@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using IczpNet.Chat.BaseAppServices;
 using Microsoft.AspNetCore.Authorization;
 
 namespace IczpNet.Chat.Samples;

@@ -1,0 +1,18 @@
+﻿using IczpNet.AbpTrees.Dtos;
+using System;
+
+namespace IczpNet.Chat.BaseDtos
+{
+    public class BaseTreeInputDto: ITreeInput<Guid>
+    {
+        public virtual Guid? ParentId { get; set; }
+
+        public virtual string Name { get; set; }
+
+        public virtual string Code { get; set; }
+
+        public virtual bool IsActive { get; set; }
+
+        public virtual double Sorting { get; set; }
+    }
+}

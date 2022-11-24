@@ -8,6 +8,7 @@ namespace IczpNet.Chat;
 [DependsOn(
     typeof(ChatApplicationContractsModule),
     typeof(AbpHttpClientModule))]
+
 public class ChatHttpApiClientModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)

@@ -33,11 +33,12 @@ using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
 using Volo.Abp.VirtualFileSystem;
+using Volo.Abp.AspNetCore.ExceptionHandling;
+using Volo.Abp.AspNetCore.Mvc;
 
 namespace IczpNet.Chat;
-
 [DependsOn(
-    typeof(ChatApplicationModule),
+typeof(ChatApplicationModule),
     typeof(ChatEntityFrameworkCoreModule),
     typeof(ChatHttpApiModule),
     typeof(AbpAspNetCoreMvcUiMultiTenancyModule),
@@ -58,6 +59,20 @@ public class ChatHttpApiHostModule : AbpModule
     {
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
+
+
+        Configure<AbpExceptionHandlingOptions>(options =>
+        {
+            options.SendExceptionsDetailsToClients = true;
+            options.SendStackTraceToClients = true;
+        });
+
+        Configure<AbpAspNetCoreMvcOptions>(options =>
+        {
+            options
+                .ConventionalControllers
+                .Create(typeof(ChatApplicationModule).Assembly);
+        });
 
         Configure<AbpDbContextOptions>(options =>
         {

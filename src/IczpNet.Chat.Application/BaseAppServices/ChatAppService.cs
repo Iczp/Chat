@@ -1,7 +1,7 @@
 ﻿using IczpNet.Chat.Localization;
 using Volo.Abp.Application.Services;
 
-namespace IczpNet.Chat;
+namespace IczpNet.Chat.BaseAppServices;
 
 public abstract class ChatAppService : ApplicationService
 {
