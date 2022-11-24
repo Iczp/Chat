@@ -1,0 +1,79 @@
+{
+  "folders": {
+    "items": {
+      "src": {},
+      "test": {},
+      "host": {}
+    }
+  },
+  "packages": {
+    "IczpNet.Chat.Domain.Shared": {
+      "path": "src/IczpNet.Chat.Domain.Shared/IczpNet.Chat.Domain.Shared.abppkg.json",
+      "folder": "src"
+    },
+    "IczpNet.Chat.Domain": {
+      "path": "src/IczpNet.Chat.Domain/IczpNet.Chat.Domain.abppkg.json",
+      "folder": "src"
+    },
+    "IczpNet.Chat.Application.Contracts": {
+      "path": "src/IczpNet.Chat.Application.Contracts/IczpNet.Chat.Application.Contracts.abppkg.json",
+      "folder": "src"
+    },
+    "IczpNet.Chat.Application": {
+      "path": "src/IczpNet.Chat.Application/IczpNet.Chat.Application.abppkg.json",
+      "folder": "src"
+    },
+    "IczpNet.Chat.EntityFrameworkCore": {
+      "path": "src/IczpNet.Chat.EntityFrameworkCore/IczpNet.Chat.EntityFrameworkCore.abppkg.json",
+      "folder": "src"
+    },
+    "IczpNet.Chat.MongoDB": {
+      "path": "src/IczpNet.Chat.MongoDB/IczpNet.Chat.MongoDB.abppkg.json",
+      "folder": "src"
+    },
+    "IczpNet.Chat.HttpApi": {
+      "path": "src/IczpNet.Chat.HttpApi/IczpNet.Chat.HttpApi.abppkg.json",
+      "folder": "src"
+    },
+    "IczpNet.Chat.HttpApi.Client": {
+      "path": "src/IczpNet.Chat.HttpApi.Client/IczpNet.Chat.HttpApi.Client.abppkg.json",
+      "folder": "src"
+    },
+    "IczpNet.Chat.TestBase": {
+      "path": "test/IczpNet.Chat.TestBase/IczpNet.Chat.TestBase.abppkg.json",
+      "folder": "test"
+    },
+    "IczpNet.Chat.EntityFrameworkCore.Tests": {
+      "path": "test/IczpNet.Chat.EntityFrameworkCore.Tests/IczpNet.Chat.EntityFrameworkCore.Tests.abppkg.json",
+      "folder": "test"
+    },
+    "IczpNet.Chat.MongoDB.Tests": {
+      "path": "test/IczpNet.Chat.MongoDB.Tests/IczpNet.Chat.MongoDB.Tests.abppkg.json",
+      "folder": "test"
+    },
+    "IczpNet.Chat.Domain.Tests": {
+      "path": "test/IczpNet.Chat.Domain.Tests/IczpNet.Chat.Domain.Tests.abppkg.json",
+      "folder": "test"
+    },
+    "IczpNet.Chat.Application.Tests": {
+      "path": "test/IczpNet.Chat.Application.Tests/IczpNet.Chat.Application.Tests.abppkg.json",
+      "folder": "test"
+    },
+    "IczpNet.Chat.HttpApi.Host": {
+      "path": "host/IczpNet.Chat.HttpApi.Host/IczpNet.Chat.HttpApi.Host.abppkg.json",
+      "folder": "host"
+    },
+    "IczpNet.Chat.HttpApi.Client.ConsoleTestApp": {
+      "path": "test/IczpNet.Chat.HttpApi.Client.ConsoleTestApp/IczpNet.Chat.HttpApi.Client.ConsoleTestApp.abppkg.json",
+      "folder": "test"
+    },
+    "IczpNet.Chat.AuthServer": {
+      "path": "host/IczpNet.Chat.AuthServer/IczpNet.Chat.AuthServer.abppkg.json",
+      "folder": "host"
+    },
+    "IczpNet.Chat.Host.Shared": {
+      "path": "host/IczpNet.Chat.Host.Shared/IczpNet.Chat.Host.Shared.abppkg.json",
+      "folder": "host"
+    }
+  }
+}

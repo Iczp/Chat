@@ -1,0 +1,7 @@
+{
+  "modules": {
+    "IczpNet.Chat": {
+      "path": "IczpNet.Chat.abpmdl.json"
+    }
+  }
+}
