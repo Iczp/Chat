@@ -5,23 +5,50 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace IczpNet.Chat.Migrations
 {
-    public partial class MessageContent_Init : Migration
+    public partial class ShopKeeper_ShopWaiter : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_Chat_Message_TextContent_Chat_TextContent_TextMessageListId",
-                table: "Chat_Message_TextContent");
-
             migrationBuilder.RenameColumn(
-                name: "TextMessageListId",
-                table: "Chat_Message_TextContent",
-                newName: "TextContentListId");
+                name: "Type",
+                table: "Chat_ChatObject",
+                newName: "ChatObjectType");
 
-            migrationBuilder.RenameIndex(
-                name: "IX_Chat_Message_TextContent_TextMessageListId",
-                table: "Chat_Message_TextContent",
-                newName: "IX_Chat_Message_TextContent_TextContentListId");
+            migrationBuilder.AddColumn<string>(
+                name: "Content",
+                table: "Chat_Message",
+                type: "nvarchar(max)",
+                maxLength: 5000,
+                nullable: true);
+
+            migrationBuilder.AddColumn<string>(
+                name: "SessionId",
+                table: "Chat_Message",
+                type: "nvarchar(100)",
+                maxLength: 100,
+                nullable: true);
+
+            migrationBuilder.AddColumn<long>(
+                name: "AutoId",
+                table: "Chat_ChatObject",
+                type: "bigint",
+                nullable: false,
+                defaultValue: 0L)
+                .Annotation("SqlServer:Identity", "1, 1");
+
+            migrationBuilder.AddColumn<string>(
+                name: "Code",
+                table: "Chat_ChatObject",
+                type: "nvarchar(50)",
+                maxLength: 50,
+                nullable: true);
+
+            migrationBuilder.AddColumn<string>(
+                name: "Name",
+                table: "Chat_ChatObject",
+                type: "nvarchar(50)",
+                maxLength: 50,
+                nullable: true);
 
             migrationBuilder.CreateTable(
                 name: "Chat_ArticleContent",
@@ -273,6 +300,22 @@ namespace IczpNet.Chat.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Chat_Official",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Chat_Official", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Chat_Official_Chat_ChatObject_Id",
+                        column: x => x.Id,
+                        principalTable: "Chat_ChatObject",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Chat_RedEnvelopeContent",
                 columns: table => new
                 {
@@ -302,6 +345,75 @@ namespace IczpNet.Chat.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Chat_Robot",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Chat_Robot", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Chat_Robot_Chat_ChatObject_Id",
+                        column: x => x.Id,
+                        principalTable: "Chat_ChatObject",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Chat_Room",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Chat_Room", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Chat_Room_Chat_ChatObject_Id",
+                        column: x => x.Id,
+                        principalTable: "Chat_ChatObject",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Chat_Session",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ExtraProperties = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ConcurrencyStamp = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: true),
+                    CreationTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatorId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    LastModificationTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    LastModifierId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    DeleterId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    DeletionTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Chat_Session", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Chat_ShopKeeper",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Chat_ShopKeeper", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Chat_ShopKeeper_Chat_ChatObject_Id",
+                        column: x => x.Id,
+                        principalTable: "Chat_ChatObject",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Chat_SoundContent",
                 columns: table => new
                 {
@@ -325,6 +437,29 @@ namespace IczpNet.Chat.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Chat_SoundContent", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Chat_TextContent",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Text = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    ExtraProperties = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ConcurrencyStamp = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: true),
+                    CreationTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatorId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    LastModificationTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    LastModifierId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    DeleterId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    DeletionTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Chat_TextContent", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -667,6 +802,69 @@ namespace IczpNet.Chat.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Chat_SessionSetting",
+                columns: table => new
+                {
+                    ChatObjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SessionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ExtraProperties = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ConcurrencyStamp = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: true),
+                    CreationTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatorId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    LastModificationTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    LastModifierId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    DeleterId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    DeletionTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Chat_SessionSetting", x => new { x.ChatObjectId, x.SessionId });
+                    table.ForeignKey(
+                        name: "FK_Chat_SessionSetting_Chat_ChatObject_ChatObjectId",
+                        column: x => x.ChatObjectId,
+                        principalTable: "Chat_ChatObject",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Chat_SessionSetting_Chat_Session_SessionId",
+                        column: x => x.SessionId,
+                        principalTable: "Chat_Session",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Chat_ShopWaiter",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    NickName = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
+                    ShopKeeperId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    ChatObjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Chat_ShopWaiter", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Chat_ShopWaiter_Chat_ChatObject_ChatObjectId",
+                        column: x => x.ChatObjectId,
+                        principalTable: "Chat_ChatObject",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Chat_ShopWaiter_Chat_ChatObject_Id",
+                        column: x => x.Id,
+                        principalTable: "Chat_ChatObject",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Chat_ShopWaiter_Chat_ShopKeeper_ShopKeeperId",
+                        column: x => x.ShopKeeperId,
+                        principalTable: "Chat_ShopKeeper",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Chat_Message_SoundContent",
                 columns: table => new
                 {
@@ -686,6 +884,30 @@ namespace IczpNet.Chat.Migrations
                         name: "FK_Chat_Message_SoundContent_Chat_SoundContent_SoundContentListId",
                         column: x => x.SoundContentListId,
                         principalTable: "Chat_SoundContent",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Chat_Message_TextContent",
+                columns: table => new
+                {
+                    MessageListId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TextContentListId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Chat_Message_TextContent", x => new { x.MessageListId, x.TextContentListId });
+                    table.ForeignKey(
+                        name: "FK_Chat_Message_TextContent_Chat_Message_MessageListId",
+                        column: x => x.MessageListId,
+                        principalTable: "Chat_Message",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Chat_Message_TextContent_Chat_TextContent_TextContentListId",
+                        column: x => x.TextContentListId,
+                        principalTable: "Chat_TextContent",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -775,6 +997,11 @@ namespace IczpNet.Chat.Migrations
                 column: "SoundContentListId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Chat_Message_TextContent_TextContentListId",
+                table: "Chat_Message_TextContent",
+                column: "TextContentListId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Chat_Message_VideoContent_VideoContentListId",
                 table: "Chat_Message_VideoContent",
                 column: "VideoContentListId");
@@ -784,21 +1011,24 @@ namespace IczpNet.Chat.Migrations
                 table: "Chat_RedEnvelopeUnit",
                 column: "RedEnvelopeContentId");
 
-            migrationBuilder.AddForeignKey(
-                name: "FK_Chat_Message_TextContent_Chat_TextContent_TextContentListId",
-                table: "Chat_Message_TextContent",
-                column: "TextContentListId",
-                principalTable: "Chat_TextContent",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+            migrationBuilder.CreateIndex(
+                name: "IX_Chat_SessionSetting_SessionId",
+                table: "Chat_SessionSetting",
+                column: "SessionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Chat_ShopWaiter_ChatObjectId",
+                table: "Chat_ShopWaiter",
+                column: "ChatObjectId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Chat_ShopWaiter_ShopKeeperId",
+                table: "Chat_ShopWaiter",
+                column: "ShopKeeperId");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_Chat_Message_TextContent_Chat_TextContent_TextContentListId",
-                table: "Chat_Message_TextContent");
-
             migrationBuilder.DropTable(
                 name: "Chat_HistoryMessage");
 
@@ -836,10 +1066,28 @@ namespace IczpNet.Chat.Migrations
                 name: "Chat_Message_SoundContent");
 
             migrationBuilder.DropTable(
+                name: "Chat_Message_TextContent");
+
+            migrationBuilder.DropTable(
                 name: "Chat_Message_VideoContent");
 
             migrationBuilder.DropTable(
+                name: "Chat_Official");
+
+            migrationBuilder.DropTable(
                 name: "Chat_RedEnvelopeUnit");
+
+            migrationBuilder.DropTable(
+                name: "Chat_Robot");
+
+            migrationBuilder.DropTable(
+                name: "Chat_Room");
+
+            migrationBuilder.DropTable(
+                name: "Chat_SessionSetting");
+
+            migrationBuilder.DropTable(
+                name: "Chat_ShopWaiter");
 
             migrationBuilder.DropTable(
                 name: "Chat_ArticleContent");
@@ -872,28 +1120,44 @@ namespace IczpNet.Chat.Migrations
                 name: "Chat_SoundContent");
 
             migrationBuilder.DropTable(
+                name: "Chat_TextContent");
+
+            migrationBuilder.DropTable(
                 name: "Chat_VideoContent");
 
             migrationBuilder.DropTable(
                 name: "Chat_RedEnvelopeContent");
 
+            migrationBuilder.DropTable(
+                name: "Chat_Session");
+
+            migrationBuilder.DropTable(
+                name: "Chat_ShopKeeper");
+
+            migrationBuilder.DropColumn(
+                name: "Content",
+                table: "Chat_Message");
+
+            migrationBuilder.DropColumn(
+                name: "SessionId",
+                table: "Chat_Message");
+
+            migrationBuilder.DropColumn(
+                name: "AutoId",
+                table: "Chat_ChatObject");
+
+            migrationBuilder.DropColumn(
+                name: "Code",
+                table: "Chat_ChatObject");
+
+            migrationBuilder.DropColumn(
+                name: "Name",
+                table: "Chat_ChatObject");
+
             migrationBuilder.RenameColumn(
-                name: "TextContentListId",
-                table: "Chat_Message_TextContent",
-                newName: "TextMessageListId");
-
-            migrationBuilder.RenameIndex(
-                name: "IX_Chat_Message_TextContent_TextContentListId",
-                table: "Chat_Message_TextContent",
-                newName: "IX_Chat_Message_TextContent_TextMessageListId");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_Chat_Message_TextContent_Chat_TextContent_TextMessageListId",
-                table: "Chat_Message_TextContent",
-                column: "TextMessageListId",
-                principalTable: "Chat_TextContent",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+                name: "ChatObjectType",
+                table: "Chat_ChatObject",
+                newName: "Type");
         }
     }
 }

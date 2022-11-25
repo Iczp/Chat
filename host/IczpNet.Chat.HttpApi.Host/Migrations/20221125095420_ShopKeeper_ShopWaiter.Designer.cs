@@ -13,8 +13,8 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    [Migration("20221125085044_SessionSetting_Init")]
-    partial class SessionSetting_Init
+    [Migration("20221125095420_ShopKeeper_ShopWaiter")]
+    partial class ShopKeeper_ShopWaiter
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -1695,6 +1695,34 @@ namespace IczpNet.Chat.Migrations
                     b.ToTable("Chat_Robot", (string)null);
                 });
 
+            modelBuilder.Entity("IczpNet.Chat.Robots.ShopKeeper", b =>
+                {
+                    b.HasBaseType("IczpNet.Chat.ChatObjects.ChatObject");
+
+                    b.ToTable("Chat_ShopKeeper", (string)null);
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.Robots.ShopWaiter", b =>
+                {
+                    b.HasBaseType("IczpNet.Chat.ChatObjects.ChatObject");
+
+                    b.Property<Guid?>("ChatObjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("NickName")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid?>("ShopKeeperId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasIndex("ChatObjectId");
+
+                    b.HasIndex("ShopKeeperId");
+
+                    b.ToTable("Chat_ShopWaiter", (string)null);
+                });
+
             modelBuilder.Entity("IczpNet.Chat.Rooms.Room", b =>
                 {
                     b.HasBaseType("IczpNet.Chat.ChatObjects.ChatObject");
@@ -1991,6 +2019,36 @@ namespace IczpNet.Chat.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("IczpNet.Chat.Robots.ShopKeeper", b =>
+                {
+                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", null)
+                        .WithOne()
+                        .HasForeignKey("IczpNet.Chat.Robots.ShopKeeper", "Id")
+                        .OnDelete(DeleteBehavior.ClientCascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.Robots.ShopWaiter", b =>
+                {
+                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "ChatObject")
+                        .WithMany("ShopWaiterList")
+                        .HasForeignKey("ChatObjectId");
+
+                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", null)
+                        .WithOne()
+                        .HasForeignKey("IczpNet.Chat.Robots.ShopWaiter", "Id")
+                        .OnDelete(DeleteBehavior.ClientCascade)
+                        .IsRequired();
+
+                    b.HasOne("IczpNet.Chat.Robots.ShopKeeper", "ShopKeeper")
+                        .WithMany()
+                        .HasForeignKey("ShopKeeperId");
+
+                    b.Navigation("ChatObject");
+
+                    b.Navigation("ShopKeeper");
+                });
+
             modelBuilder.Entity("IczpNet.Chat.Rooms.Room", b =>
                 {
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", null)
@@ -2005,6 +2063,8 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("ReceiverMessageList");
 
                     b.Navigation("SenderMessageList");
+
+                    b.Navigation("ShopWaiterList");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.Messages.Message", b =>
