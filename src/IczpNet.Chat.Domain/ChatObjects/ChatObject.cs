@@ -29,10 +29,16 @@ namespace IczpNet.Chat.ChatObjects
         public virtual IList<Message> ReceiverMessageList { get; set; }
 
         /// <summary>
-        /// 兼职客服
+        /// 兼职店小二
         /// </summary>
         [InverseProperty(nameof(ShopWaiter.ChatObject))]
         public virtual IList<ShopWaiter> PartShopWaiterList { get; set; }
+
+        /// <summary>
+        /// 兼职掌柜
+        /// </summary>
+        [InverseProperty(nameof(ShopKeeper.ChatObject))]
+        public virtual IList<ShopKeeper> PartShopKeeperList { get; set; }
 
         protected ChatObject() { }
 
