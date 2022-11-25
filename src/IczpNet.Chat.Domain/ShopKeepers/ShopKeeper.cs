@@ -2,6 +2,7 @@
 using System;
 using IczpNet.Chat.Enums;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.Robots
 {
@@ -9,6 +10,7 @@ namespace IczpNet.Chat.Robots
     {
         public const ChatObjectType ChatObjectTypeValue = ChatObjectType.ShopKeeper;
 
+        [InverseProperty(nameof(ShopWaiter.ShopKeeper))]
         public virtual IList<ShopWaiter> ShopWaiterList { get; set; }
 
         protected ShopKeeper()

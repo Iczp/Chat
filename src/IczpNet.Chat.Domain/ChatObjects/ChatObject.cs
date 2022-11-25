@@ -28,8 +28,11 @@ namespace IczpNet.Chat.ChatObjects
         [InverseProperty(nameof(Message.Receiver))]
         public virtual IList<Message> ReceiverMessageList { get; set; }
 
+        /// <summary>
+        /// 兼职客服
+        /// </summary>
         [InverseProperty(nameof(ShopWaiter.ChatObject))]
-        public virtual IList<ShopWaiter> ShopWaiterList { get; set; }
+        public virtual IList<ShopWaiter> PartShopWaiterList { get; set; }
 
         protected ChatObject() { }
 
