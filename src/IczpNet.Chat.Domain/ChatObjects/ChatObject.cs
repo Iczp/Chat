@@ -1,6 +1,7 @@
 ﻿using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Messages;
+using IczpNet.Chat.Robots;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -26,6 +27,9 @@ namespace IczpNet.Chat.ChatObjects
 
         [InverseProperty(nameof(Message.Receiver))]
         public virtual IList<Message> ReceiverMessageList { get; set; }
+
+        [InverseProperty(nameof(ShopWaiter.ChatObject))]
+        public virtual IList<ShopWaiter> ShopWaiterList { get; set; }
 
         protected ChatObject() { }
 

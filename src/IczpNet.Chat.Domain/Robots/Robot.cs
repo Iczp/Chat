@@ -1,24 +1,16 @@
 ﻿using IczpNet.Chat.ChatObjects;
 using System;
 using IczpNet.Chat.Enums;
-using System.ComponentModel.DataAnnotations.Schema;
-
 namespace IczpNet.Chat.Robots
 {
     public class Robot : ChatObject
     {
-        //public virtual Guid? ChatObjectId { get; set; }
-
-        //[ForeignKey(nameof(ChatObjectId))]
-        //public virtual ChatObject ChatObject { get; set; }
+        public const ChatObjectType ChatObjectTypeValue = ChatObjectType.Robot;
 
         protected Robot()
         {
-            ChatObjectType = ChatObjectType.Room;
+            ChatObjectType = ChatObjectTypeValue;
         }
-        protected Robot(Guid id) : base(id, ChatObjectType.Robot)
-        {
-
-        }
+        protected Robot(Guid id) : base(id, ChatObjectTypeValue) { }
     }
 }

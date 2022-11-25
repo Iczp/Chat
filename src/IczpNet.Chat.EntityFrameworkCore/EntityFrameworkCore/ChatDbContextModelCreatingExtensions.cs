@@ -3,9 +3,7 @@ using IczpNet.Chat.Messages;
 using IczpNet.Chat.Messages.Templates;
 using IczpNet.Chat.SessionSettings;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
 using Volo.Abp;
-using Volo.Abp.EntityFrameworkCore.Modeling;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 

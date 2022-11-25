@@ -1,25 +1,16 @@
 ﻿using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using System;
-using System.ComponentModel.DataAnnotations.Schema;
-
 namespace IczpNet.Chat.Officials
 {
     public class Official : ChatObject
     {
-        //public virtual Guid? ChatObjectId { get; set; }
-
-        //[ForeignKey(nameof(ChatObjectId))]
-        //public virtual ChatObject ChatObject { get; set; }
-
+        public const ChatObjectType ChatObjectTypeValue = ChatObjectType.Official;
 
         protected Official()
         {
-            ChatObjectType = ChatObjectType.Room;
+            ChatObjectType = ChatObjectTypeValue;
         }
-        protected Official(Guid id) : base(id, ChatObjectType.Official)
-        {
-
-        }
+        protected Official(Guid id) : base(id, ChatObjectTypeValue) { }
     }
 }

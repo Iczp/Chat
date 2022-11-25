@@ -1,23 +1,19 @@
 ﻿using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using System;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.Rooms
 {
     public class Room : ChatObject
     {
 
-        //public virtual Guid? ChatObjectId { get; set; }
-
-        //[ForeignKey(nameof(ChatObjectId))]
-        //public virtual ChatObject ChatObject { get; set; }
+        public const ChatObjectType ChatObjectTypeValue = ChatObjectType.Room;
 
         protected Room()
         {
-            ChatObjectType = ChatObjectType.Room;
+            ChatObjectType = ChatObjectTypeValue;
         }
-        protected Room(Guid id) : base(id, ChatObjectType.Room)
+        protected Room(Guid id) : base(id, ChatObjectTypeValue)
         {
 
         }
