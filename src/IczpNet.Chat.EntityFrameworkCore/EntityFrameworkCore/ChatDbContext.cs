@@ -1,9 +1,11 @@
 ﻿using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.SessionSettings;
 using IczpNet.Chat.Messages;
 using IczpNet.Chat.Messages.Templates;
 using IczpNet.Chat.Officials;
 using IczpNet.Chat.Robots;
 using IczpNet.Chat.Rooms;
+using IczpNet.Chat.Sessions;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
@@ -16,6 +18,11 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     /* Add DbSet for each Aggregate Root here. Example:
      * public DbSet<Question> Questions { get; set; }
      */
+
+    public DbSet<Session> Session { get; }
+    public DbSet<SessionSetting> SessionSetting { get; }
+
+    public DbSet<SessionSetting> ChatSetting { get; }
     public DbSet<ChatObject> ChatObject { get; }
     public DbSet<Message> Message { get; }
     public DbSet<Official> Official { get; }

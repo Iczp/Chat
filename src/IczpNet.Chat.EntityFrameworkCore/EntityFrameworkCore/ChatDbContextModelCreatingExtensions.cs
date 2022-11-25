@@ -1,6 +1,7 @@
 ﻿using IczpNet.AbpCommons.EntityFrameworkCore;
 using IczpNet.Chat.Messages;
 using IczpNet.Chat.Messages.Templates;
+using IczpNet.Chat.SessionSettings;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using Volo.Abp;
@@ -40,8 +41,13 @@ public static class ChatDbContextModelCreatingExtensions
         builder.Entity<HistoryMessage>(b =>
         {
             b.HasKey(x => new { x.MessageId, x.HistoryContentId });
-            //b.HasKey(x => x.GetKeys().ToArray());
         });
+
+        builder.Entity<SessionSetting>(b =>
+        {
+            b.HasKey(x => new { x.ChatObjectId, x.SessionId });
+        });
+
 
         builder.Entity<Message>(b =>
         {

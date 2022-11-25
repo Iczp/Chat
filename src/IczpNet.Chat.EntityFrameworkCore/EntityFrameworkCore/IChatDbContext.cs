@@ -1,9 +1,11 @@
 ﻿using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.SessionSettings;
 using IczpNet.Chat.Messages;
 using IczpNet.Chat.Messages.Templates;
 using IczpNet.Chat.Officials;
 using IczpNet.Chat.Robots;
 using IczpNet.Chat.Rooms;
+using IczpNet.Chat.Sessions;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
@@ -17,6 +19,11 @@ public interface IChatDbContext : IEfCoreDbContext
      * DbSet<Question> Questions { get; }
      */
 
+    DbSet<Session> Session { get; }
+    DbSet<SessionSetting> SessionSetting { get; }
+    
+
+    DbSet<SessionSetting> ChatSetting { get; }
     DbSet<ChatObject> ChatObject { get; }
     DbSet<Message> Message { get; }
     DbSet<Official> Official { get; }

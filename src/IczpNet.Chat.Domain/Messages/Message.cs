@@ -12,15 +12,31 @@ namespace IczpNet.Chat.Messages
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public virtual long AutoId { get; set; }
 
-        //[Required]
+        [StringLength(100)]
+        public virtual string SessionId { get; protected set; }
+
+        /// <summary>
+        /// 发送者
+        /// </summary>
         public virtual Guid? SenderId { get; set; }
 
-        //[Required]
+        /// <summary>
+        /// 接收者
+        /// </summary>
         public virtual Guid? ReceiverId { get; set; }
 
+        /// <summary>
+        /// 消息通道
+        /// </summary>
         public virtual MessageChannel MessageChannel { get; set; }
 
+        /// <summary>
+        /// 消息类型
+        /// </summary>
         public virtual MessageType MessageType { get; set; }
+
+        [StringLength(5000)]
+        public virtual string Content { get; protected set; }
 
         /// <summary>
         /// 扩展（键名）根据业务自义，如:"courseId"、"course-userId"、"erp-userId"
