@@ -8,10 +8,10 @@ namespace IczpNet.Chat.Rooms
     public class Room : ChatObject
     {
 
-        public virtual Guid? ChatObjectId { get; set; }
+        //public virtual Guid? ChatObjectId { get; set; }
 
-        [ForeignKey(nameof(ChatObjectId))]
-        public virtual ChatObject ChatObject { get; set; }
+        //[ForeignKey(nameof(ChatObjectId))]
+        //public virtual ChatObject ChatObject { get; set; }
 
         protected Room()
         {

@@ -7,10 +7,10 @@ namespace IczpNet.Chat.Robots
 {
     public class Robot : ChatObject
     {
-        public virtual Guid? ChatObjectId { get; set; }
+        //public virtual Guid? ChatObjectId { get; set; }
 
-        [ForeignKey(nameof(ChatObjectId))]
-        public virtual ChatObject ChatObject { get; set; }
+        //[ForeignKey(nameof(ChatObjectId))]
+        //public virtual ChatObject ChatObject { get; set; }
 
         protected Robot()
         {

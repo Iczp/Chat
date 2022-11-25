@@ -1,9 +1,6 @@
 ﻿using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Messages;
-using IczpNet.Chat.Officials;
-using IczpNet.Chat.Robots;
-using IczpNet.Chat.Rooms;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -29,12 +26,6 @@ namespace IczpNet.Chat.ChatObjects
 
         [InverseProperty(nameof(Message.Receiver))]
         public virtual IList<Message> ReceiverMessageList { get; set; }
-
-        public virtual IList<Room> RoomList { get; set; }
-
-        public virtual IList<Robot> RobotList { get; set; }
-
-        public virtual IList<Official> OfficialList { get; set; }
 
         protected ChatObject() { }
 

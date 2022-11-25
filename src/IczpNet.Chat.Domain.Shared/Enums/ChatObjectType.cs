@@ -30,9 +30,19 @@ namespace IczpNet.Chat.Enums
         [Description("机器人")]
         Robot = 5,
         /// <summary>
-        /// 电子商务
+        /// 掌柜
         /// </summary>
-        [Description("电子商务")]
-        ElectronicCommerce = 7,
+        [Description("掌柜")]
+        ShopKeeper = 7,
+        /// <summary>
+        /// 店小二
+        /// </summary>
+        [Description("店小二")]
+        ShopWaiter = 8,
+        /// <summary>
+        /// 客户
+        /// </summary>
+        [Description("客户")]
+        Customer = 8,
     }
 }

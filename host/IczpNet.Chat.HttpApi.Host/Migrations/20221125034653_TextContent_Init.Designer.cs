@@ -13,8 +13,8 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    [Migration("20221124100211_Add_ChatObjectId")]
-    partial class Add_ChatObjectId
+    [Migration("20221125034653_TextContent_Init")]
+    partial class TextContent_Init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -202,14 +202,86 @@ namespace IczpNet.Chat.Migrations
                     b.ToTable("Chat_Message", (string)null);
                 });
 
+            modelBuilder.Entity("IczpNet.Chat.Messages.Templates.TextContent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<string>("ExtraProperties")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
+                    b.Property<string>("Text")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Chat_TextContent", (string)null);
+                });
+
+            modelBuilder.Entity("MessageTextContent", b =>
+                {
+                    b.Property<Guid>("MessageListId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TextMessageListId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("MessageListId", "TextMessageListId");
+
+                    b.HasIndex("TextMessageListId");
+
+                    b.ToTable("Chat_Message_TextContent", (string)null);
+                });
+
             modelBuilder.Entity("IczpNet.Chat.Officials.Official", b =>
                 {
                     b.HasBaseType("IczpNet.Chat.ChatObjects.ChatObject");
-
-                    b.Property<Guid?>("ChatObjectId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasIndex("ChatObjectId");
 
                     b.ToTable("Chat_Official", (string)null);
                 });
@@ -218,22 +290,12 @@ namespace IczpNet.Chat.Migrations
                 {
                     b.HasBaseType("IczpNet.Chat.ChatObjects.ChatObject");
 
-                    b.Property<Guid?>("ChatObjectId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasIndex("ChatObjectId");
-
                     b.ToTable("Chat_Robot", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.Rooms.Room", b =>
                 {
                     b.HasBaseType("IczpNet.Chat.ChatObjects.ChatObject");
-
-                    b.Property<Guid?>("ChatObjectId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasIndex("ChatObjectId");
 
                     b.ToTable("Chat_Room", (string)null);
                 });
@@ -265,60 +327,51 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("Sender");
                 });
 
+            modelBuilder.Entity("MessageTextContent", b =>
+                {
+                    b.HasOne("IczpNet.Chat.Messages.Message", null)
+                        .WithMany()
+                        .HasForeignKey("MessageListId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("IczpNet.Chat.Messages.Templates.TextContent", null)
+                        .WithMany()
+                        .HasForeignKey("TextMessageListId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("IczpNet.Chat.Officials.Official", b =>
                 {
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "ChatObject")
-                        .WithMany("OfficialList")
-                        .HasForeignKey("ChatObjectId");
-
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", null)
                         .WithOne()
                         .HasForeignKey("IczpNet.Chat.Officials.Official", "Id")
                         .OnDelete(DeleteBehavior.ClientCascade)
                         .IsRequired();
-
-                    b.Navigation("ChatObject");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.Robots.Robot", b =>
                 {
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "ChatObject")
-                        .WithMany("RobotList")
-                        .HasForeignKey("ChatObjectId");
-
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", null)
                         .WithOne()
                         .HasForeignKey("IczpNet.Chat.Robots.Robot", "Id")
                         .OnDelete(DeleteBehavior.ClientCascade)
                         .IsRequired();
-
-                    b.Navigation("ChatObject");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.Rooms.Room", b =>
                 {
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "ChatObject")
-                        .WithMany("RoomList")
-                        .HasForeignKey("ChatObjectId");
-
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", null)
                         .WithOne()
                         .HasForeignKey("IczpNet.Chat.Rooms.Room", "Id")
                         .OnDelete(DeleteBehavior.ClientCascade)
                         .IsRequired();
-
-                    b.Navigation("ChatObject");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.ChatObjects.ChatObject", b =>
                 {
-                    b.Navigation("OfficialList");
-
                     b.Navigation("ReceiverMessageList");
-
-                    b.Navigation("RobotList");
-
-                    b.Navigation("RoomList");
 
                     b.Navigation("SenderMessageList");
                 });
