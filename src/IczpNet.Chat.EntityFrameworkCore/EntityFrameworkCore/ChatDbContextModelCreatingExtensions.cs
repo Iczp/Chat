@@ -1,9 +1,9 @@
 ﻿using IczpNet.AbpCommons.EntityFrameworkCore;
 using IczpNet.Chat.Messages;
-using IczpNet.Chat.Messages.Templates;
-using IczpNet.Chat.RoomPermissionGrants;
-using IczpNet.Chat.RoomRoleRoomMembers;
-using IczpNet.Chat.SessionSettings;
+using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.RoomSections.RoomPermissionGrants;
+using IczpNet.Chat.RoomSections.RoomRoleRoomMembers;
+using IczpNet.Chat.SessionSections.SessionSettings;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp;
 

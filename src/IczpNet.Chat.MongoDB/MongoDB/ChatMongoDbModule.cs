@@ -1,6 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.Modularity;
 using Volo.Abp.MongoDB;
+using Volo.Abp.Identity.MongoDB;
 
 namespace IczpNet.Chat.MongoDB;
 
@@ -8,7 +9,8 @@ namespace IczpNet.Chat.MongoDB;
     typeof(ChatDomainModule),
     typeof(AbpMongoDbModule)
     )]
-public class ChatMongoDbModule : AbpModule
+[DependsOn(typeof(AbpIdentityMongoDbModule))]
+    public class ChatMongoDbModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {

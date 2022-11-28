@@ -1,9 +1,10 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;
 using Volo.Abp.Application;
 using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
+using Volo.Abp.Identity;
 
 namespace IczpNet.Chat;
 [DependsOn(
@@ -14,7 +15,8 @@ namespace IczpNet.Chat;
     )]
 [DependsOn(typeof(AbpCommonsApplicationModule))]
 [DependsOn(typeof(AbpTreesApplicationModule))]
-public class ChatApplicationModule : AbpModule
+[DependsOn(typeof(AbpIdentityApplicationModule))]
+    public class ChatApplicationModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {

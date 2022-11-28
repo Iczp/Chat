@@ -1,8 +1,9 @@
-﻿using IczpNet.AbpCommons.EntityFrameworkCore;
+using IczpNet.AbpCommons.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.Modularity;
+using Volo.Abp.Identity.EntityFrameworkCore;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -11,7 +12,8 @@ namespace IczpNet.Chat.EntityFrameworkCore;
     typeof(AbpEntityFrameworkCoreModule)
 )]
 [DependsOn(typeof(AbpCommonsEntityFrameworkCoreModule))]
-public class ChatEntityFrameworkCoreModule : AbpModule
+[DependsOn(typeof(AbpIdentityEntityFrameworkCoreModule))]
+    public class ChatEntityFrameworkCoreModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {

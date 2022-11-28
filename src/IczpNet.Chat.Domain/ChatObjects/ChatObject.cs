@@ -1,9 +1,8 @@
 ﻿using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Messages;
-using IczpNet.Chat.OfficialExcludedMembers;
-using IczpNet.Chat.OfficialGroupMembers;
-using IczpNet.Chat.Officials;
+using IczpNet.Chat.OfficialSections.OfficialExcludedMembers;
+using IczpNet.Chat.OfficialSections.OfficialGroupMembers;
 using IczpNet.Chat.Robots;
 using System;
 using System.Collections.Generic;

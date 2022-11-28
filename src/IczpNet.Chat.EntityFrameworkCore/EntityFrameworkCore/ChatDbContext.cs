@@ -1,23 +1,24 @@
-﻿using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.SessionSettings;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Messages;
-using IczpNet.Chat.Messages.Templates;
-using IczpNet.Chat.Officials;
 using IczpNet.Chat.Robots;
-using IczpNet.Chat.Rooms;
-using IczpNet.Chat.Sessions;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
-using IczpNet.Chat.OfficialExcludedMembers;
-using IczpNet.Chat.OfficialGroupMembers;
-using IczpNet.Chat.OfficialGroups;
-using IczpNet.Chat.RoomMembers;
-using IczpNet.Chat.RoomRoles;
-using IczpNet.Chat.RoomRoleRoomMembers;
-using IczpNet.Chat.RoomPermissionDefines;
-using IczpNet.Chat.RoomPermissionGrants;
-using IczpNet.Chat.RoomForbiddenMembers;
+using Volo.Abp.Identity.EntityFrameworkCore;
+using IczpNet.Chat.RoomSections.Rooms;
+using IczpNet.Chat.RoomSections.RoomMembers;
+using IczpNet.Chat.RoomSections.RoomRoles;
+using IczpNet.Chat.RoomSections.RoomPermissionGrants;
+using IczpNet.Chat.RoomSections.RoomPermissionDefines;
+using IczpNet.Chat.RoomSections.RoomRoleRoomMembers;
+using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.OfficialSections.Officials;
+using IczpNet.Chat.OfficialSections.OfficialGroups;
+using IczpNet.Chat.OfficialSections.OfficialGroupMembers;
+using IczpNet.Chat.OfficialSections.OfficialExcludedMembers;
+using IczpNet.Chat.RoomSections.RoomForbiddenMembers;
+using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.SessionSettings;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -79,5 +80,6 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
         base.OnModelCreating(builder);
 
         builder.ConfigureChat();
-    }
+        builder.ConfigureIdentity();
+        }
 }

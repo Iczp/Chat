@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
-using IczpNet.Chat.ChatObjects.Dtos;
-using IczpNet.Chat.Rooms;
 using IczpNet.Chat.Rooms.Dtos;
+using IczpNet.Chat.RoomSections.Rooms;
 
 namespace IczpNet.Chat.AutoMappers;
 

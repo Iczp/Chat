@@ -1,7 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.Http.Client;
 using Volo.Abp.Modularity;
 using Volo.Abp.VirtualFileSystem;
+using Volo.Abp.Identity;
 
 namespace IczpNet.Chat;
 
@@ -9,7 +10,8 @@ namespace IczpNet.Chat;
     typeof(ChatApplicationContractsModule),
     typeof(AbpHttpClientModule))]
 
-public class ChatHttpApiClientModule : AbpModule
+[DependsOn(typeof(AbpIdentityHttpApiClientModule))]
+    public class ChatHttpApiClientModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
