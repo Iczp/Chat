@@ -6,7 +6,7 @@ namespace IczpNet.Chat.Enums
     /// 文章类型,
     /// 0:常规
     /// </summary>
-    public enum ArticleTypes : int
+    public enum ArticleTypeEnum : int
     {
         /// <summary>
         /// 文章类型（用户群 User）

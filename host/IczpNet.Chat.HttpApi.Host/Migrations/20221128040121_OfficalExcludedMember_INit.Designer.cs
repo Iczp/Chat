@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,10 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221128040121_OfficalExcludedMember_INit")]
+    partial class OfficalExcludedMember_INit
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1650,447 +1652,6 @@ namespace IczpNet.Chat.Migrations
                     b.ToTable("Chat_OfficialGroup", (string)null);
                 });
 
-            modelBuilder.Entity("IczpNet.Chat.RoomForbiddenMembers.RoomForbiddenMember", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime?>("ExpireTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ExtraProperties")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<Guid>("OperatorChatObjectId")
-                        .HasMaxLength(36)
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("OwnerChatObjectId")
-                        .HasMaxLength(36)
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("RoomId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("TenantId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RoomId");
-
-                    b.ToTable("Chat_RoomForbiddenMember", (string)null);
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.RoomMembers.RoomMember", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<string>("DepartmentId")
-                        .HasMaxLength(36)
-                        .HasColumnType("nvarchar(36)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("ExtraProperties")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<string>("Grade")
-                        .HasMaxLength(36)
-                        .HasColumnType("nvarchar(36)");
-
-                    b.Property<DateTime>("HistoryFirstTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("InputForbiddenExpireTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("InviterUserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<int>("JoinWay")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<string>("MemberName")
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)");
-
-                    b.Property<Guid>("OwnerUserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("PositionId")
-                        .HasMaxLength(36)
-                        .HasColumnType("nvarchar(36)");
-
-                    b.Property<Guid>("RoomId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("RoomRole")
-                        .HasColumnType("int");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("TenantId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RoomId");
-
-                    b.ToTable("Chat_RoomMember", (string)null);
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.RoomPermissionDefines.RoomPermissionDefine", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<string>("DateType")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<long>("DefaultValue")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("ExtraProperties")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<string>("GroupName")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<long>("MaxValue")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("MinValue")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("ParentId")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<long>("Sorting")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ParentId");
-
-                    b.ToTable("Chat_RoomPermissionDefine", (string)null);
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.RoomPermissionGrants.RoomPermissionGrant", b =>
-                {
-                    b.Property<string>("DefineId")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<Guid>("RoleId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<string>("ExtraProperties")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("TenantId");
-
-                    b.Property<long>("Value")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("DefineId", "RoleId");
-
-                    b.HasIndex("RoleId");
-
-                    b.ToTable("Chat_RoomPermissionGrant", (string)null);
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.RoomRoleRoomMembers.RoomRoleRoomMember", b =>
-                {
-                    b.Property<Guid>("RoleId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("RoomMemberId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<string>("ExtraProperties")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("TenantId");
-
-                    b.HasKey("RoleId", "RoomMemberId");
-
-                    b.HasIndex("RoomMemberId");
-
-                    b.ToTable("Chat_RoomRoleRoomMember", (string)null);
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.RoomRoles.RoomRole", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<string>("ExtraProperties")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)");
-
-                    b.Property<Guid?>("RoomId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<long>("Sorting")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("TenantId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RoomId");
-
-                    b.ToTable("Chat_RoomRole", (string)null);
-                });
-
             modelBuilder.Entity("IczpNet.Chat.Sessions.Session", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2361,64 +1922,6 @@ namespace IczpNet.Chat.Migrations
                 {
                     b.HasBaseType("IczpNet.Chat.ChatObjects.ChatObject");
 
-                    b.Property<string>("BackgroundImage")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
-                    b.Property<Guid?>("DefaultRoleId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("FullName")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
-                    b.Property<int>("InvitationMethod")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsAllowAutoJoin")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsCanSetBackground")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsCanSetImmersed")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsForbiddenInput")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("ManagerUserIdList")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("MemberNameDisplayMode")
-                        .HasColumnType("int");
-
-                    b.Property<string>("OriginalName")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
-                    b.Property<Guid?>("OwnerChatObjectId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Portrait")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
-                    b.Property<int>("PortraitDisplayMode")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("int");
-
-                    b.HasIndex("DefaultRoleId");
-
-                    b.HasIndex("OwnerChatObjectId");
-
                     b.ToTable("Chat_Room", (string)null);
                 });
 
@@ -2618,84 +2121,6 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("Official");
                 });
 
-            modelBuilder.Entity("IczpNet.Chat.RoomForbiddenMembers.RoomForbiddenMember", b =>
-                {
-                    b.HasOne("IczpNet.Chat.Rooms.Room", "Room")
-                        .WithMany("RoomForbiddenMemberList")
-                        .HasForeignKey("RoomId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Room");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.RoomMembers.RoomMember", b =>
-                {
-                    b.HasOne("IczpNet.Chat.Rooms.Room", "Room")
-                        .WithMany("MemberList")
-                        .HasForeignKey("RoomId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Room");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.RoomPermissionDefines.RoomPermissionDefine", b =>
-                {
-                    b.HasOne("IczpNet.Chat.RoomPermissionDefines.RoomPermissionDefine", "Parent")
-                        .WithMany("Childs")
-                        .HasForeignKey("ParentId");
-
-                    b.Navigation("Parent");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.RoomPermissionGrants.RoomPermissionGrant", b =>
-                {
-                    b.HasOne("IczpNet.Chat.RoomPermissionDefines.RoomPermissionDefine", "Define")
-                        .WithMany("GrantList")
-                        .HasForeignKey("DefineId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("IczpNet.Chat.RoomRoles.RoomRole", "Role")
-                        .WithMany("GrantList")
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Define");
-
-                    b.Navigation("Role");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.RoomRoleRoomMembers.RoomRoleRoomMember", b =>
-                {
-                    b.HasOne("IczpNet.Chat.RoomRoles.RoomRole", "RoomRole")
-                        .WithMany("MemberRoleList")
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("IczpNet.Chat.RoomMembers.RoomMember", "RoomMember")
-                        .WithMany("RoleList")
-                        .HasForeignKey("RoomMemberId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("RoomMember");
-
-                    b.Navigation("RoomRole");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.RoomRoles.RoomRole", b =>
-                {
-                    b.HasOne("IczpNet.Chat.Rooms.Room", "Room")
-                        .WithMany("RoleList")
-                        .HasForeignKey("RoomId");
-
-                    b.Navigation("Room");
-                });
-
             modelBuilder.Entity("IczpNet.Chat.SessionSettings.SessionSetting", b =>
                 {
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "ChatObject")
@@ -2841,7 +2266,7 @@ namespace IczpNet.Chat.Migrations
             modelBuilder.Entity("IczpNet.Chat.Robots.ShopKeeper", b =>
                 {
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "ChatObject")
-                        .WithMany("ProxyShopKeeperList")
+                        .WithMany("PartShopKeeperList")
                         .HasForeignKey("ChatObjectId");
 
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", null)
@@ -2856,7 +2281,7 @@ namespace IczpNet.Chat.Migrations
             modelBuilder.Entity("IczpNet.Chat.Robots.ShopWaiter", b =>
                 {
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "ChatObject")
-                        .WithMany("ProxyShopWaiterList")
+                        .WithMany("PartShopWaiterList")
                         .HasForeignKey("ChatObjectId");
 
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", null)
@@ -2876,23 +2301,11 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.Rooms.Room", b =>
                 {
-                    b.HasOne("IczpNet.Chat.RoomRoles.RoomRole", "DefaultRole")
-                        .WithMany("DefaultRoomList")
-                        .HasForeignKey("DefaultRoleId");
-
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", null)
                         .WithOne()
                         .HasForeignKey("IczpNet.Chat.Rooms.Room", "Id")
                         .OnDelete(DeleteBehavior.ClientCascade)
                         .IsRequired();
-
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "OwnerChatObject")
-                        .WithMany()
-                        .HasForeignKey("OwnerChatObjectId");
-
-                    b.Navigation("DefaultRole");
-
-                    b.Navigation("OwnerChatObject");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.ChatObjects.ChatObject", b =>
@@ -2901,9 +2314,9 @@ namespace IczpNet.Chat.Migrations
 
                     b.Navigation("OfficialGroupMemberList");
 
-                    b.Navigation("ProxyShopKeeperList");
+                    b.Navigation("PartShopKeeperList");
 
-                    b.Navigation("ProxyShopWaiterList");
+                    b.Navigation("PartShopWaiterList");
 
                     b.Navigation("ReceiverMessageList");
 
@@ -2934,27 +2347,6 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("OfficialGroupMemberList");
                 });
 
-            modelBuilder.Entity("IczpNet.Chat.RoomMembers.RoomMember", b =>
-                {
-                    b.Navigation("RoleList");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.RoomPermissionDefines.RoomPermissionDefine", b =>
-                {
-                    b.Navigation("Childs");
-
-                    b.Navigation("GrantList");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.RoomRoles.RoomRole", b =>
-                {
-                    b.Navigation("DefaultRoomList");
-
-                    b.Navigation("GrantList");
-
-                    b.Navigation("MemberRoleList");
-                });
-
             modelBuilder.Entity("IczpNet.Chat.Officials.Official", b =>
                 {
                     b.Navigation("OfficalExcludedMemberList");
@@ -2965,15 +2357,6 @@ namespace IczpNet.Chat.Migrations
             modelBuilder.Entity("IczpNet.Chat.Robots.ShopKeeper", b =>
                 {
                     b.Navigation("ShopWaiterList");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.Rooms.Room", b =>
-                {
-                    b.Navigation("MemberList");
-
-                    b.Navigation("RoleList");
-
-                    b.Navigation("RoomForbiddenMemberList");
                 });
 #pragma warning restore 612, 618
         }

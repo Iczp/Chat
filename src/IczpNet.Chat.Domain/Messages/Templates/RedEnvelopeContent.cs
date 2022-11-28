@@ -12,7 +12,7 @@ namespace IczpNet.Chat.Messages.Templates
         /// 红包发放方式（0：随机金额;1:固定金额）
         /// </summary>
         //[Index]
-        public virtual GrantModes GrantMode { get; set; }
+        public virtual GrantModeEnum GrantMode { get; set; }
 
         /// <summary>
         /// 金额

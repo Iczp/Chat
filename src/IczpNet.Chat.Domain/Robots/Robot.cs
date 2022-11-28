@@ -5,7 +5,7 @@ namespace IczpNet.Chat.Robots
 {
     public class Robot : ChatObject
     {
-        public const ChatObjectType ChatObjectTypeValue = ChatObjectType.Robot;
+        public const ChatObjectTypeEnum ChatObjectTypeValue = ChatObjectTypeEnum.Robot;
 
         protected Robot()
         {

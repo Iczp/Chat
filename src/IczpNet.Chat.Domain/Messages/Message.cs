@@ -28,12 +28,12 @@ namespace IczpNet.Chat.Messages
         /// <summary>
         /// 消息通道
         /// </summary>
-        public virtual MessageChannel MessageChannel { get; set; }
+        public virtual MessageChannelEnum MessageChannel { get; set; }
 
         /// <summary>
         /// 消息类型
         /// </summary>
-        public virtual MessageType MessageType { get; set; }
+        public virtual MessageTypeEnum MessageType { get; set; }
 
         [StringLength(5000)]
         public virtual string Content { get; protected set; }

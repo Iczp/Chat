@@ -1,6 +1,8 @@
 ﻿using IczpNet.AbpCommons.EntityFrameworkCore;
 using IczpNet.Chat.Messages;
 using IczpNet.Chat.Messages.Templates;
+using IczpNet.Chat.RoomPermissionGrants;
+using IczpNet.Chat.RoomRoleRoomMembers;
 using IczpNet.Chat.SessionSettings;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp;
@@ -46,6 +48,15 @@ public static class ChatDbContextModelCreatingExtensions
             b.HasKey(x => new { x.ChatObjectId, x.SessionId });
         });
 
+        builder.Entity<RoomPermissionGrant>(b =>
+        {
+            b.HasKey(x => new { x.DefineId, x.RoleId });
+        });
+
+        builder.Entity<RoomRoleRoomMember>(b =>
+        {
+            b.HasKey(x => new { x.RoleId, x.RoomMemberId });
+        });
 
         builder.Entity<Message>(b =>
         {

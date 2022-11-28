@@ -1,6 +1,9 @@
 ﻿using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Messages;
+using IczpNet.Chat.OfficialExcludedMembers;
+using IczpNet.Chat.OfficialGroupMembers;
+using IczpNet.Chat.Officials;
 using IczpNet.Chat.Robots;
 using System;
 using System.Collections.Generic;
@@ -20,7 +23,7 @@ namespace IczpNet.Chat.ChatObjects
         [StringLength(50)]
         public virtual string Code { get; set; }
 
-        public virtual ChatObjectType ChatObjectType { get; protected set; }
+        public virtual ChatObjectTypeEnum ChatObjectType { get; protected set; }
 
         [InverseProperty(nameof(Message.Sender))]
         public virtual IList<Message> SenderMessageList { get; set; }
@@ -32,17 +35,23 @@ namespace IczpNet.Chat.ChatObjects
         /// 兼职店小二
         /// </summary>
         [InverseProperty(nameof(ShopWaiter.ChatObject))]
-        public virtual IList<ShopWaiter> PartShopWaiterList { get; set; }
+        public virtual IList<ShopWaiter> ProxyShopWaiterList { get; set; }
 
         /// <summary>
         /// 兼职掌柜
         /// </summary>
         [InverseProperty(nameof(ShopKeeper.ChatObject))]
-        public virtual IList<ShopKeeper> PartShopKeeperList { get; set; }
+        public virtual IList<ShopKeeper> ProxyShopKeeperList { get; set; }
+
+        [InverseProperty(nameof(OfficialGroupMember.ChatObject))]
+        public virtual IList<OfficialGroupMember> OfficialGroupMemberList { get; set; }
+
+        [InverseProperty(nameof(OfficalExcludedMember.ChatObject))]
+        public virtual IList<OfficalExcludedMember> InOfficalExcludedMemberList { get; set; }
 
         protected ChatObject() { }
 
-        protected ChatObject(Guid id, ChatObjectType chatObjectType) : base(id)
+        protected ChatObject(Guid id, ChatObjectTypeEnum chatObjectType) : base(id)
         {
             ChatObjectType = chatObjectType;
         }

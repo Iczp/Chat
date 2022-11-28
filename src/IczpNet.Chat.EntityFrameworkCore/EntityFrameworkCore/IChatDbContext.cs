@@ -9,6 +9,15 @@ using IczpNet.Chat.Sessions;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
+using IczpNet.Chat.OfficialGroups;
+using IczpNet.Chat.OfficialExcludedMembers;
+using IczpNet.Chat.OfficialGroupMembers;
+using IczpNet.Chat.RoomForbiddenMembers;
+using IczpNet.Chat.RoomMembers;
+using IczpNet.Chat.RoomPermissionDefines;
+using IczpNet.Chat.RoomPermissionGrants;
+using IczpNet.Chat.RoomRoleRoomMembers;
+using IczpNet.Chat.RoomRoles;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -21,13 +30,11 @@ public interface IChatDbContext : IEfCoreDbContext
 
     DbSet<Session> Session { get; }
     DbSet<SessionSetting> SessionSetting { get; }
-    
+
 
     DbSet<SessionSetting> ChatSetting { get; }
     DbSet<ChatObject> ChatObject { get; }
     DbSet<Message> Message { get; }
-    DbSet<Official> Official { get; }
-    DbSet<Room> Room { get; }
     DbSet<Robot> Robot { get; }
 
     DbSet<CmdContent> CmdMessage { get; }
@@ -45,4 +52,19 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<RedEnvelopeUnit> RedEnvelopeUnit { get; }
     DbSet<HistoryContent> HistoryContent { get; }
     DbSet<HistoryMessage> HistoryMessage { get; }
+
+
+    DbSet<Official> Official { get; }
+    DbSet<OfficialGroupMember> OfficialGroupMember { get; }
+    DbSet<OfficialGroup> OfficialGroup { get; }
+    DbSet<OfficalExcludedMember> OfficalExcludedMember { get; }
+
+    DbSet<Room> Room { get; }
+    DbSet<RoomMember> RoomMember { get; }
+    DbSet<RoomRole> RoomRole { get; }
+    DbSet<RoomRoleRoomMember> RoomRoleRoomMember { get; }
+    DbSet<RoomPermissionDefine> RoomPermissionDefine { get; }
+    DbSet<RoomPermissionGrant> RoomPermissionGrant { get; }
+    DbSet<RoomForbiddenMember> RoomForbiddenMember { get; }
+
 }

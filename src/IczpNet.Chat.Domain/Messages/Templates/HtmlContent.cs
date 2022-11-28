@@ -8,7 +8,7 @@ namespace IczpNet.Chat.Messages.Templates
         /// <summary>
         /// 编辑器类型
         /// </summary>
-        public virtual EditorTypes EditorType { get; set; }
+        public virtual EditorTypeEnum EditorType { get; set; }
         /// <summary>
         /// 文本内容
         /// </summary>

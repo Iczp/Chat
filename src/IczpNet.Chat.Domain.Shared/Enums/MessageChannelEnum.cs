@@ -2,7 +2,7 @@
 
 namespace IczpNet.Chat.Enums
 {
-    public enum MessageChannel
+    public enum MessageChannelEnum
     {
         /// <summary>
         /// 个人
