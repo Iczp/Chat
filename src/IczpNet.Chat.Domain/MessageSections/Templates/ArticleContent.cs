@@ -1,5 +1,4 @@
 ﻿using IczpNet.Chat.Enums;
-using IczpNet.Chat.MessageSections.Messages;
 using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.MessageSections.Templates

@@ -3,7 +3,6 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using IczpNet.Chat.Enums;
-using IczpNet.Chat.MessageSections.Messages;
 
 namespace IczpNet.Chat.MessageSections.Templates
 {

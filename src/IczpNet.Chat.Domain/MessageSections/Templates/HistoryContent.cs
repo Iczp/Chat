@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using IczpNet.Chat.MessageSections.Messages;
 
 namespace IczpNet.Chat.MessageSections.Templates
 {
