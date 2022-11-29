@@ -13,8 +13,14 @@ namespace IczpNet.Chat.EntityFrameworkCore;
 )]
 [DependsOn(typeof(AbpCommonsEntityFrameworkCoreModule))]
 [DependsOn(typeof(AbpIdentityEntityFrameworkCoreModule))]
-    public class ChatEntityFrameworkCoreModule : AbpModule
+public class ChatEntityFrameworkCoreModule : AbpModule
 {
+    public override void PreConfigureServices(ServiceConfigurationContext context)
+    {
+        base.PreConfigureServices(context);
+        ChatEfCoreEntityExtensionMappings.Configure();
+    }
+
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         context.Services.AddAbpDbContext<ChatDbContext>(options =>

@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,10 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221129024756_SquareCategory_Init")]
+    partial class SquareCategory_Init
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -36,7 +38,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("MessageListId");
 
-                    b.ToTable("Chat_Message_MapTo_ArticleContent", (string)null);
+                    b.ToTable("Chat_Message_ArticleContent", (string)null);
                 });
 
             modelBuilder.Entity("CmdContentMessage", b =>
@@ -51,7 +53,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("MessageListId");
 
-                    b.ToTable("Chat_Message_MapTo_CmdContent", (string)null);
+                    b.ToTable("Chat_Message_CmdContent", (string)null);
                 });
 
             modelBuilder.Entity("ContactsContentMessage", b =>
@@ -66,7 +68,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("MessageListId");
 
-                    b.ToTable("Chat_Message_MapTo_ContactsContent", (string)null);
+                    b.ToTable("Chat_Message_ContactsContent", (string)null);
                 });
 
             modelBuilder.Entity("FileContentMessage", b =>
@@ -81,7 +83,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("MessageListId");
 
-                    b.ToTable("Chat_Message_MapTo_FileContent", (string)null);
+                    b.ToTable("Chat_Message_FileContent", (string)null);
                 });
 
             modelBuilder.Entity("HistoryContentMessage", b =>
@@ -96,7 +98,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("MessageListId");
 
-                    b.ToTable("Chat_Message_MapTo_HistoryContent", (string)null);
+                    b.ToTable("Chat_Message_HistoryContent", (string)null);
                 });
 
             modelBuilder.Entity("HtmlContentMessage", b =>
@@ -111,7 +113,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("MessageListId");
 
-                    b.ToTable("Chat_Message_MapTo_HtmlContent", (string)null);
+                    b.ToTable("Chat_Message_HtmlContent", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.ChatObjects.ChatObject", b =>
@@ -176,9 +178,6 @@ namespace IczpNet.Chat.Migrations
                     b.Property<string>("Name")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
-
-                    b.Property<Guid?>("OwnerUserId")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uniqueidentifier")
@@ -394,7 +393,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Chat_Message_Template_ArticleContent", (string)null);
+                    b.ToTable("Chat_ArticleContent", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Templates.CmdContent", b =>
@@ -460,7 +459,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Chat_Message_Template_CmdContent", (string)null);
+                    b.ToTable("Chat_CmdContent", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Templates.ContactsContent", b =>
@@ -542,7 +541,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Chat_Message_Template_ContactsContent", (string)null);
+                    b.ToTable("Chat_ContactsContent", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Templates.FileContent", b =>
@@ -623,7 +622,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Chat_Message_Template_FileContent", (string)null);
+                    b.ToTable("Chat_FileContent", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Templates.HistoryContent", b =>
@@ -690,7 +689,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Chat_Message_Template_HistoryContent", (string)null);
+                    b.ToTable("Chat_HistoryContent", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Templates.HistoryMessage", b =>
@@ -822,7 +821,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Chat_Message_Template_HtmlContent", (string)null);
+                    b.ToTable("Chat_HtmlContent", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Templates.ImageContent", b =>
@@ -913,7 +912,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Chat_Message_Template_ImageContent", (string)null);
+                    b.ToTable("Chat_ImageContent", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Templates.LinkContent", b =>
@@ -997,7 +996,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Chat_Message_Template_LinkContent", (string)null);
+                    b.ToTable("Chat_LinkContent", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Templates.LocationContent", b =>
@@ -1078,7 +1077,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Chat_Message_Template_LocationContent", (string)null);
+                    b.ToTable("Chat_LocationContent", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Templates.RedEnvelopeContent", b =>
@@ -1158,7 +1157,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Chat_Message_Template_RedEnvelopeContent", (string)null);
+                    b.ToTable("Chat_RedEnvelopeContent", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Templates.RedEnvelopeUnit", b =>
@@ -1310,7 +1309,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Chat_Message_Template_SoundContent", (string)null);
+                    b.ToTable("Chat_SoundContent", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Templates.TextContent", b =>
@@ -1372,7 +1371,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Chat_Message_Template_TextContent", (string)null);
+                    b.ToTable("Chat_TextContent", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Templates.VideoContent", b =>
@@ -1460,7 +1459,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Chat_Message_Template_VideoContent", (string)null);
+                    b.ToTable("Chat_VideoContent", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.OfficialSections.OfficialExcludedMembers.OfficalExcludedMember", b =>
@@ -1651,71 +1650,6 @@ namespace IczpNet.Chat.Migrations
                     b.HasIndex("OfficialId");
 
                     b.ToTable("Chat_OfficialGroup", (string)null);
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.OfficialSections.OfficialMembers.OfficialMember", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("ChatObjectId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<string>("ExtraProperties")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<Guid>("OfficialId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("TenantId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChatObjectId");
-
-                    b.HasIndex("OfficialId");
-
-                    b.ToTable("Chat_OfficialMember", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.RoomSections.RoomForbiddenMembers.RoomForbiddenMember", b =>
@@ -2365,78 +2299,6 @@ namespace IczpNet.Chat.Migrations
                     b.ToTable("Chat_SquareCategory", (string)null);
                 });
 
-            modelBuilder.Entity("IczpNet.Chat.SquareSections.SquareMembers.SquareMember", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("ChatObjectId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<string>("ExtraProperties")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<DateTime>("HistoryFirstTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<string>("MemberName")
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)");
-
-                    b.Property<Guid>("SquareId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("TenantId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChatObjectId");
-
-                    b.HasIndex("SquareId");
-
-                    b.ToTable("Chat_SquareMember", (string)null);
-                });
-
             modelBuilder.Entity("ImageContentMessage", b =>
                 {
                     b.Property<Guid>("ImageContentListId")
@@ -2449,7 +2311,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("MessageListId");
 
-                    b.ToTable("Chat_Message_MapTo_ImageContent", (string)null);
+                    b.ToTable("Chat_Message_ImageContent", (string)null);
                 });
 
             modelBuilder.Entity("LinkContentMessage", b =>
@@ -2464,7 +2326,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("MessageListId");
 
-                    b.ToTable("Chat_Message_MapTo_LinkContent", (string)null);
+                    b.ToTable("Chat_Message_LinkContent", (string)null);
                 });
 
             modelBuilder.Entity("LocationContentMessage", b =>
@@ -2479,7 +2341,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("MessageListId");
 
-                    b.ToTable("Chat_Message_MapTo_LocationContent", (string)null);
+                    b.ToTable("Chat_Message_LocationContent", (string)null);
                 });
 
             modelBuilder.Entity("MessageRedEnvelopeContent", b =>
@@ -2494,7 +2356,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("RedEnvelopeContentListId");
 
-                    b.ToTable("Chat_Message_MapTo_RedEnvelopeContent", (string)null);
+                    b.ToTable("Chat_Message_RedEnvelopeContent", (string)null);
                 });
 
             modelBuilder.Entity("MessageSoundContent", b =>
@@ -2509,7 +2371,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("SoundContentListId");
 
-                    b.ToTable("Chat_Message_MapTo_SoundContent", (string)null);
+                    b.ToTable("Chat_Message_SoundContent", (string)null);
                 });
 
             modelBuilder.Entity("MessageTextContent", b =>
@@ -2524,7 +2386,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("TextContentListId");
 
-                    b.ToTable("Chat_Message_MapTo_TextContent", (string)null);
+                    b.ToTable("Chat_Message_TextContent", (string)null);
                 });
 
             modelBuilder.Entity("MessageVideoContent", b =>
@@ -2539,7 +2401,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("VideoContentListId");
 
-                    b.ToTable("Chat_Message_MapTo_VideoContent", (string)null);
+                    b.ToTable("Chat_Message_VideoContent", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.OfficialSections.Officials.Official", b =>
@@ -2835,7 +2697,7 @@ namespace IczpNet.Chat.Migrations
             modelBuilder.Entity("IczpNet.Chat.OfficialSections.OfficialGroupMembers.OfficialGroupMember", b =>
                 {
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "ChatObject")
-                        .WithMany("InOfficialGroupMemberList")
+                        .WithMany("OfficialGroupMemberList")
                         .HasForeignKey("ChatObjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -2858,25 +2720,6 @@ namespace IczpNet.Chat.Migrations
                         .HasForeignKey("OfficialId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Official");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.OfficialSections.OfficialMembers.OfficialMember", b =>
-                {
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "ChatObject")
-                        .WithMany("InOfficialMemberList")
-                        .HasForeignKey("ChatObjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("IczpNet.Chat.OfficialSections.Officials.Official", "Official")
-                        .WithMany("MemberList")
-                        .HasForeignKey("OfficialId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ChatObject");
 
                     b.Navigation("Official");
                 });
@@ -2985,25 +2828,6 @@ namespace IczpNet.Chat.Migrations
                         .HasForeignKey("ParentId");
 
                     b.Navigation("Parent");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.SquareSections.SquareMembers.SquareMember", b =>
-                {
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "ChatObject")
-                        .WithMany("InSquareMemberList")
-                        .HasForeignKey("ChatObjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("IczpNet.Chat.SquareSections.Squares.Square", "Square")
-                        .WithMany("SquareMemberList")
-                        .HasForeignKey("SquareId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ChatObject");
-
-                    b.Navigation("Square");
                 });
 
             modelBuilder.Entity("ImageContentMessage", b =>
@@ -3205,11 +3029,7 @@ namespace IczpNet.Chat.Migrations
                 {
                     b.Navigation("InOfficalExcludedMemberList");
 
-                    b.Navigation("InOfficialGroupMemberList");
-
-                    b.Navigation("InOfficialMemberList");
-
-                    b.Navigation("InSquareMemberList");
+                    b.Navigation("OfficialGroupMemberList");
 
                     b.Navigation("ProxyShopKeeperList");
 
@@ -3274,8 +3094,6 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.OfficialSections.Officials.Official", b =>
                 {
-                    b.Navigation("MemberList");
-
                     b.Navigation("OfficalExcludedMemberList");
 
                     b.Navigation("OfficialGroupList");
@@ -3293,11 +3111,6 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("RoomForbiddenMemberList");
 
                     b.Navigation("RoomMemberList");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.SquareSections.Squares.Square", b =>
-                {
-                    b.Navigation("SquareMemberList");
                 });
 #pragma warning restore 612, 618
         }

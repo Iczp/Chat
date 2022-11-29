@@ -3,7 +3,9 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.Messages;
 using IczpNet.Chat.OfficialSections.OfficialExcludedMembers;
 using IczpNet.Chat.OfficialSections.OfficialGroupMembers;
+using IczpNet.Chat.OfficialSections.OfficialMembers;
 using IczpNet.Chat.Robots;
+using IczpNet.Chat.SquareSections.SquareMembers;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -21,6 +23,8 @@ namespace IczpNet.Chat.ChatObjects
 
         [StringLength(50)]
         public virtual string Code { get; set; }
+
+        public virtual Guid? OwnerUserId { get; set; }
 
         public virtual ChatObjectTypeEnum ChatObjectType { get; protected set; }
 
@@ -43,10 +47,17 @@ namespace IczpNet.Chat.ChatObjects
         public virtual IList<ShopKeeper> ProxyShopKeeperList { get; set; }
 
         [InverseProperty(nameof(OfficialGroupMember.ChatObject))]
-        public virtual IList<OfficialGroupMember> OfficialGroupMemberList { get; set; }
+        public virtual IList<OfficialGroupMember> InOfficialGroupMemberList { get; set; }
+
+        [InverseProperty(nameof(OfficialMember.ChatObject))]
+        public virtual IList<OfficialMember> InOfficialMemberList { get; set; }
 
         [InverseProperty(nameof(OfficalExcludedMember.ChatObject))]
         public virtual IList<OfficalExcludedMember> InOfficalExcludedMemberList { get; set; }
+
+
+        [InverseProperty(nameof(SquareMember.ChatObject))]
+        public virtual IList<SquareMember> InSquareMemberList { get; set; }
 
         protected ChatObject() { }
 
