@@ -13,7 +13,7 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    [Migration("20221129100137_Friendship_Init")]
+    [Migration("20221129100403_Friendship_Init")]
     partial class Friendship_Init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -2217,6 +2217,10 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnName("LastModifierId");
 
                     b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Rename")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 

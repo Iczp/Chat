@@ -20,6 +20,9 @@ namespace IczpNet.Chat.SessionSections.Friends
         public virtual ChatObject Friend { get; set; }
 
         [StringLength(50)]
+        public virtual string Rename { get; set; }
+
+        [StringLength(500)]
         public virtual string Remarks { get; set; }
 
         public virtual bool IsActive { get; set; }

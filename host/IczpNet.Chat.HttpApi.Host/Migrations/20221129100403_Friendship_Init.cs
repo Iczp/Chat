@@ -15,7 +15,8 @@ namespace IczpNet.Chat.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     FriendId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Remarks = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Rename = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     ChatObjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ExtraProperties = table.Column<string>(type: "nvarchar(max)", nullable: true),
