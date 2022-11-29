@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 
 namespace IczpNet.Chat.RoomSections.Rooms
 {
@@ -123,7 +124,7 @@ namespace IczpNet.Chat.RoomSections.Rooms
         /// <summary>
         /// 群成员
         /// </summary>
-        public virtual IList<RoomMember> RoomMemberList { get; protected set; }
+        public virtual IList<RoomMember> RoomMemberList { get; protected set; } = new List<RoomMember>();
 
         /// <summary>
         /// 被禁言的成员
@@ -152,5 +153,9 @@ namespace IczpNet.Chat.RoomSections.Rooms
 
         }
 
+        public int GetMemberCount()
+        {
+            return RoomMemberList.Count;
+        }
     }
 }
