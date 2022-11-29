@@ -1,14 +1,27 @@
 ﻿using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.SessionSettings;
 using IczpNet.Chat.Messages;
-using IczpNet.Chat.Messages.Templates;
-using IczpNet.Chat.Officials;
 using IczpNet.Chat.Robots;
-using IczpNet.Chat.Rooms;
-using IczpNet.Chat.Sessions;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
+using IczpNet.Chat.RoomSections.Rooms;
+using IczpNet.Chat.RoomSections.RoomMembers;
+using IczpNet.Chat.RoomSections.RoomRoles;
+using IczpNet.Chat.RoomSections.RoomPermissionGrants;
+using IczpNet.Chat.RoomSections.RoomPermissionDefines;
+using IczpNet.Chat.RoomSections.RoomRoleRoomMembers;
+using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.OfficialSections.Officials;
+using IczpNet.Chat.OfficialSections.OfficialGroups;
+using IczpNet.Chat.OfficialSections.OfficialGroupMembers;
+using IczpNet.Chat.OfficialSections.OfficialExcludedMembers;
+using IczpNet.Chat.RoomSections.RoomForbiddenMembers;
+using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.SessionSettings;
+using IczpNet.Chat.SquareSections.Squares;
+using IczpNet.Chat.SquareSections.SquareCategorys;
+using IczpNet.Chat.SquareSections.SquareMembers;
+using IczpNet.Chat.SessionSections.Friends;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -21,13 +34,12 @@ public interface IChatDbContext : IEfCoreDbContext
 
     DbSet<Session> Session { get; }
     DbSet<SessionSetting> SessionSetting { get; }
+
+    DbSet<Friendship> Friendship { get; }
     
 
-    DbSet<SessionSetting> ChatSetting { get; }
     DbSet<ChatObject> ChatObject { get; }
     DbSet<Message> Message { get; }
-    DbSet<Official> Official { get; }
-    DbSet<Room> Room { get; }
     DbSet<Robot> Robot { get; }
 
     DbSet<CmdContent> CmdMessage { get; }
@@ -45,4 +57,22 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<RedEnvelopeUnit> RedEnvelopeUnit { get; }
     DbSet<HistoryContent> HistoryContent { get; }
     DbSet<HistoryMessage> HistoryMessage { get; }
+
+
+    DbSet<Official> Official { get; }
+    DbSet<OfficialGroupMember> OfficialGroupMember { get; }
+    DbSet<OfficialGroup> OfficialGroup { get; }
+    DbSet<OfficalExcludedMember> OfficalExcludedMember { get; }
+
+    DbSet<Room> Room { get; }
+    DbSet<RoomMember> RoomMember { get; }
+    DbSet<RoomRole> RoomRole { get; }
+    DbSet<RoomRoleRoomMember> RoomRoleRoomMember { get; }
+    DbSet<RoomPermissionDefine> RoomPermissionDefine { get; }
+    DbSet<RoomPermissionGrant> RoomPermissionGrant { get; }
+    DbSet<RoomForbiddenMember> RoomForbiddenMember { get; }
+
+    DbSet<Square> Square { get; }
+    DbSet<SquareCategory> SquareCategory { get; }
+    DbSet<SquareMember> SquareMember { get; }
 }

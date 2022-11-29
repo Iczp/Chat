@@ -1,8 +1,8 @@
-﻿using IczpNet.Chat.ChatObjects.Dtos;
+﻿using IczpNet.Chat.BaseDtos;
 
 namespace IczpNet.Chat.Rooms.Dtos;
 
-public class RoomGetListInput : ChatObjectGetListInput
+public class RoomGetListInput : BaseGetListInput
 {
 
 }

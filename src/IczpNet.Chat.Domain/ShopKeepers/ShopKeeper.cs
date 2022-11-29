@@ -8,14 +8,12 @@ namespace IczpNet.Chat.Robots
 {
     public class ShopKeeper : ChatObject
     {
-        public const ChatObjectType ChatObjectTypeValue = ChatObjectType.ShopKeeper;
+        public const ChatObjectTypeEnum ChatObjectTypeValue = ChatObjectTypeEnum.ShopKeeper;
 
         public virtual Guid? ChatObjectId { get; set; }
 
         [ForeignKey(nameof(ChatObjectId))]
         public virtual ChatObject ChatObject { get; set; }
-
-
 
         [InverseProperty(nameof(ShopWaiter.ShopKeeper))]
         public virtual IList<ShopWaiter> ShopWaiterList { get; set; }

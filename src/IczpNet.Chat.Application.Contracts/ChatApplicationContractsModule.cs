@@ -1,8 +1,9 @@
-﻿using Volo.Abp.Application;
+using Volo.Abp.Application;
 using Volo.Abp.Modularity;
 using Volo.Abp.Authorization;
 using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
+using Volo.Abp.Identity;
 
 namespace IczpNet.Chat;
 [DependsOn(
@@ -12,7 +13,8 @@ namespace IczpNet.Chat;
     )]
 [DependsOn(typeof(AbpCommonsApplicationContractsModule))]
 [DependsOn(typeof(AbpTreesApplicationContractsModule))]
-public class ChatApplicationContractsModule : AbpModule
+[DependsOn(typeof(AbpIdentityApplicationContractsModule))]
+    public class ChatApplicationContractsModule : AbpModule
 {
 
 }

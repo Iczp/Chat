@@ -1,9 +1,13 @@
-﻿using IczpNet.Chat.ChatObjects.Dtos;
+﻿using IczpNet.Chat.BaseDtos;
 
 namespace IczpNet.Chat.Rooms.Dtos
 {
-    public class RoomDto : ChatObjectDto
+    public class RoomDto : BaseDto
     {
+        public virtual string Name { get; set; }
 
+        public virtual string Code { get; set; }
+
+        public virtual int MemberCount { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-﻿using Volo.Abp.Modularity;
+using Volo.Abp.Modularity;
 using Volo.Abp.Localization;
 using IczpNet.Chat.Localization;
 using Volo.Abp.Localization.ExceptionHandling;
@@ -7,6 +7,7 @@ using Volo.Abp.Validation.Localization;
 using Volo.Abp.VirtualFileSystem;
 using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
+using Volo.Abp.Identity;
 
 namespace IczpNet.Chat;
 [DependsOn(
@@ -14,7 +15,8 @@ namespace IczpNet.Chat;
 )]
 [DependsOn(typeof(AbpCommonsDomainSharedModule))]
 [DependsOn(typeof(AbpTreesDomainSharedModule))]
-public class ChatDomainSharedModule : AbpModule
+[DependsOn(typeof(AbpIdentityDomainSharedModule))]
+    public class ChatDomainSharedModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
