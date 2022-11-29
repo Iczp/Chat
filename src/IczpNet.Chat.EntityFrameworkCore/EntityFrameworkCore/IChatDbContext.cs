@@ -21,6 +21,7 @@ using IczpNet.Chat.SessionSections.SessionSettings;
 using IczpNet.Chat.SquareSections.Squares;
 using IczpNet.Chat.SquareSections.SquareCategorys;
 using IczpNet.Chat.SquareSections.SquareMembers;
+using IczpNet.Chat.SessionSections.Friends;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -33,6 +34,9 @@ public interface IChatDbContext : IEfCoreDbContext
 
     DbSet<Session> Session { get; }
     DbSet<SessionSetting> SessionSetting { get; }
+
+    DbSet<Friendship> Friendship { get; }
+    
 
     DbSet<ChatObject> ChatObject { get; }
     DbSet<Message> Message { get; }

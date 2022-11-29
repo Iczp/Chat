@@ -5,6 +5,7 @@ using IczpNet.Chat.OfficialSections.OfficialExcludedMembers;
 using IczpNet.Chat.OfficialSections.OfficialGroupMembers;
 using IczpNet.Chat.OfficialSections.OfficialMembers;
 using IczpNet.Chat.Robots;
+using IczpNet.Chat.SessionSections.Friends;
 using IczpNet.Chat.SquareSections.SquareMembers;
 using System;
 using System.Collections.Generic;
@@ -58,6 +59,11 @@ namespace IczpNet.Chat.ChatObjects
 
         [InverseProperty(nameof(SquareMember.ChatObject))]
         public virtual IList<SquareMember> InSquareMemberList { get; set; }
+
+        public virtual IList<Friendship> FriendList { get; set; }
+
+        [InverseProperty(nameof(Friendship.Friend))]
+        public virtual IList<Friendship> DestinationFriendList { get; set; }
 
         protected ChatObject() { }
 
