@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.MessageSections.Templates
 {
+
     public class HistoryMessage : BaseEntity
     {
         public virtual Guid MessageId { set; get; }

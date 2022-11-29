@@ -19,6 +19,9 @@ using IczpNet.Chat.OfficialSections.OfficialExcludedMembers;
 using IczpNet.Chat.RoomSections.RoomForbiddenMembers;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionSettings;
+using IczpNet.Chat.SquareSections.SquareCategorys;
+using IczpNet.Chat.SquareSections.SquareMembers;
+using IczpNet.Chat.SquareSections.Squares;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -32,7 +35,6 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     public DbSet<Session> Session { get; }
     public DbSet<SessionSetting> SessionSetting { get; }
 
-    public DbSet<SessionSetting> ChatSetting { get; }
     public DbSet<ChatObject> ChatObject { get; }
     public DbSet<Message> Message { get; }
     
@@ -67,7 +69,11 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     public DbSet<RoomPermissionDefine> RoomPermissionDefine { get; }
     public DbSet<RoomPermissionGrant> RoomPermissionGrant { get; }
     public DbSet<RoomForbiddenMember> RoomForbiddenMember { get; }
-    
+
+    public DbSet<Square> Square { get; }
+    public DbSet<SquareCategory> SquareCategory { get; }
+    public DbSet<SquareMember> SquareMember { get; }
+
 
     public ChatDbContext(DbContextOptions<ChatDbContext> options)
         : base(options)

@@ -1,11 +1,17 @@
 ﻿using IczpNet.AbpCommons.EntityFrameworkCore;
+using IczpNet.Chat.Attributes;
 using IczpNet.Chat.Messages;
+using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.RoomSections.RoomPermissionGrants;
 using IczpNet.Chat.RoomSections.RoomRoleRoomMembers;
 using IczpNet.Chat.SessionSections.SessionSettings;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
+using System.Reflection;
 using Volo.Abp;
+using Volo.Abp.Domain.Entities;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -38,6 +44,10 @@ public static class ChatDbContextModelCreatingExtensions
 
         builder.ConfigEntitys<ChatDomainModule>(ChatDbProperties.DbTablePrefix, ChatDbProperties.DbSchema);
 
+        ConfigMessageTemplateEntitys(builder);
+
+        //ConfigKeys(builder);
+
         builder.Entity<HistoryMessage>(b =>
         {
             b.HasKey(x => new { x.MessageId, x.HistoryContentId });
@@ -45,7 +55,7 @@ public static class ChatDbContextModelCreatingExtensions
 
         builder.Entity<SessionSetting>(b =>
         {
-            b.HasKey(x => new { x.ChatObjectId, x.SessionId });
+            b.HasKey(x => new { x.OwnerId, x.SessionId });
         });
 
         builder.Entity<RoomPermissionGrant>(b =>
@@ -60,7 +70,7 @@ public static class ChatDbContextModelCreatingExtensions
 
         builder.Entity<Message>(b =>
         {
-            var _prefix = $"{ChatDbProperties.DbTablePrefix}_{nameof(Message)}";
+            var _prefix = $"{ChatDbProperties.DbTablePrefix}_{nameof(Message)}_MapTo";
             b.HasMany(x => x.CmdContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(CmdContent)}", ChatDbProperties.DbSchema));
             b.HasMany(x => x.TextContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(TextContent)}", ChatDbProperties.DbSchema));
             b.HasMany(x => x.HtmlContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(HtmlContent)}", ChatDbProperties.DbSchema));
@@ -75,5 +85,56 @@ public static class ChatDbContextModelCreatingExtensions
             b.HasMany(x => x.RedEnvelopeContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(RedEnvelopeContent)}", ChatDbProperties.DbSchema));
             b.HasMany(x => x.HistoryContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(HistoryContent)}", ChatDbProperties.DbSchema));
         });
+    }
+
+    private static void ConfigMessageTemplateEntitys(this ModelBuilder builder)
+    {
+        var moduleType = typeof(ChatDomainModule);
+
+        string entityNamespace = moduleType.Namespace;
+
+        var entityTypes = moduleType.Assembly.GetExportedTypes()
+                .Where(t => t.Namespace.StartsWith(entityNamespace) && !t.IsAbstract
+                    && t.GetInterfaces().Any(x => typeof(IMessageContent).IsAssignableFrom(x)));
+
+        var _prefix = $"{ChatDbProperties.DbTablePrefix}_{nameof(Message)}_Template";
+
+        foreach (var t in entityTypes)
+        {
+            builder.Entity(t, b =>
+            {
+                var tableAttribute = t.GetCustomAttribute<TableAttribute>();
+
+                if (tableAttribute == null)
+                {
+                    b.ToTable($"{_prefix}_{t.Name}", ChatDbProperties.DbSchema);
+                }
+            });
+        }
+
+    }
+
+    private static void ConfigKeys(this ModelBuilder builder)
+    {
+        var moduleType = typeof(ChatDomainModule);
+
+        string entityNamespace = moduleType.Namespace;
+
+        var entityTypes = moduleType.Assembly.GetExportedTypes()
+                .Where(t => t.Namespace.StartsWith(entityNamespace) && !t.IsAbstract
+                    && t.GetInterfaces().Any(x => typeof(IEntity).IsAssignableFrom(x)));
+
+        foreach (var t in entityTypes)
+        {
+            builder.Entity(t, b =>
+            {
+                var keyAttributes = t.GetCustomAttributes<HasKeyAttribute>();
+
+                foreach(var keyAttribute in keyAttributes)
+                {
+                    b.HasKey(keyAttribute.PropertyNames.ToArray());
+                }
+            });
+        }
     }
 }

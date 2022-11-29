@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.BaseEntitys;
+﻿using IczpNet.Chat.Attributes;
+using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.RoomSections.RoomMembers;
 using IczpNet.Chat.RoomSections.RoomRoles;
 using System;
@@ -6,6 +7,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.RoomSections.RoomRoleRoomMembers
 {
+
+    [HasKey(nameof(RoomMemberId), nameof(RoleId))]
     public class RoomRoleRoomMember : BaseEntity
     {
         public virtual Guid RoomMemberId { get; set; }

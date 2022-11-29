@@ -18,6 +18,9 @@ using IczpNet.Chat.OfficialSections.OfficialExcludedMembers;
 using IczpNet.Chat.RoomSections.RoomForbiddenMembers;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionSettings;
+using IczpNet.Chat.SquareSections.Squares;
+using IczpNet.Chat.SquareSections.SquareCategorys;
+using IczpNet.Chat.SquareSections.SquareMembers;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -31,8 +34,6 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<Session> Session { get; }
     DbSet<SessionSetting> SessionSetting { get; }
 
-
-    DbSet<SessionSetting> ChatSetting { get; }
     DbSet<ChatObject> ChatObject { get; }
     DbSet<Message> Message { get; }
     DbSet<Robot> Robot { get; }
@@ -67,4 +68,7 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<RoomPermissionGrant> RoomPermissionGrant { get; }
     DbSet<RoomForbiddenMember> RoomForbiddenMember { get; }
 
+    DbSet<Square> Square { get; }
+    DbSet<SquareCategory> SquareCategory { get; }
+    DbSet<SquareMember> SquareMember { get; }
 }

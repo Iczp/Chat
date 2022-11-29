@@ -1,12 +1,17 @@
-﻿using IczpNet.Chat.BaseEntitys;
+﻿using IczpNet.Chat.Attributes;
+using IczpNet.Chat.BaseEntitys;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.RoomSections.RoomPermissionDefines;
 using IczpNet.Chat.RoomSections.RoomRoles;
+using IczpNet.Chat.SessionSections.Sessions;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.RoomSections.RoomPermissionGrants
 {
+
+    [HasKey(nameof(RoleId), nameof(DefineId))]
     public class RoomPermissionGrant : BaseEntity
     {
         /// <summary>
