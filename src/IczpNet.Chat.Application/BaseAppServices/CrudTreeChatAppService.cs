@@ -5,7 +5,7 @@ using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.BaseAppServices
 {
-    public abstract class CrudTreeOrganizationAppService<
+    public abstract class CrudTreeChatAppService<
         TEntity,
         TKey,
         TGetOutputDto,
@@ -35,7 +35,7 @@ namespace IczpNet.Chat.BaseAppServices
         where TUpdateInput : ITreeInput<TKey>
         where TTreeInfo : ITreeInfo<TKey>
     {
-        protected CrudTreeOrganizationAppService(IRepository<TEntity, TKey> repository) : base(repository)
+        protected CrudTreeChatAppService(IRepository<TEntity, TKey> repository) : base(repository)
         {
         }
 

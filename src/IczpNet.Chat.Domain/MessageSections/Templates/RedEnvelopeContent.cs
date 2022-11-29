@@ -18,7 +18,7 @@ namespace IczpNet.Chat.MessageSections.Templates
         /// 金额
         /// </summary>
         [Column(TypeName = "decimal(18, 8)")]
-        //[Precision(14, 2)]
+        //[Precision(18, 2)]
         public virtual decimal Amount { get; set; }
 
         /// <summary>

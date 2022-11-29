@@ -1,8 +1,8 @@
-﻿using IczpNet.Chat.ChatObjects.Dtos;
+﻿using IczpNet.Chat.BaseDtos;
 
 namespace IczpNet.Chat.Rooms.Dtos;
 
-public class RoomUpdateInput : ChatObjectUpdateInput
+public class RoomUpdateInput : BaseInput
 {
 
 }

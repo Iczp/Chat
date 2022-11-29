@@ -7,6 +7,8 @@ using IczpNet.Chat.RoomSections.RoomPermissionGrants;
 using IczpNet.Chat.RoomSections.RoomRoleRoomMembers;
 using IczpNet.Chat.SessionSections.SessionSettings;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using System;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Reflection;
@@ -45,7 +47,7 @@ public static class ChatDbContextModelCreatingExtensions
         builder.ConfigEntitys<ChatDomainModule>(ChatDbProperties.DbTablePrefix, ChatDbProperties.DbSchema);
 
         ConfigMessageTemplateEntitys(builder);
-
+        //ForEachEntitys(builder);
         //ConfigKeys(builder);
 
         builder.Entity<HistoryMessage>(b =>
@@ -85,6 +87,23 @@ public static class ChatDbContextModelCreatingExtensions
             b.HasMany(x => x.RedEnvelopeContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(RedEnvelopeContent)}", ChatDbProperties.DbSchema));
             b.HasMany(x => x.HistoryContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(HistoryContent)}", ChatDbProperties.DbSchema));
         });
+    }
+
+    public static void ForEachEntitys(this ModelBuilder builder)
+    {
+        var moduleType = typeof(ChatDomainModule);
+
+        string entityNamespace = moduleType.Namespace;
+
+        var entityTypes = moduleType.Assembly.GetExportedTypes()
+                .Where(t => t.Namespace.StartsWith(entityNamespace) && !t.IsAbstract
+                    && t.GetInterfaces().Any(x => typeof(IEntity).IsAssignableFrom(x) || x.IsGenericType && typeof(IEntity<>).IsAssignableFrom(x.GetGenericTypeDefinition())));
+
+
+        foreach (var t in entityTypes)
+        {
+            builder.Entity(t, ConfigureEnums);
+        }
     }
 
     private static void ConfigMessageTemplateEntitys(this ModelBuilder builder)
@@ -135,6 +154,31 @@ public static class ChatDbContextModelCreatingExtensions
                     b.HasKey(keyAttribute.PropertyNames.ToArray());
                 }
             });
+        }
+    }
+
+    public static void ConfigureEnums(this EntityTypeBuilder b)
+    {
+        foreach (var prop in b.Metadata.GetProperties())
+        {
+            if (prop.Name.Equals("ExtraProperties", StringComparison.CurrentCulture))
+            {
+                continue;
+            }
+
+            var propType = prop.ClrType;
+
+            if (propType.IsGenericType)
+            {
+                propType = Nullable.GetUnderlyingType(propType);
+            }
+
+            if (!propType.IsEnum)
+            {
+                continue;
+            }
+
+            b.Property(prop.Name).HasConversion<string>();
         }
     }
 }
