@@ -1,5 +1,7 @@
 ﻿using IczpNet.Chat.ChatObjects.Dtos;
 using System;
+using System.Threading.Tasks;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 
 namespace IczpNet.Chat.ChatObjects
@@ -13,5 +15,9 @@ namespace IczpNet.Chat.ChatObjects
             ChatObjectCreateInput,
             ChatObjectUpdateInput>
     {
+        Task<PagedResultDto<ChatObjectDto>> GetListByUserIdAsync(Guid userId, int maxResultCount = 10, int skipCount = 0, string sorting = null);
+        Task<ChatObjectDetailDto> GetByAutoIdAsync(long autoId);
+        Task<ChatObjectDetailDto> GetByCodeAsync(string code);
+
     }
 }
