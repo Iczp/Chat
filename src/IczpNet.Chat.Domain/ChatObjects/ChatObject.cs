@@ -6,6 +6,7 @@ using IczpNet.Chat.OfficialSections.OfficialGroupMembers;
 using IczpNet.Chat.OfficialSections.OfficialMembers;
 using IczpNet.Chat.Robots;
 using IczpNet.Chat.SessionSections.Friends;
+using IczpNet.Chat.SessionSections.SessionSettings;
 using IczpNet.Chat.SquareSections.SquareMembers;
 using System;
 using System.Collections.Generic;
@@ -29,12 +30,17 @@ namespace IczpNet.Chat.ChatObjects
 
         public virtual ChatObjectTypeEnum ChatObjectType { get; protected set; }
 
+        #region Message
+
         [InverseProperty(nameof(Message.Sender))]
         public virtual IList<Message> SenderMessageList { get; set; }
 
         [InverseProperty(nameof(Message.Receiver))]
         public virtual IList<Message> ReceiverMessageList { get; set; }
 
+        #endregion
+
+        #region ShopKeeper
         /// <summary>
         /// 兼职店小二
         /// </summary>
@@ -47,6 +53,10 @@ namespace IczpNet.Chat.ChatObjects
         [InverseProperty(nameof(ShopKeeper.ChatObject))]
         public virtual IList<ShopKeeper> ProxyShopKeeperList { get; set; }
 
+        #endregion
+
+        #region Official
+
         [InverseProperty(nameof(OfficialGroupMember.ChatObject))]
         public virtual IList<OfficialGroupMember> InOfficialGroupMemberList { get; set; }
 
@@ -56,14 +66,34 @@ namespace IczpNet.Chat.ChatObjects
         [InverseProperty(nameof(OfficalExcludedMember.ChatObject))]
         public virtual IList<OfficalExcludedMember> InOfficalExcludedMemberList { get; set; }
 
+        #endregion
+
+        #region SquareMember
 
         [InverseProperty(nameof(SquareMember.ChatObject))]
         public virtual IList<SquareMember> InSquareMemberList { get; set; }
 
-        public virtual IList<Friendship> FriendList { get; set; }
+        #endregion
+
+        #region Friendship
+
+        [InverseProperty(nameof(Friendship.Owner))]
+        public virtual IList<Friendship> OwnerFriendList { get; set; }
 
         [InverseProperty(nameof(Friendship.Friend))]
         public virtual IList<Friendship> DestinationFriendList { get; set; }
+
+        #endregion
+
+        #region SessionSetting
+
+        //[InverseProperty(nameof(SessionSetting.Owner))]
+        //public virtual IList<SessionSetting> OwnerSessionSettingList { get; set; }
+
+        //[InverseProperty(nameof(SessionSetting.Destination))]
+        //public virtual IList<SessionSetting> DestinationSessionSettingList { get; set; }
+
+        #endregion
 
         protected ChatObject() { }
 

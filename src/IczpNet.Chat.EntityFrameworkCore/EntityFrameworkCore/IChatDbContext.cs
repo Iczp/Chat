@@ -1,27 +1,27 @@
 ﻿using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Messages;
+using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.OfficialSections.OfficialExcludedMembers;
+using IczpNet.Chat.OfficialSections.OfficialGroupMembers;
+using IczpNet.Chat.OfficialSections.OfficialGroups;
+using IczpNet.Chat.OfficialSections.Officials;
 using IczpNet.Chat.Robots;
+using IczpNet.Chat.RoomSections.RoomForbiddenMembers;
+using IczpNet.Chat.RoomSections.RoomMembers;
+using IczpNet.Chat.RoomSections.RoomPermissionDefines;
+using IczpNet.Chat.RoomSections.RoomPermissionGrants;
+using IczpNet.Chat.RoomSections.RoomRoleRoomMembers;
+using IczpNet.Chat.RoomSections.RoomRoles;
+using IczpNet.Chat.RoomSections.Rooms;
+using IczpNet.Chat.SessionSections.Friends;
+using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.SessionSettings;
+using IczpNet.Chat.SquareSections.SquareCategorys;
+using IczpNet.Chat.SquareSections.SquareMembers;
+using IczpNet.Chat.SquareSections.Squares;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
-using IczpNet.Chat.RoomSections.Rooms;
-using IczpNet.Chat.RoomSections.RoomMembers;
-using IczpNet.Chat.RoomSections.RoomRoles;
-using IczpNet.Chat.RoomSections.RoomPermissionGrants;
-using IczpNet.Chat.RoomSections.RoomPermissionDefines;
-using IczpNet.Chat.RoomSections.RoomRoleRoomMembers;
-using IczpNet.Chat.MessageSections.Templates;
-using IczpNet.Chat.OfficialSections.Officials;
-using IczpNet.Chat.OfficialSections.OfficialGroups;
-using IczpNet.Chat.OfficialSections.OfficialGroupMembers;
-using IczpNet.Chat.OfficialSections.OfficialExcludedMembers;
-using IczpNet.Chat.RoomSections.RoomForbiddenMembers;
-using IczpNet.Chat.SessionSections.Sessions;
-using IczpNet.Chat.SessionSections.SessionSettings;
-using IczpNet.Chat.SquareSections.Squares;
-using IczpNet.Chat.SquareSections.SquareCategorys;
-using IczpNet.Chat.SquareSections.SquareMembers;
-using IczpNet.Chat.SessionSections.Friends;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -33,7 +33,7 @@ public interface IChatDbContext : IEfCoreDbContext
      */
 
     DbSet<Session> Session { get; }
-    DbSet<SessionSetting> SessionSetting { get; }
+    //DbSet<SessionSetting> SessionSetting { get; }
 
     DbSet<Friendship> Friendship { get; }
     

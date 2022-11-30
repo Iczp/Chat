@@ -1,28 +1,28 @@
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Messages;
-using IczpNet.Chat.Robots;
-using Microsoft.EntityFrameworkCore;
-using Volo.Abp.Data;
-using Volo.Abp.EntityFrameworkCore;
-using Volo.Abp.Identity.EntityFrameworkCore;
-using IczpNet.Chat.RoomSections.Rooms;
-using IczpNet.Chat.RoomSections.RoomMembers;
-using IczpNet.Chat.RoomSections.RoomRoles;
-using IczpNet.Chat.RoomSections.RoomPermissionGrants;
-using IczpNet.Chat.RoomSections.RoomPermissionDefines;
-using IczpNet.Chat.RoomSections.RoomRoleRoomMembers;
 using IczpNet.Chat.MessageSections.Templates;
-using IczpNet.Chat.OfficialSections.Officials;
-using IczpNet.Chat.OfficialSections.OfficialGroups;
-using IczpNet.Chat.OfficialSections.OfficialGroupMembers;
 using IczpNet.Chat.OfficialSections.OfficialExcludedMembers;
+using IczpNet.Chat.OfficialSections.OfficialGroupMembers;
+using IczpNet.Chat.OfficialSections.OfficialGroups;
+using IczpNet.Chat.OfficialSections.Officials;
+using IczpNet.Chat.Robots;
 using IczpNet.Chat.RoomSections.RoomForbiddenMembers;
+using IczpNet.Chat.RoomSections.RoomMembers;
+using IczpNet.Chat.RoomSections.RoomPermissionDefines;
+using IczpNet.Chat.RoomSections.RoomPermissionGrants;
+using IczpNet.Chat.RoomSections.RoomRoleRoomMembers;
+using IczpNet.Chat.RoomSections.RoomRoles;
+using IczpNet.Chat.RoomSections.Rooms;
+using IczpNet.Chat.SessionSections.Friends;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionSettings;
 using IczpNet.Chat.SquareSections.SquareCategorys;
 using IczpNet.Chat.SquareSections.SquareMembers;
 using IczpNet.Chat.SquareSections.Squares;
-using IczpNet.Chat.SessionSections.Friends;
+using Microsoft.EntityFrameworkCore;
+using Volo.Abp.Data;
+using Volo.Abp.EntityFrameworkCore;
+using Volo.Abp.Identity.EntityFrameworkCore;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -34,7 +34,8 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
      */
 
     public DbSet<Session> Session { get; }
-    public DbSet<SessionSetting> SessionSetting { get; }
+    //public DbSet<SessionSetting> SessionSetting { get; }
+
     public DbSet<Friendship> Friendship { get; }
 
     public DbSet<ChatObject> ChatObject { get; }
