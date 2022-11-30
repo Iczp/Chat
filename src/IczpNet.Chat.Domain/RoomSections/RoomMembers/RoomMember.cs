@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.BaseEntitys;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.RoomSections.RoomRoleRoomMembers;
 using IczpNet.Chat.RoomSections.Rooms;
@@ -15,6 +16,8 @@ namespace IczpNet.Chat.RoomSections.RoomMembers
         /// 群Id
         /// </summary>
         public virtual Guid RoomId { get; protected set; }
+
+        public virtual Guid OwnerId { get; set; }
 
         /// <summary>
         /// 成员Id
@@ -66,11 +69,15 @@ namespace IczpNet.Chat.RoomSections.RoomMembers
         /// </summary>
         [StringLength(36)]
         public virtual string DepartmentId { get; set; }
+
         /// <summary>
         /// 所在的群
         /// </summary>
         [ForeignKey(nameof(RoomId))]
         public virtual Room Room { get; set; }
+
+        [ForeignKey(nameof(OwnerId))]
+        public virtual ChatObject Owner { get; set; }
 
         ///// <summary>
         ///// 成员角色

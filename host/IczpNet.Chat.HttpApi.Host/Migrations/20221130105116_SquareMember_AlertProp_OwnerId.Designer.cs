@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,10 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221130105116_SquareMember_AlertProp_OwnerId")]
+    partial class SquareMember_AlertProp_OwnerId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1912,9 +1914,6 @@ namespace IczpNet.Chat.Migrations
                         .HasMaxLength(40)
                         .HasColumnType("nvarchar(40)");
 
-                    b.Property<Guid>("OwnerId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid>("OwnerUserId")
                         .HasColumnType("uniqueidentifier");
 
@@ -1937,8 +1936,6 @@ namespace IczpNet.Chat.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("JoinWay");
-
-                    b.HasIndex("OwnerId");
 
                     b.HasIndex("RoomId");
 
@@ -3071,19 +3068,11 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.RoomSections.RoomMembers.RoomMember", b =>
                 {
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
-                        .WithMany("InRoomMemberList")
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("IczpNet.Chat.RoomSections.Rooms.Room", "Room")
                         .WithMany("RoomMemberList")
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Owner");
 
                     b.Navigation("Room");
                 });
@@ -3408,8 +3397,6 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("InOfficialGroupMemberList");
 
                     b.Navigation("InOfficialMemberList");
-
-                    b.Navigation("InRoomMemberList");
 
                     b.Navigation("InSquareMemberList");
 

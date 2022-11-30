@@ -15,10 +15,10 @@ namespace IczpNet.Chat.SquareSections.SquareMembers
         [ForeignKey(nameof(SquareId))]
         public virtual Square Square { get; set; }
 
-        public virtual Guid ChatObjectId { get; set; }
+        public virtual Guid OwnerId { get; set; }
 
-        [ForeignKey(nameof(ChatObjectId))]
-        public virtual ChatObject ChatObject { get; set; }
+        [ForeignKey(nameof(OwnerId))]
+        public virtual ChatObject Owner { get; set; }
 
         /// <summary>
         /// 群里显示名称
