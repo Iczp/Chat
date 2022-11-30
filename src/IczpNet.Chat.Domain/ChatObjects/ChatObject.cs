@@ -6,7 +6,6 @@ using IczpNet.Chat.OfficialSections.OfficialGroupMembers;
 using IczpNet.Chat.OfficialSections.OfficialMembers;
 using IczpNet.Chat.Robots;
 using IczpNet.Chat.SessionSections.Friends;
-using IczpNet.Chat.SessionSections.SessionSettings;
 using IczpNet.Chat.SquareSections.SquareMembers;
 using System;
 using System.Collections.Generic;
@@ -15,12 +14,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.ChatObjects
 {
+    //[Index]
     public class ChatObject : BaseEntity<Guid>, IChatObject
     {
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public virtual long AutoId { get; set; }
 
         [StringLength(50)]
+        [Required]
         public virtual string Name { get; set; }
 
         [StringLength(50)]
@@ -28,7 +29,7 @@ namespace IczpNet.Chat.ChatObjects
 
         public virtual Guid? OwnerUserId { get; set; }
 
-        public virtual ChatObjectTypeEnum ChatObjectType { get; protected set; }
+        public virtual ChatObjectTypeEnum? ChatObjectType { get; protected set; }
 
         #region Message
 

@@ -47,7 +47,7 @@ public static class ChatDbContextModelCreatingExtensions
         builder.ConfigEntitys<ChatDomainModule>(ChatDbProperties.DbTablePrefix, ChatDbProperties.DbSchema);
 
         ConfigMessageTemplateEntitys(builder);
-        //ForEachEntitys(builder);
+        ForEachEntitys(builder);
         //ConfigKeys(builder);
 
         builder.Entity<HistoryMessage>(b =>
@@ -178,7 +178,9 @@ public static class ChatDbContextModelCreatingExtensions
                 continue;
             }
 
-            b.Property(prop.Name).HasConversion<string>();
+            b.Property(prop.Name).HasConversion<string>().HasMaxLength(20);
+
+            b.HasIndex(prop.Name);
         }
     }
 }

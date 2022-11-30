@@ -1,10 +1,16 @@
 ﻿using System;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Auditing;
 
 namespace IczpNet.Chat.BaseDtos
 {
-    public class BaseDto : IEntityDto<Guid>
+    public class BaseDto : EntityDto
     {
-        public Guid Id { get; set; }
+
+    }
+
+    public class BaseDto<TKey> : EntityDto<TKey>, IHasCreationTime
+    {
+        public virtual DateTime CreationTime { get; set; }
     }
 }

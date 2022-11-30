@@ -1,9 +1,10 @@
 ﻿using IczpNet.Chat.BaseDtos;
-using IczpNet.Chat.Enums;
+using System;
+using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.ChatObjects.Dtos
 {
-    public class ChatObjectDto : BaseDto
+    public class ChatObjectDto : BaseDto<Guid>
     {
         public virtual long AutoId { get; set; }
 
@@ -11,6 +12,6 @@ namespace IczpNet.Chat.ChatObjects.Dtos
 
         public virtual string Code { get; set; }
 
-        public virtual ChatObjectTypeEnum ChatObjectType { get; set; }
+        public virtual string ChatObjectType { get; set; }
     }
 }

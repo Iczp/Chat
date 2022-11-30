@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.Messages
@@ -15,6 +16,9 @@ namespace IczpNet.Chat.Messages
         /// 转发层级 0:不是转发
         /// </summary>
         public virtual long ForwardDepth { get; protected set; }
+
+        [StringLength(100)]
+        public virtual string ForwardPath { get; protected set; }
 
         /// <summary>
         /// 转发自...

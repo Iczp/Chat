@@ -2,7 +2,9 @@
 using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.Localization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
@@ -53,14 +55,27 @@ public abstract class CrudChatAppService<
         return base.GetAsync(id);
     }
 
-    protected override Task SetCreateEntityAsync(TEntity entity, TCreateInput input)
+    [RemoteService(false)]
+    public override Task<TGetOutputDto> CreateAsync(TCreateInput input)
     {
-        return Task.CompletedTask;
+        return base.CreateAsync(input);
     }
 
-
-    protected override Task SetUpdateEntityAsync(TEntity entity, TUpdateInput input)
+    [RemoteService(false)]
+    public override Task<TGetOutputDto> UpdateAsync(TKey id, TUpdateInput input)
     {
-        return Task.CompletedTask;
+        return base.UpdateAsync(id, input);
+    }
+
+    [RemoteService(false)]
+    public override Task DeleteAsync(TKey id)
+    {
+        return base.DeleteAsync(id);
+    }
+
+    [RemoteService(false)]
+    public override Task DeleteManyAsync(List<TKey> idList)
+    {
+        return base.DeleteManyAsync(idList);
     }
 }

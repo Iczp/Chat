@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.Messages
@@ -15,6 +16,9 @@ namespace IczpNet.Chat.Messages
         /// 引用层级 0:不是引用
         /// </summary>
         public virtual long QuoteDepth { get; protected set; }
+
+        [StringLength(100)]
+        public virtual string QuotePath { get; protected set; }
 
         /// <summary>
         /// 引用自...

@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,10 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221130062946_Enums_ToString")]
+    partial class Enums_ToString
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -127,6 +129,7 @@ namespace IczpNet.Chat.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("AutoId"), 1L, 1);
 
                     b.Property<string>("ChatObjectType")
+                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
@@ -175,7 +178,6 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnName("LastModifierId");
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
@@ -187,8 +189,6 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnName("TenantId");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ChatObjectType");
 
                     b.ToTable("Chat_ChatObject", (string)null);
                 });
@@ -211,7 +211,7 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("nvarchar(40)")
                         .HasColumnName("ConcurrencyStamp");
 
-                    b.Property<string>("ContentJson")
+                    b.Property<string>("Content")
                         .HasMaxLength(5000)
                         .HasColumnType("nvarchar(max)");
 
@@ -240,10 +240,6 @@ namespace IczpNet.Chat.Migrations
 
                     b.Property<Guid?>("ForwardMessageId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ForwardPath")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
 
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
@@ -283,10 +279,6 @@ namespace IczpNet.Chat.Migrations
                     b.Property<Guid?>("QuoteMessageId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("QuotePath")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.Property<Guid?>("ReceiverId")
                         .HasColumnType("uniqueidentifier");
 
@@ -307,10 +299,6 @@ namespace IczpNet.Chat.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ForwardMessageId");
-
-                    b.HasIndex("MessageChannel");
-
-                    b.HasIndex("MessageType");
 
                     b.HasIndex("QuoteMessageId");
 
@@ -417,10 +405,6 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("bigint");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ArticleType");
-
-                    b.HasIndex("EditorType");
 
                     b.ToTable("Chat_Message_Template_ArticleContent", (string)null);
                 });
@@ -852,8 +836,6 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("EditorType");
-
                     b.ToTable("Chat_Message_Template_HtmlContent", (string)null);
                 });
 
@@ -1191,8 +1173,6 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("decimal(18,8)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("GrantMode");
 
                     b.ToTable("Chat_Message_Template_RedEnvelopeContent", (string)null);
                 });
@@ -1929,11 +1909,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("JoinWay");
-
                     b.HasIndex("RoomId");
-
-                    b.HasIndex("RoomRole");
 
                     b.ToTable("Chat_RoomMember", (string)null);
                 });
@@ -2358,8 +2334,6 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("MessageChannel");
 
                     b.ToTable("Chat_Session", (string)null);
                 });
@@ -2806,15 +2780,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("DefaultRoleId");
 
-                    b.HasIndex("InvitationMethod");
-
-                    b.HasIndex("MemberNameDisplayMode");
-
                     b.HasIndex("OwnerChatObjectId");
-
-                    b.HasIndex("PortraitDisplayMode");
-
-                    b.HasIndex("Type");
 
                     b.ToTable("Chat_Room", (string)null);
                 });

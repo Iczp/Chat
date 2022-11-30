@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,10 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221130064241_Enums_Add_Index")]
+    partial class Enums_Add_Index
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -175,7 +177,6 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnName("LastModifierId");
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
@@ -211,7 +212,7 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("nvarchar(40)")
                         .HasColumnName("ConcurrencyStamp");
 
-                    b.Property<string>("ContentJson")
+                    b.Property<string>("Content")
                         .HasMaxLength(5000)
                         .HasColumnType("nvarchar(max)");
 
@@ -240,10 +241,6 @@ namespace IczpNet.Chat.Migrations
 
                     b.Property<Guid?>("ForwardMessageId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ForwardPath")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
 
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
@@ -282,10 +279,6 @@ namespace IczpNet.Chat.Migrations
 
                     b.Property<Guid?>("QuoteMessageId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("QuotePath")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
 
                     b.Property<Guid?>("ReceiverId")
                         .HasColumnType("uniqueidentifier");
