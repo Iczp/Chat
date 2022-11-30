@@ -8,6 +8,6 @@ namespace IczpNet.Chat.SquareSections.Squares.Dtos;
 public class SquareGetListInput : BaseGetListInput
 {
     [DefaultValue(null)]
-    public virtual List<Guid> SquareCategoryIdList { get; set; }
+    public virtual List<Guid> CategoryIdList { get; set; }
     public bool IsImportChildCategory { get; set; }
 }

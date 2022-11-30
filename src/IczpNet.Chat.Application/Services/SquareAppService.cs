@@ -31,18 +31,17 @@ namespace IczpNet.Chat.Services
         protected override async Task<IQueryable<Square>> CreateFilteredQueryAsync(SquareGetListInput input)
         {
             //Category
-            IQueryable<Guid> positionIdQuery = null;
+            IQueryable<Guid> categoryIdQuery = null;
 
-            if (input.IsImportChildCategory && input.SquareCategoryIdList.IsAny())
+            if (input.IsImportChildCategory && input.CategoryIdList.IsAny())
             {
-                positionIdQuery = (await SquareCategoryManager.QueryCurrentAndAllChildsAsync(input.SquareCategoryIdList)).Select(x => x.Id);
+                categoryIdQuery = (await SquareCategoryManager.QueryCurrentAndAllChildsAsync(input.CategoryIdList)).Select(x => x.Id);
             }
 
             return (await ReadOnlyRepository.GetQueryableAsync())
-
                 //CategoryId
-                .WhereIf(!input.IsImportChildCategory && input.SquareCategoryIdList.IsAny(), x => input.SquareCategoryIdList.Contains(x.SquareCategoryId.Value))
-                .WhereIf(input.IsImportChildCategory && input.SquareCategoryIdList.IsAny(), x => positionIdQuery.Contains(x.SquareCategoryId.Value))
+                .WhereIf(!input.IsImportChildCategory && input.CategoryIdList.IsAny(), x => input.CategoryIdList.Contains(x.CategoryId.Value))
+                .WhereIf(input.IsImportChildCategory && input.CategoryIdList.IsAny(), x => categoryIdQuery.Contains(x.CategoryId.Value))
                 .WhereIf(!input.Keyword.IsNullOrEmpty(), x => x.Name.Contains(input.Keyword) || x.Code.Contains(input.Keyword));
         }
     }

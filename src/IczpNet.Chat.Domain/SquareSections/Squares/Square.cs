@@ -10,19 +10,19 @@ namespace IczpNet.Chat.SquareSections.Squares
 {
     public class Square : ChatObject
     {
-        public virtual Guid? SquareCategoryId { get; set; }
+        public virtual Guid? CategoryId { get; set; }
 
         public virtual SquareTypeEnum Type { get; set; }
 
-        [ForeignKey(nameof(SquareCategoryId))]
-        public virtual SquareCategory SquareCategory { get; set; }
+        [ForeignKey(nameof(CategoryId))]
+        public virtual SquareCategory Category { get; set; }
 
         [InverseProperty(nameof(SquareMember.Square))]
-        public virtual IList<SquareMember> SquareMemberList { get; set; } = new List<SquareMember>();
+        public virtual IList<SquareMember> MemberList { get; set; } = new List<SquareMember>();
 
         public int GetMemberCount()
         {
-            return SquareMemberList.Count;
+            return MemberList.Count;
         }
     }
 }
