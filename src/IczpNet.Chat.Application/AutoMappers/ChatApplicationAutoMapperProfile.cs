@@ -1,10 +1,6 @@
 ﻿using AutoMapper;
-using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.Rooms.Dtos;
-using IczpNet.Chat.RoomSections.Rooms;
-using IczpNet.Chat.Messages.Dtos;
-using IczpNet.Chat.Messages;
+using IczpNet.Chat.ChatObjects.Dtos;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -33,20 +29,10 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<ChatObjectCreateInput, ChatObject>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
         CreateMap<ChatObjectUpdateInput, ChatObject>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
 
-        //Room
-        CreateMap<Room, RoomDto>().ForMember(x => x.MemberCount, o => o.MapFrom(x => x.GetMemberCount()));
-        CreateMap<Room, RoomDetailDto>().ForMember(x => x.MemberCount, o => o.MapFrom(x => x.GetMemberCount()));
-        CreateMap<RoomCreateInput, Room>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
-        CreateMap<RoomUpdateInput, Room>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
+        
 
-        //Message
-        CreateMap<Message, MessageDto>()
-            //.ForMember(x => x.MemberCount, o => o.MapFrom(x => x.GetMemberCount()))
-            ;
-        CreateMap<Message, MessageDetailDto>()
-            //.ForMember(x => x.MemberCount, o => o.MapFrom(x => x.GetMemberCount()))
-            ;
-        CreateMap<MessageCreateInput, Message>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
-        CreateMap<MessageUpdateInput, Message>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
+        
+
+
     }
 }

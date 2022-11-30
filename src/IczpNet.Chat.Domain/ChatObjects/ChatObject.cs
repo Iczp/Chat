@@ -31,6 +31,9 @@ namespace IczpNet.Chat.ChatObjects
 
         public virtual ChatObjectTypeEnum? ChatObjectType { get; protected set; }
 
+        [StringLength(500)]
+        public virtual string Description { get; set; }
+
         #region Message
 
         [InverseProperty(nameof(Message.Sender))]

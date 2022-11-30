@@ -1,8 +1,8 @@
 ﻿using IczpNet.Chat.BaseDtos;
 
-namespace IczpNet.Chat.ChatObjects.Dtos;
+namespace IczpNet.Chat.SquareSections.Squares.Dtos;
 
-public class ChatObjectUpdateInput : BaseInput
+public class SquareUpdateInput : BaseInput
 {
     public virtual string Name { get; set; }
 

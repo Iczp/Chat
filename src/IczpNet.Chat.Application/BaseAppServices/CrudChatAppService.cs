@@ -55,27 +55,27 @@ public abstract class CrudChatAppService<
         return base.GetAsync(id);
     }
 
-    [RemoteService(false)]
-    public override Task<TGetOutputDto> CreateAsync(TCreateInput input)
-    {
-        return base.CreateAsync(input);
-    }
+    //[RemoteService(false)]
+    //public override Task<TGetOutputDto> CreateAsync(TCreateInput input)
+    //{
+    //    return base.CreateAsync(input);
+    //}
 
-    [RemoteService(false)]
-    public override Task<TGetOutputDto> UpdateAsync(TKey id, TUpdateInput input)
-    {
-        return base.UpdateAsync(id, input);
-    }
+    //[RemoteService(false)]
+    //public override Task<TGetOutputDto> UpdateAsync(TKey id, TUpdateInput input)
+    //{
+    //    return base.UpdateAsync(id, input);
+    //}
 
-    [RemoteService(false)]
-    public override Task DeleteAsync(TKey id)
-    {
-        return base.DeleteAsync(id);
-    }
+    //[RemoteService(false)]
+    //public override Task DeleteAsync(TKey id)
+    //{
+    //    return base.DeleteAsync(id);
+    //}
 
-    [RemoteService(false)]
-    public override Task DeleteManyAsync(List<TKey> idList)
-    {
-        return base.DeleteManyAsync(idList);
-    }
+    //[RemoteService(false)]
+    //public override Task DeleteManyAsync(List<TKey> idList)
+    //{
+    //    return base.DeleteManyAsync(idList);
+    //}
 }

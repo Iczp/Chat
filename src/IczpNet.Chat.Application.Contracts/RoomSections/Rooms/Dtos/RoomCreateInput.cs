@@ -1,4 +1,4 @@
-﻿namespace IczpNet.Chat.Rooms.Dtos;
+﻿namespace IczpNet.Chat.RoomSections.Rooms.Dtos;
 
 public class RoomCreateInput : RoomUpdateInput
 {

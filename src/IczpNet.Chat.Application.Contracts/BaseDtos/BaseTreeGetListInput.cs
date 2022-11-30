@@ -7,10 +7,10 @@ namespace IczpNet.Chat.BaseDtos
 {
     public class BaseTreeGetListInput : TreeGetListInput<Guid>, IKeyword
     {
-        [DefaultValue(null)]
-        public virtual bool? IsStatic { get; set; }
+        //[DefaultValue(null)]
+        //public virtual bool? IsStatic { get; set; }
 
-        [DefaultValue(null)]
-        public virtual bool? IsActive { get; set; }
+        //[DefaultValue(null)]
+        //public virtual bool? IsActive { get; set; }
     }
 }

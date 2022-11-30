@@ -6,6 +6,8 @@ namespace IczpNet.Chat.ChatObjects.Dtos
     {
         public virtual Guid? OwnerUserId { get; set; }
 
+        public virtual string Description { get; set; }
+
         /// <summary>
         /// 朋友数量
         /// </summary>
