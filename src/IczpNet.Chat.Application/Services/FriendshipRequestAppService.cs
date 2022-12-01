@@ -6,6 +6,8 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp;
+using System.Collections.Generic;
 
 namespace IczpNet.Chat.Services
 {
@@ -29,6 +31,24 @@ namespace IczpNet.Chat.Services
             return (await base.CreateFilteredQueryAsync(input))
 
                 ;
+        }
+
+        [RemoteService(false)]
+        public override Task<FriendshipRequestDetailDto> UpdateAsync(Guid id, FriendshipRequestUpdateInput input)
+        {
+            return base.UpdateAsync(id, input);
+        }
+
+        [RemoteService(false)]
+        public override Task DeleteAsync(Guid id)
+        {
+            return base.DeleteAsync(id);
+        }
+
+        [RemoteService(false)]
+        public override Task DeleteManyAsync(List<Guid> idList)
+        {
+            return base.DeleteManyAsync(idList);
         }
     }
 }
