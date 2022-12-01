@@ -29,9 +29,9 @@ namespace IczpNet.Chat.ChatObjects
         [StringLength(50)]
         public virtual string Code { get; set; }
 
-        public virtual Guid? OwnerUserId { get; set; }
+        public virtual Guid? OwnerUserId { get; protected set; }
 
-        public virtual ChatObjectTypeEnum? ChatObjectType { get; protected set; }
+        public virtual ChatObjectTypeEnum? ObjectType { get; protected set; }
 
         [StringLength(500)]
         public virtual string Description { get; set; }
@@ -46,7 +46,7 @@ namespace IczpNet.Chat.ChatObjects
 
         #endregion
 
-        #region ShopKeeper
+        #region Shop
         /// <summary>
         /// 兼职店小二
         /// </summary>
@@ -61,7 +61,7 @@ namespace IczpNet.Chat.ChatObjects
 
         #endregion
 
-        #region RoomMember
+        #region Room
 
         [InverseProperty(nameof(RoomMember.Owner))]
         public virtual IList<RoomMember> InRoomMemberList { get; set; }
@@ -84,7 +84,7 @@ namespace IczpNet.Chat.ChatObjects
 
         #endregion
 
-        #region SquareMember
+        #region Square
 
         [InverseProperty(nameof(SquareMember.Owner))]
         public virtual IList<SquareMember> InSquareMemberList { get; set; }
@@ -101,7 +101,7 @@ namespace IczpNet.Chat.ChatObjects
 
         #endregion
 
-        #region SessionSetting
+        #region Session
 
         //[InverseProperty(nameof(SessionSetting.Owner))]
         //public virtual IList<SessionSetting> OwnerSessionSettingList { get; set; }
@@ -115,7 +115,7 @@ namespace IczpNet.Chat.ChatObjects
 
         protected ChatObject(Guid id, ChatObjectTypeEnum chatObjectType) : base(id)
         {
-            ChatObjectType = chatObjectType;
+            ObjectType = chatObjectType;
         }
     }
 }

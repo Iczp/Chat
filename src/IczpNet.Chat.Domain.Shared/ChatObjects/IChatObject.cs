@@ -5,6 +5,6 @@ namespace IczpNet.Chat.ChatObjects
 {
     public interface IChatObject : IName, ICode
     {
-        ChatObjectTypeEnum? ChatObjectType { get; }
+        ChatObjectTypeEnum? ObjectType { get; }
     }
 }

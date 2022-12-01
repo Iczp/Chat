@@ -1,7 +1,8 @@
 ﻿using IczpNet.Chat.ChatObjects;
 using System;
 using IczpNet.Chat.Enums;
-namespace IczpNet.Chat.Robots
+
+namespace IczpNet.Chat.RobotSections.Robots
 {
     public class Robot : ChatObject
     {
@@ -9,7 +10,7 @@ namespace IczpNet.Chat.Robots
 
         protected Robot()
         {
-            ChatObjectType = ChatObjectTypeValue;
+            ObjectType = ChatObjectTypeValue;
         }
         protected Robot(Guid id) : base(id, ChatObjectTypeValue) { }
     }

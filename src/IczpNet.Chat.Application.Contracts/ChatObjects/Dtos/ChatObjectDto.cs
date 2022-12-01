@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.BaseDtos;
+using IczpNet.Chat.Enums;
 using System;
 using Volo.Abp.Application.Dtos;
 
@@ -12,6 +13,6 @@ namespace IczpNet.Chat.ChatObjects.Dtos
 
         public virtual string Code { get; set; }
 
-        public virtual string ChatObjectType { get; set; }
+        public virtual ChatObjectTypeEnum ObjectType { get; set; }
     }
 }

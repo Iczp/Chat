@@ -27,12 +27,12 @@ namespace IczpNet.Chat.Robots
 
         protected ShopWaiter()
         {
-            ChatObjectType = ChatObjectTypeValue;
+            ObjectType = ChatObjectTypeValue;
         }
 
         protected ShopWaiter(Guid id, ShopKeeper shopKeeper, ChatObject chatObject) : base(id, ChatObjectTypeValue)
         {
-            Assert.If(chatObject.ChatObjectType == ChatObjectTypeEnum.ShopWaiter, "");
+            Assert.If(chatObject.ObjectType == ChatObjectTypeEnum.ShopWaiter, "");
             ShopKeeper = shopKeeper;
             Owner = chatObject;
         }

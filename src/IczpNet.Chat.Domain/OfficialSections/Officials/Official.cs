@@ -13,20 +13,26 @@ namespace IczpNet.Chat.OfficialSections.Officials
     {
         public const ChatObjectTypeEnum ChatObjectTypeValue = ChatObjectTypeEnum.Official;
 
+        public virtual OfficialTypeEnum Type { get; set; }
 
         public virtual IList<OfficialGroup> OfficialGroupList { get; set; }
-
 
         public virtual IList<OfficalExcludedMember> OfficalExcludedMemberList { get; set; }
 
         [InverseProperty(nameof(OfficialMember.Official))]
-        public virtual IList<OfficialMember> MemberList { get; set; }
+        public virtual IList<OfficialMember> MemberList { get; set; } = new List<OfficialMember>();
 
 
         protected Official()
         {
-            ChatObjectType = ChatObjectTypeValue;
+            ObjectType = ChatObjectTypeValue;
         }
+
         protected Official(Guid id) : base(id, ChatObjectTypeValue) { }
+
+        public int GetMemberCount()
+        {
+            return MemberList.Count;
+        }
     }
 }

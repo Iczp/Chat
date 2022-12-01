@@ -33,8 +33,8 @@ namespace IczpNet.Chat.Services
         protected override async Task<IQueryable<ChatObject>> CreateFilteredQueryAsync(ChatObjectGetListInput input)
         {
             return (await base.CreateFilteredQueryAsync(input))
-
-                ;
+                .WhereIf(input.ObjectType.HasValue, x => x.ObjectType == input.ObjectType);
+            ;
         }
 
         [HttpGet]

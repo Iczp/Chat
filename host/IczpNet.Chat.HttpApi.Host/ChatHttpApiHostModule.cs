@@ -35,6 +35,7 @@ using Volo.Abp.TenantManagement.EntityFrameworkCore;
 using Volo.Abp.VirtualFileSystem;
 using Volo.Abp.AspNetCore.ExceptionHandling;
 using Volo.Abp.AspNetCore.Mvc;
+using Volo.Abp.Json;
 
 namespace IczpNet.Chat;
 [DependsOn(
@@ -65,6 +66,11 @@ public class ChatHttpApiHostModule : AbpModule
         {
             options.SendExceptionsDetailsToClients = true;
             options.SendStackTraceToClients = true;
+        });
+
+        Configure<AbpJsonOptions>(options =>
+        {
+
         });
 
         Configure<AbpAspNetCoreMvcOptions>(options =>

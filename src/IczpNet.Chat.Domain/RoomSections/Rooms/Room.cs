@@ -146,7 +146,7 @@ namespace IczpNet.Chat.RoomSections.Rooms
 
         protected Room()
         {
-            ChatObjectType = ChatObjectTypeValue;
+            ObjectType = ChatObjectTypeValue;
         }
         protected Room(Guid id) : base(id, ChatObjectTypeValue)
         {
