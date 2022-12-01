@@ -30,7 +30,7 @@
 
   <ItemGroup>
     <Folder Include="CompanyTypes\" />
-    <Folder Include="Sessions\" />
+    <Folder Include="SessionSections\" />
   </ItemGroup>
 
 </Project>

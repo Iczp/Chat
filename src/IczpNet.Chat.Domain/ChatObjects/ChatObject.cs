@@ -13,11 +13,12 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Volo.Abp.SimpleStateChecking;
 
 namespace IczpNet.Chat.ChatObjects
 {
     //[Index]
-    public class ChatObject : BaseEntity<Guid>, IChatObject
+    public class ChatObject : BaseEntity<Guid>, IChatObject, IHasSimpleStateCheckers<ChatObject>
     {
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public virtual long AutoId { get; set; }
@@ -111,11 +112,17 @@ namespace IczpNet.Chat.ChatObjects
 
         #endregion
 
-        protected ChatObject() { }
+        public List<ISimpleStateChecker<ChatObject>> StateCheckers { get; }
+
+        protected ChatObject()
+        {
+            StateCheckers = new List<ISimpleStateChecker<ChatObject>>();
+        }
 
         protected ChatObject(Guid id, ChatObjectTypeEnum chatObjectType) : base(id)
         {
             ObjectType = chatObjectType;
+            StateCheckers = new List<ISimpleStateChecker<ChatObject>>();
         }
     }
 }

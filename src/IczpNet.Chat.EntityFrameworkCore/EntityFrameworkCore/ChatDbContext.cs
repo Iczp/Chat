@@ -5,7 +5,7 @@ using IczpNet.Chat.OfficialSections.OfficialExcludedMembers;
 using IczpNet.Chat.OfficialSections.OfficialGroupMembers;
 using IczpNet.Chat.OfficialSections.OfficialGroups;
 using IczpNet.Chat.OfficialSections.Officials;
-using IczpNet.Chat.Robots;
+using IczpNet.Chat.RobotSections.Robots;
 using IczpNet.Chat.RoomSections.RoomForbiddenMembers;
 using IczpNet.Chat.RoomSections.RoomMembers;
 using IczpNet.Chat.RoomSections.RoomPermissionDefines;
