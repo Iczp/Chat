@@ -8,7 +8,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.OfficialSections.OfficialMembers
 {
-    public class OfficialMember : BaseEntity<Guid>, IOwner
+    public class OfficialMember : BaseEntity<Guid>, IOwner<Guid>
     {
         public virtual Guid OfficialId { get; set; }
 

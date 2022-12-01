@@ -50,13 +50,13 @@ namespace IczpNet.Chat.ChatObjects
         /// <summary>
         /// 兼职店小二
         /// </summary>
-        [InverseProperty(nameof(ShopWaiter.ChatObject))]
+        [InverseProperty(nameof(ShopWaiter.Owner))]
         public virtual IList<ShopWaiter> ProxyShopWaiterList { get; set; }
 
         /// <summary>
         /// 兼职掌柜
         /// </summary>
-        [InverseProperty(nameof(ShopKeeper.ChatObject))]
+        [InverseProperty(nameof(ShopKeeper.Owner))]
         public virtual IList<ShopKeeper> ProxyShopKeeperList { get; set; }
 
         #endregion
@@ -68,9 +68,6 @@ namespace IczpNet.Chat.ChatObjects
 
         [InverseProperty(nameof(RoomForbiddenMember.Owner))]
         public virtual IList<RoomForbiddenMember> InRoomForbiddenMemberList { get; set; }
-        
-
-
 
         #endregion
 
@@ -97,10 +94,10 @@ namespace IczpNet.Chat.ChatObjects
         #region Friendship
 
         [InverseProperty(nameof(Friendship.Owner))]
-        public virtual IList<Friendship> OwnerFriendList { get; set; }
+        public virtual IList<Friendship> FriendList { get; set; }
 
         [InverseProperty(nameof(Friendship.Friend))]
-        public virtual IList<Friendship> DestinationFriendList { get; set; }
+        public virtual IList<Friendship> InFriendList { get; set; }
 
         #endregion
 

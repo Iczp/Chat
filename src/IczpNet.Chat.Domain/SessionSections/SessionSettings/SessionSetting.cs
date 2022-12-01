@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.SessionSections.SessionSettings
 {
-    public class SessionSetting : BaseEntity<Guid>, IOwner
+    public class SessionSetting : BaseEntity<Guid>, IOwner<Guid>
     {
         public virtual Guid OwnerId { get; set; }
 

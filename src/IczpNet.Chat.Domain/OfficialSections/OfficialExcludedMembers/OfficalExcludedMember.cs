@@ -7,7 +7,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.OfficialSections.OfficialExcludedMembers
 {
-    public class OfficalExcludedMember : BaseEntity<Guid>, IOwner
+    public class OfficalExcludedMember : BaseEntity<Guid>, IOwner<Guid>
     {
 
         public virtual Guid OfficialId { get; set; }

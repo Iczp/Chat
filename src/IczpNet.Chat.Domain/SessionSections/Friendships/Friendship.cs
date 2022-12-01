@@ -8,7 +8,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.SessionSections.Friends
 {
-    public class Friendship : BaseEntity<Guid>, IIsActive, IOwner
+    public class Friendship : BaseEntity<Guid>, IIsActive, IOwner<Guid>
     {
         public virtual Guid OwnerId { get; set; }
 

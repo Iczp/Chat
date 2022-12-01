@@ -11,7 +11,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.RoomSections.RoomMembers
 {
-    public class RoomMember : BaseEntity<Guid>, IOwner
+    public class RoomMember : BaseEntity<Guid>, IOwner<Guid>
     {
         /// <summary>
         /// 群Id

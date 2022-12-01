@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.SquareSections.Squares;
 using System;
 using System.ComponentModel.DataAnnotations;
@@ -7,7 +8,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.SquareSections.SquareMembers
 {
-    public class SquareMember : BaseEntity<Guid>
+    public class SquareMember : BaseEntity<Guid>, IOwner<Guid>
     {
 
         public virtual Guid SquareId { get; set; }

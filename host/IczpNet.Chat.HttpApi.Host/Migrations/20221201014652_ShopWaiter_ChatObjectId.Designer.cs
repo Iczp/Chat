@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,10 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221201014652_ShopWaiter_ChatObjectId")]
+    partial class ShopWaiter_ChatObjectId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2720,10 +2722,10 @@ namespace IczpNet.Chat.Migrations
                 {
                     b.HasBaseType("IczpNet.Chat.ChatObjects.ChatObject");
 
-                    b.Property<Guid?>("OwnerId")
+                    b.Property<Guid?>("ChatObjectId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.HasIndex("OwnerId");
+                    b.HasIndex("ChatObjectId");
 
                     b.ToTable("Chat_ShopKeeper", (string)null);
                 });
@@ -2732,17 +2734,17 @@ namespace IczpNet.Chat.Migrations
                 {
                     b.HasBaseType("IczpNet.Chat.ChatObjects.ChatObject");
 
+                    b.Property<Guid>("ChatObjectId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("NickName")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<Guid?>("OwnerId")
+                    b.Property<Guid?>("ShopKeeperId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("ShopKeeperId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasIndex("OwnerId");
+                    b.HasIndex("ChatObjectId");
 
                     b.HasIndex("ShopKeeperId");
 
@@ -3341,38 +3343,38 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.Robots.ShopKeeper", b =>
                 {
+                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "ChatObject")
+                        .WithMany("ProxyShopKeeperList")
+                        .HasForeignKey("ChatObjectId");
+
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", null)
                         .WithOne()
                         .HasForeignKey("IczpNet.Chat.Robots.ShopKeeper", "Id")
                         .OnDelete(DeleteBehavior.ClientCascade)
                         .IsRequired();
 
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
-                        .WithMany("ProxyShopKeeperList")
-                        .HasForeignKey("OwnerId");
-
-                    b.Navigation("Owner");
+                    b.Navigation("ChatObject");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.Robots.ShopWaiter", b =>
                 {
+                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "ChatObject")
+                        .WithMany("ProxyShopWaiterList")
+                        .HasForeignKey("ChatObjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", null)
                         .WithOne()
                         .HasForeignKey("IczpNet.Chat.Robots.ShopWaiter", "Id")
                         .OnDelete(DeleteBehavior.ClientCascade)
                         .IsRequired();
 
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
-                        .WithMany("ProxyShopWaiterList")
-                        .HasForeignKey("OwnerId");
-
                     b.HasOne("IczpNet.Chat.Robots.ShopKeeper", "ShopKeeper")
                         .WithMany("ShopWaiterList")
-                        .HasForeignKey("ShopKeeperId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("ShopKeeperId");
 
-                    b.Navigation("Owner");
+                    b.Navigation("ChatObject");
 
                     b.Navigation("ShopKeeper");
                 });

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace IczpNet.Chat.ChatObjects.Dtos
 {
@@ -11,12 +12,12 @@ namespace IczpNet.Chat.ChatObjects.Dtos
         /// <summary>
         /// 朋友数量
         /// </summary>
-        public virtual int OwnerFriendCount { get; set; }
+        public virtual int FriendCount { get; set; }
 
         /// <summary>
         /// 被动朋友数量
         /// </summary>
-        public virtual int DestinationFriendCount { get; set; }
+        public virtual int InFriendCount { get; set; }
 
         /// <summary>
         /// 发送者消息数量
@@ -37,6 +38,16 @@ namespace IczpNet.Chat.ChatObjects.Dtos
         /// 代理掌店小二
         /// </summary>
         public virtual int ProxyShopWaiterCount { get; set; }
+
+        /// <summary>
+        /// 加入群数量
+        /// </summary>
+        public virtual int InRoomMemberCount { get; set; }
+
+        /// <summary>
+        /// 被禁言次数
+        /// </summary>
+        public virtual int InRoomForbiddenMemberCount { get; set; }
 
 
         /// <summary>
