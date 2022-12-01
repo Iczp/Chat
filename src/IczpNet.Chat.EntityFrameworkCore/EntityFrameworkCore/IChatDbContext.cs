@@ -36,6 +36,8 @@ public interface IChatDbContext : IEfCoreDbContext
     //DbSet<SessionSetting> SessionSetting { get; }
 
     DbSet<Friendship> Friendship { get; }
+    DbSet<FriendshipRequest> FriendshipRequest { get; }
+    
 
     DbSet<ChatObject> ChatObject { get; }
     DbSet<Message> Message { get; }

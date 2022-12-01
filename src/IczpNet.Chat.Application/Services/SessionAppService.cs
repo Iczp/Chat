@@ -57,5 +57,10 @@ namespace IczpNet.Chat.Services
         {
             return SessionManager.AddFriendAsync(ownerId, friendId);
         }
+
+        public Task<DateTime> RequestForFriendshipAsync(Guid ownerId, Guid friendId, string message)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -35,8 +35,8 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
 
     public DbSet<Session> Session { get; }
     //public DbSet<SessionSetting> SessionSetting { get; }
-
     public DbSet<Friendship> Friendship { get; }
+    public DbSet<FriendshipRequest> FriendshipRequest { get; }
 
     public DbSet<ChatObject> ChatObject { get; }
     public DbSet<Message> Message { get; }
