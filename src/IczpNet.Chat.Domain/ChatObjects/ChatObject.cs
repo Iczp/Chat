@@ -5,6 +5,7 @@ using IczpNet.Chat.OfficialSections.OfficialExcludedMembers;
 using IczpNet.Chat.OfficialSections.OfficialGroupMembers;
 using IczpNet.Chat.OfficialSections.OfficialMembers;
 using IczpNet.Chat.Robots;
+using IczpNet.Chat.RoomSections.RoomForbiddenMembers;
 using IczpNet.Chat.RoomSections.RoomMembers;
 using IczpNet.Chat.SessionSections.Friends;
 using IczpNet.Chat.SquareSections.SquareMembers;
@@ -65,17 +66,23 @@ namespace IczpNet.Chat.ChatObjects
         [InverseProperty(nameof(RoomMember.Owner))]
         public virtual IList<RoomMember> InRoomMemberList { get; set; }
 
+        [InverseProperty(nameof(RoomForbiddenMember.Owner))]
+        public virtual IList<RoomForbiddenMember> InRoomForbiddenMemberList { get; set; }
+        
+
+
+
         #endregion
 
         #region Official
 
-        [InverseProperty(nameof(OfficialGroupMember.ChatObject))]
+        [InverseProperty(nameof(OfficialGroupMember.Owner))]
         public virtual IList<OfficialGroupMember> InOfficialGroupMemberList { get; set; }
 
-        [InverseProperty(nameof(OfficialMember.ChatObject))]
+        [InverseProperty(nameof(OfficialMember.Owner))]
         public virtual IList<OfficialMember> InOfficialMemberList { get; set; }
 
-        [InverseProperty(nameof(OfficalExcludedMember.ChatObject))]
+        [InverseProperty(nameof(OfficalExcludedMember.Owner))]
         public virtual IList<OfficalExcludedMember> InOfficalExcludedMemberList { get; set; }
 
         #endregion

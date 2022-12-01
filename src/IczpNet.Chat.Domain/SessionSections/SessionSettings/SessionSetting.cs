@@ -1,13 +1,14 @@
 ﻿using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.DataFilters;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.SessionSections.SessionSettings
 {
-    public class SessionSetting : BaseEntity<Guid>
+    public class SessionSetting : BaseEntity<Guid>, IOwner
     {
-        public virtual Guid? OwnerId { get; set; }
+        public virtual Guid OwnerId { get; set; }
 
         [ForeignKey(nameof(OwnerId))]
         public virtual ChatObject Owner { get; set; }

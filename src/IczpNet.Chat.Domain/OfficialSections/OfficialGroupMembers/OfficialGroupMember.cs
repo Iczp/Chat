@@ -1,23 +1,24 @@
 ﻿using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.OfficialSections.OfficialGroups;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.OfficialSections.OfficialGroupMembers
 {
-    public class OfficialGroupMember : BaseEntity<Guid>
+    public class OfficialGroupMember : BaseEntity<Guid>, IOwner
     {
 
-        public virtual Guid ChatObjectId { get; set; }
+        public virtual Guid OwnerId { get; set; }
 
         public virtual Guid OfficialGroupId { get; set; }
 
         [ForeignKey(nameof(OfficialGroupId))]
         public virtual OfficialGroup OfficialGroup { get; set; }
 
-        [ForeignKey(nameof(ChatObjectId))]
-        public virtual ChatObject ChatObject { get; set; }
+        [ForeignKey(nameof(OwnerId))]
+        public virtual ChatObject Owner { get; set; }
 
         protected OfficialGroupMember()
         {
@@ -26,7 +27,7 @@ namespace IczpNet.Chat.OfficialSections.OfficialGroupMembers
 
         protected OfficialGroupMember(Guid id, Guid chatObjectId) : base(id)
         {
-            ChatObjectId = chatObjectId;
+            OwnerId = chatObjectId;
         }
     }
 }

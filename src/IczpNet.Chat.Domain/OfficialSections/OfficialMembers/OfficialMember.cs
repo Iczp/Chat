@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.OfficialSections.OfficialGroups;
 using IczpNet.Chat.OfficialSections.Officials;
 using System;
@@ -7,7 +8,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.OfficialSections.OfficialMembers
 {
-    public class OfficialMember : BaseEntity<Guid>
+    public class OfficialMember : BaseEntity<Guid>, IOwner
     {
         public virtual Guid OfficialId { get; set; }
 
@@ -15,9 +16,9 @@ namespace IczpNet.Chat.OfficialSections.OfficialMembers
         public virtual Official Official { get; set; }
 
 
-        public virtual Guid ChatObjectId { get; set; }
+        public virtual Guid OwnerId { get; set; }
 
-        [ForeignKey(nameof(ChatObjectId))]
-        public virtual ChatObject ChatObject { get; set; }
+        [ForeignKey(nameof(OwnerId))]
+        public virtual ChatObject Owner { get; set; }
     }
 }

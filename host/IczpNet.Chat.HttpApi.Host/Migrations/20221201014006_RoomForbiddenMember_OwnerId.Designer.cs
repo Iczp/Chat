@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,10 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221201014006_RoomForbiddenMember_OwnerId")]
+    partial class RoomForbiddenMember_OwnerId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1509,6 +1511,9 @@ namespace IczpNet.Chat.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("ChatObjectId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasMaxLength(40)
@@ -1552,18 +1557,15 @@ namespace IczpNet.Chat.Migrations
                     b.Property<Guid>("OfficialId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("OwnerId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("TenantId");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OfficialId");
+                    b.HasIndex("ChatObjectId");
 
-                    b.HasIndex("OwnerId");
+                    b.HasIndex("OfficialId");
 
                     b.ToTable("Chat_OfficalExcludedMember", (string)null);
                 });
@@ -1572,6 +1574,9 @@ namespace IczpNet.Chat.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ChatObjectId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ConcurrencyStamp")
@@ -1617,18 +1622,15 @@ namespace IczpNet.Chat.Migrations
                     b.Property<Guid>("OfficialGroupId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("OwnerId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("TenantId");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OfficialGroupId");
+                    b.HasIndex("ChatObjectId");
 
-                    b.HasIndex("OwnerId");
+                    b.HasIndex("OfficialGroupId");
 
                     b.ToTable("Chat_OfficialGroupMember", (string)null);
                 });
@@ -1699,6 +1701,9 @@ namespace IczpNet.Chat.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("ChatObjectId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasMaxLength(40)
@@ -1742,18 +1747,15 @@ namespace IczpNet.Chat.Migrations
                     b.Property<Guid>("OfficialId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("OwnerId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("TenantId");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OfficialId");
+                    b.HasIndex("ChatObjectId");
 
-                    b.HasIndex("OwnerId");
+                    b.HasIndex("OfficialId");
 
                     b.ToTable("Chat_OfficialMember", (string)null);
                 });
@@ -2424,7 +2426,7 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("LastModifierId");
 
-                    b.Property<Guid>("OwnerId")
+                    b.Property<Guid?>("OwnerId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("TenantId")
@@ -2994,40 +2996,40 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.OfficialSections.OfficialExcludedMembers.OfficalExcludedMember", b =>
                 {
+                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "ChatObject")
+                        .WithMany("InOfficalExcludedMemberList")
+                        .HasForeignKey("ChatObjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("IczpNet.Chat.OfficialSections.Officials.Official", "Official")
                         .WithMany("OfficalExcludedMemberList")
                         .HasForeignKey("OfficialId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
-                        .WithMany("InOfficalExcludedMemberList")
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("ChatObject");
 
                     b.Navigation("Official");
-
-                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.OfficialSections.OfficialGroupMembers.OfficialGroupMember", b =>
                 {
+                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "ChatObject")
+                        .WithMany("InOfficialGroupMemberList")
+                        .HasForeignKey("ChatObjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("IczpNet.Chat.OfficialSections.OfficialGroups.OfficialGroup", "OfficialGroup")
                         .WithMany("OfficialGroupMemberList")
                         .HasForeignKey("OfficialGroupId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
-                        .WithMany("InOfficialGroupMemberList")
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("ChatObject");
 
                     b.Navigation("OfficialGroup");
-
-                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.OfficialSections.OfficialGroups.OfficialGroup", b =>
@@ -3043,21 +3045,21 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.OfficialSections.OfficialMembers.OfficialMember", b =>
                 {
+                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "ChatObject")
+                        .WithMany("InOfficialMemberList")
+                        .HasForeignKey("ChatObjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("IczpNet.Chat.OfficialSections.Officials.Official", "Official")
                         .WithMany("MemberList")
                         .HasForeignKey("OfficialId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
-                        .WithMany("InOfficialMemberList")
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("ChatObject");
 
                     b.Navigation("Official");
-
-                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.RoomSections.RoomForbiddenMembers.RoomForbiddenMember", b =>
@@ -3179,9 +3181,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
                         .WithMany()
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("OwnerId");
 
                     b.Navigation("Destination");
 

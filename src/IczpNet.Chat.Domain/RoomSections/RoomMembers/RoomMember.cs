@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.RoomSections.RoomRoleRoomMembers;
 using IczpNet.Chat.RoomSections.Rooms;
@@ -10,7 +11,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.RoomSections.RoomMembers
 {
-    public class RoomMember : BaseEntity<Guid>
+    public class RoomMember : BaseEntity<Guid>, IOwner
     {
         /// <summary>
         /// 群Id

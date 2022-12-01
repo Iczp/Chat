@@ -1,13 +1,14 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.DataFilters;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.SessionSections.Friends
 {
-    public class Friendship : BaseEntity<Guid>, IIsActive
+    public class Friendship : BaseEntity<Guid>, IIsActive, IOwner
     {
         public virtual Guid OwnerId { get; set; }
 
