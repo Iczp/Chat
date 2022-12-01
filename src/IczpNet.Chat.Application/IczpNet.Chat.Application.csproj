@@ -30,4 +30,8 @@
     <ProjectReference Include="..\IczpNet.Chat.Domain\IczpNet.Chat.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Samples\" />
+  </ItemGroup>
+
 </Project>
