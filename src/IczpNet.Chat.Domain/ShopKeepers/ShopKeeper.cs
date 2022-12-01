@@ -7,7 +7,7 @@ using IczpNet.Chat.DataFilters;
 
 namespace IczpNet.Chat.Robots
 {
-    public class ShopKeeper : ChatObject, IOwner<Guid?>
+    public class ShopKeeper : ChatObject, IChatOwner<Guid?>
     {
         public const ChatObjectTypeEnum ChatObjectTypeValue = ChatObjectTypeEnum.ShopKeeper;
 

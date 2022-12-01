@@ -8,7 +8,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.Robots
 {
-    public class ShopWaiter : ChatObject, IOwner<Guid?>
+    public class ShopWaiter : ChatObject, IChatOwner<Guid?>
     {
         public const ChatObjectTypeEnum ChatObjectTypeValue = ChatObjectTypeEnum.ShopWaiter;
 

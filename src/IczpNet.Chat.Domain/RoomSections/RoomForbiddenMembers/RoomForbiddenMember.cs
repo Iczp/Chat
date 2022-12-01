@@ -8,7 +8,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.RoomSections.RoomForbiddenMembers
 {
-    public class RoomForbiddenMember : BaseEntity<Guid>, IOwner<Guid>
+    public class RoomForbiddenMember : BaseEntity<Guid>, IChatOwner<Guid>
     {
         /// <summary>
         /// 群Id

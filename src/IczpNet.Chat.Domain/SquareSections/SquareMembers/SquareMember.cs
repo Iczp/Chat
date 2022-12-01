@@ -8,7 +8,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.SquareSections.SquareMembers
 {
-    public class SquareMember : BaseEntity<Guid>, IOwner<Guid>
+    public class SquareMember : BaseEntity<Guid>, IChatOwner<Guid>
     {
 
         public virtual Guid SquareId { get; set; }
