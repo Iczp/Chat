@@ -29,8 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="CompanyTypes\" />
-    <Folder Include="SessionSections\" />
+    <Folder Include="新文件夹\" />
   </ItemGroup>
 
 </Project>

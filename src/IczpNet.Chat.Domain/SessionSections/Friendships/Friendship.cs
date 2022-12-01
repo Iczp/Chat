@@ -10,7 +10,7 @@ namespace IczpNet.Chat.SessionSections.Friends
 {
     public class Friendship : BaseEntity<Guid>, IIsActive, IChatOwner<Guid>
     {
-        public virtual Guid OwnerId { get; set; }
+        public virtual Guid OwnerId { get; protected set; }
 
         [ForeignKey(nameof(OwnerId))]
         public virtual ChatObject Owner { get; set; }
@@ -18,7 +18,7 @@ namespace IczpNet.Chat.SessionSections.Friends
         public virtual Guid? FriendId { get; set; }
 
         [ForeignKey(nameof(FriendId))]
-        public virtual ChatObject Friend { get; set; }
+        public virtual ChatObject Friend { get; protected set; }
 
         /// <summary>
         /// 备注名称
@@ -67,5 +67,13 @@ namespace IczpNet.Chat.SessionSections.Friends
         /// 是否有效的
         /// </summary>
         public virtual bool IsActive { get; set; }
+
+        protected Friendship() { }
+
+        public Friendship(ChatObject owner, ChatObject friend)
+        {
+            Owner = owner;
+            Friend = friend;
+        }
     }
 }

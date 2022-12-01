@@ -7,5 +7,7 @@ namespace IczpNet.Chat.ChatObjects
     public interface IChatObjectManager
     {
         Task<List<ChatObject>> GetListByUserId(Guid userId);
+
+        Task<ChatObject> GetAsync(Guid chatObjectId);
     }
 }
