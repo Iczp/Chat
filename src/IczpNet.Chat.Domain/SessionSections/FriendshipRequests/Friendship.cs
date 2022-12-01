@@ -6,7 +6,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace IczpNet.Chat.SessionSections.Friends
+namespace IczpNet.Chat.SessionSections.Friendships
 {
     public class FriendshipRequest : BaseEntity<Guid>, IChatOwner<Guid>
     {

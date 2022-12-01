@@ -2,7 +2,7 @@
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.SessionSections;
-using IczpNet.Chat.SessionSections.Friends;
+using IczpNet.Chat.SessionSections.Friendships;
 using System;
 using System.Collections.Generic;
 using System.Linq;

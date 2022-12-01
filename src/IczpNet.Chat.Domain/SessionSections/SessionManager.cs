@@ -1,5 +1,5 @@
 ﻿using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.SessionSections.Friends;
+using IczpNet.Chat.SessionSections.Friendships;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;

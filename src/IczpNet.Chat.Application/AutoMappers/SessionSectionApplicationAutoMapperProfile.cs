@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using IczpNet.Chat.SessionSections.Friends;
+using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.FriendshipRequests.Dtos;
 using IczpNet.Chat.SessionSections.Friendships.Dtos;
 

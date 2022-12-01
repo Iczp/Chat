@@ -7,7 +7,7 @@ using IczpNet.Chat.OfficialSections.OfficialMembers;
 using IczpNet.Chat.Robots;
 using IczpNet.Chat.RoomSections.RoomForbiddenMembers;
 using IczpNet.Chat.RoomSections.RoomMembers;
-using IczpNet.Chat.SessionSections.Friends;
+using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SquareSections.SquareMembers;
 using System;
 using System.Collections.Generic;

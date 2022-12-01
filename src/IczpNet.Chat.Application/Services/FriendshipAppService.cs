@@ -1,5 +1,5 @@
 ﻿using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.SessionSections.Friends;
+using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.Friendships.Dtos;
 using System;
