@@ -14,7 +14,7 @@ namespace IczpNet.Chat;
     typeof(AbpAspNetCoreMvcModule))]
 [DependsOn(typeof(AbpCommonsHttpApiModule))]
 [DependsOn(typeof(AbpIdentityHttpApiModule))]
-    public class ChatHttpApiModule : AbpModule
+public class ChatHttpApiModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {

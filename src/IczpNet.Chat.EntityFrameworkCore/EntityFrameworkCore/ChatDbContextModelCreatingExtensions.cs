@@ -5,6 +5,7 @@ using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.RoomSections.RoomPermissionGrants;
 using IczpNet.Chat.RoomSections.RoomRoleRoomMembers;
+using IczpNet.Chat.SessionSections.FriendshipTagUnits;
 using IczpNet.Chat.SessionSections.SessionSettings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -55,10 +56,10 @@ public static class ChatDbContextModelCreatingExtensions
             b.HasKey(x => new { x.MessageId, x.HistoryContentId });
         });
 
-        //builder.Entity<SessionSetting>(b =>
-        //{
-        //    b.HasKey(x => new { x.OwnerId, x.DestinationId });
-        //});
+        builder.Entity<FriendshipTagUnit>(b =>
+        {
+            b.HasKey(x => new { x.FriendshipId, x.FriendshipTagId });
+        });
 
         builder.Entity<RoomPermissionGrant>(b =>
         {

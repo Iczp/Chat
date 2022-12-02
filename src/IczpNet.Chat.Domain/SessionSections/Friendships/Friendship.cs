@@ -1,8 +1,8 @@
-﻿using IczpNet.AbpCommons.DataFilters;
-using IczpNet.Chat.BaseEntitys;
+﻿using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.SessionSections.FriendshipRequests;
+using IczpNet.Chat.SessionSections.FriendshipTagUnits;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -26,6 +26,8 @@ namespace IczpNet.Chat.SessionSections.Friendships
 
         [ForeignKey(nameof(RequestId))]
         public virtual FriendshipRequest FriendshipRequest { get; protected set; }
+
+        public virtual IList<FriendshipTagUnit> TagList { get; protected set; }
 
         /// <summary>
         /// 备注名称
