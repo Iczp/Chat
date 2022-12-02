@@ -1,10 +1,13 @@
 ﻿using IczpNet.Chat.BaseDtos;
 using System;
+using System.Collections.Generic;
 
 namespace IczpNet.Chat.SessionSections.Friendships.Dtos;
 
 public class FriendshipGetListInput : BaseGetListInput
 {
+    public virtual List<Guid> TagIdList { get; set; }
+
     public virtual Guid? OwnerId { get; set; }
 
     public virtual Guid? FriendId { get; set; }

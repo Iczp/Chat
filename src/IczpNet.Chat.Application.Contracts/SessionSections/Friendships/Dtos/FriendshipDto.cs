@@ -1,6 +1,8 @@
 ﻿using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.ChatObjects.Dtos;
+using IczpNet.Chat.FriendshipTagSections.FriendshipTags.Dtos;
 using System;
+using System.Collections.Generic;
 
 namespace IczpNet.Chat.SessionSections.Friendships.Dtos;
 
@@ -13,6 +15,8 @@ public class FriendshipDto : BaseDto<Guid>
     //public virtual ChatObjectSimpleDto Owner { get; set; }
 
     public virtual ChatObjectSimpleDto Friend { get; set; }
+
+    public virtual List<FriendshipTagSimpleDto> TagList { get; set; }
 
     /// <summary>
     /// 备注名称

@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 
 namespace IczpNet.Chat.SessionSections.Friendships
 {
@@ -27,7 +28,7 @@ namespace IczpNet.Chat.SessionSections.Friendships
         [ForeignKey(nameof(RequestId))]
         public virtual FriendshipRequest FriendshipRequest { get; protected set; }
 
-        public virtual IList<FriendshipTagUnit> TagList { get; protected set; }
+        public virtual IList<FriendshipTagUnit> TagList { get; protected set; } = new List<FriendshipTagUnit>();
 
         /// <summary>
         /// 备注名称
@@ -85,6 +86,26 @@ namespace IczpNet.Chat.SessionSections.Friendships
             Friend = friend;
             IsPassive = isPassive;
             RequestId = friendshipRequestId;
+        }
+
+        public void SetTabList(List<FriendshipTag> tagList)
+        {
+            TagList?.Clear();
+
+            foreach (var tag in tagList)
+            {
+                TagList.Add(new FriendshipTagUnit(this, tag));
+            }
+        }
+
+        public List<Guid> GetTagIdList()
+        {
+            return TagList?.Select(x => x.FriendshipTagId).ToList();
+        }
+
+        public List<FriendshipTag> GetTagList()
+        {
+            return TagList?.Select(x => x.FriendshipTag).ToList();
         }
     }
 }

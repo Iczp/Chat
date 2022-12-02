@@ -1,4 +1,6 @@
-﻿using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons.Extensions;
+using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.Friendships.Dtos;
 using Microsoft.AspNetCore.Mvc;
@@ -22,8 +24,13 @@ namespace IczpNet.Chat.Services
             FriendshipUpdateInput>,
         IFriendshipAppService
     {
-        public FriendshipAppService(IRepository<Friendship, Guid> repository) : base(repository)
+        protected IRepository<FriendshipTag, Guid> FriendshipTagRepository { get; }
+
+        public FriendshipAppService(
+            IRepository<Friendship, Guid> repository,
+            IRepository<FriendshipTag, Guid> friendshipTagRepository) : base(repository)
         {
+            FriendshipTagRepository = friendshipTagRepository;
         }
 
 
@@ -31,6 +38,7 @@ namespace IczpNet.Chat.Services
         {
             return (await base.CreateFilteredQueryAsync(input))
                 .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
+                .WhereIf(input.TagIdList.IsAny(), x => x.TagList.Any(d => input.TagIdList.Contains(d.FriendshipTagId)))
                 .WhereIf(input.FriendId.HasValue, x => x.FriendId == input.FriendId)
                 .WhereIf(input.IsCantacts.HasValue, x => x.IsCantacts == input.IsCantacts)
                 .WhereIf(input.IsPassive.HasValue, x => x.IsPassive == input.IsPassive)
@@ -110,6 +118,27 @@ namespace IczpNet.Chat.Services
         public async Task<string> SetBackgroundImageAsync(Guid friendshipId, string backgroundImage)
         {
             return (await UpdateAsync(friendshipId, x => x.BackgroundImage = backgroundImage)).BackgroundImage;
+        }
+
+        [HttpPost]
+        public async Task<List<Guid>> SetTagListAsync(Guid friendshipId, List<Guid> tagIdList)
+        {
+            var entity = await Repository.GetAsync(friendshipId);
+
+            var tagList = new List<FriendshipTag>();
+
+            foreach (var tagId in tagIdList)
+            {
+                var tag = await FriendshipTagRepository.GetAsync(tagId);
+
+                Assert.If(tag.OwnerId != entity.OwnerId, $"Cannot be used tagId:{tagId}");
+
+                tagList.Add(tag);
+            }
+
+            entity.SetTabList(tagList);
+
+            return tagIdList;
         }
     }
 }

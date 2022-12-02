@@ -4,9 +4,9 @@ using Volo.Abp.MultiTenancy;
 
 namespace IczpNet.Chat.BaseEntitys
 {
-    public abstract class BaseEntity : FullAuditedAggregateRoot, IMultiTenant//, ISorting
+    public abstract class BaseEntity : AuditedAggregateRoot//, IMultiTenant//, ISorting
     {
-        public virtual Guid? TenantId { get; set; }
+        //public virtual Guid? TenantId { get; set; }
     }
     public abstract class BaseEntity<TKey> : FullAuditedAggregateRoot<TKey>, IMultiTenant//, IIsActive, IIsStatic, IIsEnabled
     {

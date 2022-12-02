@@ -21,5 +21,18 @@ namespace IczpNet.Chat.SessionSections.Friendships
 
         public virtual IList<FriendshipTagUnit> FriendshipList { get; protected set; }
 
+        protected FriendshipTag() { }
+
+        public FriendshipTag(ChatObject owner, string name)
+        {
+            Owner = owner;
+            Name = name;
+            FriendshipList = new List<FriendshipTagUnit>();
+        }
+
+        public int GetFriendshipCount()
+        {
+            return FriendshipList.Count;
+        }
     }
 }

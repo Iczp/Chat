@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.SessionSections.Friendships.Dtos;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
 
@@ -22,4 +23,5 @@ public interface IFriendshipAppService :
     Task<bool> SetIsShowMemberNameAsync(Guid friendshipId, bool isShowMemberName);
     Task<bool> SetIsShowReadNameAsync(Guid friendshipId, bool isShowRead);
     Task<string> SetBackgroundImageAsync(Guid friendshipId, string backgroundImage);
+    Task<List<Guid>> SetTagListAsync(Guid friendshipId, List<Guid> tagIdList);
 }

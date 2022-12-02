@@ -17,6 +17,14 @@ namespace IczpNet.Chat.SessionSections.FriendshipTagUnits
         [ForeignKey(nameof(FriendshipTagId))]
         public virtual FriendshipTag FriendshipTag { get; protected set; }
 
+        protected FriendshipTagUnit() { }
+
+        public FriendshipTagUnit(Friendship friendship,  FriendshipTag friendshipTag)
+        {
+            Friendship = friendship;
+            FriendshipTag = friendshipTag;
+        }
+
         public override object[] GetKeys()
         {
             return new object[] { FriendshipId, FriendshipTagId };
