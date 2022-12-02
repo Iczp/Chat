@@ -11,6 +11,8 @@ public class FriendshipGetListInput : BaseGetListInput
 
     public virtual bool? IsCantacts { get; set; }
 
+    public virtual bool? IsPassive { get; set; }
+
     /// <summary>
     /// 消息免打扰，默认为 false
     /// </summary>

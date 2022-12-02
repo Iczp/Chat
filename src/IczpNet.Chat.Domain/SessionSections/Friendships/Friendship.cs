@@ -10,7 +10,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.SessionSections.Friendships
 {
-    public class Friendship : BaseEntity<Guid>, IIsActive, IChatOwner<Guid>
+    public class Friendship : BaseEntity<Guid>, IChatOwner<Guid>
     {
         public virtual Guid OwnerId { get; protected set; }
 
@@ -21,6 +21,11 @@ namespace IczpNet.Chat.SessionSections.Friendships
 
         [ForeignKey(nameof(FriendId))]
         public virtual ChatObject Friend { get; protected set; }
+
+        public virtual Guid? RequestId { get; set; }
+
+        [ForeignKey(nameof(RequestId))]
+        public virtual FriendshipRequest FriendshipRequest { get; protected set; }
 
         /// <summary>
         /// 备注名称
@@ -66,18 +71,18 @@ namespace IczpNet.Chat.SessionSections.Friendships
         public virtual string BackgroundImage { get; set; }
 
         /// <summary>
-        /// 是否有效的
+        /// 是否被动的（主动添加为0,被动添加为1）
         /// </summary>
-        public virtual bool IsActive { get; set; }
-
-        public virtual IList<FriendshipRequest> FriendshipRequestList { get; protected set; }
+        public virtual bool IsPassive { get; protected set; }
 
         protected Friendship() { }
 
-        public Friendship(ChatObject owner, ChatObject friend)
+        public Friendship(ChatObject owner, ChatObject friend, bool isPassive, Guid? friendshipRequestId)
         {
             Owner = owner;
             Friend = friend;
+            IsPassive = isPassive;
+            RequestId = friendshipRequestId;
         }
     }
 }

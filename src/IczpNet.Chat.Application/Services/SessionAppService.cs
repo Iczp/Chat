@@ -32,7 +32,7 @@ namespace IczpNet.Chat.Services
         {
             var query = (await FriendshipRepository.GetQueryableAsync())
                 .Where(x => x.OwnerId == ownerId)
-                .Where(x => x.IsActive)
+                //.Where(x => x.IsPassive)
                 .WhereIf(isCantacts.HasValue, x => x.IsCantacts)
                 .Select(x => x.Friend)
                 .Distinct()

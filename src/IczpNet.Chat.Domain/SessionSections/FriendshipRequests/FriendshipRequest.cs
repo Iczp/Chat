@@ -4,8 +4,10 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.SessionSections.Friendships;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 
 namespace IczpNet.Chat.SessionSections.FriendshipRequests
 {
@@ -34,10 +36,7 @@ namespace IczpNet.Chat.SessionSections.FriendshipRequests
         [StringLength(200)]
         public virtual DateTime? HandlTime { get; protected set; }
 
-        public virtual Guid? FriendshipId { get; protected set; }
-
-        [ForeignKey(nameof(FriendshipId))]
-        public virtual Friendship Friendship { get; protected set; }
+        public virtual IList<Friendship> FriendshipList { get; protected set; }
 
         protected FriendshipRequest() { }
 
@@ -56,22 +55,26 @@ namespace IczpNet.Chat.SessionSections.FriendshipRequests
             Message = message;
         }
 
-        private void HandlRequest(bool isAgreed, string handlMessage, Friendship friendship)
+        private void HandlRequest(bool isAgreed, string handlMessage)
         {
             IsAgreed = isAgreed;
             IsHandled = true;
             HandlMessage = handlMessage;
-            Friendship = friendship;
             HandlTime = DateTime.Now;
         }
 
         public virtual void DisagreeRequest(string handlMessage)
         {
-            HandlRequest(false, handlMessage, null);
+            HandlRequest(false, handlMessage);
         }
-        public virtual void AgreeRequest(Friendship friendship, string handlMessage)
+        public virtual void AgreeRequest(string handlMessage)
         {
-            HandlRequest(true, handlMessage, friendship);
+            HandlRequest(true, handlMessage);
+        }
+
+        public List<Guid> GetFriendshipIdList()
+        {
+            return FriendshipList?.Select(d => d.Id).ToList();
         }
     }
 }

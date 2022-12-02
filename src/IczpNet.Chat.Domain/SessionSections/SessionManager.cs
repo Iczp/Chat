@@ -1,6 +1,5 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.SessionSections.FriendshipRequests;
 using IczpNet.Chat.SessionSections.Friendships;
 using System;
@@ -31,16 +30,16 @@ namespace IczpNet.Chat.SessionSections
             return FriendshipRepository.AnyAsync(x => x.OwnerId == ownerId && x.FriendId == friendId);
         }
 
-        public async Task<Friendship> CreateFriendshipAsync(Guid ownerId, Guid friendId)
+        public async Task<Friendship> CreateFriendshipAsync(Guid ownerId, Guid friendId, bool IsPassive, Guid? friendshipRequestId)
         {
             var owner = await ChatObjectManager.GetAsync(ownerId);
 
             var friend = await ChatObjectManager.GetAsync(friendId);
 
-            return await CreateFriendshipAsync(owner, friend);
+            return await CreateFriendshipAsync(owner, friend, IsPassive, friendshipRequestId);
         }
 
-        public async Task<Friendship> CreateFriendshipAsync(ChatObject owner, ChatObject friend)
+        public async Task<Friendship> CreateFriendshipAsync(ChatObject owner, ChatObject friend, bool IsPassive, Guid? friendshipRequestId)
         {
             Assert.NotNull(owner, nameof(owner));
 
@@ -48,7 +47,7 @@ namespace IczpNet.Chat.SessionSections
 
             var entity = await FriendshipRepository.FindAsync(x => x.OwnerId == owner.Id && x.FriendId == friend.Id);
 
-            entity ??= await FriendshipRepository.InsertAsync(new Friendship(owner, friend), autoSave: true);
+            entity ??= await FriendshipRepository.InsertAsync(new Friendship(owner, friend, IsPassive, friendshipRequestId), autoSave: true);
 
             return entity;
         }
@@ -60,7 +59,10 @@ namespace IczpNet.Chat.SessionSections
 
         public Task DeleteFriendshipRequestAsync(Guid ownerId, Guid destinationId)
         {
-            return FriendshipRequestRepository.DeleteAsync(x => x.OwnerId == ownerId && x.DestinationId == destinationId && !x.IsHandled);
+            return FriendshipRequestRepository.DeleteAsync(x => 
+                (x.OwnerId == ownerId && x.DestinationId == destinationId && !x.IsHandled) ||
+                (x.OwnerId == destinationId && x.DestinationId == ownerId && !x.IsHandled)
+            );
         }
 
         public async Task<DateTime?> HandlRequestAsync(Guid friendshipRequestId, bool isAgreed, string handlMessage)
@@ -71,20 +73,20 @@ namespace IczpNet.Chat.SessionSections
 
             if (isAgreed)
             {
-                var friendship = await CreateFriendshipAsync(friendshipRequest.Owner, friendshipRequest.Destination);
-
-                friendshipRequest.AgreeRequest(friendship, handlMessage);
+                await CreateFriendshipAsync(friendshipRequest.Owner, friendshipRequest.Destination, IsPassive: true, friendshipRequest.Id);
+                await CreateFriendshipAsync(friendshipRequest.Destination, friendshipRequest.Owner, IsPassive: false, friendshipRequest.Id);
+                friendshipRequest.AgreeRequest(handlMessage);
             }
             else
             {
                 friendshipRequest.DisagreeRequest(handlMessage);
             }
+            await FriendshipRequestRepository.UpdateAsync(friendshipRequest, autoSave: true);
 
             await DeleteFriendshipRequestAsync(friendshipRequest.OwnerId, friendshipRequest.DestinationId.Value);
 
             return friendshipRequest.HandlTime;
         }
-
 
     }
 }

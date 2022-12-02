@@ -3,6 +3,7 @@ using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.FriendshipRequests.Dtos;
 using IczpNet.Chat.SessionSections.Friendships.Dtos;
 using IczpNet.Chat.SessionSections.FriendshipRequests;
+using System.Linq;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -23,7 +24,7 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
 
         //FriendshipRequest
         CreateMap<FriendshipRequest, FriendshipRequestDto>();
-        CreateMap<FriendshipRequest, FriendshipRequestDetailDto>();
+        CreateMap<FriendshipRequest, FriendshipRequestDetailDto>().ForMember(x => x.FriendshipIdList, o => o.MapFrom(x => x.GetFriendshipIdList()));
         CreateMap<FriendshipRequestCreateInput, FriendshipRequest>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
         CreateMap<FriendshipRequestUpdateInput, FriendshipRequest>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
     }
