@@ -2,7 +2,9 @@
 using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
+using IczpNet.Chat.SessionSections.FriendshipRequests;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -67,6 +69,8 @@ namespace IczpNet.Chat.SessionSections.Friendships
         /// 是否有效的
         /// </summary>
         public virtual bool IsActive { get; set; }
+
+        public virtual IList<FriendshipRequest> FriendshipRequestList { get; protected set; }
 
         protected Friendship() { }
 

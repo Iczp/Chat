@@ -53,11 +53,6 @@ namespace IczpNet.Chat.Services
             return new PagedResultDto<ChatObjectDto>(totalCount, items);
         }
 
-        public Task<DateTime> AddFriendAsync(Guid ownerId, Guid friendId)
-        {
-            return SessionManager.AddFriendAsync(ownerId, friendId);
-        }
-
         public Task<DateTime> RequestForFriendshipAsync(Guid ownerId, Guid friendId, string message)
         {
             throw new NotImplementedException();

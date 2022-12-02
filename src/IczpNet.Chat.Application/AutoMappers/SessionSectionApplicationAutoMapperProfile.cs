@@ -2,6 +2,7 @@
 using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.FriendshipRequests.Dtos;
 using IczpNet.Chat.SessionSections.Friendships.Dtos;
+using IczpNet.Chat.SessionSections.FriendshipRequests;
 
 namespace IczpNet.Chat.AutoMappers;
 

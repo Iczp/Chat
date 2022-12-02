@@ -1,13 +1,16 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseEntitys;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Localization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Clients;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Users;
 
 namespace IczpNet.Chat.BaseAppServices;
 
@@ -43,6 +46,7 @@ public abstract class CrudChatAppService<
     //where TCreateInput : IName
     //where TUpdateInput : IName
 {
+    protected ICurrentChatObject CurrentChatObject => LazyServiceProvider.LazyGetRequiredService<ICurrentChatObject>();
     protected CrudChatAppService(IRepository<TEntity, TKey> repository) : base(repository)
     {
         LocalizationResource = typeof(ChatResource);
@@ -52,6 +56,7 @@ public abstract class CrudChatAppService<
     [HttpGet]
     public override Task<TGetOutputDto> GetAsync(TKey id)
     {
+        //CurrentUser.PhoneNumber = id;
         return base.GetAsync(id);
     }
 

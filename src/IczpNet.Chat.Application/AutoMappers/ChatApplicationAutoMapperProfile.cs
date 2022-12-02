@@ -14,6 +14,7 @@ public class ChatApplicationAutoMapperProfile : Profile
 
         //ChatObject
         CreateMap<ChatObject, ChatObjectDto>();
+        CreateMap<ChatObject, ChatObjectSimpleDto>();
         CreateMap<ChatObject, ChatObjectDetailDto>()
             .ForMember(x => x.SenderMessageCount, o => o.MapFrom(x => x.SenderMessageList.Count))
             .ForMember(x => x.ReceiverMessageCount, o => o.MapFrom(x => x.ReceiverMessageList.Count))
@@ -31,9 +32,9 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<ChatObjectCreateInput, ChatObject>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
         CreateMap<ChatObjectUpdateInput, ChatObject>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
 
-        
 
-        
+
+
 
 
     }

@@ -29,7 +29,13 @@ namespace IczpNet.Chat.Services
         protected override async Task<IQueryable<Friendship>> CreateFilteredQueryAsync(FriendshipGetListInput input)
         {
             return (await base.CreateFilteredQueryAsync(input))
-
+                .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
+                .WhereIf(input.FriendId.HasValue, x => x.FriendId == input.FriendId)
+                .WhereIf(input.IsCantacts.HasValue, x => x.IsCantacts == input.IsCantacts)
+                .WhereIf(input.IsImmersed.HasValue, x => x.IsImmersed == input.IsImmersed)
+                .WhereIf(input.StartCreationTime.HasValue, x => x.CreationTime >= input.StartCreationTime)
+                .WhereIf(input.StartCreationTime.HasValue, x => x.CreationTime < input.EndCreationTime)
+                .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Rename.Contains(input.Keyword) || x.Remarks.Contains(input.Keyword))
                 ;
         }
 

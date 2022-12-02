@@ -42,7 +42,7 @@ public static class ChatEfCoreEntityExtensionMappings
 
             ObjectExtensionManager.Instance
                 //ChatUserType
-                .MapEfCoreProperty<IdentityUser, string>(IdentityUserExtensions.ChatUserTypePropertyName, (entityBuilder, propertyBuilder) =>
+                .MapEfCoreProperty<IdentityUser, string>(IdentityUserExtensions.ChatObjectTypePropertyName, (entityBuilder, propertyBuilder) =>
                 {
                     propertyBuilder.HasMaxLength(32);
                 })

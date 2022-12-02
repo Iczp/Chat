@@ -1,5 +1,6 @@
 ﻿using IczpNet.AbpTrees;
 using IczpNet.AbpTrees.Dtos;
+using IczpNet.Chat.ChatObjects;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 
@@ -35,6 +36,7 @@ namespace IczpNet.Chat.BaseAppServices
         where TUpdateInput : ITreeInput<TKey>
         where TTreeInfo : ITreeInfo<TKey>
     {
+        protected ICurrentChatObject CurrentChatObject => LazyServiceProvider.LazyGetRequiredService<ICurrentChatObject>();
         protected CrudTreeChatAppService(IRepository<TEntity, TKey> repository) : base(repository)
         {
         }

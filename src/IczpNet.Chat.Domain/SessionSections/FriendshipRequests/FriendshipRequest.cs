@@ -2,11 +2,12 @@
 using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
+using IczpNet.Chat.SessionSections.Friendships;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace IczpNet.Chat.SessionSections.Friendships
+namespace IczpNet.Chat.SessionSections.FriendshipRequests
 {
     public class FriendshipRequest : BaseEntity<Guid>, IChatOwner<Guid>
     {
@@ -23,6 +24,8 @@ namespace IczpNet.Chat.SessionSections.Friendships
         [StringLength(200)]
         public virtual string Message { get; protected set; }
 
+        public virtual bool IsHandled { get; set; }
+
         public virtual bool? IsAgreed { get; protected set; }
 
         [StringLength(200)]
@@ -31,6 +34,11 @@ namespace IczpNet.Chat.SessionSections.Friendships
         [StringLength(200)]
         public virtual DateTime? HandlTime { get; protected set; }
 
+        public virtual Guid? FriendshipId { get; protected set; }
+
+        [ForeignKey(nameof(FriendshipId))]
+        public virtual Friendship Friendship { get; protected set; }
+
         protected FriendshipRequest() { }
 
         public FriendshipRequest(ChatObject owner, ChatObject friend, string message)
@@ -38,13 +46,32 @@ namespace IczpNet.Chat.SessionSections.Friendships
             Owner = owner;
             Destination = friend;
             Message = message;
+            IsHandled = false;
         }
 
-        public virtual void HandlRequest(bool isAgreed, string handlMessage)
+        public FriendshipRequest(Guid ownerId, Guid friendId, string message)
+        {
+            OwnerId = ownerId;
+            DestinationId = friendId;
+            Message = message;
+        }
+
+        private void HandlRequest(bool isAgreed, string handlMessage, Friendship friendship)
         {
             IsAgreed = isAgreed;
+            IsHandled = true;
             HandlMessage = handlMessage;
+            Friendship = friendship;
             HandlTime = DateTime.Now;
+        }
+
+        public virtual void DisagreeRequest(string handlMessage)
+        {
+            HandlRequest(false, handlMessage, null);
+        }
+        public virtual void AgreeRequest(Friendship friendship, string handlMessage)
+        {
+            HandlRequest(true, handlMessage, friendship);
         }
     }
 }

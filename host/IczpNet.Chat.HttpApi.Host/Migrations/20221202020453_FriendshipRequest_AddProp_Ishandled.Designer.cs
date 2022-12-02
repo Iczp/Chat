@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,10 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221202020453_FriendshipRequest_AddProp_Ishandled")]
+    partial class FriendshipRequest_AddProp_Ishandled
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2344,9 +2346,6 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("ExtraProperties");
 
-                    b.Property<Guid?>("FriendshipId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("HandlMessage")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -2364,7 +2363,7 @@ namespace IczpNet.Chat.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("IsDeleted");
 
-                    b.Property<bool>("IsHandled")
+                    b.Property<bool>("Ishandled")
                         .HasColumnType("bit");
 
                     b.Property<DateTime?>("LastModificationTime")
@@ -2389,8 +2388,6 @@ namespace IczpNet.Chat.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DestinationId");
-
-                    b.HasIndex("FriendshipId");
 
                     b.HasIndex("OwnerId");
 
@@ -3272,10 +3269,6 @@ namespace IczpNet.Chat.Migrations
                         .WithMany()
                         .HasForeignKey("DestinationId");
 
-                    b.HasOne("IczpNet.Chat.SessionSections.Friendships.Friendship", "Friendship")
-                        .WithMany("FriendshipRequestList")
-                        .HasForeignKey("FriendshipId");
-
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
                         .WithMany()
                         .HasForeignKey("OwnerId")
@@ -3283,8 +3276,6 @@ namespace IczpNet.Chat.Migrations
                         .IsRequired();
 
                     b.Navigation("Destination");
-
-                    b.Navigation("Friendship");
 
                     b.Navigation("Owner");
                 });
@@ -3601,11 +3592,6 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("GrantList");
 
                     b.Navigation("MemberRoleList");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.SessionSections.Friendships.Friendship", b =>
-                {
-                    b.Navigation("FriendshipRequestList");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.SquareSections.SquareCategorys.SquareCategory", b =>

@@ -9,8 +9,6 @@ namespace IczpNet.Chat.SessionSections
     {
         Task<PagedResultDto<ChatObjectDto>> GetFriendsAsync(Guid ownerId, bool? isCantacts, int maxResultCount = 10, int skipCount = 0, string sorting = null);
 
-        Task<DateTime> AddFriendAsync(Guid ownerId, Guid friendId);
-
         Task<DateTime> RequestForFriendshipAsync(Guid ownerId, Guid friendId, string message);
     }
 }
