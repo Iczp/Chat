@@ -34,25 +34,29 @@ Update-Database
 
 
 
-## 数据结构
+## Internal structure 数据结构
 
 ### Message 消息表
 
 ### ChatObject 聊天对象(参与会话)
 
-#### Persion 人
+#### Persion 人(用户、员工)
+
+#### Customer 人（客户）
 
 #### Room 群
 
 #### Official 公众号
 
-#### OfficialGroup 公众号分组（人群定义）
+#### OfficialGroup 公众号分组（人群定义、临时分组等）
 
 #### Robot 机器人（智能对话）
 
 #### Shopkeeper 电商掌柜(主账号)
 
 #### ShopWaiter 店小二(子账号)
+
+#### Square 广场
 
 
 
