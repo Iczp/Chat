@@ -13,9 +13,16 @@ namespace IczpNet.Chat.RoomSections.RoomRoles
     public class RoomRole : BaseEntity<Guid>, ISorting
     {
         /// <summary>
+        /// 群Id
+        /// </summary>
+        //[Required]
+        public virtual Guid? RoomId { get; protected set; }
+
+        /// <summary>
         /// 角色名称
         /// </summary>
         [StringLength(40)]
+        [Required]
         public virtual string Name { get; protected set; }
 
         /// <summary>
@@ -26,12 +33,6 @@ namespace IczpNet.Chat.RoomSections.RoomRoles
 
         [StringLength(500)]
         public virtual string Description { get; set; }
-
-        /// <summary>
-        /// 群Id
-        /// </summary>
-        //[Required]
-        public virtual Guid? RoomId { get; protected set; }
 
         /// <summary>
         /// 排序（越大越前面） DESC
@@ -63,22 +64,22 @@ namespace IczpNet.Chat.RoomSections.RoomRoles
 
         protected RoomRole() { }
 
-        public RoomRole(string name, string code, string description, Guid? roomId, double sorting, Room room, IList<RoomRoleRoomMember> memberList, IList<Room> defaultRoomList, IList<RoomPermissionGrant> grantList)
+        public RoomRole(Guid id, Guid roomId, string name, string code, string description) : base(id)
         {
-            Name = name;
+            SetName(name);
             Code = code;
             Description = description;
             RoomId = roomId;
-            Sorting = sorting;
-            Room = room;
-            MemberList = memberList;
-            DefaultRoomList = defaultRoomList;
-            GrantList = grantList;
         }
 
         public int GetMemberCount()
         {
             return MemberList.Count;
+        }
+
+        public virtual void SetName(string name)
+        {
+            Name = name;
         }
     }
 }
