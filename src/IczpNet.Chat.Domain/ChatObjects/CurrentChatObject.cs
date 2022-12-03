@@ -32,7 +32,7 @@ namespace IczpNet.Chat.ChatObjects
 
         public virtual string Name => ChatObject.Name;
 
-        public virtual Guid? OwnerUserId => ChatObject.OwnerUserId;
+        public virtual Guid? OwnerUserId => ChatObject.AppUserId;
 
         public virtual ChatObjectTypeEnum? ObjectType => ChatObject.ObjectType;
 

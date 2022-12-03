@@ -68,7 +68,7 @@ public static class ChatDbContextModelCreatingExtensions
 
         builder.Entity<RoomRoleRoomMember>(b =>
         {
-            b.HasKey(x => new { x.RoleId, x.RoomMemberId });
+            b.HasKey(x => new { x.RoomRoleId, x.RoomMemberId });
         });
 
         builder.Entity<Message>(b =>

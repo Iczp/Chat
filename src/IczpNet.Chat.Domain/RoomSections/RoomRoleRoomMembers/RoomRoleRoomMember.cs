@@ -8,14 +8,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace IczpNet.Chat.RoomSections.RoomRoleRoomMembers
 {
 
-    [HasKey(nameof(RoomMemberId), nameof(RoleId))]
+    [HasKey(nameof(RoomMemberId), nameof(RoomRoleId))]
     public class RoomRoleRoomMember : BaseEntity
     {
         public virtual Guid RoomMemberId { get; set; }
 
-        public virtual Guid RoleId { get; set; }
+        public virtual Guid RoomRoleId { get; set; }
 
-        [ForeignKey(nameof(RoleId))]
+        [ForeignKey(nameof(RoomRoleId))]
         public virtual RoomRole RoomRole { get; set; }
 
         [ForeignKey(nameof(RoomMemberId))]
@@ -23,7 +23,7 @@ namespace IczpNet.Chat.RoomSections.RoomRoleRoomMembers
 
         public override object[] GetKeys()
         {
-            return new object[] { RoomMemberId, RoleId };
+            return new object[] { RoomMemberId, RoomRoleId };
         }
 
         protected RoomRoleRoomMember()
@@ -31,10 +31,10 @@ namespace IczpNet.Chat.RoomSections.RoomRoleRoomMembers
 
         }
 
-        public RoomRoleRoomMember(Guid roomMemberId, Guid roleId)
+        public RoomRoleRoomMember(Guid roomMemberId, Guid roomRoleId)
         {
             RoomMemberId = roomMemberId;
-            RoleId = roleId;
+            RoomRoleId = roomRoleId;
         }
     }
 }

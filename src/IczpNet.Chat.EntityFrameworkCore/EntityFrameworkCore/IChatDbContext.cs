@@ -4,6 +4,7 @@ using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.OfficialSections.OfficialExcludedMembers;
 using IczpNet.Chat.OfficialSections.OfficialGroupMembers;
 using IczpNet.Chat.OfficialSections.OfficialGroups;
+using IczpNet.Chat.OfficialSections.OfficialMembers;
 using IczpNet.Chat.OfficialSections.Officials;
 using IczpNet.Chat.RobotSections.Robots;
 using IczpNet.Chat.RoomSections.RoomForbiddenMembers;
@@ -62,6 +63,7 @@ public interface IChatDbContext : IEfCoreDbContext
 
 
     DbSet<Official> Official { get; }
+    DbSet<OfficialMember> OfficialMember { get; }
     DbSet<OfficialGroupMember> OfficialGroupMember { get; }
     DbSet<OfficialGroup> OfficialGroup { get; }
     DbSet<OfficalExcludedMember> OfficalExcludedMember { get; }

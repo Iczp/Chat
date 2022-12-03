@@ -18,7 +18,7 @@ namespace IczpNet.Chat.ChatObjects
 
         public async Task<List<ChatObject>> GetListByUserId(Guid userId)
         {
-            return await ChatObjectReadOnlyRepository.GetListAsync(x => x.OwnerUserId == userId);
+            return await ChatObjectReadOnlyRepository.GetListAsync(x => x.AppUserId == userId);
         }
 
         public Task<ChatObject> GetAsync(Guid chatObjectId)

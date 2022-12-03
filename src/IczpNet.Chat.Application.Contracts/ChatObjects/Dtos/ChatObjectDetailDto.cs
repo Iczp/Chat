@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace IczpNet.Chat.ChatObjects.Dtos
 {
     public class ChatObjectDetailDto : ChatObjectDto
     {
-        public virtual Guid? OwnerUserId { get; set; }
+        public virtual Guid? AppUserId { get; set; }
 
         public virtual string Description { get; set; }
 

@@ -16,4 +16,6 @@ public class OfficialDto : BaseDto<Guid>
 
     public virtual int MemberCount { get; set; }
 
+    public virtual int GroupCount { get; set; }
+
 }

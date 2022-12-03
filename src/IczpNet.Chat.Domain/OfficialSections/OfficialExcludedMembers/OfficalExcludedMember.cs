@@ -25,9 +25,9 @@ namespace IczpNet.Chat.OfficialSections.OfficialExcludedMembers
 
         }
 
-        protected OfficalExcludedMember(Guid id, Guid chatObjectId) : base(id)
+        protected OfficalExcludedMember(Guid id, Guid ownerId) : base(id)
         {
-            OwnerId = chatObjectId;
+            OwnerId = ownerId;
         }
     }
 }

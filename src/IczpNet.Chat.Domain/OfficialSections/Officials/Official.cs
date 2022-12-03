@@ -34,5 +34,10 @@ namespace IczpNet.Chat.OfficialSections.Officials
         {
             return MemberList.Count;
         }
+
+        public int GetGroupCount()
+        {
+            return OfficialGroupList.Count;
+        }
     }
 }

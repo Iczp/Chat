@@ -62,7 +62,7 @@ namespace IczpNet.Chat.Services
         {
             await CheckGetListPolicyAsync();
 
-            var query = (await Repository.GetQueryableAsync()).Where(x => x.OwnerUserId == userId);
+            var query = (await Repository.GetQueryableAsync()).Where(x => x.AppUserId == userId);
 
             return await GetPagedResultAsync(query, maxResultCount, skipCount, sorting);
         }

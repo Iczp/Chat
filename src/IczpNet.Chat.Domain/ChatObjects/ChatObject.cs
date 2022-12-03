@@ -30,7 +30,14 @@ namespace IczpNet.Chat.ChatObjects
         [StringLength(50)]
         public virtual string Code { get; set; }
 
-        public virtual Guid? OwnerUserId { get; protected set; }
+        /// <summary>
+        /// 头像
+        /// </summary>
+        [StringLength(300)]
+        [MaxLength(300)]
+        public virtual string Portrait { get; protected set; }
+
+        public virtual Guid? AppUserId { get; protected set; }
 
         public virtual ChatObjectTypeEnum? ObjectType { get; protected set; }
 
@@ -69,6 +76,9 @@ namespace IczpNet.Chat.ChatObjects
 
         [InverseProperty(nameof(RoomForbiddenMember.Owner))]
         public virtual IList<RoomForbiddenMember> InRoomForbiddenMemberList { get; set; }
+
+        [InverseProperty(nameof(RoomMember.Inviter))]
+        public virtual IList<RoomMember> InInviterList { get; set; }
 
         #endregion
 

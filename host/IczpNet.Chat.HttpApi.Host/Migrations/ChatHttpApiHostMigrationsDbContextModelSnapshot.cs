@@ -120,6 +120,9 @@ namespace IczpNet.Chat.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("AppUserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<long>("AutoId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
@@ -183,8 +186,9 @@ namespace IczpNet.Chat.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<Guid?>("OwnerUserId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("Portrait")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uniqueidentifier")
@@ -1848,10 +1852,6 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("DeletionTime");
 
-                    b.Property<string>("DepartmentId")
-                        .HasMaxLength(36)
-                        .HasColumnType("nvarchar(36)");
-
                     b.Property<string>("Description")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -1860,17 +1860,13 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("ExtraProperties");
 
-                    b.Property<string>("Grade")
-                        .HasMaxLength(36)
-                        .HasColumnType("nvarchar(36)");
-
                     b.Property<DateTime>("HistoryFirstTime")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("InputForbiddenExpireTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("InviterUserId")
+                    b.Property<Guid?>("InviterId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("IsDeleted")
@@ -1899,13 +1895,6 @@ namespace IczpNet.Chat.Migrations
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("OwnerUserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("PositionId")
-                        .HasMaxLength(36)
-                        .HasColumnType("nvarchar(36)");
-
                     b.Property<Guid>("RoomId")
                         .HasColumnType("uniqueidentifier");
 
@@ -1919,6 +1908,8 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnName("TenantId");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("InviterId");
 
                     b.HasIndex("JoinWay");
 
@@ -2050,7 +2041,7 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.RoomSections.RoomRoleRoomMembers.RoomRoleRoomMember", b =>
                 {
-                    b.Property<Guid>("RoleId")
+                    b.Property<Guid>("RoomRoleId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("RoomMemberId")
@@ -2082,7 +2073,7 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("LastModifierId");
 
-                    b.HasKey("RoleId", "RoomMemberId");
+                    b.HasKey("RoomRoleId", "RoomMemberId");
 
                     b.HasIndex("RoomMemberId");
 
@@ -2121,6 +2112,10 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("DeletionTime");
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<string>("ExtraProperties")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("ExtraProperties");
@@ -2146,8 +2141,8 @@ namespace IczpNet.Chat.Migrations
                     b.Property<Guid?>("RoomId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<long>("Sorting")
-                        .HasColumnType("bigint");
+                    b.Property<double>("Sorting")
+                        .HasColumnType("float");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uniqueidentifier")
@@ -2906,10 +2901,6 @@ namespace IczpNet.Chat.Migrations
                     b.Property<Guid?>("DefaultRoleId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("FullName")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
                     b.Property<string>("InvitationMethod")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -2927,25 +2918,13 @@ namespace IczpNet.Chat.Migrations
                     b.Property<bool>("IsForbiddenInput")
                         .HasColumnType("bit");
 
-                    b.Property<string>("ManagerUserIdList")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
                     b.Property<string>("MemberNameDisplayMode")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<string>("OriginalName")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
-                    b.Property<Guid?>("OwnerChatObjectId")
+                    b.Property<Guid?>("OwnerId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Portrait")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
 
                     b.Property<string>("PortraitDisplayMode")
                         .IsRequired()
@@ -2963,7 +2942,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("MemberNameDisplayMode");
 
-                    b.HasIndex("OwnerChatObjectId");
+                    b.HasIndex("OwnerId");
 
                     b.HasIndex("PortraitDisplayMode");
 
@@ -3227,6 +3206,10 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.RoomSections.RoomMembers.RoomMember", b =>
                 {
+                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Inviter")
+                        .WithMany("InInviterList")
+                        .HasForeignKey("InviterId");
+
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
                         .WithMany("InRoomMemberList")
                         .HasForeignKey("OwnerId")
@@ -3238,6 +3221,8 @@ namespace IczpNet.Chat.Migrations
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Inviter");
 
                     b.Navigation("Owner");
 
@@ -3274,15 +3259,15 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.RoomSections.RoomRoleRoomMembers.RoomRoleRoomMember", b =>
                 {
-                    b.HasOne("IczpNet.Chat.RoomSections.RoomRoles.RoomRole", "RoomRole")
+                    b.HasOne("IczpNet.Chat.RoomSections.RoomMembers.RoomMember", "RoomMember")
                         .WithMany("MemberRoleList")
-                        .HasForeignKey("RoleId")
+                        .HasForeignKey("RoomMemberId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("IczpNet.Chat.RoomSections.RoomMembers.RoomMember", "RoomMember")
-                        .WithMany("RoleList")
-                        .HasForeignKey("RoomMemberId")
+                    b.HasOne("IczpNet.Chat.RoomSections.RoomRoles.RoomRole", "RoomRole")
+                        .WithMany("MemberList")
+                        .HasForeignKey("RoomRoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -3586,13 +3571,13 @@ namespace IczpNet.Chat.Migrations
                         .OnDelete(DeleteBehavior.ClientCascade)
                         .IsRequired();
 
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "OwnerChatObject")
+                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
                         .WithMany()
-                        .HasForeignKey("OwnerChatObjectId");
+                        .HasForeignKey("OwnerId");
 
                     b.Navigation("DefaultRole");
 
-                    b.Navigation("OwnerChatObject");
+                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.SquareSections.Squares.Square", b =>
@@ -3615,6 +3600,8 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("FriendList");
 
                     b.Navigation("InFriendList");
+
+                    b.Navigation("InInviterList");
 
                     b.Navigation("InOfficalExcludedMemberList");
 
@@ -3663,7 +3650,7 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.RoomSections.RoomMembers.RoomMember", b =>
                 {
-                    b.Navigation("RoleList");
+                    b.Navigation("MemberRoleList");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.RoomSections.RoomPermissionDefines.RoomPermissionDefine", b =>
@@ -3679,7 +3666,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.Navigation("GrantList");
 
-                    b.Navigation("MemberRoleList");
+                    b.Navigation("MemberList");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.SessionSections.FriendshipRequests.FriendshipRequest", b =>
