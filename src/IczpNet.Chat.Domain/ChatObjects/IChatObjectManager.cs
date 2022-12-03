@@ -1,4 +1,5 @@
-﻿using System;
+﻿using IczpNet.Chat.Enums;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -9,5 +10,7 @@ namespace IczpNet.Chat.ChatObjects
         Task<List<ChatObject>> GetListByUserId(Guid userId);
 
         Task<ChatObject> GetAsync(Guid chatObjectId);
+
+        Task<bool> IsAllowJoinRoomMemnerAsync(ChatObjectTypeEnum? objectType);
     }
 }

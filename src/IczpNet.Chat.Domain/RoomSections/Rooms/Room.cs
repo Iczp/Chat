@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
 
 namespace IczpNet.Chat.RoomSections.Rooms;
 
@@ -66,7 +65,7 @@ public class Room : ChatObject, IChatOwner<Guid?>
     /// <summary>
     /// 全体禁言（除群主及管理员）
     /// </summary>
-    public virtual bool IsForbiddenInput { get; set; } = false;
+    public virtual bool IsForbiddenAll { get; set; } = false;
 
     /// <summary>
     /// 是否允许自动加入群（当不是群成员的时） Allow to automatically join the room(when not a member of the room)
@@ -106,9 +105,14 @@ public class Room : ChatObject, IChatOwner<Guid?>
         ObjectType = ChatObjectTypeValue;
     }
 
-    protected Room(Guid id) : base(id, ChatObjectTypeValue)
+    public Room(Guid id, string name, string code, string description, IList<RoomMember> memberList, Guid? ownerId) : base(id, ChatObjectTypeValue)
     {
-
+        Name = name;
+        Code = code;
+        Description = description;
+        OwnerId = ownerId;
+        Type = RoomTypeEnum.Normal;
+        RoomMemberList = memberList;
     }
 
     public int GetMemberCount()

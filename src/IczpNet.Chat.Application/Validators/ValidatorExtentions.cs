@@ -20,6 +20,17 @@ namespace IczpNet.Chat.Validators
             .WithMessage("{PropertyName} must contain fewer than {MaxElements} items. The list contains {TotalElements} element");
         }
 
-        
+        public static IRuleBuilderOptions<T, IList<TElement>> MinCount<T, TElement>(this IRuleBuilder<T, IList<TElement>> ruleBuilder, int minCount)
+        {
+
+            return ruleBuilder.Must((rootObject, list, context) =>
+            {
+                context.MessageFormatter
+                  .AppendArgument("MaxElements", minCount)
+                  .AppendArgument("TotalElements", list.Count);
+                return list.Count > minCount;
+            })
+            .WithMessage("{PropertyName} must contain fewer than {MaxElements} items. The list contains {TotalElements} element");
+        }
     }
 }

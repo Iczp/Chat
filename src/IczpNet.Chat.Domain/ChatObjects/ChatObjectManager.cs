@@ -1,5 +1,7 @@
-﻿using System;
+﻿using IczpNet.Chat.Enums;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
@@ -24,6 +26,11 @@ namespace IczpNet.Chat.ChatObjects
         public Task<ChatObject> GetAsync(Guid chatObjectId)
         {
             return ChatObjectReadOnlyRepository.GetAsync(chatObjectId);
+        }
+
+        public Task<bool> IsAllowJoinRoomMemnerAsync(ChatObjectTypeEnum? objectType)
+        {
+            return Task.FromResult(ChatConsts.AllowJoinRoomMemberObjectTypes.Any(x => x.Equals(objectType)));
         }
     }
 }

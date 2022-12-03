@@ -1,6 +1,30 @@
-﻿namespace IczpNet.Chat.RoomSections.Rooms.Dtos;
+﻿using IczpNet.Chat.BaseDtos;
+using IczpNet.Chat.Enums;
+using System;
+using System.Collections.Generic;
 
-public class RoomCreateInput : RoomUpdateInput
+namespace IczpNet.Chat.RoomSections.Rooms.Dtos;
+
+public class RoomCreateInput : BaseInput
 {
+    public virtual string Name { get; set; }
 
+    public virtual string Code { get; set; }
+
+    /// <summary>
+    /// 群拥有者 OwnerUserId (群主)
+    /// </summary>
+    public virtual Guid? OwnerId { get;  set; }
+
+    /// <summary>
+    /// 群类型（自由群、职位群）
+    /// </summary>
+    public virtual RoomTypeEnum Type { get; set; }
+
+    public virtual string Description { get; set; }
+
+    /// <summary>
+    /// ChatObjectId
+    /// </summary>
+    public virtual List<Guid> MemberIdList { get; set; }
 }

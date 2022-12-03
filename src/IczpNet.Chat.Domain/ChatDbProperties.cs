@@ -1,6 +1,10 @@
 ﻿namespace IczpNet.Chat;
 
-public static class ChatClaims
+public static class ChatDbProperties
 {
-    public const string Id = "ChatObjectId";
+    public static string DbTablePrefix { get; set; } = "Chat";
+
+    public static string DbSchema { get; set; } = null;
+
+    public const string ConnectionStringName = "Chat";
 }

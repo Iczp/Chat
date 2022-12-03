@@ -33,8 +33,6 @@ namespace IczpNet.Chat.RoomSections.RoomForbiddenMembers
         [StringLength(500)]
         public virtual string Description { get; set; }
 
-        
-
         /// <summary>
         /// 激活状态
         /// </summary>

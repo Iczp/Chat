@@ -10,6 +10,11 @@ namespace IczpNet.Chat.ChatObjects
         {
             var chatObjectIdValue = currentUser.FindClaim(ChatClaims.Id);
 
+            if (chatObjectIdValue == null)
+            {
+                return null;
+            }
+
             if (Guid.TryParse(chatObjectIdValue.Value, out Guid chatObjectId))
             {
                 return chatObjectId;

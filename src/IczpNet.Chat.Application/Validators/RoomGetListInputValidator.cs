@@ -14,15 +14,15 @@ namespace IczpNet.Chat.Validators
             RuleFor(x => x.Keyword).Length(3, 10).WithMessage("3-10");
         }
 
-        public Task AddErrorsAsync(ObjectValidationContext context)
-        {
-            RuleFor(x => x.Keyword).Length(3, 10);
-            //Get the validating object
-            var obj = context.ValidatingObject;
+        //public Task AddErrorsAsync(ObjectValidationContext context)
+        //{
+        //    RuleFor(x => x.Keyword).Length(3, 10);
+        //    //Get the validating object
+        //    var obj = context.ValidatingObject;
 
-            context.Errors.Add(new ValidationResult("55555555555"));
+        //    context.Errors.Add(new ValidationResult("55555555555"));
 
-            return Task.CompletedTask;
-        }
+        //    return Task.CompletedTask;
+        //}
     }
 }

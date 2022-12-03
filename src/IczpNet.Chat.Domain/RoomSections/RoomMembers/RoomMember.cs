@@ -23,7 +23,7 @@ namespace IczpNet.Chat.RoomSections.RoomMembers
         /// <summary>
         /// 成员Id
         /// </summary>
-        public virtual Guid OwnerId { get; set; }
+        public virtual Guid OwnerId { get; protected set; }
 
         /// <summary>
         /// 群角色（群主，管理员，成员）
@@ -74,17 +74,21 @@ namespace IczpNet.Chat.RoomSections.RoomMembers
         [ForeignKey(nameof(InviterId))]
         public virtual ChatObject Inviter { get; set; }
 
-        ///// <summary>
-        ///// 成员角色
-        ///// </summary>
-        //public virtual IList<RoomRole> RoomRoleList { get; set; }
-
         /// <summary>
         /// 成员群色
         /// </summary>
         [InverseProperty(nameof(RoomRoleRoomMember.RoomMember))]
         public virtual IList<RoomRoleRoomMember> MemberRoleList { get; set; } = new List<RoomRoleRoomMember>();
 
+
+        protected RoomMember() { }
+
+        public RoomMember(Guid id, Guid roomId, Guid ownerId, Guid? inviterId) : base(id)
+        {
+            RoomId = roomId;
+            OwnerId = ownerId;
+            InviterId = inviterId;
+        }
         public virtual List<RoomRole> GetRoleList()
         {
             return MemberRoleList.Select(x => x.RoomRole).ToList();
