@@ -70,6 +70,10 @@ namespace IczpNet.Chat.Services
 
         protected virtual async Task CheckDeleteAsync(RoomRole entity)
         {
+            var memberCount = entity.MemberList.Count;
+
+            Assert.If(memberCount != 0, $"role's member count: memberCount");
+
             await CheckDeleteIsStaticAsync(entity.Id);
         }
     }
