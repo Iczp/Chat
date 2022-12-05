@@ -13,6 +13,10 @@ public class RoomGetListInput : BaseGetListInput
 
     public virtual RoomTypeEnum? Type { get; set; }
 
+    public virtual int? MinCount { get; set; }
+
+    public virtual int? MaxCount { get; set; }
+
     /// <summary>
     /// 是否全体禁言
     /// </summary>

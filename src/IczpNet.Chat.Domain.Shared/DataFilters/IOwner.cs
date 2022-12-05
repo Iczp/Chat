@@ -8,9 +8,4 @@
     {
         TKey OwnerId { get; }
     }
-
-    public interface IOwnerObject<T>
-    {
-        T Owner { get; }
-    }
 }

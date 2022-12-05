@@ -26,9 +26,12 @@ namespace IczpNet.Chat.Services
         protected override async Task<IQueryable<RoomMember>> CreateFilteredQueryAsync(RoomMemberGetListInput input)
         {
             return (await base.CreateFilteredQueryAsync(input))
-                .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
                 .WhereIf(input.RoomId.HasValue, x => x.RoomId == input.RoomId)
+                .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
+                .WhereIf(input.InviterId.HasValue, x => x.InviterId == input.InviterId)
+                .WhereIf(input.JoinWay.HasValue, x => x.JoinWay == input.JoinWay)
                 .WhereIf(input.RoomRoleId.HasValue, x => x.MemberRoleList.Any(d => d.RoomRoleId == input.RoomRoleId))
+                .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.MemberName.Contains(input.Keyword))
                 ;
         }
     }
