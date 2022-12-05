@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using IczpNet.Chat.OfficialSections.OfficialGroupMembers;
 using IczpNet.Chat.OfficialSections.OfficialGroupMembers.Dtos;
+using IczpNet.Chat.OfficialSections.OfficialGroups;
+using IczpNet.Chat.OfficialSections.OfficialGroups.Dtos;
 using IczpNet.Chat.OfficialSections.OfficialMembers;
 using IczpNet.Chat.OfficialSections.OfficialMembers.Dtos;
 using IczpNet.Chat.OfficialSections.Officials;
@@ -27,6 +29,16 @@ public class OfficialSectionApplicationAutoMapperProfile : Profile
             ;
         CreateMap<OfficialCreateInput, Official>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
         CreateMap<OfficialUpdateInput, Official>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
+
+        //OfficialGroup
+        CreateMap<OfficialGroup, OfficialGroupDto>()
+            .ForMember(x => x.GroupMemberCount, o => o.MapFrom(x => x.GetGroupMemberCount()))
+            ;
+        CreateMap<OfficialGroup, OfficialGroupDetailDto>()
+            .ForMember(x => x.GroupMemberCount, o => o.MapFrom(x => x.GetGroupMemberCount()))
+            ;
+        //CreateMap<OfficialGroupCreateInput, OfficialGroup>(MemberList.None).IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<OfficialGroupUpdateInput, OfficialGroup>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
 
         //OfficialMember
         CreateMap<OfficialMember, OfficialMemberDto>();

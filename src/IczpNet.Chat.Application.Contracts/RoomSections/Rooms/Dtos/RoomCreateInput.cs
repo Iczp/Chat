@@ -26,5 +26,5 @@ public class RoomCreateInput : BaseInput
     /// <summary>
     /// ChatObjectId
     /// </summary>
-    public virtual List<Guid> MemberIdList { get; set; }
+    public virtual List<Guid> ChatObjectIdList { get; set; }
 }

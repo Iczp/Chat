@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.AbpCommons;
+using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.OfficialSections.Officials;
 using IczpNet.Chat.OfficialSections.Officials.Dtos;
 using System;
@@ -26,8 +27,26 @@ namespace IczpNet.Chat.Services
         protected override async Task<IQueryable<Official>> CreateFilteredQueryAsync(OfficialGetListInput input)
         {
             return (await base.CreateFilteredQueryAsync(input))
+                .WhereIf(!input.Keyword.IsNullOrEmpty(), x => x.Name.Contains(input.Keyword) || x.Code.Contains(input.Keyword));
+            ;
+        }
 
-                ;
+        protected override async Task CheckCreateAsync(OfficialCreateInput input)
+        {
+            Assert.If(await Repository.AnyAsync(x => x.Name.Equals(input.Name)), $"Already exists [{typeof(Official)}] name:{input.Name}");
+            await base.CheckCreateAsync(input);
+        }
+
+        protected override async Task CheckUpdateAsync(Guid id, Official entity, OfficialUpdateInput input)
+        {
+            Assert.If(await Repository.AnyAsync(x => x.Id.Equals(id) && x.Name.Equals(input.Name)), $"Already exists [{typeof(Official)}] name:{input.Name}");
+            await base.CheckUpdateAsync(id, entity, input);
+        }
+
+        protected override Task MapToEntityAsync(OfficialUpdateInput updateInput, Official entity)
+        {
+            entity.SetName(updateInput.Name);
+            return base.MapToEntityAsync(updateInput, entity);
         }
     }
 }

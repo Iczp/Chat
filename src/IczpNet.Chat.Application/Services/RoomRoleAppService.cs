@@ -30,6 +30,7 @@ namespace IczpNet.Chat.Services
                 //.WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
                 .WhereIf(!input.IsNullRoomId.HasValue && input.RoomId.HasValue, x => x.RoomId == input.RoomId)
                 .WhereIf(input.IsNullRoomId.HasValue, x => x.RoomId == null)
+                .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(input.Keyword) || x.Description.Contains(input.Keyword))
                 ;
         }
 

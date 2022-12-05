@@ -26,6 +26,7 @@ namespace IczpNet.Chat.Services
         protected override async Task<IQueryable<Robot>> CreateFilteredQueryAsync(RobotGetListInput input)
         {
             return (await base.CreateFilteredQueryAsync(input))
+                .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(input.Keyword) || x.Description.Contains(input.Keyword))
 
                 ;
         }

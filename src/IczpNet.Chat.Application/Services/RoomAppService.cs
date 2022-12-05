@@ -46,6 +46,7 @@ namespace IczpNet.Chat.Services
                 .WhereIf(input.IsForbiddenAll.HasValue, x => x.IsForbiddenAll == input.IsForbiddenAll)
                 .WhereIf(input.MemberOwnerId.HasValue, x => x.RoomMemberList.Any(d => d.OwnerId == input.MemberOwnerId))
                 .WhereIf(input.ForbiddenMemberOwnerId.HasValue, x => x.RoomForbiddenMemberList.Any(d => d.OwnerId == input.ForbiddenMemberOwnerId && d.ExpireTime.HasValue && d.ExpireTime < DateTime.Now))
+                .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(input.Keyword))
 
                 ;
         }
@@ -53,20 +54,20 @@ namespace IczpNet.Chat.Services
 
         protected override async Task<Room> MapToEntityAsync(RoomCreateInput createInput)
         {
-            var memberList = new List<RoomMember>();
+            var roomMemberList = new List<RoomMember>();
 
             var roomId = GuidGenerator.Create();
 
-            foreach (var memberId in createInput.MemberIdList)
+            foreach (var memberId in createInput.ChatObjectIdList)
             {
                 var chatObject = await ChatObjectManager.GetAsync(memberId);
 
                 Assert.If(!await ChatObjectManager.IsAllowJoinRoomMemnerAsync(chatObject.ObjectType), $"Not allowed to join the room,ObjectType:{chatObject.ObjectType},Id:{memberId}");
 
-                memberList.Add(new RoomMember(GuidGenerator.Create(), roomId, chatObject.Id, CurrentChatObject.GetId()));
+                roomMemberList.Add(new RoomMember(GuidGenerator.Create(), roomId, chatObject.Id, CurrentChatObject.GetId()));
             }
 
-            return new Room(roomId, createInput.Name, createInput.Code, createInput.Description, memberList, createInput.OwnerId);
+            return new Room(roomId, createInput.Name, createInput.Code, createInput.Description, roomMemberList, createInput.OwnerId);
         }
 
         protected override Task CheckDeleteAsync(Room entity)

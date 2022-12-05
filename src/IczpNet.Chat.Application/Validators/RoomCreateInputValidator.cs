@@ -10,7 +10,7 @@ namespace IczpNet.Chat.Validators
 
             RuleFor(x => x.Name).NotEmpty();
 
-            RuleFor(x => x.MemberIdList).NotNull().MinCount(2);
+            RuleFor(x => x.ChatObjectIdList).NotNull().MinCount(2);
         }
     }
 }

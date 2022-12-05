@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.BaseEntitys;
+﻿using IczpNet.AbpCommons.DataFilters;
+using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Messages;
 using IczpNet.Chat.OfficialSections.OfficialExcludedMembers;
@@ -18,14 +19,14 @@ using Volo.Abp.SimpleStateChecking;
 namespace IczpNet.Chat.ChatObjects
 {
     //[Index]
-    public class ChatObject : BaseEntity<Guid>, IChatObject, IHasSimpleStateCheckers<ChatObject>
+    public class ChatObject : BaseEntity<Guid>, IName, IChatObject, IHasSimpleStateCheckers<ChatObject>
     {
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public virtual long AutoId { get; set; }
 
         [StringLength(50)]
         [Required]
-        public virtual string Name { get; set; }
+        public virtual string Name { get; protected set; }
 
         [StringLength(50)]
         public virtual string Code { get; set; }
@@ -121,6 +122,11 @@ namespace IczpNet.Chat.ChatObjects
         //public virtual IList<SessionSetting> DestinationSessionSettingList { get; set; }
 
         #endregion
+
+        public virtual void SetName(string name)
+        {
+            Name = name;
+        }
 
         public List<ISimpleStateChecker<ChatObject>> StateCheckers { get; }
 

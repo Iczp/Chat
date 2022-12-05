@@ -105,14 +105,14 @@ public class Room : ChatObject, IChatOwner<Guid?>
         ObjectType = ChatObjectTypeValue;
     }
 
-    public Room(Guid id, string name, string code, string description, IList<RoomMember> memberList, Guid? ownerId) : base(id, ChatObjectTypeValue)
+    public Room(Guid id, string name, string code, string description, IList<RoomMember> roomMemberList, Guid? ownerId) : base(id, ChatObjectTypeValue)
     {
-        Name = name;
+        SetName(name);
         Code = code;
         Description = description;
         OwnerId = ownerId;
         Type = RoomTypeEnum.Normal;
-        RoomMemberList = memberList;
+        RoomMemberList = roomMemberList;
     }
 
     public int GetMemberCount()

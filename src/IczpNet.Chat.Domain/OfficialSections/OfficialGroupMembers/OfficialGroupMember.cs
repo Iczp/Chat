@@ -25,9 +25,10 @@ namespace IczpNet.Chat.OfficialSections.OfficialGroupMembers
 
         }
 
-        protected OfficialGroupMember(Guid id, Guid ownerId) : base(id)
+        public OfficialGroupMember(Guid id, Guid officialGroupId, Guid ownerId) : base(id)
         {
             OwnerId = ownerId;
+            OfficialGroupId = officialGroupId;
         }
     }
 }

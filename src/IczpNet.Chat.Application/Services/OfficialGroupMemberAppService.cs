@@ -26,8 +26,7 @@ namespace IczpNet.Chat.Services
         protected override async Task<IQueryable<OfficialGroupMember>> CreateFilteredQueryAsync(OfficialGroupMemberGetListInput input)
         {
             return (await base.CreateFilteredQueryAsync(input))
-                //.WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
-                //.WhereIf(input.Type.HasValue, x => x.Type == input.Type)
+ 
                 ;
         }
     }
