@@ -7,6 +7,8 @@ using System.Linq;
 using IczpNet.Chat.RoomSections.Rooms.Dtos;
 using IczpNet.Chat.RoomSections.Rooms;
 using IczpNet.Chat.FriendshipTagSections.FriendshipTags.Dtos;
+using IczpNet.Chat.SessionSections.OpenedRecordes.Dtos;
+using IczpNet.Chat.SessionSections.OpenedRecorders;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -37,5 +39,9 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
         CreateMap<FriendshipTag, FriendshipTagSimpleDto>();
         CreateMap<FriendshipTagCreateInput, FriendshipTag>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
         CreateMap<FriendshipTagUpdateInput, FriendshipTag>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
+
+
+        //OpenedRecorder
+        CreateMap<OpenedRecorder, OpenedRecorderDto>();
     }
 }

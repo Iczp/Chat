@@ -1,9 +1,12 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.Messages;
 using IczpNet.Chat.SessionSections.FriendshipRequests;
 using IczpNet.Chat.SessionSections.Friendships;
+using IczpNet.Chat.SessionSections.OpenedRecorders;
 using System;
 using System.Threading.Tasks;
+using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 
@@ -14,15 +17,21 @@ namespace IczpNet.Chat.SessionSections
         protected IRepository<Friendship, Guid> FriendshipRepository { get; }
         protected IRepository<FriendshipRequest, Guid> FriendshipRequestRepository { get; }
         protected IChatObjectManager ChatObjectManager { get; }
+        protected IRepository<OpenedRecorder, Guid> OpenedRecorderRepository { get; }
+        public IRepository<Message, Guid> MessageRepository { get; }
 
         public SessionManager(
             IRepository<Friendship, Guid> friendshipRepository,
             IChatObjectManager chatObjectManager,
-            IRepository<FriendshipRequest, Guid> friendshipRequestRepository)
+            IRepository<FriendshipRequest, Guid> friendshipRequestRepository,
+            IRepository<OpenedRecorder, Guid> openedRecorderRepository,
+            IRepository<Message, Guid> messageRepository)
         {
             FriendshipRepository = friendshipRepository;
             ChatObjectManager = chatObjectManager;
             FriendshipRequestRepository = friendshipRequestRepository;
+            OpenedRecorderRepository = openedRecorderRepository;
+            MessageRepository = messageRepository;
         }
 
         public Task<bool> IsFriendshipAsync(Guid ownerId, Guid destinationId)
@@ -59,7 +68,7 @@ namespace IczpNet.Chat.SessionSections
 
         public Task DeleteFriendshipRequestAsync(Guid ownerId, Guid destinationId)
         {
-            return FriendshipRequestRepository.DeleteAsync(x => 
+            return FriendshipRequestRepository.DeleteAsync(x =>
                 (x.OwnerId == ownerId && x.DestinationId == destinationId && !x.IsHandled) ||
                 (x.OwnerId == destinationId && x.DestinationId == ownerId && !x.IsHandled)
             );
@@ -88,5 +97,20 @@ namespace IczpNet.Chat.SessionSections
             return friendshipRequest.HandlTime;
         }
 
+        public async Task<OpenedRecorder> SetOpenedAsync(Guid ownerId, Guid destinationId, Guid messageId, string deviceId)
+        {
+            var message = await MessageRepository.GetAsync(messageId);
+
+            var openedRecorder = await OpenedRecorderRepository.FindAsync(x => x.OwnerId == ownerId && x.DestinationId == destinationId);
+
+            if (openedRecorder == null)
+            {
+                return await OpenedRecorderRepository.InsertAsync(new OpenedRecorder(ownerId, destinationId, message, deviceId), autoSave: true);
+            }
+
+            openedRecorder.SetMessage(message, deviceId);
+
+            return await OpenedRecorderRepository.UpdateAsync(openedRecorder, autoSave: true);
+        }
     }
 }

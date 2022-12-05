@@ -1,8 +1,12 @@
-﻿using IczpNet.Chat.BaseAppServices;
+﻿using AutoMapper.Internal.Mappers;
+using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.SessionSections;
 using IczpNet.Chat.SessionSections.Friendships;
+using IczpNet.Chat.SessionSections.OpenedRecorders;
+using IczpNet.Chat.SessionSections.OpenedRecordes.Dtos;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -56,6 +60,14 @@ namespace IczpNet.Chat.Services
         public Task<DateTime> RequestForFriendshipAsync(Guid ownerId, Guid friendId, string message)
         {
             throw new NotImplementedException();
+        }
+
+        [HttpPost]
+        public async Task<OpenedRecorderDto> SetOpenedAsync(OpenedRecorderInput input)
+        {
+            var entity = await SessionManager.SetOpenedAsync(input.OwnerId, input.DestinationId, input.MessageId, input.DeviceId);
+
+            return ObjectMapper.Map<OpenedRecorder, OpenedRecorderDto>(entity);
         }
     }
 }
