@@ -33,11 +33,12 @@ public class OfficialSectionApplicationAutoMapperProfile : Profile
         //OfficialGroup
         CreateMap<OfficialGroup, OfficialGroupDto>()
             .ForMember(x => x.GroupMemberCount, o => o.MapFrom(x => x.GetGroupMemberCount()))
+
             ;
         CreateMap<OfficialGroup, OfficialGroupDetailDto>()
             .ForMember(x => x.GroupMemberCount, o => o.MapFrom(x => x.GetGroupMemberCount()))
             ;
-        //CreateMap<OfficialGroupCreateInput, OfficialGroup>(MemberList.None).IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<OfficialGroupCreateInput, OfficialGroup>(MemberList.None).IgnoreAllPropertiesWithAnInaccessibleSetter();
         CreateMap<OfficialGroupUpdateInput, OfficialGroup>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
 
         //OfficialMember

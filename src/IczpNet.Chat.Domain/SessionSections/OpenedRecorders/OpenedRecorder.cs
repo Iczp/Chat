@@ -1,6 +1,6 @@
 ﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.BaseEntitys;
-using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Messages;
 using System;
 using System.ComponentModel.DataAnnotations;

@@ -4,6 +4,8 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.RoomSections.RoomMembers;
 using IczpNet.Chat.RoomSections.Rooms;
 using IczpNet.Chat.RoomSections.Rooms.Dtos;
+using IczpNet.Chat.SquareSections.Squares.Dtos;
+using IczpNet.Chat.SquareSections.Squares;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -50,7 +52,6 @@ namespace IczpNet.Chat.Services
 
                 ;
         }
-
 
         protected override async Task<Room> MapToEntityAsync(RoomCreateInput createInput)
         {

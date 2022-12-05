@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.AbpCommons;
+using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.RobotSections.Robots;
 using IczpNet.Chat.RobotSections.Robots.Dtos;
 using System;
@@ -30,5 +31,26 @@ namespace IczpNet.Chat.Services
 
                 ;
         }
+
+        protected override Robot MapToEntity(RobotCreateInput createInput)
+        {
+            var entity = base.MapToEntity(createInput);
+            entity.SetName(createInput.Name);
+            return entity;
+        }
+
+        protected override async Task CheckCreateAsync(RobotCreateInput input)
+        {
+            Assert.If(await Repository.AnyAsync(x => x.Name.Equals(input.Name)), $"Already exists [{typeof(Robot)}] name:{input.Name}");
+            await base.CheckCreateAsync(input);
+        }
+
+        protected override async Task CheckUpdateAsync(Guid id, Robot entity, RobotUpdateInput input)
+        {
+            Assert.If(await Repository.AnyAsync(x => x.Id.Equals(id) && x.Name.Equals(input.Name)), $"Already exists [{typeof(Robot)}] name:{input.Name}");
+            await base.CheckUpdateAsync(id, entity, input);
+        }
+
+       
     }
 }

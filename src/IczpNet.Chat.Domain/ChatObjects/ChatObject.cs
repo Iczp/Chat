@@ -22,7 +22,7 @@ namespace IczpNet.Chat.ChatObjects
     public class ChatObject : BaseEntity<Guid>, IName, IChatObject, IHasSimpleStateCheckers<ChatObject>
     {
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public virtual long AutoId { get; set; }
+        public virtual long AutoId { get; private set; }
 
         [StringLength(50)]
         [Required]
