@@ -5,7 +5,8 @@ namespace IczpNet.Chat.Connections
 {
     public class Connection
     {
-        public virtual Guid? OwnerUserId { get; set; }
+        [Required]
+        public virtual Guid AppUserId { get; set; }
 
         [StringLength(200)]
         public virtual string Server { get; set; }

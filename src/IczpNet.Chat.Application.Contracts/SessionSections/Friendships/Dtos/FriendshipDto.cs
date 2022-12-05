@@ -10,11 +10,14 @@ public class FriendshipDto : BaseDto<Guid>
 {
     public virtual Guid OwnerId { get; set; }
 
-    //public virtual Guid? FriendId { get;  set; }
+    //public virtual Guid? DestinationId { get;  set; }
 
     //public virtual ChatObjectSimpleDto Owner { get; set; }
 
-    public virtual ChatObjectSimpleDto Friend { get; set; }
+    /// <summary>
+    /// Friend
+    /// </summary>
+    public virtual ChatObjectSimpleDto Destination { get; set; }
 
     public virtual List<FriendshipTagSimpleDto> TagList { get; set; }
 

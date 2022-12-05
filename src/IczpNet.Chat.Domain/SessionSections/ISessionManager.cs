@@ -7,10 +7,10 @@ namespace IczpNet.Chat.SessionSections
 {
     public interface ISessionManager
     {
-        Task<bool> IsFriendshipAsync(Guid ownerId, Guid friendId);
-        Task<Friendship> CreateFriendshipAsync(Guid ownerId, Guid friendId, bool isPassive, Guid? friendshipRequestId);
-        Task<Friendship> CreateFriendshipAsync(ChatObject owner, ChatObject friend, bool isPassive, Guid? friendshipRequestId);
-        Task<DateTime> DeleteFriendshipAsync(Guid ownerId, Guid friendId);
+        Task<bool> IsFriendshipAsync(Guid ownerId, Guid destinationId);
+        Task<Friendship> CreateFriendshipAsync(Guid ownerId, Guid destinationId, bool isPassive, Guid? friendshipRequestId);
+        Task<Friendship> CreateFriendshipAsync(ChatObject owner, ChatObject destination, bool isPassive, Guid? friendshipRequestId);
+        Task<DateTime> DeleteFriendshipAsync(Guid ownerId, Guid destinationId);
         Task<DateTime?> HandlRequestAsync(Guid friendshipRequestId, bool isAgreed, string handlMessage);
     }
 }

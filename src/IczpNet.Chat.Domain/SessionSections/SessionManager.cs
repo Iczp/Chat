@@ -25,34 +25,34 @@ namespace IczpNet.Chat.SessionSections
             FriendshipRequestRepository = friendshipRequestRepository;
         }
 
-        public Task<bool> IsFriendshipAsync(Guid ownerId, Guid friendId)
+        public Task<bool> IsFriendshipAsync(Guid ownerId, Guid destinationId)
         {
-            return FriendshipRepository.AnyAsync(x => x.OwnerId == ownerId && x.FriendId == friendId);
+            return FriendshipRepository.AnyAsync(x => x.OwnerId == ownerId && x.DestinationId == destinationId);
         }
 
-        public async Task<Friendship> CreateFriendshipAsync(Guid ownerId, Guid friendId, bool IsPassive, Guid? friendshipRequestId)
+        public async Task<Friendship> CreateFriendshipAsync(Guid ownerId, Guid destinationId, bool IsPassive, Guid? friendshipRequestId)
         {
             var owner = await ChatObjectManager.GetAsync(ownerId);
 
-            var friend = await ChatObjectManager.GetAsync(friendId);
+            var destination = await ChatObjectManager.GetAsync(destinationId);
 
-            return await CreateFriendshipAsync(owner, friend, IsPassive, friendshipRequestId);
+            return await CreateFriendshipAsync(owner, destination, IsPassive, friendshipRequestId);
         }
 
-        public async Task<Friendship> CreateFriendshipAsync(ChatObject owner, ChatObject friend, bool IsPassive, Guid? friendshipRequestId)
+        public async Task<Friendship> CreateFriendshipAsync(ChatObject owner, ChatObject destination, bool IsPassive, Guid? friendshipRequestId)
         {
             Assert.NotNull(owner, nameof(owner));
 
-            Assert.NotNull(friend, nameof(friend));
+            Assert.NotNull(destination, nameof(destination));
 
-            var entity = await FriendshipRepository.FindAsync(x => x.OwnerId == owner.Id && x.FriendId == friend.Id);
+            var entity = await FriendshipRepository.FindAsync(x => x.OwnerId == owner.Id && x.DestinationId == destination.Id);
 
-            entity ??= await FriendshipRepository.InsertAsync(new Friendship(owner, friend, IsPassive, friendshipRequestId), autoSave: true);
+            entity ??= await FriendshipRepository.InsertAsync(new Friendship(owner, destination, IsPassive, friendshipRequestId), autoSave: true);
 
             return entity;
         }
 
-        public Task<DateTime> DeleteFriendshipAsync(Guid ownerId, Guid friendId)
+        public Task<DateTime> DeleteFriendshipAsync(Guid ownerId, Guid destinationId)
         {
             throw new NotImplementedException();
         }

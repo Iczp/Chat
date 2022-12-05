@@ -39,7 +39,7 @@ namespace IczpNet.Chat.Services
             return (await base.CreateFilteredQueryAsync(input))
                 .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
                 .WhereIf(input.TagIdList.IsAny(), x => x.TagList.Any(d => input.TagIdList.Contains(d.FriendshipTagId)))
-                .WhereIf(input.FriendId.HasValue, x => x.FriendId == input.FriendId)
+                .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
                 .WhereIf(input.IsCantacts.HasValue, x => x.IsCantacts == input.IsCantacts)
                 .WhereIf(input.IsPassive.HasValue, x => x.IsPassive == input.IsPassive)
                 .WhereIf(input.IsImmersed.HasValue, x => x.IsImmersed == input.IsImmersed)

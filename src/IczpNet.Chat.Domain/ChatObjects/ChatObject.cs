@@ -107,7 +107,7 @@ namespace IczpNet.Chat.ChatObjects
         [InverseProperty(nameof(Friendship.Owner))]
         public virtual IList<Friendship> FriendList { get; set; }
 
-        [InverseProperty(nameof(Friendship.Friend))]
+        [InverseProperty(nameof(Friendship.Destination))]
         public virtual IList<Friendship> InFriendList { get; set; }
 
         #endregion

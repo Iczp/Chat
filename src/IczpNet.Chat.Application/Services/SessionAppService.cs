@@ -34,7 +34,7 @@ namespace IczpNet.Chat.Services
                 .Where(x => x.OwnerId == ownerId)
                 //.Where(x => x.IsPassive)
                 .WhereIf(isCantacts.HasValue, x => x.IsCantacts)
-                .Select(x => x.Friend)
+                .Select(x => x.Destination)
                 .Distinct()
                 ;
 

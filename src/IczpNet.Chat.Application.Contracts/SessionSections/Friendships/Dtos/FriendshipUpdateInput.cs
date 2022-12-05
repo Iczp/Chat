@@ -7,5 +7,5 @@ public class FriendshipUpdateInput : BaseInput
 {
     public virtual Guid OwnerId { get; set; }
 
-    public virtual Guid FriendId { get; set; }
+    public virtual Guid DestinationId { get; set; }
 }

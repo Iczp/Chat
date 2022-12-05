@@ -17,6 +17,7 @@ using IczpNet.Chat.RoomSections.Rooms;
 using IczpNet.Chat.SessionSections.FriendshipRequests;
 using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.FriendshipTagUnits;
+using IczpNet.Chat.SessionSections.OpenedRecorders;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SquareSections.SquareCategorys;
 using IczpNet.Chat.SquareSections.SquareMembers;
@@ -39,7 +40,9 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<FriendshipTag> FriendshipTag { get; }
     DbSet<FriendshipTagUnit> FriendshipTagUnit { get; }
     DbSet<FriendshipRequest> FriendshipRequest { get; }
+    DbSet<OpenedRecorder> OpenedRecorder { get; }
     
+
 
     DbSet<ChatObject> ChatObject { get; }
     DbSet<Message> Message { get; }

@@ -11,18 +11,8 @@ using System.Linq;
 
 namespace IczpNet.Chat.SessionSections.Friendships
 {
-    public class Friendship : BaseEntity<Guid>, IChatOwner<Guid>
+    public class Friendship : BaseSessionEntity
     {
-        public virtual Guid OwnerId { get; protected set; }
-
-        [ForeignKey(nameof(OwnerId))]
-        public virtual ChatObject Owner { get; set; }
-
-        public virtual Guid? FriendId { get; set; }
-
-        [ForeignKey(nameof(FriendId))]
-        public virtual ChatObject Friend { get; protected set; }
-
         public virtual Guid? RequestId { get; set; }
 
         [ForeignKey(nameof(RequestId))]
@@ -80,10 +70,10 @@ namespace IczpNet.Chat.SessionSections.Friendships
 
         protected Friendship() { }
 
-        public Friendship(ChatObject owner, ChatObject friend, bool isPassive, Guid? friendshipRequestId)
+        public Friendship(ChatObject owner, ChatObject destination, bool isPassive, Guid? friendshipRequestId)
         {
             Owner = owner;
-            Friend = friend;
+            Destination = destination;
             IsPassive = isPassive;
             RequestId = friendshipRequestId;
         }
