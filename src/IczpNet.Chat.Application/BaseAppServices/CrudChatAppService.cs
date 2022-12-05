@@ -23,7 +23,7 @@ public abstract class CrudChatAppService<
     TCreateInput,
     TUpdateInput>
     :
-    CrudCommonAppService<
+    CrudAbpCommonsAppService<
         TEntity,
         TGetOutputDto,
         TGetListOutputDto,

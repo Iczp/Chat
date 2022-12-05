@@ -68,5 +68,14 @@ namespace IczpNet.Chat.Services
 
             return new Room(roomId, createInput.Name, createInput.Code, createInput.Description, memberList, createInput.OwnerId);
         }
+
+        protected override Task CheckDeleteAsync(Room entity)
+        {
+            var memberCount = entity.RoomMemberList.Count;
+
+            Assert.If(memberCount != 0, $"Room's member count: memberCount");
+
+            return base.CheckDeleteAsync(entity);
+        }
     }
 }
