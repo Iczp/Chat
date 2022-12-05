@@ -12,6 +12,7 @@ namespace IczpNet.Chat.MessageSections.Templates
         [StringLength(256)]
         //[Index]
         public virtual string Title { get; set; }
+
         /// <summary>
         /// 简要说明
         /// </summary>

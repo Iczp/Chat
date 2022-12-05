@@ -8,7 +8,9 @@ using IczpNet.Chat.OfficialSections.OfficialMembers;
 using IczpNet.Chat.Robots;
 using IczpNet.Chat.RoomSections.RoomForbiddenMembers;
 using IczpNet.Chat.RoomSections.RoomMembers;
+using IczpNet.Chat.SessionSections.FriendshipRequests;
 using IczpNet.Chat.SessionSections.Friendships;
+using IczpNet.Chat.SessionSections.SessionSettings;
 using IczpNet.Chat.SquareSections.SquareMembers;
 using System;
 using System.Collections.Generic;
@@ -21,6 +23,7 @@ namespace IczpNet.Chat.ChatObjects
     //[Index]
     public class ChatObject : BaseEntity<Guid>, IName, IChatObject, IHasSimpleStateCheckers<ChatObject>
     {
+        //[Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public virtual long AutoId { get; private set; }
 
@@ -106,20 +109,28 @@ namespace IczpNet.Chat.ChatObjects
         #region Friendship
 
         [InverseProperty(nameof(Friendship.Owner))]
-        public virtual IList<Friendship> FriendList { get; set; }
+        public virtual IList<Friendship> OwnerFriendshipList { get; set; }
 
         [InverseProperty(nameof(Friendship.Destination))]
-        public virtual IList<Friendship> InFriendList { get; set; }
+        public virtual IList<Friendship> DestinationFriendshipList { get; set; }
 
+        #endregion FriendshipRequest
+
+        #region FriendshipRequest
+        [InverseProperty(nameof(FriendshipRequest.Owner))]
+        public virtual IList<FriendshipRequest> OwnerFriendshipRequestList { get; set; }
+
+        [InverseProperty(nameof(FriendshipRequest.Destination))]
+        public virtual IList<FriendshipRequest> DestinationFriendshipRequestList { get; set; }
         #endregion
 
-        #region Session
+        #region SessionSetting
 
-        //[InverseProperty(nameof(SessionSetting.Owner))]
-        //public virtual IList<SessionSetting> OwnerSessionSettingList { get; set; }
+        [InverseProperty(nameof(SessionSetting.Owner))]
+        public virtual IList<SessionSetting> OwnerSessionSettingList { get; set; }
 
-        //[InverseProperty(nameof(SessionSetting.Destination))]
-        //public virtual IList<SessionSetting> DestinationSessionSettingList { get; set; }
+        [InverseProperty(nameof(SessionSetting.Destination))]
+        public virtual IList<SessionSetting> DestinationSessionSettingList { get; set; }
 
         #endregion
 
