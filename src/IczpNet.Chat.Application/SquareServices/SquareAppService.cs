@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using IczpNet.AbpCommons;
 
-namespace IczpNet.Chat.Services
+namespace IczpNet.Chat.SquareServices
 {
     public class SquareAppService
         : CrudChatAppService<

@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 
-namespace IczpNet.Chat.Services
+namespace IczpNet.Chat.SessionServices
 {
     public class SessionAppService : ChatAppService, ISessionAppService
     {

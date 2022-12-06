@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 
-namespace IczpNet.Chat.Services
+namespace IczpNet.Chat.OfficialServices
 {
     public class OfficialGroupMemberAppService
         : CrudChatAppService<
@@ -25,8 +25,8 @@ namespace IczpNet.Chat.Services
 
         protected override async Task<IQueryable<OfficialGroupMember>> CreateFilteredQueryAsync(OfficialGroupMemberGetListInput input)
         {
-            return (await base.CreateFilteredQueryAsync(input))
- 
+            return await base.CreateFilteredQueryAsync(input)
+
                 ;
         }
     }

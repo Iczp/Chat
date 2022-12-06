@@ -7,7 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 
-namespace IczpNet.Chat.Services
+namespace IczpNet.Chat.SquareServices
 {
     public class SquareCategoryAppService
         : CrudTreeChatAppService<

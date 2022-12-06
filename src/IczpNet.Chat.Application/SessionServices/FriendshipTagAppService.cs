@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 
-namespace IczpNet.Chat.Services
+namespace IczpNet.Chat.SessionServices
 {
     public class FriendshipTagAppService
         : CrudChatAppService<
@@ -33,7 +33,7 @@ namespace IczpNet.Chat.Services
 
         protected override async Task<IQueryable<FriendshipTag>> CreateFilteredQueryAsync(FriendshipTagGetListInput input)
         {
-            return (await base.CreateFilteredQueryAsync(input))
+            return await base.CreateFilteredQueryAsync(input)
 
                 ;
         }

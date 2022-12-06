@@ -5,15 +5,13 @@ using IczpNet.Chat.OfficialSections.OfficialGroupMembers;
 using IczpNet.Chat.OfficialSections.OfficialGroups;
 using IczpNet.Chat.OfficialSections.OfficialGroups.Dtos;
 using IczpNet.Chat.OfficialSections.Officials;
-using IczpNet.Chat.RoomSections.RoomMembers;
-using IczpNet.Chat.RoomSections.Rooms;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 
-namespace IczpNet.Chat.Services
+namespace IczpNet.Chat.OfficialServices
 {
     public class OfficialGroupAppService
         : CrudChatAppService<
@@ -56,7 +54,7 @@ namespace IczpNet.Chat.Services
 
             var officialGroupMember = createInput.ChatObjectIdList.Select(x => new OfficialGroupMember(GuidGenerator.Create(), officialGroupId, x)).ToList();
 
-            return new OfficialGroup(officialGroupId, createInput.OfficialId, createInput.Name,createInput.Description, true, officialGroupMember);
+            return new OfficialGroup(officialGroupId, createInput.OfficialId, createInput.Name, createInput.Description, true, officialGroupMember);
         }
 
         protected override async Task CheckCreateAsync(OfficialGroupCreateInput input)

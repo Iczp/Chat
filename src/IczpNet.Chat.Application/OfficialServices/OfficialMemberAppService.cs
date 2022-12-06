@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 
-namespace IczpNet.Chat.Services
+namespace IczpNet.Chat.OfficialServices
 {
     public class OfficialMemberAppService
         : CrudChatAppService<
@@ -25,7 +25,7 @@ namespace IczpNet.Chat.Services
 
         protected override async Task<IQueryable<OfficialMember>> CreateFilteredQueryAsync(OfficialMemberGetListInput input)
         {
-            return (await base.CreateFilteredQueryAsync(input))
+            return await base.CreateFilteredQueryAsync(input)
                 //.WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
                 //.WhereIf(input.Type.HasValue, x => x.Type == input.Type)
                 ;

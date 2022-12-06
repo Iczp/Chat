@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 
-namespace IczpNet.Chat.Services
+namespace IczpNet.Chat.SessionServices
 {
     public class FriendshipAppService
         : CrudChatAppService<

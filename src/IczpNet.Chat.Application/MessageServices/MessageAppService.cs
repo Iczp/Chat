@@ -4,7 +4,7 @@ using IczpNet.Chat.MessageSections.Messages.Dtos;
 using System;
 using Volo.Abp.Domain.Repositories;
 
-namespace IczpNet.Chat.Services
+namespace IczpNet.Chat.MessageServices
 {
     public class MessageAppService
         : CrudChatAppService<

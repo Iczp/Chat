@@ -4,15 +4,13 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.RoomSections.RoomMembers;
 using IczpNet.Chat.RoomSections.Rooms;
 using IczpNet.Chat.RoomSections.Rooms.Dtos;
-using IczpNet.Chat.SquareSections.Squares.Dtos;
-using IczpNet.Chat.SquareSections.Squares;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 
-namespace IczpNet.Chat.Services
+namespace IczpNet.Chat.RoomServices
 {
     public class RoomAppService
         : CrudChatAppService<
