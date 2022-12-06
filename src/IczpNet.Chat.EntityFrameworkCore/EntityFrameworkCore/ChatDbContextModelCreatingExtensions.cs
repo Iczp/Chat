@@ -6,6 +6,7 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.RoomSections.RoomPermissionGrants;
 using IczpNet.Chat.RoomSections.RoomRoleRoomMembers;
+using IczpNet.Chat.SessionSections.Favorites;
 using IczpNet.Chat.SessionSections.FriendshipTagUnits;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -57,6 +58,13 @@ public static class ChatDbContextModelCreatingExtensions
             //    .ValueGeneratedOnAdd()
             //    .HasColumnType("bigint")
             //    .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+        });
+
+
+
+        builder.Entity<FavoriteMessage>(b =>
+        {
+            b.HasKey(x => new { x.MessageId, x.FavoriteId });
         });
 
         builder.Entity<HistoryMessage>(b =>

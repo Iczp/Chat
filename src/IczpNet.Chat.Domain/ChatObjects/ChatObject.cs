@@ -8,6 +8,7 @@ using IczpNet.Chat.OfficialSections.OfficialMembers;
 using IczpNet.Chat.Robots;
 using IczpNet.Chat.RoomSections.RoomForbiddenMembers;
 using IczpNet.Chat.RoomSections.RoomMembers;
+using IczpNet.Chat.SessionSections.Favorites;
 using IczpNet.Chat.SessionSections.FriendshipRequests;
 using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.SessionSettings;
@@ -131,6 +132,11 @@ namespace IczpNet.Chat.ChatObjects
         [InverseProperty(nameof(SessionSetting.Destination))]
         public virtual IList<SessionSetting> DestinationSessionSettingList { get; set; }
 
+        #endregion
+
+        #region Favorite 
+        [InverseProperty(nameof(Favorite.Owner))]
+        public virtual IList<Favorite> FavoriteList { get; set; }
         #endregion
 
         public virtual void SetName(string name)
