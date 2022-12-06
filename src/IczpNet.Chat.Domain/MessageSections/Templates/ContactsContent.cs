@@ -29,7 +29,7 @@ namespace IczpNet.Chat.MessageSections.Templates
         [MaxLength(300)]
         public virtual string Portrait { get; set; }
 
-        public virtual ChatObjectTypeEnum? ObjectType { get; set; }
+        public virtual ChatObjectTypes? ObjectType { get; set; }
 
         /// <summary>
         /// 说明

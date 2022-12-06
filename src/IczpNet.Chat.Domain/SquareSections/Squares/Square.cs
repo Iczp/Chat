@@ -12,7 +12,7 @@ namespace IczpNet.Chat.SquareSections.Squares
     {
         public virtual Guid? CategoryId { get; set; }
 
-        public virtual SquareTypeEnum Type { get; set; }
+        public virtual SquareTypes Type { get; set; }
 
         [ForeignKey(nameof(CategoryId))]
         public virtual SquareCategory Category { get; set; }

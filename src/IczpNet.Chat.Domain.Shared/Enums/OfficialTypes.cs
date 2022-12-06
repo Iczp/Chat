@@ -5,7 +5,7 @@ namespace IczpNet.Chat.Enums
     /// <summary>
     /// 公众号类型
     /// </summary>
-    public enum OfficialTypeEnum
+    public enum OfficialTypes
     {
         /// <summary>
         /// 订阅号

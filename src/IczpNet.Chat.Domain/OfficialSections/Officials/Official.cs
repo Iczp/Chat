@@ -11,9 +11,9 @@ namespace IczpNet.Chat.OfficialSections.Officials
 {
     public class Official : ChatObject
     {
-        public const ChatObjectTypeEnum ChatObjectTypeValue = ChatObjectTypeEnum.Official;
+        public const ChatObjectTypes ChatObjectTypeValue = ChatObjectTypes.Official;
 
-        public virtual OfficialTypeEnum Type { get; set; }
+        public virtual OfficialTypes Type { get; set; }
 
         public virtual IList<OfficialGroup> OfficialGroupList { get; set; } = new List<OfficialGroup>();
 

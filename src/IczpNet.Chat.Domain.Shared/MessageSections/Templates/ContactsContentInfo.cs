@@ -16,7 +16,7 @@ namespace IczpNet.Chat.MessageSections.Templates
         /// <summary>
         /// 媒体类型  0:未定义, 1:个人, 2:群, 3:订阅号, 4:公众号, 5:部门群, 6:课程群, 7:任务群
         /// </summary>
-        public MessageTypeEnum MessageType { get; set; }
+        public MessageTypes MessageType { get; set; }
 
         /// <summary>
         /// 联系人名称

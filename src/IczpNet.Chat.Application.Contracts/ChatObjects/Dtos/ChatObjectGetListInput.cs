@@ -5,5 +5,5 @@ namespace IczpNet.Chat.ChatObjects.Dtos;
 
 public class ChatObjectGetListInput : BaseGetListInput
 {
-    public virtual ChatObjectTypeEnum? ObjectType { get; set; }
+    public virtual ChatObjectTypes? ObjectType { get; set; }
 }

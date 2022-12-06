@@ -10,7 +10,7 @@ namespace IczpNet.Chat.MessageSections.Templates
         /// <summary>
         /// 红包发放方式（0：随机金额;1:固定金额）
         /// </summary>
-        public GrantModeEnum GrantMode { get; set; }
+        public GrantModes GrantMode { get; set; }
 
         /// <summary>
         /// 单个金额Red Envelope

@@ -28,7 +28,7 @@ namespace IczpNet.Chat.RoomSections.RoomMembers
         /// <summary>
         /// 群角色（群主，管理员，成员）
         /// </summary>
-        public virtual RoomRoleEnum RoomRole { get; set; }
+        public virtual RoomRoleTypes RoomRole { get; set; }
 
         /// <summary>
         /// 群里显示名称
@@ -44,7 +44,7 @@ namespace IczpNet.Chat.RoomSections.RoomMembers
         /// <summary>
         /// 加入方式
         /// </summary>
-        public virtual JoinWayEnum JoinWay { get; set; }
+        public virtual JoinWays JoinWay { get; set; }
 
         /// <summary>
         /// 邀请人

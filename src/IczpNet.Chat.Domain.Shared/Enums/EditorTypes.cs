@@ -7,7 +7,7 @@ namespace IczpNet.Chat.Enums
     /// 0:常规
     /// 1:MarkDown
     /// </summary>
-    public enum EditorTypeEnum
+    public enum EditorTypes
     {
         /// <summary>
         /// 无

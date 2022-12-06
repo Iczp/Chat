@@ -28,12 +28,12 @@ public partial class Message : BaseEntity<Guid>
     /// <summary>
     /// 消息通道
     /// </summary>
-    public virtual MessageChannelEnum MessageChannel { get; set; }
+    public virtual MessageChannels MessageChannel { get; set; }
 
     /// <summary>
     /// 消息类型
     /// </summary>
-    public virtual MessageTypeEnum MessageType { get; set; }
+    public virtual MessageTypes MessageType { get; set; }
 
     [StringLength(5000)]
     public virtual string ContentJson { get; protected set; }

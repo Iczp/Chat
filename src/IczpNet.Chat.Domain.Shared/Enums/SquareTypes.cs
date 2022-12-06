@@ -2,7 +2,7 @@
 
 namespace IczpNet.Chat.Enums
 {
-    public enum SquareTypeEnum
+    public enum SquareTypes
     {
         /// <summary>
         /// 公共

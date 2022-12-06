@@ -32,7 +32,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         /// <summary>
         /// 消息类型
         /// </summary>
-        public virtual MessageTypeEnum MessageType { get; set; }
+        public virtual MessageTypes MessageType { get; set; }
 
         /// <summary>
         /// 扩展（键名）根据业务自义，如:"courseId"、"course-userId"、"erp-userId"

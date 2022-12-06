@@ -9,7 +9,7 @@ namespace IczpNet.Chat.ChatObjects
         long AutoId { get; }
         string Name { get; }
         Guid? OwnerUserId { get;  }
-        ChatObjectTypeEnum? ObjectType { get;  }
+        ChatObjectTypes? ObjectType { get;  }
         Guid? GetId();
     }
 }

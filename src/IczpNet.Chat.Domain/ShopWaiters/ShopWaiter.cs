@@ -10,7 +10,7 @@ namespace IczpNet.Chat.Robots
 {
     public class ShopWaiter : ChatObject, IChatOwner<Guid?>
     {
-        public const ChatObjectTypeEnum ChatObjectTypeValue = ChatObjectTypeEnum.ShopWaiter;
+        public const ChatObjectTypes ChatObjectTypeValue = ChatObjectTypes.ShopWaiter;
 
         [StringLength(20)]
         public virtual string NickName { get; set; }
@@ -32,7 +32,7 @@ namespace IczpNet.Chat.Robots
 
         protected ShopWaiter(Guid id, ShopKeeper shopKeeper, ChatObject chatObject) : base(id, ChatObjectTypeValue)
         {
-            Assert.If(chatObject.ObjectType == ChatObjectTypeEnum.ShopWaiter, "");
+            Assert.If(chatObject.ObjectType == ChatObjectTypes.ShopWaiter, "");
             ShopKeeper = shopKeeper;
             Owner = chatObject;
         }

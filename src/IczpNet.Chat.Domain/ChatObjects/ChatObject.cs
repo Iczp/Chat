@@ -43,7 +43,7 @@ namespace IczpNet.Chat.ChatObjects
 
         public virtual Guid? AppUserId { get; protected set; }
 
-        public virtual ChatObjectTypeEnum? ObjectType { get; protected set; }
+        public virtual ChatObjectTypes? ObjectType { get; protected set; }
 
         [StringLength(500)]
         public virtual string Description { get; set; }
@@ -151,7 +151,7 @@ namespace IczpNet.Chat.ChatObjects
             StateCheckers = new List<ISimpleStateChecker<ChatObject>>();
         }
 
-        protected ChatObject(Guid id, ChatObjectTypeEnum chatObjectType) : base(id)
+        protected ChatObject(Guid id, ChatObjectTypes chatObjectType) : base(id)
         {
             ObjectType = chatObjectType;
             StateCheckers = new List<ISimpleStateChecker<ChatObject>>();

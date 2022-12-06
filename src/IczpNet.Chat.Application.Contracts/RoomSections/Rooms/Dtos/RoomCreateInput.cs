@@ -19,7 +19,7 @@ public class RoomCreateInput : BaseInput
     /// <summary>
     /// 群类型（自由群、职位群）
     /// </summary>
-    public virtual RoomTypeEnum Type { get; set; }
+    public virtual RoomTypes Type { get; set; }
 
     public virtual string Description { get; set; }
 

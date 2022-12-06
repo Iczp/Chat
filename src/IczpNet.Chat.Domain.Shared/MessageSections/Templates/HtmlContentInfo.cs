@@ -11,7 +11,7 @@ namespace IczpNet.Chat.MessageSections.Templates
         /// <summary>
         /// 编辑器类型
         /// </summary>
-        public virtual EditorTypeEnum EditorType { get; set; }
+        public virtual EditorTypes EditorType { get; set; }
 
         /// <summary>
         /// 文本内容

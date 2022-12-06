@@ -5,7 +5,7 @@ namespace IczpNet.Chat.Enums
     /// <summary>
     /// 消息类型，0:其他未知,1:文本,2:图片,3:语音 4:视频,5:链接,6:工作流,7:地理位置,8:联系人名片,9:系统消息,10:课程,11:红包,12:Html,13:文章,14:聊天历史消息,15:文件消息
     /// </summary>
-    public enum MessageTypeEnum
+    public enum MessageTypes
     {
         /// <summary>  
         /// 其他未知  

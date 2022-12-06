@@ -1,6 +1,6 @@
 ﻿namespace IczpNet.Chat.Enums
 {
-    public enum RobotTypeEnum
+    public enum RobotTypes
     {
         Normal = 0,
     }

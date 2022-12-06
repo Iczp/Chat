@@ -8,13 +8,13 @@ namespace IczpNet.Chat.MessageSections.Templates
         /// <summary>
         /// 文章类型
         /// </summary>
-        public virtual ArticleTypeEnum ArticleType { get; set; }
+        public virtual ArticleTypes ArticleType { get; set; }
 
         /// <summary>
         /// 编辑器类型
         /// </summary>
         //[Index]
-        public virtual EditorTypeEnum EditorType { get; set; }
+        public virtual EditorTypes EditorType { get; set; }
 
         /// <summary>
         /// 文本内容

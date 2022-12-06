@@ -12,7 +12,7 @@ public class OfficialDto : BaseDto<Guid>
 
     public virtual string Code { get; set; }
 
-    public virtual OfficialTypeEnum Type { get; set; }
+    public virtual OfficialTypes Type { get; set; }
 
     public virtual int MemberCount { get; set; }
 

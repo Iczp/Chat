@@ -11,7 +11,7 @@ public class RoomGetListInput : BaseGetListInput
     /// </summary>
     public virtual Guid? OwnerId { get; set; }
 
-    public virtual RoomTypeEnum? Type { get; set; }
+    public virtual RoomTypes? Type { get; set; }
 
     public virtual int? MinCount { get; set; }
 

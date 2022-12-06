@@ -13,7 +13,7 @@ namespace IczpNet.Chat.RoomSections.Rooms;
 
 public class Room : ChatObject, IChatOwner<Guid?>
 {
-    public const ChatObjectTypeEnum ChatObjectTypeValue = ChatObjectTypeEnum.Room;
+    public const ChatObjectTypes ChatObjectTypeValue = ChatObjectTypes.Room;
 
     /// <summary>
     /// 群拥有者 OwnerUserId (群主)
@@ -23,17 +23,17 @@ public class Room : ChatObject, IChatOwner<Guid?>
     /// <summary>
     /// 群类型（自由群、职位群）
     /// </summary>
-    public virtual RoomTypeEnum Type { get; set; }
+    public virtual RoomTypes Type { get; set; }
 
     /// <summary>
     /// 成员名称的显示方式
     /// </summary>
-    public virtual MemberNameDisplayModeEnum MemberNameDisplayMode { get; protected set; }
+    public virtual MemberNameDisplayModes MemberNameDisplayMode { get; protected set; }
 
     /// <summary>
     /// 头像的显示方式
     /// </summary>
-    public virtual PortraitDisplayModeEnum PortraitDisplayMode { get; protected set; }
+    public virtual PortraitDisplayModes PortraitDisplayMode { get; protected set; }
 
     /// <summary>
     /// 聊天背景，默认为 null
@@ -50,7 +50,7 @@ public class Room : ChatObject, IChatOwner<Guid?>
     /// <summary>
     /// 入群邀请方式
     /// </summary>
-    public virtual InvitationMethodEnum InvitationMethod { get; set; }
+    public virtual InvitationMethods InvitationMethod { get; set; }
 
     /// <summary>
     /// 是否可以设置消息免打扰
@@ -111,7 +111,7 @@ public class Room : ChatObject, IChatOwner<Guid?>
         Code = code;
         Description = description;
         OwnerId = ownerId;
-        Type = RoomTypeEnum.Normal;
+        Type = RoomTypes.Normal;
         RoomMemberList = roomMemberList;
     }
 

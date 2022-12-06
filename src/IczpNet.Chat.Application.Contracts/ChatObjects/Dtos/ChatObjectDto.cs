@@ -13,6 +13,6 @@ namespace IczpNet.Chat.ChatObjects.Dtos
 
         public virtual string Code { get; set; }
 
-        public virtual ChatObjectTypeEnum ObjectType { get; set; }
+        public virtual ChatObjectTypes ObjectType { get; set; }
     }
 }

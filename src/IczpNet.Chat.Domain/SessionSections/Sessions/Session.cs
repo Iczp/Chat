@@ -10,6 +10,6 @@ namespace IczpNet.Chat.SessionSections.Sessions
         [StringLength(100)]
         public virtual string Value { get; set; }
 
-        public virtual MessageChannelEnum MessageChannel { get; set; }
+        public virtual MessageChannels MessageChannel { get; set; }
     }
 }

@@ -7,7 +7,7 @@ namespace IczpNet.Chat.Enums
     /// <summary>
     /// 红包发放方式（0：随机金额;1:固定金额）
     /// </summary>
-    public enum GrantModeEnum : int
+    public enum GrantModes : int
     {
         /// <summary>
         /// 拼人气红包（随机金额）

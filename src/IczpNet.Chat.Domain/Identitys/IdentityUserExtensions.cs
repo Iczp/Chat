@@ -11,14 +11,14 @@ public static class IdentityUserExtensions
 
     public const string ChatObjectTypePropertyName = "ChatObjectType";
 
-    public static void SetChatObjectType(this IdentityUser user, ChatObjectTypeEnum  chatObjectType)
+    public static void SetChatObjectType(this IdentityUser user, ChatObjectTypes  chatObjectType)
     {
         user.SetProperty(ChatObjectTypePropertyName, chatObjectType);
     }
 
-    public static ChatObjectTypeEnum? GetChatObjectType(this IdentityUser user)
+    public static ChatObjectTypes? GetChatObjectType(this IdentityUser user)
     {
-        return user.GetProperty<ChatObjectTypeEnum?>(ChatObjectTypePropertyName);
+        return user.GetProperty<ChatObjectTypes?>(ChatObjectTypePropertyName);
     }
 
     #endregion

@@ -9,7 +9,7 @@ namespace IczpNet.Chat.Enums
     /// 2:Tasks任务群;
     /// 3:Course课程群;
     /// </summary>
-    public enum RoomTypeEnum 
+    public enum RoomTypes 
     {
         /// <summary>
         /// 自由群（用户群 User）

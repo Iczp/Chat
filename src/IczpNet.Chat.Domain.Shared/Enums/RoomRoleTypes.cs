@@ -5,7 +5,7 @@ namespace IczpNet.Chat.Enums
     /// <summary>
     /// 群角色(0:群成员,1:群管理员,2:群主)
     /// </summary>
-    public enum RoomRoleEnum : int
+    public enum RoomRoleTypes : int
     {
         /// <summary>
         /// 群成员

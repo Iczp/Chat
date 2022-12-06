@@ -21,7 +21,7 @@ public class RoomMemberDto : BaseDto<Guid>
     /// <summary>
     /// 加入方式
     /// </summary>
-    public virtual JoinWayEnum JoinWay { get; set; }
+    public virtual JoinWays JoinWay { get; set; }
 
     /// <summary>
     /// 邀请人
