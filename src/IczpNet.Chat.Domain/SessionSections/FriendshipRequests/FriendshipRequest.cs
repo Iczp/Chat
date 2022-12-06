@@ -1,7 +1,6 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.SessionSections.Friendships;
 using System;
 using System.Collections.Generic;
@@ -32,18 +31,18 @@ namespace IczpNet.Chat.SessionSections.FriendshipRequests
 
         protected FriendshipRequest() { }
 
-        public FriendshipRequest(ChatObject owner, ChatObject friend, string message)
+        public FriendshipRequest(ChatObject owner, ChatObject destination, string message)
         {
             Owner = owner;
-            Destination = friend;
+            Destination = destination;
             Message = message;
             IsHandled = false;
         }
 
-        public FriendshipRequest(Guid ownerId, Guid friendId, string message)
+        public FriendshipRequest(Guid ownerId, Guid destinationId, string message)
         {
             OwnerId = ownerId;
-            DestinationId = friendId;
+            DestinationId = destinationId;
             Message = message;
         }
 
