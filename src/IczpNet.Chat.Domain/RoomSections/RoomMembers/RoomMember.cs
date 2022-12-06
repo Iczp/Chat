@@ -28,7 +28,7 @@ namespace IczpNet.Chat.RoomSections.RoomMembers
         /// <summary>
         /// 群角色（群主，管理员，成员）
         /// </summary>
-        public virtual RoomRoleTypes RoomRole { get; set; }
+        public virtual RoomRoleTypes RoomRoleType { get; set; }
 
         /// <summary>
         /// 群里显示名称
