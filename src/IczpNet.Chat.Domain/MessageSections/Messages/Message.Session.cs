@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.SessionSections.Favorites;
 using IczpNet.Chat.SessionSections.OpenedRecorders;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -13,4 +14,6 @@ public partial class Message
 
     [InverseProperty(nameof(FavoriteMessage.Message))]
     public virtual IList<FavoriteMessage> FavoriteMessageList { get; set; }
+
+    
 }

@@ -16,6 +16,8 @@ public class ChatApplicationAutoMapperProfile : Profile
         //Message
         CreateMap<Message, MessageInfo>();
 
+        //CreateMap<MessageInput<>, Message>();
+
 
         //MessageContent
 

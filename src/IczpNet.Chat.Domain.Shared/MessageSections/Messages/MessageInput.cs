@@ -1,33 +1,22 @@
-﻿using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.Enums;
+﻿using IczpNet.Chat.Enums;
 using System;
 
 namespace IczpNet.Chat.MessageSections.Messages
 {
 
-    public class MessageInfo<T> : MessageInfo
+    public class MessageInput<T> 
     {
-        public T Content { get; set; }
-    }
-
-    public class MessageInfo
-    {
-        public virtual Guid Id { get; set; }
-
-        public virtual long AutoId { get; set; }
-
-        public virtual string SessionId { get; set; }
+        public virtual T Content { get; set; }
 
         /// <summary>
         /// 发送者
         /// </summary>
-        public virtual Guid? SenderId { get; set; }
-        //public virtual ChatObjectInfo Sender { get; set; }
+        public virtual Guid SenderId { get; set; }
 
         /// <summary>
         /// 接收者
         /// </summary>
-        public virtual Guid? ReceiverId { get; set; }
+        public virtual Guid ReceiverId { get; set; }
 
         /// <summary>
         /// 消息类型
@@ -44,9 +33,6 @@ namespace IczpNet.Chat.MessageSections.Messages
         /// </summary>
         public virtual string KeyValue { get; set; }
 
-        /// <summary>
-        /// 撤回消息时间
-        /// </summary>
-        public virtual DateTime? RollbackTime { get; set; }
+        public virtual Guid? QuoteMessageId { get; set; }
     }
 }

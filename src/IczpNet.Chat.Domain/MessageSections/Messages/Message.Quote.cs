@@ -24,11 +24,11 @@ public partial class Message
     /// 引用自...
     /// </summary>
     [ForeignKey(nameof(QuoteMessageId))]
-    public virtual Message QuoteMessage { get; set; }
+    public virtual Message QuoteMessage { get; protected set; }
 
     /// <summary>
     /// 被引用列表
     /// </summary>
     [InverseProperty(nameof(QuoteMessage))]
-    public virtual IList<Message> QuotedMessageList { get; set; }
+    public virtual IList<Message> QuotedMessageList { get; protected set; }
 }

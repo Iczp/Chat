@@ -26,7 +26,10 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Localization\Chat\*.json" />
+    <Compile Remove="DataFilters\**" />
     <Content Remove="Localization\Chat\*.json" />
+    <EmbeddedResource Remove="DataFilters\**" />
+    <None Remove="DataFilters\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,10 +37,6 @@
       <PackagePath>\</PackagePath>
       <Pack>True</Pack>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="DataFilters\" />
   </ItemGroup>
 
 </Project>
