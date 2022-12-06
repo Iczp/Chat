@@ -1,12 +1,11 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.Messages;
+using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.FriendshipRequests;
 using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.OpenedRecorders;
 using System;
 using System.Threading.Tasks;
-using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 

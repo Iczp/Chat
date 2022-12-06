@@ -1,5 +1,4 @@
 ﻿using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.OfficialSections.OfficialExcludedMembers;
 using IczpNet.Chat.OfficialSections.OfficialGroupMembers;

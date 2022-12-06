@@ -1,7 +1,7 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.Enums;
-using IczpNet.Chat.Messages;
+using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.OfficialSections.OfficialExcludedMembers;
 using IczpNet.Chat.OfficialSections.OfficialGroupMembers;
 using IczpNet.Chat.OfficialSections.OfficialMembers;

@@ -1,5 +1,4 @@
-﻿using IczpNet.Chat.BaseEntitys;
-using IczpNet.Chat.Messages;
+﻿using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.OpenedRecorders;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;

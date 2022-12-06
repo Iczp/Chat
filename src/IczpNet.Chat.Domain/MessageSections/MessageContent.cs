@@ -1,6 +1,6 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.BaseEntitys;
-using IczpNet.Chat.Messages;
+using IczpNet.Chat.MessageSections.Messages;
 using System;
 using System.Collections.Generic;
 

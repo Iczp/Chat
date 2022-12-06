@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.Messages;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 

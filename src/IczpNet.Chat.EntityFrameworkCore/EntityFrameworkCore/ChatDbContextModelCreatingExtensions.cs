@@ -1,15 +1,13 @@
 ﻿using IczpNet.AbpCommons.EntityFrameworkCore;
 using IczpNet.Chat.Attributes;
 using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.Messages;
 using IczpNet.Chat.MessageSections;
+using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.RoomSections.RoomPermissionGrants;
 using IczpNet.Chat.RoomSections.RoomRoleRoomMembers;
 using IczpNet.Chat.SessionSections.FriendshipTagUnits;
-using IczpNet.Chat.SessionSections.SessionSettings;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
