@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace IczpNet.Chat.MessageSections
 {
-    public abstract class MessageContent : BaseEntity<Guid>, IMessageContent, IIsActive
+    public abstract class BaseMessageContentEntity : BaseEntity<Guid>, IMessageContent, IIsActive
     {
         public virtual bool IsActive { get; set; }
 

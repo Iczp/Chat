@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
-using IczpNet.Chat.Messages;
-using IczpNet.Chat.Messages.Dtos;
+using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.MessageSections.Messages.Dtos;
 
 namespace IczpNet.Chat.AutoMappers;
 

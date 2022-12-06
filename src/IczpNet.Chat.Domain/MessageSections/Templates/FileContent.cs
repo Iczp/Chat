@@ -2,7 +2,7 @@
 
 namespace IczpNet.Chat.MessageSections.Templates
 {
-    public class FileContent : MessageContent
+    public class FileContent : BaseMessageContentEntity
     {
         /// <summary>
         /// 文件地址

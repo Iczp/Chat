@@ -2,7 +2,7 @@
 
 namespace IczpNet.Chat.MessageSections.Templates
 {
-    public class CmdContent : MessageContent
+    public class CmdContent : BaseMessageContentEntity
     {
         [StringLength(20)]
         public virtual string Cmd { get; set; }

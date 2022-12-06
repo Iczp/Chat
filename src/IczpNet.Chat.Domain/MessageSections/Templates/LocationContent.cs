@@ -2,7 +2,7 @@
 
 namespace IczpNet.Chat.MessageSections.Templates
 {
-    public class LocationContent : MessageContent
+    public class LocationContent : BaseMessageContentEntity
     {
         /// <summary>
         /// AMap(高德地图)、baidu(百度地图)

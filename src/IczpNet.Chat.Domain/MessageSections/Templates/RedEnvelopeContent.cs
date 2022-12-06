@@ -6,7 +6,7 @@ using IczpNet.Chat.Enums;
 
 namespace IczpNet.Chat.MessageSections.Templates
 {
-    public class RedEnvelopeContent : MessageContent
+    public class RedEnvelopeContent : BaseMessageContentEntity
     {
         /// <summary>
         /// 红包发放方式（0：随机金额;1:固定金额）

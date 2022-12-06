@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.MessageSections.Templates
 {
-    public class HistoryContent : MessageContent
+    public class HistoryContent : BaseMessageContentEntity
     {
         /// <summary>
         /// 文本内容

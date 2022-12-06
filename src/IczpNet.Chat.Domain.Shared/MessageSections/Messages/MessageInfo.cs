@@ -1,20 +1,28 @@
 ﻿using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace IczpNet.Chat.MessageSections.Messages
 {
+
+    public class MessageInfo<T> : MessageInfo
+    {
+        public T Content { get; set; }
+    }
+
     public class MessageInfo
     {
-       
-        public virtual string SessionId { get; protected set; }
+        public virtual Guid Id { get; set; }
+
+        public virtual long AutoId { get; set; }
+
+        public virtual string SessionId { get; set; }
 
         /// <summary>
         /// 发送者
         /// </summary>
-        public virtual Guid? SenderId { get; set; }
+        //public virtual Guid? SenderId { get; set; }
+        public virtual ChatObjectInfo Sender { get; set; }
 
         /// <summary>
         /// 接收者
@@ -22,16 +30,9 @@ namespace IczpNet.Chat.MessageSections.Messages
         public virtual Guid? ReceiverId { get; set; }
 
         /// <summary>
-        /// 消息通道
-        /// </summary>
-        public virtual MessageChannelEnum MessageChannel { get; set; }
-
-        /// <summary>
         /// 消息类型
         /// </summary>
         public virtual MessageTypeEnum MessageType { get; set; }
-
-        public virtual string ContentJson { get; protected set; }
 
         /// <summary>
         /// 扩展（键名）根据业务自义，如:"courseId"、"course-userId"、"erp-userId"
@@ -47,9 +48,5 @@ namespace IczpNet.Chat.MessageSections.Messages
         /// 撤回消息时间
         /// </summary>
         public virtual DateTime? RollbackTime { get; set; }
-
-        public virtual ChatObjectSimpleInfo Sender { get; set; }
-
-        public virtual ChatObjectSimpleInfo Receiver { get; set; }
     }
 }

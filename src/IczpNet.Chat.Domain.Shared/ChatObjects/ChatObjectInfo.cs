@@ -3,7 +3,7 @@ using System;
 
 namespace IczpNet.Chat.ChatObjects
 {
-    public class ChatObjectSimpleInfo
+    public class ChatObjectInfo
     {
         public virtual Guid Id { get; set; }
         public virtual string Name { get; set; }

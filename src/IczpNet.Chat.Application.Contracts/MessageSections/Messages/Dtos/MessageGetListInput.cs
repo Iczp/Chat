@@ -1,6 +1,6 @@
 ﻿using IczpNet.Chat.BaseDtos;
 
-namespace IczpNet.Chat.Messages.Dtos;
+namespace IczpNet.Chat.MessageSections.Messages.Dtos;
 
 public class MessageGetListInput : BaseGetListInput
 {

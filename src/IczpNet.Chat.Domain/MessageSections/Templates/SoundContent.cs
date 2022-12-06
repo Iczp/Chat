@@ -2,7 +2,7 @@
 
 namespace IczpNet.Chat.MessageSections.Templates
 {
-    public class SoundContent : MessageContent
+    public class SoundContent : BaseMessageContentEntity
     {
         /// <summary>
         /// 语音地址

@@ -2,7 +2,7 @@
 
 namespace IczpNet.Chat.MessageSections.Templates
 {
-    public class LinkContent : MessageContent
+    public class LinkContent : BaseMessageContentEntity
     {
         /// <summary>
         /// Url

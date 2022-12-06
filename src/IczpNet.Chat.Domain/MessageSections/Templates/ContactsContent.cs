@@ -1,39 +1,46 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.DataFilters;
+using IczpNet.Chat.Enums;
+using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.MessageSections.Templates
 {
-    public class ContactsContent : MessageContent
+    public class ContactsContent : BaseMessageContentEntity, IChatOwner<Guid?>
     {
-        /// <summary>
-        /// 媒体Id
-        /// </summary>
-        [StringLength(36)]
-        public string MediaId { get; set; }
-        /// <summary>
-        /// 媒体类型  0:未定义, 1:个人, 2:群, 3:订阅号, 4:公众号, 5:部门群, 6:课程群, 7:任务群
-        /// </summary>
-        public string MediaType { get; set; }
+        public Guid? OwnerId { get; set; }
+
+        public ChatObject Owner { get; set; }
+
         /// <summary>
         /// 联系人名称
         /// </summary>
-        [Required(ErrorMessage = "联系人名称[Title]必填")]
         //[Index]
-        [StringLength(500)]
-        public string Title { get; set; }
+        [StringLength(50)]
+        public string Name { get; set; }
+
+        [StringLength(50)]
+        public virtual string Code { get; set; }
+
         /// <summary>
-        /// 头像地址
+        /// 头像
         /// </summary>
-        [StringLength(500)]
-        public string Picture { get; set; }
+        [StringLength(300)]
+        [MaxLength(300)]
+        public virtual string Portrait { get; set; }
+
+        public virtual ChatObjectTypeEnum? ObjectType { get; set; }
+
         /// <summary>
         /// 说明
         /// </summary>
-        [StringLength(500)]
+        [StringLength(200)]
         public string Description { get; set; }
+
         /// <summary>
         /// 备注
         /// </summary>
-        [StringLength(500)]
+        [StringLength(200)]
         public string Remark { get; set; }
     }
 }

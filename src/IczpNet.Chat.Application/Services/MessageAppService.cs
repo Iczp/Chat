@@ -1,6 +1,6 @@
 ﻿using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.Messages;
-using IczpNet.Chat.Messages.Dtos;
+using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.MessageSections.Messages.Dtos;
 using System;
 using Volo.Abp.Domain.Repositories;
 
