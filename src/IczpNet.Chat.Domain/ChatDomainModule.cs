@@ -1,5 +1,7 @@
 using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
+using Microsoft.Extensions.DependencyInjection;
+using Volo.Abp.AutoMapper;
 using Volo.Abp.Domain;
 using Volo.Abp.Identity;
 using Volo.Abp.Modularity;
@@ -18,5 +20,12 @@ namespace IczpNet.Chat;
 [DependsOn(typeof(AbpPermissionManagementDomainIdentityModule))]
 public class ChatDomainModule : AbpModule
 {
-
+    public override void ConfigureServices(ServiceConfigurationContext context)
+    {
+        context.Services.AddAutoMapperObjectMapper<ChatDomainModule>();
+        Configure<AbpAutoMapperOptions>(options =>
+        {
+            options.AddMaps<ChatDomainModule>(validate: true);
+        });
+    }
 }
