@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.MessageSections.Templates
 {
@@ -20,6 +21,7 @@ namespace IczpNet.Chat.MessageSections.Templates
         //[Index]
         public virtual string Description { get; set; }
 
+        [InverseProperty(nameof(HistoryMessage.HistoryContent))]
         public virtual List<HistoryMessage> HistoryMessageList { set; get; }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons.Dtos;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
@@ -11,7 +12,6 @@ using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.Services
 {
@@ -91,16 +91,17 @@ namespace IczpNet.Chat.Services
             return base.DeleteAsync(id);
         }
 
-        [RemoteService(false)]
-        public override Task<ChatObjectDetailDto> UpdateAsync(Guid id, ChatObjectUpdateInput input)
+        protected override Task MapToEntityAsync(ChatObjectUpdateInput updateInput, ChatObject entity)
         {
-            return base.UpdateAsync(id, input);
+            entity.SetName(updateInput.Name);
+            return base.MapToEntityAsync(updateInput, entity);
         }
 
-        [RemoteService(false)]
-        public override Task<ChatObjectDetailDto> CreateAsync(ChatObjectCreateInput input)
+        protected override ChatObject MapToEntity(ChatObjectCreateInput createInput)
         {
-            return base.CreateAsync(input);
+            var entity = base.MapToEntity(createInput);
+            entity.SetName(createInput.Name);
+            return entity;
         }
 
         [RemoteService(false)]

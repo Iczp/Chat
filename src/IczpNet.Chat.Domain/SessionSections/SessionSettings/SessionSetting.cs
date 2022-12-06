@@ -12,7 +12,7 @@ namespace IczpNet.Chat.SessionSections.SessionSettings
         public virtual string Rename { get; set; }
 
         /// <summary>
-        /// 备注
+        /// 备注,./
         /// </summary>
         [StringLength(500)]
         public virtual string Remarks { get; set; }
