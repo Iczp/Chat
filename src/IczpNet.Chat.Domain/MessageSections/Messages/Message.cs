@@ -39,7 +39,7 @@ public partial class Message : BaseEntity<Guid>
     /// <summary>
     /// 消息通道
     /// </summary>
-    [Required] 
+    [Required]
     public virtual MessageChannels MessageChannel { get; protected set; }
 
     /// <summary>
@@ -62,6 +62,10 @@ public partial class Message : BaseEntity<Guid>
     [StringLength(5000)]
     public virtual string KeyValue { get; protected set; }
 
+    /// <summary>
+    /// 是否撤回
+    /// </summary>
+    public virtual bool IsRollbacked { get; protected set; }
     /// <summary>
     /// 撤回消息时间
     /// </summary>
