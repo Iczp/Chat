@@ -20,15 +20,16 @@ namespace IczpNet.Chat.MessageSections.Messages
             ChatObjectRepository = chatObjectRepository;
         }
 
-        protected virtual async Task<Message> SendMessageAsync<TContentInfo, TContentInput>(MessageInput<TContentInput> input)
-            where TContentInfo : class
+        protected virtual async Task<Message> CreateMessageAsync<TContentInput>(MessageInput<TContentInput> input)
             where TContentInput : class
         {
             var sender = await ChatObjectRepository.GetAsync(input.SenderId);
 
             var receiver = await ChatObjectRepository.GetAsync(input.ReceiverId);
 
-            var entity = new Message(sender, receiver, input.KeyName, input.KeyValue);
+            var entity = new Message(GuidGenerator.Create(), sender, receiver);
+
+            entity.SetKey(input.KeyName, input.KeyValue);
 
             if (input.QuoteMessageId.HasValue)
             {
@@ -44,9 +45,9 @@ namespace IczpNet.Chat.MessageSections.Messages
             throw new NotImplementedException();
         }
 
-        public virtual Task<MessageInfo<TextContentInfo>> SendTextMessageAsync(MessageInput<TextContentInfo> input)
+        public virtual async Task<Message> SendTextMessageAsync(MessageInput<TextContentInfo> input)
         {
-            throw new NotImplementedException();
+            return await CreateMessageAsync(input);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.MessageSections.Templates;
+﻿using IczpNet.Chat.MessageSections.Messages.Dtos;
+using IczpNet.Chat.MessageSections.Templates;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.MessageSections.Messages
@@ -6,6 +7,6 @@ namespace IczpNet.Chat.MessageSections.Messages
     public interface IMessageAppService
     {
 
-        Task<MessageInfo<TextContentInfo>> SendTextMessageAsync(MessageInput<TextContentInfo> input);
+        Task<MessageDto> SendTextMessageAsync(MessageInput<TextContentInfo> input);
     }
 }

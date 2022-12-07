@@ -5,6 +5,7 @@ using IczpNet.Chat.MessageSections.Templates;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.MessageServices
 {
@@ -29,9 +30,10 @@ namespace IczpNet.Chat.MessageServices
             MessageManager = messageManager;
         }
 
-        public Task<MessageInfo<TextContentInfo>> SendTextMessageAsync(MessageInput<TextContentInfo> input)
+        public async Task<MessageDto> SendTextMessageAsync(MessageInput<TextContentInfo> input)
         {
-            return MessageManager.SendTextMessageAsync(input);
+            var message = await MessageManager.SendTextMessageAsync(input);
+            return ObjectMapper.Map<Message, MessageDto>(message);
         }
     }
 }

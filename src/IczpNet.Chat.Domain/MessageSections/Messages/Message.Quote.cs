@@ -17,7 +17,7 @@ public partial class Message
     /// </summary>
     public virtual long QuoteDepth { get; protected set; }
 
-    [StringLength(100)]
+    [StringLength(QuotePathMaxLength)]
     public virtual string QuotePath { get; protected set; }
 
     /// <summary>

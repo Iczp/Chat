@@ -17,7 +17,7 @@ public partial class Message
     /// </summary>
     public virtual long ForwardDepth { get; protected set; }
 
-    [StringLength(100)]
+    [StringLength(ForwardPathMaxLength)]
     public virtual string ForwardPath { get; protected set; }
 
     /// <summary>
