@@ -2,6 +2,7 @@
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
+using Volo.Abp.AutoMapper;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -21,26 +22,26 @@ public class ChatApplicationAutoMapperProfile : Profile
 
         //MessageContent
 
-        CreateMap<RedEnvelopeContent, RedEnvelopeContentResult>()
-          //.ForMember(d => d.Detail, options => options.MapFrom<DetailResolver>())
-          //.ForMember(d => d.IsFinished, options => options.MapFrom<IsFinishedResolver>())
-          ;
+        //CreateMap<RedEnvelopeContent, RedEnvelopeContentResult>()
+        //  //.ForMember(d => d.Detail, options => options.MapFrom<DetailResolver>())
+        //  //.ForMember(d => d.IsFinished, options => options.MapFrom<IsFinishedResolver>())
+        //  ;
 
-        CreateMap<TextContentInfo, TextContent>().ReverseMap();
-        CreateMap<CmdContentInfo, CmdContent>().ReverseMap();
-        CreateMap<HtmlContentInfo, HtmlContent>().ReverseMap();
+        //CreateMap<TextContentInfo, TextContent>().IgnoreAllPropertiesWithAnInaccessibleSetter().ReverseMap();
+        //CreateMap<CmdContentInfo, CmdContent>().IgnoreAllPropertiesWithAnInaccessibleSetter().ReverseMap();
+        //CreateMap<HtmlContentInfo, HtmlContent>().IgnoreAllPropertiesWithAnInaccessibleSetter().ReverseMap();
 
-        CreateMap<ContactsContentInfo, ContactsContent>().ReverseMap();
+        //CreateMap<ContactsContentInfo, ContactsContent>().IgnoreAllPropertiesWithAnInaccessibleSetter().ReverseMap();
 
-        CreateMap<FileContentInfo, FileContent>().ReverseMap();
-        CreateMap<ImageContentInfo, ImageContent>().ReverseMap();
-        CreateMap<LinkContentInfo, LinkContent>().ReverseMap();
-        CreateMap<LocationContentInfo, LocationContent>().ReverseMap();
-        CreateMap<SoundContentInfo, SoundContent>().ReverseMap();
-        CreateMap<VideoContentInfo, VideoContent>().ReverseMap();
+        //CreateMap<FileContentInfo, FileContent>().IgnoreAllPropertiesWithAnInaccessibleSetter().ReverseMap();
+        //CreateMap<ImageContentInfo, ImageContent>().IgnoreAllPropertiesWithAnInaccessibleSetter().ReverseMap();
+        //CreateMap<LinkContentInfo, LinkContent>().IgnoreAllPropertiesWithAnInaccessibleSetter().ReverseMap();
+        //CreateMap<LocationContentInfo, LocationContent>().IgnoreAllPropertiesWithAnInaccessibleSetter().ReverseMap();
+        //CreateMap<SoundContentInfo, SoundContent>().IgnoreAllPropertiesWithAnInaccessibleSetter().ReverseMap();
+        //CreateMap<VideoContentInfo, VideoContent>().IgnoreAllPropertiesWithAnInaccessibleSetter().ReverseMap();
 
-        CreateMap<HistoryContentInput, HistoryContent>();
-        CreateMap<HistoryContent, HistoryContentOutput>();
+        //CreateMap<HistoryContentInput, HistoryContent>().IgnoreAllPropertiesWithAnInaccessibleSetter();
+        //CreateMap<HistoryContent, HistoryContentOutput>().IgnoreAllPropertiesWithAnInaccessibleSetter();
 
     }
 }

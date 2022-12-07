@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,10 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221207032711_ChatObject_AddProp_TypeName")]
+    partial class ChatObject_AddProp_TypeName
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -189,8 +191,7 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnName("TenantId");
 
                     b.Property<string>("TypeName")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -555,9 +556,6 @@ namespace IczpNet.Chat.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<Guid>("DestinationId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("ExtraProperties")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("ExtraProperties");
@@ -603,8 +601,6 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnName("TenantId");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("DestinationId");
 
                     b.HasIndex("ObjectType");
 
@@ -3361,17 +3357,9 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Templates.ContactsContent", b =>
                 {
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Destination")
-                        .WithMany()
-                        .HasForeignKey("DestinationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
                         .WithMany()
                         .HasForeignKey("OwnerId");
-
-                    b.Navigation("Destination");
 
                     b.Navigation("Owner");
                 });

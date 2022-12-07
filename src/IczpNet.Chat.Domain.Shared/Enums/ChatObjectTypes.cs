@@ -20,15 +20,20 @@ namespace IczpNet.Chat.Enums
         [Description("公众号")]
         Official = 3,
         /// <summary>
+        /// 公众群组
+        /// </summary>
+        [Description("公众群组")]
+        OfficialGroup = 4,
+        /// <summary>
         /// 广场
         /// </summary>
         [Description("广场")]
-        Square = 4,
+        Square = 5,
         /// <summary>
         /// 机器人
         /// </summary>
         [Description("机器人")]
-        Robot = 5,
+        Robot = 6,
         /// <summary>
         /// 掌柜
         /// </summary>
@@ -43,6 +48,6 @@ namespace IczpNet.Chat.Enums
         /// 客户
         /// </summary>
         [Description("客户")]
-        Customer = 8,
+        Customer = 9,
     }
 }

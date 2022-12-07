@@ -24,6 +24,11 @@ namespace IczpNet.Chat.ChatObjects
     //[Index]
     public class ChatObject : BaseEntity<Guid>, IName, IChatObject, IHasSimpleStateCheckers<ChatObject>
     {
+        public List<ISimpleStateChecker<ChatObject>> StateCheckers { get; }
+
+        [StringLength(50)]
+        public virtual string TypeName { get; private set; }
+
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public virtual long AutoId { get; }
 
@@ -139,22 +144,23 @@ namespace IczpNet.Chat.ChatObjects
         public virtual IList<Favorite> FavoriteList { get; set; }
         #endregion
 
-        public virtual void SetName(string name)
-        {
-            Name = name;
-        }
-
-        public List<ISimpleStateChecker<ChatObject>> StateCheckers { get; }
 
         protected ChatObject()
         {
             StateCheckers = new List<ISimpleStateChecker<ChatObject>>();
+            TypeName = GetType().Name;
         }
 
         protected ChatObject(Guid id, ChatObjectTypes chatObjectType) : base(id)
         {
             ObjectType = chatObjectType;
+            TypeName = GetType().Name;
             StateCheckers = new List<ISimpleStateChecker<ChatObject>>();
+        }
+
+        public virtual void SetName(string name)
+        {
+            Name = name;
         }
     }
 }

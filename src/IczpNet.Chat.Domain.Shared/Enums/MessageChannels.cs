@@ -8,7 +8,7 @@ namespace IczpNet.Chat.Enums
         /// 个人
         /// </summary>
         [Description("个人")]
-        PersonalChannel = 1,
+        PersonalToPersonal = 1,
         /// <summary>
         /// 普通群
         /// </summary>

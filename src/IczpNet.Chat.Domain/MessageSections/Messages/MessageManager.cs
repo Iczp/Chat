@@ -24,9 +24,10 @@ namespace IczpNet.Chat.MessageSections.Messages
             where TContentInfo : class
             where TContentInput : class
         {
-            var sender = await ChatObjectRepository.GetAsync(input.SenderId, includeDetails: false);
-            var receiver = await ChatObjectRepository.GetAsync(input.ReceiverId, includeDetails: false);
-            
+            var sender = await ChatObjectRepository.GetAsync(input.SenderId);
+
+            var receiver = await ChatObjectRepository.GetAsync(input.ReceiverId);
+
             var entity = new Message(sender, receiver, input.KeyName, input.KeyValue);
 
             if (input.QuoteMessageId.HasValue)

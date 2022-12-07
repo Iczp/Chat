@@ -13,7 +13,7 @@ public partial class Message : BaseEntity<Guid>
     public virtual long AutoId { get; protected set; }
 
     [StringLength(100)]
-    [Required]
+    //[Required]
     public virtual string SessionId { get; protected set; }
 
     /// <summary>
@@ -22,9 +22,19 @@ public partial class Message : BaseEntity<Guid>
     public virtual Guid? SenderId { get; protected set; }
 
     /// <summary>
+    /// 发送者类型
+    /// </summary>
+    public virtual ChatObjectTypes? SenderType { get; protected set; }
+
+    /// <summary>
     /// 接收者
     /// </summary>
     public virtual Guid? ReceiverId { get; protected set; }
+
+    /// <summary>
+    /// 接收者类型
+    /// </summary>
+    public virtual ChatObjectTypes? ReceiverType { get; protected set; }
 
     /// <summary>
     /// 消息通道

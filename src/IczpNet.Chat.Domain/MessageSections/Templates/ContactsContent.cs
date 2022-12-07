@@ -3,14 +3,16 @@ using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.MessageSections.Templates
 {
     public class ContactsContent : BaseMessageContentEntity, IChatOwner<Guid?>
     {
-        public Guid? OwnerId { get; set; }
+        public virtual Guid DestinationId { get; protected set; }
 
-        public ChatObject Owner { get; set; }
+        [ForeignKey(nameof(DestinationId))]
+        public virtual ChatObject Destination { get; protected set; }
 
         /// <summary>
         /// 联系人名称

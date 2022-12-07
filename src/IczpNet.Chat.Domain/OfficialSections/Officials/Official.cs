@@ -15,6 +15,7 @@ namespace IczpNet.Chat.OfficialSections.Officials
 
         public virtual OfficialTypes Type { get; set; }
 
+        [InverseProperty(nameof(OfficialGroup.Official))]
         public virtual IList<OfficialGroup> OfficialGroupList { get; set; } = new List<OfficialGroup>();
 
         public virtual IList<OfficalExcludedMember> OfficalExcludedMemberList { get; set; } = new List<OfficalExcludedMember>();

@@ -12,37 +12,17 @@ public partial class Message
     {
         //, IMessageContent messageContent
         Sender = sender;
+        SenderType = sender.ObjectType;
         Receiver = receiver;
-        SessionId = MakeSessionId(sender, receiver);
-        MessageChannel = MakeMessageChannel(sender, receiver);
+        ReceiverType = receiver.ObjectType;
+        MessageChannel = MessageExtentions.MakeMessageChannel(sender, receiver);
+        SessionId = MessageExtentions.MakeSessionId(MessageChannel, sender, receiver);
         //MessageType = messageType;
         KeyName = keyName;
         KeyValue = keyValue;
     }
 
-    protected virtual MessageChannels MakeMessageChannel(ChatObject sender, ChatObject receiver)
-    {
-        if (sender.ObjectType == ChatObjectTypes.Room || receiver.ObjectType == ChatObjectTypes.Room)
-        {
-            return MessageChannels.RoomChannel;
-        }
-        else if (sender.ObjectType == ChatObjectTypes.Official || receiver.ObjectType == ChatObjectTypes.Official)
-        {
-            return MessageChannels.ServiceChannel;
-        }
-        else if (sender.ObjectType == ChatObjectTypes.Square || receiver.ObjectType == ChatObjectTypes.Square)
-        {
-            return MessageChannels.RoomChannel;
-        }
 
-
-        return MessageChannels.PersonalChannel;
-    }
-
-    protected virtual string MakeSessionId(ChatObject sender, ChatObject receiver)
-    {
-        throw new NotImplementedException();
-    }
 
     internal void SetQuoteMessage(Message quoteMessage)
     {

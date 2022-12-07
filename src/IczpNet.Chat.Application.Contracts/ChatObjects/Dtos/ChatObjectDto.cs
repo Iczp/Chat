@@ -1,7 +1,6 @@
 ﻿using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.Enums;
 using System;
-using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.ChatObjects.Dtos
 {
