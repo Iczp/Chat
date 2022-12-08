@@ -5,7 +5,7 @@ namespace IczpNet.Chat.MessageSections.Templates
     /// <summary>
     /// RedEnvelopeContentInput
     /// </summary>
-    public class RedEnvelopeContentRequest : BaseMessageContentInfo, IMessageContentInfo//, IValidatableObject
+    public class RedEnvelopeContentInput : BaseMessageContentInfo, IMessageContentInfo//, IValidatableObject
     {
         /// <summary>
         /// 红包发放方式（0：随机金额;1:固定金额）

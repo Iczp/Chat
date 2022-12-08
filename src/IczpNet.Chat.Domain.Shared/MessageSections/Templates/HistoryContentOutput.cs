@@ -1,6 +1,4 @@
-﻿using System.Linq;
-
-namespace IczpNet.Chat.MessageSections.Templates
+﻿namespace IczpNet.Chat.MessageSections.Templates
 {
     /// <summary>
     /// 聊天历史

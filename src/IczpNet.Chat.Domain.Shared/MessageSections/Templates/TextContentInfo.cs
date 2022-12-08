@@ -3,7 +3,6 @@
     /// <summary>
     /// 文本消息
     /// </summary>
-    //[AutoMap(typeof(TextContent))]
     public class TextContentInfo : BaseMessageContentInfo, IMessageContentInfo
     {
         /// <summary>

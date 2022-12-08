@@ -12,10 +12,14 @@ namespace IczpNet.Chat.MessageSections
     {
         public virtual bool IsActive { get; protected set; }
 
-        public virtual IList<Message> MessageList { get; protected set; }
+        public virtual IList<Message> MessageList { get; protected set; } = new List<Message>();
 
         public virtual Guid? OwnerId { get; protected set; }
 
         public virtual ChatObject Owner { get; protected set; }
+
+        protected BaseMessageContentEntity() { }
+
+        protected BaseMessageContentEntity(Guid id) : base(id) { }
     }
 }

@@ -1,6 +1,8 @@
 ﻿using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.MessageSections.Inputs;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
+using IczpNet.Chat.MessageSections.Outputs;
 using IczpNet.Chat.MessageSections.Templates;
 using System;
 using System.Threading.Tasks;
@@ -30,10 +32,14 @@ namespace IczpNet.Chat.MessageServices
             MessageManager = messageManager;
         }
 
-        public async Task<MessageDto> SendTextMessageAsync(MessageInput<TextContentInfo> input)
+        public virtual Task<TextMessageOuput> SendTextMessageAsync(TextMessageInput input)
         {
-            var message = await MessageManager.SendTextMessageAsync(input);
-            return ObjectMapper.Map<Message, MessageDto>(message);
+            return MessageManager.SendTextMessageAsync(input);
+        }
+
+        public Task<MessageInfo<CmdContentInfo>> SendCmdMessageAsync(MessageInput<CmdContentInfo> input)
+        {
+            return MessageManager.SendCmdMessageAsync(input);
         }
     }
 }
