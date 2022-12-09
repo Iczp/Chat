@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Linq;
 
 namespace IczpNet.Chat.MessageSections.Templates
 {
     /// <summary>
     /// RedEnvelopeContentOutput
     /// </summary>
-    public class RedEnvelopeContentResult : BaseMessageContentInfo, IMessageContentInfo
+    public class RedEnvelopeContentOutput : BaseMessageContentInfo, IMessageContentInfo
     {
         /// <summary>
         /// 文本内容

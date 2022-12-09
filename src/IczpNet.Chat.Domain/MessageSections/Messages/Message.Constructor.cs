@@ -24,7 +24,7 @@ public partial class Message
         //MessageType = messageType;
     }
 
-    internal void SetQuoteMessage(Message forwardMessage)
+    public virtual void SetQuoteMessage(Message forwardMessage)
     {
         QuoteMessage = forwardMessage;
         QuoteDepth = forwardMessage.QuoteDepth + 1;
@@ -32,7 +32,7 @@ public partial class Message
         Assert.If(QuotePath.Length > QuotePathMaxLength, "Maximum length exceeded in [QuotePath].");
     }
 
-    internal void SetForwardMessage(Message forwardMessage)
+    public virtual void SetForwardMessage(Message forwardMessage)
     {
         ForwardMessage = forwardMessage;
         ForwardDepth = forwardMessage.QuoteDepth + 1;
@@ -40,7 +40,7 @@ public partial class Message
         Assert.If(ForwardPath.Length > ForwardPathMaxLength, "Maximum length exceeded in [ForwardPath].");
     }
 
-    internal virtual void SetKey(string keyName, string keyValue)
+    public virtual void SetKey(string keyName, string keyValue)
     {
         KeyName = keyName;
         KeyValue = keyValue;

@@ -1,13 +1,12 @@
 ﻿using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.MessageSections.ContentInputs;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
-using IczpNet.Chat.MessageSections.ContentOutputs;
 using IczpNet.Chat.MessageSections.Templates;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.MessageServices
 {
@@ -32,6 +31,12 @@ namespace IczpNet.Chat.MessageServices
             MessageManager = messageManager;
         }
 
+        public async Task<List<Guid>> ForwardMessageAsync(Guid sourceMessageId, Guid senderId, List<Guid> receiverIdList)
+        {
+            var messageList = await MessageManager.ForwardMessageAsync(sourceMessageId, senderId, receiverIdList);
+            return messageList.Select(x => x.Id).ToList();
+        }
+
         public virtual Task<MessageInfo<TextContentInfo>> SendTextMessageAsync(MessageInput<TextContentInfo> input)
         {
             return MessageManager.SendTextMessageAsync(input);
@@ -41,5 +46,7 @@ namespace IczpNet.Chat.MessageServices
         {
             return MessageManager.SendCmdMessageAsync(input);
         }
+
+
     }
 }

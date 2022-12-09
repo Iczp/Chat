@@ -50,13 +50,13 @@ namespace IczpNet.Chat.Attributes
 
         public static MessageTypes GetMessageType(Type type)
         {
-            //var nameAttribute = type.GetCustomAttribute<MessageTemplateAttribute>();
+            var nameAttribute = type.GetCustomAttribute<MessageTemplateAttribute>();
 
-            //Assert.NotNull(nameAttribute, $"Item already exists. Key:'{type}',value:'{nameAttribute.MessageType}'");
+            Assert.NotNull(nameAttribute, $"Item already exists. Key:'{type}',value:'{nameAttribute.MessageType}'");
 
-            //return nameAttribute.MessageType;
+            return nameAttribute.MessageType;
 
-            return MessageTemplateDictionary[type];
+            //return MessageTemplateDictionary[type];
         }
     }
 }
