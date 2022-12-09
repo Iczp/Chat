@@ -1,6 +1,4 @@
 ﻿using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.MessageSections.ContentInputs;
-using IczpNet.Chat.MessageSections.ContentOutputs;
 using IczpNet.Chat.MessageSections.Templates;
 using System;
 using System.Collections.Generic;

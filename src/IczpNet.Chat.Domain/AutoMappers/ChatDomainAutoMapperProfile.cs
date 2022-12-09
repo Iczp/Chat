@@ -1,12 +1,8 @@
 ﻿using AutoMapper;
 using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.MessageSections;
-using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.ContentOutputs;
+using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
-using Volo.Abp.AutoMapper;
-using System.Linq.Dynamic.Core;
-using System.Linq;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -17,21 +13,16 @@ public class ChatApplicationAutoMapperProfile : Profile
         //ChatObject
         CreateMap<ChatObject, ChatObjectInfo>();
 
-
         //Message
-        CreateMap<Message, MessageInfo>();
-
-        CreateMap(typeof(Message), typeof(MessageInfo<>));
+        CreateMap<Message, MessageInfo>().MaxDepth(1);
+        CreateMap<Message, MessageWithQuoteInfo>().MaxDepth(1);
+        CreateMap(typeof(Message), typeof(MessageInfo<>)).MaxDepth(1);
+        CreateMap(typeof(Message), typeof(MessageWithQuoteInfo<>)).MaxDepth(1);
 
         //CreateMap<MessageInput<>, Message>();
         CreateMap<Message, TextMessageOuput>().ForMember(x => x.Content, o => o.MapFrom(x => x.GetContent()));
 
         //MessageContent
-
-        //CreateMap<RedEnvelopeContent, RedEnvelopeContentResult>()
-        //  //.ForMember(d => d.Detail, options => options.MapFrom<DetailResolver>())
-        //  //.ForMember(d => d.IsFinished, options => options.MapFrom<IsFinishedResolver>())
-        //  ;
 
         CreateMap<TextContentInfo, TextContent>().UsingMessageTemplate().ReverseMap();
         CreateMap<CmdContentInfo, CmdContent>().UsingMessageTemplate().ReverseMap();
@@ -45,5 +36,11 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<VideoContentInfo, VideoContent>().UsingMessageTemplate().ReverseMap();
         CreateMap<HistoryContentInput, HistoryContent>(MemberList.None).UsingMessageTemplate();
         CreateMap<HistoryContent, HistoryContentOutput>();
+
+        //RedEnvelope
+        //CreateMap<RedEnvelopeContent, RedEnvelopeContentOutput>()
+          //.ForMember(d => d.Detail, options => options.MapFrom<DetailResolver>())
+          //.ForMember(d => d.IsFinished, options => options.MapFrom<IsFinishedResolver>())
+          ;
     }
 }
