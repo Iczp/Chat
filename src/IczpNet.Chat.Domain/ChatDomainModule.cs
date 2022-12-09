@@ -2,7 +2,6 @@ using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
 using IczpNet.Chat.ShortIds;
 using Microsoft.Extensions.DependencyInjection;
-using shortid.Configuration;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Domain;
 using Volo.Abp.Identity;
