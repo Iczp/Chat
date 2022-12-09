@@ -15,7 +15,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         public virtual long AutoId { get; set; }
 
-        public virtual string SessionId { get; set; }
+        //public virtual string SessionId { get; set; }
 
         /// <summary>
         /// 发送者
