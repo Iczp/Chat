@@ -1,5 +1,4 @@
-﻿using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.Enums;
+﻿using IczpNet.Chat.Enums;
 using System;
 
 namespace IczpNet.Chat.MessageSections.Messages

@@ -23,19 +23,9 @@ public class ChatApplicationAutoMapperProfile : Profile
 
         CreateMap(typeof(Message), typeof(MessageInfo<>));
 
-
         //CreateMap<MessageInput<>, Message>();
         CreateMap<Message, TextMessageOuput>().ForMember(x => x.Content, o => o.MapFrom(x => x.GetContent()));
-        //CreateMap<Message, CmdMessageOuput>().ForMember(x => x.Content, o => o.MapFrom(x => x.GetContent()));
-        //CreateMap<Message, TextMessageOuput>().ForMember(x => x.Content, o => o.MapFrom(x => x.GetContent()));
-        //CreateMap<Message, TextMessageOuput>().ForMember(x => x.Content, o => o.MapFrom(x => x.GetContent()));
-        //CreateMap<Message, TextMessageOuput>().ForMember(x => x.Content, o => o.MapFrom(x => x.GetContent()));
-        //CreateMap<Message, TextMessageOuput>().ForMember(x => x.Content, o => o.MapFrom(x => x.GetContent()));
-        //CreateMap<Message, TextMessageOuput>().ForMember(x => x.Content, o => o.MapFrom(x => x.GetContent()));
-        //CreateMap<Message, TextMessageOuput>().ForMember(x => x.Content, o => o.MapFrom(x => x.GetContent()));
-        //CreateMap<Message, TextMessageOuput>().ForMember(x => x.Content, o => o.MapFrom(x => x.GetContent()));
-        //CreateMap<Message, TextMessageOuput>().ForMember(x => x.Content, o => o.MapFrom(x => x.GetContent()));
-        //CreateMap<Message, TextMessageOuput>().ForMember(x => x.Content, o => o.MapFrom(x => x.GetContent()));
+
         //MessageContent
 
         //CreateMap<RedEnvelopeContent, RedEnvelopeContentResult>()

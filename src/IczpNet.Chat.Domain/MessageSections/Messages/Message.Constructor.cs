@@ -1,5 +1,6 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.Enums;
 using System;
 
 namespace IczpNet.Chat.MessageSections.Messages;
@@ -11,15 +12,15 @@ public partial class Message
     public const string Delimiter = "/";
     protected Message() { }
 
-    public Message(Guid id, ChatObject sender, ChatObject receiver) : base(id)
+    public Message(Guid id, MessageChannels messageChannel, ChatObject sender, ChatObject receiver, string sessionId) : base(id)
     {
         //, IMessageContent messageContent
         Sender = sender;
         SenderType = sender.ObjectType;
         Receiver = receiver;
         ReceiverType = receiver.ObjectType;
-        MessageChannel = MessageExtentions.MakeMessageChannel(sender, receiver);
-        SessionId = MessageExtentions.MakeSessionId(MessageChannel, sender, receiver);
+        MessageChannel = messageChannel;
+        SessionId = sessionId;
         //MessageType = messageType;
     }
 
@@ -43,5 +44,10 @@ public partial class Message
     {
         KeyName = keyName;
         KeyValue = keyValue;
+    }
+
+    public virtual void SetContentJson(string contentJson)
+    {
+        ContentJson = contentJson;
     }
 }

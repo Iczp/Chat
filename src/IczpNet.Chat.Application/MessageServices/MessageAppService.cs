@@ -32,7 +32,7 @@ namespace IczpNet.Chat.MessageServices
             MessageManager = messageManager;
         }
 
-        public virtual Task<TextMessageOuput> SendTextMessageAsync(TextMessageInput input)
+        public virtual Task<MessageInfo<TextContentInfo>> SendTextMessageAsync(MessageInput<TextContentInfo> input)
         {
             return MessageManager.SendTextMessageAsync(input);
         }

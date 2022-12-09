@@ -9,6 +9,8 @@ namespace IczpNet.Chat.MessageSections.Messages;
 
 public partial class Message : BaseEntity<Guid>
 {
+    public virtual dynamic Content => GetContent();
+
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public virtual long AutoId { get; protected set; }
 
@@ -49,6 +51,8 @@ public partial class Message : BaseEntity<Guid>
 
     [StringLength(5000)]
     public virtual string ContentJson { get; protected set; }
+
+    
 
     /// <summary>
     /// 扩展（键名）根据业务自义，如:"courseId"、"course-userId"、"erp-userId"

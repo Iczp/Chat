@@ -22,10 +22,10 @@ namespace IczpNet.Chat.MessageSections
         /// </summary>
         Guid ReceiverId { get; set; }
 
-        /// <summary>
-        /// 消息类型
-        /// </summary>
-        MessageTypes MessageType { get; set; }
+        ///// <summary>
+        ///// 消息类型
+        ///// </summary>
+        //MessageTypes MessageType { get; set; }
 
         /// <summary>
         /// 扩展（键名）根据业务自义，如:"courseId"、"course-userId"、"erp-userId"

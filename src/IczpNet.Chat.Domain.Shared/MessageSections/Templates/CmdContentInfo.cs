@@ -18,11 +18,7 @@
         /// <summary>
         /// app:///pages/im/notice?id=123
         /// </summary>
-        public virtual string Url { get; internal set; }
+        public virtual string Url { get; set; }
 
-        ///// <summary>
-        ///// 相关的媒体
-        ///// </summary>
-        //public List<MediaDto> Medias { get; set; }
     }
 }

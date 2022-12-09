@@ -12,5 +12,11 @@ namespace IczpNet.Chat.MessageSections.Templates
 
         [StringLength(500)]
         public virtual string Text { get; set; }
+
+        [StringLength(500)]
+        /// <summary>
+        /// app:///pages/im/notice?id=123
+        /// </summary>
+        public virtual string Url { get; internal set; }
     }
 }

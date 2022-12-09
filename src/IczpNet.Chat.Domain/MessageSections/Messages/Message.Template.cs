@@ -56,9 +56,9 @@ public partial class Message
     [InverseProperty(nameof(HistoryMessage.Message))]
     public virtual IList<HistoryMessage> HistoryMessageList { get; set; }
 
-
     public virtual dynamic GetContent()
     {
         return this.GetMessageContent().ToDynamicList().FirstOrDefault();
     }
+
 }
