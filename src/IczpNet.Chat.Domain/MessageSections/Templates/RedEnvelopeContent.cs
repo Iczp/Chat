@@ -3,9 +3,11 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.Attributes;
 
 namespace IczpNet.Chat.MessageSections.Templates
 {
+    [MessageTemplate(MessageTypes.RedEnvelope)]
     public class RedEnvelopeContent : BaseMessageContentEntity
     {
         /// <summary>

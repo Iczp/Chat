@@ -16,6 +16,15 @@ namespace IczpNet.Chat.MessageSections
 {
     public static class MessageExtentions
     {
+
+        public static ConcurrentDictionary<MessageTypes, PropertyInfo> MessageTypeDictionary => GenerateMessageTypeDictionary();
+
+        private static ConcurrentDictionary<MessageTypes, PropertyInfo> _messageTypeDictionary;
+
+        public static ConcurrentDictionary<Type, MessageTypes> MessageTemplateDictionary => GenerateMessageTemplateDictionary();
+
+        private static ConcurrentDictionary<Type, MessageTypes> _messageTemplateDictionary;
+
         public static MessageChannels MakeMessageChannel(ChatObject sender, ChatObject receiver)
         {
             if (sender.ObjectType == ChatObjectTypes.Room || receiver.ObjectType == ChatObjectTypes.Room)
@@ -59,6 +68,29 @@ namespace IczpNet.Chat.MessageSections
         }
 
 
+
+
+        public static ConcurrentDictionary<Type, MessageTypes> GenerateMessageTemplateDictionary()
+        {
+            if (_messageTemplateDictionary == null)
+            {
+                _messageTemplateDictionary = new ConcurrentDictionary<Type, MessageTypes>();
+
+                var entityTypes = typeof(IMessageContent).Assembly.GetExportedTypes()
+                    .Where(t => !t.IsAbstract && t.GetInterfaces().Any(x => typeof(IMessageContent).IsAssignableFrom(x)));
+
+                foreach (var entityType in entityTypes)
+                {
+                    var attribute = entityType.GetCustomAttribute<MessageTemplateAttribute>();
+                    if (attribute != null)
+                    {
+                        Assert.If(!_messageTemplateDictionary.TryAdd(entityType, attribute.MessageType), $"Item already exists. Key:'{entityType}',value:'{attribute.MessageType}'");
+                    }
+                }
+            }
+            return _messageTemplateDictionary;
+        }
+
         public static ConcurrentDictionary<MessageTypes, PropertyInfo> GenerateMessageTypeDictionary()
         {
             if (_messageTypeDictionary == null)
@@ -74,14 +106,18 @@ namespace IczpNet.Chat.MessageSections
             return _messageTypeDictionary;
         }
 
-        public static ConcurrentDictionary<MessageTypes, PropertyInfo> MessageTypeDictionary => GenerateMessageTypeDictionary();
-
-        private static ConcurrentDictionary<MessageTypes, PropertyInfo> _messageTypeDictionary;
-
         public static void SetMessageContent(this Message message, IMessageContent messageContent)
         {
             var list = message.GetMessageContent();
+
             list.Add(messageContent);
+
+            var messageType= MessageTemplateDictionary.GetValueOrDefault(messageContent.GetType());
+
+            Assert.NotNull(messageType, $"Item not exists. Key:'{messageType}'");
+
+            message.SetMessageType(messageType);
+
             MessageTypeDictionary[message.MessageType].SetValue(message, list, null);
         }
 

@@ -1,8 +1,10 @@
-﻿using IczpNet.Chat.Enums;
+﻿using IczpNet.Chat.Attributes;
+using IczpNet.Chat.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.MessageSections.Templates
 {
+    [MessageTemplate(MessageTypes.Html)]
     public class HtmlContent : BaseMessageContentEntity
     {
         /// <summary>

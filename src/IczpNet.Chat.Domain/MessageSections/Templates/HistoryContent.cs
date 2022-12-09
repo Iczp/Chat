@@ -1,9 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using IczpNet.Chat.Attributes;
+using IczpNet.Chat.Enums;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.MessageSections.Templates
 {
+    [MessageTemplate(MessageTypes.History)]
     public class HistoryContent : BaseMessageContentEntity
     {
         /// <summary>

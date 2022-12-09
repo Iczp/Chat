@@ -1,7 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using IczpNet.Chat.Attributes;
+using IczpNet.Chat.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.MessageSections.Templates
 {
+    [MessageTemplate(MessageTypes.Link)]
     public class LinkContent : BaseMessageContentEntity
     {
         /// <summary>

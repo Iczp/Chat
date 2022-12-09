@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.ChatObjects;
+﻿using IczpNet.Chat.Attributes;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
 using System;
@@ -7,6 +8,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.MessageSections.Templates
 {
+    [MessageTemplate(MessageTypes.Contacts)]
     public class ContactsContent : BaseMessageContentEntity, IChatOwner<Guid?>
     {
         public virtual Guid DestinationId { get; protected set; }
