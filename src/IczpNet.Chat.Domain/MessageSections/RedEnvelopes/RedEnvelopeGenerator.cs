@@ -12,26 +12,13 @@ namespace IczpNet.Chat.MessageSections.RedEnvelopes
 {
     public class RedEnvelopeGenerator : DomainService, IRedEnvelopeGenerator
     {
-        public Task<IList<RedEnvelopeUnit>> MakeAsync(GrantModes grantMode, decimal amount, int count, decimal totalAmount, string text)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="source"></param>
-        /// <param name="destination"></param>
-        /// <param name="destMember"></param>
-        /// <param name="context"></param>
-        /// <returns></returns>
-        public virtual IList<RedEnvelopeUnit> Resolve(RedEnvelopeContentInput source, RedEnvelopeContent destination, IList<RedEnvelopeUnit> destMember, ResolutionContext context)
+        public virtual async Task<IList<RedEnvelopeUnit>> MakeAsync(GrantModes grantMode, decimal amount, int count, decimal totalAmount, string text)
         {
             var result = new List<RedEnvelopeUnit>();
 
-            var numList = source.GrantMode == GrantModes.RandomAmount 
-                ? AllocateRandomResult(source.TotalAmount, source.Count) 
-                : AllocateFixedResult(source.Amount, source.Count);
+            var numList = grantMode == GrantModes.RandomAmount
+                ? AllocateRandomResult(totalAmount, count)
+                : AllocateFixedResult(amount, count);
 
             numList.ForEach(amount =>
             {
@@ -40,13 +27,14 @@ namespace IczpNet.Chat.MessageSections.RedEnvelopes
                     Amount = Convert.ToDecimal(amount),
                 });
             });
-            if (source.GrantMode == GrantModes.RandomAmount)
+
+            if (grantMode == GrantModes.RandomAmount)
             {
                 var maxAmount = result.Max(x => x.Amount);
 
                 result.FindAll(x => x.Amount == maxAmount).ForEach(x => x.IsTop = true);
             }
-            return result;
+            return await Task.FromResult(result);
         }
 
         /// <summary>
