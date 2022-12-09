@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 namespace IczpNet.Chat.MessageSections.Templates
 {
     [MessageTemplate(MessageTypes.Link)]
-    public class LinkContent : BaseMessageContentEntity
+    public class LinkContent : MessageContentEntityBase
     {
         /// <summary>
         /// Url

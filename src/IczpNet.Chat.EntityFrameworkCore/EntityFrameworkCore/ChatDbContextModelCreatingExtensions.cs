@@ -131,7 +131,7 @@ public static class ChatDbContextModelCreatingExtensions
 
         var entityTypes = moduleType.Assembly.GetExportedTypes()
                 .Where(t => t.Namespace.StartsWith(entityNamespace) && !t.IsAbstract
-                    && t.GetInterfaces().Any(x => typeof(IMessageContent).IsAssignableFrom(x)));
+                    && t.GetInterfaces().Any(x => typeof(IMessageContentEntity).IsAssignableFrom(x)));
 
         var _prefix = $"{ChatDbProperties.DbTablePrefix}_{nameof(Message)}_Template";
 

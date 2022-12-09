@@ -64,7 +64,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             return await Repository.InsertAsync(entity, autoSave: true);
         }
 
-        public virtual Task<Message> CreateMessageAsync<TMessageInput>(TMessageInput input, IMessageContent content)
+        public virtual Task<Message> CreateMessageAsync<TMessageInput>(TMessageInput input, IMessageContentEntity content)
             where TMessageInput : class, IMessageInput
         {
             return CreateMessageAsync(input, x =>
@@ -76,7 +76,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         public virtual async Task<MessageInfo<TContentInfo>> SendMessageAsync<TContentInfo, TContent>(MessageInput<TContentInfo> input)
             where TContentInfo : class, IMessageContentInfo
-            where TContent : class, IMessageContent
+            where TContent : class, IMessageContentEntity
         {
             var content = ObjectMapper.Map<TContentInfo, TContent>(input.Content);
             var message = await CreateMessageAsync(input, content);
@@ -93,5 +93,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         {
             return await SendMessageAsync<TextContentInfo, TextContent>(input);
         }
+
+
     }
 }

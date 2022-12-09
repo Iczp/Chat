@@ -8,7 +8,7 @@ using IczpNet.Chat.Attributes;
 namespace IczpNet.Chat.MessageSections.Templates
 {
     [MessageTemplate(MessageTypes.RedEnvelope)]
-    public class RedEnvelopeContent : BaseMessageContentEntity
+    public class RedEnvelopeContent : MessageContentEntityBase
     {
         /// <summary>
         /// 红包发放方式（0：随机金额;1:固定金额）

@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 namespace IczpNet.Chat.MessageSections.Templates
 {
     [MessageTemplate(MessageTypes.Location)]
-    public class LocationContent : BaseMessageContentEntity
+    public class LocationContent : MessageContentEntityBase
     {
         /// <summary>
         /// AMap(高德地图)、baidu(百度地图)

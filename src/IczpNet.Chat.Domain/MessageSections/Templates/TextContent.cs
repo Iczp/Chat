@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 namespace IczpNet.Chat.MessageSections.Templates
 {
     [MessageTemplate(MessageTypes.Text)]
-    public class TextContent : BaseMessageContentEntity
+    public class TextContent : MessageContentEntityBase
     {
         //protected TextContent() { }
 

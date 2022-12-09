@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 namespace IczpNet.Chat.MessageSections.Templates
 {
     [MessageTemplate(MessageTypes.Article)]
-    public class ArticleContent : BaseMessageContentEntity
+    public class ArticleContent : MessageContentEntityBase
     {
         /// <summary>
         /// 文章类型

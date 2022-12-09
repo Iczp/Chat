@@ -8,7 +8,7 @@ namespace IczpNet.Chat.MessageSections
     public static class MessageExtentions
     {
 
-        public static void SetMessageContent(this Message message, IMessageContent messageContent)
+        public static void SetMessageContent(this Message message, IMessageContentEntity messageContent)
         {
             var messageType = MessageTemplateAttribute.GetMessageType(messageContent.GetType());
 

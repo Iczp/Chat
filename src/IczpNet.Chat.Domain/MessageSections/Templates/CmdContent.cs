@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 namespace IczpNet.Chat.MessageSections.Templates
 {
     [MessageTemplate(MessageTypes.Cmd)]
-    public class CmdContent : BaseMessageContentEntity
+    public class CmdContent : MessageContentEntityBase
     {
         [StringLength(20)]
         public virtual string Cmd { get; set; }

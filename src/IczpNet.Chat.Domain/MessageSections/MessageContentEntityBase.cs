@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace IczpNet.Chat.MessageSections
 {
-    public abstract class BaseMessageContentEntity : BaseEntity<Guid>, IMessageContent, IIsActive, IChatOwner<Guid?>
+    public abstract class MessageContentEntityBase : BaseEntity<Guid>, IMessageContentEntity, IIsActive, IChatOwner<Guid?>
     {
         public virtual bool IsActive { get; protected set; }
 
@@ -18,8 +18,8 @@ namespace IczpNet.Chat.MessageSections
 
         public virtual ChatObject Owner { get; protected set; }
 
-        protected BaseMessageContentEntity() { }
+        protected MessageContentEntityBase() { }
 
-        protected BaseMessageContentEntity(Guid id) : base(id) { }
+        protected MessageContentEntityBase(Guid id) : base(id) { }
     }
 }

@@ -1,6 +1,6 @@
 ﻿namespace IczpNet.Chat.MessageSections
 {
-    public interface IMessageContent
+    public interface IMessageContentEntity
     {
     }
 }

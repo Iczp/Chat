@@ -2,7 +2,7 @@
 
 namespace IczpNet.Chat.MessageSections.Templates
 {
-    public class VideoContent : BaseMessageContentEntity
+    public class VideoContent : MessageContentEntityBase
     {
         /// <summary>
         /// 视频地址

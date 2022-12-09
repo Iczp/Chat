@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 namespace IczpNet.Chat.MessageSections.Templates
 {
     [MessageTemplate(MessageTypes.Image)]
-    public class ImageContent : BaseMessageContentEntity
+    public class ImageContent : MessageContentEntityBase
     {
         /// <summary>
         /// 图片地址

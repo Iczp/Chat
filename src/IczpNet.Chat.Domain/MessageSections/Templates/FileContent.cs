@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 namespace IczpNet.Chat.MessageSections.Templates
 {
     [MessageTemplate(MessageTypes.File)]
-    public class FileContent : BaseMessageContentEntity
+    public class FileContent : MessageContentEntityBase
     {
         /// <summary>
         /// 文件地址

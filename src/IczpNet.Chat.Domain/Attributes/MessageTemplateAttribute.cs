@@ -28,8 +28,8 @@ namespace IczpNet.Chat.Attributes
             {
                 _messageTemplateDictionary = new ConcurrentDictionary<Type, MessageTypes>();
 
-                var entityTypes = typeof(IMessageContent).Assembly.GetExportedTypes()
-                    .Where(t => !t.IsAbstract && t.GetInterfaces().Any(x => typeof(IMessageContent).IsAssignableFrom(x)));
+                var entityTypes = typeof(IMessageContentEntity).Assembly.GetExportedTypes()
+                    .Where(t => !t.IsAbstract && t.GetInterfaces().Any(x => typeof(IMessageContentEntity).IsAssignableFrom(x)));
 
                 foreach (var entityType in entityTypes)
                 {
