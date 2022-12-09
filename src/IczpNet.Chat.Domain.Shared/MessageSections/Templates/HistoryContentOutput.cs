@@ -3,7 +3,6 @@
     /// <summary>
     /// 聊天历史
     /// </summary>
-    //[AutoMapFrom(typeof(HistoryContent))]
     public class HistoryContentOutput : BaseMessageContentInfo, IMessageContentInfo
     {
         /// <summary>

@@ -6,7 +6,6 @@ namespace IczpNet.Chat.MessageSections.Templates
     /// <summary>
     /// 联系人消息
     /// </summary>
-    //[AutoMap(typeof(ContactsContent))]
     public class ContactsContentInfo : BaseMessageContentInfo, IMessageContentInfo
     {
         public virtual Guid DestinationId { get; set; }

@@ -3,7 +3,6 @@
     /// <summary>
     /// 位置信息
     /// </summary>
-    //[AutoMap(typeof(LocationContent))]
     public class LocationContentInfo : BaseMessageContentInfo, IMessageContentInfo
     {
         /// <summary>

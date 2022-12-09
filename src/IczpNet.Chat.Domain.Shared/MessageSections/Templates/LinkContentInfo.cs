@@ -3,7 +3,6 @@
     /// <summary>
     /// 分享链接消息
     /// </summary>
-    //[AutoMap(typeof(LinkContent))]
     public class LinkContentInfo : BaseMessageContentInfo, IMessageContentInfo
     {
         /// <summary>

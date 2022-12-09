@@ -3,7 +3,6 @@
     /// <summary>
     /// 视频消息
     /// </summary>
-    //[AutoMap(typeof(VideoContent))]
     public class VideoContentInfo : BaseMessageContentInfo, IMessageContentInfo
     {
         /// <summary>

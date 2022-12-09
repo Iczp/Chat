@@ -5,7 +5,6 @@ namespace IczpNet.Chat.MessageSections.Templates
     /// <summary>
     /// HTML消息
     /// </summary>
-    //[AutoMap(typeof(HtmlContent))]
     public class HtmlContentInfo : BaseMessageContentInfo, IMessageContentInfo
     {
         /// <summary>

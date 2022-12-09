@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace IczpNet.Chat.MessageSections.Outputs
+namespace IczpNet.Chat.MessageSections.ContentOutputs
 {
     public class BaseMessageOuput
     {

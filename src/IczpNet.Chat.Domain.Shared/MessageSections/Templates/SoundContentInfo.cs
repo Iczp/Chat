@@ -3,7 +3,6 @@
     /// <summary>
     /// 语音消息
     /// </summary>
-    //[AutoMap(typeof(SoundContent))]
     public class SoundContentInfo : BaseMessageContentInfo, IMessageContentInfo
     {
         /// <summary>

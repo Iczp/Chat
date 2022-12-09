@@ -3,7 +3,6 @@
     /// <summary>
     /// 系统命令（）
     /// </summary>
-    //[AutoMap(typeof(CmdContent))]
     public class CmdContentInfo : BaseMessageContentInfo, IMessageContentInfo
     {
         /// <summary>

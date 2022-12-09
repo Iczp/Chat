@@ -5,7 +5,6 @@ namespace IczpNet.Chat.MessageSections.Templates
     /// <summary>
     /// 
     /// </summary>
-    //[AutoMapFrom(typeof(RedEnvelopeDetail))]
     public class RedEnvelopeDetailResult 
     {
         public Guid Id { get; set; }

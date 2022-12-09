@@ -2,7 +2,7 @@
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
-using IczpNet.Chat.MessageSections.Outputs;
+using IczpNet.Chat.MessageSections.ContentOutputs;
 using IczpNet.Chat.MessageSections.Templates;
 using Volo.Abp.AutoMapper;
 using System.Linq.Dynamic.Core;

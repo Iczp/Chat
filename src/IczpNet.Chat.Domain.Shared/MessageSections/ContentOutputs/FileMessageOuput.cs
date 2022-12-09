@@ -1,7 +1,7 @@
 ﻿using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 
-namespace IczpNet.Chat.MessageSections.Outputs
+namespace IczpNet.Chat.MessageSections.ContentOutputs
 {
     public class FileMessageOuput : MessageInfo<FileContentInfo>, IMessageOuput
     {

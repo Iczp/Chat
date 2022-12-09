@@ -3,7 +3,6 @@
     /// <summary>
     /// 文件消息
     /// </summary>
-    //[AutoMap(typeof(FileContent))]
     public class FileContentInfo : BaseMessageContentInfo, IMessageContentInfo
     {
         /// <summary>
