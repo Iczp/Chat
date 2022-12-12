@@ -46,17 +46,23 @@ namespace IczpNet.Chat.Wallets
 
         public Task<Wallet> Expenditure(ChatObject owner, string walletBusinessCode, decimal amount, string description)
         {
-
             throw new NotImplementedException();
         }
 
         public async Task<Wallet> Income(ChatObject owner, string walletBusinessCode, decimal amount, string description)
         {
             var wallet = await GetWalletAsync(owner.Id);
+
             var walletBusiness = await GetWalletBusinessAsync(walletBusinessCode);
-            //wallet.ConcurrencyStamp = wallet.ConcurrencyStamp;
-            var walletRecorder = new WalletRecorder(GuidGenerator.Create(), owner, walletBusiness, amount, description);
+
+            var walletRecorder = new WalletRecorder(GuidGenerator.Create(), owner, wallet);
+
             wallet.Income(amount, walletRecorder);
+
+            walletRecorder.SetChangedAfter(walletBusiness, wallet, amount, description);
+
+            wallet.ConcurrencyStamp = wallet.ConcurrencyStamp;
+
             return await Repository.UpdateAsync(wallet, autoSave: true);
         }
 

@@ -32,28 +32,50 @@ namespace IczpNet.Chat.Wallets
 
 
         [Column(TypeName = "decimal(18,2)")]
-        public virtual decimal AmountBeforeChange { get; protected set; }
+        public virtual decimal AvailableAmountBeforeChange { get; protected set; }
+        [Column(TypeName = "decimal(18,2)")]
+        public virtual decimal TotalAmountBeforeChange { get; protected set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public virtual decimal LockAmountBeforeChange { get; protected set; }
 
         [Column(TypeName = "decimal(18,2)")]
         [Range(0.0, (double)decimal.MaxValue)]
+        public virtual decimal AvailableAmount { get; protected set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Range(0.0, (double)decimal.MaxValue)]
+        public virtual decimal TotalAmount { get; protected set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public virtual decimal LockAmount { get; protected set; }
+
+        [Column(TypeName = "decimal(18,2)")]
         public virtual decimal Amount { get; protected set; }
-
-        [Column(TypeName = "decimal(18,2)")]
-        [Range(0.0, (double)decimal.MaxValue)]
-        public virtual decimal CurrentAmount { get; protected set; }
 
         [StringLength(100)]
         public virtual string Description { get; protected set; }
 
         protected WalletRecorder() { }
 
-        public WalletRecorder(Guid id,  ChatObject owner, WalletBusiness walletBusiness, decimal amount, string description) : base(id)
+        public WalletRecorder(Guid id, ChatObject owner, Wallet wallet) : base(id)
         {
             Owner = owner;
-            Amount = amount;
-            Description = description;
+            AvailableAmountBeforeChange = wallet.AvailableAmount;
+            TotalAmountBeforeChange = wallet.TotalAmount;
+            LockAmountBeforeChange = wallet.LockAmount;
+        }
+
+        public void SetChangedAfter(WalletBusiness walletBusiness, Wallet wallet, decimal amount, string description)
+        {
             WalletBusiness = walletBusiness;
             WalletBusinessType = WalletBusiness.BusinessType;
+
+            Amount = amount;
+            AvailableAmount = wallet.AvailableAmount;
+            TotalAmount = wallet.TotalAmount;
+            LockAmount = wallet.LockAmount;
+            Description = description;
         }
     }
 }

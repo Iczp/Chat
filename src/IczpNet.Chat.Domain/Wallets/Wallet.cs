@@ -12,7 +12,8 @@ namespace IczpNet.Chat.Wallets
 {
     public class Wallet : BaseEntity<Guid>, IChatOwner<Guid>
     {
-        public decimal? OriginalAvailableAmount { get; }
+        [NotMapped]
+        public decimal? OriginalAvailableAmount { get; private set; }
 
         public virtual Guid OwnerId { get; protected set; }
 
@@ -61,14 +62,21 @@ namespace IczpNet.Chat.Wallets
         internal void Expenditure(decimal amount, WalletRecorder walletRecorder)
         {
             Assert.If(walletRecorder.WalletBusinessType != Enums.WalletBusinessTypes.Expenditure, "");
+            SetOriginalAvailableAmount();
             AvailableAmount -= amount;
             UpdateTotalAmount();
             WalletRecorderList.Add(walletRecorder);
         }
 
+        private void SetOriginalAvailableAmount()
+        {
+            OriginalAvailableAmount = AvailableAmount;
+        }
+
         internal void Income(decimal amount, WalletRecorder walletRecorder)
         {
             Assert.If(walletRecorder.WalletBusinessType != Enums.WalletBusinessTypes.Income, "");
+            SetOriginalAvailableAmount();
             AvailableAmount += amount;
             UpdateTotalAmount();
             WalletRecorderList.Add(walletRecorder);
