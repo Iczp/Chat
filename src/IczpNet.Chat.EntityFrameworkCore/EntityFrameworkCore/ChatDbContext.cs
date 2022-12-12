@@ -89,7 +89,8 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     public DbSet<Wallet> Wallet { get; }
     public DbSet<WalletRecorder> WalletRecorder { get; }
     public DbSet<WalletBusiness> WalletBusiness { get; }
-    
+    public DbSet<PaymentPlatform> PaymentPlatform { get; }
+    public DbSet<WalletRequest> RechargeRequest { get; }
 
     public ChatDbContext(DbContextOptions<ChatDbContext> options)
         : base(options)

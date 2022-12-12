@@ -89,4 +89,6 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<Wallet> Wallet { get; }
     DbSet<WalletRecorder> WalletRecorder { get; }
     DbSet<WalletBusiness> WalletBusiness { get; }
+    DbSet<PaymentPlatform> PaymentPlatform { get; }
+    DbSet<WalletRequest> RechargeRequest { get; }
 }
