@@ -20,7 +20,7 @@ namespace IczpNet.Chat.Wallets
         /// <param name="amount"></param>
         /// <param name="description"></param>
         /// <returns></returns>
-        Task<Wallet> Expenditure(ChatObject owner, string walletBusinessCode, decimal amount, string description);
+        Task<Wallet> Expenditure(ChatObject owner, string walletBusinessCode, decimal amount, string description, string concurrencyStamp);
 
         /// <summary>
         /// 收入
@@ -29,9 +29,9 @@ namespace IczpNet.Chat.Wallets
         /// <param name="amount"></param>
         /// <param name="description"></param>
         /// <returns></returns>
-        Task<Wallet> Income(ChatObject owner, string walletBusinessCode, decimal amount, string description);
+        Task<Wallet> Income(ChatObject owner, string walletBusinessCode, decimal amount, string description, string concurrencyStamp);
 
-        Task<Wallet> Recharge(ChatObject owner, decimal amount, string description);
+        Task<Wallet> Recharge(ChatObject owner, decimal amount, string description, string concurrencyStamp);
 
     }
 }

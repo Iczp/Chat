@@ -11,5 +11,7 @@ namespace IczpNet.Chat.Wallets.Dtos
         public virtual decimal Amount { get; set; }
 
         public virtual string Password { get; set; }
+        public string ConcurrencyStamp { get; set; }
+        public string Description { get; set; }
     }
 }

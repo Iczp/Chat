@@ -44,12 +44,12 @@ namespace IczpNet.Chat.Wallets
             return wallet;
         }
 
-        public Task<Wallet> Expenditure(ChatObject owner, string walletBusinessCode, decimal amount, string description)
+        public Task<Wallet> Expenditure(ChatObject owner, string walletBusinessCode, decimal amount, string description, string concurrencyStamp)
         {
             throw new NotImplementedException();
         }
 
-        public async Task<Wallet> Income(ChatObject owner, string walletBusinessCode, decimal amount, string description)
+        public async Task<Wallet> Income(ChatObject owner, string walletBusinessCode, decimal amount, string description, string concurrencyStamp)
         {
             var wallet = await GetWalletAsync(owner.Id);
 
@@ -61,14 +61,15 @@ namespace IczpNet.Chat.Wallets
 
             walletRecorder.SetChangedAfter(walletBusiness, wallet, amount, description);
 
-            wallet.ConcurrencyStamp = wallet.ConcurrencyStamp;
+            //var env = context.GetEnvironment();
+            //wallet.ConcurrencyStamp = concurrencyStamp;
 
             return await Repository.UpdateAsync(wallet, autoSave: true);
         }
 
-        public Task<Wallet> Recharge(ChatObject owner, decimal amount, string description)
+        public Task<Wallet> Recharge(ChatObject owner, decimal amount, string description, string concurrencyStamp)
         {
-            return Income(owner, RedEnvelopeConsts.Recharge, amount, description);
+            return Income(owner, RedEnvelopeConsts.Recharge, amount, description, concurrencyStamp);
         }
     }
 }
