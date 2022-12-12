@@ -1,7 +1,7 @@
 ﻿using IczpNet.Chat.Enums;
+using IczpNet.Chat.RedEnvelopes;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Data;
@@ -10,7 +10,6 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Guids;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
-using static IczpNet.Chat.ChatConsts;
 
 namespace IczpNet.Chat.Wallets
 {

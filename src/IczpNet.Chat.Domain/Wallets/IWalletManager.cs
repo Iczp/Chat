@@ -30,5 +30,8 @@ namespace IczpNet.Chat.Wallets
         /// <param name="description"></param>
         /// <returns></returns>
         Task<Wallet> Income(ChatObject owner, string walletBusinessCode, decimal amount, string description);
+
+        Task<Wallet> Recharge(ChatObject owner, decimal amount, string description);
+
     }
 }

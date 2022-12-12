@@ -1,5 +1,6 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.RedEnvelopes;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
@@ -11,14 +12,17 @@ namespace IczpNet.Chat.Wallets
     {
         protected IRepository<Wallet, Guid> Repository { get; }
         protected IRepository<WalletBusiness, string> WalletBusinessRepository { get; }
+        protected IRepository<WalletRecorder, Guid> WalletRecorderRepository { get; }
 
 
         public WalletManager(
             IRepository<Wallet, Guid> repository,
-            IRepository<WalletBusiness, string> walletBusinessRepository)
+            IRepository<WalletBusiness, string> walletBusinessRepository,
+            IRepository<WalletRecorder, Guid> walletRecorderRepository)
         {
             Repository = repository;
             WalletBusinessRepository = walletBusinessRepository;
+            WalletRecorderRepository = walletRecorderRepository;
         }
 
         public Task<Wallet> GetWalletAsync(ChatObject owner)
@@ -48,17 +52,17 @@ namespace IczpNet.Chat.Wallets
 
         public async Task<Wallet> Income(ChatObject owner, string walletBusinessCode, decimal amount, string description)
         {
-
             var wallet = await GetWalletAsync(owner.Id);
             var walletBusiness = await GetWalletBusinessAsync(walletBusinessCode);
-            wallet.ConcurrencyStamp = wallet.ConcurrencyStamp;
-            var a = wallet.OriginalAvailableAmount;
-            wallet.Income(amount);
+            //wallet.ConcurrencyStamp = wallet.ConcurrencyStamp;
+            var walletRecorder = new WalletRecorder(GuidGenerator.Create(), owner, walletBusiness, amount, description);
+            wallet.Income(amount, walletRecorder);
+            return await Repository.UpdateAsync(wallet, autoSave: true);
+        }
 
-            var isChanged = wallet.OriginalAvailableAmount.Equals(wallet.AvailableAmount);
-
-            await Repository.UpdateAsync(wallet, autoSave: true);
-            throw new NotImplementedException();
+        public Task<Wallet> Recharge(ChatObject owner, decimal amount, string description)
+        {
+            return Income(owner, RedEnvelopeConsts.Recharge, amount, description);
         }
     }
 }

@@ -20,7 +20,7 @@ namespace IczpNet.Chat.Wallets
 
         public virtual Guid? WalletId { get; protected set; }
 
-        [ForeignKey(nameof(OwnerId))]
+        [ForeignKey(nameof(WalletId))]
         public virtual Wallet Wallet { get; protected set; }
 
         public virtual string WalletBusinessId { get; protected set; }
@@ -47,10 +47,9 @@ namespace IczpNet.Chat.Wallets
 
         protected WalletRecorder() { }
 
-        public WalletRecorder(Guid id, Wallet wallet, ChatObject owner, WalletBusiness walletBusiness, decimal amount, string description) : base(id)
+        public WalletRecorder(Guid id,  ChatObject owner, WalletBusiness walletBusiness, decimal amount, string description) : base(id)
         {
             Owner = owner;
-            Wallet = wallet;
             Amount = amount;
             Description = description;
             WalletBusiness = walletBusiness;

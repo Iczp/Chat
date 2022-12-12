@@ -1,6 +1,8 @@
-﻿using IczpNet.Chat.BaseEntitys;
+﻿using IczpNet.AbpCommons;
+using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -10,7 +12,7 @@ namespace IczpNet.Chat.Wallets
 {
     public class Wallet : BaseEntity<Guid>, IChatOwner<Guid>
     {
-        public readonly decimal OriginalAvailableAmount;
+        public decimal? OriginalAvailableAmount { get; }
 
         public virtual Guid OwnerId { get; protected set; }
 
@@ -20,6 +22,14 @@ namespace IczpNet.Chat.Wallets
         [Column(TypeName = "decimal(18,2)")]
         [Range(0.0, (double)decimal.MaxValue)]
         public virtual decimal AvailableAmount { get; protected set; }
+        //{
+        //    get => AvailableAmount;
+        //    protected set
+        //    {
+        //        OriginalAvailableAmount ??= value;
+        //        AvailableAmount = value;
+        //    }
+        //}
 
         [Column(TypeName = "decimal(18,2)")]
         [Range(0.0, (double)decimal.MaxValue)]
@@ -28,11 +38,19 @@ namespace IczpNet.Chat.Wallets
         [Column(TypeName = "decimal(18,2)")]
         public virtual decimal TotalAmount { get; protected set; }
 
+        [StringLength(100)]
+        public virtual string Password { get; protected set; }
+
         public virtual List<WalletRecorder> WalletRecorderList { get; protected set; } = new List<WalletRecorder>();
 
         protected Wallet()
         {
-            OriginalAvailableAmount = AvailableAmount;
+
+        }
+
+        private void UpdateTotalAmount()
+        {
+            TotalAmount = LockAmount + AvailableAmount;
         }
 
         public Wallet(Guid id, Guid ownerId) : base(id)
@@ -40,15 +58,22 @@ namespace IczpNet.Chat.Wallets
             OwnerId = ownerId;
         }
 
-        internal void Expenditure(decimal amount)
+        internal void Expenditure(decimal amount, WalletRecorder walletRecorder)
         {
+            Assert.If(walletRecorder.WalletBusinessType != Enums.WalletBusinessTypes.Expenditure, "");
             AvailableAmount -= amount;
+            UpdateTotalAmount();
+            WalletRecorderList.Add(walletRecorder);
         }
 
-        internal void Income(decimal amount)
+        internal void Income(decimal amount, WalletRecorder walletRecorder)
         {
+            Assert.If(walletRecorder.WalletBusinessType != Enums.WalletBusinessTypes.Income, "");
             AvailableAmount += amount;
+            UpdateTotalAmount();
+            WalletRecorderList.Add(walletRecorder);
         }
+
 
         ///// <summary>
         ///// 支出
