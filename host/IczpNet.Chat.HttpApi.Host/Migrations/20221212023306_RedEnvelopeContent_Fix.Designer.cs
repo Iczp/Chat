@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,10 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221212023306_RedEnvelopeContent_Fix")]
+    partial class RedEnvelopeContent_Fix
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1172,6 +1174,173 @@ namespace IczpNet.Chat.Migrations
                     b.ToTable("Chat_Message_Template_LocationContent", (string)null);
                 });
 
+            modelBuilder.Entity("IczpNet.Chat.MessageSections.Templates.RedEnvelopeContent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,8)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<int>("Count")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid>("CreatorChatObjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<DateTime?>("ExpireTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ExtraProperties")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<string>("GrantMode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<Guid?>("OwnerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
+                    b.Property<string>("Text")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("decimal(18,8)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GrantMode");
+
+                    b.HasIndex("OwnerId");
+
+                    b.ToTable("Chat_Message_Template_RedEnvelopeContent", (string)null);
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.MessageSections.Templates.RedEnvelopeUnit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<string>("ExtraProperties")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<bool>("IsOwned")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsTop")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<DateTime?>("OwnerTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("OwnerUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RedEnvelopeContentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("RollbackTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RedEnvelopeContentId");
+
+                    b.ToTable("Chat_RedEnvelopeUnit", (string)null);
+                });
+
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Templates.SoundContent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1604,172 +1773,6 @@ namespace IczpNet.Chat.Migrations
                     b.HasIndex("OwnerId");
 
                     b.ToTable("Chat_OfficialMember", (string)null);
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.RedEnvelopes.RedEnvelopeContent", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<int>("Count")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<DateTime?>("ExpireTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ExtraProperties")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<string>("GrantMode")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<Guid?>("OwnerId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("TenantId");
-
-                    b.Property<string>("Text")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<decimal>("TotalAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("GrantMode");
-
-                    b.HasIndex("OwnerId");
-
-                    b.ToTable("Chat_Message_Template_RedEnvelopeContent", (string)null);
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.RedEnvelopes.RedEnvelopeUnit", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<string>("ExtraProperties")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<bool>("IsOwned")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsTop")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<DateTime?>("OwnedTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("OwnerId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("RedEnvelopeContentId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("RollbackTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("TenantId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OwnerId");
-
-                    b.HasIndex("RedEnvelopeContentId");
-
-                    b.ToTable("Chat_RedEnvelopeUnit", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.RoomSections.RoomForbiddenMembers.RoomForbiddenMember", b =>
@@ -2969,244 +2972,6 @@ namespace IczpNet.Chat.Migrations
                     b.ToTable("Chat_SquareMember", (string)null);
                 });
 
-            modelBuilder.Entity("IczpNet.Chat.Wallets.Wallet", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("AvailableAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<string>("ExtraProperties")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<decimal>("LockAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<Guid>("OwnerId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("TenantId");
-
-                    b.Property<decimal>("TotalAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OwnerId");
-
-                    b.ToTable("Chat_Wallet", (string)null);
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.Wallets.WalletBusiness", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("BusinessType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("ExtraProperties")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsStatic")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("TenantId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BusinessType");
-
-                    b.ToTable("Chat_WalletBusiness", (string)null);
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.Wallets.WalletRecorder", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("AmountBeforeChange")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<long>("AutoId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("AutoId"), 1L, 1);
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<decimal>("CurrentAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("ExtraProperties")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<Guid?>("OwnerId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("TenantId");
-
-                    b.Property<string>("WalletBusinessId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("WalletBusinessType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<Guid?>("WalletId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OwnerId");
-
-                    b.HasIndex("WalletBusinessId");
-
-                    b.HasIndex("WalletBusinessType");
-
-                    b.ToTable("Chat_WalletRecorder", (string)null);
-                });
-
             modelBuilder.Entity("ImageContentMessage", b =>
                 {
                     b.Property<Guid>("ImageContentListId")
@@ -3693,6 +3458,26 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("Owner");
                 });
 
+            modelBuilder.Entity("IczpNet.Chat.MessageSections.Templates.RedEnvelopeContent", b =>
+                {
+                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId");
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.MessageSections.Templates.RedEnvelopeUnit", b =>
+                {
+                    b.HasOne("IczpNet.Chat.MessageSections.Templates.RedEnvelopeContent", "RedEnvelopeContent")
+                        .WithMany("RedEnvelopeUnitList")
+                        .HasForeignKey("RedEnvelopeContentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("RedEnvelopeContent");
+                });
+
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Templates.SoundContent", b =>
                 {
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
@@ -3775,32 +3560,6 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("Official");
 
                     b.Navigation("Owner");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.RedEnvelopes.RedEnvelopeContent", b =>
-                {
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
-                        .WithMany("RedEnvelopeContentList")
-                        .HasForeignKey("OwnerId");
-
-                    b.Navigation("Owner");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.RedEnvelopes.RedEnvelopeUnit", b =>
-                {
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
-                        .WithMany("RedEnvelopeUnitList")
-                        .HasForeignKey("OwnerId");
-
-                    b.HasOne("IczpNet.Chat.RedEnvelopes.RedEnvelopeContent", "RedEnvelopeContent")
-                        .WithMany("RedEnvelopeUnitList")
-                        .HasForeignKey("RedEnvelopeContentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Owner");
-
-                    b.Navigation("RedEnvelopeContent");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.RoomSections.RoomForbiddenMembers.RoomForbiddenMember", b =>
@@ -4069,38 +3828,6 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("Square");
                 });
 
-            modelBuilder.Entity("IczpNet.Chat.Wallets.Wallet", b =>
-                {
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
-                        .WithMany()
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Owner");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.Wallets.WalletRecorder", b =>
-                {
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
-                        .WithMany()
-                        .HasForeignKey("OwnerId");
-
-                    b.HasOne("IczpNet.Chat.Wallets.Wallet", "Wallet")
-                        .WithMany("WalletRecorderList")
-                        .HasForeignKey("OwnerId");
-
-                    b.HasOne("IczpNet.Chat.Wallets.WalletBusiness", "WalletBusiness")
-                        .WithMany("WalletRecorderList")
-                        .HasForeignKey("WalletBusinessId");
-
-                    b.Navigation("Owner");
-
-                    b.Navigation("Wallet");
-
-                    b.Navigation("WalletBusiness");
-                });
-
             modelBuilder.Entity("ImageContentMessage", b =>
                 {
                     b.HasOne("IczpNet.Chat.MessageSections.Templates.ImageContent", null)
@@ -4154,7 +3881,7 @@ namespace IczpNet.Chat.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("IczpNet.Chat.RedEnvelopes.RedEnvelopeContent", null)
+                    b.HasOne("IczpNet.Chat.MessageSections.Templates.RedEnvelopeContent", null)
                         .WithMany()
                         .HasForeignKey("RedEnvelopeContentListId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -4351,10 +4078,6 @@ namespace IczpNet.Chat.Migrations
 
                     b.Navigation("ReceiverMessageList");
 
-                    b.Navigation("RedEnvelopeContentList");
-
-                    b.Navigation("RedEnvelopeUnitList");
-
                     b.Navigation("SenderMessageList");
                 });
 
@@ -4371,7 +4094,7 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("QuotedMessageList");
                 });
 
-            modelBuilder.Entity("IczpNet.Chat.RedEnvelopes.RedEnvelopeContent", b =>
+            modelBuilder.Entity("IczpNet.Chat.MessageSections.Templates.RedEnvelopeContent", b =>
                 {
                     b.Navigation("RedEnvelopeUnitList");
                 });
@@ -4422,16 +4145,6 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("Childs");
 
                     b.Navigation("SquareList");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.Wallets.Wallet", b =>
-                {
-                    b.Navigation("WalletRecorderList");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.Wallets.WalletBusiness", b =>
-                {
-                    b.Navigation("WalletRecorderList");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.OfficialSections.OfficialGroups.OfficialGroup", b =>

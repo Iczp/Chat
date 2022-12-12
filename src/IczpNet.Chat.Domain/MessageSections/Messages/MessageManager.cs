@@ -2,6 +2,7 @@
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.SessionSections;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -26,14 +27,16 @@ namespace IczpNet.Chat.MessageSections.Messages
         protected IRepository<Message, Guid> Repository { get; }
         protected ISessionIdGenerator SessionIdGenerator => LazyServiceProvider.LazyGetRequiredService<ISessionIdGenerator>();
         protected IMessageChannelGenerator MessageChannelGenerator => LazyServiceProvider.LazyGetRequiredService<IMessageChannelGenerator>();
-
+        protected IRedEnvelopeGenerator RedEnvelopeGenerator { get; }
 
         public MessageManager(
             IRepository<Message, Guid> repository,
-            IRepository<ChatObject, Guid> chatObjectRepository)
+            IRepository<ChatObject, Guid> chatObjectRepository,
+            IRedEnvelopeGenerator redEnvelopeGenerator)
         {
             Repository = repository;
             ChatObjectRepository = chatObjectRepository;
+            RedEnvelopeGenerator = redEnvelopeGenerator;
         }
         public virtual async Task<Message> CreateMessageAsync(ChatObject sender, ChatObject receiver, Action<Message> action = null)
         {
@@ -142,14 +145,20 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         public virtual async Task<MessageInfo<RedEnvelopeContentOutput>> SendRedEnvelopeMessageAsync(MessageInput<RedEnvelopeContentInput> input)
         {
-            var messageContent = ObjectMapper.Map<RedEnvelopeContentInput, RedEnvelopeContent>(input.Content);
+            var contentInput = input.Content;
+            var messageContent = new RedEnvelopeContent(
+                id: GuidGenerator.Create(),
+                grantMode: contentInput.GrantMode,
+                amount: contentInput.Amount,
+                count: contentInput.Count,
+                totalAmount: contentInput.TotalAmount,
+                text: contentInput.Text
+                );
+            var redEnvelopeUnitList = await RedEnvelopeGenerator.MakeAsync(contentInput.GrantMode, messageContent.Id, contentInput.Amount, contentInput.Count, contentInput.TotalAmount);
+            messageContent.SetRedEnvelopeUnitList(redEnvelopeUnitList);
             return await SendMessageAsync<RedEnvelopeContent, RedEnvelopeContentOutput>(input, messageContent);
         }
 
-        public virtual async Task<MessageInfo<RedEnvelopeContentOutput>> SendRedEnvelopeMessageAsync(MessageInput messageInput, RedEnvelopeContentInput contentInput)
-        {
-            var messageContent = ObjectMapper.Map<RedEnvelopeContentInput, RedEnvelopeContent>(contentInput);
-            return await SendMessageAsync<RedEnvelopeContent, RedEnvelopeContentOutput>(messageInput, messageContent);
-        }
+
     }
 }

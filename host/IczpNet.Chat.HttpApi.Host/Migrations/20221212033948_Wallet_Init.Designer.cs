@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,10 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221212033948_Wallet_Init")]
+    partial class Wallet_Init
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2969,151 +2971,7 @@ namespace IczpNet.Chat.Migrations
                     b.ToTable("Chat_SquareMember", (string)null);
                 });
 
-            modelBuilder.Entity("IczpNet.Chat.Wallets.Wallet", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("AvailableAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<string>("ExtraProperties")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<decimal>("LockAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<Guid>("OwnerId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("TenantId");
-
-                    b.Property<decimal>("TotalAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OwnerId");
-
-                    b.ToTable("Chat_Wallet", (string)null);
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.Wallets.WalletBusiness", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("BusinessType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("ExtraProperties")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsStatic")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("TenantId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BusinessType");
-
-                    b.ToTable("Chat_WalletBusiness", (string)null);
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.Wallets.WalletRecorder", b =>
+            modelBuilder.Entity("IczpNet.Chat.wallets.Wallet", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -3122,7 +2980,67 @@ namespace IczpNet.Chat.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<decimal>("AmountBeforeChange")
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<string>("ExtraProperties")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.ToTable("Chat_Wallet", (string)null);
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.wallets.WalletRecorder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<long>("AutoId")
@@ -3156,10 +3074,6 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("DeletionTime");
 
-                    b.Property<string>("Description")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.Property<string>("ExtraProperties")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("ExtraProperties");
@@ -3185,24 +3099,12 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("TenantId");
 
-                    b.Property<string>("WalletBusinessId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("WalletBusinessType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
                     b.Property<Guid?>("WalletId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
                     b.HasIndex("OwnerId");
-
-                    b.HasIndex("WalletBusinessId");
-
-                    b.HasIndex("WalletBusinessType");
 
                     b.ToTable("Chat_WalletRecorder", (string)null);
                 });
@@ -4069,7 +3971,7 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("Square");
                 });
 
-            modelBuilder.Entity("IczpNet.Chat.Wallets.Wallet", b =>
+            modelBuilder.Entity("IczpNet.Chat.wallets.Wallet", b =>
                 {
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
                         .WithMany()
@@ -4080,25 +3982,19 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("Owner");
                 });
 
-            modelBuilder.Entity("IczpNet.Chat.Wallets.WalletRecorder", b =>
+            modelBuilder.Entity("IczpNet.Chat.wallets.WalletRecorder", b =>
                 {
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
                         .WithMany()
                         .HasForeignKey("OwnerId");
 
-                    b.HasOne("IczpNet.Chat.Wallets.Wallet", "Wallet")
-                        .WithMany("WalletRecorderList")
+                    b.HasOne("IczpNet.Chat.wallets.Wallet", "Wallet")
+                        .WithMany()
                         .HasForeignKey("OwnerId");
-
-                    b.HasOne("IczpNet.Chat.Wallets.WalletBusiness", "WalletBusiness")
-                        .WithMany("WalletRecorderList")
-                        .HasForeignKey("WalletBusinessId");
 
                     b.Navigation("Owner");
 
                     b.Navigation("Wallet");
-
-                    b.Navigation("WalletBusiness");
                 });
 
             modelBuilder.Entity("ImageContentMessage", b =>
@@ -4422,16 +4318,6 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("Childs");
 
                     b.Navigation("SquareList");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.Wallets.Wallet", b =>
-                {
-                    b.Navigation("WalletRecorderList");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.Wallets.WalletBusiness", b =>
-                {
-                    b.Navigation("WalletRecorderList");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.OfficialSections.OfficialGroups.OfficialGroup", b =>

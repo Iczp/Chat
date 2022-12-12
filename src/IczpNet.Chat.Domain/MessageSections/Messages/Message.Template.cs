@@ -1,6 +1,7 @@
 ﻿using IczpNet.Chat.Attributes;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.RedEnvelopes;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;

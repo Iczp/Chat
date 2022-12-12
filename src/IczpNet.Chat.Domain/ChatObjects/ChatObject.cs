@@ -5,6 +5,7 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.OfficialSections.OfficialExcludedMembers;
 using IczpNet.Chat.OfficialSections.OfficialGroupMembers;
 using IczpNet.Chat.OfficialSections.OfficialMembers;
+using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.Robots;
 using IczpNet.Chat.RoomSections.RoomForbiddenMembers;
 using IczpNet.Chat.RoomSections.RoomMembers;
@@ -60,6 +61,22 @@ namespace IczpNet.Chat.ChatObjects
 
         [InverseProperty(nameof(Message.Receiver))]
         public virtual IList<Message> ReceiverMessageList { get; set; }
+
+        #endregion
+
+        #region RedEnvelopeContent
+
+        /// <summary>
+        /// 红包发送记录
+        /// </summary>
+        [InverseProperty(nameof(RedEnvelopeContent.Owner))]
+        public virtual IList<RedEnvelopeContent> RedEnvelopeContentList { get; set; }
+
+        /// <summary>
+        /// 红包领取记录
+        /// </summary>
+        [InverseProperty(nameof(RedEnvelopeUnit.Owner))]
+        public virtual IList<RedEnvelopeUnit> RedEnvelopeUnitList { get; set; }
 
         #endregion
 

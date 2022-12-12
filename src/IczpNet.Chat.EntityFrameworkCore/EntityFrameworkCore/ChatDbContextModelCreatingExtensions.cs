@@ -4,6 +4,7 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.RoomSections.RoomPermissionGrants;
 using IczpNet.Chat.RoomSections.RoomRoleRoomMembers;
 using IczpNet.Chat.SessionSections.Favorites;

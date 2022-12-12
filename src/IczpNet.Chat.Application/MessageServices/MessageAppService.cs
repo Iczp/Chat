@@ -47,6 +47,9 @@ namespace IczpNet.Chat.MessageServices
             return MessageManager.SendCmdMessageAsync(input);
         }
 
-
+        public Task<MessageInfo<RedEnvelopeContentOutput>> SendRedEnvelopeMessageAsync(MessageInput<RedEnvelopeContentInput> input)
+        {
+            return MessageManager.SendRedEnvelopeMessageAsync(input);
+        }
     }
 }

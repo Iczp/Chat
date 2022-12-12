@@ -3,6 +3,7 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.MessageSections.ContentOutputs;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.RedEnvelopes;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -37,8 +38,10 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<HistoryContentInput, HistoryContent>(MemberList.None).UsingMessageTemplate();
         CreateMap<HistoryContent, HistoryContentOutput>();
 
-        //RedEnvelope
-        //CreateMap<RedEnvelopeContent, RedEnvelopeContentOutput>()
+        CreateMap<RedEnvelopeContentInput, RedEnvelopeContent>().UsingMessageTemplate();
+        CreateMap<RedEnvelopeContent, RedEnvelopeContentOutput>();
+          //RedEnvelope
+        CreateMap<RedEnvelopeContent, RedEnvelopeContentOutput>()
           //.ForMember(d => d.Detail, options => options.MapFrom<DetailResolver>())
           //.ForMember(d => d.IsFinished, options => options.MapFrom<IsFinishedResolver>())
           ;

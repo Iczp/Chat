@@ -5,6 +5,7 @@ using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.MessageSections.Messages;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.MessageSections
 {
@@ -16,6 +17,7 @@ namespace IczpNet.Chat.MessageSections
 
         public virtual Guid? OwnerId { get; protected set; }
 
+        [ForeignKey(nameof(OwnerId))]
         public virtual ChatObject Owner { get; protected set; }
 
         protected MessageContentEntityBase() { }

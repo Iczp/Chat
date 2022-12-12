@@ -1,17 +1,18 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.Enums;
-using IczpNet.Chat.MessageSections.Templates;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Services;
 
-namespace IczpNet.Chat.MessageSections.RedEnvelopes
+namespace IczpNet.Chat.RedEnvelopes
 {
     public class RedEnvelopeGenerator : DomainService, IRedEnvelopeGenerator
     {
-        public virtual async Task<IList<RedEnvelopeUnit>> MakeAsync(GrantModes grantMode, decimal amount, int count, decimal totalAmount, string text)
+
+
+        public virtual async Task<IList<RedEnvelopeUnit>> MakeAsync(GrantModes grantMode, Guid redEnvelopeContentId, decimal amount, int count, decimal totalAmount)
         {
             var result = new List<RedEnvelopeUnit>();
 
@@ -21,10 +22,7 @@ namespace IczpNet.Chat.MessageSections.RedEnvelopes
 
             numList.ForEach(amount =>
             {
-                result.Add(new RedEnvelopeUnit
-                {
-                    Amount = Convert.ToDecimal(amount),
-                });
+                result.Add(new RedEnvelopeUnit(GuidGenerator.Create(), redEnvelopeContentId, Convert.ToDecimal(amount)));
             });
 
             if (grantMode == GrantModes.RandomAmount)
@@ -97,7 +95,7 @@ namespace IczpNet.Chat.MessageSections.RedEnvelopes
             Assert.If(!_sumAmount.Equals(totalAmount), $"Verification of red packet amount failed.");
 
             Assert.If(moneyList.Any(x => x < minAmount), $"Error in red packet algorithm.");
-            
+
             //Console.WriteLine("第" + count + "个红包：" + _totalAmount + " 元，余额：0 元");
             return moneyList;
         }

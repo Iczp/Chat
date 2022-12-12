@@ -6,6 +6,7 @@ using IczpNet.Chat.OfficialSections.OfficialGroupMembers;
 using IczpNet.Chat.OfficialSections.OfficialGroups;
 using IczpNet.Chat.OfficialSections.OfficialMembers;
 using IczpNet.Chat.OfficialSections.Officials;
+using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.RobotSections.Robots;
 using IczpNet.Chat.RoomSections.RoomForbiddenMembers;
 using IczpNet.Chat.RoomSections.RoomMembers;
@@ -22,6 +23,7 @@ using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SquareSections.SquareCategorys;
 using IczpNet.Chat.SquareSections.SquareMembers;
 using IczpNet.Chat.SquareSections.Squares;
+using IczpNet.Chat.Wallets;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
@@ -82,4 +84,9 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<Square> Square { get; }
     DbSet<SquareCategory> SquareCategory { get; }
     DbSet<SquareMember> SquareMember { get; }
+
+
+    DbSet<Wallet> Wallet { get; }
+    DbSet<WalletRecorder> WalletRecorder { get; }
+    DbSet<WalletBusiness> WalletBusiness { get; }
 }

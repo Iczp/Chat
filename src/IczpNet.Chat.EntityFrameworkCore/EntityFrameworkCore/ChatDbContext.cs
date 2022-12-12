@@ -6,6 +6,7 @@ using IczpNet.Chat.OfficialSections.OfficialGroupMembers;
 using IczpNet.Chat.OfficialSections.OfficialGroups;
 using IczpNet.Chat.OfficialSections.OfficialMembers;
 using IczpNet.Chat.OfficialSections.Officials;
+using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.RobotSections.Robots;
 using IczpNet.Chat.RoomSections.RoomForbiddenMembers;
 using IczpNet.Chat.RoomSections.RoomMembers;
@@ -22,6 +23,7 @@ using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SquareSections.SquareCategorys;
 using IczpNet.Chat.SquareSections.SquareMembers;
 using IczpNet.Chat.SquareSections.Squares;
+using IczpNet.Chat.Wallets;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
@@ -45,7 +47,7 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
 
     public DbSet<ChatObject> ChatObject { get; }
     public DbSet<Message> Message { get; }
-    
+
     public DbSet<Robot> Robot { get; }
 
     public DbSet<CmdContent> CmdMessage { get; }
@@ -84,6 +86,11 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     public DbSet<SquareMember> SquareMember { get; }
 
 
+    public DbSet<Wallet> Wallet { get; }
+    public DbSet<WalletRecorder> WalletRecorder { get; }
+    public DbSet<WalletBusiness> WalletBusiness { get; }
+    
+
     public ChatDbContext(DbContextOptions<ChatDbContext> options)
         : base(options)
     {
@@ -93,8 +100,7 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-
         builder.ConfigureChat();
         builder.ConfigureIdentity();
-        }
+    }
 }

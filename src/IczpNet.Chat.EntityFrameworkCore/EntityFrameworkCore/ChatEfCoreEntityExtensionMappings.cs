@@ -40,14 +40,14 @@ public static class ChatEfCoreEntityExtensionMappings
              * https://docs.abp.io/en/abp/latest/Customizing-Application-Modules-Extending-Entities
              */
 
-            ObjectExtensionManager.Instance
-                //ChatUserType
-                .MapEfCoreProperty<IdentityUser, string>(IdentityUserExtensions.ChatObjectTypePropertyName, (entityBuilder, propertyBuilder) =>
-                {
-                    propertyBuilder.HasMaxLength(32);
-                })
+            //ObjectExtensionManager.Instance
+            //    //ChatUserType
+            //    .MapEfCoreProperty<IdentityUser, string>(IdentityUserExtensions.ChatObjectTypePropertyName, (entityBuilder, propertyBuilder) =>
+            //    {
+            //        propertyBuilder.HasMaxLength(32);
+            //    })
 
-                ;
+            //    ;
         });
     }
 }

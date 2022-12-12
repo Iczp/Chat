@@ -1,13 +1,23 @@
 ﻿using IczpNet.Chat.BaseEntitys;
+using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.DataFilters;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace IczpNet.Chat.MessageSections.Templates
+namespace IczpNet.Chat.RedEnvelopes
 {
-    public class RedEnvelopeUnit : BaseEntity<Guid>
+    public class RedEnvelopeUnit : BaseEntity<Guid>, IChatOwner<Guid?>
     {
+
         public virtual Guid RedEnvelopeContentId { get; set; }
+
+        /// <summary>
+        /// RedEnvelopeContent
+        /// </summary>
+        [ForeignKey(nameof(RedEnvelopeContentId))]
+        public virtual RedEnvelopeContent RedEnvelopeContent { get; set; }
+
         /// <summary>
         /// 金额
         /// </summary>
@@ -28,33 +38,41 @@ namespace IczpNet.Chat.MessageSections.Templates
         /// <summary>
         /// 归属人
         /// </summary>
-        //[StringLength(36)]
-        public virtual Guid? OwnerUserId { get; set; }
+        public virtual Guid? OwnerId { get; set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        [ForeignKey(nameof(OwnerId))]
+        public virtual ChatObject Owner { get; set; }
         /// <summary>
         /// 得到时间
         /// </summary>
-        public virtual DateTime? OwnerTime { get; set; }
+        public virtual DateTime? OwnedTime { get; set; }
 
         /// <summary>
         /// 退回时间
         /// </summary>
         public virtual DateTime? RollbackTime { get; set; }
 
-        /// <summary>
-        /// RedEnvelopeContent
-        /// </summary>
-        [ForeignKey(nameof(RedEnvelopeContentId))]
-        public virtual RedEnvelopeContent RedEnvelopeContent { get; set; }
+        protected RedEnvelopeUnit()
+        {
+        }
+
+        public RedEnvelopeUnit(Guid id, Guid redEnvelopeContentId, decimal amount) : base(id)
+        {
+            RedEnvelopeContentId = redEnvelopeContentId;
+            Amount = amount;
+        }
 
         /// <summary>
         /// 领取红包
         /// </summary>
         /// <param name="ownerUserId">领取人UserId</param>
-        public void SetGrabed(Guid ownerUserId)
+        public void SetGrabed(Guid ownerId, DateTime ownedTime)
         {
-            OwnerUserId = ownerUserId;
-            //OwnerTime = Clock.Now;
+            OwnerId = ownerId;
+            OwnedTime = ownedTime;
             IsOwned = true;
         }
     }
