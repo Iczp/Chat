@@ -2,5 +2,6 @@
 {
     public interface IMessageContentEntity
     {
+        string GetBody();
     }
 }

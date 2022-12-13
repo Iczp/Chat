@@ -1,4 +1,7 @@
-﻿using IczpNet.AbpCommons.DataFilters;
+﻿using Castle.DynamicProxy;
+using IczpNet.AbpCommons.DataFilters;
+using IczpNet.AbpCommons.Extensions;
+using IczpNet.Chat.Attributes;
 using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
@@ -23,5 +26,17 @@ namespace IczpNet.Chat.MessageSections
         protected MessageContentEntityBase() { }
 
         protected MessageContentEntityBase(Guid id) : base(id) { }
+
+        public virtual string GetBody()
+        {
+            var currentContentType = ProxyUtil.GetUnproxiedType(this);
+            var description = MessageTemplateAttribute.GetMessageType(currentContentType).GetDescription();
+            return $"[{description}]";
+        }
+
+        public virtual string FormatString(string text, int length = 20)
+        {
+            return text.Length > 20 ? $"{text[..20]}…" : text;
+        }
     }
 }

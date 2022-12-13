@@ -51,5 +51,50 @@ namespace IczpNet.Chat.MessageServices
         {
             return MessageManager.SendRedEnvelopeMessageAsync(input);
         }
+
+        public Task<MessageInfo<HtmlContentInfo>> SendHtmlMessageAsync(MessageInput<HtmlContentInfo> input)
+        {
+            return MessageManager.SendHtmlMessageAsync(input);
+        }
+
+        public Task<MessageInfo<ImageContentInfo>> SendImageMessageAsync(MessageInput<ImageContentInfo> input)
+        {
+            return MessageManager.SendImageMessageAsync(input);
+        }
+
+        public Task<MessageInfo<SoundContentInfo>> SendSoundMessageAsync(MessageInput<SoundContentInfo> input)
+        {
+            return MessageManager.SendSoundMessageAsync(input);
+        }
+
+        public Task<MessageInfo<VideoContentInfo>> SendVideoMessageAsync(MessageInput<VideoContentInfo> input)
+        {
+            return MessageManager.SendVideoMessageAsync(input);
+        }
+
+        public Task<MessageInfo<FileContentInfo>> SendFileMessageAsync(MessageInput<FileContentInfo> input)
+        {
+            return MessageManager.SendFileMessageAsync(input);
+        }
+
+        public Task<MessageInfo<LocationContentInfo>> SendLocationMessageAsync(MessageInput<LocationContentInfo> input)
+        {
+            return MessageManager.SendLocationMessageAsync(input);
+        }
+
+        public Task<MessageInfo<ContactsContentInfo>> SendContactsMessageAsync(MessageInput<ContactsContentInfo> input)
+        {
+            return MessageManager.SendContactsMessageAsync(input);
+        }
+
+        public Task<MessageInfo<LinkContentInfo>> SendLinkMessageAsync(MessageInput<LinkContentInfo> input)
+        {
+            return MessageManager.SendLinkMessageAsync(input);
+        }
+
+        public Task<MessageInfo<HistoryContentOutput>> SendHistoryMessageAsync(MessageInput<HistoryContentInput> input)
+        {
+            return MessageManager.SendHistoryMessageAsync(input);
+        }
     }
 }

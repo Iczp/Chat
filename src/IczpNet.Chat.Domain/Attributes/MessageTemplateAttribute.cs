@@ -52,7 +52,7 @@ namespace IczpNet.Chat.Attributes
         {
             var nameAttribute = type.GetCustomAttribute<MessageTemplateAttribute>();
 
-            Assert.NotNull(nameAttribute, $"Item already exists. Key:'{type}',value:'{nameAttribute.MessageType}'");
+            Assert.NotNull(nameAttribute, $"Non-existent MessageTemplateAttribute of type:'{type}'.");
 
             return nameAttribute.MessageType;
 

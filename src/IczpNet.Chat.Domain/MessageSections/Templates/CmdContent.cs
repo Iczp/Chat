@@ -17,6 +17,6 @@ namespace IczpNet.Chat.MessageSections.Templates
         /// <summary>
         /// app:///pages/im/notice?id=123
         /// </summary>
-        public virtual string Url { get; internal set; }
+        public virtual string Url { get; set; }
     }
 }

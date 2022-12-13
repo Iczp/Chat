@@ -9,7 +9,7 @@
         /// 文本内容
         /// </summary>
         //[Required(ErrorMessage = "文本内容[Text]必填！")]
-        public string Text { get; set; }
+        public virtual string Text { get; set; }
 
     }
 }

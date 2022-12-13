@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.Attributes;
 using IczpNet.Chat.Enums;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -25,6 +26,19 @@ namespace IczpNet.Chat.MessageSections.Templates
         public virtual string Description { get; protected set; }
 
         [InverseProperty(nameof(HistoryMessage.HistoryContent))]
-        public virtual List<HistoryMessage> HistoryMessageList { set; protected get; }
+        public virtual IList<HistoryMessage> HistoryMessageList { set; protected get; }
+
+        protected HistoryContent() { }
+
+        public HistoryContent(Guid id, string title, string description) : base(id)
+        {
+            Title = title;
+            Description = description;
+        }
+
+        public void SetHistoryMessageList(IList<HistoryMessage> historyMessageList)
+        {
+            HistoryMessageList = historyMessageList;
+        }
     }
 }

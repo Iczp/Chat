@@ -33,6 +33,26 @@ namespace IczpNet.Chat.RedEnvelopes
             }
             return await Task.FromResult(result);
         }
+        public virtual async Task<IList<RedEnvelopeUnit>> MakeForRandomAsync(Guid redEnvelopeContentId, int count, decimal totalAmount)
+        {
+            var result = AllocateRandomResult(totalAmount, count, 0.01m)
+                .Select(amount => new RedEnvelopeUnit(GuidGenerator.Create(), redEnvelopeContentId, Convert.ToDecimal(amount)))
+                .ToList();
+
+            var maxAmount = result.Max(x => x.Amount);
+
+            result.FindAll(x => x.Amount == maxAmount).ForEach(x => x.IsTop = true);
+
+            return await Task.FromResult(result);
+        }
+
+        public virtual async Task<IList<RedEnvelopeUnit>> MakeForFixedAsync(Guid redEnvelopeContentId, decimal amount, int count)
+        {
+            var result = AllocateFixedResult(amount, count)
+                .Select(amount => new RedEnvelopeUnit(GuidGenerator.Create(), redEnvelopeContentId, Convert.ToDecimal(amount)))
+                .ToList();
+            return await Task.FromResult(result);
+        }
 
         /// <summary>
         /// 固定红包

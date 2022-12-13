@@ -2,37 +2,36 @@
 
 namespace IczpNet.Chat.MessageSections.Templates
 {
-    /// <summary>
-    /// RedEnvelopeContentInput
-    /// </summary>
     public class RedEnvelopeContentInput : BaseMessageContentInfo, IMessageContentInfo//, IValidatableObject
     {
+
+        public virtual string Password { get; set; }
         /// <summary>
         /// 红包发放方式（0：随机金额;1:固定金额）
         /// </summary>
-        public GrantModes GrantMode { get; set; }
+        public virtual GrantModes GrantMode { get; set; }
 
         /// <summary>
         /// 单个金额Red Envelope
         /// </summary>
-        public decimal Amount { get; set; }
+        public virtual decimal Amount { get; set; }
 
         /// <summary>
         /// 数量
         /// </summary>
-        public int Count { get; set; }
+        public virtual int Count { get; set; }
 
         /// <summary>
         /// 总金额
         /// </summary>
-        public decimal TotalAmount { get; set; }
+        public virtual decimal TotalAmount { get; set; }
 
         /// <summary>
         /// 文本内容
         /// </summary>
-        public string Text { get; set; }
+        public virtual string Text { get; set; }
 
-        //public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        //public virtual IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         //{
         //    if (Count <= 0)
         //    {

@@ -8,31 +8,31 @@
         /// <summary>
         /// AMap(高德地图)、baidu(百度地图)
         /// </summary>
-        public string Provider { get; set; }
+        public virtual string Provider { get; set; }
 
         /// <summary>
         /// 位置名称
         /// </summary>
-        public string Name { get; set; }
+        public virtual string Name { get; set; }
 
         /// <summary>
         /// 简要说明
         /// </summary>
-        public string Address { get; set; }
+        public virtual string Address { get; set; }
 
         /// <summary>
         /// 地图图片
         /// </summary>
-        public string Image { get; set; }
+        public virtual string Image { get; set; }
 
         /// <summary>
         /// 坐标 Latitude
         /// </summary>
-        public float Latitude { get; set; }
+        public virtual float Latitude { get; set; }
 
         /// <summary>
         /// 坐标 Longitude
         /// </summary>
-        public float Longitude { get; set; }
+        public virtual float Longitude { get; set; }
     }
 }

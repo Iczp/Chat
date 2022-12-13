@@ -15,7 +15,7 @@ namespace IczpNet.Chat.MessageSections.Templates
         /// </summary>
         //[Index]
 
-        public string Name { get; set; }
+        public virtual string Name { get; set; }
 
         public virtual string Code { get; set; }
 
@@ -29,11 +29,11 @@ namespace IczpNet.Chat.MessageSections.Templates
         /// <summary>
         /// 说明
         /// </summary>
-        public string Description { get; set; }
+        public virtual string Description { get; set; }
 
         /// <summary>
         /// 备注
         /// </summary>
-        public string Remark { get; set; }
+        public virtual string Remark { get; set; }
     }
 }

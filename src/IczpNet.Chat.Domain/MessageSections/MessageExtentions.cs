@@ -5,6 +5,7 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq.Dynamic.Core;
 
 namespace IczpNet.Chat.MessageSections
 {

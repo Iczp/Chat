@@ -60,4 +60,9 @@ public partial class Message
         return this.GetMessageContent().ToDynamicList().FirstOrDefault();
     }
 
+    public virtual IMessageContentEntity GetTypedContent()
+    {
+        return (IMessageContentEntity)GetContent();
+    }
+
 }

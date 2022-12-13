@@ -8,31 +8,31 @@
         /// <summary>
         /// FileName
         /// </summary>
-        public string FileName { get; set; }
+        public virtual string FileName { get; set; }
 
         /// <summary>
         /// 文件地址
         /// </summary>
-        public string Url { get; set; }
+        public virtual string Url { get; set; }
 
         /// <summary>
         /// 文件地址
         /// </summary>
-        public string ActionUrl { get; set; }
+        public virtual string ActionUrl { get; set; }
 
         /// <summary>
         /// ContentType
         /// </summary>
-        public string ContentType { get; set; }
+        public virtual string ContentType { get; set; }
 
         /// <summary>
         /// 文件后缀名
         /// </summary>
-        public string Suffix { get; set; }
+        public virtual string Suffix { get; set; }
 
         /// <summary>
         /// 大小 ContentLength(Size)
         /// </summary>
-        public long? ContentLength { get; set; }
+        public virtual long? ContentLength { get; set; }
     }
 }

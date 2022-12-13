@@ -22,5 +22,13 @@ namespace IczpNet.Chat.MessageSections.Templates
         {
             return new object[] { MessageId, HistoryContentId };
         }
+
+        protected HistoryMessage() { }
+        public HistoryMessage(HistoryContent historyContent, Message message)
+        {
+
+            HistoryContent = historyContent;
+            Message = message;
+        }
     }
 }
