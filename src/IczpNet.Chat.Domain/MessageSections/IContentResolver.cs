@@ -6,6 +6,6 @@ namespace IczpNet.Chat.MessageSections
 {
     public interface IContentResolver
     {
-        string GetProvider(string name);
+        Type GetProvider(string name);
     }
 }
