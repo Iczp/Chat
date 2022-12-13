@@ -28,7 +28,7 @@ namespace IczpNet.Chat.Wallets
 
         public WalletBusiness(string id, string name, WalletBusinessTypes walletBusinessType, string description, bool isStatic, bool isEnabled) : base(id)
         {
-            base.Id= id.ToLower();
+            //base.Id= id.ToLower();
             Name = name;
             Description = description;
             BusinessType = walletBusinessType;

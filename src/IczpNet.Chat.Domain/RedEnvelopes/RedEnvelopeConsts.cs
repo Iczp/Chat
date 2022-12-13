@@ -2,10 +2,10 @@
 {
     public static class RedEnvelopeConsts
     {
-        public const string Give = "give";
-        public const string Received = "received";
-        public const string Return = "return";
-        public const string Recharge = "recharge";
-        public const string Withdrawal = "withdrawal";
+        public static string Give { get; set; } = "RedEnvelope.Give";
+        public static string Received { get; set; } = "RedEnvelope.Received";
+        public static string Return { get; set; } = "RedEnvelope.Return";
+        public static string Recharge { get; set; } = "RedEnvelope.Recharge";
+        public static string Withdrawal { get; set; } = "RedEnvelope.Withdrawal";
     }
 }

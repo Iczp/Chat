@@ -12,8 +12,7 @@ namespace IczpNet.Chat.Wallets
 {
     public class Wallet : BaseEntity<Guid>, IChatOwner<Guid>
     {
-        [NotMapped]
-        public decimal? OriginalAvailableAmount { get; private set; }
+        public virtual Guid? AppUserId { get; protected set; }
 
         public virtual Guid OwnerId { get; protected set; }
 
@@ -23,14 +22,7 @@ namespace IczpNet.Chat.Wallets
         [Column(TypeName = "decimal(18,2)")]
         [Range(0.0, (double)decimal.MaxValue)]
         public virtual decimal AvailableAmount { get; protected set; }
-        //{
-        //    get => AvailableAmount;
-        //    protected set
-        //    {
-        //        OriginalAvailableAmount ??= value;
-        //        AvailableAmount = value;
-        //    }
-        //}
+
 
         [Column(TypeName = "decimal(18,2)")]
         [Range(0.0, (double)decimal.MaxValue)]
@@ -54,7 +46,7 @@ namespace IczpNet.Chat.Wallets
             TotalAmount = LockAmount + AvailableAmount;
         }
 
-        public Wallet(Guid id, Guid ownerId) : base(id)
+        public Wallet(Guid id, Guid ownerId ) : base(id)
         {
             OwnerId = ownerId;
         }
@@ -70,7 +62,7 @@ namespace IczpNet.Chat.Wallets
 
         private void SetOriginalAvailableAmount()
         {
-            OriginalAvailableAmount = AvailableAmount;
+
         }
 
         internal void Income(decimal amount, WalletRecorder walletRecorder)

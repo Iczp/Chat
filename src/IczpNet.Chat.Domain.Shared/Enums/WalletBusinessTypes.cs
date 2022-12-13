@@ -9,11 +9,11 @@ namespace IczpNet.Chat.Enums
         /// 收入
         /// </summary>
         [Description("收入")]
-        Income = 0,
+        Income = 1,
         /// <summary>
         /// 支出
         /// </summary>
         [Description("支出")]
-        Expenditure = 1,
+        Expenditure = -1,
     }
 }
