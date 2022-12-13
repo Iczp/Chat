@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.Connections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.OfficialSections.OfficialExcludedMembers;
@@ -18,6 +19,7 @@ using IczpNet.Chat.RoomSections.Rooms;
 using IczpNet.Chat.SessionSections.FriendshipRequests;
 using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.FriendshipTagUnits;
+using IczpNet.Chat.SessionSections.MessageReminders;
 using IczpNet.Chat.SessionSections.OpenedRecorders;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SquareSections.SquareCategorys;
@@ -43,7 +45,10 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<FriendshipTagUnit> FriendshipTagUnit { get; }
     DbSet<FriendshipRequest> FriendshipRequest { get; }
     DbSet<OpenedRecorder> OpenedRecorder { get; }
-    
+    DbSet<MessageReminder> MessageReminder { get; }
+
+
+    DbSet<Connection> Connection { get; }
 
 
     DbSet<ChatObject> ChatObject { get; }

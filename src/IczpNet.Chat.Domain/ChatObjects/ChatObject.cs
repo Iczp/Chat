@@ -12,6 +12,7 @@ using IczpNet.Chat.RoomSections.RoomMembers;
 using IczpNet.Chat.SessionSections.Favorites;
 using IczpNet.Chat.SessionSections.FriendshipRequests;
 using IczpNet.Chat.SessionSections.Friendships;
+using IczpNet.Chat.SessionSections.MessageReminders;
 using IczpNet.Chat.SessionSections.SessionSettings;
 using IczpNet.Chat.SquareSections.SquareMembers;
 using System;
@@ -61,6 +62,14 @@ namespace IczpNet.Chat.ChatObjects
 
         [InverseProperty(nameof(Message.Receiver))]
         public virtual IList<Message> ReceiverMessageList { get; set; }
+
+        #endregion
+
+        #region MessageReminder @me,@evone
+
+        [InverseProperty(nameof(MessageReminder.Owner))]
+        public virtual IList<MessageReminder> MessageReminderList { get; set; }
+
 
         #endregion
 

@@ -12,5 +12,7 @@ namespace IczpNet.Chat.ChatObjects
         Task<ChatObject> GetAsync(Guid chatObjectId);
 
         Task<bool> IsAllowJoinRoomMemnerAsync(ChatObjectTypes? objectType);
+
+        Task<List<Guid>> GetIdListByNameAsync(List<string> nameList); //, List<ChatObjectTypes> objectTypes
     }
 }

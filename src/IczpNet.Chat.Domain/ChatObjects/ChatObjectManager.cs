@@ -32,5 +32,14 @@ namespace IczpNet.Chat.ChatObjects
         {
             return Task.FromResult(ChatConsts.AllowJoinRoomMemberObjectTypes.Any(x => x.Equals(objectType)));
         }
+
+        public virtual async Task<List<Guid>> GetIdListByNameAsync(List<string> nameList)
+        {
+            var query = (await ChatObjectReadOnlyRepository.GetQueryableAsync())
+                .Where(x => nameList.Contains(x.Name))
+                .Select(x => x.Id)
+                ;
+            return await AsyncExecuter.ToListAsync(query);
+        }
     }
 }

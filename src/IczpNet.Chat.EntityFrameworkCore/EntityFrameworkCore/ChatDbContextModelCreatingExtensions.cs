@@ -9,6 +9,7 @@ using IczpNet.Chat.RoomSections.RoomPermissionGrants;
 using IczpNet.Chat.RoomSections.RoomRoleRoomMembers;
 using IczpNet.Chat.SessionSections.Favorites;
 using IczpNet.Chat.SessionSections.FriendshipTagUnits;
+using IczpNet.Chat.SessionSections.MessageReminders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
@@ -62,6 +63,11 @@ public static class ChatDbContextModelCreatingExtensions
         });
 
 
+
+        builder.Entity<MessageReminder>(b =>
+        {
+            b.HasKey(x => new { x.MessageId, x.OwnerId });
+        });
 
         builder.Entity<FavoriteMessage>(b =>
         {

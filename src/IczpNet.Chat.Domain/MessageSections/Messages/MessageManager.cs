@@ -3,11 +3,13 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.RedEnvelopes;
+using IczpNet.Chat.RoomSections.Rooms;
 using IczpNet.Chat.SessionSections;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
@@ -23,20 +25,26 @@ namespace IczpNet.Chat.MessageSections.Messages
             ? provider.GetRequiredService<IObjectMapper>()
             : (IObjectMapper)provider.GetRequiredService(typeof(IObjectMapper<>).MakeGenericType(ObjectMapperContext)));
 
-        protected IRepository<ChatObject, Guid> ChatObjectRepository { get; }
+        //protected IRepository<ChatObject, Guid> ChatObjectRepository { get; }
+
+        protected IChatObjectManager ChatObjectManager { get; }
         protected IRepository<Message, Guid> Repository { get; }
         protected ISessionIdGenerator SessionIdGenerator => LazyServiceProvider.LazyGetRequiredService<ISessionIdGenerator>();
         protected IMessageChannelGenerator MessageChannelGenerator => LazyServiceProvider.LazyGetRequiredService<IMessageChannelGenerator>();
         protected IRedEnvelopeGenerator RedEnvelopeGenerator { get; }
+        protected IMessageChatObjectResolver MessageChatObjectResolver { get; }
 
         public MessageManager(
             IRepository<Message, Guid> repository,
-            IRepository<ChatObject, Guid> chatObjectRepository,
-            IRedEnvelopeGenerator redEnvelopeGenerator)
+            IRedEnvelopeGenerator redEnvelopeGenerator,
+            IMessageChatObjectResolver messageChatObjectResolver,
+            IChatObjectManager chatObjectManager)
         {
             Repository = repository;
-            ChatObjectRepository = chatObjectRepository;
+
             RedEnvelopeGenerator = redEnvelopeGenerator;
+            MessageChatObjectResolver = messageChatObjectResolver;
+            ChatObjectManager = chatObjectManager;
         }
         public virtual async Task<Message> CreateMessageAsync(ChatObject sender, ChatObject receiver, Action<Message> action = null)
         {
@@ -56,9 +64,9 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             where TMessageInput : class, IMessageInput
         {
-            var sender = await ChatObjectRepository.GetAsync(input.SenderId);
+            var sender = await ChatObjectManager.GetAsync(input.SenderId);
 
-            var receiver = await ChatObjectRepository.GetAsync(input.ReceiverId);
+            var receiver = await ChatObjectManager.GetAsync(input.ReceiverId);
 
             return await CreateMessageAsync(sender, receiver, entity =>
             {
@@ -72,6 +80,66 @@ namespace IczpNet.Chat.MessageSections.Messages
             });
         }
 
+        /// <summary>
+        /// 设置【@我】提醒
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="room"></param>
+        /// <returns></returns>
+        protected async Task SetRemindAsync(Message message, Room room)
+        {
+            //@XXX
+            if (message.MessageType != MessageTypes.Text)
+            {
+                return;
+            }
+            //Guid.TryParse(message.Receiver, out Guid roomId);
+            var textContent = message.TextContentList.FirstOrDefault();
+
+            var text = textContent.Text;
+
+            var reg = new Regex("@([^ ]+) ?");
+
+            //例如我想提取 @中的NAME值
+            var match = reg.Match(text);
+
+            var nameList = new List<string>();
+
+            for (var i = 0; i < match.Groups.Count; i++)
+            {
+                string value = match.Groups[i].Value;
+
+                if (!value.IsNullOrWhiteSpace())
+                {
+                    nameList.Add(value);
+                }
+            }
+            if (!nameList.Any())
+            {
+                return;
+            }
+            if (nameList.IndexOf("所有人") != -1)
+            {
+                message.SetRemindAll();
+
+                return;
+            }
+            var chatObjectIdList = await ChatObjectManager.GetIdListByNameAsync(nameList);
+
+            if (!chatObjectIdList.Any())
+            {
+                return;
+            }
+            var roomId = message.Receiver;
+
+            //验证被@的人是否在群里
+            var memberChatObjectIdList = room.RoomMemberList.Where(x => chatObjectIdList.Contains(x.OwnerId)).Select(x => x.OwnerId).ToList();
+
+            if (memberChatObjectIdList.Any())
+            {
+                message.SetRemindChatObject(memberChatObjectIdList);
+            }
+        }
         //public virtual async Task<Message> CreateMessageAsync<TMessageInput>(TMessageInput input, IMessageContentEntity content)
         //    where TMessageInput : class, IMessageInput
         //{
@@ -88,6 +156,8 @@ namespace IczpNet.Chat.MessageSections.Messages
         {
             var message = await CreateMessageAsync(input, action);
             var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
+
+            var chatObjectList = await MessageChatObjectResolver.GetChatObjectListAsync(message);
             //push
             return await Task.FromResult(output);
         }
@@ -98,7 +168,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             Assert.If(source.IsRollbacked || source.RollbackTime != null, $"message already rollback：{sourceMessageId}");
 
-            var sender = await ChatObjectRepository.GetAsync(senderId);
+            var sender = await ChatObjectManager.GetAsync(senderId);
 
             return await ForwardMessageAsync(source, sender, receiverIdList);
         }
@@ -119,7 +189,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             foreach (var receiverId in receiverIdList.Distinct())
             {
-                var receiver = await ChatObjectRepository.GetAsync(receiverId);
+                var receiver = await ChatObjectManager.GetAsync(receiverId);
 
                 var newMessage = await CreateMessageAsync(sender, receiver, x =>
                 {

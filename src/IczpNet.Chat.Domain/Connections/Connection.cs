@@ -1,12 +1,15 @@
-﻿using System;
+﻿using IczpNet.Chat.BaseEntitys;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.Connections
 {
-    public class Connection
+    public class Connection : BaseEntity<Guid>
     {
-        [Required]
-        public virtual Guid AppUserId { get; set; }
+        //[Required]
+        public virtual Guid? AppUserId { get; set; }
+
+        public virtual Guid? ChatObjectId { get; set; }
 
         [StringLength(200)]
         public virtual string Server { get; set; }
@@ -20,6 +23,9 @@ namespace IczpNet.Chat.Connections
         [StringLength(300)]
         public virtual string Agent { get; set; }
 
-        public virtual DateTime ActiveTime { get; set; }
+        public virtual DateTime ActiveTime { get; set; } = DateTime.Now;
+
+        protected Connection() { }
+
     }
 }

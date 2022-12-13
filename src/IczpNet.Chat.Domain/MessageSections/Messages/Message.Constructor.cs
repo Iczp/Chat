@@ -2,6 +2,8 @@
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
@@ -49,5 +51,27 @@ public partial class Message
     public virtual void SetContentJson(string contentJson)
     {
         ContentJson = contentJson;
+    }
+
+    public virtual void SetMessageType(MessageTypes messageType)
+    {
+        MessageType = messageType;
+    }
+
+    /// <summary>
+    /// 设置提醒所有人 @Everyone
+    /// </summary>
+    public virtual void SetRemindAll()
+    {
+        SetKey(MessageKeyNames.Remind, MessageKeyNames.RemindEveryone);
+    }
+
+    /// <summary>
+    /// 设置提醒用户 @ChatObjectId
+    /// </summary>
+    /// <param name="chatObjectIdList"></param>
+    public virtual void SetRemindChatObject(List<Guid> chatObjectIdList)
+    {
+        SetKey(MessageKeyNames.Remind, string.Join(",", chatObjectIdList.ToArray()));
     }
 }
