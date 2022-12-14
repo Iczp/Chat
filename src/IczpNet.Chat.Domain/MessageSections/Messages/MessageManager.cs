@@ -319,5 +319,13 @@ namespace IczpNet.Chat.MessageSections.Messages
             var providerType = ContentResolver.GetProviderTypeOrDefault(providerName);
             return LazyServiceProvider.LazyGetService(providerType) as IContentProvider;
         }
+
+        public virtual async Task<MessageInfo<TextContentInfo>> SendTextTemplateMessageAsync(MessageInput<TextContentInfo> input)
+        {
+            var provider = GetContentProvider(TextContentProvider.Name);
+
+            var messageContent = ObjectMapper.Map<TextContentInfo, TextContent>(input.Content);
+            return await SendMessageAsync<TextContentInfo>(input, x => x.SetMessageContent(messageContent));
+        }
     }
 }

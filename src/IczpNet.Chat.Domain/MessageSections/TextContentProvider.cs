@@ -1,18 +1,16 @@
-﻿using AutoMapper.Internal.Mappers;
-using IczpNet.Chat.MessageSections.Templates;
+﻿using IczpNet.Chat.MessageSections.Templates;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.MessageSections
 {
-    [ContentProvider("Text")]
+    [ContentProvider(Name)]
     public class TextContentProvider : ContentProviderBase
     {
+        public const string Name = "Text";
         protected IRepository<TextContent, Guid> Repository { get; set; }
 
         public TextContentProvider(IRepository<TextContent, Guid> repository)

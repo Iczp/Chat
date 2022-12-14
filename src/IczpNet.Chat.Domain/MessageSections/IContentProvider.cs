@@ -7,4 +7,11 @@ namespace IczpNet.Chat.MessageSections
     {
         Task<IMessageContentInfo> GetContent(Guid messageId);
     }
+
+    public interface IContentProvider<TInput, TOutput>
+        where TInput : class
+        where TOutput : class
+    {
+        Task<TOutput> Create(TInput input);
+    }
 }
