@@ -8,12 +8,12 @@ using Volo.Abp.Domain.Repositories;
 namespace IczpNet.Chat.MessageSections
 {
     [ContentProvider(Name)]
-    public class ArticleContentProvider : ContentProviderBase
+    public class ArticleProvider : ContentProviderBase
     {
         public const string Name = "Article";
         protected IRepository<ArticleContent, Guid> Repository { get; set; }
 
-        public ArticleContentProvider(IRepository<ArticleContent, Guid> repository)
+        public ArticleProvider(IRepository<ArticleContent, Guid> repository)
         {
             Repository = repository;
         }

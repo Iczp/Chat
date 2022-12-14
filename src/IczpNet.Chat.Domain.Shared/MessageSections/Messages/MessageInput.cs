@@ -3,7 +3,7 @@ using System;
 
 namespace IczpNet.Chat.MessageSections.Messages
 {
-    public class MessageInput<T> : MessageInput where T : class, IMessageContentInfo
+    public class MessageInput<T> : MessageInput //where T : class, IMessageContentInfo
     {
         public virtual T Content { get; set; }
     }

@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using IczpNet.Chat.Articles;
+using IczpNet.Chat.Articles.Dtos;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
 
@@ -34,7 +36,11 @@ public class ChatApplicationAutoMapperProfile : Profile
 
 
 
-
+        //Article
+        CreateMap<Article, ArticleDto>();
+        CreateMap<Article, ArticleDetailDto>();
+        CreateMap<ArticleCreateInput, Article>(MemberList.None).IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<ArticleUpdateInput, Article>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
 
 
     }

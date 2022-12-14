@@ -18,6 +18,10 @@ public partial class Message : BaseEntity<Guid>
     //[Required]
     public virtual string SessionId { get; protected set; }
 
+    [StringLength(100)]
+    //[Required]
+    public virtual string Provider { get; protected set; }
+
     /// <summary>
     /// 发送者
     /// </summary>

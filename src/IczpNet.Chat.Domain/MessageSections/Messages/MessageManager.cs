@@ -154,7 +154,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         //}
 
         public virtual async Task<MessageInfo<TContentInfo>> SendMessageAsync<TContentInfo>(MessageInput input, Action<Message> action = null)
-            where TContentInfo : class, IMessageContentInfo
+            //where TContentInfo : class, IMessageContentInfo
             //where TContent : class, IMessageContentEntity
         {
             var message = await CreateMessageAsync(input, action);

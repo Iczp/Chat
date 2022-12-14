@@ -1,4 +1,5 @@
 ﻿using IczpNet.AbpCommons.EntityFrameworkCore;
+using IczpNet.Chat.Articles;
 using IczpNet.Chat.Attributes;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.MessageSections;
@@ -63,6 +64,10 @@ public static class ChatDbContextModelCreatingExtensions
         });
 
 
+        builder.Entity<ArticleMessage>(b =>
+        {
+            b.HasKey(x => new { x.MessageId, x.ArticleId });
+        });
 
         builder.Entity<MessageReminder>(b =>
         {

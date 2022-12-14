@@ -11,6 +11,8 @@ namespace IczpNet.Chat.MessageSections.Messages
         Task<Message> CreateMessageAsync(ChatObject sender, ChatObject receiver, Action<Message> action = null);
         Task<Message> CreateMessageAsync<TMessageInput>(TMessageInput input, Action<Message> action = null) where TMessageInput : class, IMessageInput;
 
+        Task<MessageInfo<TContentInfo>> SendMessageAsync<TContentInfo>(MessageInput input, Action<Message> action = null);
+
         Task<List<Message>> ForwardMessageAsync(Guid sourceMessageId, Guid senderId, List<Guid> receiverIdList);
         Task<List<Message>> ForwardMessageAsync(Message source, ChatObject sender, List<Guid> receiverIdList);
 

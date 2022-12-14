@@ -74,4 +74,13 @@ public partial class Message
     {
         SetKey(MessageKeyNames.Remind, string.Join(",", chatObjectIdList.ToArray()));
     }
+
+    public void SetContentProvider(Type type)
+    {
+        Provider = ContentProviderAttribute.GetName(type);
+    }
+    public void SetContentProvider<T>()
+    {
+        Provider = ContentProviderAttribute.GetName<T>();
+    }
 }

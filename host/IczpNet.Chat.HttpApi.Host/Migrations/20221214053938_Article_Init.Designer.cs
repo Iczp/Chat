@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,10 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221214053938_Article_Init")]
+    partial class Article_Init
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -507,10 +509,6 @@ namespace IczpNet.Chat.Migrations
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("Provider")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
 
                     b.Property<long>("QuoteDepth")
                         .HasColumnType("bigint");
@@ -4007,20 +4005,12 @@ namespace IczpNet.Chat.Migrations
             modelBuilder.Entity("IczpNet.Chat.Articles.ArticleMessage", b =>
                 {
                     b.HasOne("IczpNet.Chat.Articles.Article", "Article")
-                        .WithMany("MessageList")
+                        .WithMany()
                         .HasForeignKey("ArticleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("IczpNet.Chat.MessageSections.Messages.Message", "Message")
-                        .WithMany()
-                        .HasForeignKey("MessageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Article");
-
-                    b.Navigation("Message");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Messages.Message", b =>
@@ -4828,11 +4818,6 @@ namespace IczpNet.Chat.Migrations
                         .IsRequired();
 
                     b.Navigation("Category");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.Articles.Article", b =>
-                {
-                    b.Navigation("MessageList");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.ChatObjects.ChatObject", b =>

@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.ChatObjects;
+﻿using IczpNet.Chat.Articles;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Connections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
@@ -38,6 +39,10 @@ public interface IChatDbContext : IEfCoreDbContext
     /* Add DbSet for each Aggregate Root here. Example:
      * DbSet<Question> Questions { get; }
      */
+
+    DbSet<Article> Article { get; }
+    DbSet<ArticleMessage> ArticleMessage { get; }
+
 
     DbSet<Session> Session { get; }
     DbSet<Friendship> Friendship { get; }

@@ -19,5 +19,6 @@ public partial class Message
 
     [InverseProperty(nameof(MessageReminder.Message))]
     public virtual IList<MessageReminder> MessageReminderList { get; set; }
+
     
 }
