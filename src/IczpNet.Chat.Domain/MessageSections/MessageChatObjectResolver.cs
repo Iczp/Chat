@@ -18,7 +18,7 @@ namespace IczpNet.Chat.MessageSections
         {
             RoomRepository = roomRepository;
         }
-        public async Task<List<ChatObject>> GetChatObjectListAsync(Message message)
+        public virtual async Task<List<ChatObject>> GetChatObjectListAsync(Message message)
         {
             var result = new List<ChatObject>();
 
@@ -46,7 +46,7 @@ namespace IczpNet.Chat.MessageSections
             return result;
         }
 
-        public async Task<IEnumerable<Guid>> GetChatObjectIdListAsync(Message message)
+        public virtual async Task<IEnumerable<Guid>> GetChatObjectIdListAsync(Message message)
         {
             var result = new List<Guid>();
             switch (message.MessageChannel)

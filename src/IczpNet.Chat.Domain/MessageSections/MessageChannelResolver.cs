@@ -5,7 +5,7 @@ using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.MessageSections
 {
-    public class MessageChannelGenerator : DomainService, IMessageChannelGenerator
+    public class MessageChannelResolver : DomainService, IMessageChannelResolver
     {
         public MessageChannels Make(ChatObject sender, ChatObject receiver)
         {

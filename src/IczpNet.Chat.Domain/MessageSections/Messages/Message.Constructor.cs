@@ -26,19 +26,19 @@ public partial class Message
         //MessageType = messageType;
     }
 
-    public virtual void SetQuoteMessage(Message forwardMessage)
+    public virtual void SetQuoteMessage(Message source)
     {
-        QuoteMessage = forwardMessage;
-        QuoteDepth = forwardMessage.QuoteDepth + 1;
-        QuotePath = forwardMessage.QuotePath + Delimiter + forwardMessage.AutoId;
+        QuoteMessage = source;
+        QuoteDepth = source.QuoteDepth + 1;
+        QuotePath = source.QuotePath + Delimiter + source.AutoId;
         Assert.If(QuotePath.Length > QuotePathMaxLength, "Maximum length exceeded in [QuotePath].");
     }
 
-    public virtual void SetForwardMessage(Message forwardMessage)
+    public virtual void SetForwardMessage(Message source)
     {
-        ForwardMessage = forwardMessage;
-        ForwardDepth = forwardMessage.QuoteDepth + 1;
-        ForwardPath = forwardMessage.QuotePath + Delimiter + forwardMessage.AutoId;
+        ForwardMessage = source;
+        ForwardDepth = source.QuoteDepth + 1;
+        ForwardPath = source.QuotePath + Delimiter + source.AutoId;
         Assert.If(ForwardPath.Length > ForwardPathMaxLength, "Maximum length exceeded in [ForwardPath].");
     }
 

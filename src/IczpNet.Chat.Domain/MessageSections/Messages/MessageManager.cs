@@ -30,25 +30,28 @@ namespace IczpNet.Chat.MessageSections.Messages
         protected IChatObjectManager ChatObjectManager { get; }
         protected IRepository<Message, Guid> Repository { get; }
         protected ISessionIdGenerator SessionIdGenerator => LazyServiceProvider.LazyGetRequiredService<ISessionIdGenerator>();
-        protected IMessageChannelGenerator MessageChannelGenerator => LazyServiceProvider.LazyGetRequiredService<IMessageChannelGenerator>();
+        protected IMessageChannelResolver MessageChannelResolver => LazyServiceProvider.LazyGetRequiredService<IMessageChannelResolver>();
         protected IRedEnvelopeGenerator RedEnvelopeGenerator { get; }
         protected IMessageChatObjectResolver MessageChatObjectResolver { get; }
+        protected IContentResolver ContentResolver { get; }
+        
 
         public MessageManager(
             IRepository<Message, Guid> repository,
             IRedEnvelopeGenerator redEnvelopeGenerator,
             IMessageChatObjectResolver messageChatObjectResolver,
-            IChatObjectManager chatObjectManager)
+            IChatObjectManager chatObjectManager,
+            IContentResolver contentResolver)
         {
             Repository = repository;
-
             RedEnvelopeGenerator = redEnvelopeGenerator;
             MessageChatObjectResolver = messageChatObjectResolver;
             ChatObjectManager = chatObjectManager;
+            ContentResolver = contentResolver;
         }
         public virtual async Task<Message> CreateMessageAsync(ChatObject sender, ChatObject receiver, Action<Message> action = null)
         {
-            var messageChannel = await MessageChannelGenerator.MakeAsync(sender, receiver);
+            var messageChannel = await MessageChannelResolver.MakeAsync(sender, receiver);
 
             var sessionId = await SessionIdGenerator.MakeAsync(messageChannel, sender, receiver);
 
@@ -194,7 +197,9 @@ namespace IczpNet.Chat.MessageSections.Messages
                 var newMessage = await CreateMessageAsync(sender, receiver, x =>
                 {
                     x.SetMessageContent((IMessageContentEntity)messageContent);
+                    x.SetForwardMessage(source);
                 });
+
                 messageList.Add(newMessage);
             }
             return messageList;
@@ -308,6 +313,10 @@ namespace IczpNet.Chat.MessageSections.Messages
             return await SendMessageAsync<RedEnvelopeContentOutput>(input, x => x.SetMessageContent(messageContent));
         }
 
-
+        protected virtual IContentProvider GetContentProvider(string providerName)
+        {
+            var providerType = ContentResolver.GetProviderTypeOrDefault(providerName);
+            return LazyServiceProvider.LazyGetService(providerType) as IContentProvider;
+        }
     }
 }

@@ -11,15 +11,27 @@ namespace IczpNet.Chat.MessageSections
         protected Dictionary<string, Type> ContentProvider { get; }
         public ContentResolver()
         {
-            ContentProvider = typeof(IContentResolver).Assembly.GetExportedTypes()
-                    .Where(t => !t.IsAbstract && t.GetInterfaces().Any(x => typeof(IContentResolver).IsAssignableFrom(x)))
-                    .ToDictionary(x => x.GetCustomAttribute<ContentProviderAttribute>(true).ProviderName, x => x)
+            //ContentProvider = typeof(IContentProvider).Assembly.GetExportedTypes()
+            //        .Where(t => !t.IsAbstract && t.GetInterfaces().Any(x => typeof(IContentProvider).IsAssignableFrom(x)))
+            //        .ToDictionary(x => x.GetCustomAttribute<ContentProviderAttribute>(true).ProviderName, x => x)
+            //        ;
+
+            var list = typeof(IContentProvider).Assembly.GetExportedTypes()
+                    .Where(t => !t.IsAbstract && t.GetInterfaces().Any(x => typeof(IContentProvider).IsAssignableFrom(x)))
+                    .ToList();
+            ContentProvider = list
+                     .ToDictionary(x => x.GetCustomAttribute<ContentProviderAttribute>(true).ProviderName, x => x)
                     ;
         }
 
-        public Type GetProvider(string name)
+        public Type GetProviderType(string name)
         {
             return ContentProvider[name];
+        }
+
+        public Type GetProviderTypeOrDefault(string name)
+        {
+            return ContentProvider.GetOrDefault(name);
         }
     }
 }
