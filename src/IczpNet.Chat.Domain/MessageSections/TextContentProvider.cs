@@ -13,7 +13,6 @@ namespace IczpNet.Chat.MessageSections
     [ContentProvider("Text")]
     public class TextContentProvider : ContentProviderBase
     {
-        public override string ProviderName => "Text";
         protected IRepository<TextContent, Guid> Repository { get; set; }
 
         public TextContentProvider(IRepository<TextContent, Guid> repository)

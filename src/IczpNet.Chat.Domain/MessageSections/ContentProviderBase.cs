@@ -11,7 +11,6 @@ namespace IczpNet.Chat.MessageSections
 {
     public abstract class ContentProviderBase : DomainService, IContentProvider
     {
-        public abstract string ProviderName { get; }
         public abstract Task<IMessageContentInfo> GetContent(Guid messageId);
 
         protected Type ObjectMapperContext { get; set; }

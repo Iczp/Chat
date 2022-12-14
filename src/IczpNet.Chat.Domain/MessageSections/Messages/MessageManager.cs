@@ -158,6 +158,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             //where TContent : class, IMessageContentEntity
         {
             var message = await CreateMessageAsync(input, action);
+
             var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
 
             var chatObjectList = await MessageChatObjectResolver.GetChatObjectListAsync(message);
