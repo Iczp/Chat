@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace IczpNet.Chat.Connections
+﻿namespace IczpNet.Chat.Connections
 {
     public class ConnectionOptions
     {
-        public int ActiveSecconds { get; set; } = 10;
+        public int InactiveSeconds { get; set; } = 30;
+        public int TimerPeriodSeconds { get; set; } = 10;
     }
 }

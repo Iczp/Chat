@@ -1,14 +1,11 @@
 ﻿using AutoMapper;
-using IczpNet.Chat.SessionSections.Friendships;
-using IczpNet.Chat.SessionSections.FriendshipRequests.Dtos;
-using IczpNet.Chat.SessionSections.Friendships.Dtos;
-using IczpNet.Chat.SessionSections.FriendshipRequests;
-using System.Linq;
-using IczpNet.Chat.RoomSections.Rooms.Dtos;
-using IczpNet.Chat.RoomSections.Rooms;
 using IczpNet.Chat.FriendshipTagSections.FriendshipTags.Dtos;
-using IczpNet.Chat.SessionSections.OpenedRecordes.Dtos;
+using IczpNet.Chat.SessionSections.FriendshipRequests;
+using IczpNet.Chat.SessionSections.FriendshipRequests.Dtos;
+using IczpNet.Chat.SessionSections.Friendships;
+using IczpNet.Chat.SessionSections.Friendships.Dtos;
 using IczpNet.Chat.SessionSections.OpenedRecorders;
+using IczpNet.Chat.SessionSections.OpenedRecordes.Dtos;
 
 namespace IczpNet.Chat.AutoMappers;
 

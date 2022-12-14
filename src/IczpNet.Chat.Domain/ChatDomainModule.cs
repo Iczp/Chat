@@ -1,8 +1,12 @@
 using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
+using IczpNet.Chat.Connections;
 using IczpNet.Chat.ShortIds;
 using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
+using Volo.Abp;
 using Volo.Abp.AutoMapper;
+using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.Domain;
 using Volo.Abp.Identity;
 using Volo.Abp.Modularity;
@@ -38,5 +42,11 @@ public class ChatDomainModule : AbpModule
             options.UseSpecialCharacters = false;
         });
 
+    }
+
+    public override async Task OnPostApplicationInitializationAsync(ApplicationInitializationContext context)
+    {
+        await context.AddBackgroundWorkerAsync<ConnectionWorker>();
+        await base.OnPostApplicationInitializationAsync(context);
     }
 }

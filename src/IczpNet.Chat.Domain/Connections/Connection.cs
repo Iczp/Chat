@@ -23,9 +23,13 @@ namespace IczpNet.Chat.Connections
         [StringLength(300)]
         public virtual string Agent { get; set; }
 
-        public virtual DateTime ActiveTime { get; set; } = DateTime.Now;
+        public virtual DateTime ActiveTime { get; private set; } = DateTime.Now;
 
         protected Connection() { }
 
+        internal void SetActiveTime(DateTime now)
+        {
+            ActiveTime = now;
+        }
     }
 }

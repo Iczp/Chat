@@ -3,6 +3,8 @@ using IczpNet.Chat.Articles;
 using IczpNet.Chat.Articles.Dtos;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
+using IczpNet.Chat.Connections;
+using IczpNet.Chat.Connections.Dtos;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -42,6 +44,11 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<ArticleCreateInput, Article>(MemberList.None).IgnoreAllPropertiesWithAnInaccessibleSetter();
         CreateMap<ArticleUpdateInput, Article>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
 
+        //Connection
+        CreateMap<Connection, ConnectionDto>();
+        CreateMap<Connection, ConnectionDetailDto>();
+        CreateMap<ConnectionCreateInput, Connection>(MemberList.None).IgnoreAllPropertiesWithAnInaccessibleSetter();
+        //CreateMap<ConnectionUpdateInput, Connection>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
 
     }
 }
