@@ -29,5 +29,10 @@ namespace IczpNet.Chat.MessageSections
             }
             return ObjectMapper.Map<TextContent, TextContentInfo>(content);
         }
+
+        public override Task<TOutput> Create<TInput, TOutput>(TInput input)
+        {
+            return Task.FromResult(ObjectMapper.Map<TInput, TOutput>(input));
+        }
     }
 }

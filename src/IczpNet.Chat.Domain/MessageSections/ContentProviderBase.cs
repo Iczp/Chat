@@ -12,6 +12,7 @@ namespace IczpNet.Chat.MessageSections
     public abstract class ContentProviderBase : DomainService, IContentProvider
     {
         public abstract Task<IMessageContentInfo> GetContent(Guid messageId);
+        public abstract Task<TOutput> Create<TInput, TOutput>(TInput input);
 
         protected Type ObjectMapperContext { get; set; }
         protected IObjectMapper ObjectMapper => LazyServiceProvider.LazyGetService<IObjectMapper>(provider =>

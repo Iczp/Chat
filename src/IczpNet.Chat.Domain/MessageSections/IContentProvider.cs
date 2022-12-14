@@ -6,12 +6,8 @@ namespace IczpNet.Chat.MessageSections
     public interface IContentProvider
     {
         Task<IMessageContentInfo> GetContent(Guid messageId);
+
+        Task<TOutput> Create<TInput, TOutput>(TInput input);
     }
 
-    public interface IContentProvider<TInput, TOutput>
-        where TInput : class
-        where TOutput : class
-    {
-        Task<TOutput> Create(TInput input);
-    }
 }

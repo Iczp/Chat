@@ -34,7 +34,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         protected IRedEnvelopeGenerator RedEnvelopeGenerator { get; }
         protected IMessageChatObjectResolver MessageChatObjectResolver { get; }
         protected IContentResolver ContentResolver { get; }
-        
+
 
         public MessageManager(
             IRepository<Message, Guid> repository,
@@ -323,9 +323,8 @@ namespace IczpNet.Chat.MessageSections.Messages
         public virtual async Task<MessageInfo<TextContentInfo>> SendTextTemplateMessageAsync(MessageInput<TextContentInfo> input)
         {
             var provider = GetContentProvider(TextContentProvider.Name);
-
-            var messageContent = ObjectMapper.Map<TextContentInfo, TextContent>(input.Content);
-            return await SendMessageAsync<TextContentInfo>(input, x => x.SetMessageContent(messageContent));
+            var content = await provider.Create<TextContentInfo, TextContent>(input.Content);
+            return await SendMessageAsync<TextContentInfo>(input, x => x.SetMessageContent(content));
         }
     }
 }
