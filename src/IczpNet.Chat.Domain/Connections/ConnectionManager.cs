@@ -23,7 +23,7 @@ namespace IczpNet.Chat.Connections
         {
             var entity = await Repository.InsertAsync(connection, autoSave: true);
 
-
+            // 
             return entity;
         }
         public Task<int> GetOnlineCountAsync(DateTime currentTime)

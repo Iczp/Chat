@@ -25,7 +25,7 @@ namespace IczpNet.Chat.Connections
         [UnitOfWork]
         protected override async Task DoWorkAsync(PeriodicBackgroundWorkerContext workerContext)
         {
-            Logger.LogInformation($"ConnectionWorker running:{DateTime.Now}");
+            Logger.LogInformation($"ConnectionWorker running:{DateTime.Now}, Timer.Period:{Timer.Period}ms");
 
             var count = await ConnectionManager.DeleteInactiveAsync();
 
