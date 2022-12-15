@@ -13,6 +13,7 @@ using IczpNet.Chat.SessionSections.Favorites;
 using IczpNet.Chat.SessionSections.FriendshipRequests;
 using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.MessageReminders;
+using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionSettings;
 using IczpNet.Chat.SquareSections.SquareMembers;
 using System;
@@ -162,6 +163,16 @@ namespace IczpNet.Chat.ChatObjects
 
         [InverseProperty(nameof(SessionSetting.Destination))]
         public virtual IList<SessionSetting> DestinationSessionSettingList { get; set; }
+
+        #endregion
+
+        #region Session
+
+        [InverseProperty(nameof(Session.Owner))]
+        public virtual IList<Session> OwnerSessionList { get; set; }
+
+        [InverseProperty(nameof(Session.Destination))]
+        public virtual IList<Session> DestinationSessionList { get; set; }
 
         #endregion
 
