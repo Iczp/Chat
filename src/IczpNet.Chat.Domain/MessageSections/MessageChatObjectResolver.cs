@@ -3,6 +3,7 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.RoomSections.Rooms;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
@@ -52,13 +53,14 @@ namespace IczpNet.Chat.MessageSections
             switch (message.MessageChannel)
             {
                 case Enums.MessageChannels.PersonalToPersonal:
-
                     return new List<Guid>() { message.Sender.Id, message.Receiver.Id };
-
                 case Enums.MessageChannels.RoomChannel:
-                    await RoomRepository.GetAsync(message.ReceiverId.Value);
-                    break;
+                    var roomId = message.ReceiverId.Value;
+                    var room = await RoomRepository.GetAsync(roomId);
+                    return room.RoomMemberList.Select(x => x.OwnerId).Distinct().ToList();
                 case Enums.MessageChannels.SubscriptionChannel:
+
+
                     break;
                 case Enums.MessageChannels.ServiceChannel:
                     break;

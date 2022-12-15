@@ -17,20 +17,23 @@ namespace IczpNet.Chat.SessionSections
         protected IRepository<FriendshipRequest, Guid> FriendshipRequestRepository { get; }
         protected IChatObjectManager ChatObjectManager { get; }
         protected IRepository<OpenedRecorder, Guid> OpenedRecorderRepository { get; }
-        public IRepository<Message, Guid> MessageRepository { get; }
+        protected IRepository<Message, Guid> MessageRepository { get; }
+        protected ISessionRecorder SessionRecorder { get; }
 
         public SessionManager(
             IRepository<Friendship, Guid> friendshipRepository,
             IChatObjectManager chatObjectManager,
             IRepository<FriendshipRequest, Guid> friendshipRequestRepository,
             IRepository<OpenedRecorder, Guid> openedRecorderRepository,
-            IRepository<Message, Guid> messageRepository)
+            IRepository<Message, Guid> messageRepository,
+            ISessionRecorder sessionRecorder)
         {
             FriendshipRepository = friendshipRepository;
             ChatObjectManager = chatObjectManager;
             FriendshipRequestRepository = friendshipRequestRepository;
             OpenedRecorderRepository = openedRecorderRepository;
             MessageRepository = messageRepository;
+            SessionRecorder = sessionRecorder;
         }
 
         public Task<bool> IsFriendshipAsync(Guid ownerId, Guid destinationId)

@@ -8,10 +8,10 @@ namespace IczpNet.Chat.MessageSections.Messages
 {
     public interface IMessageManager
     {
-        Task<Message> CreateMessageAsync(ChatObject sender, ChatObject receiver, Action<Message> action = null);
-        Task<Message> CreateMessageAsync<TMessageInput>(TMessageInput input, Action<Message> action = null) where TMessageInput : class, IMessageInput;
+        Task<Message> CreateMessageAsync(ChatObject sender, ChatObject receiver, Func<Message, Task<IMessageContentEntity>> func);
+        Task<Message> CreateMessageAsync<TMessageInput>(TMessageInput input, Func<Message, Task<IMessageContentEntity>> func) where TMessageInput : class, IMessageInput;
 
-        Task<MessageInfo<TContentInfo>> SendMessageAsync<TContentInfo>(MessageInput input, Action<Message> action = null);
+        Task<MessageInfo<TContentInfo>> SendMessageAsync<TContentInfo>(MessageInput input, Func<Message, Task<IMessageContentEntity>> func);
 
         Task<List<Message>> ForwardMessageAsync(Guid sourceMessageId, Guid senderId, List<Guid> receiverIdList);
         Task<List<Message>> ForwardMessageAsync(Message source, ChatObject sender, List<Guid> receiverIdList);

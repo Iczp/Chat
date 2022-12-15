@@ -35,7 +35,7 @@ namespace IczpNet.Chat.RedEnvelopes
         }
         public virtual async Task<IList<RedEnvelopeUnit>> MakeForRandomAsync(Guid redEnvelopeContentId, int count, decimal totalAmount)
         {
-            var result = AllocateRandomResult(totalAmount, count, 0.01m)
+            var result = AllocateRandomResult(Math.Truncate(totalAmount), count, 0.01m)
                 .Select(amount => new RedEnvelopeUnit(GuidGenerator.Create(), redEnvelopeContentId, Convert.ToDecimal(amount)))
                 .ToList();
 

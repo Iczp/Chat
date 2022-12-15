@@ -56,6 +56,10 @@ namespace IczpNet.Chat.Connections
 
             var count = await Repository.CountAsync(predicate);
 
+            if (count == 0)
+            {
+                return 0;
+            }
             await Repository.DeleteAsync(predicate);
 
             return count;

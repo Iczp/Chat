@@ -56,18 +56,18 @@ namespace IczpNet.Chat.Services
                 ;
         }
 
-        public async Task<MessageInfo<ArticleItemInfo>> SendMessageAsync(MessageInput<ArticleItemInfo> input)
-        {
-            var article = await Repository.InsertAsync(new Article()
-            {
-                Title = "Title" + input.Content.Title
-            }, true);
+        //public async Task<MessageInfo<ArticleItemInfo>> SendMessageAsync(MessageInput<ArticleItemInfo> input)
+        //{
+        //    var article = await Repository.InsertAsync(new Article()
+        //    {
+        //        Title = "Title" + input.Content.Title
+        //    }, true);
 
-            return await MessageManager.SendMessageAsync<ArticleItemInfo>(input, x =>
-            {
-                article.AddMessage(new ArticleMessage(x));
-                x.SetContentProvider(typeof(ArticleProvider));
-            });
-        }
+        //    return await MessageManager.SendMessageAsync<ArticleItemInfo>(input, x =>
+        //    {
+        //        article.AddMessage(new ArticleMessage(x));
+        //        x.SetContentProvider(typeof(ArticleProvider));
+        //    });
+        //}
     }
 }

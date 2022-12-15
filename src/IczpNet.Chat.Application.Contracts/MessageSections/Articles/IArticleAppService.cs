@@ -17,5 +17,5 @@ public interface IArticleAppService :
         ArticleUpdateInput>
 {
 
-    Task<MessageInfo<ArticleItemInfo>> SendMessageAsync(MessageInput<ArticleItemInfo> input);
+    //Task<MessageInfo<ArticleItemInfo>> SendMessageAsync(MessageInput<ArticleItemInfo> input);
 }
