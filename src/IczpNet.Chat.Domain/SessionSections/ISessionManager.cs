@@ -13,6 +13,6 @@ namespace IczpNet.Chat.SessionSections
         Task<Friendship> CreateFriendshipAsync(ChatObject owner, ChatObject destination, bool isPassive, Guid? friendshipRequestId);
         Task<DateTime> DeleteFriendshipAsync(Guid ownerId, Guid destinationId);
         Task<DateTime?> HandlRequestAsync(Guid friendshipRequestId, bool isAgreed, string handlMessage);
-        Task<OpenedRecorder> SetOpenedAsync(Guid ownerId, Guid destinationId,Guid messageId, string deviceId);
+        Task<OpenedRecorder> SetOpenedAsync(Guid ownerId, Guid destinationId, Guid messageId, string deviceId);
     }
 }

@@ -16,6 +16,7 @@ using IczpNet.Chat.SessionSections.MessageReminders;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionSettings;
 using IczpNet.Chat.SquareSections.SquareMembers;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -34,6 +35,11 @@ namespace IczpNet.Chat.ChatObjects
 
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public virtual long AutoId { get; }
+
+        /// <summary>
+        /// SessionRecorder
+        /// </summary>
+        public virtual long MaxMessageAutoId { get; protected set; }
 
         [StringLength(50)]
         [Required]
@@ -198,6 +204,11 @@ namespace IczpNet.Chat.ChatObjects
         public virtual void SetName(string name)
         {
             Name = name;
+        }
+
+        public virtual void SetMaxMessageAutoId(long maxMessageAutoId)
+        {
+            MaxMessageAutoId = maxMessageAutoId;
         }
     }
 }

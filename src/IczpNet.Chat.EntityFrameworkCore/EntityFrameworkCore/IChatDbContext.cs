@@ -55,8 +55,9 @@ public interface IChatDbContext : IEfCoreDbContext
 
     DbSet<Connection> Connection { get; }
 
-
     DbSet<ChatObject> ChatObject { get; }
+
+
     DbSet<Message> Message { get; }
     DbSet<Robot> Robot { get; }
 

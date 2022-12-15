@@ -3,10 +3,12 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.MessageSections.Messages;
 using System;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.SessionSections.MessageReminders
 {
+    [Description("消息提醒器@我")]
     public class MessageReminder : BaseEntity, IChatOwner<Guid>
     {
         public virtual Guid OwnerId { get; protected set; }
