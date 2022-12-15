@@ -29,7 +29,7 @@ namespace IczpNet.Chat.Connections
 
             var count = await ConnectionManager.DeleteInactiveAsync();
 
-            Logger.LogInformation($"ConnectionWorker Delete inactive count:{count}");
+            Logger.LogInformation($"ConnectionWorker delete inactive connection count:{count}");
         }
     }
 }

@@ -6,6 +6,8 @@ namespace IczpNet.Chat.Connections
 {
     public class Connection : BaseEntity<Guid>
     {
+        //[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        //public virtual long AutoId { get; protected set; }
         //[Required]
         public virtual Guid? AppUserId { get; set; }
 

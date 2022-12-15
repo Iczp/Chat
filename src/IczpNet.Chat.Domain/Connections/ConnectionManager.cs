@@ -21,6 +21,8 @@ namespace IczpNet.Chat.Connections
 
         public virtual async Task<Connection> OnlineAsync(Connection connection)
         {
+
+            //var onlineCount = await GetOnlineCountAsync(Clock.Now);
             var entity = await Repository.InsertAsync(connection, autoSave: true);
 
             // 
