@@ -2,8 +2,10 @@
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.Options;
 using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.SessionSections;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,7 +27,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         protected IRedEnvelopeGenerator RedEnvelopeGenerator { get; }
         protected IChatObjectResolver MessageChatObjectResolver { get; }
         protected IContentResolver ContentResolver { get; }
-
+        protected ChatOption Config { get; }
 
         public MessageManager(
             IRepository<Message, Guid> repository,
@@ -36,7 +38,8 @@ namespace IczpNet.Chat.MessageSections.Messages
             IObjectMapper objectMapper,
             IChannelResolver messageChannelResolver,
             IMessageValidator messageValidator,
-            ISessionGenerator sessionIdGenerator)
+            ISessionGenerator sessionIdGenerator,
+            IOptions<ChatOption> options)
         {
             Repository = repository;
             RedEnvelopeGenerator = redEnvelopeGenerator;
@@ -47,6 +50,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             ChannelResolver = messageChannelResolver;
             MessageValidator = messageValidator;
             SessionGenerator = sessionIdGenerator;
+            Config = options.Value;
         }
 
         public virtual async Task<Message> CreateMessageAsync(ChatObject sender, ChatObject receiver, Func<Message, Task<IMessageContentEntity>> func)
@@ -113,7 +117,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         public async Task<long> RollbackMessageAsync(Message message)
         {
 
-            const int HOURS = 24;
+            int HOURS = Config.AllowRollbackHours;
 
             var nowTime = Clock.Now;
 
@@ -122,7 +126,6 @@ namespace IczpNet.Chat.MessageSections.Messages
             //Assert.If(message.Sender != LoginInfo.UserId, $"无权限撤回别人消息！");
 
             Assert.If(nowTime > message.CreationTime.AddHours(HOURS), $"超过{HOURS}小时的消息不能被撤回！");
-
 
             message.Rollback(nowTime);
 
@@ -297,6 +300,6 @@ namespace IczpNet.Chat.MessageSections.Messages
             return await SendMessageAsync<TextContentInfo>(input, async x => await Task.FromResult(content));
         }
 
-        
+
     }
 }
