@@ -4,22 +4,6 @@ abpvnext v6.0 chat module.
 
 
 
-```
-[18:04:48 WRN] Entity 'HistoryContent' has a global query filter defined and is the required end of a relationship with the entity 'HistoryMessage'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-
-[18:04:48 WRN] Entity 'RoomRole' has a global query filter defined and is the required end of a relationship with the entity 'RoomPermissionGrant'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-
-[18:04:48 WRN] Entity 'RoomMember' has a global query filter defined and is the required end of a relationship with the entity 'RoomRoleRoomMember'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-
-[18:04:48 WRN] Entity 'Friendship' has a global query filter defined and is the required end of a relationship with the entity 'FriendshipTagUnit'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-```
-
-
-
-
-
-
-
 ## Startup
 
 ```
@@ -66,7 +50,7 @@ Update-Database
 
 #### Official 公众号
 
-#### OfficialGroup 公众号分组（人群定义、临时分组等）
+#### ----OfficialGroup 公众号分组（人群定义、临时分组等）
 
 #### Robot 机器人（智能对话）
 

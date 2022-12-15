@@ -83,4 +83,10 @@ public partial class Message
     {
         Provider = ContentProviderAttribute.GetName<T>();
     }
+
+    internal void Rollback(DateTime now)
+    {
+        IsRollbacked = true;
+        RollbackTime = now;
+    }
 }

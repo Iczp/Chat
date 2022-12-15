@@ -11,15 +11,14 @@ using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.MessageSections
 {
-    public class MessageChatObjectResolver : DomainService, IMessageChatObjectResolver
+    public class ChatObjectResolver : DomainService, IChatObjectResolver
     {
-
         protected IRepository<Room, Guid> RoomRepository { get; }
-        public MessageChatObjectResolver(IRepository<Room, Guid> roomRepository)
+        public ChatObjectResolver(IRepository<Room, Guid> roomRepository)
         {
             RoomRepository = roomRepository;
         }
-        public virtual async Task<List<ChatObject>> GetChatObjectListAsync(Message message)
+        public virtual async Task<List<ChatObject>> GetListAsync(Message message)
         {
             var result = new List<ChatObject>();
 
@@ -47,7 +46,7 @@ namespace IczpNet.Chat.MessageSections
             return result;
         }
 
-        public virtual async Task<IEnumerable<Guid>> GetChatObjectIdListAsync(Message message)
+        public virtual async Task<IEnumerable<Guid>> GetIdListAsync(Message message)
         {
             var result = new List<Guid>();
             switch (message.MessageChannel)

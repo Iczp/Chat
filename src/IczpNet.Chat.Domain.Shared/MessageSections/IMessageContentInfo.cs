@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace IczpNet.Chat.MessageSections
+﻿namespace IczpNet.Chat.MessageSections
 {
     /// <summary>
     /// 消息内容 Serializable

@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace IczpNet.Chat.MessageSections
 {
-    public interface IMessageChannelResolver
+    public interface IChannelResolver
     {
         Task<MessageChannels> MakeAsync(ChatObject sender, ChatObject receiver);
 

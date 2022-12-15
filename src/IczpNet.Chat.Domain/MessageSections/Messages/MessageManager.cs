@@ -21,24 +21,24 @@ namespace IczpNet.Chat.MessageSections.Messages
         protected IObjectMapper ObjectMapper { get; }
         protected IChatObjectManager ChatObjectManager { get; }
         protected IRepository<Message, Guid> Repository { get; }
-        protected ISessionIdGenerator SessionIdGenerator { get; }
-        protected IMessageChannelResolver MessageChannelResolver { get; }
+        protected ISessionGenerator SessionGenerator { get; }
+        protected IChannelResolver ChannelResolver { get; }
         protected IMessageValidator MessageValidator { get; }
         protected IRedEnvelopeGenerator RedEnvelopeGenerator { get; }
-        protected IMessageChatObjectResolver MessageChatObjectResolver { get; }
+        protected IChatObjectResolver MessageChatObjectResolver { get; }
         protected IContentResolver ContentResolver { get; }
 
 
         public MessageManager(
             IRepository<Message, Guid> repository,
             IRedEnvelopeGenerator redEnvelopeGenerator,
-            IMessageChatObjectResolver messageChatObjectResolver,
+            IChatObjectResolver messageChatObjectResolver,
             IChatObjectManager chatObjectManager,
             IContentResolver contentResolver,
             IObjectMapper objectMapper,
-            IMessageChannelResolver messageChannelResolver,
+            IChannelResolver messageChannelResolver,
             IMessageValidator messageValidator,
-            ISessionIdGenerator sessionIdGenerator)
+            ISessionGenerator sessionIdGenerator)
         {
             Repository = repository;
             RedEnvelopeGenerator = redEnvelopeGenerator;
@@ -46,16 +46,16 @@ namespace IczpNet.Chat.MessageSections.Messages
             ChatObjectManager = chatObjectManager;
             ContentResolver = contentResolver;
             ObjectMapper = objectMapper;
-            MessageChannelResolver = messageChannelResolver;
+            ChannelResolver = messageChannelResolver;
             MessageValidator = messageValidator;
-            SessionIdGenerator = sessionIdGenerator;
+            SessionGenerator = sessionIdGenerator;
         }
 
         public virtual async Task<Message> CreateMessageAsync(ChatObject sender, ChatObject receiver, Func<Message, Task<IMessageContentEntity>> func)
         {
-            var messageChannel = await MessageChannelResolver.MakeAsync(sender, receiver);
+            var messageChannel = await ChannelResolver.MakeAsync(sender, receiver);
 
-            var sessionId = await SessionIdGenerator.MakeAsync(messageChannel, sender, receiver);
+            var sessionId = await SessionGenerator.MakeSesssionIdAsync(messageChannel, sender, receiver);
 
             var entity = new Message(GuidGenerator.Create(), messageChannel, sender, receiver, sessionId);
 
@@ -170,9 +170,36 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
 
-            var chatObjectList = await MessageChatObjectResolver.GetChatObjectListAsync(message);
+            var chatObjectList = await MessageChatObjectResolver.GetListAsync(message);
             //push
             return await Task.FromResult(output);
+        }
+
+        public async Task<long> RollbackMessageAsync(Message message)
+        {
+
+            const int HOURS = 24;
+
+            var nowTime = Clock.Now;
+
+            //var message = await Repository.GetAsync(messageId);
+
+            //Assert.If(message.Sender != LoginInfo.UserId, $"无权限撤回别人消息！");
+
+            Assert.If(nowTime > message.CreationTime.AddHours(HOURS), $"超过{HOURS}小时的消息不能被撤回！");
+
+
+            message.Rollback(nowTime);
+
+            await Repository.UpdateAsync(message, true);
+
+            // push
+            //var targetUserIdList = await MessageChatObjectResolver.GetChatObjectIdListAsync(message);
+
+            //return await PusherFactory.SendToAsync<RollbackCommand>(x => targetUserIdList.Contains(x.UserId), rollbackMessageCommandMessage);
+
+            return 0;
+
         }
 
         public async Task<List<Message>> ForwardMessageAsync(Guid sourceMessageId, Guid senderId, List<Guid> receiverIdList)
@@ -334,5 +361,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             var content = await provider.Create<TextContentInfo, TextContent>(input.Content);
             return await SendMessageAsync<TextContentInfo>(input, async x => await Task.FromResult(content));
         }
+
+        
     }
 }

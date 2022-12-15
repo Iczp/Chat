@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace IczpNet.Chat.MessageSections
 {
-    public interface IMessageChatObjectResolver
+    public interface IChatObjectResolver
     {
-        Task<List<ChatObject>> GetChatObjectListAsync(Message message);
-        Task<IEnumerable<Guid>> GetChatObjectIdListAsync(Message message);
+        Task<List<ChatObject>> GetListAsync(Message message);
+        Task<IEnumerable<Guid>> GetIdListAsync(Message message);
     }
 }
