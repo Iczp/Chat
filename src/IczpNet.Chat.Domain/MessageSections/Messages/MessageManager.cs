@@ -3,12 +3,10 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.RedEnvelopes;
-using IczpNet.Chat.RoomSections.Rooms;
 using IczpNet.Chat.SessionSections;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
@@ -87,69 +85,6 @@ namespace IczpNet.Chat.MessageSections.Messages
                 }
                 return await func(entity);
             });
-        }
-
-        /// <summary>
-        /// 设置【@我】提醒
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="room"></param>
-        /// <returns></returns>
-        protected async Task SetRemindAsync(Message message, Room room)
-        {
-            //@XXX
-            if (message.MessageType != MessageTypes.Text)
-            {
-                return;
-            }
-
-            //Guid.TryParse(message.Receiver, out Guid roomId);
-
-            var textContent = message.TextContentList.FirstOrDefault();
-
-            var text = textContent.Text;
-
-            var reg = new Regex("@([^ ]+) ?");
-
-            //例如我想提取 @中的NAME值
-            var match = reg.Match(text);
-
-            var nameList = new List<string>();
-
-            for (var i = 0; i < match.Groups.Count; i++)
-            {
-                string value = match.Groups[i].Value;
-
-                if (!value.IsNullOrWhiteSpace())
-                {
-                    nameList.Add(value);
-                }
-            }
-            if (!nameList.Any())
-            {
-                return;
-            }
-            if (nameList.IndexOf("所有人") != -1)
-            {
-                message.SetRemindAll();
-
-                return;
-            }
-            var chatObjectIdList = await ChatObjectManager.GetIdListByNameAsync(nameList);
-
-            if (!chatObjectIdList.Any())
-            {
-                return;
-            }
-            var roomId = message.Receiver;
-
-            //验证被@的人是否在群里
-            var memberChatObjectIdList = room.RoomMemberList.Where(x => chatObjectIdList.Contains(x.OwnerId)).Select(x => x.OwnerId).ToList();
-
-            if (memberChatObjectIdList.Any())
-            {
-                message.SetRemindChatObject(memberChatObjectIdList);
-            }
         }
 
         //public virtual async Task<Message> CreateMessageAsync<TMessageInput>(TMessageInput input, IMessageContentEntity content)
