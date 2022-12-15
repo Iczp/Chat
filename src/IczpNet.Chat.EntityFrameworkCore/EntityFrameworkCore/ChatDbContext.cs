@@ -1,5 +1,6 @@
 using IczpNet.Chat.Articles;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.ChatUsers;
 using IczpNet.Chat.Connections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
@@ -40,7 +41,8 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     /* Add DbSet for each Aggregate Root here. Example:
      * public DbSet<Question> Questions { get; set; }
      */
-
+    public DbSet<ChatObject> ChatObject { get; }
+    public DbSet<ChatUser> ChatUser { get; }
 
 
     public DbSet<Article> Article { get; }
@@ -56,7 +58,9 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
 
     public DbSet<Connection> Connection { get; }
 
-    public DbSet<ChatObject> ChatObject { get; }
+    
+    
+
     public DbSet<Message> Message { get; }
 
     public DbSet<Robot> Robot { get; }
