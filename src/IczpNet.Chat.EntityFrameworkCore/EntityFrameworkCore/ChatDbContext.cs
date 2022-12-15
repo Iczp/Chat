@@ -8,6 +8,7 @@ using IczpNet.Chat.OfficialSections.OfficialExcludedMembers;
 using IczpNet.Chat.OfficialSections.OfficialGroupMembers;
 using IczpNet.Chat.OfficialSections.OfficialGroups;
 using IczpNet.Chat.OfficialSections.OfficialMembers;
+using IczpNet.Chat.OfficialSections.OfficialMemberTagUnits;
 using IczpNet.Chat.OfficialSections.Officials;
 using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.RobotSections.Robots;
@@ -83,6 +84,7 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
 
     public DbSet<Official> Official { get; }
     public DbSet<OfficialMember> OfficialMember { get; }
+    public DbSet<OfficialMemberTagUnit> OfficialMemberTagUnit { get; }
     public DbSet<OfficialGroupMember> OfficialGroupMember { get; }
     public DbSet<OfficialGroup> OfficialGroup { get; }
     public DbSet<OfficalExcludedMember> OfficalExcludedMember { get; }

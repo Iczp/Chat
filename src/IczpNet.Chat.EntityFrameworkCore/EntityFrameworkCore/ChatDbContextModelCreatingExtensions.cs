@@ -5,6 +5,7 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.OfficialSections.OfficialMemberTagUnits;
 using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.RoomSections.RoomPermissionGrants;
 using IczpNet.Chat.RoomSections.RoomRoleRoomMembers;
@@ -63,41 +64,14 @@ public static class ChatDbContextModelCreatingExtensions
             //    .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
         });
 
-
-        builder.Entity<ArticleMessage>(b =>
-        {
-            b.HasKey(x => new { x.MessageId, x.ArticleId });
-        });
-
-        builder.Entity<MessageReminder>(b =>
-        {
-            b.HasKey(x => new { x.MessageId, x.OwnerId });
-        });
-
-        builder.Entity<FavoriteMessage>(b =>
-        {
-            b.HasKey(x => new { x.MessageId, x.FavoriteId });
-        });
-
-        builder.Entity<HistoryMessage>(b =>
-        {
-            b.HasKey(x => new { x.MessageId, x.HistoryContentId });
-        });
-
-        builder.Entity<FriendshipTagUnit>(b =>
-        {
-            b.HasKey(x => new { x.FriendshipId, x.FriendshipTagId });
-        });
-
-        builder.Entity<RoomPermissionGrant>(b =>
-        {
-            b.HasKey(x => new { x.DefineId, x.RoleId });
-        });
-
-        builder.Entity<RoomRoleRoomMember>(b =>
-        {
-            b.HasKey(x => new { x.RoomRoleId, x.RoomMemberId });
-        });
+        builder.Entity<ArticleMessage>(b => { b.HasKey(x => new { x.MessageId, x.ArticleId }); });
+        builder.Entity<MessageReminder>(b => { b.HasKey(x => new { x.MessageId, x.OwnerId }); });
+        builder.Entity<FavoriteMessage>(b => { b.HasKey(x => new { x.MessageId, x.FavoriteId }); });
+        builder.Entity<HistoryMessage>(b => { b.HasKey(x => new { x.MessageId, x.HistoryContentId }); });
+        builder.Entity<FriendshipTagUnit>(b => { b.HasKey(x => new { x.FriendshipId, x.FriendshipTagId }); });
+        builder.Entity<OfficialMemberTagUnit>(b => { b.HasKey(x => new { x.TagId, x.MemberId }); });
+        builder.Entity<RoomPermissionGrant>(b => { b.HasKey(x => new { x.DefineId, x.RoleId }); });
+        builder.Entity<RoomRoleRoomMember>(b => { b.HasKey(x => new { x.RoomRoleId, x.RoomMemberId }); });
 
         builder.Entity<Message>(b =>
         {

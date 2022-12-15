@@ -3,6 +3,7 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.OfficialSections.OfficialExcludedMembers;
 using IczpNet.Chat.OfficialSections.OfficialGroups;
 using IczpNet.Chat.OfficialSections.OfficialMembers;
+using IczpNet.Chat.OfficialSections.OfficialMemberTags;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -22,6 +23,9 @@ namespace IczpNet.Chat.OfficialSections.Officials
 
         [InverseProperty(nameof(OfficialMember.Official))]
         public virtual IList<OfficialMember> MemberList { get; set; } = new List<OfficialMember>();
+
+        [InverseProperty(nameof(OfficialMemberTag.Official))]
+        public virtual IList<OfficialMemberTag> TagList { get; set; } = new List<OfficialMemberTag>();
 
 
         protected Official()

@@ -1,8 +1,10 @@
 ﻿using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
+using IczpNet.Chat.OfficialSections.OfficialMemberTagUnits;
 using IczpNet.Chat.OfficialSections.Officials;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.OfficialSections.OfficialMembers
@@ -18,5 +20,7 @@ namespace IczpNet.Chat.OfficialSections.OfficialMembers
 
         [ForeignKey(nameof(OwnerId))]
         public virtual ChatObject Owner { get; set; }
+
+        public virtual IList<OfficialMemberTagUnit> TagList { get; set; }
     }
 }

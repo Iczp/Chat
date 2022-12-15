@@ -8,6 +8,7 @@ using IczpNet.Chat.OfficialSections.OfficialExcludedMembers;
 using IczpNet.Chat.OfficialSections.OfficialGroupMembers;
 using IczpNet.Chat.OfficialSections.OfficialGroups;
 using IczpNet.Chat.OfficialSections.OfficialMembers;
+using IczpNet.Chat.OfficialSections.OfficialMemberTagUnits;
 using IczpNet.Chat.OfficialSections.Officials;
 using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.RobotSections.Robots;
@@ -83,6 +84,7 @@ public interface IChatDbContext : IEfCoreDbContext
 
     DbSet<Official> Official { get; }
     DbSet<OfficialMember> OfficialMember { get; }
+    DbSet<OfficialMemberTagUnit> OfficialMemberTagUnit { get; }
     DbSet<OfficialGroupMember> OfficialGroupMember { get; }
     DbSet<OfficialGroup> OfficialGroup { get; }
     DbSet<OfficalExcludedMember> OfficalExcludedMember { get; }
