@@ -1,6 +1,9 @@
-﻿using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.AbpCommons.DataFilters;
+using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
+using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.SessionSections;
 using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.OpenedRecorders;
@@ -8,6 +11,7 @@ using IczpNet.Chat.SessionSections.OpenedRecordes.Dtos;
 using IczpNet.Chat.SessionSections.Sessions;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
@@ -22,6 +26,8 @@ namespace IczpNet.Chat.SessionServices
 
         protected IRepository<Friendship, Guid> FriendshipRepository { get; }
         protected IRepository<Session, Guid> SessionRepository { get; }
+
+        protected IRepository<Message, Guid> MessageRepository { get; }
         protected ISessionManager SessionManager { get; }
 
         protected ISessionGenerator SessionGenerator { get; }
@@ -30,12 +36,14 @@ namespace IczpNet.Chat.SessionServices
             IRepository<Friendship, Guid> chatObjectRepository,
             ISessionManager sessionManager,
             ISessionGenerator sessionGenerator,
-            IRepository<Session, Guid> sessionRepository)
+            IRepository<Session, Guid> sessionRepository,
+            IRepository<Message, Guid> messageRepository)
         {
             FriendshipRepository = chatObjectRepository;
             SessionManager = sessionManager;
             SessionGenerator = sessionGenerator;
             SessionRepository = sessionRepository;
+            MessageRepository = messageRepository;
         }
 
 
@@ -49,19 +57,7 @@ namespace IczpNet.Chat.SessionServices
                 .Distinct()
                 ;
 
-            var totalCount = await AsyncExecuter.CountAsync(query);
-
-            if (!sorting.IsNullOrWhiteSpace())
-            {
-                query = query.OrderBy(sorting);
-            }
-            query = query.PageBy(skipCount, maxResultCount);
-
-            var entities = await AsyncExecuter.ToListAsync(query);
-
-            var items = ObjectMapper.Map<List<ChatObject>, List<ChatObjectDto>>(entities);
-
-            return new PagedResultDto<ChatObjectDto>(totalCount, items);
+            return await GetPagedListAsync<ChatObject, ChatObjectDto>(query, maxResultCount, skipCount, sorting); 
         }
 
         public Task<DateTime> RequestForFriendshipAsync(Guid ownerId, Guid friendId, string message)
@@ -78,14 +74,23 @@ namespace IczpNet.Chat.SessionServices
         }
 
         [HttpPost]
-        public async Task<List<SessionDto>> GetSessionsAsync(Guid ownerId)
+        public async Task<PagedResultDto<SessionDto>> GetSessionsAsync(Guid ownerId, int maxResultCount = 10, int skipCount = 0, string sorting = null)
         {
-            var result = (await SessionRepository.GetQueryableAsync())
-                .Where(x => x.MemberList.Any(x => x.OwnerId == ownerId))
-                .ToList();
-            ;
-
-            return ObjectMapper.Map<List<Session>, List<SessionDto>>(result);
+            var query = (await SessionRepository.GetQueryableAsync())
+                .Where(x => x.MemberList.Any(x => x.OwnerId == ownerId));
+            return await GetPagedListAsync<Session, SessionDto>(query, maxResultCount, skipCount, sorting);
         }
+
+        [HttpPost]
+        public async Task<PagedResultDto<MessageDto>> GetMessageListAsync(Guid ownerId, int maxResultCount = 10, int skipCount = 0, string sorting = null)
+        {
+            var query = (await MessageRepository.GetQueryableAsync())
+                .Where(x => x.Session.MemberList.Any(m => m.OwnerId == ownerId && m.HistoryFristTime <= x.CreationTime))
+                ;
+
+            return await GetPagedListAsync<Message, MessageDto>(query, maxResultCount, skipCount, sorting);
+        }
+
+
     }
 }

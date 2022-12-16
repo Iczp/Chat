@@ -20,6 +20,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public virtual string Name { get; set; }
 
+        public virtual DateTime HistoryFristTime { get; set; }
+
         public override object[] GetKeys()
         {
             return new object[] { SessionId, OwnerId };
