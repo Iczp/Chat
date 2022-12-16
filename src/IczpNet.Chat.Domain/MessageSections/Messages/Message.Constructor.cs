@@ -22,6 +22,7 @@ public partial class Message
         Receiver = receiver;
         ReceiverType = receiver.ObjectType;
         MessageChannel = messageChannel;
+        Session= session;
         SessionKey = session.SessionKey;
         //MessageType = messageType;
     }
