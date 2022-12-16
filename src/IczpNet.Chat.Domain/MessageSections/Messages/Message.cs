@@ -1,6 +1,7 @@
 ﻿using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.SessionSections.Sessions;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -16,7 +17,12 @@ public partial class Message : BaseEntity<Guid>
 
     [StringLength(100)]
     //[Required]
-    public virtual string SessionId { get; protected set; }
+    public virtual string SessionValue { get; protected set; }
+
+    public virtual Guid? SessionId { get; protected set; }
+
+    [ForeignKey(nameof(SessionId))]
+    public virtual Session Session { get; protected set; }
 
     [StringLength(100)]
     //[Required]

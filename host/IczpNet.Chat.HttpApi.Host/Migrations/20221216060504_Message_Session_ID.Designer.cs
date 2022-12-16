@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,10 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221216060504_Message_Session_ID")]
+    partial class Message_Session_ID
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -542,12 +544,12 @@ namespace IczpNet.Chat.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<Guid?>("SessionId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("SessionValue")
+                    b.Property<string>("SessionId")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid?>("SessionIdValue")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uniqueidentifier")
@@ -571,7 +573,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("SenderType");
 
-                    b.HasIndex("SessionId");
+                    b.HasIndex("SessionIdValue");
 
                     b.ToTable("Chat_Message", (string)null);
                 });
@@ -3237,7 +3239,7 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("LastModifierId");
 
-                    b.Property<string>("SessionValue")
+                    b.Property<string>("SessionId")
                         .HasMaxLength(80)
                         .HasColumnType("nvarchar(80)");
 
@@ -4346,7 +4348,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasOne("IczpNet.Chat.SessionSections.Sessions.Session", "Session")
                         .WithMany("MessageList")
-                        .HasForeignKey("SessionId");
+                        .HasForeignKey("SessionIdValue");
 
                     b.Navigation("ForwardMessage");
 

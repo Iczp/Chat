@@ -12,6 +12,7 @@ using IczpNet.Chat.RoomSections.RoomRoleRoomMembers;
 using IczpNet.Chat.SessionSections.Favorites;
 using IczpNet.Chat.SessionSections.FriendshipTagUnits;
 using IczpNet.Chat.SessionSections.MessageReminders;
+using IczpNet.Chat.SessionSections.Sessions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
@@ -64,6 +65,7 @@ public static class ChatDbContextModelCreatingExtensions
             //    .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
         });
 
+        //public DbSet<Session> Session { get; }
         builder.Entity<ArticleMessage>(b => { b.HasKey(x => new { x.MessageId, x.ArticleId }); });
         builder.Entity<MessageReminder>(b => { b.HasKey(x => new { x.MessageId, x.OwnerId }); });
         builder.Entity<FavoriteMessage>(b => { b.HasKey(x => new { x.MessageId, x.FavoriteId }); });
@@ -72,6 +74,7 @@ public static class ChatDbContextModelCreatingExtensions
         builder.Entity<OfficialMemberTagUnit>(b => { b.HasKey(x => new { x.TagId, x.MemberId }); });
         builder.Entity<RoomPermissionGrant>(b => { b.HasKey(x => new { x.DefineId, x.RoleId }); });
         builder.Entity<RoomRoleRoomMember>(b => { b.HasKey(x => new { x.RoomRoleId, x.RoomMemberId }); });
+        builder.Entity<SessionMember>(b => { b.HasKey(x => new { x.SessionId, x.OwnerId }); });
 
         builder.Entity<Message>(b =>
         {

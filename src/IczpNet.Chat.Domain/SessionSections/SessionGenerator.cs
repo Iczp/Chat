@@ -2,15 +2,12 @@
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
-using IczpNet.Chat.RoomSections.RoomMembers;
 using IczpNet.Chat.SessionSections.ReadedRecorders;
 using IczpNet.Chat.SessionSections.Sessions;
-using Nito.AsyncEx;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
@@ -69,6 +66,8 @@ namespace IczpNet.Chat.SessionSections
         [UnitOfWork(true, IsolationLevel.ReadUncommitted)]
         public async Task<List<Session>> GenerateAsync(Guid ownerId, long? startMessageAutoId = null)
         {
+
+            //return await CreateSessionAsync();
             var currentTick = Clock.Now.Ticks;
             var owner = await ChatObjectManager.GetAsync(ownerId);
             //用户所在的群(包含已经删除的)
@@ -93,7 +92,7 @@ namespace IczpNet.Chat.SessionSections
             var readedQuery = (await ReadedRecorderRepository.GetQueryableAsync()).Where(x => x.OwnerId == ownerId);
 
             var list = messageQuery
-                .GroupBy(x => x.SessionId, (SessionId, g) => new
+                .GroupBy(x => x.SessionValue, (SessionId, g) => new
                 {
                     SessionId,
                     Message = g.Where(x => x.AutoId == g.Max(c => c.AutoId)),
@@ -110,18 +109,57 @@ namespace IczpNet.Chat.SessionSections
                 .ToList()
                 ;
 
-            var sessionList = list.Select(x => new Session(GuidGenerator.Create(), ownerId)
+            var sessionList = list.Select(x => new Session(GuidGenerator.Create(), x.SessionId)
             {
-                SessionId = x.SessionId,
-                //DestinationId = 
-                MessageAutoId = x.AutoId,
-                Badge = x.UnreadCount,
-                Description = $"@我:{x.ReminderCount}"
+                //SessionId = x.SessionId,
+                ////DestinationId = 
+                //MessageAutoId = x.AutoId,
+                //Badge = x.UnreadCount,
+                //Description = $"@我:{x.ReminderCount}"
             }).ToList();
 
             await SessionRepository.InsertManyAsync(sessionList);
 
             return sessionList;
+        }
+
+
+        public virtual async Task<List<Session>> CreateSessionAsync()
+        {
+            var list = (await MessageRepository.GetQueryableAsync())
+                .GroupBy(x => x.SessionValue, (SessionValue, Items) => new
+                {
+                    SessionValue,
+                    Items = Items.ToList()
+                })
+                .ToList();
+            ;
+            var sessionList = new List<Session>();
+            foreach (var item in list)
+            {
+                var memberList = new List<SessionMember>();
+                foreach (var message in item.Items)
+                {
+                    if (!memberList.Any(x => x.OwnerId == message.SenderId.Value))
+                    {
+                        memberList.Add(new SessionMember() { OwnerId = message.SenderId.Value });
+                    }
+                    if (!memberList.Any(x => x.OwnerId == message.ReceiverId.Value))
+                    {
+                        memberList.Add(new SessionMember() { OwnerId = message.ReceiverId.Value });
+                    }
+                }
+                var session = new Session(GuidGenerator.Create(), item.SessionValue)
+                {
+                    MessageList = item.Items,
+                    MemberList = memberList
+                };
+                sessionList.Add(session);
+            }
+            await SessionRepository.InsertManyAsync(sessionList);
+
+            return sessionList;
+
         }
     }
 }

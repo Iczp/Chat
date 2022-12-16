@@ -20,8 +20,8 @@ public partial class Message
     [InverseProperty(nameof(MessageReminder.Message))]
     public virtual IList<MessageReminder> MessageReminderList { get; set; }
 
-    [InverseProperty(nameof(Session.Message))]
-    public virtual IList<Session> SessionList { get; set; }
+    //[InverseProperty(nameof(Session.Message))]
+    //public virtual IList<Session> SessionList { get; set; }
 
     
 }

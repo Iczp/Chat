@@ -1,5 +1,4 @@
-﻿using AutoMapper.Internal.Mappers;
-using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.SessionSections;
@@ -15,7 +14,6 @@ using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.SessionServices
 {
@@ -23,6 +21,7 @@ namespace IczpNet.Chat.SessionServices
     {
 
         protected IRepository<Friendship, Guid> FriendshipRepository { get; }
+        protected IRepository<Session, Guid> SessionRepository { get; }
         protected ISessionManager SessionManager { get; }
 
         protected ISessionGenerator SessionGenerator { get; }
@@ -30,11 +29,13 @@ namespace IczpNet.Chat.SessionServices
         public SessionAppService(
             IRepository<Friendship, Guid> chatObjectRepository,
             ISessionManager sessionManager,
-            ISessionGenerator sessionGenerator)
+            ISessionGenerator sessionGenerator,
+            IRepository<Session, Guid> sessionRepository)
         {
             FriendshipRepository = chatObjectRepository;
             SessionManager = sessionManager;
             SessionGenerator = sessionGenerator;
+            SessionRepository = sessionRepository;
         }
 
 
@@ -79,7 +80,10 @@ namespace IczpNet.Chat.SessionServices
         [HttpPost]
         public async Task<List<SessionDto>> GetSessionsAsync(Guid ownerId)
         {
-            var result = await SessionGenerator.GenerateAsync(ownerId);
+            var result = (await SessionRepository.GetQueryableAsync())
+                .Where(x => x.MemberList.Any(x => x.OwnerId == ownerId))
+                .ToList();
+            ;
 
             return ObjectMapper.Map<List<Session>, List<SessionDto>>(result);
         }
