@@ -38,7 +38,7 @@ namespace IczpNet.Chat.SessionSections
             ReadedRecorderRepository = readedRecorderRepository;
         }
 
-        protected virtual string MakeSesssionId(MessageChannels messageChannel, ChatObject sender, ChatObject receiver)
+        protected virtual string MakeSesssionKey(MessageChannels messageChannel, ChatObject sender, ChatObject receiver)
         {
             switch (messageChannel)
             {
@@ -58,9 +58,15 @@ namespace IczpNet.Chat.SessionSections
             }
         }
 
-        public Task<string> MakeSesssionIdAsync(MessageChannels messageChannel, ChatObject sender, ChatObject receiver)
+        public async Task<Session> MakeAsync(MessageChannels messageChannel, ChatObject sender, ChatObject receiver)
         {
-            return Task.FromResult(MakeSesssionId(messageChannel, sender, receiver));
+            var sessionKey = MakeSesssionKey(messageChannel, sender, receiver);
+
+            var session = await SessionRepository.FindAsync(x => x.SessionKey.Equals(sessionKey));
+
+            session ??= await SessionRepository.InsertAsync(new Session(GuidGenerator.Create(), sessionKey), autoSave: true);
+
+            return session;
         }
 
         [UnitOfWork(true, IsolationLevel.ReadUncommitted)]

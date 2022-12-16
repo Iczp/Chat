@@ -6,8 +6,8 @@ namespace IczpNet.Chat.MessageSections
 {
     public interface IChannelResolver
     {
-        Task<MessageChannels> MakeAsync(ChatObject sender, ChatObject receiver);
+        Task<MessageChannels> GetAsync(ChatObject sender, ChatObject receiver);
 
-        MessageChannels Make(ChatObject sender, ChatObject receiver);
+        MessageChannels Get(ChatObject sender, ChatObject receiver);
     }
 }

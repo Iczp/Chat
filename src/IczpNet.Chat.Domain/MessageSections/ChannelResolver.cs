@@ -7,7 +7,7 @@ namespace IczpNet.Chat.MessageSections
 {
     public class ChannelResolver : DomainService, IChannelResolver
     {
-        public MessageChannels Make(ChatObject sender, ChatObject receiver)
+        public MessageChannels Get(ChatObject sender, ChatObject receiver)
         {
             if (sender.ObjectType == ChatObjectTypes.Room || receiver.ObjectType == ChatObjectTypes.Room)
             {
@@ -25,9 +25,9 @@ namespace IczpNet.Chat.MessageSections
             return MessageChannels.PersonalToPersonal;
         }
 
-        public Task<MessageChannels> MakeAsync(ChatObject sender, ChatObject receiver)
+        public Task<MessageChannels> GetAsync(ChatObject sender, ChatObject receiver)
         {
-            return Task.FromResult(Make(sender, receiver));
+            return Task.FromResult(Get(sender, receiver));
         }
     }
 }

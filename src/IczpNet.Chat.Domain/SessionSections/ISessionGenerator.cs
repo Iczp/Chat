@@ -9,7 +9,7 @@ namespace IczpNet.Chat.SessionSections
 {
     public interface ISessionGenerator
     {
-        Task<string> MakeSesssionIdAsync(MessageChannels messageChannel, ChatObject sender, ChatObject receiver);
+        Task<Session> MakeAsync(MessageChannels messageChannel, ChatObject sender, ChatObject receiver);
         Task<List<Session>> GenerateAsync(Guid ownerId, long? startMessageAutoId = null);
     }
 }

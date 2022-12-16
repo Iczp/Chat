@@ -25,9 +25,9 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         protected Session() { }
 
-        public Session(Guid id, string sessionValue) : base(id)
+        public Session(Guid id, string sessionKey) : base(id)
         {
-            SessionKey = sessionValue;
+            SessionKey = sessionKey;
         }
 
         public int GetMemberCount()

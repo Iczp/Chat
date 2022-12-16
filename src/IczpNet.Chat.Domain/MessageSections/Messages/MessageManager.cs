@@ -55,11 +55,11 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         public virtual async Task<Message> CreateMessageAsync(ChatObject sender, ChatObject receiver, Func<Message, Task<IMessageContentEntity>> func)
         {
-            var messageChannel = await ChannelResolver.MakeAsync(sender, receiver);
+            var messageChannel = await ChannelResolver.GetAsync(sender, receiver);
 
-            var sessionId = await SessionGenerator.MakeSesssionIdAsync(messageChannel, sender, receiver);
+            var session = await SessionGenerator.MakeAsync(messageChannel, sender, receiver);
 
-            var entity = new Message(GuidGenerator.Create(), messageChannel, sender, receiver, sessionId);
+            var entity = new Message(GuidGenerator.Create(), messageChannel, sender, receiver, session);
 
             if (func != null)
             {
