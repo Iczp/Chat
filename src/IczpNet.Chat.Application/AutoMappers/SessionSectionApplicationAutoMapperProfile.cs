@@ -6,6 +6,7 @@ using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.Friendships.Dtos;
 using IczpNet.Chat.SessionSections.OpenedRecorders;
 using IczpNet.Chat.SessionSections.OpenedRecordes.Dtos;
+using IczpNet.Chat.SessionSections.Sessions;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -17,12 +18,15 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
          * Alternatively, you can split your mapping configurations
          * into multiple profile classes for a better organization. */
 
+
+        //Session
+        CreateMap<Session, SessionDto>();
+
         //Friendship
         CreateMap<Friendship, FriendshipDto>().ForMember(x => x.TagList, o => o.MapFrom(x => x.GetTagList()));
         CreateMap<Friendship, FriendshipDetailDto>().ForMember(x => x.TagList, o => o.MapFrom(x => x.GetTagList()));
         CreateMap<FriendshipCreateInput, Friendship>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
         CreateMap<FriendshipUpdateInput, Friendship>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
-
 
         //FriendshipRequest
         CreateMap<FriendshipRequest, FriendshipRequestDto>();

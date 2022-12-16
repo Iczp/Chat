@@ -1,6 +1,4 @@
-﻿using shortid.Configuration;
-
-namespace IczpNet.Chat.ShortIds
+﻿namespace IczpNet.Chat.ShortIds
 {
     public class ShortIdOptions
     {

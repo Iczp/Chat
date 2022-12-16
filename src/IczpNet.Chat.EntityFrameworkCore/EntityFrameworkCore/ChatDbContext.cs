@@ -19,11 +19,13 @@ using IczpNet.Chat.RoomSections.RoomPermissionGrants;
 using IczpNet.Chat.RoomSections.RoomRoleRoomMembers;
 using IczpNet.Chat.RoomSections.RoomRoles;
 using IczpNet.Chat.RoomSections.Rooms;
+using IczpNet.Chat.SessionSections;
 using IczpNet.Chat.SessionSections.FriendshipRequests;
 using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.FriendshipTagUnits;
 using IczpNet.Chat.SessionSections.MessageReminders;
 using IczpNet.Chat.SessionSections.OpenedRecorders;
+using IczpNet.Chat.SessionSections.ReadedRecorders;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SquareSections.SquareCategorys;
 using IczpNet.Chat.SquareSections.SquareMembers;
@@ -50,6 +52,8 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     public DbSet<ArticleMessage> ArticleMessage { get; }
 
     public DbSet<Session> Session { get; }
+    public DbSet<ReadedRecorder> ReadedRecorder { get; }
+
     public DbSet<Friendship> Friendship { get; }
     public DbSet<FriendshipTag> FriendshipTag { get; }
     public DbSet<FriendshipTagUnit> FriendshipTagUnit { get; }

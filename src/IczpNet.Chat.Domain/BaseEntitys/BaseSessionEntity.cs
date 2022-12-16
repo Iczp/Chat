@@ -16,5 +16,8 @@ namespace IczpNet.Chat.BaseEntitys
 
         [ForeignKey(nameof(DestinationId))]
         public virtual ChatObject Destination { get; protected set; }
+
+        protected BaseSessionEntity() { }
+        protected BaseSessionEntity(Guid id) : base(id) { }
     }
 }

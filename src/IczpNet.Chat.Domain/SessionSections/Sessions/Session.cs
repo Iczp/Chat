@@ -12,6 +12,9 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public virtual ChatObjectTypes DestinationObjectType { get; set; }
 
+        [StringLength(80)]
+        public virtual string SessionId { get; set; }
+
         [StringLength(50)]
         public virtual string Title { get; set; }
 
@@ -37,5 +40,19 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public virtual DateTime ShowTime { get; set; }
 
+        protected Session() { }
+
+        public Session(Guid id, Guid ownerId) : base(id)
+        {
+            OwnerId = ownerId;
+            //Title = title;
+            //Description = description;
+            //Badge = badge;
+            //Sorting = sorting;
+            //MessageAutoId = messageAutoId;
+            //MessageId = messageId;
+            //Message = message;
+            //ShowTime = showTime;
+        }
     }
 }

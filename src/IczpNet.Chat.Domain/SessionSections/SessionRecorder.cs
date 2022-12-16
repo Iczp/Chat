@@ -1,5 +1,7 @@
 ﻿using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.SessionSections.ReadedRecorders;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
@@ -11,36 +13,45 @@ namespace IczpNet.Chat.SessionSections
     public class SessionRecorder : DomainService, ISessionRecorder
     {
         protected IRepository<ChatObject, Guid> Repository { get; }
+        protected IRepository<ReadedRecorder, Guid> ReadedRecorderRepository { get; }
 
-        public SessionRecorder(IRepository<ChatObject, Guid> repository)
+        public SessionRecorder(
+            IRepository<ChatObject, Guid> repository,
+            IRepository<ReadedRecorder, Guid> readedRecorderRepository)
         {
             Repository = repository;
+            ReadedRecorderRepository = readedRecorderRepository;
         }
 
-        public async Task<long> GetMaxIdAsync(Guid chatObjectId)
+        public async Task<long> GetAsync(Guid ownerId)
         {
-            return (await Repository.GetQueryableAsync()).Where(x => x.Id.Equals(chatObjectId)).Select(x => x.MaxMessageAutoId).FirstOrDefault();
+            return (await Repository.GetQueryableAsync()).Where(x => x.Id.Equals(ownerId)).Select(x => x.MaxMessageAutoId).FirstOrDefault();
         }
 
-        public Task<long> GetMaxIdAsync(ChatObject chatObject)
+        public Task<long> GetAsync(ChatObject owner)
         {
-            return Task.FromResult(chatObject.MaxMessageAutoId);
+            return Task.FromResult(owner.MaxMessageAutoId);
         }
 
-        public async Task<long> UpdateMaxIdAsync(Guid chatObjectId, long maxMessageAutoId, bool isForce = false)
+        public async Task<long> UpdateAsync(Guid ownerId, long maxMessageAutoId, bool isForce = false)
         {
-            var chatObject = await Repository.GetAsync(chatObjectId);
-            return await UpdateMaxIdAsync(chatObject, maxMessageAutoId, isForce);
+            var chatObject = await Repository.GetAsync(ownerId);
+            return await UpdateAsync(chatObject, maxMessageAutoId, isForce);
         }
 
-        public async Task<long> UpdateMaxIdAsync(ChatObject chatObject, long maxMessageAutoId, bool isForce = false)
+        public async Task<long> UpdateAsync(ChatObject owner, long maxMessageAutoId, bool isForce = false)
         {
-            if (isForce || maxMessageAutoId > chatObject.MaxMessageAutoId)
+            if (isForce || maxMessageAutoId > owner.MaxMessageAutoId)
             {
-                chatObject.SetMaxMessageAutoId(maxMessageAutoId);
-                await Repository.UpdateAsync(chatObject, true);
+                owner.SetMaxMessageAutoId(maxMessageAutoId);
+                await Repository.UpdateAsync(owner, true);
             }
-            return chatObject.MaxMessageAutoId;
+            return owner.MaxMessageAutoId;
+        }
+
+        public Task<List<ReadedRecorder>> GetReadedsAsync(Guid ownerId)
+        {
+            return ReadedRecorderRepository.GetListAsync(x => x.OwnerId == ownerId);
         }
     }
 }

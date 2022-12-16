@@ -1,14 +1,21 @@
 ﻿using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.SessionSections.ReadedRecorders;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.SessionSections
 {
     public interface ISessionRecorder
     {
-        Task<long> GetMaxIdAsync(Guid chatObjectId);
-        Task<long> GetMaxIdAsync(ChatObject chatObject);
-        Task<long> UpdateMaxIdAsync(Guid chatObjectId, long maxMessageAutoId, bool isForce = false);
-        Task<long> UpdateMaxIdAsync(ChatObject chatObject, long maxMessageAutoId, bool isForce = false);
+        Task<long> GetAsync(Guid ownerId);
+
+        Task<long> GetAsync(ChatObject ownerId);
+
+        Task<long> UpdateAsync(Guid ownerId, long maxMessageAutoId, bool isForce = false);
+
+        Task<long> UpdateAsync(ChatObject owner, long maxMessageAutoId, bool isForce = false);
+
+        Task<List<ReadedRecorder>> GetReadedsAsync(Guid ownerId);
     }
 }
