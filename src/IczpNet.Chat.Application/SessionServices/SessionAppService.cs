@@ -57,7 +57,7 @@ namespace IczpNet.Chat.SessionServices
                 .Distinct()
                 ;
 
-            return await GetPagedListAsync<ChatObject, ChatObjectDto>(query, maxResultCount, skipCount, sorting); 
+            return await GetPagedListAsync<ChatObject, ChatObjectDto>(query, maxResultCount, skipCount, sorting);
         }
 
         public Task<DateTime> RequestForFriendshipAsync(Guid ownerId, Guid friendId, string message)
@@ -73,23 +73,28 @@ namespace IczpNet.Chat.SessionServices
             return ObjectMapper.Map<OpenedRecorder, OpenedRecorderDto>(entity);
         }
 
-        [HttpPost]
-        public async Task<PagedResultDto<SessionDto>> GetSessionsAsync(Guid ownerId, int maxResultCount = 10, int skipCount = 0, string sorting = null)
+        [HttpGet]
+        public async Task<PagedResultDto<SessionDto>> GetSessionsAsync(SessionGetListInput input)
         {
             var query = (await SessionRepository.GetQueryableAsync())
-                .Where(x => x.MemberList.Any(x => x.OwnerId == ownerId));
-            return await GetPagedListAsync<Session, SessionDto>(query, maxResultCount, skipCount, sorting);
+                .Where(x => x.MemberList.Any(m => m.OwnerId == input.OwnerId))
+                ;
+            return await GetPagedListAsync<Session, SessionDto>(query, input);
         }
 
-        [HttpPost]
-        public async Task<PagedResultDto<MessageDto>> GetMessageListAsync(Guid ownerId, int maxResultCount = 10, int skipCount = 0, string sorting = null)
+        [HttpGet]
+        public async Task<PagedResultDto<MessageDto>> GetMessageListAsync(SessionMessageGetListInput input)
         {
             var query = (await MessageRepository.GetQueryableAsync())
-                .Where(x => x.Session.MemberList.Any(m => m.OwnerId == ownerId && m.HistoryFristTime <= x.CreationTime))
+                .Where(x => x.SessionId == input.SessionId)
+                .Where(x => x.Session.MemberList.Any(m => m.OwnerId == input.OwnerId && m.HistoryFristTime <= x.CreationTime))
+                .WhereIf(input.IsUnreaded, x => x.Session.MemberList.Any(m => m.OwnerId == input.OwnerId && m.HistoryFristTime <= x.CreationTime && m.ReadedMessageAutoId < x.AutoId && x.SenderId != m.OwnerId))
                 ;
 
-            return await GetPagedListAsync<Message, MessageDto>(query, maxResultCount, skipCount, sorting);
+            return await GetPagedListAsync<Message, MessageDto>(query, input);
         }
+
+
 
 
     }

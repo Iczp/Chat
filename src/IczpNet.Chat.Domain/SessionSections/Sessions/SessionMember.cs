@@ -8,7 +8,6 @@ namespace IczpNet.Chat.SessionSections.Sessions
 {
     public class SessionMember : BaseEntity, IChatOwner<Guid>
     {
-
         public virtual Guid SessionId { get; set; }
 
         [ForeignKey(nameof(SessionId))]
@@ -19,6 +18,9 @@ namespace IczpNet.Chat.SessionSections.Sessions
         public virtual ChatObject Owner { get; set; }
 
         public virtual string Name { get; set; }
+
+
+        public virtual long ReadedMessageAutoId { get; set; }
 
         public virtual DateTime HistoryFristTime { get; set; }
 

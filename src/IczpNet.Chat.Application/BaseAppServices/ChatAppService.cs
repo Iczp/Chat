@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 using System;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using IczpNet.AbpCommons.DataFilters;
+using IczpNet.Chat.MessageSections.Messages.Dtos;
+using IczpNet.Chat.MessageSections.Messages;
 
 namespace IczpNet.Chat.BaseAppServices;
 
@@ -34,5 +37,10 @@ public abstract class ChatAppService : ApplicationService
         var items = ObjectMapper.Map<List<TEntity>, List<TOuputDto>>(entities);
 
         return new PagedResultDto<TOuputDto>(totalCount, items);
+    }
+
+    protected virtual  Task<PagedResultDto<TOuputDto>> GetPagedListAsync<TEntity, TOuputDto>(IQueryable<TEntity> query, PagedAndSortedResultRequestDto input)
+    {
+        return GetPagedListAsync<TEntity, TOuputDto>(query, input.MaxResultCount, input.SkipCount, input.Sorting);
     }
 }

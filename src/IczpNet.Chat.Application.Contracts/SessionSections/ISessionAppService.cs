@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.ChatObjects.Dtos;
+using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.SessionSections.OpenedRecordes.Dtos;
 using IczpNet.Chat.SessionSections.Sessions;
 using System;
@@ -13,6 +14,7 @@ namespace IczpNet.Chat.SessionSections
 
         Task<OpenedRecorderDto> SetOpenedAsync(OpenedRecorderInput input);
 
-        Task<PagedResultDto<SessionDto>> GetSessionsAsync(Guid ownerId, int maxResultCount = 10, int skipCount = 0, string sorting = null);
+        Task<PagedResultDto<SessionDto>> GetSessionsAsync(SessionGetListInput input);
+        Task<PagedResultDto<MessageDto>> GetMessageListAsync(SessionMessageGetListInput input);
     }
 }

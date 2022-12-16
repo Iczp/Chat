@@ -92,7 +92,7 @@ namespace IczpNet.Chat.SessionSections
             var readedQuery = (await ReadedRecorderRepository.GetQueryableAsync()).Where(x => x.OwnerId == ownerId);
 
             var list = messageQuery
-                .GroupBy(x => x.SessionValue, (SessionId, g) => new
+                .GroupBy(x => x.SessionKey, (SessionId, g) => new
                 {
                     SessionId,
                     Message = g.Where(x => x.AutoId == g.Max(c => c.AutoId)),
@@ -127,7 +127,7 @@ namespace IczpNet.Chat.SessionSections
         public virtual async Task<List<Session>> CreateSessionAsync()
         {
             var list = (await MessageRepository.GetQueryableAsync())
-                .GroupBy(x => x.SessionValue, (SessionValue, Items) => new
+                .GroupBy(x => x.SessionKey, (SessionValue, Items) => new
                 {
                     SessionValue,
                     Items = Items.ToList()

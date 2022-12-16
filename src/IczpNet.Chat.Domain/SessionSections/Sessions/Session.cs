@@ -9,7 +9,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
     public class Session : BaseEntity<Guid>
     {
         [StringLength(80)]
-        public virtual string SessionValue { get; set; }
+        public virtual string SessionKey { get; set; }
 
         [StringLength(50)]
         public virtual string Title { get; set; }
@@ -27,10 +27,15 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public Session(Guid id, string sessionValue) : base(id)
         {
-            SessionValue = sessionValue;
+            SessionKey = sessionValue;
         }
 
         public int GetMemberCount()
+        {
+            return MemberList.Count;
+        }
+
+        public int GetUnreadCount()
         {
             return MemberList.Count;
         }
