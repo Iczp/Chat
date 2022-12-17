@@ -52,6 +52,7 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     public DbSet<ArticleMessage> ArticleMessage { get; }
 
     public DbSet<Session> Session { get; }
+    public DbSet<SessionUnit> SessionUnit { get; }
     public DbSet<ReadedRecorder> ReadedRecorder { get; }
 
     public DbSet<Friendship> Friendship { get; }
@@ -63,8 +64,8 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
 
     public DbSet<Connection> Connection { get; }
 
-    
-    
+
+
 
     public DbSet<Message> Message { get; }
 

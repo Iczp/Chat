@@ -1,12 +1,15 @@
 ﻿using IczpNet.Chat.BaseEntitys;
+using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.MessageSections.Messages;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 
 namespace IczpNet.Chat.SessionSections.Sessions
 {
-    public class Session : BaseEntity<Guid>
+    public class Session : BaseEntity<Guid>, IChatOwner<Guid?>
     {
         [StringLength(80)]
         public virtual string SessionKey { get; set; }
@@ -17,11 +20,13 @@ namespace IczpNet.Chat.SessionSections.Sessions
         [StringLength(100)]
         public virtual string Description { get; set; }
 
-        //public virtual Guid MessageId { get; set; }
+        public virtual Guid? OwnerId { get; set; }
 
-        public virtual List<Message> MessageList { get; set; }
+        public virtual ChatObject Owner { get; set; }
 
-        public virtual List<SessionMember> MemberList { get; set; } = new List<SessionMember>();
+        public virtual List<Message> MessageList { get; set; } = new List<Message>();
+
+        public virtual IList<SessionUnit> UnitList { get; set; } = new List<SessionUnit>();
 
         protected Session() { }
 
@@ -32,12 +37,22 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public int GetMemberCount()
         {
-            return MemberList.Count;
+            return UnitList.Count;
         }
 
         public int GetUnreadCount()
         {
-            return MemberList.Count;
+            return MessageList.Count(x => x.Session.UnitList.Any(d => d.OwnerId != x.SenderId));
+        }
+
+        public int GetBadge()
+        {
+            return MessageList.Count(x => x.Session.UnitList.Any(d => d.OwnerId != x.SenderId));
+        }
+
+        public Message GetLastMessage()
+        {
+            return MessageList.FirstOrDefault(x => x.AutoId == MessageList.Max(d => d.AutoId));
         }
     }
 }

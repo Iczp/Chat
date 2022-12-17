@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,10 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221217021933_Session_AddProp_Owner")]
+    partial class Session_AddProp_Owner
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -542,7 +544,7 @@ namespace IczpNet.Chat.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<Guid?>("SessionId")
+                    b.Property<Guid>("SessionId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("SessionKey")
@@ -3259,7 +3261,7 @@ namespace IczpNet.Chat.Migrations
                     b.ToTable("Chat_Session", (string)null);
                 });
 
-            modelBuilder.Entity("IczpNet.Chat.SessionSections.Sessions.SessionUnit", b =>
+            modelBuilder.Entity("IczpNet.Chat.SessionSections.Sessions.SessionMember", b =>
                 {
                     b.Property<Guid>("SessionId")
                         .HasColumnType("uniqueidentifier");
@@ -3311,7 +3313,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("OwnerId");
 
-                    b.ToTable("Chat_SessionUnit", (string)null);
+                    b.ToTable("Chat_SessionMember", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.SessionSections.SessionSettings.SessionSetting", b =>
@@ -4362,7 +4364,9 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasOne("IczpNet.Chat.SessionSections.Sessions.Session", "Session")
                         .WithMany("MessageList")
-                        .HasForeignKey("SessionId");
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("ForwardMessage");
 
@@ -4898,26 +4902,26 @@ namespace IczpNet.Chat.Migrations
             modelBuilder.Entity("IczpNet.Chat.SessionSections.Sessions.Session", b =>
                 {
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
-                        .WithMany("OwnerSessionList")
+                        .WithMany()
                         .HasForeignKey("OwnerId");
 
                     b.Navigation("Owner");
                 });
 
-            modelBuilder.Entity("IczpNet.Chat.SessionSections.Sessions.SessionUnit", b =>
+            modelBuilder.Entity("IczpNet.Chat.SessionSections.Sessions.SessionMember", b =>
                 {
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Destination")
-                        .WithMany("DestinationSessionUnitList")
+                        .WithMany("DestinationSessionMemberList")
                         .HasForeignKey("DestinationId");
 
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
-                        .WithMany("OwnerSessionUnitList")
+                        .WithMany("OwnerSessionMemberList")
                         .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("IczpNet.Chat.SessionSections.Sessions.Session", "Session")
-                        .WithMany("UnitList")
+                        .WithMany("MemberList")
                         .HasForeignKey("SessionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -5254,9 +5258,9 @@ namespace IczpNet.Chat.Migrations
 
                     b.Navigation("DestinationFriendshipRequestList");
 
-                    b.Navigation("DestinationSessionSettingList");
+                    b.Navigation("DestinationSessionMemberList");
 
-                    b.Navigation("DestinationSessionUnitList");
+                    b.Navigation("DestinationSessionSettingList");
 
                     b.Navigation("FavoriteList");
 
@@ -5280,11 +5284,9 @@ namespace IczpNet.Chat.Migrations
 
                     b.Navigation("OwnerFriendshipRequestList");
 
-                    b.Navigation("OwnerSessionList");
+                    b.Navigation("OwnerSessionMemberList");
 
                     b.Navigation("OwnerSessionSettingList");
-
-                    b.Navigation("OwnerSessionUnitList");
 
                     b.Navigation("ProxyShopKeeperList");
 
@@ -5377,9 +5379,9 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.SessionSections.Sessions.Session", b =>
                 {
-                    b.Navigation("MessageList");
+                    b.Navigation("MemberList");
 
-                    b.Navigation("UnitList");
+                    b.Navigation("MessageList");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.SquareSections.SquareCategorys.SquareCategory", b =>

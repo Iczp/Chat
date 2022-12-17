@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.ChatObjects;
+﻿using AutoMapper;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
@@ -40,22 +41,17 @@ namespace IczpNet.Chat.SessionSections
 
         protected virtual string MakeSesssionKey(MessageChannels messageChannel, ChatObject sender, ChatObject receiver)
         {
-            switch (messageChannel)
+            if (sender.ObjectType.Equals(ChatObjectTypes.Room))
             {
-                case MessageChannels.RoomChannel:
-                case MessageChannels.SubscriptionChannel:
-                case MessageChannels.ServiceChannel:
-                case MessageChannels.SquareChannel:
-                    return receiver.Id.ToString();
-                case MessageChannels.PersonalToPersonal:
-                case MessageChannels.RobotChannel:
-                    var arr = new[] { sender.Id, receiver.Id };
-                    Array.Sort(arr);
-                    return string.Join(":", arr);
-                case MessageChannels.ElectronicCommerceChannel:
-                default:
-                    return null;
+                return sender.Id.ToString();
             }
+            if (receiver.ObjectType.Equals(ChatObjectTypes.Room))
+            {
+                return receiver.Id.ToString();
+            }
+            var arr = new[] { sender.Id, receiver.Id };
+            Array.Sort(arr);
+            return string.Join(":", arr);
         }
 
         public async Task<Session> MakeAsync(MessageChannels messageChannel, ChatObject sender, ChatObject receiver)
@@ -63,10 +59,21 @@ namespace IczpNet.Chat.SessionSections
             var sessionKey = MakeSesssionKey(messageChannel, sender, receiver);
 
             var session = await SessionRepository.FindAsync(x => x.SessionKey.Equals(sessionKey));
+            if (session != null)
+            {
+                return session;
+            }
 
-            session ??= await SessionRepository.InsertAsync(new Session(GuidGenerator.Create(), sessionKey), autoSave: true);
+            session = new Session(GuidGenerator.Create(), sessionKey)
+            {
+                UnitList = new List<SessionUnit>()
+                {
+                    new SessionUnit(session.Id, sender.Id, receiver.Id),
+                    new SessionUnit(session.Id, receiver.Id, sender.Id)
+                }
+            };
 
-            return session;
+            return await SessionRepository.InsertAsync(session, autoSave: true);
         }
 
         [UnitOfWork(true, IsolationLevel.ReadUncommitted)]
@@ -143,26 +150,28 @@ namespace IczpNet.Chat.SessionSections
             var sessionList = new List<Session>();
             foreach (var item in list)
             {
-                var memberList = new List<SessionMember>();
+                var memberList = new List<SessionUnit>();
+                var sessionId = GuidGenerator.Create();
                 foreach (var message in item.Items)
                 {
-                    if (!memberList.Any(x => x.OwnerId == message.SenderId.Value))
+                    if (!memberList.Any(x => x.OwnerId == message.SenderId.Value && x.DestinationId == message.ReceiverId.Value))
                     {
-                        memberList.Add(new SessionMember() { OwnerId = message.SenderId.Value });
+                        memberList.Add(new SessionUnit(sessionId, message.SenderId.Value, message.ReceiverId.Value));
                     }
-                    if (!memberList.Any(x => x.OwnerId == message.ReceiverId.Value))
+                    if (!memberList.Any(x => x.OwnerId == message.ReceiverId.Value && x.DestinationId == message.SenderId.Value))
                     {
-                        memberList.Add(new SessionMember() { OwnerId = message.ReceiverId.Value });
+                        memberList.Add(new SessionUnit(sessionId, message.ReceiverId.Value, message.SenderId.Value));
                     }
                 }
-                var session = new Session(GuidGenerator.Create(), item.SessionValue)
+                var session = new Session(sessionId, item.SessionValue)
                 {
                     MessageList = item.Items,
-                    MemberList = memberList
+                    UnitList = memberList
                 };
                 sessionList.Add(session);
             }
             await SessionRepository.InsertManyAsync(sessionList);
+
 
             return sessionList;
 

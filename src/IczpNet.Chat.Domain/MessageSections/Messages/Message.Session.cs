@@ -23,5 +23,4 @@ public partial class Message
     //[InverseProperty(nameof(Session.Message))]
     //public virtual IList<Session> SessionList { get; set; }
 
-    
 }

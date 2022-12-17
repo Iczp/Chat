@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,10 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221217022342_SessionUnit_init")]
+    partial class SessionUnit_init
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -542,7 +544,7 @@ namespace IczpNet.Chat.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<Guid?>("SessionId")
+                    b.Property<Guid>("SessionId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("SessionKey")
@@ -4362,7 +4364,9 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasOne("IczpNet.Chat.SessionSections.Sessions.Session", "Session")
                         .WithMany("MessageList")
-                        .HasForeignKey("SessionId");
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("ForwardMessage");
 
@@ -4917,7 +4921,7 @@ namespace IczpNet.Chat.Migrations
                         .IsRequired();
 
                     b.HasOne("IczpNet.Chat.SessionSections.Sessions.Session", "Session")
-                        .WithMany("UnitList")
+                        .WithMany("MemberList")
                         .HasForeignKey("SessionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -5377,9 +5381,9 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.SessionSections.Sessions.Session", b =>
                 {
-                    b.Navigation("MessageList");
+                    b.Navigation("MemberList");
 
-                    b.Navigation("UnitList");
+                    b.Navigation("MessageList");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.SquareSections.SquareCategorys.SquareCategory", b =>

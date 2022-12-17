@@ -19,7 +19,7 @@ public partial class Message : BaseEntity<Guid>
     //[Required]
     public virtual string SessionKey { get; protected set; }
 
-    public virtual Guid SessionId { get; protected set; }
+    public virtual Guid? SessionId { get; protected set; }
 
     [ForeignKey(nameof(SessionId))]
     public virtual Session Session { get; protected set; }

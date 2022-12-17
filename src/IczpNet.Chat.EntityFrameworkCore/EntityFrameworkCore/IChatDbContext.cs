@@ -52,6 +52,8 @@ public interface IChatDbContext : IEfCoreDbContext
 
 
     DbSet<Session> Session { get; }
+    DbSet<SessionUnit> SessionUnit { get; }
+    
     DbSet<ReadedRecorder> ReadedRecorder { get; }
     DbSet<Friendship> Friendship { get; }
     DbSet<FriendshipTag> FriendshipTag { get; }

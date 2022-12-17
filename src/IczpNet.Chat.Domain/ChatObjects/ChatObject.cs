@@ -173,13 +173,14 @@ namespace IczpNet.Chat.ChatObjects
 
         #region Session
 
-        //[InverseProperty(nameof(Session.Owner))]
-        //public virtual IList<Session> OwnerSessionList { get; set; }
+        [InverseProperty(nameof(Session.Owner))]
+        public virtual IList<Session> OwnerSessionList { get; set; }
 
-        //[InverseProperty(nameof(Session.Destination))]
-        //public virtual IList<Session> DestinationSessionList { get; set; }
+        [InverseProperty(nameof(SessionUnit.Owner))]
+        public virtual IList<SessionUnit> OwnerSessionUnitList { get; set; }
 
-        public virtual IList<SessionMember> SessionMemberList { get; set; }
+        [InverseProperty(nameof(SessionUnit.Destination))]
+        public virtual IList<SessionUnit> DestinationSessionUnitList { get; set; }
         #endregion
 
         #region Favorite 

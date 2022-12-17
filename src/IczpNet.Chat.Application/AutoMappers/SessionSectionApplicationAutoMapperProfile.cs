@@ -20,7 +20,14 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
 
 
         //Session
-        CreateMap<Session, SessionDto>().ForMember(x => x.MemberCount, o => o.MapFrom(x => x.GetMemberCount()));
+        CreateMap<Session, SessionDto>()
+            .ForMember(x => x.MemberCount, o => o.MapFrom(x => x.GetMemberCount()))
+            ;
+        //Session
+        CreateMap<SessionUnit, SessionUnitDto>()
+            .ForMember(x => x.Badge, o => o.MapFrom(x => x.GetBadge()))
+            .ForMember(x => x.Message, o => o.MapFrom(x => x.GetLastMessage()))
+            ;
 
         //Friendship
         CreateMap<Friendship, FriendshipDto>().ForMember(x => x.TagList, o => o.MapFrom(x => x.GetTagList()));

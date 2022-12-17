@@ -18,6 +18,7 @@ using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.SessionServices
 {
@@ -26,9 +27,11 @@ namespace IczpNet.Chat.SessionServices
 
         protected IRepository<Friendship, Guid> FriendshipRepository { get; }
         protected IRepository<Session, Guid> SessionRepository { get; }
+        protected IRepository<SessionUnit> SessionUnitRepository { get; }
 
         protected IRepository<Message, Guid> MessageRepository { get; }
         protected ISessionManager SessionManager { get; }
+
 
         protected ISessionGenerator SessionGenerator { get; }
 
@@ -37,13 +40,15 @@ namespace IczpNet.Chat.SessionServices
             ISessionManager sessionManager,
             ISessionGenerator sessionGenerator,
             IRepository<Session, Guid> sessionRepository,
-            IRepository<Message, Guid> messageRepository)
+            IRepository<Message, Guid> messageRepository,
+            IRepository<SessionUnit> sessionMemberRepository)
         {
             FriendshipRepository = chatObjectRepository;
             SessionManager = sessionManager;
             SessionGenerator = sessionGenerator;
             SessionRepository = sessionRepository;
             MessageRepository = messageRepository;
+            SessionUnitRepository = sessionMemberRepository;
         }
 
 
@@ -77,9 +82,18 @@ namespace IczpNet.Chat.SessionServices
         public async Task<PagedResultDto<SessionDto>> GetSessionsAsync(SessionGetListInput input)
         {
             var query = (await SessionRepository.GetQueryableAsync())
-                .Where(x => x.MemberList.Any(m => m.OwnerId == input.OwnerId))
+                .Where(x => x.UnitList.Any(m => m.OwnerId == input.OwnerId))
                 ;
             return await GetPagedListAsync<Session, SessionDto>(query, input);
+        }
+
+        [HttpGet]
+        public async Task<PagedResultDto<SessionUnitDto>> GetSessionUnitsAsync(SessionGetListInput input)
+        {
+            var query = (await SessionUnitRepository.GetQueryableAsync())
+                .Where(x => x.OwnerId == input.OwnerId)
+                ;
+            return await GetPagedListAsync<SessionUnit, SessionUnitDto>(query, input);
         }
 
         [HttpGet]
@@ -87,15 +101,19 @@ namespace IczpNet.Chat.SessionServices
         {
             var query = (await MessageRepository.GetQueryableAsync())
                 .Where(x => x.SessionId == input.SessionId)
-                .Where(x => x.Session.MemberList.Any(m => m.OwnerId == input.OwnerId && m.HistoryFristTime <= x.CreationTime))
-                .WhereIf(input.IsUnreaded, x => x.Session.MemberList.Any(m => m.OwnerId == input.OwnerId && m.HistoryFristTime <= x.CreationTime && m.ReadedMessageAutoId < x.AutoId && x.SenderId != m.OwnerId))
+                .Where(x => x.Session.UnitList.Any(m => m.OwnerId == input.OwnerId && m.HistoryFristTime <= x.CreationTime))
+                .WhereIf(input.IsUnreaded, x => x.Session.UnitList.Any(m => m.OwnerId == input.OwnerId && m.HistoryFristTime <= x.CreationTime && m.ReadedMessageAutoId < x.AutoId && x.SenderId != m.OwnerId))
                 ;
 
             return await GetPagedListAsync<Message, MessageDto>(query, input);
         }
 
 
-
-
+        [HttpPost]
+        public async Task<List<SessionDto>> CreateSessionAsync()
+        {
+            var entitys = await SessionGenerator.CreateSessionAsync();
+            return ObjectMapper.Map<List<Session>, List<SessionDto>>(entitys);
+        }
     }
 }
