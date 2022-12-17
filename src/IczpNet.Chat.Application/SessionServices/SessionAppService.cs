@@ -101,12 +101,11 @@ namespace IczpNet.Chat.SessionServices
         [HttpGet]
         public async Task<PagedResultDto<MessageDto>> GetMessageListAsync(SessionMessageGetListInput input)
         {
-            //new UnreadedSpecification(this).ToExpression()
-            //Expression<Func<SessionUnit,bool>> ownerHistoryFristTimePredicate = 
             var query = (await MessageRepository.GetQueryableAsync())
-                .Where(x => x.SessionId == input.SessionId)
-                .Where(x => x.Session.UnitList.Any(d => d.OwnerId == input.OwnerId && d.HistoryFristTime <= x.CreationTime))
-                .WhereIf(input.IsUnreaded, x => x.Session.UnitList.Any(d => d.OwnerId == input.OwnerId && d.HistoryFristTime <= x.CreationTime && d.ReadedMessageAutoId < x.AutoId && x.SenderId != d.OwnerId))
+                .Where(new OwnerMessageSpecification(input.OwnerId).ToExpression())
+                .WhereIf(input.SessionId.HasValue, new SessionMessageSpecification(input.SessionId.GetValueOrDefault()).ToExpression())
+                .WhereIf(input.IsUnreaded, new UnreadedMessageSpecification(input.OwnerId).ToExpression())
+                .WhereIf(input.SenderId.HasValue, new SenderMessageSpecification(input.SenderId.GetValueOrDefault()).ToExpression())
                 ;
 
             return await GetPagedListAsync<Message, MessageDto>(query, input);
