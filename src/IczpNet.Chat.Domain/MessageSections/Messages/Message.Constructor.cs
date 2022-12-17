@@ -14,15 +14,15 @@ public partial class Message
     public const string Delimiter = "/";
     protected Message() { }
 
-    public Message(Guid id, MessageChannels messageChannel, ChatObject sender, ChatObject receiver, Session session) : base(id)
+    public Message(Guid id, ChatObject sender, ChatObject receiver, Session session) : base(id)
     {
         //, IMessageContent messageContent
         Sender = sender;
         SenderType = sender.ObjectType;
         Receiver = receiver;
         ReceiverType = receiver.ObjectType;
-        MessageChannel = messageChannel;
-        Session= session;
+        Channel = session.Channel;
+        Session = session;
         SessionKey = session.SessionKey;
         //MessageType = messageType;
     }

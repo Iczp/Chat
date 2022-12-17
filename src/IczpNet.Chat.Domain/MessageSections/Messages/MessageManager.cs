@@ -36,7 +36,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             IChatObjectManager chatObjectManager,
             IContentResolver contentResolver,
             IObjectMapper objectMapper,
-            IChannelResolver messageChannelResolver,
+            IChannelResolver channelResolver,
             IMessageValidator messageValidator,
             ISessionGenerator sessionIdGenerator,
             IOptions<ChatOption> options)
@@ -47,7 +47,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             ChatObjectManager = chatObjectManager;
             ContentResolver = contentResolver;
             ObjectMapper = objectMapper;
-            ChannelResolver = messageChannelResolver;
+            ChannelResolver = channelResolver;
             MessageValidator = messageValidator;
             SessionGenerator = sessionIdGenerator;
             Config = options.Value;
@@ -55,11 +55,9 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         public virtual async Task<Message> CreateMessageAsync(ChatObject sender, ChatObject receiver, Func<Message, Task<IMessageContentEntity>> func)
         {
-            var messageChannel = await ChannelResolver.GetAsync(sender, receiver);
+            var session = await SessionGenerator.MakeAsync(sender, receiver);
 
-            var session = await SessionGenerator.MakeAsync(messageChannel, sender, receiver);
-
-            var entity = new Message(GuidGenerator.Create(), messageChannel, sender, receiver, session);
+            var entity = new Message(GuidGenerator.Create(), sender, receiver, session);
 
             if (func != null)
             {

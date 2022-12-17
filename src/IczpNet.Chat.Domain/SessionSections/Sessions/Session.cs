@@ -1,6 +1,7 @@
 ﻿using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using System;
 using System.Collections.Generic;
@@ -14,8 +15,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
         [StringLength(80)]
         public virtual string SessionKey { get; protected set; }
 
-        [StringLength(36)]
-        public virtual string Channel { get; protected set; }
+        //[StringLength(36)]
+        public virtual Channels Channel { get; protected set; }
 
         [StringLength(50)]
         public virtual string Title { get; set; }
@@ -33,9 +34,10 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         protected Session() { }
 
-        public Session(Guid id, string sessionKey) : base(id)
+        public Session(Guid id, string sessionKey, Channels channel) : base(id)
         {
             SessionKey = sessionKey;
+            Channel = channel;
         }
 
         public int GetMemberCount()

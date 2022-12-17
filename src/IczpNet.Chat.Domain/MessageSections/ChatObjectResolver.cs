@@ -21,23 +21,23 @@ namespace IczpNet.Chat.MessageSections
         {
             var result = new List<ChatObject>();
 
-            switch (message.MessageChannel)
+            switch (message.Channel)
             {
-                case Enums.MessageChannels.PersonalToPersonal:
+                case Enums.Channels.PrivateChannel:
                     return new List<ChatObject>() { message.Sender, message.Receiver };
-                case Enums.MessageChannels.RoomChannel:
+                case Enums.Channels.RoomChannel:
                     await RoomRepository.GetAsync(message.ReceiverId.Value);
 
                     break;
-                case Enums.MessageChannels.SubscriptionChannel:
+                case Enums.Channels.SubscriptionChannel:
                     break;
-                case Enums.MessageChannels.ServiceChannel:
+                case Enums.Channels.ServiceChannel:
                     break;
-                case Enums.MessageChannels.SquareChannel:
+                case Enums.Channels.SquareChannel:
                     break;
-                case Enums.MessageChannels.RobotChannel:
+                case Enums.Channels.RobotChannel:
                     break;
-                case Enums.MessageChannels.ElectronicCommerceChannel:
+                case Enums.Channels.ElectronicCommerceChannel:
                     break;
                 default:
                     break;
@@ -48,25 +48,25 @@ namespace IczpNet.Chat.MessageSections
         public virtual async Task<IEnumerable<Guid>> GetIdListAsync(Message message)
         {
             var result = new List<Guid>();
-            switch (message.MessageChannel)
+            switch (message.Channel)
             {
-                case Enums.MessageChannels.PersonalToPersonal:
+                case Enums.Channels.PrivateChannel:
                     return new List<Guid>() { message.Sender.Id, message.Receiver.Id };
-                case Enums.MessageChannels.RoomChannel:
+                case Enums.Channels.RoomChannel:
                     var roomId = message.ReceiverId.Value;
                     var room = await RoomRepository.GetAsync(roomId);
                     return room.RoomMemberList.Select(x => x.OwnerId).Distinct().ToList();
-                case Enums.MessageChannels.SubscriptionChannel:
+                case Enums.Channels.SubscriptionChannel:
 
 
                     break;
-                case Enums.MessageChannels.ServiceChannel:
+                case Enums.Channels.ServiceChannel:
                     break;
-                case Enums.MessageChannels.SquareChannel:
+                case Enums.Channels.SquareChannel:
                     break;
-                case Enums.MessageChannels.RobotChannel:
+                case Enums.Channels.RobotChannel:
                     break;
-                case Enums.MessageChannels.ElectronicCommerceChannel:
+                case Enums.Channels.ElectronicCommerceChannel:
                     break;
             }
             return result;

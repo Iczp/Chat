@@ -52,7 +52,7 @@ public partial class Message : BaseEntity<Guid>
     /// 消息通道
     /// </summary>
     [Required]
-    public virtual MessageChannels MessageChannel { get; protected set; }
+    public virtual Channels Channel { get; protected set; }
 
     /// <summary>
     /// 消息类型

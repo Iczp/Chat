@@ -23,6 +23,7 @@ namespace IczpNet.Chat.SessionSections
         protected IRepository<Session, Guid> SessionRepository { get; }
         protected IRepository<ReadedRecorder, Guid> ReadedRecorderRepository { get; }
         protected ISessionRecorder SessionRecorder { get; }
+        protected IChannelResolver ChannelResolver { get; }
 
 
         public SessionGenerator(
@@ -30,16 +31,18 @@ namespace IczpNet.Chat.SessionSections
             IRepository<Message, Guid> messageRepository,
             IRepository<Session, Guid> sessionRepository,
             ISessionRecorder sessionRecorder,
-            IRepository<ReadedRecorder, Guid> readedRecorderRepository)
+            IRepository<ReadedRecorder, Guid> readedRecorderRepository,
+            IChannelResolver channelResolver)
         {
             ChatObjectManager = chatObjectManager;
             MessageRepository = messageRepository;
             SessionRepository = sessionRepository;
             SessionRecorder = sessionRecorder;
             ReadedRecorderRepository = readedRecorderRepository;
+            ChannelResolver = channelResolver;
         }
 
-        protected virtual string MakeSesssionKey(MessageChannels messageChannel, ChatObject sender, ChatObject receiver)
+        protected virtual string MakeSesssionKey(ChatObject sender, ChatObject receiver)
         {
             if (sender.ObjectType.Equals(ChatObjectTypes.Room))
             {
@@ -54,9 +57,11 @@ namespace IczpNet.Chat.SessionSections
             return string.Join(":", arr);
         }
 
-        public async Task<Session> MakeAsync(MessageChannels messageChannel, ChatObject sender, ChatObject receiver)
+        public async Task<Session> MakeAsync(ChatObject sender, ChatObject receiver)
         {
-            var sessionKey = MakeSesssionKey(messageChannel, sender, receiver);
+            var sessionKey = MakeSesssionKey(sender, receiver);
+
+            var channel = await ChannelResolver.GetAsync(sender, receiver);
 
             var session = await SessionRepository.FindAsync(x => x.SessionKey.Equals(sessionKey));
 
@@ -65,7 +70,7 @@ namespace IczpNet.Chat.SessionSections
                 return session;
             }
 
-            session = new Session(GuidGenerator.Create(), sessionKey)
+            session = new Session(GuidGenerator.Create(), sessionKey, channel)
             {
                 UnitList = new List<SessionUnit>()
                 {
@@ -92,7 +97,7 @@ namespace IczpNet.Chat.SessionSections
 
             // 个人消息
             var personalMessage = messageQuery
-                .Where(q => q.MessageChannel == MessageChannels.PersonalToPersonal)
+                .Where(q => q.Channel == Channels.PrivateChannel)
                 .Where(q => q.SenderId == ownerId || q.ReceiverId == ownerId);
 
 
@@ -123,7 +128,7 @@ namespace IczpNet.Chat.SessionSections
                 .ToList()
                 ;
 
-            var sessionList = list.Select(x => new Session(GuidGenerator.Create(), x.SessionId)
+            var sessionList = list.Select(x => new Session(GuidGenerator.Create(), x.SessionId, Channels.PrivateChannel)
             {
                 //SessionId = x.SessionId,
                 ////DestinationId = 
@@ -164,7 +169,7 @@ namespace IczpNet.Chat.SessionSections
                         memberList.Add(new SessionUnit(sessionId, message.ReceiverId.Value, message.SenderId.Value));
                     }
                 }
-                var session = new Session(sessionId, item.SessionValue)
+                var session = new Session(sessionId, item.SessionValue, Channels.PrivateChannel)
                 {
                     MessageList = item.Items,
                     UnitList = memberList
