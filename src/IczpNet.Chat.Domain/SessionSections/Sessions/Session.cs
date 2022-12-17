@@ -28,9 +28,9 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public virtual ChatObject Owner { get; protected set; }
 
-        public virtual List<Message> MessageList { get; set; } = new List<Message>();
+        public virtual List<Message> MessageList { get; internal set; } = new List<Message>();
 
-        public virtual IList<SessionUnit> UnitList { get; set; } = new List<SessionUnit>();
+        public virtual IList<SessionUnit> UnitList { get; internal set; } = new List<SessionUnit>();
 
         protected Session() { }
 
@@ -58,6 +58,16 @@ namespace IczpNet.Chat.SessionSections.Sessions
         public Message GetLastMessage()
         {
             return MessageList.FirstOrDefault(x => x.AutoId == MessageList.Max(d => d.AutoId));
+        }
+
+        internal void SetSessionUnitList(List<SessionUnit> unitList)
+        {
+            UnitList = unitList;
+        }
+
+        public void AddSessionUnit(SessionUnit sessionUnit)
+        {
+            UnitList.Add(sessionUnit);
         }
     }
 }

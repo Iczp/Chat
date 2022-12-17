@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using IczpNet.Chat.ChatObjects;
+﻿using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
@@ -53,7 +52,9 @@ namespace IczpNet.Chat.SessionSections
                 return receiver.Id.ToString();
             }
             var arr = new[] { sender.Id, receiver.Id };
+
             Array.Sort(arr);
+
             return string.Join(":", arr);
         }
 
@@ -70,15 +71,16 @@ namespace IczpNet.Chat.SessionSections
                 return session;
             }
 
-            session = new Session(GuidGenerator.Create(), sessionKey, channel)
+            session = new Session(GuidGenerator.Create(), sessionKey, channel);
+
+            if(channel== Channels.PrivateChannel)
             {
-                UnitList = new List<SessionUnit>()
+                session.SetSessionUnitList(new List<SessionUnit>()
                 {
                     new SessionUnit(session.Id, sender.Id, receiver.Id),
                     new SessionUnit(session.Id, receiver.Id, sender.Id)
-                }
-            };
-
+                });
+            }
             return await SessionRepository.InsertAsync(session, autoSave: true);
         }
 
@@ -128,14 +130,7 @@ namespace IczpNet.Chat.SessionSections
                 .ToList()
                 ;
 
-            var sessionList = list.Select(x => new Session(GuidGenerator.Create(), x.SessionId, Channels.PrivateChannel)
-            {
-                //SessionId = x.SessionId,
-                ////DestinationId = 
-                //MessageAutoId = x.AutoId,
-                //Badge = x.UnreadCount,
-                //Description = $"@我:{x.ReminderCount}"
-            }).ToList();
+            var sessionList = list.Select(x => new Session(GuidGenerator.Create(), x.SessionId, Channels.PrivateChannel)).ToList();
 
             await SessionRepository.InsertManyAsync(sessionList);
 
@@ -178,9 +173,7 @@ namespace IczpNet.Chat.SessionSections
             }
             await SessionRepository.InsertManyAsync(sessionList);
 
-
             return sessionList;
-
         }
     }
 }
