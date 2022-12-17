@@ -73,13 +73,13 @@ namespace IczpNet.Chat.SessionSections
 
             session = new Session(GuidGenerator.Create(), sessionKey, channel);
 
-            if(channel== Channels.PrivateChannel)
+            if (channel == Channels.PrivateChannel )
             {
-                session.SetSessionUnitList(new List<SessionUnit>()
+                session.AddSessionUnit(new SessionUnit(session.Id, sender.Id, receiver.Id));
+                if ( sender.Id != receiver.Id)
                 {
-                    new SessionUnit(session.Id, sender.Id, receiver.Id),
-                    new SessionUnit(session.Id, receiver.Id, sender.Id)
-                });
+                    session.AddSessionUnit(new SessionUnit(session.Id, receiver.Id, sender.Id));
+                }
             }
             return await SessionRepository.InsertAsync(session, autoSave: true);
         }
