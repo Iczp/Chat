@@ -9,12 +9,14 @@ using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.OpenedRecorders;
 using IczpNet.Chat.SessionSections.OpenedRecordes.Dtos;
 using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.Specifications;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
@@ -99,10 +101,12 @@ namespace IczpNet.Chat.SessionServices
         [HttpGet]
         public async Task<PagedResultDto<MessageDto>> GetMessageListAsync(SessionMessageGetListInput input)
         {
+            //new UnreadedSpecification(this).ToExpression()
+            //Expression<Func<SessionUnit,bool>> ownerHistoryFristTimePredicate = 
             var query = (await MessageRepository.GetQueryableAsync())
                 .Where(x => x.SessionId == input.SessionId)
-                .Where(x => x.Session.UnitList.Any(m => m.OwnerId == input.OwnerId && m.HistoryFristTime <= x.CreationTime))
-                .WhereIf(input.IsUnreaded, x => x.Session.UnitList.Any(m => m.OwnerId == input.OwnerId && m.HistoryFristTime <= x.CreationTime && m.ReadedMessageAutoId < x.AutoId && x.SenderId != m.OwnerId))
+                .Where(x => x.Session.UnitList.Any(d => d.OwnerId == input.OwnerId && d.HistoryFristTime <= x.CreationTime))
+                .WhereIf(input.IsUnreaded, x => x.Session.UnitList.Any(d => d.OwnerId == input.OwnerId && d.HistoryFristTime <= x.CreationTime && d.ReadedMessageAutoId < x.AutoId && x.SenderId != d.OwnerId))
                 ;
 
             return await GetPagedListAsync<Message, MessageDto>(query, input);

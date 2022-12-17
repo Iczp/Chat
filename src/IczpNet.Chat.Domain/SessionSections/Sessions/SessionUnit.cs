@@ -47,6 +47,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public virtual int GetBadge()
         {
+
+            //return Session.MessageList.Count(new UnreadedSpecification(this).ToExpression());
             return Session.MessageList.Count(x => x.AutoId > ReadedMessageAutoId && x.SenderId != OwnerId && x.CreationTime > HistoryFristTime);
         }
 
