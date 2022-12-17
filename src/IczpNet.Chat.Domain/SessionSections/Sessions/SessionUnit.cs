@@ -10,7 +10,28 @@ namespace IczpNet.Chat.SessionSections.Sessions
 {
     public class SessionUnit : BaseEntity, IChatOwner<Guid>
     {
+        public virtual Guid SessionId { get; protected set; }
+
+        [ForeignKey(nameof(SessionId))]
+        public virtual Session Session { get; protected set; }
+
+        public virtual Guid OwnerId { get; protected set; }
+        [ForeignKey(nameof(OwnerId))]
+        public virtual ChatObject Owner { get; protected set; }
+
+        public virtual Guid? DestinationId { get; protected set; }
+
+        [ForeignKey(nameof(DestinationId))]
+        public virtual ChatObject Destination { get; protected set; }
+
+        public virtual long ReadedMessageAutoId { get; protected set; }
+
+        public virtual DateTime HistoryFristTime { get; protected set; }
+
+        public virtual string Name { get; set; }
+
         protected SessionUnit() { }
+
         public SessionUnit(Guid sessionId, Guid ownerId, Guid destinationId)
         {
             SessionId = sessionId;
@@ -18,27 +39,15 @@ namespace IczpNet.Chat.SessionSections.Sessions
             DestinationId = destinationId;
         }
 
-        public virtual Guid SessionId { get; set; }
+        internal void SetReaded(long messageAutoId)
+        {
+            ReadedMessageAutoId = messageAutoId;
+        }
 
-        [ForeignKey(nameof(SessionId))]
-        public virtual Session Session { get; set; }
-
-        public virtual Guid OwnerId { get; set; }
-        [ForeignKey(nameof(OwnerId))]
-        public virtual ChatObject Owner { get; set; }
-
-        public virtual Guid? DestinationId { get; protected set; }
-
-        [ForeignKey(nameof(DestinationId))]
-        public virtual ChatObject Destination { get; protected set; }
-
-        public virtual string Name { get; set; }
-
-        public virtual long ReadedMessageAutoId { get; set; }
-
-        public virtual DateTime HistoryFristTime { get; set; }
-
-
+        internal void SetHistoryFristTime(DateTime historyFristTime)
+        {
+            HistoryFristTime = historyFristTime;
+        }
 
         public override object[] GetKeys()
         {
@@ -47,8 +56,6 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public virtual int GetBadge()
         {
-
-            //return Session.MessageList.Count(new UnreadedSpecification(this).ToExpression());
             return Session.MessageList.Count(x => x.AutoId > ReadedMessageAutoId && x.SenderId != OwnerId && x.CreationTime > HistoryFristTime);
         }
 

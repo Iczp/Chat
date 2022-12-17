@@ -59,6 +59,7 @@ namespace IczpNet.Chat.SessionSections
             var sessionKey = MakeSesssionKey(messageChannel, sender, receiver);
 
             var session = await SessionRepository.FindAsync(x => x.SessionKey.Equals(sessionKey));
+
             if (session != null)
             {
                 return session;

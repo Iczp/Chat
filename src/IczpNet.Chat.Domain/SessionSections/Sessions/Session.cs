@@ -12,7 +12,10 @@ namespace IczpNet.Chat.SessionSections.Sessions
     public class Session : BaseEntity<Guid>, IChatOwner<Guid?>
     {
         [StringLength(80)]
-        public virtual string SessionKey { get; set; }
+        public virtual string SessionKey { get; protected set; }
+
+        [StringLength(36)]
+        public virtual string Channel { get; protected set; }
 
         [StringLength(50)]
         public virtual string Title { get; set; }
@@ -20,9 +23,9 @@ namespace IczpNet.Chat.SessionSections.Sessions
         [StringLength(100)]
         public virtual string Description { get; set; }
 
-        public virtual Guid? OwnerId { get; set; }
+        public virtual Guid? OwnerId { get; protected set; }
 
-        public virtual ChatObject Owner { get; set; }
+        public virtual ChatObject Owner { get; protected set; }
 
         public virtual List<Message> MessageList { get; set; } = new List<Message>();
 
