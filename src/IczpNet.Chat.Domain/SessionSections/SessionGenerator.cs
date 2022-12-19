@@ -73,12 +73,12 @@ namespace IczpNet.Chat.SessionSections
 
             session = new Session(GuidGenerator.Create(), sessionKey, channel);
 
-            if (channel == Channels.PrivateChannel )
+            if (channel == Channels.PrivateChannel)
             {
-                session.AddSessionUnit(new SessionUnit(session.Id, sender.Id, receiver.Id));
-                if ( sender.Id != receiver.Id)
+                session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session.Id, sender.Id, receiver.Id));
+                if (sender.Id != receiver.Id)
                 {
-                    session.AddSessionUnit(new SessionUnit(session.Id, receiver.Id, sender.Id));
+                    session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session.Id, receiver.Id, sender.Id));
                 }
             }
             return await SessionRepository.InsertAsync(session, autoSave: true);
@@ -138,9 +138,10 @@ namespace IczpNet.Chat.SessionSections
         }
 
 
-        public virtual async Task<List<Session>> CreateSessionAsync()
+        public virtual async Task<List<Session>> CreateSessionByMessageAsync()
         {
             var list = (await MessageRepository.GetQueryableAsync())
+                .Where(x => x.SessionId == null)
                 .GroupBy(x => x.SessionKey, (SessionValue, Items) => new
                 {
                     SessionValue,
@@ -157,11 +158,11 @@ namespace IczpNet.Chat.SessionSections
                 {
                     if (!memberList.Any(x => x.OwnerId == message.SenderId.Value && x.DestinationId == message.ReceiverId.Value))
                     {
-                        memberList.Add(new SessionUnit(sessionId, message.SenderId.Value, message.ReceiverId.Value));
+                        memberList.Add(new SessionUnit(GuidGenerator.Create(), sessionId, message.SenderId.Value, message.ReceiverId.Value));
                     }
                     if (!memberList.Any(x => x.OwnerId == message.ReceiverId.Value && x.DestinationId == message.SenderId.Value))
                     {
-                        memberList.Add(new SessionUnit(sessionId, message.ReceiverId.Value, message.SenderId.Value));
+                        memberList.Add(new SessionUnit(GuidGenerator.Create(), sessionId, message.ReceiverId.Value, message.SenderId.Value));
                     }
                 }
                 var session = new Session(sessionId, item.SessionValue, Channels.PrivateChannel)

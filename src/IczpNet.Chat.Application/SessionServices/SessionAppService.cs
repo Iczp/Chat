@@ -113,9 +113,9 @@ namespace IczpNet.Chat.SessionServices
 
 
         [HttpPost]
-        public async Task<List<SessionDto>> CreateSessionAsync()
+        public async Task<List<SessionDto>> CreateSessionByMessageAsync()
         {
-            var entitys = await SessionGenerator.CreateSessionAsync();
+            var entitys = await SessionGenerator.CreateSessionByMessageAsync();
             return ObjectMapper.Map<List<Session>, List<SessionDto>>(entitys);
         }
     }

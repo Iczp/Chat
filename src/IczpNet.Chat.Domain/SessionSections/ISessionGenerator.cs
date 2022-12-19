@@ -11,6 +11,6 @@ namespace IczpNet.Chat.SessionSections
     {
         Task<Session> MakeAsync(ChatObject sender, ChatObject receiver);
         Task<List<Session>> GenerateAsync(Guid ownerId, long? startMessageAutoId = null);
-        Task<List<Session>> CreateSessionAsync();
+        Task<List<Session>> CreateSessionByMessageAsync();
     }
 }
