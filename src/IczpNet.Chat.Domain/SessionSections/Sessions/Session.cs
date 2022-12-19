@@ -7,7 +7,6 @@ using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
 
 namespace IczpNet.Chat.SessionSections.Sessions
 {
@@ -44,21 +43,6 @@ namespace IczpNet.Chat.SessionSections.Sessions
         public int GetMemberCount()
         {
             return UnitList.Count;
-        }
-
-        public int GetUnreadCount()
-        {
-            return MessageList.Count(x => x.Session.UnitList.Any(d => d.OwnerId != x.SenderId));
-        }
-
-        public int GetBadge()
-        {
-            return MessageList.Count(x => x.Session.UnitList.Any(d => d.OwnerId != x.SenderId));
-        }
-
-        public Message GetLastMessage()
-        {
-            return MessageList.FirstOrDefault(x => x.AutoId == MessageList.Max(d => d.AutoId));
         }
 
         internal void SetSessionUnitList(List<SessionUnit> unitList)
