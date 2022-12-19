@@ -26,7 +26,10 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public virtual long ReadedMessageAutoId { get; protected set; }
 
-        public virtual DateTime HistoryFristTime { get; protected set; }
+        /// <summary>
+        /// 为null时，
+        /// </summary>
+        public virtual DateTime? HistoryFristTime { get; protected set; }
 
         public virtual DateTime? HistoryLastTime { get; protected set; }
 
@@ -99,7 +102,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public virtual int GetBadge()
         {
-            return Session.MessageList.Count(x => x.AutoId > ReadedMessageAutoId && x.SenderId != OwnerId && x.CreationTime > HistoryFristTime);
+            return Session.MessageList.Count(x => x.AutoId > ReadedMessageAutoId && x.SenderId != OwnerId && (!HistoryFristTime.HasValue || x.CreationTime > HistoryFristTime));
         }
 
         public virtual Message GetLastMessage()
