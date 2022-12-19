@@ -1,11 +1,10 @@
 ﻿using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
-using IczpNet.Chat.SessionSections.Sessions;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace IczpNet.Chat.SessionSections
+namespace IczpNet.Chat.SessionSections.Sessions
 {
     public interface ISessionGenerator
     {

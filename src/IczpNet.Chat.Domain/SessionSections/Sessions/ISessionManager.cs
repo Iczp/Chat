@@ -4,7 +4,7 @@ using IczpNet.Chat.SessionSections.OpenedRecorders;
 using System;
 using System.Threading.Tasks;
 
-namespace IczpNet.Chat.SessionSections
+namespace IczpNet.Chat.SessionSections.Sessions
 {
     public interface ISessionManager
     {

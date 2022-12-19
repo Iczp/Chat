@@ -3,7 +3,7 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.ReadedRecorders;
-using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -13,7 +13,7 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Uow;
 
-namespace IczpNet.Chat.SessionSections
+namespace IczpNet.Chat.SessionSections.Sessions
 {
     public class SessionGenerator : DomainService, ISessionGenerator
     {

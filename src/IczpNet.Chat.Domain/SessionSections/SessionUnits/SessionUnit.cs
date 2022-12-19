@@ -2,13 +2,15 @@
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.MessageReminders;
+using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.Specifications;
 using JetBrains.Annotations;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 
-namespace IczpNet.Chat.SessionSections.Sessions
+namespace IczpNet.Chat.SessionSections.SessionUnits
 {
     public class SessionUnit : BaseSessionEntity, IChatOwner<Guid>
     {
@@ -57,7 +59,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public virtual string Name { get; set; }
 
-        public virtual IList<MessageReminder> ReminderList { get; protected set; }
+        public virtual IList<MessageReminder> ReminderList { get; protected set; } = new List<MessageReminder>();
 
         protected SessionUnit() { }
 
@@ -114,7 +116,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         protected virtual int GetBadge()
         {
-            return Session.MessageList.AsQueryable().Count(x => !x.IsRollbacked && x.AutoId > ReadedMessageAutoId && x.SenderId != OwnerId && (!HistoryFristTime.HasValue || x.CreationTime > HistoryFristTime));
+            return Session.MessageList.AsQueryable().Count(new SessionUnitMessageSpecification(this).ToExpression());
         }
 
         protected virtual Message GetLastMessage()
@@ -122,10 +124,27 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return Session.MessageList.FirstOrDefault(x => x.AutoId == Session.MessageList.Max(d => d.AutoId));
         }
 
-        protected virtual int GetReminderCount()
+        private int GetReminderCount()
         {
-            return ReminderList.Count + Session.MessageList.Count(x => x.IsRemindAll && !x.IsRollbacked && x.AutoId > ReadedMessageAutoId && x.SenderId != OwnerId && (!HistoryFristTime.HasValue || x.CreationTime > HistoryFristTime));
-            //x => x.Message.IsRemindAll || x.MessageReminderList.Any(d => d.SessionUnitId == SessionUnitId)
+            return GetRemindMeCount() + GetRemindAllCount();
+        }
+
+        /// <summary>
+        /// @me
+        /// </summary>
+        /// <returns></returns>
+        protected int GetRemindMeCount()
+        {
+            return ReminderList.AsQueryable().Select(x => x.Message).Where(x => !x.IsRollbacked).Count(new SessionUnitMessageSpecification(this).ToExpression());
+        }
+
+        /// <summary>
+        /// @everyone
+        /// </summary>
+        /// <returns></returns>
+        protected int GetRemindAllCount()
+        {
+            return Session.MessageList.AsQueryable().Where(x => x.IsRemindAll && !x.IsRollbacked).Count(new SessionUnitMessageSpecification(this).ToExpression());
         }
 
     }

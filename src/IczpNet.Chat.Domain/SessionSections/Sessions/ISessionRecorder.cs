@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace IczpNet.Chat.SessionSections
+namespace IczpNet.Chat.SessionSections.Sessions
 {
     public interface ISessionRecorder
     {

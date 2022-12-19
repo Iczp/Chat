@@ -1,21 +1,13 @@
 ﻿using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.MessageSections.Messages;
-using IczpNet.Chat.MessageSections.Messages.Dtos;
-using IczpNet.Chat.SessionSections;
 using IczpNet.Chat.SessionSections.Friendships;
-using IczpNet.Chat.SessionSections.OpenedRecorders;
-using IczpNet.Chat.SessionSections.OpenedRecordes.Dtos;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
-using IczpNet.Chat.Specifications;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
@@ -31,7 +23,7 @@ namespace IczpNet.Chat.SessionServices
 
         protected IRepository<Message, Guid> MessageRepository { get; }
         protected ISessionManager SessionManager { get; }
-
+        protected ISessionUnitManager SessionUnitManager { get; }
 
         protected ISessionGenerator SessionGenerator { get; }
 
@@ -41,7 +33,8 @@ namespace IczpNet.Chat.SessionServices
             ISessionGenerator sessionGenerator,
             IRepository<Session, Guid> sessionRepository,
             IRepository<Message, Guid> messageRepository,
-            IRepository<SessionUnit, Guid> repository)
+            IRepository<SessionUnit, Guid> repository,
+            ISessionUnitManager sessionUnitManager)
         {
             FriendshipRepository = chatObjectRepository;
             SessionManager = sessionManager;
@@ -49,6 +42,7 @@ namespace IczpNet.Chat.SessionServices
             SessionRepository = sessionRepository;
             MessageRepository = messageRepository;
             Repository = repository;
+            SessionUnitManager = sessionUnitManager;
         }
 
         [HttpGet]
@@ -64,7 +58,60 @@ namespace IczpNet.Chat.SessionServices
         public async Task<SessionUnitDto> GetListAsync(Guid id)
         {
             var entity = await Repository.GetAsync(id);
-            return ObjectMapper.Map<SessionUnit, SessionUnitDto>(entity);
+
+            return await MapToEntityAsync(entity);
+        }
+
+
+        private Task<SessionUnitDto> MapToEntityAsync(SessionUnit entity)
+        {
+            return Task.FromResult(ObjectMapper.Map<SessionUnit, SessionUnitDto>(entity));
+        }
+
+        [HttpPost]
+        public async Task<SessionUnitDto> SetReadedAsync(Guid id, Guid messageId)
+        {
+            var entity = await Repository.GetAsync(id);
+
+            await SessionUnitManager.SetReadedAsync(entity, messageId);
+
+            return await MapToEntityAsync(entity);
+        }
+
+        [HttpPost]
+        public async Task<SessionUnitDto> RemoveAsync(Guid id)
+        {
+            var entity = await Repository.GetAsync(id);
+
+            await SessionUnitManager.RemoveAsync(entity);
+
+            return await MapToEntityAsync(entity);
+        }
+
+        [HttpPost]
+        public async Task<SessionUnitDto> KillAsync(Guid id)
+        {
+            var entity = await Repository.GetAsync(id);
+
+            await SessionUnitManager.KillAsync(entity);
+
+            return await MapToEntityAsync(entity);
+        }
+
+        [HttpPost]
+        public async Task<SessionUnitDto> ClearAsync(Guid id)
+        {
+            var entity = await Repository.GetAsync(id);
+
+            await SessionUnitManager.KillAsync(entity);
+
+            return await MapToEntityAsync(entity);
+        }
+
+        [HttpPost]
+        public Task<SessionUnitDto> DeleteMessageAsync(Guid id, Guid messageId)
+        {
+            throw new NotImplementedException();
         }
     }
 }

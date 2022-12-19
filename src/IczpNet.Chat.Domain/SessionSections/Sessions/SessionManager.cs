@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 
-namespace IczpNet.Chat.SessionSections
+namespace IczpNet.Chat.SessionSections.Sessions
 {
     public class SessionManager : DomainService, ISessionManager
     {
@@ -71,8 +71,8 @@ namespace IczpNet.Chat.SessionSections
         public Task DeleteFriendshipRequestAsync(Guid ownerId, Guid destinationId)
         {
             return FriendshipRequestRepository.DeleteAsync(x =>
-                (x.OwnerId == ownerId && x.DestinationId == destinationId && !x.IsHandled) ||
-                (x.OwnerId == destinationId && x.DestinationId == ownerId && !x.IsHandled)
+                x.OwnerId == ownerId && x.DestinationId == destinationId && !x.IsHandled ||
+                x.OwnerId == destinationId && x.DestinationId == ownerId && !x.IsHandled
             );
         }
 

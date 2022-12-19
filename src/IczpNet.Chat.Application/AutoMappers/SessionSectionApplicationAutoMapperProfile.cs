@@ -7,6 +7,7 @@ using IczpNet.Chat.SessionSections.Friendships.Dtos;
 using IczpNet.Chat.SessionSections.OpenedRecorders;
 using IczpNet.Chat.SessionSections.OpenedRecordes.Dtos;
 using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 
 namespace IczpNet.Chat.AutoMappers;
