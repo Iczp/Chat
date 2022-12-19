@@ -3,7 +3,7 @@ using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.SessionSections.Sessions
 {
-    public class SessionGetListInput : PagedAndSortedResultRequestDto
+    public class SessionUnitGetListInput : PagedAndSortedResultRequestDto
     {
         public virtual Guid? OwnerId { get; set; }
 

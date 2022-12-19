@@ -1,12 +1,11 @@
 ﻿using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.SessionSections.OpenedRecordes.Dtos;
-using IczpNet.Chat.SessionSections.Sessions;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 
-namespace IczpNet.Chat.SessionSections
+namespace IczpNet.Chat.SessionSections.Sessions
 {
     public interface ISessionAppService
     {

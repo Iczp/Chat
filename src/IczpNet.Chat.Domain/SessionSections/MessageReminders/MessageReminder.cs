@@ -2,6 +2,7 @@
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.SessionSections.Sessions;
 using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -9,12 +10,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace IczpNet.Chat.SessionSections.MessageReminders
 {
     [Description("消息提醒器@我")]
-    public class MessageReminder : BaseEntity, IChatOwner<Guid>
+    public class MessageReminder : BaseEntity
     {
-        public virtual Guid OwnerId { get; protected set; }
+        public virtual Guid SessionUnitId { get; protected set; }
 
-        [ForeignKey(nameof(OwnerId))]
-        public virtual ChatObject Owner { get; protected set; }
+        [ForeignKey(nameof(SessionUnitId))]
+        public virtual SessionUnit SessionUnit { get; protected set; }
 
         public virtual Guid MessageId { get; protected set; }
 
@@ -23,15 +24,15 @@ namespace IczpNet.Chat.SessionSections.MessageReminders
 
         protected MessageReminder() { }
 
-        public MessageReminder(Message message, ChatObject owner)
+        public MessageReminder(Message message, SessionUnit sessionUnit)
         {
             Message = message;
-            Owner = owner;
+            SessionUnit = sessionUnit;
         }
 
         public override object[] GetKeys()
         {
-            return new object[] { OwnerId, MessageId };
+            return new object[] { SessionUnitId, MessageId };
         }
     }
 }

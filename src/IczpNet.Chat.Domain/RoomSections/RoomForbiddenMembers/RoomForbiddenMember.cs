@@ -18,7 +18,7 @@ namespace IczpNet.Chat.RoomSections.RoomForbiddenMembers
         /// <summary>
         /// 禁言的群成员
         /// </summary>
-        [StringLength(36)]
+        //[StringLength(36)]
         public virtual Guid OwnerId { get; set; }
 
         /// <summary>

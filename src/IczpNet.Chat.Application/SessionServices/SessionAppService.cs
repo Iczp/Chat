@@ -9,6 +9,7 @@ using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.OpenedRecorders;
 using IczpNet.Chat.SessionSections.OpenedRecordes.Dtos;
 using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using IczpNet.Chat.Specifications;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -84,18 +85,9 @@ namespace IczpNet.Chat.SessionServices
         public async Task<PagedResultDto<SessionDto>> GetSessionsAsync(SessionGetListInput input)
         {
             var query = (await SessionRepository.GetQueryableAsync())
-                .Where(x => x.UnitList.Any(m => m.OwnerId == input.OwnerId))
+                .WhereIf(input.OwnerId.HasValue, x => x.UnitList.Any(m => m.OwnerId == input.OwnerId))
                 ;
             return await GetPagedListAsync<Session, SessionDto>(query, input);
-        }
-
-        [HttpGet]
-        public async Task<PagedResultDto<SessionUnitDto>> GetSessionUnitsAsync(SessionGetListInput input)
-        {
-            var query = (await SessionUnitRepository.GetQueryableAsync())
-                .Where(x => x.OwnerId == input.OwnerId)
-                ;
-            return await GetPagedListAsync<SessionUnit, SessionUnitDto>(query, input);
         }
 
         [HttpGet]

@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,10 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221219070422_Message_AddProp_IsRemindAll")]
+    partial class Message_AddProp_IsRemindAll
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2246,6 +2248,7 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("OwnerId")
+                        .HasMaxLength(36)
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("RoomId")
@@ -2994,7 +2997,7 @@ namespace IczpNet.Chat.Migrations
                     b.Property<Guid>("MessageId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("SessionUnitId")
+                    b.Property<Guid>("OwnerId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ConcurrencyStamp")
@@ -3023,9 +3026,9 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("LastModifierId");
 
-                    b.HasKey("MessageId", "SessionUnitId");
+                    b.HasKey("MessageId", "OwnerId");
 
-                    b.HasIndex("SessionUnitId");
+                    b.HasIndex("OwnerId");
 
                     b.ToTable("Chat_MessageReminder", (string)null);
                 });
@@ -4883,15 +4886,15 @@ namespace IczpNet.Chat.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("IczpNet.Chat.SessionSections.Sessions.SessionUnit", "SessionUnit")
-                        .WithMany("ReminderList")
-                        .HasForeignKey("SessionUnitId")
+                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
+                        .WithMany("MessageReminderList")
+                        .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Message");
 
-                    b.Navigation("SessionUnit");
+                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.SessionSections.OpenedRecorders.OpenedRecorder", b =>
@@ -5319,6 +5322,8 @@ namespace IczpNet.Chat.Migrations
 
                     b.Navigation("InSquareMemberList");
 
+                    b.Navigation("MessageReminderList");
+
                     b.Navigation("OwnerFriendshipList");
 
                     b.Navigation("OwnerFriendshipRequestList");
@@ -5423,11 +5428,6 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("MessageList");
 
                     b.Navigation("UnitList");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.SessionSections.Sessions.SessionUnit", b =>
-                {
-                    b.Navigation("ReminderList");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.SquareSections.SquareCategorys.SquareCategory", b =>

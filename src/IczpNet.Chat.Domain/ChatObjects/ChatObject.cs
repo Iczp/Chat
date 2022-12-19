@@ -73,8 +73,8 @@ namespace IczpNet.Chat.ChatObjects
 
         #region MessageReminder @me,@evone
 
-        [InverseProperty(nameof(MessageReminder.Owner))]
-        public virtual IList<MessageReminder> MessageReminderList { get; set; }
+        //[InverseProperty(nameof(MessageReminder.Owner))]
+        //public virtual IList<MessageReminder> MessageReminderList { get; set; }
 
 
         #endregion

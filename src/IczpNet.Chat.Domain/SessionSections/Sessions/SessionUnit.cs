@@ -1,7 +1,10 @@
 ﻿using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.SessionSections.MessageReminders;
+using JetBrains.Annotations;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 
@@ -10,6 +13,12 @@ namespace IczpNet.Chat.SessionSections.Sessions
     public class SessionUnit : BaseSessionEntity, IChatOwner<Guid>
     {
         public virtual Guid SessionId { get; protected set; }
+
+        public virtual int Badge => GetBadge();
+
+        public virtual int ReminderCount => GetReminderCount();
+
+        public virtual Message LastMessage => GetLastMessage();
 
         [ForeignKey(nameof(SessionId))]
         public virtual Session Session { get; protected set; }
@@ -25,6 +34,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
         //public virtual ChatObject Destination { get; protected set; }
 
         public virtual long ReadedMessageAutoId { get; protected set; }
+
 
         /// <summary>
         /// 为null时，
@@ -47,9 +57,11 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public virtual string Name { get; set; }
 
+        public virtual IList<MessageReminder> ReminderList { get; protected set; }
+
         protected SessionUnit() { }
 
-        public SessionUnit(Guid id, Guid sessionId, Guid ownerId, Guid destinationId) : base(id)
+        internal SessionUnit(Guid id, [NotNull] Guid sessionId, [NotNull] Guid ownerId, [NotNull] Guid destinationId) : base(id)
         {
             SessionId = sessionId;
             OwnerId = ownerId;
@@ -97,19 +109,24 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public override object[] GetKeys()
         {
-            return new object[] { SessionId, OwnerId };
+            return new object[] { SessionId, OwnerId, DestinationId };
         }
 
-        public virtual int GetBadge()
+        protected virtual int GetBadge()
         {
-            return Session.MessageList.Count(x => x.AutoId > ReadedMessageAutoId && x.SenderId != OwnerId && (!HistoryFristTime.HasValue || x.CreationTime > HistoryFristTime));
+            return Session.MessageList.AsQueryable().Count(x => !x.IsRollbacked && x.AutoId > ReadedMessageAutoId && x.SenderId != OwnerId && (!HistoryFristTime.HasValue || x.CreationTime > HistoryFristTime));
         }
 
-        public virtual Message GetLastMessage()
+        protected virtual Message GetLastMessage()
         {
             return Session.MessageList.FirstOrDefault(x => x.AutoId == Session.MessageList.Max(d => d.AutoId));
         }
 
+        protected virtual int GetReminderCount()
+        {
+            return ReminderList.Count + Session.MessageList.Count(x => x.IsRemindAll && !x.IsRollbacked && x.AutoId > ReadedMessageAutoId && x.SenderId != OwnerId && (!HistoryFristTime.HasValue || x.CreationTime > HistoryFristTime));
+            //x => x.Message.IsRemindAll || x.MessageReminderList.Any(d => d.SessionUnitId == SessionUnitId)
+        }
 
     }
 }

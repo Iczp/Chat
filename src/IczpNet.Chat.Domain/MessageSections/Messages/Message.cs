@@ -62,7 +62,10 @@ public partial class Message : BaseEntity<Guid>
     [StringLength(5000)]
     public virtual string ContentJson { get; protected set; }
 
-    
+    /// <summary>
+    /// Remind Everyone
+    /// </summary>
+    public virtual bool IsRemindAll { get; protected set; }
 
     /// <summary>
     /// 扩展（键名）根据业务自义，如:"courseId"、"course-userId"、"erp-userId"
@@ -80,6 +83,7 @@ public partial class Message : BaseEntity<Guid>
     /// 是否撤回
     /// </summary>
     public virtual bool IsRollbacked { get; protected set; }
+
     /// <summary>
     /// 撤回消息时间
     /// </summary>
