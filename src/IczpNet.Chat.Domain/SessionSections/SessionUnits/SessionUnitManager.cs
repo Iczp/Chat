@@ -23,6 +23,10 @@ namespace IczpNet.Chat.SessionSections.Sessions
             MessageRepository = messageRepository;
         }
 
+        public Task<SessionUnit> SetToppingAsync(SessionUnit entity)
+        {
+            throw new NotImplementedException();
+        }
 
         protected async Task<SessionUnit> SetEntityAsync(SessionUnit entity, Action<SessionUnit> action = null)
         {
@@ -59,5 +63,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
         {
             throw new NotImplementedException();
         }
+
+
     }
 }

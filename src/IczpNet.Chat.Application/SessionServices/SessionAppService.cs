@@ -110,5 +110,11 @@ namespace IczpNet.Chat.SessionServices
             var entitys = await SessionGenerator.CreateSessionByMessageAsync();
             return ObjectMapper.Map<List<Session>, List<SessionDto>>(entitys);
         }
+
+        [HttpGet]
+        public Task<PagedResultDto<ChatObjectDto>> GetMembersAsync(Guid sessionId)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

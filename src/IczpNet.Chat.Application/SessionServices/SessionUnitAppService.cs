@@ -60,8 +60,13 @@ namespace IczpNet.Chat.SessionServices
         {
             await CheckPolicyAsync(GetListPolicyName);
             var query = (await Repository.GetQueryableAsync())
+
+
                 .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
                 ;
+            //...
+            query = query.OrderBy(x => x.Id);
+
             return await GetPagedListAsync<SessionUnit, SessionUnitDto>(query, input);
         }
 

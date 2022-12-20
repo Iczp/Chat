@@ -15,5 +15,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         Task<PagedResultDto<SessionDto>> GetSessionsAsync(SessionGetListInput input);
         Task<PagedResultDto<MessageDto>> GetMessageListAsync(SessionMessageGetListInput input);
+
+        Task<PagedResultDto<ChatObjectDto>> GetMembersAsync(Guid sessionId);
     }
 }
