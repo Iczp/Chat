@@ -23,7 +23,10 @@ namespace IczpNet.Chat.Specifications
                 //!x.IsRollbacked &&
                 x.AutoId > SessionUnit.ReadedMessageAutoId &&
                 x.SenderId != SessionUnit.OwnerId &&
-                (!SessionUnit.HistoryFristTime.HasValue || x.CreationTime > SessionUnit.HistoryFristTime)
+                (!SessionUnit.HistoryFristTime.HasValue || x.CreationTime > SessionUnit.HistoryFristTime) &&
+                (!SessionUnit.HistoryLastTime.HasValue || x.CreationTime < SessionUnit.HistoryLastTime) &&
+                (!SessionUnit.ClearTime.HasValue || x.CreationTime > SessionUnit.ClearTime)
+
             ;
         }
     }

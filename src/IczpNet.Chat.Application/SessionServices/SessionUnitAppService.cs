@@ -14,18 +14,23 @@ using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.SessionServices
 {
+
     public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     {
-
         protected IRepository<Friendship, Guid> FriendshipRepository { get; }
         protected IRepository<Session, Guid> SessionRepository { get; }
         protected IRepository<SessionUnit, Guid> Repository { get; }
-
         protected IRepository<Message, Guid> MessageRepository { get; }
         protected ISessionManager SessionManager { get; }
         protected ISessionUnitManager SessionUnitManager { get; }
-
         protected ISessionGenerator SessionGenerator { get; }
+        public virtual string GetListPolicyName { get; private set; }
+        public virtual string GetPolicyName { get; private set; }
+        public virtual string GetDetailPolicyName { get; private set; }
+        public virtual string SetReadedPolicyName { get; private set; }
+        public virtual string RemoveSessionPolicyName { get; private set; }
+        public virtual string ClearMessagePolicyName { get; private set; }
+        public virtual string DeleteMessagePolicyName { get; private set; }
 
         public SessionUnitAppService(
             IRepository<Friendship, Guid> chatObjectRepository,
@@ -45,9 +50,15 @@ namespace IczpNet.Chat.SessionServices
             SessionUnitManager = sessionUnitManager;
         }
 
-        [HttpGet]
-        public async Task<PagedResultDto<SessionUnitDto>> GetListAsync(SessionUnitGetListInput input)
+        protected override Task CheckPolicyAsync(string policyName)
         {
+            return base.CheckPolicyAsync(policyName);
+        }
+
+        [HttpGet]
+        public virtual async Task<PagedResultDto<SessionUnitDto>> GetListAsync(SessionUnitGetListInput input)
+        {
+            await CheckPolicyAsync(GetListPolicyName);
             var query = (await Repository.GetQueryableAsync())
                 .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
                 ;
@@ -55,62 +66,65 @@ namespace IczpNet.Chat.SessionServices
         }
 
         [HttpGet]
-        public async Task<SessionUnitDto> GetListAsync(Guid id)
+        public virtual async Task<SessionUnitDto> GetAsync(Guid id)
         {
+            await CheckPolicyAsync(GetPolicyName);
             var entity = await Repository.GetAsync(id);
-
-            return await MapToEntityAsync(entity);
+            return await MapToDtoAsync(entity);
         }
 
+        [HttpGet]
+        public virtual async Task<SessionUnitDetailDto> GetDetailAsync(Guid id)
+        {
+            await CheckPolicyAsync(GetDetailPolicyName);
+            var entity = await Repository.GetAsync(id);
+            return ObjectMapper.Map<SessionUnit, SessionUnitDetailDto>(entity);
+        }
 
-        private Task<SessionUnitDto> MapToEntityAsync(SessionUnit entity)
+        private Task<SessionUnitDto> MapToDtoAsync(SessionUnit entity)
         {
             return Task.FromResult(ObjectMapper.Map<SessionUnit, SessionUnitDto>(entity));
         }
 
         [HttpPost]
-        public async Task<SessionUnitDto> SetReadedAsync(Guid id, Guid messageId)
+        public virtual async Task<SessionUnitDto> SetReadedAsync(Guid id, Guid messageId, bool isForce = false)
         {
+            await CheckPolicyAsync(SetReadedPolicyName);
             var entity = await Repository.GetAsync(id);
-
-            await SessionUnitManager.SetReadedAsync(entity, messageId);
-
-            return await MapToEntityAsync(entity);
+            await SessionUnitManager.SetReadedAsync(entity, messageId, isForce);
+            return await MapToDtoAsync(entity);
         }
 
         [HttpPost]
-        public async Task<SessionUnitDto> RemoveAsync(Guid id)
+        public virtual async Task<SessionUnitDto> RemoveSessionAsync(Guid id)
         {
+            await CheckPolicyAsync(RemoveSessionPolicyName);
             var entity = await Repository.GetAsync(id);
-
-            await SessionUnitManager.RemoveAsync(entity);
-
-            return await MapToEntityAsync(entity);
+            await SessionUnitManager.RemoveSessionAsync(entity);
+            return await MapToDtoAsync(entity);
         }
 
         [HttpPost]
-        public async Task<SessionUnitDto> KillAsync(Guid id)
+        public virtual async Task<SessionUnitDto> KillSessionAsync(Guid id)
         {
             var entity = await Repository.GetAsync(id);
-
-            await SessionUnitManager.KillAsync(entity);
-
-            return await MapToEntityAsync(entity);
+            await SessionUnitManager.KillSessionAsync(entity);
+            return await MapToDtoAsync(entity);
         }
 
         [HttpPost]
-        public async Task<SessionUnitDto> ClearAsync(Guid id)
+        public virtual async Task<SessionUnitDto> ClearMessageAsync(Guid id)
         {
+            await CheckPolicyAsync(ClearMessagePolicyName);
             var entity = await Repository.GetAsync(id);
-
-            await SessionUnitManager.KillAsync(entity);
-
-            return await MapToEntityAsync(entity);
+            await SessionUnitManager.ClearMessageAsync(entity);
+            return await MapToDtoAsync(entity);
         }
 
         [HttpPost]
-        public Task<SessionUnitDto> DeleteMessageAsync(Guid id, Guid messageId)
+        public virtual async Task<SessionUnitDto> DeleteMessageAsync(Guid id, Guid messageId)
         {
+            await CheckPolicyAsync(DeleteMessagePolicyName);
             throw new NotImplementedException();
         }
     }

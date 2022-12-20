@@ -11,6 +11,7 @@ namespace IczpNet.Chat.SessionSections.Friendships
 {
     public class FriendshipTag : BaseEntity<Guid>, IChatOwner<Guid?>
     {
+
         public virtual Guid? OwnerId { get; protected set; }
 
         [ForeignKey(nameof(OwnerId))]
@@ -21,6 +22,8 @@ namespace IczpNet.Chat.SessionSections.Friendships
 
         public virtual IList<FriendshipTagUnit> FriendshipList { get; protected set; }
 
+        public virtual int FriendshipCount => FriendshipList.Count;
+
         protected FriendshipTag() { }
 
         public FriendshipTag(ChatObject owner, string name)
@@ -30,9 +33,5 @@ namespace IczpNet.Chat.SessionSections.Friendships
             FriendshipList = new List<FriendshipTagUnit>();
         }
 
-        public int GetFriendshipCount()
-        {
-            return FriendshipList.Count;
-        }
     }
 }

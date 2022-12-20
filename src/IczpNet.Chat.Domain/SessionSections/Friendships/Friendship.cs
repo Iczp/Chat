@@ -12,12 +12,17 @@ namespace IczpNet.Chat.SessionSections.Friendships
 {
     public class Friendship : BaseSessionEntity
     {
+        
+
         public virtual Guid? RequestId { get; set; }
 
         [ForeignKey(nameof(RequestId))]
         public virtual FriendshipRequest FriendshipRequest { get; protected set; }
 
-        public virtual IList<FriendshipTagUnit> TagList { get; protected set; } = new List<FriendshipTagUnit>();
+        public virtual IList<FriendshipTagUnit> FriendshipTagUnitList { get; protected set; } = new List<FriendshipTagUnit>();
+
+        [NotMapped]
+        public virtual List<FriendshipTag> TagList => GetTagList();
 
         /// <summary>
         /// 备注名称
@@ -79,22 +84,22 @@ namespace IczpNet.Chat.SessionSections.Friendships
 
         public void SetTabList(List<FriendshipTag> tagList)
         {
-            TagList?.Clear();
+            FriendshipTagUnitList?.Clear();
 
             foreach (var tag in tagList)
             {
-                TagList.Add(new FriendshipTagUnit(this, tag));
+                FriendshipTagUnitList.Add(new FriendshipTagUnit(this, tag));
             }
         }
 
         public List<Guid> GetTagIdList()
         {
-            return TagList?.Select(x => x.FriendshipTagId).ToList();
+            return FriendshipTagUnitList?.Select(x => x.FriendshipTagId).ToList();
         }
 
         public List<FriendshipTag> GetTagList()
         {
-            return TagList?.Select(x => x.FriendshipTag).ToList();
+            return FriendshipTagUnitList?.Select(x => x.FriendshipTag).ToList();
         }
     }
 }

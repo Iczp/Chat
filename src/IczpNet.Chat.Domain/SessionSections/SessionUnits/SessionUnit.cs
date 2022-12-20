@@ -70,9 +70,12 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             DestinationId = destinationId;
         }
 
-        internal void SetReaded(long messageAutoId)
+        internal void SetReaded(long messageAutoId, bool isForce = false)
         {
-            ReadedMessageAutoId = messageAutoId;
+            if (isForce || messageAutoId > ReadedMessageAutoId)
+            {
+                ReadedMessageAutoId = messageAutoId;
+            }
         }
 
         internal void SetHistoryFristTime(DateTime historyFristTime)
@@ -104,7 +107,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         /// 清空消息，不退群 
         /// </summary>
         /// <param name="clearTime"></param>
-        internal void ClearMessage(DateTime clearTime)
+        internal void ClearMessage(DateTime? clearTime)
         {
             ClearTime = clearTime;
         }
@@ -121,7 +124,9 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         protected virtual Message GetLastMessage()
         {
-            return Session.MessageList.FirstOrDefault(x => x.AutoId == Session.MessageList.Max(d => d.AutoId));
+
+            return Session.MessageList.AsQueryable().OrderBy(x => x.AutoId).FirstOrDefault(new SessionUnitMessageSpecification(this).ToExpression());
+            //return Session.MessageList.FirstOrDefault(x => x.AutoId == Session.MessageList.AsQueryable().Where(new SessionUnitMessageSpecification(this).ToExpression()).Max(d => d.AutoId));
         }
 
         private int GetReminderCount()

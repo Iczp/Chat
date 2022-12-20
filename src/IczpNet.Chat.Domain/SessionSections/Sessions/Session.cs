@@ -12,6 +12,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
 {
     public class Session : BaseEntity<Guid>, IChatOwner<Guid?>
     {
+        public virtual int MemberCount => GetMemberCount();
+
         [StringLength(80)]
         public virtual string SessionKey { get; protected set; }
 
@@ -40,17 +42,17 @@ namespace IczpNet.Chat.SessionSections.Sessions
             Channel = channel;
         }
 
-        public int GetMemberCount()
+        internal virtual int GetMemberCount()
         {
             return UnitList.Count;
         }
 
-        internal void SetSessionUnitList(List<SessionUnit> unitList)
+        internal virtual void SetSessionUnitList(List<SessionUnit> unitList)
         {
             UnitList = unitList;
         }
 
-        public void AddSessionUnit(SessionUnit sessionUnit)
+        public virtual void AddSessionUnit(SessionUnit sessionUnit)
         {
             UnitList.Add(sessionUnit);
         }

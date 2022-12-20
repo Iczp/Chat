@@ -6,13 +6,13 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 {
     public interface ISessionUnitAppService
     {
-        Task<SessionUnitDto> SetReadedAsync(Guid id, Guid messageId);
+        Task<SessionUnitDto> SetReadedAsync(Guid id, Guid messageId, bool isForce);
 
-        Task<SessionUnitDto> RemoveAsync(Guid id);
+        Task<SessionUnitDto> RemoveSessionAsync(Guid id);
 
-        Task<SessionUnitDto> KillAsync(Guid id);
+        Task<SessionUnitDto> KillSessionAsync(Guid id);
 
-        Task<SessionUnitDto> ClearAsync(Guid id);
+        Task<SessionUnitDto> ClearMessageAsync(Guid id);
 
         Task<SessionUnitDto> DeleteMessageAsync(Guid id, Guid messageId);
     }

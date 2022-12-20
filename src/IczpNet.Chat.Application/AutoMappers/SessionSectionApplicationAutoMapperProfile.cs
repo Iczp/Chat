@@ -22,15 +22,15 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
 
 
         //Session
-        CreateMap<Session, SessionDto>()
-            .ForMember(x => x.MemberCount, o => o.MapFrom(x => x.GetMemberCount()))
-            ;
-        //Session
+        CreateMap<Session, SessionDto>();
+
+        //SessionUnit
         CreateMap<SessionUnit, SessionUnitDto>();
+        CreateMap<SessionUnit, SessionUnitDetailDto>();
 
         //Friendship
-        CreateMap<Friendship, FriendshipDto>().ForMember(x => x.TagList, o => o.MapFrom(x => x.GetTagList()));
-        CreateMap<Friendship, FriendshipDetailDto>().ForMember(x => x.TagList, o => o.MapFrom(x => x.GetTagList()));
+        CreateMap<Friendship, FriendshipDto>();
+        CreateMap<Friendship, FriendshipDetailDto>();
         CreateMap<FriendshipCreateInput, Friendship>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
         CreateMap<FriendshipUpdateInput, Friendship>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
 
@@ -41,8 +41,8 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
         CreateMap<FriendshipRequestUpdateInput, FriendshipRequest>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
 
         //FriendshipTag
-        CreateMap<FriendshipTag, FriendshipTagDto>().ForMember(x => x.FriendshipCount, o => o.MapFrom(x => x.GetFriendshipCount()));
-        CreateMap<FriendshipTag, FriendshipTagDetailDto>().ForMember(x => x.FriendshipCount, o => o.MapFrom(x => x.GetFriendshipCount()));
+        CreateMap<FriendshipTag, FriendshipTagDto>();
+        CreateMap<FriendshipTag, FriendshipTagDetailDto>();
         CreateMap<FriendshipTag, FriendshipTagSimpleDto>();
         CreateMap<FriendshipTagCreateInput, FriendshipTag>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
         CreateMap<FriendshipTagUpdateInput, FriendshipTag>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();

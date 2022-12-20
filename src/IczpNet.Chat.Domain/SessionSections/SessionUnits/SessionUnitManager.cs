@@ -31,25 +31,26 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return await Repository.UpdateAsync(entity);
         }
 
-        public async Task<SessionUnit> SetReadedAsync(SessionUnit entity, Guid messageId)
+        public async Task<SessionUnit> SetReadedAsync(SessionUnit entity, Guid messageId, bool isForce = false)
         {
             var message = await MessageRepository.GetAsync(messageId);
+
             // add readedRecorder
             /// ...
-            return await SetEntityAsync(entity, x => x.SetReaded(message.AutoId));
+            return await SetEntityAsync(entity, x => x.SetReaded(message.AutoId, isForce = false));
         }
 
-        public Task<SessionUnit> RemoveAsync(SessionUnit entity)
+        public Task<SessionUnit> RemoveSessionAsync(SessionUnit entity)
         {
             return SetEntityAsync(entity, x => x.RemoveSession(Clock.Now));
         }
 
-        public Task<SessionUnit> KillAsync(SessionUnit entity)
+        public Task<SessionUnit> KillSessionAsync(SessionUnit entity)
         {
             return SetEntityAsync(entity, x => x.KillSession(Clock.Now));
         }
 
-        public Task<SessionUnit> ClearAsync(SessionUnit entity)
+        public Task<SessionUnit> ClearMessageAsync(SessionUnit entity)
         {
             return SetEntityAsync(entity, x => x.ClearMessage(Clock.Now));
         }
