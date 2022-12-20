@@ -46,15 +46,20 @@ namespace IczpNet.Chat.RoomServices
             return (await base.CreateFilteredQueryAsync(input))
                 .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
                 .WhereIf(input.Type.HasValue, x => x.Type == input.Type)
-                .WhereIf(input.MinCount.HasValue, x => x.RoomMemberList.Count >= input.MinCount)
-                .WhereIf(input.MaxCount.HasValue, x => x.RoomMemberList.Count < input.MaxCount)
+                .WhereIf(input.MinCount.HasValue, x => x.Session != null && x.Session.UnitList.Count(x => !x.IsKilled) >= input.MinCount)
+                .WhereIf(input.MaxCount.HasValue, x => x.Session != null && x.Session.UnitList.Count(x => !x.IsKilled) < input.MaxCount)
                 .WhereIf(input.Type.HasValue, x => x.Type == input.Type)
                 .WhereIf(input.IsForbiddenAll.HasValue, x => x.IsForbiddenAll == input.IsForbiddenAll)
-                .WhereIf(input.MemberOwnerId.HasValue, x => x.RoomMemberList.Any(d => d.OwnerId == input.MemberOwnerId))
+                .WhereIf(input.MemberOwnerId.HasValue, x => x.Session != null && x.Session.UnitList.Any(d => d.OwnerId == input.MemberOwnerId))
                 .WhereIf(input.ForbiddenMemberOwnerId.HasValue, x => x.RoomForbiddenMemberList.Any(d => d.OwnerId == input.ForbiddenMemberOwnerId && d.ExpireTime.HasValue && d.ExpireTime < DateTime.Now))
                 .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(input.Keyword))
 
                 ;
+        }
+
+        protected override IQueryable<Room> ApplyDefaultSorting(IQueryable<Room> query)
+        {
+            return query.OrderByDescending(x => x.Session.UnitList.Count(x => !x.IsKilled));
         }
 
         protected override Task CheckDeleteAsync(Room entity)
@@ -69,7 +74,9 @@ namespace IczpNet.Chat.RoomServices
         [HttpPost]
         public override async Task<RoomDetailDto> CreateAsync(RoomCreateInput input)
         {
-            var room = await RoomManager.CreateRoomAsync(new Room(GuidGenerator.Create(), input.Name, input.Code, input.Description, input.OwnerId), input.ChatObjectIdList);
+            var members = await ChatObjectManager.GetManyAsync(input.ChatObjectIdList);
+
+            var room = await RoomManager.CreateRoomAsync(new Room(GuidGenerator.Create(), input.Name, input.Code, input.Description, input.OwnerId), members);
 
             return await MapToDtoAsync(room);
         }

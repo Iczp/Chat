@@ -100,12 +100,6 @@ namespace IczpNet.Chat.RoomSections.Rooms
             return room;
         }
 
-        public virtual async Task<Room> CreateRoomAsync(Room room, List<Guid> chatObjectIdList)
-        {
-            var members = await ChatObjectManager.GetManyAsync(chatObjectIdList);
-            return await CreateRoomAsync(room, members);
-        }
-
         public virtual async Task<int> JoinRoomAsync(Room room, List<ChatObject> members, ChatObject inviter, JoinWays joinWay)
         {
             Assert.If(room.IsInRoom(inviter), $"The inviter[{inviter}] is no in room[{room}]");
