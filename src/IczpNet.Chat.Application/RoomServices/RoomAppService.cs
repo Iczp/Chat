@@ -4,11 +4,14 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.RoomSections.RoomMembers;
 using IczpNet.Chat.RoomSections.Rooms;
 using IczpNet.Chat.RoomSections.Rooms.Dtos;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
+
+
 
 namespace IczpNet.Chat.RoomServices
 {
@@ -27,12 +30,15 @@ namespace IczpNet.Chat.RoomServices
         //protected IRepository<ChatObject, Guid> ChatObjectRepository { get; } 
 
         protected IChatObjectManager ChatObjectManager { get; }
+        protected IRoomManager RoomManager { get; }
 
         public RoomAppService(
             IRepository<Room, Guid> repository,
-            IChatObjectManager chatObjectManager) : base(repository)
+            IChatObjectManager chatObjectManager,
+            IRoomManager roomManager) : base(repository)
         {
             ChatObjectManager = chatObjectManager;
+            RoomManager = roomManager;
         }
 
         protected override async Task<IQueryable<Room>> CreateFilteredQueryAsync(RoomGetListInput input)
@@ -51,23 +57,7 @@ namespace IczpNet.Chat.RoomServices
                 ;
         }
 
-        protected override async Task<Room> MapToEntityAsync(RoomCreateInput createInput)
-        {
-            var roomMemberList = new List<RoomMember>();
 
-            var roomId = GuidGenerator.Create();
-
-            foreach (var memberId in createInput.ChatObjectIdList)
-            {
-                var chatObject = await ChatObjectManager.GetAsync(memberId);
-
-                Assert.If(!await ChatObjectManager.IsAllowJoinRoomMemnerAsync(chatObject.ObjectType), $"Not allowed to join the room,ObjectType:{chatObject.ObjectType},Id:{memberId}");
-
-                roomMemberList.Add(new RoomMember(GuidGenerator.Create(), roomId, chatObject.Id, CurrentChatObject.GetId()));
-            }
-
-            return new Room(roomId, createInput.Name, createInput.Code, createInput.Description, roomMemberList, createInput.OwnerId);
-        }
 
         protected override Task CheckDeleteAsync(Room entity)
         {
@@ -76,6 +66,14 @@ namespace IczpNet.Chat.RoomServices
             Assert.If(memberCount != 0, $"Room's member count: memberCount");
 
             return base.CheckDeleteAsync(entity);
+        }
+
+        [HttpPost]
+        public override async Task<RoomDetailDto> CreateAsync(RoomCreateInput input)
+        {
+            var room = await RoomManager.CreateRoomAsync(new Room(GuidGenerator.Create(), input.Name, input.Code, input.Description, input.OwnerId), input.ChatObjectIdList);
+
+            return ObjectMapper.Map<Room, RoomDetailDto>(room);
         }
     }
 }

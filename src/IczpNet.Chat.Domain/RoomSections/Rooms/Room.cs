@@ -4,6 +4,7 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.RoomSections.RoomForbiddenMembers;
 using IczpNet.Chat.RoomSections.RoomMembers;
 using IczpNet.Chat.RoomSections.RoomRoles;
+using IczpNet.Chat.SessionSections.Sessions;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -16,10 +17,28 @@ public class Room : ChatObject, IChatOwner<Guid?>
     public const ChatObjectTypes ChatObjectTypeValue = ChatObjectTypes.Room;
 
     /// <summary>
+    /// 会话Id
+    /// </summary>
+    public virtual Guid? SessionId { get; protected set; }
+
+    /// <summary>
+    /// 会话
+    /// </summary>
+    [ForeignKey(nameof(SessionId))]
+    public virtual Session Session { get; set; }
+
+    public virtual int? MemberCount => GetMemberCount();
+    
+    /// <summary>
     /// 群拥有者 OwnerUserId (群主)
     /// </summary>
     public virtual Guid? OwnerId { get; protected set; }
 
+    /// <summary>
+    /// 群主
+    /// </summary>
+    [ForeignKey(nameof(OwnerId))]
+    public virtual ChatObject Owner { get; set; }
     /// <summary>
     /// 群类型（自由群、职位群）
     /// </summary>
@@ -74,12 +93,6 @@ public class Room : ChatObject, IChatOwner<Guid?>
     public virtual bool IsAllowAutoJoin { get; set; } = false;
 
     /// <summary>
-    /// 群主
-    /// </summary>
-    [ForeignKey(nameof(OwnerId))]
-    public virtual ChatObject Owner { get; set; }
-
-    /// <summary>
     /// 群成员
     /// </summary>
     public virtual IList<RoomMember> RoomMemberList { get; protected set; } = new List<RoomMember>();
@@ -105,18 +118,37 @@ public class Room : ChatObject, IChatOwner<Guid?>
         ObjectType = ChatObjectTypeValue;
     }
 
-    public Room(Guid id, string name, string code, string description, IList<RoomMember> roomMemberList, Guid? ownerId) : base(id, ChatObjectTypeValue)
+    //public Room(Guid id, string name, string code, string description, IList<RoomMember> roomMemberList, ChatObject owner) : base(id, ChatObjectTypeValue)
+    //{
+    //    SetName(name);
+    //    Code = code;
+    //    Description = description;
+    //    Owner = owner;
+    //    Type = RoomTypes.Normal;
+    //    RoomMemberList = roomMemberList;
+    //}
+
+    public Room(Guid id, string name, string code, string description, Guid? ownerId) : base(id, ChatObjectTypeValue)
     {
         SetName(name);
         Code = code;
         Description = description;
-        OwnerId = ownerId;
         Type = RoomTypes.Normal;
-        RoomMemberList = roomMemberList;
+        OwnerId = ownerId;
     }
 
-    public int GetMemberCount()
+    public int? GetMemberCount()
     {
-        return RoomMemberList.Count;
+        return Session?.MemberCount;
+    }
+
+    internal void SetOwner(ChatObject chatObject)
+    {
+        Owner = chatObject;
+    }
+
+    internal void SetSession(Session session)
+    {
+        Session = session;
     }
 }

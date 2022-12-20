@@ -28,9 +28,9 @@ namespace IczpNet.Chat.ChatObjects
             return ChatObjectReadOnlyRepository.GetAsync(chatObjectId);
         }
 
-        public Task<bool> IsAllowJoinRoomMemnerAsync(ChatObjectTypes? objectType)
+        public Task<bool> IsAllowJoinRoomAsync(ChatObjectTypes? objectType)
         {
-            return Task.FromResult(ChatConsts.AllowJoinRoomMemberObjectTypes.Any(x => x.Equals(objectType)));
+            return Task.FromResult(ChatConsts.AllowJoinRoomObjectTypes.Any(x => x.Equals(objectType)));
         }
 
         public virtual async Task<List<Guid>> GetIdListByNameAsync(List<string> nameList)

@@ -76,6 +76,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
             if (channel == Channels.PrivateChannel)
             {
                 session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session.Id, sender.Id, receiver.Id));
+
                 if (sender.Id != receiver.Id)
                 {
                     session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session.Id, receiver.Id, sender.Id));
@@ -85,59 +86,6 @@ namespace IczpNet.Chat.SessionSections.Sessions
         }
 
         [UnitOfWork(true, IsolationLevel.ReadUncommitted)]
-        public async Task<List<Session>> GenerateAsync(Guid ownerId, long? startMessageAutoId = null)
-        {
-
-            //return await CreateSessionAsync();
-            var currentTick = Clock.Now.Ticks;
-            var owner = await ChatObjectManager.GetAsync(ownerId);
-            //用户所在的群(包含已经删除的)
-            //owner.InRoomMemberList
-            var minAutoId = startMessageAutoId ?? await SessionRecorder.GetAsync(owner);
-
-            var messageQuery = await MessageRepository.GetQueryableAsync();
-
-            // 个人消息
-            var personalMessage = messageQuery
-                .Where(q => q.Channel == Channels.PrivateChannel)
-                .Where(q => q.SenderId == ownerId || q.ReceiverId == ownerId);
-
-
-            // 已读
-            var readedRecorderList = await SessionRecorder.GetReadedsAsync(ownerId);
-
-            var predicate = PredicateBuilder.New<Message>();
-            predicate = predicate.And(x => x.SenderId != ownerId);
-
-
-            var readedQuery = (await ReadedRecorderRepository.GetQueryableAsync()).Where(x => x.OwnerId == ownerId);
-
-            var list = messageQuery
-                .GroupBy(x => x.SessionKey, (SessionId, g) => new
-                {
-                    SessionId,
-                    Message = g.Where(x => x.AutoId == g.Max(c => c.AutoId)),
-                    AutoId = g.Max(c => c.AutoId),
-                    //未读消息数量
-                    UnreadCount = g.Where(m => m.SenderId != ownerId).Count(),
-                    // @我（包含 @所有人）
-                    ReminderCount = g.Where(m => m.SenderId != ownerId)
-                                     .Where(x => x.KeyName == MessageKeyNames.Remind)
-                                     .Where(x => x.KeyValue == MessageKeyNames.RemindEveryone || x.KeyValue.IndexOf(ownerId.ToString()) != -1)
-                                     .Count()
-                })
-                //.OrderByDescending(t => t.AutoId)
-                .ToList()
-                ;
-
-            var sessionList = list.Select(x => new Session(GuidGenerator.Create(), x.SessionId, Channels.PrivateChannel)).ToList();
-
-            await SessionRepository.InsertManyAsync(sessionList);
-
-            return sessionList;
-        }
-
-
         public virtual async Task<List<Session>> CreateSessionByMessageAsync()
         {
             var list = (await MessageRepository.GetQueryableAsync())
@@ -175,6 +123,13 @@ namespace IczpNet.Chat.SessionSections.Sessions
             await SessionRepository.InsertManyAsync(sessionList);
 
             return sessionList;
+        }
+
+
+
+        public Task<List<Session>> GenerateAsync(Guid ownerId, long? startMessageAutoId = null)
+        {
+            throw new NotImplementedException();
         }
     }
 }

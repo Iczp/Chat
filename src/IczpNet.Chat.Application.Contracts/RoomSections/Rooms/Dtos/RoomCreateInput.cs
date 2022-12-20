@@ -14,7 +14,7 @@ public class RoomCreateInput : BaseInput
     /// <summary>
     /// 群拥有者 OwnerUserId (群主)
     /// </summary>
-    public virtual Guid? OwnerId { get;  set; }
+    public virtual Guid? OwnerId { get; set; }
 
     /// <summary>
     /// 群类型（自由群、职位群）

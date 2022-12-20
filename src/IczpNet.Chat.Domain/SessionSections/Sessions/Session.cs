@@ -3,6 +3,7 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.RoomSections.Rooms;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
@@ -34,6 +35,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public virtual IList<SessionUnit> UnitList { get; internal set; } = new List<SessionUnit>();
 
+        public virtual IList<Room> RoomList { get; protected set; } = new List<Room>();
+
         protected Session() { }
 
         public Session(Guid id, string sessionKey, Channels channel) : base(id)
@@ -55,6 +58,11 @@ namespace IczpNet.Chat.SessionSections.Sessions
         public virtual void AddSessionUnit(SessionUnit sessionUnit)
         {
             UnitList.Add(sessionUnit);
+        }
+
+        internal void SetOwner(ChatObject chatObject)
+        {
+            Owner = chatObject;
         }
     }
 }

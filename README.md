@@ -108,6 +108,27 @@ person - shopkeeper
 
 ### Session
 
+
+
+## Room
+
+### CreateRoom
+
+```json
+{
+  "name": "9999999999999999999999999",
+  "code": "string",
+  "ownerId": null,
+  "type": 0,
+  "description": "string",
+  "chatObjectIdList": [
+    "31F8B124-BEA6-85C4-B4E3-3A07BB313745","329A7C43-9B01-5966-322A-3A07D4A342EA","5B6A6100-CA52-8040-09F2-3A07D4A367ED","972157FA-2449-FEC6-49A1-3A07DE609F58",
+  ]
+}
+```
+
+
+
 ## 待实现功能
 
 ### 以前要求未实现的功能

@@ -1,5 +1,7 @@
 ﻿using IczpNet.Chat.BaseEntitys;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.MessageReminders;
 using IczpNet.Chat.SessionSections.Sessions;
@@ -25,18 +27,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         [ForeignKey(nameof(SessionId))]
         public virtual Session Session { get; protected set; }
 
-        //public virtual Guid OwnerId { get; protected set; }
-
-        //[ForeignKey(nameof(OwnerId))]
-        //public virtual ChatObject Owner { get; protected set; }
-
-        //public virtual Guid? DestinationId { get; protected set; }
-
-        //[ForeignKey(nameof(DestinationId))]
-        //public virtual ChatObject Destination { get; protected set; }
-
         public virtual long ReadedMessageAutoId { get; protected set; }
-
 
         /// <summary>
         /// 为null时，
@@ -61,6 +52,19 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public virtual IList<MessageReminder> ReminderList { get; protected set; } = new List<MessageReminder>();
 
+        /// <summary>
+        /// 加入方式
+        /// </summary>
+        public virtual JoinWays? JoinWay { get; set; }
+
+        /// <summary>
+        /// 邀请人
+        /// </summary>
+        public virtual Guid? InviterId { get; set; }
+
+        [ForeignKey(nameof(InviterId))]
+        public virtual ChatObject Inviter { get; set; }
+
         protected SessionUnit() { }
 
         internal SessionUnit(Guid id, [NotNull] Guid sessionId, [NotNull] Guid ownerId, [NotNull] Guid destinationId) : base(id)
@@ -68,6 +72,13 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             SessionId = sessionId;
             OwnerId = ownerId;
             DestinationId = destinationId;
+        }
+
+        internal SessionUnit(Guid id, [NotNull] Session session, [NotNull] ChatObject owner, [NotNull] ChatObject destination) : base(id)
+        {
+            Session = session;
+            Owner = owner;
+            Destination = destination;
         }
 
         internal void SetReaded(long messageAutoId, bool isForce = false)

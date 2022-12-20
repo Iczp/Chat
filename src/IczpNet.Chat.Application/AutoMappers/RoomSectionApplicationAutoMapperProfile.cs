@@ -17,9 +17,9 @@ public class RoomSectionApplicationAutoMapperProfile : Profile
          * into multiple profile classes for a better organization. */
 
         //Room
-        CreateMap<Room, RoomDto>().ForMember(x => x.MemberCount, o => o.MapFrom(x => x.GetMemberCount()));
-        CreateMap<Room, RoomDetailDto>().ForMember(x => x.MemberCount, o => o.MapFrom(x => x.GetMemberCount()));
-        CreateMap<RoomCreateInput, Room>(MemberList.None).IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<Room, RoomDto>();
+        CreateMap<Room, RoomDetailDto>();
+        //CreateMap<RoomCreateInput, Room>(MemberList.None).IgnoreAllPropertiesWithAnInaccessibleSetter();
         CreateMap<RoomUpdateInput, Room>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
 
         //RoomMember

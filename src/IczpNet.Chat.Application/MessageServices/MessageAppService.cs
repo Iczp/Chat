@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.MessageSections.Templates;
@@ -22,12 +23,15 @@ namespace IczpNet.Chat.MessageServices
         IMessageAppService
     {
 
-        protected IMessageManager MessageManager { get; set; }
+        protected IChatSender ChatSender { get; }
+        protected IMessageManager MessageManager { get; }
 
         public MessageAppService(
             IRepository<Message, Guid> repository,
-            IMessageManager messageManager) : base(repository)
+            IMessageManager messageManager,
+            IChatSender chatSender) : base(repository)
         {
+            ChatSender = chatSender;
             MessageManager = messageManager;
         }
 
@@ -39,62 +43,62 @@ namespace IczpNet.Chat.MessageServices
 
         public virtual Task<MessageInfo<TextContentInfo>> SendTextMessageAsync(MessageInput<TextContentInfo> input)
         {
-            return MessageManager.SendTextMessageAsync(input);
+            return ChatSender.SendTextMessageAsync(input);
         }
 
         public Task<MessageInfo<CmdContentInfo>> SendCmdMessageAsync(MessageInput<CmdContentInfo> input)
         {
-            return MessageManager.SendCmdMessageAsync(input);
+            return ChatSender.SendCmdMessageAsync(input);
         }
 
         public Task<MessageInfo<RedEnvelopeContentOutput>> SendRedEnvelopeMessageAsync(MessageInput<RedEnvelopeContentInput> input)
         {
-            return MessageManager.SendRedEnvelopeMessageAsync(input);
+            return ChatSender.SendRedEnvelopeMessageAsync(input);
         }
 
         public Task<MessageInfo<HtmlContentInfo>> SendHtmlMessageAsync(MessageInput<HtmlContentInfo> input)
         {
-            return MessageManager.SendHtmlMessageAsync(input);
+            return ChatSender.SendHtmlMessageAsync(input);
         }
 
         public Task<MessageInfo<ImageContentInfo>> SendImageMessageAsync(MessageInput<ImageContentInfo> input)
         {
-            return MessageManager.SendImageMessageAsync(input);
+            return ChatSender.SendImageMessageAsync(input);
         }
 
         public Task<MessageInfo<SoundContentInfo>> SendSoundMessageAsync(MessageInput<SoundContentInfo> input)
         {
-            return MessageManager.SendSoundMessageAsync(input);
+            return ChatSender.SendSoundMessageAsync(input);
         }
 
         public Task<MessageInfo<VideoContentInfo>> SendVideoMessageAsync(MessageInput<VideoContentInfo> input)
         {
-            return MessageManager.SendVideoMessageAsync(input);
+            return ChatSender.SendVideoMessageAsync(input);
         }
 
         public Task<MessageInfo<FileContentInfo>> SendFileMessageAsync(MessageInput<FileContentInfo> input)
         {
-            return MessageManager.SendFileMessageAsync(input);
+            return ChatSender.SendFileMessageAsync(input);
         }
 
         public Task<MessageInfo<LocationContentInfo>> SendLocationMessageAsync(MessageInput<LocationContentInfo> input)
         {
-            return MessageManager.SendLocationMessageAsync(input);
+            return ChatSender.SendLocationMessageAsync(input);
         }
 
         public Task<MessageInfo<ContactsContentInfo>> SendContactsMessageAsync(MessageInput<ContactsContentInfo> input)
         {
-            return MessageManager.SendContactsMessageAsync(input);
+            return ChatSender.SendContactsMessageAsync(input);
         }
 
         public Task<MessageInfo<LinkContentInfo>> SendLinkMessageAsync(MessageInput<LinkContentInfo> input)
         {
-            return MessageManager.SendLinkMessageAsync(input);
+            return ChatSender.SendLinkMessageAsync(input);
         }
 
         public Task<MessageInfo<HistoryContentOutput>> SendHistoryMessageAsync(MessageInput<HistoryContentInput> input)
         {
-            return MessageManager.SendHistoryMessageAsync(input);
+            return ChatSender.SendHistoryMessageAsync(input);
         }
     }
 }

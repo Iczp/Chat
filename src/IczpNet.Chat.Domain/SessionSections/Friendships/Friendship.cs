@@ -12,8 +12,6 @@ namespace IczpNet.Chat.SessionSections.Friendships
 {
     public class Friendship : BaseSessionEntity
     {
-        
-
         public virtual Guid? RequestId { get; set; }
 
         [ForeignKey(nameof(RequestId))]

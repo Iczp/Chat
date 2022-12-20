@@ -1,10 +1,7 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
-using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.Options;
-using IczpNet.Chat.RedEnvelopes;
-using IczpNet.Chat.SessionSections;
 using IczpNet.Chat.SessionSections.Sessions;
 using Microsoft.Extensions.Options;
 using System;
@@ -23,32 +20,26 @@ namespace IczpNet.Chat.MessageSections.Messages
         protected IChatObjectManager ChatObjectManager { get; }
         protected IRepository<Message, Guid> Repository { get; }
         protected ISessionGenerator SessionGenerator { get; }
-        protected IChannelResolver ChannelResolver { get; }
         protected IMessageValidator MessageValidator { get; }
-        protected IRedEnvelopeGenerator RedEnvelopeGenerator { get; }
         protected IChatObjectResolver MessageChatObjectResolver { get; }
         protected IContentResolver ContentResolver { get; }
         protected ChatOption Config { get; }
 
         public MessageManager(
             IRepository<Message, Guid> repository,
-            IRedEnvelopeGenerator redEnvelopeGenerator,
             IChatObjectResolver messageChatObjectResolver,
             IChatObjectManager chatObjectManager,
             IContentResolver contentResolver,
             IObjectMapper objectMapper,
-            IChannelResolver channelResolver,
             IMessageValidator messageValidator,
             ISessionGenerator sessionIdGenerator,
             IOptions<ChatOption> options)
         {
             Repository = repository;
-            RedEnvelopeGenerator = redEnvelopeGenerator;
             MessageChatObjectResolver = messageChatObjectResolver;
             ChatObjectManager = chatObjectManager;
             ContentResolver = contentResolver;
             ObjectMapper = objectMapper;
-            ChannelResolver = channelResolver;
             MessageValidator = messageValidator;
             SessionGenerator = sessionIdGenerator;
             Config = options.Value;
@@ -90,19 +81,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             });
         }
 
-        //public virtual async Task<Message> CreateMessageAsync<TMessageInput>(TMessageInput input, IMessageContentEntity content)
-        //    where TMessageInput : class, IMessageInput
-        //{
-        //    return await CreateMessageAsync(input, x =>
-        //    {
-        //        x.SetMessageContent(content);
-        //        //x.SetContentJson();
-        //    });
-        //}
-
         public virtual async Task<MessageInfo<TContentInfo>> SendMessageAsync<TContentInfo>(MessageInput input, Func<Message, Task<IMessageContentEntity>> func)
-        //where TContentInfo : class, IMessageContentInfo
-        //where TContent : class, IMessageContentEntity
         {
             var message = await CreateMessageAsync(input, func);
 
@@ -179,125 +158,9 @@ namespace IczpNet.Chat.MessageSections.Messages
             return messageList;
         }
 
-        public virtual Task<MessageInfo<CmdContentInfo>> SendCmdMessageAsync(MessageInput<CmdContentInfo> input)
-        {
-            return SendMessageAsync<CmdContentInfo>(input, async x => await Task.FromResult(ObjectMapper.Map<CmdContentInfo, CmdContent>(input.Content)));
-        }
+       
 
-        public virtual async Task<MessageInfo<TextContentInfo>> SendTextMessageAsync(MessageInput<TextContentInfo> input)
-        {
-            var messageContent = ObjectMapper.Map<TextContentInfo, TextContent>(input.Content);
-            return await SendMessageAsync<TextContentInfo>(input, async x => await Task.FromResult(messageContent));
-        }
-
-        public virtual async Task<MessageInfo<HtmlContentInfo>> SendHtmlMessageAsync(MessageInput<HtmlContentInfo> input)
-        {
-            var messageContent = ObjectMapper.Map<HtmlContentInfo, HtmlContent>(input.Content);
-            return await SendMessageAsync<HtmlContentInfo>(input, async x => await Task.FromResult(messageContent));
-        }
-
-        public virtual async Task<MessageInfo<ImageContentInfo>> SendImageMessageAsync(MessageInput<ImageContentInfo> input)
-        {
-            var messageContent = ObjectMapper.Map<ImageContentInfo, ImageContent>(input.Content);
-            return await SendMessageAsync<ImageContentInfo>(input, async x => await Task.FromResult(messageContent));
-        }
-
-        public virtual async Task<MessageInfo<SoundContentInfo>> SendSoundMessageAsync(MessageInput<SoundContentInfo> input)
-        {
-            var messageContent = ObjectMapper.Map<SoundContentInfo, SoundContent>(input.Content);
-            return await SendMessageAsync<SoundContentInfo>(input, async x => await Task.FromResult(messageContent));
-        }
-
-        public virtual async Task<MessageInfo<VideoContentInfo>> SendVideoMessageAsync(MessageInput<VideoContentInfo> input)
-        {
-            var messageContent = ObjectMapper.Map<VideoContentInfo, VideoContent>(input.Content);
-            return await SendMessageAsync<VideoContentInfo>(input, async x => await Task.FromResult(messageContent));
-        }
-
-        public virtual async Task<MessageInfo<FileContentInfo>> SendFileMessageAsync(MessageInput<FileContentInfo> input)
-        {
-            var messageContent = ObjectMapper.Map<FileContentInfo, FileContent>(input.Content);
-            return await SendMessageAsync<FileContentInfo>(input, async x => await Task.FromResult(messageContent));
-        }
-
-        public virtual async Task<MessageInfo<LocationContentInfo>> SendLocationMessageAsync(MessageInput<LocationContentInfo> input)
-        {
-            var messageContent = ObjectMapper.Map<LocationContentInfo, LocationContent>(input.Content);
-            return await SendMessageAsync<LocationContentInfo>(input, async x => await Task.FromResult(messageContent));
-        }
-
-        public virtual async Task<MessageInfo<ContactsContentInfo>> SendContactsMessageAsync(MessageInput<ContactsContentInfo> input)
-        {
-            var messageContent = ObjectMapper.Map<ContactsContentInfo, ContactsContent>(input.Content);
-            return await SendMessageAsync<ContactsContentInfo>(input, async x => await Task.FromResult(messageContent));
-        }
-
-        public virtual async Task<MessageInfo<LinkContentInfo>> SendLinkMessageAsync(MessageInput<LinkContentInfo> input)
-        {
-            var messageContent = ObjectMapper.Map<LinkContentInfo, LinkContent>(input.Content);
-            return await SendMessageAsync<LinkContentInfo>(input, async x => await Task.FromResult(messageContent));
-        }
-
-        public virtual async Task<MessageInfo<HistoryContentOutput>> SendHistoryMessageAsync(MessageInput<HistoryContentInput> input)
-        {
-            var messageIdList = input.Content.MessageIdList;
-
-            var selectedMessageList = (await Repository.GetQueryableAsync())
-                .Where(x => messageIdList.Contains(x.Id))
-                .Where(x => !x.IsRollbacked || x.RollbackTime == null)
-                .OrderBy(x => x.AutoId)
-                //.Select(x => x.Id)
-                .ToList();
-
-            var description = selectedMessageList.Take(3)
-                .Select(x => $"{x.Sender?.Name}:{x.GetTypedContent()?.GetBody()}")
-                .ToArray()
-                .JoinAsString("\n");
-
-            var messageContent = new HistoryContent(GuidGenerator.Create(), $"聊天记录({selectedMessageList.Count})", description);
-
-            return await SendMessageAsync<HistoryContentOutput>(input, async message =>
-            {
-                var historyDetailList = selectedMessageList.Select(x => new HistoryMessage(messageContent, message)).ToList();
-
-                messageContent.SetHistoryMessageList(historyDetailList);
-
-                //message.HistoryContentList.Add(historyContent);
-                return await Task.FromResult(messageContent);
-            });
-        }
-
-        public virtual async Task<MessageInfo<RedEnvelopeContentOutput>> SendRedEnvelopeMessageAsync(MessageInput<RedEnvelopeContentInput> input)
-        {
-            var content = input.Content;
-            var messageContent = new RedEnvelopeContent(
-                id: GuidGenerator.Create(),
-                grantMode: content.GrantMode,
-                amount: content.Amount,
-                count: content.Count,
-                totalAmount: content.TotalAmount,
-                text: content.Text
-                );
-
-            var redEnvelopeUnitList = await RedEnvelopeGenerator.MakeAsync(content.GrantMode, messageContent.Id, content.Amount, content.Count, content.TotalAmount);
-
-            messageContent.SetRedEnvelopeUnitList(redEnvelopeUnitList);
-
-            return await SendMessageAsync<RedEnvelopeContentOutput>(input, async x => await Task.FromResult(messageContent));
-        }
-
-        protected virtual IContentProvider GetContentProvider(string providerName)
-        {
-            var providerType = ContentResolver.GetProviderTypeOrDefault(providerName);
-            return LazyServiceProvider.LazyGetService(providerType) as IContentProvider;
-        }
-
-        public virtual async Task<MessageInfo<TextContentInfo>> SendTextTemplateMessageAsync(MessageInput<TextContentInfo> input)
-        {
-            var provider = GetContentProvider(TextContentProvider.Name);
-            var content = await provider.Create<TextContentInfo, TextContent>(input.Content);
-            return await SendMessageAsync<TextContentInfo>(input, async x => await Task.FromResult(content));
-        }
+       
 
 
     }
