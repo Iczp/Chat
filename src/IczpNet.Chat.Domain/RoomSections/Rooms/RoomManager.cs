@@ -1,5 +1,5 @@
-﻿using AutoMapper.Execution;
-using IczpNet.AbpCommons;
+﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
@@ -8,10 +8,10 @@ using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.Options;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
@@ -48,19 +48,18 @@ namespace IczpNet.Chat.RoomSections.Rooms
             ChatSender = chatSender;
         }
 
-        public Task<bool> IsAllowJoinRoomAsync(ChatObjectTypes? objectType)
+        public virtual Task<bool> IsAllowJoinRoomAsync(ChatObjectTypes? objectType)
         {
             return Task.FromResult(Config.AllowJoinRoomObjectTypes.Any(x => x.Equals(objectType)));
         }
 
-        public Task<bool> IsAllowCreateRoomAsync(ChatObjectTypes? objectType)
+        public virtual Task<bool> IsAllowCreateRoomAsync(ChatObjectTypes? objectType)
         {
             return Task.FromResult(Config.AllowCreateRoomObjectTypes.Any(x => x.Equals(objectType)));
         }
 
-        public async Task<Room> CreateRoomAsync(Room room, List<ChatObject> members)
+        public virtual async Task<Room> CreateRoomAsync(Room room, List<ChatObject> members)
         {
-
             if (room.OwnerId.HasValue)
             {
                 room.SetOwner(await ChatObjectManager.GetAsync(room.OwnerId.Value));
@@ -101,15 +100,55 @@ namespace IczpNet.Chat.RoomSections.Rooms
             return room;
         }
 
-        public async Task<Room> CreateRoomAsync(Room room, List<Guid> chatObjectIdList)
+        public virtual async Task<Room> CreateRoomAsync(Room room, List<Guid> chatObjectIdList)
         {
-            var members = new List<ChatObject>();
-
-            foreach (var chatObjectId in chatObjectIdList)
-            {
-                members.Add(await ChatObjectManager.GetAsync(chatObjectId));
-            }
+            var members = await ChatObjectManager.GetManyAsync(chatObjectIdList);
             return await CreateRoomAsync(room, members);
+        }
+
+        public virtual async Task<int> JoinRoomAsync(Room room, List<ChatObject> members, ChatObject inviter, JoinWays joinWay)
+        {
+            Assert.If(room.IsInRoom(inviter), $"The inviter[{inviter}] is no in room[{room}]");
+
+            var addCount = 0;
+
+            foreach (var member in members)
+            {
+                if (room.IsInRoom(member))
+                {
+                    Logger.LogWarning($"The member[{member}] is in room[{room}]");
+                    continue;
+                }
+                room.Session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), room.Session, member, room)
+                {
+                    JoinWay = joinWay,
+                    Inviter = inviter
+                });
+                addCount++;
+            }
+
+            if (addCount == 0)
+            {
+                return 0;
+            }
+
+            await Repository.UpdateAsync(room, autoSave: true);
+
+            await ChatSender.SendCmdMessageAsync(new MessageInput<CmdContentInfo>()
+            {
+                SenderId = room.Id,
+                ReceiverId = room.Id,
+                Content = new CmdContentInfo()
+                {
+                    Text = $"{members.Select(x => x.Name).JoinAsString("、")}等 {members.Count} 人通过'{joinWay.GetDescription()}'加入群聊。",
+                }
+            });
+            return addCount;
+        }
+
+        public virtual Task<bool> IsInRoomAsync(Room room, ChatObject member)
+        {
+            return Task.FromResult(room.IsInRoom(member));
         }
     }
 }

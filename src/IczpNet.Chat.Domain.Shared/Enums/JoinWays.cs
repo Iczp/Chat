@@ -30,7 +30,7 @@ namespace IczpNet.Chat.Enums
         /// <summary>
         /// 系统
         /// </summary>
-        [Description("系统")]
+        [Description("系统邀请")]
         System = 4,
         /// <summary>
         /// 自动加入

@@ -9,6 +9,8 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
+
 
 namespace IczpNet.Chat.RoomSections.Rooms;
 
@@ -150,5 +152,14 @@ public class Room : ChatObject, IChatOwner<Guid?>
     internal void SetSession(Session session)
     {
         Session = session;
+    }
+
+    public bool IsInRoom(ChatObject member)
+    {
+        if (Session == null)
+        {
+            return false;
+        }
+        return Session.UnitList.Any(x => x.OwnerId == member.Id);
     }
 }

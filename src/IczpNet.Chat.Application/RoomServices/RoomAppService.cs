@@ -1,7 +1,7 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.RoomSections.RoomMembers;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.RoomSections.Rooms;
 using IczpNet.Chat.RoomSections.Rooms.Dtos;
 using Microsoft.AspNetCore.Mvc;
@@ -57,8 +57,6 @@ namespace IczpNet.Chat.RoomServices
                 ;
         }
 
-
-
         protected override Task CheckDeleteAsync(Room entity)
         {
             var memberCount = entity.RoomMemberList.Count;
@@ -73,7 +71,26 @@ namespace IczpNet.Chat.RoomServices
         {
             var room = await RoomManager.CreateRoomAsync(new Room(GuidGenerator.Create(), input.Name, input.Code, input.Description, input.OwnerId), input.ChatObjectIdList);
 
-            return ObjectMapper.Map<Room, RoomDetailDto>(room);
+            return await MapToDtoAsync(room);
+        }
+
+        protected Task<RoomDetailDto> MapToDtoAsync(Room room)
+        {
+            return Task.FromResult(ObjectMapper.Map<Room, RoomDetailDto>(room));
+        }
+
+        [HttpPost]
+        public virtual async Task<int> JoinRoomAsync(Guid id, RoomJoinInput input)
+        {
+            var room = await Repository.GetAsync(id);
+
+            var inviter = await ChatObjectManager.GetAsync(input.InviterId);
+
+            var members = await ChatObjectManager.GetManyAsync(input.ChatObjectIdList);
+
+            var addCount = await RoomManager.JoinRoomAsync(room, members, inviter, JoinWays.Invitation);
+
+            return addCount;
         }
     }
 }
