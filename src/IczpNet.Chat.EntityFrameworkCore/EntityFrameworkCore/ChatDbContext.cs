@@ -26,8 +26,10 @@ using IczpNet.Chat.SessionSections.FriendshipTagUnits;
 using IczpNet.Chat.SessionSections.MessageReminders;
 using IczpNet.Chat.SessionSections.OpenedRecorders;
 using IczpNet.Chat.SessionSections.ReadedRecorders;
+using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionTags;
+using IczpNet.Chat.SessionSections.SessionUnitRoles;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SquareSections.SquareCategorys;
 using IczpNet.Chat.SquareSections.SquareMembers;
@@ -56,7 +58,8 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     public DbSet<Session> Session { get; }
     public DbSet<SessionUnit> SessionUnit { get; }
     public DbSet<SessionTag> SessionTag { get; }
-
+    public DbSet<SessionRole> SessionRole { get; }
+    
     public DbSet<ReadedRecorder> ReadedRecorder { get; }
 
     public DbSet<Friendship> Friendship { get; }
