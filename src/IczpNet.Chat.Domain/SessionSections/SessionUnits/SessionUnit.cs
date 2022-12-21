@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.BaseEntitys;
+﻿using IczpNet.AbpCommons.DataFilters;
+using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
@@ -14,7 +15,7 @@ using System.Linq;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits
 {
-    public class SessionUnit : BaseSessionEntity, IChatOwner<Guid>
+    public class SessionUnit : BaseSessionEntity, IChatOwner<Guid>, ISorting
     {
         public virtual Guid SessionId { get; protected set; }
 
@@ -64,6 +65,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         [ForeignKey(nameof(InviterId))]
         public virtual ChatObject Inviter { get; set; }
+
+        public virtual double Sorting { get; private set; }
 
         protected SessionUnit() { }
 
@@ -163,5 +166,9 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             return Session.MessageList.AsQueryable().Where(x => x.IsRemindAll && !x.IsRollbacked).Count(new SessionUnitMessageSpecification(this).ToExpression());
         }
 
+        internal void SetTopping(bool isTopping)
+        {
+            Sorting = isTopping ? DateTime.Now.Ticks : 0;
+        }
     }
 }

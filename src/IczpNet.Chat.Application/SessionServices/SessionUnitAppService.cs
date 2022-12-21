@@ -59,15 +59,16 @@ namespace IczpNet.Chat.SessionServices
         public virtual async Task<PagedResultDto<SessionUnitDto>> GetListAsync(SessionUnitGetListInput input)
         {
             await CheckPolicyAsync(GetListPolicyName);
+
             var query = (await Repository.GetQueryableAsync())
-
-
                 .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
+                .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
+                .WhereIf(input.IsKilled.HasValue, x => x.IsKilled == input.IsKilled)
+                .WhereIf(input.JoinWay.HasValue, x => x.JoinWay == input.JoinWay)
+                .WhereIf(input.InviterId.HasValue, x => x.InviterId == input.InviterId)
                 ;
-            //...
-            query = query.OrderBy(x => x.Id);
 
-            return await GetPagedListAsync<SessionUnit, SessionUnitDto>(query, input);
+            return await GetPagedListAsync<SessionUnit, SessionUnitDto>(query, input, x => x.OrderByDescending(d => d.Sorting));
         }
 
         [HttpGet]
@@ -89,6 +90,15 @@ namespace IczpNet.Chat.SessionServices
         private Task<SessionUnitDto> MapToDtoAsync(SessionUnit entity)
         {
             return Task.FromResult(ObjectMapper.Map<SessionUnit, SessionUnitDto>(entity));
+        }
+
+        [HttpPost]
+        public virtual async Task<SessionUnitDto> SetToppingAsync(Guid id, bool isTopping)
+        {
+            await CheckPolicyAsync(SetReadedPolicyName);
+            var entity = await Repository.GetAsync(id);
+            await SessionUnitManager.SetToppingAsync(entity, isTopping);
+            return await MapToDtoAsync(entity);
         }
 
         [HttpPost]

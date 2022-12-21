@@ -19,7 +19,7 @@ public abstract class ChatAppService : ApplicationService
         ObjectMapperContext = typeof(ChatApplicationModule);
     }
 
-    protected virtual async Task<PagedResultDto<TOuputDto>> GetPagedListAsync<TEntity, TOuputDto>(IQueryable<TEntity> query, int maxResultCount = 10, int skipCount = 0, string sorting = null)
+    protected virtual async Task<PagedResultDto<TOuputDto>> GetPagedListAsync<TEntity, TOuputDto>(IQueryable<TEntity> query, int maxResultCount = 10, int skipCount = 0, string sorting = null, Func<IQueryable<TEntity>, IQueryable<TEntity>> action = null)
     {
         var totalCount = await AsyncExecuter.CountAsync(query);
 
@@ -27,6 +27,11 @@ public abstract class ChatAppService : ApplicationService
         {
             query = query.OrderBy(sorting);
         }
+        else if (action != null)
+        {
+            query = action.Invoke(query);
+        }
+
         query = query.PageBy(skipCount, maxResultCount);
 
         var entities = await AsyncExecuter.ToListAsync(query);
@@ -36,8 +41,8 @@ public abstract class ChatAppService : ApplicationService
         return new PagedResultDto<TOuputDto>(totalCount, items);
     }
 
-    protected virtual  Task<PagedResultDto<TOuputDto>> GetPagedListAsync<TEntity, TOuputDto>(IQueryable<TEntity> query, PagedAndSortedResultRequestDto input)
+    protected virtual Task<PagedResultDto<TOuputDto>> GetPagedListAsync<TEntity, TOuputDto>(IQueryable<TEntity> query, PagedAndSortedResultRequestDto input, Func<IQueryable<TEntity>, IQueryable<TEntity>> action = null)
     {
-        return GetPagedListAsync<TEntity, TOuputDto>(query, input.MaxResultCount, input.SkipCount, input.Sorting);
+        return GetPagedListAsync<TEntity, TOuputDto>(query, input.MaxResultCount, input.SkipCount, input.Sorting, action);
     }
 }

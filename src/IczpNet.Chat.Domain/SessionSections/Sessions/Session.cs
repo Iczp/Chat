@@ -50,7 +50,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return UnitList.Count;
         }
 
-        internal virtual void SetSessionUnitList(List<SessionUnit> unitList)
+        internal virtual void SetUnitList(List<SessionUnit> unitList)
         {
             UnitList = unitList;
         }
@@ -63,6 +63,11 @@ namespace IczpNet.Chat.SessionSections.Sessions
         internal void SetOwner(ChatObject chatObject)
         {
             Owner = chatObject;
+        }
+
+        internal void SetMessageList(List<Message> messages)
+        {
+            MessageList = messages;
         }
     }
 }

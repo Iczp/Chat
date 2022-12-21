@@ -6,7 +6,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 {
     public interface ISessionUnitManager
     {
-        Task<SessionUnit> SetToppingAsync(SessionUnit entity);
+        Task<SessionUnit> SetToppingAsync(SessionUnit entity, bool isTopping);
 
         Task<SessionUnit> SetReadedAsync(SessionUnit entity, Guid messageId, bool isForce = false);
 

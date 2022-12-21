@@ -73,7 +73,7 @@ namespace IczpNet.Chat.RoomSections.Rooms
 
             var session = await SessionGenerator.MakeAsync(room, room);
 
-            session.SetSessionUnitList(members.Select(x =>
+            session.SetUnitList(members.Select(x =>
                     new SessionUnit(GuidGenerator.Create(), session, x, room)
                     {
                         InviterId = room.OwnerId,

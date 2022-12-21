@@ -17,5 +17,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
         public virtual int Badge { get; set; }
 
         public virtual int ReminderCount { get; set; }
+
+        public virtual double Sorting { get; set; }
     }
 }

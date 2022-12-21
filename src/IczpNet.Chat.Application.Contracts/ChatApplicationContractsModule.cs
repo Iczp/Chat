@@ -14,7 +14,7 @@ namespace IczpNet.Chat;
 [DependsOn(typeof(AbpCommonsApplicationContractsModule))]
 [DependsOn(typeof(AbpTreesApplicationContractsModule))]
 [DependsOn(typeof(AbpIdentityApplicationContractsModule))]
-    public class ChatApplicationContractsModule : AbpModule
+public class ChatApplicationContractsModule : AbpModule
 {
 
 }

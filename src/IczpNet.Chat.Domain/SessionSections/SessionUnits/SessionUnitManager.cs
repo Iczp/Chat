@@ -23,16 +23,18 @@ namespace IczpNet.Chat.SessionSections.Sessions
             MessageRepository = messageRepository;
         }
 
-        public Task<SessionUnit> SetToppingAsync(SessionUnit entity)
-        {
-            throw new NotImplementedException();
-        }
+        
 
         protected async Task<SessionUnit> SetEntityAsync(SessionUnit entity, Action<SessionUnit> action = null)
         {
             action?.Invoke(entity);
 
             return await Repository.UpdateAsync(entity);
+        }
+
+        public async Task<SessionUnit> SetToppingAsync(SessionUnit entity, bool isTopping)
+        {
+            return await SetEntityAsync(entity, x => x.SetTopping(isTopping));
         }
 
         public async Task<SessionUnit> SetReadedAsync(SessionUnit entity, Guid messageId, bool isForce = false)

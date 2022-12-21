@@ -75,11 +75,11 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
             if (channel == Channels.PrivateChannel)
             {
-                session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session.Id, sender.Id, receiver.Id));
+                session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session, sender, receiver));
 
                 if (sender.Id != receiver.Id)
                 {
-                    session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session.Id, receiver.Id, sender.Id));
+                    session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session, receiver, sender));
                 }
             }
             return await SessionRepository.InsertAsync(session, autoSave: true);
@@ -96,40 +96,35 @@ namespace IczpNet.Chat.SessionSections.Sessions
                     Items = Items.ToList()
                 })
                 .ToList();
-            ;
+
             var sessionList = new List<Session>();
+
             foreach (var item in list)
             {
-                var memberList = new List<SessionUnit>();
-                var sessionId = GuidGenerator.Create();
+                var unitList = new List<SessionUnit>();
+
+                var session = new Session(GuidGenerator.Create(), item.SessionValue, Channels.PrivateChannel);
+
                 foreach (var message in item.Items)
                 {
-                    if (!memberList.Any(x => x.OwnerId == message.SenderId.Value && x.DestinationId == message.ReceiverId.Value))
+                    if (!unitList.Any(x => x.OwnerId == message.SenderId.Value && x.DestinationId == message.ReceiverId.Value))
                     {
-                        memberList.Add(new SessionUnit(GuidGenerator.Create(), sessionId, message.SenderId.Value, message.ReceiverId.Value));
+                        unitList.Add(new SessionUnit(GuidGenerator.Create(), session, message.Sender, message.Receiver));
                     }
-                    if (!memberList.Any(x => x.OwnerId == message.ReceiverId.Value && x.DestinationId == message.SenderId.Value))
+                    if (!unitList.Any(x => x.OwnerId == message.ReceiverId.Value && x.DestinationId == message.SenderId.Value))
                     {
-                        memberList.Add(new SessionUnit(GuidGenerator.Create(), sessionId, message.ReceiverId.Value, message.SenderId.Value));
+                        unitList.Add(new SessionUnit(GuidGenerator.Create(), session, message.Receiver, message.Sender));
                     }
                 }
-                var session = new Session(sessionId, item.SessionValue, Channels.PrivateChannel)
-                {
-                    MessageList = item.Items,
-                    UnitList = memberList
-                };
+                session.SetMessageList(item.Items);
+
+                session.SetUnitList(unitList);
+
                 sessionList.Add(session);
             }
             await SessionRepository.InsertManyAsync(sessionList);
 
             return sessionList;
-        }
-
-
-
-        public Task<List<Session>> GenerateAsync(Guid ownerId, long? startMessageAutoId = null)
-        {
-            throw new NotImplementedException();
         }
     }
 }

@@ -36,6 +36,7 @@ using Volo.Abp.VirtualFileSystem;
 using Volo.Abp.AspNetCore.ExceptionHandling;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.Json;
+using System.Threading.Tasks;
 
 namespace IczpNet.Chat;
 [DependsOn(
