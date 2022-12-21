@@ -2,7 +2,7 @@
 using System;
 using Volo.Abp.Application.Dtos;
 
-namespace IczpNet.Chat.SessionSections.Sessions
+namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 {
     public class SessionUnitGetListInput : PagedAndSortedResultRequestDto
     {

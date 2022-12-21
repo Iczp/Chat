@@ -4,6 +4,7 @@ using IczpNet.Chat.SessionSections.OpenedRecordes.Dtos;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 using IczpNet.Chat.SessionSections.Sessions.Dtos;
 using IczpNet.Chat.SessionSections.SessionTagDtos.Dtos;
+using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -28,6 +29,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
         Task<PagedResultDto<SessionTagDto>> GetTagListAsync(SessionTagGetListInput input);
 
         Task<PagedResultDto<SessionRoleDto>> GetRoleListAsync(SessionRoleGetListInput input);
+
+        Task<PagedResultDto<SessionUnitOwnerDto>> GetSessionUnitListAsync(SessionSetUnitGetListInput input);
 
         Task<SessionTagDto> AddTagAsync(Guid sessionId, string name);
 

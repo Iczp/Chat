@@ -13,6 +13,8 @@ using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.Sessions.Dtos;
 using IczpNet.Chat.SessionSections.SessionTagDtos.Dtos;
 using IczpNet.Chat.SessionSections.SessionTags;
+using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using IczpNet.Chat.Specifications;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -140,6 +142,21 @@ namespace IczpNet.Chat.SessionServices
             return await GetPagedListAsync<SessionRole, SessionRoleDto>(query, input);
         }
 
+        [HttpGet]
+        public async Task<PagedResultDto<SessionUnitOwnerDto>> GetSessionUnitListAsync(SessionSetUnitGetListInput input)
+        {
+            var query = (await Repository.GetAsync(input.SessionId))
+                .UnitList.AsQueryable()
+                .WhereIf(!input.TagId.IsEmpty(), x => x.SessionUnitTagList.Any(x => x.SessionTagId == input.TagId))
+                .WhereIf(!input.RoleId.IsEmpty(), x => x.SessionUnitRoleList.Any(x => x.SessionRoleId == input.RoleId))
+                .WhereIf(!input.JoinWay.IsEmpty(), x => x.JoinWay == input.JoinWay)
+                .WhereIf(!input.InviterId.IsEmpty(), x => x.InviterId == input.InviterId)
+                .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Owner.Name.Contains(input.Keyword))
+                ;
+
+            return await GetPagedListAsync<SessionUnit, SessionUnitOwnerDto>(query, input);
+        }
+
         [HttpPost]
         public async Task<List<SessionDto>> GenerateSessionByMessageAsync()
         {
@@ -188,5 +205,7 @@ namespace IczpNet.Chat.SessionServices
         {
             throw new NotImplementedException();
         }
+
+
     }
 }
