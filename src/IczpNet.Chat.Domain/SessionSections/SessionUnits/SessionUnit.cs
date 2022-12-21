@@ -6,7 +6,7 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.MessageReminders;
 using IczpNet.Chat.SessionSections.Sessions;
-using IczpNet.Chat.SessionSections.SessionTags;
+using IczpNet.Chat.SessionSections.SessionUnitRoles;
 using IczpNet.Chat.SessionSections.SessionUnitTags;
 using IczpNet.Chat.Specifications;
 using JetBrains.Annotations;
@@ -53,10 +53,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public virtual string Name { get; set; }
 
-        public virtual IList<MessageReminder> ReminderList { get; protected set; } = new List<MessageReminder>();
-
-        public virtual List<SessionUnitTag> SessionUnitTagList { get; protected set; }
-
         /// <summary>
         /// 加入方式
         /// </summary>
@@ -71,6 +67,12 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public virtual ChatObject Inviter { get; set; }
 
         public virtual double Sorting { get; private set; }
+
+        public virtual IList<MessageReminder> ReminderList { get; protected set; } = new List<MessageReminder>();
+
+        public virtual List<SessionUnitTag> SessionUnitTagList { get; protected set; } = new List<SessionUnitTag>();
+
+        public virtual List<SessionUnitRole> SessionUnitRoleList { get; protected set; } = new List<SessionUnitRole>();
 
         protected SessionUnit() { }
 
