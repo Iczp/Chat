@@ -15,5 +15,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
         public virtual DateTime? ClearTime { get;  set; }
 
         public virtual DateTime? RemoveTime { get;  set; }
+
+        public virtual double Sorting { get; set; }
     }
 }

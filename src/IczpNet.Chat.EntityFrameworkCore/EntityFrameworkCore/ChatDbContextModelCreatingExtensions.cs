@@ -12,7 +12,7 @@ using IczpNet.Chat.RoomSections.RoomRoleRoomMembers;
 using IczpNet.Chat.SessionSections.Favorites;
 using IczpNet.Chat.SessionSections.FriendshipTagUnits;
 using IczpNet.Chat.SessionSections.MessageReminders;
-using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.SessionUnitTags;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
@@ -74,6 +74,7 @@ public static class ChatDbContextModelCreatingExtensions
         builder.Entity<OfficialMemberTagUnit>(b => { b.HasKey(x => new { x.TagId, x.MemberId }); });
         builder.Entity<RoomPermissionGrant>(b => { b.HasKey(x => new { x.DefineId, x.RoleId }); });
         builder.Entity<RoomRoleRoomMember>(b => { b.HasKey(x => new { x.RoomRoleId, x.RoomMemberId }); });
+        builder.Entity<SessionUnitTag>(b => { b.HasKey(x => new { x.SessionUnitId, x.SessionTagId }); });
         //builder.Entity<SessionUnit>(b => { b.HasKey(x => new { x.SessionId, x.OwnerId }); });
 
         builder.Entity<Message>(b =>

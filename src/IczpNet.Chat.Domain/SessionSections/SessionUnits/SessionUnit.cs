@@ -6,6 +6,8 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.MessageReminders;
 using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.SessionTags;
+using IczpNet.Chat.SessionSections.SessionUnitTags;
 using IczpNet.Chat.Specifications;
 using JetBrains.Annotations;
 using System;
@@ -17,13 +19,13 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 {
     public class SessionUnit : BaseSessionEntity, IChatOwner<Guid>, ISorting
     {
-        public virtual Guid SessionId { get; protected set; }
-
         public virtual int Badge => GetBadge();
 
         public virtual int ReminderCount => GetReminderCount();
 
         public virtual Message LastMessage => GetLastMessage();
+
+        public virtual Guid SessionId { get; protected set; }
 
         [ForeignKey(nameof(SessionId))]
         public virtual Session Session { get; protected set; }
@@ -52,6 +54,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public virtual string Name { get; set; }
 
         public virtual IList<MessageReminder> ReminderList { get; protected set; } = new List<MessageReminder>();
+
+        public virtual List<SessionUnitTag> SessionUnitTagList { get; protected set; }
 
         /// <summary>
         /// 加入方式

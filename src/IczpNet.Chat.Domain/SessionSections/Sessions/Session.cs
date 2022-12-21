@@ -4,6 +4,7 @@ using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.RoomSections.Rooms;
+using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
@@ -36,6 +37,9 @@ namespace IczpNet.Chat.SessionSections.Sessions
         public virtual IList<SessionUnit> UnitList { get; internal set; } = new List<SessionUnit>();
 
         public virtual IList<Room> RoomList { get; protected set; } = new List<Room>();
+
+        public virtual IList<SessionTag> TagList { get; protected set; } = new List<SessionTag>();
+        
 
         protected Session() { }
 

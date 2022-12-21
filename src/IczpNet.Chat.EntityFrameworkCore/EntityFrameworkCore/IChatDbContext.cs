@@ -27,6 +27,7 @@ using IczpNet.Chat.SessionSections.MessageReminders;
 using IczpNet.Chat.SessionSections.OpenedRecorders;
 using IczpNet.Chat.SessionSections.ReadedRecorders;
 using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SquareSections.SquareCategorys;
 using IczpNet.Chat.SquareSections.SquareMembers;
@@ -54,7 +55,8 @@ public interface IChatDbContext : IEfCoreDbContext
 
     DbSet<Session> Session { get; }
     DbSet<SessionUnit> SessionUnit { get; }
-    
+    DbSet<SessionTag> SessionTag { get; }
+
     DbSet<ReadedRecorder> ReadedRecorder { get; }
     DbSet<Friendship> Friendship { get; }
     DbSet<FriendshipTag> FriendshipTag { get; }
