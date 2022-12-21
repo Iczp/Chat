@@ -5,7 +5,9 @@ using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.MessageReminders;
+using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionUnitRoles;
 using IczpNet.Chat.SessionSections.SessionUnitTags;
 using IczpNet.Chat.Specifications;
@@ -24,6 +26,16 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public virtual int ReminderCount => GetReminderCount();
 
         public virtual Message LastMessage => GetLastMessage();
+
+        [NotMapped]
+        public virtual List<SessionTag> TagList => GetTagList();
+
+        public virtual List<Guid> TagIdList => GetTagIdList();
+
+        [NotMapped]
+        public virtual List<SessionRole> RoleList => GetRoleList();
+
+        public virtual List<Guid> RoleIdList => GetRoleIdList();
 
         public virtual Guid SessionId { get; protected set; }
 
@@ -144,9 +156,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         protected virtual Message GetLastMessage()
         {
-
-            return Session.MessageList.AsQueryable().OrderBy(x => x.AutoId).FirstOrDefault(new SessionUnitMessageSpecification(this).ToExpression());
-            //return Session.MessageList.FirstOrDefault(x => x.AutoId == Session.MessageList.AsQueryable().Where(new SessionUnitMessageSpecification(this).ToExpression()).Max(d => d.AutoId));
+            return Session.MessageList.AsQueryable().OrderByDescending(x => x.AutoId).FirstOrDefault(new SessionUnitMessageSpecification(this).ToExpression());
         }
 
         private int GetReminderCount()
@@ -175,6 +185,26 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         internal void SetTopping(bool isTopping)
         {
             Sorting = isTopping ? DateTime.Now.Ticks : 0;
+        }
+
+        private List<SessionTag> GetTagList()
+        {
+            return SessionUnitTagList.Select(x => x.SessionTag).ToList();
+        }
+
+        private List<Guid> GetTagIdList()
+        {
+            return SessionUnitTagList.Select(x => x.SessionTagId).ToList();
+        }
+
+        private List<SessionRole> GetRoleList()
+        {
+            return SessionUnitRoleList.Select(x => x.SessionRole).ToList();
+        }
+
+        private List<Guid> GetRoleIdList()
+        {
+            return SessionUnitRoleList.Select(x => x.SessionRoleId).ToList();
         }
     }
 }

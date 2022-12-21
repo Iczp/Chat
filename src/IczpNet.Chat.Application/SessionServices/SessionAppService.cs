@@ -1,4 +1,4 @@
-﻿using IczpNet.AbpCommons.DataFilters;
+﻿using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
@@ -7,21 +7,21 @@ using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.OpenedRecorders;
 using IczpNet.Chat.SessionSections.OpenedRecordes.Dtos;
+using IczpNet.Chat.SessionSections.SessionRoles;
+using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 using IczpNet.Chat.SessionSections.Sessions;
-using IczpNet.Chat.SessionSections.SessionUnits;
-using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
+using IczpNet.Chat.SessionSections.Sessions.Dtos;
+using IczpNet.Chat.SessionSections.SessionTagDtos.Dtos;
+using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.Specifications;
 using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.SessionServices
 {
@@ -29,29 +29,20 @@ namespace IczpNet.Chat.SessionServices
     {
 
         protected IRepository<Friendship, Guid> FriendshipRepository { get; }
-        protected IRepository<Session, Guid> SessionRepository { get; }
-        protected IRepository<SessionUnit> SessionUnitRepository { get; }
-
-        protected IRepository<Message, Guid> MessageRepository { get; }
+        protected IRepository<Session, Guid> Repository { get; }
         protected ISessionManager SessionManager { get; }
-
-
         protected ISessionGenerator SessionGenerator { get; }
 
         public SessionAppService(
             IRepository<Friendship, Guid> chatObjectRepository,
             ISessionManager sessionManager,
             ISessionGenerator sessionGenerator,
-            IRepository<Session, Guid> sessionRepository,
-            IRepository<Message, Guid> messageRepository,
-            IRepository<SessionUnit> sessionMemberRepository)
+            IRepository<Session, Guid> repository)
         {
             FriendshipRepository = chatObjectRepository;
             SessionManager = sessionManager;
             SessionGenerator = sessionGenerator;
-            SessionRepository = sessionRepository;
-            MessageRepository = messageRepository;
-            SessionUnitRepository = sessionMemberRepository;
+            Repository = repository;
         }
 
 
@@ -82,37 +73,118 @@ namespace IczpNet.Chat.SessionServices
         }
 
         [HttpGet]
-        public async Task<PagedResultDto<SessionDto>> GetSessionsAsync(SessionGetListInput input)
+        public async Task<PagedResultDto<SessionDto>> GetListAsync(SessionGetListInput input)
         {
-            var query = (await SessionRepository.GetQueryableAsync())
+            var query = (await Repository.GetQueryableAsync())
                 .WhereIf(input.OwnerId.HasValue, x => x.UnitList.Any(m => m.OwnerId == input.OwnerId))
                 ;
             return await GetPagedListAsync<Session, SessionDto>(query, input);
         }
 
         [HttpGet]
-        public async Task<PagedResultDto<MessageDto>> GetMessageListAsync(SessionMessageGetListInput input)
+        public async Task<SessionDto> GetAsync(Guid id)
         {
-            var query = (await MessageRepository.GetQueryableAsync())
-                .Where(new OwnerMessageSpecification(input.OwnerId).ToExpression())
-                .WhereIf(input.SessionId.HasValue, new SessionMessageSpecification(input.SessionId.GetValueOrDefault()).ToExpression())
-                .WhereIf(input.IsUnreaded, new UnreadedMessageSpecification(input.OwnerId).ToExpression())
-                .WhereIf(input.SenderId.HasValue, new SenderMessageSpecification(input.SenderId.GetValueOrDefault()).ToExpression())
-                ;
-
-            return await GetPagedListAsync<Message, MessageDto>(query, input);
+            var entity = await Repository.GetAsync(id);
+            return await MapToDtoAsync(entity);
         }
 
-
-        [HttpPost]
-        public async Task<List<SessionDto>> CreateSessionByMessageAsync()
+        protected virtual Task<SessionDto> MapToDtoAsync(Session entity)
         {
-            var entitys = await SessionGenerator.CreateSessionByMessageAsync();
-            return ObjectMapper.Map<List<Session>, List<SessionDto>>(entitys);
+            return Task.FromResult(ObjectMapper.Map<Session, SessionDto>(entity));
         }
 
         [HttpGet]
-        public Task<PagedResultDto<ChatObjectDto>> GetMembersAsync(Guid sessionId)
+        public async Task<SessionDetailDto> GetDetailAsync(Guid id)
+        {
+            var entity = await Repository.GetAsync(id);
+            return await MapToDetailDtoAsync(entity);
+        }
+
+        protected virtual Task<SessionDetailDto> MapToDetailDtoAsync(Session entity)
+        {
+            return Task.FromResult(ObjectMapper.Map<Session, SessionDetailDto>(entity));
+        }
+
+        [HttpGet]
+        public async Task<PagedResultDto<MessageDto>> GetMessageListAsync(SessionMessageGetListInput input)
+        {
+            var query = (await Repository.GetAsync(input.SessionId))
+                .MessageList.AsQueryable()
+                .WhereIf(!input.SenderId.IsEmpty(), new SenderMessageSpecification(input.SenderId.GetValueOrDefault()).ToExpression())
+                .WhereIf(!input.MinAutoId.IsEmpty(), new MinAutoIdMessageSpecification(input.MinAutoId.GetValueOrDefault()).ToExpression())
+                .WhereIf(!input.MaxAutoId.IsEmpty(), new MaxAutoIdMessageSpecification(input.MaxAutoId.GetValueOrDefault()).ToExpression())
+                ;
+
+            return await GetPagedListAsync<Message, MessageDto>(query, input, x => x.OrderBy(x => x.AutoId));
+        }
+
+        [HttpGet]
+        public async Task<PagedResultDto<SessionTagDto>> GetTagListAsync(SessionTagGetListInput input)
+        {
+            var query = (await Repository.GetAsync(input.SessionId))
+                .TagList.AsQueryable()
+                .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(input.Keyword))
+                ;
+
+            return await GetPagedListAsync<SessionTag, SessionTagDto>(query, input);
+        }
+
+        [HttpGet]
+        public async Task<PagedResultDto<SessionRoleDto>> GetRoleListAsync(SessionRoleGetListInput input)
+        {
+            var query = (await Repository.GetAsync(input.SessionId))
+                .RoleList.AsQueryable()
+                .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(input.Keyword))
+                ;
+
+            return await GetPagedListAsync<SessionRole, SessionRoleDto>(query, input);
+        }
+
+        [HttpPost]
+        public async Task<List<SessionDto>> GenerateSessionByMessageAsync()
+        {
+            var entitys = await SessionGenerator.GenerateSessionByMessageAsync();
+            return ObjectMapper.Map<List<Session>, List<SessionDto>>(entitys);
+        }
+
+        [HttpPost]
+        public async Task<SessionTagDto> AddTagAsync(Guid sessionId, string name)
+        {
+            var entity = await Repository.GetAsync(sessionId);
+
+            var tag = await SessionManager.AddTagAsync(entity, new SessionTag(GuidGenerator.Create(), name));
+
+            return ObjectMapper.Map<SessionTag, SessionTagDto>(tag);
+        }
+
+        [HttpPost]
+        public Task RemoveTagAsync(Guid tagId)
+        {
+            return SessionManager.RemoveTagAsync(tagId);
+        }
+
+        [HttpPost]
+        public async Task<SessionRoleDto> AddRoleAsync(Guid sessionId, string name)
+        {
+            var entity = await Repository.GetAsync(sessionId);
+
+            var role = await SessionManager.AddRoleAsync(entity, new SessionRole(GuidGenerator.Create(), name));
+
+            return ObjectMapper.Map<SessionRole, SessionRoleDto>(role);
+        }
+
+        [HttpPost]
+        public Task RemoveRoleAsync(Guid roleId)
+        {
+            return SessionManager.RemoveRoleAsync(roleId);
+        }
+
+        public Task AddTagMemberAsync(Guid tagId, List<Guid> sessionUnitIdList)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task AddRoleMemberAsync(Guid roleId, List<Guid> sessionUnitIdList)
         {
             throw new NotImplementedException();
         }

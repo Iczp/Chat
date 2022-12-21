@@ -9,6 +9,6 @@ namespace IczpNet.Chat.SessionSections.Sessions
     public interface ISessionGenerator
     {
         Task<Session> MakeAsync(ChatObject sender, ChatObject receiver);
-        Task<List<Session>> CreateSessionByMessageAsync();
+        Task<List<Session>> GenerateSessionByMessageAsync();
     }
 }

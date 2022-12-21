@@ -1,8 +1,7 @@
 ﻿using IczpNet.Chat.ChatObjects.Dtos;
-using IczpNet.Chat.MessageSections.Messages.Dtos;
 using System;
 
-namespace IczpNet.Chat.SessionSections.Sessions
+namespace IczpNet.Chat.SessionSections.Sessions.Dtos
 {
     public class SessionDto
     {

@@ -28,8 +28,4 @@
     <ProjectReference Include="..\IczpNet.Chat.Domain.Shared\IczpNet.Chat.Domain.Shared.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="SessionSections\Sessions\Dtos\" />
-  </ItemGroup>
-
 </Project>

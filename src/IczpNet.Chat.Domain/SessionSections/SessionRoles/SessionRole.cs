@@ -10,6 +10,10 @@ namespace IczpNet.Chat.SessionSections.SessionRoles
 {
     public class SessionRole : BaseEntity<Guid>
     {
+        public SessionRole(Guid id, string name) : base(id)
+        {
+            Name = name;
+        }
 
         public virtual Guid? SessionId { get; set; }
 

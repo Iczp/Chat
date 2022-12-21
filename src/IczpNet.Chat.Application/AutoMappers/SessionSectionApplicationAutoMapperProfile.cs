@@ -6,7 +6,12 @@ using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.Friendships.Dtos;
 using IczpNet.Chat.SessionSections.OpenedRecorders;
 using IczpNet.Chat.SessionSections.OpenedRecordes.Dtos;
+using IczpNet.Chat.SessionSections.SessionRoles;
+using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.Sessions.Dtos;
+using IczpNet.Chat.SessionSections.SessionTagDtos.Dtos;
+using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 
@@ -23,10 +28,15 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
 
         //Session
         CreateMap<Session, SessionDto>();
+        CreateMap<Session, SessionDetailDto>();
 
         //SessionUnit
         CreateMap<SessionUnit, SessionUnitDto>();
         CreateMap<SessionUnit, SessionUnitDetailDto>();
+
+        CreateMap<SessionTag, SessionTagDto>();
+
+        CreateMap<SessionRole, SessionRoleDto>();
 
         //Friendship
         CreateMap<Friendship, FriendshipDto>();

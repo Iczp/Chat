@@ -75,5 +75,17 @@ namespace IczpNet.Chat.SessionSections.Sessions
         {
             MessageList = messages;
         }
+
+        internal SessionTag AddTag(SessionTag sessionTag)
+        {
+            TagList.Add(sessionTag);
+            return sessionTag;
+        }
+
+        internal SessionRole AddRole(SessionRole sessionRole)
+        {
+            RoleList.Add(sessionRole);
+            return sessionRole;
+        }
     }
 }

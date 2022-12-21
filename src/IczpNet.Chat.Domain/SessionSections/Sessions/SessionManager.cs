@@ -4,8 +4,12 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.FriendshipRequests;
 using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.OpenedRecorders;
+using IczpNet.Chat.SessionSections.SessionRoles;
+using IczpNet.Chat.SessionSections.SessionTags;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 
@@ -18,6 +22,9 @@ namespace IczpNet.Chat.SessionSections.Sessions
         protected IChatObjectManager ChatObjectManager { get; }
         protected IRepository<OpenedRecorder, Guid> OpenedRecorderRepository { get; }
         protected IRepository<Message, Guid> MessageRepository { get; }
+        protected IRepository<Session, Guid> Repository { get; }
+        protected IRepository<SessionRole, Guid> SessionRoleRepository { get; }
+        protected IRepository<SessionTag, Guid> SessionTagRepository { get; }
         protected ISessionRecorder SessionRecorder { get; }
 
         public SessionManager(
@@ -26,7 +33,10 @@ namespace IczpNet.Chat.SessionSections.Sessions
             IRepository<FriendshipRequest, Guid> friendshipRequestRepository,
             IRepository<OpenedRecorder, Guid> openedRecorderRepository,
             IRepository<Message, Guid> messageRepository,
-            ISessionRecorder sessionRecorder)
+            ISessionRecorder sessionRecorder,
+            IRepository<Session, Guid> repository,
+            IRepository<SessionRole, Guid> sessionRoleRepository,
+            IRepository<SessionTag, Guid> sessionTagRepository)
         {
             FriendshipRepository = friendshipRepository;
             ChatObjectManager = chatObjectManager;
@@ -34,6 +44,15 @@ namespace IczpNet.Chat.SessionSections.Sessions
             OpenedRecorderRepository = openedRecorderRepository;
             MessageRepository = messageRepository;
             SessionRecorder = sessionRecorder;
+            Repository = repository;
+            SessionRoleRepository = sessionRoleRepository;
+            SessionTagRepository = sessionTagRepository;
+        }
+
+        protected async Task<Session> SetEntityAsync(Session entity, Action<Session> action = null)
+        {
+            action?.Invoke(entity);
+            return await Repository.UpdateAsync(entity, autoSave: true);
         }
 
         public Task<bool> IsFriendshipAsync(Guid ownerId, Guid destinationId)
@@ -113,6 +132,42 @@ namespace IczpNet.Chat.SessionSections.Sessions
             openedRecorder.SetMessage(message, deviceId);
 
             return await OpenedRecorderRepository.UpdateAsync(openedRecorder, autoSave: true);
+        }
+
+        public async Task<SessionTag> AddTagAsync(Session entity, SessionTag sessionTag)
+        {
+            await SetEntityAsync(entity, x => x.AddTag(sessionTag));
+
+            return sessionTag;
+        }
+
+        public async Task RemoveTagAsync(Guid tagId)
+        {
+            var tag = await SessionTagRepository.GetAsync(tagId);
+
+            var count = tag.SessionUnitTagList.Count();
+
+            Assert.If(count > 0, $"Cannot delete tag[{tag}],there has {count} members");
+
+            await SessionTagRepository.DeleteAsync(tag);
+        }
+
+        public async Task<SessionRole> AddRoleAsync(Session entity, SessionRole sessionRole)
+        {
+            await SetEntityAsync(entity, x => x.AddRole(sessionRole));
+
+            return sessionRole;
+        }
+
+        public async Task RemoveRoleAsync(Guid roleId)
+        {
+            var role = await SessionRoleRepository.GetAsync(roleId);
+
+            var count = role.SessionUnitRoleList.Count();
+
+            Assert.If(count > 0, $"Cannot delete role[{role}],there has {count} members");
+
+            await SessionRoleRepository.DeleteAsync(role);
         }
     }
 }

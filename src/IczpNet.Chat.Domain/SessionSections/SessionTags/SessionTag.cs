@@ -1,6 +1,5 @@
 ﻿using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.SessionSections.Sessions;
-using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnitTags;
 using System;
 using System.Collections.Generic;
@@ -11,6 +10,10 @@ namespace IczpNet.Chat.SessionSections.SessionTags
 {
     public class SessionTag : BaseEntity<Guid>
     {
+        public SessionTag(Guid id, string name) : base(id)
+        {
+            Name = name;
+        }
 
         public virtual Guid? SessionId { get; set; }
 

@@ -86,7 +86,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
         }
 
         [UnitOfWork(true, IsolationLevel.ReadUncommitted)]
-        public virtual async Task<List<Session>> CreateSessionByMessageAsync()
+        public virtual async Task<List<Session>> GenerateSessionByMessageAsync()
         {
             var list = (await MessageRepository.GetQueryableAsync())
                 .Where(x => x.SessionId == null)
