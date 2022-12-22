@@ -8,11 +8,13 @@ using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.SessionServices
 {
@@ -69,6 +71,7 @@ namespace IczpNet.Chat.SessionServices
         }
 
         [HttpGet]
+        [UnitOfWork(true, IsolationLevel.ReadCommitted)]
         public virtual async Task<PagedResultDto<SessionUnitDto>> GetListAsync(SessionUnitGetListInput input)
         {
             await CheckPolicyAsync(GetListPolicyName);

@@ -5,7 +5,6 @@ using System;
 using System.Threading.Tasks;
 using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.Threading;
-using Volo.Abp.Timing;
 using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.Connections
