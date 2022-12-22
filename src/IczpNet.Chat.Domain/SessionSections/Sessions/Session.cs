@@ -33,7 +33,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public virtual ChatObject Owner { get; protected set; }
 
-        public virtual List<Message> MessageList { get; internal set; } = new List<Message>();
+        public virtual IList<Message> MessageList { get; internal set; } = new List<Message>();
 
         public virtual IList<SessionUnit> UnitList { get; internal set; } = new List<SessionUnit>();
 

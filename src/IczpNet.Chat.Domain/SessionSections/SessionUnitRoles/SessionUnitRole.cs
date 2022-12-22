@@ -18,6 +18,14 @@ namespace IczpNet.Chat.SessionSections.SessionUnitRoles
         [ForeignKey(nameof(SessionRoleId))]
         public virtual SessionRole SessionRole { get; set; }
 
+        protected SessionUnitRole() { }
+
+        public SessionUnitRole(SessionRole sessionRole, SessionUnit sessionUnit)
+        {
+            SessionRole = sessionRole;
+            SessionUnit = sessionUnit;
+        }
+
         public override object[] GetKeys()
         {
             return new object[] { SessionUnitId, SessionRoleId };

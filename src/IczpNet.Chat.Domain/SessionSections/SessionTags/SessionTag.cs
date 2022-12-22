@@ -23,6 +23,6 @@ namespace IczpNet.Chat.SessionSections.SessionTags
         [StringLength(20)]
         public virtual string Name { get; set; }
 
-        public virtual List<SessionUnitTag> SessionUnitTagList { get; protected set; }
+        public virtual IList<SessionUnitTag> SessionUnitTagList { get; protected set; }
     }
 }

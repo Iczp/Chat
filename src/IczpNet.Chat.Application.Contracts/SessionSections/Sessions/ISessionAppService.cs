@@ -34,15 +34,23 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         Task<SessionTagDto> AddTagAsync(Guid sessionId, string name);
 
-        Task AddTagMemberAsync(Guid tagId, List<Guid> sessionUnitIdList);
-
         Task RemoveTagAsync(Guid tagId);
+
+        Task AddTagMembersAsync(Guid tagId, List<Guid> sessionUnitIdList);
+
+        Task RemoveTagMembersAsync(Guid tagId, List<Guid> sessionUnitIdList);
 
         Task<SessionRoleDto> AddRoleAsync(Guid sessionId, string name);
 
-        Task AddRoleMemberAsync(Guid roleId, List<Guid> sessionUnitIdList);
-
         Task RemoveRoleAsync(Guid roleId);
+
+        Task AddRoleMembersAsync(Guid roleId, List<Guid> sessionUnitIdList);
+
+        Task RemoveRoleMembersAsync(Guid roleId, List<Guid> sessionUnitIdList);
+
+        Task<List<SessionRoleDto>> SetRolesAsync(Guid sessionUnitId, List<Guid> roleIdList);
+
+        Task<List<SessionTagDto>> SetTagsAsync(Guid sessionUnitId, List<Guid> tagIdList);
 
         Task<List<SessionDto>> GenerateSessionByMessageAsync();
     }

@@ -21,22 +21,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 {
     public class SessionUnit : BaseSessionEntity, IChatOwner<Guid>, ISorting
     {
-        public virtual int Badge => GetBadge();
-
-        public virtual int ReminderCount => GetReminderCount();
-
-        public virtual Message LastMessage => GetLastMessage();
-
-        [NotMapped]
-        public virtual List<SessionTag> TagList => GetTagList();
-
-        public virtual List<Guid> TagIdList => GetTagIdList();
-
-        [NotMapped]
-        public virtual List<SessionRole> RoleList => GetRoleList();
-
-        public virtual List<Guid> RoleIdList => GetRoleIdList();
-
         public virtual Guid SessionId { get; protected set; }
 
         [ForeignKey(nameof(SessionId))]
@@ -85,6 +69,27 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public virtual List<SessionUnitTag> SessionUnitTagList { get; protected set; } = new List<SessionUnitTag>();
 
         public virtual List<SessionUnitRole> SessionUnitRoleList { get; protected set; } = new List<SessionUnitRole>();
+
+        [NotMapped]
+        public virtual int Badge => GetBadge();
+
+        [NotMapped]
+        public virtual int ReminderCount => GetReminderCount();
+
+        [NotMapped]
+        public virtual Message LastMessage => GetLastMessage();
+
+        [NotMapped]
+        public virtual List<SessionTag> TagList => GetTagList();
+
+        [NotMapped]
+        public virtual List<Guid> TagIdList => GetTagIdList();
+
+        [NotMapped]
+        public virtual List<SessionRole> RoleList => GetRoleList();
+
+        [NotMapped]
+        public virtual List<Guid> RoleIdList => GetRoleIdList();
 
         protected SessionUnit() { }
 

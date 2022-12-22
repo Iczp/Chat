@@ -1,11 +1,8 @@
 ﻿using IczpNet.Chat.BaseEntitys;
-using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
 
 namespace IczpNet.Chat.SessionSections.SessionUnitTags
 {
@@ -20,6 +17,14 @@ namespace IczpNet.Chat.SessionSections.SessionUnitTags
 
         [ForeignKey(nameof(SessionTagId))]
         public virtual SessionTag SessionTag { get; set; }
+
+        protected SessionUnitTag() { }
+
+        public SessionUnitTag(SessionTag sessionTag, SessionUnit sessionUnit)
+        {
+            SessionTag = sessionTag;
+            SessionUnit = sessionUnit;
+        }
 
         public override object[] GetKeys()
         {

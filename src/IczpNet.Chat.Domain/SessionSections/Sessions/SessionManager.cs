@@ -6,10 +6,13 @@ using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.OpenedRecorders;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.SessionTags;
+using IczpNet.Chat.SessionSections.SessionUnitRoles;
+using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionSections.SessionUnitTags;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 
@@ -23,6 +26,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
         protected IRepository<OpenedRecorder, Guid> OpenedRecorderRepository { get; }
         protected IRepository<Message, Guid> MessageRepository { get; }
         protected IRepository<Session, Guid> Repository { get; }
+        protected IRepository<SessionUnit, Guid> SessionUnitRepository { get; }
         protected IRepository<SessionRole, Guid> SessionRoleRepository { get; }
         protected IRepository<SessionTag, Guid> SessionTagRepository { get; }
         protected ISessionRecorder SessionRecorder { get; }
@@ -36,7 +40,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
             ISessionRecorder sessionRecorder,
             IRepository<Session, Guid> repository,
             IRepository<SessionRole, Guid> sessionRoleRepository,
-            IRepository<SessionTag, Guid> sessionTagRepository)
+            IRepository<SessionTag, Guid> sessionTagRepository,
+            IRepository<SessionUnit, Guid> sessionUnitRepository)
         {
             FriendshipRepository = friendshipRepository;
             ChatObjectManager = chatObjectManager;
@@ -47,6 +52,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
             Repository = repository;
             SessionRoleRepository = sessionRoleRepository;
             SessionTagRepository = sessionTagRepository;
+            SessionUnitRepository = sessionUnitRepository;
         }
 
         protected async Task<Session> SetEntityAsync(Session entity, Action<Session> action = null)
@@ -104,7 +110,9 @@ namespace IczpNet.Chat.SessionSections.Sessions
             if (isAgreed)
             {
                 await CreateFriendshipAsync(friendshipRequest.Owner, friendshipRequest.Destination, IsPassive: true, friendshipRequest.Id);
+
                 await CreateFriendshipAsync(friendshipRequest.Destination, friendshipRequest.Owner, IsPassive: false, friendshipRequest.Id);
+
                 friendshipRequest.AgreeRequest(handlMessage);
             }
             else
@@ -168,6 +176,70 @@ namespace IczpNet.Chat.SessionSections.Sessions
             Assert.If(count > 0, $"Cannot delete role[{role}],there has {count} members");
 
             await SessionRoleRepository.DeleteAsync(role);
+        }
+
+        public async Task<SessionTag> AddTagMembersAsync(Guid tagId, List<Guid> sessionUnitIdList)
+        {
+            var sessionTag = await SessionTagRepository.GetAsync(tagId);
+
+            foreach (var sessionUnitId in sessionUnitIdList)
+            {
+                if (sessionTag.SessionUnitTagList.Any(x => x.SessionUnitId == sessionUnitId))
+                {
+                    continue;
+                }
+                var sessionUnit = await SessionUnitRepository.GetAsync(sessionUnitId);
+
+                Assert.If(sessionTag.SessionId != sessionUnit.SessionId, "");
+
+                sessionTag.SessionUnitTagList.Add(new SessionUnitTag(sessionTag, sessionUnit));
+            }
+            return await SessionTagRepository.UpdateAsync(sessionTag, true);
+        }
+
+        public async Task<SessionTag> RemoveTagMembersAsync(Guid tagId, List<Guid> sessionUnitIdList)
+        {
+            var sessionTag = await SessionTagRepository.GetAsync(tagId);
+
+            var items = sessionTag.SessionUnitTagList.Where(x => sessionUnitIdList.Contains(x.SessionUnitId)).ToList();
+
+            foreach (var item in items)
+            {
+                sessionTag.SessionUnitTagList.Remove(item);
+            }
+            return await SessionTagRepository.UpdateAsync(sessionTag, true);
+        }
+
+        public async Task<SessionRole> AddRoleMembersAsync(Guid roleId, List<Guid> sessionUnitIdList)
+        {
+            var sessionRole = await SessionRoleRepository.GetAsync(roleId);
+
+            foreach (var sessionUnitId in sessionUnitIdList)
+            {
+                if (sessionRole.SessionUnitRoleList.Any(x => x.SessionUnitId == sessionUnitId))
+                {
+                    continue;
+                }
+                var sessionUnit = await SessionUnitRepository.GetAsync(sessionUnitId);
+
+                Assert.If(sessionRole.SessionId != sessionUnit.SessionId, "");
+
+                sessionRole.SessionUnitRoleList.Add(new SessionUnitRole(sessionRole, sessionUnit));
+            }
+            return await SessionRoleRepository.UpdateAsync(sessionRole, true);
+        }
+
+        public async Task<SessionRole> RemoveRoleMembersAsync(Guid roleId, List<Guid> sessionUnitIdList)
+        {
+            var sessionTag = await SessionRoleRepository.GetAsync(roleId);
+
+            var items = sessionTag.SessionUnitRoleList.Where(x => sessionUnitIdList.Contains(x.SessionUnitId)).ToList();
+
+            foreach (var item in items)
+            {
+                sessionTag.SessionUnitRoleList.Remove(item);
+            }
+            return await SessionRoleRepository.UpdateAsync(sessionTag, true);
         }
     }
 }

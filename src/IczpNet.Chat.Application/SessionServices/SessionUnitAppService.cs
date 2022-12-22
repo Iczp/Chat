@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.Sessions;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
@@ -55,27 +57,96 @@ namespace IczpNet.Chat.SessionServices
             return base.CheckPolicyAsync(policyName);
         }
 
-        [HttpGet]
-        public virtual async Task<PagedResultDto<SessionUnitDto>> GetListAsync(SessionUnitGetListInput input)
+        protected virtual async Task<IQueryable<SessionUnit>> CreateQueryAsync(SessionUnitGetListInput input)
         {
-            await CheckPolicyAsync(GetListPolicyName);
-
-            var query = (await Repository.GetQueryableAsync())
+            return (await Repository.GetQueryableAsync())
                 .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
                 .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
                 .WhereIf(input.IsKilled.HasValue, x => x.IsKilled == input.IsKilled)
                 .WhereIf(input.JoinWay.HasValue, x => x.JoinWay == input.JoinWay)
                 .WhereIf(input.InviterId.HasValue, x => x.InviterId == input.InviterId)
                 ;
+        }
 
-            return await GetPagedListAsync<SessionUnit, SessionUnitDto>(query, input, x => x.OrderByDescending(d => d.Sorting));
+        [HttpGet]
+        public virtual async Task<PagedResultDto<SessionUnitDto>> GetListAsync(SessionUnitGetListInput input)
+        {
+            await CheckPolicyAsync(GetListPolicyName);
+
+            var query = await CreateQueryAsync(input);
+
+            Expression<Func<SessionUnit, int>> p = x =>
+                    x.Session.MessageList.Count(d =>
+                        //!x.IsRollbacked &&
+                        d.AutoId > x.ReadedMessageAutoId &&
+                        d.SenderId != x.OwnerId &&
+                        (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
+                        (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
+                        (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)
+                     );
+
+            return await GetPagedListAsync<SessionUnit, SessionUnitDto>(
+                query,
+                input,
+                x => x.OrderByDescending(d => d.Sorting)
+                      .ThenByDescending(p)
+                    );
+        }
+        [HttpGet]
+        public virtual async Task<PagedResultDto<SessionUnitDto>> GetListByLinqAsync(SessionUnitGetListInput input)
+        {
+            await CheckPolicyAsync(GetListPolicyName);
+
+            var query = (await CreateQueryAsync(input)).Select(x => new SessionUnitDto
+            {
+                Id = x.Id,
+                OwnerId = x.OwnerId,
+                SessionId = x.SessionId,
+                Sorting = x.Sorting,
+                Destination = new ChatObjectDto()
+                {
+                    Id = x.Destination.Id,
+                    Name = x.Destination.Name,
+                    ObjectType = x.Destination.ObjectType.Value,
+                    Portrait = x.Destination.Portrait,
+                },
+                //LastMessage = x.Session.MessageList.OrderByDescending(x => x.AutoId).FirstOrDefault(),
+                Badge = x.Session.MessageList.Count(d =>
+                        //!x.IsRollbacked &&
+                        d.AutoId > x.ReadedMessageAutoId &&
+                        d.SenderId != x.OwnerId &&
+                        (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
+                        (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
+                        (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)
+                     ),
+                ReminderCount = x.Session.MessageList.Count(x => !x.IsRollbacked && x.IsRemindAll) + x.ReminderList.Select(x => x.Message).Count(d =>
+                        //!x.IsRollbacked &&
+                        d.AutoId > x.ReadedMessageAutoId &&
+                        d.SenderId != x.OwnerId &&
+                        (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
+                        (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
+                        (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)
+                     ),
+            });
+
+            var totalCount = await AsyncExecuter.CountAsync(query);
+
+            query = query.OrderByDescending(x => x.Sorting).OrderByDescending(x => x.Badge);
+
+            query = query.PageBy(input);
+
+            var items = await AsyncExecuter.ToListAsync(query);
+
+            return new PagedResultDto<SessionUnitDto>(totalCount, items);
         }
 
         [HttpGet]
         public virtual async Task<SessionUnitDto> GetAsync(Guid id)
         {
             await CheckPolicyAsync(GetPolicyName);
+
             var entity = await Repository.GetAsync(id);
+
             return await MapToDtoAsync(entity);
         }
 
@@ -83,7 +154,9 @@ namespace IczpNet.Chat.SessionServices
         public virtual async Task<SessionUnitDetailDto> GetDetailAsync(Guid id)
         {
             await CheckPolicyAsync(GetDetailPolicyName);
+
             var entity = await Repository.GetAsync(id);
+
             return ObjectMapper.Map<SessionUnit, SessionUnitDetailDto>(entity);
         }
 
@@ -96,8 +169,11 @@ namespace IczpNet.Chat.SessionServices
         public virtual async Task<SessionUnitDto> SetToppingAsync(Guid id, bool isTopping)
         {
             await CheckPolicyAsync(SetReadedPolicyName);
+
             var entity = await Repository.GetAsync(id);
+
             await SessionUnitManager.SetToppingAsync(entity, isTopping);
+
             return await MapToDtoAsync(entity);
         }
 
@@ -105,8 +181,11 @@ namespace IczpNet.Chat.SessionServices
         public virtual async Task<SessionUnitDto> SetReadedAsync(Guid id, Guid messageId, bool isForce = false)
         {
             await CheckPolicyAsync(SetReadedPolicyName);
+
             var entity = await Repository.GetAsync(id);
+
             await SessionUnitManager.SetReadedAsync(entity, messageId, isForce);
+
             return await MapToDtoAsync(entity);
         }
 
@@ -114,8 +193,11 @@ namespace IczpNet.Chat.SessionServices
         public virtual async Task<SessionUnitDto> RemoveSessionAsync(Guid id)
         {
             await CheckPolicyAsync(RemoveSessionPolicyName);
+
             var entity = await Repository.GetAsync(id);
+
             await SessionUnitManager.RemoveSessionAsync(entity);
+
             return await MapToDtoAsync(entity);
         }
 
@@ -123,7 +205,9 @@ namespace IczpNet.Chat.SessionServices
         public virtual async Task<SessionUnitDto> KillSessionAsync(Guid id)
         {
             var entity = await Repository.GetAsync(id);
+
             await SessionUnitManager.KillSessionAsync(entity);
+
             return await MapToDtoAsync(entity);
         }
 
@@ -131,8 +215,11 @@ namespace IczpNet.Chat.SessionServices
         public virtual async Task<SessionUnitDto> ClearMessageAsync(Guid id)
         {
             await CheckPolicyAsync(ClearMessagePolicyName);
+
             var entity = await Repository.GetAsync(id);
+
             await SessionUnitManager.ClearMessageAsync(entity);
+
             return await MapToDtoAsync(entity);
         }
 
@@ -140,6 +227,7 @@ namespace IczpNet.Chat.SessionServices
         public virtual async Task<SessionUnitDto> DeleteMessageAsync(Guid id, Guid messageId)
         {
             await CheckPolicyAsync(DeleteMessagePolicyName);
+
             throw new NotImplementedException();
         }
     }

@@ -147,6 +147,7 @@ namespace IczpNet.Chat.SessionServices
         {
             var query = (await Repository.GetAsync(input.SessionId))
                 .UnitList.AsQueryable()
+                .Where(x => !x.IsKilled)
                 .WhereIf(!input.TagId.IsEmpty(), x => x.SessionUnitTagList.Any(x => x.SessionTagId == input.TagId))
                 .WhereIf(!input.RoleId.IsEmpty(), x => x.SessionUnitRoleList.Any(x => x.SessionRoleId == input.RoleId))
                 .WhereIf(!input.JoinWay.IsEmpty(), x => x.JoinWay == input.JoinWay)
@@ -181,6 +182,18 @@ namespace IczpNet.Chat.SessionServices
         }
 
         [HttpPost]
+        public async Task AddTagMembersAsync(Guid tagId, List<Guid> sessionUnitIdList)
+        {
+            await SessionManager.AddTagMembersAsync(tagId, sessionUnitIdList);
+        }
+
+        [HttpPost]
+        public async Task RemoveTagMembersAsync(Guid tagId, List<Guid> sessionUnitIdList)
+        {
+            await SessionManager.RemoveTagMembersAsync(tagId, sessionUnitIdList);
+        }
+
+        [HttpPost]
         public async Task<SessionRoleDto> AddRoleAsync(Guid sessionId, string name)
         {
             var entity = await Repository.GetAsync(sessionId);
@@ -196,16 +209,28 @@ namespace IczpNet.Chat.SessionServices
             return SessionManager.RemoveRoleAsync(roleId);
         }
 
-        public Task AddTagMemberAsync(Guid tagId, List<Guid> sessionUnitIdList)
+        [HttpPost]
+        public async Task AddRoleMembersAsync(Guid roleId, List<Guid> sessionUnitIdList)
+        {
+            await SessionManager.AddRoleMembersAsync(roleId, sessionUnitIdList);
+        }
+
+        [HttpPost]
+        public Task RemoveRoleMembersAsync(Guid roleId, List<Guid> sessionUnitIdList)
+        {
+            return SessionManager.RemoveRoleMembersAsync(roleId, sessionUnitIdList);
+        }
+
+        [HttpPost]
+        public Task<List<SessionRoleDto>> SetRolesAsync(Guid sessionUnitId, List<Guid> roleIdList)
         {
             throw new NotImplementedException();
         }
 
-        public Task AddRoleMemberAsync(Guid roleId, List<Guid> sessionUnitIdList)
+        [HttpPost]
+        public Task<List<SessionTagDto>> SetTagsAsync(Guid sessionUnitId, List<Guid> tagIdList)
         {
             throw new NotImplementedException();
         }
-
-
     }
 }
