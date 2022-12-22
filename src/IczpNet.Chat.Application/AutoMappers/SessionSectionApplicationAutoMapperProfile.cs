@@ -14,6 +14,7 @@ using IczpNet.Chat.SessionSections.SessionTagDtos.Dtos;
 using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
+using IczpNet.Chat.SessionServices;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -34,7 +35,11 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
         CreateMap<SessionUnit, SessionUnitDto>();
         CreateMap<SessionUnit, SessionUnitDetailDto>();
         CreateMap<SessionUnit, SessionUnitOwnerDto>();
+
+        CreateMap<SessionUnitModel, SessionUnitDto>();
         
+
+
         CreateMap<SessionTag, SessionTagDto>();
 
         CreateMap<SessionRole, SessionRoleDto>();

@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.AbpCommons.Extensions;
+using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.Friendships;
@@ -14,6 +15,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.SessionServices
@@ -100,45 +102,50 @@ namespace IczpNet.Chat.SessionServices
         {
             await CheckPolicyAsync(GetListPolicyName);
 
-            var query = (await CreateQueryAsync(input)).Select(x => new SessionUnitDto
+            var query = (await CreateQueryAsync(input)).Select(x => new SessionUnitModel
             {
                 Id = x.Id,
                 OwnerId = x.OwnerId,
                 SessionId = x.SessionId,
                 Sorting = x.Sorting,
-                Destination = new ChatObjectDto()
-                {
-                    Id = x.Destination.Id,
-                    Name = x.Destination.Name,
-                    ObjectType = x.Destination.ObjectType.Value,
-                    Portrait = x.Destination.Portrait,
-                },
-                //LastMessage = x.Session.MessageList.OrderByDescending(x => x.AutoId).FirstOrDefault(),
+                Destination = x.Destination,
+                LastMessage = x.Session.MessageList.FirstOrDefault(m => m.AutoId == x.Session.MessageList.Where(d =>
+                        //!x.IsRollbacked &&
+                        d.AutoId > x.ReadedMessageAutoId &&
+                        d.SenderId != x.OwnerId &&
+                        (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
+                        (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
+                        (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)).Max(d => d.AutoId)),
                 Badge = x.Session.MessageList.Count(d =>
+                       //!x.IsRollbacked &&
+                       d.AutoId > x.ReadedMessageAutoId &&
+                       d.SenderId != x.OwnerId &&
+                       (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
+                       (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
+                       (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)
+                     ),
+                ReminderAllCount = x.Session.MessageList.Count(x => !x.IsRollbacked && x.IsRemindAll),
+                ReminderMeCount = x.ReminderList.Select(x => x.Message).Count(d =>
                         //!x.IsRollbacked &&
                         d.AutoId > x.ReadedMessageAutoId &&
                         d.SenderId != x.OwnerId &&
                         (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
                         (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
                         (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)
-                     ),
-                ReminderCount = x.Session.MessageList.Count(x => !x.IsRollbacked && x.IsRemindAll) + x.ReminderList.Select(x => x.Message).Count(d =>
-                        //!x.IsRollbacked &&
-                        d.AutoId > x.ReadedMessageAutoId &&
-                        d.SenderId != x.OwnerId &&
-                        (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
-                        (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
-                        (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)
-                     ),
+                     )
             });
 
             var totalCount = await AsyncExecuter.CountAsync(query);
 
-            query = query.OrderByDescending(x => x.Sorting).OrderByDescending(x => x.Badge);
+            query = query.OrderByDescending(x => x.Sorting)
+                .OrderByDescending(x => x.LastMessage.AutoId)
+                .OrderByDescending(x => x.Badge);
 
             query = query.PageBy(input);
 
-            var items = await AsyncExecuter.ToListAsync(query);
+            var models = await AsyncExecuter.ToListAsync(query);
+
+            var items = ObjectMapper.Map<List<SessionUnitModel>, List<SessionUnitDto>>(models);
 
             return new PagedResultDto<SessionUnitDto>(totalCount, items);
         }

@@ -71,6 +71,12 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public virtual List<SessionUnitRole> SessionUnitRoleList { get; protected set; } = new List<SessionUnitRole>();
 
         [NotMapped]
+        public virtual int ReminderAllCount => GetRemindAllCount();
+
+        [NotMapped]
+        public virtual int ReminderMeCount => GetRemindMeCount();
+
+        [NotMapped]
         public virtual int Badge => GetBadge();
 
         [NotMapped]

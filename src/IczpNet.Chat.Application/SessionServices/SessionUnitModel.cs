@@ -1,10 +1,10 @@
-﻿using IczpNet.Chat.ChatObjects.Dtos;
-using IczpNet.Chat.MessageSections.Messages.Dtos;
+﻿using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.MessageSections.Messages;
 using System;
 
-namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
+namespace IczpNet.Chat.SessionServices
 {
-    public class SessionUnitDto
+    public class SessionUnitModel
     {
         public virtual Guid Id { get; set; }
 
@@ -12,9 +12,9 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         public virtual Guid OwnerId { get; set; }
 
-        public virtual MessageDto LastMessage { get; set; }
+        public virtual Message LastMessage { get; set; }
 
-        public virtual ChatObjectDto Destination { get; set; }
+        public virtual ChatObject Destination { get; set; }
 
         public virtual int Badge { get; set; }
 
