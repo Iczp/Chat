@@ -26,6 +26,9 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         [ForeignKey(nameof(SessionId))]
         public virtual Session Session { get; protected set; }
 
+        /// <summary>
+        /// 已读的消息AutoId
+        /// </summary>
         public virtual long ReadedMessageAutoId { get; protected set; }
 
         /// <summary>
