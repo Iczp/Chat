@@ -182,6 +182,12 @@ namespace IczpNet.Chat.ChatObjects
 
         [InverseProperty(nameof(SessionUnit.Destination))]
         public virtual IList<SessionUnit> DestinationSessionUnitList { get; set; }
+
+        [InverseProperty(nameof(SessionUnit.Inviter))]
+        public virtual IList<SessionUnit> InviterSessionUnitList { get; set; }
+
+        [InverseProperty(nameof(SessionUnit.Killer))]
+        public virtual IList<SessionUnit> KillerSessionUnitList { get; set; }
         #endregion
 
         #region Favorite 
