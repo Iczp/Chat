@@ -83,7 +83,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public virtual int ReminderCount => GetReminderCount();
 
         [NotMapped]
-        public virtual Message LastMessage => GetLastMessage();
+        public virtual Message LastMessage => Session.LastMessage;//GetLastMessage();
 
         [NotMapped]
         public virtual List<SessionTag> TagList => GetTagList();

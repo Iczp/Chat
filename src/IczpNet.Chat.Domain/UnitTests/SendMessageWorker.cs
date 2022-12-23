@@ -1,19 +1,18 @@
-﻿using IczpNet.Chat.MessageSections.Messages;
-using IczpNet.Chat.MessageSections.Templates;
+﻿using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
+using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.MessageSections.Templates;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.BackgroundWorkers;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Threading;
 using Volo.Abp.Uow;
-using IczpNet.Chat.ChatObjects;
-using System.Collections.Generic;
-using Volo.Abp.Domain.Repositories;
-using IczpNet.Chat.Enums;
-using System.Linq;
 
 namespace IczpNet.Chat.Connections
 {
@@ -41,11 +40,11 @@ namespace IczpNet.Chat.Connections
 
             Logger.LogInformation($"SendMessageWorker running:{DateTime.Now}, Timer.Period:{Timer.Period}ms");
 
-            var count = await SendToEveryOneAsync("SendMessageWorker", Guid.Parse("DF252895-3EC5-48C0-81D1-2DE149B51F1B"), 100);
+            var count = await SendToEveryOneAsync("SendMessageWorker", null, new Random().Next(80, 200));
 
-            double ticks = (DateTime.Now.Ticks - startTicks); /// 10000;
+            float ticks = (DateTime.Now.Ticks - startTicks) / 10000;
 
-            Logger.LogInformation($"SendMessageWorker send message count:{count},run ticks:{ticks}");
+            Logger.LogInformation($"SendMessageWorker send message count:{count},run ticks:{ticks}ms");
         }
 
         protected async Task<int> SendToEveryOneAsync(string text, Guid? receiverId = null, int count = 100)

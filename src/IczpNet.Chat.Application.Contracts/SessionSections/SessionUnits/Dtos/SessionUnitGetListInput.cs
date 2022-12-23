@@ -1,5 +1,4 @@
-﻿using IczpNet.Chat.Enums;
-using System;
+﻿using System;
 using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
@@ -12,8 +11,10 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         public virtual bool? IsKilled { get; set; }
 
-        public virtual JoinWays? JoinWay { get; set; }
+        //public virtual JoinWays? JoinWay { get; set; }
 
-        public virtual Guid? InviterId { get; set; }
+        //public virtual Guid? InviterId { get; set; }
+
+        public virtual bool IsOrderByBadge { get; set; }
     }
 }

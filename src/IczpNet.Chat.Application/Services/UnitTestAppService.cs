@@ -1,15 +1,18 @@
-﻿using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.AbpCommons.Extensions;
+using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.SessionSections.Sessions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.Services
 {
@@ -20,6 +23,7 @@ namespace IczpNet.Chat.Services
         private static List<Guid> ChatObjectIdList;
 
         protected IRepository<Message, Guid> MessageRepository { get; }
+        protected IRepository<Session, Guid> SessionRepository { get; }
         protected IRepository<ChatObject, Guid> ChatObjectRepository { get; }
         protected IMessageManager MessageManager { get; }
 
@@ -28,12 +32,14 @@ namespace IczpNet.Chat.Services
             IRepository<Message, Guid> messageRepository,
             IRepository<ChatObject, Guid> chatObjectRepository,
             IMessageManager messageManager,
-            IChatSender chatSender)
+            IChatSender chatSender,
+            IRepository<Session, Guid> sessionRepository)
         {
             MessageRepository = messageRepository;
             ChatObjectRepository = chatObjectRepository;
             MessageManager = messageManager;
             ChatSender = chatSender;
+            SessionRepository = sessionRepository;
         }
         public async Task<int> SendToEveryOneAsync(string text, Guid? receiverId, int count = 100)
         {
@@ -73,6 +79,20 @@ namespace IczpNet.Chat.Services
                 items.Add(r.Next(minValue, maxValue));
             }
             return Task.FromResult(items);
+        }
+
+        [UnitOfWork(true, System.Data.IsolationLevel.ReadUncommitted)]
+        public async Task<int> SetSessionLastMessageAsync()
+        {
+            var items = await SessionRepository.GetListAsync(x => x.MessageList.Any());
+
+            foreach (var item in items)
+            {
+                item.SetLastMessage(item.MessageList.OrderByDescending(x => x.AutoId).FirstOrDefault());
+            }
+            await SessionRepository.UpdateManyAsync(items);
+
+            return items.Count;
         }
     }
 }

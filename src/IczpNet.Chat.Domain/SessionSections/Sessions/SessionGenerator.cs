@@ -126,5 +126,10 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
             return sessionList;
         }
+
+        public async Task<Session> UpdateAsync(Session session)
+        {
+            return await SessionRepository.UpdateAsync(session,true);
+        }
     }
 }

@@ -1,13 +1,13 @@
 ﻿using System;
 using Volo.Abp.Application.Dtos;
 
-namespace IczpNet.Chat.SessionSections.Sessions.Dtos
+namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 {
-    public class SessionMessageGetListInput : PagedAndSortedResultRequestDto
+    public class SessionUnitGetMessageListInput : PagedAndSortedResultRequestDto
     {
-        public virtual Guid SessionId { get; set; }
-
         public virtual Guid? SenderId { get; set; }
+
+        public virtual bool? IsRemind { get; set; }
 
         public virtual long? MinAutoId { get; set; }
 

@@ -1,6 +1,9 @@
-﻿using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
+﻿using IczpNet.Chat.MessageSections.Messages.Dtos;
+using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits
 {
@@ -15,5 +18,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         Task<SessionUnitDto> ClearMessageAsync(Guid id);
 
         Task<SessionUnitDto> DeleteMessageAsync(Guid id, Guid messageId);
+
+        Task<PagedResultDto<MessageDto>> GetMessageListAsync(Guid id, SessionUnitGetMessageListInput input);
     }
 }

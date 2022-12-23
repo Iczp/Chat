@@ -59,7 +59,13 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             await MessageValidator.CheckAsync(entity);
 
-            return await Repository.InsertAsync(entity, autoSave: true);
+            await Repository.InsertAsync(entity, autoSave: true);
+
+            session.SetLastMessage(entity);
+
+            await SessionGenerator.UpdateAsync(session);
+
+            return entity;
         }
 
         public virtual async Task<Message> CreateMessageAsync<TMessageInput>(TMessageInput input, Func<Message, Task<IMessageContentEntity>> func)
@@ -158,9 +164,9 @@ namespace IczpNet.Chat.MessageSections.Messages
             return messageList;
         }
 
-       
 
-       
+
+
 
 
     }

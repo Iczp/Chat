@@ -10,6 +10,7 @@ using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.SessionSections.Sessions
 {
@@ -31,7 +32,15 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public virtual Guid? OwnerId { get; protected set; }
 
+        [ForeignKey(nameof(OwnerId))]
         public virtual ChatObject Owner { get; protected set; }
+
+        public virtual Guid? LastMessageId { get; protected set; }
+
+        [ForeignKey(nameof(LastMessageId))]
+        public virtual Message LastMessage { get; protected set; }
+
+        public virtual long? LastMessageAutoId { get; protected set; }
 
         public virtual IList<Message> MessageList { get; internal set; } = new List<Message>();
 
@@ -86,6 +95,13 @@ namespace IczpNet.Chat.SessionSections.Sessions
         {
             RoleList.Add(sessionRole);
             return sessionRole;
+        }
+
+        public void SetLastMessage(Message lastMessage)
+        {
+            LastMessage = lastMessage;
+            LastMessageId = lastMessage.Id;
+            LastMessageAutoId = lastMessage.AutoId;
         }
     }
 }
