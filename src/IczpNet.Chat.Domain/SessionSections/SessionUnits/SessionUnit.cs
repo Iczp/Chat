@@ -43,6 +43,15 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         /// </summary>
         public virtual bool IsKilled { get; protected set; }
 
+        public virtual KillTypes? KillType { get; protected set; }
+
+        public virtual DateTime? KillTime { get; protected set; }
+
+        public virtual Guid? KillerId { get; protected set; }
+
+        [ForeignKey(nameof(KillerId))]
+        public virtual ChatObject Killer { get; protected set; }
+
         public virtual DateTime? ClearTime { get; protected set; }
 
         /// <summary>
