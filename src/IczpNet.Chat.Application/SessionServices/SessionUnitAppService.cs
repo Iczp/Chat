@@ -294,7 +294,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .Any(x => x.UnitList.Any(d => d.OwnerId == entity.OwnerId))
             ;
 
-        Assert.If(isCanRead, "非法访问!");
+        Assert.If(!isCanRead, "非法访问!");
 
         return ObjectMapper.Map<Message, MessageDto>(message);
     }
