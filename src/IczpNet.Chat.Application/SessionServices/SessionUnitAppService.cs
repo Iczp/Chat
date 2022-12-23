@@ -253,7 +253,7 @@ namespace IczpNet.Chat.SessionServices
         {
             var entity = await Repository.GetAsync(id);
 
-            if(entity.IsKilled)
+            if (entity.IsKilled)
             {
                 return new PagedResultDto<MessageDto>();
             }
@@ -262,11 +262,12 @@ namespace IczpNet.Chat.SessionServices
                 .WhereIf(entity.HistoryFristTime.HasValue, x => x.CreationTime > entity.HistoryFristTime)
                 .WhereIf(entity.HistoryLastTime.HasValue, x => x.CreationTime < entity.HistoryFristTime)
                 .WhereIf(entity.ClearTime.HasValue, x => x.CreationTime > entity.ClearTime)
+                .WhereIf(!input.IsRemind.IsEmpty(), x => x.IsRemindAll || x.MessageReminderList.Any(x => x.SessionUnitId == id))
                 .WhereIf(!input.SenderId.IsEmpty(), new SenderMessageSpecification(input.SenderId.GetValueOrDefault()).ToExpression())
                 .WhereIf(!input.MinAutoId.IsEmpty(), new MinAutoIdMessageSpecification(input.MinAutoId.GetValueOrDefault()).ToExpression())
                 .WhereIf(!input.MaxAutoId.IsEmpty(), new MaxAutoIdMessageSpecification(input.MaxAutoId.GetValueOrDefault()).ToExpression())
                 ;
-            return await GetPagedListAsync<Message, MessageDto>(query, input, x => x.OrderBy(x => x.AutoId));
+            return await GetPagedListAsync<Message, MessageDto>(query, input, x => x.OrderByDescending(x => x.AutoId));
         }
     }
 }
