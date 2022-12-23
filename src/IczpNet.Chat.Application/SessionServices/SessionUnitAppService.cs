@@ -1,6 +1,7 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.SessionSections.Friendships;
@@ -61,12 +62,22 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return base.CheckPolicyAsync(policyName);
     }
 
+    protected virtual async Task<SessionUnit> GetEntityAsync(Guid id, bool checkIsKilled = true)
+    {
+        var entity = await Repository.GetAsync(id);
+
+        Assert.If(checkIsKilled && entity.IsKilled, "已经删除的会话单元!");
+
+        return entity;
+    }
+
     protected virtual async Task<IQueryable<SessionUnit>> GetQueryAsync(SessionUnitGetListInput input)
     {
         return (await Repository.GetQueryableAsync())
             .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
             .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
             .WhereIf(input.IsKilled.HasValue, x => x.IsKilled == input.IsKilled)
+            .WhereIf(input.DestinationObjectType.HasValue, x => x.Destination.ObjectType == input.DestinationObjectType)
             //.WhereIf(input.JoinWay.HasValue, x => x.JoinWay == input.JoinWay)
             //.WhereIf(input.InviterId.HasValue, x => x.InviterId == input.InviterId)
             ;
@@ -163,7 +174,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     {
         await CheckPolicyAsync(GetPolicyName);
 
-        var entity = await Repository.GetAsync(id);
+        var entity = await GetEntityAsync(id);
 
         return await MapToDtoAsync(entity);
     }
@@ -173,7 +184,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     {
         await CheckPolicyAsync(GetDetailPolicyName);
 
-        var entity = await Repository.GetAsync(id);
+        var entity = await GetEntityAsync(id);
 
         return ObjectMapper.Map<SessionUnit, SessionUnitDetailDto>(entity);
     }
@@ -188,7 +199,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     {
         await CheckPolicyAsync(SetReadedPolicyName);
 
-        var entity = await Repository.GetAsync(id);
+        var entity = await GetEntityAsync(id);
 
         await SessionUnitManager.SetToppingAsync(entity, isTopping);
 
@@ -200,7 +211,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     {
         await CheckPolicyAsync(SetReadedPolicyName);
 
-        var entity = await Repository.GetAsync(id);
+        var entity = await GetEntityAsync(id);
 
         await SessionUnitManager.SetReadedAsync(entity, messageId, isForce);
 
@@ -212,7 +223,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     {
         await CheckPolicyAsync(RemoveSessionPolicyName);
 
-        var entity = await Repository.GetAsync(id);
+        var entity = await GetEntityAsync(id);
 
         await SessionUnitManager.RemoveSessionAsync(entity);
 
@@ -222,7 +233,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     [HttpPost]
     public virtual async Task<SessionUnitDto> KillSessionAsync(Guid id)
     {
-        var entity = await Repository.GetAsync(id);
+        var entity = await GetEntityAsync(id);
 
         await SessionUnitManager.KillSessionAsync(entity);
 
@@ -234,7 +245,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     {
         await CheckPolicyAsync(ClearMessagePolicyName);
 
-        var entity = await Repository.GetAsync(id);
+        var entity = await GetEntityAsync(id);
 
         await SessionUnitManager.ClearMessageAsync(entity);
 
@@ -252,12 +263,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     [HttpGet]
     public async Task<PagedResultDto<MessageDto>> GetMessageListAsync(Guid id, SessionUnitGetMessageListInput input)
     {
-        var entity = await Repository.GetAsync(id);
-
-        if (entity.IsKilled)
-        {
-            return new PagedResultDto<MessageDto>();
-        }
+        var entity = await GetEntityAsync(id);
 
         var query = entity.Session.MessageList.AsQueryable()
             .WhereIf(entity.HistoryFristTime.HasValue, x => x.CreationTime > entity.HistoryFristTime)
@@ -274,7 +280,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     [HttpGet]
     public async Task<MessageDto> GetMessageAsync(Guid id, Guid messageId)
     {
-        var entity = await Repository.GetAsync(id);
+        var entity = await GetEntityAsync(id);
 
         //var message = entity.Session.MessageList.FirstOrDefault(x => x.Id == messageId);
 
@@ -297,5 +303,24 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         Assert.If(!isCanRead, "非法访问!");
 
         return ObjectMapper.Map<Message, MessageDto>(message);
+    }
+
+    [HttpGet]
+    public async Task<PagedResultDto<SessionUnitOwnerDto>> GetSessionMemberListAsync(Guid id, SessionUnitGetSessionMemberListInput input)
+    {
+        var entity = await GetEntityAsync(id);
+
+        var objectTypeList = new List<ChatObjectTypes>()
+        {
+             ChatObjectTypes.Personal, ChatObjectTypes.Official, ChatObjectTypes.ShopWaiter, ChatObjectTypes.Customer, ChatObjectTypes.Robot,
+        };
+
+        var query = entity.Session.UnitList.AsQueryable()
+           .Where(x => !x.IsKilled)
+           .Where(x => objectTypeList.Contains(x.Owner.ObjectType.Value))
+           .WhereIf(!input.TagId.IsEmpty(), x => x.SessionUnitTagList.Any(d => d.SessionTagId == input.TagId))
+           .WhereIf(!input.RoleId.IsEmpty(), x => x.SessionUnitRoleList.Any(d => d.SessionRoleId == input.RoleId))
+           ;
+        return await GetPagedListAsync<SessionUnit, SessionUnitOwnerDto>(query, input);
     }
 }

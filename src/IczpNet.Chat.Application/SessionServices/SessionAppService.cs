@@ -108,9 +108,9 @@ namespace IczpNet.Chat.SessionServices
         }
 
         [HttpGet]
-        public async Task<PagedResultDto<MessageDto>> GetMessageListAsync(SessionGetMessageListInput input)
+        public async Task<PagedResultDto<MessageDto>> GetMessageListAsync(Guid id, SessionGetMessageListInput input)
         {
-            var query = (await Repository.GetAsync(input.SessionId))
+            var query = (await Repository.GetAsync(id))
                 .MessageList.AsQueryable()
                 .WhereIf(!input.SenderId.IsEmpty(), new SenderMessageSpecification(input.SenderId.GetValueOrDefault()).ToExpression())
                 .WhereIf(!input.MinAutoId.IsEmpty(), new MinAutoIdMessageSpecification(input.MinAutoId.GetValueOrDefault()).ToExpression())

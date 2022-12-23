@@ -16,8 +16,6 @@ namespace IczpNet.Chat.SessionSections.Sessions
 {
     public class Session : BaseEntity<Guid>, IChatOwner<Guid?>
     {
-        public virtual int MemberCount => GetMemberCount();
-
         [StringLength(80)]
         public virtual string SessionKey { get; protected set; }
 
@@ -51,6 +49,18 @@ namespace IczpNet.Chat.SessionSections.Sessions
         public virtual IList<SessionTag> TagList { get; protected set; } = new List<SessionTag>();
 
         public virtual IList<SessionRole> RoleList { get; protected set; } = new List<SessionRole>();
+
+        [NotMapped]
+        public virtual int MemberCount => GetMemberCount();
+
+        [NotMapped]
+        public virtual int MessageCount => MessageList.Count;
+
+        [NotMapped]
+        public virtual int TagCount => TagList.Count;
+
+        [NotMapped]
+        public virtual int RoleCount => RoleList.Count;
 
         protected Session() { }
 

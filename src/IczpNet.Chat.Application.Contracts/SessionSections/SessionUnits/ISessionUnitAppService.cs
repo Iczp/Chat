@@ -21,4 +21,6 @@ public interface ISessionUnitAppService
     Task<PagedResultDto<MessageDto>> GetMessageListAsync(Guid id, SessionUnitGetMessageListInput input);
 
     Task<MessageDto> GetMessageAsync(Guid id, Guid messageId);
+
+    Task<PagedResultDto<SessionUnitOwnerDto>> GetSessionMemberListAsync(Guid id, SessionUnitGetSessionMemberListInput input);
 }

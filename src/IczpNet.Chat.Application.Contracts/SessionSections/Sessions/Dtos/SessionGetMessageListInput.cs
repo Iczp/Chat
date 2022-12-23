@@ -5,7 +5,7 @@ namespace IczpNet.Chat.SessionSections.Sessions.Dtos
 {
     public class SessionGetMessageListInput : PagedAndSortedResultRequestDto
     {
-        public virtual Guid SessionId { get; set; }
+        //public virtual Guid SessionId { get; set; }
 
         public virtual Guid? SenderId { get; set; }
 

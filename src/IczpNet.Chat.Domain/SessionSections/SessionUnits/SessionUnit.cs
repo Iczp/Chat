@@ -39,7 +39,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public virtual DateTime? HistoryLastTime { get; protected set; }
 
         /// <summary>
-        /// KillSession  退出群，不删除会话(用于查看历史消息)
+        /// KillSession  退出群，但是不删除会话(用于查看历史消息)
         /// </summary>
         public virtual bool IsKilled { get; protected set; }
 
