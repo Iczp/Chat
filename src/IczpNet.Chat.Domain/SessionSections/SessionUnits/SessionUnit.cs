@@ -36,14 +36,14 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public virtual DateTime? HistoryLastTime { get; protected set; }
 
         /// <summary>
-        /// KillSession  退出群，不删除会话
+        /// KillSession  退出群，不删除会话(用于查看历史消息)
         /// </summary>
         public virtual bool IsKilled { get; protected set; }
 
         public virtual DateTime? ClearTime { get; protected set; }
 
         /// <summary>
-        /// 删除消息会话,不退群
+        /// 不显示消息会话(不退群,不删除消息)
         /// </summary>
         public virtual DateTime? RemoveTime { get; protected set; }
 
