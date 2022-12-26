@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.Enums;
 using System;
+using System.ComponentModel;
 using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
@@ -8,13 +9,17 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
     {
         public virtual Guid? OwnerId { get; set; }
 
-        public virtual Guid? DestinationId { get;  set; }
+        public virtual Guid? DestinationId { get; set; }
 
         public virtual bool? IsKilled { get; set; }
 
         public virtual ChatObjectTypes? DestinationObjectType { get; set; }
 
-        //public virtual bool? IsRemind { get; set; }
+        [DefaultValue(false)]
+        public virtual bool IsRemind { get; set; }
+
+        [DefaultValue(false)]
+        public virtual bool IsBadge { get; set; }
 
         public virtual long? MinAutoId { get; set; }
 

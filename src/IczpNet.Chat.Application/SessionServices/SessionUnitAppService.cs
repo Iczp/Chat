@@ -80,9 +80,20 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(input.DestinationObjectType.HasValue, x => x.Destination.ObjectType == input.DestinationObjectType)
             .WhereIf(input.MinAutoId.HasValue, x => x.Session.LastMessageAutoId > input.MinAutoId)
             .WhereIf(input.MaxAutoId.HasValue, x => x.Session.LastMessageAutoId < input.MaxAutoId)
-
-            //.WhereIf(input.JoinWay.HasValue, x => x.JoinWay == input.JoinWay)
-            //.WhereIf(input.InviterId.HasValue, x => x.InviterId == input.InviterId)
+            .WhereIf(input.IsBadge, x =>
+                x.Session.MessageList.Any(d =>
+                    //!x.IsRollbacked &&
+                    d.AutoId > x.ReadedMessageAutoId &&
+                    d.SenderId != x.OwnerId &&
+                    (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
+                    (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
+                    (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)
+                )
+            )
+            .WhereIf(input.IsRemind, x =>
+                x.Session.MessageList.Any(d => !d.IsRollbacked && d.IsRemindAll) ||
+                x.ReminderList.Any(d => !d.Message.IsRollbacked)
+            )
             ;
     }
 
@@ -311,6 +322,27 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     }
 
     [HttpGet]
+    public async Task<int> GetBadgeAsync(Guid ownerId)
+    {
+        var badge = (await Repository.GetQueryableAsync())
+            .Where(x => x.OwnerId == ownerId)
+            .Select(x => new
+            {
+                Badge = x.Session.MessageList.Count(d =>
+                //!x.IsRollbacked &&
+                d.AutoId > x.ReadedMessageAutoId &&
+                d.SenderId != x.OwnerId &&
+                (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
+                (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
+                (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime))
+            })
+            .Where(x => x.Badge > 0)
+            .ToList()
+            .Sum(x => x.Badge);
+        return badge;
+    }
+
+    [HttpGet]
     public async Task<PagedResultDto<SessionUnitOwnerDto>> GetSessionMemberListAsync(Guid id, SessionUnitGetSessionMemberListInput input)
     {
         var entity = await GetEntityAsync(id);
@@ -328,4 +360,6 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
            ;
         return await GetPagedListAsync<SessionUnit, SessionUnitOwnerDto>(query, input);
     }
+
+
 }

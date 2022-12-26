@@ -32,5 +32,7 @@ public interface ISessionUnitAppService
 
     Task<MessageDto> GetMessageAsync(Guid id, Guid messageId);
 
+    Task<int> GetBadgeAsync(Guid ownerId);
+
     Task<PagedResultDto<SessionUnitOwnerDto>> GetSessionMemberListAsync(Guid id, SessionUnitGetSessionMemberListInput input);
 }
