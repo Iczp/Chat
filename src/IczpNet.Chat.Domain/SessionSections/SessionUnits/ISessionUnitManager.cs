@@ -17,5 +17,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
         Task<SessionUnit> ClearMessageAsync(SessionUnit entity);
 
         Task<SessionUnit> DeleteMessageAsync(SessionUnit entity, Guid messageId);
+
+        Task<int> GetBadgeAsync(Guid ownerId);
     }
 }

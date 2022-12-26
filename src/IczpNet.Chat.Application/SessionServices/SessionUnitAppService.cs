@@ -14,9 +14,11 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 
@@ -322,24 +324,9 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     }
 
     [HttpGet]
-    public async Task<int> GetBadgeAsync(Guid ownerId)
+    public Task<int> GetBadgeAsync(Guid ownerId)
     {
-        var badge = (await Repository.GetQueryableAsync())
-            .Where(x => x.OwnerId == ownerId)
-            .Select(x => new
-            {
-                Badge = x.Session.MessageList.Count(d =>
-                //!x.IsRollbacked &&
-                d.AutoId > x.ReadedMessageAutoId &&
-                d.SenderId != x.OwnerId &&
-                (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
-                (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
-                (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime))
-            })
-            .Where(x => x.Badge > 0)
-            .ToList()
-            .Sum(x => x.Badge);
-        return badge;
+        return SessionUnitManager.GetBadgeAsync(ownerId); ;
     }
 
     [HttpGet]
@@ -349,12 +336,13 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 
         var objectTypeList = new List<ChatObjectTypes>()
         {
-             ChatObjectTypes.Personal, ChatObjectTypes.Official, ChatObjectTypes.ShopWaiter, ChatObjectTypes.Customer, ChatObjectTypes.Robot,
+             ChatObjectTypes.Personal, ChatObjectTypes.Official, ChatObjectTypes.ShopKeeper, ChatObjectTypes.Customer, ChatObjectTypes.Robot,
         };
 
         var query = entity.Session.UnitList.AsQueryable()
            .Where(x => !x.IsKilled)
            .Where(x => objectTypeList.Contains(x.Owner.ObjectType.Value))
+           .WhereIf(entity.Session.OwnerId == null, x => x.Id != id)
            .WhereIf(!input.TagId.IsEmpty(), x => x.SessionUnitTagList.Any(d => d.SessionTagId == input.TagId))
            .WhereIf(!input.RoleId.IsEmpty(), x => x.SessionUnitRoleList.Any(d => d.SessionRoleId == input.RoleId))
            ;

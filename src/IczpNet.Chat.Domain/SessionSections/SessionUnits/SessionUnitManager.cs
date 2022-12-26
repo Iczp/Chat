@@ -2,6 +2,7 @@
 using IczpNet.Chat.SessionSections.ReadedRecorders;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
@@ -23,7 +24,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
             MessageRepository = messageRepository;
         }
 
-        
+
 
         protected async Task<SessionUnit> SetEntityAsync(SessionUnit entity, Action<SessionUnit> action = null)
         {
@@ -66,6 +67,25 @@ namespace IczpNet.Chat.SessionSections.Sessions
             throw new NotImplementedException();
         }
 
+        public async Task<int> GetBadgeAsync(Guid ownerId)
+        {
+            var badge = (await Repository.GetQueryableAsync())
+                .Where(x => x.OwnerId == ownerId)
+                .Select(x => new
+                {
+                    Badge = x.Session.MessageList.Count(d =>
+                    //!x.IsRollbacked &&
+                    d.AutoId > x.ReadedMessageAutoId &&
+                    d.SenderId != x.OwnerId &&
+                    (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
+                    (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
+                    (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime))
+                })
+                .Where(x => x.Badge > 0)
+                .ToList()
+            .Sum(x => x.Badge);
 
+            return badge;
+        }
     }
 }
