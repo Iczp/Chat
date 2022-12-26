@@ -62,14 +62,14 @@ namespace IczpNet.Chat.SessionSections.Sessions
         {
             var sessionKey = MakeSesssionKey(sender, receiver);
 
-            var channel = await ChannelResolver.GetAsync(sender, receiver);
-
             var session = await SessionRepository.FindAsync(x => x.SessionKey.Equals(sessionKey));
 
             if (session != null)
             {
                 return session;
             }
+
+            var channel = await ChannelResolver.GetAsync(sender, receiver);
 
             session = new Session(GuidGenerator.Create(), sessionKey, channel);
 

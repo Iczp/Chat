@@ -24,6 +24,8 @@ public partial class Message : BaseEntity<Guid>
     [ForeignKey(nameof(SessionId))]
     public virtual Session Session { get; protected set; }
 
+    public virtual int SessionUnitCount { get; protected set; }
+
     [StringLength(100)]
     //[Required]
     public virtual string Provider { get; protected set; }

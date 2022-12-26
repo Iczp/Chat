@@ -24,6 +24,7 @@ public partial class Message
         Channel = session.Channel;
         Session = session;
         SessionKey = session.SessionKey;
+        SessionUnitCount = session.UnitList.Count;
         //MessageType = messageType;
     }
 

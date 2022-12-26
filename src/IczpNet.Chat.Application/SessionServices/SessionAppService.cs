@@ -117,7 +117,7 @@ namespace IczpNet.Chat.SessionServices
                 .WhereIf(!input.MaxAutoId.IsEmpty(), new MaxAutoIdMessageSpecification(input.MaxAutoId.GetValueOrDefault()).ToExpression())
                 ;
 
-            return await GetPagedListAsync<Message, MessageDto>(query, input, x => x.OrderBy(x => x.AutoId));
+            return await GetPagedListAsync<Message, MessageDto>(query, input, x => x.OrderByDescending(x => x.AutoId));
         }
 
         [HttpGet]
