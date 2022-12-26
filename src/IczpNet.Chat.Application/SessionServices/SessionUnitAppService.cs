@@ -78,6 +78,9 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
             .WhereIf(input.IsKilled.HasValue, x => x.IsKilled == input.IsKilled)
             .WhereIf(input.DestinationObjectType.HasValue, x => x.Destination.ObjectType == input.DestinationObjectType)
+            .WhereIf(input.MinAutoId.HasValue, x => x.Session.LastMessageAutoId > input.MinAutoId)
+            .WhereIf(input.MaxAutoId.HasValue, x => x.Session.LastMessageAutoId < input.MaxAutoId)
+
             //.WhereIf(input.JoinWay.HasValue, x => x.JoinWay == input.JoinWay)
             //.WhereIf(input.InviterId.HasValue, x => x.InviterId == input.InviterId)
             ;
@@ -269,10 +272,12 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(entity.HistoryFristTime.HasValue, x => x.CreationTime > entity.HistoryFristTime)
             .WhereIf(entity.HistoryLastTime.HasValue, x => x.CreationTime < entity.HistoryFristTime)
             .WhereIf(entity.ClearTime.HasValue, x => x.CreationTime > entity.ClearTime)
+            .WhereIf(input.MessageType.HasValue, x => x.MessageType == input.MessageType)
             .WhereIf(!input.IsRemind.IsEmpty(), x => x.IsRemindAll || x.MessageReminderList.Any(x => x.SessionUnitId == id))
             .WhereIf(!input.SenderId.IsEmpty(), new SenderMessageSpecification(input.SenderId.GetValueOrDefault()).ToExpression())
             .WhereIf(!input.MinAutoId.IsEmpty(), new MinAutoIdMessageSpecification(input.MinAutoId.GetValueOrDefault()).ToExpression())
             .WhereIf(!input.MaxAutoId.IsEmpty(), new MaxAutoIdMessageSpecification(input.MaxAutoId.GetValueOrDefault()).ToExpression())
+            .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TextContentList.Any(d => d.Text.Contains(input.Keyword)))
             ;
         return await GetPagedListAsync<Message, MessageDto>(query, input, x => x.OrderByDescending(x => x.AutoId));
     }

@@ -14,6 +14,12 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         public virtual ChatObjectTypes? DestinationObjectType { get; set; }
 
+        //public virtual bool? IsRemind { get; set; }
+
+        public virtual long? MinAutoId { get; set; }
+
+        public virtual long? MaxAutoId { get; set; }
+
         //public virtual JoinWays? JoinWay { get; set; }
 
         //public virtual Guid? InviterId { get; set; }

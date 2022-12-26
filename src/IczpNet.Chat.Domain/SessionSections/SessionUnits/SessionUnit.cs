@@ -89,7 +89,13 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public virtual int ReminderMeCount => GetRemindMeCount();
 
         [NotMapped]
-        public virtual int Badge => GetBadge();
+        public virtual int Badge => Session.MessageList.Count(x =>
+                //!x.IsRollbacked &&
+                x.AutoId > ReadedMessageAutoId &&
+                x.SenderId != OwnerId &&
+                (!HistoryFristTime.HasValue || x.CreationTime > HistoryFristTime) &&
+                (!HistoryLastTime.HasValue || x.CreationTime < HistoryLastTime) &&
+                (!ClearTime.HasValue || x.CreationTime > ClearTime));// GetBadge();
 
         [NotMapped]
         public virtual int ReminderCount => GetReminderCount();

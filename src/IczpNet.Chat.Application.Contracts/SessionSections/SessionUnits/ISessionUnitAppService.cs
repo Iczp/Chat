@@ -8,6 +8,16 @@ namespace IczpNet.Chat.SessionSections.SessionUnits;
 
 public interface ISessionUnitAppService
 {
+    Task<PagedResultDto<SessionUnitDto>> GetListAsync(SessionUnitGetListInput input);
+
+    Task<PagedResultDto<SessionUnitDto>> GetListByLinqAsync(SessionUnitGetListInput input);
+
+    Task<SessionUnitDto> GetAsync(Guid id);
+
+    Task<SessionUnitDetailDto> GetDetailAsync(Guid id);
+
+    Task<SessionUnitDto> SetToppingAsync(Guid id, bool isTopping);
+
     Task<SessionUnitDto> SetReadedAsync(Guid id, Guid messageId, bool isForce);
 
     Task<SessionUnitDto> RemoveSessionAsync(Guid id);
