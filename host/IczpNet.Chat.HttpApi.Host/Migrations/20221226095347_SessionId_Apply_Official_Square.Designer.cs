@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,10 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221226095347_SessionId_Apply_Official_Square")]
+    partial class SessionId_Apply_Official_Square
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -4548,18 +4550,6 @@ namespace IczpNet.Chat.Migrations
                     b.ToTable("Chat_Square", (string)null);
                 });
 
-            modelBuilder.Entity("IczpNet.Chat.Subscriptions.Subscription", b =>
-                {
-                    b.HasBaseType("IczpNet.Chat.ChatObjects.ChatObject");
-
-                    b.Property<Guid?>("SessionId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasIndex("SessionId");
-
-                    b.ToTable("Chat_Subscription", (string)null);
-                });
-
             modelBuilder.Entity("ArticleContentMessage", b =>
                 {
                     b.HasOne("IczpNet.Chat.MessageSections.Templates.ArticleContent", null)
@@ -5658,21 +5648,6 @@ namespace IczpNet.Chat.Migrations
                         .HasForeignKey("SessionId");
 
                     b.Navigation("Category");
-
-                    b.Navigation("Session");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.Subscriptions.Subscription", b =>
-                {
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", null)
-                        .WithOne()
-                        .HasForeignKey("IczpNet.Chat.Subscriptions.Subscription", "Id")
-                        .OnDelete(DeleteBehavior.ClientCascade)
-                        .IsRequired();
-
-                    b.HasOne("IczpNet.Chat.SessionSections.Sessions.Session", "Session")
-                        .WithMany()
-                        .HasForeignKey("SessionId");
 
                     b.Navigation("Session");
                 });

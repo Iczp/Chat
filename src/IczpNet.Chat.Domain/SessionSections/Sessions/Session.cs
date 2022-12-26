@@ -3,10 +3,12 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.OfficialSections.Officials;
 using IczpNet.Chat.RoomSections.Rooms;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SquareSections.Squares;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -44,11 +46,15 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public virtual IList<SessionUnit> UnitList { get; internal set; } = new List<SessionUnit>();
 
-        public virtual IList<Room> RoomList { get; protected set; } = new List<Room>();
-
         public virtual IList<SessionTag> TagList { get; protected set; } = new List<SessionTag>();
 
         public virtual IList<SessionRole> RoleList { get; protected set; } = new List<SessionRole>();
+
+        public virtual IList<Room> RoomList { get; protected set; } = new List<Room>();
+
+        public virtual IList<Official> OfficialList { get; protected set; } = new List<Official>();
+
+        public virtual IList<Square> SquareList { get; protected set; } = new List<Square>();
 
         [NotMapped]
         public virtual int MemberCount => GetMemberCount();

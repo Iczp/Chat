@@ -34,6 +34,7 @@ using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SquareSections.SquareCategorys;
 using IczpNet.Chat.SquareSections.SquareMembers;
 using IczpNet.Chat.SquareSections.Squares;
+using IczpNet.Chat.Subscriptions;
 using IczpNet.Chat.Wallets;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Data;
@@ -95,6 +96,8 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     public DbSet<HistoryMessage> HistoryMessage { get; }
 
     public DbSet<Official> Official { get; }
+    public DbSet<Subscription> Subscription { get; }
+    
     public DbSet<OfficialMember> OfficialMember { get; }
     public DbSet<OfficialMemberTagUnit> OfficialMemberTagUnit { get; }
     public DbSet<OfficialGroupMember> OfficialGroupMember { get; }

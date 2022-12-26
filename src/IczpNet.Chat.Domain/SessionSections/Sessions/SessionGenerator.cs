@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.ChatObjects;
+﻿using IczpNet.AbpCommons;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
@@ -73,6 +74,11 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
             session = new Session(GuidGenerator.Create(), sessionKey, channel);
 
+            if (sender.ObjectType == ChatObjectTypes.Official)
+            {
+                Assert.If(receiver.ObjectType != ChatObjectTypes.Personal && sender.Id != receiver.Id, "非法");
+            }
+
             if (channel == Channels.PrivateChannel)
             {
                 session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session, sender, receiver));
@@ -84,6 +90,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
             }
             return await SessionRepository.InsertAsync(session, autoSave: true);
         }
+
+
 
         [UnitOfWork(true, IsolationLevel.ReadUncommitted)]
         public virtual async Task<List<Session>> GenerateSessionByMessageAsync()
@@ -129,7 +137,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public async Task<Session> UpdateAsync(Session session)
         {
-            return await SessionRepository.UpdateAsync(session,true);
+            return await SessionRepository.UpdateAsync(session, true);
         }
     }
 }

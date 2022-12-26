@@ -15,15 +15,15 @@ namespace IczpNet.Chat.Enums
         [Description("群")]
         Room = 2,
         /// <summary>
-        /// 公众号
+        /// 服务号
         /// </summary>
-        [Description("公众号")]
+        [Description("服务号")]
         Official = 3,
         /// <summary>
-        /// 公众群组
+        /// 订阅号
         /// </summary>
-        [Description("公众群组")]
-        OfficialGroup = 4,
+        [Description("订阅号")]
+        Subscription = 4,
         /// <summary>
         /// 广场
         /// </summary>

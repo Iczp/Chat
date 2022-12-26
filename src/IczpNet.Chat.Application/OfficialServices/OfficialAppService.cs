@@ -50,6 +50,12 @@ namespace IczpNet.Chat.OfficialServices
             await base.CheckUpdateAsync(id, entity, input);
         }
 
+        public async Task<int> AddAllAsync(Guid id)
+        {
+            var entity = await GetEntityByIdAsync(id);
+            throw new NotImplementedException();
+        }
+
         //protected override Task MapToEntityAsync(OfficialUpdateInput updateInput, Official entity)
         //{
         //    entity.SetName(updateInput.Name);

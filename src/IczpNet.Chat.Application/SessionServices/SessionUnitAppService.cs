@@ -282,6 +282,11 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         var entity = await GetEntityAsync(id);
 
         var query = entity.Session.MessageList.AsQueryable()
+            .WhereIf(entity.Session.Owner.ObjectType == ChatObjectTypes.Official, x =>
+                (x.SenderId == entity.OwnerId && x.ReceiverId == entity.Session.OwnerId) ||
+                (x.ReceiverId == entity.OwnerId && x.SenderId == entity.Session.OwnerId) ||
+                (x.SenderId == x.ReceiverId && x.SenderId == entity.OwnerId)
+            )
             .WhereIf(entity.HistoryFristTime.HasValue, x => x.CreationTime > entity.HistoryFristTime)
             .WhereIf(entity.HistoryLastTime.HasValue, x => x.CreationTime < entity.HistoryFristTime)
             .WhereIf(entity.ClearTime.HasValue, x => x.CreationTime > entity.ClearTime)
