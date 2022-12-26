@@ -26,6 +26,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         [ForeignKey(nameof(SessionId))]
         public virtual Session Session { get; protected set; }
 
+        public virtual ChatObjectTypes? DestinationObjectType { get; protected set; }
+
         /// <summary>
         /// 已读的消息AutoId
         /// </summary>
@@ -117,18 +119,12 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         protected SessionUnit() { }
 
-        internal SessionUnit(Guid id, [NotNull] Guid sessionId, [NotNull] Guid ownerId, [NotNull] Guid destinationId) : base(id)
-        {
-            SessionId = sessionId;
-            OwnerId = ownerId;
-            DestinationId = destinationId;
-        }
-
         internal SessionUnit(Guid id, [NotNull] Session session, [NotNull] ChatObject owner, [NotNull] ChatObject destination) : base(id)
         {
             Session = session;
             Owner = owner;
             Destination = destination;
+            DestinationObjectType = destination.ObjectType;
         }
 
         internal void SetReaded(long messageAutoId, bool isForce = false)
