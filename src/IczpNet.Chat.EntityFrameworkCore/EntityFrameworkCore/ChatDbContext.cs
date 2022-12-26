@@ -2,6 +2,7 @@ using IczpNet.Chat.Articles;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatUsers;
 using IczpNet.Chat.Connections;
+using IczpNet.Chat.MessageSections.MessageContents;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.OfficialSections.OfficialExcludedMembers;
@@ -76,6 +77,8 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
 
 
     public DbSet<Message> Message { get; }
+    public DbSet<MessageContent> MessageContent { get; }
+    
 
     public DbSet<Robot> Robot { get; }
 
