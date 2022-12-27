@@ -7,4 +7,11 @@
     <RootNamespace>IczpNet.Chat</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Update="Fody" Version="6.6.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
 </Project>

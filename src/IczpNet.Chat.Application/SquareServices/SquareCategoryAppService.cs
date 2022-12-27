@@ -31,7 +31,7 @@ namespace IczpNet.Chat.SquareServices
             Assert.If(!input.IsEnabledParentId && input.ParentId.HasValue, "When [IsEnabledParentId]=false,then [ParentId] != null");
 
             return (await Repository.GetQueryableAsync())
-                .WhereIf(input.Depth.HasValue, (x) => x.Depth == input.Depth)
+                //.WhereIf(input.Depth.HasValue, (x) => x.Depth == input.Depth)
                 .WhereIf(input.IsEnabledParentId, (x) => x.ParentId == input.ParentId)
                 .WhereIf(!string.IsNullOrWhiteSpace(input.Keyword), x => x.Name.Contains(input.Keyword));
 
