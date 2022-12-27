@@ -281,8 +281,11 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     {
         var entity = await GetEntityAsync(id);
 
+        Assert.NotNull(entity.Session, "session is null");
+
         var query = entity.Session.MessageList.AsQueryable()
-            .WhereIf(entity.Session.Owner.ObjectType == ChatObjectTypes.Official, x =>
+            //Official
+            .WhereIf(entity.Session.Owner != null && entity.Session.Owner.ObjectType == ChatObjectTypes.Official, x =>
                 (x.SenderId == entity.OwnerId && x.ReceiverId == entity.Session.OwnerId) ||
                 (x.ReceiverId == entity.OwnerId && x.SenderId == entity.Session.OwnerId) ||
                 (x.SenderId == x.ReceiverId && x.SenderId == entity.OwnerId)
