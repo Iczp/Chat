@@ -47,7 +47,7 @@ public class ChatDomainModule : AbpModule
     public override async Task OnPostApplicationInitializationAsync(ApplicationInitializationContext context)
     {
         //await context.AddBackgroundWorkerAsync<ConnectionWorker>();
-        await context.AddBackgroundWorkerAsync<SendMessageWorker>();
+        //await context.AddBackgroundWorkerAsync<SendMessageWorker>();
         await base.OnPostApplicationInitializationAsync(context);
     }
 }
