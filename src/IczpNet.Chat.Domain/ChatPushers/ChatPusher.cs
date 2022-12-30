@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.Commands;
 using IczpNet.Pusher;
+using IczpNet.Pusher.Models;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -21,20 +22,23 @@ namespace IczpNet.Chat.ChatPushers
             LocalEventBus = localEventBus;
         }
 
-        public async Task ExecuteAsync<TCommand>(object data, List<string> ignoreConnections = null)
+        public Task ExecuteAsync<TCommand>(object data, List<string> ignoreConnections = null)
         {
-            var eventData = new
+            return ExecuteAsync<TCommand>(new CommandData
             {
                 Command = CommandAttribute.GetValue<TCommand>(),
-                Data = data,
+                Payload = data,
                 IgnoreConnections = ignoreConnections
-            };
+            });
+        }
 
-            Logger.LogDebug($"ChatPusher PublishAsync:{eventData}");
+        public async Task ExecuteAsync<TCommand>(CommandData commandData)
+        {
+            Logger.LogDebug($"ChatPusher PublishAsync:{commandData}");
 
-            await PusherPublisher.PublishAsync(eventData);
+            await PusherPublisher.PublishAsync(commandData);
 
-            await LocalEventBus.PublishAsync(eventData);
+            await LocalEventBus.PublishAsync(commandData);
         }
     }
 }

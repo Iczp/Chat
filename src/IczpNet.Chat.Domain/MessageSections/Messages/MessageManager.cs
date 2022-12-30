@@ -102,12 +102,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             var targetIdList = await ChatObjectResolver.GetIdListAsync(message);
 
-            //push
-            await ChatPusher.ExecuteAsync<ChatCommand>(new MessageSendEto()
-            {
-                TargetIdList = targetIdList,
-                Payload = output,
-            }, input.IgnoreConnections);
+            await ChatPusher.ExecuteAsync<ChatCommand>(new SendDataEto(targetIdList, output), input.IgnoreConnections);
 
             return await Task.FromResult(output);
         }
@@ -131,12 +126,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             var targetIdList = await ChatObjectResolver.GetIdListAsync(message);
 
-            //push
-            await ChatPusher.ExecuteAsync<RollbackCommand>(new MessageSendEto()
-            {
-                TargetIdList = targetIdList,
-                Payload = message.Id,
-            });
+            await ChatPusher.ExecuteAsync<RollbackCommand>(new SendDataEto(targetIdList, message.Id));
 
             return 0;
 
