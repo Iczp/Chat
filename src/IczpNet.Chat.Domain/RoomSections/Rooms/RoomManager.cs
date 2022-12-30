@@ -28,7 +28,7 @@ namespace IczpNet.Chat.RoomSections.Rooms
         protected ISessionGenerator SessionGenerator { get; }
         protected IChatObjectManager ChatObjectManager { get; }
 
-        protected IChatSender ChatSender { get; }
+        protected IMessageSender ChatSender { get; }
 
         public RoomManager(
             IOptions<RoomOptions> options,
@@ -37,7 +37,7 @@ namespace IczpNet.Chat.RoomSections.Rooms
             IRepository<SessionUnit, Guid> sessionUnitRepository,
             ISessionGenerator sessionGenerator,
             IChatObjectManager chatObjectManager,
-            IChatSender chatSender)
+            IMessageSender chatSender)
         {
             Config = options.Value;
             Repository = repository;

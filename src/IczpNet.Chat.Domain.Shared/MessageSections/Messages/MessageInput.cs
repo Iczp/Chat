@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.Enums;
 using System;
+using System.Collections.Generic;
 
 namespace IczpNet.Chat.MessageSections.Messages
 {
@@ -38,5 +39,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         public virtual string KeyValue { get; set; }
 
         public virtual Guid? QuoteMessageId { get; set; }
+
+        public virtual List<string> IgnoreConnections { get; set; }
     }
 }

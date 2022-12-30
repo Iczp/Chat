@@ -45,7 +45,7 @@ namespace IczpNet.Chat.MessageSections
             return result;
         }
 
-        public virtual async Task<IEnumerable<Guid>> GetIdListAsync(Message message)
+        public virtual async Task<List<Guid>> GetIdListAsync(Message message)
         {
             var result = new List<Guid>();
             switch (message.Channel)

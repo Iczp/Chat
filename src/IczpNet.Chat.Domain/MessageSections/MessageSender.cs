@@ -11,7 +11,7 @@ using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.MessageSections
 {
-    public class ChatSender : DomainService, IChatSender
+    public class MessageSender : DomainService, IMessageSender
     {
         protected IObjectMapper ObjectMapper { get; }
         protected IRepository<Message, Guid> Repository { get; }
@@ -19,7 +19,7 @@ namespace IczpNet.Chat.MessageSections
         protected IContentResolver ContentResolver { get; }
         protected IMessageManager MessageManager { get; }
 
-        public ChatSender(
+        public MessageSender(
             IMessageManager messageManager,
             IRedEnvelopeGenerator redEnvelopeGenerator,
             IContentResolver contentResolver,

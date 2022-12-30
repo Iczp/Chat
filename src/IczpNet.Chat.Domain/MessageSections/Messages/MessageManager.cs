@@ -1,6 +1,9 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.ChatPushers;
+using IczpNet.Chat.Commands;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.Etos;
 using IczpNet.Chat.Options;
 using IczpNet.Chat.SessionSections.Sessions;
 using Microsoft.Extensions.Options;
@@ -10,6 +13,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.EventBus.Local;
 using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.MessageSections.Messages
@@ -21,9 +25,10 @@ namespace IczpNet.Chat.MessageSections.Messages
         protected IRepository<Message, Guid> Repository { get; }
         protected ISessionGenerator SessionGenerator { get; }
         protected IMessageValidator MessageValidator { get; }
-        protected IChatObjectResolver MessageChatObjectResolver { get; }
+        protected IChatObjectResolver ChatObjectResolver { get; }
         protected IContentResolver ContentResolver { get; }
         protected ChatOption Config { get; }
+        protected IChatPusher ChatPusher { get; }
 
         public MessageManager(
             IRepository<Message, Guid> repository,
@@ -33,16 +38,18 @@ namespace IczpNet.Chat.MessageSections.Messages
             IObjectMapper objectMapper,
             IMessageValidator messageValidator,
             ISessionGenerator sessionIdGenerator,
-            IOptions<ChatOption> options)
+            IOptions<ChatOption> options,
+            IChatPusher chatPusher)
         {
             Repository = repository;
-            MessageChatObjectResolver = messageChatObjectResolver;
+            ChatObjectResolver = messageChatObjectResolver;
             ChatObjectManager = chatObjectManager;
             ContentResolver = contentResolver;
             ObjectMapper = objectMapper;
             MessageValidator = messageValidator;
             SessionGenerator = sessionIdGenerator;
             Config = options.Value;
+            ChatPusher = chatPusher;
         }
 
         public virtual async Task<Message> CreateMessageAsync(ChatObject sender, ChatObject receiver, Func<Message, Task<IMessageContentEntity>> func)
@@ -93,8 +100,15 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
 
-            var chatObjectList = await MessageChatObjectResolver.GetListAsync(message);
+            var targetIdList = await ChatObjectResolver.GetIdListAsync(message);
+
             //push
+            await ChatPusher.ExecuteAsync<ChatCommand>(new MessageSendEto()
+            {
+                TargetIdList = targetIdList,
+                Payload = output,
+            }, input.IgnoreConnections);
+
             return await Task.FromResult(output);
         }
 
@@ -115,10 +129,14 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             await Repository.UpdateAsync(message, true);
 
-            // push
-            //var targetUserIdList = await MessageChatObjectResolver.GetChatObjectIdListAsync(message);
+            var targetIdList = await ChatObjectResolver.GetIdListAsync(message);
 
-            //return await PusherFactory.SendToAsync<RollbackCommand>(x => targetUserIdList.Contains(x.UserId), rollbackMessageCommandMessage);
+            //push
+            await ChatPusher.ExecuteAsync<RollbackCommand>(new MessageSendEto()
+            {
+                TargetIdList = targetIdList,
+                Payload = message.Id,
+            });
 
             return 0;
 

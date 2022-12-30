@@ -21,12 +21,12 @@ namespace IczpNet.Chat.Connections
         private static List<Guid> ChatObjectIdList;
 
         protected IRepository<ChatObject, Guid> ChatObjectRepository { get; }
-        protected IChatSender ChatSender { get; }
+        protected IMessageSender ChatSender { get; }
 
         public SendMessageWorker(AbpAsyncTimer timer,
             IServiceScopeFactory serviceScopeFactory,
             IRepository<ChatObject, Guid> chatObjectRepository,
-            IChatSender chatSender) : base(timer, serviceScopeFactory)
+            IMessageSender chatSender) : base(timer, serviceScopeFactory)
         {
             Timer.Period = 3 * 1000; //3 seconds
             ChatObjectRepository = chatObjectRepository;

@@ -27,12 +27,12 @@ namespace IczpNet.Chat.Services
         protected IRepository<ChatObject, Guid> ChatObjectRepository { get; }
         protected IMessageManager MessageManager { get; }
 
-        protected IChatSender ChatSender { get; }
+        protected IMessageSender ChatSender { get; }
         public UnitTestAppService(
             IRepository<Message, Guid> messageRepository,
             IRepository<ChatObject, Guid> chatObjectRepository,
             IMessageManager messageManager,
-            IChatSender chatSender,
+            IMessageSender chatSender,
             IRepository<Session, Guid> sessionRepository)
         {
             MessageRepository = messageRepository;

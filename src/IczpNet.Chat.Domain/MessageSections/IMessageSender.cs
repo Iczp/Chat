@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace IczpNet.Chat.MessageSections
 {
-    public interface IChatSender
+    public interface IMessageSender
     {
         Task<MessageInfo<CmdContentInfo>> SendCmdMessageAsync(MessageInput<CmdContentInfo> input);
         Task<MessageInfo<TextContentInfo>> SendTextMessageAsync(MessageInput<TextContentInfo> input);

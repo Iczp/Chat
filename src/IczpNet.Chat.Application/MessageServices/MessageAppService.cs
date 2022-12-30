@@ -23,13 +23,13 @@ namespace IczpNet.Chat.MessageServices
         IMessageAppService
     {
 
-        protected IChatSender ChatSender { get; }
+        protected IMessageSender ChatSender { get; }
         protected IMessageManager MessageManager { get; }
 
         public MessageAppService(
             IRepository<Message, Guid> repository,
             IMessageManager messageManager,
-            IChatSender chatSender) : base(repository)
+            IMessageSender chatSender) : base(repository)
         {
             ChatSender = chatSender;
             MessageManager = messageManager;
