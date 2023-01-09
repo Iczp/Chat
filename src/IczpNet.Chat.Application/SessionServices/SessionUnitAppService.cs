@@ -109,15 +109,14 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 
         var query = await GetQueryAsync(input);
 
-        return await GetPagedListAsync<SessionUnit, SessionUnitDto>(query, input);
+        //return await GetPagedListAsync<SessionUnit, SessionUnitDto>(query, input);
 
         if (!input.IsOrderByBadge)
         {
             return await GetPagedListAsync<SessionUnit, SessionUnitDto>(
                 query,
                 input,
-                x => x.OrderByDescending(d => d.Sorting)
-                      .ThenByDescending(x => x.Session.LastMessageAutoId)
+                x => x.OrderByDescending(x => x.Session.LastMessageAutoId)
                       );
         }
 
