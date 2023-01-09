@@ -1,10 +1,12 @@
-﻿using IczpNet.Chat.ChatObjects;
+﻿using IczpNet.AbpCommons;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.RoomSections.Rooms;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 
@@ -13,9 +15,15 @@ namespace IczpNet.Chat.MessageSections
     public class ChatObjectResolver : DomainService, IChatObjectResolver
     {
         protected IRepository<Room, Guid> RoomRepository { get; }
-        public ChatObjectResolver(IRepository<Room, Guid> roomRepository)
+
+        protected IDistributedCache<List<Guid>, Guid> SessionUnitIdListCache { get; }
+
+        public ChatObjectResolver(
+            IRepository<Room, Guid> roomRepository,
+            IDistributedCache<List<Guid>, Guid> sessionUnitIdListCache)
         {
             RoomRepository = roomRepository;
+            SessionUnitIdListCache = sessionUnitIdListCache;
         }
         public virtual async Task<List<ChatObject>> GetListAsync(Message message)
         {
@@ -45,31 +53,14 @@ namespace IczpNet.Chat.MessageSections
             return result;
         }
 
-        public virtual async Task<List<Guid>> GetIdListAsync(Message message)
+        public virtual Task<List<Guid>> GetIdListAsync(Message message)
         {
-            var result = new List<Guid>();
-            switch (message.Channel)
+            Assert.NotNull(message.SessionId, "Message.Session is not null.");
+
+            return SessionUnitIdListCache.GetOrAddAsync(message.SessionId.Value, () =>
             {
-                case Enums.Channels.PrivateChannel:
-                    return new List<Guid>() { message.Sender.Id, message.Receiver.Id };
-                case Enums.Channels.RoomChannel:
-                    var roomId = message.ReceiverId.Value;
-                    var room = await RoomRepository.GetAsync(roomId);
-                    return room.RoomMemberList.Select(x => x.OwnerId).Distinct().ToList();
-                case Enums.Channels.SubscriptionChannel:
-
-
-                    break;
-                case Enums.Channels.ServiceChannel:
-                    break;
-                case Enums.Channels.SquareChannel:
-                    break;
-                case Enums.Channels.RobotChannel:
-                    break;
-                case Enums.Channels.ElectronicCommerceChannel:
-                    break;
-            }
-            return result;
+                return Task.FromResult(message.Session.UnitList.Select(x => x.OwnerId).ToList());
+            });
         }
     }
 }

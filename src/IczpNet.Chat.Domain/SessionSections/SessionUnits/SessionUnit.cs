@@ -34,6 +34,11 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public virtual long ReadedMessageAutoId { get; protected set; }
 
         /// <summary>
+        /// last message autoId
+        /// </summary>
+        public virtual long LastMessageAutoId { get; protected set; }
+
+        /// <summary>
         /// 为null时，
         /// </summary>
         public virtual DateTime? HistoryFristTime { get; protected set; }
@@ -76,7 +81,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         [ForeignKey(nameof(InviterId))]
         public virtual ChatObject Inviter { get; set; }
 
-        public virtual double Sorting { get; private set; }
+        public virtual double Sorting { get; protected set; }
 
         public virtual IList<MessageReminder> ReminderList { get; protected set; } = new List<MessageReminder>();
 

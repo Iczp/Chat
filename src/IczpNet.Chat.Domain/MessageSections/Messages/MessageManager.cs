@@ -104,7 +104,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             await ChatPusher.ExecuteAsync<ChatCommand>(new SendDataEto(targetIdList, output), input.IgnoreConnections);
 
-            return await Task.FromResult(output);
+            return output;
         }
 
         public async Task<long> RollbackMessageAsync(Message message)

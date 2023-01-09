@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 
@@ -28,6 +29,8 @@ namespace IczpNet.Chat.RoomSections.Rooms
         protected ISessionGenerator SessionGenerator { get; }
         protected IChatObjectManager ChatObjectManager { get; }
 
+        protected IDistributedCache<List<Guid>, Guid> SessionUnitIdListCache { get; }
+
         protected IMessageSender ChatSender { get; }
 
         public RoomManager(
@@ -37,7 +40,8 @@ namespace IczpNet.Chat.RoomSections.Rooms
             IRepository<SessionUnit, Guid> sessionUnitRepository,
             ISessionGenerator sessionGenerator,
             IChatObjectManager chatObjectManager,
-            IMessageSender chatSender)
+            IMessageSender chatSender,
+            IDistributedCache<List<Guid>, Guid> sessionUnitIdListCache)
         {
             Config = options.Value;
             Repository = repository;
@@ -46,6 +50,7 @@ namespace IczpNet.Chat.RoomSections.Rooms
             SessionGenerator = sessionGenerator;
             ChatObjectManager = chatObjectManager;
             ChatSender = chatSender;
+            SessionUnitIdListCache = sessionUnitIdListCache;
         }
 
         public virtual Task<bool> IsAllowJoinRoomAsync(ChatObjectTypes? objectType)
@@ -118,6 +123,9 @@ namespace IczpNet.Chat.RoomSections.Rooms
                     JoinWay = joinWay,
                     Inviter = inviter
                 });
+
+                await SessionUnitIdListCache.RemoveAsync(room.Session.Id);
+
                 addCount++;
             }
 

@@ -26,60 +26,60 @@ namespace IczpNet.Chat.Enums
         /// 语音类型  
         /// </summary>  
         [Description("语音")]
-        Sound = 4,
+        Sound = 3,
 
         /// <summary>  
         /// 视频类型  
         /// </summary>  
         [Description("视频")]
-        Video = 6,
+        Video = 4,
 
         /// <summary>
         /// 文件消息
         /// </summary>
         [Description("文件消息")]
-        File = 7,
+        File = 5,
 
         /// <summary>  
         /// 链接类型  
         /// </summary>  
         [Description("链接")]
-        Link = 8,
+        Link = 6,
 
         /// <summary>  
         /// 地理位置
         /// </summary>  
         [Description("地理位置")]
-        Location = 9,
+        Location = 7,
 
         /// <summary>  
         /// 联系人名片
         /// </summary>  
         [Description("联系人名片")]
-        Contacts = 10,
+        Contacts = 8,
 
         /// <summary>
         /// 红包
         /// </summary>
         [Description("红包")]
-        RedEnvelope = 11,
+        RedEnvelope = 9,
 
         /// <summary>
         /// HTML
         /// </summary>
         [Description("HTML")]
-        Html = 12,
+        Html = 10,
 
         /// <summary>
         /// 文章
         /// </summary>
         [Description("文章")]
-        Article = 13,
+        Article = 11,
 
         /// <summary>
         /// 聊天历史消息
         /// </summary>
         [Description("聊天历史消息")]
-        History = 14,
+        History = 12,
     }
 }

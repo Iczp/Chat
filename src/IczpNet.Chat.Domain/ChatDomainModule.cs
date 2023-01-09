@@ -22,7 +22,7 @@ namespace IczpNet.Chat;
 
 [DependsOn(typeof(AbpCommonsDomainModule))]
 [DependsOn(typeof(AbpTreesDomainModule))]
-[DependsOn(typeof(AbpIdentityDomainModule))]
+//[DependsOn(typeof(AbpIdentityDomainModule))]
 [DependsOn(typeof(AbpPermissionManagementDomainIdentityModule))]
 public class ChatDomainModule : AbpModule
 {

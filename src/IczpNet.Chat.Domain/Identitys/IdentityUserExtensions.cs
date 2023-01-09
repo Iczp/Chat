@@ -1,25 +1,25 @@
-﻿using IczpNet.Chat.Enums;
-using Volo.Abp.Data;
-using Volo.Abp.Identity;
+﻿//using IczpNet.Chat.Enums;
+//using Volo.Abp.Data;
+//using Volo.Abp.Identity;
 
-namespace IczpNet.Chat.Identitys;
+//namespace IczpNet.Chat.Identitys;
 
-public static class IdentityUserExtensions
-{
+//public static class IdentityUserExtensions
+//{
 
-    #region ChatUserType
+//    #region ChatUserType
 
-    public const string ChatObjectTypePropertyName = "ChatObjectType";
+//    public const string ChatObjectTypePropertyName = "ChatObjectType";
 
-    public static void SetChatObjectType(this IdentityUser user, ChatObjectTypes  chatObjectType)
-    {
-        user.SetProperty(ChatObjectTypePropertyName, chatObjectType);
-    }
+//    public static void SetChatObjectType(this IdentityUser user, ChatObjectTypes  chatObjectType)
+//    {
+//        user.SetProperty(ChatObjectTypePropertyName, chatObjectType);
+//    }
 
-    public static ChatObjectTypes? GetChatObjectType(this IdentityUser user)
-    {
-        return user.GetProperty<ChatObjectTypes?>(ChatObjectTypePropertyName);
-    }
+//    public static ChatObjectTypes? GetChatObjectType(this IdentityUser user)
+//    {
+//        return user.GetProperty<ChatObjectTypes?>(ChatObjectTypePropertyName);
+//    }
 
-    #endregion
-}
+//    #endregion
+//}

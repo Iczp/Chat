@@ -107,12 +107,16 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 
         var query = await GetQueryAsync(input);
 
+        return await GetPagedListAsync<SessionUnit, SessionUnitDto>(query, input);
+
         if (!input.IsOrderByBadge)
         {
             return await GetPagedListAsync<SessionUnit, SessionUnitDto>(
                 query,
                 input,
-                x => x.OrderByDescending(d => d.Sorting).OrderByDescending(x => x.Session.LastMessageAutoId));
+                x => x.OrderByDescending(d => d.Sorting)
+                      .ThenByDescending(x => x.Session.LastMessageAutoId)
+                      );
         }
 
         Expression<Func<SessionUnit, int>> p = x =>
@@ -128,7 +132,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return await GetPagedListAsync<SessionUnit, SessionUnitDto>(
             query,
             input,
-            x => x.OrderByDescending(d => d.Sorting).ThenByDescending(p)
+            x => x.OrderByDescending(d => d.Sorting)
+                  .ThenByDescending(p)
                 );
 
     }

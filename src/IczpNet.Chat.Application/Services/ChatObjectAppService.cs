@@ -1,5 +1,4 @@
 ﻿using IczpNet.AbpCommons;
-using IczpNet.AbpCommons.Dtos;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
@@ -33,7 +32,9 @@ namespace IczpNet.Chat.Services
         protected override async Task<IQueryable<ChatObject>> CreateFilteredQueryAsync(ChatObjectGetListInput input)
         {
             return (await base.CreateFilteredQueryAsync(input))
-                .WhereIf(input.ObjectType.HasValue, x => x.ObjectType == input.ObjectType);
+                .WhereIf(input.ObjectType.HasValue, x => x.ObjectType == input.ObjectType)
+                .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(input.Keyword) || x.Code.Contains(input.Keyword))
+                ;
             ;
         }
 
