@@ -82,6 +82,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(input.DestinationObjectType.HasValue, x => x.Destination.ObjectType == input.DestinationObjectType)
             .WhereIf(input.MinAutoId.HasValue, x => x.Session.LastMessageAutoId > input.MinAutoId)
             .WhereIf(input.MaxAutoId.HasValue, x => x.Session.LastMessageAutoId < input.MaxAutoId)
+            .WhereIf(input.IsTopping == true, x => x.Sorting != 0)
+            .WhereIf(input.IsTopping == false, x => x.Sorting == 0)
             .WhereIf(input.IsBadge, x =>
                 x.Session.MessageList.Any(d =>
                     //!x.IsRollbacked &&

@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,10 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230109010811_Session_AddIndex_LastMessageAutoId")]
+    partial class Session_AddIndex_LastMessageAutoId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3731,15 +3733,11 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("KillerId");
 
-                    b.HasIndex("LastMessageAutoId");
-
                     b.HasIndex("OwnerId");
 
                     b.HasIndex("SessionId");
 
-                    b.HasIndex("Sorting");
-
-                    b.HasIndex("Sorting", "LastMessageAutoId");
+                    b.HasIndex("LastMessageAutoId", "Sorting");
 
                     b.ToTable("Chat_SessionUnit", (string)null);
                 });

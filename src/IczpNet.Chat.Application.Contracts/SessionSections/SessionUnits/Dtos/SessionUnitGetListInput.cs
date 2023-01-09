@@ -15,6 +15,9 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         public virtual ChatObjectTypes? DestinationObjectType { get; set; }
 
+        [DefaultValue(null)]
+        public virtual bool? IsTopping { get; set; }
+
         [DefaultValue(false)]
         public virtual bool IsRemind { get; set; }
 

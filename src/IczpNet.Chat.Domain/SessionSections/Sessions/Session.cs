@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.BaseEntitys;
+﻿using IczpNet.AbpCommons.DataFilters;
+using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
@@ -9,6 +10,7 @@ using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SquareSections.Squares;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -16,6 +18,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.SessionSections.Sessions
 {
+    [Index(nameof(LastMessageAutoId))]
     public class Session : BaseEntity<Guid>, IChatOwner<Guid?>
     {
         [StringLength(80)]

@@ -12,6 +12,7 @@ using IczpNet.Chat.SessionSections.SessionUnitRoles;
 using IczpNet.Chat.SessionSections.SessionUnitTags;
 using IczpNet.Chat.Specifications;
 using JetBrains.Annotations;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -19,6 +20,9 @@ using System.Linq;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits
 {
+    [Index(nameof(LastMessageAutoId))]
+    [Index(nameof(Sorting))]
+    [Index(nameof(Sorting), nameof(LastMessageAutoId))]
     public class SessionUnit : BaseSessionEntity, IChatOwner<Guid>, ISorting
     {
         public virtual Guid SessionId { get; protected set; }
