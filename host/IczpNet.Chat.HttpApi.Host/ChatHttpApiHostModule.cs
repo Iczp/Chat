@@ -1,5 +1,8 @@
+using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.EntityFrameworkCore;
 using IczpNet.Chat.MultiTenancy;
+using IczpNet.Pusher;
+using IczpNet.Pusher.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors;
@@ -58,6 +61,11 @@ public class ChatHttpApiHostModule : AbpModule
         var configuration = context.Services.GetConfiguration();
 
 
+        Configure<PusherOptions>(options =>
+        {
+            options.Redis = ConnectionMultiplexer.Connect(configuration["Redis:Configuration"]);
+        });
+
         Configure<AbpExceptionHandlingOptions>(options =>
         {
             options.SendExceptionsDetailsToClients = true;
@@ -105,7 +113,7 @@ public class ChatHttpApiHostModule : AbpModule
             },
             options =>
             {
-                options.SwaggerDoc("v1", new OpenApiInfo {Title = "Chat API", Version = "v1"});
+                options.SwaggerDoc("v1", new OpenApiInfo { Title = "Chat API", Version = "v1" });
                 options.DocInclusionPredicate((docName, description) => true);
                 options.CustomSchemaIds(type => type.FullName);
             });
@@ -178,6 +186,10 @@ public class ChatHttpApiHostModule : AbpModule
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
+
+        app.UseStaticAutoMapper();
+
+        //app.UsePusherSubscriber();
 
         if (env.IsDevelopment())
         {

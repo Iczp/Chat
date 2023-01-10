@@ -15,14 +15,15 @@ using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits
 {
-    [Index(nameof(LastMessageAutoId))]
+    //[Index(nameof(LastMessageAutoId))]
+    //[Index(nameof(Sorting), nameof(LastMessageAutoId))]
     [Index(nameof(Sorting))]
-    [Index(nameof(Sorting), nameof(LastMessageAutoId))]
     public class SessionUnit : BaseSessionEntity, IChatOwner<Guid>, ISorting
     {
         public virtual Guid SessionId { get; protected set; }
@@ -32,15 +33,15 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public virtual ChatObjectTypes? DestinationObjectType { get; protected set; }
 
+        [StringLength(50)]
+        public virtual string Rename { get; protected set; }
+
         /// <summary>
         /// 已读的消息AutoId
         /// </summary>
         public virtual long ReadedMessageAutoId { get; protected set; }
 
-        /// <summary>
-        /// last message autoId
-        /// </summary>
-        public virtual long LastMessageAutoId { get; protected set; }
+        
 
         /// <summary>
         /// 为null时，
@@ -70,7 +71,10 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         /// </summary>
         public virtual DateTime? RemoveTime { get; protected set; }
 
-        public virtual string Name { get; set; }
+        /// <summary>
+        /// 消息免打扰，默认为 false
+        /// </summary>
+        public virtual bool IsImmersed { get; protected set; }
 
         /// <summary>
         /// 加入方式
@@ -125,6 +129,12 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         [NotMapped]
         public virtual List<Guid> RoleIdList => GetRoleIdList();
+
+        /// <summary>
+        /// last message autoId
+        /// </summary>
+        [NotMapped]
+        public virtual long? LastMessageAutoId => Session.LastMessageAutoId;
 
         protected SessionUnit() { }
 

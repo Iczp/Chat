@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 namespace IczpNet.Chat.MessageSections.Templates
 {
     [MessageTemplate(MessageTypes.Text)]
+    [ContentOuput(typeof(TextContentInfo))]
     public class TextContent : MessageContentEntityBase
     {
         [StringLength(500)]

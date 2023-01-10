@@ -90,6 +90,8 @@ namespace IczpNet.Chat.RoomSections.Rooms
 
             room.SetSession(session);
 
+            room.SetMemberCount(members.Count);
+
             await Repository.InsertAsync(room, autoSave: true);
 
             await ChatSender.SendCmdMessageAsync(new MessageInput<CmdContentInfo>()
@@ -134,6 +136,8 @@ namespace IczpNet.Chat.RoomSections.Rooms
                 return 0;
             }
 
+            room.SetMemberCount(room.Session.MemberCount);
+
             await Repository.UpdateAsync(room, autoSave: true);
 
             await ChatSender.SendCmdMessageAsync(new MessageInput<CmdContentInfo>()
@@ -151,6 +155,15 @@ namespace IczpNet.Chat.RoomSections.Rooms
         public virtual Task<bool> IsInRoomAsync(Room room, ChatObject member)
         {
             return Task.FromResult(room.IsInRoom(member));
+        }
+
+        public async Task<Room> UpdateRoomAsync(Room room)
+        {
+            room.SetName(room.Name);
+
+            room.SetMemberCount(room.Session.MemberCount);
+
+            return await Repository.UpdateAsync(room, autoSave: true);
         }
     }
 }

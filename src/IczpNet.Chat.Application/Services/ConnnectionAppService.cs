@@ -41,6 +41,9 @@ namespace IczpNet.Chat.Services
 
         protected override async Task<IQueryable<Connection>> CreateFilteredQueryAsync(ConnectionGetListInput input)
         {
+
+
+
             return (await base.CreateFilteredQueryAsync(input))
                 //.WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
                 //.WhereIf(input.Type.HasValue, x => x.Type == input.Type)

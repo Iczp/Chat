@@ -57,10 +57,15 @@ namespace IczpNet.Chat.RoomServices
                 ;
         }
 
-        protected override IQueryable<Room> ApplyDefaultSorting(IQueryable<Room> query)
-        {
-            return query.OrderByDescending(x => x.Session.UnitList.Count(x => !x.IsKilled));
-        }
+        ///// <summary>
+        ///// 
+        ///// </summary>
+        ///// <param name="query"></param>
+        ///// <returns></returns>
+        //protected override IQueryable<Room> ApplyDefaultSorting(IQueryable<Room> query)
+        //{
+        //    return query.OrderByDescending(x => x.Session.UnitList.Count(x => !x.IsKilled));
+        //}
 
         protected override Task CheckDeleteAsync(Room entity)
         {
@@ -77,6 +82,32 @@ namespace IczpNet.Chat.RoomServices
             var members = await ChatObjectManager.GetManyAsync(input.ChatObjectIdList);
 
             var room = await RoomManager.CreateRoomAsync(new Room(GuidGenerator.Create(), input.Name, input.Code, input.Description, input.OwnerId), members);
+
+            return await MapToDtoAsync(room);
+        }
+
+        [HttpPost]
+        public override async Task<RoomDetailDto> UpdateAsync(Guid id, RoomUpdateInput input)
+        {
+            var room = await Repository.GetAsync(id);
+
+            room.SetName(input.Name);
+
+            room.Code = input.Code;
+
+            room.Description = input.Description;
+
+            await RoomManager.UpdateRoomAsync(room);
+
+            return await MapToDtoAsync(room);
+        }
+
+        [HttpPost]
+        public async Task<RoomDetailDto> CreateWithAllUserAsync(string roomName)
+        {
+            var idList = await ChatObjectManager.GetAllListAsync(ChatObjectTypes.Personal);
+
+            var room = await RoomManager.CreateRoomAsync(new Room(GuidGenerator.Create(), roomName, roomName, "所有人", idList.FirstOrDefault()?.Id), idList);
 
             return await MapToDtoAsync(room);
         }

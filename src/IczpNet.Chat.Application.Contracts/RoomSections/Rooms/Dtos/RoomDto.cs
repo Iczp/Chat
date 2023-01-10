@@ -16,6 +16,6 @@ public class RoomDto : BaseDto<Guid>
 
     public virtual RoomTypes Type { get; set; }
 
-    public virtual int? MemberCount { get; set; }
+    public virtual int MemberCount { get; set; }
 
 }

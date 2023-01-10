@@ -1,14 +1,12 @@
 using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
-using IczpNet.Chat.Connections;
 using IczpNet.Chat.ShortIds;
+using IczpNet.Pusher;
 using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.AutoMapper;
-using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.Domain;
-using Volo.Abp.Identity;
 using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement.Identity;
 
@@ -24,6 +22,7 @@ namespace IczpNet.Chat;
 [DependsOn(typeof(AbpTreesDomainModule))]
 //[DependsOn(typeof(AbpIdentityDomainModule))]
 [DependsOn(typeof(AbpPermissionManagementDomainIdentityModule))]
+[DependsOn(typeof(IczpNetPusherModule))]
 public class ChatDomainModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)

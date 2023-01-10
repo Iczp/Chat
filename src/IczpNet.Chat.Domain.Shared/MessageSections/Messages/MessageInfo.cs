@@ -42,5 +42,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         /// 撤回消息时间
         /// </summary>
         public virtual DateTime? RollbackTime { get; set; }
+
+        public virtual DateTime CreationTime { get; set; }
     }
 }

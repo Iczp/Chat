@@ -3,7 +3,7 @@ using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.MessageSections.Messages.Dtos
 {
-    public class MessageDto : MessageInfo, IEntityDto<Guid>
+    public class MessageDto : MessageInfo<dynamic>, IEntityDto<Guid>
     {
         /// <summary>
         /// 转发来源Id(转发才有)

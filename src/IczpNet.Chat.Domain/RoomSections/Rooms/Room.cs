@@ -29,8 +29,8 @@ public class Room : ChatObject, IChatOwner<Guid?>
     [ForeignKey(nameof(SessionId))]
     public virtual Session Session { get; set; }
 
-    public virtual int? MemberCount => GetMemberCount();
-    
+    public virtual int MemberCount { get; protected set; }
+
     /// <summary>
     /// 群拥有者 OwnerUserId (群主)
     /// </summary>
@@ -142,6 +142,11 @@ public class Room : ChatObject, IChatOwner<Guid?>
     public int? GetMemberCount()
     {
         return Session?.MemberCount;
+    }
+
+    internal void SetMemberCount(int count)
+    {
+        MemberCount = count;
     }
 
     internal void SetOwner(ChatObject chatObject)

@@ -1,4 +1,6 @@
-﻿using IczpNet.Chat.Attributes;
+﻿using Castle.DynamicProxy;
+using IczpNet.AbpCommons.Extensions;
+using IczpNet.Chat.Attributes;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.RedEnvelopes;
@@ -13,6 +15,7 @@ namespace IczpNet.Chat.MessageSections.Messages;
 public partial class Message
 {
     [ContentType(MessageTypes.Cmd)]
+
     public virtual IList<CmdContent> CmdContentList { get; set; } = new List<CmdContent>();
 
     [ContentType(MessageTypes.Text)]
@@ -65,4 +68,16 @@ public partial class Message
         return (IMessageContentEntity)GetContent();
     }
 
+    public virtual object GetContentDto()
+    {
+        var content = GetContent();
+
+        var currentInstance = ProxyUtil.GetUnproxiedInstance(content);
+
+        var currentType = ProxyUtil.GetUnproxiedType(content);
+
+        var outputType = ContentOuputAttribute.GetOuputType(currentType);
+
+        return AutoMapperExtensions.MapTo(currentInstance, currentType, outputType);
+    }
 }

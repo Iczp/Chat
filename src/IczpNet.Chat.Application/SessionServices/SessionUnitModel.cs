@@ -12,11 +12,19 @@ namespace IczpNet.Chat.SessionServices
 
         public virtual Guid OwnerId { get; set; }
 
-        public virtual Message LastMessage { get; set; }
+        public virtual string Rename { get; set; }
 
         public virtual ChatObject Destination { get; set; }
 
+        public virtual Message LastMessage { get; set; }
+
+        public virtual long? LastMessageAutoId { get; set; }
+
         public virtual int Badge { get; set; }
+
+        public virtual bool IsImmersed { get; set; }
+
+        public virtual long ReadedMessageAutoId { get; set; }
 
         public virtual int ReminderAllCount { get; set; }
 

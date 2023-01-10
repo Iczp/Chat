@@ -52,5 +52,13 @@ namespace IczpNet.Chat.ChatObjects
                 ;
             return await AsyncExecuter.ToListAsync(query);
         }
+
+        public async Task<List<ChatObject>> GetAllListAsync(ChatObjectTypes objectType)
+        {
+            var query = (await ChatObjectReadOnlyRepository.GetQueryableAsync())
+                .Where(x => x.ObjectType == objectType)
+                ;
+            return await AsyncExecuter.ToListAsync(query);
+        }
     }
 }
