@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 namespace IczpNet.Chat.MessageSections.Templates
 {
     [MessageTemplate(MessageTypes.Link)]
+    [ContentOuput(typeof(LinkContentInfo))]
     public class LinkContent : MessageContentEntityBase
     {
         /// <summary>

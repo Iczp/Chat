@@ -21,7 +21,7 @@ using System.Linq;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits
 {
-    //[Index(nameof(LastMessageAutoId))]
+    [Index(nameof(LastMessageAutoId))]
     //[Index(nameof(Sorting), nameof(LastMessageAutoId))]
     [Index(nameof(Sorting))]
     public class SessionUnit : BaseSessionEntity, IChatOwner<Guid>, ISorting
@@ -41,7 +41,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         /// </summary>
         public virtual long ReadedMessageAutoId { get; protected set; }
 
-        
+        public virtual long LastMessageAutoId { get; protected set; }
 
         /// <summary>
         /// 为null时，
@@ -134,7 +134,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         /// last message autoId
         /// </summary>
         [NotMapped]
-        public virtual long? LastMessageAutoId => Session.LastMessageAutoId;
+        public virtual long? SessionLastMessageAutoId => Session.LastMessageAutoId;
 
         protected SessionUnit() { }
 

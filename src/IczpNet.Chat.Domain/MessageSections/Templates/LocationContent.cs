@@ -5,6 +5,8 @@ using System.ComponentModel.DataAnnotations;
 namespace IczpNet.Chat.MessageSections.Templates
 {
     [MessageTemplate(MessageTypes.Location)]
+
+    [ContentOuput(typeof(LocationContentInfo))]
     public class LocationContent : MessageContentEntityBase
     {
         /// <summary>

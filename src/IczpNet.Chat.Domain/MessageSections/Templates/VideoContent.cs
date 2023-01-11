@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 namespace IczpNet.Chat.MessageSections.Templates
 {
     [MessageTemplate(MessageTypes.Video)]
+    [ContentOuput(typeof(VideoContentInfo))]
     public class VideoContent : MessageContentEntityBase
     {
         /// <summary>

@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 namespace IczpNet.Chat.MessageSections.Templates
 {
     [MessageTemplate(MessageTypes.Html)]
+    [ContentOuput(typeof(HtmlContentInfo))]
     public class HtmlContent : MessageContentEntityBase
     {
         /// <summary>

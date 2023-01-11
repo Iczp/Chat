@@ -7,10 +7,12 @@ using IczpNet.Chat.Attributes;
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.MessageSections;
+using IczpNet.Chat.MessageSections.Templates;
 
 namespace IczpNet.Chat.RedEnvelopes
 {
     [MessageTemplate(MessageTypes.RedEnvelope)]
+    [ContentOuput(typeof(RedEnvelopeContentOutput))]
     public class RedEnvelopeContent : MessageContentEntityBase, IChatOwner<Guid?>
     {
         /// <summary>

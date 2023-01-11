@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 namespace IczpNet.Chat.MessageSections.Templates
 {
     [MessageTemplate(MessageTypes.File)]
+    [ContentOuput(typeof(FileContentInfo))]
     public class FileContent : MessageContentEntityBase
     {
         /// <summary>

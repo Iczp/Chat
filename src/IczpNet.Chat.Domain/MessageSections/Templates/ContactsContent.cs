@@ -9,6 +9,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace IczpNet.Chat.MessageSections.Templates
 {
     [MessageTemplate(MessageTypes.Contacts)]
+    [ContentOuput(typeof(ContactsContentInfo))]
     public class ContactsContent : MessageContentEntityBase, IChatOwner<Guid?>
     {
         public virtual Guid DestinationId { get; protected set; }

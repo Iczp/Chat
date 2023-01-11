@@ -8,6 +8,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace IczpNet.Chat.MessageSections.Templates
 {
     [MessageTemplate(MessageTypes.History)]
+    [ContentOuput(typeof(HistoryContentOutput))]
     public class HistoryContent : MessageContentEntityBase
     {
         /// <summary>

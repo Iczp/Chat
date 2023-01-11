@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 namespace IczpNet.Chat.MessageSections.Templates
 {
     [MessageTemplate(MessageTypes.Sound)]
+    [ContentOuput(typeof(SoundContentInfo))]
     public class SoundContent : MessageContentEntityBase
     {
         /// <summary>

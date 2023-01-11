@@ -114,8 +114,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         {
             return await GetPagedListAsync<SessionUnit, SessionUnitDto>(
                 query,
-                input,
-                x => x.OrderByDescending(x => x.Session.LastMessageAutoId)
+                input//, x => x.OrderByDescending(x => x.Session.LastMessageAutoId)
                       );
         }
 
