@@ -25,7 +25,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
         protected IRepository<ReadedRecorder, Guid> ReadedRecorderRepository { get; }
         protected ISessionRecorder SessionRecorder { get; }
         protected IChannelResolver ChannelResolver { get; }
-
+        protected ISessionUnitManager SessionUnitManager { get; }
 
         public SessionGenerator(
             IChatObjectManager chatObjectManager,
@@ -33,7 +33,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
             IRepository<Session, Guid> sessionRepository,
             ISessionRecorder sessionRecorder,
             IRepository<ReadedRecorder, Guid> readedRecorderRepository,
-            IChannelResolver channelResolver)
+            IChannelResolver channelResolver,
+            ISessionUnitManager sessionUnitManager)
         {
             ChatObjectManager = chatObjectManager;
             MessageRepository = messageRepository;
@@ -41,6 +42,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
             SessionRecorder = sessionRecorder;
             ReadedRecorderRepository = readedRecorderRepository;
             ChannelResolver = channelResolver;
+            SessionUnitManager = sessionUnitManager;
         }
 
         protected virtual string MakeSesssionKey(ChatObject sender, ChatObject receiver)
@@ -138,7 +140,12 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public async Task<Session> UpdateAsync(Session session)
         {
+            if (session.LastMessageAutoId.HasValue)
+            {
+                await SessionUnitManager.BatchUpdateAsync(session.Id, session.LastMessageAutoId.Value);
+            }
             return await SessionRepository.UpdateAsync(session, true);
+
         }
     }
 }

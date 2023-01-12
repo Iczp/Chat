@@ -25,9 +25,9 @@ namespace IczpNet.Chat.RoomSections.Rooms
         protected RoomOptions Config { get; }
         protected IRepository<Room, Guid> Repository { get; }
         protected IRepository<Session, Guid> SessionRepository { get; }
-        protected IRepository<SessionUnit, Guid> SessionUnitRepository { get; }
         protected ISessionGenerator SessionGenerator { get; }
         protected IChatObjectManager ChatObjectManager { get; }
+        protected ISessionUnitManager SessionUnitManager { get; }
 
         protected IDistributedCache<List<Guid>, Guid> SessionUnitIdListCache { get; }
 
@@ -37,20 +37,20 @@ namespace IczpNet.Chat.RoomSections.Rooms
             IOptions<RoomOptions> options,
             IRepository<Room, Guid> repository,
             IRepository<Session, Guid> sessionRepository,
-            IRepository<SessionUnit, Guid> sessionUnitRepository,
             ISessionGenerator sessionGenerator,
             IChatObjectManager chatObjectManager,
             IMessageSender chatSender,
-            IDistributedCache<List<Guid>, Guid> sessionUnitIdListCache)
+            IDistributedCache<List<Guid>, Guid> sessionUnitIdListCache,
+            ISessionUnitManager sessionUnitManager)
         {
             Config = options.Value;
             Repository = repository;
             SessionRepository = sessionRepository;
-            SessionUnitRepository = sessionUnitRepository;
             SessionGenerator = sessionGenerator;
             ChatObjectManager = chatObjectManager;
             ChatSender = chatSender;
             SessionUnitIdListCache = sessionUnitIdListCache;
+            SessionUnitManager = sessionUnitManager;
         }
 
         public virtual Task<bool> IsAllowJoinRoomAsync(ChatObjectTypes? objectType)
@@ -136,7 +136,7 @@ namespace IczpNet.Chat.RoomSections.Rooms
                 return 0;
             }
 
-            room.SetMemberCount(room.Session.MemberCount);
+            room.SetMemberCount(await GetMemberCountAsync(room));
 
             await Repository.UpdateAsync(room, autoSave: true);
 
@@ -161,9 +161,18 @@ namespace IczpNet.Chat.RoomSections.Rooms
         {
             room.SetName(room.Name);
 
-            room.SetMemberCount(room.Session.MemberCount);
+            room.SetMemberCount(await GetMemberCountAsync(room));
 
             return await Repository.UpdateAsync(room, autoSave: true);
+        }
+
+        public async Task<int> GetMemberCountAsync(Room room)
+        {
+            if (room.SessionId.HasValue)
+            {
+                return await SessionUnitManager.GetCountAsync(room.SessionId.Value);
+            }
+            return 0;
         }
     }
 }

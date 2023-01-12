@@ -17,6 +17,8 @@ namespace IczpNet.Chat.RoomSections.Rooms
 
         Task<Room> UpdateRoomAsync(Room room);
 
+        Task<int> GetMemberCountAsync(Room room);
+
         Task<int> JoinRoomAsync(Room room, List<ChatObject> members, ChatObject inviter, JoinWays joinWay);
 
         Task<bool> IsInRoomAsync(Room room, ChatObject member);

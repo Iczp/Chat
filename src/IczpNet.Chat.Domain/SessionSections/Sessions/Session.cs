@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 
 namespace IczpNet.Chat.SessionSections.Sessions
 {
@@ -62,13 +63,13 @@ namespace IczpNet.Chat.SessionSections.Sessions
         public virtual int MemberCount => GetMemberCount();
 
         [NotMapped]
-        public virtual int MessageCount => MessageList.Count;
+        public virtual int MessageCount => MessageList.Count();
 
         [NotMapped]
-        public virtual int TagCount => TagList.Count;
+        public virtual int TagCount => TagList.Count();
 
         [NotMapped]
-        public virtual int RoleCount => RoleList.Count;
+        public virtual int RoleCount => RoleList.Count();
 
         protected Session() { }
 
@@ -80,7 +81,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         internal virtual int GetMemberCount()
         {
-            return UnitList.Count;
+            return UnitList.Count();
         }
 
         internal virtual void SetUnitList(List<SessionUnit> unitList)

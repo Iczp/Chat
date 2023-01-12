@@ -11,11 +11,11 @@ namespace IczpNet.Chat.SessionSections.Sessions
 {
     public class SessionUnitManager : DomainService, ISessionUnitManager
     {
-        protected IRepository<SessionUnit, Guid> Repository { get; }
+        protected ISessionUnitRepository Repository { get; }
         protected IRepository<ReadedRecorder, Guid> ReadedRecorderRepository { get; }
         protected IRepository<Message, Guid> MessageRepository { get; }
         public SessionUnitManager(
-            IRepository<SessionUnit, Guid> repository,
+            ISessionUnitRepository repository,
             IRepository<ReadedRecorder, Guid> readedRecorderRepository,
             IRepository<Message, Guid> messageRepository)
         {
@@ -86,6 +86,16 @@ namespace IczpNet.Chat.SessionSections.Sessions
             .Sum(x => x.Badge);
 
             return badge;
+        }
+
+        public Task<int> GetCountAsync(Guid sessionId)
+        {
+            return Repository.CountAsync(x => x.SessionId == sessionId);
+        }
+
+        public Task<int> BatchUpdateAsync(Guid sessionId, long lastMessageAutoId)
+        {
+            return Repository.BatchUpdateAsync(sessionId, lastMessageAutoId);
         }
     }
 }

@@ -120,16 +120,6 @@ public class Room : ChatObject, IChatOwner<Guid?>
         ObjectType = ChatObjectTypeValue;
     }
 
-    //public Room(Guid id, string name, string code, string description, IList<RoomMember> roomMemberList, ChatObject owner) : base(id, ChatObjectTypeValue)
-    //{
-    //    SetName(name);
-    //    Code = code;
-    //    Description = description;
-    //    Owner = owner;
-    //    Type = RoomTypes.Normal;
-    //    RoomMemberList = roomMemberList;
-    //}
-
     public Room(Guid id, string name, string code, string description, Guid? ownerId) : base(id, ChatObjectTypeValue)
     {
         SetName(name);
@@ -141,7 +131,7 @@ public class Room : ChatObject, IChatOwner<Guid?>
 
     public int? GetMemberCount()
     {
-        return Session?.MemberCount;
+        return Session?.GetMemberCount();
     }
 
     internal void SetMemberCount(int count)

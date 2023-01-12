@@ -18,7 +18,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         public virtual MessageDto LastMessage { get; set; }
 
-        public virtual long? LastMessageAutoId { get; set; }
+        public virtual long LastMessageAutoId { get; set; }
 
         public virtual int Badge { get; set; }
 

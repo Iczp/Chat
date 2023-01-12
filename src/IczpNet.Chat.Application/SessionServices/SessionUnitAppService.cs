@@ -27,7 +27,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 {
     protected IRepository<Friendship, Guid> FriendshipRepository { get; }
     protected IRepository<Session, Guid> SessionRepository { get; }
-    protected IRepository<SessionUnit, Guid> Repository { get; }
+    protected ISessionUnitRepository Repository { get; }
     protected IRepository<Message, Guid> MessageRepository { get; }
     protected ISessionManager SessionManager { get; }
     protected ISessionUnitManager SessionUnitManager { get; }
@@ -46,7 +46,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         ISessionGenerator sessionGenerator,
         IRepository<Session, Guid> sessionRepository,
         IRepository<Message, Guid> messageRepository,
-        IRepository<SessionUnit, Guid> repository,
+        ISessionUnitRepository repository,
         ISessionUnitManager sessionUnitManager)
     {
         FriendshipRepository = chatObjectRepository;
@@ -79,8 +79,10 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
             .WhereIf(input.IsKilled.HasValue, x => x.IsKilled == input.IsKilled)
             .WhereIf(input.DestinationObjectType.HasValue, x => x.Destination.ObjectType == input.DestinationObjectType)
-            .WhereIf(input.MinAutoId.HasValue, x => x.Session.LastMessageAutoId > input.MinAutoId)
-            .WhereIf(input.MaxAutoId.HasValue, x => x.Session.LastMessageAutoId < input.MaxAutoId)
+            //.WhereIf(input.MinAutoId.HasValue, x => x.Session.LastMessageAutoId > input.MinAutoId)
+            //.WhereIf(input.MaxAutoId.HasValue, x => x.Session.LastMessageAutoId < input.MaxAutoId)
+            .WhereIf(input.MinAutoId.HasValue, x => x.LastMessageAutoId > input.MinAutoId)
+            .WhereIf(input.MaxAutoId.HasValue, x => x.LastMessageAutoId < input.MaxAutoId)
             .WhereIf(input.IsTopping == true, x => x.Sorting != 0)
             .WhereIf(input.IsTopping == false, x => x.Sorting == 0)
             .WhereIf(input.IsBadge, x =>
@@ -114,8 +116,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         {
             return await GetPagedListAsync<SessionUnit, SessionUnitDto>(
                 query,
-                input//, x => x.OrderByDescending(x => x.Session.LastMessageAutoId)
-                      );
+                input,
+                x => x.OrderByDescending(x => x.LastMessageAutoId));
         }
 
         Expression<Func<SessionUnit, int>> p = x =>
