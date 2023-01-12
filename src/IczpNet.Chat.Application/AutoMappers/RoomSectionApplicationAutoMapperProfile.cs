@@ -25,7 +25,7 @@ public class RoomSectionApplicationAutoMapperProfile : Profile
         //RoomMember
         CreateMap<RoomMember, RoomMemberDto>().ForMember(x => x.RoleList, o => o.MapFrom(x => x.GetRoleList()));
         CreateMap<RoomMember, RoomMemberDetailDto>().ForMember(x => x.RoleList, o => o.MapFrom(x => x.GetRoleList()));
-        
+
         CreateMap<RoomMemberCreateInput, RoomMember>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
         CreateMap<RoomMemberUpdateInput, RoomMember>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
 
