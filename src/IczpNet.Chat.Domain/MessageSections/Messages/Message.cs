@@ -3,12 +3,15 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.MessageContents;
 using IczpNet.Chat.SessionSections.Sessions;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
+[Index(nameof(AutoId))]
+[Index(nameof(SessionUnitCount))]
 public partial class Message : BaseEntity<Guid>
 {
     public virtual dynamic Content => GetContent();

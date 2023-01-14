@@ -21,10 +21,11 @@ using System.Linq;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits
 {
-    [Index(nameof(LastMessageAutoId))]
-    //[Index(nameof(Sorting), nameof(LastMessageAutoId))]
     [Index(nameof(Sorting))]
+    [Index(nameof(LastMessageAutoId))]
     [Index(nameof(ReadedMessageAutoId))]
+    //[Index(nameof(HistoryFristTime))]
+    //[Index(nameof(HistoryLastTime))]
     public class SessionUnit : BaseSessionEntity, IChatOwner<Guid>, ISorting
     {
         public virtual Guid SessionId { get; protected set; }
