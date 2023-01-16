@@ -47,6 +47,11 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return await SetEntityAsync(entity, x => x.SetReaded(message.AutoId, isForce = false));
         }
 
+        public async Task<SessionUnit> SetImmersedAsync(SessionUnit entity, bool isImmersed)
+        {
+            return await SetEntityAsync(entity, x => x.SetImmersed(isImmersed));
+        }
+
         public Task<SessionUnit> RemoveSessionAsync(SessionUnit entity)
         {
             return SetEntityAsync(entity, x => x.RemoveSession(Clock.Now));
@@ -97,5 +102,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
         {
             return Repository.BatchUpdateAsync(sessionId, lastMessageAutoId);
         }
+
+
     }
 }

@@ -10,6 +10,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         Task<SessionUnit> SetReadedAsync(SessionUnit entity, Guid messageId, bool isForce = false);
 
+        Task<SessionUnit> SetImmersedAsync(SessionUnit entity, bool isImmersed);
+
         Task<SessionUnit> RemoveSessionAsync(SessionUnit entity);
 
         Task<SessionUnit> KillSessionAsync(SessionUnit entity);
@@ -23,5 +25,6 @@ namespace IczpNet.Chat.SessionSections.Sessions
         Task<int> GetCountAsync(Guid sessionId);
 
         Task<int> BatchUpdateAsync(Guid sessionId, long lastMessageAutoId);
+        
     }
 }

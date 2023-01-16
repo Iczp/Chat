@@ -36,6 +36,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     public virtual string GetPolicyName { get; private set; }
     public virtual string GetDetailPolicyName { get; private set; }
     public virtual string SetReadedPolicyName { get; private set; }
+    public virtual string SetImmersedPolicyName { get; private set; }
     public virtual string RemoveSessionPolicyName { get; private set; }
     public virtual string ClearMessagePolicyName { get; private set; }
     public virtual string DeleteMessagePolicyName { get; private set; }
@@ -81,8 +82,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(input.DestinationObjectType.HasValue, x => x.Destination.ObjectType == input.DestinationObjectType)
             //.WhereIf(input.MinAutoId.HasValue, x => x.Session.LastMessageAutoId > input.MinAutoId)
             //.WhereIf(input.MaxAutoId.HasValue, x => x.Session.LastMessageAutoId < input.MaxAutoId)
-            .WhereIf(input.MinAutoId.HasValue, x => x.LastMessageAutoId > input.MinAutoId)
-            .WhereIf(input.MaxAutoId.HasValue, x => x.LastMessageAutoId < input.MaxAutoId)
+            .WhereIf(input.MinAutoId.HasValue && input.MinAutoId.Value > 0, x => x.LastMessageAutoId > input.MinAutoId)
+            .WhereIf(input.MaxAutoId.HasValue && input.MaxAutoId.Value > 0, x => x.LastMessageAutoId < input.MaxAutoId)
             .WhereIf(input.IsTopping == true, x => x.Sorting != 0)
             .WhereIf(input.IsTopping == false, x => x.Sorting == 0)
             .WhereIf(input.IsBadge, x =>
@@ -236,6 +237,18 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         var entity = await GetEntityAsync(id);
 
         await SessionUnitManager.SetReadedAsync(entity, messageId, isForce);
+
+        return await MapToDtoAsync(entity);
+    }
+
+    [HttpPost]
+    public async Task<SessionUnitDto> SetImmersedAsync(Guid id, bool isImmersed)
+    {
+        await CheckPolicyAsync(SetImmersedPolicyName);
+
+        var entity = await GetEntityAsync(id);
+
+        await SessionUnitManager.SetImmersedAsync(entity, isImmersed);
 
         return await MapToDtoAsync(entity);
     }

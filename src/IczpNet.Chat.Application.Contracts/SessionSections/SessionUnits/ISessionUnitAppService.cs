@@ -20,6 +20,8 @@ public interface ISessionUnitAppService
 
     Task<SessionUnitDto> SetReadedAsync(Guid id, Guid messageId, bool isForce);
 
+    Task<SessionUnitDto> SetImmersedAsync(Guid id, bool isImmersed);
+
     Task<SessionUnitDto> RemoveSessionAsync(Guid id);
 
     Task<SessionUnitDto> KillSessionAsync(Guid id);

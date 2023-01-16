@@ -257,5 +257,10 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         {
             return SessionUnitRoleList.Select(x => x.SessionRoleId).ToList();
         }
+
+        internal void SetImmersed(bool isImmersed)
+        {
+            IsImmersed= isImmersed;
+        }
     }
 }
