@@ -1,10 +1,13 @@
-﻿using IczpNet.Chat.Enums;
+﻿
+using IczpNet.Chat.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.ChatObjects
 {
@@ -12,10 +15,18 @@ namespace IczpNet.Chat.ChatObjects
     {
 
         protected IReadOnlyRepository<ChatObject, Guid> ChatObjectReadOnlyRepository { get; }
+        protected IDistributedCache<ChatObjectInfo, Guid> ChatObjectCache { get; }
 
-        public ChatObjectManager(IReadOnlyRepository<ChatObject, Guid> chatObjectReadOnlyRepository)
+        protected IObjectMapper ObjectMapper { get; }
+
+        public ChatObjectManager(
+            IReadOnlyRepository<ChatObject, Guid> chatObjectReadOnlyRepository,
+            IDistributedCache<ChatObjectInfo, Guid> chatObjectCache,
+            IObjectMapper objectMapper)
         {
             ChatObjectReadOnlyRepository = chatObjectReadOnlyRepository;
+            ChatObjectCache = chatObjectCache;
+            ObjectMapper = objectMapper;
         }
 
         public async Task<List<ChatObject>> GetListByUserId(Guid userId)
@@ -23,9 +34,34 @@ namespace IczpNet.Chat.ChatObjects
             return await ChatObjectReadOnlyRepository.GetListAsync(x => x.AppUserId == userId);
         }
 
+        public async Task<List<Guid>> GetIdListByUserId(Guid userId)
+        {
+            return (await ChatObjectReadOnlyRepository.GetQueryableAsync()).Where(x => x.AppUserId == userId).Select(x => x.Id).ToList();
+        }
+
         public Task<ChatObject> GetAsync(Guid chatObjectId)
         {
             return ChatObjectReadOnlyRepository.GetAsync(chatObjectId);
+        }
+
+        public Task<ChatObjectInfo> GetItemByCacheAsync(Guid chatObjectId)
+        {
+            return ChatObjectCache.GetOrAddAsync(chatObjectId, async () =>
+            {
+                var entity = await GetAsync(chatObjectId);
+                return ObjectMapper.Map<ChatObject, ChatObjectInfo>(entity);
+            });
+        }
+
+        public async Task<List<ChatObjectInfo>> GetManyByCacheAsync(List<Guid> chatObjectIdList)
+        {
+            var list = new List<ChatObjectInfo>();
+
+            foreach (var chatObjectId in chatObjectIdList)
+            {
+                list.Add(await GetItemByCacheAsync(chatObjectId));
+            }
+            return list;
         }
 
         public async Task<List<ChatObject>> GetManyAsync(List<Guid> chatObjectIdList)

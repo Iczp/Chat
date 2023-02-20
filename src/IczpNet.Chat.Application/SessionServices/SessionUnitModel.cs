@@ -24,6 +24,8 @@ namespace IczpNet.Chat.SessionServices
 
         public virtual bool IsImmersed { get; set; }
 
+        public virtual bool IsImportant { get; set; }
+
         public virtual long ReadedMessageAutoId { get; set; }
 
         public virtual int ReminderAllCount { get; set; }

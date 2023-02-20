@@ -12,7 +12,6 @@ using IczpNet.Chat.RoomSections.RoomMembers;
 using IczpNet.Chat.SessionSections.Favorites;
 using IczpNet.Chat.SessionSections.FriendshipRequests;
 using IczpNet.Chat.SessionSections.Friendships;
-using IczpNet.Chat.SessionSections.MessageReminders;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionSettings;
 using IczpNet.Chat.SessionSections.SessionUnits;

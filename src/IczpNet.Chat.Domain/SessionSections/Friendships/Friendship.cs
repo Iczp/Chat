@@ -72,10 +72,10 @@ namespace IczpNet.Chat.SessionSections.Friendships
 
         protected Friendship() { }
 
-        public Friendship(ChatObject owner, ChatObject destination, bool isPassive, Guid? friendshipRequestId)
+        public Friendship(Guid ownerId, Guid destinationId, bool isPassive, Guid? friendshipRequestId)
         {
-            Owner = owner;
-            Destination = destination;
+            OwnerId = ownerId;
+            DestinationId = destinationId;
             IsPassive = isPassive;
             RequestId = friendshipRequestId;
         }

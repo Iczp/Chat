@@ -24,6 +24,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
     [Index(nameof(Sorting))]
     [Index(nameof(LastMessageAutoId))]
     [Index(nameof(ReadedMessageAutoId))]
+    //[Index(nameof(Sorting), nameof(LastMessageAutoId))]
     //[Index(nameof(HistoryFristTime))]
     //[Index(nameof(HistoryLastTime))]
     public class SessionUnit : BaseSessionEntity, IChatOwner<Guid>, ISorting
@@ -77,6 +78,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         /// 消息免打扰，默认为 false
         /// </summary>
         public virtual bool IsImmersed { get; protected set; }
+
+        public virtual bool IsImportant { get; protected set; }
 
         /// <summary>
         /// 加入方式
@@ -140,12 +143,12 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         protected SessionUnit() { }
 
-        internal SessionUnit(Guid id, [NotNull] Session session, [NotNull] ChatObject owner, [NotNull] ChatObject destination) : base(id)
+        internal SessionUnit(Guid id, [NotNull] Session session, [NotNull] Guid ownerId, [NotNull] Guid destinationId, ChatObjectTypes? destinationObjectType) : base(id)
         {
             Session = session;
-            Owner = owner;
-            Destination = destination;
-            DestinationObjectType = destination.ObjectType;
+            OwnerId = ownerId;
+            DestinationId = destinationId;
+            DestinationObjectType = destinationObjectType;
         }
 
         internal void SetReaded(long messageAutoId, bool isForce = false)

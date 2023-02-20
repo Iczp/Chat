@@ -22,23 +22,23 @@ namespace IczpNet.Chat.ChatPushers
             LocalEventBus = localEventBus;
         }
 
-        public Task ExecuteAsync<TCommand>(object data, List<string> ignoreConnections = null)
+        public Task ExecuteAsync<TCommand>(object payload, List<string> ignoreConnections = null)
         {
-            return ExecuteAsync<TCommand>(new CommandData
+            return ExecuteAsync(new CommandPayload
             {
                 Command = CommandAttribute.GetValue<TCommand>(),
-                Payload = data,
+                Payload = payload,
                 IgnoreConnections = ignoreConnections
             });
         }
 
-        public async Task ExecuteAsync<TCommand>(CommandData commandData)
+        public async Task ExecuteAsync(CommandPayload commandData)
         {
             Logger.LogDebug($"ChatPusher PublishAsync:{commandData}");
 
             await PusherPublisher.PublishAsync(commandData);
 
-            await LocalEventBus.PublishAsync(commandData);
+            //await LocalEventBus.PublishAsync(commandData);
         }
     }
 }

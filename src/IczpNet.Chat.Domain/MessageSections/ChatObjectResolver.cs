@@ -2,6 +2,7 @@
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.RoomSections.Rooms;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,6 +18,8 @@ namespace IczpNet.Chat.MessageSections
         protected IRepository<Room, Guid> RoomRepository { get; }
 
         protected IDistributedCache<List<Guid>, Guid> SessionUnitIdListCache { get; }
+
+        protected IDistributedCache<List<SessionUnitInfo>, Guid> SessionUnitCache { get; }
 
         public ChatObjectResolver(
             IRepository<Room, Guid> roomRepository,

@@ -7,7 +7,7 @@ namespace IczpNet.Chat.SessionSections
 {
     public class ChannelResolver : DomainService, IChannelResolver
     {
-        public Channels Get(ChatObject sender, ChatObject receiver)
+        public Channels Get(ChatObjectInfo sender, ChatObjectInfo receiver)
         {
             if (sender.ObjectType == ChatObjectTypes.Room || receiver.ObjectType == ChatObjectTypes.Room)
             {
@@ -24,7 +24,7 @@ namespace IczpNet.Chat.SessionSections
             return Channels.PrivateChannel;
         }
 
-        public Task<Channels> GetAsync(ChatObject sender, ChatObject receiver)
+        public Task<Channels> GetAsync(ChatObjectInfo sender, ChatObjectInfo receiver)
         {
             return Task.FromResult(Get(sender, receiver));
         }

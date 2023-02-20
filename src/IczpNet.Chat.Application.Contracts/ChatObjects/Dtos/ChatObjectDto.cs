@@ -2,6 +2,6 @@
 {
     public class ChatObjectDto : ChatObjectSimpleDto
     {
-        public virtual string Code { get; set; }
+
     }
 }

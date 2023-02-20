@@ -34,7 +34,7 @@ public interface ISessionUnitAppService
 
     Task<MessageDto> GetMessageAsync(Guid id, Guid messageId);
 
-    Task<int> GetBadgeAsync(Guid ownerId);
+    Task<int> GetBadgeAsync(Guid ownerId, bool? isImmersed = null);
 
     Task<PagedResultDto<SessionUnitOwnerDto>> GetSessionMemberListAsync(Guid id, SessionUnitGetSessionMemberListInput input);
 }

@@ -103,6 +103,36 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             ;
     }
 
+    protected virtual async Task<IQueryable<SessionUnit>> GetQueryByJoinAsync(SessionUnitGetListInput input)
+    {
+        return (await Repository.GetQueryableAsync())
+            .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
+            .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
+            .WhereIf(input.IsKilled.HasValue, x => x.IsKilled == input.IsKilled)
+            .WhereIf(input.DestinationObjectType.HasValue, x => x.Destination.ObjectType == input.DestinationObjectType)
+            .WhereIf(input.MinAutoId.HasValue, x => x.Session.LastMessageAutoId > input.MinAutoId)
+            .WhereIf(input.MaxAutoId.HasValue, x => x.Session.LastMessageAutoId < input.MaxAutoId)
+            //.WhereIf(input.MinAutoId.HasValue && input.MinAutoId.Value > 0, x => x.LastMessageAutoId > input.MinAutoId)
+            //.WhereIf(input.MaxAutoId.HasValue && input.MaxAutoId.Value > 0, x => x.LastMessageAutoId < input.MaxAutoId)
+            .WhereIf(input.IsTopping == true, x => x.Sorting != 0)
+            .WhereIf(input.IsTopping == false, x => x.Sorting == 0)
+            .WhereIf(input.IsBadge, x =>
+                x.Session.MessageList.Any(d =>
+                    //!x.IsRollbacked &&
+                    d.AutoId > x.ReadedMessageAutoId &&
+                    d.SenderId != x.OwnerId &&
+                    (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
+                    (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
+                    (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)
+                )
+            )
+            .WhereIf(input.IsRemind, x =>
+                x.Session.MessageList.Any(d => !d.IsRollbacked && d.IsRemindAll) ||
+                x.ReminderList.Any(d => !d.Message.IsRollbacked)
+            )
+            ;
+    }
+
     [HttpGet]
     [UnitOfWork(true, IsolationLevel.ReadCommitted)]
     public virtual async Task<PagedResultDto<SessionUnitDto>> GetListAsync(SessionUnitGetListInput input)
@@ -139,6 +169,24 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
                 );
 
     }
+
+    [HttpGet]
+    [UnitOfWork(true, IsolationLevel.ReadCommitted)]
+    public virtual async Task<PagedResultDto<SessionUnitDto>> GetListByJoinAsync(SessionUnitGetListInput input)
+    {
+        await CheckPolicyAsync(GetListPolicyName);
+
+        var query = await GetQueryByJoinAsync(input);
+
+        return await GetPagedListAsync<SessionUnit, SessionUnitDto>(
+            query,
+            input,
+            x => x.OrderByDescending(d => d.Sorting)
+                  .ThenByDescending(d => d.Session.LastMessageAutoId)
+                );
+
+    }
+
     [HttpGet]
     public virtual async Task<PagedResultDto<SessionUnitDto>> GetListByLinqAsync(SessionUnitGetListInput input)
     {
@@ -351,9 +399,9 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     }
 
     [HttpGet]
-    public Task<int> GetBadgeAsync(Guid ownerId)
+    public Task<int> GetBadgeAsync(Guid ownerId, bool? isImmersed = null)
     {
-        return SessionUnitManager.GetBadgeAsync(ownerId); ;
+        return SessionUnitManager.GetBadgeAsync(ownerId, isImmersed); ;
     }
 
     [HttpGet]

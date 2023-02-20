@@ -19,6 +19,7 @@ using System.Linq;
 namespace IczpNet.Chat.SessionSections.Sessions
 {
     [Index(nameof(LastMessageAutoId))]
+    [Index(nameof(SessionKey))]
     public class Session : BaseEntity<Guid>, IChatOwner<Guid?>
     {
         [StringLength(80)]

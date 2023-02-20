@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.Enums;
 using System;
+using System.Linq;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Users;
 
@@ -36,7 +37,7 @@ namespace IczpNet.Chat.ChatObjects
 
         public virtual ChatObjectTypes? ObjectType => ChatObject.ObjectType;
 
-        public virtual Guid? GetId() => CurrentUser.GetChatObjectId();
+        public virtual Guid? GetId() => CurrentUser.GetChatObjectIdList().FirstOrDefault();
 
     }
 }

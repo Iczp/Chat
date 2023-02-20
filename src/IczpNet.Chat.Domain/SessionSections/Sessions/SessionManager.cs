@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 
@@ -68,14 +69,14 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public async Task<Friendship> CreateFriendshipAsync(Guid ownerId, Guid destinationId, bool IsPassive, Guid? friendshipRequestId)
         {
-            var owner = await ChatObjectManager.GetAsync(ownerId);
+            var owner = await ChatObjectManager.GetItemByCacheAsync(ownerId);
 
-            var destination = await ChatObjectManager.GetAsync(destinationId);
+            var destination = await ChatObjectManager.GetItemByCacheAsync(destinationId);
 
             return await CreateFriendshipAsync(owner, destination, IsPassive, friendshipRequestId);
         }
 
-        public async Task<Friendship> CreateFriendshipAsync(ChatObject owner, ChatObject destination, bool IsPassive, Guid? friendshipRequestId)
+        public async Task<Friendship> CreateFriendshipAsync(ChatObjectInfo owner, ChatObjectInfo destination, bool IsPassive, Guid? friendshipRequestId)
         {
             Assert.NotNull(owner, nameof(owner));
 
@@ -83,7 +84,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
             var entity = await FriendshipRepository.FindAsync(x => x.OwnerId == owner.Id && x.DestinationId == destination.Id);
 
-            entity ??= await FriendshipRepository.InsertAsync(new Friendship(owner, destination, IsPassive, friendshipRequestId), autoSave: true);
+            entity ??= await FriendshipRepository.InsertAsync(new Friendship(owner.Id, destination.Id, IsPassive, friendshipRequestId), autoSave: true);
 
             return entity;
         }
@@ -109,9 +110,9 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
             if (isAgreed)
             {
-                await CreateFriendshipAsync(friendshipRequest.Owner, friendshipRequest.Destination, IsPassive: true, friendshipRequest.Id);
+                await CreateFriendshipAsync(friendshipRequest.OwnerId, friendshipRequest.DestinationId.Value, IsPassive: true, friendshipRequest.Id);
 
-                await CreateFriendshipAsync(friendshipRequest.Destination, friendshipRequest.Owner, IsPassive: false, friendshipRequest.Id);
+                await CreateFriendshipAsync(friendshipRequest.Destination.Id, friendshipRequest.OwnerId, IsPassive: false, friendshipRequest.Id);
 
                 friendshipRequest.AgreeRequest(handlMessage);
             }

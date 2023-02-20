@@ -2,8 +2,10 @@
 using IczpNet.Chat.SessionSections.ReadedRecorders;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 
@@ -14,14 +16,18 @@ namespace IczpNet.Chat.SessionSections.Sessions
         protected ISessionUnitRepository Repository { get; }
         protected IRepository<ReadedRecorder, Guid> ReadedRecorderRepository { get; }
         protected IRepository<Message, Guid> MessageRepository { get; }
+        protected IDistributedCache<List<SessionUnitInfo>, Guid> SessionUnitCache { get; }
+
         public SessionUnitManager(
             ISessionUnitRepository repository,
             IRepository<ReadedRecorder, Guid> readedRecorderRepository,
-            IRepository<Message, Guid> messageRepository)
+            IRepository<Message, Guid> messageRepository,
+            IDistributedCache<List<SessionUnitInfo>, Guid> sessionUnitCache)
         {
             Repository = repository;
             ReadedRecorderRepository = readedRecorderRepository;
             MessageRepository = messageRepository;
+            SessionUnitCache = sessionUnitCache;
         }
 
 
@@ -72,16 +78,19 @@ namespace IczpNet.Chat.SessionSections.Sessions
             throw new NotImplementedException();
         }
 
-        public async Task<int> GetBadgeAsync(Guid ownerId)
+        public async Task<int> GetBadgeAsync(Guid ownerId, bool? isImmersed = null)
         {
             var badge = (await Repository.GetQueryableAsync())
                 .Where(x => x.OwnerId == ownerId)
+                .WhereIf(isImmersed.HasValue, x => x.IsImmersed == isImmersed)
                 .Select(x => new
                 {
                     Badge = x.Session.MessageList.Count(d =>
                     //!x.IsRollbacked &&
                     d.AutoId > x.ReadedMessageAutoId &&
                     d.SenderId != x.OwnerId &&
+
+
                     (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
                     (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
                     (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime))
@@ -103,6 +112,31 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return Repository.BatchUpdateAsync(sessionId, lastMessageAutoId);
         }
 
+        public Task<List<SessionUnitInfo>> GetCacheListBySessionIdAsync(Guid sessionId)
+        {
+            return SessionUnitCache.GetAsync(sessionId);
+        }
+
+        public async Task SetCacheListBySessionIdAsync(Guid sessionId)
+        {
+            var sessionUnitInfoList = await GetListBySessionIdAsync(sessionId);
+            await SessionUnitCache.SetAsync(sessionId, sessionUnitInfoList);
+        }
+
+        public async Task<List<SessionUnitInfo>> GetListBySessionIdAsync(Guid sessionId)
+        {
+            return (await Repository.GetQueryableAsync())
+                .Where(x => x.SessionId == sessionId)
+                .Select(x => new SessionUnitInfo()
+                {
+                    Id = x.Id,
+                    SessionId = x.SessionId,
+                    DestinationId = x.DestinationId,
+                    OwnerId = x.OwnerId,
+                    DestinationObjectType = x.DestinationObjectType,
+                })
+                .ToList();
+        }
 
     }
 }

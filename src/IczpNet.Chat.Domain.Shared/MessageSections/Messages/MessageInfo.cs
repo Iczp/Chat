@@ -24,7 +24,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         public virtual long AutoId { get; set; }
 
-        //public virtual string SessionId { get; set; }
+        public virtual Guid SessionId { get; set; }
 
         public virtual Guid? SenderId { get; set; }
 

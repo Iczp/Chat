@@ -75,11 +75,11 @@ namespace IczpNet.Chat.RoomSections.Rooms
             {
                 Assert.If(!await IsAllowJoinRoomAsync(member.ObjectType), $"Not allowed to join the room,ObjectType:{member.ObjectType},Id:{member.Id}");
             }
-
-            var session = await SessionGenerator.MakeAsync(room, room);
+            var chatObject = await ChatObjectManager.GetItemByCacheAsync(room.Id);
+            var session = await SessionGenerator.MakeAsync(chatObject, chatObject);
 
             session.SetUnitList(members.Select(x =>
-                    new SessionUnit(GuidGenerator.Create(), session, x, room)
+                    new SessionUnit(GuidGenerator.Create(), session, x.Id, room.Id, room.ObjectType)
                     {
                         InviterId = room.OwnerId,
                         JoinWay = JoinWays.Creator,
@@ -120,7 +120,7 @@ namespace IczpNet.Chat.RoomSections.Rooms
                     Logger.LogWarning($"The member[{member}] is in room[{room}]");
                     continue;
                 }
-                room.Session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), room.Session, member, room)
+                room.Session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), room.Session, member.Id, room.Id, room.ObjectType)
                 {
                     JoinWay = joinWay,
                     Inviter = inviter

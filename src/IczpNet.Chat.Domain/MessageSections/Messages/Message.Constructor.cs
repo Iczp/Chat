@@ -4,6 +4,7 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.SessionSections.Sessions;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
@@ -14,17 +15,17 @@ public partial class Message
     public const string Delimiter = "/";
     protected Message() { }
 
-    public Message(Guid id, ChatObject sender, ChatObject receiver, Session session) : base(id)
+    public Message(Guid id, ChatObjectInfo sender, ChatObjectInfo receiver, Session session) : base(id)
     {
         //, IMessageContent messageContent
-        Sender = sender;
+        SenderId = sender.Id;
         SenderType = sender.ObjectType;
-        Receiver = receiver;
+        ReceiverId = receiver.Id;
         ReceiverType = receiver.ObjectType;
         Channel = session.Channel;
         Session = session;
         SessionKey = session.SessionKey;
-        SessionUnitCount = session.UnitList.Count;
+        SessionUnitCount = session.GetMemberCount();
         //MessageType = messageType;
     }
 

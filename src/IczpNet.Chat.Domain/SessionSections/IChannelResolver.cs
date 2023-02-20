@@ -6,8 +6,8 @@ namespace IczpNet.Chat.SessionSections
 {
     public interface IChannelResolver
     {
-        Task<Channels> GetAsync(ChatObject sender, ChatObject receiver);
+        Task<Channels> GetAsync(ChatObjectInfo sender, ChatObjectInfo receiver);
 
-        Channels Get(ChatObject sender, ChatObject receiver);
+        Channels Get(ChatObjectInfo sender, ChatObjectInfo receiver);
     }
 }

@@ -6,7 +6,7 @@ namespace IczpNet.Chat.ChatPushers
 {
     public interface IChatPusher
     {
-        Task ExecuteAsync<TCommand>(CommandData commandData);
+        Task ExecuteAsync(CommandPayload commandData);
 
         Task ExecuteAsync<TCommand>(object data, List<string> ignoreConnections = null);
     }

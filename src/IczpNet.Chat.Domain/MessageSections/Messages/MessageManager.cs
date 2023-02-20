@@ -27,6 +27,8 @@ namespace IczpNet.Chat.MessageSections.Messages
         protected IMessageValidator MessageValidator { get; }
         protected IChatObjectResolver ChatObjectResolver { get; }
         protected IContentResolver ContentResolver { get; }
+        protected ISessionUnitManager SessionUnitManager { get; }
+        
         protected ChatOption Config { get; }
         protected IChatPusher ChatPusher { get; }
 
@@ -39,7 +41,8 @@ namespace IczpNet.Chat.MessageSections.Messages
             IMessageValidator messageValidator,
             ISessionGenerator sessionIdGenerator,
             IOptions<ChatOption> options,
-            IChatPusher chatPusher)
+            IChatPusher chatPusher,
+            ISessionUnitManager sessionUnitManager)
         {
             Repository = repository;
             ChatObjectResolver = messageChatObjectResolver;
@@ -50,9 +53,10 @@ namespace IczpNet.Chat.MessageSections.Messages
             SessionGenerator = sessionIdGenerator;
             Config = options.Value;
             ChatPusher = chatPusher;
+            SessionUnitManager = sessionUnitManager;
         }
 
-        public virtual async Task<Message> CreateMessageAsync(ChatObject sender, ChatObject receiver, Func<Message, Task<IMessageContentEntity>> func)
+        public virtual async Task<Message> CreateMessageAsync(ChatObjectInfo sender, ChatObjectInfo receiver, Func<Message, Task<IMessageContentEntity>> func)
         {
             var session = await SessionGenerator.MakeAsync(sender, receiver);
 
@@ -78,9 +82,9 @@ namespace IczpNet.Chat.MessageSections.Messages
         public virtual async Task<Message> CreateMessageAsync<TMessageInput>(TMessageInput input, Func<Message, Task<IMessageContentEntity>> func)
             where TMessageInput : class, IMessageInput
         {
-            var sender = await ChatObjectManager.GetAsync(input.SenderId);
+            var sender = await ChatObjectManager.GetItemByCacheAsync(input.SenderId);
 
-            var receiver = await ChatObjectManager.GetAsync(input.ReceiverId);
+            var receiver = await ChatObjectManager.GetItemByCacheAsync(input.ReceiverId);
 
             return await CreateMessageAsync(sender, receiver, async entity =>
             {
@@ -98,11 +102,29 @@ namespace IczpNet.Chat.MessageSections.Messages
         {
             var message = await CreateMessageAsync(input, func);
 
+            //return null;
+
             var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
 
-            var targetIdList = await ChatObjectResolver.GetIdListAsync(message);
+            await SessionUnitManager.SetCacheListBySessionIdAsync(message.SessionId.Value);
 
-            await ChatPusher.ExecuteAsync<ChatCommand>(new SendDataEto(targetIdList, output), input.IgnoreConnections);
+            await ChatPusher.ExecuteAsync<ChatCommand>(output, input.IgnoreConnections);
+
+            //var targetIdList = await ChatObjectResolver.GetIdListAsync(message);
+
+
+            ////// get user id
+            ////var userIdList = message.Session.UnitList
+            ////    .Where(x => x.Owner.AppUserId != null)
+            ////    .Select(x => x.Owner.AppUserId.Value)
+            ////    .ToList();
+            ////// get online user id
+            ////var onlineUserIdList = userIdList.Where(x => true).ToList();
+            ////// ,sessionUnit.OwnerId[chatObjectId]
+            ////var sessionUnitList = message.Session.UnitList
+            ////    .Where(x => x.Owner.AppUserId.HasValue && onlineUserIdList.Contains(x.Owner.AppUserId.Value)).ToList();
+
+            ////await ChatPusher.ExecuteAsync<ChatCommand>(new SendDataEto(targetIdList, output), input.IgnoreConnections);
 
             return output;
         }
@@ -138,12 +160,12 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             Assert.If(source.IsRollbacked || source.RollbackTime != null, $"message already rollback：{sourceMessageId}");
 
-            var sender = await ChatObjectManager.GetAsync(senderId);
+            var sender = await ChatObjectManager.GetItemByCacheAsync(senderId);
 
             return await ForwardMessageAsync(source, sender, receiverIdList);
         }
 
-        public async Task<List<Message>> ForwardMessageAsync(Message source, ChatObject sender, List<Guid> receiverIdList)
+        public async Task<List<Message>> ForwardMessageAsync(Message source, ChatObjectInfo sender, List<Guid> receiverIdList)
         {
             var isSelfSender = source.Sender.Id == sender.Id;
 
@@ -159,7 +181,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             foreach (var receiverId in receiverIdList.Distinct())
             {
-                var receiver = await ChatObjectManager.GetAsync(receiverId);
+                var receiver = await ChatObjectManager.GetItemByCacheAsync(receiverId);
 
                 var newMessage = await CreateMessageAsync(sender, receiver, x =>
                 {

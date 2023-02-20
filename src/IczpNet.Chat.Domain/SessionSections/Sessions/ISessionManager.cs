@@ -3,6 +3,7 @@ using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.OpenedRecorders;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.SessionTags;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -15,7 +16,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         Task<Friendship> CreateFriendshipAsync(Guid ownerId, Guid destinationId, bool isPassive, Guid? friendshipRequestId);
 
-        Task<Friendship> CreateFriendshipAsync(ChatObject owner, ChatObject destination, bool isPassive, Guid? friendshipRequestId);
+        Task<Friendship> CreateFriendshipAsync(ChatObjectInfo owner, ChatObjectInfo destination, bool isPassive, Guid? friendshipRequestId);
 
         Task<DateTime> DeleteFriendshipAsync(Guid ownerId, Guid destinationId);
 

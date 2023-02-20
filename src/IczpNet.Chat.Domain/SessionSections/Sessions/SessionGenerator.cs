@@ -45,7 +45,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
             SessionUnitManager = sessionUnitManager;
         }
 
-        protected virtual string MakeSesssionKey(ChatObject sender, ChatObject receiver)
+        protected virtual string MakeSesssionKey(ChatObjectInfo sender, ChatObjectInfo receiver)
         {
             if (sender.ObjectType.Equals(ChatObjectTypes.Room))
             {
@@ -62,7 +62,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return string.Join(":", arr);
         }
 
-        public async Task<Session> MakeAsync(ChatObject sender, ChatObject receiver)
+        public async Task<Session> MakeAsync(ChatObjectInfo sender, ChatObjectInfo receiver)
         {
             var sessionKey = MakeSesssionKey(sender, receiver);
 
@@ -84,11 +84,11 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
             if (channel == Channels.PrivateChannel)
             {
-                session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session, sender, receiver));
+                session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session, sender.Id, receiver.Id, receiver.ObjectType));
 
                 if (sender.Id != receiver.Id)
                 {
-                    session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session, receiver, sender));
+                    session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session, receiver.Id, sender.Id, sender.ObjectType));
                 }
             }
             return await SessionRepository.InsertAsync(session, autoSave: true);
@@ -120,11 +120,11 @@ namespace IczpNet.Chat.SessionSections.Sessions
                 {
                     if (!unitList.Any(x => x.OwnerId == message.SenderId.Value && x.DestinationId == message.ReceiverId.Value))
                     {
-                        unitList.Add(new SessionUnit(GuidGenerator.Create(), session, message.Sender, message.Receiver));
+                        unitList.Add(new SessionUnit(GuidGenerator.Create(), session, message.Sender.Id, message.Receiver.Id, message.Receiver.ObjectType));
                     }
                     if (!unitList.Any(x => x.OwnerId == message.ReceiverId.Value && x.DestinationId == message.SenderId.Value))
                     {
-                        unitList.Add(new SessionUnit(GuidGenerator.Create(), session, message.Receiver, message.Sender));
+                        unitList.Add(new SessionUnit(GuidGenerator.Create(), session, message.Receiver.Id, message.Sender.Id, message.Sender.ObjectType));
                     }
                 }
                 session.SetMessageList(item.Items);
