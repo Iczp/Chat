@@ -126,17 +126,16 @@ namespace IczpNet.Chat.SessionSections.Sessions
         public async Task<List<SessionUnitInfo>> GetListBySessionIdAsync(Guid sessionId)
         {
             return (await Repository.GetQueryableAsync())
-                .Where(x => x.SessionId == sessionId)
-                .Select(x => new SessionUnitInfo()
-                {
-                    Id = x.Id,
-                    SessionId = x.SessionId,
-                    DestinationId = x.DestinationId,
-                    OwnerId = x.OwnerId,
-                    DestinationObjectType = x.DestinationObjectType,
-                })
-                .ToList();
+            .Where(x => x.SessionId == sessionId)
+            .Select(x => new SessionUnitInfo()
+            {
+                Id = x.Id,
+                SessionId = x.SessionId,
+                DestinationId = x.DestinationId,
+                OwnerId = x.OwnerId,
+                DestinationObjectType = x.DestinationObjectType,
+            })
+            .ToList();
         }
-
     }
 }
