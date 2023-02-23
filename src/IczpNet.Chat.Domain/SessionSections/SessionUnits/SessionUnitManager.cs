@@ -117,6 +117,11 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return SessionUnitCache.GetAsync(sessionId);
         }
 
+        public Task<List<SessionUnitInfo>> GetOrAddCacheListBySessionIdAsync(Guid sessionId)
+        {
+            return SessionUnitCache.GetOrAddAsync(sessionId, () => GetListBySessionIdAsync(sessionId));
+        }
+
         public async Task SetCacheListBySessionIdAsync(Guid sessionId)
         {
             var sessionUnitInfoList = await GetListBySessionIdAsync(sessionId);

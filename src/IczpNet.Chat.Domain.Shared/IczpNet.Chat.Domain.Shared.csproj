@@ -42,6 +42,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\IczpNet.AbpCommons\src\IczpNet.AbpCommons.Domain.Shared\IczpNet.AbpCommons.Domain.Shared.csproj" />
     <ProjectReference Include="..\..\..\IczpNet.AbpTrees\src\IczpNet.AbpTrees.Domain.Shared\IczpNet.AbpTrees.Domain.Shared.csproj" />
+    <ProjectReference Include="..\..\..\IczpNet.Pusher\src\IczpNet.Pusher.Domain.Shared\IczpNet.Pusher.Domain.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -52,6 +53,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Commands\" />
     <Folder Include="新文件夹\" />
   </ItemGroup>
 

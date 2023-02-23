@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.Enums;
+using IczpNet.Pusher.Commands;
 using System;
 
 namespace IczpNet.Chat.MessageSections.Messages
@@ -17,14 +18,15 @@ namespace IczpNet.Chat.MessageSections.Messages
     {
         public T Content { get; set; }
     }
-    
+
+    [Command("Chat")]
     public class MessageInfo
     {
         public virtual Guid Id { get; set; }
 
         public virtual long AutoId { get; set; }
 
-        public virtual Guid SessionId { get; set; }
+        //public virtual Guid SessionId { get; set; }
 
         public virtual Guid? SenderId { get; set; }
 

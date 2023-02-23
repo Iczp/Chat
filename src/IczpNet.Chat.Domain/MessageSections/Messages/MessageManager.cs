@@ -1,9 +1,8 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatPushers;
-using IczpNet.Chat.Commands;
+using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.Enums;
-using IczpNet.Chat.Etos;
 using IczpNet.Chat.Options;
 using IczpNet.Chat.SessionSections.Sessions;
 using Microsoft.Extensions.Options;
@@ -13,7 +12,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
-using Volo.Abp.EventBus.Local;
 using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.MessageSections.Messages
@@ -28,7 +26,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         protected IChatObjectResolver ChatObjectResolver { get; }
         protected IContentResolver ContentResolver { get; }
         protected ISessionUnitManager SessionUnitManager { get; }
-        
+
         protected ChatOption Config { get; }
         protected IChatPusher ChatPusher { get; }
 
@@ -102,36 +100,15 @@ namespace IczpNet.Chat.MessageSections.Messages
         {
             var message = await CreateMessageAsync(input, func);
 
-            //return null;
-
             var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
 
-            await SessionUnitManager.SetCacheListBySessionIdAsync(message.SessionId.Value);
-
-            await ChatPusher.ExecuteAsync<ChatCommand>(output, input.IgnoreConnections);
-
-            //var targetIdList = await ChatObjectResolver.GetIdListAsync(message);
-
-
-            ////// get user id
-            ////var userIdList = message.Session.UnitList
-            ////    .Where(x => x.Owner.AppUserId != null)
-            ////    .Select(x => x.Owner.AppUserId.Value)
-            ////    .ToList();
-            ////// get online user id
-            ////var onlineUserIdList = userIdList.Where(x => true).ToList();
-            ////// ,sessionUnit.OwnerId[chatObjectId]
-            ////var sessionUnitList = message.Session.UnitList
-            ////    .Where(x => x.Owner.AppUserId.HasValue && onlineUserIdList.Contains(x.Owner.AppUserId.Value)).ToList();
-
-            ////await ChatPusher.ExecuteAsync<ChatCommand>(new SendDataEto(targetIdList, output), input.IgnoreConnections);
+            await ChatPusher.ExecuteBySessionIdAsync(message.SessionId.Value, output, input.IgnoreConnections);
 
             return output;
         }
 
         public async Task<long> RollbackMessageAsync(Message message)
         {
-
             int HOURS = Config.AllowRollbackHours;
 
             var nowTime = Clock.Now;
@@ -146,12 +123,10 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             await Repository.UpdateAsync(message, true);
 
-            var targetIdList = await ChatObjectResolver.GetIdListAsync(message);
-
-            await ChatPusher.ExecuteAsync<RollbackCommand>(new SendDataEto(targetIdList, message.Id));
-
-            return 0;
-
+            return await ChatPusher.ExecuteBySessionIdAsync(message.SessionId.Value, new RollbackMessageCommandPayload
+            {
+                MessageId = message.Id,
+            });
         }
 
         public async Task<List<Message>> ForwardMessageAsync(Guid sourceMessageId, Guid senderId, List<Guid> receiverIdList)

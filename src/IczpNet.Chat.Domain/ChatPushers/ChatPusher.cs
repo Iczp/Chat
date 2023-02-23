@@ -1,7 +1,9 @@
-﻿using IczpNet.Chat.Commands;
+﻿using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Pusher;
+using IczpNet.Pusher.Commands;
 using IczpNet.Pusher.Models;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Services;
@@ -13,18 +15,21 @@ namespace IczpNet.Chat.ChatPushers
     {
         protected IPusherPublisher PusherPublisher { get; }
         protected ILocalEventBus LocalEventBus { get; }
+        protected ISessionUnitManager SessionUnitManager { get; }
 
         public ChatPusher(
             IPusherPublisher pusherPublisher,
-            ILocalEventBus localEventBus)
+            ILocalEventBus localEventBus,
+            ISessionUnitManager sessionUnitManager)
         {
             PusherPublisher = pusherPublisher;
             LocalEventBus = localEventBus;
+            SessionUnitManager = sessionUnitManager;
         }
 
-        public Task ExecuteAsync<TCommand>(object payload, List<string> ignoreConnections = null)
+        public Task<long> ExecuteAsync<TCommand>(object payload, List<string> ignoreConnections = null)
         {
-            return ExecuteAsync(new CommandPayload
+            return ExecuteAsync(new ChannelMessagePayload
             {
                 Command = CommandAttribute.GetValue<TCommand>(),
                 Payload = payload,
@@ -32,13 +37,24 @@ namespace IczpNet.Chat.ChatPushers
             });
         }
 
-        public async Task ExecuteAsync(CommandPayload commandData)
+        public async Task<long> ExecuteAsync(ChannelMessagePayload payload)
         {
-            Logger.LogDebug($"ChatPusher PublishAsync:{commandData}");
+            Logger.LogDebug($"ChatPusher PublishAsync:{payload}");
 
-            await PusherPublisher.PublishAsync(commandData);
+            return await PusherPublisher.PublishAsync(payload);
+        }
 
-            //await LocalEventBus.PublishAsync(commandData);
+        public async Task<long> ExecuteBySessionIdAsync(Guid sessionId, object commandPayload, List<string> ignoreConnections = null)
+        {
+            await SessionUnitManager.GetOrAddCacheListBySessionIdAsync(sessionId);
+
+            return await ExecuteAsync(new ChannelMessagePayload
+            {
+                SessionId = sessionId,
+                Command = CommandAttribute.GetValue(commandPayload.GetType()),
+                Payload = commandPayload,
+                IgnoreConnections = ignoreConnections
+            });
         }
     }
 }

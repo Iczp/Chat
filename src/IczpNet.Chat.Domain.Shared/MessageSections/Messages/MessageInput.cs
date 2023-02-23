@@ -40,6 +40,6 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         public virtual Guid? QuoteMessageId { get; set; }
 
-        public virtual List<string> IgnoreConnections { get; set; }
+        public virtual List<string> IgnoreConnections { get; set; } = new List<string>();
     }
 }
