@@ -100,5 +100,11 @@ namespace IczpNet.Chat.MessageServices
         {
             return ChatSender.SendHistoryMessageAsync(input);
         }
+
+        public async Task<Dictionary<string, long>> RollbackMessageAsync(Guid messageId)
+        {
+            var message = await Repository.GetAsync(messageId);
+            return await MessageManager.RollbackMessageAsync(message);
+        }
     }
 }

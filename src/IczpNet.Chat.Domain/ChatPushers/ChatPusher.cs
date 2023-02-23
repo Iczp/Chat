@@ -26,34 +26,48 @@ namespace IczpNet.Chat.ChatPushers
             LocalEventBus = localEventBus;
             SessionUnitManager = sessionUnitManager;
         }
-
-        public Task<long> ExecuteAsync<TCommand>(object payload, List<string> ignoreConnections = null)
-        {
-            return ExecuteAsync(new ChannelMessagePayload
-            {
-                Command = CommandAttribute.GetValue<TCommand>(),
-                Payload = payload,
-                IgnoreConnections = ignoreConnections
-            });
-        }
-
         public async Task<long> ExecuteAsync(ChannelMessagePayload payload)
         {
-            Logger.LogDebug($"ChatPusher PublishAsync:{payload}");
+            var ret = await PusherPublisher.PublishAsync(payload);
 
-            return await PusherPublisher.PublishAsync(payload);
+            Logger.LogInformation($"ChatPusher PublishAsync[{ret}]:{payload}");
+
+            return ret;
         }
 
-        public async Task<long> ExecuteBySessionIdAsync(Guid sessionId, object commandPayload, List<string> ignoreConnections = null)
+        public async Task<Dictionary<string, long>> ExecuteAsync(object payload, Action<ChannelMessagePayload> action)
+        {
+            var result = new Dictionary<string, long>();
+
+            var channelMessagePayload = new ChannelMessagePayload
+            {
+                Payload = payload,
+            };
+
+            action?.Invoke(channelMessagePayload);
+
+            foreach (var command in CommandAttribute.GetValues(payload.GetType()))
+            {
+                channelMessagePayload.Command = command;
+
+                var value = await ExecuteAsync(channelMessagePayload);
+
+                result.TryAdd(command, value);
+            }
+            return result;
+        }
+
+
+
+        public async Task<Dictionary<string, long>> ExecuteBySessionIdAsync(Guid sessionId, object commandPayload, List<string> ignoreConnections = null)
         {
             await SessionUnitManager.GetOrAddCacheListBySessionIdAsync(sessionId);
 
-            return await ExecuteAsync(new ChannelMessagePayload
+
+            return await ExecuteAsync(commandPayload, x =>
             {
-                SessionId = sessionId,
-                Command = CommandAttribute.GetValue(commandPayload.GetType()),
-                Payload = commandPayload,
-                IgnoreConnections = ignoreConnections
+                x.SessionId = sessionId;
+                x.IgnoreConnections = ignoreConnections;
             });
         }
     }

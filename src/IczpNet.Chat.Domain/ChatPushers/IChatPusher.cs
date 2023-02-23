@@ -10,8 +10,8 @@ namespace IczpNet.Chat.ChatPushers
     {
         Task<long> ExecuteAsync(ChannelMessagePayload commandData);
 
-        Task<long> ExecuteAsync<TCommand>(object data, List<string> ignoreConnections = null);
+        Task<Dictionary<string, long>> ExecuteAsync(object payload, Action<ChannelMessagePayload> action);
 
-        Task<long> ExecuteBySessionIdAsync(Guid sessionId, object commandPayload, List<string> ignoreConnections = null);
+        Task<Dictionary<string, long>> ExecuteBySessionIdAsync(Guid sessionId, object commandPayload, List<string> ignoreConnections = null);
     }
 }

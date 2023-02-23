@@ -30,12 +30,10 @@ public partial class Message : BaseEntity<Guid>
 
     public virtual int SessionUnitCount { get; protected set; }
 
-
     public virtual Guid? MessageContentId { get; protected set; }
 
     [ForeignKey(nameof(MessageContentId))]
     public virtual MessageContent MessageContent { get; protected set; }
-
 
     [StringLength(100)]
     //[Required]

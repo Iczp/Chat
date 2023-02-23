@@ -107,7 +107,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             return output;
         }
 
-        public async Task<long> RollbackMessageAsync(Message message)
+        public async Task<Dictionary<string, long>> RollbackMessageAsync(Message message)
         {
             int HOURS = Config.AllowRollbackHours;
 

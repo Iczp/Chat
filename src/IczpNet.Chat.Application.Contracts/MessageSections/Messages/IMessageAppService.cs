@@ -22,5 +22,6 @@ namespace IczpNet.Chat.MessageSections.Messages
         Task<MessageInfo<LinkContentInfo>> SendLinkMessageAsync(MessageInput<LinkContentInfo> input);
         Task<MessageInfo<HistoryContentOutput>> SendHistoryMessageAsync(MessageInput<HistoryContentInput> input);
         Task<MessageInfo<RedEnvelopeContentOutput>> SendRedEnvelopeMessageAsync(MessageInput<RedEnvelopeContentInput> input);
+        Task<Dictionary<string, long>> RollbackMessageAsync(Guid messageId);
     }
 }
