@@ -4186,9 +4186,8 @@ namespace IczpNet.Chat.Migrations
 
                     b.Property<long>("AutoId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("AutoId"));
+                        .HasColumnType("bigint")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<decimal>("AvailableAmount")
                         .HasColumnType("decimal(18,2)");

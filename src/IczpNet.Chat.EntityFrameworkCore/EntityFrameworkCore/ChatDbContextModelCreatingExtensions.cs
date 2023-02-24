@@ -15,6 +15,7 @@ using IczpNet.Chat.SessionSections.MessageReminders;
 using IczpNet.Chat.SessionSections.SessionUnitRoles;
 using IczpNet.Chat.SessionSections.SessionUnitTags;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -64,7 +65,7 @@ public static class ChatDbContextModelCreatingExtensions
             //    .ValueGeneratedOnAdd()
             //    .HasColumnType("bigint")
             //    .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-            b.UseTpcMappingStrategy();
+            b.UseTptMappingStrategy();
         });
 
         //public DbSet<Session> Session { get; }
@@ -96,7 +97,11 @@ public static class ChatDbContextModelCreatingExtensions
             b.HasMany(x => x.ContactsContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(ContactsContent)}", ChatDbProperties.DbSchema));
             b.HasMany(x => x.RedEnvelopeContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(RedEnvelopeContent)}", ChatDbProperties.DbSchema));
             b.HasMany(x => x.HistoryContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(HistoryContent)}", ChatDbProperties.DbSchema));
-            
+            b.Property<long>(nameof(Message.AutoId))
+                .ValueGeneratedOnAdd()
+                .HasColumnType("bigint")
+                //.HasColumnType("uniqueidentifier")
+                .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
         });
     }
 

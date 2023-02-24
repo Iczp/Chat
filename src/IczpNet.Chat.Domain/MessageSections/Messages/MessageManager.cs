@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.ObjectMapping;
+using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.MessageSections.Messages
 {
@@ -26,6 +27,8 @@ namespace IczpNet.Chat.MessageSections.Messages
         protected IChatObjectResolver ChatObjectResolver { get; }
         protected IContentResolver ContentResolver { get; }
         protected ISessionUnitManager SessionUnitManager { get; }
+        protected IUnitOfWorkManager UnitOfWorkManager { get; }
+        protected IUnitOfWork CurrentUnitOfWork => UnitOfWorkManager?.Current;
 
         protected ChatOption Config { get; }
         protected IChatPusher ChatPusher { get; }
@@ -40,7 +43,8 @@ namespace IczpNet.Chat.MessageSections.Messages
             ISessionGenerator sessionIdGenerator,
             IOptions<ChatOption> options,
             IChatPusher chatPusher,
-            ISessionUnitManager sessionUnitManager)
+            ISessionUnitManager sessionUnitManager,
+            IUnitOfWorkManager unitOfWorkManager)
         {
             Repository = repository;
             ChatObjectResolver = messageChatObjectResolver;
@@ -52,6 +56,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             Config = options.Value;
             ChatPusher = chatPusher;
             SessionUnitManager = sessionUnitManager;
+            UnitOfWorkManager = unitOfWorkManager;
         }
 
         public virtual async Task<Message> CreateMessageAsync(ChatObjectInfo sender, ChatObjectInfo receiver, Func<Message, Task<IMessageContentEntity>> func)
@@ -121,7 +126,8 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             message.Rollback(nowTime);
 
-            await Repository.UpdateAsync(message, true);
+            //await Repository.UpdateAsync(message, true);
+            await CurrentUnitOfWork.SaveChangesAsync();
 
             return await ChatPusher.ExecuteBySessionIdAsync(message.SessionId.Value, new RollbackMessageCommandPayload
             {

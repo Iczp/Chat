@@ -12,7 +12,7 @@ namespace IczpNet.Chat;
 [DependsOn(
     typeof(ChatApplicationContractsModule),
     typeof(AbpAspNetCoreMvcModule))]
-[DependsOn(typeof(AbpCommonsHttpApiModule))]
+//[DependsOn(typeof(AbpCommonsHttpApiModule))]
 [DependsOn(typeof(AbpIdentityHttpApiModule))]
 public class ChatHttpApiModule : AbpModule
 {

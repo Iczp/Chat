@@ -17,7 +17,7 @@ public partial class Message : BaseEntity<Guid>
     public virtual dynamic Content => GetContent();
 
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public virtual long AutoId { get; protected set; }
+    public virtual long AutoId { get;  }
 
     [StringLength(100)]
     //[Required]
