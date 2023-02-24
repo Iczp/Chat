@@ -27,8 +27,8 @@ public class OfficialSectionApplicationAutoMapperProfile : Profile
             .ForMember(x => x.MemberCount, o => o.MapFrom(x => x.GetMemberCount()))
             .ForMember(x => x.GroupCount, o => o.MapFrom(x => x.GetGroupCount()))
             ;
-        CreateMap<OfficialCreateInput, Official>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
-        CreateMap<OfficialUpdateInput, Official>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<OfficialCreateInput, Official>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<OfficialUpdateInput, Official>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
 
         //OfficialGroup
         CreateMap<OfficialGroup, OfficialGroupDto>()
@@ -38,19 +38,19 @@ public class OfficialSectionApplicationAutoMapperProfile : Profile
         CreateMap<OfficialGroup, OfficialGroupDetailDto>()
             .ForMember(x => x.GroupMemberCount, o => o.MapFrom(x => x.GetGroupMemberCount()))
             ;
-        CreateMap<OfficialGroupCreateInput, OfficialGroup>(MemberList.None).IgnoreAllPropertiesWithAnInaccessibleSetter();
-        CreateMap<OfficialGroupUpdateInput, OfficialGroup>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<OfficialGroupCreateInput, OfficialGroup>(MemberList.None).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<OfficialGroupUpdateInput, OfficialGroup>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
 
         //OfficialMember
         CreateMap<OfficialMember, OfficialMemberDto>();
         CreateMap<OfficialMember, OfficialMemberDetailDto>();
-        CreateMap<OfficialMemberCreateInput, OfficialMember>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
-        CreateMap<OfficialMemberUpdateInput, OfficialMember>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<OfficialMemberCreateInput, OfficialMember>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<OfficialMemberUpdateInput, OfficialMember>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
 
         //OfficialGroupMember
         CreateMap<OfficialGroupMember, OfficialGroupMemberDto>();
         CreateMap<OfficialGroupMember, OfficialGroupMemberDetailDto>();
-        CreateMap<OfficialGroupMemberCreateInput, OfficialGroupMember>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
-        CreateMap<OfficialGroupMemberUpdateInput, OfficialGroupMember>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<OfficialGroupMemberCreateInput, OfficialGroupMember>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<OfficialGroupMemberUpdateInput, OfficialGroupMember>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
     }
 }

@@ -17,14 +17,14 @@ public class SquareSectionApplicationAutoMapperProfile : Profile
         //SquareCategory
         CreateMap<SquareCategory, SquareCategoryDto>();
         CreateMap<SquareCategory, SquareCategoryDetailDto>();
-        CreateMap<SquareCategoryCreateInput, SquareCategory>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
-        CreateMap<SquareCategoryUpdateInput, SquareCategory>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<SquareCategoryCreateInput, SquareCategory>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<SquareCategoryUpdateInput, SquareCategory>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         CreateMap<SquareCategory, SquareCategoryInfo>();
 
         //Square
         CreateMap<Square, SquareDto>().ForMember(x => x.MemberCount, o => o.MapFrom(x => x.GetMemberCount()));
         CreateMap<Square, SquareDetailDto>().ForMember(x => x.MemberCount, o => o.MapFrom(x => x.GetMemberCount()));
-        CreateMap<SquareCreateInput, Square>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
-        CreateMap<SquareUpdateInput, Square>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<SquareCreateInput, Square>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<SquareUpdateInput, Square>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
     }
 }

@@ -15,7 +15,7 @@ public class WalletSectionApplicationAutoMapperProfile : Profile
         //Wallet
         CreateMap<Wallet, WalletDto>();
         CreateMap<Wallet, WalletDetailDto>();
-        //CreateMap<WalletCreateInput, Wallet>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
-        //CreateMap<WalletUpdateInput, Wallet>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
+        //CreateMap<WalletCreateInput, Wallet>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        //CreateMap<WalletUpdateInput, Wallet>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
     }
 }

@@ -33,21 +33,21 @@ public class ChatApplicationAutoMapperProfile : Profile
             .ForMember(x => x.ProxyShopKeeperCount, o => o.MapFrom(x => x.ProxyShopKeeperList.Count))
             .ForMember(x => x.ProxyShopWaiterCount, o => o.MapFrom(x => x.ProxyShopWaiterList.Count))
             ;
-        CreateMap<ChatObjectCreateInput, ChatObject>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
-        CreateMap<ChatObjectUpdateInput, ChatObject>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<ChatObjectCreateInput, ChatObject>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<ChatObjectUpdateInput, ChatObject>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
 
 
 
         //Article
         CreateMap<Article, ArticleDto>();
         CreateMap<Article, ArticleDetailDto>();
-        CreateMap<ArticleCreateInput, Article>(MemberList.None).IgnoreAllPropertiesWithAnInaccessibleSetter();
-        CreateMap<ArticleUpdateInput, Article>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<ArticleCreateInput, Article>(MemberList.None).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<ArticleUpdateInput, Article>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
 
         //Connection
         CreateMap<Connection, ConnectionDto>();
         CreateMap<Connection, ConnectionDetailDto>();
-        CreateMap<ConnectionCreateInput, Connection>(MemberList.None).IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<ConnectionCreateInput, Connection>(MemberList.None).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         //CreateMap<ConnectionUpdateInput, Connection>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
 
     }

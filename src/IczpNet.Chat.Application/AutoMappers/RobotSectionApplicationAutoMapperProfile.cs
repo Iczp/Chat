@@ -15,7 +15,7 @@ public class RobotSectionApplicationAutoMapperProfile : Profile
         //Robot
         CreateMap<Robot, RobotDto>();
         CreateMap<Robot, RobotDetailDto>();
-        CreateMap<RobotCreateInput, Robot>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
-        CreateMap<RobotUpdateInput, Robot>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<RobotCreateInput, Robot>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<RobotUpdateInput, Robot>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
     }
 }

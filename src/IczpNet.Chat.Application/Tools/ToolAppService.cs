@@ -110,7 +110,9 @@ namespace Rctea.IM.Tools
 
             var multiTenancySide = CurrentTenant.GetMultiTenancySide();
 
-            foreach (var group in PermissionDefinitionManager.GetGroups().Where(x => x.Name == GlobalPermissionConsts.GroupName))
+            var groups = (await PermissionDefinitionManager.GetGroupsAsync()).Where(x => x.Name == GlobalPermissionConsts.GroupName);
+
+            foreach (var group in groups)
             {
                 var groupDto = new PermissionGroupDto
                 {

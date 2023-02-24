@@ -2,7 +2,6 @@
 using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;

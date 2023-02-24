@@ -19,21 +19,21 @@ public class RoomSectionApplicationAutoMapperProfile : Profile
         //Room
         CreateMap<Room, RoomDto>();
         CreateMap<Room, RoomDetailDto>();
-        //CreateMap<RoomCreateInput, Room>(MemberList.None).IgnoreAllPropertiesWithAnInaccessibleSetter();
-        CreateMap<RoomUpdateInput, Room>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
+        //CreateMap<RoomCreateInput, Room>(MemberList.None).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<RoomUpdateInput, Room>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
 
         //RoomMember
         CreateMap<RoomMember, RoomMemberDto>().ForMember(x => x.RoleList, o => o.MapFrom(x => x.GetRoleList()));
         CreateMap<RoomMember, RoomMemberDetailDto>().ForMember(x => x.RoleList, o => o.MapFrom(x => x.GetRoleList()));
 
-        CreateMap<RoomMemberCreateInput, RoomMember>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
-        CreateMap<RoomMemberUpdateInput, RoomMember>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<RoomMemberCreateInput, RoomMember>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<RoomMemberUpdateInput, RoomMember>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
 
         //RoomRole
         CreateMap<RoomRole, RoomRoleDto>().ForMember(x => x.MemberCount, o => o.MapFrom(x => x.GetMemberCount()));
         CreateMap<RoomRole, RoomRoleDetailDto>().ForMember(x => x.MemberCount, o => o.MapFrom(x => x.GetMemberCount()));
         CreateMap<RoomRole, RoomRoleSampleDto>();
-        CreateMap<RoomRoleCreateInput, RoomRole>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
-        CreateMap<RoomRoleUpdateInput, RoomRole>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<RoomRoleCreateInput, RoomRole>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<RoomRoleUpdateInput, RoomRole>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
     }
 }

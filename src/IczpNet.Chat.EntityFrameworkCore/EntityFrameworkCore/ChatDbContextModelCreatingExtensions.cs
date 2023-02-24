@@ -64,6 +64,7 @@ public static class ChatDbContextModelCreatingExtensions
             //    .ValueGeneratedOnAdd()
             //    .HasColumnType("bigint")
             //    .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+            b.UseTpcMappingStrategy();
         });
 
         //public DbSet<Session> Session { get; }
@@ -95,6 +96,7 @@ public static class ChatDbContextModelCreatingExtensions
             b.HasMany(x => x.ContactsContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(ContactsContent)}", ChatDbProperties.DbSchema));
             b.HasMany(x => x.RedEnvelopeContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(RedEnvelopeContent)}", ChatDbProperties.DbSchema));
             b.HasMany(x => x.HistoryContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(HistoryContent)}", ChatDbProperties.DbSchema));
+            
         });
     }
 

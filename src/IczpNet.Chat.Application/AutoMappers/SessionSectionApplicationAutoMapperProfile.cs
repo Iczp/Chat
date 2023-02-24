@@ -45,21 +45,21 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
         //Friendship
         CreateMap<Friendship, FriendshipDto>();
         CreateMap<Friendship, FriendshipDetailDto>();
-        CreateMap<FriendshipCreateInput, Friendship>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
-        CreateMap<FriendshipUpdateInput, Friendship>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<FriendshipCreateInput, Friendship>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<FriendshipUpdateInput, Friendship>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
 
         //FriendshipRequest
         CreateMap<FriendshipRequest, FriendshipRequestDto>();
         CreateMap<FriendshipRequest, FriendshipRequestDetailDto>().ForMember(x => x.FriendshipIdList, o => o.MapFrom(x => x.GetFriendshipIdList()));
-        CreateMap<FriendshipRequestCreateInput, FriendshipRequest>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
-        CreateMap<FriendshipRequestUpdateInput, FriendshipRequest>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<FriendshipRequestCreateInput, FriendshipRequest>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<FriendshipRequestUpdateInput, FriendshipRequest>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
 
         //FriendshipTag
         CreateMap<FriendshipTag, FriendshipTagDto>();
         CreateMap<FriendshipTag, FriendshipTagDetailDto>();
         CreateMap<FriendshipTag, FriendshipTagSimpleDto>();
-        CreateMap<FriendshipTagCreateInput, FriendshipTag>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
-        CreateMap<FriendshipTagUpdateInput, FriendshipTag>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<FriendshipTagCreateInput, FriendshipTag>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<FriendshipTagUpdateInput, FriendshipTag>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
 
 
         //OpenedRecorder
