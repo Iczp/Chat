@@ -1,5 +1,6 @@
 using IczpNet.Chat.Articles;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.ChatUsers;
 using IczpNet.Chat.Connections;
 using IczpNet.Chat.MessageSections.MessageContents;
@@ -48,82 +49,85 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     /* Add DbSet for each Aggregate Root here. Example:
      * public DbSet<Question> Questions { get; set; }
      */
-    public DbSet<ChatObject> ChatObject { get; }
-    public DbSet<ChatUser> ChatUser { get; }
+    public DbSet<ChatObject> ChatObject { get; set; }
+
+    public DbSet<ChatObjectType> ChatObjectType { get; set; }
+
+    public DbSet<ChatUser> ChatUser { get; set; }
 
 
-    public DbSet<Article> Article { get; }
-    public DbSet<ArticleMessage> ArticleMessage { get; }
+    public DbSet<Article> Article { get; set; }
+    public DbSet<ArticleMessage> ArticleMessage { get; set; }
 
-    public DbSet<Session> Session { get; }
+    public DbSet<Session> Session { get; set; }
     public DbSet<SessionUnit> SessionUnit { get; set; }
-    public DbSet<SessionTag> SessionTag { get; }
-    public DbSet<SessionRole> SessionRole { get; }
+    public DbSet<SessionTag> SessionTag { get; set; }
+    public DbSet<SessionRole> SessionRole { get; set; }
     
-    public DbSet<ReadedRecorder> ReadedRecorder { get; }
+    public DbSet<ReadedRecorder> ReadedRecorder { get; set; }
 
-    public DbSet<Friendship> Friendship { get; }
-    public DbSet<FriendshipTag> FriendshipTag { get; }
-    public DbSet<FriendshipTagUnit> FriendshipTagUnit { get; }
-    public DbSet<FriendshipRequest> FriendshipRequest { get; }
-    public DbSet<OpenedRecorder> OpenedRecorder { get; }
-    public DbSet<MessageReminder> MessageReminder { get; }
+    public DbSet<Friendship> Friendship { get; set; }
+    public DbSet<FriendshipTag> FriendshipTag { get; set; }
+    public DbSet<FriendshipTagUnit> FriendshipTagUnit { get; set; }
+    public DbSet<FriendshipRequest> FriendshipRequest { get; set; }
+    public DbSet<OpenedRecorder> OpenedRecorder { get; set; }
+    public DbSet<MessageReminder> MessageReminder { get; set; }
 
-    public DbSet<Connection> Connection { get; }
-
-
+    public DbSet<Connection> Connection { get; set; }
 
 
-    public DbSet<Message> Message { get; }
-    public DbSet<MessageContent> MessageContent { get; }
+
+
+    public DbSet<Message> Message { get; set; }
+    public DbSet<MessageContent> MessageContent { get; set; }
     
 
-    public DbSet<Robot> Robot { get; }
+    public DbSet<Robot> Robot { get; set; }
 
-    public DbSet<CmdContent> CmdMessage { get; }
-    public DbSet<TextContent> TextMessage { get; }
-    public DbSet<HtmlContent> HtmlContent { get; }
-    public DbSet<ArticleContent> ArticleContent { get; }
-    public DbSet<LinkContent> LinkContent { get; }
-    public DbSet<ImageContent> ImageMessage { get; }
-    public DbSet<SoundContent> SoundContent { get; }
-    public DbSet<VideoContent> VideoContent { get; }
-    public DbSet<FileContent> FileContent { get; }
-    public DbSet<LocationContent> LocationContent { get; }
-    public DbSet<ContactsContent> ContactsContent { get; }
-    public DbSet<RedEnvelopeContent> RedEnvelopeContent { get; }
-    public DbSet<RedEnvelopeUnit> RedEnvelopeUnit { get; }
-    public DbSet<HistoryContent> HistoryContent { get; }
-    public DbSet<HistoryMessage> HistoryMessage { get; }
+    public DbSet<CmdContent> CmdMessage { get; set; }
+    public DbSet<TextContent> TextMessage { get; set; }
+    public DbSet<HtmlContent> HtmlContent { get; set; }
+    public DbSet<ArticleContent> ArticleContent { get; set; }
+    public DbSet<LinkContent> LinkContent { get; set; }
+    public DbSet<ImageContent> ImageMessage { get; set; }
+    public DbSet<SoundContent> SoundContent { get; set; }
+    public DbSet<VideoContent> VideoContent { get; set; }
+    public DbSet<FileContent> FileContent { get; set; }
+    public DbSet<LocationContent> LocationContent { get; set; }
+    public DbSet<ContactsContent> ContactsContent { get; set; }
+    public DbSet<RedEnvelopeContent> RedEnvelopeContent { get; set; }
+    public DbSet<RedEnvelopeUnit> RedEnvelopeUnit { get; set; }
+    public DbSet<HistoryContent> HistoryContent { get; set; }
+    public DbSet<HistoryMessage> HistoryMessage { get; set; }
 
-    public DbSet<Official> Official { get; }
-    public DbSet<Subscription> Subscription { get; }
+    public DbSet<Official> Official { get; set; }
+    public DbSet<Subscription> Subscription { get; set; }
     
-    public DbSet<OfficialMember> OfficialMember { get; }
-    public DbSet<OfficialMemberTagUnit> OfficialMemberTagUnit { get; }
-    public DbSet<OfficialGroupMember> OfficialGroupMember { get; }
-    public DbSet<OfficialGroup> OfficialGroup { get; }
-    public DbSet<OfficalExcludedMember> OfficalExcludedMember { get; }
+    public DbSet<OfficialMember> OfficialMember { get; set; }
+    public DbSet<OfficialMemberTagUnit> OfficialMemberTagUnit { get; set; }
+    public DbSet<OfficialGroupMember> OfficialGroupMember { get; set; }
+    public DbSet<OfficialGroup> OfficialGroup { get; set; }
+    public DbSet<OfficalExcludedMember> OfficalExcludedMember { get; set; }
 
 
-    public DbSet<Room> Room { get; }
-    public DbSet<RoomMember> RoomMember { get; }
-    public DbSet<RoomRole> RoomRole { get; }
-    public DbSet<RoomRoleRoomMember> RoomRoleRoomMember { get; }
-    public DbSet<RoomPermissionDefine> RoomPermissionDefine { get; }
-    public DbSet<RoomPermissionGrant> RoomPermissionGrant { get; }
-    public DbSet<RoomForbiddenMember> RoomForbiddenMember { get; }
+    public DbSet<Room> Room { get; set; }
+    public DbSet<RoomMember> RoomMember { get; set; }
+    public DbSet<RoomRole> RoomRole { get; set; }
+    public DbSet<RoomRoleRoomMember> RoomRoleRoomMember { get; set; }
+    public DbSet<RoomPermissionDefine> RoomPermissionDefine { get; set; }
+    public DbSet<RoomPermissionGrant> RoomPermissionGrant { get; set; }
+    public DbSet<RoomForbiddenMember> RoomForbiddenMember { get; set; }
 
-    public DbSet<Square> Square { get; }
-    public DbSet<SquareCategory> SquareCategory { get; }
-    public DbSet<SquareMember> SquareMember { get; }
+    public DbSet<Square> Square { get; set; }
+    public DbSet<SquareCategory> SquareCategory { get; set; }
+    public DbSet<SquareMember> SquareMember { get; set; }
 
 
-    public DbSet<Wallet> Wallet { get; }
-    public DbSet<WalletRecorder> WalletRecorder { get; }
-    public DbSet<WalletBusiness> WalletBusiness { get; }
-    public DbSet<PaymentPlatform> PaymentPlatform { get; }
-    public DbSet<WalletRequest> RechargeRequest { get; }
+    public DbSet<Wallet> Wallet { get; set; }
+    public DbSet<WalletRecorder> WalletRecorder { get; set; }
+    public DbSet<WalletBusiness> WalletBusiness { get; set; }
+    public DbSet<PaymentPlatform> PaymentPlatform { get; set; }
+    public DbSet<WalletRequest> RechargeRequest { get; set; }
 
     public ChatDbContext(DbContextOptions<ChatDbContext> options)
         : base(options)

@@ -30,11 +30,11 @@ namespace IczpNet.Chat.SquareSections.Squares
         public virtual SquareCategory Category { get; set; }
 
         [InverseProperty(nameof(SquareMember.Square))]
-        public virtual IList<SquareMember> MemberList { get; set; } = new List<SquareMember>();
+        public virtual IList<SquareMember> SquareMemberList { get; set; } = new List<SquareMember>();
 
         public int GetMemberCount()
         {
-            return MemberList.Count;
+            return SquareMemberList.Count;
         }
     }
 }

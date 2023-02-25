@@ -34,7 +34,7 @@ namespace IczpNet.Chat.OfficialSections.Officials
         public virtual IList<OfficalExcludedMember> OfficalExcludedMemberList { get; set; } = new List<OfficalExcludedMember>();
 
         [InverseProperty(nameof(OfficialMember.Official))]
-        public virtual IList<OfficialMember> MemberList { get; set; } = new List<OfficialMember>();
+        public virtual IList<OfficialMember> OfficialMemberList { get; set; } = new List<OfficialMember>();
 
         [InverseProperty(nameof(OfficialMemberTag.Official))]
         public virtual IList<OfficialMemberTag> TagList { get; set; } = new List<OfficialMemberTag>();
@@ -45,11 +45,11 @@ namespace IczpNet.Chat.OfficialSections.Officials
             ObjectType = ChatObjectTypeValue;
         }
 
-        protected Official(Guid id) : base(id, ChatObjectTypeValue) { }
+        public Official(Guid id, string name, Guid? parnetId) : base(id, name, ChatObjectTypeValue, parnetId) { }
 
         public int GetMemberCount()
         {
-            return MemberList.Count;
+            return OfficialMemberList.Count;
         }
 
         public int GetGroupCount()

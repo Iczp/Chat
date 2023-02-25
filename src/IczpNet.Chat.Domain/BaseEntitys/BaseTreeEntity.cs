@@ -10,5 +10,9 @@ namespace IczpNet.Chat.BaseEntitys
         where TKey : struct
     {
         public virtual Guid? TenantId { get; set; }
+
+        protected BaseTreeEntity() { }
+
+        protected BaseTreeEntity(TKey id, string name, TKey? parentId) : base(id, name, parentId) { }
     }
 }

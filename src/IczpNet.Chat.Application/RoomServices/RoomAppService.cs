@@ -81,7 +81,12 @@ namespace IczpNet.Chat.RoomServices
         {
             var members = await ChatObjectManager.GetManyAsync(input.ChatObjectIdList);
 
-            var room = await RoomManager.CreateRoomAsync(new Room(GuidGenerator.Create(), input.Name, input.Code, input.Description, input.OwnerId), members);
+            var room = await RoomManager.CreateRoomAsync(new Room(
+                id: GuidGenerator.Create(),
+                name: input.Name,
+                code: input.Code,
+                description: input.Description,
+                input.OwnerId), members);
 
             return await MapToDtoAsync(room);
         }
@@ -107,7 +112,10 @@ namespace IczpNet.Chat.RoomServices
         {
             var idList = await ChatObjectManager.GetAllListAsync(ChatObjectTypeEnums.Personal);
 
-            var room = await RoomManager.CreateRoomAsync(new Room(GuidGenerator.Create(), roomName, roomName, "所有人", idList.FirstOrDefault()?.Id), idList);
+            var room = await RoomManager.CreateRoomAsync(new Room(
+                id: GuidGenerator.Create(),
+                name: roomName,
+                code:roomName,"所有人", idList.FirstOrDefault()?.Id), idList);
 
             return await MapToDtoAsync(room);
         }

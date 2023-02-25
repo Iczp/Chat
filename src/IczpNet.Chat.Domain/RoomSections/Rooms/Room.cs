@@ -119,8 +119,7 @@ public class Room : ChatObject, IChatOwner<Guid?>
     {
         ObjectType = ChatObjectTypeValue;
     }
-
-    public Room(Guid id, string name, string code, string description, Guid? ownerId) : base(id, ChatObjectTypeValue)
+    public Room(Guid id, string name, string code, string description, Guid? ownerId) : base(id, name, ChatObjectTypeValue, null)
     {
         SetName(name);
         Code = code;

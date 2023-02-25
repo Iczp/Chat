@@ -14,6 +14,6 @@ namespace IczpNet.Chat.ChatUsers
             ObjectType = ChatObjectTypeValue;
         }
 
-        protected ChatUser(Guid id) : base(id, ChatObjectTypeValue) { }
+        protected ChatUser(Guid id, string name, Guid? parnetId) : base(id, name, ChatObjectTypeValue, parnetId) { }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.BaseEntitys;
+using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.OfficialSections.OfficialExcludedMembers;
@@ -25,7 +26,7 @@ using Volo.Abp.SimpleStateChecking;
 namespace IczpNet.Chat.ChatObjects
 {
     //[Index]
-    public class ChatObject : BaseEntity<Guid>, IName, IChatObject, IHasSimpleStateCheckers<ChatObject>
+    public class ChatObject : BaseTreeEntity<ChatObject, Guid>, IName, IChatObject, IHasSimpleStateCheckers<ChatObject>
     {
         public List<ISimpleStateChecker<ChatObject>> StateCheckers { get; }
 
@@ -42,7 +43,7 @@ namespace IczpNet.Chat.ChatObjects
 
         [StringLength(50)]
         [Required]
-        public virtual string Name { get; protected set; }
+        public override string Name { get; protected set; }
 
         [StringLength(50)]
         public virtual string Code { get; set; }
@@ -59,7 +60,26 @@ namespace IczpNet.Chat.ChatObjects
         public virtual ChatObjectTypeEnums? ObjectType { get; protected set; }
 
         [StringLength(500)]
-        public virtual string Description { get; set; }
+        public override string Description { get; set; }
+
+
+        #region Group
+        public virtual Guid? GroupId { get; set; }
+
+        [ForeignKey(nameof(GroupId))]
+        public virtual ChatObject Group { get; set; }
+
+        [InverseProperty(nameof(Group))]
+        public virtual IList<ChatObject> MemberList { get; set; }
+        #endregion
+
+
+        #region ChatObjectType
+        public virtual string ChatObjectTypeId { get; protected set; }
+
+        [ForeignKey(nameof(ChatObjectTypeId))]
+        public virtual ChatObjectType ChatObjectType { get; set; }
+        #endregion
 
         #region Message
 
@@ -201,16 +221,16 @@ namespace IczpNet.Chat.ChatObjects
             TypeName = GetType().Name;
         }
 
-        protected ChatObject(Guid id, ChatObjectTypeEnums chatObjectType) : base(id)
+        protected ChatObject(Guid id, string name, ChatObjectTypeEnums chatObjectType, Guid? parentId) : base(id, name, parentId)
         {
             ObjectType = chatObjectType;
             TypeName = GetType().Name;
             StateCheckers = new List<ISimpleStateChecker<ChatObject>>();
         }
 
-        public virtual void SetName(string name)
+        public override void SetName(string name)
         {
-            Name = name;
+            base.SetName(name);
         }
 
         public virtual void SetMaxMessageAutoId(long maxMessageAutoId)

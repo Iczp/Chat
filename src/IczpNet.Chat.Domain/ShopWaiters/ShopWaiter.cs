@@ -30,7 +30,7 @@ namespace IczpNet.Chat.Robots
             ObjectType = ChatObjectTypeValue;
         }
 
-        protected ShopWaiter(Guid id, ShopKeeper shopKeeper, ChatObject chatObject) : base(id, ChatObjectTypeValue)
+        public ShopWaiter(Guid id, string name, Guid? parnetId, ShopKeeper shopKeeper, ChatObject chatObject) : base(id, name, ChatObjectTypeValue, parnetId) 
         {
             Assert.If(chatObject.ObjectType == ChatObjectTypeEnums.ShopWaiter, "");
             ShopKeeper = shopKeeper;

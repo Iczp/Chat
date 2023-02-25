@@ -1,16 +1,12 @@
 ﻿using IczpNet.AbpCommons;
-using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Localization;
-using IczpNet.Chat.OfficialSections.Officials.Dtos;
-using IczpNet.Chat.OfficialSections.Officials;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.MultiTenancy;
 using IczpNet.AbpCommons.DataFilters;
 
 namespace IczpNet.Chat.BaseAppServices;
@@ -41,7 +37,7 @@ public abstract class CrudChatAppService<
         TCreateInput,
         TUpdateInput>
 
-    where TEntity : BaseEntity<TKey>, IEntity<TKey>
+    where TEntity : class, IEntity<TKey>
     where TGetOutputDto : IEntityDto<TKey>
     where TGetListOutputDto : IEntityDto<TKey>
     //where TCreateInput : IName
@@ -83,5 +79,5 @@ public abstract class CrudChatAppService<
 
             methodInfo.Invoke(entity, new object[] { name });
         }
-    }   
+    }
 }

@@ -14,7 +14,6 @@ namespace IczpNet.Chat.RobotSections.Robots
         {
             ObjectType = ChatObjectTypeValue;
         }
-
-        protected Robot(Guid id) : base(id, ChatObjectTypeValue) { }
+        public Robot(Guid id, string name, Guid? parnetId) : base(id, name, ChatObjectTypeValue, parnetId) { }
     }
 }

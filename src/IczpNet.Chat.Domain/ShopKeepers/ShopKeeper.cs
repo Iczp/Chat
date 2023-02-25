@@ -23,7 +23,7 @@ namespace IczpNet.Chat.Robots
         {
             ObjectType = ChatObjectTypeValue;
         }
-        protected ShopKeeper(Guid id) : base(id, ChatObjectTypeValue)
+        public ShopKeeper(Guid id, string name, Guid? parnetId) : base(id, name, ChatObjectTypeValue, parnetId)
         {
 
         }

@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230225035400_ChatObjectType_Init")]
+    partial class ChatObjectType_Init
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -359,9 +362,6 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("DeletionTime");
 
-                    b.Property<int>("Depth")
-                        .HasColumnType("int");
-
                     b.Property<string>("Description")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -369,19 +369,6 @@ namespace IczpNet.Chat.Migrations
                     b.Property<string>("ExtraProperties")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("ExtraProperties");
-
-                    b.Property<string>("FullPath")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("FullPathName")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<Guid?>("GroupId")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
@@ -409,15 +396,9 @@ namespace IczpNet.Chat.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<Guid?>("ParentId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Portrait")
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
-
-                    b.Property<double>("Sorting")
-                        .HasColumnType("float");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uniqueidentifier")
@@ -431,11 +412,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("ChatObjectTypeId");
 
-                    b.HasIndex("GroupId");
-
                     b.HasIndex("ObjectType");
-
-                    b.HasIndex("ParentId");
 
                     b.ToTable("Chat_ChatObject", (string)null);
 
@@ -4868,19 +4845,7 @@ namespace IczpNet.Chat.Migrations
                         .WithMany("ChatObjectList")
                         .HasForeignKey("ChatObjectTypeId");
 
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Group")
-                        .WithMany("MemberList")
-                        .HasForeignKey("GroupId");
-
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Parent")
-                        .WithMany("Childs")
-                        .HasForeignKey("ParentId");
-
                     b.Navigation("ChatObjectType");
-
-                    b.Navigation("Group");
-
-                    b.Navigation("Parent");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Messages.Message", b =>
@@ -5137,7 +5102,7 @@ namespace IczpNet.Chat.Migrations
             modelBuilder.Entity("IczpNet.Chat.OfficialSections.OfficialMembers.OfficialMember", b =>
                 {
                     b.HasOne("IczpNet.Chat.OfficialSections.Officials.Official", "Official")
-                        .WithMany("OfficialMemberList")
+                        .WithMany("MemberList")
                         .HasForeignKey("OfficialId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -5585,7 +5550,7 @@ namespace IczpNet.Chat.Migrations
                         .IsRequired();
 
                     b.HasOne("IczpNet.Chat.SquareSections.Squares.Square", "Square")
-                        .WithMany("SquareMemberList")
+                        .WithMany("MemberList")
                         .HasForeignKey("SquareId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -5909,8 +5874,6 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.ChatObjects.ChatObject", b =>
                 {
-                    b.Navigation("Childs");
-
                     b.Navigation("DestinationFriendshipList");
 
                     b.Navigation("DestinationFriendshipRequestList");
@@ -5938,8 +5901,6 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("InviterSessionUnitList");
 
                     b.Navigation("KillerSessionUnitList");
-
-                    b.Navigation("MemberList");
 
                     b.Navigation("OwnerFriendshipList");
 
@@ -6102,11 +6063,11 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.OfficialSections.Officials.Official", b =>
                 {
+                    b.Navigation("MemberList");
+
                     b.Navigation("OfficalExcludedMemberList");
 
                     b.Navigation("OfficialGroupList");
-
-                    b.Navigation("OfficialMemberList");
 
                     b.Navigation("TagList");
                 });
@@ -6127,7 +6088,7 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.SquareSections.Squares.Square", b =>
                 {
-                    b.Navigation("SquareMemberList");
+                    b.Navigation("MemberList");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.Articles;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.ChatUsers;
 using IczpNet.Chat.Connections;
 using IczpNet.Chat.MessageSections.MessageContents;
@@ -49,6 +50,7 @@ public interface IChatDbContext : IEfCoreDbContext
      */
 
     DbSet<ChatObject> ChatObject { get; }
+    DbSet<ChatObjectType> ChatObjectType { get; }
     DbSet<ChatUser> ChatUser { get; }
 
     DbSet<Article> Article { get; }
