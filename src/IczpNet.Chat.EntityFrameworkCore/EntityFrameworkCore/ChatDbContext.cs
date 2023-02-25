@@ -56,7 +56,7 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     public DbSet<ArticleMessage> ArticleMessage { get; }
 
     public DbSet<Session> Session { get; }
-    public DbSet<SessionUnit> SessionUnit { get; }
+    public DbSet<SessionUnit> SessionUnit { get; set; }
     public DbSet<SessionTag> SessionTag { get; }
     public DbSet<SessionRole> SessionRole { get; }
     
