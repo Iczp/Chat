@@ -9,9 +9,9 @@ namespace IczpNet.Chat.RoomSections.Rooms
     public interface IRoomManager
     {
 
-        Task<bool> IsAllowJoinRoomAsync(ChatObjectTypes? objectType);
+        Task<bool> IsAllowJoinRoomAsync(ChatObjectTypeEnums? objectType);
 
-        Task<bool> IsAllowCreateRoomAsync(ChatObjectTypes? objectType);
+        Task<bool> IsAllowCreateRoomAsync(ChatObjectTypeEnums? objectType);
 
         Task<Room> CreateRoomAsync(Room room, List<ChatObject> members);
 

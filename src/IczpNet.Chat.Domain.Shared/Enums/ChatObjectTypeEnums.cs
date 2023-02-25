@@ -2,7 +2,7 @@
 
 namespace IczpNet.Chat.Enums
 {
-    public enum ChatObjectTypes
+    public enum ChatObjectTypeEnums
     {
         /// <summary>
         /// 个人

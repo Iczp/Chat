@@ -47,7 +47,7 @@ public partial class Message : BaseEntity<Guid>
     /// <summary>
     /// 发送者类型
     /// </summary>
-    public virtual ChatObjectTypes? SenderType { get; protected set; }
+    public virtual ChatObjectTypeEnums? SenderType { get; protected set; }
 
     /// <summary>
     /// 接收者
@@ -57,7 +57,7 @@ public partial class Message : BaseEntity<Guid>
     /// <summary>
     /// 接收者类型
     /// </summary>
-    public virtual ChatObjectTypes? ReceiverType { get; protected set; }
+    public virtual ChatObjectTypeEnums? ReceiverType { get; protected set; }
 
     /// <summary>
     /// 消息通道

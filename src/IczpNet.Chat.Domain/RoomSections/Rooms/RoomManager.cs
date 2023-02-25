@@ -53,12 +53,12 @@ namespace IczpNet.Chat.RoomSections.Rooms
             SessionUnitManager = sessionUnitManager;
         }
 
-        public virtual Task<bool> IsAllowJoinRoomAsync(ChatObjectTypes? objectType)
+        public virtual Task<bool> IsAllowJoinRoomAsync(ChatObjectTypeEnums? objectType)
         {
             return Task.FromResult(Config.AllowJoinRoomObjectTypes.Any(x => x.Equals(objectType)));
         }
 
-        public virtual Task<bool> IsAllowCreateRoomAsync(ChatObjectTypes? objectType)
+        public virtual Task<bool> IsAllowCreateRoomAsync(ChatObjectTypeEnums? objectType)
         {
             return Task.FromResult(Config.AllowCreateRoomObjectTypes.Any(x => x.Equals(objectType)));
         }

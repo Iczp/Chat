@@ -9,7 +9,7 @@ namespace IczpNet.Chat.Robots
 {
     public class ShopKeeper : ChatObject, IChatOwner<Guid?>
     {
-        public const ChatObjectTypes ChatObjectTypeValue = ChatObjectTypes.ShopKeeper;
+        public const ChatObjectTypeEnums ChatObjectTypeValue = ChatObjectTypeEnums.ShopKeeper;
 
         public virtual Guid? OwnerId { get; set; }
 

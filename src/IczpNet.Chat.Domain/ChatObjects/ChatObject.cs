@@ -56,7 +56,7 @@ namespace IczpNet.Chat.ChatObjects
 
         public virtual Guid? AppUserId { get; protected set; }
 
-        public virtual ChatObjectTypes? ObjectType { get; protected set; }
+        public virtual ChatObjectTypeEnums? ObjectType { get; protected set; }
 
         [StringLength(500)]
         public virtual string Description { get; set; }
@@ -201,7 +201,7 @@ namespace IczpNet.Chat.ChatObjects
             TypeName = GetType().Name;
         }
 
-        protected ChatObject(Guid id, ChatObjectTypes chatObjectType) : base(id)
+        protected ChatObject(Guid id, ChatObjectTypeEnums chatObjectType) : base(id)
         {
             ObjectType = chatObjectType;
             TypeName = GetType().Name;

@@ -352,7 +352,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 
         var query = entity.Session.MessageList.AsQueryable()
             //Official
-            .WhereIf(entity.Session.Owner != null && entity.Session.Owner.ObjectType == ChatObjectTypes.Official, x =>
+            .WhereIf(entity.Session.Owner != null && entity.Session.Owner.ObjectType == ChatObjectTypeEnums.Official, x =>
                 (x.SenderId == entity.OwnerId && x.ReceiverId == entity.Session.OwnerId) ||
                 (x.ReceiverId == entity.OwnerId && x.SenderId == entity.Session.OwnerId) ||
                 (x.SenderId == x.ReceiverId && x.SenderId == entity.OwnerId)
@@ -409,9 +409,9 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     {
         var entity = await GetEntityAsync(id);
 
-        var objectTypeList = new List<ChatObjectTypes>()
+        var objectTypeList = new List<ChatObjectTypeEnums>()
         {
-             ChatObjectTypes.Personal, ChatObjectTypes.Official, ChatObjectTypes.ShopKeeper, ChatObjectTypes.Customer, ChatObjectTypes.Robot,
+             ChatObjectTypeEnums.Personal, ChatObjectTypeEnums.Official, ChatObjectTypeEnums.ShopKeeper, ChatObjectTypeEnums.Customer, ChatObjectTypeEnums.Robot,
         };
 
         var query = entity.Session.UnitList.AsQueryable()

@@ -9,15 +9,15 @@ namespace IczpNet.Chat.SessionSections
     {
         public Channels Get(ChatObjectInfo sender, ChatObjectInfo receiver)
         {
-            if (sender.ObjectType == ChatObjectTypes.Room || receiver.ObjectType == ChatObjectTypes.Room)
+            if (sender.ObjectType == ChatObjectTypeEnums.Room || receiver.ObjectType == ChatObjectTypeEnums.Room)
             {
                 return Channels.RoomChannel;
             }
-            if (sender.ObjectType == ChatObjectTypes.Official || receiver.ObjectType == ChatObjectTypes.Official)
+            if (sender.ObjectType == ChatObjectTypeEnums.Official || receiver.ObjectType == ChatObjectTypeEnums.Official)
             {
                 return Channels.ServiceChannel;
             }
-            if (sender.ObjectType == ChatObjectTypes.Square || receiver.ObjectType == ChatObjectTypes.Square)
+            if (sender.ObjectType == ChatObjectTypeEnums.Square || receiver.ObjectType == ChatObjectTypeEnums.Square)
             {
                 return Channels.SquareChannel;
             }

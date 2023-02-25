@@ -13,7 +13,7 @@ namespace IczpNet.Chat.OfficialSections.Officials
 {
     public class Official : ChatObject
     {
-        public const ChatObjectTypes ChatObjectTypeValue = ChatObjectTypes.Official;
+        public const ChatObjectTypeEnums ChatObjectTypeValue = ChatObjectTypeEnums.Official;
 
         public virtual OfficialTypes Type { get; set; }
 

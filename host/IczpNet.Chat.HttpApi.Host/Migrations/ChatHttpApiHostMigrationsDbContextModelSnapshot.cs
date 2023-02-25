@@ -19,7 +19,7 @@ namespace IczpNet.Chat.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("_Abp_DatabaseProvider", EfCoreDatabaseProvider.SqlServer)
-                .HasAnnotation("ProductVersion", "7.0.3")
+                .HasAnnotation("ProductVersion", "6.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -342,8 +342,6 @@ namespace IczpNet.Chat.Migrations
                     b.HasIndex("ObjectType");
 
                     b.ToTable("Chat_ChatObject", (string)null);
-
-                    b.UseTptMappingStrategy();
                 });
 
             modelBuilder.Entity("IczpNet.Chat.Connections.Connection", b =>
@@ -2103,7 +2101,7 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18, 2)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -2171,7 +2169,7 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.Property<decimal>("TotalAmount")
-                        .HasColumnType("decimal(18, 2)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 

@@ -105,7 +105,7 @@ namespace IczpNet.Chat.RoomServices
         [HttpPost]
         public async Task<RoomDetailDto> CreateWithAllUserAsync(string roomName)
         {
-            var idList = await ChatObjectManager.GetAllListAsync(ChatObjectTypes.Personal);
+            var idList = await ChatObjectManager.GetAllListAsync(ChatObjectTypeEnums.Personal);
 
             var room = await RoomManager.CreateRoomAsync(new Room(GuidGenerator.Create(), roomName, roomName, "所有人", idList.FirstOrDefault()?.Id), idList);
 

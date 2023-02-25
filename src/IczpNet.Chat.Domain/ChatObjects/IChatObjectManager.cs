@@ -7,7 +7,7 @@ namespace IczpNet.Chat.ChatObjects
 {
     public interface IChatObjectManager
     {
-        Task<List<ChatObject>> GetAllListAsync(ChatObjectTypes objectType);
+        Task<List<ChatObject>> GetAllListAsync(ChatObjectTypeEnums objectType);
 
         Task<List<ChatObject>> GetListByUserId(Guid userId);
 
@@ -21,7 +21,7 @@ namespace IczpNet.Chat.ChatObjects
 
         Task<List<ChatObject>> GetManyAsync(List<Guid> chatObjectIdList);
 
-        Task<bool> IsAllowJoinRoomAsync(ChatObjectTypes? objectType);
+        Task<bool> IsAllowJoinRoomAsync(ChatObjectTypeEnums? objectType);
 
         Task<List<Guid>> GetIdListByNameAsync(List<string> nameList); //, List<ChatObjectTypes> objectTypes
 

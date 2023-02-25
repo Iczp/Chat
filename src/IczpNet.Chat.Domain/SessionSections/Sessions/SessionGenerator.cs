@@ -47,11 +47,11 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         protected virtual string MakeSesssionKey(ChatObjectInfo sender, ChatObjectInfo receiver)
         {
-            if (sender.ObjectType.Equals(ChatObjectTypes.Room))
+            if (sender.ObjectType.Equals(ChatObjectTypeEnums.Room))
             {
                 return sender.Id.ToString();
             }
-            if (receiver.ObjectType.Equals(ChatObjectTypes.Room))
+            if (receiver.ObjectType.Equals(ChatObjectTypeEnums.Room))
             {
                 return receiver.Id.ToString();
             }
@@ -77,9 +77,9 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
             session = new Session(GuidGenerator.Create(), sessionKey, channel);
 
-            if (sender.ObjectType == ChatObjectTypes.Official)
+            if (sender.ObjectType == ChatObjectTypeEnums.Official)
             {
-                Assert.If(receiver.ObjectType != ChatObjectTypes.Personal && sender.Id != receiver.Id, "非法");
+                Assert.If(receiver.ObjectType != ChatObjectTypeEnums.Personal && sender.Id != receiver.Id, "非法");
             }
 
             if (channel == Channels.PrivateChannel)

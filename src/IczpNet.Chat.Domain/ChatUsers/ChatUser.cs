@@ -6,7 +6,7 @@ namespace IczpNet.Chat.ChatUsers
 {
     public class ChatUser : ChatObject
     {
-        public const ChatObjectTypes ChatObjectTypeValue = ChatObjectTypes.Personal;
+        public const ChatObjectTypeEnums ChatObjectTypeValue = ChatObjectTypeEnums.Personal;
 
         public override Guid? AppUserId { get; protected set; }
         protected ChatUser()

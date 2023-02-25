@@ -35,7 +35,7 @@ namespace IczpNet.Chat.ChatObjects
 
         public virtual Guid? OwnerUserId => ChatObject.AppUserId;
 
-        public virtual ChatObjectTypes? ObjectType => ChatObject.ObjectType;
+        public virtual ChatObjectTypeEnums? ObjectType => ChatObject.ObjectType;
 
         public virtual Guid? GetId() => CurrentUser.GetChatObjectIdList().FirstOrDefault();
 

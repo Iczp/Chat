@@ -50,7 +50,7 @@ namespace IczpNet.Chat.Connections
         protected async Task<int> SendToEveryOneAsync(string text, Guid? receiverId = null, int count = 100)
         {
             ChatObjectIdList ??= (await ChatObjectRepository.GetQueryableAsync())
-                .Where(x => x.ObjectType == ChatObjectTypes.Personal)
+                .Where(x => x.ObjectType == ChatObjectTypeEnums.Personal)
                 .Select(x => x.Id)
                 .ToList();
 

@@ -24,7 +24,7 @@ namespace IczpNet.Chat.MessageSections.Templates
         /// </summary>
         public virtual string Portrait { get; set; }
 
-        public virtual ChatObjectTypes? ObjectType { get; set; }
+        public virtual ChatObjectTypeEnums? ObjectType { get; set; }
 
         /// <summary>
         /// 说明

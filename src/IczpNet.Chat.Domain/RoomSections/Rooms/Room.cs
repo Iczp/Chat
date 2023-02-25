@@ -16,7 +16,7 @@ namespace IczpNet.Chat.RoomSections.Rooms;
 
 public class Room : ChatObject, IChatOwner<Guid?>
 {
-    public const ChatObjectTypes ChatObjectTypeValue = ChatObjectTypes.Room;
+    public const ChatObjectTypeEnums ChatObjectTypeValue = ChatObjectTypeEnums.Room;
 
     /// <summary>
     /// 会话Id

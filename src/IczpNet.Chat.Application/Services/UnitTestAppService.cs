@@ -46,10 +46,10 @@ namespace IczpNet.Chat.Services
 
             if (TotalCount == 0)
             {
-                var TotalCount = await ChatObjectRepository.CountAsync(x => x.ObjectType == ChatObjectTypes.Personal);
+                var TotalCount = await ChatObjectRepository.CountAsync(x => x.ObjectType == ChatObjectTypeEnums.Personal);
             }
             ChatObjectIdList ??= (await ChatObjectRepository.GetQueryableAsync())
-                .Where(x => x.ObjectType == ChatObjectTypes.Personal)
+                .Where(x => x.ObjectType == ChatObjectTypeEnums.Personal)
                 .Select(x => x.Id)
                 .ToList();
 

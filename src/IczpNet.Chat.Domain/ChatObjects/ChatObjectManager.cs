@@ -75,7 +75,7 @@ namespace IczpNet.Chat.ChatObjects
             return list;
         }
 
-        public Task<bool> IsAllowJoinRoomAsync(ChatObjectTypes? objectType)
+        public Task<bool> IsAllowJoinRoomAsync(ChatObjectTypeEnums? objectType)
         {
             return Task.FromResult(ChatConsts.AllowJoinRoomObjectTypes.Any(x => x.Equals(objectType)));
         }
@@ -89,7 +89,7 @@ namespace IczpNet.Chat.ChatObjects
             return await AsyncExecuter.ToListAsync(query);
         }
 
-        public async Task<List<ChatObject>> GetAllListAsync(ChatObjectTypes objectType)
+        public async Task<List<ChatObject>> GetAllListAsync(ChatObjectTypeEnums objectType)
         {
             var query = (await ChatObjectReadOnlyRepository.GetQueryableAsync())
                 .Where(x => x.ObjectType == objectType)

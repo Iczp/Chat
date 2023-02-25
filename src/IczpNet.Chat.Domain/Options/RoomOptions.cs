@@ -5,18 +5,18 @@ namespace IczpNet.Chat.Options
 {
     public class RoomOptions
     {
-        public List<ChatObjectTypes> AllowJoinRoomObjectTypes { get; set; } = new List<ChatObjectTypes>() {
-            ChatObjectTypes.Personal,
-            ChatObjectTypes.ShopKeeper,
-            ChatObjectTypes.ShopWaiter,
-            ChatObjectTypes.Customer,
-            ChatObjectTypes.Robot,
+        public List<ChatObjectTypeEnums> AllowJoinRoomObjectTypes { get; set; } = new List<ChatObjectTypeEnums>() {
+            ChatObjectTypeEnums.Personal,
+            ChatObjectTypeEnums.ShopKeeper,
+            ChatObjectTypeEnums.ShopWaiter,
+            ChatObjectTypeEnums.Customer,
+            ChatObjectTypeEnums.Robot,
         };
 
-        public List<ChatObjectTypes> AllowCreateRoomObjectTypes { get; set; } = new List<ChatObjectTypes>() {
-            ChatObjectTypes.Personal,
-            ChatObjectTypes.ShopKeeper,
-            ChatObjectTypes.Customer,
+        public List<ChatObjectTypeEnums> AllowCreateRoomObjectTypes { get; set; } = new List<ChatObjectTypeEnums>() {
+            ChatObjectTypeEnums.Personal,
+            ChatObjectTypeEnums.ShopKeeper,
+            ChatObjectTypeEnums.Customer,
         };
     }
 }

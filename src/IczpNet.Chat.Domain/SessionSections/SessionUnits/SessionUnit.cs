@@ -34,7 +34,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         [ForeignKey(nameof(SessionId))]
         public virtual Session Session { get; protected set; }
 
-        public virtual ChatObjectTypes? DestinationObjectType { get; protected set; }
+        public virtual ChatObjectTypeEnums? DestinationObjectType { get; protected set; }
 
         [StringLength(50)]
         public virtual string Rename { get; protected set; }
@@ -143,7 +143,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         protected SessionUnit() { }
 
-        internal SessionUnit(Guid id, [NotNull] Session session, [NotNull] Guid ownerId, [NotNull] Guid destinationId, ChatObjectTypes? destinationObjectType) : base(id)
+        internal SessionUnit(Guid id, [NotNull] Session session, [NotNull] Guid ownerId, [NotNull] Guid destinationId, ChatObjectTypeEnums? destinationObjectType) : base(id)
         {
             Session = session;
             OwnerId = ownerId;

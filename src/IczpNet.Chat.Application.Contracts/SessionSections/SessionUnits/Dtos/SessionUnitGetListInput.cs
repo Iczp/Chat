@@ -13,7 +13,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         public virtual bool? IsKilled { get; set; }
 
-        public virtual ChatObjectTypes? DestinationObjectType { get; set; }
+        public virtual ChatObjectTypeEnums? DestinationObjectType { get; set; }
 
         [DefaultValue(null)]
         public virtual bool? IsTopping { get; set; }

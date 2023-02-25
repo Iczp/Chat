@@ -5,11 +5,11 @@ namespace IczpNet.Chat;
 
 public static class ChatConsts
 {
-    public static List<ChatObjectTypes> AllowJoinRoomObjectTypes { get; set; } = new List<ChatObjectTypes>() {
-        ChatObjectTypes.Personal,
-        ChatObjectTypes.ShopKeeper,
-        ChatObjectTypes.ShopWaiter,
-        ChatObjectTypes.Customer,
-        ChatObjectTypes.Robot,
+    public static List<ChatObjectTypeEnums> AllowJoinRoomObjectTypes { get; set; } = new List<ChatObjectTypeEnums>() {
+        ChatObjectTypeEnums.Personal,
+        ChatObjectTypeEnums.ShopKeeper,
+        ChatObjectTypeEnums.ShopWaiter,
+        ChatObjectTypeEnums.Customer,
+        ChatObjectTypeEnums.Robot,
     };
 }

@@ -6,7 +6,7 @@ namespace IczpNet.Chat.RobotSections.Robots
 {
     public class Robot : ChatObject
     {
-        public const ChatObjectTypes ChatObjectTypeValue = ChatObjectTypes.Robot;
+        public const ChatObjectTypeEnums ChatObjectTypeValue = ChatObjectTypeEnums.Robot;
 
         public virtual RobotTypes RobotType { get; set; }
 
