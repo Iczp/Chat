@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace IczpNet.Chat.ChatObjects
 {
-    public interface IChatObjectManager : ITreeManager<ChatObject, Guid>
+    public interface IChatObjectManager : ITreeManager<ChatObject, Guid, ChatObjectInfo>
     {
         Task<List<ChatObject>> GetAllListAsync(ChatObjectTypeEnums objectType);
 
@@ -14,13 +14,13 @@ namespace IczpNet.Chat.ChatObjects
 
         Task<List<Guid>> GetIdListByUserId(Guid userId);
 
-        Task<ChatObject> GetAsync(Guid chatObjectId);
+        //Task<ChatObject> GetAsync(Guid chatObjectId);
 
-        Task<ChatObjectInfo> GetItemByCacheAsync(Guid chatObjectId);
+        //Task<ChatObjectInfo> GetItemByCacheAsync(Guid chatObjectId);
 
-        Task<List<ChatObjectInfo>> GetManyByCacheAsync(List<Guid> chatObjectIdList);
+        //Task<List<ChatObjectInfo>> GetManyByCacheAsync(List<Guid> chatObjectIdList);
 
-        Task<List<ChatObject>> GetManyAsync(List<Guid> chatObjectIdList);
+        //Task<List<ChatObject>> GetManyAsync(List<Guid> chatObjectIdList);
 
         Task<bool> IsAllowJoinRoomAsync(ChatObjectTypeEnums? objectType);
 

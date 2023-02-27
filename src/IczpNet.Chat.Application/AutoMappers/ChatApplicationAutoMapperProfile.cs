@@ -5,6 +5,14 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.Connections;
 using IczpNet.Chat.Connections.Dtos;
+using IczpNet.Chat.SquareSections.SquareCategorys.Dtos;
+using IczpNet.Chat.SquareSections.SquareCategorys;
+using IczpNet.Chat.ChatObjectCategorys;
+using IczpNet.Chat.ChatObjectCategorys.Dtos;
+using IczpNet.Chat.SquareSections.Squares.Dtos;
+using IczpNet.Chat.SquareSections.Squares;
+using IczpNet.Chat.ChatObjectTypes;
+using IczpNet.Chat.ChatObjectTypes.Dtos;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -37,6 +45,19 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<ChatObjectUpdateInput, ChatObject>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
 
 
+        //ChatObjectCategory
+        CreateMap<ChatObjectCategory, ChatObjectCategoryDto>();
+        CreateMap<ChatObjectCategory, ChatObjectCategoryDetailDto>();
+        CreateMap<ChatObjectCategoryCreateInput, ChatObjectCategory>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<ChatObjectCategoryUpdateInput, ChatObjectCategory>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<ChatObjectCategory, ChatObjectCategoryInfo>();
+
+
+        //ChatObjectType
+        CreateMap<ChatObjectType, ChatObjectTypeDto>().ForMember(x => x.ChatObjectCount, o => o.MapFrom(x => x.GetChatObjectCount()));
+        CreateMap<ChatObjectType, ChatObjectTypeDetailDto>().ForMember(x => x.ChatObjectCount, o => o.MapFrom(x => x.GetChatObjectCount()));
+        CreateMap<ChatObjectTypeCreateInput, ChatObjectType>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<ChatObjectTypeUpdateInput, ChatObjectType>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
 
         //Article
         CreateMap<Article, ArticleDto>();
@@ -49,6 +70,8 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<Connection, ConnectionDetailDto>();
         CreateMap<ConnectionCreateInput, Connection>(MemberList.None).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         //CreateMap<ConnectionUpdateInput, Connection>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
+
+
 
     }
 }

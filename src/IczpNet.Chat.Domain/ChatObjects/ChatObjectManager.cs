@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.ChatObjects
@@ -16,14 +15,11 @@ namespace IczpNet.Chat.ChatObjects
     public class ChatObjectManager : TreeManager<ChatObject, Guid, ChatObjectInfo>, IChatObjectManager
     {
         protected IChatObjectTypeManager ChatObjectTypeManager { get; }
-        protected IDistributedCache<ChatObjectInfo, Guid> ChatObjectCache { get; }
 
         public ChatObjectManager(
             IRepository<ChatObject, Guid> repository,
-            IDistributedCache<ChatObjectInfo, Guid> chatObjectCache,
-              IChatObjectTypeManager chatObjectTypeManager) : base(repository)
+            IChatObjectTypeManager chatObjectTypeManager) : base(repository)
         {
-            ChatObjectCache = chatObjectCache;
             ChatObjectTypeManager = chatObjectTypeManager;
         }
 
@@ -37,36 +33,36 @@ namespace IczpNet.Chat.ChatObjects
             return (await Repository.GetQueryableAsync()).Where(x => x.AppUserId == userId).Select(x => x.Id).ToList();
         }
 
-        public Task<ChatObjectInfo> GetItemByCacheAsync(Guid chatObjectId)
-        {
-            return ChatObjectCache.GetOrAddAsync(chatObjectId, async () =>
-            {
-                var entity = await GetAsync(chatObjectId);
-                return ObjectMapper.Map<ChatObject, ChatObjectInfo>(entity);
-            });
-        }
+        //public Task<ChatObjectInfo> GetItemByCacheAsync(Guid chatObjectId)
+        //{
+        //    return ChatObjectCache.GetOrAddAsync(chatObjectId, async () =>
+        //    {
+        //        var entity = await GetAsync(chatObjectId);
+        //        return ObjectMapper.Map<ChatObject, ChatObjectInfo>(entity);
+        //    });
+        //}
 
-        public async Task<List<ChatObjectInfo>> GetManyByCacheAsync(List<Guid> chatObjectIdList)
-        {
-            var list = new List<ChatObjectInfo>();
+        //public async Task<List<ChatObjectInfo>> GetManyByCacheAsync(List<Guid> chatObjectIdList)
+        //{
+        //    var list = new List<ChatObjectInfo>();
 
-            foreach (var chatObjectId in chatObjectIdList)
-            {
-                list.Add(await GetItemByCacheAsync(chatObjectId));
-            }
-            return list;
-        }
+        //    foreach (var chatObjectId in chatObjectIdList)
+        //    {
+        //        list.Add(await GetItemByCacheAsync(chatObjectId));
+        //    }
+        //    return list;
+        //}
 
-        public async Task<List<ChatObject>> GetManyAsync(List<Guid> chatObjectIdList)
-        {
-            var list = new List<ChatObject>();
+        //public async Task<List<ChatObject>> GetManyAsync(List<Guid> chatObjectIdList)
+        //{
+        //    var list = new List<ChatObject>();
 
-            foreach (var chatObjectId in chatObjectIdList)
-            {
-                list.Add(await GetAsync(chatObjectId));
-            }
-            return list;
-        }
+        //    foreach (var chatObjectId in chatObjectIdList)
+        //    {
+        //        list.Add(await GetAsync(chatObjectId));
+        //    }
+        //    return list;
+        //}
 
         public Task<bool> IsAllowJoinRoomAsync(ChatObjectTypeEnums? objectType)
         {
@@ -94,7 +90,6 @@ namespace IczpNet.Chat.ChatObjects
         {
             var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Room);
 
-            
             var room = new ChatObject(GuidGenerator.Create(), name, chatObjectType, null);
 
             var session = new Session(room.Id, room.Id.ToString(), Channels.RoomChannel);

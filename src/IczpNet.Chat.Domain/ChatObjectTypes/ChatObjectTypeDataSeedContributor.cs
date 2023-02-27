@@ -55,6 +55,7 @@ namespace IczpNet.Chat.Wallets
                 await Repository.InsertAsync(new ChatObjectType(id)
                 {
                     Name = value.GetDescription(),
+                    IsStatic = true,
                 });
                 Logger.LogInformation($"Add {nameof(ChatObjectType)}:{id}");
             }

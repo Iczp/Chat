@@ -5,5 +5,7 @@ namespace IczpNet.Chat.ChatObjects.Dtos;
 
 public class ChatObjectGetListInput : BaseTreeGetListInput
 {
+    public virtual string ChatObjectTypeId { get; set; }
+
     public virtual ChatObjectTypeEnums? ObjectType { get; set; }
 }
