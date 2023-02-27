@@ -1,47 +1,40 @@
 ﻿
+using IczpNet.AbpTrees;
+using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.Domain.Services;
-using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.ChatObjects
 {
-    public class ChatObjectManager : DomainService, IChatObjectManager
+    public class ChatObjectManager : TreeManager<ChatObject, Guid, ChatObjectInfo>, IChatObjectManager
     {
-
-        protected IReadOnlyRepository<ChatObject, Guid> ChatObjectReadOnlyRepository { get; }
+        protected IChatObjectTypeManager ChatObjectTypeManager { get; }
         protected IDistributedCache<ChatObjectInfo, Guid> ChatObjectCache { get; }
 
-        protected IObjectMapper ObjectMapper { get; }
-
         public ChatObjectManager(
-            IReadOnlyRepository<ChatObject, Guid> chatObjectReadOnlyRepository,
+            IRepository<ChatObject, Guid> repository,
             IDistributedCache<ChatObjectInfo, Guid> chatObjectCache,
-            IObjectMapper objectMapper)
+              IChatObjectTypeManager chatObjectTypeManager) : base(repository)
         {
-            ChatObjectReadOnlyRepository = chatObjectReadOnlyRepository;
             ChatObjectCache = chatObjectCache;
-            ObjectMapper = objectMapper;
+            ChatObjectTypeManager = chatObjectTypeManager;
         }
 
         public async Task<List<ChatObject>> GetListByUserId(Guid userId)
         {
-            return await ChatObjectReadOnlyRepository.GetListAsync(x => x.AppUserId == userId);
+            return await Repository.GetListAsync(x => x.AppUserId == userId);
         }
 
         public async Task<List<Guid>> GetIdListByUserId(Guid userId)
         {
-            return (await ChatObjectReadOnlyRepository.GetQueryableAsync()).Where(x => x.AppUserId == userId).Select(x => x.Id).ToList();
-        }
-
-        public Task<ChatObject> GetAsync(Guid chatObjectId)
-        {
-            return ChatObjectReadOnlyRepository.GetAsync(chatObjectId);
+            return (await Repository.GetQueryableAsync()).Where(x => x.AppUserId == userId).Select(x => x.Id).ToList();
         }
 
         public Task<ChatObjectInfo> GetItemByCacheAsync(Guid chatObjectId)
@@ -82,7 +75,7 @@ namespace IczpNet.Chat.ChatObjects
 
         public virtual async Task<List<Guid>> GetIdListByNameAsync(List<string> nameList)
         {
-            var query = (await ChatObjectReadOnlyRepository.GetQueryableAsync())
+            var query = (await Repository.GetQueryableAsync())
                 .Where(x => nameList.Contains(x.Name))
                 .Select(x => x.Id)
                 ;
@@ -91,10 +84,32 @@ namespace IczpNet.Chat.ChatObjects
 
         public async Task<List<ChatObject>> GetAllListAsync(ChatObjectTypeEnums objectType)
         {
-            var query = (await ChatObjectReadOnlyRepository.GetQueryableAsync())
+            var query = (await Repository.GetQueryableAsync())
                 .Where(x => x.ObjectType == objectType)
                 ;
             return await AsyncExecuter.ToListAsync(query);
+        }
+
+        public async Task<ChatObject> CreateRoomAsync(string name, List<Guid> memberList)
+        {
+            var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Room);
+
+            
+            var room = new ChatObject(GuidGenerator.Create(), name, chatObjectType, null);
+
+            var session = new Session(room.Id, room.Id.ToString(), Channels.RoomChannel);
+
+            session.SetOwner(room);
+
+            foreach (var chatObjectId in memberList)
+            {
+                session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session, chatObjectId, room.Id, room.ObjectType));
+            }
+            room.OwnerSessionList.Add(session);
+
+            await base.CreateAsync(room);
+
+            return room;
         }
     }
 }

@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230227031922_ChatObjectCategory_Init")]
+    partial class ChatObjectCategory_Init
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -254,47 +257,6 @@ namespace IczpNet.Chat.Migrations
                     b.HasIndex("ArticleId");
 
                     b.ToTable("Chat_ArticleMessage", (string)null);
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.ChatObjectCategoryUnits.ChatObjectCategoryUnit", b =>
-                {
-                    b.Property<Guid>("ChatObjectId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("CategoryId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<string>("ExtraProperties")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.HasKey("ChatObjectId", "CategoryId");
-
-                    b.HasIndex("CategoryId");
-
-                    b.ToTable("Chat_ChatObjectCategoryUnit", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.ChatObjectCategorys.ChatObjectCategory", b =>
@@ -4988,25 +4950,6 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("Message");
                 });
 
-            modelBuilder.Entity("IczpNet.Chat.ChatObjectCategoryUnits.ChatObjectCategoryUnit", b =>
-                {
-                    b.HasOne("IczpNet.Chat.ChatObjectCategorys.ChatObjectCategory", "Category")
-                        .WithMany("ChatObjectCategoryUnitList")
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "ChatObject")
-                        .WithMany("ChatObjectCategoryUnitList")
-                        .HasForeignKey("ChatObjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Category");
-
-                    b.Navigation("ChatObject");
-                });
-
             modelBuilder.Entity("IczpNet.Chat.ChatObjectCategorys.ChatObjectCategory", b =>
                 {
                     b.HasOne("IczpNet.Chat.ChatObjectTypes.ChatObjectType", "ChatObjectType")
@@ -6058,8 +6001,6 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.ChatObjectCategorys.ChatObjectCategory", b =>
                 {
-                    b.Navigation("ChatObjectCategoryUnitList");
-
                     b.Navigation("Childs");
                 });
 
@@ -6072,8 +6013,6 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.ChatObjects.ChatObject", b =>
                 {
-                    b.Navigation("ChatObjectCategoryUnitList");
-
                     b.Navigation("Childs");
 
                     b.Navigation("DestinationFriendshipList");

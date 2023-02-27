@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.ChatObjects.Dtos;
+﻿using IczpNet.AbpTrees;
+using IczpNet.Chat.ChatObjects.Dtos;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
@@ -14,6 +15,8 @@ namespace IczpNet.Chat.ChatObjects
             ChatObjectGetListInput,
             ChatObjectCreateInput,
             ChatObjectUpdateInput>
+        ,
+        ITreeAppService<Guid, ChatObjectInfo>
     {
         Task<PagedResultDto<ChatObjectDto>> GetListByUserIdAsync(Guid userId, int maxResultCount = 10, int skipCount = 0, string sorting = null);
         Task<ChatObjectDetailDto> GetByAutoIdAsync(long autoId);

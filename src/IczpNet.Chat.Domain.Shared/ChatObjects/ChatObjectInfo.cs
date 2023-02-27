@@ -1,14 +1,11 @@
-﻿using IczpNet.Chat.Enums;
+﻿using IczpNet.AbpTrees;
+using IczpNet.Chat.Enums;
 using System;
 
 namespace IczpNet.Chat.ChatObjects
 {
-    public class ChatObjectInfo
+    public class ChatObjectInfo : TreeInfo<Guid>
     {
-        public virtual Guid Id { get; set; }
-
-        public virtual string Name { get; set; }
-
         public virtual string Code { get; set; }
 
         public virtual string Portrait { get; set; }

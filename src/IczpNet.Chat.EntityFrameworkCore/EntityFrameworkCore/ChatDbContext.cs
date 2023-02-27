@@ -1,4 +1,5 @@
 using IczpNet.Chat.Articles;
+using IczpNet.Chat.ChatObjectCategorys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.ChatUsers;
@@ -50,7 +51,8 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
      * public DbSet<Question> Questions { get; set; }
      */
     public DbSet<ChatObject> ChatObject { get; set; }
-
+    public DbSet<ChatObjectCategory> ChatObjectCategory { get; set; }
+    
     public DbSet<ChatObjectType> ChatObjectType { get; set; }
 
     public DbSet<ChatUser> ChatUser { get; set; }

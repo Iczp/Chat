@@ -4,6 +4,8 @@ namespace IczpNet.Chat.Enums
 {
     public enum ChatObjectTypeEnums
     {
+        [Description("匿名")]
+        Anonymous =0,
         /// <summary>
         /// 个人
         /// </summary>

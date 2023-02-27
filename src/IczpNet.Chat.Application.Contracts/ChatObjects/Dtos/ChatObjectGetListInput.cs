@@ -3,7 +3,7 @@ using IczpNet.Chat.Enums;
 
 namespace IczpNet.Chat.ChatObjects.Dtos;
 
-public class ChatObjectGetListInput : BaseGetListInput
+public class ChatObjectGetListInput : BaseTreeGetListInput
 {
     public virtual ChatObjectTypeEnums? ObjectType { get; set; }
 }

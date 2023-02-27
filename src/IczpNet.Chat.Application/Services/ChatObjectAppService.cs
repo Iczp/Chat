@@ -2,6 +2,7 @@
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
+using IczpNet.Chat.RoomSections.Rooms.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -15,18 +16,23 @@ using Volo.Abp.Domain.Repositories;
 namespace IczpNet.Chat.Services
 {
     public class ChatObjectAppService
-        : CrudChatAppService<
+        : CrudTreeChatAppService<
             ChatObject,
+            Guid,
             ChatObjectDetailDto,
             ChatObjectDto,
-            Guid,
             ChatObjectGetListInput,
             ChatObjectCreateInput,
-            ChatObjectUpdateInput>,
+            ChatObjectUpdateInput,
+            ChatObjectInfo>,
         IChatObjectAppService
     {
-        public ChatObjectAppService(IRepository<ChatObject, Guid> repository) : base(repository)
+        protected IChatObjectManager ChatObjectManager { get; }
+        public ChatObjectAppService(
+            IRepository<ChatObject, Guid> repository,
+            IChatObjectManager chatObjectManager) : base(repository)
         {
+            ChatObjectManager = chatObjectManager;
         }
 
         protected override async Task<IQueryable<ChatObject>> CreateFilteredQueryAsync(ChatObjectGetListInput input)
@@ -105,10 +111,18 @@ namespace IczpNet.Chat.Services
             return entity;
         }
 
-        [RemoteService(false)]
-        public override Task DeleteManyAsync(List<Guid> idList)
+        //[RemoteService(false)]
+        //public override Task DeleteManyAsync(List<Guid> idList)
+        //{
+        //    return base.DeleteManyAsync(idList);
+        //}
+
+        public async Task<ChatObjectDto> CreateRoomAsync(RoomCreateInput input)
         {
-            return base.DeleteManyAsync(idList);
+            var room = await ChatObjectManager.CreateRoomAsync(input.Name, input.ChatObjectIdList);
+
+            return ObjectMapper.Map<ChatObject, ChatObjectDto>(room);
         }
+
     }
 }

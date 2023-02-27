@@ -1,5 +1,6 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.BaseEntitys;
+using IczpNet.Chat.ChatObjectCategoryUnits;
 using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
@@ -62,17 +63,9 @@ namespace IczpNet.Chat.ChatObjects
         [StringLength(500)]
         public override string Description { get; set; }
 
-
-        #region Group
-        public virtual Guid? GroupId { get; set; }
-
-        [ForeignKey(nameof(GroupId))]
-        public virtual ChatObject Group { get; set; }
-
-        [InverseProperty(nameof(Group))]
-        public virtual IList<ChatObject> MemberList { get; set; }
+        #region Categorys
+        public virtual IList<ChatObjectCategoryUnit> ChatObjectCategoryUnitList { get; set; }
         #endregion
-
 
         #region ChatObjectType
         public virtual string ChatObjectTypeId { get; protected set; }
@@ -194,7 +187,7 @@ namespace IczpNet.Chat.ChatObjects
         #region Session
 
         [InverseProperty(nameof(Session.Owner))]
-        public virtual IList<Session> OwnerSessionList { get; set; }
+        public virtual IList<Session> OwnerSessionList { get; set; } = new List<Session>();
 
         [InverseProperty(nameof(SessionUnit.Owner))]
         public virtual IList<SessionUnit> OwnerSessionUnitList { get; set; }
@@ -226,6 +219,13 @@ namespace IczpNet.Chat.ChatObjects
             ObjectType = chatObjectType;
             TypeName = GetType().Name;
             StateCheckers = new List<ISimpleStateChecker<ChatObject>>();
+        }
+
+        public ChatObject(Guid id, string name, ChatObjectType chatObjectType, Guid? parentId) : base(id, name, parentId)
+        {
+            TypeName = GetType().Name;
+            StateCheckers = new List<ISimpleStateChecker<ChatObject>>();
+            ChatObjectType = chatObjectType;
         }
 
         public override void SetName(string name)

@@ -1,6 +1,7 @@
 ﻿using IczpNet.AbpCommons.EntityFrameworkCore;
 using IczpNet.Chat.Articles;
 using IczpNet.Chat.Attributes;
+using IczpNet.Chat.ChatObjectCategoryUnits;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatUsers;
 using IczpNet.Chat.MessageSections;
@@ -24,12 +25,10 @@ using IczpNet.Chat.Subscriptions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.Extensions.Hosting;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Reflection;
-using System.Reflection.Emit;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities;
 
@@ -68,6 +67,7 @@ public static class ChatDbContextModelCreatingExtensions
         ForEachEntitys(builder);
         //ConfigKeys(builder);
 
+
         builder.Entity<ChatObject>(b =>
         {
             //b.Property<long>(nameof(ChatObject.AutoId))
@@ -77,7 +77,8 @@ public static class ChatDbContextModelCreatingExtensions
             b.UseTptMappingStrategy();
         });
 
-        //public DbSet<Session> Session { get; }
+
+        builder.Entity<ChatObjectCategoryUnit>(b => { b.HasKey(x => new { x.ChatObjectId, x.CategoryId }); });
         builder.Entity<ArticleMessage>(b => { b.HasKey(x => new { x.MessageId, x.ArticleId }); });
         builder.Entity<MessageReminder>(b => { b.HasKey(x => new { x.MessageId, x.SessionUnitId }); });
         builder.Entity<FavoriteMessage>(b => { b.HasKey(x => new { x.MessageId, x.FavoriteId }); });
