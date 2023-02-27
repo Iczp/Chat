@@ -1,5 +1,4 @@
 ﻿using IczpNet.Chat.BaseEntitys;
-using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.SessionSections.FriendshipRequests;
 using IczpNet.Chat.SessionSections.FriendshipTagUnits;
 using System;

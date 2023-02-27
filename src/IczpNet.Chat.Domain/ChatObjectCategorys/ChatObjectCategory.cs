@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.BaseEntitys;
+﻿using IczpNet.AbpCommons;
+using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjectCategoryUnits;
 using IczpNet.Chat.ChatObjectTypes;
 using System;
@@ -14,6 +15,13 @@ namespace IczpNet.Chat.ChatObjectCategorys
         [ForeignKey(nameof(ChatObjectTypeId))]
         public virtual ChatObjectType ChatObjectType { get; set; }
 
-        public virtual IList<ChatObjectCategoryUnit> ChatObjectCategoryUnitList{ get; set; }
-}
+        public virtual IList<ChatObjectCategoryUnit> ChatObjectCategoryUnitList { get; set; }
+
+        public override void SetParent(ChatObjectCategory parent)
+        {
+            Assert.If(Parent.ChatObjectTypeId != ChatObjectTypeId, $"不是父级的聊天对象[ChatObjectTypeId]：'{Parent.ChatObjectTypeId}','{ChatObjectTypeId}'");
+
+            base.SetParent(parent);
+        }
+    }
 }

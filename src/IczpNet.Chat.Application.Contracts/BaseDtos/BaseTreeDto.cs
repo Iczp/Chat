@@ -1,10 +1,12 @@
 ﻿using IczpNet.AbpTrees.Dtos;
 using System;
+using System.ComponentModel;
 
 namespace IczpNet.Chat.BaseDtos
 {
     public class BaseTreeInputDto: ITreeInput<Guid>
     {
+        [DefaultValue(null)]
         public virtual Guid? ParentId { get; set; }
 
         public virtual string Name { get; set; }
