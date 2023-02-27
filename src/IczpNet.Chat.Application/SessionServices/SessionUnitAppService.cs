@@ -148,7 +148,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             return await GetPagedListAsync<SessionUnit, SessionUnitDto>(
                 query,
                 input,
-                x => x.OrderByDescending(x => x.LastMessageAutoId));
+                x => x.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageAutoId));
         }
 
         Expression<Func<SessionUnit, int>> p = x =>

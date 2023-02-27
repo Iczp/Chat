@@ -6,6 +6,8 @@ namespace IczpNet.Chat.ChatObjects
 {
     public class ChatObjectInfo : TreeInfo<Guid>
     {
+        public virtual string ChatObjectTypeId { get; set; }
+
         public virtual string Code { get; set; }
 
         public virtual string Portrait { get; set; }

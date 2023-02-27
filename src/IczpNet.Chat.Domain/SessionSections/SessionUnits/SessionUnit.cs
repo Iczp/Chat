@@ -21,9 +21,9 @@ using System.Linq;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits
 {
-    [Index(nameof(Sorting))]
-    [Index(nameof(LastMessageAutoId))]
-    [Index(nameof(ReadedMessageAutoId))]
+    [Index(nameof(Sorting), AllDescending = true)]
+    [Index(nameof(LastMessageAutoId), IsDescending = new[] { true })]
+    [Index(nameof(ReadedMessageAutoId), AllDescending = true)]
     //[Index(nameof(Sorting), nameof(LastMessageAutoId))]
     //[Index(nameof(HistoryFristTime))]
     //[Index(nameof(HistoryLastTime))]
@@ -263,7 +263,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         internal void SetImmersed(bool isImmersed)
         {
-            IsImmersed= isImmersed;
+            IsImmersed = isImmersed;
         }
     }
 }

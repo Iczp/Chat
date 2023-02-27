@@ -1,5 +1,7 @@
 ﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.ChatObjectCategorys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.RoomSections.Rooms.Dtos;
@@ -28,6 +30,7 @@ namespace IczpNet.Chat.Services
         IChatObjectAppService
     {
         protected IChatObjectManager ChatObjectManager { get; }
+        protected IChatObjectCategoryManager ChatObjectCategoryManager { get; }
         public ChatObjectAppService(
             IRepository<ChatObject, Guid> repository,
             IChatObjectManager chatObjectManager) : base(repository)
@@ -37,9 +40,19 @@ namespace IczpNet.Chat.Services
 
         protected override async Task<IQueryable<ChatObject>> CreateFilteredQueryAsync(ChatObjectGetListInput input)
         {
+            //Category
+            IQueryable<Guid> categoryIdQuery = null;
+
+            if (input.IsImportChildCategory && input.CategoryIdList.IsAny())
+            {
+                categoryIdQuery = (await ChatObjectCategoryManager.QueryCurrentAndAllChildsAsync(input.CategoryIdList)).Select(x => x.Id);
+            }
             return (await base.CreateFilteredQueryAsync(input))
                 .WhereIf(!input.ChatObjectTypeId.IsNullOrWhiteSpace(), x => x.ChatObjectTypeId == input.ChatObjectTypeId)
                 .WhereIf(input.ObjectType.HasValue, x => x.ObjectType == input.ObjectType)
+                //CategoryId
+                .WhereIf(!input.IsImportChildCategory && input.CategoryIdList.IsAny(), x => x.ChatObjectCategoryUnitList.Any(d => input.CategoryIdList.Contains(d.CategoryId)))
+                .WhereIf(input.IsImportChildCategory && input.CategoryIdList.IsAny(), x => x.ChatObjectCategoryUnitList.Any(d => categoryIdQuery.Contains(d.CategoryId)))
                 .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(input.Keyword) || x.Code.Contains(input.Keyword))
                 ;
         }
