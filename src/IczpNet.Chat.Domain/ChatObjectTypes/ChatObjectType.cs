@@ -2,9 +2,11 @@
 using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjectCategorys;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.Enums;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.ChatObjectTypes
 {
@@ -13,6 +15,9 @@ namespace IczpNet.Chat.ChatObjectTypes
         [StringLength(50)]
         [Required]
         public virtual string Name { get; set; }
+
+        [NotMapped]
+        public virtual ChatObjectTypeEnums ObjectType { get; set; }
 
         [StringLength(500)]
         public virtual string Description { get; set; }
