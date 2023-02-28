@@ -8,6 +8,8 @@ namespace IczpNet.Chat.ChatObjects
 {
     public interface IChatObjectManager : ITreeManager<ChatObject, Guid, ChatObjectInfo>
     {
+        //ChatObject GroupAssistant { get; }
+
         Task<List<ChatObject>> GetAllListAsync(ChatObjectTypeEnums objectType);
 
         Task<List<ChatObject>> GetListByUserId(Guid userId);
@@ -27,6 +29,8 @@ namespace IczpNet.Chat.ChatObjects
         Task<List<Guid>> GetIdListByNameAsync(List<string> nameList); //, List<ChatObjectTypes> objectTypes
 
         Task<ChatObject> CreateRoomAsync(string name, List<Guid> memberList, Guid? ownerId);
+
+        //Task<ChatObjectInfo> GetGroupAssistantAsync();
 
     }
 }
