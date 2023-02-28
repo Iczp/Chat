@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
@@ -45,13 +46,18 @@ namespace IczpNet.Chat.SessionSections.Sessions
             SessionUnitManager = sessionUnitManager;
         }
 
+        protected virtual bool IsObjectType(ChatObjectInfo chatObject, ChatObjectTypeEnums chatObjectTypeEnums)
+        {
+            return chatObject.ObjectType.Equals(chatObjectTypeEnums) || chatObject.ChatObjectTypeId == chatObjectTypeEnums.ToString();
+        }
+
         protected virtual string MakeSesssionKey(ChatObjectInfo sender, ChatObjectInfo receiver)
         {
-            if (sender.ObjectType.Equals(ChatObjectTypeEnums.Room))
+            if (IsObjectType(sender, ChatObjectTypeEnums.Room))
             {
                 return sender.Id.ToString();
             }
-            if (receiver.ObjectType.Equals(ChatObjectTypeEnums.Room))
+            if (IsObjectType(receiver, ChatObjectTypeEnums.Room))
             {
                 return receiver.Id.ToString();
             }
