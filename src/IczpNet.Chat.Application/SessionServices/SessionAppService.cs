@@ -80,7 +80,7 @@ namespace IczpNet.Chat.SessionServices
             var query = (await Repository.GetQueryableAsync())
                 .WhereIf(input.OwnerId.HasValue, x => x.UnitList.Any(m => m.OwnerId == input.OwnerId))
                 ;
-            return await GetPagedListAsync<Session, SessionDto>(query, input);
+            return await GetPagedListAsync<Session, SessionDto>(query, input, q => q.OrderByDescending(x => x.LastMessageAutoId));
         }
 
         [HttpGet]
@@ -155,7 +155,7 @@ namespace IczpNet.Chat.SessionServices
                 .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Owner.Name.Contains(input.Keyword))
                 ;
 
-            return await GetPagedListAsync<SessionUnit, SessionUnitOwnerDto>(query, input);
+            return await GetPagedListAsync<SessionUnit, SessionUnitOwnerDto>(query, input, q => q.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageAutoId));
         }
 
         [HttpPost]

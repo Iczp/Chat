@@ -18,7 +18,7 @@ using System.Linq;
 
 namespace IczpNet.Chat.SessionSections.Sessions
 {
-    [Index(nameof(LastMessageAutoId), IsDescending = new[] { true })]
+    [Index(nameof(LastMessageAutoId), AllDescending = true)]
     [Index(nameof(SessionKey))]
     public class Session : BaseEntity<Guid>, IChatOwner<Guid?>
     {
@@ -98,6 +98,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
         internal void SetOwner(ChatObject chatObject)
         {
             Owner = chatObject;
+            OwnerId = chatObject.Id;
         }
 
         internal void SetMessageList(List<Message> messages)

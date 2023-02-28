@@ -26,7 +26,7 @@ namespace IczpNet.Chat.ChatObjects
 
         Task<List<Guid>> GetIdListByNameAsync(List<string> nameList); //, List<ChatObjectTypes> objectTypes
 
-        Task<ChatObject> CreateRoomAsync(string name, List<Guid> memberList);
+        Task<ChatObject> CreateRoomAsync(string name, List<Guid> memberList, Guid? ownerId);
 
     }
 }

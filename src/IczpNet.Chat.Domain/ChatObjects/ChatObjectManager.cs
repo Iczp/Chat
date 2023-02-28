@@ -1,7 +1,11 @@
 ﻿
+using AutoMapper.Execution;
 using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.MessageSections;
+using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
@@ -15,7 +19,7 @@ namespace IczpNet.Chat.ChatObjects
     public class ChatObjectManager : TreeManager<ChatObject, Guid, ChatObjectInfo>, IChatObjectManager
     {
         protected IChatObjectTypeManager ChatObjectTypeManager { get; }
-
+        protected IMessageSender MessageSender => LazyServiceProvider.LazyGetRequiredService<IMessageSender>();
         public ChatObjectManager(
             IRepository<ChatObject, Guid> repository,
             IChatObjectTypeManager chatObjectTypeManager) : base(repository)
@@ -33,38 +37,7 @@ namespace IczpNet.Chat.ChatObjects
             return (await Repository.GetQueryableAsync()).Where(x => x.AppUserId == userId).Select(x => x.Id).ToList();
         }
 
-        //public Task<ChatObjectInfo> GetItemByCacheAsync(Guid chatObjectId)
-        //{
-        //    return ChatObjectCache.GetOrAddAsync(chatObjectId, async () =>
-        //    {
-        //        var entity = await GetAsync(chatObjectId);
-        //        return ObjectMapper.Map<ChatObject, ChatObjectInfo>(entity);
-        //    });
-        //}
-
-        //public async Task<List<ChatObjectInfo>> GetManyByCacheAsync(List<Guid> chatObjectIdList)
-        //{
-        //    var list = new List<ChatObjectInfo>();
-
-        //    foreach (var chatObjectId in chatObjectIdList)
-        //    {
-        //        list.Add(await GetItemByCacheAsync(chatObjectId));
-        //    }
-        //    return list;
-        //}
-
-        //public async Task<List<ChatObject>> GetManyAsync(List<Guid> chatObjectIdList)
-        //{
-        //    var list = new List<ChatObject>();
-
-        //    foreach (var chatObjectId in chatObjectIdList)
-        //    {
-        //        list.Add(await GetAsync(chatObjectId));
-        //    }
-        //    return list;
-        //}
-
-        public Task<bool> IsAllowJoinRoomAsync(ChatObjectTypeEnums? objectType)
+        public virtual Task<bool> IsAllowJoinRoomAsync(ChatObjectTypeEnums? objectType)
         {
             return Task.FromResult(ChatConsts.AllowJoinRoomObjectTypes.Any(x => x.Equals(objectType)));
         }
@@ -78,7 +51,7 @@ namespace IczpNet.Chat.ChatObjects
             return await AsyncExecuter.ToListAsync(query);
         }
 
-        public async Task<List<ChatObject>> GetAllListAsync(ChatObjectTypeEnums objectType)
+        public virtual async Task<List<ChatObject>> GetAllListAsync(ChatObjectTypeEnums objectType)
         {
             var query = (await Repository.GetQueryableAsync())
                 .Where(x => x.ObjectType == objectType)
@@ -86,9 +59,11 @@ namespace IczpNet.Chat.ChatObjects
             return await AsyncExecuter.ToListAsync(query);
         }
 
-        public async Task<ChatObject> CreateRoomAsync(string name, List<Guid> memberList)
+        public virtual async Task<ChatObject> CreateRoomAsync(string name, List<Guid> memberList, Guid? ownerId)
         {
             var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Room);
+
+            var members = await GetManyByCacheAsync(memberList);
 
             var room = new ChatObject(GuidGenerator.Create(), name, chatObjectType, null);
 
@@ -96,13 +71,28 @@ namespace IczpNet.Chat.ChatObjects
 
             session.SetOwner(room);
 
-            foreach (var chatObjectId in memberList)
+            foreach (var member in members)
             {
-                session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session, chatObjectId, room.Id, room.ObjectType));
+                session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session, member.Id, room.Id, room.ObjectType));
             }
+
             room.OwnerSessionList.Add(session);
 
-            await base.CreateAsync(room);
+            await base.CreateAsync(room, isUnique: false);
+
+            var roomOwner = ownerId.HasValue ? await GetItemByCacheAsync(ownerId.Value) : null;
+
+            
+
+            await MessageSender.SendCmdMessageAsync(new MessageInput<CmdContentInfo>()
+            {
+                SenderId = room.Id,
+                ReceiverId = room.Id,
+                Content = new CmdContentInfo()
+                {
+                    Text = $"{roomOwner?.Name}创建群,{members.Take(3).Select(x => x.Name).JoinAsString("、")}等 {members.Count} 人加入群聊。",
+                }
+            });
 
             return room;
         }

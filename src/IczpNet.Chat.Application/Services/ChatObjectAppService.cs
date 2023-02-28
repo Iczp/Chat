@@ -33,9 +33,11 @@ namespace IczpNet.Chat.Services
         protected IChatObjectCategoryManager ChatObjectCategoryManager { get; }
         public ChatObjectAppService(
             IRepository<ChatObject, Guid> repository,
-            IChatObjectManager chatObjectManager) : base(repository)
+            IChatObjectManager chatObjectManager,
+            IChatObjectCategoryManager chatObjectCategoryManager) : base(repository)
         {
             ChatObjectManager = chatObjectManager;
+            ChatObjectCategoryManager = chatObjectCategoryManager;
         }
 
         protected override async Task<IQueryable<ChatObject>> CreateFilteredQueryAsync(ChatObjectGetListInput input)
@@ -132,7 +134,7 @@ namespace IczpNet.Chat.Services
 
         public async Task<ChatObjectDto> CreateRoomAsync(RoomCreateInput input)
         {
-            var room = await ChatObjectManager.CreateRoomAsync(input.Name, input.ChatObjectIdList);
+            var room = await ChatObjectManager.CreateRoomAsync(input.Name, input.ChatObjectIdList, input.OwnerId);
 
             return ObjectMapper.Map<ChatObject, ChatObjectDto>(room);
         }
