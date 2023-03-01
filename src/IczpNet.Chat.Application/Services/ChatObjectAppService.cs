@@ -126,12 +126,7 @@ namespace IczpNet.Chat.Services
             return entity;
         }
 
-        //[RemoteService(false)]
-        //public override Task DeleteManyAsync(List<Guid> idList)
-        //{
-        //    return base.DeleteManyAsync(idList);
-        //}
-
+        [HttpPost]
         public async Task<ChatObjectDto> CreateRoomAsync(RoomCreateInput input)
         {
             var room = await ChatObjectManager.CreateRoomAsync(input.Name, input.ChatObjectIdList, input.OwnerId);
@@ -139,5 +134,12 @@ namespace IczpNet.Chat.Services
             return ObjectMapper.Map<ChatObject, ChatObjectDto>(room);
         }
 
+        [HttpPost]
+        public async Task<ChatObjectDto> CreateRoomByAllUsersAsync(string name)
+        {
+            var room = await ChatObjectManager.CreateRoomByAllUsersAsync(name);
+
+            return ObjectMapper.Map<ChatObject, ChatObjectDto>(room);
+        }
     }
 }

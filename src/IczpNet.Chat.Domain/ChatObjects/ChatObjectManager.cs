@@ -82,8 +82,6 @@ namespace IczpNet.Chat.ChatObjects
 
             var roomOwner = ownerId.HasValue ? await GetItemByCacheAsync(ownerId.Value) : null;
 
-            
-
             await MessageSender.SendCmdMessageAsync(new MessageInput<CmdContentInfo>()
             {
                 SenderId = room.Id,
@@ -95,6 +93,17 @@ namespace IczpNet.Chat.ChatObjects
             });
 
             return room;
+        }
+
+        public virtual async Task<ChatObject> CreateRoomByAllUsersAsync(string name)
+        {
+            var query = (await Repository.GetQueryableAsync())
+                .Where(x => x.ObjectType == ChatObjectTypeEnums.Personal)
+                .Select(x => x.Id)
+                ;
+            var idList = await AsyncExecuter.ToListAsync(query);
+
+            return await CreateRoomAsync(name, idList, null);
         }
     }
 }

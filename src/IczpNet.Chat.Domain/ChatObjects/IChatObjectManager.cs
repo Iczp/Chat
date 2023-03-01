@@ -30,6 +30,8 @@ namespace IczpNet.Chat.ChatObjects
 
         Task<ChatObject> CreateRoomAsync(string name, List<Guid> memberList, Guid? ownerId);
 
+        Task<ChatObject> CreateRoomByAllUsersAsync(string name);
+
         //Task<ChatObjectInfo> GetGroupAssistantAsync();
 
     }
