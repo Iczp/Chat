@@ -59,11 +59,9 @@ namespace IczpNet.Chat.ChatObjects
             return await AsyncExecuter.ToListAsync(query);
         }
 
-        public virtual async Task<ChatObject> CreateRoomAsync(string name, List<Guid> memberList, Guid? ownerId)
+        public virtual async Task<ChatObject> CreateRoomAsync(string name, List<Guid> memberIdList, Guid? ownerId)
         {
             var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Room);
-
-            var members = await GetManyByCacheAsync(memberList);
 
             var room = new ChatObject(GuidGenerator.Create(), name, chatObjectType, null);
 
@@ -71,9 +69,9 @@ namespace IczpNet.Chat.ChatObjects
 
             session.SetOwner(room);
 
-            foreach (var member in members)
+            foreach (var memberId in memberIdList)
             {
-                session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session, member.Id, room.Id, room.ObjectType));
+                session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session, memberId, room.Id, room.ObjectType));
             }
 
             room.OwnerSessionList.Add(session);
@@ -82,13 +80,15 @@ namespace IczpNet.Chat.ChatObjects
 
             var roomOwner = ownerId.HasValue ? await GetItemByCacheAsync(ownerId.Value) : null;
 
+            var members = await GetManyByCacheAsync(memberIdList.Take(3).ToList());
+
             await MessageSender.SendCmdMessageAsync(new MessageInput<CmdContentInfo>()
             {
                 SenderId = room.Id,
                 ReceiverId = room.Id,
                 Content = new CmdContentInfo()
                 {
-                    Text = $"{roomOwner?.Name}创建群,{members.Take(3).Select(x => x.Name).JoinAsString("、")}等 {members.Count} 人加入群聊。",
+                    Text = $"{roomOwner?.Name}创建群聊'{room.Name}',{members.Select(x => x.Name).JoinAsString("、")}等 {memberIdList.Count} 人加入群聊。",
                 }
             });
 
