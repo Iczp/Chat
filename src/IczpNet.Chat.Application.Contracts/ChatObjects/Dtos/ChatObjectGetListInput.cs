@@ -6,7 +6,7 @@ using System;
 
 namespace IczpNet.Chat.ChatObjects.Dtos;
 
-public class ChatObjectGetListInput : BaseTreeGetListInput
+public class ChatObjectGetListInput : BaseTreeGetListInput<long>
 {
     public virtual string ChatObjectTypeId { get; set; }
 

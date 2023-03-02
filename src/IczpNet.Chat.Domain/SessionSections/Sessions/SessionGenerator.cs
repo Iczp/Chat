@@ -18,7 +18,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
     public class SessionGenerator : DomainService, ISessionGenerator
     {
         protected IChatObjectManager ChatObjectManager { get; }
-        protected IRepository<Message, Guid> MessageRepository { get; }
+        protected IMessageRepository MessageRepository { get; }
         protected IRepository<Session, Guid> SessionRepository { get; }
         protected IRepository<ReadedRecorder, Guid> ReadedRecorderRepository { get; }
         protected ISessionRecorder SessionRecorder { get; }
@@ -27,7 +27,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public SessionGenerator(
             IChatObjectManager chatObjectManager,
-            IRepository<Message, Guid> messageRepository,
+            IMessageRepository messageRepository,
             IRepository<Session, Guid> sessionRepository,
             ISessionRecorder sessionRecorder,
             IRepository<ReadedRecorder, Guid> readedRecorderRepository,
@@ -143,9 +143,9 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public async Task<Session> UpdateAsync(Session session)
         {
-            if (session.LastMessageAutoId.HasValue)
+            if (session.LastMessageId.HasValue)
             {
-                await SessionUnitManager.BatchUpdateAsync(session.Id, session.LastMessageAutoId.Value);
+                await SessionUnitManager.BatchUpdateAsync(session.Id, session.LastMessageId.Value);
             }
             return await SessionRepository.UpdateAsync(session, true);
 

@@ -39,7 +39,7 @@ namespace IczpNet.Chat.SessionSections.FriendshipRequests
             IsHandled = false;
         }
 
-        public FriendshipRequest(Guid ownerId, Guid destinationId, string message)
+        public FriendshipRequest(long ownerId, long destinationId, string message)
         {
             OwnerId = ownerId;
             DestinationId = destinationId;

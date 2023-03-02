@@ -22,17 +22,15 @@ namespace IczpNet.Chat.MessageSections.Messages
     [Command("Chat")]
     public class MessageInfo
     {
-        public virtual Guid Id { get; set; }
-
-        public virtual long AutoId { get; set; }
+        public virtual long Id { get; set; }
 
         //public virtual Guid SessionId { get; set; }
 
-        public virtual Guid? SenderId { get; set; }
+        public virtual long? SenderId { get; set; }
 
         //public virtual ChatObjectInfo Sender { get; set; }
 
-        public virtual Guid? ReceiverId { get; set; }
+        public virtual long? ReceiverId { get; set; }
 
         public virtual MessageTypes MessageType { get; set; }
 

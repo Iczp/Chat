@@ -10,7 +10,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         public virtual Guid SessionId { get; set; }
 
-        public virtual Guid OwnerId { get; set; }
+        public virtual long OwnerId { get; set; }
 
         public virtual string Rename { get; set; }
 
@@ -18,7 +18,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         public virtual MessageDto LastMessage { get; set; }
 
-        public virtual long LastMessageAutoId { get; set; }
+        public virtual long LastMessageId { get; set; }
 
         public virtual int Badge { get; set; }
 
@@ -26,7 +26,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         public virtual bool IsImportant { get;  set; }
 
-        public virtual long ReadedMessageAutoId { get; set; }
+        public virtual long ReadedMessageId { get; set; }
 
         public virtual int ReminderAllCount { get; set; }
 

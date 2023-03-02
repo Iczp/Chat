@@ -15,30 +15,30 @@ namespace IczpNet.Chat.SessionSections.OpenedRecorders
 
         public virtual long? MessageAutoId { get; protected set; }
 
-        public virtual Guid? MessageId { get; protected set; }
+        public virtual long? MessageId { get; protected set; }
 
         [ForeignKey(nameof(MessageId))]
         public virtual Message Message { get; protected set; }
 
         protected OpenedRecorder() { }
 
-        public OpenedRecorder(Guid ownerId, Guid destinationId, Message message, string deviceId)
+        public OpenedRecorder(long ownerId, long destinationId, Message message, string deviceId)
         {
             OwnerId = ownerId;
             DestinationId = destinationId;
             Message = Assert.NotNull(message, $"notnull:{nameof(message)}");
-            MessageAutoId = message.AutoId;
+            MessageAutoId = message.Id;
             DeviceId = deviceId;
         }
 
         internal void SetMessage(Message message, string deviceId)
         {
-            if (message.AutoId <= MessageAutoId)
+            if (message.Id <= MessageAutoId)
             {
                 return;
             }
             Message = message;
-            MessageAutoId = message.AutoId;
+            MessageAutoId = message.Id;
         }
     }
 }

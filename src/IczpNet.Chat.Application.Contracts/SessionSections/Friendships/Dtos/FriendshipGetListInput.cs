@@ -8,9 +8,9 @@ public class FriendshipGetListInput : BaseGetListInput
 {
     public virtual List<Guid> TagIdList { get; set; }
 
-    public virtual Guid? OwnerId { get; set; }
+    public virtual long? OwnerId { get; set; }
 
-    public virtual Guid? DestinationId { get; set; }
+    public virtual long? DestinationId { get; set; }
 
     public virtual bool? IsCantacts { get; set; }
 

@@ -11,12 +11,12 @@ namespace IczpNet.Chat.ChatObjects
         ICrudAppService<
             ChatObjectDetailDto,
             ChatObjectDto,
-            Guid,
+            long,
             ChatObjectGetListInput,
             ChatObjectCreateInput,
             ChatObjectUpdateInput>
         ,
-        ITreeAppService<Guid, ChatObjectInfo>
+        ITreeAppService<long, ChatObjectInfo>
     {
         Task<PagedResultDto<ChatObjectDto>> GetListByUserIdAsync(Guid userId, int maxResultCount = 10, int skipCount = 0, string sorting = null);
         Task<ChatObjectDetailDto> GetByAutoIdAsync(long autoId);

@@ -10,7 +10,7 @@ public partial class Message
     /// <summary>
     /// 转发来源Id(转发才有)
     /// </summary>
-    public virtual Guid? ForwardMessageId { get; protected set; }
+    public virtual long? ForwardMessageId { get; protected set; }
 
     /// <summary>
     /// 转发层级 0:不是转发

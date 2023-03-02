@@ -9,6 +9,6 @@
         ///// <summary>
         ///// 
         ///// </summary>
-        //Guid MessageId { set; get; }
+        //long MessageId { set; get; }
     }
 }

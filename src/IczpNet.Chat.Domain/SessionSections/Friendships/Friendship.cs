@@ -71,7 +71,7 @@ namespace IczpNet.Chat.SessionSections.Friendships
 
         protected Friendship() { }
 
-        public Friendship(Guid ownerId, Guid destinationId, bool isPassive, Guid? friendshipRequestId)
+        public Friendship(long ownerId, long destinationId, bool isPassive, Guid? friendshipRequestId)
         {
             OwnerId = ownerId;
             DestinationId = destinationId;

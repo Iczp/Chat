@@ -9,10 +9,10 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.SessionSections.Friendships
 {
-    public class FriendshipTag : BaseEntity<Guid>, IChatOwner<Guid?>
+    public class FriendshipTag : BaseEntity<Guid>, IChatOwner<long?>
     {
 
-        public virtual Guid? OwnerId { get; protected set; }
+        public virtual long? OwnerId { get; protected set; }
 
         [ForeignKey(nameof(OwnerId))]
         public virtual ChatObject Owner { get; protected set; }

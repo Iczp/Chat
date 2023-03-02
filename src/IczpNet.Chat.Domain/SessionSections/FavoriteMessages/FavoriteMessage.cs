@@ -10,7 +10,7 @@ namespace IczpNet.Chat.SessionSections.Favorites
 
         public virtual Favorite Favorite { get; set; }
 
-        public virtual Guid MessageId { get; set; }
+        public virtual long MessageId { get; set; }
 
         public virtual Message Message { get; set; }
 

@@ -5,9 +5,9 @@ namespace IczpNet.Chat.SessionSections.FriendshipRequests.Dtos;
 
 public class FriendshipRequestUpdateInput : BaseInput
 {
-    public virtual Guid OwnerId { get; set; }
+    public virtual long OwnerId { get; set; }
 
-    public virtual Guid DestinationId { get; set; }
+    public virtual long DestinationId { get; set; }
 
     public virtual string Message { get; set; }
 }

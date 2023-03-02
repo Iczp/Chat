@@ -15,7 +15,7 @@ public partial class Message
     public const string Delimiter = "/";
     protected Message() { }
 
-    public Message(Guid id, ChatObjectInfo sender, ChatObjectInfo receiver, Session session) : base(id)
+    public Message(ChatObjectInfo sender, ChatObjectInfo receiver, Session session) : base()
     {
         //, IMessageContent messageContent
         SenderId = sender.Id;
@@ -33,7 +33,7 @@ public partial class Message
     {
         QuoteMessage = source;
         QuoteDepth = source.QuoteDepth + 1;
-        QuotePath = source.QuotePath + Delimiter + source.AutoId;
+        QuotePath = source.QuotePath + Delimiter + source.Id;
         Assert.If(QuotePath.Length > QuotePathMaxLength, "Maximum length exceeded in [QuotePath].");
     }
 
@@ -41,7 +41,7 @@ public partial class Message
     {
         ForwardMessage = source;
         ForwardDepth = source.QuoteDepth + 1;
-        ForwardPath = source.QuotePath + Delimiter + source.AutoId;
+        ForwardPath = source.QuotePath + Delimiter + source.Id;
         Assert.If(ForwardPath.Length > ForwardPathMaxLength, "Maximum length exceeded in [ForwardPath].");
     }
 

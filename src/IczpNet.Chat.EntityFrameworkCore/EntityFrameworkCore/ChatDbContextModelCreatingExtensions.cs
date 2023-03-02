@@ -95,11 +95,11 @@ public static class ChatDbContextModelCreatingExtensions
             b.HasMany(x => x.ContactsContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(ContactsContent)}", ChatDbProperties.DbSchema));
             b.HasMany(x => x.RedEnvelopeContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(RedEnvelopeContent)}", ChatDbProperties.DbSchema));
             b.HasMany(x => x.HistoryContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(HistoryContent)}", ChatDbProperties.DbSchema));
-            b.Property<long>(nameof(Message.AutoId))
-                .ValueGeneratedOnAdd()
-                .HasColumnType("bigint")
-                //.HasColumnType("uniqueidentifier")
-                .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+            //b.Property<long>(nameof(Message.AutoId))
+            //    .ValueGeneratedOnAdd()
+            //    .HasColumnType("bigint")
+            //    //.HasColumnType("uniqueidentifier")
+            //    .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
         });
 
     }
@@ -115,10 +115,10 @@ public static class ChatDbContextModelCreatingExtensions
                     && t.GetInterfaces().Any(x => typeof(IEntity).IsAssignableFrom(x) || x.IsGenericType && typeof(IEntity<>).IsAssignableFrom(x.GetGenericTypeDefinition())));
 
 
-        foreach (var t in entityTypes)
-        {
-            builder.Entity(t, ConfigureEnums);
-        }
+        //foreach (var t in entityTypes)
+        //{
+        //    builder.Entity(t, ConfigureEnums);
+        //}
     }
 
     private static void ConfigMessageTemplateEntitys(this ModelBuilder builder)

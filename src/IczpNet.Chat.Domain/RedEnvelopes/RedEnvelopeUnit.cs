@@ -7,7 +7,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.RedEnvelopes
 {
-    public class RedEnvelopeUnit : BaseEntity<Guid>, IChatOwner<Guid?>
+    public class RedEnvelopeUnit : BaseEntity<Guid>, IChatOwner<long?>
     {
 
         public virtual Guid RedEnvelopeContentId { get; set; }
@@ -38,7 +38,7 @@ namespace IczpNet.Chat.RedEnvelopes
         /// <summary>
         /// 归属人
         /// </summary>
-        public virtual Guid? OwnerId { get; set; }
+        public virtual long? OwnerId { get; set; }
 
         /// <summary>
         /// 
@@ -69,7 +69,7 @@ namespace IczpNet.Chat.RedEnvelopes
         /// 领取红包
         /// </summary>
         /// <param name="ownerUserId">领取人UserId</param>
-        public void SetGrabed(Guid ownerId, DateTime ownedTime)
+        public void SetGrabed(long ownerId, DateTime ownedTime)
         {
             OwnerId = ownerId;
             OwnedTime = ownedTime;

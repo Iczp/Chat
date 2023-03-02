@@ -9,11 +9,11 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.Wallets
 {
-    public class Wallet : BaseEntity<Guid>, IChatOwner<Guid>
+    public class Wallet : BaseEntity<Guid>, IChatOwner<long>
     {
         public virtual Guid? AppUserId { get; protected set; }
 
-        public virtual Guid OwnerId { get; protected set; }
+        public virtual long OwnerId { get; protected set; }
 
         [ForeignKey(nameof(OwnerId))]
         public virtual ChatObject Owner { get; protected set; }
@@ -45,7 +45,7 @@ namespace IczpNet.Chat.Wallets
             TotalAmount = LockAmount + AvailableAmount;
         }
 
-        public Wallet(Guid id, Guid ownerId ) : base(id)
+        public Wallet(Guid id, long ownerId ) : base(id)
         {
             OwnerId = ownerId;
         }

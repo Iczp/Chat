@@ -13,12 +13,12 @@ namespace IczpNet.Chat.RedEnvelopes
 {
     [MessageTemplate(MessageTypes.RedEnvelope)]
     [ContentOuput(typeof(RedEnvelopeContentOutput))]
-    public class RedEnvelopeContent : MessageContentEntityBase, IChatOwner<Guid?>
+    public class RedEnvelopeContent : MessageContentEntityBase, IChatOwner<long?>
     {
         /// <summary>
         /// 创建人(发红包的人)
         /// </summary>
-        public override Guid? OwnerId { get; protected set; }
+        public override long? OwnerId { get; protected set; }
 
         /// <summary>
         /// 创建人(发红包的人)

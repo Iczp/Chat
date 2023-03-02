@@ -48,7 +48,7 @@ namespace IczpNet.Chat.SessionServices
         }
 
 
-        public async Task<PagedResultDto<ChatObjectDto>> GetFriendsAsync(Guid ownerId, bool? isCantacts, int maxResultCount = 10, int skipCount = 0, string sorting = null)
+        public async Task<PagedResultDto<ChatObjectDto>> GetFriendsAsync(long ownerId, bool? isCantacts, int maxResultCount = 10, int skipCount = 0, string sorting = null)
         {
             var query = (await FriendshipRepository.GetQueryableAsync())
                 .Where(x => x.OwnerId == ownerId)
@@ -61,7 +61,7 @@ namespace IczpNet.Chat.SessionServices
             return await GetPagedListAsync<ChatObject, ChatObjectDto>(query, maxResultCount, skipCount, sorting);
         }
 
-        public Task<DateTime> RequestForFriendshipAsync(Guid ownerId, Guid friendId, string message)
+        public Task<DateTime> RequestForFriendshipAsync(long ownerId, long friendId, string message)
         {
             throw new NotImplementedException();
         }
@@ -80,7 +80,7 @@ namespace IczpNet.Chat.SessionServices
             var query = (await Repository.GetQueryableAsync())
                 .WhereIf(input.OwnerId.HasValue, x => x.UnitList.Any(m => m.OwnerId == input.OwnerId))
                 ;
-            return await GetPagedListAsync<Session, SessionDto>(query, input, q => q.OrderByDescending(x => x.LastMessageAutoId));
+            return await GetPagedListAsync<Session, SessionDto>(query, input, q => q.OrderByDescending(x => x.LastMessageId));
         }
 
         [HttpGet]
@@ -117,7 +117,7 @@ namespace IczpNet.Chat.SessionServices
                 .WhereIf(!input.MaxAutoId.IsEmpty(), new MaxAutoIdMessageSpecification(input.MaxAutoId.GetValueOrDefault()).ToExpression())
                 ;
 
-            return await GetPagedListAsync<Message, MessageDto>(query, input, x => x.OrderByDescending(x => x.AutoId));
+            return await GetPagedListAsync<Message, MessageDto>(query, input, x => x.OrderByDescending(x => x.Id));
         }
 
         [HttpGet]
@@ -155,7 +155,7 @@ namespace IczpNet.Chat.SessionServices
                 .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Owner.Name.Contains(input.Keyword))
                 ;
 
-            return await GetPagedListAsync<SessionUnit, SessionUnitOwnerDto>(query, input, q => q.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageAutoId));
+            return await GetPagedListAsync<SessionUnit, SessionUnitOwnerDto>(query, input, q => q.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId));
         }
 
         [HttpPost]

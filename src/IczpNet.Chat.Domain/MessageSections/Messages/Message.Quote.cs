@@ -10,7 +10,7 @@ public partial class Message
     /// <summary>
     /// 引用来源Id(引用才有)
     /// </summary>
-    public virtual Guid? QuoteMessageId { get; protected set; }
+    public virtual long? QuoteMessageId { get; protected set; }
 
     /// <summary>
     /// 引用层级 0:不是引用

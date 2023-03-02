@@ -13,12 +13,12 @@ namespace IczpNet.Chat.MessageSections
 {
     public class ChatObjectResolver : DomainService, IChatObjectResolver
     {
-        protected IDistributedCache<List<Guid>, Guid> SessionUnitIdListCache { get; }
+        protected IDistributedCache<List<long>, Guid> SessionUnitIdListCache { get; }
 
         protected IDistributedCache<List<SessionUnitInfo>, Guid> SessionUnitCache { get; }
 
         public ChatObjectResolver(
-            IDistributedCache<List<Guid>, Guid> sessionUnitIdListCache)
+            IDistributedCache<List<long>, Guid> sessionUnitIdListCache)
         {
             SessionUnitIdListCache = sessionUnitIdListCache;
         }
@@ -48,7 +48,7 @@ namespace IczpNet.Chat.MessageSections
             return result;
         }
 
-        public virtual Task<List<Guid>> GetIdListAsync(Message message)
+        public virtual Task<List<long>> GetIdListAsync(Message message)
         {
             Assert.NotNull(message.SessionId, "Message.Session is not null.");
 

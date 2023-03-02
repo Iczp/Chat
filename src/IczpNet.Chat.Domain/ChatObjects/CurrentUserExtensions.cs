@@ -7,11 +7,11 @@ namespace IczpNet.Chat.ChatObjects
 {
     public static class CurrentUserExtensions
     {
-        public static List<Guid> GetChatObjectIdList(this ICurrentUser currentUser)
+        public static List<long> GetChatObjectIdList(this ICurrentUser currentUser)
         {
             return currentUser.FindClaims(ChatObjectClaims.Id)
                 .Where(x => !string.IsNullOrWhiteSpace(x.Value))
-                .Select(x => Guid.Parse(x.Value))
+                .Select(x => long.Parse(x.Value))
                 .ToList();
         }
 

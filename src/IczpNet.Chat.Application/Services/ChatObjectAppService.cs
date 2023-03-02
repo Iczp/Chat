@@ -12,14 +12,13 @@ using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
-using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.Services
 {
     public class ChatObjectAppService
         : CrudTreeChatAppService<
             ChatObject,
-            Guid,
+            long,
             ChatObjectDetailDto,
             ChatObjectDto,
             ChatObjectGetListInput,
@@ -31,7 +30,7 @@ namespace IczpNet.Chat.Services
         protected IChatObjectManager ChatObjectManager { get; }
         protected IChatObjectCategoryManager ChatObjectCategoryManager { get; }
         public ChatObjectAppService(
-            IRepository<ChatObject, Guid> repository,
+            IChatObjectRepository repository,
             IChatObjectManager chatObjectManager,
             IChatObjectCategoryManager chatObjectCategoryManager) : base(repository)
         {
@@ -107,7 +106,7 @@ namespace IczpNet.Chat.Services
         }
 
         [RemoteService(false)]
-        public override Task DeleteAsync(Guid id)
+        public override Task DeleteAsync(long id)
         {
             return base.DeleteAsync(id);
         }

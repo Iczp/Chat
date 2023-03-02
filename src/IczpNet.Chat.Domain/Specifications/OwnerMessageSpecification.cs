@@ -11,8 +11,8 @@ namespace IczpNet.Chat.Specifications
     /// </summary>
     public class OwnerMessageSpecification : Specification<Message>
     {
-        public virtual Guid OwnerId { get; }
-        public OwnerMessageSpecification(Guid ownerId)
+        public virtual long OwnerId { get; }
+        public OwnerMessageSpecification(long ownerId)
         {
             OwnerId = ownerId;
         }

@@ -14,7 +14,7 @@ namespace IczpNet.Chat.MessageSections
     public class MessageSender : DomainService, IMessageSender
     {
         protected IObjectMapper ObjectMapper { get; }
-        protected IRepository<Message, Guid> Repository { get; }
+        protected IMessageRepository Repository { get; }
         protected IRedEnvelopeGenerator RedEnvelopeGenerator { get; }
         protected IContentResolver ContentResolver { get; }
         protected IMessageManager MessageManager { get; }
@@ -23,7 +23,7 @@ namespace IczpNet.Chat.MessageSections
             IMessageManager messageManager,
             IRedEnvelopeGenerator redEnvelopeGenerator,
             IContentResolver contentResolver,
-            IRepository<Message, Guid> repository,
+            IMessageRepository repository,
             IObjectMapper objectMapper)
         {
             MessageManager = messageManager;
@@ -99,7 +99,7 @@ namespace IczpNet.Chat.MessageSections
             var selectedMessageList = (await Repository.GetQueryableAsync())
                 .Where(x => messageIdList.Contains(x.Id))
                 .Where(x => !x.IsRollbacked || x.RollbackTime == null)
-                .OrderBy(x => x.AutoId)
+                .OrderBy(x => x.Id)
             //.Select(x => x.Id)
                 .ToList();
             var description = selectedMessageList.Take(3)

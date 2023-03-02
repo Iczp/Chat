@@ -21,7 +21,7 @@ namespace IczpNet.Chat.SessionSections.ReadedRecorders
 
         public virtual long? MessageAutoId { get; protected set; }
 
-        public virtual Guid? MessageId { get; protected set; }
+        public virtual long? MessageId { get; protected set; }
 
         [ForeignKey(nameof(MessageId))]
         public virtual Message Message { get; protected set; }

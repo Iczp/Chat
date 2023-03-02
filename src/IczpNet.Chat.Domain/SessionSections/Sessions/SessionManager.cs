@@ -25,7 +25,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
         protected IRepository<FriendshipRequest, Guid> FriendshipRequestRepository { get; }
         protected IChatObjectManager ChatObjectManager { get; }
         protected IRepository<OpenedRecorder, Guid> OpenedRecorderRepository { get; }
-        protected IRepository<Message, Guid> MessageRepository { get; }
+        protected IMessageRepository MessageRepository { get; }
         protected IRepository<Session, Guid> Repository { get; }
         protected IRepository<SessionUnit, Guid> SessionUnitRepository { get; }
         protected IRepository<SessionRole, Guid> SessionRoleRepository { get; }
@@ -37,7 +37,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
             IChatObjectManager chatObjectManager,
             IRepository<FriendshipRequest, Guid> friendshipRequestRepository,
             IRepository<OpenedRecorder, Guid> openedRecorderRepository,
-            IRepository<Message, Guid> messageRepository,
+            IMessageRepository messageRepository,
             ISessionRecorder sessionRecorder,
             IRepository<Session, Guid> repository,
             IRepository<SessionRole, Guid> sessionRoleRepository,
@@ -62,12 +62,12 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return await Repository.UpdateAsync(entity, autoSave: true);
         }
 
-        public Task<bool> IsFriendshipAsync(Guid ownerId, Guid destinationId)
+        public Task<bool> IsFriendshipAsync(long ownerId, long destinationId)
         {
             return FriendshipRepository.AnyAsync(x => x.OwnerId == ownerId && x.DestinationId == destinationId);
         }
 
-        public async Task<Friendship> CreateFriendshipAsync(Guid ownerId, Guid destinationId, bool IsPassive, Guid? friendshipRequestId)
+        public async Task<Friendship> CreateFriendshipAsync(long ownerId, long destinationId, bool IsPassive, Guid? friendshipRequestId)
         {
             var owner = await ChatObjectManager.GetItemByCacheAsync(ownerId);
 
@@ -89,12 +89,12 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return entity;
         }
 
-        public Task<DateTime> DeleteFriendshipAsync(Guid ownerId, Guid destinationId)
+        public Task<DateTime> DeleteFriendshipAsync(long ownerId, long destinationId)
         {
             throw new NotImplementedException();
         }
 
-        public Task DeleteFriendshipRequestAsync(Guid ownerId, Guid destinationId)
+        public Task DeleteFriendshipRequestAsync(long ownerId, long destinationId)
         {
             return FriendshipRequestRepository.DeleteAsync(x =>
                 x.OwnerId == ownerId && x.DestinationId == destinationId && !x.IsHandled ||
@@ -127,7 +127,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return friendshipRequest.HandlTime;
         }
 
-        public async Task<OpenedRecorder> SetOpenedAsync(Guid ownerId, Guid destinationId, Guid messageId, string deviceId)
+        public async Task<OpenedRecorder> SetOpenedAsync(long ownerId, long destinationId, long messageId, string deviceId)
         {
             var message = await MessageRepository.GetAsync(messageId);
 

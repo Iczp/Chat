@@ -12,7 +12,7 @@ namespace IczpNet.Chat.Articles
         [ForeignKey(nameof(ArticleId))]
         public virtual Article Article { get; protected set; }
 
-        public virtual Guid MessageId { get; protected set; }
+        public virtual long MessageId { get; protected set; }
 
         [ForeignKey(nameof(MessageId))]
         public virtual Message Message { get; protected set; }
@@ -25,7 +25,7 @@ namespace IczpNet.Chat.Articles
         //    Message = message;
         //}
 
-        public ArticleMessage(Guid articleId, Guid messageId)
+        public ArticleMessage(Guid articleId, long messageId)
         {
             ArticleId = articleId;
             MessageId = messageId;

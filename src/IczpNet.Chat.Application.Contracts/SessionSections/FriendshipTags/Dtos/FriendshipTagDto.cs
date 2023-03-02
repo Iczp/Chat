@@ -8,7 +8,7 @@ public class FriendshipTagDto : BaseDto<Guid>
 {
     public virtual string Name { get; set; }
 
-    public virtual Guid? OwnerId { get; set; }
+    public virtual long? OwnerId { get; set; }
 
     public virtual int FriendshipCount { get; set; }
 }

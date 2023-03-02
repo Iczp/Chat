@@ -3,12 +3,12 @@ using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.MessageSections.Messages.Dtos
 {
-    public class MessageDto : MessageInfo<dynamic>, IEntityDto<Guid>
+    public class MessageDto : MessageInfo<dynamic>, IEntityDto<long>
     {
         /// <summary>
         /// 转发来源Id(转发才有)
         /// </summary>
-        public virtual Guid? ForwardMessageId { get; set; }
+        public virtual long? ForwardMessageId { get; set; }
 
         /// <summary>
         /// 转发层级 0:不是转发
@@ -18,7 +18,7 @@ namespace IczpNet.Chat.MessageSections.Messages.Dtos
         /// <summary>
         /// 引用来源Id(引用才有)
         /// </summary>
-        public virtual Guid? QuoteMessageId { get; set; }
+        public virtual long? QuoteMessageId { get; set; }
 
         /// <summary>
         /// 引用层级 0:不是引用

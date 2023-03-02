@@ -1,11 +1,9 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
 using IczpNet.AbpTrees.Dtos;
-using System;
-using System.ComponentModel;
 
 namespace IczpNet.Chat.BaseDtos
 {
-    public class BaseTreeGetListInput : TreeGetListInput<Guid>, IKeyword
+    public class BaseTreeGetListInput<TKey> : TreeGetListInput<TKey>, IKeyword where TKey : struct
     {
         //[DefaultValue(null)]
         //public virtual bool? IsStatic { get; set; }

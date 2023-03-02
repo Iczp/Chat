@@ -2,7 +2,7 @@
 
 namespace IczpNet.Chat.ChatObjects.Dtos;
 
-public class ChatObjectUpdateInput : BaseTreeInputDto
+public class ChatObjectUpdateInput : BaseTreeInputDto<long>
 {
     public virtual string Code { get; set; }
 

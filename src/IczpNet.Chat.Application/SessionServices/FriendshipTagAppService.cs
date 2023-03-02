@@ -23,10 +23,10 @@ namespace IczpNet.Chat.SessionServices
             FriendshipTagUpdateInput>,
         IFriendshipTagAppService
     {
-        protected IRepository<ChatObject, Guid> ChatObjectRepository { get; }
+        protected IChatObjectRepository ChatObjectRepository { get; }
         public FriendshipTagAppService(
             IRepository<FriendshipTag, Guid> repository,
-            IRepository<ChatObject, Guid> chatObjectRepository) : base(repository)
+            IChatObjectRepository chatObjectRepository) : base(repository)
         {
             ChatObjectRepository = chatObjectRepository;
         }

@@ -7,7 +7,7 @@ namespace IczpNet.Chat.SessionSections.Sessions.Dtos
     {
         //public virtual Guid SessionId { get; set; }
 
-        public virtual Guid? SenderId { get; set; }
+        public virtual long? SenderId { get; set; }
 
         public virtual long? MinAutoId { get; set; }
 

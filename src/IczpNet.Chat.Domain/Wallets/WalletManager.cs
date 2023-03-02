@@ -35,7 +35,7 @@ namespace IczpNet.Chat.Wallets
             return Assert.NotNull(await WalletBusinessRepository.FindAsync(x => x.Id.Equals(walletBusinessId)), $"No such WalletBusiness by id:{walletBusinessId}");
         }
 
-        public async Task<Wallet> GetWalletAsync(Guid ownerId)
+        public async Task<Wallet> GetWalletAsync(long ownerId)
         {
             var wallet = await Repository.FindAsync(x => x.OwnerId == ownerId);
 

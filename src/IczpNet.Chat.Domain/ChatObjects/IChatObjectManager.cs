@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace IczpNet.Chat.ChatObjects
 {
-    public interface IChatObjectManager : ITreeManager<ChatObject, Guid, ChatObjectInfo>
+    public interface IChatObjectManager : ITreeManager<ChatObject, long, ChatObjectInfo>
     {
         //ChatObject GroupAssistant { get; }
 
@@ -14,7 +14,7 @@ namespace IczpNet.Chat.ChatObjects
 
         Task<List<ChatObject>> GetListByUserId(Guid userId);
 
-        Task<List<Guid>> GetIdListByUserId(Guid userId);
+        Task<List<long>> GetIdListByUserId(Guid userId);
 
         //Task<ChatObject> GetAsync(Guid chatObjectId);
 
@@ -26,9 +26,9 @@ namespace IczpNet.Chat.ChatObjects
 
         Task<bool> IsAllowJoinRoomAsync(ChatObjectTypeEnums? objectType);
 
-        Task<List<Guid>> GetIdListByNameAsync(List<string> nameList); //, List<ChatObjectTypes> objectTypes
+        Task<List<long>> GetIdListByNameAsync(List<string> nameList); //, List<ChatObjectTypes> objectTypes
 
-        Task<ChatObject> CreateRoomAsync(string name, List<Guid> memberIdList, Guid? ownerId);
+        Task<ChatObject> CreateRoomAsync(string name, List<long> memberIdList, long? ownerId);
 
         Task<ChatObject> CreateRoomByAllUsersAsync(string name);
 

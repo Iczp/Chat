@@ -4,10 +4,10 @@ using System.ComponentModel;
 
 namespace IczpNet.Chat.BaseDtos
 {
-    public class BaseTreeInputDto: ITreeInput<Guid>
+    public class BaseTreeInputDto<TKey> : ITreeInput<TKey> where TKey : struct
     {
         [DefaultValue(null)]
-        public virtual Guid? ParentId { get; set; }
+        public virtual TKey? ParentId { get; set; }
 
         public virtual string Name { get; set; }
 
@@ -16,5 +16,6 @@ namespace IczpNet.Chat.BaseDtos
         //public virtual bool IsActive { get; set; }
 
         public virtual double Sorting { get; set; }
+
     }
 }

@@ -3,11 +3,9 @@ using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.MessageSections.Templates;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.MessageServices
 {
@@ -16,7 +14,7 @@ namespace IczpNet.Chat.MessageServices
         Message,
         MessageDetailDto,
         MessageDto,
-        Guid,
+        long,
         MessageGetListInput,
         MessageCreateInput,
         MessageUpdateInput>,
@@ -27,7 +25,7 @@ namespace IczpNet.Chat.MessageServices
         protected IMessageManager MessageManager { get; }
 
         public MessageAppService(
-            IRepository<Message, Guid> repository,
+            IMessageRepository repository,
             IMessageManager messageManager,
             IMessageSender chatSender) : base(repository)
         {
@@ -35,7 +33,7 @@ namespace IczpNet.Chat.MessageServices
             MessageManager = messageManager;
         }
 
-        public async Task<List<Guid>> ForwardMessageAsync(Guid sourceMessageId, Guid senderId, List<Guid> receiverIdList)
+        public async Task<List<long>> ForwardMessageAsync(long sourceMessageId, long senderId, List<long> receiverIdList)
         {
             var messageList = await MessageManager.ForwardMessageAsync(sourceMessageId, senderId, receiverIdList);
             return messageList.Select(x => x.Id).ToList();
@@ -101,7 +99,7 @@ namespace IczpNet.Chat.MessageServices
             return ChatSender.SendHistoryMessageAsync(input);
         }
 
-        public async Task<Dictionary<string, long>> RollbackMessageAsync(Guid messageId)
+        public async Task<Dictionary<string, long>> RollbackMessageAsync(long messageId)
         {
             var message = await Repository.GetAsync(messageId);
             return await MessageManager.RollbackMessageAsync(message);

@@ -15,12 +15,12 @@ namespace IczpNet.Chat.MessageSections
         /// <summary>
         /// 发送者
         /// </summary>
-        Guid SenderId { get; set; }
+        long SenderId { get; set; }
 
         /// <summary>
         /// 接收者
         /// </summary>
-        Guid ReceiverId { get; set; }
+        long ReceiverId { get; set; }
 
         ///// <summary>
         ///// 消息类型
@@ -37,6 +37,6 @@ namespace IczpNet.Chat.MessageSections
         /// </summary>
         string KeyValue { get; set; }
 
-        Guid? QuoteMessageId { get; set; }
+        long? QuoteMessageId { get; set; }
     }
 }

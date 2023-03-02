@@ -1,7 +1,5 @@
 ﻿using IczpNet.Chat.MessageSections.Templates;
-using Microsoft.Extensions.Logging;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 
@@ -18,7 +16,7 @@ namespace IczpNet.Chat.MessageSections
             Repository = repository;
         }
 
-        public override Task<IMessageContentInfo> GetContent(Guid messageId)
+        public override Task<IMessageContentInfo> GetContent(long messageId)
         {
             throw new NotImplementedException();
         }

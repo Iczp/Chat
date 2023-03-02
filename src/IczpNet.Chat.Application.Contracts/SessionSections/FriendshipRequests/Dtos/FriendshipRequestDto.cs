@@ -6,9 +6,9 @@ namespace IczpNet.Chat.SessionSections.FriendshipRequests.Dtos;
 
 public class FriendshipRequestDto : BaseDto<Guid>
 {
-    public virtual Guid OwnerId { get; set; }
+    public virtual long OwnerId { get; set; }
 
-    //public virtual Guid? DestinationId { get; set; }
+    //public virtual long? DestinationId { get; set; }
 
     //public virtual ChatObjectSimpleDto Owner { get; set; }
 

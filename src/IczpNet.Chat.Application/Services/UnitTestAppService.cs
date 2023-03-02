@@ -20,17 +20,17 @@ namespace IczpNet.Chat.Services
     {
 
         private static int TotalCount = 0;
-        private static List<Guid> ChatObjectIdList;
+        private static List<long> ChatObjectIdList;
 
-        protected IRepository<Message, Guid> MessageRepository { get; }
+        protected IMessageRepository MessageRepository { get; }
         protected IRepository<Session, Guid> SessionRepository { get; }
-        protected IRepository<ChatObject, Guid> ChatObjectRepository { get; }
+        protected IChatObjectRepository ChatObjectRepository { get; }
         protected IMessageManager MessageManager { get; }
 
         protected IMessageSender ChatSender { get; }
         public UnitTestAppService(
-            IRepository<Message, Guid> messageRepository,
-            IRepository<ChatObject, Guid> chatObjectRepository,
+            IMessageRepository messageRepository,
+            IChatObjectRepository chatObjectRepository,
             IMessageManager messageManager,
             IMessageSender chatSender,
             IRepository<Session, Guid> sessionRepository)
@@ -41,7 +41,7 @@ namespace IczpNet.Chat.Services
             ChatSender = chatSender;
             SessionRepository = sessionRepository;
         }
-        public async Task<int> SendToEveryOneAsync(string text, Guid? receiverId, int count = 100)
+        public async Task<int> SendToEveryOneAsync(string text, long? receiverId, int count = 100)
         {
 
             if (TotalCount == 0)
@@ -88,7 +88,7 @@ namespace IczpNet.Chat.Services
 
             foreach (var item in items)
             {
-                item.SetLastMessage(item.MessageList.OrderByDescending(x => x.AutoId).FirstOrDefault());
+                item.SetLastMessage(item.MessageList.OrderByDescending(x => x.Id).FirstOrDefault());
             }
             await SessionRepository.UpdateManyAsync(items);
 

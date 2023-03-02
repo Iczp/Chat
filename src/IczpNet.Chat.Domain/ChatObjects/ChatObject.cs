@@ -20,7 +20,7 @@ using Volo.Abp.SimpleStateChecking;
 namespace IczpNet.Chat.ChatObjects
 {
     //[Index]
-    public class ChatObject : BaseTreeEntity<ChatObject, Guid>, IName, IChatObject, IHasSimpleStateCheckers<ChatObject>, IIsStatic, IIsActive
+    public class ChatObject : BaseTreeEntity<ChatObject, long>, IName, IChatObject, IHasSimpleStateCheckers<ChatObject>, IIsStatic, IIsActive
     {
         public List<ISimpleStateChecker<ChatObject>> StateCheckers { get; }
 
@@ -164,14 +164,7 @@ namespace IczpNet.Chat.ChatObjects
             TypeName = GetType().Name;
         }
 
-        protected ChatObject(Guid id, string name, ChatObjectTypeEnums chatObjectType, Guid? parentId) : base(id, name, parentId)
-        {
-            ObjectType = chatObjectType;
-            TypeName = GetType().Name;
-            StateCheckers = new List<ISimpleStateChecker<ChatObject>>();
-        }
-
-        public ChatObject(Guid id, string name, ChatObjectType chatObjectType, Guid? parentId) : base(id, name, parentId)
+        public ChatObject(string name, ChatObjectType chatObjectType, long? parentId) : base(name, parentId)
         {
             TypeName = GetType().Name;
             StateCheckers = new List<ISimpleStateChecker<ChatObject>>();

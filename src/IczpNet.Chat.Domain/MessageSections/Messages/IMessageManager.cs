@@ -13,8 +13,8 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         Task<MessageInfo<TContentInfo>> SendMessageAsync<TContentInfo>(MessageInput input, Func<Message, Task<IMessageContentEntity>> func);
 
-        Task<List<Message>> ForwardMessageAsync(Guid sourceMessageId, Guid senderId, List<Guid> receiverIdList);
-        Task<List<Message>> ForwardMessageAsync(Message source, ChatObjectInfo sender, List<Guid> receiverIdList);
+        Task<List<Message>> ForwardMessageAsync(long sourceMessageId, long senderId, List<long> receiverIdList);
+        Task<List<Message>> ForwardMessageAsync(Message source, ChatObjectInfo sender, List<long> receiverIdList);
 
         Task<Dictionary<string, long>> RollbackMessageAsync(Message message);
 

@@ -22,12 +22,10 @@ using System.Linq;
 namespace IczpNet.Chat.SessionSections.SessionUnits
 {
     [Index(nameof(Sorting), AllDescending = true)]
-    [Index(nameof(LastMessageAutoId), IsDescending = new[] { true })]
-    [Index(nameof(ReadedMessageAutoId), AllDescending = true)]
-    //[Index(nameof(Sorting), nameof(LastMessageAutoId))]
-    //[Index(nameof(HistoryFristTime))]
-    //[Index(nameof(HistoryLastTime))]
-    public class SessionUnit : BaseSessionEntity, IChatOwner<Guid>, ISorting
+    [Index(nameof(LastMessageId), IsDescending = new[] { true })]
+    [Index(nameof(Sorting), nameof(LastMessageId), AllDescending = true)]
+    [Index(nameof(ReadedMessageId), AllDescending = true)]
+    public class SessionUnit : BaseSessionEntity, IChatOwner<long>, ISorting
     {
         public virtual Guid SessionId { get; protected set; }
 
@@ -42,9 +40,15 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         /// <summary>
         /// 已读的消息AutoId
         /// </summary>
-        public virtual long ReadedMessageAutoId { get; protected set; }
+        public virtual long? ReadedMessageId { get; protected set; }
 
-        public virtual long LastMessageAutoId { get; protected set; }
+        [ForeignKey(nameof(ReadedMessageId))]
+        public virtual Message ReadedMessage { get; protected set; }
+
+        public virtual long? LastMessageId { get; protected set; }
+
+        [ForeignKey(nameof(LastMessageId))]
+        public virtual Message LastMessage { get; protected set; }
 
         /// <summary>
         /// 为null时，
@@ -62,7 +66,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public virtual DateTime? KillTime { get; protected set; }
 
-        public virtual Guid? KillerId { get; protected set; }
+        public virtual long? KillerId { get; protected set; }
 
         [ForeignKey(nameof(KillerId))]
         public virtual ChatObject Killer { get; protected set; }
@@ -89,7 +93,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         /// <summary>
         /// 邀请人
         /// </summary>
-        public virtual Guid? InviterId { get; set; }
+        public virtual long? InviterId { get; set; }
 
         [ForeignKey(nameof(InviterId))]
         public virtual ChatObject Inviter { get; set; }
@@ -111,7 +115,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         [NotMapped]
         public virtual int Badge => Session.MessageList.Count(x =>
                 //!x.IsRollbacked &&
-                x.AutoId > ReadedMessageAutoId &&
+                x.Id > ReadedMessageId &&
                 x.SenderId != OwnerId &&
                 (!HistoryFristTime.HasValue || x.CreationTime > HistoryFristTime) &&
                 (!HistoryLastTime.HasValue || x.CreationTime < HistoryLastTime) &&
@@ -121,7 +125,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public virtual int ReminderCount => GetReminderCount();
 
         [NotMapped]
-        public virtual Message LastMessage => Session.LastMessage;//GetLastMessage();
+        public virtual Message SessionLastMessage => Session.LastMessage;//GetLastMessage();
 
         [NotMapped]
         public virtual List<SessionTag> TagList => GetTagList();
@@ -139,11 +143,11 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         /// last message autoId
         /// </summary>
         [NotMapped]
-        public virtual long? SessionLastMessageAutoId => Session.LastMessageAutoId;
+        public virtual long? SessionLastMessageId => Session.LastMessageId;
 
         protected SessionUnit() { }
 
-        internal SessionUnit(Guid id, [NotNull] Session session, [NotNull] Guid ownerId, [NotNull] Guid destinationId, ChatObjectTypeEnums? destinationObjectType) : base(id)
+        internal SessionUnit(Guid id, [NotNull] Session session, [NotNull] long ownerId, [NotNull] long destinationId, ChatObjectTypeEnums? destinationObjectType) : base(id)
         {
             Session = session;
             OwnerId = ownerId;
@@ -153,9 +157,9 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         internal void SetReaded(long messageAutoId, bool isForce = false)
         {
-            if (isForce || messageAutoId > ReadedMessageAutoId)
+            if (isForce || messageAutoId > ReadedMessageId)
             {
-                ReadedMessageAutoId = messageAutoId;
+                ReadedMessageId = messageAutoId;
             }
         }
 
@@ -210,7 +214,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         protected virtual Message GetLastMessage()
         {
-            return Session.MessageList.AsQueryable().OrderByDescending(x => x.AutoId).FirstOrDefault(new SessionUnitMessageSpecification(this).ToExpression());
+            return Session.MessageList.AsQueryable().OrderByDescending(x => x.Id).FirstOrDefault(new SessionUnitMessageSpecification(this).ToExpression());
         }
 
         private int GetReminderCount()

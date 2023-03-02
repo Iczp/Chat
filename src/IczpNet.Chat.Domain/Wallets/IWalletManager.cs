@@ -7,7 +7,7 @@ namespace IczpNet.Chat.Wallets
 {
     public interface IWalletManager
     {
-        Task<Wallet> GetWalletAsync(Guid ownerId);
+        Task<Wallet> GetWalletAsync(long ownerId);
 
         Task<WalletBusiness> GetWalletBusinessAsync(string walletBusinessId);
 

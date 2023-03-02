@@ -10,6 +10,6 @@ namespace IczpNet.Chat.MessageSections
     public interface IChatObjectResolver
     {
         Task<List<ChatObject>> GetListAsync(Message message);
-        Task<List<Guid>> GetIdListAsync(Message message);
+        Task<List<long>> GetIdListAsync(Message message);
     }
 }

@@ -6,9 +6,9 @@ using System.Collections.Generic;
 
 namespace IczpNet.Chat.SessionSections.Favorites
 {
-    public class Favorite : BaseEntity<Guid>, IChatOwner<Guid>
+    public class Favorite : BaseEntity<Guid>, IChatOwner<long>
     {
-        public virtual Guid OwnerId { get; set; }
+        public virtual long OwnerId { get; set; }
 
         public virtual ChatObject Owner { get; set; }
 

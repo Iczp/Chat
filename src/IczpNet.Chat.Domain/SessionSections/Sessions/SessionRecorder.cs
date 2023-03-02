@@ -12,18 +12,18 @@ namespace IczpNet.Chat.SessionSections.Sessions
 {
     public class SessionRecorder : DomainService, ISessionRecorder
     {
-        protected IRepository<ChatObject, Guid> Repository { get; }
+        protected IChatObjectRepository Repository { get; }
         protected IRepository<ReadedRecorder, Guid> ReadedRecorderRepository { get; }
 
         public SessionRecorder(
-            IRepository<ChatObject, Guid> repository,
+            IChatObjectRepository repository,
             IRepository<ReadedRecorder, Guid> readedRecorderRepository)
         {
             Repository = repository;
             ReadedRecorderRepository = readedRecorderRepository;
         }
 
-        public async Task<long> GetAsync(Guid ownerId)
+        public async Task<long> GetAsync(long ownerId)
         {
             return (await Repository.GetQueryableAsync()).Where(x => x.Id.Equals(ownerId)).Select(x => x.MaxMessageAutoId).FirstOrDefault();
         }
@@ -33,7 +33,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return Task.FromResult(owner.MaxMessageAutoId);
         }
 
-        public async Task<long> UpdateAsync(Guid ownerId, long maxMessageAutoId, bool isForce = false)
+        public async Task<long> UpdateAsync(long ownerId, long maxMessageAutoId, bool isForce = false)
         {
             var chatObject = await Repository.GetAsync(ownerId);
             return await UpdateAsync(chatObject, maxMessageAutoId, isForce);
@@ -49,7 +49,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return owner.MaxMessageAutoId;
         }
 
-        public Task<List<ReadedRecorder>> GetReadedsAsync(Guid ownerId)
+        public Task<List<ReadedRecorder>> GetReadedsAsync(long ownerId)
         {
             return ReadedRecorderRepository.GetListAsync(x => x.OwnerId == ownerId);
         }

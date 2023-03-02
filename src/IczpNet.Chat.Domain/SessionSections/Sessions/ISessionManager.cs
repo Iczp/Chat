@@ -12,17 +12,17 @@ namespace IczpNet.Chat.SessionSections.Sessions
 {
     public interface ISessionManager
     {
-        Task<bool> IsFriendshipAsync(Guid ownerId, Guid destinationId);
+        Task<bool> IsFriendshipAsync(long ownerId, long destinationId);
 
-        Task<Friendship> CreateFriendshipAsync(Guid ownerId, Guid destinationId, bool isPassive, Guid? friendshipRequestId);
+        Task<Friendship> CreateFriendshipAsync(long ownerId, long destinationId, bool isPassive, Guid? friendshipRequestId);
 
         Task<Friendship> CreateFriendshipAsync(ChatObjectInfo owner, ChatObjectInfo destination, bool isPassive, Guid? friendshipRequestId);
 
-        Task<DateTime> DeleteFriendshipAsync(Guid ownerId, Guid destinationId);
+        Task<DateTime> DeleteFriendshipAsync(long ownerId, long destinationId);
 
         Task<DateTime?> HandlRequestAsync(Guid friendshipRequestId, bool isAgreed, string handlMessage);
 
-        Task<OpenedRecorder> SetOpenedAsync(Guid ownerId, Guid destinationId, Guid messageId, string deviceId);
+        Task<OpenedRecorder> SetOpenedAsync(long ownerId, long destinationId, long messageId, string deviceId);
 
         Task<SessionTag> AddTagAsync(Session entity, SessionTag sessionTag);
 

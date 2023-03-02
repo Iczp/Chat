@@ -6,6 +6,6 @@ namespace IczpNet.Chat.CommandPayloads
     [Command("Rollback")]
     public class RollbackMessageCommandPayload
     {
-        public Guid MessageId { get; set; }
+        public long MessageId { get; set; }
     }
 }

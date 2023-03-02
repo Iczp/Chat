@@ -12,7 +12,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         public virtual Guid SessionId { get; set; }
 
-        public virtual Guid OwnerId { get; set; }
+        public virtual long OwnerId { get; set; }
 
         public virtual ChatObjectDto Destination { get; set; }
 

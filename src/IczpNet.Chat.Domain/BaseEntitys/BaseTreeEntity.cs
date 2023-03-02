@@ -14,5 +14,7 @@ namespace IczpNet.Chat.BaseEntitys
         protected BaseTreeEntity() { }
 
         protected BaseTreeEntity(TKey id, string name, TKey? parentId) : base(id, name, parentId) { }
+
+        protected BaseTreeEntity(string name, TKey? parentId) : base(name, parentId) { }
     }
 }

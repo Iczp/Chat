@@ -17,7 +17,7 @@ namespace IczpNet.Chat.SessionSections.MessageReminders
         [ForeignKey(nameof(SessionUnitId))]
         public virtual SessionUnit SessionUnit { get; protected set; }
 
-        public virtual Guid MessageId { get; protected set; }
+        public virtual long MessageId { get; protected set; }
 
         [ForeignKey(nameof(MessageId))]
         public virtual Message Message { get; protected set; }

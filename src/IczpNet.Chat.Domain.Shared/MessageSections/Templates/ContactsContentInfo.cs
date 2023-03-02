@@ -8,7 +8,7 @@ namespace IczpNet.Chat.MessageSections.Templates
     /// </summary>
     public class ContactsContentInfo : BaseMessageContentInfo, IMessageContentInfo
     {
-        public virtual Guid DestinationId { get; set; }
+        public virtual long DestinationId { get; set; }
 
         /// <summary>
         /// 联系人名称

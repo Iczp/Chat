@@ -15,13 +15,13 @@ namespace IczpNet.Chat.SessionSections.Sessions
     {
         protected ISessionUnitRepository Repository { get; }
         protected IRepository<ReadedRecorder, Guid> ReadedRecorderRepository { get; }
-        protected IRepository<Message, Guid> MessageRepository { get; }
+        protected IMessageRepository MessageRepository { get; }
         protected IDistributedCache<List<SessionUnitInfo>, Guid> SessionUnitCache { get; }
 
         public SessionUnitManager(
             ISessionUnitRepository repository,
             IRepository<ReadedRecorder, Guid> readedRecorderRepository,
-            IRepository<Message, Guid> messageRepository,
+            IMessageRepository messageRepository,
             IDistributedCache<List<SessionUnitInfo>, Guid> sessionUnitCache)
         {
             Repository = repository;
@@ -44,13 +44,13 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return await SetEntityAsync(entity, x => x.SetTopping(isTopping));
         }
 
-        public async Task<SessionUnit> SetReadedAsync(SessionUnit entity, Guid messageId, bool isForce = false)
+        public async Task<SessionUnit> SetReadedAsync(SessionUnit entity, long messageId, bool isForce = false)
         {
             var message = await MessageRepository.GetAsync(messageId);
 
             // add readedRecorder
             /// ...
-            return await SetEntityAsync(entity, x => x.SetReaded(message.AutoId, isForce = false));
+            return await SetEntityAsync(entity, x => x.SetReaded(message.Id, isForce = false));
         }
 
         public async Task<SessionUnit> SetImmersedAsync(SessionUnit entity, bool isImmersed)
@@ -73,12 +73,12 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return SetEntityAsync(entity, x => x.ClearMessage(Clock.Now));
         }
 
-        public Task<SessionUnit> DeleteMessageAsync(SessionUnit entity, Guid messageId)
+        public Task<SessionUnit> DeleteMessageAsync(SessionUnit entity, long messageId)
         {
             throw new NotImplementedException();
         }
 
-        public async Task<int> GetBadgeAsync(Guid ownerId, bool? isImmersed = null)
+        public async Task<int> GetBadgeAsync(long ownerId, bool? isImmersed = null)
         {
             var badge = (await Repository.GetQueryableAsync())
                 .Where(x => x.OwnerId == ownerId)
@@ -87,7 +87,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
                 {
                     Badge = x.Session.MessageList.Count(d =>
                     //!x.IsRollbacked &&
-                    d.AutoId > x.ReadedMessageAutoId &&
+                    d.Id > x.ReadedMessageId &&
                     d.SenderId != x.OwnerId &&
 
 
@@ -107,9 +107,9 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return Repository.CountAsync(x => x.SessionId == sessionId);
         }
 
-        public Task<int> BatchUpdateAsync(Guid sessionId, long lastMessageAutoId)
+        public Task<int> BatchUpdateAsync(Guid sessionId, long lastMessageId)
         {
-            return Repository.BatchUpdateAsync(sessionId, lastMessageAutoId);
+            return Repository.BatchUpdateAsync(sessionId, lastMessageId);
         }
 
         public Task<List<SessionUnitInfo>> GetCacheListBySessionIdAsync(Guid sessionId)

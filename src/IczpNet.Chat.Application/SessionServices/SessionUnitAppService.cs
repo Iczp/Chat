@@ -28,7 +28,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     protected IRepository<Friendship, Guid> FriendshipRepository { get; }
     protected IRepository<Session, Guid> SessionRepository { get; }
     protected ISessionUnitRepository Repository { get; }
-    protected IRepository<Message, Guid> MessageRepository { get; }
+    protected IMessageRepository MessageRepository { get; }
     protected ISessionManager SessionManager { get; }
     protected ISessionUnitManager SessionUnitManager { get; }
     protected ISessionGenerator SessionGenerator { get; }
@@ -46,7 +46,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         ISessionManager sessionManager,
         ISessionGenerator sessionGenerator,
         IRepository<Session, Guid> sessionRepository,
-        IRepository<Message, Guid> messageRepository,
+        IMessageRepository messageRepository,
         ISessionUnitRepository repository,
         ISessionUnitManager sessionUnitManager)
     {
@@ -80,16 +80,16 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
             .WhereIf(input.IsKilled.HasValue, x => x.IsKilled == input.IsKilled)
             .WhereIf(input.DestinationObjectType.HasValue, x => x.Destination.ObjectType == input.DestinationObjectType)
-            //.WhereIf(input.MinAutoId.HasValue, x => x.Session.LastMessageAutoId > input.MinAutoId)
-            //.WhereIf(input.MaxAutoId.HasValue, x => x.Session.LastMessageAutoId < input.MaxAutoId)
-            .WhereIf(input.MinAutoId.HasValue && input.MinAutoId.Value > 0, x => x.LastMessageAutoId > input.MinAutoId)
-            .WhereIf(input.MaxAutoId.HasValue && input.MaxAutoId.Value > 0, x => x.LastMessageAutoId < input.MaxAutoId)
+            //.WhereIf(input.MinAutoId.HasValue, x => x.Session.LastMessageId > input.MinAutoId)
+            //.WhereIf(input.MaxAutoId.HasValue, x => x.Session.LastMessageId < input.MaxAutoId)
+            .WhereIf(input.MinAutoId.HasValue && input.MinAutoId.Value > 0, x => x.LastMessageId > input.MinAutoId)
+            .WhereIf(input.MaxAutoId.HasValue && input.MaxAutoId.Value > 0, x => x.LastMessageId < input.MaxAutoId)
             .WhereIf(input.IsTopping == true, x => x.Sorting != 0)
             .WhereIf(input.IsTopping == false, x => x.Sorting == 0)
             .WhereIf(input.IsBadge, x =>
                 x.Session.MessageList.Any(d =>
                     //!x.IsRollbacked &&
-                    d.AutoId > x.ReadedMessageAutoId &&
+                    d.Id > x.ReadedMessageId &&
                     d.SenderId != x.OwnerId &&
                     (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
                     (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
@@ -110,8 +110,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
             .WhereIf(input.IsKilled.HasValue, x => x.IsKilled == input.IsKilled)
             .WhereIf(input.DestinationObjectType.HasValue, x => x.Destination.ObjectType == input.DestinationObjectType)
-            .WhereIf(input.MinAutoId.HasValue, x => x.Session.LastMessageAutoId > input.MinAutoId)
-            .WhereIf(input.MaxAutoId.HasValue, x => x.Session.LastMessageAutoId < input.MaxAutoId)
+            .WhereIf(input.MinAutoId.HasValue, x => x.Session.LastMessageId > input.MinAutoId)
+            .WhereIf(input.MaxAutoId.HasValue, x => x.Session.LastMessageId < input.MaxAutoId)
             //.WhereIf(input.MinAutoId.HasValue && input.MinAutoId.Value > 0, x => x.LastMessageAutoId > input.MinAutoId)
             //.WhereIf(input.MaxAutoId.HasValue && input.MaxAutoId.Value > 0, x => x.LastMessageAutoId < input.MaxAutoId)
             .WhereIf(input.IsTopping == true, x => x.Sorting != 0)
@@ -119,7 +119,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(input.IsBadge, x =>
                 x.Session.MessageList.Any(d =>
                     //!x.IsRollbacked &&
-                    d.AutoId > x.ReadedMessageAutoId &&
+                    d.Id > x.ReadedMessageId &&
                     d.SenderId != x.OwnerId &&
                     (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
                     (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
@@ -148,13 +148,13 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             return await GetPagedListAsync<SessionUnit, SessionUnitDto>(
                 query,
                 input,
-                x => x.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageAutoId));
+                x => x.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId));
         }
 
         Expression<Func<SessionUnit, int>> p = x =>
                 x.Session.MessageList.Count(d =>
                     //!x.IsRollbacked &&
-                    d.AutoId > x.ReadedMessageAutoId &&
+                    d.Id > x.ReadedMessageId &&
                     d.SenderId != x.OwnerId &&
                     (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
                     (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
@@ -182,7 +182,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             query,
             input,
             x => x.OrderByDescending(d => d.Sorting)
-                  .ThenByDescending(d => d.Session.LastMessageAutoId)
+                  .ThenByDescending(d => d.Session.LastMessageId)
                 );
 
     }
@@ -199,16 +199,16 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             SessionId = x.SessionId,
             Sorting = x.Sorting,
             Destination = x.Destination,
-            LastMessage = x.Session.MessageList.FirstOrDefault(m => m.AutoId == x.Session.MessageList.Where(d =>
+            LastMessage = x.Session.MessageList.FirstOrDefault(m => m.Id == x.Session.MessageList.Where(d =>
                     //!x.IsRollbacked &&
-                    d.AutoId > x.ReadedMessageAutoId &&
+                    d.Id > x.ReadedMessageId &&
                     d.SenderId != x.OwnerId &&
                     (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
                     (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
-                    (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)).Max(d => d.AutoId)),
+                    (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)).Max(d => d.Id)),
             Badge = x.Session.MessageList.Count(d =>
                    //!x.IsRollbacked &&
-                   d.AutoId > x.ReadedMessageAutoId &&
+                   d.Id > x.ReadedMessageId &&
                    d.SenderId != x.OwnerId &&
                    (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
                    (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
@@ -217,7 +217,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             ReminderAllCount = x.Session.MessageList.Count(x => !x.IsRollbacked && x.IsRemindAll),
             ReminderMeCount = x.ReminderList.Select(x => x.Message).Count(d =>
                     //!x.IsRollbacked &&
-                    d.AutoId > x.ReadedMessageAutoId &&
+                    d.Id > x.ReadedMessageId &&
                     d.SenderId != x.OwnerId &&
                     (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
                     (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
@@ -228,7 +228,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         var totalCount = await AsyncExecuter.CountAsync(query);
 
         query = query.OrderByDescending(x => x.Sorting)
-            .OrderByDescending(x => x.LastMessage.AutoId)
+            .OrderByDescending(x => x.LastMessage.Id)
             .OrderByDescending(x => x.Badge);
 
         query = query.PageBy(input);
@@ -278,7 +278,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     }
 
     [HttpPost]
-    public virtual async Task<SessionUnitDto> SetReadedAsync(Guid id, Guid messageId, bool isForce = false)
+    public virtual async Task<SessionUnitDto> SetReadedAsync(Guid id, long messageId, bool isForce = false)
     {
         await CheckPolicyAsync(SetReadedPolicyName);
 
@@ -336,7 +336,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     }
 
     [HttpPost]
-    public virtual async Task<SessionUnitDto> DeleteMessageAsync(Guid id, Guid messageId)
+    public virtual async Task<SessionUnitDto> DeleteMessageAsync(Guid id, long messageId)
     {
         await CheckPolicyAsync(DeleteMessagePolicyName);
 
@@ -367,11 +367,11 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(!input.MaxAutoId.IsEmpty(), new MaxAutoIdMessageSpecification(input.MaxAutoId.GetValueOrDefault()).ToExpression())
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TextContentList.Any(d => d.Text.Contains(input.Keyword)))
             ;
-        return await GetPagedListAsync<Message, MessageDto>(query, input, x => x.OrderByDescending(x => x.AutoId));
+        return await GetPagedListAsync<Message, MessageDto>(query, input, x => x.OrderByDescending(x => x.Id));
     }
 
     [HttpGet]
-    public async Task<MessageDto> GetMessageAsync(Guid id, Guid messageId)
+    public async Task<MessageDto> GetMessageAsync(Guid id, long messageId)
     {
         var entity = await GetEntityAsync(id);
 
@@ -388,7 +388,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 
         var isCanRead = (await MessageRepository.GetQueryableAsync())
             //本条消息 || 引用这个消息的 || 包含在聊天记录里的
-            .Where(x => x.Id == id || x.QuotedMessageList.Any(d => d.Id == messageId) || x.HistoryMessageList.Any(x => x.MessageId == messageId))
+            .Where(x => x.Id == messageId || x.QuotedMessageList.Any(d => d.Id == messageId) || x.HistoryMessageList.Any(x => x.MessageId == messageId))
             .Select(x => x.Session)
             .Any(x => x.UnitList.Any(d => d.OwnerId == entity.OwnerId))
             ;
@@ -399,7 +399,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     }
 
     [HttpGet]
-    public Task<int> GetBadgeAsync(Guid ownerId, bool? isImmersed = null)
+    public Task<int> GetBadgeAsync(long ownerId, bool? isImmersed = null)
     {
         return SessionUnitManager.GetBadgeAsync(ownerId, isImmersed); ;
     }

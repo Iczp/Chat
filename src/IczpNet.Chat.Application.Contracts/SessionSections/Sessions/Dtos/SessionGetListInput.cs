@@ -5,6 +5,6 @@ namespace IczpNet.Chat.SessionSections.Sessions.Dtos
 {
     public class SessionGetListInput : PagedAndSortedResultRequestDto
     {
-        public virtual Guid? OwnerId { get; set; }
+        public virtual long? OwnerId { get; set; }
     }
 }

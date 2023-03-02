@@ -10,8 +10,8 @@ namespace IczpNet.Chat.Specifications
     /// </summary>
     public class SenderMessageSpecification : Specification<Message>
     {
-        public virtual Guid SenderId { get; }
-        public SenderMessageSpecification(Guid senderId)
+        public virtual long SenderId { get; }
+        public SenderMessageSpecification(long senderId)
         {
             SenderId = senderId;
         }

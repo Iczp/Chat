@@ -16,12 +16,12 @@ using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.ChatObjects
 {
-    public class ChatObjectManager : TreeManager<ChatObject, Guid, ChatObjectInfo>, IChatObjectManager
+    public class ChatObjectManager : TreeManager<ChatObject, long, ChatObjectInfo>, IChatObjectManager
     {
         protected IChatObjectTypeManager ChatObjectTypeManager { get; }
         protected IMessageSender MessageSender => LazyServiceProvider.LazyGetRequiredService<IMessageSender>();
         public ChatObjectManager(
-            IRepository<ChatObject, Guid> repository,
+            IChatObjectRepository repository,
             IChatObjectTypeManager chatObjectTypeManager) : base(repository)
         {
             ChatObjectTypeManager = chatObjectTypeManager;
@@ -32,7 +32,7 @@ namespace IczpNet.Chat.ChatObjects
             return await Repository.GetListAsync(x => x.AppUserId == userId);
         }
 
-        public async Task<List<Guid>> GetIdListByUserId(Guid userId)
+        public async Task<List<long>> GetIdListByUserId(Guid userId)
         {
             return (await Repository.GetQueryableAsync()).Where(x => x.AppUserId == userId).Select(x => x.Id).ToList();
         }
@@ -42,7 +42,7 @@ namespace IczpNet.Chat.ChatObjects
             return Task.FromResult(ChatConsts.AllowJoinRoomObjectTypes.Any(x => x.Equals(objectType)));
         }
 
-        public virtual async Task<List<Guid>> GetIdListByNameAsync(List<string> nameList)
+        public virtual async Task<List<long>> GetIdListByNameAsync(List<string> nameList)
         {
             var query = (await Repository.GetQueryableAsync())
                 .Where(x => nameList.Contains(x.Name))
@@ -59,13 +59,13 @@ namespace IczpNet.Chat.ChatObjects
             return await AsyncExecuter.ToListAsync(query);
         }
 
-        public virtual async Task<ChatObject> CreateRoomAsync(string name, List<Guid> memberIdList, Guid? ownerId)
+        public virtual async Task<ChatObject> CreateRoomAsync(string name, List<long> memberIdList, long? ownerId)
         {
             var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Room);
 
-            var room = new ChatObject(GuidGenerator.Create(), name, chatObjectType, null);
+            var room = new ChatObject(name, chatObjectType, null);
 
-            var session = new Session(room.Id, room.Id.ToString(), Channels.RoomChannel);
+            var session = new Session(GuidGenerator.Create(), room.Id.ToString(), Channels.RoomChannel);
 
             session.SetOwner(room);
 

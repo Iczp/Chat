@@ -7,8 +7,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 {
     public class SessionUnitDetailDto : SessionUnitDto
     {
-        public virtual long ReadedMessageAutoId { get;  set; }
-
         public virtual DateTime? HistoryFristTime { get;  set; }
 
         public virtual DateTime? HistoryLastTime { get;  set; }

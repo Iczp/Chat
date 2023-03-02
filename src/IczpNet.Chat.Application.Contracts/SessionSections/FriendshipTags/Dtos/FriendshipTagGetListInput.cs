@@ -8,5 +8,5 @@ namespace IczpNet.Chat.FriendshipTagSections.FriendshipTags.Dtos;
 public class FriendshipTagGetListInput : BaseGetListInput
 {
     [DefaultValue(null)]
-    public virtual Guid? OwnerId { get; set; }
+    public virtual long? OwnerId { get; set; }
 }

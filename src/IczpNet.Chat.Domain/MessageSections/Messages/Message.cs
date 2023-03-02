@@ -10,14 +10,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
-[Index(nameof(AutoId))]
+[Index(nameof(Id))]
 [Index(nameof(SessionUnitCount))]
-public partial class Message : BaseEntity<Guid>
+public partial class Message : BaseEntity<long>
 {
     public virtual dynamic Content => GetContent();
 
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public virtual long AutoId { get;  }
+    //[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    //public virtual long Id { get;  }
 
     [StringLength(100)]
     //[Required]
@@ -42,7 +42,7 @@ public partial class Message : BaseEntity<Guid>
     /// <summary>
     /// 发送者
     /// </summary>
-    public virtual Guid? SenderId { get; protected set; }
+    public virtual long? SenderId { get; protected set; }
 
     /// <summary>
     /// 发送者类型
@@ -52,7 +52,7 @@ public partial class Message : BaseEntity<Guid>
     /// <summary>
     /// 接收者
     /// </summary>
-    public virtual Guid? ReceiverId { get; protected set; }
+    public virtual long? ReceiverId { get; protected set; }
 
     /// <summary>
     /// 接收者类型

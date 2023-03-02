@@ -9,7 +9,7 @@ namespace IczpNet.Chat.ChatObjectCategoryUnits
     public class ChatObjectCategoryUnit : BaseEntity
     {
 
-        public virtual Guid ChatObjectId { get; set; }
+        public virtual long ChatObjectId { get; set; }
 
         public virtual Guid CategoryId { get; set; }
 

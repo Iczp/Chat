@@ -10,9 +10,9 @@ namespace IczpNet.Chat.MessageSections.Templates
 {
     [MessageTemplate(MessageTypes.Contacts)]
     [ContentOuput(typeof(ContactsContentInfo))]
-    public class ContactsContent : MessageContentEntityBase, IChatOwner<Guid?>
+    public class ContactsContent : MessageContentEntityBase, IChatOwner<long?>
     {
-        public virtual Guid DestinationId { get; protected set; }
+        public virtual long DestinationId { get; protected set; }
 
         [ForeignKey(nameof(DestinationId))]
         public virtual ChatObject Destination { get; protected set; }

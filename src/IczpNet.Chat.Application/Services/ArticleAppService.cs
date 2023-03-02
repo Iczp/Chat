@@ -25,7 +25,7 @@ namespace IczpNet.Chat.Services
         IArticleAppService
     {
 
-        //protected IRepository<ChatObject, Guid> ChatObjectRepository { get; } 
+        //protected IChatObjectRepository ChatObjectRepository { get; } 
 
         protected IChatObjectManager ChatObjectManager { get; }
 

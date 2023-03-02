@@ -21,7 +21,7 @@ namespace IczpNet.Chat.MessageSections.Messages
     {
         protected IObjectMapper ObjectMapper { get; }
         protected IChatObjectManager ChatObjectManager { get; }
-        protected IRepository<Message, Guid> Repository { get; }
+        protected IMessageRepository Repository { get; }
         protected ISessionGenerator SessionGenerator { get; }
         protected IMessageValidator MessageValidator { get; }
         protected IChatObjectResolver ChatObjectResolver { get; }
@@ -34,7 +34,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         protected IChatPusher ChatPusher { get; }
 
         public MessageManager(
-            IRepository<Message, Guid> repository,
+            IMessageRepository repository,
             IChatObjectResolver messageChatObjectResolver,
             IChatObjectManager chatObjectManager,
             IContentResolver contentResolver,
@@ -63,7 +63,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         {
             var session = await SessionGenerator.MakeAsync(sender, receiver);
 
-            var entity = new Message(GuidGenerator.Create(), sender, receiver, session);
+            var entity = new Message(sender, receiver, session);
 
             if (func != null)
             {
@@ -135,7 +135,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             });
         }
 
-        public async Task<List<Message>> ForwardMessageAsync(Guid sourceMessageId, Guid senderId, List<Guid> receiverIdList)
+        public async Task<List<Message>> ForwardMessageAsync(long sourceMessageId, long senderId, List<long> receiverIdList)
         {
             var source = await Repository.GetAsync(sourceMessageId);
 
@@ -146,7 +146,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             return await ForwardMessageAsync(source, sender, receiverIdList);
         }
 
-        public async Task<List<Message>> ForwardMessageAsync(Message source, ChatObjectInfo sender, List<Guid> receiverIdList)
+        public async Task<List<Message>> ForwardMessageAsync(Message source, ChatObjectInfo sender, List<long> receiverIdList)
         {
             var isSelfSender = source.Sender.Id == sender.Id;
 

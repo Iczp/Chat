@@ -15,7 +15,7 @@ namespace IczpNet.Chat.Specifications
 
         public override Expression<Func<Message, bool>> ToExpression()
         {
-            return x => x.AutoId <= MaxAutoId;
+            return x => x.Id <= MaxAutoId;
         }
     }
 }

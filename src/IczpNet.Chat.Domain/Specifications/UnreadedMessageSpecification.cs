@@ -11,8 +11,8 @@ namespace IczpNet.Chat.Specifications
     /// </summary>
     public class UnreadedMessageSpecification : Specification<Message>
     {
-        public virtual Guid OwnerId { get; }
-        public UnreadedMessageSpecification(Guid ownerId)
+        public virtual long OwnerId { get; }
+        public UnreadedMessageSpecification(long ownerId)
         {
             OwnerId = ownerId;
         }
@@ -21,7 +21,7 @@ namespace IczpNet.Chat.Specifications
         {
             return x => x.Session.UnitList.Any(d => d.OwnerId == OwnerId 
             && (!d.HistoryFristTime.HasValue || d.HistoryFristTime <= x.CreationTime) 
-            && d.ReadedMessageAutoId < x.AutoId 
+            && d.ReadedMessageId < x.Id 
             && x.SenderId != d.OwnerId);
         }
     }

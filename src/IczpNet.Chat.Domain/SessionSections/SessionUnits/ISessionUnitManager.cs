@@ -9,7 +9,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
     {
         Task<SessionUnit> SetToppingAsync(SessionUnit entity, bool isTopping);
 
-        Task<SessionUnit> SetReadedAsync(SessionUnit entity, Guid messageId, bool isForce = false);
+        Task<SessionUnit> SetReadedAsync(SessionUnit entity, long messageId, bool isForce = false);
 
         Task<SessionUnit> SetImmersedAsync(SessionUnit entity, bool isImmersed);
 
@@ -19,13 +19,13 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         Task<SessionUnit> ClearMessageAsync(SessionUnit entity);
 
-        Task<SessionUnit> DeleteMessageAsync(SessionUnit entity, Guid messageId);
+        Task<SessionUnit> DeleteMessageAsync(SessionUnit entity, long messageId);
 
-        Task<int> GetBadgeAsync(Guid ownerId, bool? isImmersed = null);
+        Task<int> GetBadgeAsync(long ownerId, bool? isImmersed = null);
 
         Task<int> GetCountAsync(Guid sessionId);
 
-        Task<int> BatchUpdateAsync(Guid sessionId, long lastMessageAutoId);
+        Task<int> BatchUpdateAsync(Guid sessionId, long lastMessageId);
 
         Task<List<SessionUnitInfo>> GetCacheListBySessionIdAsync(Guid sessionId);
 

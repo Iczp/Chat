@@ -27,7 +27,7 @@ namespace IczpNet.Chat.ChatObjects
             ChatObjectManager = chatObjectManager;
         }
 
-        public virtual Guid Id => GetId() ?? throw new Exception("Get [ChatObjectId] Exception");
+        public virtual long Id => GetId() ?? throw new Exception("Get [ChatObjectId] Exception");
 
         public virtual long AutoId => ChatObject.AutoId;
 
@@ -37,7 +37,7 @@ namespace IczpNet.Chat.ChatObjects
 
         public virtual ChatObjectTypeEnums? ObjectType => ChatObject.ObjectType;
 
-        public virtual Guid? GetId() => CurrentUser.GetChatObjectIdList().FirstOrDefault();
+        public virtual long? GetId() => CurrentUser.GetChatObjectIdList().FirstOrDefault();
 
     }
 }

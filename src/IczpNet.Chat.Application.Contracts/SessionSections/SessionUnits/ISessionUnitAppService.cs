@@ -18,7 +18,7 @@ public interface ISessionUnitAppService
 
     Task<SessionUnitDto> SetToppingAsync(Guid id, bool isTopping);
 
-    Task<SessionUnitDto> SetReadedAsync(Guid id, Guid messageId, bool isForce);
+    Task<SessionUnitDto> SetReadedAsync(Guid id, long messageId, bool isForce);
 
     Task<SessionUnitDto> SetImmersedAsync(Guid id, bool isImmersed);
 
@@ -28,13 +28,13 @@ public interface ISessionUnitAppService
 
     Task<SessionUnitDto> ClearMessageAsync(Guid id);
 
-    Task<SessionUnitDto> DeleteMessageAsync(Guid id, Guid messageId);
+    Task<SessionUnitDto> DeleteMessageAsync(Guid id, long messageId);
 
     Task<PagedResultDto<MessageDto>> GetMessageListAsync(Guid id, SessionUnitGetMessageListInput input);
 
-    Task<MessageDto> GetMessageAsync(Guid id, Guid messageId);
+    Task<MessageDto> GetMessageAsync(Guid id, long messageId);
 
-    Task<int> GetBadgeAsync(Guid ownerId, bool? isImmersed = null);
+    Task<int> GetBadgeAsync(long ownerId, bool? isImmersed = null);
 
     Task<PagedResultDto<SessionUnitOwnerDto>> GetSessionMemberListAsync(Guid id, SessionUnitGetSessionMemberListInput input);
 }

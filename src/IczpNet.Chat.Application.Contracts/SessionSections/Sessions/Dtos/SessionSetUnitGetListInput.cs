@@ -15,7 +15,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public virtual JoinWays? JoinWay { get; set; }
 
-        public virtual Guid? InviterId { get; set; }
+        public virtual long? InviterId { get; set; }
 
         public virtual string Keyword { get; set; }
 

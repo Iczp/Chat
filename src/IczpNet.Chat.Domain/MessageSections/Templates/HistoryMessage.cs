@@ -13,7 +13,7 @@ namespace IczpNet.Chat.MessageSections.Templates
         [ForeignKey(nameof(HistoryContentId))]
         public virtual HistoryContent HistoryContent { set; get; }
 
-        public virtual Guid MessageId { set; get; }
+        public virtual long MessageId { set; get; }
 
         [ForeignKey(nameof(MessageId))]
         public virtual Message Message { set; get; }

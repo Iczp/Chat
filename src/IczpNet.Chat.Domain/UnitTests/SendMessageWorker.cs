@@ -18,14 +18,14 @@ namespace IczpNet.Chat.Connections
 {
     public class SendMessageWorker : AsyncPeriodicBackgroundWorkerBase
     {
-        private static List<Guid> ChatObjectIdList;
+        private static List<long> ChatObjectIdList;
 
-        protected IRepository<ChatObject, Guid> ChatObjectRepository { get; }
+        protected IChatObjectRepository ChatObjectRepository { get; }
         protected IMessageSender ChatSender { get; }
 
         public SendMessageWorker(AbpAsyncTimer timer,
             IServiceScopeFactory serviceScopeFactory,
-            IRepository<ChatObject, Guid> chatObjectRepository,
+            IChatObjectRepository chatObjectRepository,
             IMessageSender chatSender) : base(timer, serviceScopeFactory)
         {
             Timer.Period = 3 * 1000; //3 seconds
@@ -47,7 +47,7 @@ namespace IczpNet.Chat.Connections
             Logger.LogInformation($"SendMessageWorker send message count:{count},run ticks:{ticks}ms");
         }
 
-        protected async Task<int> SendToEveryOneAsync(string text, Guid? receiverId = null, int count = 100)
+        protected async Task<int> SendToEveryOneAsync(string text, long? receiverId = null, int count = 100)
         {
             ChatObjectIdList ??= (await ChatObjectRepository.GetQueryableAsync())
                 .Where(x => x.ObjectType == ChatObjectTypeEnums.Personal)

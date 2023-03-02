@@ -7,11 +7,11 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.Wallets
 {
-    public class WalletRequest : BaseEntity<Guid>, IChatOwner<Guid>
+    public class WalletRequest : BaseEntity<Guid>, IChatOwner<long>
     {
         [StringLength(64)]
         public override Guid Id { get => base.Id; protected set => base.Id = value; }
-        public virtual Guid OwnerId { get; protected set; }
+        public virtual long OwnerId { get; protected set; }
 
         [ForeignKey(nameof(OwnerId))]
         public virtual ChatObject Owner { get; protected set; }

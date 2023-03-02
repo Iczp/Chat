@@ -12,13 +12,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.MessageSections
 {
-    public abstract class MessageContentEntityBase : BaseEntity<Guid>, IMessageContentEntity, IIsActive, IChatOwner<Guid?>
+    public abstract class MessageContentEntityBase : BaseEntity<Guid>, IMessageContentEntity, IIsActive, IChatOwner<long?>
     {
         public virtual bool IsActive { get; protected set; }
 
         public virtual IList<Message> MessageList { get; protected set; } = new List<Message>();
 
-        public virtual Guid? OwnerId { get; protected set; }
+        public virtual long? OwnerId { get; protected set; }
 
         [ForeignKey(nameof(OwnerId))]
         public virtual ChatObject Owner { get; protected set; }

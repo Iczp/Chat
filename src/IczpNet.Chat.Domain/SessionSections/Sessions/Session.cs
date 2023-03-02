@@ -15,9 +15,9 @@ using System.Linq;
 
 namespace IczpNet.Chat.SessionSections.Sessions
 {
-    [Index(nameof(LastMessageAutoId), AllDescending = true)]
+    [Index(nameof(LastMessageId), AllDescending = true)]
     [Index(nameof(SessionKey))]
-    public class Session : BaseEntity<Guid>, IChatOwner<Guid?>
+    public class Session : BaseEntity<Guid>, IChatOwner<long?>
     {
         [StringLength(80)]
         public virtual string SessionKey { get; protected set; }
@@ -31,17 +31,15 @@ namespace IczpNet.Chat.SessionSections.Sessions
         [StringLength(100)]
         public virtual string Description { get; set; }
 
-        public virtual Guid? OwnerId { get; protected set; }
+        public virtual long? OwnerId { get; protected set; }
 
         [ForeignKey(nameof(OwnerId))]
         public virtual ChatObject Owner { get; protected set; }
 
-        public virtual Guid? LastMessageId { get; protected set; }
+        public virtual long? LastMessageId { get; protected set; }
 
         [ForeignKey(nameof(LastMessageId))]
         public virtual Message LastMessage { get; protected set; }
-
-        public virtual long? LastMessageAutoId { get; protected set; }
 
         public virtual IList<Message> MessageList { get; internal set; } = new List<Message>();
 
@@ -113,7 +111,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
         {
             LastMessage = lastMessage;
             LastMessageId = lastMessage.Id;
-            LastMessageAutoId = lastMessage.AutoId;
+            LastMessageId = lastMessage.Id;
         }
     }
 }

@@ -7,6 +7,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
     public interface ISessionUnitRepository : IRepository<SessionUnit, Guid>
     {
 
-        Task<int> BatchUpdateAsync(Guid sessionId, long lastMessageAutoId);
+        Task<int> BatchUpdateAsync(Guid sessionId, long lastMessageId);
     }
 }

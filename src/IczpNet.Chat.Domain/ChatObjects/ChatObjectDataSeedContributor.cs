@@ -17,12 +17,12 @@ namespace IczpNet.Chat.ChatObjects
         protected ILogger<ChatObjectDataSeedContributor> Logger { get; }
         protected IConfiguration Configuration { get; }
         protected ICurrentTenant CurrentTenant { get; }
-        protected IRepository<ChatObject, Guid> Repository { get; }
+        protected IChatObjectRepository Repository { get; }
         protected IChatObjectTypeManager ChatObjectTypeManager { get; }
         public ChatObjectDataSeedContributor(
             IConfiguration configuration,
             ICurrentTenant currentTenant,
-            IRepository<ChatObject, Guid> repository,
+            IChatObjectRepository repository,
             ILogger<ChatObjectDataSeedContributor> logger,
             IChatObjectTypeManager chatObjectTypeManager)
         {
@@ -38,7 +38,7 @@ namespace IczpNet.Chat.ChatObjects
         {
             using (CurrentTenant.Change(context?.TenantId))
             {
-                await CreateAsync();
+                //await CreateAsync();
             }
         }
 
@@ -47,7 +47,7 @@ namespace IczpNet.Chat.ChatObjects
             if(!await Repository.AnyAsync(x=>x.Code== "GroupAssistant"))
             {
                 var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Robot);
-                var robot = new ChatObject(Guid.Parse("99999999-8888-7777-6666-000000000001"), "群助手", chatObjectType, null)
+                var robot = new ChatObject( "群助手", chatObjectType, null)
                 {
                     Code = "GroupAssistant",
                     Description = "我是机器人：加群"

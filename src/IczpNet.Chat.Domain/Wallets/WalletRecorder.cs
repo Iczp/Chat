@@ -8,12 +8,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.Wallets
 {
-    public class WalletRecorder : BaseEntity<Guid>, IChatOwner<Guid?>
+    public class WalletRecorder : BaseEntity<Guid>, IChatOwner<long?>
     {
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public virtual long AutoId { get; protected set; }
 
-        public virtual Guid? OwnerId { get; protected set; }
+        public virtual long? OwnerId { get; protected set; }
 
         [ForeignKey(nameof(OwnerId))]
         public virtual ChatObject Owner { get; protected set; }

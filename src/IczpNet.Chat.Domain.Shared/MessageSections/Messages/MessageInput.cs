@@ -16,12 +16,12 @@ namespace IczpNet.Chat.MessageSections.Messages
         /// <summary>
         /// 发送者
         /// </summary>
-        public virtual Guid SenderId { get; set; }
+        public virtual long SenderId { get; set; }
 
         /// <summary>
         /// 接收者
         /// </summary>
-        public virtual Guid ReceiverId { get; set; }
+        public virtual long ReceiverId { get; set; }
 
         ///// <summary>
         ///// 消息类型
@@ -38,7 +38,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         /// </summary>
         public virtual string KeyValue { get; set; }
 
-        public virtual Guid? QuoteMessageId { get; set; }
+        public virtual long? QuoteMessageId { get; set; }
 
         public virtual List<string> IgnoreConnections { get; set; } = new List<string>();
     }
