@@ -1,21 +1,17 @@
 ﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.GlobalPermissions;
-using IczpNet.Chat.RoomSections.Rooms;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Volo.Abp;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Data;
-using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.Security.Encryption;
 using Volo.Abp.SimpleStateChecking;
-using Volo.Abp.Threading;
 
 namespace Rctea.IM.Tools
 {
@@ -32,14 +28,12 @@ namespace Rctea.IM.Tools
         protected ISimpleStateCheckerManager<PermissionDefinition> SimpleStateCheckerManager { get; }
         protected IStringEncryptionService StringEncryptionService { get; }
 
-        protected IRepository<Room, Guid> RoomRepository { get; }
         public ToolAppService(IDataSeeder dataSeeder,
             IPermissionManager permissionManager,
             IPermissionDefinitionManager permissionDefinitionManager,
             IOptions<PermissionManagementOptions> options,
             ISimpleStateCheckerManager<PermissionDefinition> simpleStateCheckerManager,
-            IStringEncryptionService stringEncryptionService,
-            IRepository<Room, Guid> roomRepository)
+            IStringEncryptionService stringEncryptionService)
         {
             DataSeeder = dataSeeder;
             Options = options.Value;
@@ -47,35 +41,9 @@ namespace Rctea.IM.Tools
             PermissionDefinitionManager = permissionDefinitionManager;
             SimpleStateCheckerManager = simpleStateCheckerManager;
             StringEncryptionService = stringEncryptionService;
-            RoomRepository = roomRepository;
         }
 
-        [HttpPost]
-        public async Task<int> UpdateRoomStateAsync()
-        {
-            using (DataFilter.Disable<ISoftDelete>())
-            {
 
-                var roomIdList = new List<Guid>();
-
-                if (!roomIdList.Any())
-                {
-                    return 0;
-                }
-
-                var roomIdQuery = (await RoomRepository.GetQueryableAsync())
-                       .Where(x => roomIdList.Contains(x.Id))
-                       .Where(x => !x.IsDeleted)
-                       .Select(x => x.Id)
-                       ;
-
-                var deleteCount = await AsyncExecuter.CountAsync(roomIdQuery);
-
-                await RoomRepository.DeleteAsync(x => roomIdQuery.Contains(x.Id));
-
-                return deleteCount;
-            }
-        }
 
         [HttpPost]
         public string Encrypt(string value)

@@ -3,25 +3,15 @@ using IczpNet.Chat.Articles;
 using IczpNet.Chat.Attributes;
 using IczpNet.Chat.ChatObjectCategoryUnits;
 using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.ChatUsers;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
-using IczpNet.Chat.OfficialSections.OfficialMemberTagUnits;
-using IczpNet.Chat.OfficialSections.Officials;
 using IczpNet.Chat.RedEnvelopes;
-using IczpNet.Chat.Robots;
-using IczpNet.Chat.RobotSections.Robots;
-using IczpNet.Chat.RoomSections.RoomPermissionGrants;
-using IczpNet.Chat.RoomSections.RoomRoleRoomMembers;
-using IczpNet.Chat.RoomSections.Rooms;
 using IczpNet.Chat.SessionSections.Favorites;
 using IczpNet.Chat.SessionSections.FriendshipTagUnits;
 using IczpNet.Chat.SessionSections.MessageReminders;
 using IczpNet.Chat.SessionSections.SessionUnitRoles;
 using IczpNet.Chat.SessionSections.SessionUnitTags;
-using IczpNet.Chat.SquareSections.Squares;
-using IczpNet.Chat.Subscriptions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -84,9 +74,7 @@ public static class ChatDbContextModelCreatingExtensions
         builder.Entity<FavoriteMessage>(b => { b.HasKey(x => new { x.MessageId, x.FavoriteId }); });
         builder.Entity<HistoryMessage>(b => { b.HasKey(x => new { x.MessageId, x.HistoryContentId }); });
         builder.Entity<FriendshipTagUnit>(b => { b.HasKey(x => new { x.FriendshipId, x.FriendshipTagId }); });
-        builder.Entity<OfficialMemberTagUnit>(b => { b.HasKey(x => new { x.TagId, x.MemberId }); });
-        builder.Entity<RoomPermissionGrant>(b => { b.HasKey(x => new { x.DefineId, x.RoleId }); });
-        builder.Entity<RoomRoleRoomMember>(b => { b.HasKey(x => new { x.RoomRoleId, x.RoomMemberId }); });
+        
         builder.Entity<SessionUnitTag>(b => { b.HasKey(x => new { x.SessionUnitId, x.SessionTagId }); });
         builder.Entity<SessionUnitRole>(b => { b.HasKey(x => new { x.SessionUnitId, x.SessionRoleId }); });
         //builder.Entity<SessionUnit>(b => { b.HasKey(x => new { x.SessionId, x.OwnerId }); });
@@ -114,14 +102,6 @@ public static class ChatDbContextModelCreatingExtensions
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
         });
 
-        builder.Entity<ChatUser>().HasOne<ChatObject>().WithOne().HasForeignKey<ChatUser>(e => e.Id).OnDelete(DeleteBehavior.ClientCascade);
-        builder.Entity<Official>().HasOne<ChatObject>().WithOne().HasForeignKey<Official>(e => e.Id).OnDelete(DeleteBehavior.ClientCascade);
-        builder.Entity<Robot>().HasOne<ChatObject>().WithOne().HasForeignKey<Robot>(e => e.Id).OnDelete(DeleteBehavior.ClientCascade);
-        builder.Entity<Room>().HasOne<ChatObject>().WithOne().HasForeignKey<Room>(e => e.Id).OnDelete(DeleteBehavior.ClientCascade);
-        builder.Entity<ShopKeeper>().HasOne<ChatObject>().WithOne().HasForeignKey<ShopKeeper>(e => e.Id).OnDelete(DeleteBehavior.ClientCascade);
-        builder.Entity<ShopWaiter>().HasOne<ChatObject>().WithOne().HasForeignKey<ShopWaiter>(e => e.Id).OnDelete(DeleteBehavior.ClientCascade);
-        builder.Entity<Square>().HasOne<ChatObject>().WithOne().HasForeignKey<Square>(e => e.Id).OnDelete(DeleteBehavior.ClientCascade);
-        builder.Entity<Subscription>().HasOne<ChatObject>().WithOne().HasForeignKey<Subscription>(e => e.Id).OnDelete(DeleteBehavior.ClientCascade);
     }
 
     public static void ForEachEntitys(this ModelBuilder builder)

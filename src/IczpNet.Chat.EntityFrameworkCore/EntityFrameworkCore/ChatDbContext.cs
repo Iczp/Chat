@@ -2,26 +2,11 @@ using IczpNet.Chat.Articles;
 using IczpNet.Chat.ChatObjectCategorys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjectTypes;
-using IczpNet.Chat.ChatUsers;
 using IczpNet.Chat.Connections;
 using IczpNet.Chat.MessageSections.MessageContents;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
-using IczpNet.Chat.OfficialSections.OfficialExcludedMembers;
-using IczpNet.Chat.OfficialSections.OfficialGroupMembers;
-using IczpNet.Chat.OfficialSections.OfficialGroups;
-using IczpNet.Chat.OfficialSections.OfficialMembers;
-using IczpNet.Chat.OfficialSections.OfficialMemberTagUnits;
-using IczpNet.Chat.OfficialSections.Officials;
 using IczpNet.Chat.RedEnvelopes;
-using IczpNet.Chat.RobotSections.Robots;
-using IczpNet.Chat.RoomSections.RoomForbiddenMembers;
-using IczpNet.Chat.RoomSections.RoomMembers;
-using IczpNet.Chat.RoomSections.RoomPermissionDefines;
-using IczpNet.Chat.RoomSections.RoomPermissionGrants;
-using IczpNet.Chat.RoomSections.RoomRoleRoomMembers;
-using IczpNet.Chat.RoomSections.RoomRoles;
-using IczpNet.Chat.RoomSections.Rooms;
 using IczpNet.Chat.SessionSections.FriendshipRequests;
 using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.FriendshipTagUnits;
@@ -32,10 +17,6 @@ using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionUnits;
-using IczpNet.Chat.SquareSections.SquareCategorys;
-using IczpNet.Chat.SquareSections.SquareMembers;
-using IczpNet.Chat.SquareSections.Squares;
-using IczpNet.Chat.Subscriptions;
 using IczpNet.Chat.Wallets;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Data;
@@ -54,9 +35,6 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     public DbSet<ChatObjectCategory> ChatObjectCategory { get; set; }
     
     public DbSet<ChatObjectType> ChatObjectType { get; set; }
-
-    public DbSet<ChatUser> ChatUser { get; set; }
-
 
     public DbSet<Article> Article { get; set; }
     public DbSet<ArticleMessage> ArticleMessage { get; set; }
@@ -78,13 +56,9 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     public DbSet<Connection> Connection { get; set; }
 
 
-
-
     public DbSet<Message> Message { get; set; }
     public DbSet<MessageContent> MessageContent { get; set; }
     
-
-    public DbSet<Robot> Robot { get; set; }
 
     public DbSet<CmdContent> CmdMessage { get; set; }
     public DbSet<TextContent> TextMessage { get; set; }
@@ -101,28 +75,6 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     public DbSet<RedEnvelopeUnit> RedEnvelopeUnit { get; set; }
     public DbSet<HistoryContent> HistoryContent { get; set; }
     public DbSet<HistoryMessage> HistoryMessage { get; set; }
-
-    public DbSet<Official> Official { get; set; }
-    public DbSet<Subscription> Subscription { get; set; }
-    
-    public DbSet<OfficialMember> OfficialMember { get; set; }
-    public DbSet<OfficialMemberTagUnit> OfficialMemberTagUnit { get; set; }
-    public DbSet<OfficialGroupMember> OfficialGroupMember { get; set; }
-    public DbSet<OfficialGroup> OfficialGroup { get; set; }
-    public DbSet<OfficalExcludedMember> OfficalExcludedMember { get; set; }
-
-
-    public DbSet<Room> Room { get; set; }
-    public DbSet<RoomMember> RoomMember { get; set; }
-    public DbSet<RoomRole> RoomRole { get; set; }
-    public DbSet<RoomRoleRoomMember> RoomRoleRoomMember { get; set; }
-    public DbSet<RoomPermissionDefine> RoomPermissionDefine { get; set; }
-    public DbSet<RoomPermissionGrant> RoomPermissionGrant { get; set; }
-    public DbSet<RoomForbiddenMember> RoomForbiddenMember { get; set; }
-
-    public DbSet<Square> Square { get; set; }
-    public DbSet<SquareCategory> SquareCategory { get; set; }
-    public DbSet<SquareMember> SquareMember { get; set; }
 
 
     public DbSet<Wallet> Wallet { get; set; }

@@ -4,20 +4,13 @@ using IczpNet.Chat.ChatObjectCategoryUnits;
 using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
-using IczpNet.Chat.OfficialSections.OfficialExcludedMembers;
-using IczpNet.Chat.OfficialSections.OfficialGroupMembers;
-using IczpNet.Chat.OfficialSections.OfficialMembers;
 using IczpNet.Chat.RedEnvelopes;
-using IczpNet.Chat.Robots;
-using IczpNet.Chat.RoomSections.RoomForbiddenMembers;
-using IczpNet.Chat.RoomSections.RoomMembers;
 using IczpNet.Chat.SessionSections.Favorites;
 using IczpNet.Chat.SessionSections.FriendshipRequests;
 using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionSettings;
 using IczpNet.Chat.SessionSections.SessionUnits;
-using IczpNet.Chat.SquareSections.SquareMembers;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -112,53 +105,6 @@ namespace IczpNet.Chat.ChatObjects
 
         #endregion
 
-        #region Shop
-        /// <summary>
-        /// 兼职店小二
-        /// </summary>
-        [InverseProperty(nameof(ShopWaiter.Owner))]
-        public virtual IList<ShopWaiter> ProxyShopWaiterList { get; set; }
-
-        /// <summary>
-        /// 兼职掌柜
-        /// </summary>
-        [InverseProperty(nameof(ShopKeeper.Owner))]
-        public virtual IList<ShopKeeper> ProxyShopKeeperList { get; set; }
-
-        #endregion
-
-        #region Room
-
-        [InverseProperty(nameof(RoomMember.Owner))]
-        public virtual IList<RoomMember> InRoomMemberList { get; set; }
-
-        [InverseProperty(nameof(RoomForbiddenMember.Owner))]
-        public virtual IList<RoomForbiddenMember> InRoomForbiddenMemberList { get; set; }
-
-        [InverseProperty(nameof(RoomMember.Inviter))]
-        public virtual IList<RoomMember> InInviterList { get; set; }
-
-        #endregion
-
-        #region Official
-
-        [InverseProperty(nameof(OfficialGroupMember.Owner))]
-        public virtual IList<OfficialGroupMember> InOfficialGroupMemberList { get; set; }
-
-        [InverseProperty(nameof(OfficialMember.Owner))]
-        public virtual IList<OfficialMember> InOfficialMemberList { get; set; }
-
-        [InverseProperty(nameof(OfficalExcludedMember.Owner))]
-        public virtual IList<OfficalExcludedMember> InOfficalExcludedMemberList { get; set; }
-
-        #endregion
-
-        #region Square
-
-        [InverseProperty(nameof(SquareMember.Owner))]
-        public virtual IList<SquareMember> InSquareMemberList { get; set; }
-
-        #endregion
 
         #region Friendship
 

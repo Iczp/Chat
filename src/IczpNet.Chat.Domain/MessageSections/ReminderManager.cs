@@ -6,7 +6,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System;
 using Volo.Abp.Domain.Services;
-using IczpNet.Chat.RoomSections.Rooms;
 using System.Linq;
 using Volo.Abp.Domain.Repositories;
 using IczpNet.Chat.SessionSections.MessageReminders;
@@ -32,7 +31,7 @@ namespace IczpNet.Chat.MessageSections
         /// <param name="message"></param>
         /// <param name="room"></param>
         /// <returns></returns>
-        public virtual async Task SetRemindAsync(Message message, Room room)
+        public virtual async Task SetRemindAsync(Message message)
         {
             //@XXX
             if (message.MessageType != MessageTypes.Text)
@@ -80,13 +79,13 @@ namespace IczpNet.Chat.MessageSections
             }
             var roomId = message.Receiver;
 
-            //验证被@的人是否在群里
-            var memberChatObjectIdList = room.RoomMemberList.Where(x => chatObjectIdList.Contains(x.OwnerId)).Select(x => x.OwnerId).ToList();
+            ////验证被@的人是否在群里
+            //var memberChatObjectIdList = room.RoomMemberList.Where(x => chatObjectIdList.Contains(x.OwnerId)).Select(x => x.OwnerId).ToList();
 
-            if (memberChatObjectIdList.Any())
-            {
-                message.SetRemindChatObject(memberChatObjectIdList);
-            }
+            //if (memberChatObjectIdList.Any())
+            //{
+            //    message.SetRemindChatObject(memberChatObjectIdList);
+            //}
         }
     }
 }

@@ -4,7 +4,6 @@ using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjectCategorys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
-using IczpNet.Chat.RoomSections.Rooms.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -126,13 +125,13 @@ namespace IczpNet.Chat.Services
             return entity;
         }
 
-        [HttpPost]
-        public async Task<ChatObjectDto> CreateRoomAsync(RoomCreateInput input)
-        {
-            var room = await ChatObjectManager.CreateRoomAsync(input.Name, input.ChatObjectIdList, input.OwnerId);
+        //[HttpPost]
+        //public async Task<ChatObjectDto> CreateRoomAsync(RoomCreateInput input)
+        //{
+        //    var room = await ChatObjectManager.CreateRoomAsync(input.Name, input.ChatObjectIdList, input.OwnerId);
 
-            return ObjectMapper.Map<ChatObject, ChatObjectDto>(room);
-        }
+        //    return ObjectMapper.Map<ChatObject, ChatObjectDto>(room);
+        //}
 
         [HttpPost]
         public async Task<ChatObjectDto> CreateRoomByAllUsersAsync(string name)

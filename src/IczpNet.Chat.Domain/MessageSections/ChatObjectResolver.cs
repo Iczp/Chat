@@ -1,31 +1,25 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.MessageSections.Messages;
-using IczpNet.Chat.RoomSections.Rooms;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Caching;
-using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.MessageSections
 {
     public class ChatObjectResolver : DomainService, IChatObjectResolver
     {
-        protected IRepository<Room, Guid> RoomRepository { get; }
-
         protected IDistributedCache<List<Guid>, Guid> SessionUnitIdListCache { get; }
 
         protected IDistributedCache<List<SessionUnitInfo>, Guid> SessionUnitCache { get; }
 
         public ChatObjectResolver(
-            IRepository<Room, Guid> roomRepository,
             IDistributedCache<List<Guid>, Guid> sessionUnitIdListCache)
         {
-            RoomRepository = roomRepository;
             SessionUnitIdListCache = sessionUnitIdListCache;
         }
         public virtual async Task<List<ChatObject>> GetListAsync(Message message)
@@ -37,8 +31,6 @@ namespace IczpNet.Chat.MessageSections
                 case Enums.Channels.PrivateChannel:
                     return new List<ChatObject>() { message.Sender, message.Receiver };
                 case Enums.Channels.RoomChannel:
-                    await RoomRepository.GetAsync(message.ReceiverId.Value);
-
                     break;
                 case Enums.Channels.SubscriptionChannel:
                     break;
