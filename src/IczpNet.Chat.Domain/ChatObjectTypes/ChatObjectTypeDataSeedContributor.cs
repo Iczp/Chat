@@ -43,7 +43,7 @@ namespace IczpNet.Chat.Wallets
 
         private async Task CreateAsync()
         {
-            foreach (Enum value in Enum.GetValues(typeof(ChatObjectTypeEnums)))
+            foreach (ChatObjectTypeEnums value in Enum.GetValues(typeof(ChatObjectTypeEnums)))
             {
                 var id = value.ToString();
                 var isAny = await Repository.AnyAsync(x => x.Id.Equals(id));
@@ -55,6 +55,7 @@ namespace IczpNet.Chat.Wallets
                 await Repository.InsertAsync(new ChatObjectType(id)
                 {
                     Name = value.GetDescription(),
+                    ObjectType = value,
                     IsStatic = true,
                 });
                 Logger.LogInformation($"Add {nameof(ChatObjectType)}:{id}");

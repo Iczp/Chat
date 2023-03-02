@@ -169,6 +169,7 @@ namespace IczpNet.Chat.ChatObjects
             TypeName = GetType().Name;
             StateCheckers = new List<ISimpleStateChecker<ChatObject>>();
             ChatObjectType = chatObjectType;
+            ObjectType = chatObjectType.ObjectType;
         }
 
         public override void SetName(string name)

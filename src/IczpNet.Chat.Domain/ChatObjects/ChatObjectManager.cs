@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.ChatObjects
 {
@@ -20,6 +21,8 @@ namespace IczpNet.Chat.ChatObjects
     {
         protected IChatObjectTypeManager ChatObjectTypeManager { get; }
         protected IMessageSender MessageSender => LazyServiceProvider.LazyGetRequiredService<IMessageSender>();
+        protected IUnitOfWorkManager UnitOfWorkManager => LazyServiceProvider.LazyGetRequiredService<IUnitOfWorkManager>();
+        protected IUnitOfWork CurrentUnitOfWork => UnitOfWorkManager?.Current;
         public ChatObjectManager(
             IChatObjectRepository repository,
             IChatObjectTypeManager chatObjectTypeManager) : base(repository)
@@ -65,18 +68,20 @@ namespace IczpNet.Chat.ChatObjects
 
             var room = new ChatObject(name, chatObjectType, null);
 
-            var session = new Session(GuidGenerator.Create(), room.Id.ToString(), Channels.RoomChannel);
+            await base.CreateAsync(room, isUnique: false);
+
+            var session = new Session(GuidGenerator.Create(), $"{room.Id}".ToString(), Channels.RoomChannel);
 
             session.SetOwner(room);
 
             foreach (var memberId in memberIdList)
             {
-                session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session, memberId, room.Id, room.ObjectType));
+                session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session, memberId, room));
             }
 
             room.OwnerSessionList.Add(session);
 
-            await base.CreateAsync(room, isUnique: false);
+            await CurrentUnitOfWork.SaveChangesAsync();
 
             var roomOwner = ownerId.HasValue ? await GetItemByCacheAsync(ownerId.Value) : null;
 
