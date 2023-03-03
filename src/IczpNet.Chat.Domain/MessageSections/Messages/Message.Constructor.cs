@@ -4,7 +4,6 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.SessionSections.Sessions;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
@@ -25,7 +24,7 @@ public partial class Message
         Channel = session.Channel;
         Session = session;
         SessionKey = session.SessionKey;
-        SessionUnitCount = session.GetMemberCount();
+        //SessionUnitCount = session.GetMemberCount();
         //MessageType = messageType;
     }
 

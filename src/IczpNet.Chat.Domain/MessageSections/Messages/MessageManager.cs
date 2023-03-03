@@ -63,7 +63,10 @@ namespace IczpNet.Chat.MessageSections.Messages
         {
             var session = await SessionGenerator.MakeAsync(sender, receiver);
 
-            var entity = new Message(sender, receiver, session);
+            var entity = new Message(sender, receiver, session)
+            {
+                SessionUnitCount = await SessionUnitManager.GetCountAsync(session.Id)
+            };
 
             if (func != null)
             {

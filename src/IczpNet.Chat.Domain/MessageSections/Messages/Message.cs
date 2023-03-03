@@ -10,7 +10,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
-[Index(nameof(Id))]
+[Index(nameof(Id), AllDescending = true)]
 [Index(nameof(SessionUnitCount))]
 public partial class Message : BaseEntity<long>
 {
@@ -28,7 +28,7 @@ public partial class Message : BaseEntity<long>
     [ForeignKey(nameof(SessionId))]
     public virtual Session Session { get; protected set; }
 
-    public virtual int SessionUnitCount { get; protected set; }
+    public virtual int SessionUnitCount { get; internal protected set; }
 
     public virtual Guid? MessageContentId { get; protected set; }
 
