@@ -1,6 +1,4 @@
-﻿
-using AutoMapper.Execution;
-using IczpNet.AbpTrees;
+﻿using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
@@ -12,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.ChatObjects
