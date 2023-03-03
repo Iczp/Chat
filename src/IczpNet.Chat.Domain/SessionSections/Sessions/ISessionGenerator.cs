@@ -8,8 +8,11 @@ namespace IczpNet.Chat.SessionSections.Sessions
     {
         Task<Session> MakeAsync(ChatObjectInfo sender, ChatObjectInfo receiver);
 
+        Task<Session> MakeAsync(ChatObjectInfo room);
+
         Task<List<Session>> GenerateSessionByMessageAsync();
 
         Task<Session> UpdateAsync(Session session);
+        
     }
 }

@@ -5,6 +5,8 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Data;
@@ -67,6 +69,7 @@ namespace Rctea.IM.Tools
             await DataSeeder.SeedAsync();
             return Clock.Now;
         }
+
         [HttpPost]
         public virtual async Task<GetPermissionListResultDto> GetAsync(string providerName, string providerKey)
         {
@@ -143,6 +146,27 @@ namespace Rctea.IM.Tools
             }
 
             return result;
+        }
+
+        [HttpPost]
+        public virtual string ToMD5(string input)
+        {
+            var hashBytes = MD5.HashData(Encoding.UTF8.GetBytes(input));
+
+            string hashString = string.Join(string.Empty, hashBytes.Select(x => x.ToString("X2")));
+
+            return hashString;
+        }
+
+        [HttpPost]
+        public virtual Guid ToGuid(string input)
+        {
+            //32位大写
+            var str = ToMD5(input);
+
+            var ret = new Guid(str);
+
+            return ret;
         }
     }
 }

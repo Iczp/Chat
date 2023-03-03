@@ -23,6 +23,8 @@ namespace IczpNet.Chat.ChatObjects
         protected IMessageSender MessageSender => LazyServiceProvider.LazyGetRequiredService<IMessageSender>();
         protected IUnitOfWorkManager UnitOfWorkManager => LazyServiceProvider.LazyGetRequiredService<IUnitOfWorkManager>();
         protected IUnitOfWork CurrentUnitOfWork => UnitOfWorkManager?.Current;
+        protected ISessionGenerator SessionGenerator => LazyServiceProvider.LazyGetRequiredService<ISessionGenerator>();
+
         public ChatObjectManager(
             IChatObjectRepository repository,
             IChatObjectTypeManager chatObjectTypeManager) : base(repository)
@@ -66,11 +68,11 @@ namespace IczpNet.Chat.ChatObjects
         {
             var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Room);
 
-            var room = new ChatObject(name, chatObjectType, null);
+            var room = await base.CreateAsync(new ChatObject(name, chatObjectType, null), isUnique: false);
 
-            await base.CreateAsync(room, isUnique: false);
+            var roomInfo = await base.MapToOuputAsync(room);
 
-            var session = new Session(GuidGenerator.Create(), $"{room.Id}".ToString(), Channels.RoomChannel);
+            var session = await SessionGenerator.MakeAsync(roomInfo);
 
             session.SetOwner(room);
 

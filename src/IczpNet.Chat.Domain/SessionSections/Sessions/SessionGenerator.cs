@@ -8,16 +8,17 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Uow;
+using System.Security.Cryptography;
 
 namespace IczpNet.Chat.SessionSections.Sessions
 {
     public class SessionGenerator : DomainService, ISessionGenerator
     {
-        protected IChatObjectManager ChatObjectManager { get; }
         protected IMessageRepository MessageRepository { get; }
         protected IRepository<Session, Guid> SessionRepository { get; }
         protected IRepository<ReadedRecorder, Guid> ReadedRecorderRepository { get; }
@@ -26,7 +27,6 @@ namespace IczpNet.Chat.SessionSections.Sessions
         protected ISessionUnitManager SessionUnitManager { get; }
 
         public SessionGenerator(
-            IChatObjectManager chatObjectManager,
             IMessageRepository messageRepository,
             IRepository<Session, Guid> sessionRepository,
             ISessionRecorder sessionRecorder,
@@ -34,7 +34,6 @@ namespace IczpNet.Chat.SessionSections.Sessions
             IChannelResolver channelResolver,
             ISessionUnitManager sessionUnitManager)
         {
-            ChatObjectManager = chatObjectManager;
             MessageRepository = messageRepository;
             SessionRepository = sessionRepository;
             SessionRecorder = sessionRecorder;
@@ -43,13 +42,24 @@ namespace IczpNet.Chat.SessionSections.Sessions
             SessionUnitManager = sessionUnitManager;
         }
 
+        protected virtual Task<Guid> MakeSesssionIdAsync(string input)
+        {
+            var hashBytes = MD5.HashData(Encoding.UTF8.GetBytes(input));
+
+            string hashString = string.Join(string.Empty, hashBytes.Select(x => x.ToString("X2")));
+
+            return Task.FromResult(new Guid(hashString));
+        }
+
         protected virtual bool IsObjectType(ChatObjectInfo chatObject, ChatObjectTypeEnums chatObjectTypeEnums)
         {
             return chatObject.ObjectType.Equals(chatObjectTypeEnums) || chatObject.ChatObjectTypeId == chatObjectTypeEnums.ToString();
         }
 
-        protected virtual string MakeSesssionKey(ChatObjectInfo sender, ChatObjectInfo receiver)
+        protected virtual async Task<string> MakeSesssionKeyAsync(ChatObjectInfo sender, ChatObjectInfo receiver)
         {
+            await Task.CompletedTask;
+
             if (IsObjectType(sender, ChatObjectTypeEnums.Room))
             {
                 return sender.Id.ToString();
@@ -65,11 +75,18 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return string.Join(":", arr);
         }
 
-        public async Task<Session> MakeAsync(ChatObjectInfo sender, ChatObjectInfo receiver)
+        public virtual Task<Session> MakeAsync(ChatObjectInfo room)
         {
-            var sessionKey = MakeSesssionKey(sender, receiver);
+            return MakeAsync(room, room);
+        }
 
-            var session = await SessionRepository.FindAsync(x => x.SessionKey.Equals(sessionKey));
+        public virtual async Task<Session> MakeAsync(ChatObjectInfo sender, ChatObjectInfo receiver)
+        {
+            var sessionKey = await MakeSesssionKeyAsync(sender, receiver);
+
+            var sessionId = await MakeSesssionIdAsync(sessionKey);
+
+            var session = await SessionRepository.FindAsync(x => x.Id.Equals(sessionId));
 
             if (session != null)
             {
@@ -78,26 +95,24 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
             var channel = await ChannelResolver.GetAsync(sender, receiver);
 
-            session = new Session(GuidGenerator.Create(), sessionKey, channel);
+            session = new Session(sessionId, sessionKey, channel);
 
-            if (sender.ObjectType == ChatObjectTypeEnums.Official)
-            {
-                Assert.If(receiver.ObjectType != ChatObjectTypeEnums.Personal && sender.Id != receiver.Id, "非法");
-            }
+            //if (sender.ObjectType == ChatObjectTypeEnums.Official)
+            //{
+            //    Assert.If(receiver.ObjectType != ChatObjectTypeEnums.Personal && sender.Id != receiver.Id, "非法");
+            //}
 
-            if (channel == Channels.PrivateChannel)
-            {
-                session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session, sender.Id, receiver.Id, receiver.ObjectType));
+            //if (channel == Channels.PrivateChannel)
+            //{
+            //    session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session, sender.Id, receiver.Id, receiver.ObjectType));
 
-                if (sender.Id != receiver.Id)
-                {
-                    session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session, receiver.Id, sender.Id, sender.ObjectType));
-                }
-            }
+            //    if (sender.Id != receiver.Id)
+            //    {
+            //        session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session, receiver.Id, sender.Id, sender.ObjectType));
+            //    }
+            //}
             return await SessionRepository.InsertAsync(session, autoSave: true);
         }
-
-
 
         [UnitOfWork(true, IsolationLevel.ReadUncommitted)]
         public virtual async Task<List<Session>> GenerateSessionByMessageAsync()
@@ -150,5 +165,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return await SessionRepository.UpdateAsync(session, true);
 
         }
+
+
     }
 }
