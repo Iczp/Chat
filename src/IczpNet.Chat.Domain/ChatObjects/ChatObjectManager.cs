@@ -29,12 +29,12 @@ namespace IczpNet.Chat.ChatObjects
             ChatObjectTypeManager = chatObjectTypeManager;
         }
 
-        public async Task<List<ChatObject>> GetListByUserId(Guid userId)
+        public virtual async Task<List<ChatObject>> GetListByUserId(Guid userId)
         {
             return await Repository.GetListAsync(x => x.AppUserId == userId);
         }
 
-        public async Task<List<long>> GetIdListByUserId(Guid userId)
+        public virtual async Task<List<long>> GetIdListByUserId(Guid userId)
         {
             return (await Repository.GetQueryableAsync()).Where(x => x.AppUserId == userId).Select(x => x.Id).ToList();
         }
@@ -108,6 +108,41 @@ namespace IczpNet.Chat.ChatObjects
             var idList = await AsyncExecuter.ToListAsync(query);
 
             return await CreateRoomAsync(name, idList, null);
+        }
+
+        public virtual Task<ChatObject> CreateShopKeeperAsync(string name)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual Task<ChatObject> CreateShopWaiterAsync(string name)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual Task<ChatObject> CreateRobotAsync(string name)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual Task<ChatObject> CreateSquareAsync(string name)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual Task<ChatObject> CreateSubscriptionAsync(string name)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual Task<ChatObject> CreateOfficialAsync(string name)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual Task<ChatObject> CreateAnonymousAsync(string name)
+        {
+            throw new NotImplementedException();
         }
     }
 }

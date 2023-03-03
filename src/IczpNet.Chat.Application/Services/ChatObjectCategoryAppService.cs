@@ -31,6 +31,7 @@ namespace IczpNet.Chat.ChatObjectCategorys
 
             return (await Repository.GetQueryableAsync())
                 //.WhereIf(input.Depth.HasValue, (x) => x.Depth == input.Depth)
+                .WhereIf(!input.ChatObjectTypeId.IsNullOrWhiteSpace(), (x) => x.ChatObjectTypeId == input.ChatObjectTypeId)
                 .WhereIf(input.IsEnabledParentId, (x) => x.ParentId == input.ParentId)
                 .WhereIf(!string.IsNullOrWhiteSpace(input.Keyword), x => x.Name.Contains(input.Keyword));
 

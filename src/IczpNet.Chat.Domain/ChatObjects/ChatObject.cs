@@ -24,11 +24,11 @@ namespace IczpNet.Chat.ChatObjects
     {
         public List<ISimpleStateChecker<ChatObject>> StateCheckers { get; }
 
-        [StringLength(50)]
-        public virtual string TypeName { get; private set; }
+        //[StringLength(50)]
+        //public virtual string TypeName { get; private set; }
 
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public virtual long AutoId { get; }
+        //[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        //public virtual long AutoId { get; }
 
         /// <summary>
         /// SessionRecorder
@@ -161,12 +161,10 @@ namespace IczpNet.Chat.ChatObjects
         protected ChatObject()
         {
             StateCheckers = new List<ISimpleStateChecker<ChatObject>>();
-            TypeName = GetType().Name;
         }
 
         public ChatObject(string name, ChatObjectType chatObjectType, long? parentId) : base(name, parentId)
         {
-            TypeName = GetType().Name;
             StateCheckers = new List<ISimpleStateChecker<ChatObject>>();
             ChatObjectType = chatObjectType;
             ObjectType = chatObjectType.ObjectType;

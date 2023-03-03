@@ -32,6 +32,20 @@ namespace IczpNet.Chat.ChatObjects
 
         Task<ChatObject> CreateRoomByAllUsersAsync(string name);
 
+        Task<ChatObject> CreateShopKeeperAsync(string name);
+
+        Task<ChatObject> CreateShopWaiterAsync(string name);
+
+        Task<ChatObject> CreateRobotAsync(string name);
+
+        Task<ChatObject> CreateSquareAsync(string name);
+
+        Task<ChatObject> CreateSubscriptionAsync(string name);
+
+        Task<ChatObject> CreateOfficialAsync(string name);
+
+        Task<ChatObject> CreateAnonymousAsync(string name);
+
         //Task<ChatObjectInfo> GetGroupAssistantAsync();
 
     }

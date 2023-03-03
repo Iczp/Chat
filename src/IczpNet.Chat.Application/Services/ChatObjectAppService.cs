@@ -59,16 +59,6 @@ namespace IczpNet.Chat.Services
         }
 
         [HttpGet]
-        public virtual async Task<ChatObjectDetailDto> GetByAutoIdAsync(long autoId)
-        {
-            await CheckGetPolicyAsync();
-
-            var entity = Assert.NotNull(await Repository.FindAsync(x => x.AutoId == autoId), $"Entity no such by [autoId]:{autoId}");
-
-            return await MapToGetOutputDtoAsync(entity);
-        }
-
-        [HttpGet]
         public virtual async Task<ChatObjectDetailDto> GetByCodeAsync(string code)
         {
             await CheckGetPolicyAsync();

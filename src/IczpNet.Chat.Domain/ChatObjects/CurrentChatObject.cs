@@ -29,7 +29,7 @@ namespace IczpNet.Chat.ChatObjects
 
         public virtual long Id => GetId() ?? throw new Exception("Get [ChatObjectId] Exception");
 
-        public virtual long AutoId => ChatObject.AutoId;
+        //public virtual long AutoId => ChatObject.AutoId;
 
         public virtual string Name => ChatObject.Name;
 
