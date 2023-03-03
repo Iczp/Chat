@@ -16,7 +16,6 @@ namespace IczpNet.Chat.ChatObjectTypes
         [Required]
         public virtual string Name { get; set; }
 
-        [NotMapped]
         public virtual ChatObjectTypeEnums ObjectType { get; set; }
 
         [StringLength(500)]
