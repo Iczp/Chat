@@ -15,7 +15,7 @@ namespace IczpNet.Chat.SessionSections.Sessions.Dtos
 
         public virtual ChatObjectDto Owner { get; set; }
 
-        public virtual int MemberCount { get; set; }
+        //public virtual int MemberCount { get; set; }
 
         public virtual int MessageCount { get; set; }
 
