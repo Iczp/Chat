@@ -1,11 +1,9 @@
 ﻿using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.RedEnvelopes;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.ObjectMapping;
 
@@ -13,25 +11,13 @@ namespace IczpNet.Chat.MessageSections
 {
     public class MessageSender : DomainService, IMessageSender
     {
-        protected IObjectMapper ObjectMapper { get; }
-        protected IMessageRepository Repository { get; }
-        protected IRedEnvelopeGenerator RedEnvelopeGenerator { get; }
-        protected IContentResolver ContentResolver { get; }
-        protected IMessageManager MessageManager { get; }
+        protected IObjectMapper ObjectMapper => LazyServiceProvider.LazyGetRequiredService<IObjectMapper>();
+        protected IMessageRepository Repository => LazyServiceProvider.LazyGetRequiredService<IMessageRepository>();
+        protected IRedEnvelopeGenerator RedEnvelopeGenerator => LazyServiceProvider.LazyGetRequiredService<IRedEnvelopeGenerator>();
+        protected IContentResolver ContentResolver => LazyServiceProvider.LazyGetRequiredService<IContentResolver>();
+        protected IMessageManager MessageManager => LazyServiceProvider.LazyGetRequiredService<IMessageManager>();
 
-        public MessageSender(
-            IMessageManager messageManager,
-            IRedEnvelopeGenerator redEnvelopeGenerator,
-            IContentResolver contentResolver,
-            IMessageRepository repository,
-            IObjectMapper objectMapper)
-        {
-            MessageManager = messageManager;
-            RedEnvelopeGenerator = redEnvelopeGenerator;
-            ContentResolver = contentResolver;
-            Repository = repository;
-            ObjectMapper = objectMapper;
-        }
+        public MessageSender() { }
 
         public virtual Task<MessageInfo<CmdContentInfo>> SendCmdMessageAsync(MessageInput<CmdContentInfo> input)
         {

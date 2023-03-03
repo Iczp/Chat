@@ -10,23 +10,24 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.ChatObjects
 {
     public class ChatObjectManager : TreeManager<ChatObject, long, ChatObjectInfo>, IChatObjectManager
     {
         protected IChatObjectTypeManager ChatObjectTypeManager { get; }
-        protected IMessageSender MessageSender => LazyServiceProvider.LazyGetRequiredService<IMessageSender>();
-        protected IUnitOfWorkManager UnitOfWorkManager => LazyServiceProvider.LazyGetRequiredService<IUnitOfWorkManager>();
-        protected IUnitOfWork CurrentUnitOfWork => UnitOfWorkManager?.Current;
-        protected ISessionGenerator SessionGenerator => LazyServiceProvider.LazyGetRequiredService<ISessionGenerator>();
+        protected IMessageSender MessageSender { get; }
+        protected ISessionGenerator SessionGenerator { get; }
 
         public ChatObjectManager(
             IChatObjectRepository repository,
-            IChatObjectTypeManager chatObjectTypeManager) : base(repository)
+            IChatObjectTypeManager chatObjectTypeManager,
+            IMessageSender messageSender,
+            ISessionGenerator sessionGenerator) : base(repository)
         {
             ChatObjectTypeManager = chatObjectTypeManager;
+            MessageSender = messageSender;
+            SessionGenerator = sessionGenerator;
         }
 
         public virtual async Task<List<ChatObject>> GetListByUserId(Guid userId)

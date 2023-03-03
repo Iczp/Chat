@@ -19,28 +19,14 @@ namespace IczpNet.Chat.SessionSections.Sessions
 {
     public class SessionGenerator : DomainService, ISessionGenerator
     {
-        protected IMessageRepository MessageRepository { get; }
-        protected IRepository<Session, Guid> SessionRepository { get; }
-        protected IRepository<ReadedRecorder, Guid> ReadedRecorderRepository { get; }
-        protected ISessionRecorder SessionRecorder { get; }
-        protected IChannelResolver ChannelResolver { get; }
-        protected ISessionUnitManager SessionUnitManager { get; }
+        protected IMessageRepository MessageRepository => LazyServiceProvider.LazyGetRequiredService<IMessageRepository>();
+        protected IRepository<Session, Guid> SessionRepository => LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
+        protected IRepository<ReadedRecorder, Guid> ReadedRecorderRepository => LazyServiceProvider.LazyGetRequiredService<IRepository<ReadedRecorder, Guid>>();
+        protected ISessionRecorder SessionRecorder => LazyServiceProvider.LazyGetRequiredService<ISessionRecorder>();
+        protected IChannelResolver ChannelResolver => LazyServiceProvider.LazyGetRequiredService<IChannelResolver>();
+        protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
 
-        public SessionGenerator(
-            IMessageRepository messageRepository,
-            IRepository<Session, Guid> sessionRepository,
-            ISessionRecorder sessionRecorder,
-            IRepository<ReadedRecorder, Guid> readedRecorderRepository,
-            IChannelResolver channelResolver,
-            ISessionUnitManager sessionUnitManager)
-        {
-            MessageRepository = messageRepository;
-            SessionRepository = sessionRepository;
-            SessionRecorder = sessionRecorder;
-            ReadedRecorderRepository = readedRecorderRepository;
-            ChannelResolver = channelResolver;
-            SessionUnitManager = sessionUnitManager;
-        }
+        public SessionGenerator() { }
 
         protected virtual Task<Guid> MakeSesssionIdAsync(string input)
         {
