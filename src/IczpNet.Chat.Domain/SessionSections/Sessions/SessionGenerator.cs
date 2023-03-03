@@ -1,8 +1,6 @@
-﻿using IczpNet.AbpCommons;
-using IczpNet.Chat.ChatObjects;
+﻿using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
-using IczpNet.Chat.SessionSections.ReadedRecorders;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
@@ -21,8 +19,6 @@ namespace IczpNet.Chat.SessionSections.Sessions
     {
         protected IMessageRepository MessageRepository => LazyServiceProvider.LazyGetRequiredService<IMessageRepository>();
         protected IRepository<Session, Guid> SessionRepository => LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
-        protected IRepository<ReadedRecorder, Guid> ReadedRecorderRepository => LazyServiceProvider.LazyGetRequiredService<IRepository<ReadedRecorder, Guid>>();
-        protected ISessionRecorder SessionRecorder => LazyServiceProvider.LazyGetRequiredService<ISessionRecorder>();
         protected IChannelResolver ChannelResolver => LazyServiceProvider.LazyGetRequiredService<IChannelResolver>();
         protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
 
