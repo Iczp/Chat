@@ -16,21 +16,22 @@ namespace IczpNet.Chat.SessionSections.Sessions
         protected ISessionUnitRepository Repository { get; }
         protected IRepository<ReadedRecorder, Guid> ReadedRecorderRepository { get; }
         protected IMessageRepository MessageRepository { get; }
-        protected IDistributedCache<List<SessionUnitInfo>, Guid> SessionUnitCache { get; }
+        protected IDistributedCache<List<SessionUnitInfo>, Guid> UnitListCache { get; }
+        protected IDistributedCache<string, Guid> UnitCountCache { get; }
 
         public SessionUnitManager(
             ISessionUnitRepository repository,
             IRepository<ReadedRecorder, Guid> readedRecorderRepository,
             IMessageRepository messageRepository,
-            IDistributedCache<List<SessionUnitInfo>, Guid> sessionUnitCache)
+            IDistributedCache<List<SessionUnitInfo>, Guid> unitListCache,
+            IDistributedCache<string, Guid> unitCountCache)
         {
             Repository = repository;
             ReadedRecorderRepository = readedRecorderRepository;
             MessageRepository = messageRepository;
-            SessionUnitCache = sessionUnitCache;
+            UnitListCache = unitListCache;
+            UnitCountCache = unitCountCache;
         }
-
-
 
         protected async Task<SessionUnit> SetEntityAsync(SessionUnit entity, Action<SessionUnit> action = null)
         {
@@ -102,9 +103,14 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return badge;
         }
 
-        public Task<int> GetCountAsync(Guid sessionId)
+        public async Task<int> GetCountAsync(Guid sessionId)
         {
-            return Repository.CountAsync(x => x.SessionId == sessionId);
+            var value = await UnitCountCache.GetOrAddAsync(sessionId, async () =>
+            {
+                var count = await Repository.CountAsync(x => x.SessionId == sessionId);
+                return count.ToString();
+            });
+            return int.Parse(value);
         }
 
         public Task<int> BatchUpdateAsync(Guid sessionId, long lastMessageId)
@@ -114,33 +120,38 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public Task<List<SessionUnitInfo>> GetCacheListBySessionIdAsync(Guid sessionId)
         {
-            return SessionUnitCache.GetAsync(sessionId);
+            return UnitListCache.GetAsync(sessionId);
         }
 
         public Task<List<SessionUnitInfo>> GetOrAddCacheListBySessionIdAsync(Guid sessionId)
         {
-            return SessionUnitCache.GetOrAddAsync(sessionId, () => GetListBySessionIdAsync(sessionId));
+            return UnitListCache.GetOrAddAsync(sessionId, () => GetListBySessionIdAsync(sessionId));
         }
 
         public async Task SetCacheListBySessionIdAsync(Guid sessionId)
         {
             var sessionUnitInfoList = await GetListBySessionIdAsync(sessionId);
-            await SessionUnitCache.SetAsync(sessionId, sessionUnitInfoList);
+            await UnitListCache.SetAsync(sessionId, sessionUnitInfoList);
         }
 
         public async Task<List<SessionUnitInfo>> GetListBySessionIdAsync(Guid sessionId)
         {
-            return (await Repository.GetQueryableAsync())
-            .Where(x => x.SessionId == sessionId)
-            .Select(x => new SessionUnitInfo()
-            {
-                Id = x.Id,
-                SessionId = x.SessionId,
-                DestinationId = x.DestinationId,
-                OwnerId = x.OwnerId,
-                DestinationObjectType = x.DestinationObjectType,
-            })
-            .ToList();
+
+            var list = (await Repository.GetQueryableAsync())
+                .Where(x => x.SessionId == sessionId)
+                .Select(x => new SessionUnitInfo()
+                {
+                    Id = x.Id,
+                    SessionId = x.SessionId,
+                    DestinationId = x.DestinationId,
+                    OwnerId = x.OwnerId,
+                    DestinationObjectType = x.DestinationObjectType,
+                })
+                .ToList();
+
+            await UnitCountCache.SetAsync(sessionId, list.Count.ToString());
+
+            return list;
         }
     }
 }
