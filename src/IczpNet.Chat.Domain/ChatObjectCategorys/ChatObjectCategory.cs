@@ -19,8 +19,10 @@ namespace IczpNet.Chat.ChatObjectCategorys
 
         public override void SetParent(ChatObjectCategory parent)
         {
-            Assert.If(Parent.ChatObjectTypeId != ChatObjectTypeId, $"不是父级的聊天对象[ChatObjectTypeId]：'{Parent.ChatObjectTypeId}','{ChatObjectTypeId}'");
-
+            if (Parent != null)
+            {
+                Assert.If(Parent.ChatObjectTypeId != ChatObjectTypeId, $"不是父级的聊天对象[ChatObjectTypeId]：'{Parent.ChatObjectTypeId}','{ChatObjectTypeId}'");
+            }
             base.SetParent(parent);
         }
     }
