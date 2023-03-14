@@ -6,6 +6,7 @@ using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
 using Volo.Abp.Identity;
 using Volo.Abp.FluentValidation;
+using IczpNet.Pusher;
 
 namespace IczpNet.Chat;
 [DependsOn(
@@ -18,6 +19,8 @@ namespace IczpNet.Chat;
 [DependsOn(typeof(AbpTreesApplicationModule))]
 [DependsOn(typeof(AbpIdentityApplicationModule))]
 [DependsOn(typeof(AbpFluentValidationModule))]
+[DependsOn(typeof(PusherApplicationModule))]
+
 public class ChatApplicationModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)

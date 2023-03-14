@@ -1,7 +1,7 @@
 using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
-using IczpNet.Chat.ShortIds;
 using IczpNet.Pusher;
+using IczpNet.Pusher.ShortIds;
 using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Tasks;
 using Volo.Abp;
@@ -22,7 +22,7 @@ namespace IczpNet.Chat;
 [DependsOn(typeof(AbpTreesDomainModule))]
 //[DependsOn(typeof(AbpIdentityDomainModule))]
 [DependsOn(typeof(AbpPermissionManagementDomainIdentityModule))]
-[DependsOn(typeof(IczpNetPusherModule))]
+[DependsOn(typeof(PusherDomainModule))]
 public class ChatDomainModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
@@ -36,7 +36,7 @@ public class ChatDomainModule : AbpModule
 
         Configure<ShortIdOptions>(options =>
         {
-            options.Length = 10;
+            options.Length = 16;
             options.UseNumbers = false;
             options.UseSpecialCharacters = false;
         });

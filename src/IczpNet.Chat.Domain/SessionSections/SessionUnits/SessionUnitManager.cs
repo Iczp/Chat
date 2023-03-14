@@ -90,8 +90,6 @@ namespace IczpNet.Chat.SessionSections.Sessions
                     //!x.IsRollbacked &&
                     d.Id > x.ReadedMessageId &&
                     d.SenderId != x.OwnerId &&
-
-
                     (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
                     (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
                     (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime))
