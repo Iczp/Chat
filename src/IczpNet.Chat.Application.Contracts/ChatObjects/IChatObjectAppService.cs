@@ -19,6 +19,9 @@ namespace IczpNet.Chat.ChatObjects
         ITreeAppService<long, ChatObjectInfo>
     {
         Task<PagedResultDto<ChatObjectDto>> GetListByUserIdAsync(Guid userId, int maxResultCount = 10, int skipCount = 0, string sorting = null);
+
+        Task<PagedResultDto<ChatObjectDto>> GetListByCurrentUserAsync(int maxResultCount = 10, int skipCount = 0, string sorting = null);
+
         Task<ChatObjectDetailDto> GetByCodeAsync(string code);
 
     }

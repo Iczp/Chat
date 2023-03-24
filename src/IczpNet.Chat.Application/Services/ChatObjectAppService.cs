@@ -5,6 +5,7 @@ using IczpNet.Chat.ChatObjectCategorys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.RoomSections.Rooms.Dtos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -13,6 +14,7 @@ using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Users;
 
 namespace IczpNet.Chat.Services
 {
@@ -78,6 +80,13 @@ namespace IczpNet.Chat.Services
             return await GetPagedResultAsync(query, maxResultCount, skipCount, sorting);
         }
 
+        [HttpGet]
+        [Authorize]
+        public virtual Task<PagedResultDto<ChatObjectDto>> GetListByCurrentUserAsync(int maxResultCount = 10, int skipCount = 0, string sorting = null)
+        {
+            return GetListByUserIdAsync(CurrentUser.GetId(), maxResultCount, skipCount, sorting);
+        }
+
         protected virtual async Task<PagedResultDto<ChatObjectDto>> GetPagedResultAsync(IQueryable<ChatObject> query, int maxResultCount = 10, int skipCount = 0, string sorting = null)
         {
             var totalCount = await AsyncExecuter.CountAsync(query);
@@ -116,7 +125,7 @@ namespace IczpNet.Chat.Services
         }
 
         [HttpPost]
-        public async Task<ChatObjectDto> CreateRoomAsync(RoomCreateInput input)
+        public virtual async Task<ChatObjectDto> CreateRoomAsync(RoomCreateInput input)
         {
             var room = await ChatObjectManager.CreateRoomAsync(input.Name, input.ChatObjectIdList, input.OwnerId);
 
@@ -124,11 +133,13 @@ namespace IczpNet.Chat.Services
         }
 
         [HttpPost]
-        public async Task<ChatObjectDto> CreateRoomByAllUsersAsync(string name)
+        public virtual async Task<ChatObjectDto> CreateRoomByAllUsersAsync(string name)
         {
             var room = await ChatObjectManager.CreateRoomByAllUsersAsync(name);
 
             return ObjectMapper.Map<ChatObject, ChatObjectDto>(room);
         }
+
+       
     }
 }
