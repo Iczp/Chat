@@ -14,7 +14,12 @@ namespace IczpNet.Chat.ChatObjectCategorys
             ChatObjectCategoryCreateInput,
             ChatObjectCategoryUpdateInput>
         ,
-        ITreeAppService<Guid, ChatObjectCategoryInfo>
+        ITreeAppService<ChatObjectCategoryDetailDto,
+            ChatObjectCategoryDto,
+            Guid,
+            ChatObjectCategoryGetListInput,
+            ChatObjectCategoryCreateInput,
+            ChatObjectCategoryUpdateInput, ChatObjectCategoryInfo>
     {
     }
 }

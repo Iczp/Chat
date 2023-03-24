@@ -21,8 +21,8 @@
 
 	<ItemGroup>
 		<PackageReference Include="IczpNet.AbpCommons.MongoDB" Version="0.1.4" />
-		<PackageReference Include="Volo.Abp.Identity.MongoDB" Version="7.0.2" />
-		<PackageReference Include="Volo.Abp.MongoDB" Version="7.0.2" />
+		<PackageReference Include="Volo.Abp.Identity.MongoDB" Version="7.1.0" />
+		<PackageReference Include="Volo.Abp.MongoDB" Version="7.1.0" />
 		<ProjectReference Include="..\IczpNet.Chat.Domain\IczpNet.Chat.Domain.csproj" />
 	</ItemGroup>
 

@@ -16,7 +16,13 @@ namespace IczpNet.Chat.ChatObjects
             ChatObjectCreateInput,
             ChatObjectUpdateInput>
         ,
-        ITreeAppService<long, ChatObjectInfo>
+        ITreeAppService<
+            ChatObjectDetailDto,
+            ChatObjectDto,
+            long,
+            ChatObjectGetListInput,
+            ChatObjectCreateInput,
+            ChatObjectUpdateInput, ChatObjectInfo>
     {
         Task<PagedResultDto<ChatObjectDto>> GetListByUserIdAsync(Guid userId, int maxResultCount = 10, int skipCount = 0, string sorting = null);
 

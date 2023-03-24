@@ -26,7 +26,7 @@ namespace IczpNet.Chat.BaseAppServices
             TUpdateInput,
             TTreeInfo>
         ,
-        ITreeAppService<TKey, TTreeInfo>
+        ITreeAppService<TGetOutputDto, TGetListOutputDto, TKey, TGetListInput, TCreateInput, TUpdateInput, TTreeInfo>
         where TKey : struct
         where TEntity : class, ITreeEntity<TEntity, TKey>
         where TGetOutputDto : IEntityDto<TKey>
