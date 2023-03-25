@@ -79,9 +79,9 @@ namespace IczpNet.Chat.SessionServices
         }
 
         [HttpPost]
-        public Task<DateTime?> HandlRequestAsync(HandlRequestInput input)
+        public Task<DateTime?> HandleRequestAsync(HandleRequestInput input)
         {
-            return SessionManager.HandlRequestAsync(input.FriendshipRequestId, input.IsAgreed, input.HandlMessage);
+            return SessionManager.HandleRequestAsync(input.FriendshipRequestId, input.IsAgreed, input.HandleMessage);
         }
     }
 }

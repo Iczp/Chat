@@ -46,7 +46,7 @@ namespace IczpNet.Chat.SessionSections.FriendshipRequests
             Message = message;
         }
 
-        private void HandlRequest(bool isAgreed, string handlMessage)
+        private void HandleRequest(bool isAgreed, string handlMessage)
         {
             IsAgreed = isAgreed;
             IsHandled = true;
@@ -56,11 +56,11 @@ namespace IczpNet.Chat.SessionSections.FriendshipRequests
 
         public virtual void DisagreeRequest(string handlMessage)
         {
-            HandlRequest(false, handlMessage);
+            HandleRequest(false, handlMessage);
         }
         public virtual void AgreeRequest(string handlMessage)
         {
-            HandlRequest(true, handlMessage);
+            HandleRequest(true, handlMessage);
         }
 
         public List<Guid> GetFriendshipIdList()

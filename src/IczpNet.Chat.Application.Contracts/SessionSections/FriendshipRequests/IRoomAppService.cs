@@ -14,5 +14,5 @@ public interface IFriendshipRequestAppService :
         FriendshipRequestCreateInput,
         FriendshipRequestUpdateInput>
 {
-    Task<DateTime?> HandlRequestAsync(HandlRequestInput input);
+    Task<DateTime?> HandleRequestAsync(HandleRequestInput input);
 }

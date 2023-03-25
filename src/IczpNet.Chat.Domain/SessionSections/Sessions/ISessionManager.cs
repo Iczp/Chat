@@ -20,7 +20,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         Task<DateTime> DeleteFriendshipAsync(long ownerId, long destinationId);
 
-        Task<DateTime?> HandlRequestAsync(Guid friendshipRequestId, bool isAgreed, string handlMessage);
+        Task<DateTime?> HandleRequestAsync(Guid friendshipRequestId, bool isAgreed, string handlMessage);
 
         Task<OpenedRecorder> SetOpenedAsync(long ownerId, long destinationId, long messageId, string deviceId);
 

@@ -102,7 +102,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
             );
         }
 
-        public async Task<DateTime?> HandlRequestAsync(Guid friendshipRequestId, bool isAgreed, string handlMessage)
+        public async Task<DateTime?> HandleRequestAsync(Guid friendshipRequestId, bool isAgreed, string handleMessage)
         {
             var friendshipRequest = await FriendshipRequestRepository.GetAsync(friendshipRequestId);
 
@@ -114,11 +114,11 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
                 await CreateFriendshipAsync(friendshipRequest.Destination.Id, friendshipRequest.OwnerId, IsPassive: false, friendshipRequest.Id);
 
-                friendshipRequest.AgreeRequest(handlMessage);
+                friendshipRequest.AgreeRequest(handleMessage);
             }
             else
             {
-                friendshipRequest.DisagreeRequest(handlMessage);
+                friendshipRequest.DisagreeRequest(handleMessage);
             }
             await FriendshipRequestRepository.UpdateAsync(friendshipRequest, autoSave: true);
 
