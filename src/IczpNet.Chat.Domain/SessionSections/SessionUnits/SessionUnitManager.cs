@@ -88,7 +88,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
                 {
                     Badge = x.Session.MessageList.Count(d =>
                     //!x.IsRollbacked &&
-                    d.Id > x.ReadedMessageId &&
+                    (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
                     d.SenderId != x.OwnerId &&
                     (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
                     (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&

@@ -1,6 +1,7 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
@@ -9,7 +10,9 @@ using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using IczpNet.Chat.Specifications;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Pipelines.Sockets.Unofficial.Buffers;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -20,18 +23,12 @@ using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
+using Volo.Abp.Users;
 
 namespace IczpNet.Chat.SessionServices;
 
 public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 {
-    protected IRepository<Friendship, Guid> FriendshipRepository { get; }
-    protected IRepository<Session, Guid> SessionRepository { get; }
-    protected ISessionUnitRepository Repository { get; }
-    protected IMessageRepository MessageRepository { get; }
-    protected ISessionManager SessionManager { get; }
-    protected ISessionUnitManager SessionUnitManager { get; }
-    protected ISessionGenerator SessionGenerator { get; }
     public virtual string GetListPolicyName { get; private set; }
     public virtual string GetPolicyName { get; private set; }
     public virtual string GetDetailPolicyName { get; private set; }
@@ -41,6 +38,16 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     public virtual string ClearMessagePolicyName { get; private set; }
     public virtual string DeleteMessagePolicyName { get; private set; }
 
+    protected IRepository<Friendship, Guid> FriendshipRepository { get; }
+    protected IRepository<Session, Guid> SessionRepository { get; }
+    protected ISessionUnitRepository Repository { get; }
+    protected IMessageRepository MessageRepository { get; }
+    protected ISessionManager SessionManager { get; }
+    protected ISessionUnitManager SessionUnitManager { get; }
+    protected ISessionGenerator SessionGenerator { get; }
+    protected IChatObjectManager ChatObjectManager { get; }
+
+
     public SessionUnitAppService(
         IRepository<Friendship, Guid> chatObjectRepository,
         ISessionManager sessionManager,
@@ -48,7 +55,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         IRepository<Session, Guid> sessionRepository,
         IMessageRepository messageRepository,
         ISessionUnitRepository repository,
-        ISessionUnitManager sessionUnitManager)
+        ISessionUnitManager sessionUnitManager,
+        IChatObjectManager chatObjectManager)
     {
         FriendshipRepository = chatObjectRepository;
         SessionManager = sessionManager;
@@ -57,6 +65,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         MessageRepository = messageRepository;
         Repository = repository;
         SessionUnitManager = sessionUnitManager;
+        ChatObjectManager = chatObjectManager;
     }
 
     protected override Task CheckPolicyAsync(string policyName)
@@ -399,9 +408,39 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     }
 
     [HttpGet]
-    public Task<int> GetBadgeAsync(long ownerId, bool? isImmersed = null)
+    public async Task<BadgeDto> GetBadgeAsync(long ownerId, bool? isImmersed = null)
     {
-        return SessionUnitManager.GetBadgeAsync(ownerId, isImmersed); ;
+        var badge = await SessionUnitManager.GetBadgeAsync(ownerId, isImmersed);
+
+        var chatObjectInfo = await ChatObjectManager.GetItemByCacheAsync(ownerId);
+
+        return new BadgeDto()
+        {
+            AppUserId = chatObjectInfo?.AppUserId,
+            ChatObjectId = ownerId,
+            Badge = badge
+        };
+    }
+
+    [HttpGet]
+    public async Task<List<BadgeDto>> GetBadgeByUserIdAsync(Guid userId, bool? isImmersed = null)
+    {
+        var chatObjectIdList = await ChatObjectManager.GetIdListByUserId(userId);
+
+        var result = new List<BadgeDto>();
+
+        foreach (var chatObjectId in chatObjectIdList)
+        {
+            result.Add(await GetBadgeAsync(chatObjectId, isImmersed));
+        }
+        return result;
+    }
+
+    [HttpGet]
+    [Authorize]
+    public Task<List<BadgeDto>> GetBadgeByCurrentUserAsync(bool? isImmersed = null)
+    {
+        return GetBadgeByUserIdAsync(CurrentUser.GetId(), isImmersed);
     }
 
     [HttpGet]

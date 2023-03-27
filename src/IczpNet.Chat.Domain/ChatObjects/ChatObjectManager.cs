@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.Caching;
 
 namespace IczpNet.Chat.ChatObjects
 {
@@ -18,16 +19,18 @@ namespace IczpNet.Chat.ChatObjects
         protected IChatObjectTypeManager ChatObjectTypeManager { get; }
         protected IMessageSender MessageSender { get; }
         protected ISessionGenerator SessionGenerator { get; }
-
+        protected IDistributedCache<List<long>, Guid> UserChatObjectCache { get; }
         public ChatObjectManager(
             IChatObjectRepository repository,
             IChatObjectTypeManager chatObjectTypeManager,
             IMessageSender messageSender,
-            ISessionGenerator sessionGenerator) : base(repository)
+            ISessionGenerator sessionGenerator,
+            IDistributedCache<List<long>, Guid> userChatObjectCache) : base(repository)
         {
             ChatObjectTypeManager = chatObjectTypeManager;
             MessageSender = messageSender;
             SessionGenerator = sessionGenerator;
+            UserChatObjectCache = userChatObjectCache;
         }
 
         public virtual async Task<List<ChatObject>> GetListByUserId(Guid userId)
@@ -35,9 +38,15 @@ namespace IczpNet.Chat.ChatObjects
             return await Repository.GetListAsync(x => x.AppUserId == userId);
         }
 
-        public virtual async Task<List<long>> GetIdListByUserId(Guid userId)
+        public virtual Task<List<long>> GetIdListByUserId(Guid userId)
         {
-            return (await Repository.GetQueryableAsync()).Where(x => x.AppUserId == userId).Select(x => x.Id).ToList();
+            return UserChatObjectCache.GetOrAddAsync(userId, async () =>
+            {
+                return (await Repository.GetQueryableAsync())
+                .Where(x => x.AppUserId == userId)
+                .Select(x => x.Id)
+                .ToList();
+            });
         }
 
         public virtual Task<bool> IsAllowJoinRoomAsync(ChatObjectTypeEnums? objectType)

@@ -26,7 +26,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         public virtual bool IsImportant { get;  set; }
 
-        public virtual long ReadedMessageId { get; set; }
+        public virtual long? ReadedMessageId { get; set; }
 
         public virtual int ReminderAllCount { get; set; }
 

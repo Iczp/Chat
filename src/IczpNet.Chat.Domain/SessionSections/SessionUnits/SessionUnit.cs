@@ -112,14 +112,17 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         [NotMapped]
         public virtual int ReminderMeCount => GetRemindMeCount();
 
+        //[NotMapped]
+        //public virtual int Badge => Session.MessageList.Count(x =>
+        //        //!x.IsRollbacked &&
+        //        (ReadedMessageId == null || x.Id > ReadedMessageId) &&
+        //        x.SenderId != OwnerId &&
+        //        (!HistoryFristTime.HasValue || x.CreationTime > HistoryFristTime) &&
+        //        (!HistoryLastTime.HasValue || x.CreationTime < HistoryLastTime) &&
+        //        (!ClearTime.HasValue || x.CreationTime > ClearTime));
+
         [NotMapped]
-        public virtual int Badge => Session.MessageList.Count(x =>
-                //!x.IsRollbacked &&
-                x.Id > ReadedMessageId &&
-                x.SenderId != OwnerId &&
-                (!HistoryFristTime.HasValue || x.CreationTime > HistoryFristTime) &&
-                (!HistoryLastTime.HasValue || x.CreationTime < HistoryLastTime) &&
-                (!ClearTime.HasValue || x.CreationTime > ClearTime));// GetBadge();
+        public virtual int Badge => GetBadge();
 
         [NotMapped]
         public virtual int ReminderCount => GetReminderCount();
@@ -165,7 +168,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         internal void SetReaded(long messageAutoId, bool isForce = false)
         {
-            if (isForce || messageAutoId > ReadedMessageId)
+            if (isForce || messageAutoId > ReadedMessageId.GetValueOrDefault())
             {
                 ReadedMessageId = messageAutoId;
             }

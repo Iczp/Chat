@@ -1,6 +1,7 @@
 ﻿using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 
@@ -34,7 +35,11 @@ public interface ISessionUnitAppService
 
     Task<MessageDto> GetMessageAsync(Guid id, long messageId);
 
-    Task<int> GetBadgeAsync(long ownerId, bool? isImmersed = null);
+    Task<BadgeDto> GetBadgeAsync(long ownerId, bool? isImmersed = null);
+
+    Task<List<BadgeDto>> GetBadgeByUserIdAsync(Guid userId, bool? isImmersed = null);
+
+    Task<List<BadgeDto>> GetBadgeByCurrentUserAsync(bool? isImmersed = null);
 
     Task<PagedResultDto<SessionUnitOwnerDto>> GetSessionMemberListAsync(Guid id, SessionUnitGetSessionMemberListInput input);
 }
