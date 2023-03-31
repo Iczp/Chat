@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.ChatObjects.Dtos;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 using IczpNet.Chat.SessionSections.SessionTagDtos.Dtos;
 using System;
@@ -15,6 +16,10 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
         public virtual Guid SessionId { get; set; }
 
         public virtual ChatObjectDto Owner { get; set; }
+
+        public virtual long? InviterId { get; set; }
+
+        public virtual JoinWays? JoinWay { get; set; }
 
         public virtual List<SessionRoleDto> RoleList { get; set; }
 
