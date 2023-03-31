@@ -1,4 +1,6 @@
-﻿using IczpNet.AbpTrees;
+﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons.DataFilters;
+using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
@@ -16,6 +18,8 @@ namespace IczpNet.Chat.ChatObjects
 {
     public class ChatObjectManager : TreeManager<ChatObject, long, ChatObjectInfo>, IChatObjectManager
     {
+        protected virtual string GroupAssistantCode => "GroupAssistant";
+
         protected IChatObjectTypeManager ChatObjectTypeManager { get; }
         protected IMessageSender MessageSender { get; }
         protected ISessionGenerator SessionGenerator { get; }
@@ -31,6 +35,11 @@ namespace IczpNet.Chat.ChatObjects
             MessageSender = messageSender;
             SessionGenerator = sessionGenerator;
             UserChatObjectCache = userChatObjectCache;
+        }
+
+        public async Task<ChatObject> GetGroupAssistantAsync()
+        {
+            return Assert.NotNull(await Repository.FindAsync(x => x.Code == GroupAssistantCode), $"Entity no such by [code]:{GroupAssistantCode}");
         }
 
         public virtual async Task<List<ChatObject>> GetListByUserId(Guid userId)

@@ -51,7 +51,7 @@ namespace IczpNet.Chat.ChatObjects
 
         public virtual Guid? AppUserId { get; protected set; }
 
-        public virtual ChatObjectTypeEnums? ObjectType { get; protected set; }
+        public virtual ChatObjectTypeEnums? ObjectType { get; internal protected set; }
 
         [StringLength(500)]
         public override string Description { get; set; }

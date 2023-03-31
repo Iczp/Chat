@@ -38,21 +38,26 @@ namespace IczpNet.Chat.ChatObjects
         {
             using (CurrentTenant.Change(context?.TenantId))
             {
-                //await CreateAsync();
+                await CreateAsync();
             }
         }
 
         private async Task CreateAsync()
         {
-            if(!await Repository.AnyAsync(x=>x.Code== "GroupAssistant"))
+            if (!await Repository.AnyAsync(x => x.Code == "GroupAssistant"))
             {
                 var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Robot);
-                var robot = new ChatObject( "群助手", chatObjectType, null)
+
+                var robot = new ChatObject("群助手", chatObjectType, null)
                 {
                     Code = "GroupAssistant",
-                    Description = "我是机器人：加群"
+                    Description = "我是机器人：加群",
+                    IsStatic = true,
+                    ObjectType = ChatObjectTypeEnums.Robot,
                 };
                 await Repository.InsertAsync(robot);
+
+                Logger.LogDebug($"Cteate chatObject by code:{robot.Code}");
             }
         }
     }
