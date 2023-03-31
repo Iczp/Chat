@@ -26,9 +26,9 @@ public interface ISessionUnitAppService
 
     Task<SessionUnitDto> SetImmersedAsync(Guid id, bool isImmersed);
 
-    Task<SessionUnitDto> RemoveSessionAsync(Guid id);
+    Task<SessionUnitDto> RemoveAsync(Guid id);
 
-    Task<SessionUnitDto> KillSessionAsync(Guid id);
+    Task<SessionUnitDto> KillAsync(Guid id);
 
     Task<SessionUnitDto> ClearMessageAsync(Guid id);
 
@@ -45,4 +45,6 @@ public interface ISessionUnitAppService
     Task<List<BadgeDto>> GetBadgeByCurrentUserAsync(bool? isImmersed = null);
 
     Task<PagedResultDto<SessionUnitOwnerDto>> GetSessionMemberListAsync(Guid id, SessionUnitGetSessionMemberListInput input);
+
+    //Task<SessionUnitOwnerDto> GetSessionMemberAsync(Guid sessionId, Guid ownerId);
 }

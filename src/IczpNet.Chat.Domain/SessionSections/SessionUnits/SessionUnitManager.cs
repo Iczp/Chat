@@ -59,14 +59,14 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return await SetEntityAsync(entity, x => x.SetImmersed(isImmersed));
         }
 
-        public Task<SessionUnit> RemoveSessionAsync(SessionUnit entity)
+        public Task<SessionUnit> RemoveAsync(SessionUnit entity)
         {
-            return SetEntityAsync(entity, x => x.RemoveSession(Clock.Now));
+            return SetEntityAsync(entity, x => x.Remove(Clock.Now));
         }
 
-        public Task<SessionUnit> KillSessionAsync(SessionUnit entity)
+        public Task<SessionUnit> KillAsync(SessionUnit entity)
         {
-            return SetEntityAsync(entity, x => x.KillSession(Clock.Now));
+            return SetEntityAsync(entity, x => x.Kill(Clock.Now));
         }
 
         public Task<SessionUnit> ClearMessageAsync(SessionUnit entity)

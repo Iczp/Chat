@@ -13,9 +13,9 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         Task<SessionUnit> SetImmersedAsync(SessionUnit entity, bool isImmersed);
 
-        Task<SessionUnit> RemoveSessionAsync(SessionUnit entity);
+        Task<SessionUnit> RemoveAsync(SessionUnit entity);
 
-        Task<SessionUnit> KillSessionAsync(SessionUnit entity);
+        Task<SessionUnit> KillAsync(SessionUnit entity);
 
         Task<SessionUnit> ClearMessageAsync(SessionUnit entity);
 

@@ -222,7 +222,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         /// removeSession 删除消息会话,不退群
         /// </summary>
         /// <param name="removeTime"></param>
-        internal void RemoveSession(DateTime removeTime)
+        internal void Remove(DateTime removeTime)
         {
             RemoveTime = removeTime;
         }
@@ -231,7 +231,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         /// 退群，但不删除会话（用于查看历史I）
         /// </summary>
         /// <param name="removeTime"></param>
-        internal void KillSession(DateTime killTime, KillTypes? killType = null, ChatObject killer = null)
+        internal void Kill(DateTime killTime, KillTypes? killType = null, ChatObject killer = null)
         {
             IsKilled = true;
             KillTime = killTime;

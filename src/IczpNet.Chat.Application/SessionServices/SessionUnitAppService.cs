@@ -12,7 +12,6 @@ using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using IczpNet.Chat.Specifications;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Pipelines.Sockets.Unofficial.Buffers;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -201,7 +200,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     public async Task<PagedResultDto<SessionUnitOwnerDto>> GetListBySessionIdAsync(SessionGetListBySessionIdInput input)
     {
         var query = (await Repository.GetQueryableAsync())
-            .Where(x => !x.IsKilled && x.SessionId == input.SessionId)
+            .Where(x =>  x.SessionId == input.SessionId)
+            .WhereIf(input.IsKilled.HasValue, x => x.IsKilled == input.IsKilled)
             .WhereIf(input.OwnerIdList.IsAny(), x => input.OwnerIdList.Contains(x.OwnerId))
             .WhereIf(input.OwnerTypeList.IsAny(), x => input.OwnerTypeList.Contains(x.Owner.ObjectType.Value))
             .WhereIf(!input.TagId.IsEmpty(), x => x.SessionUnitTagList.Any(x => x.SessionTagId == input.TagId))
@@ -329,23 +329,23 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     }
 
     [HttpPost]
-    public virtual async Task<SessionUnitDto> RemoveSessionAsync(Guid id)
+    public virtual async Task<SessionUnitDto> RemoveAsync(Guid id)
     {
         await CheckPolicyAsync(RemoveSessionPolicyName);
 
         var entity = await GetEntityAsync(id);
 
-        await SessionUnitManager.RemoveSessionAsync(entity);
+        await SessionUnitManager.RemoveAsync(entity);
 
         return await MapToDtoAsync(entity);
     }
 
     [HttpPost]
-    public virtual async Task<SessionUnitDto> KillSessionAsync(Guid id)
+    public virtual async Task<SessionUnitDto> KillAsync(Guid id)
     {
         var entity = await GetEntityAsync(id);
 
-        await SessionUnitManager.KillSessionAsync(entity);
+        await SessionUnitManager.KillAsync(entity);
 
         return await MapToDtoAsync(entity);
     }
@@ -462,6 +462,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     }
 
     [HttpGet]
+    [Obsolete("Move to GetListBySessionIdAsync")]
     public async Task<PagedResultDto<SessionUnitOwnerDto>> GetSessionMemberListAsync(Guid id, SessionUnitGetSessionMemberListInput input)
     {
         var entity = await GetEntityAsync(id);

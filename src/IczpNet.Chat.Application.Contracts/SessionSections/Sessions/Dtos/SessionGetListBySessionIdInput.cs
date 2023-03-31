@@ -13,6 +13,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
         [Required]
         public virtual Guid SessionId { get; set; }
 
+        public virtual bool? IsKilled { get; set; }
+
         public virtual List<long> OwnerIdList { get; set; }
 
         [DefaultValue(null)]
