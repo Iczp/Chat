@@ -34,6 +34,10 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public virtual ChatObjectTypeEnums? DestinationObjectType { get; protected set; }
 
+
+        /// <summary>
+        /// rename in session, is not remarks
+        /// </summary>
         [StringLength(50)]
         public virtual string Rename { get; protected set; }
 

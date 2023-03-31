@@ -24,6 +24,17 @@ namespace IczpNet.Chat.SessionServices
             FriendshipUpdateInput>,
         IFriendshipAppService
     {
+
+        protected override string CreatePolicyName { get; set; }
+        protected virtual string SetRenamePolicyName { get; set; }
+        public virtual string SetRemarksPolicyName { get; private set; }
+        public virtual string SetIsCantactsPolicyName { get; private set; }
+        public virtual string SetIsImmersedPolicyName { get; private set; }
+        public virtual string SetIsShowMemberNamePolicyName { get; private set; }
+        public virtual string SetIsShowReadNamePolicyName { get; private set; }
+        public virtual string SetBackgroundImagePolicyName { get; private set; }
+        public virtual string SetTagListPolicyName { get; private set; }
+
         protected IRepository<FriendshipTag, Guid> FriendshipTagRepository { get; }
 
         public FriendshipAppService(
@@ -47,6 +58,12 @@ namespace IczpNet.Chat.SessionServices
                 .WhereIf(input.StartCreationTime.HasValue, x => x.CreationTime < input.EndCreationTime)
                 .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Rename.Contains(input.Keyword) || x.Remarks.Contains(input.Keyword))
                 ;
+        }
+
+        [HttpPost]
+        public override Task<FriendshipDetailDto> CreateAsync(FriendshipCreateInput input)
+        {
+            return base.CreateAsync(input);
         }
 
         [RemoteService(false)]
@@ -79,24 +96,32 @@ namespace IczpNet.Chat.SessionServices
         [HttpPost]
         public async Task<string> SetRenameAsync(Guid friendshipId, string rename)
         {
+            await CheckPolicyAsync(SetRenamePolicyName);
+
             return (await UpdateAsync(friendshipId, x => x.Rename = rename)).Rename;
         }
 
         [HttpPost]
         public async Task<string> SetRemarksAsync(Guid friendshipId, string remarks)
         {
+            await CheckPolicyAsync(SetRemarksPolicyName);
+
             return (await UpdateAsync(friendshipId, x => x.Remarks = remarks)).Remarks;
         }
 
         [HttpPost]
         public async Task<bool> SetIsCantactsAsync(Guid friendshipId, bool isCantacts)
         {
+            await CheckPolicyAsync(SetIsCantactsPolicyName);
+
             return (await UpdateAsync(friendshipId, x => x.IsCantacts = isCantacts)).IsCantacts;
         }
 
         [HttpPost]
         public async Task<bool> SetIsImmersedAsync(Guid friendshipId, bool isImmersed)
         {
+            await CheckPolicyAsync(SetIsImmersedPolicyName);
+
             return (await UpdateAsync(friendshipId, x => x.IsImmersed = isImmersed)).IsImmersed;
         }
 
@@ -104,12 +129,16 @@ namespace IczpNet.Chat.SessionServices
 
         public async Task<bool> SetIsShowMemberNameAsync(Guid friendshipId, bool isShowMemberName)
         {
+            await CheckPolicyAsync(SetIsShowMemberNamePolicyName);
+
             return (await UpdateAsync(friendshipId, x => x.IsShowMemberName = isShowMemberName)).IsShowMemberName;
         }
 
         [HttpPost]
         public async Task<bool> SetIsShowReadNameAsync(Guid friendshipId, bool isShowRead)
         {
+            await CheckPolicyAsync(SetIsShowReadNamePolicyName);
+
             return (await UpdateAsync(friendshipId, x => x.IsShowRead = isShowRead)).IsShowRead;
         }
 
@@ -117,12 +146,16 @@ namespace IczpNet.Chat.SessionServices
         [HttpPost]
         public async Task<string> SetBackgroundImageAsync(Guid friendshipId, string backgroundImage)
         {
+            await CheckPolicyAsync(SetBackgroundImagePolicyName);
+
             return (await UpdateAsync(friendshipId, x => x.BackgroundImage = backgroundImage)).BackgroundImage;
         }
 
         [HttpPost]
         public async Task<List<Guid>> SetTagListAsync(Guid friendshipId, List<Guid> tagIdList)
         {
+            await CheckPolicyAsync(SetTagListPolicyName);
+
             var entity = await Repository.GetAsync(friendshipId);
 
             var tagList = new List<FriendshipTag>();

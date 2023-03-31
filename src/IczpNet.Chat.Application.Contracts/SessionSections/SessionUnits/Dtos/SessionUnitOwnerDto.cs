@@ -10,6 +10,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
     {
         public virtual Guid Id { get; set; }
 
+        public virtual string Rename { get; set; }
+
         public virtual Guid SessionId { get; set; }
 
         public virtual ChatObjectDto Owner { get; set; }

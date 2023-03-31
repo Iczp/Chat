@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.MessageSections.Messages.Dtos;
+using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using System;
 using System.Collections.Generic;
@@ -12,6 +13,8 @@ public interface ISessionUnitAppService
     Task<PagedResultDto<SessionUnitDto>> GetListAsync(SessionUnitGetListInput input);
 
     Task<PagedResultDto<SessionUnitDto>> GetListByLinqAsync(SessionUnitGetListInput input);
+
+    Task<PagedResultDto<SessionUnitOwnerDto>> GetListBySessionIdAsync(SessionGetListBySessionIdInput input);
 
     Task<SessionUnitDto> GetAsync(Guid id);
 

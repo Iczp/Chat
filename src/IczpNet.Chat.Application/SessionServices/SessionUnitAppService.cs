@@ -196,6 +196,24 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 
     }
 
+
+    [HttpGet]
+    public async Task<PagedResultDto<SessionUnitOwnerDto>> GetListBySessionIdAsync(SessionGetListBySessionIdInput input)
+    {
+        var query = (await Repository.GetQueryableAsync())
+            .Where(x => !x.IsKilled && x.SessionId == input.SessionId)
+            .WhereIf(input.OwnerIdList.IsAny(), x => input.OwnerIdList.Contains(x.OwnerId))
+            .WhereIf(input.OwnerTypeList.IsAny(), x => input.OwnerTypeList.Contains(x.Owner.ObjectType.Value))
+            .WhereIf(!input.TagId.IsEmpty(), x => x.SessionUnitTagList.Any(x => x.SessionTagId == input.TagId))
+            .WhereIf(!input.RoleId.IsEmpty(), x => x.SessionUnitRoleList.Any(x => x.SessionRoleId == input.RoleId))
+            .WhereIf(!input.JoinWay.IsEmpty(), x => x.JoinWay == input.JoinWay)
+            .WhereIf(!input.InviterId.IsEmpty(), x => x.InviterId == input.InviterId)
+            .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Owner.Name.Contains(input.Keyword))
+            ;
+
+        return await GetPagedListAsync<SessionUnit, SessionUnitOwnerDto>(query, input, q => q.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId));
+    }
+
     [HttpGet]
     public virtual async Task<PagedResultDto<SessionUnitDto>> GetListByLinqAsync(SessionUnitGetListInput input)
     {

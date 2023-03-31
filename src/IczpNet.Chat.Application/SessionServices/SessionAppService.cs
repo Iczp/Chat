@@ -143,11 +143,14 @@ namespace IczpNet.Chat.SessionServices
         }
 
         [HttpGet]
-        public async Task<PagedResultDto<SessionUnitOwnerDto>> GetSessionUnitListAsync(SessionSetUnitGetListInput input)
+        [Obsolete("Move to SessionUnitAppService.GetListBySessionIdAsync")]
+        public async Task<PagedResultDto<SessionUnitOwnerDto>> GetSessionUnitListAsync(SessionGetListBySessionIdInput input)
         {
             var query = (await Repository.GetAsync(input.SessionId))
                 .UnitList.AsQueryable()
                 .Where(x => !x.IsKilled)
+                .WhereIf(input.OwnerIdList.IsAny(), x => input.OwnerIdList.Contains(x.OwnerId))
+                .WhereIf(input.OwnerTypeList.IsAny(), x => input.OwnerTypeList.Contains(x.Owner.ObjectType.Value))
                 .WhereIf(!input.TagId.IsEmpty(), x => x.SessionUnitTagList.Any(x => x.SessionTagId == input.TagId))
                 .WhereIf(!input.RoleId.IsEmpty(), x => x.SessionUnitRoleList.Any(x => x.SessionRoleId == input.RoleId))
                 .WhereIf(!input.JoinWay.IsEmpty(), x => x.JoinWay == input.JoinWay)
