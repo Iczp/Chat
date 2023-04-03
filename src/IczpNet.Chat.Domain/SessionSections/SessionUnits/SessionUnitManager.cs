@@ -143,12 +143,18 @@ namespace IczpNet.Chat.SessionSections.Sessions
                     DestinationId = x.DestinationId,
                     OwnerId = x.OwnerId,
                     DestinationObjectType = x.DestinationObjectType,
+                    ServiceStatus = x.ServiceStatus,
                 })
                 .ToList();
 
             await UnitCountCache.SetAsync(sessionId, list.Count.ToString());
 
             return list;
+        }
+
+        public async Task RemoveCacheListBySessionIdAsync(Guid sessionId)
+        {
+            await UnitListCache.RemoveAsync(sessionId);
         }
     }
 }

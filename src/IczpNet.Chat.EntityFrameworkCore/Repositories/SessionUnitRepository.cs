@@ -57,7 +57,7 @@ namespace IczpNet.Chat.Repositories
 
             ////EF7.0  https://learn.microsoft.com/en-us/ef/core/what-is-new/ef-core-7.0/whatsnew
             return await context.SessionUnit
-                .Where(x => x.SessionId == sessionId && !x.IsDeleted)
+                .Where(x => x.SessionId == sessionId && !x.IsDeleted && x.ServiceStatus == Enums.ServiceStatus.Normal)
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(b => b.LastMessageId, b => lastMessageId)
                     .SetProperty(b => b.LastModificationTime, b => DateTime.Now)

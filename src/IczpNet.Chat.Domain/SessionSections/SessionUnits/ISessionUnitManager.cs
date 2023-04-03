@@ -35,5 +35,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         Task<List<SessionUnitInfo>> GetListBySessionIdAsync(Guid sessionId);
 
+        Task RemoveCacheListBySessionIdAsync(Guid sessionId);
+
     }
 }

@@ -15,6 +15,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public virtual long OwnerId { get; set; }
 
         public virtual long? DestinationId { get; set; }
-        
+
+        public virtual ServiceStatus ServiceStatus { get; set; }
+
     }
 }
