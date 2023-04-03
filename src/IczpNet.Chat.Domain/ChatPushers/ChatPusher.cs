@@ -63,7 +63,6 @@ namespace IczpNet.Chat.ChatPushers
         {
             await SessionUnitManager.GetOrAddCacheListBySessionIdAsync(sessionId);
 
-
             return await ExecuteAsync(commandPayload, x =>
             {
                 x.SessionId = sessionId;

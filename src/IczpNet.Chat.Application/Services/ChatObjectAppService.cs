@@ -140,6 +140,36 @@ namespace IczpNet.Chat.Services
             return ObjectMapper.Map<ChatObject, ChatObjectDto>(room);
         }
 
-       
+        [HttpPost]
+        public virtual async Task<ChatObjectDto> CreateShopKeeperAsync(string name)
+        {
+            var shopKeeper = await ChatObjectManager.CreateShopKeeperAsync(name);
+
+            return ObjectMapper.Map<ChatObject, ChatObjectDto>(shopKeeper);
+        }
+
+        [HttpPost]
+        public virtual async Task<ChatObjectDto> CreateShopWaiterAsync(long shopKeeperId, string name)
+        {
+            var shopWaiter = await ChatObjectManager.CreateShopWaiterAsync(shopKeeperId, name);
+
+            return ObjectMapper.Map<ChatObject, ChatObjectDto>(shopWaiter);
+        }
+
+        [HttpPost]
+        public virtual async Task<ChatObjectDto> CreateRobotAsync(string name)
+        {
+            var entity = await ChatObjectManager.CreateRobotAsync(name);
+
+            return ObjectMapper.Map<ChatObject, ChatObjectDto>(entity);
+        }
+
+        [HttpPost]
+        public virtual async Task<ChatObjectDto> CreateSquareAsync(string name)
+        {
+            var entity = await ChatObjectManager.CreateSquareAsync(name);
+
+            return ObjectMapper.Map<ChatObject, ChatObjectDto>(entity);
+        }
     }
 }

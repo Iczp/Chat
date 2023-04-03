@@ -4,7 +4,7 @@ using System;
 
 namespace IczpNet.Chat.ChatObjects
 {
-    public class ChatObjectInfo : TreeInfo<long>
+    public class ChatObjectInfo : TreeInfo<long>, IChatObject
     {
         public virtual string ChatObjectTypeId { get; set; }
 

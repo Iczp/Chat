@@ -16,7 +16,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         Task<Friendship> CreateFriendshipAsync(long ownerId, long destinationId, bool isPassive, Guid? friendshipRequestId);
 
-        Task<Friendship> CreateFriendshipAsync(ChatObjectInfo owner, ChatObjectInfo destination, bool isPassive, Guid? friendshipRequestId);
+        Task<Friendship> CreateFriendshipAsync(IChatObject owner, IChatObject destination, bool isPassive, Guid? friendshipRequestId);
 
         Task<DateTime> DeleteFriendshipAsync(long ownerId, long destinationId);
 

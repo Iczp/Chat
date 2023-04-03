@@ -14,7 +14,7 @@ public partial class Message
     public const string Delimiter = "/";
     protected Message() { }
 
-    public Message(ChatObjectInfo sender, ChatObjectInfo receiver, Session session) : base()
+    public Message(IChatObject sender, IChatObject receiver, Session session) : base()
     {
         //, IMessageContent messageContent
         SenderId = sender.Id;

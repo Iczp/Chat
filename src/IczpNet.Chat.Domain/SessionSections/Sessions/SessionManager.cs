@@ -76,7 +76,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return await CreateFriendshipAsync(owner, destination, IsPassive, friendshipRequestId);
         }
 
-        public async Task<Friendship> CreateFriendshipAsync(ChatObjectInfo owner, ChatObjectInfo destination, bool IsPassive, Guid? friendshipRequestId)
+        public async Task<Friendship> CreateFriendshipAsync(IChatObject owner, IChatObject destination, bool IsPassive, Guid? friendshipRequestId)
         {
             Assert.NotNull(owner, nameof(owner));
 

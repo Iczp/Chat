@@ -25,7 +25,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
     [Index(nameof(LastMessageId), IsDescending = new[] { true })]
     [Index(nameof(Sorting), nameof(LastMessageId), AllDescending = true)]
     [Index(nameof(ReadedMessageId), AllDescending = true)]
-    public class SessionUnit : BaseSessionEntity, IChatOwner<long>, ISorting
+    public class SessionUnit : BaseSessionEntity, IChatOwner<long>, ISorting, IIsStatic, IIsPublic
     {
         public virtual Guid SessionId { get; protected set; }
 
@@ -138,7 +138,10 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         /// 客服状态
         /// </summary>
         public virtual ServiceStatus ServiceStatus { get; protected set; }
-        
+
+        public virtual bool IsStatic { get; set; }
+
+        public virtual bool IsPublic { get; set; }
 
         [ForeignKey(nameof(InviterId))]
         public virtual ChatObject Inviter { get; set; }

@@ -34,7 +34,7 @@ namespace IczpNet.Chat.ChatObjects
 
         Task<ChatObject> CreateShopKeeperAsync(string name);
 
-        Task<ChatObject> CreateShopWaiterAsync(string name);
+        Task<ChatObject> CreateShopWaiterAsync(long shopKeeperId ,string name);
 
         Task<ChatObject> CreateRobotAsync(string name);
 

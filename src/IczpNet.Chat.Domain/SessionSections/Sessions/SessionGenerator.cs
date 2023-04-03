@@ -33,12 +33,12 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return Task.FromResult(new Guid(hashString));
         }
 
-        protected virtual bool IsObjectType(ChatObjectInfo chatObject, ChatObjectTypeEnums chatObjectTypeEnums)
+        protected virtual bool IsObjectType(IChatObject chatObject, ChatObjectTypeEnums chatObjectTypeEnums)
         {
             return chatObject.ObjectType.Equals(chatObjectTypeEnums) || chatObject.ChatObjectTypeId == chatObjectTypeEnums.ToString();
         }
 
-        protected virtual async Task<string> MakeSesssionKeyAsync(ChatObjectInfo sender, ChatObjectInfo receiver)
+        protected virtual async Task<string> MakeSesssionKeyAsync(IChatObject sender, IChatObject receiver)
         {
             await Task.CompletedTask;
 
@@ -57,12 +57,12 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return string.Join(":", arr);
         }
 
-        public virtual Task<Session> MakeAsync(ChatObjectInfo room)
+        public virtual Task<Session> MakeAsync(IChatObject room)
         {
             return MakeAsync(room, room);
         }
 
-        public virtual async Task<Session> MakeAsync(ChatObjectInfo sender, ChatObjectInfo receiver)
+        public virtual async Task<Session> MakeAsync(IChatObject sender, IChatObject receiver)
         {
             var sessionKey = await MakeSesssionKeyAsync(sender, receiver);
 

@@ -10,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
@@ -59,7 +58,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             UnitOfWorkManager = unitOfWorkManager;
         }
 
-        public virtual async Task<Message> CreateMessageAsync(ChatObjectInfo sender, ChatObjectInfo receiver, Func<Message, Task<IMessageContentEntity>> func)
+        public virtual async Task<Message> CreateMessageAsync(IChatObject sender, IChatObject receiver, Func<Message, Task<IMessageContentEntity>> func)
         {
             var session = await SessionGenerator.MakeAsync(sender, receiver);
 
@@ -149,7 +148,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             return await ForwardMessageAsync(source, sender, receiverIdList);
         }
 
-        public async Task<List<Message>> ForwardMessageAsync(Message source, ChatObjectInfo sender, List<long> receiverIdList)
+        public async Task<List<Message>> ForwardMessageAsync(Message source, IChatObject sender, List<long> receiverIdList)
         {
             var isSelfSender = source.Sender.Id == sender.Id;
 

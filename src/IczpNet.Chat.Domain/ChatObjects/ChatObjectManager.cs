@@ -1,4 +1,5 @@
-﻿using IczpNet.AbpCommons;
+﻿using AutoMapper.Execution;
+using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.DataFilters;
 using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjectTypes;
@@ -11,6 +12,7 @@ using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Volo.Abp.Caching;
 
@@ -94,8 +96,21 @@ namespace IczpNet.Chat.ChatObjects
 
             foreach (var memberId in memberIdList)
             {
-                session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session, memberId, room));
+                session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session, memberId, room)
+                {
+                    IsStatic = memberId == ownerId,
+                    IsPublic = true,
+                });
             }
+
+            //群组手
+            var groupAssistant = await GetGroupAssistantAsync();
+
+            session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session, groupAssistant.Id, room)
+            {
+                IsStatic = true,
+                IsPublic = false,
+            });
 
             room.OwnerSessionList.Add(session);
 
@@ -107,7 +122,7 @@ namespace IczpNet.Chat.ChatObjects
 
             await MessageSender.SendCmdMessageAsync(new MessageInput<CmdContentInfo>()
             {
-                SenderId = room.Id,
+                SenderId = groupAssistant.Id,
                 ReceiverId = room.Id,
                 Content = new CmdContentInfo()
                 {
@@ -129,24 +144,40 @@ namespace IczpNet.Chat.ChatObjects
             return await CreateRoomAsync(name, idList, null);
         }
 
-        public virtual Task<ChatObject> CreateShopKeeperAsync(string name)
+        public virtual async Task<ChatObject> CreateShopKeeperAsync(string name)
         {
-            throw new NotImplementedException();
+            var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.ShopKeeper);
+
+            var shopKeeper = await base.CreateAsync(new ChatObject(name, chatObjectType, null), isUnique: false);
+
+            return shopKeeper;
         }
 
-        public virtual Task<ChatObject> CreateShopWaiterAsync(string name)
+        public virtual async Task<ChatObject> CreateShopWaiterAsync(long shopKeeperId, string name)
         {
-            throw new NotImplementedException();
+            var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.ShopWaiter);
+
+            var shopWaiter = await base.CreateAsync(new ChatObject(name, chatObjectType, shopKeeperId), isUnique: false);
+
+            return shopWaiter;
         }
 
-        public virtual Task<ChatObject> CreateRobotAsync(string name)
+        public virtual async Task<ChatObject> CreateRobotAsync(string name)
         {
-            throw new NotImplementedException();
+            var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Robot);
+
+            var entity = await base.CreateAsync(new ChatObject(name, chatObjectType, null), isUnique: false);
+
+            return entity;
         }
 
-        public virtual Task<ChatObject> CreateSquareAsync(string name)
+        public virtual async Task<ChatObject> CreateSquareAsync(string name)
         {
-            throw new NotImplementedException();
+            var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Square);
+
+            var entity = await base.CreateAsync(new ChatObject(name, chatObjectType, null), isUnique: false);
+
+            return entity;
         }
 
         public virtual Task<ChatObject> CreateSubscriptionAsync(string name)
