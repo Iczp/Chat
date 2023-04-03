@@ -1,5 +1,6 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.Enums;
+using System;
 
 namespace IczpNet.Chat.ChatObjects
 {
@@ -7,8 +8,14 @@ namespace IczpNet.Chat.ChatObjects
     {
         long Id { get; }
 
+        long? ParentId { get; }
+
+        string Portrait { get; }
+
         string ChatObjectTypeId { get; }
 
         ChatObjectTypeEnums? ObjectType { get; }
+
+        Guid? AppUserId { get; }
     }
 }
