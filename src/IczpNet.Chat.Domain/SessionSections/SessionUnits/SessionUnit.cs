@@ -134,6 +134,12 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         /// </summary>
         public virtual long? InviterId { get; set; }
 
+        /// <summary>
+        /// 客服状态
+        /// </summary>
+        public virtual ServiceStatus ServiceStatus { get; protected set; }
+        
+
         [ForeignKey(nameof(InviterId))]
         public virtual ChatObject Inviter { get; set; }
 
