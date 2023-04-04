@@ -12,6 +12,7 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Uow;
 using System.Security.Cryptography;
+using IczpNet.AbpCommons;
 
 namespace IczpNet.Chat.SessionSections.Sessions
 {
@@ -21,6 +22,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
         protected IRepository<Session, Guid> SessionRepository => LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
         protected IChannelResolver ChannelResolver => LazyServiceProvider.LazyGetRequiredService<IChannelResolver>();
         protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
+        protected IChatObjectManager ChatObjectManager => LazyServiceProvider.LazyGetRequiredService<IChatObjectManager>();
 
         public SessionGenerator() { }
 
@@ -33,24 +35,57 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return Task.FromResult(new Guid(hashString));
         }
 
-        protected virtual bool IsObjectType(IChatObject chatObject, ChatObjectTypeEnums chatObjectTypeEnums)
+        protected virtual bool IsObjectType(ChatObjectTypeEnums input, params ChatObjectTypeEnums[] objectTypes)
         {
-            return chatObject.ObjectType.Equals(chatObjectTypeEnums) || chatObject.ChatObjectTypeId == chatObjectTypeEnums.ToString();
+            return objectTypes.Contains(input);
         }
 
+        private async void ResolveShopWaiterId(IChatObject sender, IChatObject receiver, Func<long, Task> matchAction)
+        {
+            if (IsObjectType(receiver.ObjectType.Value, ChatObjectTypeEnums.ShopWaiter))
+            {
+                var list = new List<ChatObjectTypeEnums>() {
+                    ChatObjectTypeEnums.Personal,
+                    ChatObjectTypeEnums.Anonymous,
+                    ChatObjectTypeEnums.Customer,
+                };
+                if (receiver.ParentId.HasValue && list.Contains(sender.ObjectType.Value))
+                {
+                    await matchAction?.Invoke(receiver.ParentId.Value);
+                }
+            }
+        }
         protected virtual async Task<string> MakeSesssionKeyAsync(IChatObject sender, IChatObject receiver)
         {
             await Task.CompletedTask;
 
-            if (IsObjectType(sender, ChatObjectTypeEnums.Room))
+            var senderId = sender.Id;
+
+            var receiverId = receiver.Id;
+
+            if (IsObjectType(receiver.ObjectType.Value, ChatObjectTypeEnums.Room, ChatObjectTypeEnums.Square))
             {
-                return sender.Id.ToString();
+                return receiverId.ToString();
             }
-            if (IsObjectType(receiver, ChatObjectTypeEnums.Room))
+
+            if (IsObjectType(sender.ObjectType.Value, ChatObjectTypeEnums.Room, ChatObjectTypeEnums.Square))
             {
-                return receiver.Id.ToString();
+                return senderId.ToString();
             }
-            var arr = new[] { sender.Id, receiver.Id };
+
+            ResolveShopWaiterId(sender, receiver, async (v) =>
+            {
+                receiverId = v;
+                await Task.CompletedTask;
+            });
+
+            ResolveShopWaiterId(receiver, sender, async (v) =>
+            {
+                senderId = v;
+                await Task.CompletedTask;
+            });
+
+            var arr = new[] { senderId, receiverId };
 
             Array.Sort(arr);
 
@@ -78,6 +113,25 @@ namespace IczpNet.Chat.SessionSections.Sessions
             var channel = await ChannelResolver.GetAsync(sender, receiver);
 
             session = new Session(sessionId, sessionKey, channel);
+
+            ResolveShopWaiterId(sender, receiver, async (shopKeeperId) =>
+            {
+                //Cache GetChildsByCacheAsync
+                var shopWaiterList = await ChatObjectManager.GetChildsAsync(shopKeeperId);
+
+                foreach (var shopWaiter in shopWaiterList)
+                {
+                    session.AddSessionUnit(new SessionUnit(
+                        id: GuidGenerator.Create(),
+                        session: session,
+                        ownerId: shopWaiter.Id,
+                        destinationId: sender.Id,
+                        destinationObjectType: sender.ObjectType));
+                }
+
+                //add or update sessionUnit
+                await Task.CompletedTask;
+            });
 
             //if (sender.ObjectType == ChatObjectTypeEnums.Official)
             //{
