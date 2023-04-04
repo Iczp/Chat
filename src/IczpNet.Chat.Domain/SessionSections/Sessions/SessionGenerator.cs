@@ -116,6 +116,16 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
             ResolveShopWaiterId(sender, receiver, async (shopKeeperId) =>
             {
+                //add sender
+                var shopKeeper = await ChatObjectManager.GetItemByCacheAsync(shopKeeperId);
+
+                session.AddSessionUnit(new SessionUnit(
+                        id: GuidGenerator.Create(),
+                        session: session,
+                        ownerId: sender.Id,
+                        destinationId: shopKeeper.Id,
+                        destinationObjectType: shopKeeper.ObjectType));
+
                 //Cache GetChildsByCacheAsync
                 var shopWaiterList = await ChatObjectManager.GetChildsAsync(shopKeeperId);
 
@@ -128,6 +138,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
                         destinationId: sender.Id,
                         destinationObjectType: sender.ObjectType));
                 }
+
+                
 
                 //add or update sessionUnit
                 await Task.CompletedTask;
