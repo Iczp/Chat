@@ -4,7 +4,7 @@ using System;
 namespace IczpNet.Chat.SessionSections.SessionUnits
 {
     [Serializable]
-    public class SessionUnitInfo
+    public class SessionUnitCacheItem
     {
         public virtual Guid Id { get; set; }
 

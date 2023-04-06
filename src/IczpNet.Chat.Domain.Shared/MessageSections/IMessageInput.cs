@@ -7,7 +7,7 @@ namespace IczpNet.Chat.MessageSections
     public interface IMessageInput<T> : IMessageInput where T : class, IMessageContentInfo
     {
         T Content { get; }
-}
+    }
 
     public interface IMessageInput
     {
@@ -39,4 +39,6 @@ namespace IczpNet.Chat.MessageSections
 
         long? QuoteMessageId { get; set; }
     }
+
+   
 }

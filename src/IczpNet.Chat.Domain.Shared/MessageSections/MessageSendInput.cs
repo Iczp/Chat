@@ -1,43 +1,43 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace IczpNet.Chat.MessageSections.Messages
 {
-    public class MessageInput<T> : MessageInput //where T : class, IMessageContentInfo
+    public class MessageSendInput<T> : MessageSendInput, IMessageSendInput<T> where T : class
     {
         public virtual T Content { get; set; }
     }
 
-    public class MessageInput : IMessageInput 
+    public class MessageSendInput : IMessageSendInput
     {
-        //public virtual IMessageContentInfo Content { get; set; }
-
         /// <summary>
-        /// 发送者
+        /// SessionUnitId
         /// </summary>
-        public virtual long SenderId { get; set; }
-
-        /// <summary>
-        /// 接收者
-        /// </summary>
-        public virtual long ReceiverId { get; set; }
-
-        ///// <summary>
-        ///// 消息类型
-        ///// </summary>
-        //public virtual MessageTypes MessageType { get; set; }
+        public virtual Guid SessionUnitId { get; set; }
 
         /// <summary>
         /// 扩展（键名）根据业务自义，如:"courseId"、"course-userId"、"erp-userId"
         /// </summary>
+        [DefaultValue(null)]
         public virtual string KeyName { get; set; }
 
         /// <summary>
         /// 扩展（键值）根据业务自义,如："123456789"、"02b7d668-02ca-428f-b88c-b8adac2c5044"、"admin"
         /// </summary>
+        [DefaultValue(null)]
         public virtual string KeyValue { get; set; }
 
+        /// <summary>
+        /// 引用消息Id
+        /// </summary>
+        [DefaultValue(null)]
         public virtual long? QuoteMessageId { get; set; }
 
+        /// <summary>
+        /// Ignore Connections
+        /// </summary>
+        [DefaultValue(null)]
         public virtual List<string> IgnoreConnections { get; set; } = new List<string>();
     }
 }

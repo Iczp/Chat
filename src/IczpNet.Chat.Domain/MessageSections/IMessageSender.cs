@@ -18,6 +18,9 @@ namespace IczpNet.Chat.MessageSections
         Task<MessageInfo<LinkContentInfo>> SendLinkMessageAsync(MessageInput<LinkContentInfo> input);
         Task<MessageInfo<HistoryContentOutput>> SendHistoryMessageAsync(MessageInput<HistoryContentInput> input);
         Task<MessageInfo<RedEnvelopeContentOutput>> SendRedEnvelopeMessageAsync(MessageInput<RedEnvelopeContentInput> input);
+
         //Task<MessageInfo<ArticleContentOutput>> SendArticleContentMessageAsync(MessageInput<ArticleContentInput> input);
+
+        Task<MessageInfo<TextContentInfo>> SendTextAsync(MessageSendInput<TextContentInfo> input);
     }
 }

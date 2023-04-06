@@ -15,15 +15,18 @@ namespace IczpNet.Chat.MessageSections
     {
         protected IDistributedCache<List<long>, Guid> SessionUnitIdListCache { get; }
 
-        protected IDistributedCache<List<SessionUnitInfo>, Guid> SessionUnitCache { get; }
+        protected IDistributedCache<List<SessionUnitCacheItem>, Guid> SessionUnitCache { get; }
 
         public ChatObjectResolver(
             IDistributedCache<List<long>, Guid> sessionUnitIdListCache)
         {
             SessionUnitIdListCache = sessionUnitIdListCache;
         }
+
         public virtual async Task<List<ChatObject>> GetListAsync(Message message)
         {
+            await Task.CompletedTask;
+
             var result = new List<ChatObject>();
 
             switch (message.Channel)

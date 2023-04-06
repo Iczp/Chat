@@ -2,6 +2,7 @@
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
 
@@ -12,7 +13,7 @@ public partial class Message
     public const int QuotePathMaxLength = 1000;
     public const int ForwardPathMaxLength = 1000;
     public const string Delimiter = "/";
-    protected Message() { }
+    protected Message() : base() { }
 
     public Message(IChatObject sender, IChatObject receiver, Session session) : base()
     {
@@ -26,6 +27,19 @@ public partial class Message
         SessionKey = session.SessionKey;
         //SessionUnitCount = session.GetMemberCount();
         //MessageType = messageType;
+    }
+
+    public Message(SessionUnit sessionUnit) : base()
+    {
+        SessionUnit = sessionUnit;
+        SenderId = sessionUnit.OwnerId;
+        SenderType = sessionUnit.Owner.ObjectType;
+        ReceiverId = sessionUnit.DestinationId;
+        ReceiverType = sessionUnit.DestinationObjectType;
+        
+        Session = sessionUnit.Session;
+        Channel = Session.Channel;
+        SessionKey = Session.SessionKey;
     }
 
     public virtual void SetQuoteMessage(Message source)

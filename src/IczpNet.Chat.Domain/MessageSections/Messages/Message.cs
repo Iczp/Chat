@@ -1,12 +1,8 @@
 ﻿using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
-using IczpNet.Chat.MessageSections.MessageContents;
-using IczpNet.Chat.SessionSections.Sessions;
-using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -25,17 +21,15 @@ public partial class Message : BaseEntity<long>
     //[Required]
     public virtual string SessionKey { get; protected set; }
 
-    public virtual Guid? SessionId { get; protected set; }
+    public virtual Guid? SessionId { get; protected set; } 
 
-    [ForeignKey(nameof(SessionId))]
-    public virtual Session Session { get; protected set; }
+    /// <summary>
+    /// sender session unit
+    /// </summary>
+    public virtual Guid? SessionUnitId { get; protected set; }
 
     public virtual int SessionUnitCount { get; internal protected set; }
 
-    public virtual Guid? MessageContentId { get; protected set; }
-
-    [ForeignKey(nameof(MessageContentId))]
-    public virtual MessageContent MessageContent { get; protected set; }
 
     [StringLength(100)]
     //[Required]
@@ -108,16 +102,9 @@ public partial class Message : BaseEntity<long>
     [ForeignKey(nameof(ReceiverId))]
     public virtual ChatObject Receiver { get; protected set; }
 
-    /// <summary>
-    /// sender session unit
-    /// </summary>
-    [ForeignKey(nameof(SessionUnitId))]
-    public virtual SessionUnit SessionUnit { get; protected set; }
 
-    /// <summary>
-    /// sender session unit
-    /// </summary>
-    public virtual Guid? SessionUnitId { get; protected set; }
+
+   
 
 
 

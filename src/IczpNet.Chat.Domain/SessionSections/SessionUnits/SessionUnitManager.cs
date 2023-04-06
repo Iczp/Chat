@@ -4,6 +4,7 @@ using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
@@ -16,14 +17,14 @@ namespace IczpNet.Chat.SessionSections.Sessions
         protected ISessionUnitRepository Repository { get; }
         protected IRepository<ReadedRecorder, Guid> ReadedRecorderRepository { get; }
         protected IMessageRepository MessageRepository { get; }
-        protected IDistributedCache<List<SessionUnitInfo>, Guid> UnitListCache { get; }
+        protected IDistributedCache<List<SessionUnitCacheItem>, Guid> UnitListCache { get; }
         protected IDistributedCache<string, Guid> UnitCountCache { get; }
 
         public SessionUnitManager(
             ISessionUnitRepository repository,
             IRepository<ReadedRecorder, Guid> readedRecorderRepository,
             IMessageRepository messageRepository,
-            IDistributedCache<List<SessionUnitInfo>, Guid> unitListCache,
+            IDistributedCache<List<SessionUnitCacheItem>, Guid> unitListCache,
             IDistributedCache<string, Guid> unitCountCache)
         {
             Repository = repository;
@@ -38,6 +39,20 @@ namespace IczpNet.Chat.SessionSections.Sessions
             action?.Invoke(entity);
 
             return await Repository.UpdateAsync(entity);
+        }
+
+        public async Task<Guid?> FindIdAsync(Expression<Func<SessionUnit, bool>> predicate)
+        {
+            return (await Repository.GetQueryableAsync())
+                .Where(predicate)
+                .Select(x => x.Id)
+                .FirstOrDefault();
+            ;
+        }
+
+        public Task<SessionUnit> GetAsync(Guid id)
+        {
+            return Repository.GetAsync(id);
         }
 
         public async Task<SessionUnit> SetToppingAsync(SessionUnit entity, bool isTopping)
@@ -116,12 +131,12 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return Repository.BatchUpdateAsync(sessionId, lastMessageId);
         }
 
-        public Task<List<SessionUnitInfo>> GetCacheListBySessionIdAsync(Guid sessionId)
+        public Task<List<SessionUnitCacheItem>> GetCacheListBySessionIdAsync(Guid sessionId)
         {
             return UnitListCache.GetAsync(sessionId);
         }
 
-        public Task<List<SessionUnitInfo>> GetOrAddCacheListBySessionIdAsync(Guid sessionId)
+        public Task<List<SessionUnitCacheItem>> GetOrAddCacheListBySessionIdAsync(Guid sessionId)
         {
             return UnitListCache.GetOrAddAsync(sessionId, () => GetListBySessionIdAsync(sessionId));
         }
@@ -132,11 +147,11 @@ namespace IczpNet.Chat.SessionSections.Sessions
             await UnitListCache.SetAsync(sessionId, sessionUnitInfoList);
         }
 
-        public async Task<List<SessionUnitInfo>> GetListBySessionIdAsync(Guid sessionId)
+        public async Task<List<SessionUnitCacheItem>> GetListBySessionIdAsync(Guid sessionId)
         {
             var list = (await Repository.GetQueryableAsync())
                 .Where(x => x.SessionId == sessionId)
-                .Select(x => new SessionUnitInfo()
+                .Select(x => new SessionUnitCacheItem()
                 {
                     Id = x.Id,
                     SessionId = x.SessionId,

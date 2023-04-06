@@ -2,8 +2,10 @@
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.Attributes;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.MessageSections.MessageContents;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.RedEnvelopes;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -14,8 +16,14 @@ namespace IczpNet.Chat.MessageSections.Messages;
 
 public partial class Message
 {
-    [ContentType(MessageTypes.Cmd)]
 
+    public virtual Guid? MessageContentId { get; protected set; }
+
+    [ForeignKey(nameof(MessageContentId))]
+    public virtual MessageContent MessageContent { get; protected set; }
+
+
+    [ContentType(MessageTypes.Cmd)]
     public virtual IList<CmdContent> CmdContentList { get; set; } = new List<CmdContent>();
 
     [ContentType(MessageTypes.Text)]

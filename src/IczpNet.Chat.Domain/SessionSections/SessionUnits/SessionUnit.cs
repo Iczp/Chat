@@ -204,7 +204,14 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         protected SessionUnit() { }
 
-        internal SessionUnit(Guid id, [NotNull] Session session, [NotNull] long ownerId, [NotNull] long destinationId, ChatObjectTypeEnums? destinationObjectType) : base(id)
+        internal SessionUnit(Guid id,
+            [NotNull]
+            Session session,
+            [NotNull]
+            long ownerId,
+            [NotNull]
+            long destinationId,
+            ChatObjectTypeEnums? destinationObjectType) : base(id)
         {
             Session = session;
             OwnerId = ownerId;

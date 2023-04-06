@@ -5,6 +5,7 @@ using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Options;
 using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
@@ -84,6 +85,8 @@ namespace IczpNet.Chat.MessageSections.Messages
             return entity;
         }
 
+        
+
         public virtual async Task<Message> CreateMessageAsync<TMessageInput>(TMessageInput input, Func<Message, Task<IMessageContentEntity>> func)
             where TMessageInput : class, IMessageInput
         {
@@ -101,6 +104,65 @@ namespace IczpNet.Chat.MessageSections.Messages
                 }
                 return await func(entity);
             });
+        }
+
+        public virtual async Task<Message> CreateMessageBySessionUnitAsync(SessionUnit sessionUnit, Func<Message, Task<IMessageContentEntity>> func)
+        {
+            var session = sessionUnit.Session;
+
+            var entity = new Message(sessionUnit)
+            {
+                SessionUnitCount = await SessionUnitManager.GetCountAsync(session.Id)
+            };
+
+            if (func != null)
+            {
+                var messageContent = await func(entity);
+                entity.SetMessageContent(messageContent);
+            }
+
+            await MessageValidator.CheckAsync(entity);
+
+            await Repository.InsertAsync(entity, autoSave: true);
+
+            session.SetLastMessage(entity);
+
+            if (session.LastMessageId.HasValue)
+            {
+                await SessionUnitManager.BatchUpdateAsync(session.Id, session.LastMessageId.Value);
+            }
+
+            await CurrentUnitOfWork.SaveChangesAsync();
+
+            return entity;
+        }
+
+        public virtual async Task<Message> CreateMessageBySessionUnitAsync<TMessageSendInput>(TMessageSendInput input, Func<Message, Task<IMessageContentEntity>> func)
+            where TMessageSendInput : class, IMessageSendInput
+        {
+            var sessionUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
+
+            return await CreateMessageBySessionUnitAsync(sessionUnit, async entity =>
+            {
+                entity.SetKey(input.KeyName, input.KeyValue);
+
+                if (input.QuoteMessageId.HasValue)
+                {
+                    entity.SetQuoteMessage(await Repository.GetAsync(input.QuoteMessageId.Value));
+                }
+                return await func(entity);
+            });
+        }
+
+        public virtual async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo>(MessageSendInput input, Func<Message, Task<IMessageContentEntity>> func)
+        {
+            var message = await CreateMessageBySessionUnitAsync(input, func);
+
+            var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
+
+            await ChatPusher.ExecuteBySessionIdAsync(message.SessionId.Value, output, input.IgnoreConnections);
+
+            return output;
         }
 
         public virtual async Task<MessageInfo<TContentInfo>> SendMessageAsync<TContentInfo>(MessageInput input, Func<Message, Task<IMessageContentEntity>> func)

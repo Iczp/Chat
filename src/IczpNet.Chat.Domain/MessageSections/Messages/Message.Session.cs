@@ -21,6 +21,16 @@ public partial class Message
     [InverseProperty(nameof(MessageReminder.Message))]
     public virtual IList<MessageReminder> MessageReminderList { get; set; }
 
+
+    [ForeignKey(nameof(SessionId))]
+    public virtual Session Session { get; protected set; }
+
+    /// <summary>
+    /// sender session unit
+    /// </summary>
+    [ForeignKey(nameof(SessionUnitId))]
+    public virtual SessionUnit SessionUnit { get; protected set; }
+
     [InverseProperty(nameof(SessionSections.Sessions.Session.LastMessage))]
     public virtual IList<Session> SessionList { get; set; }
 

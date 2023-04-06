@@ -137,5 +137,11 @@ namespace IczpNet.Chat.MessageSections
             var content = await provider.Create<TextContentInfo, TextContent>(input.Content);
             return await MessageManager.SendMessageAsync<TextContentInfo>(input, async x => await Task.FromResult(content));
         }
+
+        public async Task<MessageInfo<TextContentInfo>> SendTextAsync(MessageSendInput<TextContentInfo> input)
+        {
+            var messageContent = ObjectMapper.Map<TextContentInfo, TextContent>(input.Content);
+            return await MessageManager.SendAsync<TextContentInfo>(input, async x => await Task.FromResult(messageContent));
+        }
     }
 }

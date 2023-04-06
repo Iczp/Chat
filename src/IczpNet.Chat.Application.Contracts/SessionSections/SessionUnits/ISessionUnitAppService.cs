@@ -10,6 +10,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits;
 
 public interface ISessionUnitAppService
 {
+    Task<Guid?> FindIdAsync(long ownerId, long destinactionId);
+
     Task<PagedResultDto<SessionUnitDto>> GetListAsync(SessionUnitGetListInput input);
 
     Task<PagedResultDto<SessionUnitDto>> GetListByLinqAsync(SessionUnitGetListInput input);

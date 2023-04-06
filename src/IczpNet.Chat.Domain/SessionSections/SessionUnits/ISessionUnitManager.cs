@@ -1,12 +1,17 @@
 ﻿using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.SessionSections.Sessions
 {
     public interface ISessionUnitManager
     {
+        Task<SessionUnit> GetAsync(Guid sessionUnitId);
+
+        Task<Guid?> FindIdAsync(Expression<Func<SessionUnit, bool>> predicate);
+
         Task<SessionUnit> SetToppingAsync(SessionUnit entity, bool isTopping);
 
         Task<SessionUnit> SetReadedAsync(SessionUnit entity, long messageId, bool isForce = false);
@@ -27,15 +32,15 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         Task<int> BatchUpdateAsync(Guid sessionId, long lastMessageId);
 
-        Task<List<SessionUnitInfo>> GetCacheListBySessionIdAsync(Guid sessionId);
+        Task<List<SessionUnitCacheItem>> GetCacheListBySessionIdAsync(Guid sessionId);
 
-        Task<List<SessionUnitInfo>> GetOrAddCacheListBySessionIdAsync(Guid sessionId);
+        Task<List<SessionUnitCacheItem>> GetOrAddCacheListBySessionIdAsync(Guid sessionId);
 
         Task SetCacheListBySessionIdAsync(Guid sessionId);
 
-        Task<List<SessionUnitInfo>> GetListBySessionIdAsync(Guid sessionId);
+        Task<List<SessionUnitCacheItem>> GetListBySessionIdAsync(Guid sessionId);
 
         Task RemoveCacheListBySessionIdAsync(Guid sessionId);
-
+        
     }
 }

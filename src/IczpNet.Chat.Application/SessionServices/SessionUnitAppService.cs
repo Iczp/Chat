@@ -482,5 +482,9 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return await GetPagedListAsync<SessionUnit, SessionUnitOwnerDto>(query, input);
     }
 
-
+    [HttpGet]
+    public Task<Guid?> FindIdAsync(long ownerId, long destinactionId)
+    {
+        return SessionUnitManager.FindIdAsync(x => x.OwnerId == ownerId && x.DestinationId == destinactionId);
+    }
 }

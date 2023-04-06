@@ -3,6 +3,7 @@ using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.MessageSections.Templates;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -21,15 +22,15 @@ namespace IczpNet.Chat.MessageServices
         IMessageAppService
     {
 
-        protected IMessageSender ChatSender { get; }
+        protected IMessageSender MessageSender { get; }
         protected IMessageManager MessageManager { get; }
 
         public MessageAppService(
             IMessageRepository repository,
             IMessageManager messageManager,
-            IMessageSender chatSender) : base(repository)
+            IMessageSender messageSender) : base(repository)
         {
-            ChatSender = chatSender;
+            MessageSender = messageSender;
             MessageManager = messageManager;
         }
 
@@ -41,68 +42,73 @@ namespace IczpNet.Chat.MessageServices
 
         public virtual Task<MessageInfo<TextContentInfo>> SendTextMessageAsync(MessageInput<TextContentInfo> input)
         {
-            return ChatSender.SendTextMessageAsync(input);
+            return MessageSender.SendTextMessageAsync(input);
         }
 
         public Task<MessageInfo<CmdContentInfo>> SendCmdMessageAsync(MessageInput<CmdContentInfo> input)
         {
-            return ChatSender.SendCmdMessageAsync(input);
+            return MessageSender.SendCmdMessageAsync(input);
         }
 
         public Task<MessageInfo<RedEnvelopeContentOutput>> SendRedEnvelopeMessageAsync(MessageInput<RedEnvelopeContentInput> input)
         {
-            return ChatSender.SendRedEnvelopeMessageAsync(input);
+            return MessageSender.SendRedEnvelopeMessageAsync(input);
         }
 
         public Task<MessageInfo<HtmlContentInfo>> SendHtmlMessageAsync(MessageInput<HtmlContentInfo> input)
         {
-            return ChatSender.SendHtmlMessageAsync(input);
+            return MessageSender.SendHtmlMessageAsync(input);
         }
 
         public Task<MessageInfo<ImageContentInfo>> SendImageMessageAsync(MessageInput<ImageContentInfo> input)
         {
-            return ChatSender.SendImageMessageAsync(input);
+            return MessageSender.SendImageMessageAsync(input);
         }
 
         public Task<MessageInfo<SoundContentInfo>> SendSoundMessageAsync(MessageInput<SoundContentInfo> input)
         {
-            return ChatSender.SendSoundMessageAsync(input);
+            return MessageSender.SendSoundMessageAsync(input);
         }
 
         public Task<MessageInfo<VideoContentInfo>> SendVideoMessageAsync(MessageInput<VideoContentInfo> input)
         {
-            return ChatSender.SendVideoMessageAsync(input);
+            return MessageSender.SendVideoMessageAsync(input);
         }
 
         public Task<MessageInfo<FileContentInfo>> SendFileMessageAsync(MessageInput<FileContentInfo> input)
         {
-            return ChatSender.SendFileMessageAsync(input);
+            return MessageSender.SendFileMessageAsync(input);
         }
 
         public Task<MessageInfo<LocationContentInfo>> SendLocationMessageAsync(MessageInput<LocationContentInfo> input)
         {
-            return ChatSender.SendLocationMessageAsync(input);
+            return MessageSender.SendLocationMessageAsync(input);
         }
 
         public Task<MessageInfo<ContactsContentInfo>> SendContactsMessageAsync(MessageInput<ContactsContentInfo> input)
         {
-            return ChatSender.SendContactsMessageAsync(input);
+            return MessageSender.SendContactsMessageAsync(input);
         }
 
         public Task<MessageInfo<LinkContentInfo>> SendLinkMessageAsync(MessageInput<LinkContentInfo> input)
         {
-            return ChatSender.SendLinkMessageAsync(input);
+            return MessageSender.SendLinkMessageAsync(input);
         }
 
         public Task<MessageInfo<HistoryContentOutput>> SendHistoryMessageAsync(MessageInput<HistoryContentInput> input)
         {
-            return ChatSender.SendHistoryMessageAsync(input);
+            return MessageSender.SendHistoryMessageAsync(input);
         }
 
         public async Task<Dictionary<string, long>> RollbackMessageAsync(long messageId)
         {
             var message = await Repository.GetAsync(messageId);
             return await MessageManager.RollbackMessageAsync(message);
+        }
+
+        public Task<MessageInfo<TextContentInfo>> SendTextAsync(MessageSendInput<TextContentInfo> input)
+        {
+            return MessageSender.SendTextAsync(input);
         }
     }
 }
