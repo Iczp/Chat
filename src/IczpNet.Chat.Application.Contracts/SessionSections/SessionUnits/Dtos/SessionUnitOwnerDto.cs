@@ -28,6 +28,10 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         public virtual bool IsKilled { get; set; }
 
+        public virtual bool IsPublic { get; set; }
+
+        public virtual bool IsStatic { get; set; }
+
         public virtual List<SessionRoleDto> RoleList { get; set; }
 
         public virtual List<SessionTagDto> TagList { get; set; }

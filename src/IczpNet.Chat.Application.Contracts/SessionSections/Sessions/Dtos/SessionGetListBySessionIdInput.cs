@@ -15,6 +15,10 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public virtual bool? IsKilled { get; set; }
 
+        public virtual bool? IsPublic { get; set; }
+
+        public virtual bool? IsStatic { get; set; }
+
         public virtual List<long> OwnerIdList { get; set; }
 
         [DefaultValue(null)]

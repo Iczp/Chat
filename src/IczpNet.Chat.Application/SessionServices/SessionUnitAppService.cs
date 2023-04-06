@@ -202,6 +202,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         var query = (await Repository.GetQueryableAsync())
             .Where(x =>  x.SessionId == input.SessionId)
             .WhereIf(input.IsKilled.HasValue, x => x.IsKilled == input.IsKilled)
+            .WhereIf(input.IsStatic.HasValue, x => x.IsStatic == input.IsStatic)
+            .WhereIf(input.IsPublic.HasValue, x => x.IsPublic == input.IsPublic)
             .WhereIf(input.OwnerIdList.IsAny(), x => input.OwnerIdList.Contains(x.OwnerId))
             .WhereIf(input.OwnerTypeList.IsAny(), x => input.OwnerTypeList.Contains(x.Owner.ObjectType.Value))
             .WhereIf(!input.TagId.IsEmpty(), x => x.SessionUnitTagList.Any(x => x.SessionTagId == input.TagId))
