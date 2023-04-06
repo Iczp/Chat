@@ -3,8 +3,10 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.MessageContents;
 using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -105,5 +107,18 @@ public partial class Message : BaseEntity<long>
 
     [ForeignKey(nameof(ReceiverId))]
     public virtual ChatObject Receiver { get; protected set; }
+
+    /// <summary>
+    /// sender session unit
+    /// </summary>
+    [ForeignKey(nameof(SessionUnitId))]
+    public virtual SessionUnit SessionUnit { get; protected set; }
+
+    /// <summary>
+    /// sender session unit
+    /// </summary>
+    public virtual Guid? SessionUnitId { get; protected set; }
+
+
 
 }

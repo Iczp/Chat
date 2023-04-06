@@ -2,6 +2,7 @@
 using IczpNet.Chat.SessionSections.MessageReminders;
 using IczpNet.Chat.SessionSections.OpenedRecorders;
 using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -22,5 +23,17 @@ public partial class Message
 
     [InverseProperty(nameof(SessionSections.Sessions.Session.LastMessage))]
     public virtual IList<Session> SessionList { get; set; }
+
+    /// <summary>
+    /// last message list
+    /// </summary>
+    [InverseProperty(nameof(SessionSections.SessionUnits.SessionUnit.LastMessage))]
+    public virtual List<SessionUnit> LastMessageSessionUnitList { get; protected set; }
+
+    /// <summary>
+    /// last message list
+    /// </summary>
+    [InverseProperty(nameof(SessionSections.SessionUnits.SessionUnit.ReadedMessage))]
+    public virtual List<SessionUnit> ReadedMessageSessionUnitList { get; protected set; }
 
 }

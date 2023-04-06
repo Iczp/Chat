@@ -154,6 +154,12 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public virtual List<SessionUnitRole> SessionUnitRoleList { get; protected set; } = new List<SessionUnitRole>();
 
+        /// <summary>
+        /// sender message list
+        /// </summary>
+        [InverseProperty(nameof(Message.SessionUnit))]
+        public virtual List<Message> MessageList { get; protected set; } = new List<Message>();
+
         [NotMapped]
         public virtual int ReminderAllCount => GetRemindAllCount();
 

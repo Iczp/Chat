@@ -148,8 +148,6 @@ namespace IczpNet.Chat.SessionSections.Sessions
                         destinationObjectType: sender.ObjectType));
                 }
 
-                
-
                 //add or update sessionUnit
                 await Task.CompletedTask;
             });
