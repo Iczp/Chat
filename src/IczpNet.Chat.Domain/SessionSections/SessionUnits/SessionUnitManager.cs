@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
@@ -120,7 +121,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
         {
             var value = await UnitCountCache.GetOrAddAsync(sessionId, async () =>
             {
-                var count = await Repository.CountAsync(x => x.SessionId == sessionId);
+                var count = await Repository.CountAsync(x => x.SessionId == sessionId && x.IsPublic && !x.IsKilled);
                 return count.ToString();
             });
             return int.Parse(value);
@@ -150,7 +151,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
         public async Task<List<SessionUnitCacheItem>> GetListBySessionIdAsync(Guid sessionId)
         {
             var list = (await Repository.GetQueryableAsync())
-                .Where(x => x.SessionId == sessionId)
+                .Where(x => x.SessionId == sessionId && !x.IsKilled)
                 .Select(x => new SessionUnitCacheItem()
                 {
                     Id = x.Id,
@@ -158,11 +159,12 @@ namespace IczpNet.Chat.SessionSections.Sessions
                     DestinationId = x.DestinationId,
                     OwnerId = x.OwnerId,
                     DestinationObjectType = x.DestinationObjectType,
+                    IsPublic = x.IsPublic,
                     ServiceStatus = x.ServiceStatus,
                 })
                 .ToList();
 
-            await UnitCountCache.SetAsync(sessionId, list.Count.ToString());
+            await UnitCountCache.SetAsync(sessionId, list.Where(x => x.IsPublic).Count().ToString());
 
             return list;
         }

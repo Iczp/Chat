@@ -124,21 +124,7 @@ namespace IczpNet.Chat.Services
             return entity;
         }
 
-        [HttpPost]
-        public virtual async Task<ChatObjectDto> CreateRoomAsync(RoomCreateInput input)
-        {
-            var room = await ChatObjectManager.CreateRoomAsync(input.Name, input.ChatObjectIdList, input.OwnerId);
-
-            return ObjectMapper.Map<ChatObject, ChatObjectDto>(room);
-        }
-
-        [HttpPost]
-        public virtual async Task<ChatObjectDto> CreateRoomByAllUsersAsync(string name)
-        {
-            var room = await ChatObjectManager.CreateRoomByAllUsersAsync(name);
-
-            return ObjectMapper.Map<ChatObject, ChatObjectDto>(room);
-        }
+       
 
         [HttpPost]
         public virtual async Task<ChatObjectDto> CreateShopKeeperAsync(string name)

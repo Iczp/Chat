@@ -1,18 +1,12 @@
-﻿using AutoMapper.Execution;
-using IczpNet.AbpCommons;
-using IczpNet.AbpCommons.DataFilters;
+﻿using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
-using IczpNet.Chat.MessageSections.Messages;
-using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionSections.Sessions;
-using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Volo.Abp.Caching;
 
@@ -20,28 +14,15 @@ namespace IczpNet.Chat.ChatObjects
 {
     public class ChatObjectManager : TreeManager<ChatObject, long, ChatObjectInfo>, IChatObjectManager
     {
-        protected virtual string GroupAssistantCode => "GroupAssistant";
+        
+        protected IChatObjectTypeManager ChatObjectTypeManager => LazyServiceProvider.LazyGetRequiredService<IChatObjectTypeManager>();
+        protected IMessageSender MessageSender => LazyServiceProvider.LazyGetRequiredService<IMessageSender>();
+        protected ISessionGenerator SessionGenerator => LazyServiceProvider.LazyGetRequiredService<ISessionGenerator>();
+        protected IDistributedCache<List<long>, Guid> UserChatObjectCache => LazyServiceProvider.LazyGetRequiredService<IDistributedCache<List<long>, Guid>>();
 
-        protected IChatObjectTypeManager ChatObjectTypeManager { get; }
-        protected IMessageSender MessageSender { get; }
-        protected ISessionGenerator SessionGenerator { get; }
-        protected IDistributedCache<List<long>, Guid> UserChatObjectCache { get; }
-        public ChatObjectManager(
-            IChatObjectRepository repository,
-            IChatObjectTypeManager chatObjectTypeManager,
-            IMessageSender messageSender,
-            ISessionGenerator sessionGenerator,
-            IDistributedCache<List<long>, Guid> userChatObjectCache) : base(repository)
+        public ChatObjectManager(IChatObjectRepository repository) : base(repository)
         {
-            ChatObjectTypeManager = chatObjectTypeManager;
-            MessageSender = messageSender;
-            SessionGenerator = sessionGenerator;
-            UserChatObjectCache = userChatObjectCache;
-        }
 
-        public async Task<ChatObject> GetGroupAssistantAsync()
-        {
-            return Assert.NotNull(await Repository.FindAsync(x => x.Code == GroupAssistantCode), $"Entity no such by [code]:{GroupAssistantCode}");
         }
 
         public virtual async Task<List<ChatObject>> GetListByUserId(Guid userId)
@@ -60,11 +41,6 @@ namespace IczpNet.Chat.ChatObjects
             });
         }
 
-        public virtual Task<bool> IsAllowJoinRoomAsync(ChatObjectTypeEnums? objectType)
-        {
-            return Task.FromResult(ChatConsts.AllowJoinRoomObjectTypes.Any(x => x.Equals(objectType)));
-        }
-
         public virtual async Task<List<long>> GetIdListByNameAsync(List<string> nameList)
         {
             var query = (await Repository.GetQueryableAsync())
@@ -80,68 +56,6 @@ namespace IczpNet.Chat.ChatObjects
                 .Where(x => x.ObjectType == objectType)
                 ;
             return await AsyncExecuter.ToListAsync(query);
-        }
-
-        public virtual async Task<ChatObject> CreateRoomAsync(string name, List<long> memberIdList, long? ownerId)
-        {
-            var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Room);
-
-            var room = await base.CreateAsync(new ChatObject(name, chatObjectType, null), isUnique: false);
-
-            var roomInfo = await base.MapToOuputAsync(room);
-
-            var session = await SessionGenerator.MakeAsync(roomInfo);
-
-            session.SetOwner(room);
-
-            foreach (var memberId in memberIdList)
-            {
-                session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session, memberId, room)
-                {
-                    IsStatic = memberId == ownerId,
-                    IsPublic = true,
-                });
-            }
-
-            //群组手
-            var groupAssistant = await GetGroupAssistantAsync();
-
-            session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session, groupAssistant.Id, room)
-            {
-                IsStatic = true,
-                IsPublic = false,
-            });
-
-            room.OwnerSessionList.Add(session);
-
-            await CurrentUnitOfWork.SaveChangesAsync();
-
-            var roomOwner = ownerId.HasValue ? await GetItemByCacheAsync(ownerId.Value) : null;
-
-            var members = await GetManyByCacheAsync(memberIdList.Take(3).ToList());
-
-            await MessageSender.SendCmdMessageAsync(new MessageInput<CmdContentInfo>()
-            {
-                SenderId = groupAssistant.Id,
-                ReceiverId = room.Id,
-                Content = new CmdContentInfo()
-                {
-                    Text = $"{roomOwner?.Name}创建群聊'{room.Name}',{members.Select(x => x.Name).JoinAsString("、")}等 {memberIdList.Count} 人加入群聊。",
-                }
-            });
-
-            return room;
-        }
-
-        public virtual async Task<ChatObject> CreateRoomByAllUsersAsync(string name)
-        {
-            var query = (await Repository.GetQueryableAsync())
-                .Where(x => x.ObjectType == ChatObjectTypeEnums.Personal)
-                .Select(x => x.Id)
-                ;
-            var idList = await AsyncExecuter.ToListAsync(query);
-
-            return await CreateRoomAsync(name, idList, null);
         }
 
         public virtual async Task<ChatObject> CreateShopKeeperAsync(string name)

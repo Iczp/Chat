@@ -79,9 +79,10 @@ namespace IczpNet.Chat.SessionSections.Sessions
             UnitList = unitList;
         }
 
-        public virtual void AddSessionUnit(SessionUnit sessionUnit)
+        public virtual SessionUnit AddSessionUnit(SessionUnit sessionUnit)
         {
             UnitList.Add(sessionUnit);
+            return sessionUnit;
         }
 
         internal void SetOwner(ChatObject chatObject)

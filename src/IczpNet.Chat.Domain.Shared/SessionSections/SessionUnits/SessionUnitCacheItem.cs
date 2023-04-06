@@ -16,6 +16,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public virtual long? DestinationId { get; set; }
 
+        public virtual bool IsPublic { get; set; }
+
         public virtual ServiceStatus ServiceStatus { get; set; }
 
     }

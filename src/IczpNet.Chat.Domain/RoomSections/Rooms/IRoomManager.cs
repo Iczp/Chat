@@ -1,0 +1,28 @@
+﻿using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.Enums;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace IczpNet.Chat.RoomSections.Rooms
+{
+    public interface IRoomManager : IChatObjectManager
+    {
+
+        Task<bool> IsAllowJoinRoomAsync(ChatObjectTypeEnums? objectType);
+
+        Task<bool> IsAllowCreateRoomAsync(ChatObjectTypeEnums? objectType);
+
+        Task<ChatObject> CreateAsync(string name, List<long> memberIdList, long? ownerId);
+
+        Task<ChatObject> CreateByAllUsersAsync(string name);
+
+        //Task<ChatObject> UpdateAsync(ChatObject room);
+
+        Task<int> GetMemberCountAsync(ChatObject room);
+
+        Task<int> JoinRoomAsync(ChatObject room, List<ChatObject> members, ChatObject inviter, JoinWays joinWay);
+
+        Task<bool> IsInRoomAsync(ChatObject room, ChatObject member);
+        
+    }
+}

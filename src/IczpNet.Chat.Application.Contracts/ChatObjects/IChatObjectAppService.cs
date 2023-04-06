@@ -31,10 +31,6 @@ namespace IczpNet.Chat.ChatObjects
 
         Task<ChatObjectDetailDto> GetByCodeAsync(string code);
 
-        Task<ChatObjectDto> CreateRoomAsync(RoomCreateInput input);
-
-        Task<ChatObjectDto> CreateRoomByAllUsersAsync(string name);
-
         Task<ChatObjectDto> CreateShopKeeperAsync(string name);
 
         Task<ChatObjectDto> CreateShopWaiterAsync(long shopKeeperId, string name);

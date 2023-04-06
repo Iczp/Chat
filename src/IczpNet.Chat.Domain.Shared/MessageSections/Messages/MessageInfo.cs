@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.Enums;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Pusher.Commands;
 using System;
 
@@ -44,5 +45,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         public virtual DateTime? RollbackTime { get; set; }
 
         public virtual DateTime CreationTime { get; set; }
+
+        public virtual SessionUnitSenderInfo SessionUnit { get; set; }
     }
 }

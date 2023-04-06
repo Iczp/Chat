@@ -24,13 +24,7 @@ namespace IczpNet.Chat.ChatObjects
 
         //Task<List<ChatObject>> GetManyAsync(List<Guid> chatObjectIdList);
 
-        Task<bool> IsAllowJoinRoomAsync(ChatObjectTypeEnums? objectType);
-
         Task<List<long>> GetIdListByNameAsync(List<string> nameList); //, List<ChatObjectTypes> objectTypes
-
-        Task<ChatObject> CreateRoomAsync(string name, List<long> memberIdList, long? ownerId);
-
-        Task<ChatObject> CreateRoomByAllUsersAsync(string name);
 
         Task<ChatObject> CreateShopKeeperAsync(string name);
 

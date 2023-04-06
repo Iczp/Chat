@@ -4,6 +4,9 @@ using IczpNet.Chat.MessageSections.ContentOutputs;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.RedEnvelopes;
+using IczpNet.Chat.SessionSections.SessionTags;
+using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionSections.SessionUnitTags;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -45,5 +48,10 @@ public class ChatApplicationAutoMapperProfile : Profile
           //.ForMember(d => d.Detail, options => options.MapFrom<DetailResolver>())
           //.ForMember(d => d.IsFinished, options => options.MapFrom<IsFinishedResolver>())
           ;
+
+
+        CreateMap<SessionUnit, SessionUnitSenderInfo>();
+        CreateMap<SessionTag, SessionTagInfo>();
+        
     }
 }

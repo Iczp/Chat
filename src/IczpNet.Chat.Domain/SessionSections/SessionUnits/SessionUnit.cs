@@ -211,21 +211,18 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             long ownerId,
             [NotNull]
             long destinationId,
-            ChatObjectTypeEnums? destinationObjectType) : base(id)
+            ChatObjectTypeEnums? destinationObjectType,
+            bool isPublic = false,
+            bool isStatic = false) : base(id)
         {
             Session = session;
             OwnerId = ownerId;
             DestinationId = destinationId;
             DestinationObjectType = destinationObjectType;
+            IsStatic = isStatic;
+            IsPublic = isPublic;
         }
 
-        internal SessionUnit(Guid id, [NotNull] Session session, [NotNull] long ownerId, [NotNull] ChatObject destination) : base(id)
-        {
-            Session = session;
-            OwnerId = ownerId;
-            Destination = destination;
-            DestinationObjectType = destination.ObjectType;
-        }
 
         internal void SetReaded(long messageAutoId, bool isForce = false)
         {

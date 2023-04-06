@@ -143,5 +143,11 @@ namespace IczpNet.Chat.MessageSections
             var messageContent = ObjectMapper.Map<TextContentInfo, TextContent>(input.Content);
             return await MessageManager.SendAsync<TextContentInfo>(input, async x => await Task.FromResult(messageContent));
         }
+
+        public async Task<MessageInfo<CmdContentInfo>> SendCmdAsync(MessageSendInput<CmdContentInfo> input)
+        {
+            var messageContent = ObjectMapper.Map<CmdContentInfo, CmdContent>(input.Content);
+            return await MessageManager.SendAsync<CmdContentInfo>(input, async x => await Task.FromResult(messageContent));
+        }
     }
 }
