@@ -10,6 +10,8 @@ using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.SessionSections.Favorites;
 using IczpNet.Chat.SessionSections.FriendshipTagUnits;
 using IczpNet.Chat.SessionSections.MessageReminders;
+using IczpNet.Chat.SessionSections.SessionOrganizations;
+using IczpNet.Chat.SessionSections.SessionUnitOrganizations;
 using IczpNet.Chat.SessionSections.SessionUnitRoles;
 using IczpNet.Chat.SessionSections.SessionUnitTags;
 using Microsoft.EntityFrameworkCore;
@@ -77,6 +79,7 @@ public static class ChatDbContextModelCreatingExtensions
         
         builder.Entity<SessionUnitTag>(b => { b.HasKey(x => new { x.SessionUnitId, x.SessionTagId }); });
         builder.Entity<SessionUnitRole>(b => { b.HasKey(x => new { x.SessionUnitId, x.SessionRoleId }); });
+        builder.Entity<SessionUnitOrganization>(b => { b.HasKey(x => new { x.SessionUnitId, x.SessionOrganizationId }); });
         //builder.Entity<SessionUnit>(b => { b.HasKey(x => new { x.SessionId, x.OwnerId }); });
 
         builder.Entity<Message>(b =>

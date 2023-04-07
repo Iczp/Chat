@@ -8,6 +8,7 @@ using IczpNet.Chat.SessionSections.MessageReminders;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionTags;
+using IczpNet.Chat.SessionSections.SessionUnitOrganizations;
 using IczpNet.Chat.SessionSections.SessionUnitRoles;
 using IczpNet.Chat.SessionSections.SessionUnitTags;
 using IczpNet.Chat.Specifications;
@@ -173,6 +174,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public virtual List<SessionUnitTag> SessionUnitTagList { get; protected set; } = new List<SessionUnitTag>();
 
         public virtual List<SessionUnitRole> SessionUnitRoleList { get; protected set; } = new List<SessionUnitRole>();
+
+        public virtual List<SessionUnitOrganization> SessionUnitOrganizationList { get; protected set; }
 
         /// <summary>
         /// sender message list
