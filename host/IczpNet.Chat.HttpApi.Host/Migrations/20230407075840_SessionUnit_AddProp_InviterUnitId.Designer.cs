@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230407075840_SessionUnit_AddProp_InviterUnitId")]
+    partial class SessionUnit_AddProp_InviterUnitId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3078,9 +3081,6 @@ namespace IczpNet.Chat.Migrations
                     b.Property<long?>("KillerId")
                         .HasColumnType("bigint");
 
-                    b.Property<Guid?>("KillerUnitId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<long?>("LastMessageId")
                         .HasColumnType("bigint");
 
@@ -3135,8 +3135,6 @@ namespace IczpNet.Chat.Migrations
                     b.HasIndex("InviterUnitId");
 
                     b.HasIndex("KillerId");
-
-                    b.HasIndex("KillerUnitId");
 
                     b.HasIndex("LastMessageId")
                         .IsDescending();
@@ -4365,16 +4363,12 @@ namespace IczpNet.Chat.Migrations
                         .HasForeignKey("InviterId");
 
                     b.HasOne("IczpNet.Chat.SessionSections.SessionUnits.SessionUnit", "InviterUnit")
-                        .WithMany("InviterUnitList")
+                        .WithMany()
                         .HasForeignKey("InviterUnitId");
 
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Killer")
                         .WithMany("KillerSessionUnitList")
                         .HasForeignKey("KillerId");
-
-                    b.HasOne("IczpNet.Chat.SessionSections.SessionUnits.SessionUnit", "KillerUnit")
-                        .WithMany("KillerUnitList")
-                        .HasForeignKey("KillerUnitId");
 
                     b.HasOne("IczpNet.Chat.MessageSections.Messages.Message", "LastMessage")
                         .WithMany("LastMessageSessionUnitList")
@@ -4403,8 +4397,6 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("InviterUnit");
 
                     b.Navigation("Killer");
-
-                    b.Navigation("KillerUnit");
 
                     b.Navigation("LastMessage");
 
@@ -4719,10 +4711,6 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.SessionSections.SessionUnits.SessionUnit", b =>
                 {
-                    b.Navigation("InviterUnitList");
-
-                    b.Navigation("KillerUnitList");
-
                     b.Navigation("MessageList");
 
                     b.Navigation("ReminderList");

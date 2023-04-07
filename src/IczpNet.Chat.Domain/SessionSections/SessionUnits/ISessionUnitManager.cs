@@ -14,6 +14,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         Task<SessionUnit> FindAsync(long ownerId, long destinactionId);
 
+        Task<SessionUnit> FindBySessionIdAsync(Guid sessionId, long ownerId);
+
         Task<Guid?> FindIdAsync(long ownerId, long destinactionId);
 
         Task<Guid?> FindIdAsync(Expression<Func<SessionUnit, bool>> predicate);

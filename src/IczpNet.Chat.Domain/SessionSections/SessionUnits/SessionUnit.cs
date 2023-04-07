@@ -134,6 +134,26 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         /// </summary>
         public virtual long? InviterId { get; set; }
 
+        #region 邀请人 SessionUnit
+        public virtual Guid? InviterUnitId { get; set; }
+
+        [ForeignKey(nameof(InviterUnitId))]
+        public virtual SessionUnit InviterUnit { get; set; }
+
+        [InverseProperty(nameof(InviterUnit))]
+        public virtual List<SessionUnit> InviterUnitList { get; set; }
+        #endregion
+
+        #region 删除人 SessionUnit
+        public virtual Guid? KillerUnitId { get; set; }
+
+        [ForeignKey(nameof(KillerUnitId))]
+        public virtual SessionUnit KillerUnit { get; set; }
+
+        [InverseProperty(nameof(KillerUnit))]
+        public virtual List<SessionUnit> KillerUnitList { get; set; }
+        #endregion
+
         /// <summary>
         /// 客服状态
         /// </summary>
@@ -214,7 +234,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             ChatObjectTypeEnums? destinationObjectType,
             bool isPublic = true,
             bool isStatic = false,
-            JoinWays? joinWay = null) : base(id)
+            JoinWays? joinWay = null,
+            Guid? inviterUnitId = null) : base(id)
         {
             Session = session;
             OwnerId = ownerId;
@@ -223,6 +244,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             IsStatic = isStatic;
             IsPublic = isPublic;
             JoinWay = joinWay;
+            InviterUnitId = inviterUnitId;
         }
 
 

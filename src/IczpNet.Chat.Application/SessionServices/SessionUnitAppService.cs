@@ -210,6 +210,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(!input.RoleId.IsEmpty(), x => x.SessionUnitRoleList.Any(x => x.SessionRoleId == input.RoleId))
             .WhereIf(!input.JoinWay.IsEmpty(), x => x.JoinWay == input.JoinWay)
             .WhereIf(!input.InviterId.IsEmpty(), x => x.InviterId == input.InviterId)
+            .WhereIf(!input.InviterUnitId.IsEmpty(), x => x.InviterUnitId == input.InviterUnitId)
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Owner.Name.Contains(input.Keyword))
             ;
 

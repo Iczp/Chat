@@ -65,6 +65,11 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return Repository.FindAsync(predicate);
         }
 
+        public Task<SessionUnit> FindBySessionIdAsync(Guid sessionId, long ownerId)
+        {
+            return FindAsync(x => x.SessionId == sessionId && x.OwnerId == ownerId);
+        }
+
         public Task<SessionUnit> GetAsync(Guid id)
         {
             return Repository.GetAsync(id);

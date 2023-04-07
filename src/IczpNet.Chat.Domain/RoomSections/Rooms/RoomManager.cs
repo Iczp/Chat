@@ -66,7 +66,8 @@ public class RoomManager : ChatObjectManager, IRoomManager
               destinationObjectType: ChatObjectTypeEnums.Room,
               isPublic: false,
               isStatic: true,
-              joinWay: JoinWays.System));
+              joinWay: JoinWays.System,
+              inviterUnitId: null));
     }
     public virtual async Task<ChatObject> CreateAsync(string name, List<long> memberIdList, long? ownerId)
     {
@@ -128,7 +129,15 @@ public class RoomManager : ChatObjectManager, IRoomManager
 
         var session = await SessionManager.GetByOwnerIdAsync(input.RoomId);
 
-        Assert.If(input.InviterId.HasValue && !await IsInRoomAsync(session.Id, input.InviterId.Value), "邀请人不在群里");
+        SessionUnit inviterSessionUnit = null;
+
+        if (input.InviterId.HasValue)
+        {
+            inviterSessionUnit = await SessionUnitManager.FindBySessionIdAsync(session.Id, input.InviterId.Value);
+            Assert.If(inviterSessionUnit == null, "邀请人不在群里");
+        }
+
+        //Assert.If(input.InviterId.HasValue && !await IsInRoomAsync(session.Id, input.InviterId.Value), "邀请人不在群里");
 
         var inMemberIdList = (await SessionUnitRepository.GetQueryableAsync())
             .Where(x => x.SessionId == session.Id && input.MemberIdList.Contains(x.OwnerId))
@@ -159,7 +168,8 @@ public class RoomManager : ChatObjectManager, IRoomManager
                destinationObjectType: ChatObjectTypeEnums.Room,
                isPublic: true,
                isStatic: false,
-               joinWay: JoinWays.Invitation)));
+               joinWay: JoinWays.Invitation,
+               inviterUnitId: inviterSessionUnit?.Id)));
         }
         await CurrentUnitOfWork.SaveChangesAsync();
 
