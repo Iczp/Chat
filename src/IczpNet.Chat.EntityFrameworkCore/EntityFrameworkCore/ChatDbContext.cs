@@ -13,6 +13,7 @@ using IczpNet.Chat.SessionSections.FriendshipTagUnits;
 using IczpNet.Chat.SessionSections.MessageReminders;
 using IczpNet.Chat.SessionSections.OpenedRecorders;
 using IczpNet.Chat.SessionSections.ReadedRecorders;
+using IczpNet.Chat.SessionSections.SessionOrganizations;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionTags;
@@ -43,7 +44,8 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     public DbSet<SessionUnit> SessionUnit { get; set; }
     public DbSet<SessionTag> SessionTag { get; set; }
     public DbSet<SessionRole> SessionRole { get; set; }
-    
+    public DbSet<SessionOrganization> SessionOrganization { get; set; }
+
     public DbSet<ReadedRecorder> ReadedRecorder { get; set; }
 
     public DbSet<Friendship> Friendship { get; set; }
