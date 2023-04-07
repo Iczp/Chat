@@ -281,13 +281,13 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     }
 
     [HttpGet]
-    public virtual async Task<SessionUnitDetailDto> GetDetailAsync(Guid id)
+    public virtual async Task<SessionUnitDestinationDetailDto> GetDetailAsync(Guid id)
     {
         await CheckPolicyAsync(GetDetailPolicyName);
 
         var entity = await GetEntityAsync(id);
 
-        return ObjectMapper.Map<SessionUnit, SessionUnitDetailDto>(entity);
+        return ObjectMapper.Map<SessionUnit, SessionUnitDestinationDetailDto>(entity);
     }
 
     private Task<SessionUnitOwnerDto> MapToDtoAsync(SessionUnit entity)

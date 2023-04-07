@@ -20,7 +20,7 @@ public interface ISessionUnitAppService
 
     Task<SessionUnitOwnerDto> GetAsync(Guid id);
 
-    Task<SessionUnitDetailDto> GetDetailAsync(Guid id);
+    Task<SessionUnitDestinationDetailDto> GetDetailAsync(Guid id);
 
     Task<SessionUnitOwnerDto> SetToppingAsync(Guid id, bool isTopping);
 
