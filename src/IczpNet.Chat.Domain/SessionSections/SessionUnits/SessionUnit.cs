@@ -212,8 +212,9 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             [NotNull]
             long destinationId,
             ChatObjectTypeEnums? destinationObjectType,
-            bool isPublic = false,
-            bool isStatic = false) : base(id)
+            bool isPublic = true,
+            bool isStatic = false,
+            JoinWays? joinWay = null) : base(id)
         {
             Session = session;
             OwnerId = ownerId;
@@ -221,6 +222,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             DestinationObjectType = destinationObjectType;
             IsStatic = isStatic;
             IsPublic = isPublic;
+            JoinWay = joinWay;
         }
 
 

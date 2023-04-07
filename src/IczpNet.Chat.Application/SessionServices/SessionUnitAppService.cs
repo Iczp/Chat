@@ -28,14 +28,14 @@ namespace IczpNet.Chat.SessionServices;
 
 public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 {
-    public virtual string GetListPolicyName { get; private set; }
-    public virtual string GetPolicyName { get; private set; }
-    public virtual string GetDetailPolicyName { get; private set; }
-    public virtual string SetReadedPolicyName { get; private set; }
-    public virtual string SetImmersedPolicyName { get; private set; }
-    public virtual string RemoveSessionPolicyName { get; private set; }
-    public virtual string ClearMessagePolicyName { get; private set; }
-    public virtual string DeleteMessagePolicyName { get; private set; }
+    public virtual string GetListPolicyName { get; set; }
+    public virtual string GetPolicyName { get; set; }
+    public virtual string GetDetailPolicyName { get; set; }
+    public virtual string SetReadedPolicyName { get; set; }
+    public virtual string SetImmersedPolicyName { get; set; }
+    public virtual string RemoveSessionPolicyName { get; set; }
+    public virtual string ClearMessagePolicyName { get; set; }
+    public virtual string DeleteMessagePolicyName { get; set; }
 
     protected IRepository<Friendship, Guid> FriendshipRepository { get; }
     protected IRepository<Session, Guid> SessionRepository { get; }
@@ -200,7 +200,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     public async Task<PagedResultDto<SessionUnitOwnerDto>> GetListBySessionIdAsync(SessionGetListBySessionIdInput input)
     {
         var query = (await Repository.GetQueryableAsync())
-            .Where(x =>  x.SessionId == input.SessionId)
+            .Where(x => x.SessionId == input.SessionId)
             .WhereIf(input.IsKilled.HasValue, x => x.IsKilled == input.IsKilled)
             .WhereIf(input.IsStatic.HasValue, x => x.IsStatic == input.IsStatic)
             .WhereIf(input.IsPublic.HasValue, x => x.IsPublic == input.IsPublic)
@@ -487,6 +487,6 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     [HttpGet]
     public Task<Guid?> FindIdAsync(long ownerId, long destinactionId)
     {
-        return SessionUnitManager.FindIdAsync(x => x.OwnerId == ownerId && x.DestinationId == destinactionId);
+        return SessionUnitManager.FindIdAsync(ownerId, destinactionId);
     }
 }

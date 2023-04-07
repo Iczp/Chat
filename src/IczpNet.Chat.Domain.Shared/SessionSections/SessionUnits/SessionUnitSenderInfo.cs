@@ -17,7 +17,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         //public virtual long OwnerId { get; set; }
 
-        //public virtual ChatObjectInfo Owner { get; set; }
+        public virtual ChatObjectInfo Owner { get; set; }
 
         public virtual bool IsPublic { get; set; }
 

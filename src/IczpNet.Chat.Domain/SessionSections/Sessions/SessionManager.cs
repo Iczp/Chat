@@ -62,6 +62,21 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return await Repository.UpdateAsync(entity, autoSave: true);
         }
 
+        public Task<Session> GetAsync(Guid sessionId)
+        {
+            return Repository.GetAsync(sessionId);
+        }
+
+        public async Task<Session> GetByKeyAsync(string sessionKey)
+        {
+            return Assert.NotNull(await Repository.FindAsync(x => x.SessionKey == sessionKey), $"No such session by sessionKey:{sessionKey}");
+        }
+
+        public virtual async Task<Session> GetByOwnerIdAsync(long roomId)
+        {
+            return Assert.NotNull(await Repository.FindAsync(x => x.OwnerId == roomId), $"No such session by roomId:{roomId}");
+        }
+
         public Task<bool> IsFriendshipAsync(long ownerId, long destinationId)
         {
             return FriendshipRepository.AnyAsync(x => x.OwnerId == ownerId && x.DestinationId == destinationId);
@@ -242,5 +257,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
             }
             return await SessionRoleRepository.UpdateAsync(sessionTag, true);
         }
+
+        
     }
 }

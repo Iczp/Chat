@@ -10,6 +10,12 @@ namespace IczpNet.Chat.SessionSections.Sessions
     {
         Task<SessionUnit> GetAsync(Guid sessionUnitId);
 
+        Task<SessionUnit> FindAsync(Expression<Func<SessionUnit, bool>> predicate);
+
+        Task<SessionUnit> FindAsync(long ownerId, long destinactionId);
+
+        Task<Guid?> FindIdAsync(long ownerId, long destinactionId);
+
         Task<Guid?> FindIdAsync(Expression<Func<SessionUnit, bool>> predicate);
 
         Task<SessionUnit> SetToppingAsync(SessionUnit entity, bool isTopping);

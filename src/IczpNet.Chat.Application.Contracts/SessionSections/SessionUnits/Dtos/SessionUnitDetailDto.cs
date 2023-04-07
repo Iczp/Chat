@@ -11,8 +11,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         public virtual DateTime? HistoryLastTime { get;  set; }
 
-        public virtual bool IsKilled { get;  set; }
-
         public virtual DateTime? ClearTime { get;  set; }
 
         public virtual DateTime? RemoveTime { get;  set; }

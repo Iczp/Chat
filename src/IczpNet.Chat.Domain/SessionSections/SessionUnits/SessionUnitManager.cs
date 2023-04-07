@@ -50,6 +50,20 @@ namespace IczpNet.Chat.SessionSections.Sessions
                 .FirstOrDefault();
             ;
         }
+        public virtual Task<Guid?> FindIdAsync(long ownerId, long destinactionId)
+        {
+            return FindIdAsync(x => x.OwnerId == ownerId && x.DestinationId == destinactionId);
+        }
+
+        public Task<SessionUnit> FindAsync(long ownerId, long destinactionId)
+        {
+            return FindAsync(x => x.OwnerId == ownerId && x.DestinationId == destinactionId);
+        }
+
+        public Task<SessionUnit> FindAsync(Expression<Func<SessionUnit, bool>> predicate)
+        {
+            return Repository.FindAsync(predicate);
+        }
 
         public Task<SessionUnit> GetAsync(Guid id)
         {

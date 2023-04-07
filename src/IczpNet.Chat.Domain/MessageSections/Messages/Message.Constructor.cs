@@ -33,10 +33,10 @@ public partial class Message
     {
         SessionUnit = sessionUnit;
         SenderId = sessionUnit.OwnerId;
-        SenderType = sessionUnit.Owner.ObjectType;
+        SenderType = sessionUnit.Owner?.ObjectType;
         ReceiverId = sessionUnit.DestinationId;
         ReceiverType = sessionUnit.DestinationObjectType;
-        
+
         Session = sessionUnit.Session;
         Channel = Session.Channel;
         SessionKey = Session.SessionKey;

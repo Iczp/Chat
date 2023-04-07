@@ -53,13 +53,13 @@ namespace IczpNet.Chat.SessionSections.Sessions
         public virtual int MemberCount => GetMemberCount();
 
         [NotMapped]
-        public virtual int MessageCount => MessageList.Count();
+        public virtual int MessageCount => MessageList.Count;
 
         [NotMapped]
-        public virtual int TagCount => TagList.Count();
+        public virtual int TagCount => TagList.Count;
 
         [NotMapped]
-        public virtual int RoleCount => RoleList.Count();
+        public virtual int RoleCount => RoleList.Count;
 
         protected Session() { }
 

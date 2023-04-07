@@ -12,6 +12,12 @@ namespace IczpNet.Chat.SessionSections.Sessions
 {
     public interface ISessionManager
     {
+        Task<Session> GetAsync(Guid sessionId);
+
+        Task<Session> GetByOwnerIdAsync(long roomId);
+
+        Task<Session> GetByKeyAsync(string sessionKey);
+
         Task<bool> IsFriendshipAsync(long ownerId, long destinationId);
 
         Task<Friendship> CreateFriendshipAsync(long ownerId, long destinationId, bool isPassive, Guid? friendshipRequestId);
@@ -39,5 +45,6 @@ namespace IczpNet.Chat.SessionSections.Sessions
         Task<SessionRole> AddRoleMembersAsync(Guid roleId, List<Guid> sessionUnitIdList);
 
         Task<SessionRole> RemoveRoleMembersAsync(Guid roleId, List<Guid> sessionUnitIdList);
+        
     }
 }

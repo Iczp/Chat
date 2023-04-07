@@ -27,13 +27,13 @@ namespace IczpNet.Chat.SessionServices
 
         protected override string CreatePolicyName { get; set; }
         protected virtual string SetRenamePolicyName { get; set; }
-        public virtual string SetRemarksPolicyName { get; private set; }
-        public virtual string SetIsCantactsPolicyName { get; private set; }
-        public virtual string SetIsImmersedPolicyName { get; private set; }
-        public virtual string SetIsShowMemberNamePolicyName { get; private set; }
-        public virtual string SetIsShowReadNamePolicyName { get; private set; }
-        public virtual string SetBackgroundImagePolicyName { get; private set; }
-        public virtual string SetTagListPolicyName { get; private set; }
+        public virtual string SetRemarksPolicyName { get; set; }
+        public virtual string SetIsCantactsPolicyName { get; set; }
+        public virtual string SetIsImmersedPolicyName { get; set; }
+        public virtual string SetIsShowMemberNamePolicyName { get; set; }
+        public virtual string SetIsShowReadNamePolicyName { get; set; }
+        public virtual string SetBackgroundImagePolicyName { get; set; }
+        public virtual string SetTagListPolicyName { get; set; }
 
         protected IRepository<FriendshipTag, Guid> FriendshipTagRepository { get; }
 
