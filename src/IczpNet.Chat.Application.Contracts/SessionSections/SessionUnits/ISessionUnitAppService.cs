@@ -12,29 +12,29 @@ public interface ISessionUnitAppService
 {
     Task<Guid?> FindIdAsync(long ownerId, long destinactionId);
 
-    Task<PagedResultDto<SessionUnitDto>> GetListAsync(SessionUnitGetListInput input);
+    Task<PagedResultDto<SessionUnitOwnerDto>> GetListAsync(SessionUnitGetListInput input);
 
-    Task<PagedResultDto<SessionUnitDto>> GetListByLinqAsync(SessionUnitGetListInput input);
+    Task<PagedResultDto<SessionUnitOwnerDto>> GetListByLinqAsync(SessionUnitGetListInput input);
 
-    Task<PagedResultDto<SessionUnitOwnerDto>> GetListBySessionIdAsync(SessionGetListBySessionIdInput input);
+    Task<PagedResultDto<SessionUnitDestinationDto>> GetListBySessionIdAsync(SessionGetListBySessionIdInput input);
 
-    Task<SessionUnitDto> GetAsync(Guid id);
+    Task<SessionUnitOwnerDto> GetAsync(Guid id);
 
     Task<SessionUnitDetailDto> GetDetailAsync(Guid id);
 
-    Task<SessionUnitDto> SetToppingAsync(Guid id, bool isTopping);
+    Task<SessionUnitOwnerDto> SetToppingAsync(Guid id, bool isTopping);
 
-    Task<SessionUnitDto> SetReadedAsync(Guid id, long messageId, bool isForce);
+    Task<SessionUnitOwnerDto> SetReadedAsync(Guid id, long messageId, bool isForce);
 
-    Task<SessionUnitDto> SetImmersedAsync(Guid id, bool isImmersed);
+    Task<SessionUnitOwnerDto> SetImmersedAsync(Guid id, bool isImmersed);
 
-    Task<SessionUnitDto> RemoveAsync(Guid id);
+    Task<SessionUnitOwnerDto> RemoveAsync(Guid id);
 
-    Task<SessionUnitDto> KillAsync(Guid id);
+    Task<SessionUnitOwnerDto> KillAsync(Guid id);
 
-    Task<SessionUnitDto> ClearMessageAsync(Guid id);
+    Task<SessionUnitOwnerDto> ClearMessageAsync(Guid id);
 
-    Task<SessionUnitDto> DeleteMessageAsync(Guid id, long messageId);
+    Task<SessionUnitOwnerDto> DeleteMessageAsync(Guid id, long messageId);
 
     Task<PagedResultDto<MessageDto>> GetMessageListAsync(Guid id, SessionUnitGetMessageListInput input);
 
@@ -46,7 +46,7 @@ public interface ISessionUnitAppService
 
     Task<List<BadgeDto>> GetBadgeByCurrentUserAsync(bool? isImmersed = null);
 
-    Task<PagedResultDto<SessionUnitOwnerDto>> GetSessionMemberListAsync(Guid id, SessionUnitGetSessionMemberListInput input);
+    Task<PagedResultDto<SessionUnitDestinationDto>> GetSessionMemberListAsync(Guid id, SessionUnitGetSessionMemberListInput input);
 
     //Task<SessionUnitOwnerDto> GetSessionMemberAsync(Guid sessionId, Guid ownerId);
 }

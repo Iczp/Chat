@@ -36,11 +36,11 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
         CreateMap<Session, SessionDetailDto>();
 
         //SessionUnit
-        CreateMap<SessionUnit, SessionUnitDto>();
-        CreateMap<SessionUnit, SessionUnitDetailDto>();
         CreateMap<SessionUnit, SessionUnitOwnerDto>();
+        CreateMap<SessionUnit, SessionUnitDetailDto>();
+        CreateMap<SessionUnit, SessionUnitDestinationDto>();
         CreateMap<SessionUnit, SessionUnitWithDestinationDto>(); 
-        CreateMap<SessionUnitModel, SessionUnitDto>();
+        CreateMap<SessionUnitModel, SessionUnitOwnerDto>();
 
         //SessionOrganization
         CreateMap<SessionOrganization, SessionOrganizationDto>();

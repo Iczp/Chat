@@ -30,7 +30,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         Task<PagedResultDto<SessionRoleDto>> GetRoleListAsync(SessionRoleGetListInput input);
 
-        Task<PagedResultDto<SessionUnitOwnerDto>> GetSessionUnitListAsync(SessionGetListBySessionIdInput input);
+        Task<PagedResultDto<SessionUnitDestinationDto>> GetSessionUnitListAsync(SessionGetListBySessionIdInput input);
 
         Task<SessionTagDto> AddTagAsync(Guid sessionId, string name);
 

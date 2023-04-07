@@ -144,7 +144,7 @@ namespace IczpNet.Chat.SessionServices
 
         [HttpGet]
         [Obsolete("Move to SessionUnitAppService.GetListBySessionIdAsync")]
-        public async Task<PagedResultDto<SessionUnitOwnerDto>> GetSessionUnitListAsync(SessionGetListBySessionIdInput input)
+        public async Task<PagedResultDto<SessionUnitDestinationDto>> GetSessionUnitListAsync(SessionGetListBySessionIdInput input)
         {
             var query = (await Repository.GetAsync(input.SessionId))
                 .UnitList.AsQueryable()
@@ -158,7 +158,7 @@ namespace IczpNet.Chat.SessionServices
                 .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Owner.Name.Contains(input.Keyword))
                 ;
 
-            return await GetPagedListAsync<SessionUnit, SessionUnitOwnerDto>(query, input, q => q.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId));
+            return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query, input, q => q.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId));
         }
 
         [HttpPost]

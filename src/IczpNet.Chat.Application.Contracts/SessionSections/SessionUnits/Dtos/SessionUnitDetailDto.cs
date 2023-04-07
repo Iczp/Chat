@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 {
-    public class SessionUnitDetailDto : SessionUnitDto
+    public class SessionUnitDetailDto : SessionUnitOwnerDto
     {
         public virtual DateTime? HistoryFristTime { get;  set; }
 
