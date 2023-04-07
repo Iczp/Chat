@@ -3,6 +3,7 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.RoomSections.Rooms
@@ -27,6 +28,10 @@ namespace IczpNet.Chat.RoomSections.Rooms
         Task<int> JoinRoomAsync(ChatObject room, List<ChatObject> members, ChatObject inviter, JoinWays joinWay);
 
         Task<bool> IsInRoomAsync(ChatObject room, ChatObject member);
+
+        Task<bool> IsInRoomAsync(Guid sessionId, IEnumerable<long> memberIdList);
+
+        Task<bool> IsInRoomAsync(Guid sessionId, long memberId);
 
     }
 }
