@@ -69,5 +69,13 @@ namespace IczpNet.Chat.ChatPushers
                 x.IgnoreConnections = ignoreConnections;
             });
         }
+
+        // send private message 
+
+        public Task<Dictionary<string, long>> ExecutePrivateAsync(List<Guid> sessionUnitList, object commandPayload, List<string> ignoreConnections = null)
+        {
+            //sessionUnitList
+            throw new NotImplementedException();
+        }
     }
 }

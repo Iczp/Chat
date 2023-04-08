@@ -4,6 +4,7 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.OfficialSections.Officials.Dtos;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
@@ -21,17 +22,20 @@ public class OfficialAppService : ChatAppService, IOfficialAppService
     protected IOfficialManager OfficialManager { get; }
     protected IChatObjectTypeManager ChatObjectTypeManager { get; }
     protected ISessionUnitManager SessionUnitManager { get; }
+    protected IMessageSender MessageSender { get; }
     protected IChatObjectCategoryManager ChatObjectCategoryManager { get; }
 
     public OfficialAppService(IOfficialManager roomManager,
         IChatObjectCategoryManager chatObjectCategoryManager,
         IChatObjectTypeManager chatObjectTypeManager,
-        ISessionUnitManager sessionUnitManager)
+        ISessionUnitManager sessionUnitManager,
+        IMessageSender messageSender)
     {
         OfficialManager = roomManager;
         ChatObjectCategoryManager = chatObjectCategoryManager;
         ChatObjectTypeManager = chatObjectTypeManager;
         SessionUnitManager = sessionUnitManager;
+        MessageSender = messageSender;
     }
 
 
@@ -53,7 +57,6 @@ public class OfficialAppService : ChatAppService, IOfficialAppService
     [HttpPost]
     public async Task<SessionUnitOwnerDto> SubscribeAsync(long ownerId, long destinationId)
     {
-
         var sessionUnit = await OfficialManager.SubscribeAsync(ownerId, destinationId);
 
         return ObjectMapper.Map<SessionUnit, SessionUnitOwnerDto>(sessionUnit);
