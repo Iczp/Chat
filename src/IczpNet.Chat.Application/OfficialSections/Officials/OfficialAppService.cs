@@ -49,26 +49,26 @@ public class OfficialAppService : ChatAppService, IOfficialAppService
     }
 
     [HttpPost]
-    public async Task<SessionUnitOwnerDto> EnableAsync(long ownerId, long destinationId)
+    public async Task<SessionUnitOwnerDto> SubscribeAsync(long ownerId, long destinationId)
     {
 
-        var sessionUnit = await OfficialManager.EnableAsync(ownerId, destinationId);
+        var sessionUnit = await OfficialManager.SubscribeAsync(ownerId, destinationId);
 
         return ObjectMapper.Map<SessionUnit, SessionUnitOwnerDto>(sessionUnit);
     }
 
     [HttpPost]
-    public async Task<SessionUnitOwnerDto> DisableAsync(Guid sessionUnitId)
+    public async Task<SessionUnitOwnerDto> UnsubscribeAsync(Guid sessionUnitId)
     {
-        var sessionUnit = await OfficialManager.DisableAsync(sessionUnitId);
+        var sessionUnit = await OfficialManager.UnsubscribeAsync(sessionUnitId);
 
         return ObjectMapper.Map<SessionUnit, SessionUnitOwnerDto>(sessionUnit);
     }
 
     [HttpPost]
-    public async Task<SessionUnitOwnerDto> EnableByIdAsync(Guid sessionUnitId)
+    public async Task<SessionUnitOwnerDto> SubscribeByIdAsync(Guid sessionUnitId)
     {
-        var sessionUnit = await OfficialManager.EnableAsync(sessionUnitId);
+        var sessionUnit = await OfficialManager.SubscribeByIdAsync(sessionUnitId);
 
         return ObjectMapper.Map<SessionUnit, SessionUnitOwnerDto>(sessionUnit);
     }

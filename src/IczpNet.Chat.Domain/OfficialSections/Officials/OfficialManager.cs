@@ -64,7 +64,7 @@ namespace IczpNet.Chat.OfficialSections.Officials
             return official;
         }
 
-        public async Task<SessionUnit> EnableAsync(long ownerId, long destinationId)
+        public async Task<SessionUnit> SubscribeAsync(long ownerId, long destinationId)
         {
 
             var sessionUnit = await SessionUnitManager.FindAsync(ownerId, destinationId);
@@ -103,12 +103,12 @@ namespace IczpNet.Chat.OfficialSections.Officials
             return sessionUnit;
         }
 
-        public Task<SessionUnit> DisableAsync(Guid sessionUnitId)
+        public Task<SessionUnit> UnsubscribeAsync(Guid sessionUnitId)
         {
             return SetIsEnabledAsync(sessionUnitId, isEnabled: false);
         }
 
-        public Task<SessionUnit> EnableAsync(Guid sessionUnitId)
+        public Task<SessionUnit> SubscribeByIdAsync(Guid sessionUnitId)
         {
             return SetIsEnabledAsync(sessionUnitId, isEnabled: true);
         }

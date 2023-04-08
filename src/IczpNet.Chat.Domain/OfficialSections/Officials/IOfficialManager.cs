@@ -7,10 +7,10 @@ namespace IczpNet.Chat.OfficialSections.Officials
 {
     public interface IOfficialManager : IChatObjectManager
     {
-        Task<SessionUnit> EnableAsync(long ownerId, long destinationId);
+        Task<SessionUnit> SubscribeAsync(long ownerId, long destinationId);
 
-        Task<SessionUnit> EnableAsync(Guid sessionUnitId);
+        Task<SessionUnit> SubscribeByIdAsync(Guid sessionUnitId);
 
-        Task<SessionUnit> DisableAsync(Guid sessionUnitId);
+        Task<SessionUnit> UnsubscribeAsync(Guid sessionUnitId);
     }
 }

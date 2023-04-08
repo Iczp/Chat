@@ -11,10 +11,10 @@ namespace IczpNet.Chat.OfficialSections.Officials
     {
         Task<ChatObjectDto> CreateAsync(OfficialCreateInput input);
 
-        Task<SessionUnitOwnerDto> EnableAsync(long ownerId, long destinationId);
+        Task<SessionUnitOwnerDto> SubscribeAsync(long ownerId, long destinationId);
 
-        Task<SessionUnitOwnerDto> EnableByIdAsync(Guid sessionUnitId);
+        Task<SessionUnitOwnerDto> SubscribeByIdAsync(Guid sessionUnitId);
 
-        Task<SessionUnitOwnerDto> DisableAsync(Guid sessionUnitId);
+        Task<SessionUnitOwnerDto> UnsubscribeAsync(Guid sessionUnitId);
     }
 }
