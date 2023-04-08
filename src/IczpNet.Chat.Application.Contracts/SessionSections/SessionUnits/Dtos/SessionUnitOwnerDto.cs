@@ -70,6 +70,10 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         public virtual bool IsKilled { get; set; }
 
+        public virtual bool IsInputEnabled { get; set; }
+
+        public virtual bool IsEnabled { get; set; }
+
         /// <summary>
         /// 邀请人
         /// </summary>

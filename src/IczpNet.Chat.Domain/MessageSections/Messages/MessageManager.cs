@@ -85,7 +85,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             return entity;
         }
 
-        
+
 
         public virtual async Task<Message> CreateMessageAsync<TMessageInput>(TMessageInput input, Func<Message, Task<IMessageContentEntity>> func)
             where TMessageInput : class, IMessageInput
@@ -141,6 +141,8 @@ namespace IczpNet.Chat.MessageSections.Messages
             where TMessageSendInput : class, IMessageSendInput
         {
             var sessionUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
+
+            Assert.If(!sessionUnit.IsInputEnabled, $"Unable to send message, input status is disabled");
 
             return await CreateMessageBySessionUnitAsync(sessionUnit, async entity =>
             {
