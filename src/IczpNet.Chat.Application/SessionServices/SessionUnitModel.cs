@@ -75,6 +75,10 @@ namespace IczpNet.Chat.SessionServices
 
         public virtual bool IsKilled { get; set; }
 
+        public virtual bool IsInputEnabled { get; set; }
+
+        public virtual bool IsEnabled { get; set; }
+
         public virtual ChatObject Destination { get; set; }
 
         public virtual Message LastMessage { get; set; }
