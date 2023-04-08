@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -8,30 +9,30 @@ namespace IczpNet.Chat.MessageSections
 {
     public class ContentResolver : IContentResolver, ISingletonDependency
     {
-        protected Dictionary<string, Type> ContentProvider { get; }
+        public ConcurrentDictionary<string, Type> Providers => _providers;
+
+        private readonly ConcurrentDictionary<string, Type> _providers = new();
+
         public ContentResolver()
         {
-            //ContentProvider = typeof(IContentProvider).Assembly.GetExportedTypes()
-            //        .Where(t => !t.IsAbstract && t.GetInterfaces().Any(x => typeof(IContentProvider).IsAssignableFrom(x)))
-            //        .ToDictionary(x => x.GetCustomAttribute<ContentProviderAttribute>(true).ProviderName, x => x)
-            //        ;
-
-            var list = typeof(IContentProvider).Assembly.GetExportedTypes()
+            var typeList = typeof(IContentProvider).Assembly.GetExportedTypes()
                     .Where(t => !t.IsAbstract && t.GetInterfaces().Any(x => typeof(IContentProvider).IsAssignableFrom(x)))
                     .ToList();
-            ContentProvider = list
-                     .ToDictionary(x => x.GetCustomAttribute<ContentProviderAttribute>(true).ProviderName, x => x)
-                    ;
+
+            foreach (var type in typeList)
+            {
+                _providers.TryAdd(type.GetCustomAttribute<ContentProviderAttribute>(true).ProviderName, type);
+            }
         }
 
         public Type GetProviderType(string name)
         {
-            return ContentProvider[name];
+            return _providers[name];
         }
 
         public Type GetProviderTypeOrDefault(string name)
         {
-            return ContentProvider.GetOrDefault(name);
+            return _providers.GetOrDefault(name);
         }
     }
 }

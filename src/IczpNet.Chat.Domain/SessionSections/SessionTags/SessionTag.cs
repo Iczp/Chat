@@ -10,9 +10,12 @@ namespace IczpNet.Chat.SessionSections.SessionTags
 {
     public class SessionTag : BaseEntity<Guid>
     {
-        public SessionTag(Guid id, string name) : base(id)
+        protected SessionTag() {}
+
+        public SessionTag(Guid id, Guid sessionId, string name) : base(id)
         {
             Name = name;
+            SessionId = sessionId;
         }
 
         public virtual Guid? SessionId { get; set; }

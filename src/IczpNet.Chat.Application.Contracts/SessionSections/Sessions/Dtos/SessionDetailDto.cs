@@ -1,5 +1,5 @@
 ﻿using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
-using IczpNet.Chat.SessionSections.SessionTagDtos.Dtos;
+using IczpNet.Chat.SessionSections.SessionTags.Dtos;
 using System.Collections.Generic;
 
 namespace IczpNet.Chat.SessionSections.Sessions.Dtos

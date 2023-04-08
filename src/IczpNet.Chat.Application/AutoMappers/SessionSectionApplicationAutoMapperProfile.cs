@@ -12,13 +12,13 @@ using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.Sessions.Dtos;
-using IczpNet.Chat.SessionSections.SessionTagDtos.Dtos;
 using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using IczpNet.Chat.SessionServices;
 using IczpNet.Chat.SessionSections.SessionOrganizations;
 using IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;
+using IczpNet.Chat.SessionSections.SessionTags.Dtos;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -49,9 +49,20 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
         CreateMap<SessionOrganizationUpdateInput, SessionOrganization>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         CreateMap<SessionOrganization, SessionOrganizationInfo>();
 
-        CreateMap<SessionTag, SessionTagDto>();
 
+        //SessionTag
+        CreateMap<SessionTag, SessionTagDto>();
+        CreateMap<SessionTag, SessionTagDetailDto>();
+        CreateMap<SessionTag, SessionTagSimpleDto>();
+        CreateMap<SessionTagCreateInput, SessionTag>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<SessionTagUpdateInput, SessionTag>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+
+        //SessionRole
         CreateMap<SessionRole, SessionRoleDto>();
+        CreateMap<SessionRole, SessionRoleDetailDto>();
+        CreateMap<SessionRole, SessionRoleSimpleDto>();
+        CreateMap<SessionRoleCreateInput, SessionRole>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<SessionRoleUpdateInput, SessionRole>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
 
         //Friendship
         CreateMap<Friendship, FriendshipDto>();

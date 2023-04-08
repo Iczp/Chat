@@ -11,8 +11,8 @@ using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.Sessions.Dtos;
-using IczpNet.Chat.SessionSections.SessionTagDtos.Dtos;
 using IczpNet.Chat.SessionSections.SessionTags;
+using IczpNet.Chat.SessionSections.SessionTags.Dtos;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using IczpNet.Chat.Specifications;
@@ -173,7 +173,7 @@ namespace IczpNet.Chat.SessionServices
         {
             var entity = await Repository.GetAsync(sessionId);
 
-            var tag = await SessionManager.AddTagAsync(entity, new SessionTag(GuidGenerator.Create(), name));
+            var tag = await SessionManager.AddTagAsync(entity, new SessionTag(GuidGenerator.Create(), sessionId, name));
 
             return ObjectMapper.Map<SessionTag, SessionTagDto>(tag);
         }
@@ -201,7 +201,7 @@ namespace IczpNet.Chat.SessionServices
         {
             var entity = await Repository.GetAsync(sessionId);
 
-            var role = await SessionManager.AddRoleAsync(entity, new SessionRole(GuidGenerator.Create(), name));
+            var role = await SessionManager.AddRoleAsync(entity, new SessionRole(GuidGenerator.Create(), sessionId, name));
 
             return ObjectMapper.Map<SessionRole, SessionRoleDto>(role);
         }

@@ -2,9 +2,9 @@
 using System;
 using Volo.Abp.Application.Dtos;
 
-namespace IczpNet.Chat.SessionSections.Sessions.Dtos
+namespace IczpNet.Chat.SessionSections.SessionRoles.Dtos
 {
-    public class SessionTagGetListInput : PagedAndSortedResultRequestDto, IKeyword
+    public class SessionRoleGetListInput : PagedAndSortedResultRequestDto, IKeyword
     {
         public virtual Guid SessionId { get; set; }
 

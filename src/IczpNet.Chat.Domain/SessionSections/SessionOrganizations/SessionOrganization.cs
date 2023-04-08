@@ -9,15 +9,18 @@ namespace IczpNet.Chat.SessionSections.SessionOrganizations
 {
     public class SessionOrganization : BaseTreeEntity<SessionOrganization, long>
     {
-        public SessionOrganization(string name, long? parentId) : base(name, parentId)
+        protected SessionOrganization() { }
+
+        public SessionOrganization(string name, Guid sessionId, long? parentId) : base(name, parentId)
         {
             Name = name;
+            SessionId = sessionId;
         }
 
-        public virtual Guid? SessionId { get; set; }
+        public virtual Guid? SessionId { get; protected set; }
 
         [ForeignKey(nameof(SessionId))]
-        public virtual Session Session { get; set; }
+        public virtual Session Session { get; protected set; }
 
         public virtual List<SessionUnitOrganization> SessionUnitOrganizationList { get; protected set; }
     }
