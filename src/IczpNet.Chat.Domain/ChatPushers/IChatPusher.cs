@@ -13,5 +13,7 @@ namespace IczpNet.Chat.ChatPushers
         Task<Dictionary<string, long>> ExecuteAsync(object payload, Action<ChannelMessagePayload> action);
 
         Task<Dictionary<string, long>> ExecuteBySessionIdAsync(Guid sessionId, object commandPayload, List<string> ignoreConnections = null);
+
+        Task<Dictionary<string, long>> ExecutePrivateAsync(List<Guid> sessionUnitList, object commandPayload, List<string> ignoreConnections = null)
     }
 }
