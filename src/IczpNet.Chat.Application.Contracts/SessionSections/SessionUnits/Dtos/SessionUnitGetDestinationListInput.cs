@@ -3,15 +3,14 @@ using IczpNet.Chat.Enums;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
 using Volo.Abp.Application.Dtos;
 
-namespace IczpNet.Chat.SessionSections.Sessions
+namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 {
-    public class SessionGetListBySessionIdInput : PagedAndSortedResultRequestDto, IKeyword
+    public class SessionUnitGetDestinationListInput : PagedAndSortedResultRequestDto, IKeyword
     {
-        [Required]
-        public virtual Guid SessionId { get; set; }
+        //[Required]
+        //public virtual Guid SessionId { get; set; }
 
         public virtual bool? IsKilled { get; set; }
 

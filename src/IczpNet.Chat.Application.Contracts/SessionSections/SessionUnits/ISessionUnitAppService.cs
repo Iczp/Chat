@@ -1,5 +1,4 @@
 ﻿using IczpNet.Chat.MessageSections.Messages.Dtos;
-using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using System;
 using System.Collections.Generic;
@@ -16,11 +15,13 @@ public interface ISessionUnitAppService
 
     Task<PagedResultDto<SessionUnitOwnerDto>> GetListByLinqAsync(SessionUnitGetListInput input);
 
-    Task<PagedResultDto<SessionUnitDestinationDto>> GetListBySessionIdAsync(SessionGetListBySessionIdInput input);
+    Task<PagedResultDto<SessionUnitDestinationDto>> GetDestinationListAsync(Guid id,SessionUnitGetDestinationListInput input);
 
     Task<SessionUnitOwnerDto> GetAsync(Guid id);
 
     Task<SessionUnitDestinationDetailDto> GetDetailAsync(Guid id);
+
+    Task<SessionUnitDestinationDto> GetDestinationAsync(Guid id, Guid destinationId);
 
     Task<SessionUnitOwnerDto> SetToppingAsync(Guid id, bool isTopping);
 

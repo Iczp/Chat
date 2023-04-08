@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
@@ -46,7 +45,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
         {
             return (await Repository.GetQueryableAsync())
                 .Where(predicate)
-                .Select(x => x.Id)
+                .Select(x => (Guid?)x.Id)
                 .FirstOrDefault();
             ;
         }

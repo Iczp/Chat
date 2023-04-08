@@ -144,9 +144,9 @@ namespace IczpNet.Chat.SessionServices
 
         [HttpGet]
         [Obsolete("Move to SessionUnitAppService.GetListBySessionIdAsync")]
-        public async Task<PagedResultDto<SessionUnitDestinationDto>> GetSessionUnitListAsync(SessionGetListBySessionIdInput input)
+        public async Task<PagedResultDto<SessionUnitDestinationDto>> GetSessionUnitListAsync(Guid id, SessionUnitGetDestinationListInput input)
         {
-            var query = (await Repository.GetAsync(input.SessionId))
+            var query = (await Repository.GetAsync(id))
                 .UnitList.AsQueryable()
                 .Where(x => !x.IsKilled)
                 .WhereIf(input.OwnerIdList.IsAny(), x => input.OwnerIdList.Contains(x.OwnerId))

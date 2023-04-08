@@ -197,10 +197,13 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 
 
     [HttpGet]
-    public async Task<PagedResultDto<SessionUnitDestinationDto>> GetListBySessionIdAsync(SessionGetListBySessionIdInput input)
+    public async Task<PagedResultDto<SessionUnitDestinationDto>> GetDestinationListAsync(Guid id, SessionUnitGetDestinationListInput input)
     {
+        var entity = await Repository.GetAsync(id);
+
         var query = (await Repository.GetQueryableAsync())
-            .Where(x => x.SessionId == input.SessionId)
+
+            .Where(x => x.SessionId == entity.SessionId)
             .WhereIf(input.IsKilled.HasValue, x => x.IsKilled == input.IsKilled)
             .WhereIf(input.IsStatic.HasValue, x => x.IsStatic == input.IsStatic)
             .WhereIf(input.IsPublic.HasValue, x => x.IsPublic == input.IsPublic)
@@ -290,9 +293,26 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return ObjectMapper.Map<SessionUnit, SessionUnitDestinationDetailDto>(entity);
     }
 
-    private Task<SessionUnitOwnerDto> MapToDtoAsync(SessionUnit entity)
+    [HttpGet]
+    public virtual async Task<SessionUnitDestinationDto> GetDestinationAsync(Guid id, Guid destinationId)
+    {
+        var destinationEntity = await GetEntityAsync(destinationId);
+
+        var selfEntity = await GetEntityAsync(id);
+
+        Assert.If(selfEntity.SessionId != destinationEntity.SessionId, $"Not in the same session");
+
+        return await MapToDestinationDtoAsync(destinationEntity);
+    }
+
+    protected virtual Task<SessionUnitOwnerDto> MapToDtoAsync(SessionUnit entity)
     {
         return Task.FromResult(ObjectMapper.Map<SessionUnit, SessionUnitOwnerDto>(entity));
+    }
+
+    protected virtual Task<SessionUnitDestinationDto> MapToDestinationDtoAsync(SessionUnit entity)
+    {
+        return Task.FromResult(ObjectMapper.Map<SessionUnit, SessionUnitDestinationDto>(entity));
     }
 
     [HttpPost]
