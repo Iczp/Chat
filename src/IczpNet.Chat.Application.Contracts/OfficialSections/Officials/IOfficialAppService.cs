@@ -11,6 +11,8 @@ namespace IczpNet.Chat.OfficialSections.Officials
     {
         Task<ChatObjectDto> CreateAsync(OfficialCreateInput input);
 
+        //Task<ChatObjectDto> UpdateAsync(Guid id, OfficialUpdateInput input);
+
         Task<SessionUnitOwnerDto> SubscribeAsync(long ownerId, long destinationId);
 
         Task<SessionUnitOwnerDto> SubscribeByIdAsync(Guid sessionUnitId);

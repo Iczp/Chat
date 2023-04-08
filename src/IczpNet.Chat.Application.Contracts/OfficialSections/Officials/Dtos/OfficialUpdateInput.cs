@@ -2,7 +2,7 @@
 
 namespace IczpNet.Chat.OfficialSections.Officials.Dtos;
 
-public class OfficialCreateInput : BaseInput
+public class OfficialUpdateInput : BaseInput
 {
     public virtual string Name { get; set; }
 

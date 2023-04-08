@@ -9,7 +9,6 @@ using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using Microsoft.AspNetCore.Mvc;
-using Pipelines.Sockets.Unofficial.Buffers;
 using System;
 using System.Threading.Tasks;
 
@@ -43,7 +42,10 @@ public class OfficialAppService : ChatAppService, IOfficialAppService
 
         var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Official);
 
-        var official = await OfficialManager.CreateAsync(new ChatObject(input.Name, chatObjectType, null));
+        var official = await OfficialManager.CreateAsync(new ChatObject(input.Name, chatObjectType, null)
+        {
+            Description = input.Description,
+        });
 
         return ObjectMapper.Map<ChatObject, ChatObjectDto>(official);
     }
@@ -72,4 +74,6 @@ public class OfficialAppService : ChatAppService, IOfficialAppService
 
         return ObjectMapper.Map<SessionUnit, SessionUnitOwnerDto>(sessionUnit);
     }
+
+
 }
