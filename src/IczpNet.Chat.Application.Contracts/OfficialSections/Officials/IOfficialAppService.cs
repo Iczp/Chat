@@ -13,6 +13,8 @@ namespace IczpNet.Chat.OfficialSections.Officials
 
         Task<SessionUnitOwnerDto> EnableAsync(long ownerId, long destinationId);
 
+        Task<SessionUnitOwnerDto> EnableByIdAsync(Guid sessionUnitId);
+
         Task<SessionUnitOwnerDto> DisableAsync(Guid sessionUnitId);
     }
 }

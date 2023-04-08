@@ -164,6 +164,10 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public virtual bool IsPublic { get; set; }
 
+        public virtual bool IsInputEnabled { get; protected set; } = true;
+
+        public virtual bool IsEnabled { get; protected set; } = true;
+
         [ForeignKey(nameof(InviterId))]
         public virtual ChatObject Inviter { get; set; }
 
@@ -238,7 +242,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             bool isPublic = true,
             bool isStatic = false,
             JoinWays? joinWay = null,
-            Guid? inviterUnitId = null) : base(id)
+            Guid? inviterUnitId = null,
+            bool isInputEnabled = true) : base(id)
         {
             Session = session;
             OwnerId = ownerId;
@@ -248,6 +253,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             IsPublic = isPublic;
             JoinWay = joinWay;
             InviterUnitId = inviterUnitId;
+            IsInputEnabled = isInputEnabled;
         }
 
 
@@ -364,6 +370,11 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         internal void SetImmersed(bool isImmersed)
         {
             IsImmersed = isImmersed;
+        }
+
+        internal void SetIsEnabled(bool v)
+        {
+            IsEnabled = v;
         }
     }
 }

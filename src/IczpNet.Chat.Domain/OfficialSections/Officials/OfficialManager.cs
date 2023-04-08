@@ -1,5 +1,10 @@
-﻿using IczpNet.AbpTrees.Statics;
+﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.Enums;
+using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.SessionUnits;
+using Pipelines.Sockets.Unofficial.Buffers;
+using System;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 
@@ -7,8 +12,13 @@ namespace IczpNet.Chat.OfficialSections.Officials
 {
     public class OfficialManager : ChatObjectManager, IOfficialManager
     {
-        public OfficialManager(IChatObjectRepository repository) : base(repository)
+        protected ISessionUnitManager SessionUnitManager { get; }
+
+        public OfficialManager(IChatObjectRepository repository,
+
+            ISessionUnitManager sessionUnitManager) : base(repository)
         {
+            SessionUnitManager = sessionUnitManager;
         }
 
 
@@ -20,6 +30,100 @@ namespace IczpNet.Chat.OfficialSections.Officials
         protected override async Task CheckExistsByUpdateAsync(ChatObject inputEntity)
         {
             Assert.If(await Repository.AnyAsync((x) => x.ObjectType == inputEntity.ObjectType && x.Name == inputEntity.Name && !x.Id.Equals(inputEntity.Id)), $" Name[{inputEntity.Name}] already such,,ObjectType:{inputEntity.ObjectType}");
+        }
+
+
+        private SessionUnit AddOfficialSessionUnit(Session session, long officialId)
+        {
+            return session.AddSessionUnit(new SessionUnit(
+                  id: GuidGenerator.Create(),
+                  session: session,
+                  ownerId: officialId,
+                  destinationId: officialId,
+                  destinationObjectType: ChatObjectTypeEnums.Official,
+                  isPublic: false,
+                  isStatic: true,
+                  joinWay: JoinWays.System,
+                  inviterUnitId: null,
+                  isInputEnabled: true));
+        }
+
+        public override async Task<ChatObject> CreateAsync(ChatObject inputEntity, bool isUnique = true)
+        {
+            var official = await base.CreateAsync(inputEntity, isUnique);
+
+            var session = await SessionGenerator.MakeAsync(official, official);
+
+            session.SetOwner(official);
+
+            AddOfficialSessionUnit(session, official.Id);
+
+            // commit to db
+            await CurrentUnitOfWork.SaveChangesAsync();
+
+            return official;
+        }
+
+        public async Task<SessionUnit> EnableAsync(long ownerId, long destinationId)
+        {
+
+            var sessionUnit = await SessionUnitManager.FindAsync(ownerId, destinationId);
+
+            //Unsubscribed
+            if (sessionUnit == null)
+            {
+                var owner = await GetAsync(ownerId);
+
+                var official = await GetAsync(destinationId);
+
+                Assert.If(official.ObjectType != ChatObjectTypeEnums.Official, $"ObjectType must be '{ChatObjectTypeEnums.Official}',destinationId:{destinationId}");
+
+                var session = await SessionGenerator.MakeAsync(owner, official);
+
+                sessionUnit = session.AddSessionUnit(new SessionUnit(
+                  id: GuidGenerator.Create(),
+                  session: session,
+                  ownerId: ownerId,
+                  destinationId: official.Id,
+                  destinationObjectType: ChatObjectTypeEnums.Official,
+                  isPublic: true,
+                  isStatic: false,
+                  joinWay: JoinWays.Normal,
+                  inviterUnitId: null,
+                  isInputEnabled: false));
+            }
+            else
+            {
+                Assert.If(sessionUnit.IsEnabled, $"Already enabled,IsEnabled:{sessionUnit.IsEnabled}");
+            }
+            sessionUnit.SetIsEnabled(true);
+
+            await CurrentUnitOfWork.SaveChangesAsync();
+
+            return sessionUnit;
+        }
+
+        public Task<SessionUnit> DisableAsync(Guid sessionUnitId)
+        {
+            return SetIsEnabledAsync(sessionUnitId, isEnabled: false);
+        }
+
+        public Task<SessionUnit> EnableAsync(Guid sessionUnitId)
+        {
+            return SetIsEnabledAsync(sessionUnitId, isEnabled: true);
+        }
+
+        protected virtual async Task<SessionUnit> SetIsEnabledAsync(Guid sessionUnitId, bool isEnabled)
+        {
+            var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+
+            Assert.If(sessionUnit.IsEnabled == isEnabled, $"Unchanged IsEnabled:{isEnabled}");
+
+            sessionUnit.SetIsEnabled(isEnabled);
+
+            await CurrentUnitOfWork.SaveChangesAsync();
+
+            return sessionUnit;
         }
     }
 }

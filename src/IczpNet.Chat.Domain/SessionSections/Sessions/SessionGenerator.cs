@@ -63,12 +63,12 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
             var receiverId = receiver.Id;
 
-            if (IsObjectType(receiver.ObjectType.Value, ChatObjectTypeEnums.Room, ChatObjectTypeEnums.Square))
+            if (IsObjectType(receiver.ObjectType.Value, ChatObjectTypeEnums.Room, ChatObjectTypeEnums.Square, ChatObjectTypeEnums.Official))
             {
                 return receiverId.ToString();
             }
 
-            if (IsObjectType(sender.ObjectType.Value, ChatObjectTypeEnums.Room, ChatObjectTypeEnums.Square))
+            if (IsObjectType(sender.ObjectType.Value, ChatObjectTypeEnums.Room, ChatObjectTypeEnums.Square, ChatObjectTypeEnums.Official))
             {
                 return senderId.ToString();
             }
@@ -116,9 +116,9 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
             ResolveShopWaiterId(sender, receiver, async (shopKeeperId) =>
             {
-                
+
                 var shopKeeper = await ChatObjectManager.GetItemByCacheAsync(shopKeeperId);
-                
+
                 //add sender
                 session.AddSessionUnit(new SessionUnit(
                         id: GuidGenerator.Create(),
