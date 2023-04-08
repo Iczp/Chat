@@ -13,7 +13,7 @@ namespace IczpNet.Chat.SessionSections.SessionOrganizations
 
         protected override async Task CheckExistsByCreateAsync(SessionOrganization inputEntity)
         {
-            Assert.If(await Repository.AnyAsync(x => x.SessionId == inputEntity.SessionId && x.Name == inputEntity.Name), $"Already exists name:{inputEntity.Name},sessionId:{inputEntity.SessionId}"); ;
+            Assert.If(await Repository.AnyAsync(x => x.SessionId == inputEntity.SessionId && x.Name == inputEntity.Name), $"Already exists name:{inputEntity.Name},sessionId:{inputEntity.SessionId}"); 
         }
 
         protected override async Task CheckExistsByUpdateAsync(SessionOrganization inputEntity)

@@ -2,7 +2,6 @@
 using IczpNet.Chat.ChatObjectCategorys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
-using IczpNet.Chat.RoomSections.Rooms;
 using IczpNet.Chat.RoomSections.Rooms.Dtos;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +9,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
 
-namespace IczpNet.Chat.Services;
+namespace IczpNet.Chat.RoomSections.Rooms;
 
 public class RoomAppService : ChatAppService, IRoomAppService
 {
