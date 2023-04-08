@@ -202,8 +202,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         var entity = await Repository.GetAsync(id);
 
         var query = (await Repository.GetQueryableAsync())
-
-            .Where(x => x.SessionId == entity.SessionId)
+            .Where(x => x.SessionId == entity.SessionId && x.IsEnabled)
             .WhereIf(input.IsKilled.HasValue, x => x.IsKilled == input.IsKilled)
             .WhereIf(input.IsStatic.HasValue, x => x.IsStatic == input.IsStatic)
             .WhereIf(input.IsPublic.HasValue, x => x.IsPublic == input.IsPublic)

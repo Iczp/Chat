@@ -148,7 +148,7 @@ namespace IczpNet.Chat.SessionServices
         {
             var query = (await Repository.GetAsync(id))
                 .UnitList.AsQueryable()
-                .Where(x => !x.IsKilled)
+                .Where(x => !x.IsKilled && x.IsEnabled)
                 .WhereIf(input.OwnerIdList.IsAny(), x => input.OwnerIdList.Contains(x.OwnerId))
                 .WhereIf(input.OwnerTypeList.IsAny(), x => input.OwnerTypeList.Contains(x.Owner.ObjectType.Value))
                 .WhereIf(!input.TagId.IsEmpty(), x => x.SessionUnitTagList.Any(x => x.SessionTagId == input.TagId))

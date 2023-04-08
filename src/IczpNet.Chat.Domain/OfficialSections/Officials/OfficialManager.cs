@@ -94,7 +94,7 @@ namespace IczpNet.Chat.OfficialSections.Officials
             }
             else
             {
-                Assert.If(sessionUnit.IsEnabled, $"Already enabled,IsEnabled:{sessionUnit.IsEnabled}");
+                //Assert.If(sessionUnit.IsEnabled, $"Already enabled,IsEnabled:{sessionUnit.IsEnabled}");
             }
             sessionUnit.SetIsEnabled(true);
 
