@@ -39,6 +39,8 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         public virtual string KeyValue { get; set; }
 
+        public virtual bool IsPrivate { get; set; }
+
         /// <summary>
         /// 撤回消息时间
         /// </summary>

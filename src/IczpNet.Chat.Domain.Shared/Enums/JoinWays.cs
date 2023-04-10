@@ -18,9 +18,9 @@ namespace IczpNet.Chat.Enums
         [Description("朋友邀请")]
         Invitation = 1,
         /// <summary>
-        /// 创建人邀请
+        /// 创建人
         /// </summary>
-        [Description("创建人邀请")]
+        [Description("创建人")]
         Creator = 2,
         /// <summary>
         /// 扫码
@@ -30,7 +30,7 @@ namespace IczpNet.Chat.Enums
         /// <summary>
         /// 系统
         /// </summary>
-        [Description("系统邀请")]
+        [Description("系统")]
         System = 4,
         /// <summary>
         /// 自动加入

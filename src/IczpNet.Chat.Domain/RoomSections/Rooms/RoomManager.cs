@@ -1,4 +1,6 @@
-﻿using IczpNet.AbpCommons;
+﻿using AutoMapper.Execution;
+using AutoMapper.Internal;
+using IczpNet.AbpCommons;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
@@ -71,6 +73,13 @@ public class RoomManager : ChatObjectManager, IRoomManager
     }
     public virtual async Task<ChatObject> CreateAsync(string name, List<long> memberIdList, long? ownerId)
     {
+        var allList = memberIdList;
+
+        if (ownerId != null && !allList.Contains(ownerId.Value))
+        {
+            allList.Add(ownerId.Value);
+        }
+
         var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Room);
 
         var room = await base.CreateAsync(new ChatObject(name, chatObjectType, null), isUnique: false);
@@ -92,19 +101,38 @@ public class RoomManager : ChatObjectManager, IRoomManager
         //    destinationObjectType: room.ObjectType,
         //    isPublic: false,
         //    isStatic: true));
-
-        // add member
-        foreach (var memberId in memberIdList)
+        SessionUnit inviterSessionUnit = null;
+        //group owner
+        if (ownerId != null)
         {
-            session.AddSessionUnit(new SessionUnit(
+            inviterSessionUnit = session.AddSessionUnit(new SessionUnit(
+                id: GuidGenerator.Create(),
+                session: session,
+                ownerId: ownerId.Value,
+                destinationId: room.Id,
+                destinationObjectType: room.ObjectType,
+                isPublic: true,
+                isStatic: true,
+                joinWay: JoinWays.Creator,
+                inviterUnitId: null,
+                isInputEnabled: true));
+        }
+        // add member
+        var _memberIdList = allList
+            .Where(x => x != ownerId).ToList();
+
+        _ = _memberIdList.Select(memberId => session.AddSessionUnit(new SessionUnit(
                 id: GuidGenerator.Create(),
                 session: session,
                 ownerId: memberId,
                 destinationId: room.Id,
                 destinationObjectType: room.ObjectType,
                 isPublic: true,
-                isStatic: memberId == ownerId));
-        }
+                isStatic: memberId == ownerId,
+                joinWay: JoinWays.Invitation,
+                inviterUnitId: inviterSessionUnit?.Id,
+                isInputEnabled: true)))
+            .ToList();
 
         room.OwnerSessionList.Add(session);
 
@@ -113,11 +141,11 @@ public class RoomManager : ChatObjectManager, IRoomManager
 
         var roomOwner = ownerId.HasValue ? await GetItemByCacheAsync(ownerId.Value) : null;
 
-        var members = await GetManyByCacheAsync(memberIdList.Take(3).ToList());
+        var members = await GetManyByCacheAsync(_memberIdList.Take(3).ToList());
 
         await SendRoomMessageAsync(roomSessionUnit, new CmdContentInfo()
         {
-            Text = $"{roomOwner?.Name}创建群聊'{room.Name}',{members.Select(x => x.Name).JoinAsString("、")}等 {memberIdList.Count} 人加入群聊。",
+            Text = $"{roomOwner?.Name} 创建群聊'{room.Name}',{members.Select(x => x.Name).JoinAsString("、")}等 {_memberIdList.Count} 人加入群聊。",
         });
 
         return room;
