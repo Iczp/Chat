@@ -1,6 +1,7 @@
 ﻿using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.RedEnvelopes;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -138,16 +139,16 @@ namespace IczpNet.Chat.MessageSections
             return await MessageManager.SendMessageAsync<TextContentInfo>(input, async x => await Task.FromResult(content));
         }
 
-        public async Task<MessageInfo<TextContentInfo>> SendTextAsync(MessageSendInput<TextContentInfo> input)
+        public async Task<MessageInfo<TextContentInfo>> SendTextAsync(SessionUnit senderSessionUnit, MessageSendInput<TextContentInfo> input, SessionUnit receiverSessionUnit = null)
         {
             var messageContent = ObjectMapper.Map<TextContentInfo, TextContent>(input.Content);
-            return await MessageManager.SendAsync<TextContentInfo>(input, async x => await Task.FromResult(messageContent));
+            return await MessageManager.SendAsync<TextContentInfo>(senderSessionUnit, input, async x => await Task.FromResult(messageContent), receiverSessionUnit);
         }
 
-        public async Task<MessageInfo<CmdContentInfo>> SendCmdAsync(MessageSendInput<CmdContentInfo> input)
+        public async Task<MessageInfo<CmdContentInfo>> SendCmdAsync(SessionUnit senderSessionUnit, MessageSendInput<CmdContentInfo> input, SessionUnit receiverSessionUnit = null)
         {
             var messageContent = ObjectMapper.Map<CmdContentInfo, CmdContent>(input.Content);
-            return await MessageManager.SendAsync<CmdContentInfo>(input, async x => await Task.FromResult(messageContent));
+            return await MessageManager.SendAsync<CmdContentInfo>(senderSessionUnit, input, async x => await Task.FromResult(messageContent), receiverSessionUnit);
         }
     }
 }

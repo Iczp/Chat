@@ -106,11 +106,15 @@ namespace IczpNet.Chat.MessageSections.Messages
             });
         }
 
-        public virtual async Task<Message> CreateMessageBySessionUnitAsync(SessionUnit sessionUnit, Func<Message, Task<IMessageContentEntity>> func)
+        public virtual async Task<Message> CreateMessageBySessionUnitAsync(SessionUnit senderSessionUnit, Func<Message, Task<IMessageContentEntity>> func)
         {
-            var session = sessionUnit.Session;
+            Assert.NotNull(senderSessionUnit, $"Unable to send message, senderSessionUnit is null");
 
-            var entity = new Message(sessionUnit)
+            Assert.If(!senderSessionUnit.IsInputEnabled, $"Unable to send message, input status is disabled");
+
+            var session = senderSessionUnit.Session;
+
+            var entity = new Message(senderSessionUnit)
             {
                 SessionUnitCount = await SessionUnitManager.GetCountAsync(session.Id)
             };
@@ -137,14 +141,9 @@ namespace IczpNet.Chat.MessageSections.Messages
             return entity;
         }
 
-        public virtual async Task<Message> CreateMessageBySessionUnitAsync<TMessageSendInput>(TMessageSendInput input, Func<Message, Task<IMessageContentEntity>> func)
-            where TMessageSendInput : class, IMessageSendInput
+        public virtual async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo>(SessionUnit senderSessionUnit, MessageSendInput input, Func<Message, Task<IMessageContentEntity>> func, SessionUnit receiverSessionUnit = null)
         {
-            var sessionUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
-
-            Assert.If(!sessionUnit.IsInputEnabled, $"Unable to send message, input status is disabled");
-
-            return await CreateMessageBySessionUnitAsync(sessionUnit, async entity =>
+            var message = await CreateMessageBySessionUnitAsync(senderSessionUnit, async entity =>
             {
                 entity.SetKey(input.KeyName, input.KeyValue);
 
@@ -152,18 +151,26 @@ namespace IczpNet.Chat.MessageSections.Messages
                 {
                     entity.SetQuoteMessage(await Repository.GetAsync(input.QuoteMessageId.Value));
                 }
+
+                if (receiverSessionUnit != null)
+                {
+                    var receiver = await ChatObjectManager.GetAsync(receiverSessionUnit.OwnerId);
+                    entity.SetPrivateMessage(receiver);
+                }
                 return await func(entity);
             });
-        }
-
-        public virtual async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo>(MessageSendInput input, Func<Message, Task<IMessageContentEntity>> func)
-        {
-            var message = await CreateMessageBySessionUnitAsync(input, func);
 
             var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
 
-            await ChatPusher.ExecuteBySessionIdAsync(message.SessionId.Value, output, input.IgnoreConnections);
-
+            if (receiverSessionUnit != null)
+            {
+                var sessionUnitList = new List<SessionUnit>() { senderSessionUnit, receiverSessionUnit, };
+                await ChatPusher.ExecutePrivateAsync(sessionUnitList, output, input.IgnoreConnections);
+            }
+            else
+            {
+                await ChatPusher.ExecuteBySessionIdAsync(message.SessionId.Value, output, input.IgnoreConnections);
+            }
             return output;
         }
 

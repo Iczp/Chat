@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.MessageSections
@@ -21,8 +22,8 @@ namespace IczpNet.Chat.MessageSections
 
         //Task<MessageInfo<ArticleContentOutput>> SendArticleContentMessageAsync(MessageInput<ArticleContentInput> input);
 
-        Task<MessageInfo<TextContentInfo>> SendTextAsync(MessageSendInput<TextContentInfo> input);
+        Task<MessageInfo<TextContentInfo>> SendTextAsync(SessionUnit senderSessionUnit, MessageSendInput<TextContentInfo> input, SessionUnit receiverSessionUnit = null);
 
-        Task<MessageInfo<CmdContentInfo>> SendCmdAsync(MessageSendInput<CmdContentInfo> input);
+        Task<MessageInfo<CmdContentInfo>> SendCmdAsync(SessionUnit senderSessionUnit, MessageSendInput<CmdContentInfo> input, SessionUnit receiverSessionUnit = null);
     }
 }

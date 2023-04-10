@@ -3,6 +3,7 @@ using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.SessionSections.Sessions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,14 +25,18 @@ namespace IczpNet.Chat.MessageServices
 
         protected IMessageSender MessageSender { get; }
         protected IMessageManager MessageManager { get; }
+        protected ISessionUnitManager SessionUnitManager { get; }
+
 
         public MessageAppService(
             IMessageRepository repository,
             IMessageManager messageManager,
-            IMessageSender messageSender) : base(repository)
+            IMessageSender messageSender,
+            ISessionUnitManager sessionUnitManager) : base(repository)
         {
             MessageSender = messageSender;
             MessageManager = messageManager;
+            SessionUnitManager = sessionUnitManager;
         }
 
         public async Task<List<long>> ForwardMessageAsync(long sourceMessageId, long senderId, List<long> receiverIdList)
@@ -106,9 +111,11 @@ namespace IczpNet.Chat.MessageServices
             return await MessageManager.RollbackMessageAsync(message);
         }
 
-        public Task<MessageInfo<TextContentInfo>> SendTextAsync(MessageSendInput<TextContentInfo> input)
+        public async Task<MessageInfo<TextContentInfo>> SendTextAsync(MessageSendInput<TextContentInfo> input)
         {
-            return MessageSender.SendTextAsync(input);
+            var sessionunit = await SessionUnitManager.GetAsync(input.SessionUnitId);
+
+            return await MessageSender.SendTextAsync(sessionunit, input);
         }
     }
 }

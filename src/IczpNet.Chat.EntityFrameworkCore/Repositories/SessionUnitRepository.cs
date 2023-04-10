@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.EntityFrameworkCore;
+﻿using IczpNet.AbpCommons.Extensions;
+using IczpNet.Chat.EntityFrameworkCore;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -29,12 +30,12 @@ namespace IczpNet.Chat.Repositories
             return Task.FromResult(table);
         }
 
-        public virtual Task<int> BatchUpdateAsync(Guid sessionId, long lastMessageId)
+        public virtual Task<int> BatchUpdateAsync(Guid sessionId, long lastMessageId, List<Guid> sessionUnitIdList = null)
         {
             return BatchUpdateByEf7Async(sessionId, lastMessageId);
         }
 
-        protected virtual async Task<int> BatchUpdateBySqlAsync(Guid sessionId, long lastMessageId)
+        protected virtual async Task<int> BatchUpdateBySqlAsync(Guid sessionId, long lastMessageId, List<Guid> sessionUnitIdList = null)
         {
             var context = await GetDbContextAsync();
 
@@ -48,16 +49,24 @@ namespace IczpNet.Chat.Repositories
                 new SqlParameter("@SessionId", sessionId),
                 new SqlParameter("@IsDeleted", false),
             };
+
+            if (sessionUnitIdList.IsAny())
+            {
+                sql += " and id in(@SessionUnitIdList)";
+                parameters.Add(new SqlParameter("@SessionUnitIdList", sessionUnitIdList));
+            }
+
             return await context.Database.ExecuteSqlRawAsync(sql, parameters);
         }
 
-        protected virtual async Task<int> BatchUpdateByEf7Async(Guid sessionId, long lastMessageId)
+        protected virtual async Task<int> BatchUpdateByEf7Async(Guid sessionId, long lastMessageId, List<Guid> sessionUnitIdList = null)
         {
             var context = await GetDbContextAsync();
 
             ////EF7.0  https://learn.microsoft.com/en-us/ef/core/what-is-new/ef-core-7.0/whatsnew
             return await context.SessionUnit
                 .Where(x => x.SessionId == sessionId && !x.IsDeleted && x.ServiceStatus == Enums.ServiceStatus.Normal)
+                .WhereIf(sessionUnitIdList.IsAny(), x => sessionUnitIdList.Contains(x.Id))
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(b => b.LastMessageId, b => lastMessageId)
                     .SetProperty(b => b.LastModificationTime, b => DateTime.Now)

@@ -196,7 +196,7 @@ public class RoomManager : ChatObjectManager, IRoomManager
 
     protected virtual Task SendRoomMessageAsync(SessionUnit roomSessionUnit, CmdContentInfo content)
     {
-        return MessageSender.SendCmdAsync(new MessageSendInput<CmdContentInfo>()
+        return MessageSender.SendCmdAsync(roomSessionUnit, new MessageSendInput<CmdContentInfo>()
         {
             SessionUnitId = roomSessionUnit.Id,
             Content = content

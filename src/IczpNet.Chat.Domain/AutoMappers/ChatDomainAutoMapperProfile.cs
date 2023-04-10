@@ -14,6 +14,9 @@ public class ChatApplicationAutoMapperProfile : Profile
 {
     public ChatApplicationAutoMapperProfile()
     {
+        //SessionUnit
+        CreateMap<SessionUnit, SessionUnitCacheItem>();
+
         //ChatObject
         CreateMap<ChatObject, ChatObjectInfo>();
 
@@ -43,7 +46,7 @@ public class ChatApplicationAutoMapperProfile : Profile
 
         CreateMap<RedEnvelopeContentInput, RedEnvelopeContent>().UsingMessageTemplate();
         CreateMap<RedEnvelopeContent, RedEnvelopeContentOutput>();
-          //RedEnvelope
+        //RedEnvelope
         CreateMap<RedEnvelopeContent, RedEnvelopeContentOutput>()
           //.ForMember(d => d.Detail, options => options.MapFrom<DetailResolver>())
           //.ForMember(d => d.IsFinished, options => options.MapFrom<IsFinishedResolver>())

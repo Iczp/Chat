@@ -400,12 +400,13 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         Assert.NotNull(entity.Session, "session is null");
 
         var query = entity.Session.MessageList.AsQueryable()
-            //Official
-            .WhereIf(entity.Session.Owner != null && entity.Session.Owner.ObjectType == ChatObjectTypeEnums.Official, x =>
-                (x.SenderId == entity.OwnerId && x.ReceiverId == entity.Session.OwnerId) ||
-                (x.ReceiverId == entity.OwnerId && x.SenderId == entity.Session.OwnerId) ||
-                (x.SenderId == x.ReceiverId && x.SenderId == entity.OwnerId)
-            )
+            .Where(x => !x.IsPrivate || (x.IsPrivate && (x.SenderId == entity.OwnerId || x.ReceiverId == entity.OwnerId)))
+            ////Official
+            //.WhereIf(entity.Session.Owner != null && entity.Session.Owner.ObjectType == ChatObjectTypeEnums.Official, x =>
+            //    (x.SenderId == entity.OwnerId && x.ReceiverId == entity.Session.OwnerId) ||
+            //    (x.ReceiverId == entity.OwnerId && x.SenderId == entity.Session.OwnerId) ||
+            //    (x.SenderId == x.ReceiverId && x.SenderId == entity.OwnerId)
+            //)
             .WhereIf(entity.HistoryFristTime.HasValue, x => x.CreationTime > entity.HistoryFristTime)
             .WhereIf(entity.HistoryLastTime.HasValue, x => x.CreationTime < entity.HistoryFristTime)
             .WhereIf(entity.ClearTime.HasValue, x => x.CreationTime > entity.ClearTime)

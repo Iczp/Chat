@@ -1,7 +1,9 @@
 ﻿using IczpNet.Chat.SessionSections.SessionUnits;
+using Microsoft.Extensions.Caching.Distributed;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.SessionSections.Sessions
@@ -38,17 +40,19 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         Task<int> GetCountAsync(Guid sessionId);
 
-        Task<int> BatchUpdateAsync(Guid sessionId, long lastMessageId);
+        Task<int> BatchUpdateAsync(Guid sessionId, long lastMessageId, List<Guid> sessionUnitIdList = null);
 
-        Task<List<SessionUnitCacheItem>> GetCacheListBySessionIdAsync(Guid sessionId);
+        Task<List<SessionUnitCacheItem>> GetCacheListAsync(string cacheKey);
 
-        Task<List<SessionUnitCacheItem>> GetOrAddCacheListBySessionIdAsync(Guid sessionId);
+        Task<List<SessionUnitCacheItem>> GetOrAddCacheListAsync(Guid sessionId);
 
         Task SetCacheListBySessionIdAsync(Guid sessionId);
+
+        Task SetCacheListAsync(string cacheKey, List<SessionUnitCacheItem> sessionUnitList, DistributedCacheEntryOptions options = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default);
 
         Task<List<SessionUnitCacheItem>> GetListBySessionIdAsync(Guid sessionId);
 
         Task RemoveCacheListBySessionIdAsync(Guid sessionId);
-        
+
     }
 }

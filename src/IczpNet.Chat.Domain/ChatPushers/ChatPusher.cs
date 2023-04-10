@@ -1,13 +1,17 @@
-﻿using IczpNet.Chat.SessionSections.Sessions;
+﻿
+using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Pusher;
 using IczpNet.Pusher.Commands;
 using IczpNet.Pusher.Models;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.EventBus.Local;
+using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.ChatPushers
 {
@@ -16,15 +20,18 @@ namespace IczpNet.Chat.ChatPushers
         protected IPusherPublisher PusherPublisher { get; }
         protected ILocalEventBus LocalEventBus { get; }
         protected ISessionUnitManager SessionUnitManager { get; }
+        protected IObjectMapper ObjectMapper { get; }
 
         public ChatPusher(
             IPusherPublisher pusherPublisher,
             ILocalEventBus localEventBus,
-            ISessionUnitManager sessionUnitManager)
+            ISessionUnitManager sessionUnitManager,
+            IObjectMapper objectMapper)
         {
             PusherPublisher = pusherPublisher;
             LocalEventBus = localEventBus;
             SessionUnitManager = sessionUnitManager;
+            ObjectMapper = objectMapper;
         }
         public async Task<long> ExecuteAsync(ChannelMessagePayload payload)
         {
@@ -61,21 +68,33 @@ namespace IczpNet.Chat.ChatPushers
 
         public async Task<Dictionary<string, long>> ExecuteBySessionIdAsync(Guid sessionId, object commandPayload, List<string> ignoreConnections = null)
         {
-            await SessionUnitManager.GetOrAddCacheListBySessionIdAsync(sessionId);
+            await SessionUnitManager.GetOrAddCacheListAsync(sessionId);
 
             return await ExecuteAsync(commandPayload, x =>
             {
-                x.SessionId = sessionId;
+                x.CacheKey = $"{new SessionUnitCacheKey(sessionId)}";
                 x.IgnoreConnections = ignoreConnections;
             });
         }
 
         // send private message 
 
-        public Task<Dictionary<string, long>> ExecutePrivateAsync(List<Guid> sessionUnitList, object commandPayload, List<string> ignoreConnections = null)
+        public async Task<Dictionary<string, long>> ExecutePrivateAsync(List<SessionUnit> sessionUnitList, object commandPayload, List<string> ignoreConnections = null)
         {
-            //sessionUnitList
-            throw new NotImplementedException();
+            var sessionUnitCacheList = ObjectMapper.Map<List<SessionUnit>, List<SessionUnitCacheItem>>(sessionUnitList);
+
+            var key = $"{new SessionUnitCacheKey(DateTime.Now.Ticks)}";
+
+            await SessionUnitManager.SetCacheListAsync(key, sessionUnitCacheList, new DistributedCacheEntryOptions()
+            {
+                 AbsoluteExpirationRelativeToNow =TimeSpan.FromMinutes(5)
+            });
+
+            return await ExecuteAsync(commandPayload, x =>
+            {
+                x.CacheKey = key;
+                x.IgnoreConnections = ignoreConnections;
+            });
         }
     }
 }

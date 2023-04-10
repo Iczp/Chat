@@ -1,10 +1,12 @@
 ﻿using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.ReadedRecorders;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using Microsoft.Extensions.Caching.Distributed;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
@@ -17,14 +19,14 @@ namespace IczpNet.Chat.SessionSections.Sessions
         protected ISessionUnitRepository Repository { get; }
         protected IRepository<ReadedRecorder, Guid> ReadedRecorderRepository { get; }
         protected IMessageRepository MessageRepository { get; }
-        protected IDistributedCache<List<SessionUnitCacheItem>, Guid> UnitListCache { get; }
+        protected IDistributedCache<List<SessionUnitCacheItem>, string> UnitListCache { get; }
         protected IDistributedCache<string, Guid> UnitCountCache { get; }
 
         public SessionUnitManager(
             ISessionUnitRepository repository,
             IRepository<ReadedRecorder, Guid> readedRecorderRepository,
             IMessageRepository messageRepository,
-            IDistributedCache<List<SessionUnitCacheItem>, Guid> unitListCache,
+            IDistributedCache<List<SessionUnitCacheItem>, string> unitListCache,
             IDistributedCache<string, Guid> unitCountCache)
         {
             Repository = repository;
@@ -120,17 +122,27 @@ namespace IczpNet.Chat.SessionSections.Sessions
                 .WhereIf(isImmersed.HasValue, x => x.IsImmersed == isImmersed)
                 .Select(x => new
                 {
-                    Badge = x.Session.MessageList.Count(d =>
-                    //!x.IsRollbacked &&
-                    (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
-                    d.SenderId != x.OwnerId &&
-                    (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
-                    (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
-                    (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime))
+                    PublicBadge = x.Session.MessageList.Count(d =>
+                        //!x.IsRollbacked &&
+                        d.SenderId != x.OwnerId &&
+                        !d.IsPrivate &&
+                        (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
+                        (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
+                        (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
+                        (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)),
+                    PrivateBadge = x.Session.MessageList.Count(d =>
+                        //!x.IsRollbacked &&
+                        d.SenderId != x.OwnerId &&
+                        (d.IsPrivate && d.ReceiverId == x.OwnerId) &&
+                        (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
+                        (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
+                        (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
+                        (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)),
                 })
-                .Where(x => x.Badge > 0)
+                .Select(x => x.PublicBadge + x.PrivateBadge)
+                .Where(x => x > 0)
                 .ToList()
-            .Sum(x => x.Badge);
+            .Sum();
 
             return badge;
         }
@@ -139,37 +151,43 @@ namespace IczpNet.Chat.SessionSections.Sessions
         {
             var value = await UnitCountCache.GetOrAddAsync(sessionId, async () =>
             {
-                var count = await Repository.CountAsync(x => x.SessionId == sessionId && x.IsPublic && !x.IsKilled);
+                var count = await Repository.CountAsync(x => x.SessionId == sessionId && x.IsPublic && !x.IsKilled && x.IsEnabled);
                 return count.ToString();
             });
             return int.Parse(value);
         }
 
-        public Task<int> BatchUpdateAsync(Guid sessionId, long lastMessageId)
+        public Task<int> BatchUpdateAsync(Guid sessionId, long lastMessageId, List<Guid> sessionUnitIdList = null)
         {
-            return Repository.BatchUpdateAsync(sessionId, lastMessageId);
+            return Repository.BatchUpdateAsync(sessionId, lastMessageId, sessionUnitIdList);
         }
 
-        public Task<List<SessionUnitCacheItem>> GetCacheListBySessionIdAsync(Guid sessionId)
+        public Task<List<SessionUnitCacheItem>> GetCacheListAsync(string sessionUnitCachKey)
         {
-            return UnitListCache.GetAsync(sessionId);
+            return UnitListCache.GetAsync(sessionUnitCachKey);
         }
 
-        public Task<List<SessionUnitCacheItem>> GetOrAddCacheListBySessionIdAsync(Guid sessionId)
+        public Task<List<SessionUnitCacheItem>> GetOrAddCacheListAsync(Guid sessionId)
         {
-            return UnitListCache.GetOrAddAsync(sessionId, () => GetListBySessionIdAsync(sessionId));
+            return UnitListCache.GetOrAddAsync($"{new SessionUnitCacheKey(sessionId)}", () => GetListBySessionIdAsync(sessionId));
         }
 
         public async Task SetCacheListBySessionIdAsync(Guid sessionId)
         {
             var sessionUnitInfoList = await GetListBySessionIdAsync(sessionId);
-            await UnitListCache.SetAsync(sessionId, sessionUnitInfoList);
+
+            await SetCacheListAsync($"{new SessionUnitCacheKey(sessionId)}", sessionUnitInfoList);
+        }
+
+        public async Task SetCacheListAsync(string cacheKey, List<SessionUnitCacheItem> sessionUnitList, DistributedCacheEntryOptions options = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default)
+        {
+            await UnitListCache.SetAsync(cacheKey, sessionUnitList, options, hideErrors, considerUow, token);
         }
 
         public async Task<List<SessionUnitCacheItem>> GetListBySessionIdAsync(Guid sessionId)
         {
             var list = (await Repository.GetQueryableAsync())
-                .Where(x => x.SessionId == sessionId && !x.IsKilled)
+                .Where(x => x.SessionId == sessionId && !x.IsKilled && x.IsEnabled)
                 .Select(x => new SessionUnitCacheItem()
                 {
                     Id = x.Id,
@@ -189,7 +207,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public async Task RemoveCacheListBySessionIdAsync(Guid sessionId)
         {
-            await UnitListCache.RemoveAsync(sessionId);
+            await UnitListCache.RemoveAsync($"{new SessionUnitCacheKey(sessionId)}");
         }
     }
 }

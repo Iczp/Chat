@@ -105,4 +105,11 @@ public partial class Message
         IsRollbacked = true;
         RollbackTime = now;
     }
+
+    internal void SetPrivateMessage(ChatObject receiver)
+    {
+        ReceiverId = receiver.Id;
+        ReceiverType = receiver.ObjectType;
+        IsPrivate = true;
+    }
 }

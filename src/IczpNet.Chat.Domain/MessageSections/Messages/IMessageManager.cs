@@ -17,9 +17,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         Task<Message> CreateMessageBySessionUnitAsync(SessionUnit sessionUnit, Func<Message, Task<IMessageContentEntity>> func);
 
-        Task<Message> CreateMessageBySessionUnitAsync<T>(T input, Func<Message, Task<IMessageContentEntity>> func) where T : class, IMessageSendInput;
-
-        Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo>(MessageSendInput input, Func<Message, Task<IMessageContentEntity>> func);
+        Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo>(SessionUnit senderSessionUnit, MessageSendInput input, Func<Message, Task<IMessageContentEntity>> func, SessionUnit receiverSessionUnit = null);
 
         Task<List<Message>> ForwardMessageAsync(long sourceMessageId, long senderId, List<long> receiverIdList);
 
@@ -27,6 +25,6 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         Task<Dictionary<string, long>> RollbackMessageAsync(Message message);
 
-        
+
     }
 }

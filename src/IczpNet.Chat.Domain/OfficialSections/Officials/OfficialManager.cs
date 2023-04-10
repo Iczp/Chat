@@ -1,9 +1,11 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.MessageSections;
+using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
-using Pipelines.Sockets.Unofficial.Buffers;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
@@ -66,7 +68,6 @@ namespace IczpNet.Chat.OfficialSections.Officials
 
         public async Task<SessionUnit> SubscribeAsync(long ownerId, long destinationId)
         {
-
             var sessionUnit = await SessionUnitManager.FindAsync(ownerId, destinationId);
 
             //Unsubscribed
@@ -100,7 +101,25 @@ namespace IczpNet.Chat.OfficialSections.Officials
 
             await CurrentUnitOfWork.SaveChangesAsync();
 
+            await SendMessageAsync(sessionUnit, "启动成功");
+
             return sessionUnit;
+        }
+
+        private async Task SendMessageAsync(SessionUnit receiverSessionUnit, string text)
+        {
+            var officialSessionUnit = await SessionUnitManager.FindAsync(receiverSessionUnit.DestinationId.Value, receiverSessionUnit.DestinationId.Value);
+            await MessageSender.SendCmdAsync(
+                senderSessionUnit: officialSessionUnit,
+                input: new MessageSendInput<CmdContentInfo>()
+                {
+                    SessionUnitId = officialSessionUnit.Id,
+                    Content = new CmdContentInfo()
+                    {
+                        Text = text
+                    }
+                },
+                receiverSessionUnit: receiverSessionUnit);
         }
 
         public Task<SessionUnit> UnsubscribeAsync(Guid sessionUnitId)
@@ -122,6 +141,8 @@ namespace IczpNet.Chat.OfficialSections.Officials
             sessionUnit.SetIsEnabled(isEnabled);
 
             await CurrentUnitOfWork.SaveChangesAsync();
+
+            await SendMessageAsync(sessionUnit, isEnabled ? "启动成功" : "禁用成功");
 
             return sessionUnit;
         }

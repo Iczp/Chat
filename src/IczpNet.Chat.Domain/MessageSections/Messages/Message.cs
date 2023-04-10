@@ -21,7 +21,7 @@ public partial class Message : BaseEntity<long>
     //[Required]
     public virtual string SessionKey { get; protected set; }
 
-    public virtual Guid? SessionId { get; protected set; } 
+    public virtual Guid? SessionId { get; protected set; }
 
     /// <summary>
     /// sender session unit
@@ -92,6 +92,11 @@ public partial class Message : BaseEntity<long>
     public virtual bool IsRollbacked { get; protected set; }
 
     /// <summary>
+    /// 私有消息(只有发送人[senderId]和接收人[receiverId]才能看)
+    /// </summary>
+    public virtual bool IsPrivate { get; protected set; }
+
+    /// <summary>
     /// 撤回消息时间
     /// </summary>
     public virtual DateTime? RollbackTime { get; protected set; }
@@ -104,7 +109,7 @@ public partial class Message : BaseEntity<long>
 
 
 
-   
+
 
 
 

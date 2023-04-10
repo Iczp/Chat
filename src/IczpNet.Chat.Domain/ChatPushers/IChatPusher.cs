@@ -1,4 +1,5 @@
-﻿using IczpNet.Pusher.Commands;
+﻿using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Pusher.Commands;
 using IczpNet.Pusher.Models;
 using System;
 using System.Collections.Generic;
@@ -14,6 +15,6 @@ namespace IczpNet.Chat.ChatPushers
 
         Task<Dictionary<string, long>> ExecuteBySessionIdAsync(Guid sessionId, object commandPayload, List<string> ignoreConnections = null);
 
-        Task<Dictionary<string, long>> ExecutePrivateAsync(List<Guid> sessionUnitList, object commandPayload, List<string> ignoreConnections = null)
+        Task<Dictionary<string, long>> ExecutePrivateAsync(List<SessionUnit> sessionUnitList, object commandPayload, List<string> ignoreConnections = null);
     }
 }

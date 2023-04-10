@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.SessionSections.Favorites;
+﻿using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.SessionSections.Favorites;
 using IczpNet.Chat.SessionSections.MessageReminders;
 using IczpNet.Chat.SessionSections.OpenedRecorders;
 using IczpNet.Chat.SessionSections.Sessions;
@@ -45,5 +46,6 @@ public partial class Message
     /// </summary>
     [InverseProperty(nameof(SessionSections.SessionUnits.SessionUnit.ReadedMessage))]
     public virtual List<SessionUnit> ReadedMessageSessionUnitList { get; protected set; }
+
 
 }
