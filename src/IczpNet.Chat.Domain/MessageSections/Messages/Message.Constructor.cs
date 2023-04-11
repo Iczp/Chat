@@ -53,8 +53,8 @@ public partial class Message
     public virtual void SetForwardMessage(Message source)
     {
         ForwardMessage = source;
-        ForwardDepth = source.QuoteDepth + 1;
-        ForwardPath = source.QuotePath + Delimiter + source.Id;
+        ForwardDepth = source.ForwardDepth + 1;
+        ForwardPath = source.ForwardPath + Delimiter + source.Id;
         Assert.If(ForwardPath.Length > ForwardPathMaxLength, "Maximum length exceeded in [ForwardPath].");
     }
 

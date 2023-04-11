@@ -3,13 +3,16 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatPushers;
 using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.MessageSections.MessageContents;
 using IczpNet.Chat.Options;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Extensions.Options;
+using NUglify;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.ObjectMapping;
@@ -85,8 +88,6 @@ namespace IczpNet.Chat.MessageSections.Messages
             return entity;
         }
 
-
-
         public virtual async Task<Message> CreateMessageAsync<TMessageInput>(TMessageInput input, Func<Message, Task<IMessageContentEntity>> func)
             where TMessageInput : class, IMessageInput
         {
@@ -106,7 +107,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             });
         }
 
-        public virtual async Task<Message> CreateMessageBySessionUnitAsync(SessionUnit senderSessionUnit, Func<Message, Task<IMessageContentEntity>> func)
+        public virtual async Task<Message> CreateMessageBySessionUnitAsync(SessionUnit senderSessionUnit, Func<Message, Task<IMessageContentEntity>> func, SessionUnit receiverSessionUnit = null)
         {
             Assert.NotNull(senderSessionUnit, $"Unable to send message, senderSessionUnit is null");
 
@@ -133,7 +134,13 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             if (session.LastMessageId.HasValue)
             {
-                await SessionUnitManager.BatchUpdateAsync(session.Id, session.LastMessageId.Value);
+                List<Guid> sessionUnitList = null;
+
+                if (receiverSessionUnit != null)
+                {
+                    sessionUnitList = new List<Guid>() { senderSessionUnit.Id, receiverSessionUnit.Id, };
+                }
+                await SessionUnitManager.BatchUpdateAsync(session.Id, session.LastMessageId.Value, sessionUnitList);
             }
 
             await CurrentUnitOfWork.SaveChangesAsync();
@@ -248,10 +255,49 @@ namespace IczpNet.Chat.MessageSections.Messages
             return messageList;
         }
 
+        public virtual async Task<List<Message>> ForwardMessageAsync(Guid currentSessionUnitId, long sourceMessageId, List<Guid> targetSessionUnitIdList)
+        {
+            var currentSessionUnit = await SessionUnitManager.GetAsync(currentSessionUnitId);
 
+            Assert.If(!currentSessionUnit.IsEnabled, $"Current session unit disabled.");
 
+            var sourceMessage = await Repository.GetAsync(sourceMessageId);
 
+            Assert.If(sourceMessage.IsRollbacked || sourceMessage.RollbackTime != null, $"message already rollback：{sourceMessageId}");
 
+            Assert.If(sourceMessage.IsPrivate, $"Private messages cannot be forwarded");
 
+            Assert.If(currentSessionUnit.SessionId != sourceMessage.SessionId, $"The sender and message are not in the same session, messageSessionId:{sourceMessage.SessionId}");
+
+            var messageContent = sourceMessage.GetContent();
+
+            Assert.NotNull(messageContent, $"MessageContent is null. Source message:{sourceMessage}");
+
+            var messageList = new List<Message>();
+
+            foreach (var targetSessionUnitId in targetSessionUnitIdList.Distinct())
+            {
+                var targetSessionUnit = await SessionUnitManager.GetAsync(targetSessionUnitId);
+
+                Assert.If(!targetSessionUnit.IsEnabled, $"Target session unit disabled,id:{targetSessionUnit.Id}");
+
+                Assert.If(!targetSessionUnit.IsInputEnabled, $"Target session unit input state is disabled,id:{targetSessionUnit.Id}");
+
+                Assert.If(currentSessionUnit.OwnerId != targetSessionUnit.OwnerId, $"[targetSessionUnitId:{targetSessionUnitId}] is fail.");
+
+                var newMessage = await CreateMessageBySessionUnitAsync(targetSessionUnit, async x =>
+                {
+                    x.SetForwardMessage(sourceMessage);
+
+                    return await Task.FromResult(messageContent);
+                });
+                messageList.Add(newMessage);
+
+                var output = ObjectMapper.Map<Message, MessageInfo<object>>(newMessage);
+
+                await ChatPusher.ExecuteBySessionIdAsync(newMessage.SessionId.Value, output, null);
+            }
+            return messageList;
+        }
     }
 }

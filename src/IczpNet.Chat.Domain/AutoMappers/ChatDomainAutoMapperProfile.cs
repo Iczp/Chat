@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.ContentOutputs;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
@@ -22,6 +23,7 @@ public class ChatApplicationAutoMapperProfile : Profile
 
         //Message
         CreateMap<Message, MessageInfo>().MaxDepth(1);
+        CreateMap<Message, MessageInfo<IMessageContentInfo>>().MaxDepth(1).ForMember(x => x.Content, o => o.MapFrom(x => x.GetContent()));
         CreateMap<Message, MessageWithQuoteInfo>().MaxDepth(1);
         CreateMap(typeof(Message), typeof(MessageInfo<>)).MaxDepth(1);
         CreateMap(typeof(Message), typeof(MessageWithQuoteInfo<>)).MaxDepth(1);

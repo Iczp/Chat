@@ -12,8 +12,6 @@ namespace IczpNet.Chat.MessageSections.Messages;
 [Index(nameof(SessionUnitCount))]
 public partial class Message : BaseEntity<long>
 {
-    public virtual dynamic Content => GetContent();
-
     //[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     //public virtual long Id { get;  }
 

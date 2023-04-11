@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System;
 using System.Threading.Tasks;
+using IczpNet.Chat.MessageSections.Messages.Dtos;
 
 namespace IczpNet.Chat.MessageSections.Messages
 {
@@ -26,5 +27,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
 
         Task<MessageInfo<TextContentInfo>> SendTextAsync(MessageSendInput<TextContentInfo> input);
+
+        Task<List<MessageDto>> ForwardMessageAsync(Guid currentSessionUnitId, long sourceMessageId, List<Guid> targetSessionUnitIdList);
     }
 }

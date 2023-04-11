@@ -1,5 +1,4 @@
 ﻿using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
@@ -15,13 +14,15 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         Task<MessageInfo<TContentInfo>> SendMessageAsync<TContentInfo>(MessageInput input, Func<Message, Task<IMessageContentEntity>> func);
 
-        Task<Message> CreateMessageBySessionUnitAsync(SessionUnit sessionUnit, Func<Message, Task<IMessageContentEntity>> func);
+        Task<Message> CreateMessageBySessionUnitAsync(SessionUnit sessionUnit, Func<Message, Task<IMessageContentEntity>> func, SessionUnit receiverSessionUnit = null);
 
         Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo>(SessionUnit senderSessionUnit, MessageSendInput input, Func<Message, Task<IMessageContentEntity>> func, SessionUnit receiverSessionUnit = null);
 
         Task<List<Message>> ForwardMessageAsync(long sourceMessageId, long senderId, List<long> receiverIdList);
 
         Task<List<Message>> ForwardMessageAsync(Message source, IChatObject sender, List<long> receiverIdList);
+
+        Task<List<Message>> ForwardMessageAsync(Guid currentSessionUnitId, long sourceMessageId, List<Guid> targetSessionUnitIdList);
 
         Task<Dictionary<string, long>> RollbackMessageAsync(Message message);
 
