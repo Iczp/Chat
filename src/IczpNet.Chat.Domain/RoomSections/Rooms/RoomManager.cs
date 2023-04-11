@@ -1,6 +1,4 @@
-﻿using AutoMapper.Execution;
-using AutoMapper.Internal;
-using IczpNet.AbpCommons;
+﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
@@ -13,7 +11,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Volo.Abp;
 
 namespace IczpNet.Chat.RoomSections.Rooms;
 

@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.BackgroundWorkers;
-using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Threading;
 using Volo.Abp.Uow;
 
