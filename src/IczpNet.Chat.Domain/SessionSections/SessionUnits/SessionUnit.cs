@@ -5,6 +5,7 @@ using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.MessageReminders;
+using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionTags;
@@ -185,6 +186,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public virtual List<SessionUnitRole> SessionUnitRoleList { get; protected set; } = new List<SessionUnitRole>();
 
         public virtual List<SessionUnitOrganization> SessionUnitOrganizationList { get; protected set; }
+
+        public virtual IList<SessionPermissionUnitGrant> UnitGrantList { get; set; }
 
         /// <summary>
         /// sender message list

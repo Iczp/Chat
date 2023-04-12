@@ -19,6 +19,8 @@ using IczpNet.Chat.SessionServices;
 using IczpNet.Chat.SessionSections.SessionOrganizations;
 using IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;
 using IczpNet.Chat.SessionSections.SessionTags.Dtos;
+using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
+using IczpNet.Chat.SessionSections.SessionPermissionDefinitions.Dtos;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -40,7 +42,7 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
         CreateMap<SessionUnit, SessionUnitOwnerDto>();
         CreateMap<SessionUnit, SessionUnitDestinationDetailDto>();
         CreateMap<SessionUnit, SessionUnitDestinationDto>();
-        CreateMap<SessionUnit, SessionUnitWithDestinationDto>(); 
+        CreateMap<SessionUnit, SessionUnitWithDestinationDto>();
         CreateMap<SessionUnitModel, SessionUnitOwnerDto>();
 
         //SessionOrganization
@@ -49,7 +51,6 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
         CreateMap<SessionOrganizationCreateInput, SessionOrganization>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         CreateMap<SessionOrganizationUpdateInput, SessionOrganization>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         CreateMap<SessionOrganization, SessionOrganizationInfo>();
-
 
         //SessionTag
         CreateMap<SessionTag, SessionTagDto>();
@@ -64,6 +65,13 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
         CreateMap<SessionRole, SessionRoleSimpleDto>();
         CreateMap<SessionRoleCreateInput, SessionRole>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         CreateMap<SessionRoleUpdateInput, SessionRole>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+
+        //SessionPermissionDefinition
+        CreateMap<SessionPermissionDefinition, SessionPermissionDefinitionDto>();
+        CreateMap<SessionPermissionDefinition, SessionPermissionDefinitionDetailDto>();
+        CreateMap<SessionPermissionDefinition, SessionPermissionDefinitionSimpleDto>();
+        CreateMap<SessionPermissionDefinitionCreateInput, SessionPermissionDefinition>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<SessionPermissionDefinitionUpdateInput, SessionPermissionDefinition>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
 
         //Friendship
         CreateMap<Friendship, FriendshipDto>();

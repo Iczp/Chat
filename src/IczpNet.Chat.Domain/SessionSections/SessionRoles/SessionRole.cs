@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.BaseEntitys;
+using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnitRoles;
 using System;
@@ -27,5 +28,7 @@ namespace IczpNet.Chat.SessionSections.SessionRoles
         public virtual string Name { get; set; }
 
         public virtual List<SessionUnitRole> SessionUnitRoleList { get; protected set; }
+
+        public virtual IList<SessionPermissionRoleGrant> RoleGrantList { get; set; }
     }
 }

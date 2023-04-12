@@ -1,5 +1,5 @@
 ﻿using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.GlobalPermissions;
+using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System;
@@ -81,7 +81,7 @@ namespace Rctea.IM.Tools
 
             var multiTenancySide = CurrentTenant.GetMultiTenancySide();
 
-            var groups = (await PermissionDefinitionManager.GetGroupsAsync()).Where(x => x.Name == GlobalPermissionConsts.GroupName);
+            var groups = (await PermissionDefinitionManager.GetGroupsAsync()).Where(x => x.Name == SessionPermissionDefinitionConsts.GroupName);
 
             foreach (var group in groups)
             {
