@@ -3,16 +3,13 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatPushers;
 using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.Enums;
-using IczpNet.Chat.MessageSections.MessageContents;
 using IczpNet.Chat.Options;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Extensions.Options;
-using NUglify;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.ObjectMapping;
@@ -259,15 +256,15 @@ namespace IczpNet.Chat.MessageSections.Messages
         {
             var currentSessionUnit = await SessionUnitManager.GetAsync(currentSessionUnitId);
 
-            Assert.If(!currentSessionUnit.IsEnabled, $"Current session unit disabled.");
+            Assert.If(!currentSessionUnit.IsEnabled, $"Current session unit disabled.", nameof(currentSessionUnit.IsEnabled));
 
             var sourceMessage = await Repository.GetAsync(sourceMessageId);
 
-            Assert.If(sourceMessage.IsRollbacked || sourceMessage.RollbackTime != null, $"message already rollback：{sourceMessageId}");
+            Assert.If(sourceMessage.IsRollbacked || sourceMessage.RollbackTime != null, $"message already rollback：{sourceMessageId}", nameof(currentSessionUnit.IsEnabled));
 
             Assert.If(sourceMessage.IsPrivate, $"Private messages cannot be forwarded");
 
-            Assert.If(currentSessionUnit.SessionId != sourceMessage.SessionId, $"The sender and message are not in the same session, messageSessionId:{sourceMessage.SessionId}");
+            Assert.If(currentSessionUnit.SessionId != sourceMessage.SessionId, $"The sender and message are not in the same session, messageSessionId:{sourceMessage.SessionId}", nameof(currentSessionUnit.SessionId));
 
             var messageContent = sourceMessage.GetContent();
 
