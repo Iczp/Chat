@@ -138,9 +138,9 @@ namespace IczpNet.Chat.MessageServices
         }
 
         [HttpPost]
-        public async Task<List<MessageDto>> ForwardMessageAsync(Guid currentSessionUnitId, long sourceMessageId, List<Guid> targetSessionUnitIdList)
+        public async Task<List<MessageDto>> ForwardMessageAsync(Guid currentSessionUnitId, long messageId, List<Guid> targetSessionUnitIdList)
         {
-            var messageList = await MessageManager.ForwardMessageAsync(currentSessionUnitId, sourceMessageId, targetSessionUnitIdList);
+            var messageList = await MessageManager.ForwardMessageAsync(currentSessionUnitId, messageId, targetSessionUnitIdList);
 
             return ObjectMapper.Map<List<Message>, List<MessageDto>>(messageList);
         }

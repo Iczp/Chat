@@ -28,6 +28,6 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         Task<MessageInfo<TextContentInfo>> SendTextAsync(MessageSendInput<TextContentInfo> input);
 
-        Task<List<MessageDto>> ForwardMessageAsync(Guid currentSessionUnitId, long sourceMessageId, List<Guid> targetSessionUnitIdList);
+        Task<List<MessageDto>> ForwardMessageAsync(Guid currentSessionUnitId, long messageId, List<Guid> targetSessionUnitIdList);
     }
 }
