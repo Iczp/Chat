@@ -168,8 +168,10 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             if (receiverSessionUnit != null)
             {
-                var sessionUnitList = new List<SessionUnit>() { senderSessionUnit, receiverSessionUnit, };
-                await ChatPusher.ExecutePrivateAsync(sessionUnitList, output, input.IgnoreConnections);
+                await ChatPusher.ExecutePrivateAsync(new List<SessionUnit>()
+                {
+                    senderSessionUnit, receiverSessionUnit
+                }, output, input.IgnoreConnections);
             }
             else
             {
