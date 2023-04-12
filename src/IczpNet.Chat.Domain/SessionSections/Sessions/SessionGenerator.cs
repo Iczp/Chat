@@ -55,6 +55,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
                 }
             }
         }
+
         protected virtual async Task<string> MakeSesssionKeyAsync(IChatObject sender, IChatObject receiver)
         {
             await Task.CompletedTask;
@@ -157,8 +158,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
                         session: session, 
                         ownerId: shopWaiter.Id, 
                         destinationId: sender.Id, 
-                        destinationObjectType: 
-                        sender.ObjectType,
+                        destinationObjectType: sender.ObjectType,
                         isPublic: true,
                         isStatic: false, 
                         isCreator: false, 
