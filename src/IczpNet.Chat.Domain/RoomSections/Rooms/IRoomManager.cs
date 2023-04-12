@@ -33,5 +33,6 @@ namespace IczpNet.Chat.RoomSections.Rooms
 
         Task<bool> IsInRoomAsync(Guid sessionId, long memberId);
 
+        Task<IQueryable<SessionUnit>> GetSameGroupAsync(long sourceChatObjectId, long targetChatObjectId, List<ChatObjectTypeEnums> chatObjectTypeList = null);
     }
 }

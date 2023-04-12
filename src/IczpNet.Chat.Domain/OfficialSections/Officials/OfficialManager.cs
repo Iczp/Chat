@@ -45,6 +45,7 @@ namespace IczpNet.Chat.OfficialSections.Officials
                   destinationObjectType: ChatObjectTypeEnums.Official,
                   isPublic: false,
                   isStatic: true,
+                  isCreator: true,
                   joinWay: JoinWays.System,
                   inviterUnitId: null,
                   isInputEnabled: true));
@@ -89,6 +90,7 @@ namespace IczpNet.Chat.OfficialSections.Officials
                   destinationObjectType: ChatObjectTypeEnums.Official,
                   isPublic: true,
                   isStatic: false,
+                  isCreator: false,
                   joinWay: JoinWays.Normal,
                   inviterUnitId: null,
                   isInputEnabled: false));

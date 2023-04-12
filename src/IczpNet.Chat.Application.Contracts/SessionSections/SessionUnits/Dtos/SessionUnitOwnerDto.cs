@@ -1,31 +1,11 @@
-﻿using IczpNet.Chat.ChatObjects.Dtos;
-using IczpNet.Chat.Enums;
+﻿using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
-using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 {
-    public class SessionUnitOwnerDto
+    public class SessionUnitOwnerDto : SessionUnitDto
     {
-        public virtual Guid Id { get; set; }
-
-        public virtual Guid SessionId { get; set; }
-
-        public virtual long OwnerId { get; set; }
-
-        /// <summary>
-        /// 会话内的名称
-        /// </summary>
-        [StringLength(50)]
-        public virtual string MemberName { get; set; }
-
-        /// <summary>
-        /// 备注名称 Rename for destination
-        /// </summary>
-        [StringLength(50)]
-        public virtual string Rename { get; set; }
-
         /// <summary>
         /// 备注
         /// </summary>
@@ -60,7 +40,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
         /// <summary>
         /// 聊天背景，默认为 null
         /// </summary>
-        [StringLength(500)]
         public virtual string BackgroundImage { get; set; }
 
         /// <summary>
@@ -78,12 +57,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
         /// 邀请人
         /// </summary>
         public virtual long? InviterId { get; set; }
-
-        public virtual ChatObjectDto Destination { get; set; }
-
         public virtual MessageDto LastMessage { get; set; }
-
-        public virtual long LastMessageId { get; set; }
 
         public virtual int Badge { get; set; }
 
@@ -92,9 +66,5 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
         public virtual int ReminderAllCount { get; set; }
 
         public virtual int ReminderMeCount { get; set; }
-
-        public virtual double Sorting { get; set; }
-
-
     }
 }

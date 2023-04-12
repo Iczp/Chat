@@ -23,6 +23,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public virtual bool IsStatic { get; set; }
 
+        public virtual bool IsCreator { get; set; }
+
         public virtual List<SessionTagInfo> TagList { get; set; }
     }
 }

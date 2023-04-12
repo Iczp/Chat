@@ -32,6 +32,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         public virtual bool IsStatic { get; set; }
 
+        public virtual bool IsCreator { get; set; }
+
         public virtual List<SessionRoleDto> RoleList { get; set; }
 
         public virtual List<SessionTagDto> TagList { get; set; }

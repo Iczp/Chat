@@ -1,5 +1,6 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.FriendshipRequests;
 using IczpNet.Chat.SessionSections.Friendships;
@@ -9,6 +10,7 @@ using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionUnitRoles;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnitTags;
+using Pipelines.Sockets.Unofficial.Buffers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -80,6 +82,22 @@ namespace IczpNet.Chat.SessionSections.Sessions
         public Task<bool> IsFriendshipAsync(long ownerId, long destinationId)
         {
             return FriendshipRepository.AnyAsync(x => x.OwnerId == ownerId && x.DestinationId == destinationId);
+        }
+
+        private async Task<IQueryable<Session>> QuerySessionByUnitOwnerAsync(long ownerId, ChatObjectTypeEnums? chatObjectType = null)
+        {
+            return (await Repository.GetQueryableAsync())
+                  .Where(x => x.UnitList.Any(d => d.OwnerId.Equals(ownerId) && !d.IsKilled && d.IsEnabled && (chatObjectType != null && d.DestinationObjectType == chatObjectType)));
+
+        }
+
+        public async Task<IQueryable<Session>> InSameAsync(long sourceChatObjectId, long destinationChatObjectId, ChatObjectTypeEnums? chatObjectType = null)
+        {
+            var source = await QuerySessionByUnitOwnerAsync(sourceChatObjectId, chatObjectType);
+
+            var target = await QuerySessionByUnitOwnerAsync(destinationChatObjectId, chatObjectType);
+
+            return source.Intersect(target);
         }
 
         public async Task<Friendship> CreateFriendshipAsync(long ownerId, long destinationId, bool IsPassive, Guid? friendshipRequestId)
@@ -258,6 +276,6 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return await SessionRoleRepository.UpdateAsync(sessionTag, true);
         }
 
-        
+
     }
 }

@@ -75,6 +75,8 @@ namespace IczpNet.Chat.SessionServices
 
         public virtual bool IsKilled { get; set; }
 
+        public virtual bool IsCreator { get; set; }
+
         public virtual bool IsInputEnabled { get; set; }
 
         public virtual bool IsEnabled { get; set; }

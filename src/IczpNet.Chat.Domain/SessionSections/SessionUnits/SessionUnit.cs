@@ -168,6 +168,11 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public virtual bool IsEnabled { get; protected set; } = true;
 
+        /// <summary>
+        /// 是否创建者（群主等）
+        /// </summary>
+        public virtual bool IsCreator { get; protected set; } = false;
+
         [ForeignKey(nameof(InviterId))]
         public virtual ChatObject Inviter { get; set; }
 
@@ -241,6 +246,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             ChatObjectTypeEnums? destinationObjectType,
             bool isPublic = true,
             bool isStatic = false,
+            bool isCreator = false,
             JoinWays? joinWay = null,
             Guid? inviterUnitId = null,
             bool isInputEnabled = true) : base(id)
@@ -251,6 +257,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             DestinationObjectType = destinationObjectType;
             IsStatic = isStatic;
             IsPublic = isPublic;
+            IsCreator = isCreator;
             JoinWay = joinWay;
             InviterUnitId = inviterUnitId;
             IsInputEnabled = isInputEnabled;

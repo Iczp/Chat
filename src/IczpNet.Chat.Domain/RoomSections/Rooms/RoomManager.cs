@@ -1,4 +1,5 @@
 ﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
@@ -10,6 +11,7 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.RoomSections.Rooms;
@@ -65,6 +67,7 @@ public class RoomManager : ChatObjectManager, IRoomManager
               destinationObjectType: ChatObjectTypeEnums.Room,
               isPublic: false,
               isStatic: true,
+              isCreator: false,
               joinWay: JoinWays.System,
               inviterUnitId: null));
     }
@@ -110,6 +113,7 @@ public class RoomManager : ChatObjectManager, IRoomManager
                 destinationObjectType: room.ObjectType,
                 isPublic: true,
                 isStatic: true,
+                isCreator: true,
                 joinWay: JoinWays.Creator,
                 inviterUnitId: null,
                 isInputEnabled: true));
@@ -125,7 +129,8 @@ public class RoomManager : ChatObjectManager, IRoomManager
                 destinationId: room.Id,
                 destinationObjectType: room.ObjectType,
                 isPublic: true,
-                isStatic: memberId == ownerId,
+                isStatic: false,
+                isCreator: false,
                 joinWay: JoinWays.Invitation,
                 inviterUnitId: inviterSessionUnit?.Id,
                 isInputEnabled: true)))
@@ -193,8 +198,10 @@ public class RoomManager : ChatObjectManager, IRoomManager
                destinationObjectType: ChatObjectTypeEnums.Room,
                isPublic: true,
                isStatic: false,
+               isCreator: false,
                joinWay: JoinWays.Invitation,
-               inviterUnitId: inviterSessionUnit?.Id)));
+               inviterUnitId: inviterSessionUnit?.Id,
+               isInputEnabled: true)));
         }
         await CurrentUnitOfWork.SaveChangesAsync();
 
@@ -245,8 +252,6 @@ public class RoomManager : ChatObjectManager, IRoomManager
         await SendRoomMessageAsync(roomSessionUnit, content);
     }
 
-
-
     public virtual async Task<ChatObject> CreateByAllUsersAsync(string name)
     {
         var query = (await Repository.GetQueryableAsync())
@@ -258,23 +263,23 @@ public class RoomManager : ChatObjectManager, IRoomManager
         return await CreateAsync(name, idList, null);
     }
 
-    public Task<int> GetMemberCountAsync(ChatObject room)
+    public virtual Task<int> GetMemberCountAsync(ChatObject room)
     {
         throw new System.NotImplementedException();
     }
 
-    public Task<int> JoinRoomAsync(ChatObject room, List<ChatObject> members, ChatObject inviter, JoinWays joinWay)
+    public virtual Task<int> JoinRoomAsync(ChatObject room, List<ChatObject> members, ChatObject inviter, JoinWays joinWay)
     {
         throw new System.NotImplementedException();
     }
 
-    public Task<bool> IsInRoomAsync(ChatObject room, ChatObject member)
+    public virtual Task<bool> IsInRoomAsync(ChatObject room, ChatObject member)
     {
         throw new System.NotImplementedException();
 
     }
 
-    public async Task<bool> IsInRoomAsync(Guid sessionId, IEnumerable<long> memberIdList)
+    public virtual async Task<bool> IsInRoomAsync(Guid sessionId, IEnumerable<long> memberIdList)
     {
         Assert.If(!memberIdList.Any(), "memberIdList count:0");
 
@@ -290,8 +295,28 @@ public class RoomManager : ChatObjectManager, IRoomManager
         return !memberIdList.Except(inMemberIdList).Any();
     }
 
-    public Task<bool> IsInRoomAsync(Guid sessionId, long memberId)
+    public virtual Task<bool> IsInRoomAsync(Guid sessionId, long memberId)
     {
         return IsInRoomAsync(sessionId, new List<long>() { memberId });
+    }
+
+    private async Task<IQueryable<SessionUnit>> QuerySessionUnitByOwnerAsync(long ownerId, List<ChatObjectTypeEnums> chatObjectTypeList = null)
+    {
+        return (await SessionUnitRepository.GetQueryableAsync())
+              .Where(x => x.OwnerId.Equals(ownerId) && !x.IsKilled && x.IsEnabled)
+              .WhereIf(chatObjectTypeList.IsAny(), x => chatObjectTypeList.Contains(x.DestinationObjectType.Value));
+
+    }
+
+    public virtual async Task<IQueryable<SessionUnit>> GetSameGroupAsync(long sourceChatObjectId, long targetChatObjectId, List<ChatObjectTypeEnums> chatObjectTypeList = null)
+    {
+        var targetSessionIdList = (await QuerySessionUnitByOwnerAsync(targetChatObjectId, chatObjectTypeList))
+            .Select(x => x.SessionId);
+
+        var sourceQuery = (await QuerySessionUnitByOwnerAsync(sourceChatObjectId, chatObjectTypeList))
+            .Where(x => targetSessionIdList.Contains(x.SessionId))
+            ;
+
+        return sourceQuery;
     }
 }

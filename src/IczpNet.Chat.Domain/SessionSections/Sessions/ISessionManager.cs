@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.OpenedRecorders;
 using IczpNet.Chat.SessionSections.SessionRoles;
@@ -6,6 +7,7 @@ using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.SessionSections.Sessions
@@ -19,6 +21,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
         Task<Session> GetByKeyAsync(string sessionKey);
 
         Task<bool> IsFriendshipAsync(long ownerId, long destinationId);
+
+        Task<IQueryable<Session>> InSameAsync(long sourceChatObjectId, long destinationChatObjectId, ChatObjectTypeEnums? chatObjectType = null);
 
         Task<Friendship> CreateFriendshipAsync(long ownerId, long destinationId, bool isPassive, Guid? friendshipRequestId);
 

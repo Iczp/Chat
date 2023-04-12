@@ -125,7 +125,13 @@ namespace IczpNet.Chat.SessionSections.Sessions
                         session: session,
                         ownerId: sender.Id,
                         destinationId: shopKeeper.Id,
-                        destinationObjectType: shopKeeper.ObjectType));
+                        destinationObjectType: shopKeeper.ObjectType,
+                        isPublic: true,
+                        isStatic: false,
+                        isCreator: false,
+                        joinWay: JoinWays.AutoJoin,
+                        inviterUnitId: null,
+                        isInputEnabled: true));
 
                 //add shopKeeper
                 session.AddSessionUnit(new SessionUnit(
@@ -133,7 +139,13 @@ namespace IczpNet.Chat.SessionSections.Sessions
                          session: session,
                          ownerId: shopKeeper.Id,
                          destinationId: sender.Id,
-                         destinationObjectType: sender.ObjectType));
+                         destinationObjectType: sender.ObjectType,
+                         isPublic: true,
+                         isStatic: false,
+                         isCreator: false,
+                         joinWay: JoinWays.AutoJoin,
+                         inviterUnitId: null,
+                         isInputEnabled: true));
 
                 //Cache GetChildsByCacheAsync
                 var shopWaiterList = await ChatObjectManager.GetChildsAsync(shopKeeperId);
@@ -141,11 +153,18 @@ namespace IczpNet.Chat.SessionSections.Sessions
                 foreach (var shopWaiter in shopWaiterList)
                 {
                     session.AddSessionUnit(new SessionUnit(
-                        id: GuidGenerator.Create(),
-                        session: session,
-                        ownerId: shopWaiter.Id,
-                        destinationId: sender.Id,
-                        destinationObjectType: sender.ObjectType));
+                        id: GuidGenerator.Create(), 
+                        session: session, 
+                        ownerId: shopWaiter.Id, 
+                        destinationId: sender.Id, 
+                        destinationObjectType: 
+                        sender.ObjectType,
+                        isPublic: true,
+                        isStatic: false, 
+                        isCreator: false, 
+                        joinWay: JoinWays.AutoJoin, 
+                        inviterUnitId: null,
+                        isInputEnabled: true));
                 }
 
                 //add or update sessionUnit
