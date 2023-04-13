@@ -9,6 +9,8 @@ using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 using IczpNet.Chat.SessionSections.Sessions;
 using Microsoft.AspNetCore.Mvc;
+using IczpNet.Chat.SessionSections.SessionPermissions;
+using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 
 namespace IczpNet.Chat.SessionServices
 {
@@ -24,15 +26,18 @@ namespace IczpNet.Chat.SessionServices
         ISessionRoleAppService
     {
         protected IChatObjectRepository ChatObjectRepository { get; }
-        public IRepository<Session, Guid> SessionRepository { get; }
+        protected IRepository<Session, Guid> SessionRepository { get; }
+        protected ISessionPermission SessionPermission { get; }
 
         public SessionRoleAppService(
             IRepository<SessionRole, Guid> repository,
             IChatObjectRepository chatObjectRepository,
-            IRepository<Session, Guid> sessionRepository) : base(repository)
+            IRepository<Session, Guid> sessionRepository,
+            ISessionPermission sessionPermission) : base(repository)
         {
             ChatObjectRepository = chatObjectRepository;
             SessionRepository = sessionRepository;
+            SessionPermission = sessionPermission;
         }
 
         protected override async Task<IQueryable<SessionRole>> CreateFilteredQueryAsync(SessionRoleGetListInput input)
@@ -58,7 +63,7 @@ namespace IczpNet.Chat.SessionServices
         }
 
         protected override Task SetCreateEntityAsync(SessionRole entity, SessionRoleCreateInput input)
-        { 
+        {
             entity.SetPermissionGrant(input.PermissionGrant);
             return base.SetCreateEntityAsync(entity, input);
         }
@@ -80,6 +85,14 @@ namespace IczpNet.Chat.SessionServices
         {
             var entity = await GetEntityByIdAsync(id);
             return ObjectMapper.Map<SessionRole, SessionRolePermissionDto>(entity);
+        }
+
+        [HttpPost]
+        public async Task DeleteAsync(Guid sessionUnitId, Guid id)
+        {
+            await SessionPermission.CheckAsync(SessionPermissionDefinitionConsts.SessionPermissionRole.Delete, sessionUnitId);
+
+            await base.DeleteAsync(id);
         }
     }
 }
