@@ -21,6 +21,7 @@ using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions.Dtos;
 using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
 using IczpNet.Chat.SessionSections.SessionPermissions;
+using IczpNet.Chat.SessionSections.SessionPermissions.Dtos;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -74,6 +75,8 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
         //PermissionGrant
         CreateMap<SessionPermissionRoleGrant, PermissionGrantValue>();
         CreateMap<SessionPermissionUnitGrant, PermissionGrantValue>();
+        CreateMap<SessionPermissionRoleGrant, SessionPermissionRoleGrantDto>();
+        CreateMap<SessionPermissionUnitGrant, SessionPermissionUnitGrantDto>();
 
         //SessionPermissionDefinition
         CreateMap<SessionPermissionDefinition, SessionPermissionDefinitionDto>();

@@ -2,6 +2,7 @@
 using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.SessionSections.SessionPermissionGroups;
 using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -50,6 +51,5 @@ namespace IczpNet.Chat.SessionSections.SessionPermissionDefinitions
         public virtual IList<SessionPermissionRoleGrant> RoleGrantList { get; set; }
 
         public virtual IList<SessionPermissionUnitGrant> UnitGrantList { get; set; }
-
     }
 }

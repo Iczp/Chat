@@ -9,7 +9,6 @@ using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 using IczpNet.Chat.SessionSections.Sessions;
 using Microsoft.AspNetCore.Mvc;
-using IczpNet.AbpCommons.Dtos;
 
 namespace IczpNet.Chat.SessionServices
 {
@@ -60,8 +59,6 @@ namespace IczpNet.Chat.SessionServices
 
         protected override Task SetCreateEntityAsync(SessionRole entity, SessionRoleCreateInput input)
         { 
-
-
             entity.SetPermissionGrant(input.PermissionGrant);
             return base.SetCreateEntityAsync(entity, input);
         }

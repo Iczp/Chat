@@ -1,18 +1,15 @@
-﻿using IczpNet.AbpCommons.Dtos;
-using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjectCategorys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.RoomSections.Rooms.Dtos;
+using IczpNet.Chat.SessionSections.SessionPermissions;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 
@@ -25,16 +22,17 @@ public class RoomAppService : ChatAppService, IRoomAppService
     protected IRoomManager RoomManager { get; }
     protected ISessionUnitManager SessionUnitManager { get; }
     protected IChatObjectCategoryManager ChatObjectCategoryManager { get; }
-
-
+    protected ISessionPermission SessionPermission { get; }
 
     public RoomAppService(IRoomManager roomManager,
         IChatObjectCategoryManager chatObjectCategoryManager,
-        ISessionUnitManager sessionUnitManager)
+        ISessionUnitManager sessionUnitManager,
+        ISessionPermission sessionPermission)
     {
         RoomManager = roomManager;
         ChatObjectCategoryManager = chatObjectCategoryManager;
         SessionUnitManager = sessionUnitManager;
+        SessionPermission = sessionPermission;
     }
 
 
