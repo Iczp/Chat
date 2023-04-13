@@ -1,5 +1,4 @@
-﻿using IczpNet.AbpCommons;
-using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
 using System;
 using System.Linq;
@@ -10,6 +9,7 @@ using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using IczpNet.Chat.SessionSections.Sessions;
+using System.Collections.Generic;
 
 namespace IczpNet.Chat.SessionServices
 {
@@ -49,11 +49,16 @@ namespace IczpNet.Chat.SessionServices
             throw new NotImplementedException();
         }
 
+        [RemoteService(false)]
+        public override Task DeleteAsync(string id)
+        {
+            return base.DeleteAsync(id);
+        }
 
         [RemoteService(false)]
-        public override Task<SessionPermissionDefinitionDetailDto> UpdateAsync(string id, SessionPermissionDefinitionUpdateInput input)
+        public override Task DeleteManyAsync(List<string> idList)
         {
-            return base.UpdateAsync(id, input);
+            return base.DeleteManyAsync(idList);
         }
     }
 }

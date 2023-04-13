@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 using Volo.Abp.Application.Services;
 
@@ -13,4 +14,6 @@ public interface ISessionRoleAppService :
         SessionRoleCreateInput,
         SessionRoleUpdateInput>
 {
+
+    Task<SessionRolePermissionDto> GetPermissions(Guid id);
 }

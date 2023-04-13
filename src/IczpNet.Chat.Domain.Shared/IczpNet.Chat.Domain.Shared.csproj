@@ -55,6 +55,7 @@
 
   <ItemGroup>
     <Folder Include="Commands\" />
+    <Folder Include="SessionSections\SessionPermissions\Dtos\" />
   </ItemGroup>
 
 </Project>

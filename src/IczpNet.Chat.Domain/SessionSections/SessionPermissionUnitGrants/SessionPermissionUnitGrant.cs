@@ -22,6 +22,8 @@ namespace IczpNet.Chat.SessionSections.SessionPermissionRoleGrants
 
         public virtual long Value { get; set; }
 
+        public virtual bool IsEnabled { get; set; }
+
         public override object[] GetKeys()
         {
             return new object[] { DefinitionId, SessionUnitId, };

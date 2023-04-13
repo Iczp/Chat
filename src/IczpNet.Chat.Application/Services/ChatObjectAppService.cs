@@ -62,6 +62,8 @@ namespace IczpNet.Chat.Services
         [HttpGet]
         public virtual async Task<ChatObjectDetailDto> GetByCodeAsync(string code)
         {
+            Assert.If(code.IsNullOrWhiteSpace(), $"[code] IsNullOrWhiteSpace.");
+
             await CheckGetPolicyAsync();
 
             var entity = Assert.NotNull(await Repository.FindAsync(x => x.Code == code), $"Entity no such by [code]:{code}");

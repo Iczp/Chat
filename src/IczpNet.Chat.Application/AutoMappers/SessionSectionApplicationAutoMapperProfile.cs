@@ -1,6 +1,4 @@
 ﻿using AutoMapper;
-using IczpNet.Chat.ChatObjectCategorys.Dtos;
-using IczpNet.Chat.ChatObjectCategorys;
 using IczpNet.Chat.FriendshipTagSections.FriendshipTags.Dtos;
 using IczpNet.Chat.SessionSections.FriendshipRequests;
 using IczpNet.Chat.SessionSections.FriendshipRequests.Dtos;
@@ -21,6 +19,8 @@ using IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;
 using IczpNet.Chat.SessionSections.SessionTags.Dtos;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions.Dtos;
+using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
+using IczpNet.Chat.SessionSections.SessionPermissions;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -61,10 +61,19 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
 
         //SessionRole
         CreateMap<SessionRole, SessionRoleDto>();
+        CreateMap<SessionRole, SessionRolePermissionDto>();
         CreateMap<SessionRole, SessionRoleDetailDto>();
         CreateMap<SessionRole, SessionRoleSimpleDto>();
-        CreateMap<SessionRoleCreateInput, SessionRole>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
-        CreateMap<SessionRoleUpdateInput, SessionRole>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<SessionRoleCreateInput, SessionRole>(MemberList.None)
+            .IgnoreAllSourcePropertiesWithAnInaccessibleSetter()
+            .IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<SessionRoleUpdateInput, SessionRole>(MemberList.None)
+            .IgnoreAllSourcePropertiesWithAnInaccessibleSetter()
+            .IgnoreAllPropertiesWithAnInaccessibleSetter();
+
+        //PermissionGrant
+        CreateMap<SessionPermissionRoleGrant, PermissionGrantValue>();
+        CreateMap<SessionPermissionUnitGrant, PermissionGrantValue>();
 
         //SessionPermissionDefinition
         CreateMap<SessionPermissionDefinition, SessionPermissionDefinitionDto>();

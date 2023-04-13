@@ -1,14 +1,25 @@
-﻿using IczpNet.Chat.BaseEntitys;
+﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons.DataFilters;
+using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 
 namespace IczpNet.Chat.SessionSections.SessionPermissionRoleGrants
 {
-    public class SessionPermissionRoleGrant : BaseEntity
+    public class SessionPermissionRoleGrant : BaseEntity, IIsEnabled
     {
         protected SessionPermissionRoleGrant() { }
+
+        public SessionPermissionRoleGrant(string definitionId, long value, bool isEnabled)
+        {
+            Assert.If(!SessionPermissionDefinitionConsts.GetAll().Contains(definitionId), $"Key does not exist:{definitionId}");
+            DefinitionId = definitionId;
+            Value = value;
+            IsEnabled = isEnabled;
+        }
 
         public virtual string DefinitionId { get; set; }
 
@@ -21,6 +32,8 @@ namespace IczpNet.Chat.SessionSections.SessionPermissionRoleGrants
         public virtual SessionRole Role { get; set; }
 
         public virtual long Value { get; set; }
+
+        public virtual bool IsEnabled { get; set; }
 
         public override object[] GetKeys()
         {

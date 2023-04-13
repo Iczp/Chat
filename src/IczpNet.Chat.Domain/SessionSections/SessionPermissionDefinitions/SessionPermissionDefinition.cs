@@ -21,7 +21,7 @@ namespace IczpNet.Chat.SessionSections.SessionPermissionDefinitions
         [StringLength(100)]
         public override string Id { get; protected set; }
 
-        public virtual long? GroupId { get; protected set; }
+        public virtual long? GroupId { get; set; }
 
         [ForeignKey(nameof(GroupId))]
         public virtual SessionPermissionGroup Group { get; set; }
