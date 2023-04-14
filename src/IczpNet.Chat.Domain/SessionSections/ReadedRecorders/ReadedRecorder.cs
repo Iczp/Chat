@@ -7,7 +7,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.SessionSections.ReadedRecorders
 {
-    public class ReadedRecorder : BaseSessionEntity, IDeviceId
+    public class ReadedRecorder : BaseSessionEntity<Guid>, IDeviceId
     {
         ///// <summary>
         ///// AutoId 

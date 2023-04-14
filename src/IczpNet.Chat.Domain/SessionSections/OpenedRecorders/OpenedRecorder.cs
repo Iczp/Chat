@@ -8,7 +8,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.SessionSections.OpenedRecorders
 {
-    public class OpenedRecorder : BaseSessionEntity, IDeviceId
+    public class OpenedRecorder : BaseSessionEntity<Guid>, IDeviceId
     {
         [StringLength(36)]
         public virtual string DeviceId { get; set; }

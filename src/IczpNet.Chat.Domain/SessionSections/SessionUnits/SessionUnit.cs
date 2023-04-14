@@ -6,6 +6,7 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.MessageReminders;
 using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
+using IczpNet.Chat.SessionSections.SessionRequests;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionTags;
@@ -27,7 +28,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
     [Index(nameof(LastMessageId), IsDescending = new[] { true })]
     [Index(nameof(Sorting), nameof(LastMessageId), AllDescending = true)]
     [Index(nameof(ReadedMessageId), AllDescending = true)]
-    public class SessionUnit : BaseSessionEntity, IChatOwner<long>, ISorting, IIsStatic, IIsPublic
+    public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, IIsStatic, IIsPublic
     {
         public virtual Guid SessionId { get; protected set; }
 
@@ -188,6 +189,9 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public virtual List<SessionUnitOrganization> SessionUnitOrganizationList { get; protected set; }
 
         public virtual IList<SessionPermissionUnitGrant> GrantList { get; set; }
+
+        [InverseProperty(nameof(SessionRequest.Handler))]
+        public virtual IList<SessionRequest> HandlerList { get; set; }
 
         /// <summary>
         /// sender message list

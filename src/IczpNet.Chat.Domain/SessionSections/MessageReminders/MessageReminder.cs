@@ -1,6 +1,4 @@
 ﻿using IczpNet.Chat.BaseEntitys;
-using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;

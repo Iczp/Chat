@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.BaseEntitys
 {
-    public abstract class BaseSessionEntity : BaseEntity<Guid>, IChatOwner<long>
+    public abstract class BaseSessionEntity<TKey> : BaseEntity<Guid>, IChatOwner<long>
     {
         public virtual long OwnerId { get; protected set; }
 

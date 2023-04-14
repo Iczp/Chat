@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace IczpNet.Chat.SessionSections.FriendshipRequests
 {
-    public class FriendshipRequest : BaseSessionEntity, IDeviceId
+    public class FriendshipRequest : BaseSessionEntity<Guid>, IDeviceId
     {
         [StringLength(36)]
         public virtual string DeviceId { get; set; }

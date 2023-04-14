@@ -1,9 +1,10 @@
 ﻿using IczpNet.Chat.BaseEntitys;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.SessionSections.SessionSettings
 {
-    public class SessionSetting : BaseSessionEntity
+    public class SessionSetting : BaseSessionEntity<Guid>
     {
         /// <summary>
         /// 备注名称
