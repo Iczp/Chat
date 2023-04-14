@@ -22,17 +22,17 @@ public class RoomAppService : ChatAppService, IRoomAppService
     protected IRoomManager RoomManager { get; }
     protected ISessionUnitManager SessionUnitManager { get; }
     protected IChatObjectCategoryManager ChatObjectCategoryManager { get; }
-    protected ISessionPermission SessionPermission { get; }
+    protected ISessionPermissionChecker SessionPermissionChecker { get; }
 
     public RoomAppService(IRoomManager roomManager,
         IChatObjectCategoryManager chatObjectCategoryManager,
         ISessionUnitManager sessionUnitManager,
-        ISessionPermission sessionPermission)
+        ISessionPermissionChecker sessionPermissionChecker)
     {
         RoomManager = roomManager;
         ChatObjectCategoryManager = chatObjectCategoryManager;
         SessionUnitManager = sessionUnitManager;
-        SessionPermission = sessionPermission;
+        SessionPermissionChecker = sessionPermissionChecker;
     }
 
 

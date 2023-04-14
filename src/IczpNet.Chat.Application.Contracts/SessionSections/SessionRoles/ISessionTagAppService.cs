@@ -17,5 +17,5 @@ public interface ISessionRoleAppService :
 
     Task<SessionRolePermissionDto> GetPermissions(Guid id);
 
-    Task DeleteAsync(Guid sessionUnitId, Guid id);
+    Task DeleteByAsync(Guid sessionUnitId, Guid id);
 }

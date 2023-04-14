@@ -27,17 +27,17 @@ namespace IczpNet.Chat.SessionServices
     {
         protected IChatObjectRepository ChatObjectRepository { get; }
         protected IRepository<Session, Guid> SessionRepository { get; }
-        protected ISessionPermission SessionPermission { get; }
+        protected ISessionPermissionChecker SessionPermissionChecker { get; }
 
         public SessionRoleAppService(
             IRepository<SessionRole, Guid> repository,
             IChatObjectRepository chatObjectRepository,
             IRepository<Session, Guid> sessionRepository,
-            ISessionPermission sessionPermission) : base(repository)
+            ISessionPermissionChecker sessionPermissionChecker) : base(repository)
         {
             ChatObjectRepository = chatObjectRepository;
             SessionRepository = sessionRepository;
-            SessionPermission = sessionPermission;
+            SessionPermissionChecker = sessionPermissionChecker;
         }
 
         protected override async Task<IQueryable<SessionRole>> CreateFilteredQueryAsync(SessionRoleGetListInput input)
@@ -88,9 +88,9 @@ namespace IczpNet.Chat.SessionServices
         }
 
         [HttpPost]
-        public async Task DeleteAsync(Guid sessionUnitId, Guid id)
+        public async Task DeleteByAsync(Guid sessionUnitId, Guid id)
         {
-            await SessionPermission.CheckAsync(SessionPermissionDefinitionConsts.SessionPermissionRole.Delete, sessionUnitId);
+            await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.SessionPermissionRole.Delete, sessionUnitId);
 
             await base.DeleteAsync(id);
         }

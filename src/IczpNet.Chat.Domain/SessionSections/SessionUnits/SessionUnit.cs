@@ -187,7 +187,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public virtual List<SessionUnitOrganization> SessionUnitOrganizationList { get; protected set; }
 
-        public virtual IList<SessionPermissionUnitGrant> UnitGrantList { get; set; }
+        public virtual IList<SessionPermissionUnitGrant> GrantList { get; set; }
 
         /// <summary>
         /// sender message list

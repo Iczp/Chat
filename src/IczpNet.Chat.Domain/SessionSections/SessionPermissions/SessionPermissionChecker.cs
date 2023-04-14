@@ -11,12 +11,12 @@ using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.SessionSections.SessionPermissions
 {
-    public class SessionPermission : DomainService, ISessionPermission
+    public class SessionPermissionChecker : DomainService, ISessionPermissionChecker
     {
         protected ISessionUnitManager SessionUnitManager { get; }
         protected ISessionPermissionDefinitionRepository Repository { get; }
         protected IRepository<SessionPermissionRoleGrant> SessionPermissionRoleGrantRepository { get; }
-        public SessionPermission(ISessionUnitManager sessionUnitManager,
+        public SessionPermissionChecker(ISessionUnitManager sessionUnitManager,
             ISessionPermissionDefinitionRepository sessionPermissionDefinitionRepository)
         {
             SessionUnitManager = sessionUnitManager;
@@ -39,14 +39,14 @@ namespace IczpNet.Chat.SessionSections.SessionPermissions
             var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
 
             //UnitGrant
-            if (sessionUnit.UnitGrantList.Any(d => d.IsEnabled && d.DefinitionId == sessionPermissionDefinitionId))
+            if (sessionUnit.GrantList.Any(d => d.IsEnabled && d.DefinitionId == sessionPermissionDefinitionId))
             {
                 Logger.LogDebug($"Role Permission IsGranted:{sessionPermissionDefinitionId}");
                 return true;
             }
 
             //RoleGrant
-            if (sessionUnit.SessionUnitRoleList.Any(x => x.SessionRole.RoleGrantList.Any(d => d.IsEnabled && d.DefinitionId == sessionPermissionDefinitionId)))
+            if (sessionUnit.SessionUnitRoleList.Any(x => x.SessionRole.GrantList.Any(d => d.IsEnabled && d.DefinitionId == sessionPermissionDefinitionId)))
             {
                 Logger.LogDebug($"SessionUnit Permission IsGranted:{sessionPermissionDefinitionId}");
                 return true;

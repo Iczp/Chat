@@ -2,7 +2,7 @@
 using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.SessionSections.SessionPermissionGroups;
 using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
-using IczpNet.Chat.SessionSections.SessionUnits;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -10,6 +10,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.SessionSections.SessionPermissionDefinitions
 {
+    [Index(nameof(Sorting), AllDescending = true)]
     public class SessionPermissionDefinition : BaseEntity<string>, IIsEnabled
     {
         protected SessionPermissionDefinition() { }

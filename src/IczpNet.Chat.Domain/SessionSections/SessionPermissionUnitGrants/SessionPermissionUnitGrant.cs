@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.BaseEntitys;
+﻿using IczpNet.AbpCommons.DataFilters;
+using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
@@ -9,6 +10,14 @@ namespace IczpNet.Chat.SessionSections.SessionPermissionRoleGrants
     public class SessionPermissionUnitGrant : BaseEntity
     {
         protected SessionPermissionUnitGrant() { }
+
+        public SessionPermissionUnitGrant(string definitionId,Guid sessionUnitId, long value, bool isEnabled)
+        {
+            DefinitionId = definitionId;
+            SessionUnitId = sessionUnitId;
+            Value = value;
+            IsEnabled = isEnabled;
+        }
 
         public virtual string DefinitionId { get; set; }
 

@@ -1,9 +1,12 @@
 ﻿using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 
 namespace IczpNet.Chat.SessionSections.SessionPermissionGroups
 {
+    [Index(nameof(Sorting), AllDescending = true)]
+    [Index(nameof(FullPath), AllDescending = false)]
     public class SessionPermissionGroup : BaseTreeEntity<SessionPermissionGroup, long>
     {
         protected SessionPermissionGroup() { }

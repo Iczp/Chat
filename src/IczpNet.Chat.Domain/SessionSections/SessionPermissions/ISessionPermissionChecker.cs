@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace IczpNet.Chat.SessionSections.SessionPermissions
 {
-    public interface ISessionPermission
+    public interface ISessionPermissionChecker
     {
         //Task<bool> IsAuthenticatedAsync(string sessionPermissionDefinitionId, Guid sessionUnitId);
 

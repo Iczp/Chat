@@ -39,19 +39,19 @@ namespace IczpNet.Chat.SessionSections.SessionRoles
 
         public virtual List<SessionUnitRole> SessionUnitRoleList { get; protected set; }
 
-        public virtual IList<SessionPermissionRoleGrant> RoleGrantList { get; set; }
+        public virtual IList<SessionPermissionRoleGrant> GrantList { get; set; }
 
         public void SetPermissionGrant(Dictionary<string, PermissionGrantValue> permissionGrant)
         {
-            RoleGrantList?.Clear();
-            RoleGrantList = permissionGrant.Select(x => new SessionPermissionRoleGrant(x.Key, x.Value.Value,x.Value.IsEnabled)).ToList();
+            GrantList?.Clear();
+            GrantList = permissionGrant.Select(x => new SessionPermissionRoleGrant(x.Key, Id, x.Value.Value, x.Value.IsEnabled)).ToList();
         }
 
         public Dictionary<string, SessionPermissionRoleGrant> PermissionGrant => GetPermissionGrant();
 
         protected Dictionary<string, SessionPermissionRoleGrant> GetPermissionGrant()
         {
-            return RoleGrantList?.ToDictionary(x => x.DefinitionId);
+            return GrantList?.ToDictionary(x => x.DefinitionId);
         }
     }
 }
