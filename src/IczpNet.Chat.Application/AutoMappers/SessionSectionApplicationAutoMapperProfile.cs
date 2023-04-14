@@ -22,6 +22,8 @@ using IczpNet.Chat.SessionSections.SessionPermissionDefinitions.Dtos;
 using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
 using IczpNet.Chat.SessionSections.SessionPermissions;
 using IczpNet.Chat.SessionSections.SessionPermissions.Dtos;
+using IczpNet.Chat.SessionSections.SessionRequests.Dtos;
+using IczpNet.Chat.SessionSections.SessionRequests;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -84,6 +86,12 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
         CreateMap<SessionPermissionDefinition, SessionPermissionDefinitionSimpleDto>();
         CreateMap<SessionPermissionDefinitionCreateInput, SessionPermissionDefinition>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         CreateMap<SessionPermissionDefinitionUpdateInput, SessionPermissionDefinition>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+
+        //SessionRequest
+        CreateMap<SessionRequest, SessionRequestDto>();
+        CreateMap<SessionRequest, SessionRequestDetailDto>();
+        CreateMap<SessionRequestCreateInput, SessionRequest>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<SessionRequestUpdateInput, SessionRequest>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
 
         //Friendship
         CreateMap<Friendship, FriendshipDto>();
