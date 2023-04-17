@@ -1,4 +1,6 @@
 ﻿using IczpNet.AbpCommons;
+using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
@@ -9,10 +11,18 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
     public class SessionRequestManager : DomainService, ISessionRequestManager
     {
         protected IRepository<SessionRequest, Guid> Repository { get; }
-
-        public SessionRequestManager(IRepository<SessionRequest, Guid> repository)
+        protected ISessionUnitRepository SessionUnitRepository { get; }
+        protected ISessionUnitManager SessionUnitManager { get; }
+        protected ISessionManager SessionManager { get; }
+        public SessionRequestManager(IRepository<SessionRequest, Guid> repository, 
+            ISessionUnitRepository sessionUnitRepository, 
+            ISessionUnitManager sessionUnitManager, 
+            ISessionManager sessionManager)
         {
             Repository = repository;
+            SessionUnitRepository = sessionUnitRepository;
+            SessionUnitManager = sessionUnitManager;
+            SessionManager = sessionManager;
         }
 
         public async Task<SessionRequest> HandleRequestAsync(Guid sessionRequestId, bool isAgreed, string handlMessage, Guid? handlerSessionUnitId)
@@ -23,9 +33,14 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
 
             if (isAgreed)
             {
-                
+
                 //handle...  
                 // addSessionUnit
+                var sessionUnit = await SessionUnitManager.FindAsync(sessionRequest.OwnerId, sessionRequest.DestinationId.Value);
+                if (sessionUnit != null)
+                {
+
+                }
 
                 sessionRequest.AgreeRequest(handlMessage, handlerSessionUnitId);
             }

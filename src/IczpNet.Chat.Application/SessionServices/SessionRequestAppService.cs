@@ -1,6 +1,5 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.SessionSections.FriendshipRequests;
 using IczpNet.Chat.SessionSections.SessionRequests;
 using IczpNet.Chat.SessionSections.SessionRequests.Dtos;
 using IczpNet.Chat.SessionSections.Sessions;
@@ -65,6 +64,13 @@ namespace IczpNet.Chat.SessionServices
             Assert.NotNull(await SessionUnitManager.FindAsync(input.OwnerId, input.DestinationId), "Already a friend");
         }
 
+        [HttpPost]
+        public override Task<SessionRequestDetailDto> CreateAsync(SessionRequestCreateInput input)
+        {
+            return base.CreateAsync(input);
+        }
+
+        [HttpPost]
         [RemoteService(false)]
         public override Task<SessionRequestDetailDto> UpdateAsync(Guid id, SessionRequestUpdateInput input)
         {

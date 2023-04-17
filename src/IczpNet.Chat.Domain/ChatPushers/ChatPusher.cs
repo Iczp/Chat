@@ -87,7 +87,7 @@ namespace IczpNet.Chat.ChatPushers
 
             await SessionUnitManager.SetCacheListAsync(key, sessionUnitCacheList, new DistributedCacheEntryOptions()
             {
-                 AbsoluteExpirationRelativeToNow =TimeSpan.FromMinutes(5)
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
             });
 
             return await ExecuteAsync(commandPayload, x =>

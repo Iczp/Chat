@@ -1,9 +1,8 @@
 ﻿using IczpNet.Pusher.Commands;
-using System;
 
 namespace IczpNet.Chat.CommandPayloads
 {
-    [Command("Rollback")]
+    [Command(CommandConsts.Rollback)]
     public class RollbackMessageCommandPayload
     {
         public long MessageId { get; set; }
