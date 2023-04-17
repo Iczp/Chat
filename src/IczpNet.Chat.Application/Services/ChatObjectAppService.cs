@@ -1,5 +1,6 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
+using IczpNet.AbpTrees;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjectCategorys;
 using IczpNet.Chat.ChatObjects;
@@ -30,14 +31,15 @@ namespace IczpNet.Chat.Services
         IChatObjectAppService
     {
         protected IChatObjectManager ChatObjectManager { get; }
+        protected override ITreeManager<ChatObject, long> TreeManager => LazyServiceProvider.LazyGetRequiredService<IChatObjectManager>();
         protected IChatObjectCategoryManager ChatObjectCategoryManager { get; }
         public ChatObjectAppService(
             IChatObjectRepository repository,
-            IChatObjectManager chatObjectManager,
-            IChatObjectCategoryManager chatObjectCategoryManager) : base(repository)
+            IChatObjectCategoryManager chatObjectCategoryManager,
+            IChatObjectManager chatObjectManager) : base(repository)
         {
-            ChatObjectManager = chatObjectManager;
             ChatObjectCategoryManager = chatObjectCategoryManager;
+            ChatObjectManager = chatObjectManager;
         }
 
         protected override async Task<IQueryable<ChatObject>> CreateFilteredQueryAsync(ChatObjectGetListInput input)
@@ -66,7 +68,7 @@ namespace IczpNet.Chat.Services
 
             await CheckGetPolicyAsync();
 
-            var entity = Assert.NotNull(await Repository.FindAsync(x => x.Code == code), $"Entity no such by [code]:{code}");
+            var entity = Assert.NotNull(await ChatObjectManager.FindByCodeAsync(code), $"Entity no such by [code]:{code}");
 
             return await MapToGetOutputDtoAsync(entity);
         }

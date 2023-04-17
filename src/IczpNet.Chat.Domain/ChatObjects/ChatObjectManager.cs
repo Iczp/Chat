@@ -4,17 +4,18 @@ using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.SessionSections.Sessions;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Caching;
+using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.ChatObjects
 {
     public class ChatObjectManager : TreeManager<ChatObject, long, ChatObjectInfo>, IChatObjectManager
     {
-        
         protected IChatObjectTypeManager ChatObjectTypeManager => LazyServiceProvider.LazyGetRequiredService<IChatObjectTypeManager>();
         protected IMessageSender MessageSender => LazyServiceProvider.LazyGetRequiredService<IMessageSender>();
         protected ISessionGenerator SessionGenerator => LazyServiceProvider.LazyGetRequiredService<ISessionGenerator>();
@@ -23,6 +24,65 @@ namespace IczpNet.Chat.ChatObjects
         public ChatObjectManager(IChatObjectRepository repository) : base(repository)
         {
 
+        }
+
+        protected override async Task CheckExistsByCreateAsync(ChatObject inputEntity)
+        {
+            Assert.If(await Repository.AnyAsync(x => x.Code == inputEntity.Code), $"Already exists Code:{inputEntity.Code}");
+        }
+
+        protected override async Task CheckExistsByUpdateAsync(ChatObject inputEntity)
+        {
+            Assert.If(await Repository.AnyAsync((x) => x.Code == inputEntity.Code && !x.Id.Equals(inputEntity.Id)), $" Code[{inputEntity.Code}] already such");
+        }
+
+        public virtual async Task<ChatObject> FindByCodeAsync(string code)
+        {
+            return await Repository.FindAsync(x => x.Code == code);
+        }
+
+        public virtual async Task<ChatObject> GetOrAddGroupAssistantAsync()
+        {
+            var entity = await FindByCodeAsync(ChatConsts.GroupAssistant);
+
+            if (entity == null)
+            {
+                var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Robot);
+
+                entity = new ChatObject("群助手", chatObjectType, null)
+                {
+                    Code = ChatConsts.GroupAssistant,
+                    Description = "我是机器人：加群",
+                    IsStatic = true,
+                    ObjectType = ChatObjectTypeEnums.Robot,
+                };
+                await CreateAsync(entity);
+
+                Logger.LogDebug($"Cteate chatObject by code:{entity.Code}");
+            }
+            return entity;
+        }
+
+        public virtual async Task<ChatObject> GetOrAddPrivateAssistantAsync()
+        {
+            var entity = await FindByCodeAsync(ChatConsts.PrivateAssistant);
+
+            if (entity == null)
+            {
+                var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Robot);
+
+                entity = new ChatObject("私人助理", chatObjectType, null)
+                {
+                    Code = ChatConsts.PrivateAssistant,
+                    Description = "我是机器人,会发送私人消息、推送服务等",
+                    IsStatic = true,
+                    ObjectType = ChatObjectTypeEnums.Robot,
+                };
+                await CreateAsync(entity);
+
+                Logger.LogDebug($"Cteate chatObject by code:{entity.Code}");
+            }
+            return entity;
         }
 
         public virtual async Task<List<ChatObject>> GetListByUserId(Guid userId)

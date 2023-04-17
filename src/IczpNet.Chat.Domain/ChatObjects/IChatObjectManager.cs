@@ -8,7 +8,19 @@ namespace IczpNet.Chat.ChatObjects
 {
     public interface IChatObjectManager : ITreeManager<ChatObject, long, ChatObjectInfo>
     {
-        //ChatObject GroupAssistant { get; }
+        Task<ChatObject> FindByCodeAsync(string code);
+
+        /// <summary>
+        /// Group Assistant
+        /// </summary>
+        /// <returns></returns>
+        Task<ChatObject> GetOrAddGroupAssistantAsync();
+
+        /// <summary>
+        /// Private Assistant
+        /// </summary>
+        /// <returns></returns>
+        Task<ChatObject> GetOrAddPrivateAssistantAsync();
 
         Task<List<ChatObject>> GetAllListAsync(ChatObjectTypeEnums objectType);
 

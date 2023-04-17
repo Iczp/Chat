@@ -11,6 +11,7 @@ using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionSettings;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -19,7 +20,9 @@ using Volo.Abp.SimpleStateChecking;
 
 namespace IczpNet.Chat.ChatObjects
 {
-    //[Index]
+    [Index(nameof(Code))]
+    [Index(nameof(Name))]
+    [Index(nameof(FullPath))]
     public class ChatObject : BaseTreeEntity<ChatObject, long>, IName, IChatObject, IHasSimpleStateCheckers<ChatObject>, IIsStatic, IIsActive, IIsPublic
     {
         public List<ISimpleStateChecker<ChatObject>> StateCheckers { get; }

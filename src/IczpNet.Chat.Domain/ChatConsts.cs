@@ -12,4 +12,8 @@ public static class ChatConsts
         ChatObjectTypeEnums.Customer,
         ChatObjectTypeEnums.Robot,
     };
+
+    public static string GroupAssistant { get; set; } = nameof(GroupAssistant);
+
+    public static string PrivateAssistant { get; set; } = nameof(PrivateAssistant);
 }

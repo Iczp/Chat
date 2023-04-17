@@ -18,7 +18,7 @@ namespace IczpNet.Chat.RoomSections.Rooms;
 
 public class RoomManager : ChatObjectManager, IRoomManager
 {
-    protected virtual string GroupAssistantCode => "GroupAssistant";
+    
     protected RoomOptions Config { get; }
     protected ISessionManager SessionManager { get; }
     protected ISessionUnitManager SessionUnitManager { get; }
@@ -36,10 +36,7 @@ public class RoomManager : ChatObjectManager, IRoomManager
         SessionUnitManager = sessionUnitManager;
     }
 
-    public async Task<ChatObject> GetGroupAssistantAsync()
-    {
-        return Assert.NotNull(await Repository.FindAsync(x => x.Code == GroupAssistantCode), $"Entity no such by [code]:{GroupAssistantCode}");
-    }
+    
 
     public virtual Task<bool> IsAllowJoinRoomAsync(ChatObjectTypeEnums objectType)
     {

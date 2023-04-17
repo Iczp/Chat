@@ -1,12 +1,9 @@
 ﻿using IczpNet.Chat.ChatObjectTypes;
-using IczpNet.Chat.Enums;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Threading.Tasks;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
 
@@ -17,20 +14,17 @@ namespace IczpNet.Chat.ChatObjects
         protected ILogger<ChatObjectDataSeedContributor> Logger { get; }
         protected IConfiguration Configuration { get; }
         protected ICurrentTenant CurrentTenant { get; }
-        protected IChatObjectRepository Repository { get; }
-        protected IChatObjectTypeManager ChatObjectTypeManager { get; }
+        protected IChatObjectManager ChatObjectManager { get; }
         public ChatObjectDataSeedContributor(
             IConfiguration configuration,
             ICurrentTenant currentTenant,
-            IChatObjectRepository repository,
             ILogger<ChatObjectDataSeedContributor> logger,
-            IChatObjectTypeManager chatObjectTypeManager)
+            IChatObjectManager chatObjectManager)
         {
             Configuration = configuration;
             CurrentTenant = currentTenant;
-            Repository = repository;
             Logger = logger;
-            ChatObjectTypeManager = chatObjectTypeManager;
+            ChatObjectManager = chatObjectManager;
         }
 
         [UnitOfWork]
@@ -44,21 +38,9 @@ namespace IczpNet.Chat.ChatObjects
 
         private async Task CreateAsync()
         {
-            if (!await Repository.AnyAsync(x => x.Code == "GroupAssistant"))
-            {
-                var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Robot);
+            await ChatObjectManager.GetOrAddGroupAssistantAsync();
 
-                var robot = new ChatObject("群助手", chatObjectType, null)
-                {
-                    Code = "GroupAssistant",
-                    Description = "我是机器人：加群",
-                    IsStatic = true,
-                    ObjectType = ChatObjectTypeEnums.Robot,
-                };
-                await Repository.InsertAsync(robot);
-
-                Logger.LogDebug($"Cteate chatObject by code:{robot.Code}");
-            }
+            await ChatObjectManager.GetOrAddPrivateAssistantAsync();
         }
     }
 }
