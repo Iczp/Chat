@@ -22,8 +22,11 @@ namespace IczpNet.Chat.MessageSections
 
         //Task<MessageInfo<ArticleContentOutput>> SendArticleContentMessageAsync(MessageInput<ArticleContentInput> input);
 
+
         Task<MessageInfo<TextContentInfo>> SendTextAsync(SessionUnit senderSessionUnit, MessageSendInput<TextContentInfo> input, SessionUnit receiverSessionUnit = null);
 
         Task<MessageInfo<CmdContentInfo>> SendCmdAsync(SessionUnit senderSessionUnit, MessageSendInput<CmdContentInfo> input, SessionUnit receiverSessionUnit = null);
+
+        Task<MessageInfo<LinkContentInfo>> SendLinkAsync(SessionUnit senderSessionUnit, MessageSendInput<LinkContentInfo> input, SessionUnit receiverSessionUnit = null);
     }
 }

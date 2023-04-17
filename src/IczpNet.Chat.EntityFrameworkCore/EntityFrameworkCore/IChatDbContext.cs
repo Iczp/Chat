@@ -16,6 +16,7 @@ using IczpNet.Chat.SessionSections.ReadedRecorders;
 using IczpNet.Chat.SessionSections.SessionOrganizations;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionPermissionGroups;
+using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
 using IczpNet.Chat.SessionSections.SessionRequests;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.Sessions;
@@ -51,8 +52,8 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<SessionPermissionDefinition> SessionPermissionDefinition { get; }
     DbSet<SessionPermissionGroup> SessionPermissionGroup { get; }
     DbSet<SessionRequest> SessionRequest { get; }
-
-
+    DbSet<SessionPermissionRoleGrant> SessionPermissionRoleGrant { get;  }
+    DbSet<SessionPermissionUnitGrant> SessionPermissionUnitGrant { get;  }
 
     DbSet<ReadedRecorder> ReadedRecorder { get; }
     DbSet<Friendship> Friendship { get; }

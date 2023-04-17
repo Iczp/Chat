@@ -16,6 +16,7 @@ using IczpNet.Chat.SessionSections.ReadedRecorders;
 using IczpNet.Chat.SessionSections.SessionOrganizations;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionPermissionGroups;
+using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
 using IczpNet.Chat.SessionSections.SessionRequests;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.Sessions;
@@ -51,6 +52,8 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     public DbSet<SessionPermissionDefinition> SessionPermissionDefinition { get; set; }
     public DbSet<SessionPermissionGroup> SessionPermissionGroup { get; set; }
     public DbSet<SessionRequest> SessionRequest { get; set; }
+    public DbSet<SessionPermissionRoleGrant> SessionPermissionRoleGrant { get; set; }
+    public DbSet<SessionPermissionUnitGrant> SessionPermissionUnitGrant { get; set; }
 
     public DbSet<ReadedRecorder> ReadedRecorder { get; set; }
 

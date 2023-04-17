@@ -2,7 +2,7 @@
 
 namespace IczpNet.Chat.MessageSections
 {
-    public interface IMessageSendInput<T> : IMessageSendInput where T : class
+    public interface IMessageSendInput<T> : IMessageSendInput
     {
         T Content { get; }
     }

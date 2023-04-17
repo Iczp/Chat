@@ -22,4 +22,11 @@ public static class SessionPermissionDefinitionConsts
         public const string Delete = Default + "." + nameof(Delete);
         //public const string DeleteMany = Default + "." + nameof(DeleteMany);
     }
+
+    public class SessionRequest
+    {
+        public const string Default = GroupName + "." + nameof(SessionRequest);
+
+        public const string Handle = Default + "." + nameof(Handle);
+    }
 }

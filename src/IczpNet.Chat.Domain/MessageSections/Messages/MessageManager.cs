@@ -104,7 +104,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             });
         }
 
-        public virtual async Task<Message> CreateMessageBySessionUnitAsync(SessionUnit senderSessionUnit, Func<Message, Task<IMessageContentEntity>> func, SessionUnit receiverSessionUnit = null)
+        public virtual async Task<Message> CreateMessageBySessionUnitAsync(SessionUnit senderSessionUnit, Func<Message, Task<IMessageContentEntity>> getContentEntity, SessionUnit receiverSessionUnit = null)
         {
             Assert.NotNull(senderSessionUnit, $"Unable to send message, senderSessionUnit is null");
 
@@ -117,9 +117,9 @@ namespace IczpNet.Chat.MessageSections.Messages
                 SessionUnitCount = await SessionUnitManager.GetCountAsync(session.Id)
             };
 
-            if (func != null)
+            if (getContentEntity != null)
             {
-                var messageContent = await func(entity);
+                var messageContent = await getContentEntity(entity);
                 entity.SetMessageContent(messageContent);
             }
 
@@ -145,7 +145,9 @@ namespace IczpNet.Chat.MessageSections.Messages
             return entity;
         }
 
-        public virtual async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo>(SessionUnit senderSessionUnit, MessageSendInput input, Func<Message, Task<IMessageContentEntity>> func, SessionUnit receiverSessionUnit = null)
+        public virtual async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContent>(SessionUnit senderSessionUnit, MessageSendInput<TContentInfo> input, SessionUnit receiverSessionUnit = null)
+            where TContentInfo : IMessageContentInfo
+            where TContent : IMessageContentEntity
         {
             var message = await CreateMessageBySessionUnitAsync(senderSessionUnit, async entity =>
             {
@@ -161,7 +163,9 @@ namespace IczpNet.Chat.MessageSections.Messages
                     var receiver = await ChatObjectManager.GetAsync(receiverSessionUnit.OwnerId);
                     entity.SetPrivateMessage(receiver);
                 }
-                return await func(entity);
+                var messageContent = ObjectMapper.Map<TContentInfo, TContent>(input.Content);
+
+                return await Task.FromResult(messageContent);
             });
 
             var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);

@@ -24,17 +24,15 @@ namespace IczpNet.Chat.SessionServices
             SessionRequestUpdateInput>,
         ISessionRequestAppService
     {
-
-        protected ISessionManager SessionManager { get; }
         protected ISessionUnitManager SessionUnitManager { get; }
         protected ISessionRequestManager SessionRequestManager { get; }
+
+
         public SessionRequestAppService(
             IRepository<SessionRequest, Guid> repository,
-            ISessionManager sessionManager,
             ISessionUnitManager sessionUnitManager,
             ISessionRequestManager sessionRequestManager) : base(repository)
         {
-            SessionManager = sessionManager;
             SessionUnitManager = sessionUnitManager;
             SessionRequestManager = sessionRequestManager;
         }
@@ -61,14 +59,18 @@ namespace IczpNet.Chat.SessionServices
 
         protected override async Task CheckCreateAsync(SessionRequestCreateInput input)
         {
-            Assert.NotNull(await SessionUnitManager.FindAsync(input.OwnerId, input.DestinationId), "Already a friend");
+            var entity = await SessionUnitManager.FindAsync(input.OwnerId, input.DestinationId);
+            Assert.If(entity != null, "Already a friend");
         }
 
         [HttpPost]
-        public override Task<SessionRequestDetailDto> CreateAsync(SessionRequestCreateInput input)
+        public override async Task<SessionRequestDetailDto> CreateAsync(SessionRequestCreateInput input)
         {
-            return base.CreateAsync(input);
+            var entity = await SessionRequestManager.CreateRequestAsync(input.OwnerId, input.DestinationId, input.RequestMessage);
+
+            return await MapToGetOutputDtoAsync(entity);
         }
+
 
         [HttpPost]
         [RemoteService(false)]

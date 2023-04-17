@@ -115,7 +115,6 @@ namespace IczpNet.Chat.OfficialSections.Officials
                 senderSessionUnit: officialSessionUnit,
                 input: new MessageSendInput<CmdContentInfo>()
                 {
-                    SessionUnitId = officialSessionUnit.Id,
                     Content = new CmdContentInfo()
                     {
                         Text = text

@@ -139,16 +139,20 @@ namespace IczpNet.Chat.MessageSections
             return await MessageManager.SendMessageAsync<TextContentInfo>(input, async x => await Task.FromResult(content));
         }
 
-        public async Task<MessageInfo<TextContentInfo>> SendTextAsync(SessionUnit senderSessionUnit, MessageSendInput<TextContentInfo> input, SessionUnit receiverSessionUnit = null)
+        public Task<MessageInfo<TextContentInfo>> SendTextAsync(SessionUnit senderSessionUnit, MessageSendInput<TextContentInfo> input, SessionUnit receiverSessionUnit = null)
         {
-            var messageContent = ObjectMapper.Map<TextContentInfo, TextContent>(input.Content);
-            return await MessageManager.SendAsync<TextContentInfo>(senderSessionUnit, input, async x => await Task.FromResult(messageContent), receiverSessionUnit);
+            return MessageManager.SendAsync<TextContentInfo, TextContent>(senderSessionUnit, input, receiverSessionUnit);
         }
 
-        public async Task<MessageInfo<CmdContentInfo>> SendCmdAsync(SessionUnit senderSessionUnit, MessageSendInput<CmdContentInfo> input, SessionUnit receiverSessionUnit = null)
+        public Task<MessageInfo<CmdContentInfo>> SendCmdAsync(SessionUnit senderSessionUnit, MessageSendInput<CmdContentInfo> input, SessionUnit receiverSessionUnit = null)
         {
-            var messageContent = ObjectMapper.Map<CmdContentInfo, CmdContent>(input.Content);
-            return await MessageManager.SendAsync<CmdContentInfo>(senderSessionUnit, input, async x => await Task.FromResult(messageContent), receiverSessionUnit);
+            return MessageManager.SendAsync<CmdContentInfo, CmdContent>(senderSessionUnit, input, receiverSessionUnit);
         }
+
+        public Task<MessageInfo<LinkContentInfo>> SendLinkAsync(SessionUnit senderSessionUnit, MessageSendInput<LinkContentInfo> input, SessionUnit receiverSessionUnit = null)
+        {
+            return MessageManager.SendAsync<LinkContentInfo, LinkContent>(senderSessionUnit, input, receiverSessionUnit);
+        }
+
     }
 }

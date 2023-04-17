@@ -56,6 +56,14 @@ namespace IczpNet.Chat.SessionSections.Sessions
             }
         }
 
+        private async void ResolveSenderIsRobot(IChatObject sender, Func<Task> matchAction)
+        {
+            if (IsObjectType(sender.ObjectType.Value, ChatObjectTypeEnums.Robot))
+            {
+                await matchAction?.Invoke();
+            }
+        }
+
         protected virtual async Task<string> MakeSesssionKeyAsync(IChatObject sender, IChatObject receiver)
         {
             await Task.CompletedTask;
@@ -115,6 +123,39 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
             session = new Session(sessionId, sessionKey, channel);
 
+            ResolveSenderIsRobot(sender, async () =>
+            {
+                //add robot
+                session.AddSessionUnit(new SessionUnit(
+                        id: GuidGenerator.Create(),
+                        session: session,
+                        ownerId: sender.Id,
+                        destinationId: receiver.Id,
+                        destinationObjectType: receiver.ObjectType,
+                        isPublic: true,
+                        isStatic: true,
+                        isCreator: false,
+                        joinWay: JoinWays.AutoJoin,
+                        inviterUnitId: null,
+                        isInputEnabled: true));
+
+                //add receiver
+                session.AddSessionUnit(new SessionUnit(
+                        id: GuidGenerator.Create(),
+                        session: session,
+                        ownerId: receiver.Id,
+                        destinationId: sender.Id,
+                        destinationObjectType: sender.ObjectType,
+                        isPublic: true,
+                        isStatic: true,
+                        isCreator: false,
+                        joinWay: JoinWays.AutoJoin,
+                        inviterUnitId: null,
+                        isInputEnabled: true));
+
+                await Task.CompletedTask;
+            });
+
             ResolveShopWaiterId(sender, receiver, async (shopKeeperId) =>
             {
 
@@ -154,15 +195,15 @@ namespace IczpNet.Chat.SessionSections.Sessions
                 foreach (var shopWaiter in shopWaiterList)
                 {
                     session.AddSessionUnit(new SessionUnit(
-                        id: GuidGenerator.Create(), 
-                        session: session, 
-                        ownerId: shopWaiter.Id, 
-                        destinationId: sender.Id, 
+                        id: GuidGenerator.Create(),
+                        session: session,
+                        ownerId: shopWaiter.Id,
+                        destinationId: sender.Id,
                         destinationObjectType: sender.ObjectType,
                         isPublic: true,
-                        isStatic: false, 
-                        isCreator: false, 
-                        joinWay: JoinWays.AutoJoin, 
+                        isStatic: false,
+                        isCreator: false,
+                        joinWay: JoinWays.AutoJoin,
                         inviterUnitId: null,
                         isInputEnabled: true));
                 }

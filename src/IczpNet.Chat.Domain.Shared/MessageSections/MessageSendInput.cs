@@ -4,7 +4,7 @@ using System.ComponentModel;
 
 namespace IczpNet.Chat.MessageSections.Messages
 {
-    public class MessageSendInput<T> : MessageSendInput, IMessageSendInput<T> where T : class
+    public class MessageSendInput<T> : MessageSendInput, IMessageSendInput<T> 
     {
         public virtual T Content { get; set; }
     }

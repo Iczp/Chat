@@ -227,7 +227,6 @@ public class RoomManager : ChatObjectManager, IRoomManager
     {
         return MessageSender.SendCmdAsync(roomSessionUnit, new MessageSendInput<CmdContentInfo>()
         {
-            SessionUnitId = roomSessionUnit.Id,
             Content = content
         });
     }
