@@ -1,4 +1,5 @@
-﻿using IczpNet.Pusher.Commands;
+﻿using IczpNet.Chat.Commands;
+using IczpNet.Pusher.Commands;
 
 namespace IczpNet.Chat.CommandHandlers;
 

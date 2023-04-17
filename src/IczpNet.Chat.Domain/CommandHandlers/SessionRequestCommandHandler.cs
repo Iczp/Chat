@@ -6,6 +6,7 @@ using IczpNet.Pusher.Commands;
 using IczpNet.AbpCommons;
 using NUglify.Helpers;
 using Microsoft.Extensions.Logging;
+using IczpNet.Chat.Commands;
 
 namespace IczpNet.Chat.CommandHandlers;
 
