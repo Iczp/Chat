@@ -7,4 +7,6 @@ public static class ChatSettings
     /* Add constants for setting names. Example:
      * public const string MySettingName = GroupName + ".MySettingName";
      */
+
+    public const string SessionRequestExpirationHours = GroupName + ".SessionRequest.ExpirationHours";
 }

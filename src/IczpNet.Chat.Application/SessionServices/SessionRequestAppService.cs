@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.SessionServices
@@ -92,11 +93,11 @@ namespace IczpNet.Chat.SessionServices
         }
 
         [HttpPost]
-        public async Task<DateTime?> HandleRequestAsync(SessionRequestHandleInput input)
+        public async Task<SessionRequestDetailDto> HandleRequestAsync(SessionRequestHandleInput input)
         {
-            var sessionRequest = await SessionRequestManager.HandleRequestAsync(input.SessionRequestId, input.IsAgreed, input.HandleMessage, null);
+            var entity = await SessionRequestManager.HandleRequestAsync(input.SessionRequestId, input.IsAgreed, input.HandleMessage, null);
 
-            return sessionRequest.HandleTime;
+            return await MapToGetOutputDtoAsync(entity);
         }
     }
 }

@@ -14,5 +14,5 @@ public interface ISessionRequestAppService :
         SessionRequestCreateInput,
         SessionRequestUpdateInput>
 {
-    Task<DateTime?> HandleRequestAsync(SessionRequestHandleInput input);
+    Task<SessionRequestDetailDto> HandleRequestAsync(SessionRequestHandleInput input);
 }

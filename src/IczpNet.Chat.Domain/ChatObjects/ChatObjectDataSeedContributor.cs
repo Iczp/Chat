@@ -1,5 +1,4 @@
-﻿using IczpNet.Chat.ChatObjectTypes;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using Volo.Abp.Data;

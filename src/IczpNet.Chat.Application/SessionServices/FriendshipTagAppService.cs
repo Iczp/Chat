@@ -12,6 +12,7 @@ using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.SessionServices
 {
+    [RemoteService(false)]
     public class FriendshipTagAppService
         : CrudChatAppService<
             FriendshipTag,

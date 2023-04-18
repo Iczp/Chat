@@ -26,12 +26,16 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
         [StringLength(200)]
         public virtual DateTime? HandleTime { get; protected set; }
 
-        public virtual bool IsEnabled { get; set; }
+        public virtual bool IsEnabled { get; protected set; }
 
         public virtual Guid? HandlerId { get; set; }
 
         [ForeignKey(nameof(HandlerId))]
         public virtual SessionUnit Handler { get; set; }
+
+        public virtual bool IsExpired { get; set; } = false;
+
+        public virtual DateTime? ExpirationTime { get; protected set; }
 
         protected SessionRequest() { }
 
@@ -67,6 +71,21 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
         public virtual void AgreeRequest(string handlMessage, Guid? handleSessionUnitId)
         {
             HandleRequest(true, handlMessage, handleSessionUnitId);
+        }
+
+        internal void SetIsEnabled(bool v)
+        {
+            IsEnabled = v;
+        }
+
+        public virtual bool IsExpiredTime()
+        {
+            return !ExpirationTime.HasValue || ExpirationTime.Value < DateTime.Now;
+        }
+
+        internal void SetExpirationTime(int hours)
+        {
+            ExpirationTime = DateTime.Now.AddHours(hours);
         }
     }
 }

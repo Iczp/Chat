@@ -20,4 +20,8 @@ public class SessionRequestDto : BaseDto<Guid>
 
     public virtual string RequestMessage { get; set; }
 
+    public virtual bool IsExpired { get; set; }
+
+    public virtual DateTime? ExpirationTime { get; set; }
+
 }
