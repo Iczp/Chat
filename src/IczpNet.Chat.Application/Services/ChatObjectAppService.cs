@@ -23,7 +23,7 @@ namespace IczpNet.Chat.Services
         : CrudTreeChatAppService<
             ChatObject,
             long,
-            ChatObjectDetailDto,
+            ChatObjectDto,
             ChatObjectDto,
             ChatObjectGetListInput,
             ChatObjectCreateInput,
@@ -66,7 +66,7 @@ namespace IczpNet.Chat.Services
         }
 
         [HttpGet]
-        public virtual async Task<ChatObjectDetailDto> GetByCodeAsync(string code)
+        public virtual async Task<ChatObjectDto> GetByCodeAsync(string code)
         {
             Assert.If(code.IsNullOrWhiteSpace(), $"[code] IsNullOrWhiteSpace.");
 
@@ -168,14 +168,25 @@ namespace IczpNet.Chat.Services
         [HttpPost]
         public Task<ChatObjectDto> UpdateNameAsync(long id, string name)
         {
-            throw new NotImplementedException();
+            return UpdateEntityAsync(id, entity => entity.SetName(name));
         }
 
         [HttpPost]
         [RemoteService(false)]
         public Task<ChatObjectDto> UpdatePortraitAsync(long id, string portrait)
         {
-            throw new NotImplementedException();
+            return UpdateEntityAsync(id, entity => entity.SetPortrait(portrait));
+        }
+
+        protected virtual async Task<ChatObjectDto> UpdateEntityAsync(long id, Action<ChatObject> action)
+        {
+            var entity = await ChatObjectManager.GetAsync(id);
+
+            action?.Invoke(entity);
+
+            await ChatObjectManager.UpdateAsync(entity, isUnique: true);
+
+            return await MapToGetOutputDtoAsync(entity);
         }
     }
 }

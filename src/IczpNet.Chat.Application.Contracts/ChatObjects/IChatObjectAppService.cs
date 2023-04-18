@@ -9,7 +9,7 @@ namespace IczpNet.Chat.ChatObjects
 {
     public interface IChatObjectAppService :
         ICrudAppService<
-            ChatObjectDetailDto,
+            ChatObjectDto,
             ChatObjectDto,
             long,
             ChatObjectGetListInput,
@@ -17,7 +17,7 @@ namespace IczpNet.Chat.ChatObjects
             ChatObjectUpdateInput>
         ,
         ITreeAppService<
-            ChatObjectDetailDto,
+            ChatObjectDto,
             ChatObjectDto,
             long,
             ChatObjectGetListInput,
@@ -28,7 +28,7 @@ namespace IczpNet.Chat.ChatObjects
 
         Task<PagedResultDto<ChatObjectDto>> GetListByCurrentUserAsync(int maxResultCount = 10, int skipCount = 0, string sorting = null);
 
-        Task<ChatObjectDetailDto> GetByCodeAsync(string code);
+        Task<ChatObjectDto> GetByCodeAsync(string code);
 
         Task<ChatObjectDto> CreateShopKeeperAsync(string name);
 

@@ -21,5 +21,9 @@ namespace IczpNet.Chat.RoomSections.Rooms
         int skipCount = 0, string sorting = null);
 
         Task<int> GetSameGroupCountAsync(long sourceChatObjectId, long targetChatObjectId);
+
+        Task<ChatObjectDto> UpdateNameAsync(long id, string name);
+
+        Task<ChatObjectDto> UpdatePortraitAsync(long id, string portrait);
     }
 }

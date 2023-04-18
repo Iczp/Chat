@@ -184,5 +184,10 @@ namespace IczpNet.Chat.ChatObjects
         {
             MaxMessageAutoId = maxMessageAutoId;
         }
+
+        public void SetPortrait(string portrait)
+        {
+            Portrait = portrait;
+        }
     }
 }

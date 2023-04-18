@@ -80,4 +80,16 @@ public class RoomAppService : ChatAppService, IRoomAppService
 
         return await AsyncExecuter.CountAsync(query);
     }
+
+    [HttpPost]
+    public Task<ChatObjectDto> UpdateNameAsync(long id, string name)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    [HttpPost]
+    public Task<ChatObjectDto> UpdatePortraitAsync(long id, string portrait)
+    {
+        throw new System.NotImplementedException();
+    }
 }

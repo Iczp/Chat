@@ -10,7 +10,6 @@ namespace IczpNet.Chat.RoomSections.Rooms
 {
     public interface IRoomManager : IChatObjectManager
     {
-
         Task<bool> IsAllowJoinRoomAsync(ChatObjectTypeEnums objectType);
 
         Task<bool> IsAllowCreateRoomAsync(ChatObjectTypeEnums objectType);
@@ -34,5 +33,9 @@ namespace IczpNet.Chat.RoomSections.Rooms
         Task<bool> IsInRoomAsync(Guid sessionId, long memberId);
 
         Task<IQueryable<SessionUnit>> GetSameGroupAsync(long sourceChatObjectId, long targetChatObjectId, List<ChatObjectTypeEnums> chatObjectTypeList = null);
+
+        Task<ChatObject> UpdateNameAsync(long id, string name);
+
+        Task<ChatObject> UpdatePortraitAsync(long id, string portrait);
     }
 }
