@@ -2779,8 +2779,7 @@ namespace IczpNet.Chat.Migrations
             modelBuilder.Entity("IczpNet.Chat.SessionSections.SessionPermissionDefinitions.SessionPermissionDefinition", b =>
                 {
                     b.Property<string>("Id")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -2956,7 +2955,7 @@ namespace IczpNet.Chat.Migrations
             modelBuilder.Entity("IczpNet.Chat.SessionSections.SessionPermissionRoleGrants.SessionPermissionRoleGrant", b =>
                 {
                     b.Property<string>("DefinitionId")
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<Guid>("RoleId")
                         .HasColumnType("uniqueidentifier");
@@ -3003,7 +3002,7 @@ namespace IczpNet.Chat.Migrations
             modelBuilder.Entity("IczpNet.Chat.SessionSections.SessionPermissionRoleGrants.SessionPermissionUnitGrant", b =>
                 {
                     b.Property<string>("DefinitionId")
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<Guid>("SessionUnitId")
                         .HasColumnType("uniqueidentifier");

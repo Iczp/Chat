@@ -43,6 +43,8 @@ namespace IczpNet.Chat.SessionServices
             return (await base.CreateFilteredQueryAsync(input))
                 .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
                 .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
+                .WhereIf(input.IsEnabled.HasValue, x => x.IsEnabled == input.IsEnabled)
+                .WhereIf(input.IsExpired.HasValue, x => x.IsExpired == input.IsExpired)
                 .WhereIf(input.IsHandled.HasValue, x => x.IsHandled == input.IsHandled)
                 .WhereIf(input.IsAgreed.HasValue, x => x.IsAgreed == input.IsAgreed)
                 .WhereIf(input.StartCreationTime.HasValue, x => x.CreationTime >= input.StartCreationTime)

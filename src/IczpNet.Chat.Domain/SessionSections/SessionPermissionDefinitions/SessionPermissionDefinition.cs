@@ -19,9 +19,9 @@ namespace IczpNet.Chat.SessionSections.SessionPermissionDefinitions
         {
         }
 
-        [Key]
-        [StringLength(100)]
-        public override string Id { get; protected set; }
+        //[Key]
+        //[StringLength(100)]
+        //public override string Id { get; protected set; }
 
         public virtual long? GroupId { get; set; }
 
@@ -30,6 +30,7 @@ namespace IczpNet.Chat.SessionSections.SessionPermissionDefinitions
 
         [StringLength(50)]
         [Required]
+        [MaxLength(50)]
         //[Unique]
         public virtual string Name { get; set; }
 

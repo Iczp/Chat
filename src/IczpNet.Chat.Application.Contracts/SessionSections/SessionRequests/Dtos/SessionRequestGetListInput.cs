@@ -9,6 +9,10 @@ public class SessionRequestGetListInput : BaseGetListInput
 
     public virtual long? DestinationId { get; set; }
 
+    public virtual bool? IsEnabled { get; set; }
+
+    public virtual bool? IsExpired { get; set; }
+
     public virtual bool? IsHandled { get; set; }
 
     public virtual bool? IsAgreed { get; set; }

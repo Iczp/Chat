@@ -13,8 +13,8 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    [Migration("20230413035354_SessionPermissionGrant_AddProp_IsEnabled")]
-    partial class SessionPermissionGrant_AddProp_IsEnabled
+    [Migration("20230418070510_SessionPermission_SessionRequest_Init")]
+    partial class SessionPermission_SessionRequest_Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -565,6 +565,12 @@ namespace IczpNet.Chat.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ChatObjectTypeId");
+
+                    b.HasIndex("Code");
+
+                    b.HasIndex("FullPath");
+
+                    b.HasIndex("Name");
 
                     b.HasIndex("ParentId");
 
@@ -2776,8 +2782,7 @@ namespace IczpNet.Chat.Migrations
             modelBuilder.Entity("IczpNet.Chat.SessionSections.SessionPermissionDefinitions.SessionPermissionDefinition", b =>
                 {
                     b.Property<string>("Id")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -2853,6 +2858,9 @@ namespace IczpNet.Chat.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("GroupId");
+
+                    b.HasIndex("Sorting")
+                        .IsDescending();
 
                     b.ToTable("Chat_SessionPermissionDefinition", (string)null);
                 });
@@ -2937,7 +2945,12 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("FullPath");
+
                     b.HasIndex("ParentId");
+
+                    b.HasIndex("Sorting")
+                        .IsDescending();
 
                     b.ToTable("Chat_SessionPermissionGroup", (string)null);
                 });
@@ -2945,7 +2958,7 @@ namespace IczpNet.Chat.Migrations
             modelBuilder.Entity("IczpNet.Chat.SessionSections.SessionPermissionRoleGrants.SessionPermissionRoleGrant", b =>
                 {
                     b.Property<string>("DefinitionId")
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<Guid>("RoleId")
                         .HasColumnType("uniqueidentifier");
@@ -2992,7 +3005,7 @@ namespace IczpNet.Chat.Migrations
             modelBuilder.Entity("IczpNet.Chat.SessionSections.SessionPermissionRoleGrants.SessionPermissionUnitGrant", b =>
                 {
                     b.Property<string>("DefinitionId")
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<Guid>("SessionUnitId")
                         .HasColumnType("uniqueidentifier");
@@ -3034,6 +3047,107 @@ namespace IczpNet.Chat.Migrations
                     b.HasIndex("SessionUnitId");
 
                     b.ToTable("Chat_SessionPermissionUnitGrant", (string)null);
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.SessionSections.SessionRequests.SessionRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<long?>("DestinationId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("DeviceId")
+                        .HasMaxLength(36)
+                        .HasColumnType("nvarchar(36)");
+
+                    b.Property<DateTime?>("ExpirationTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ExtraProperties")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<string>("HandleMessage")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("HandleTime")
+                        .HasMaxLength(200)
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("HandlerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool?>("IsAgreed")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsExpired")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsHandled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<long>("OwnerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("RequestMessage")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DestinationId");
+
+                    b.HasIndex("HandlerId");
+
+                    b.HasIndex("OwnerId");
+
+                    b.ToTable("Chat_SessionRequest", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.SessionSections.SessionRoles.SessionRole", b =>
@@ -4742,7 +4856,7 @@ namespace IczpNet.Chat.Migrations
                         .IsRequired();
 
                     b.HasOne("IczpNet.Chat.SessionSections.SessionRoles.SessionRole", "Role")
-                        .WithMany("RoleGrantList")
+                        .WithMany("GrantList")
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -4761,7 +4875,7 @@ namespace IczpNet.Chat.Migrations
                         .IsRequired();
 
                     b.HasOne("IczpNet.Chat.SessionSections.SessionUnits.SessionUnit", "SessionUnit")
-                        .WithMany("UnitGrantList")
+                        .WithMany("GrantList")
                         .HasForeignKey("SessionUnitId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -4769,6 +4883,29 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("Definition");
 
                     b.Navigation("SessionUnit");
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.SessionSections.SessionRequests.SessionRequest", b =>
+                {
+                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Destination")
+                        .WithMany()
+                        .HasForeignKey("DestinationId");
+
+                    b.HasOne("IczpNet.Chat.SessionSections.SessionUnits.SessionUnit", "Handler")
+                        .WithMany("HandlerList")
+                        .HasForeignKey("HandlerId");
+
+                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Destination");
+
+                    b.Navigation("Handler");
+
+                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.SessionSections.SessionRoles.SessionRole", b =>
@@ -5239,7 +5376,7 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.SessionSections.SessionRoles.SessionRole", b =>
                 {
-                    b.Navigation("RoleGrantList");
+                    b.Navigation("GrantList");
 
                     b.Navigation("SessionUnitRoleList");
                 });
@@ -5251,6 +5388,10 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.SessionSections.SessionUnits.SessionUnit", b =>
                 {
+                    b.Navigation("GrantList");
+
+                    b.Navigation("HandlerList");
+
                     b.Navigation("InviterUnitList");
 
                     b.Navigation("KillerUnitList");
@@ -5264,8 +5405,6 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("SessionUnitRoleList");
 
                     b.Navigation("SessionUnitTagList");
-
-                    b.Navigation("UnitGrantList");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.SessionSections.Sessions.Session", b =>

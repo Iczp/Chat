@@ -78,15 +78,32 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
 
             Assert.If(DisallowCreateList.Contains(owner.ObjectType.Value), $"The owner's ObjectType '{owner.ObjectType}' disallow create session request. OwnerId:{ownerId}");
 
-            var destination = await ChatObjectManager.GetAsync(destinationId);
-
-            var entity = new SessionRequest(owner, destination, requestMessage);
+            var entity = (await Repository.GetQueryableAsync())
+                .Where(x => !x.IsHandled && x.IsEnabled)
+                .Where(x => x.ExpirationTime == null || x.ExpirationTime > DateTime.Now)
+                .Where(x => x.OwnerId == ownerId && x.DestinationId == destinationId)
+                .FirstOrDefault();
 
             var expiractionHours = await SettingProvider.GetAsync(ChatSettings.SessionRequestExpirationHours, defaultValue: 72);
 
-            entity.SetExpirationTime(expiractionHours);
+            var destination = await ChatObjectManager.GetAsync(destinationId);
 
-            entity = await Repository.InsertAsync(entity, autoSave: true);
+            if (entity != null)
+            {
+                entity.RequestMessage = requestMessage;
+
+                entity.SetExpirationTime(expiractionHours);
+
+                await Repository.UpdateAsync(entity, autoSave: true);
+            }
+            else
+            {
+                entity = new SessionRequest(GuidGenerator.Create(), owner, destination, requestMessage);
+
+                entity.SetExpirationTime(expiractionHours);
+
+                entity = await Repository.InsertAsync(entity, autoSave: true);
+            }
 
             switch (destination.ObjectType)
             {
@@ -114,11 +131,11 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
             // room creator and room manager
 
             var roleIdList = (await SessionPermissionRoleGrantRepository.GetQueryableAsync())
-                  .Where(x => x.DefinitionId == SessionPermissionDefinitionConsts.SessionRequest.Handle && x.IsEnabled)
+                  .Where(x => x.DefinitionId == SessionPermissionDefinitionConsts.SessionRequestPermission.Handle && x.IsEnabled)
                   .Select(x => x.RoleId);
 
             var sessionUnitIdList = (await SessionPermissionUnitGrantRepository.GetQueryableAsync())
-                   .Where(x => x.DefinitionId == SessionPermissionDefinitionConsts.SessionRequest.Handle && x.IsEnabled)
+                   .Where(x => x.DefinitionId == SessionPermissionDefinitionConsts.SessionRequestPermission.Handle && x.IsEnabled)
                    .Select(x => x.SessionUnitId);
 
             var managerAndCretorList = (await SessionUnitRepository.GetQueryableAsync())
@@ -200,7 +217,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                     case ChatObjectTypeEnums.Personal:
                     case ChatObjectTypeEnums.Customer:
                     case ChatObjectTypeEnums.ShopKeeper:
-                        var destinationSessionUnit = await SessionUnitManager.FindAsync(sessionRequest.OwnerId, sessionRequest.DestinationId.Value);
+                        var destinationSessionUnit = await SessionUnitManager.FindAsync(sessionRequest.DestinationId.Value, sessionRequest.OwnerId);
 
                         if (destinationSessionUnit == null)
                         {
@@ -234,7 +251,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
 
                         if (handlerSessionUnitId.HasValue)
                         {
-                            await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.SessionRequest.Handle, handlerSessionUnitId.Value);
+                            await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.SessionRequestPermission.Handle, handlerSessionUnitId.Value);
                         }
 
                         var roomOrSquareSessionUnit = await SessionUnitManager.FindAsync(sessionRequest.DestinationId.Value, sessionRequest.DestinationId.Value);

@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Timing;
 using Volo.Abp.Uow;
 
 namespace Rctea.IM.GlobalPermissions;
@@ -18,17 +20,21 @@ public class SessionPermissionDefinitionDataSeedContributor : IDataSeedContribut
     private readonly ICurrentTenant _currentTenant;
     private readonly ILogger<SessionPermissionDefinitionDataSeedContributor> _logger;
 
+    private readonly IClock _click;
+
     private readonly ISessionPermissionDefinitionRepository _sessionPermissionDefinitionRepository;
     public SessionPermissionDefinitionDataSeedContributor(
         IConfiguration configuration,
         ICurrentTenant currentTenant,
         ILogger<SessionPermissionDefinitionDataSeedContributor> logger,
-        ISessionPermissionDefinitionRepository sessionPermissionDefinitionRepository)
+        ISessionPermissionDefinitionRepository sessionPermissionDefinitionRepository,
+        IClock click)
     {
         _configuration = configuration;
         _currentTenant = currentTenant;
         _logger = logger;
         _sessionPermissionDefinitionRepository = sessionPermissionDefinitionRepository;
+        _click = click;
     }
 
     [UnitOfWork]
@@ -62,8 +68,8 @@ public class SessionPermissionDefinitionDataSeedContributor : IDataSeedContribut
         {
             list.Add(new SessionPermissionDefinition(id)
             {
-                Name = id,
-                Description = $"Initialization：{DateTime.Now}",
+                Name = id.MaxLength(50),
+                Description = $"Initialization：{_click.Now}",
             });
         }
         await _sessionPermissionDefinitionRepository.InsertManyAsync(list);

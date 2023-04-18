@@ -14,7 +14,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
         public virtual string DeviceId { get; set; }
 
         [StringLength(200)]
-        public virtual string RequestMessage { get; protected set; }
+        public virtual string RequestMessage { get; set; }
 
         public virtual bool IsHandled { get; set; }
 
@@ -26,7 +26,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
         [StringLength(200)]
         public virtual DateTime? HandleTime { get; protected set; }
 
-        public virtual bool IsEnabled { get; protected set; }
+        public virtual bool IsEnabled { get; protected set; } = true;
 
         public virtual Guid? HandlerId { get; set; }
 
@@ -39,7 +39,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
 
         protected SessionRequest() { }
 
-        public SessionRequest(ChatObject owner, ChatObject destination, string message)
+        public SessionRequest(Guid id, ChatObject owner, ChatObject destination, string message) : base(id)
         {
             Owner = owner;
             Destination = destination;

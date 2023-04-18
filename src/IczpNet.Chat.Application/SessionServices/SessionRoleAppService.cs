@@ -90,7 +90,7 @@ namespace IczpNet.Chat.SessionServices
         [HttpPost]
         public async Task DeleteByAsync(Guid sessionUnitId, Guid id)
         {
-            await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.SessionPermissionRole.Delete, sessionUnitId);
+            await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.SessionRolePermission.Delete, sessionUnitId);
 
             await base.DeleteAsync(id);
         }
