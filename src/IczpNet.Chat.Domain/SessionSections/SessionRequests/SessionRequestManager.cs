@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using Volo.Abp.Uow;
 using Volo.Abp.Settings;
 using IczpNet.Chat.Settings;
+using IczpNet.Chat.SessionSections.SessionPermissions;
 
 namespace IczpNet.Chat.SessionSections.SessionRequests
 {
@@ -34,7 +35,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
         protected IRepository<SessionPermissionUnitGrant> SessionPermissionUnitGrantRepository { get; }
         protected IUnitOfWorkManager UnitOfWorkManager { get; }
         protected ISettingProvider SettingProvider { get; }
-
+        protected ISessionPermissionChecker SessionPermissionChecker { get; }
         protected List<ChatObjectTypeEnums> DisallowCreateList { get; set; } = new List<ChatObjectTypeEnums>() {
             ChatObjectTypeEnums.Robot,
             ChatObjectTypeEnums.Anonymous,
@@ -52,7 +53,8 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
             IRepository<SessionPermissionRoleGrant> sessionPermissionRoleGrantRepository,
             IRepository<SessionPermissionUnitGrant> sessionPermissionUnitGrantRepository,
             IUnitOfWorkManager unitOfWorkManager,
-            ISettingProvider settingProvider)
+            ISettingProvider settingProvider,
+            ISessionPermissionChecker sessionPermissionChecker)
         {
             Repository = repository;
             SessionUnitRepository = sessionUnitRepository;
@@ -65,6 +67,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
             SessionPermissionUnitGrantRepository = sessionPermissionUnitGrantRepository;
             UnitOfWorkManager = unitOfWorkManager;
             SettingProvider = settingProvider;
+            SessionPermissionChecker = sessionPermissionChecker;
         }
 
         public virtual async Task<SessionRequest> CreateRequestAsync(long ownerId, long destinationId, string requestMessage)
@@ -228,7 +231,14 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                         break;
                     case ChatObjectTypeEnums.Room:
                     case ChatObjectTypeEnums.Square:
+
+                        if (handlerSessionUnitId.HasValue)
+                        {
+                            await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.SessionRequest.Handle, handlerSessionUnitId.Value);
+                        }
+
                         var roomOrSquareSessionUnit = await SessionUnitManager.FindAsync(sessionRequest.DestinationId.Value, sessionRequest.DestinationId.Value);
+
                         if (roomOrSquareSessionUnit == null)
                         {
                             roomOrSquareSessionUnit = session.AddSessionUnit(new SessionUnit(
