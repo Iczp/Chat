@@ -5,6 +5,7 @@ using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjectCategorys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
+using IczpNet.Chat.SessionSections.SessionPermissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -33,13 +34,16 @@ namespace IczpNet.Chat.Services
         protected IChatObjectManager ChatObjectManager { get; }
         protected override ITreeManager<ChatObject, long> TreeManager => LazyServiceProvider.LazyGetRequiredService<IChatObjectManager>();
         protected IChatObjectCategoryManager ChatObjectCategoryManager { get; }
+        protected ISessionPermissionChecker SessionPermissionChecker { get; }
         public ChatObjectAppService(
             IChatObjectRepository repository,
             IChatObjectCategoryManager chatObjectCategoryManager,
-            IChatObjectManager chatObjectManager) : base(repository)
+            IChatObjectManager chatObjectManager,
+            ISessionPermissionChecker sessionPermissionChecker) : base(repository)
         {
             ChatObjectCategoryManager = chatObjectCategoryManager;
             ChatObjectManager = chatObjectManager;
+            SessionPermissionChecker = sessionPermissionChecker;
         }
 
         protected override async Task<IQueryable<ChatObject>> CreateFilteredQueryAsync(ChatObjectGetListInput input)
@@ -127,7 +131,7 @@ namespace IczpNet.Chat.Services
             return entity;
         }
 
-       
+
 
         [HttpPost]
         public virtual async Task<ChatObjectDto> CreateShopKeeperAsync(string name)
@@ -159,6 +163,19 @@ namespace IczpNet.Chat.Services
             var entity = await ChatObjectManager.CreateSquareAsync(name);
 
             return ObjectMapper.Map<ChatObject, ChatObjectDto>(entity);
+        }
+
+        [HttpPost]
+        public Task<ChatObjectDto> UpdateNameAsync(long id, string name)
+        {
+            throw new NotImplementedException();
+        }
+
+        [HttpPost]
+        [RemoteService(false)]
+        public Task<ChatObjectDto> UpdatePortraitAsync(long id, string portrait)
+        {
+            throw new NotImplementedException();
         }
     }
 }
