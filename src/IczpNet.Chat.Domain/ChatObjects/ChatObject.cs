@@ -4,6 +4,7 @@ using IczpNet.Chat.ChatObjectCategoryUnits;
 using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.Mottos;
 using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.SessionSections.Favorites;
 using IczpNet.Chat.SessionSections.FriendshipRequests;
@@ -162,6 +163,16 @@ namespace IczpNet.Chat.ChatObjects
         public virtual IList<Favorite> FavoriteList { get; set; }
         #endregion
 
+
+        #region Motto 
+        public virtual Guid? MottoId { get; set; }
+
+        [ForeignKey(nameof(MottoId))]
+        public virtual Motto Motto { get; set; }
+
+        [InverseProperty(nameof(Mottos.Motto.Owner))]
+        public virtual IList<Motto> MottoList { get; set; }
+        #endregion
 
         protected ChatObject()
         {

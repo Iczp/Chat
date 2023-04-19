@@ -6,6 +6,7 @@ using IczpNet.Chat.Connections;
 using IczpNet.Chat.MessageSections.MessageContents;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.Mottos;
 using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.SessionSections.FriendshipRequests;
 using IczpNet.Chat.SessionSections.Friendships;
@@ -38,8 +39,8 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
      */
     public DbSet<ChatObject> ChatObject { get; set; }
     public DbSet<ChatObjectCategory> ChatObjectCategory { get; set; }
-    
     public DbSet<ChatObjectType> ChatObjectType { get; set; }
+    public DbSet<Motto> Motto { get; set; }
 
     public DbSet<Article> Article { get; set; }
     public DbSet<ArticleMessage> ArticleMessage { get; set; }
@@ -93,6 +94,8 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     public DbSet<WalletBusiness> WalletBusiness { get; set; }
     public DbSet<PaymentPlatform> PaymentPlatform { get; set; }
     public DbSet<WalletRequest> RechargeRequest { get; set; }
+
+    
 
     public ChatDbContext(DbContextOptions<ChatDbContext> options)
         : base(options)
