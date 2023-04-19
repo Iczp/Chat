@@ -9,29 +9,43 @@ using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Domain.Services;
+using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.OfficialSections.Officials
 {
-    public class OfficialManager : ChatObjectManager, IOfficialManager
+    public class OfficialManager : DomainService, IOfficialManager
     {
         protected ISessionUnitManager SessionUnitManager { get; }
-
-        public OfficialManager(IChatObjectRepository repository,
-
-            ISessionUnitManager sessionUnitManager) : base(repository)
+        protected IChatObjectRepository ChatObjectRepository { get; }
+        protected IChatObjectManager ChatObjectManager { get; }
+        protected IUnitOfWorkManager UnitOfWorkManager { get; }
+        protected IMessageSender MessageSender { get; }
+        protected ISessionGenerator SessionGenerator { get; }
+        public OfficialManager(
+            IChatObjectRepository chatObjectRepository,
+            ISessionUnitManager sessionUnitManager,
+            IChatObjectManager chatObjectManager,
+            IUnitOfWorkManager unitOfWorkManager,
+            IMessageSender messageSender,
+            ISessionGenerator sessionGenerator)
         {
+            ChatObjectRepository = chatObjectRepository;
             SessionUnitManager = sessionUnitManager;
+            ChatObjectManager = chatObjectManager;
+            UnitOfWorkManager = unitOfWorkManager;
+            MessageSender = messageSender;
+            SessionGenerator = sessionGenerator;
         }
 
-
-        protected override async Task CheckExistsByCreateAsync(ChatObject inputEntity)
+        protected virtual async Task CheckExistsByCreateAsync(ChatObject inputEntity)
         {
-            Assert.If(await Repository.AnyAsync(x => x.ObjectType == inputEntity.ObjectType && x.Name == inputEntity.Name), $"Already exists name:{inputEntity.Name},ObjectType:{inputEntity.ObjectType}");
+            Assert.If(await ChatObjectRepository.AnyAsync(x => x.ObjectType == inputEntity.ObjectType && x.Name == inputEntity.Name), $"Already exists name:{inputEntity.Name},ObjectType:{inputEntity.ObjectType}");
         }
 
-        protected override async Task CheckExistsByUpdateAsync(ChatObject inputEntity)
+        protected virtual async Task CheckExistsByUpdateAsync(ChatObject inputEntity)
         {
-            Assert.If(await Repository.AnyAsync((x) => x.ObjectType == inputEntity.ObjectType && x.Name == inputEntity.Name && !x.Id.Equals(inputEntity.Id)), $" Name[{inputEntity.Name}] already such,,ObjectType:{inputEntity.ObjectType}");
+            Assert.If(await ChatObjectRepository.AnyAsync((x) => x.ObjectType == inputEntity.ObjectType && x.Name == inputEntity.Name && !x.Id.Equals(inputEntity.Id)), $" Name[{inputEntity.Name}] already such,,ObjectType:{inputEntity.ObjectType}");
         }
 
 
@@ -51,9 +65,9 @@ namespace IczpNet.Chat.OfficialSections.Officials
                   isInputEnabled: true));
         }
 
-        public override async Task<ChatObject> CreateAsync(ChatObject inputEntity, bool isUnique = true)
+        public virtual async Task<ChatObject> CreateAsync(ChatObject inputEntity, bool isUnique = true)
         {
-            var official = await base.CreateAsync(inputEntity, isUnique);
+            var official = await ChatObjectManager.CreateAsync(inputEntity, isUnique);
 
             var session = await SessionGenerator.MakeAsync(official, official);
 
@@ -62,7 +76,7 @@ namespace IczpNet.Chat.OfficialSections.Officials
             AddOfficialSessionUnit(session, official.Id);
 
             // commit to db
-            await CurrentUnitOfWork.SaveChangesAsync();
+            await UnitOfWorkManager.Current.SaveChangesAsync();
 
             return official;
         }
@@ -74,9 +88,9 @@ namespace IczpNet.Chat.OfficialSections.Officials
             //Unsubscribed
             if (sessionUnit == null)
             {
-                var owner = await GetAsync(ownerId);
+                var owner = await ChatObjectManager.GetAsync(ownerId);
 
-                var official = await GetAsync(destinationId);
+                var official = await ChatObjectManager.GetAsync(destinationId);
 
                 Assert.If(official.ObjectType != ChatObjectTypeEnums.Official, $"ObjectType must be '{ChatObjectTypeEnums.Official}',destinationId:{destinationId}");
 
@@ -101,7 +115,7 @@ namespace IczpNet.Chat.OfficialSections.Officials
             }
             sessionUnit.SetIsEnabled(true);
 
-            await CurrentUnitOfWork.SaveChangesAsync();
+            await UnitOfWorkManager.Current.SaveChangesAsync();
 
             await SendMessageAsync(sessionUnit, "启动成功");
 
@@ -141,7 +155,7 @@ namespace IczpNet.Chat.OfficialSections.Officials
 
             sessionUnit.SetIsEnabled(isEnabled);
 
-            await CurrentUnitOfWork.SaveChangesAsync();
+            await UnitOfWorkManager.Current.SaveChangesAsync();
 
             await SendMessageAsync(sessionUnit, isEnabled ? "启动成功" : "禁用成功");
 

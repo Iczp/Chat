@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace IczpNet.Chat.RoomSections.Rooms
 {
-    public interface IRoomManager : IChatObjectManager
+    public interface IRoomManager
     {
         Task<bool> IsAllowJoinRoomAsync(ChatObjectTypeEnums objectType);
 

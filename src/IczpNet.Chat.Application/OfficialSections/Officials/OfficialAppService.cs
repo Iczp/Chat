@@ -20,6 +20,7 @@ public class OfficialAppService : ChatAppService, IOfficialAppService
     public virtual string InvitePolicyName { get; set; }
     public virtual string CreateOfficialPolicyName { get; set; }
     protected IOfficialManager OfficialManager { get; }
+    protected IChatObjectManager ChatObjectManager { get; }
     protected IChatObjectTypeManager ChatObjectTypeManager { get; }
     protected ISessionUnitManager SessionUnitManager { get; }
     protected IMessageSender MessageSender { get; }
@@ -29,13 +30,15 @@ public class OfficialAppService : ChatAppService, IOfficialAppService
         IChatObjectCategoryManager chatObjectCategoryManager,
         IChatObjectTypeManager chatObjectTypeManager,
         ISessionUnitManager sessionUnitManager,
-        IMessageSender messageSender)
+        IMessageSender messageSender,
+        IChatObjectManager chatObjectManager)
     {
         OfficialManager = roomManager;
         ChatObjectCategoryManager = chatObjectCategoryManager;
         ChatObjectTypeManager = chatObjectTypeManager;
         SessionUnitManager = sessionUnitManager;
         MessageSender = messageSender;
+        ChatObjectManager = chatObjectManager;
     }
 
 
@@ -46,7 +49,7 @@ public class OfficialAppService : ChatAppService, IOfficialAppService
 
         var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Official);
 
-        var official = await OfficialManager.CreateAsync(new ChatObject(input.Name, chatObjectType, null)
+        var official = await ChatObjectManager.CreateAsync(new ChatObject(input.Name, chatObjectType, null)
         {
             Description = input.Description,
         });

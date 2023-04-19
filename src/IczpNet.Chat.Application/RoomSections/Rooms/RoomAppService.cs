@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Domain.Entities;
 
 namespace IczpNet.Chat.RoomSections.Rooms;
 
@@ -41,17 +42,27 @@ public class RoomAppService : ChatAppService, IRoomAppService
     {
         await CheckPolicyAsync(CreateRoomPolicyName);
 
-        var room = await RoomManager.CreateAsync(input.Name, input.ChatObjectIdList, input.OwnerId);
+        var entity = await RoomManager.CreateAsync(input.Name, input.ChatObjectIdList, input.OwnerId);
 
-        return ObjectMapper.Map<ChatObject, ChatObjectDto>(room);
+        return await MapToChatObjectDtoAsync(entity);
+    }
+
+    protected virtual Task<ChatObjectDto> MapToChatObjectDtoAsync(ChatObject chatObject)
+    {
+        return MapToChatObjectDto(chatObject);
+    }
+
+    protected virtual Task<ChatObjectDto> MapToChatObjectDto(ChatObject chatObject)
+    {
+        return Task.FromResult(ObjectMapper.Map<ChatObject, ChatObjectDto>(chatObject));
     }
 
     [HttpPost]
     public virtual async Task<ChatObjectDto> CreateByAllUsersAsync(string name)
     {
-        var room = await RoomManager.CreateByAllUsersAsync(name);
+        var entity = await RoomManager.CreateByAllUsersAsync(name);
 
-        return ObjectMapper.Map<ChatObject, ChatObjectDto>(room);
+        return await MapToChatObjectDtoAsync(entity);
     }
 
     [HttpPost]
@@ -65,31 +76,33 @@ public class RoomAppService : ChatAppService, IRoomAppService
     }
 
     [HttpGet]
-    public async Task<PagedResultDto<SessionUnitDto>> GetSameGroupAsync(long sourceChatObjectId, long targetChatObjectId, int maxResultCount = 10,
+    public async Task<PagedResultDto<SessionUnitDto>> GetSameAsync(long sourceChatObjectId, long targetChatObjectId, int maxResultCount = 10,
         int skipCount = 0, string sorting = null)
     {
-        var query = await RoomManager.GetSameGroupAsync(sourceChatObjectId, targetChatObjectId, new List<ChatObjectTypeEnums>() { ChatObjectTypeEnums.Room });
+        var query = await SessionUnitManager.GetSameSessionQeuryableAsync(sourceChatObjectId, targetChatObjectId, new List<ChatObjectTypeEnums>() { ChatObjectTypeEnums.Room });
 
         return await GetPagedListAsync<SessionUnit, SessionUnitDto>(query, maxResultCount, skipCount, sorting, null);
     }
 
     [HttpGet]
-    public async Task<int> GetSameGroupCountAsync(long sourceChatObjectId, long targetChatObjectId)
+    public  Task<int> GetSameCountAsync(long sourceChatObjectId, long targetChatObjectId)
     {
-        var query = await RoomManager.GetSameGroupAsync(sourceChatObjectId, targetChatObjectId, new List<ChatObjectTypeEnums>() { ChatObjectTypeEnums.Room });
-
-        return await AsyncExecuter.CountAsync(query);
+        return SessionUnitManager.GetSameSessionCountAsync(sourceChatObjectId, targetChatObjectId, new List<ChatObjectTypeEnums>() { ChatObjectTypeEnums.Room }); 
     }
 
     [HttpPost]
-    public Task<ChatObjectDto> UpdateNameAsync(long id, string name)
+    public async Task<ChatObjectDto> UpdateNameAsync(long id, string name)
     {
-        throw new System.NotImplementedException();
+        var entity = await RoomManager.UpdateNameAsync(id, name);
+
+        return await MapToChatObjectDtoAsync(entity);
     }
 
     [HttpPost]
-    public Task<ChatObjectDto> UpdatePortraitAsync(long id, string portrait)
+    public async Task<ChatObjectDto> UpdatePortraitAsync(long id, string portrait)
     {
-        throw new System.NotImplementedException();
+        var entity = await RoomManager.UpdatePortraitAsync(id, portrait);
+
+        return await MapToChatObjectDtoAsync(entity);
     }
 }

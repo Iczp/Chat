@@ -5,7 +5,7 @@ using IczpNet.Chat.SessionSections.SessionUnits;
 
 namespace IczpNet.Chat.OfficialSections.Officials
 {
-    public interface IOfficialManager : IChatObjectManager
+    public interface IOfficialManager
     {
         Task<SessionUnit> SubscribeAsync(long ownerId, long destinationId);
 

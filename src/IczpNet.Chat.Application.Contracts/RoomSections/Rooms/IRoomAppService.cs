@@ -17,10 +17,10 @@ namespace IczpNet.Chat.RoomSections.Rooms
 
         Task<List<SessionUnitSenderInfo>> InviteAsync(InviteInput input);
 
-        Task<PagedResultDto<SessionUnitDto>> GetSameGroupAsync(long sourceChatObjectId, long targetChatObjectId, int maxResultCount = 10,
+        Task<PagedResultDto<SessionUnitDto>> GetSameAsync(long sourceChatObjectId, long targetChatObjectId, int maxResultCount = 10,
         int skipCount = 0, string sorting = null);
 
-        Task<int> GetSameGroupCountAsync(long sourceChatObjectId, long targetChatObjectId);
+        Task<int> GetSameCountAsync(long sourceChatObjectId, long targetChatObjectId);
 
         Task<ChatObjectDto> UpdateNameAsync(long id, string name);
 

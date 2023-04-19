@@ -1,7 +1,9 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.Options;
@@ -13,30 +15,46 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
+using Volo.Abp.Domain.Services;
+using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.RoomSections.Rooms;
 
-public class RoomManager : ChatObjectManager, IRoomManager
+public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoomManager
 {
-    
     protected RoomOptions Config { get; }
     protected ISessionManager SessionManager { get; }
     protected ISessionUnitManager SessionUnitManager { get; }
     protected ISessionUnitRepository SessionUnitRepository { get; }
+    protected IChatObjectManager ChatObjectManager { get; }
+    protected IChatObjectTypeManager ChatObjectTypeManager { get; }
+    protected ISessionGenerator SessionGenerator { get; }
+    protected IUnitOfWorkManager UnitOfWorkManager { get; }
+    protected IChatObjectRepository ChatObjectRepository { get; }
+    protected IMessageSender MessageSender { get; }
 
     public RoomManager(
         IChatObjectRepository chatObjectRepository,
         IOptions<RoomOptions> options, ISessionManager sessionManager,
         ISessionUnitRepository sessionUnitRepository,
-        ISessionUnitManager sessionUnitManager) : base(chatObjectRepository)
+        ISessionUnitManager sessionUnitManager,
+        IChatObjectManager chatObjectManager,
+        IChatObjectTypeManager chatObjectTypeManager,
+        ISessionGenerator sessionGenerator,
+        IUnitOfWorkManager unitOfWorkManager,
+        IMessageSender messageSender)
     {
         Config = options.Value;
         SessionManager = sessionManager;
         SessionUnitRepository = sessionUnitRepository;
         SessionUnitManager = sessionUnitManager;
+        ChatObjectManager = chatObjectManager;
+        ChatObjectTypeManager = chatObjectTypeManager;
+        SessionGenerator = sessionGenerator;
+        UnitOfWorkManager = unitOfWorkManager;
+        ChatObjectRepository = chatObjectRepository;
+        MessageSender = messageSender;
     }
-
-    
 
     public virtual Task<bool> IsAllowJoinRoomAsync(ChatObjectTypeEnums objectType)
     {
@@ -53,7 +71,6 @@ public class RoomManager : ChatObjectManager, IRoomManager
         return Task.FromResult(Config.AllowCreateRoomObjectTypes.Any(x => x.Equals(objectType)));
     }
 
-
     private SessionUnit AddRoomSessionUnit(Session session, long roomId)
     {
         return session.AddSessionUnit(new SessionUnit(
@@ -68,6 +85,7 @@ public class RoomManager : ChatObjectManager, IRoomManager
               joinWay: JoinWays.System,
               inviterUnitId: null));
     }
+
     public virtual async Task<ChatObject> CreateAsync(string name, List<long> memberIdList, long? ownerId)
     {
         var allList = memberIdList;
@@ -79,7 +97,7 @@ public class RoomManager : ChatObjectManager, IRoomManager
 
         var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Room);
 
-        var room = await base.CreateAsync(new ChatObject(name, chatObjectType, null), isUnique: false);
+        var room = await ChatObjectManager.CreateAsync(new ChatObject(name, chatObjectType, null), isUnique: false);
 
         var session = await SessionGenerator.MakeAsync(room);
 
@@ -136,11 +154,11 @@ public class RoomManager : ChatObjectManager, IRoomManager
         room.OwnerSessionList.Add(session);
 
         // commit to db
-        await CurrentUnitOfWork.SaveChangesAsync();
+        await UnitOfWorkManager.Current.SaveChangesAsync();
 
-        var roomOwner = ownerId.HasValue ? await GetItemByCacheAsync(ownerId.Value) : null;
+        var roomOwner = ownerId.HasValue ? await ChatObjectManager.GetItemByCacheAsync(ownerId.Value) : null;
 
-        var members = await GetManyByCacheAsync(_memberIdList.Take(3).ToList());
+        var members = await ChatObjectManager.GetManyByCacheAsync(_memberIdList.Take(3).ToList());
 
         await SendRoomMessageAsync(roomSessionUnit, new CmdContentInfo()
         {
@@ -177,7 +195,7 @@ public class RoomManager : ChatObjectManager, IRoomManager
 
         Assert.If(newMemberIdList.Count == 0, "没有数据:newMemberIdList");
 
-        var joinMembers = await GetManyByCacheAsync(newMemberIdList);
+        var joinMembers = await ChatObjectManager.GetManyByCacheAsync(newMemberIdList);
 
         Assert.If(joinMembers.Count == 0, "没有数据:joinMembers");
 
@@ -200,7 +218,7 @@ public class RoomManager : ChatObjectManager, IRoomManager
                inviterUnitId: inviterSessionUnit?.Id,
                isInputEnabled: true)));
         }
-        await CurrentUnitOfWork.SaveChangesAsync();
+        await UnitOfWorkManager.Current.SaveChangesAsync();
 
         if (!autoSendMessage)
         {
@@ -211,7 +229,7 @@ public class RoomManager : ChatObjectManager, IRoomManager
 
         if (input.InviterId != null)
         {
-            var inviter = await GetAsync(input.InviterId.Value);
+            var inviter = await ChatObjectManager.GetAsync(input.InviterId.Value);
             inviterText = $"{inviter.Name} 邀请 ";
         }
 
@@ -242,7 +260,7 @@ public class RoomManager : ChatObjectManager, IRoomManager
             //add room sessionUnit
             roomSessionUnit = AddRoomSessionUnit(session, roomId);
 
-            await CurrentUnitOfWork.SaveChangesAsync();
+            await UnitOfWorkManager.Current.SaveChangesAsync();
         }
 
         await SendRoomMessageAsync(roomSessionUnit, content);
@@ -250,7 +268,7 @@ public class RoomManager : ChatObjectManager, IRoomManager
 
     public virtual async Task<ChatObject> CreateByAllUsersAsync(string name)
     {
-        var query = (await Repository.GetQueryableAsync())
+        var query = (await ChatObjectRepository.GetQueryableAsync())
             .Where(x => x.ObjectType == ChatObjectTypeEnums.Personal)
             .Select(x => x.Id)
             ;
