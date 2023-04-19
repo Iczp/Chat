@@ -165,10 +165,10 @@ namespace IczpNet.Chat.ChatObjects
 
 
         #region Motto 
-        public virtual Guid? MottoId { get; set; }
+        public virtual Guid? MottoId { get; protected set; }
 
         [ForeignKey(nameof(MottoId))]
-        public virtual Motto Motto { get; set; }
+        public virtual Motto Motto { get; protected set; }
 
         [InverseProperty(nameof(Mottos.Motto.Owner))]
         public virtual IList<Motto> MottoList { get; set; }
@@ -199,6 +199,12 @@ namespace IczpNet.Chat.ChatObjects
         public void SetPortrait(string portrait)
         {
             Portrait = portrait;
+        }
+
+        public void SetMotto(Motto motto)
+        {
+            MottoId = motto.Id;
+            Motto = motto;
         }
     }
 }
