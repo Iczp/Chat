@@ -15,6 +15,8 @@ namespace IczpNet.Chat.RoomSections.Rooms
 
         Task<ChatObjectDto> CreateByAllUsersAsync(string name);
 
+        Task<ChatObjectDto> CreateByAllUsersWithManyAsync(string name);
+
         Task<List<SessionUnitSenderInfo>> InviteAsync(InviteInput input);
 
         Task<PagedResultDto<SessionUnitDto>> GetSameAsync(long sourceChatObjectId, long targetChatObjectId, int maxResultCount = 10,

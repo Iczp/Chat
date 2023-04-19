@@ -168,6 +168,91 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         return room;
     }
 
+    public virtual async Task<ChatObject> CreateWithManyAsync(string name, List<long> memberIdList, long? ownerId)
+    {
+        var allList = memberIdList;
+
+        if (ownerId != null && !allList.Contains(ownerId.Value))
+        {
+            allList.Add(ownerId.Value);
+        }
+
+        var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Room);
+
+        var room = await ChatObjectManager.CreateAsync(new ChatObject(name, chatObjectType, null), isUnique: false);
+
+        var session = await SessionGenerator.MakeAsync(room);
+
+        session.SetOwner(room);
+
+        //add room sessionUnit
+        var roomSessionUnit = new SessionUnit(
+              id: GuidGenerator.Create(),
+              session: session,
+              ownerId: room.Id,
+              destinationId: room.Id,
+              destinationObjectType: ChatObjectTypeEnums.Room,
+              isPublic: false,
+              isStatic: true,
+              isCreator: false,
+              joinWay: JoinWays.System,
+              inviterUnitId: null);
+
+        SessionUnit inviterSessionUnit = null;
+        //group owner
+        if (ownerId != null)
+        {
+            inviterSessionUnit = new SessionUnit(
+                id: GuidGenerator.Create(),
+                session: session,
+                ownerId: ownerId.Value,
+                destinationId: room.Id,
+                destinationObjectType: room.ObjectType,
+                isPublic: true,
+                isStatic: true,
+                isCreator: true,
+                joinWay: JoinWays.Creator,
+                inviterUnitId: null,
+                isInputEnabled: true);
+        }
+        // add member
+        var _memberIdList = allList
+            .Where(x => x != ownerId).ToList();
+
+        var memberSessionUnitList = _memberIdList.Select(memberId => session.AddSessionUnit(new SessionUnit(
+                id: GuidGenerator.Create(),
+                session: session,
+                ownerId: memberId,
+                destinationId: room.Id,
+                destinationObjectType: room.ObjectType,
+                isPublic: true,
+                isStatic: false,
+                isCreator: false,
+                joinWay: JoinWays.Invitation,
+                inviterUnitId: inviterSessionUnit?.Id,
+                isInputEnabled: true)))
+            .ToList();
+
+        room.OwnerSessionList.Add(session);
+
+        var insertSessionUnitList = new List<SessionUnit>() { roomSessionUnit }.Concat(memberSessionUnitList).ToList();
+
+        await SessionUnitRepository.InsertManyAsync(insertSessionUnitList);
+        // commit to db
+        await UnitOfWorkManager.Current.SaveChangesAsync();
+
+        var roomOwner = ownerId.HasValue ? await ChatObjectManager.GetItemByCacheAsync(ownerId.Value) : null;
+
+        var members = await ChatObjectManager.GetManyByCacheAsync(_memberIdList.Take(3).ToList());
+
+        await SendRoomMessageAsync(roomSessionUnit, new CmdContentInfo()
+        {
+            Text = $"{roomOwner?.Name} 创建群聊'{room.Name}',{members.Select(x => x.Name).JoinAsString("、")}等 {_memberIdList.Count} 人加入群聊。",
+        });
+
+        return room;
+    }
+
     public virtual async Task<List<SessionUnit>> InviteAsync(InviteInput input, bool autoSendMessage = true)
     {
         //var room = await GetAsync(roomId);
@@ -275,6 +360,17 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         var idList = await AsyncExecuter.ToListAsync(query);
 
         return await CreateAsync(name, idList, null);
+    }
+
+    public virtual async Task<ChatObject> CreateByAllUsersWithManyAsync(string name)
+    {
+        var query = (await ChatObjectRepository.GetQueryableAsync())
+            .Where(x => x.ObjectType == ChatObjectTypeEnums.Personal)
+            .Select(x => x.Id)
+            ;
+        var idList = await AsyncExecuter.ToListAsync(query);
+
+        return await CreateWithManyAsync(name, idList, null);
     }
 
     public virtual Task<int> GetMemberCountAsync(ChatObject room)

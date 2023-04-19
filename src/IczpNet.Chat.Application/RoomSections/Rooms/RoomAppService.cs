@@ -66,6 +66,14 @@ public class RoomAppService : ChatAppService, IRoomAppService
     }
 
     [HttpPost]
+    public virtual async Task<ChatObjectDto> CreateByAllUsersWithManyAsync(string name)
+    {
+        var entity = await RoomManager.CreateByAllUsersWithManyAsync(name);
+
+        return await MapToChatObjectDtoAsync(entity);
+    }
+
+    [HttpPost]
     public virtual async Task<List<SessionUnitSenderInfo>> InviteAsync(InviteInput input)
     {
         await CheckPolicyAsync(InvitePolicyName);
