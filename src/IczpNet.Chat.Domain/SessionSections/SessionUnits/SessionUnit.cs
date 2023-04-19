@@ -28,6 +28,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
     [Index(nameof(LastMessageId), IsDescending = new[] { true })]
     [Index(nameof(Sorting), nameof(LastMessageId), AllDescending = true)]
     [Index(nameof(ReadedMessageId), AllDescending = true)]
+    [Index(nameof(OwnerId), nameof(DestinationId), AllDescending = true)]
     public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, IIsStatic, IIsPublic
     {
         public virtual Guid SessionId { get; protected set; }
