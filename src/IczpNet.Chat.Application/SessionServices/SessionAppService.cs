@@ -144,7 +144,7 @@ namespace IczpNet.Chat.SessionServices
 
         [HttpGet]
         [Obsolete("Move to SessionUnitAppService.GetListBySessionIdAsync")]
-        public async Task<PagedResultDto<SessionUnitDestinationDto>> GetSessionUnitListAsync(Guid id, SessionUnitGetDestinationListInput input)
+        public async Task<PagedResultDto<SessionUnitDestinationDto>> GetSessionUnitListAsync(Guid id, SessionUnitGetListDestinationInput input)
         {
             var query = (await Repository.GetAsync(id))
                 .UnitList.AsQueryable()

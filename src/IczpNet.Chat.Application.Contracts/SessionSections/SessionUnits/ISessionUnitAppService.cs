@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.MessageSections.Messages.Dtos;
+﻿using IczpNet.Chat.Enums;
+using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using System;
 using System.Collections.Generic;
@@ -15,7 +16,15 @@ public interface ISessionUnitAppService
 
     Task<PagedResultDto<SessionUnitOwnerDto>> GetListByLinqAsync(SessionUnitGetListInput input);
 
-    Task<PagedResultDto<SessionUnitDestinationDto>> GetDestinationListAsync(Guid id,SessionUnitGetDestinationListInput input);
+    Task<PagedResultDto<SessionUnitDestinationDto>> GetListDestinationAsync(Guid id, SessionUnitGetListDestinationInput input);
+
+    Task<PagedResultDto<SessionUnitOwnerDto>> GetListSameDestinationAsync(SessionUnitGetListSameDestinationInput input);
+
+    Task<PagedResultDto<SessionUnitOwnerDto>> GetListSameSessionAsync(SessionUnitGetListSameSessionInput input);
+
+    Task<int> GetSameSessionCountAsync(long sourceId, long targetId, List<ChatObjectTypeEnums> objectTypeList);
+
+    Task<int> GetSameDestinationCountAsync(long sourceId, long targetId, List<ChatObjectTypeEnums> objectTypeList);
 
     Task<SessionUnitOwnerDto> GetAsync(Guid id);
 

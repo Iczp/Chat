@@ -1,4 +1,5 @@
 ﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons.Dtos;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
@@ -197,7 +198,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 
 
     [HttpGet]
-    public async Task<PagedResultDto<SessionUnitDestinationDto>> GetDestinationListAsync(Guid id, SessionUnitGetDestinationListInput input)
+    public async Task<PagedResultDto<SessionUnitDestinationDto>> GetListDestinationAsync(Guid id, SessionUnitGetListDestinationInput input)
     {
         var entity = await Repository.GetAsync(id);
 
@@ -302,6 +303,36 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         Assert.If(selfEntity.SessionId != destinationEntity.SessionId, $"Not in the same session");
 
         return await MapToDestinationDtoAsync(destinationEntity);
+    }
+
+    [HttpGet]
+    public async Task<PagedResultDto<SessionUnitOwnerDto>> GetListSameDestinationAsync(SessionUnitGetListSameDestinationInput input)
+    {
+        var query = (await SessionUnitManager.GetSameDestinationQeuryableAsync(input.SourceId, input.TargetId, input.ObjectTypeList))
+            .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Destination.Name.Contains(input.Keyword))
+            ;
+        return await GetPagedListAsync<SessionUnit, SessionUnitOwnerDto>(query, input, x => x.OrderByDescending(x => x.Id));
+    }
+
+    [HttpGet]
+    public async Task<PagedResultDto<SessionUnitOwnerDto>> GetListSameSessionAsync(SessionUnitGetListSameSessionInput input)
+    {
+        var query = (await SessionUnitManager.GetSameSessionQeuryableAsync(input.SourceId, input.TargetId, input.ObjectTypeList))
+            .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Destination.Name.Contains(input.Keyword))
+            ;
+        return await GetPagedListAsync<SessionUnit, SessionUnitOwnerDto>(query, input, x => x.OrderByDescending(x => x.Id));
+    }
+
+    [HttpGet]
+    public Task<int> GetSameSessionCountAsync(long sourceId, long targetId, List<ChatObjectTypeEnums> objectTypeList)
+    {
+        return SessionUnitManager.GetSameSessionCountAsync(sourceId, targetId, objectTypeList);
+    }
+
+    [HttpGet]
+    public Task<int> GetSameDestinationCountAsync(long sourceId, long targetId, List<ChatObjectTypeEnums> objectTypeList)
+    {
+        return SessionUnitManager.GetSameDestinationCountAsync(sourceId, targetId, objectTypeList);
     }
 
     protected virtual Task<SessionUnitOwnerDto> MapToDtoAsync(SessionUnit entity)
@@ -510,4 +541,6 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     {
         return SessionUnitManager.FindIdAsync(ownerId, destinactionId);
     }
+
+
 }

@@ -315,4 +315,14 @@ public class RoomManager : ChatObjectManager, IRoomManager
 
         return sourceQuery;
     }
+
+    public Task<ChatObject> UpdateNameAsync(long id, string name)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<ChatObject> UpdatePortraitAsync(long id, string portrait)
+    {
+        throw new NotImplementedException();
+    }
 }

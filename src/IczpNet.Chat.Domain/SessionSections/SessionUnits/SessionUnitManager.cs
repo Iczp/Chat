@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.MessageSections.Messages;
+﻿using IczpNet.Chat.Enums;
+using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.ReadedRecorders;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Extensions.Caching.Distributed;
@@ -11,6 +12,7 @@ using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
+using IczpNet.AbpCommons.Extensions;
 
 namespace IczpNet.Chat.SessionSections.Sessions
 {
@@ -209,5 +211,55 @@ namespace IczpNet.Chat.SessionSections.Sessions
         {
             await UnitListCache.RemoveAsync($"{new SessionUnitCacheKey(sessionId)}");
         }
+
+
+        private async Task<IQueryable<SessionUnit>> GetOwnerQueryableAsync(long ownerId, List<ChatObjectTypeEnums> destinationObjectTypeList = null)
+        {
+            return (await Repository.GetQueryableAsync())
+                  .Where(x => x.OwnerId.Equals(ownerId) && !x.IsKilled && x.IsEnabled)
+                  .WhereIf(destinationObjectTypeList.IsAny(), x => destinationObjectTypeList.Contains(x.DestinationObjectType.Value));
+
+        }
+
+        public virtual async Task<IQueryable<SessionUnit>> GetSameSessionQeuryableAsync(long sourceChatObjectId, long targetChatObjectId, List<ChatObjectTypeEnums> chatObjectTypeList = null)
+        {
+            var targetSessionIdList = (await GetOwnerQueryableAsync(targetChatObjectId, chatObjectTypeList))
+                .Select(x => x.SessionId);
+
+            var sourceQuery = (await GetOwnerQueryableAsync(sourceChatObjectId, chatObjectTypeList))
+                .Where(x => targetSessionIdList.Contains(x.SessionId))
+                ;
+
+            return sourceQuery;
+        }
+
+        public async Task<int> GetSameSessionCountAsync(long sourceChatObjectId, long targetChatObjectId, List<ChatObjectTypeEnums> chatObjectTypeList = null)
+        {
+            var query = await GetSameSessionQeuryableAsync(sourceChatObjectId, targetChatObjectId, chatObjectTypeList);
+
+            return await AsyncExecuter.CountAsync(query);
+        }
+
+        public virtual async Task<IQueryable<SessionUnit>> GetSameDestinationQeuryableAsync(long sourceChatObjectId, long targetChatObjectId, List<ChatObjectTypeEnums> chatObjectTypeList = null)
+        {
+            var destinationIdList = (await GetOwnerQueryableAsync(targetChatObjectId, chatObjectTypeList))
+                .Where(x => x.DestinationId.HasValue)
+                .Select(x => x.DestinationId.Value);
+
+            var sourceQuery = (await GetOwnerQueryableAsync(sourceChatObjectId, chatObjectTypeList))
+                .Where(x => x.DestinationId.HasValue)
+                .Where(x => destinationIdList.Contains(x.DestinationId.Value))
+                ;
+
+            return sourceQuery;
+        }
+
+        public async Task<int> GetSameDestinationCountAsync(long sourceChatObjectId, long targetChatObjectId, List<ChatObjectTypeEnums> chatObjectTypeList = null)
+        {
+            var query = await GetSameDestinationQeuryableAsync(sourceChatObjectId, targetChatObjectId, chatObjectTypeList);
+
+            return await AsyncExecuter.CountAsync(query);
+        }
+
     }
 }

@@ -7,7 +7,7 @@ using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 {
-    public class SessionUnitGetDestinationListInput : PagedAndSortedResultRequestDto, IKeyword
+    public class SessionUnitGetListDestinationInput : PagedAndSortedResultRequestDto, IKeyword
     {
         //[Required]
         //public virtual Guid SessionId { get; set; }

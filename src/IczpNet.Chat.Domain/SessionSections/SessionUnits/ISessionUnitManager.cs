@@ -1,7 +1,9 @@
-﻿using IczpNet.Chat.SessionSections.SessionUnits;
+﻿using IczpNet.Chat.Enums;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Extensions.Caching.Distributed;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -54,5 +56,12 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         Task RemoveCacheListBySessionIdAsync(Guid sessionId);
 
+        Task<IQueryable<SessionUnit>> GetSameSessionQeuryableAsync(long sourceChatObjectId, long targetChatObjectId, List<ChatObjectTypeEnums> chatObjectTypeList = null);
+
+        Task<int> GetSameSessionCountAsync(long sourceChatObjectId, long targetChatObjectId, List<ChatObjectTypeEnums> chatObjectTypeList = null);
+
+        Task<IQueryable<SessionUnit>> GetSameDestinationQeuryableAsync(long sourceChatObjectId, long targetChatObjectId, List<ChatObjectTypeEnums> chatObjectTypeList = null);
+
+        Task<int> GetSameDestinationCountAsync(long sourceChatObjectId, long targetChatObjectId, List<ChatObjectTypeEnums> chatObjectTypeList = null);
     }
 }
