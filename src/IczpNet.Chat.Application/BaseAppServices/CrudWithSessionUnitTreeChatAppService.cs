@@ -181,7 +181,12 @@ namespace IczpNet.Chat.BaseAppServices
 
             DeletePolicyName = string.Empty;
 
-            await Repository.DeleteManyAsync(idList);
+            //await Repository.DeleteManyAsync(idList);
+
+            //check chilren
+            //...
+
+            await DeleteManayAsync(idList);
         }
 
         protected virtual Expression<Func<TEntity, bool>> GetPredicateDeleteManyByAsync(SessionUnit sessionUnit)
