@@ -21,6 +21,11 @@ namespace IczpNet.Chat.SessionSections.SessionOrganizations
             Assert.If(await Repository.AnyAsync((x) => x.SessionId == inputEntity.SessionId && x.Name == inputEntity.Name && !x.Id.Equals(inputEntity.Id)), $" Name[{inputEntity.Name}] already such,,sessionId:{inputEntity.SessionId}");
         }
 
+        public override Task DeleteAsync(long id)
+        {
+            return base.DeleteAsync(id);
+        }
+
     }
 }
 
