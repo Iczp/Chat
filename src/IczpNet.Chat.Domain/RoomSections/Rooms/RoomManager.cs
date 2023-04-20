@@ -451,4 +451,24 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         });
         return entity;
     }
+
+    public async Task TransferCreatorAsync(Guid sessionUnitId, Guid targetSessionUnitId)
+    {
+        var sessionUnit = await SessionUnitRepository.GetAsync(sessionUnitId);
+
+        Assert.If(!sessionUnit.IsCreator, "Not the session creator");
+
+        var targetSessionUnit = await SessionUnitRepository.GetAsync(targetSessionUnitId);
+
+        Assert.If(sessionUnit.SessionId!= targetSessionUnit.SessionId, "Not in same session");
+
+        sessionUnit.SetIsCreator(false);
+
+        targetSessionUnit.SetIsCreator(true);
+
+        await SendRoomMessageAsync(sessionUnit.DestinationId.Value, new CmdContentInfo()
+        {
+            Text = $"<a session-unit-id=\"{sessionUnit.Id}\">{sessionUnit.Owner.Name}</a>转让群，<a session-unit-id=\"{targetSessionUnit.Id}\">{targetSessionUnit.Owner.Name}</a> 成为群主",
+        });
+    }
 }

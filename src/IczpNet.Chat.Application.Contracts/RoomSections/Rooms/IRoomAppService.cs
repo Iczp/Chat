@@ -6,11 +6,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
-using Volo.Abp.Application.Services;
 
 namespace IczpNet.Chat.RoomSections.Rooms
 {
-    public interface IRoomAppService : IApplicationService
+    public interface IRoomAppService
     {
         Task<ChatObjectDto> CreateAsync(RoomCreateInput input);
 
@@ -27,5 +26,7 @@ namespace IczpNet.Chat.RoomSections.Rooms
         Task<ChatObjectDto> UpdateNameAsync(Guid sessionUnitId, string name);
 
         Task<ChatObjectDto> UpdatePortraitAsync(Guid sessionUnitId, string portrait);
+
+        Task TransferCreatorAsync(Guid sessionUnitId, Guid targetSessionUnitId);
     }
 }

@@ -122,4 +122,10 @@ public class RoomAppService : ChatAppService, IRoomAppService
 
         return await MapToChatObjectDtoAsync(entity);
     }
+
+    [HttpPost]
+    public Task TransferCreatorAsync(Guid sessionUnitId, Guid targetSessionUnitId)
+    {
+        return RoomManager.TransferCreatorAsync(sessionUnitId, targetSessionUnitId);
+    }
 }

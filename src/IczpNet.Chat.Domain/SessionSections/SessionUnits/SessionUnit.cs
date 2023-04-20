@@ -391,5 +391,10 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         {
             IsEnabled = v;
         }
+
+        internal void SetIsCreator(bool v)
+        {
+            IsCreator = v;
+        }
     }
 }

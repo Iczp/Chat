@@ -41,5 +41,7 @@ namespace IczpNet.Chat.RoomSections.Rooms
         Task<ChatObject> UpdateNameAsync(SessionUnit sessionUnit, string name);
 
         Task<ChatObject> UpdatePortraitAsync(SessionUnit sessionUnit, string portrait);
+
+        Task TransferCreatorAsync(Guid sessionUnitId, Guid targetSessionUnitId);
     }
 }
