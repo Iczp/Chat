@@ -4,11 +4,13 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.RoomSections.Rooms.Dtos;
+using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionPermissions;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
@@ -93,23 +95,31 @@ public class RoomAppService : ChatAppService, IRoomAppService
     }
 
     [HttpGet]
-    public  Task<int> GetSameCountAsync(long sourceChatObjectId, long targetChatObjectId)
+    public Task<int> GetSameCountAsync(long sourceChatObjectId, long targetChatObjectId)
     {
-        return SessionUnitManager.GetSameSessionCountAsync(sourceChatObjectId, targetChatObjectId, new List<ChatObjectTypeEnums>() { ChatObjectTypeEnums.Room }); 
+        return SessionUnitManager.GetSameSessionCountAsync(sourceChatObjectId, targetChatObjectId, new List<ChatObjectTypeEnums>() { ChatObjectTypeEnums.Room });
     }
 
     [HttpPost]
-    public async Task<ChatObjectDto> UpdateNameAsync(long id, string name)
+    public async Task<ChatObjectDto> UpdateNameAsync(Guid sessionUnitId, string name)
     {
-        var entity = await RoomManager.UpdateNameAsync(id, name);
+        var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+
+        //await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.ChatObjectPermission.UpdateName, sessionUnit);
+
+        var entity = await RoomManager.UpdateNameAsync(sessionUnit, name);
 
         return await MapToChatObjectDtoAsync(entity);
     }
 
     [HttpPost]
-    public async Task<ChatObjectDto> UpdatePortraitAsync(long id, string portrait)
+    public async Task<ChatObjectDto> UpdatePortraitAsync(Guid sessionUnitId, string portrait)
     {
-        var entity = await RoomManager.UpdatePortraitAsync(id, portrait);
+        var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+
+        await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.ChatObjectPermission.UpdatePortrait, sessionUnit);
+
+        var entity = await RoomManager.UpdatePortraitAsync(sessionUnit, portrait);
 
         return await MapToChatObjectDtoAsync(entity);
     }

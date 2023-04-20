@@ -1,4 +1,5 @@
-﻿using System;
+﻿using IczpNet.Chat.SessionSections.SessionUnits;
+using System;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.SessionSections.SessionPermissions
@@ -9,6 +10,10 @@ namespace IczpNet.Chat.SessionSections.SessionPermissions
 
         Task<bool> IsGrantedAsync(string sessionPermissionDefinitionId, Guid sessionUnitId);
 
+        Task<bool> IsGrantedAsync(string sessionPermissionDefinitionId, SessionUnit sessionUnit);
+
         Task CheckAsync(string sessionPermissionDefinitionId, Guid sessionUnitId);
+
+        Task CheckAsync(string sessionPermissionDefinitionId, SessionUnit sessionUnit);
     }
 }

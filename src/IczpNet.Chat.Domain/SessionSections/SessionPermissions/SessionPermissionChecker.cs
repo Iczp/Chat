@@ -2,6 +2,7 @@
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
 using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
@@ -23,6 +24,14 @@ namespace IczpNet.Chat.SessionSections.SessionPermissions
             Repository = sessionPermissionDefinitionRepository;
         }
 
+
+        public async Task CheckAsync(string sessionPermissionDefinitionId, SessionUnit sessionUnit)
+        {
+            Assert.If(!await IsGrantedAsync(sessionPermissionDefinitionId, sessionUnit),
+                message: $"No permission:{(await Repository.GetAsync(sessionPermissionDefinitionId)).Name}",
+                code: $"Permission:{sessionPermissionDefinitionId}");
+        }
+
         public async Task CheckAsync(string sessionPermissionDefinitionId, Guid sessionUnitId)
         {
             Assert.If(!await IsGrantedAsync(sessionPermissionDefinitionId, sessionUnitId),
@@ -32,11 +41,16 @@ namespace IczpNet.Chat.SessionSections.SessionPermissions
 
         public async Task<bool> IsGrantedAsync(string sessionPermissionDefinitionId, Guid sessionUnitId)
         {
-            Assert.If(!SessionPermissionDefinitionConsts.GetAll().Contains(sessionPermissionDefinitionId), $"Key does not exist:{sessionPermissionDefinitionId}");
-
-            //var definition = await Repository.GetAsync(sessionPermissionDefinitionId);
-
             var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+
+            return await IsGrantedAsync(sessionPermissionDefinitionId, sessionUnit);
+        }
+
+        public async Task<bool> IsGrantedAsync(string sessionPermissionDefinitionId, SessionUnit sessionUnit)
+        {
+            await Task.CompletedTask;
+
+            Assert.If(!SessionPermissionDefinitionConsts.GetAll().Contains(sessionPermissionDefinitionId), $"Key does not exist:{sessionPermissionDefinitionId}");
 
             //UnitGrant
             if (sessionUnit.GrantList.Any(d => d.IsEnabled && d.DefinitionId == sessionPermissionDefinitionId))
@@ -56,5 +70,7 @@ namespace IczpNet.Chat.SessionSections.SessionPermissions
 
             return false;
         }
+
+       
     }
 }

@@ -10,6 +10,8 @@ namespace IczpNet.Chat.ChatObjects
     {
         Task<ChatObject> FindByCodeAsync(string code);
 
+        Task<ChatObject> SetEnitiyAsync(long id, Action<ChatObject> action, bool isUnique = true);
+
         /// <summary>
         /// Group Assistant
         /// </summary>
@@ -40,7 +42,7 @@ namespace IczpNet.Chat.ChatObjects
 
         Task<ChatObject> CreateShopKeeperAsync(string name);
 
-        Task<ChatObject> CreateShopWaiterAsync(long shopKeeperId ,string name);
+        Task<ChatObject> CreateShopWaiterAsync(long shopKeeperId, string name);
 
         Task<ChatObject> CreateRobotAsync(string name);
 
@@ -51,6 +53,8 @@ namespace IczpNet.Chat.ChatObjects
         Task<ChatObject> CreateOfficialAsync(string name);
 
         Task<ChatObject> CreateAnonymousAsync(string name);
+
+        
 
         //Task<ChatObjectInfo> GetGroupAssistantAsync();
 

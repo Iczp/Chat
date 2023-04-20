@@ -430,13 +430,25 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         return sourceQuery;
     }
 
-    public Task<ChatObject> UpdateNameAsync(long id, string name)
+    public async Task<ChatObject> UpdateNameAsync(SessionUnit sessionUnit, string name)
     {
-        throw new NotImplementedException();
+        var entity = await ChatObjectManager.SetEnitiyAsync(sessionUnit.DestinationId.Value, x => x.SetName(name), isUnique: false);
+
+        await SendRoomMessageAsync(sessionUnit.DestinationId.Value, new CmdContentInfo()
+        {
+            Text = $"<a session-unit-id=\"{sessionUnit.Id}\">{sessionUnit.Owner.Name}</a>更新群名称:'{name}'",
+        });
+        return entity;
     }
 
-    public Task<ChatObject> UpdatePortraitAsync(long id, string portrait)
+    public async Task<ChatObject> UpdatePortraitAsync(SessionUnit sessionUnit, string portrait)
     {
-        throw new NotImplementedException();
+        var entity = await ChatObjectManager.SetEnitiyAsync(sessionUnit.DestinationId.Value, x => x.SetPortrait(portrait), isUnique: false);
+
+        await SendRoomMessageAsync(sessionUnit.DestinationId.Value, new CmdContentInfo()
+        {
+            Text = $"<a session-unit-id=\"{sessionUnit.Id}\">{sessionUnit.Owner.Name}</a>更新群头像",
+        });
+        return entity;
     }
 }

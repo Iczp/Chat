@@ -16,7 +16,7 @@ namespace IczpNet.Chat.ChatObjects
 {
     public class ChatObjectManager : TreeManager<ChatObject, long, ChatObjectInfo>, IChatObjectManager
     {
-        
+
         protected IChatObjectTypeManager ChatObjectTypeManager => LazyServiceProvider.LazyGetRequiredService<IChatObjectTypeManager>();
         protected IMessageSender MessageSender => LazyServiceProvider.LazyGetRequiredService<IMessageSender>();
         protected ISessionGenerator SessionGenerator => LazyServiceProvider.LazyGetRequiredService<ISessionGenerator>();
@@ -88,7 +88,8 @@ namespace IczpNet.Chat.ChatObjects
 
         public override async Task<ChatObject> UpdateAsync(ChatObject entity, bool isUnique = true)
         {
-            if(entity.ObjectType == ChatObjectTypeEnums.Room) {
+            if (entity.ObjectType == ChatObjectTypeEnums.Room)
+            {
 
 
             }
@@ -177,6 +178,15 @@ namespace IczpNet.Chat.ChatObjects
         public virtual Task<ChatObject> CreateAnonymousAsync(string name)
         {
             throw new NotImplementedException();
+        }
+
+        public async Task<ChatObject> SetEnitiyAsync(long id, Action<ChatObject> action, bool isUnique = true)
+        {
+            var entity = await Repository.GetAsync(id);
+
+            action?.Invoke(entity);
+
+            return await base.UpdateAsync(entity, isUnique: false);
         }
     }
 }

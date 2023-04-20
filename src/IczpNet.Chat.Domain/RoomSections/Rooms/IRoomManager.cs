@@ -38,8 +38,8 @@ namespace IczpNet.Chat.RoomSections.Rooms
 
         Task<IQueryable<SessionUnit>> GetSameGroupAsync(long sourceChatObjectId, long targetChatObjectId, List<ChatObjectTypeEnums> chatObjectTypeList = null);
 
-        Task<ChatObject> UpdateNameAsync(long id, string name);
+        Task<ChatObject> UpdateNameAsync(SessionUnit sessionUnit, string name);
 
-        Task<ChatObject> UpdatePortraitAsync(long id, string portrait);
+        Task<ChatObject> UpdatePortraitAsync(SessionUnit sessionUnit, string portrait);
     }
 }
