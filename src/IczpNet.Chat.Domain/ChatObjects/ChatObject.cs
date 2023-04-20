@@ -1,4 +1,6 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
+using IczpNet.AbpCommons.PinYin;
+using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjectCategoryUnits;
 using IczpNet.Chat.ChatObjectTypes;
@@ -42,6 +44,13 @@ namespace IczpNet.Chat.ChatObjects
         [StringLength(50)]
         [Required]
         public override string Name { get; protected set; }
+
+
+        [MaxLength(300)]
+        public virtual string NameSpelling { get; protected set; }
+
+        [MaxLength(100)]
+        public virtual string NameSpellingAbbreviation { get; protected set; }
 
         [StringLength(50)]
         public virtual string Code { get; set; }
@@ -188,6 +197,8 @@ namespace IczpNet.Chat.ChatObjects
 
         public override void SetName(string name)
         {
+            NameSpelling = name.ConvertToPinyin().MaxLength(300);
+            NameSpellingAbbreviation = name.ConvertToPY().MaxLength(100);
             base.SetName(name);
         }
 

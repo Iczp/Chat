@@ -48,9 +48,16 @@ namespace IczpNet.Chat.SessionSections.SessionPermissions
 
         public async Task<bool> IsGrantedAsync(string sessionPermissionDefinitionId, SessionUnit sessionUnit)
         {
+
             await Task.CompletedTask;
 
             Assert.If(!SessionPermissionDefinitionConsts.GetAll().Contains(sessionPermissionDefinitionId), $"Key does not exist:{sessionPermissionDefinitionId}");
+
+            if (sessionUnit.IsCreator)
+            {
+                Logger.LogDebug($"SessionUnit is Creator, sessionUnitId:{sessionUnit.Id}, sessionPermissionDefinitionId:{sessionPermissionDefinitionId},");
+                return true;
+            }
 
             //UnitGrant
             if (sessionUnit.GrantList.Any(d => d.IsEnabled && d.DefinitionId == sessionPermissionDefinitionId))
@@ -71,6 +78,6 @@ namespace IczpNet.Chat.SessionSections.SessionPermissions
             return false;
         }
 
-       
+
     }
 }

@@ -1,6 +1,9 @@
 ﻿using IczpNet.AbpTrees;
 using IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;
 using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 
 namespace IczpNet.Chat.SessionSections.SessionOrganizations
@@ -19,7 +22,15 @@ namespace IczpNet.Chat.SessionSections.SessionOrganizations
             long,
             SessionOrganizationGetListInput,
             SessionOrganizationCreateInput,
-            SessionOrganizationUpdateInput, SessionOrganizationInfo>
+            SessionOrganizationUpdateInput, SessionOrganizationInfo>,
+        ICrudWithSessionUnitAppService<
+            SessionOrganizationDetailDto,
+            SessionOrganizationDto,
+            long,
+            SessionOrganizationGetListInput,
+            SessionOrganizationCreateInput,
+            SessionOrganizationUpdateInput>
     {
+
     }
 }

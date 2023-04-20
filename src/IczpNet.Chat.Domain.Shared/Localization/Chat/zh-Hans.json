@@ -2,6 +2,14 @@
   "culture": "zh-Hans",
   "texts": {
     "MyAccount": "我的账户",
-    "SamplePageMessage": "Chat模块的示例页面"
+    "SamplePageMessage": "Chat模块的示例页面",
+
+
+    "Permission:SessionPermission": "会话权限",
+
+    "SessionPermission.SessionOrganizationPermission": "会话组织架构",
+    "SessionPermission.SessionOrganizationPermission.Create": "新增",
+    "SessionPermission.SessionOrganizationPermission.Update": "新增",
+    "SessionPermission.SessionOrganizationPermission.Delete": "新增"
   }
 }

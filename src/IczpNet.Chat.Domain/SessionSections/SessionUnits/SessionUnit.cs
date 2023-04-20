@@ -1,4 +1,6 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
+using IczpNet.AbpCommons.PinYin;
+using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
@@ -85,11 +87,23 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         [StringLength(50)]
         public virtual string MemberName { get; protected set; }
 
+        [MaxLength(300)]
+        public virtual string MemberNameSpelling { get; protected set; }
+
+        [MaxLength(50)]
+        public virtual string MemberNameSpellingAbbreviation { get; protected set; }
+
         /// <summary>
         /// 备注名称 Rename for destination
         /// </summary>
         [StringLength(50)]
         public virtual string Rename { get; protected set; }
+
+        [MaxLength(300)]
+        public virtual string RenameSpelling { get; protected set; }
+
+        [MaxLength(50)]
+        public virtual string RenameSpellingAbbreviation { get; protected set; }
 
         /// <summary>
         /// 备注
@@ -271,8 +285,21 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             IsInputEnabled = isInputEnabled;
         }
 
+        internal virtual void SetRename(string rename)
+        {
+            Rename = rename;
+            RenameSpelling = rename.ConvertToPinyin().MaxLength(300);
+            RenameSpellingAbbreviation = rename.ConvertToPY().MaxLength(50);
+        }
 
-        internal void SetReaded(long messageAutoId, bool isForce = false)
+        internal virtual void SetMemberName(string memberName)
+        {
+            MemberName = memberName;
+            MemberNameSpelling = memberName.ConvertToPinyin().MaxLength(300);
+            MemberNameSpellingAbbreviation = memberName.ConvertToPY().MaxLength(50);
+        }
+
+        internal virtual void SetReaded(long messageAutoId, bool isForce = false)
         {
             if (isForce || messageAutoId > ReadedMessageId.GetValueOrDefault())
             {
@@ -280,7 +307,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             }
         }
 
-        internal void SetHistoryFristTime(DateTime historyFristTime)
+        internal virtual void SetHistoryFristTime(DateTime historyFristTime)
         {
             HistoryFristTime = historyFristTime;
         }
@@ -289,7 +316,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         /// removeSession 删除消息会话,不退群
         /// </summary>
         /// <param name="removeTime"></param>
-        internal void Remove(DateTime removeTime)
+        internal virtual void Remove(DateTime removeTime)
         {
             RemoveTime = removeTime;
         }
@@ -298,7 +325,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         /// 退群，但不删除会话（用于查看历史I）
         /// </summary>
         /// <param name="removeTime"></param>
-        internal void Kill(DateTime killTime, KillTypes? killType = null, ChatObject killer = null)
+        internal virtual void Kill(DateTime killTime, KillTypes? killType = null, ChatObject killer = null)
         {
             IsKilled = true;
             KillTime = killTime;
@@ -314,7 +341,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         /// 清空消息，不退群 
         /// </summary>
         /// <param name="clearTime"></param>
-        internal void ClearMessage(DateTime? clearTime)
+        internal virtual void ClearMessage(DateTime? clearTime)
         {
             ClearTime = clearTime;
         }
@@ -357,7 +384,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             return Session.MessageList.AsQueryable().Where(x => x.IsRemindAll && !x.IsRollbacked).Count(new SessionUnitMessageSpecification(this).ToExpression());
         }
 
-        internal void SetTopping(bool isTopping)
+        internal virtual void SetTopping(bool isTopping)
         {
             Sorting = isTopping ? DateTime.Now.Ticks : 0;
         }
@@ -382,17 +409,17 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             return SessionUnitRoleList.Select(x => x.SessionRoleId).ToList();
         }
 
-        internal void SetImmersed(bool isImmersed)
+        internal virtual void SetImmersed(bool isImmersed)
         {
             IsImmersed = isImmersed;
         }
 
-        internal void SetIsEnabled(bool v)
+        internal virtual void SetIsEnabled(bool v)
         {
             IsEnabled = v;
         }
 
-        internal void SetIsCreator(bool v)
+        internal virtual void SetIsCreator(bool v)
         {
             IsCreator = v;
         }

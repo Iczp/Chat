@@ -6,10 +6,11 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Application.Services;
 
 namespace IczpNet.Chat.RoomSections.Rooms
 {
-    public interface IRoomAppService
+    public interface IRoomAppService : IApplicationService
     {
         Task<ChatObjectDto> CreateAsync(RoomCreateInput input);
 
