@@ -1,10 +1,11 @@
 ﻿using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
+using IczpNet.Chat.SessionSections.Favorites;
 using System;
 using System.Collections.Generic;
 
-namespace IczpNet.Chat.SessionSections.Favorites
+namespace IczpNet.Chat.Favorites
 {
     public class Favorite : BaseEntity<Guid>, IChatOwner<long>
     {

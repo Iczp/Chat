@@ -2,7 +2,7 @@
 using IczpNet.Chat.MessageSections.Messages;
 using System;
 
-namespace IczpNet.Chat.SessionSections.Favorites
+namespace IczpNet.Chat.FavoriteMessages
 {
     public class FavoriteMessage : BaseEntity
     {

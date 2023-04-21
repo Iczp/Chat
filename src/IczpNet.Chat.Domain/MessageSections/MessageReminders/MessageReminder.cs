@@ -6,7 +6,7 @@ using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace IczpNet.Chat.SessionSections.MessageReminders
+namespace IczpNet.Chat.MessageSections.MessageReminders
 {
     [Description("消息提醒器@我")]
     public class MessageReminder : BaseEntity
