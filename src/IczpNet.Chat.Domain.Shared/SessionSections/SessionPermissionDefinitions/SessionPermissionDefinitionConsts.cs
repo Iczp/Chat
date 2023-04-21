@@ -20,6 +20,7 @@ public static class SessionPermissionDefinitionConsts
         public const string Create = Default + "." + nameof(Create);
         public const string Update = Default + "." + nameof(Update);
         public const string Delete = Default + "." + nameof(Delete);
+        public const string SetAllPermissions = Default + "." + nameof(SetAllPermissions);
     }
 
     public class SessionRequestPermission

@@ -25,7 +25,6 @@ namespace IczpNet.Chat.SessionSections.SessionOrganizations
         {
             return base.DeleteAsync(id);
         }
-
     }
 }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using IczpNet.Chat.SessionSections.SessionPermissions;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 using Volo.Abp.Application.Services;
 
@@ -22,5 +23,7 @@ public interface ISessionRoleAppService :
         SessionRoleUpdateInput>
 {
 
-    Task<SessionRolePermissionDto> GetPermissions(Guid id);
+    Task<SessionRolePermissionDto> GetPermissionsAsync(Guid id);
+
+    Task<SessionRolePermissionDto> SetAllPermissionsAsync(Guid id, PermissionGrantValue permissionGrantValue);
 }

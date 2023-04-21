@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using IczpNet.AbpCommons.Extensions;
@@ -58,7 +57,7 @@ public class SessionPermissionDefinitionDataSeedContributor : IDataSeedContribut
 
         if (!createIdList.Any())
         {
-            _logger.LogDebug("No new session permissions added");
+            _logger.LogInformation("No new session permissions added");
             return;
         }
 
@@ -74,7 +73,7 @@ public class SessionPermissionDefinitionDataSeedContributor : IDataSeedContribut
         }
         await _sessionPermissionDefinitionRepository.InsertManyAsync(list);
 
-        _logger.LogDebug($"Added {createIdList.Count()} permissions:{string.Join(",", createIdList.ToArray())}");
+        _logger.LogInformation($"Added {createIdList.Count()} permissions:{string.Join(",", createIdList.ToArray())}");
     }
 }
 

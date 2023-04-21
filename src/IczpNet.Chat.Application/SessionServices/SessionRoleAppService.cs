@@ -9,6 +9,9 @@ using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
+using IczpNet.Chat.SessionSections.SessionPermissions;
+using System.Collections.Generic;
+using Microsoft.AspNetCore.Authorization;
 
 namespace IczpNet.Chat.SessionServices
 {
@@ -28,6 +31,7 @@ namespace IczpNet.Chat.SessionServices
         //protected override string CreatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Create;
         //protected override string UpdatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Update;
         //protected override string DeletePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Delete;
+        protected virtual string SetAllPermissionsPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.SetAllPermissions;
         protected override string GetBySessionUnitPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Default;
         protected override string GetListBySessionUnitPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Default;
         protected override string CreateBySessionUnitPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Create;
@@ -36,13 +40,17 @@ namespace IczpNet.Chat.SessionServices
         protected override string DeleteManyBySessionUnitPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Delete;
 
         protected IChatObjectRepository ChatObjectRepository { get; }
+        protected ISessionPermissionDefinitionRepository SessionPermissionDefinitionRepository { get; }
+        protected ISessionRoleManager SessionRoleManager { get; }
 
         public SessionRoleAppService(
             IRepository<SessionRole, Guid> repository,
-            IChatObjectRepository chatObjectRepository)
+            IChatObjectRepository chatObjectRepository,
+            ISessionPermissionDefinitionRepository sessionPermissionDefinitionRepository)
             : base(repository)
         {
             ChatObjectRepository = chatObjectRepository;
+            SessionPermissionDefinitionRepository = sessionPermissionDefinitionRepository;
         }
 
         protected override async Task<IQueryable<SessionRole>> CreateFilteredQueryAsync(SessionRoleGetListInput input)
@@ -79,11 +87,30 @@ namespace IczpNet.Chat.SessionServices
             return base.SetUpdateEntityAsync(entity, input);
         }
 
+        protected virtual SessionRolePermissionDto MapToPermissionDto(SessionRole entity)
+        {
+            return ObjectMapper.Map<SessionRole, SessionRolePermissionDto>(entity);
+        }
+
+        protected virtual async Task<SessionRolePermissionDto> MapToPermissionDtoAsync(SessionRole entity)
+        {
+            await Task.CompletedTask;
+            return MapToPermissionDto(entity);
+        }
+
         [HttpGet]
-        public async Task<SessionRolePermissionDto> GetPermissions(Guid id)
+        public virtual async Task<SessionRolePermissionDto> GetPermissionsAsync(Guid id)
         {
             var entity = await GetEntityByIdAsync(id);
-            return ObjectMapper.Map<SessionRole, SessionRolePermissionDto>(entity);
+            return await MapToPermissionDtoAsync(entity);
+        }
+
+        //[Authorize(policy: SessionPermissionDefinitionConsts.SessionRolePermission.SetAllPermissions)]
+        public virtual async Task<SessionRolePermissionDto> SetAllPermissionsAsync(Guid id, PermissionGrantValue permissionGrantValue)
+        {
+            //await CheckPolicyAsync(SetAllPermissionsPolicyName);
+            var entity = await SessionRoleManager.SetAllPermissionsAsync(id, permissionGrantValue);
+            return await MapToPermissionDtoAsync(entity);
         }
     }
 }

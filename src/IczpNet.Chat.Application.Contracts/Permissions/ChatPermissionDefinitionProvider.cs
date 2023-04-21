@@ -24,6 +24,7 @@ public class ChatPermissionDefinitionProvider : PermissionDefinitionProvider
         rolePermission.AddChild(SessionPermissionDefinitionConsts.SessionRolePermission.Create, L(SessionPermissionDefinitionConsts.SessionRolePermission.Create));
         rolePermission.AddChild(SessionPermissionDefinitionConsts.SessionRolePermission.Update, L(SessionPermissionDefinitionConsts.SessionRolePermission.Update));
         rolePermission.AddChild(SessionPermissionDefinitionConsts.SessionRolePermission.Delete, L(SessionPermissionDefinitionConsts.SessionRolePermission.Delete));
+        rolePermission.AddChild(SessionPermissionDefinitionConsts.SessionRolePermission.SetAllPermissions, L(SessionPermissionDefinitionConsts.SessionRolePermission.SetAllPermissions));
     }
 
     private static LocalizableString L(string name)
