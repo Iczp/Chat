@@ -5,7 +5,6 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
-using IczpNet.AbpCommons;
 using IczpNet.Chat.ChatObjects;
 
 namespace IczpNet.Chat.MottoServices
