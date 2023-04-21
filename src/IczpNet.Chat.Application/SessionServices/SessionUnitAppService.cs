@@ -29,14 +29,16 @@ namespace IczpNet.Chat.SessionServices;
 
 public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 {
-    public virtual string GetListPolicyName { get; set; }
-    public virtual string GetPolicyName { get; set; }
-    public virtual string GetDetailPolicyName { get; set; }
-    public virtual string SetReadedPolicyName { get; set; }
-    public virtual string SetImmersedPolicyName { get; set; }
-    public virtual string RemoveSessionPolicyName { get; set; }
-    public virtual string ClearMessagePolicyName { get; set; }
-    public virtual string DeleteMessagePolicyName { get; set; }
+    protected virtual string SetRenamePolicyName { get; set; }
+    protected virtual string SetMemberNamePolicyName { get; set; }
+    protected virtual string GetListPolicyName { get; set; }
+    protected virtual string GetPolicyName { get; set; }
+    protected virtual string GetDetailPolicyName { get; set; }
+    protected virtual string SetReadedPolicyName { get; set; }
+    protected virtual string SetImmersedPolicyName { get; set; }
+    protected virtual string RemoveSessionPolicyName { get; set; }
+    protected virtual string ClearMessagePolicyName { get; set; }
+    protected virtual string DeleteMessagePolicyName { get; set; }
 
     protected IRepository<Friendship, Guid> FriendshipRepository { get; }
     protected IRepository<Session, Guid> SessionRepository { get; }
@@ -306,21 +308,21 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     }
 
     [HttpGet]
-    public async Task<PagedResultDto<SessionUnitOwnerDto>> GetListSameDestinationAsync(SessionUnitGetListSameDestinationInput input)
+    public async Task<PagedResultDto<SessionUnitDto>> GetListSameDestinationAsync(SessionUnitGetListSameDestinationInput input)
     {
         var query = (await SessionUnitManager.GetSameDestinationQeuryableAsync(input.SourceId, input.TargetId, input.ObjectTypeList))
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Destination.Name.Contains(input.Keyword))
             ;
-        return await GetPagedListAsync<SessionUnit, SessionUnitOwnerDto>(query, input, x => x.OrderByDescending(x => x.Id));
+        return await GetPagedListAsync<SessionUnit, SessionUnitDto>(query, input, x => x.OrderByDescending(x => x.Id));
     }
 
     [HttpGet]
-    public async Task<PagedResultDto<SessionUnitOwnerDto>> GetListSameSessionAsync(SessionUnitGetListSameSessionInput input)
+    public async Task<PagedResultDto<SessionUnitDto>> GetListSameSessionAsync(SessionUnitGetListSameSessionInput input)
     {
         var query = (await SessionUnitManager.GetSameSessionQeuryableAsync(input.SourceId, input.TargetId, input.ObjectTypeList))
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Destination.Name.Contains(input.Keyword))
             ;
-        return await GetPagedListAsync<SessionUnit, SessionUnitOwnerDto>(query, input, x => x.OrderByDescending(x => x.Id));
+        return await GetPagedListAsync<SessionUnit, SessionUnitDto>(query, input, x => x.OrderByDescending(x => x.Id));
     }
 
     [HttpGet]
@@ -343,6 +345,30 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     protected virtual Task<SessionUnitDestinationDto> MapToDestinationDtoAsync(SessionUnit entity)
     {
         return Task.FromResult(ObjectMapper.Map<SessionUnit, SessionUnitDestinationDto>(entity));
+    }
+
+    [HttpPost]
+    public async Task<SessionUnitOwnerDto> SetMemberNameAsync(Guid id, string memberName)
+    {
+        await CheckPolicyAsync(SetMemberNamePolicyName);
+
+        var entity = await GetEntityAsync(id);
+
+        await SessionUnitManager.SetMemberNameAsync(entity, memberName);
+
+        return await MapToDtoAsync(entity);
+    }
+
+    [HttpPost]
+    public async Task<SessionUnitOwnerDto> SetRenameAsync(Guid id, string rename)
+    {
+        await CheckPolicyAsync(SetRenamePolicyName);
+
+        var entity = await GetEntityAsync(id);
+
+        await SessionUnitManager.SetRenameAsync(entity, rename);
+
+        return await MapToDtoAsync(entity);
     }
 
     [HttpPost]
@@ -541,6 +567,5 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     {
         return SessionUnitManager.FindIdAsync(ownerId, destinactionId);
     }
-
 
 }

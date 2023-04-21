@@ -78,6 +78,16 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return Repository.GetAsync(id);
     }
 
+    public Task<SessionUnit> SetMemberNameAsync(SessionUnit entity, string memberName)
+    {
+        return SetEntityAsync(entity, x => x.SetMemberName(memberName));
+    }
+
+    public Task<SessionUnit> SetRenameAsync(SessionUnit entity, string rename)
+    {
+        return SetEntityAsync(entity, x => x.SetRename(rename));
+    }
+
     public virtual Task<SessionUnit> SetToppingAsync(SessionUnit entity, bool isTopping)
     {
         return SetEntityAsync(entity, x => x.SetTopping(isTopping));

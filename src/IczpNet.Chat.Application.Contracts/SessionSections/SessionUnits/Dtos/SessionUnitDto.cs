@@ -11,19 +11,17 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         public virtual long OwnerId { get; set; }
 
-        /// <summary>
-        /// 会话内的名称
-        /// </summary>
         public virtual string MemberName { get; set; }
 
-        /// <summary>
-        /// 备注名称 Rename for destination
-        /// </summary>
+        public virtual string MemberNameSpellingAbbreviation { get; set; }
+
         public virtual string Rename { get; set; }
 
-        public virtual long LastMessageId { get; set; }
+        public virtual string RenameSpellingAbbreviation { get; set; }
 
-        public virtual double Sorting { get; set; }
+        //public virtual long LastMessageId { get; set; }
+
+        //public virtual double Sorting { get; set; }
 
         public virtual ChatObjectDto Destination { get; set; }
     }

@@ -14,17 +14,13 @@ namespace IczpNet.Chat.SessionServices
 
         public virtual long OwnerId { get; set; }
 
-        /// <summary>
-        /// 会话内的名称
-        /// </summary>
-        [StringLength(50)]
         public virtual string MemberName { get; set; }
 
-        /// <summary>
-        /// 备注名称 Rename for destination
-        /// </summary>
-        [StringLength(50)]
+        public virtual string MemberNameSpellingAbbreviation { get; set; }
+
         public virtual string Rename { get; set; }
+
+        public virtual string RenameSpellingAbbreviation { get; set; }
 
         /// <summary>
         /// 备注

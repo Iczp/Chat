@@ -24,6 +24,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         Task<Guid?> FindIdAsync(Expression<Func<SessionUnit, bool>> predicate);
 
+        Task<SessionUnit> SetMemberNameAsync(SessionUnit entity, string memberName);
+        Task<SessionUnit> SetRenameAsync(SessionUnit entity, string rename);
         Task<SessionUnit> SetToppingAsync(SessionUnit entity, bool isTopping);
 
         Task<SessionUnit> SetReadedAsync(SessionUnit entity, long messageId, bool isForce = false);
@@ -63,5 +65,6 @@ namespace IczpNet.Chat.SessionSections.Sessions
         Task<IQueryable<SessionUnit>> GetSameDestinationQeuryableAsync(long sourceChatObjectId, long targetChatObjectId, List<ChatObjectTypeEnums> chatObjectTypeList = null);
 
         Task<int> GetSameDestinationCountAsync(long sourceChatObjectId, long targetChatObjectId, List<ChatObjectTypeEnums> chatObjectTypeList = null);
+
     }
 }

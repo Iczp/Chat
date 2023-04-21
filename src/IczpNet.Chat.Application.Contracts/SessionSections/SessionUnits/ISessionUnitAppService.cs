@@ -18,9 +18,9 @@ public interface ISessionUnitAppService
 
     Task<PagedResultDto<SessionUnitDestinationDto>> GetListDestinationAsync(Guid id, SessionUnitGetListDestinationInput input);
 
-    Task<PagedResultDto<SessionUnitOwnerDto>> GetListSameDestinationAsync(SessionUnitGetListSameDestinationInput input);
+    Task<PagedResultDto<SessionUnitDto>> GetListSameDestinationAsync(SessionUnitGetListSameDestinationInput input);
 
-    Task<PagedResultDto<SessionUnitOwnerDto>> GetListSameSessionAsync(SessionUnitGetListSameSessionInput input);
+    Task<PagedResultDto<SessionUnitDto>> GetListSameSessionAsync(SessionUnitGetListSameSessionInput input);
 
     Task<int> GetSameSessionCountAsync(long sourceId, long targetId, List<ChatObjectTypeEnums> objectTypeList);
 
@@ -31,6 +31,10 @@ public interface ISessionUnitAppService
     Task<SessionUnitDestinationDetailDto> GetDetailAsync(Guid id);
 
     Task<SessionUnitDestinationDto> GetDestinationAsync(Guid id, Guid destinationId);
+
+    Task<SessionUnitOwnerDto> SetMemberNameAsync(Guid id, string memberName);
+
+    Task<SessionUnitOwnerDto> SetRenameAsync(Guid id, string rename);
 
     Task<SessionUnitOwnerDto> SetToppingAsync(Guid id, bool isTopping);
 
