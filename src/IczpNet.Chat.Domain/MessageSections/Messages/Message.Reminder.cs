@@ -1,5 +1,5 @@
 ﻿using IczpNet.Chat.Enums;
-using IczpNet.Chat.SessionSections.MessageReminders;
+using IczpNet.Chat.MessageSections.MessageReminders;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;

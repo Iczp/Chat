@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.BaseEntitys;
+using IczpNet.Chat.Favorites;
 using IczpNet.Chat.MessageSections.Messages;
 using System;
 

@@ -1,10 +1,7 @@
-﻿using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.SessionSections.Favorites;
-using IczpNet.Chat.SessionSections.MessageReminders;
+﻿using IczpNet.Chat.FavoriteMessages;
 using IczpNet.Chat.SessionSections.OpenedRecorders;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
-using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 

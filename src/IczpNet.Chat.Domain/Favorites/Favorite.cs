@@ -1,7 +1,7 @@
 ﻿using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
-using IczpNet.Chat.SessionSections.Favorites;
+using IczpNet.Chat.FavoriteMessages;
 using System;
 using System.Collections.Generic;
 

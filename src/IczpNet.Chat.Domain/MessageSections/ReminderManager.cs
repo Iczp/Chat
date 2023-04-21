@@ -8,7 +8,7 @@ using System;
 using Volo.Abp.Domain.Services;
 using System.Linq;
 using Volo.Abp.Domain.Repositories;
-using IczpNet.Chat.SessionSections.MessageReminders;
+using IczpNet.Chat.MessageSections.MessageReminders;
 
 namespace IczpNet.Chat.MessageSections
 {
