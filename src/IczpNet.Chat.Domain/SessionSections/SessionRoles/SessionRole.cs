@@ -14,7 +14,7 @@ using System.Linq;
 namespace IczpNet.Chat.SessionSections.SessionRoles
 {
     [Index(nameof(IsDefault), AllDescending = true)]
-    public class SessionRole : BaseEntity<Guid>, IName, IIsDefault
+    public class SessionRole : BaseEntity<Guid>, IName, IIsDefault, ISessionId
     {
         protected SessionRole() { }
 

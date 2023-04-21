@@ -8,7 +8,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.SessionSections.SessionTags
 {
-    public class SessionTag : BaseEntity<Guid>
+    public class SessionTag : BaseEntity<Guid>, ISessionId
     {
         protected SessionTag() {}
 

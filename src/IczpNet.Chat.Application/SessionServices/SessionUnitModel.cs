@@ -10,7 +10,7 @@ namespace IczpNet.Chat.SessionServices
     {
         public virtual Guid Id { get; set; }
 
-        public virtual Guid SessionId { get; set; }
+        public virtual Guid? SessionId { get; set; }
 
         public virtual long OwnerId { get; set; }
 

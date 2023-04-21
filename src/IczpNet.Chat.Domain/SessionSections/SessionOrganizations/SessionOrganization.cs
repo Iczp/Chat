@@ -7,7 +7,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.SessionSections.SessionOrganizations
 {
-    public class SessionOrganization : BaseTreeEntity<SessionOrganization, long>
+    public class SessionOrganization : BaseTreeEntity<SessionOrganization, long>, ISessionId
     {
         protected SessionOrganization() { }
 

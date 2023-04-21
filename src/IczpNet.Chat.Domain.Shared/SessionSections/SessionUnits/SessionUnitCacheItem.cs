@@ -8,7 +8,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
     {
         public virtual Guid Id { get; set; }
 
-        public virtual Guid SessionId { get; set; }
+        public virtual Guid? SessionId { get; set; }
 
         public virtual ChatObjectTypeEnums? DestinationObjectType { get; set; }
 

@@ -114,7 +114,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             var entity = new Message(senderSessionUnit)
             {
-                SessionUnitCount = await SessionUnitManager.GetCountAsync(senderSessionUnit.SessionId)
+                SessionUnitCount = await SessionUnitManager.GetCountAsync(senderSessionUnit.SessionId.Value)
             };
 
             if (getContentEntity != null)

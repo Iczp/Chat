@@ -16,25 +16,23 @@ using IczpNet.Chat.SessionSections;
 
 namespace IczpNet.Chat.BaseAppServices
 {
-    public abstract class CrudWithSessionUnitTreeChatAppService<
+    public abstract class CrudWithSessionUnitChatAppService<
         TEntity,
-        TKey,
         TGetOutputDto,
         TGetListOutputDto,
+        TKey,
         TGetListInput,
         TCreateInput,
-        TUpdateInput,
-        TTreeInfo>
+        TUpdateInput>
         :
-        CrudTreeChatAppService<
+        CrudChatAppService<
             TEntity,
-            TKey,
             TGetOutputDto,
             TGetListOutputDto,
+            TKey,
             TGetListInput,
             TCreateInput,
-            TUpdateInput,
-            TTreeInfo>
+            TUpdateInput>
         where TKey : struct
         where TEntity : class, ITreeEntity<TEntity, TKey>, ISessionId
         where TGetOutputDto : IEntityDto<TKey>
@@ -42,7 +40,6 @@ namespace IczpNet.Chat.BaseAppServices
         where TGetListInput : ITreeGetListInput<TKey>, ISessionId
         where TCreateInput : ITreeInput<TKey>, ISessionId
         where TUpdateInput : ITreeInput<TKey>
-        where TTreeInfo : ITreeInfo<TKey>
     {
 
         protected virtual string GetBySessionUnitPolicyName { get; set; }
@@ -55,7 +52,7 @@ namespace IczpNet.Chat.BaseAppServices
         protected ISessionPermissionChecker SessionPermissionChecker => LazyServiceProvider.LazyGetRequiredService<ISessionPermissionChecker>();
         protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
 
-        protected CrudWithSessionUnitTreeChatAppService(IRepository<TEntity, TKey> repository) : base(repository)
+        protected CrudWithSessionUnitChatAppService(IRepository<TEntity, TKey> repository) : base(repository)
         {
         }
 

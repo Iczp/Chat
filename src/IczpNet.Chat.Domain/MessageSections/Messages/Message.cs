@@ -1,6 +1,7 @@
 ﻿using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.SessionSections;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.ComponentModel.DataAnnotations;
@@ -10,7 +11,7 @@ namespace IczpNet.Chat.MessageSections.Messages;
 
 [Index(nameof(Id), AllDescending = true)]
 [Index(nameof(SessionUnitCount))]
-public partial class Message : BaseEntity<long>
+public partial class Message : BaseEntity<long>, ISessionId
 {
     //[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     //public virtual long Id { get;  }
