@@ -134,7 +134,7 @@ namespace IczpNet.Chat.SessionServices
         [HttpGet]
         public async Task<PagedResultDto<SessionRoleDto>> GetRoleListAsync(SessionRoleGetListInput input)
         {
-            var query = (await Repository.GetAsync(input.SessionId))
+            var query = (await Repository.GetAsync(input.SessionId.Value))
                 .RoleList.AsQueryable()
                 .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(input.Keyword))
                 ;

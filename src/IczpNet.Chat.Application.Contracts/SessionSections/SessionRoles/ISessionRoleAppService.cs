@@ -12,10 +12,15 @@ public interface ISessionRoleAppService :
         Guid,
         SessionRoleGetListInput,
         SessionRoleCreateInput,
+        SessionRoleUpdateInput>,
+    ICrudWithSessionUnitAppService<
+        SessionRoleDetailDto,
+        SessionRoleDto,
+        Guid,
+        SessionRoleGetListInput,
+        SessionRoleCreateInput,
         SessionRoleUpdateInput>
 {
 
     Task<SessionRolePermissionDto> GetPermissions(Guid id);
-
-    Task DeleteByAsync(Guid sessionUnitId, Guid id);
 }

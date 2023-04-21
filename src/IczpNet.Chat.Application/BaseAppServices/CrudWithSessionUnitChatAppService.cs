@@ -1,6 +1,4 @@
-﻿using IczpNet.AbpTrees;
-using IczpNet.AbpTrees.Dtos;
-using IczpNet.Chat.SessionSections.SessionPermissions;
+﻿using IczpNet.Chat.SessionSections.SessionPermissions;
 using IczpNet.Chat.SessionSections.Sessions;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
@@ -13,6 +11,7 @@ using IczpNet.AbpCommons;
 using System.Linq;
 using System.Linq.Expressions;
 using IczpNet.Chat.SessionSections;
+using Volo.Abp.Domain.Entities;
 
 namespace IczpNet.Chat.BaseAppServices
 {
@@ -34,12 +33,11 @@ namespace IczpNet.Chat.BaseAppServices
             TCreateInput,
             TUpdateInput>
         where TKey : struct
-        where TEntity : class, ITreeEntity<TEntity, TKey>, ISessionId
+        where TEntity : class, IEntity<TKey>, ISessionId
         where TGetOutputDto : IEntityDto<TKey>
         where TGetListOutputDto : IEntityDto<TKey>
-        where TGetListInput : ITreeGetListInput<TKey>, ISessionId
-        where TCreateInput : ITreeInput<TKey>, ISessionId
-        where TUpdateInput : ITreeInput<TKey>
+        where TGetListInput : ISessionId
+        where TCreateInput : ISessionId
     {
 
         protected virtual string GetBySessionUnitPolicyName { get; set; }
@@ -54,6 +52,16 @@ namespace IczpNet.Chat.BaseAppServices
 
         protected CrudWithSessionUnitChatAppService(IRepository<TEntity, TKey> repository) : base(repository)
         {
+        }
+
+        protected virtual void TryToSetSessionId<T>(T entity, Guid? sessionId) where T : ISessionId
+        {
+            var propertyInfo = entity.GetType().GetProperty(nameof(ISessionId.SessionId));
+
+            if (entity is ISessionId && propertyInfo != null && propertyInfo.GetSetMethod(true) != null)
+            {
+                propertyInfo.SetValue(entity, sessionId);
+            }
         }
 
         protected virtual async Task<SessionUnit> GetAndCheckSessionUnitAsync(Guid sessionUnitId)
@@ -88,9 +96,7 @@ namespace IczpNet.Chat.BaseAppServices
 
         protected virtual async Task CheckGetListBySessionUnitAsync(SessionUnit sessionUnit, TGetListInput input)
         {
-            Assert.If(!input.SessionId.HasValue, $"SessionId is null");
-
-            Assert.If(sessionUnit.SessionId != input.SessionId, $"Not in same session");
+            Assert.If(input.SessionId.HasValue && sessionUnit.SessionId != input.SessionId, $"Not in same session");
 
             await SessionPermissionChecker.CheckAsync(GetListBySessionUnitPolicyName, sessionUnit);
         }
@@ -102,6 +108,8 @@ namespace IczpNet.Chat.BaseAppServices
 
             await CheckGetListBySessionUnitAsync(sessionUnit, input);
 
+            TryToSetSessionId(input, sessionUnit.SessionId);
+
             GetListPolicyName = string.Empty;
 
             return await base.GetListAsync(input);
@@ -109,7 +117,7 @@ namespace IczpNet.Chat.BaseAppServices
 
         protected virtual async Task CheckCreateBySessionUnitAsync(SessionUnit sessionUnit, TCreateInput input)
         {
-            Assert.If(sessionUnit.SessionId != input.SessionId, $"Not in same session");
+            Assert.If(input.SessionId.HasValue && sessionUnit.SessionId != input.SessionId, $"Not in same session");
 
             await SessionPermissionChecker.CheckAsync(CreateBySessionUnitPolicyName, sessionUnit);
         }
@@ -120,6 +128,8 @@ namespace IczpNet.Chat.BaseAppServices
             var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
 
             await CheckCreateBySessionUnitAsync(sessionUnit, input);
+
+            TryToSetSessionId(input, sessionUnit.SessionId);
 
             CreatePolicyName = string.Empty;
 

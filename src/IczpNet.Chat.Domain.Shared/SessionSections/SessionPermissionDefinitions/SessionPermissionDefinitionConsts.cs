@@ -20,13 +20,11 @@ public static class SessionPermissionDefinitionConsts
         public const string Create = Default + "." + nameof(Create);
         public const string Update = Default + "." + nameof(Update);
         public const string Delete = Default + "." + nameof(Delete);
-        //public const string DeleteMany = Default + "." + nameof(DeleteMany);
     }
 
     public class SessionRequestPermission
     {
         public const string Default = GroupName + "." + nameof(SessionRequestPermission);
-
         public const string Handle = Default + "." + nameof(Handle);
     }
 
@@ -37,9 +35,6 @@ public static class SessionPermissionDefinitionConsts
         public const string Update = Default + "." + nameof(Update);
         public const string Delete = Default + "." + nameof(Delete);
     }
-
-
-
 
     public class ChatObjectPermission
     {
