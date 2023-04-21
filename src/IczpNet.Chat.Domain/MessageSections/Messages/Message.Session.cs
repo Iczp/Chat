@@ -19,10 +19,6 @@ public partial class Message
     [InverseProperty(nameof(FavoriteMessage.Message))]
     public virtual IList<FavoriteMessage> FavoriteMessageList { get; set; }
 
-    [InverseProperty(nameof(MessageReminder.Message))]
-    public virtual IList<MessageReminder> MessageReminderList { get; set; }
-
-
     [ForeignKey(nameof(SessionId))]
     public virtual Session Session { get; protected set; }
 

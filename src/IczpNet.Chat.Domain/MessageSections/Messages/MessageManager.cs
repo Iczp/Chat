@@ -165,6 +165,9 @@ namespace IczpNet.Chat.MessageSections.Messages
                 }
                 var messageContent = ObjectMapper.Map<TContentInfo, TContent>(input.Content);
 
+                //remind sessionUnitId
+                entity.SetReminder(input.RemindList, ReminderTypes.Normal);
+
                 return await Task.FromResult(messageContent);
             });
 

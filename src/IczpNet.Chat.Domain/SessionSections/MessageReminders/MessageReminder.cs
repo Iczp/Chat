@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.BaseEntitys;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
@@ -20,12 +21,21 @@ namespace IczpNet.Chat.SessionSections.MessageReminders
         [ForeignKey(nameof(MessageId))]
         public virtual Message Message { get; protected set; }
 
+        public virtual ReminderTypes ReminderType { get; protected set; }
+
         protected MessageReminder() { }
 
-        public MessageReminder(Message message, SessionUnit sessionUnit)
+        internal MessageReminder(Message message, SessionUnit sessionUnit, ReminderTypes reminderType)
         {
             Message = message;
             SessionUnit = sessionUnit;
+            ReminderType = reminderType;
+        }
+
+        internal MessageReminder(Guid sessionUnitId, ReminderTypes reminderType)
+        {
+            SessionUnitId = sessionUnitId;
+            ReminderType = reminderType;
         }
 
         public override object[] GetKeys()

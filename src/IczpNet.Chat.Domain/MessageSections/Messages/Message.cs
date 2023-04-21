@@ -69,11 +69,6 @@ public partial class Message : BaseEntity<long>, ISessionId
     public virtual string ContentJson { get; protected set; }
 
     /// <summary>
-    /// Remind Everyone
-    /// </summary>
-    public virtual bool IsRemindAll { get; protected set; }
-
-    /// <summary>
     /// 扩展（键名）根据业务自义，如:"courseId"、"course-userId"、"erp-userId"
     /// </summary>
     [StringLength(100)]

@@ -4,7 +4,6 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
-using System.Collections.Generic;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
@@ -74,27 +73,11 @@ public partial class Message
         MessageType = messageType;
     }
 
-    /// <summary>
-    /// 设置提醒所有人 @Everyone
-    /// </summary>
-    public virtual void SetRemindAll()
-    {
-        SetKey(MessageKeyNames.Remind, MessageKeyNames.RemindEveryone);
-    }
-
-    /// <summary>
-    /// 设置提醒用户 @ChatObjectId
-    /// </summary>
-    /// <param name="chatObjectIdList"></param>
-    public virtual void SetRemindChatObject(List<Guid> chatObjectIdList)
-    {
-        SetKey(MessageKeyNames.Remind, string.Join(",", chatObjectIdList.ToArray()));
-    }
-
     public void SetContentProvider(Type type)
     {
         Provider = ContentProviderAttribute.GetName(type);
     }
+
     public void SetContentProvider<T>()
     {
         Provider = ContentProviderAttribute.GetName<T>();

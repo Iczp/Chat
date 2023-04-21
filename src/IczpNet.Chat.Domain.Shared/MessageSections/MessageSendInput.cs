@@ -39,5 +39,11 @@ namespace IczpNet.Chat.MessageSections.Messages
         /// </summary>
         [DefaultValue(null)]
         public virtual List<string> IgnoreConnections { get; set; } = new List<string>();
+
+        /// <summary>
+        /// Remind SessionUnitId
+        /// </summary>
+        [DefaultValue(null)]
+        public virtual List<Guid> RemindList { get; set; } = new List<Guid>();
     }
 }
