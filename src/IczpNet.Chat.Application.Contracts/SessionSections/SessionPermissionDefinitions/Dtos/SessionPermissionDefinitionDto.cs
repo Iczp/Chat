@@ -1,11 +1,13 @@
-﻿using System;
-using Volo.Abp.Application.Dtos;
+﻿using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.SessionSections.SessionPermissionDefinitions.Dtos
 {
     public class SessionPermissionDefinitionDto : EntityDto<string>
     {
+        public virtual long? GroupId { get; set; }
+
         public virtual string Name { get; set; }
+
         public virtual string Description { get; set; }
 
         //[StringLength(50)]

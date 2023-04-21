@@ -36,6 +36,14 @@ public static class SessionPermissionDefinitionConsts
         public const string Delete = Default + "." + nameof(Delete);
     }
 
+    public class SessionPermissionGroupPermission
+    {
+        public const string Default = GroupName + "." + nameof(SessionPermissionGroupPermission);
+        public const string Create = Default + "." + nameof(Create);
+        public const string Update = Default + "." + nameof(Update);
+        public const string Delete = Default + "." + nameof(Delete);
+    }
+
     public class ChatObjectPermission
     {
         public const string Default = GroupName + "." + nameof(ChatObjectPermission);

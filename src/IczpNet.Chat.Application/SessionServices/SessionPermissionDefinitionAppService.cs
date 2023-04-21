@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.AbpCommons.Extensions;
+using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
 using System;
 using System.Linq;
@@ -10,6 +11,7 @@ using IczpNet.Chat.SessionSections.SessionPermissionDefinitions.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using IczpNet.Chat.SessionSections.Sessions;
 using System.Collections.Generic;
+using IczpNet.Chat.SessionSections.SessionOrganizations;
 
 namespace IczpNet.Chat.SessionServices
 {
@@ -26,19 +28,33 @@ namespace IczpNet.Chat.SessionServices
     {
         protected IChatObjectRepository ChatObjectRepository { get; }
         protected IRepository<Session, Guid> SessionRepository { get; }
+        protected ISessionPermissionGroupManager SessionPermissionGroupManager { get; }
+
         public SessionPermissionDefinitionAppService(
             IRepository<SessionPermissionDefinition, string> repository,
             IChatObjectRepository chatObjectRepository,
-            IRepository<Session, Guid> sessionRepository) : base(repository)
+            IRepository<Session, Guid> sessionRepository,
+            ISessionPermissionGroupManager sessionPermissionGroupManager) : base(repository)
         {
             ChatObjectRepository = chatObjectRepository;
             SessionRepository = sessionRepository;
+            SessionPermissionGroupManager = sessionPermissionGroupManager;
         }
 
         protected override async Task<IQueryable<SessionPermissionDefinition>> CreateFilteredQueryAsync(SessionPermissionDefinitionGetListInput input)
         {
-            return await base.CreateFilteredQueryAsync(input)
 
+            IQueryable<long> groupIdQuery = null;
+
+            if (input.IsImportChildGroup && input.GroupIdList.IsAny())
+            {
+                groupIdQuery = (await SessionPermissionGroupManager.QueryCurrentAndAllChildsAsync(input.GroupIdList)).Select(x => x.Id);
+            }
+            return (await base.CreateFilteredQueryAsync(input))
+                //GroupId
+                .WhereIf(!input.IsImportChildGroup && input.GroupIdList.IsAny(), x => input.GroupIdList.Contains(x.GroupId.Value))
+                .WhereIf(input.IsImportChildGroup && input.GroupIdList.IsAny(), x => groupIdQuery.Contains(x.GroupId.Value))
+                .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(input.Keyword))
                 ;
         }
 
