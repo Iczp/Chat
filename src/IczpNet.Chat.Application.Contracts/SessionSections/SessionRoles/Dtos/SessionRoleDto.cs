@@ -3,8 +3,10 @@ using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.SessionSections.SessionRoles.Dtos
 {
-    public class SessionRoleDto : EntityDto<Guid>
+    public class SessionRoleDto : EntityDto<Guid>, ISessionId
     {
+        public virtual Guid? SessionId { get; set; }
+
         public virtual string Name { get; set; }
 
         public virtual bool IsDefault { get; set; }

@@ -100,10 +100,15 @@ Update-Database
 - [x] **单用户绑定多个聊天对象**
 - [x] 机器人
 - [x] 官方号(Official)
-- [x] 订阅号(Sub)
+- [x] 订阅号(Subscription)
 - [x] 掌柜(ShopKeeper)
 - [x] 店小二(ShopWaiter)
 - [x] 聊天广场(Square)
+
+### 聊天对象扩展(ChatObject)
+
+- [x] 个性签名(Motto)
+- [ ] 朋友圈
 
 
 
@@ -187,6 +192,7 @@ Update-Database
   - [x] 语音消息
   - [x] 视频消息
   - [x] 文件消息
+  - [ ] 文章消息
   - [x] HTML消息
   - [x] 链接消息
   - [x] 名片消息
