@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Threading.Tasks;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions.Dtos;
 using Volo.Abp.Application.Services;
 
@@ -13,4 +13,8 @@ public interface ISessionPermissionDefinitionAppService :
         SessionPermissionDefinitionCreateInput,
         SessionPermissionDefinitionUpdateInput>
 {
+
+    Task<SessionPermissionDefinitionDto> SetIsEnabledAsync(string id, bool isEnabled);
+
+    Task<int> SetAllIsEnabledAsync(bool isEnabled);
 }

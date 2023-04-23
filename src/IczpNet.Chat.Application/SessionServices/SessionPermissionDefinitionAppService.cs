@@ -8,10 +8,10 @@ using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions.Dtos;
-using Microsoft.AspNetCore.Mvc;
 using IczpNet.Chat.SessionSections.Sessions;
 using System.Collections.Generic;
 using IczpNet.Chat.SessionSections.SessionOrganizations;
+using Microsoft.AspNetCore.Mvc;
 
 namespace IczpNet.Chat.SessionServices
 {
@@ -26,16 +26,22 @@ namespace IczpNet.Chat.SessionServices
             SessionPermissionDefinitionUpdateInput>,
         ISessionPermissionDefinitionAppService
     {
+
+        protected override string UpdatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionPermissionDefinitionPermission.Update;
+        protected virtual string SetIsEnabledPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionPermissionDefinitionPermission.SetIsEnabled;
+        protected virtual string SetAllIsEnabledPolicyName { get; set; } //= SessionPermissionDefinitionConsts.SessionPermissionDefinitionPermission.SetAllIsEnabled;
         protected IChatObjectRepository ChatObjectRepository { get; }
         protected IRepository<Session, Guid> SessionRepository { get; }
         protected ISessionPermissionGroupManager SessionPermissionGroupManager { get; }
+        protected new ISessionPermissionDefinitionRepository Repository { get; }
 
         public SessionPermissionDefinitionAppService(
-            IRepository<SessionPermissionDefinition, string> repository,
+            ISessionPermissionDefinitionRepository repository,
             IChatObjectRepository chatObjectRepository,
             IRepository<Session, Guid> sessionRepository,
             ISessionPermissionGroupManager sessionPermissionGroupManager) : base(repository)
         {
+            Repository = repository;
             ChatObjectRepository = chatObjectRepository;
             SessionRepository = sessionRepository;
             SessionPermissionGroupManager = sessionPermissionGroupManager;
@@ -65,23 +71,37 @@ namespace IczpNet.Chat.SessionServices
                 .ThenByDescending(x => x.Sorting);
         }
 
-        [HttpPost]
         [RemoteService(false)]
-        public override Task<SessionPermissionDefinitionDetailDto> CreateAsync(SessionPermissionDefinitionCreateInput input)
-        {
-            throw new NotImplementedException();
-        }
+        public override Task<SessionPermissionDefinitionDetailDto> CreateAsync(SessionPermissionDefinitionCreateInput input) => throw new NotImplementedException();
 
         [RemoteService(false)]
-        public override Task DeleteAsync(string id)
-        {
-            return base.DeleteAsync(id);
-        }
+        public override Task DeleteAsync(string id) => base.DeleteAsync(id);
 
         [RemoteService(false)]
         public override Task DeleteManyAsync(List<string> idList)
         {
             return base.DeleteManyAsync(idList);
+        }
+
+        public async Task<SessionPermissionDefinitionDto> SetIsEnabledAsync(string id, bool isEnabled)
+        {
+            await CheckPolicyAsync(SetIsEnabledPolicyName);
+
+            var entity = await Repository.GetAsync(id);
+
+            entity.IsEnabled = isEnabled;
+
+            await Repository.UpdateAsync(entity, autoSave: true);
+
+            return await MapToGetOutputDtoAsync(entity);
+        }
+
+        [HttpPost]
+        public virtual async Task<int> SetAllIsEnabledAsync(bool isEnabled)
+        {
+            await CheckPolicyAsync(SetAllIsEnabledPolicyName);
+
+            return await Repository.BatchUpdateIsEnabledAsync(isEnabled);
         }
     }
 }

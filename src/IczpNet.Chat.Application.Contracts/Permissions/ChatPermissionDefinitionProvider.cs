@@ -13,6 +13,13 @@ public class ChatPermissionDefinitionProvider : PermissionDefinitionProvider
 
         var sessionGroup = context.AddGroup(SessionPermissionDefinitionConsts.GroupName, L($"Permission:{SessionPermissionDefinitionConsts.GroupName}"));
 
+        //SessionPermissionDefinitionPermission
+        var definitionPermission = sessionGroup.AddPermission(SessionPermissionDefinitionConsts.SessionPermissionDefinitionPermission.Default, L(SessionPermissionDefinitionConsts.SessionOrganizationPermission.Default));
+        definitionPermission.AddChild(SessionPermissionDefinitionConsts.SessionPermissionDefinitionPermission.Update, L(SessionPermissionDefinitionConsts.SessionPermissionDefinitionPermission.Update));
+        definitionPermission.AddChild(SessionPermissionDefinitionConsts.SessionPermissionDefinitionPermission.SetAllIsEnabled, L(SessionPermissionDefinitionConsts.SessionPermissionDefinitionPermission.SetAllIsEnabled));
+        definitionPermission.AddChild(SessionPermissionDefinitionConsts.SessionPermissionDefinitionPermission.SetIsEnabled, L(SessionPermissionDefinitionConsts.SessionPermissionDefinitionPermission.SetIsEnabled));
+
+
         //session organization
         var organizationPermission = sessionGroup.AddPermission(SessionPermissionDefinitionConsts.SessionOrganizationPermission.Default, L(SessionPermissionDefinitionConsts.SessionOrganizationPermission.Default));
         organizationPermission.AddChild(SessionPermissionDefinitionConsts.SessionOrganizationPermission.Create, L(SessionPermissionDefinitionConsts.SessionOrganizationPermission.Create));
