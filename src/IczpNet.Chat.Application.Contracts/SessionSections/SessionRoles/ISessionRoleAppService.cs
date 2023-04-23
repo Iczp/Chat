@@ -13,13 +13,6 @@ public interface ISessionRoleAppService :
         Guid,
         SessionRoleGetListInput,
         SessionRoleCreateInput,
-        SessionRoleUpdateInput>,
-    ICrudWithSessionUnitAppService<
-        SessionRoleDetailDto,
-        SessionRoleDto,
-        Guid,
-        SessionRoleGetListInput,
-        SessionRoleCreateInput,
         SessionRoleUpdateInput>
 {
 

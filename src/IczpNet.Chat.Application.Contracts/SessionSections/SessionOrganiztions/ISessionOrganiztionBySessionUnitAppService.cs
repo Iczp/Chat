@@ -4,21 +4,21 @@ using Volo.Abp.Application.Services;
 
 namespace IczpNet.Chat.SessionSections.SessionOrganizations
 {
-    public interface ISessionOrganizationAppService :
+    public interface ISessionOrganiztionBySessionUnitAppService :
         ICrudAppService<
             SessionOrganizationDetailDto,
             SessionOrganizationDto,
             long,
-            SessionOrganizationGetListInput,
-            SessionOrganizationCreateInput,
+            SessionOrganizationGetListBySessionUnitInput,
+            SessionOrganizationCreateBySessionUnitInput,
             SessionOrganizationUpdateInput>
         ,
         ITreeAppService<SessionOrganizationDetailDto,
             SessionOrganizationDto,
             long,
-            SessionOrganizationGetListInput,
-            SessionOrganizationCreateInput,
-            SessionOrganizationUpdateInput, SessionOrganizationInfo>
+            SessionOrganizationGetListBySessionUnitInput,
+            SessionOrganizationCreateBySessionUnitInput,
+            SessionOrganizationUpdateInput>
     {
 
     }

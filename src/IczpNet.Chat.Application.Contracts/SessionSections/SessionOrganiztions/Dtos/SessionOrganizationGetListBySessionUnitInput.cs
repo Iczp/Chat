@@ -6,7 +6,6 @@ namespace IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;
 /// <summary>
 /// SessionOrganization GetListInput
 /// </summary>
-public class SessionOrganizationGetListInput : BaseTreeGetListInput<long>, ISessionId
+public class SessionOrganizationGetListBySessionUnitInput : BaseTreeGetListInput<long>
 {
-    public virtual Guid? SessionId { get; set; }
 }

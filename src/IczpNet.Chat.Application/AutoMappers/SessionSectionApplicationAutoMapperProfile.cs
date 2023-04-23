@@ -53,6 +53,7 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
         CreateMap<SessionOrganization, SessionOrganizationDto>();
         CreateMap<SessionOrganization, SessionOrganizationDetailDto>();
         CreateMap<SessionOrganizationCreateInput, SessionOrganization>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<SessionOrganizationCreateBySessionUnitInput, SessionOrganization>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         CreateMap<SessionOrganizationUpdateInput, SessionOrganization>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         CreateMap<SessionOrganization, SessionOrganizationInfo>();
 
@@ -69,6 +70,9 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
         CreateMap<SessionRole, SessionRoleDetailDto>();
         CreateMap<SessionRole, SessionRoleSimpleDto>();
         CreateMap<SessionRoleCreateInput, SessionRole>(MemberList.None)
+            .IgnoreAllSourcePropertiesWithAnInaccessibleSetter()
+            .IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<SessionRoleCreateBySessionUnitInput, SessionRole>(MemberList.None)
             .IgnoreAllSourcePropertiesWithAnInaccessibleSetter()
             .IgnoreAllPropertiesWithAnInaccessibleSetter();
         CreateMap<SessionRoleUpdateInput, SessionRole>(MemberList.None)

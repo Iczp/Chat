@@ -27,15 +27,29 @@ namespace IczpNet.Chat.SessionSections.SessionPermissions
 
         public async Task CheckAsync(string sessionPermissionDefinitionId, SessionUnit sessionUnit)
         {
+            var definition = await Repository.GetAsync(sessionPermissionDefinitionId);
+
+            if (!definition.IsEnabled)
+            {
+                return;
+            }
+
             Assert.If(!await IsGrantedAsync(sessionPermissionDefinitionId, sessionUnit),
-                message: $"No permission:{(await Repository.GetAsync(sessionPermissionDefinitionId)).Name}",
+                message: $"No permission:{definition.Name}",
                 code: $"Permission:{sessionPermissionDefinitionId}");
         }
 
         public async Task CheckAsync(string sessionPermissionDefinitionId, Guid sessionUnitId)
         {
+            var definition = await Repository.GetAsync(sessionPermissionDefinitionId);
+
+            if (!definition.IsEnabled)
+            {
+                return;
+            }
+
             Assert.If(!await IsGrantedAsync(sessionPermissionDefinitionId, sessionUnitId),
-                message: $"No permission:{(await Repository.GetAsync(sessionPermissionDefinitionId)).Name}",
+                message: $"No permission:{definition.Name}",
                 code: $"Permission:{sessionPermissionDefinitionId}");
         }
 
@@ -48,7 +62,6 @@ namespace IczpNet.Chat.SessionSections.SessionPermissions
 
         public async Task<bool> IsGrantedAsync(string sessionPermissionDefinitionId, SessionUnit sessionUnit)
         {
-
             await Task.CompletedTask;
 
             Assert.If(!SessionPermissionDefinitionConsts.GetAll().Contains(sessionPermissionDefinitionId), $"Key does not exist:{sessionPermissionDefinitionId}");

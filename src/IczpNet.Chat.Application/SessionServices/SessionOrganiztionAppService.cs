@@ -4,7 +4,9 @@ using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.SessionSections.SessionOrganizations;
 using IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
+using IczpNet.Chat.SessionSections.Sessions;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,7 +15,7 @@ using Volo.Abp.Domain.Repositories;
 namespace IczpNet.Chat.SessionServices
 {
     public class SessionOrganizationAppService
-        : CrudWithSessionUnitTreeChatAppService<
+        : CrudTreeChatAppService<
             SessionOrganization,
             long,
             SessionOrganizationDetailDto,
@@ -24,24 +26,20 @@ namespace IczpNet.Chat.SessionServices
             SessionOrganizationInfo>,
         ISessionOrganizationAppService
     {
-        //protected override string GetPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Default;
-        //protected override string GetListPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Default;
-        //protected override string CreatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Create;
-        //protected override string UpdatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Update;
-        //protected override string DeletePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Delete;
-        protected override string GetBySessionUnitPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Default;
-        protected override string GetListBySessionUnitPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Default;
-        protected override string CreateBySessionUnitPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Create;
-        protected override string UpdateBySessionUnitPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Update;
-        protected override string DeleteBySessionUnitPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Delete;
-        protected override string DeleteManyBySessionUnitPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Delete;
+        protected override string GetPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Default;
+        protected override string GetListPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Default;
+        protected override string CreatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Create;
+        protected override string UpdatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Update;
+        protected override string DeletePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Delete;
 
         protected override ITreeManager<SessionOrganization, long> TreeManager => LazyServiceProvider.LazyGetRequiredService<ISessionOrganizationManager>();
-
+        protected IRepository<Session, Guid> SessionRepository { get; set; }
         public SessionOrganizationAppService(
-            IRepository<SessionOrganization, long> repository)
+            IRepository<SessionOrganization, long> repository,
+            IRepository<Session, Guid> sessionRepository)
             : base(repository)
         {
+            SessionRepository = sessionRepository;
         }
 
         protected override async Task<IQueryable<SessionOrganization>> CreateFilteredQueryAsync(SessionOrganizationGetListInput input)
@@ -67,7 +65,7 @@ namespace IczpNet.Chat.SessionServices
         {
             Assert.If(!await SessionRepository.AnyAsync(x => x.Id == input.SessionId), $"No such entity of sessionId:{input.SessionId}");
 
-            Assert.If(input.ParentId.HasValue && !await Repository.AnyAsync(x => x.ParentId == input.ParentId && x.SessionId == input.SessionId), $"No such entity of ParentId:{input.ParentId}");
+            Assert.If(input.ParentId.HasValue && !await Repository.AnyAsync(x => x.Id == input.ParentId && x.SessionId == input.SessionId), $"No such entity of ParentId:{input.ParentId}");
 
             return await base.CreateAsync(input);
         }
@@ -83,7 +81,6 @@ namespace IczpNet.Chat.SessionServices
 
                 Assert.If(perent.SessionId != entity.SessionId, $"Parent session is different,ParentId:{input.ParentId}");
             }
-
             return await base.UpdateAsync(id, input);
         }
     }
