@@ -198,6 +198,7 @@ Update-Database
   - [x] 名片消息
   - [x] HTML消息[H5、markdown]
   - [x] 位置消息（Location）
+  - [x] 历史聊天记录
   - [ ] 公告消息（群公告、广场公告）
   - [ ] 红包消息
 
@@ -212,6 +213,7 @@ Update-Database
   - [ ] 消息收藏夹
   - [ ] 消息已读记录器(ReadedRecorder)
   - [ ] 消息打开记录器(OpenedRecorder)
+  - [ ] **敏感词过滤\审核**
 
 
 
