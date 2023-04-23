@@ -12,6 +12,7 @@ using IczpNet.Chat.SessionSections.Sessions;
 using System.Collections.Generic;
 using IczpNet.Chat.SessionSections.SessionOrganizations;
 using Microsoft.AspNetCore.Mvc;
+using IczpNet.Chat.Permissions;
 
 namespace IczpNet.Chat.SessionServices
 {
@@ -27,9 +28,9 @@ namespace IczpNet.Chat.SessionServices
         ISessionPermissionDefinitionAppService
     {
 
-        protected override string UpdatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionPermissionDefinitionPermission.Update;
-        protected virtual string SetIsEnabledPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionPermissionDefinitionPermission.SetIsEnabled;
-        protected virtual string SetAllIsEnabledPolicyName { get; set; } //= SessionPermissionDefinitionConsts.SessionPermissionDefinitionPermission.SetAllIsEnabled;
+        protected override string UpdatePolicyName { get; set; } = ChatPermissions.SessionPermissionDefinitionPermission.Update;
+        protected virtual string SetIsEnabledPolicyName { get; set; } = ChatPermissions.SessionPermissionDefinitionPermission.SetIsEnabled;
+        protected virtual string SetAllIsEnabledPolicyName { get; set; } //= ChatPermissions.SessionPermissionDefinitionPermission.SetAllIsEnabled;
         protected IChatObjectRepository ChatObjectRepository { get; }
         protected IRepository<Session, Guid> SessionRepository { get; }
         protected ISessionPermissionGroupManager SessionPermissionGroupManager { get; }
