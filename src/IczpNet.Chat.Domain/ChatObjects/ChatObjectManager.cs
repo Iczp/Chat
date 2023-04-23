@@ -55,7 +55,6 @@ namespace IczpNet.Chat.ChatObjects
                     Code = ChatConsts.GroupAssistant,
                     Description = "我是机器人：加群",
                     IsStatic = true,
-                    ObjectType = ChatObjectTypeEnums.Robot,
                 };
                 await CreateAsync(entity);
 
@@ -77,7 +76,6 @@ namespace IczpNet.Chat.ChatObjects
                     Code = ChatConsts.PrivateAssistant,
                     Description = "我是机器人,会发送私人消息、推送服务等",
                     IsStatic = true,
-                    ObjectType = ChatObjectTypeEnums.Robot,
                 };
                 await CreateAsync(entity);
 
