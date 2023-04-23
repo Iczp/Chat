@@ -5,7 +5,7 @@ using System;
 namespace IczpNet.Chat.DataFilters
 {
 
-    public interface IChatOwner : IChatOwner<long>
+    public interface IChatOwner : IChatOwner<long?>
     {
     }
 

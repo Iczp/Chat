@@ -43,15 +43,7 @@ namespace IczpNet.Chat.BaseAppServices
         where TUpdateInput : ITreeInput<TKey>
         //where TTreeInfo : ITreeInfo<TKey>
     {
-
-
-        protected virtual string GetBySessionUnitPolicyName { get; set; }
-        protected virtual string GetListBySessionUnitPolicyName { get; set; }
-        protected virtual string CreateBySessionUnitPolicyName { get; set; }
-        protected virtual string UpdateBySessionUnitPolicyName { get; set; }
-        protected virtual string DeleteBySessionUnitPolicyName { get; set; }
         protected virtual string DeleteManyPolicyName { get; set; }
-        protected IRepository<Session, Guid> SessionRepository => LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
         protected ISessionPermissionChecker SessionPermissionChecker => LazyServiceProvider.LazyGetRequiredService<ISessionPermissionChecker>();
         protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
 
