@@ -1,5 +1,5 @@
 ﻿using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.SessionSections.ReadedRecorders;
+using IczpNet.Chat.ReadedRecorders;
 using System;
 using System.Collections.Generic;
 using System.Linq;

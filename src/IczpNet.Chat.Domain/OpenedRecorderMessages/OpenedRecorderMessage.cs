@@ -1,9 +1,9 @@
 ﻿using IczpNet.Chat.MessageSections.Messages;
-using IczpNet.Chat.SessionSections.OpenedRecorders;
+using IczpNet.Chat.OpenedRecorders;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace IczpNet.Chat.SessionSections.OpenedRecorderMessages
+namespace IczpNet.Chat.OpenedRecorderMessages
 {
     public class OpenedRecorderMessage //: BaseEntity
     {

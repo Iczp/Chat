@@ -1,10 +1,9 @@
 ﻿using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.SessionSections.Friendships;
-using IczpNet.Chat.SessionSections.OpenedRecorders;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.SessionTags;
-using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
 using System.Linq;

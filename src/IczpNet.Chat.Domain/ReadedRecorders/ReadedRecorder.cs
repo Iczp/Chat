@@ -5,7 +5,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace IczpNet.Chat.SessionSections.ReadedRecorders
+namespace IczpNet.Chat.ReadedRecorders
 {
     public class ReadedRecorder : BaseSessionEntity<Guid>, IDeviceId
     {

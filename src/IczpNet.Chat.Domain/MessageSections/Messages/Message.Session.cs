@@ -1,5 +1,5 @@
 ﻿using IczpNet.Chat.FavoriteMessages;
-using IczpNet.Chat.SessionSections.OpenedRecorders;
+using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System.Collections.Generic;

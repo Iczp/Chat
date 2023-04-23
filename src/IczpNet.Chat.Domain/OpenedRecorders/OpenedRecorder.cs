@@ -6,7 +6,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace IczpNet.Chat.SessionSections.OpenedRecorders
+namespace IczpNet.Chat.OpenedRecorders
 {
     public class OpenedRecorder : BaseSessionEntity<Guid>, IDeviceId
     {
