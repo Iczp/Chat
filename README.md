@@ -62,51 +62,7 @@ Update-Database
 
 
 
-
-
 ## Session
-
-
-
-### SessionUnit 会话单元
-
-#### chatMember 可以不用了,取消群成员、订阅号成员，替代方案 sessionUnit ，同时用于服务号、聊天广场、店铺掌柜、店小二
-
-#### 店铺消息分流
-
-#### chatObject加children 子账号，启用shopKeeper,ShopWaiter
-
-#### channels改为person-person
-
-person-room
-room-person
-person - shopkeeper
-
-#### sessionTag，role
-
-#### history last time=null
-
-#### KillSession  删除消息会话,不退群, killTime
-
-#### clearMessage 清空消息，不退群，clearTime 或MessageAutoId
-
-#### removeSession 删除消息会话,不退群
-
-#### KillSession  退出群，不删除会话，用于查看历史IsKilled，killTime，hisoryLastTime
-
-#### deleteMessages 用于删除文件助手消息
-
-####  channel要入库 chatFuctions：sendSound，vite,remind@everyone
-
-#### session ,全员禁言 is read only
-
-#### provider公众号菜单
-
-#### 会话类型sessionType 与OwnerId
-
-#### removeSession 删除消息会话,不退群 removetime
-
-### Session
 
 
 
@@ -132,3 +88,145 @@ person - shopkeeper
 ## 待实现功能
 
 ### 以前要求未实现的功能
+
+
+
+## Roadmap
+
+
+
+### 聊天对象(ChatObject)
+
+- [x] **单用户绑定多个聊天对象**
+- [x] 机器人
+- [x] 官方号(Official)
+- [x] 订阅号(Sub)
+- [x] 掌柜(ShopKeeper)
+- [x] 店小二(ShopWaiter)
+- [x] 聊天广场(Square)
+
+
+
+### 会话功能(Session)
+
+- [x] 单聊
+- [x] 群聊
+- [x] 官方通知/功能号(Official)
+- [x] 聊天广场
+- [x] 订阅号/服务号
+- [ ] 客服系统（CallCenter）
+
+
+
+### 会话验证系统（好友、加群、加广场）
+
+- [x] 好友验证、处理好友验证消息
+- [x] 加群验证，群主/管理员处理验证
+- [ ] 设置验证方式(不需要验证、验证、自动拒绝验证)
+- [ ] 自动验证
+
+
+
+### 会话单元(SessionUnit)
+
+- [x] 我的会话消息
+- [x] 会话成员(群内成员，广场成员)
+- [x] 共同的好友、共同所在的群/广场
+- [x] 群/广场内名称
+- [x] 备注好友/群
+- [x] 会话置顶
+- [x] 会话免打扰功能
+- [x] 标记为已读
+- [x] 删除会话消息
+- [x] 清除会话消息
+- [x] 会话角标
+- [x] 删除会话（不退群）
+- [x] 退出会话（退群）
+- [ ] 只读会话（通知群、官方功能、公告等）
+
+
+
+### 会话管理功能
+
+  - [x] 组织架构
+
+  - [x] 角色管理、角色权限分配
+
+  - [x] 权限管理
+
+  - [x] 权限分组
+
+  - [ ] 权限起用与禁用
+
+  - [ ] 会话标签（SessionTag）-- 
+
+  - [ ] 会话菜单功能
+
+    
+
+
+
+### 消息模板功能
+
+  - [x] 系统消息(Command)
+  - [x] 文本消息
+  - [x] 图片消息
+  - [x] 语音消息
+  - [x] 视频消息
+  - [x] 文件消息
+  - [x] HTML消息
+  - [x] 链接消息
+  - [x] 名片消息
+  - [x] HTML消息[H5、markdown]
+  - [x] 位置消息（Location）
+  - [ ] 公告消息（群公告、广场公告）
+  - [ ] 红包消息
+
+
+
+### 消息扩展功能
+
+  - [x] 转发消息
+  - [x] 群发消息
+  - [x] 引用消息
+  - [x] 消息提醒器
+
+
+
+### 客服系统（CallCenter）
+  - [x] 子账号管理
+  - [ ] 设置服务状态(挂起、接收、忙录等)
+  - [ ] 会话转接功能
+  - [ ] 消息分流功能
+  - [ ] 客户发起会话(自动加入会话)
+
+
+
+### 智能对话功能(机器人)
+
+- [x] 机器人账号
+- [x] 机器人主动发通知
+- [ ] ChatGPT
+
+
+
+### WebHook
+
+- [ ] 权限验证（APIKey）
+
+- [ ] ApiKey管理功能
+
+- [ ] Api日志
+
+  
+
+### 扩展功能
+
+  - [ ] 实现共享位置
+
+  - [ ] 扫码登录
+
+  - [ ] 文件服务器（文件预览）
+
+    
+
