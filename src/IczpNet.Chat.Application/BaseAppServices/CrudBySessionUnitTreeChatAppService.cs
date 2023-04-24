@@ -14,6 +14,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using IczpNet.Chat.SessionSections;
 using Volo.Abp;
+using Microsoft.AspNetCore.Authorization;
 
 namespace IczpNet.Chat.BaseAppServices
 {
@@ -94,6 +95,7 @@ namespace IczpNet.Chat.BaseAppServices
 
         protected virtual async Task CheckPolicyAsync(string policyName, SessionUnit sessionUnit)
         {
+            //await AuthorizationService.CheckAsync(sessionUnit, policyName);
             await SessionPermissionChecker.CheckAsync(policyName, sessionUnit);
         }
 
@@ -261,7 +263,7 @@ namespace IczpNet.Chat.BaseAppServices
 
             Assert.If(notfindIdList.Any(), $"not find {notfindIdList.Count}:[{notfindIdList.JoinAsString(",")}]");
 
-            foreach(var id in idList)
+            foreach (var id in idList)
             {
                 await TreeManager.DeleteAsync(id);
             }

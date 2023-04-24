@@ -17,7 +17,7 @@ namespace IczpNet.Chat.Authorizations
 
         public override string ToString()
         {
-            return $"{nameof(SessionPermissionRequirement)}: {PermissionName}";
+            return $"{PermissionName}";
         }
     }
 }

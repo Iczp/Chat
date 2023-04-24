@@ -1,4 +1,5 @@
 ﻿using IczpNet.AbpCommons;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
 using IczpNet.Chat.SessionSections.Sessions;
@@ -7,8 +8,10 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.Clients;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.Users;
 
 namespace IczpNet.Chat.SessionSections.SessionPermissions
 {
@@ -17,11 +20,17 @@ namespace IczpNet.Chat.SessionSections.SessionPermissions
         protected ISessionUnitManager SessionUnitManager { get; }
         protected ISessionPermissionDefinitionRepository Repository { get; }
         protected IRepository<SessionPermissionRoleGrant> SessionPermissionRoleGrantRepository { get; }
+        protected ICurrentClient CurrentClient { get; }
+        protected ICurrentUser CurrentUser { get; }
         public SessionPermissionChecker(ISessionUnitManager sessionUnitManager,
-            ISessionPermissionDefinitionRepository sessionPermissionDefinitionRepository)
+            ISessionPermissionDefinitionRepository sessionPermissionDefinitionRepository,
+            ICurrentClient currentClient,
+            ICurrentUser currentUser)
         {
             SessionUnitManager = sessionUnitManager;
             Repository = sessionPermissionDefinitionRepository;
+            CurrentClient = currentClient;
+            CurrentUser = currentUser;
         }
 
 
@@ -39,32 +48,28 @@ namespace IczpNet.Chat.SessionSections.SessionPermissions
                 code: $"Permission:{sessionPermissionDefinitionId}");
         }
 
-        public async Task CheckAsync(string sessionPermissionDefinitionId, Guid sessionUnitId)
-        {
-            var definition = await Repository.GetAsync(sessionPermissionDefinitionId);
-
-            if (!definition.IsEnabled)
-            {
-                return;
-            }
-
-            Assert.If(!await IsGrantedAsync(sessionPermissionDefinitionId, sessionUnitId),
-                message: $"No permission:{definition.Name}",
-                code: $"Permission:{sessionPermissionDefinitionId}");
-        }
-
-        public async Task<bool> IsGrantedAsync(string sessionPermissionDefinitionId, Guid sessionUnitId)
-        {
-            var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
-
-            return await IsGrantedAsync(sessionPermissionDefinitionId, sessionUnit);
-        }
-
         public async Task<bool> IsGrantedAsync(string sessionPermissionDefinitionId, SessionUnit sessionUnit)
         {
             await Task.CompletedTask;
 
+            //if (!CurrentUser.GetChatObjectIdList().Contains(sessionUnit.OwnerId))
+            //{
+            //    return false;
+            //}
+
             Assert.If(!SessionPermissionDefinitionConsts.GetAll().Contains(sessionPermissionDefinitionId), $"Key does not exist:{sessionPermissionDefinitionId}");
+
+            if (!sessionUnit.IsEnabled)
+            {
+                Logger.LogDebug($"SessionUnit is disabled, sessionUnitId:{sessionUnit.Id}, sessionPermissionDefinitionId:{sessionPermissionDefinitionId},");
+                return false;
+            }
+
+            if (sessionUnit.IsStatic)
+            {
+                Logger.LogDebug($"SessionUnit is Static, sessionUnitId:{sessionUnit.Id}, sessionPermissionDefinitionId:{sessionPermissionDefinitionId},");
+                return true;
+            }
 
             if (sessionUnit.IsCreator)
             {

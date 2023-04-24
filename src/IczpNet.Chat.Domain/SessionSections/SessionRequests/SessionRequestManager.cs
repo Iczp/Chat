@@ -251,7 +251,8 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
 
                         if (handlerSessionUnitId.HasValue)
                         {
-                            await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.SessionRequestPermission.Handle, handlerSessionUnitId.Value);
+                            var handlerSessionUnit = await SessionUnitManager.GetAsync(handlerSessionUnitId.Value);
+                            await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.SessionRequestPermission.Handle, handlerSessionUnit);
                         }
 
                         var roomOrSquareSessionUnit = await SessionUnitManager.FindAsync(sessionRequest.DestinationId.Value, sessionRequest.DestinationId.Value);

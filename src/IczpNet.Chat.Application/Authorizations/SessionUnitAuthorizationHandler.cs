@@ -30,7 +30,7 @@ namespace IczpNet.Chat.Authorizations
                 return;
             }
 
-            if (await SessionPermissionChecker.IsGrantedAsync(requirement.PermissionName, resource.Id))
+            if (await SessionPermissionChecker.IsGrantedAsync(requirement.PermissionName, resource))
             {
                 context.Succeed(requirement);
             }
