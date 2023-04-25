@@ -52,7 +52,7 @@ typeof(ChatApplicationModule),
     typeof(AbpAspNetCoreSerilogModule),
     typeof(AbpSwashbuckleModule)
     )]
-[DependsOn(typeof(ChatAdminApplicationModule))]
+[DependsOn(typeof(ChatManagementApplicationModule))]
 public class ChatHttpApiHostModule : AbpModule
 {
 
@@ -85,7 +85,7 @@ public class ChatHttpApiHostModule : AbpModule
                 .Create(typeof(ChatApplicationModule).Assembly);
             options
                 .ConventionalControllers
-                .Create(typeof(ChatAdminApplicationModule).Assembly);
+                .Create(typeof(ChatManagementApplicationModule).Assembly);
         });
 
         Configure<AbpDbContextOptions>(options =>
@@ -107,8 +107,8 @@ public class ChatHttpApiHostModule : AbpModule
                 options.FileSets.ReplaceEmbeddedByPhysical<ChatApplicationContractsModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}..{0}src{0}IczpNet.Chat.Application.Contracts", Path.DirectorySeparatorChar)));
                 options.FileSets.ReplaceEmbeddedByPhysical<ChatApplicationModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}..{0}src{0}IczpNet.Chat.Application", Path.DirectorySeparatorChar)));
 
-                options.FileSets.ReplaceEmbeddedByPhysical<ChatAdminApplicationContractsModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}..{0}src{0}IczpNet.Chat.AdminApplication.Contracts", Path.DirectorySeparatorChar)));
-                options.FileSets.ReplaceEmbeddedByPhysical<ChatAdminApplicationModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}..{0}src{0}IczpNet.Chat.AdminApplication", Path.DirectorySeparatorChar)));
+                options.FileSets.ReplaceEmbeddedByPhysical<ChatManagementApplicationContractsModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}..{0}src{0}IczpNet.Chat.ManagementApplication.Contracts", Path.DirectorySeparatorChar)));
+                options.FileSets.ReplaceEmbeddedByPhysical<ChatManagementApplicationModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}..{0}src{0}IczpNet.Chat.ManagementApplication", Path.DirectorySeparatorChar)));
             });
         }
 

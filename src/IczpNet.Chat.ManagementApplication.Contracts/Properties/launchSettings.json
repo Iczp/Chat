@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "IczpNet.Chat.Application.Contracts": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:63295;http://localhost:63296"
+    }
+  }
+}
