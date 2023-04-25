@@ -75,6 +75,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return base.CheckPolicyAsync(policyName);
     }
 
+    
+
     protected virtual async Task<SessionUnit> GetEntityAsync(Guid id, bool checkIsKilled = true)
     {
         var entity = await Repository.GetAsync(id);

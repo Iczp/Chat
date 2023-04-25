@@ -9,7 +9,7 @@ using Volo.Abp.DependencyInjection;
 
 namespace IczpNet.Chat.Authorizations
 {
-    public class SessionUnitAuthorizationHandler : AuthorizationHandler<SessionPermissionRequirement, SessionUnit>, ISingletonDependency
+    public class SessionUnitAuthorizationHandler : AuthorizationHandler<SessionUnitPermissionRequirement, SessionUnit>, ISingletonDependency
     {
         protected ISessionPermissionChecker SessionPermissionChecker { get; }
         protected ILogger<SessionUnitAuthorizationHandler> Logger { get; }
@@ -21,7 +21,7 @@ namespace IczpNet.Chat.Authorizations
             Logger = logger;
         }
 
-        protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, SessionPermissionRequirement requirement, SessionUnit resource)
+        protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, SessionUnitPermissionRequirement requirement, SessionUnit resource)
         {
             Logger.LogInformation($"requirement:{requirement}");
 

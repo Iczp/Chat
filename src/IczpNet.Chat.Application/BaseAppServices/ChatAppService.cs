@@ -1,5 +1,7 @@
 ﻿using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Localization;
+using IczpNet.Chat.SessionSections.SessionUnits;
+using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,9 +22,9 @@ public abstract class ChatAppService : ApplicationService
     }
 
     protected virtual async Task<PagedResultDto<TOuputDto>> GetPagedListAsync<TEntity, TOuputDto>(
-        IQueryable<TEntity> query, 
-        int maxResultCount = 10, 
-        int skipCount = 0, string sorting = null, 
+        IQueryable<TEntity> query,
+        int maxResultCount = 10,
+        int skipCount = 0, string sorting = null,
         Func<IQueryable<TEntity>, IQueryable<TEntity>> action = null)
     {
         var totalCount = await AsyncExecuter.CountAsync(query);
@@ -46,10 +48,30 @@ public abstract class ChatAppService : ApplicationService
     }
 
     protected virtual Task<PagedResultDto<TOuputDto>> GetPagedListAsync<TEntity, TOuputDto>(
-        IQueryable<TEntity> query, 
-        PagedAndSortedResultRequestDto input, 
+        IQueryable<TEntity> query,
+        PagedAndSortedResultRequestDto input,
         Func<IQueryable<TEntity>, IQueryable<TEntity>> action = null)
     {
         return GetPagedListAsync<TEntity, TOuputDto>(query, input.MaxResultCount, input.SkipCount, input.Sorting, action);
+    }
+
+    protected virtual async Task CheckPolicyAsync(string policyName, ChatObject owner)
+    {
+        if (string.IsNullOrEmpty(policyName))
+        {
+            return;
+        }
+
+        await AuthorizationService.CheckAsync(owner, policyName);
+    }
+
+    protected virtual async Task CheckPolicyAsync(string policyName, SessionUnit sessionUnit)
+    {
+        if (string.IsNullOrEmpty(policyName))
+        {
+            return;
+        }
+
+        await AuthorizationService.CheckAsync(sessionUnit, policyName);
     }
 }

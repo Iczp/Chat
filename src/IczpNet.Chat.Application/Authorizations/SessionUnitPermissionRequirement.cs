@@ -4,11 +4,11 @@ using Volo.Abp;
 
 namespace IczpNet.Chat.Authorizations
 {
-    public class SessionPermissionRequirement : IAuthorizationRequirement
+    public class SessionUnitPermissionRequirement : IAuthorizationRequirement
     {
         public string PermissionName { get; }
 
-        public SessionPermissionRequirement([NotNull] string permissionName)
+        public SessionUnitPermissionRequirement([NotNull] string permissionName)
         {
             Check.NotNull(permissionName, nameof(permissionName));
 

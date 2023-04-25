@@ -8,6 +8,8 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using IczpNet.AbpCommons.DataFilters;
+using IczpNet.Chat.SessionSections.SessionUnits;
+using Microsoft.AspNetCore.Authorization;
 
 namespace IczpNet.Chat.BaseAppServices;
 
@@ -61,7 +63,8 @@ public abstract class CrudChatAppService<
     {
         return entity.GetType().GetProperty(nameof(IName.Name)) != null;
     }
-    protected virtual void TrySetName(TEntity entity, string name)
+
+    protected virtual void TryToSetName(TEntity entity, string name)
     {
         if (entity is IName && HasNameProperty(entity))
         {
@@ -79,5 +82,26 @@ public abstract class CrudChatAppService<
 
             methodInfo.Invoke(entity, new object[] { name });
         }
+    }
+
+    protected virtual async Task CheckPolicyAsync(string policyName, ChatObject owner)
+    {
+
+        if (string.IsNullOrEmpty(policyName))
+        {
+            return;
+        }
+
+        await AuthorizationService.CheckAsync(owner, policyName);
+    }
+
+    protected virtual async Task CheckPolicyAsync(string policyName, SessionUnit sessionUnit)
+    {
+        if (string.IsNullOrEmpty(policyName))
+        {
+            return;
+        }
+
+        await AuthorizationService.CheckAsync(sessionUnit, policyName);
     }
 }
