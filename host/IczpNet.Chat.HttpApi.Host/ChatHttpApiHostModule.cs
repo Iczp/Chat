@@ -52,6 +52,7 @@ typeof(ChatApplicationModule),
     typeof(AbpAspNetCoreSerilogModule),
     typeof(AbpSwashbuckleModule)
     )]
+[DependsOn(typeof(ChatAdminApplicationModule))]
 public class ChatHttpApiHostModule : AbpModule
 {
 
@@ -82,6 +83,9 @@ public class ChatHttpApiHostModule : AbpModule
             options
                 .ConventionalControllers
                 .Create(typeof(ChatApplicationModule).Assembly);
+            options
+                .ConventionalControllers
+                .Create(typeof(ChatAdminApplicationModule).Assembly);
         });
 
         Configure<AbpDbContextOptions>(options =>
@@ -102,6 +106,9 @@ public class ChatHttpApiHostModule : AbpModule
                 options.FileSets.ReplaceEmbeddedByPhysical<ChatDomainModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}..{0}src{0}IczpNet.Chat.Domain", Path.DirectorySeparatorChar)));
                 options.FileSets.ReplaceEmbeddedByPhysical<ChatApplicationContractsModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}..{0}src{0}IczpNet.Chat.Application.Contracts", Path.DirectorySeparatorChar)));
                 options.FileSets.ReplaceEmbeddedByPhysical<ChatApplicationModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}..{0}src{0}IczpNet.Chat.Application", Path.DirectorySeparatorChar)));
+
+                options.FileSets.ReplaceEmbeddedByPhysical<ChatAdminApplicationContractsModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}..{0}src{0}IczpNet.Chat.AdminApplication.Contracts", Path.DirectorySeparatorChar)));
+                options.FileSets.ReplaceEmbeddedByPhysical<ChatAdminApplicationModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}..{0}src{0}IczpNet.Chat.AdminApplication", Path.DirectorySeparatorChar)));
             });
         }
 

@@ -87,7 +87,7 @@ namespace IczpNet.Chat.BaseAppServices
         [RemoteService(false)]
         public override Task<DateTime> RepairDataAsync() => base.RepairDataAsync();
 
-        [Obsolete("CheckPolicyAsync(string policyName, SessionUnit sessionUnit)", true)]
+        //[Obsolete("CheckPolicyAsync(string policyName, SessionUnit sessionUnit)", true)]
         protected override Task CheckPolicyAsync(string policyName)
         {
             throw new Exception("CheckPolicyAsync(string policyName, SessionUnit sessionUnit)");

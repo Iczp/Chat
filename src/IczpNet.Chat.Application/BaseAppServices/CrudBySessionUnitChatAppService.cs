@@ -81,16 +81,16 @@ namespace IczpNet.Chat.BaseAppServices
         [RemoteService(false)]
         public override Task DeleteManyAsync(List<TKey> idList) => base.DeleteManyAsync(idList);
 
-        [Obsolete("CheckPolicyAsync(string policyName, SessionUnit sessionUnit)", true)]
+        //[Obsolete("CheckPolicyAsync(string policyName, SessionUnit sessionUnit)", true)]
         protected override Task CheckPolicyAsync(string policyName)
         {
             throw new Exception("CheckPolicyAsync(string policyName, SessionUnit sessionUnit)");
         }
 
-        protected virtual async Task CheckPolicyAsync(string policyName, SessionUnit sessionUnit)
-        {
-            await SessionPermissionChecker.CheckAsync(policyName, sessionUnit);
-        }
+        //protected virtual async Task CheckPolicyAsync(string policyName, SessionUnit sessionUnit)
+        //{
+        //    await SessionPermissionChecker.CheckAsync(policyName, sessionUnit);
+        //}
 
         protected virtual Task CheckGetPolicyAsync(SessionUnit sessionUnit, TEntity entity)
         {

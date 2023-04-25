@@ -34,6 +34,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\IczpNet.Chat.AdminApplication\IczpNet.Chat.AdminApplication.csproj" />
     <ProjectReference Include="..\..\src\IczpNet.Chat.HttpApi\IczpNet.Chat.HttpApi.csproj" />
     <ProjectReference Include="..\..\src\IczpNet.Chat.Application\IczpNet.Chat.Application.csproj" />
     <ProjectReference Include="..\..\src\IczpNet.Chat.EntityFrameworkCore\IczpNet.Chat.EntityFrameworkCore.csproj" />

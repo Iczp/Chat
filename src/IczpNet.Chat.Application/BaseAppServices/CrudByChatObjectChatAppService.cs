@@ -92,23 +92,23 @@ namespace IczpNet.Chat.BaseAppServices
         [RemoteService(false)]
         public override Task DeleteManyAsync(List<TKey> idList) => base.DeleteManyAsync(idList);
 
-        [Obsolete("CheckPolicyAsync(string policyName, ChatObject owner)", true)]
+        //[Obsolete("CheckPolicyAsync(string policyName, ChatObject owner)", true)]
         protected override Task CheckPolicyAsync(string policyName)
         {
             throw new Exception("CheckPolicyAsync(string policyName, ChatObject owner)");
         }
 
-        protected virtual async Task CheckPolicyAsync(string policyName, ChatObject owner)
-        {
-            //await AuthorizationService.CheckAsync(owner, policyName);
+        //protected virtual async Task CheckPolicyAsync(string policyName, ChatObject owner)
+        //{
+        //    //await AuthorizationService.CheckAsync(owner, policyName);
 
-            await SessionPermissionChecker.CheckLoginAsync(owner);
+        //    await SessionPermissionChecker.CheckLoginAsync(owner);
 
-            if (!string.IsNullOrWhiteSpace(policyName))
-            {
-                await SessionPermissionChecker.CheckAsync(policyName, owner);
-            }
-        }
+        //    if (!string.IsNullOrWhiteSpace(policyName))
+        //    {
+        //        await SessionPermissionChecker.CheckAsync(policyName, owner);
+        //    }
+        //}
 
         protected virtual Task CheckGetPolicyAsync(ChatObject owner, TEntity entity)
         {

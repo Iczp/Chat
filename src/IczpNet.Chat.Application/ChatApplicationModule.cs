@@ -41,7 +41,7 @@ public class ChatApplicationModule : AbpModule
 
             foreach (var item in SessionPermissionDefinitionConsts.GetAll())
             {
-                var requirement = new SessionPermissionRequirement(item);
+                var requirement = new SessionUnitPermissionRequirement(item);
                 options.AddPolicy(item, policy => policy.Requirements.Add(requirement));
             }
 
