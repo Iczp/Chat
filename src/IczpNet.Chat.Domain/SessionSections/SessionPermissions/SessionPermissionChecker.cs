@@ -1,5 +1,6 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
 using IczpNet.Chat.SessionSections.Sessions;
@@ -96,6 +97,44 @@ namespace IczpNet.Chat.SessionSections.SessionPermissions
             return false;
         }
 
+        public virtual async Task CheckAsync(string sessionPermissionDefinitionId, ChatObject chatObject)
+        {
+            await Task.CompletedTask;
 
+            var definition = await Repository.GetAsync(sessionPermissionDefinitionId);
+
+            Assert.If(!await IsGrantedAsync(sessionPermissionDefinitionId, chatObject),
+               message: $"No permission:{definition.Name}",
+               code: $"Permission:{sessionPermissionDefinitionId}");
+        }
+
+        public async Task<bool> IsGrantedAsync(string sessionPermissionDefinitionId, ChatObject chatObject)
+        {
+            await Task.CompletedTask;
+
+            if (!chatObject.IsEnabled)
+            {
+                Logger.LogDebug($"ChatObject is disabled, Id:{chatObject.Id}, sessionPermissionDefinitionId:{sessionPermissionDefinitionId},");
+                return false;
+            }
+
+            return CurrentUser.GetChatObjectIdList().Contains(chatObject.Id);
+        }
+
+        public virtual async Task<bool> IsLoginAsync(ChatObject chatObject)
+        {
+            await Task.CompletedTask;
+
+            return CurrentUser.GetChatObjectIdList().Contains(chatObject.Id);
+        }
+
+        public virtual async Task CheckLoginAsync(ChatObject chatObject)
+        {
+            Assert.If(!CurrentUser.Id.HasValue, message: $"Not Login:{chatObject.Id}", code: $"NotLogin");
+
+            Assert.If(!await IsLoginAsync(chatObject),
+            message: $"ChatObjectId:{chatObject.Id} is unbound CurrentUserId:{CurrentUser.Id}",
+            code: $"Unbound");
+        }
     }
 }

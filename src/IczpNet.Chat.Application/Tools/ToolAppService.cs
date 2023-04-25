@@ -1,5 +1,5 @@
 ﻿using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
+using IczpNet.Chat.Permissions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System;

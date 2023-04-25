@@ -26,7 +26,7 @@ namespace IczpNet.Chat.ChatObjects
     [Index(nameof(Code))]
     [Index(nameof(Name))]
     [Index(nameof(FullPath))]
-    public class ChatObject : BaseTreeEntity<ChatObject, long>, IName, IChatObject, IHasSimpleStateCheckers<ChatObject>, IIsStatic, IIsActive, IIsPublic
+    public class ChatObject : BaseTreeEntity<ChatObject, long>, IName, IChatObject, IHasSimpleStateCheckers<ChatObject>, IIsStatic, IIsActive, IIsPublic, IIsEnabled
     {
         public List<ISimpleStateChecker<ChatObject>> StateCheckers { get; }
 
@@ -76,6 +76,8 @@ namespace IczpNet.Chat.ChatObjects
         public virtual bool IsActive { get; set; }
 
         public virtual bool IsPublic { get; set; }
+
+        public virtual bool IsEnabled { get; set; } = true;
 
         #region Categorys
         public virtual IList<ChatObjectCategoryUnit> ChatObjectCategoryUnitList { get; set; }
@@ -183,6 +185,7 @@ namespace IczpNet.Chat.ChatObjects
 
         [InverseProperty(nameof(Mottos.Motto.Owner))]
         public virtual IList<Motto> MottoList { get; set; }
+
         #endregion
 
         protected ChatObject()
@@ -218,6 +221,11 @@ namespace IczpNet.Chat.ChatObjects
         {
             MottoId = motto.Id;
             Motto = motto;
+        }
+
+        public virtual void SetVerificationMethod(VerificationMethods verificationMethod)
+        {
+            VerificationMethod = verificationMethod;
         }
     }
 }

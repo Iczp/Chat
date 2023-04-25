@@ -54,6 +54,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="SessionSections\SessionPermissionDefinitions\" />
     <Folder Include="SessionSections\SessionPermissions\Dtos\" />
   </ItemGroup>
 

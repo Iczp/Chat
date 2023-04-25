@@ -1,9 +1,10 @@
 ﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons.Extensions;
 using IczpNet.AbpTrees;
 using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionOrganizations;
 using IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;
-using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.Sessions;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -47,7 +48,7 @@ namespace IczpNet.Chat.SessionServices
             Assert.If(!input.IsEnabledParentId && input.ParentId.HasValue, "When [IsEnabledParentId]=false,then [ParentId] != null");
 
             return (await Repository.GetQueryableAsync())
-                //.WhereIf(input.Depth.HasValue, (x) => x.Depth == input.Depth)
+                .WhereIf(input.DepthList.IsAny(), (x) => input.DepthList.Contains(x.Depth))
                 .WhereIf(input.SessionId.HasValue, (x) => x.SessionId == input.SessionId)
                 .WhereIf(input.IsEnabledParentId, (x) => x.ParentId == input.ParentId)
                 .WhereIf(!string.IsNullOrWhiteSpace(input.Keyword), x => x.Name.Contains(input.Keyword));

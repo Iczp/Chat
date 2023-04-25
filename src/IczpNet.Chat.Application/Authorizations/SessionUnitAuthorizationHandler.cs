@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
+﻿using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionPermissions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.AspNetCore.Authorization;

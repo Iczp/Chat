@@ -78,6 +78,15 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return Repository.GetAsync(id);
     }
 
+    public virtual async Task<SessionUnit> CreateIfNotContainsAsync(SessionUnit sessionUnit)
+    {
+        var entity = await FindAsync(sessionUnit.OwnerId, sessionUnit.DestinationId.Value);
+
+        entity ??= await Repository.InsertAsync(sessionUnit, autoSave: true);
+
+        return entity;
+    }
+
     public Task<SessionUnit> SetMemberNameAsync(SessionUnit entity, string memberName)
     {
         return SetEntityAsync(entity, x => x.SetMemberName(memberName));
@@ -270,5 +279,6 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
 
         return await AsyncExecuter.CountAsync(query);
     }
+
 
 }

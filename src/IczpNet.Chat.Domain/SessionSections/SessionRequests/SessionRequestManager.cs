@@ -13,12 +13,12 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
 using System.Linq;
-using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using System.Collections.Generic;
 using Volo.Abp.Uow;
 using Volo.Abp.Settings;
 using IczpNet.Chat.Settings;
 using IczpNet.Chat.SessionSections.SessionPermissions;
+using IczpNet.Chat.Permissions;
 
 namespace IczpNet.Chat.SessionSections.SessionRequests
 {
@@ -105,6 +105,14 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                 entity = await Repository.InsertAsync(entity, autoSave: true);
             }
 
+            //VerificationMethods is none
+            if (destination.VerificationMethod == VerificationMethods.None)
+            {
+                await HandleRequestAsync(entity.Id, true, "VerificationMethods.None", null);
+
+                return entity;
+            }
+
             switch (destination.ObjectType)
             {
                 case ChatObjectTypeEnums.Personal:
@@ -185,7 +193,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
             });
         }
 
-        public async Task<SessionRequest> HandleRequestAsync(Guid sessionRequestId, bool isAgreed, string handlMessage, Guid? handlerSessionUnitId)
+        public virtual async Task<SessionRequest> HandleRequestAsync(Guid sessionRequestId, bool isAgreed, string handlMessage, Guid? handlerSessionUnitId)
         {
             var sessionRequest = await Repository.GetAsync(sessionRequestId);
 
@@ -199,7 +207,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
 
                 var session = await SessionGenerator.MakeAsync(sessionRequest.Owner, sessionRequest.Destination);
 
-                session.AddSessionUnit(new SessionUnit(
+                ownerSessionUnit ??= await SessionUnitManager.CreateIfNotContainsAsync(new SessionUnit(
                       id: GuidGenerator.Create(),
                       session: session,
                       ownerId: sessionRequest.OwnerId,
@@ -214,14 +222,12 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
 
                 switch (sessionRequest.Destination.ObjectType)
                 {
+                    case ChatObjectTypeEnums.Robot:
                     case ChatObjectTypeEnums.Personal:
                     case ChatObjectTypeEnums.Customer:
                     case ChatObjectTypeEnums.ShopKeeper:
-                        var destinationSessionUnit = await SessionUnitManager.FindAsync(sessionRequest.DestinationId.Value, sessionRequest.OwnerId);
 
-                        if (destinationSessionUnit == null)
-                        {
-                            destinationSessionUnit = session.AddSessionUnit(new SessionUnit(
+                        var destinationSessionUnit = await SessionUnitManager.CreateIfNotContainsAsync(new SessionUnit(
                               id: GuidGenerator.Create(),
                               session: session,
                               ownerId: sessionRequest.Destination.Id,
@@ -233,9 +239,6 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                               joinWay: JoinWays.Normal,
                               inviterUnitId: null,
                               isInputEnabled: true));
-
-                            await UnitOfWorkManager.Current.SaveChangesAsync();
-                        }
 
                         await MessageSender.SendCmdAsync(destinationSessionUnit, new MessageSendInput<CmdContentInfo>()
                         {
@@ -255,11 +258,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                             await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.SessionRequestPermission.Handle, handlerSessionUnit);
                         }
 
-                        var roomOrSquareSessionUnit = await SessionUnitManager.FindAsync(sessionRequest.DestinationId.Value, sessionRequest.DestinationId.Value);
-
-                        if (roomOrSquareSessionUnit == null)
-                        {
-                            roomOrSquareSessionUnit = session.AddSessionUnit(new SessionUnit(
+                        var roomOrSquareSessionUnit = await SessionUnitManager.CreateIfNotContainsAsync(new SessionUnit(
                                  id: GuidGenerator.Create(),
                                  session: session,
                                  ownerId: sessionRequest.Destination.Id,
@@ -272,14 +271,11 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                                  inviterUnitId: null,
                                  isInputEnabled: true));
 
-                            await UnitOfWorkManager.Current.SaveChangesAsync();
-                        }
-
                         await MessageSender.SendCmdAsync(roomOrSquareSessionUnit, new MessageSendInput<CmdContentInfo>()
                         {
                             Content = new CmdContentInfo()
                             {
-                                Text = $"欢迎 '{sessionRequest.Owner.Name}' 加入 '{sessionRequest.Destination.Name}'"
+                                Text = $"欢迎 '<a session-unit-id=\"{ownerSessionUnit.Id}\">{sessionRequest.Owner.Name}</a>' 加入 '{sessionRequest.Destination.Name}'"
                             }
                         });
                         break;

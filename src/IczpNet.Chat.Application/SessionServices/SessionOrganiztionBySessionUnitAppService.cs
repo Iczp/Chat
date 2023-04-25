@@ -1,9 +1,10 @@
 ﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons.Extensions;
 using IczpNet.AbpTrees;
 using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionOrganizations;
 using IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;
-using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
@@ -46,7 +47,7 @@ namespace IczpNet.Chat.SessionServices
 
             return (await Repository.GetQueryableAsync())
                 .Where(x => x.SessionId == sessionUnit.SessionId)
-                //.WhereIf(input.Depth.HasValue, (x) => x.Depth == input.Depth)
+                .WhereIf(input.DepthList.IsAny(), (x) => input.DepthList.Contains(x.Depth))
                 .WhereIf(input.IsEnabledParentId, (x) => x.ParentId == input.ParentId)
                 .WhereIf(!string.IsNullOrWhiteSpace(input.Keyword), x => x.Name.Contains(input.Keyword));
         }
@@ -62,7 +63,7 @@ namespace IczpNet.Chat.SessionServices
         {
             Assert.If(input.ParentId.HasValue && !await Repository.AnyAsync(x => x.Id == input.ParentId && x.SessionId == sessionUnit.SessionId), $"No such entity of ParentId:{input.ParentId}");
 
-             await base.CheckCreatePolicyAsync(sessionUnit, input);
+            await base.CheckCreatePolicyAsync(sessionUnit, input);
         }
 
         protected override async Task CheckUpdatePolicyAsync(SessionUnit sessionUnit, SessionOrganization entity, SessionOrganizationUpdateInput input)

@@ -423,6 +423,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         internal virtual void SetIsCreator(bool v)
         {
             IsCreator = v;
+            IsStatic = v;
         }
     }
 }

@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using IczpNet.AbpCommons.Extensions;
+using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;

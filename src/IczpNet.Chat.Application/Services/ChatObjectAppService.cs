@@ -5,6 +5,7 @@ using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjectCategorys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.SessionSections.SessionPermissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -187,6 +188,12 @@ namespace IczpNet.Chat.Services
             await ChatObjectManager.UpdateAsync(entity, isUnique: true);
 
             return await MapToGetOutputDtoAsync(entity);
+        }
+
+        [HttpPost]
+        public virtual Task<ChatObjectDto> SetVerificationMethodAsync(long id, VerificationMethods verificationMethod)
+        {
+            return UpdateEntityAsync(id, entity => entity.SetVerificationMethod(verificationMethod));
         }
     }
 }

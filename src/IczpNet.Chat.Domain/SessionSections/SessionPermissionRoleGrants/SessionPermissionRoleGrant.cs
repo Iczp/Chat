@@ -1,6 +1,7 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.BaseEntitys;
+using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using System;

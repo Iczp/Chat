@@ -17,7 +17,7 @@ using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.RoomSections.Rooms;
 
-public class RoomAppService : ChatAppService, IRoomAppService
+public class RoomAdminAppService : ChatAppService, IRoomAdminAppService
 {
     public virtual string InvitePolicyName { get; set; }
     public virtual string CreateRoomPolicyName { get; set; }
@@ -26,7 +26,7 @@ public class RoomAppService : ChatAppService, IRoomAppService
     protected IChatObjectCategoryManager ChatObjectCategoryManager { get; }
     protected ISessionPermissionChecker SessionPermissionChecker { get; }
 
-    public RoomAppService(IRoomManager roomManager,
+    public RoomAdminAppService(IRoomManager roomManager,
         IChatObjectCategoryManager chatObjectCategoryManager,
         ISessionUnitManager sessionUnitManager,
         ISessionPermissionChecker sessionPermissionChecker)
@@ -58,6 +58,21 @@ public class RoomAppService : ChatAppService, IRoomAppService
         return Task.FromResult(ObjectMapper.Map<ChatObject, ChatObjectDto>(chatObject));
     }
 
+    [HttpPost]
+    public virtual async Task<ChatObjectDto> CreateByAllUsersAsync(string name)
+    {
+        var entity = await RoomManager.CreateByAllUsersAsync(name);
+
+        return await MapToChatObjectDtoAsync(entity);
+    }
+
+    [HttpPost]
+    public virtual async Task<ChatObjectDto> CreateByAllUsersWithManyAsync(string name)
+    {
+        var entity = await RoomManager.CreateByAllUsersWithManyAsync(name);
+
+        return await MapToChatObjectDtoAsync(entity);
+    }
 
     [HttpPost]
     public virtual async Task<List<SessionUnitSenderInfo>> InviteAsync(InviteInput input)

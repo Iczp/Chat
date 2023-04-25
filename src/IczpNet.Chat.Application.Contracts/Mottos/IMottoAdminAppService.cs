@@ -4,13 +4,13 @@ using Volo.Abp.Application.Services;
 
 namespace IczpNet.Chat.Mottos;
 
-public interface IMottoAppService :
-    ICrudByChatObjectChatAppService<
+public interface IMottoAdminAppService :
+    ICrudAppService<
         MottoDetailDto,
         MottoDto,
         Guid,
-        MottoGetListInput,
-        MottoCreateInput,
+        MottoAdminGetListInput,
+        MottoAdminCreateInput,
         MottoUpdateInput>
 {
 }

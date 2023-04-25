@@ -9,9 +9,9 @@ using Volo.Abp.FluentValidation;
 using IczpNet.Pusher;
 using Microsoft.AspNetCore.Authorization;
 using IczpNet.Chat.Authorizations;
-using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using NUglify.Helpers;
 using Polly;
+using IczpNet.Chat.Permissions;
 
 namespace IczpNet.Chat;
 [DependsOn(
@@ -40,13 +40,21 @@ public class ChatApplicationModule : AbpModule
             //TODO: Rename UpdatePolicy/DeletePolicy since it's candidate to conflicts with other modules!
             //options.AddPolicy("BloggingUpdatePolicy", policy => policy.Requirements.Add(CommonOperations.Update));
             //options.AddPolicy("BloggingDeletePolicy", policy => policy.Requirements.Add(CommonOperations.Delete));
+
             foreach (var item in SessionPermissionDefinitionConsts.GetAll())
             {
                 var requirement = new SessionPermissionRequirement(item);
                 options.AddPolicy(item, policy => policy.Requirements.Add(requirement));
             }
+
+            foreach (var item in ChatObjectPermissionDefinitionConsts.GetAll())
+            {
+                var requirement = new ChatObjectRequirement(item);
+                options.AddPolicy(item, policy => policy.Requirements.Add(requirement));
+            }
         });
 
         context.Services.AddSingleton<IAuthorizationHandler, SessionUnitAuthorizationHandler>();
+        context.Services.AddSingleton<IAuthorizationHandler, ChatObjectAuthorizationHandler>();
     }
 }

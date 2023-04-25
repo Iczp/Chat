@@ -178,13 +178,20 @@ namespace IczpNet.Chat.ChatObjects
             throw new NotImplementedException();
         }
 
-        public async Task<ChatObject> SetEnitiyAsync(long id, Action<ChatObject> action, bool isUnique = true)
+        public async Task<ChatObject> UpdateAsync(long id, Action<ChatObject> action, bool isUnique = true)
         {
             var entity = await Repository.GetAsync(id);
 
             action?.Invoke(entity);
 
-            return await base.UpdateAsync(entity, isUnique: false);
+            return await base.UpdateAsync(entity, isUnique: isUnique);
+        }
+
+        public async Task<ChatObject> UpdateAsync(ChatObject entity, Action<ChatObject> action, bool isUnique = true)
+        {
+            action?.Invoke(entity);
+
+            return await base.UpdateAsync(entity, isUnique: isUnique);
         }
     }
 }

@@ -432,7 +432,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
 
     public async Task<ChatObject> UpdateNameAsync(SessionUnit sessionUnit, string name)
     {
-        var entity = await ChatObjectManager.SetEnitiyAsync(sessionUnit.DestinationId.Value, x => x.SetName(name), isUnique: false);
+        var entity = await ChatObjectManager.UpdateAsync(sessionUnit.DestinationId.Value, x => x.SetName(name), isUnique: false);
 
         await SendRoomMessageAsync(sessionUnit.DestinationId.Value, new CmdContentInfo()
         {
@@ -443,7 +443,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
 
     public async Task<ChatObject> UpdatePortraitAsync(SessionUnit sessionUnit, string portrait)
     {
-        var entity = await ChatObjectManager.SetEnitiyAsync(sessionUnit.DestinationId.Value, x => x.SetPortrait(portrait), isUnique: false);
+        var entity = await ChatObjectManager.UpdateAsync(sessionUnit.DestinationId.Value, x => x.SetPortrait(portrait), isUnique: false);
 
         await SendRoomMessageAsync(sessionUnit.DestinationId.Value, new CmdContentInfo()
         {
@@ -452,7 +452,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         return entity;
     }
 
-    public async Task TransferCreatorAsync(Guid sessionUnitId, Guid targetSessionUnitId)
+    public async Task TransferCreatorAsync(Guid sessionUnitId, Guid targetSessionUnitId, bool isSendMessageToRoom = true)
     {
         var sessionUnit = await SessionUnitRepository.GetAsync(sessionUnitId);
 
@@ -466,9 +466,12 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
 
         targetSessionUnit.SetIsCreator(true);
 
-        await SendRoomMessageAsync(sessionUnit.DestinationId.Value, new CmdContentInfo()
+        if(isSendMessageToRoom)
         {
-            Text = $"<a session-unit-id=\"{sessionUnit.Id}\">{sessionUnit.Owner.Name}</a>转让群，<a session-unit-id=\"{targetSessionUnit.Id}\">{targetSessionUnit.Owner.Name}</a> 成为群主",
-        });
+            await SendRoomMessageAsync(sessionUnit.DestinationId.Value, new CmdContentInfo()
+            {
+                Text = $"<a session-unit-id=\"{sessionUnit.Id}\">{sessionUnit.Owner.Name}</a>转让群，<a session-unit-id=\"{targetSessionUnit.Id}\">{targetSessionUnit.Owner.Name}</a> 成为群主",
+            });
+        }
     }
 }

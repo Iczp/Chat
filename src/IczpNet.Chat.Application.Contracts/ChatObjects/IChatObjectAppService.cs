@@ -1,5 +1,6 @@
 ﻿using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjects.Dtos;
+using IczpNet.Chat.Enums;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
@@ -37,6 +38,8 @@ namespace IczpNet.Chat.ChatObjects
         Task<ChatObjectDto> UpdateNameAsync(long id, string name);
 
         Task<ChatObjectDto> UpdatePortraitAsync(long id, string portrait);
+
+        Task<ChatObjectDto> SetVerificationMethodAsync(long id, VerificationMethods verificationMethod);
 
     }
 }

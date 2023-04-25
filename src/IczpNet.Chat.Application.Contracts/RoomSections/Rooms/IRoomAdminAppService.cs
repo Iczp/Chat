@@ -9,9 +9,13 @@ using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.RoomSections.Rooms
 {
-    public interface IRoomAppService
+    public interface IRoomAdminAppService 
     {
         Task<ChatObjectDto> CreateAsync(RoomCreateInput input);
+
+        Task<ChatObjectDto> CreateByAllUsersAsync(string name);
+
+        Task<ChatObjectDto> CreateByAllUsersWithManyAsync(string name);
 
         Task<List<SessionUnitSenderInfo>> InviteAsync(InviteInput input);
 
@@ -32,5 +36,6 @@ namespace IczpNet.Chat.RoomSections.Rooms
         /// <param name="targetSessionUnitId"></param>
         /// <returns></returns>
         Task DissolveAsync(Guid sessionUnitId);
+        
     }
 }

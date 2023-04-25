@@ -1,6 +1,6 @@
 ﻿using Volo.Abp.Reflection;
 
-namespace IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
+namespace IczpNet.Chat.Permissions;
 
 public static class SessionPermissionDefinitionConsts
 {
@@ -14,7 +14,7 @@ public static class SessionPermissionDefinitionConsts
         return allNames;
     }
 
-   
+
 
     public class SessionRolePermission
     {
