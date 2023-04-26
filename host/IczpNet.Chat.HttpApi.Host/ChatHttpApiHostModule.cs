@@ -7,14 +7,18 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using Volo.Abp;
 using Volo.Abp.AspNetCore.ExceptionHandling;
 using Volo.Abp.AspNetCore.Mvc;
@@ -120,33 +124,61 @@ public class ChatHttpApiHostModule : AbpModule
             },
             options =>
             {
+                options.UseInlineDefinitionsForEnums();
+                options.OrderActionsBy((apiDesc) => $"{apiDesc.ActionDescriptor.RouteValues["controller"]}_{apiDesc.ActionDescriptor.RouteValues["action"]}_{apiDesc.HttpMethod}");
+                options.TagActionsBy(x => new[] { x.ActionDescriptor.RouteValues["controller"] });
+
                 options.SwaggerDoc("v1", new OpenApiInfo { Title = "Chat API", Version = "v1" });
-                options.DocInclusionPredicate((docName, description) => true);
+                //options.DocInclusionPredicate((docName, description) => true);
+                options.SwaggerDoc(ChatRemoteServiceConsts.ModuleName, new OpenApiInfo { Title = "Chat", Version = ChatRemoteServiceConsts.ModuleName });
+                options.SwaggerDoc(ChatManagementRemoteServiceConsts.ModuleName, new OpenApiInfo { Title = "ChatManagement", Version = ChatManagementRemoteServiceConsts.ModuleName });
+                //System.Diagnostics.Debugger.Launch();
+
+                options.DocInclusionPredicate((docName, apiDesc) =>
+                {
+                    //return true;
+                    if (!apiDesc.TryGetMethodInfo(out MethodInfo methodInfo))
+                    {
+                        return false;
+                    }
+                    var versions = methodInfo.ReflectedType.GetCustomAttributes(true).OfType<ApiExplorerSettingsAttribute>().Select(x => x.GroupName);
+                    System.Diagnostics.Trace.WriteLine($"swagger-{docName}---{apiDesc.ActionDescriptor.DisplayName} -- {string.Join(";", versions)}");
+                    if (docName.ToLower() == "v1" && !versions.Any())
+                    {
+                        return true;
+                    }
+                    return versions.Any(x => x.ToString() == docName);
+                });
                 options.CustomSchemaIds(type => type.FullName);
+                options.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
             });
+
 
         Configure<AbpLocalizationOptions>(options =>
         {
-            options.Languages.Add(new LanguageInfo("ar", "ar", "العربية"));
-            options.Languages.Add(new LanguageInfo("cs", "cs", "Čeština"));
-            options.Languages.Add(new LanguageInfo("en", "en", "English"));
-            options.Languages.Add(new LanguageInfo("en-GB", "en-GB", "English (UK)"));
-            options.Languages.Add(new LanguageInfo("fi", "fi", "Finnish"));
-            options.Languages.Add(new LanguageInfo("fr", "fr", "Français"));
-            options.Languages.Add(new LanguageInfo("hi", "hi", "Hindi", "in"));
-            options.Languages.Add(new LanguageInfo("is", "is", "Icelandic", "is"));
-            options.Languages.Add(new LanguageInfo("it", "it", "Italiano", "it"));
-            options.Languages.Add(new LanguageInfo("hu", "hu", "Magyar"));
-            options.Languages.Add(new LanguageInfo("pt-BR", "pt-BR", "Português"));
-            options.Languages.Add(new LanguageInfo("ro-RO", "ro-RO", "Română"));
-            options.Languages.Add(new LanguageInfo("ru", "ru", "Русский"));
-            options.Languages.Add(new LanguageInfo("sk", "sk", "Slovak"));
-            options.Languages.Add(new LanguageInfo("tr", "tr", "Türkçe"));
             options.Languages.Add(new LanguageInfo("zh-Hans", "zh-Hans", "简体中文"));
-            options.Languages.Add(new LanguageInfo("zh-Hant", "zh-Hant", "繁體中文"));
-            options.Languages.Add(new LanguageInfo("de-DE", "de-DE", "Deutsch"));
-            options.Languages.Add(new LanguageInfo("es", "es", "Español"));
-            options.Languages.Add(new LanguageInfo("el", "el", "Ελληνικά"));
+            options.Languages.Add(new LanguageInfo("en", "en", "English"));
+
+            //options.Languages.Add(new LanguageInfo("ar", "ar", "العربية"));
+            //options.Languages.Add(new LanguageInfo("cs", "cs", "Čeština"));
+
+            //options.Languages.Add(new LanguageInfo("en-GB", "en-GB", "English (UK)"));
+            //options.Languages.Add(new LanguageInfo("fi", "fi", "Finnish"));
+            //options.Languages.Add(new LanguageInfo("fr", "fr", "Français"));
+            //options.Languages.Add(new LanguageInfo("hi", "hi", "Hindi", "in"));
+            //options.Languages.Add(new LanguageInfo("is", "is", "Icelandic", "is"));
+            //options.Languages.Add(new LanguageInfo("it", "it", "Italiano", "it"));
+            //options.Languages.Add(new LanguageInfo("hu", "hu", "Magyar"));
+            //options.Languages.Add(new LanguageInfo("pt-BR", "pt-BR", "Português"));
+            //options.Languages.Add(new LanguageInfo("ro-RO", "ro-RO", "Română"));
+            //options.Languages.Add(new LanguageInfo("ru", "ru", "Русский"));
+            //options.Languages.Add(new LanguageInfo("sk", "sk", "Slovak"));
+            //options.Languages.Add(new LanguageInfo("tr", "tr", "Türkçe"));
+
+            //options.Languages.Add(new LanguageInfo("zh-Hant", "zh-Hant", "繁體中文"));
+            //options.Languages.Add(new LanguageInfo("de-DE", "de-DE", "Deutsch"));
+            //options.Languages.Add(new LanguageInfo("es", "es", "Español"));
+            //options.Languages.Add(new LanguageInfo("el", "el", "Ελληνικά"));
         });
 
         context.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -219,10 +251,13 @@ public class ChatHttpApiHostModule : AbpModule
         }
         app.UseAbpRequestLocalization();
         app.UseAuthorization();
-        app.UseSwagger();
+        app.UseSwagger(x => x.RouteTemplate = "swagger/{documentName}/swagger.json");
+        //app.UseSwagger();
         app.UseAbpSwaggerUI(options =>
         {
-            options.SwaggerEndpoint("/swagger/v1/swagger.json", "Support APP API");
+            options.SwaggerEndpoint(string.Format("/swagger/{0}/swagger.json", "v1"), "Support APP API");
+            options.SwaggerEndpoint(string.Format("/swagger/{0}/swagger.json", ChatRemoteServiceConsts.ModuleName), "Chat Api");
+            options.SwaggerEndpoint(string.Format("/swagger/{0}/swagger.json", ChatManagementRemoteServiceConsts.ModuleName), "Chat Management Api");
 
             var configuration = context.GetConfiguration();
             options.OAuthClientId(configuration["AuthServer:SwaggerClientId"]);

@@ -2,6 +2,7 @@
 using IczpNet.Chat.Localization;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,7 @@ using Volo.Abp.Application.Services;
 
 namespace IczpNet.Chat.BaseAppServices;
 
+[ApiExplorerSettings(GroupName = ChatRemoteServiceConsts.ModuleName)]
 public abstract class ChatAppService : ApplicationService
 {
     protected ICurrentChatObject CurrentChatObject => LazyServiceProvider.LazyGetRequiredService<ICurrentChatObject>();
