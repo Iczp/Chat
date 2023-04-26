@@ -16,6 +16,12 @@ namespace IczpNet.Chat.BaseAppServices;
 [ApiExplorerSettings(GroupName = ChatRemoteServiceConsts.ModuleName)]
 public abstract class ChatAppService : ApplicationService
 {
+    protected virtual string CreatePolicyName { get; set; }
+    protected virtual string UpdatePolicyName { get; set; }
+    protected virtual string DeletePolicyName { get; set; }
+    protected virtual string GetPolicyName { get; set; }
+    protected virtual string GetListPolicyName { get; set; }
+
     protected ICurrentChatObject CurrentChatObject => LazyServiceProvider.LazyGetRequiredService<ICurrentChatObject>();
     protected ChatAppService()
     {

@@ -19,4 +19,12 @@ public class ChatPermissions
         public const string SetAllIsEnabled = Default + "." + nameof(SetAllIsEnabled);
 
     }
+
+    public class RobotManagementPermission
+    {
+        public const string Default = GroupName + "." + nameof(RobotManagementPermission);
+        public const string Create = Default + "." + nameof(Create);
+        public const string Update = Default + "." + nameof(Update);
+        public const string SetIsEnabled = Default + "." + nameof(SetIsEnabled);
+    }
 }

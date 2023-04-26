@@ -56,7 +56,7 @@ typeof(ChatApplicationModule),
     typeof(AbpAspNetCoreSerilogModule),
     typeof(AbpSwashbuckleModule)
     )]
-[DependsOn(typeof(ChatManagementApplicationModule))]
+//[DependsOn(typeof(ChatManagementApplicationModule))]
 public class ChatHttpApiHostModule : AbpModule
 {
 
@@ -87,9 +87,9 @@ public class ChatHttpApiHostModule : AbpModule
             options
                 .ConventionalControllers
                 .Create(typeof(ChatApplicationModule).Assembly);
-            options
-                .ConventionalControllers
-                .Create(typeof(ChatManagementApplicationModule).Assembly);
+            //options
+            //    .ConventionalControllers
+            //    .Create(typeof(ChatManagementApplicationModule).Assembly);
         });
 
         Configure<AbpDbContextOptions>(options =>
@@ -111,8 +111,8 @@ public class ChatHttpApiHostModule : AbpModule
                 options.FileSets.ReplaceEmbeddedByPhysical<ChatApplicationContractsModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}..{0}src{0}IczpNet.Chat.Application.Contracts", Path.DirectorySeparatorChar)));
                 options.FileSets.ReplaceEmbeddedByPhysical<ChatApplicationModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}..{0}src{0}IczpNet.Chat.Application", Path.DirectorySeparatorChar)));
 
-                options.FileSets.ReplaceEmbeddedByPhysical<ChatManagementApplicationContractsModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}..{0}src{0}IczpNet.Chat.ManagementApplication.Contracts", Path.DirectorySeparatorChar)));
-                options.FileSets.ReplaceEmbeddedByPhysical<ChatManagementApplicationModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}..{0}src{0}IczpNet.Chat.ManagementApplication", Path.DirectorySeparatorChar)));
+                //options.FileSets.ReplaceEmbeddedByPhysical<ChatManagementApplicationContractsModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}..{0}src{0}IczpNet.Chat.ManagementApplication.Contracts", Path.DirectorySeparatorChar)));
+                //options.FileSets.ReplaceEmbeddedByPhysical<ChatManagementApplicationModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}..{0}src{0}IczpNet.Chat.ManagementApplication", Path.DirectorySeparatorChar)));
             });
         }
 
@@ -125,13 +125,13 @@ public class ChatHttpApiHostModule : AbpModule
             options =>
             {
                 options.UseInlineDefinitionsForEnums();
-                options.OrderActionsBy((apiDesc) => $"{apiDesc.ActionDescriptor.RouteValues["controller"]}_{apiDesc.ActionDescriptor.RouteValues["action"]}_{apiDesc.HttpMethod}");
+                //options.OrderActionsBy((apiDesc) => $"{apiDesc.ActionDescriptor.RouteValues["controller"]}_{apiDesc.ActionDescriptor.RouteValues["action"]}_{apiDesc.HttpMethod}");
                 options.TagActionsBy(x => new[] { x.ActionDescriptor.RouteValues["controller"] });
 
                 options.SwaggerDoc("v1", new OpenApiInfo { Title = "Chat API", Version = "v1" });
                 //options.DocInclusionPredicate((docName, description) => true);
                 options.SwaggerDoc(ChatRemoteServiceConsts.ModuleName, new OpenApiInfo { Title = "Chat", Version = ChatRemoteServiceConsts.ModuleName });
-                options.SwaggerDoc(ChatManagementRemoteServiceConsts.ModuleName, new OpenApiInfo { Title = "ChatManagement", Version = ChatManagementRemoteServiceConsts.ModuleName });
+                //options.SwaggerDoc(ChatManagementRemoteServiceConsts.ModuleName, new OpenApiInfo { Title = "ChatManagement", Version = ChatManagementRemoteServiceConsts.ModuleName });
                 //System.Diagnostics.Debugger.Launch();
 
                 options.DocInclusionPredicate((docName, apiDesc) =>
@@ -255,9 +255,9 @@ public class ChatHttpApiHostModule : AbpModule
         //app.UseSwagger();
         app.UseAbpSwaggerUI(options =>
         {
-            options.SwaggerEndpoint(string.Format("/swagger/{0}/swagger.json", "v1"), "Support APP API");
             options.SwaggerEndpoint(string.Format("/swagger/{0}/swagger.json", ChatRemoteServiceConsts.ModuleName), "Chat Api");
-            options.SwaggerEndpoint(string.Format("/swagger/{0}/swagger.json", ChatManagementRemoteServiceConsts.ModuleName), "Chat Management Api");
+            options.SwaggerEndpoint(string.Format("/swagger/{0}/swagger.json", "v1"), "Support APP API");
+            //options.SwaggerEndpoint(string.Format("/swagger/{0}/swagger.json", ChatManagementRemoteServiceConsts.ModuleName), "Chat Management Api");
 
             var configuration = context.GetConfiguration();
             options.OAuthClientId(configuration["AuthServer:SwaggerClientId"]);

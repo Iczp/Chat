@@ -1,14 +1,18 @@
 using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
+using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Pusher;
 using IczpNet.Pusher.ShortIds;
 using Microsoft.Extensions.DependencyInjection;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Domain;
 using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement.Identity;
+using Volo.Abp.SimpleStateChecking;
 
 namespace IczpNet.Chat;
 
@@ -41,6 +45,14 @@ public class ChatDomainModule : AbpModule
             options.UseSpecialCharacters = false;
         });
 
+        Configure<AbpSimpleStateCheckerOptions<ChatObject>>(options =>
+        {
+            options.GlobalStateCheckers.Add<ChatObjectStateChecker>();
+        });
+        Configure<AbpSimpleStateCheckerOptions<SessionUnit>>(options =>
+        {
+            options.GlobalStateCheckers.Add<SessionUnitStateChecker>();
+        });
     }
 
     public override async Task OnPostApplicationInitializationAsync(ApplicationInitializationContext context)

@@ -1,13 +1,14 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using IczpNet.Chat.SessionSections.SessionUnits;
+using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Tasks;
 using Volo.Abp.SimpleStateChecking;
 using Volo.Abp.Users;
 
 namespace IczpNet.Chat.ChatObjects
 {
-    public class ChatObjectStateChecker : ISimpleStateChecker<ChatObject>
+    public class SessionUnitStateChecker : ISimpleStateChecker<SessionUnit>
     {
-        public virtual async Task<bool> IsEnabledAsync(SimpleStateCheckerContext<ChatObject> context)
+        public virtual async Task<bool> IsEnabledAsync(SimpleStateCheckerContext<SessionUnit> context)
         {
             await Task.CompletedTask;
             //context.State.Name

@@ -46,6 +46,7 @@ public abstract class CrudChatAppService<
     //where TCreateInput : IName
     //where TUpdateInput : IName
 {
+
     protected ICurrentChatObject CurrentChatObject => LazyServiceProvider.LazyGetRequiredService<ICurrentChatObject>();
     protected CrudChatAppService(IRepository<TEntity, TKey> repository) : base(repository)
     {
