@@ -11,6 +11,8 @@ namespace IczpNet.Chat.Robots.Dtos
 
         public virtual string Name { get; set; }
 
+        public virtual string Code { get; set; }
+
         public virtual string Portrait { get; set; }
 
         public virtual Guid? AppUserId { get; set; }

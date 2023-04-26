@@ -3,6 +3,7 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.Robots.Dtos;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.Robots
@@ -24,6 +25,7 @@ namespace IczpNet.Chat.Robots
             ChatObjectManager = chatObjectManager;
         }
 
+        [HttpPost]
         [Authorize(ChatPermissions.RobotManagementPermission.Create)]
         public async Task<RobotDto> CreateAsync(RobotCreateInput input)
         {
@@ -32,6 +34,7 @@ namespace IczpNet.Chat.Robots
             throw new System.NotImplementedException();
         }
 
+        [HttpPost]
         [Authorize(ChatPermissions.RobotManagementPermission.Update)]
         public async Task<RobotDto> UpdateAsync(long id, RobotUpdateInput input)
         {

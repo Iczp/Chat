@@ -7,9 +7,51 @@
 
     "Permission:SessionPermission": "会话权限",
 
+    "Permission:Chat": "聊天管理",
+
+    "SessionPermission.SessionRolePermission": "会话角色管理",
+    "SessionPermission.SessionRolePermission.Create": "新增",
+    "SessionPermission.SessionRolePermission.Update": "修改",
+    "SessionPermission.SessionRolePermission.Delete": "删除",
+    "SessionPermission.SessionRolePermission.SetAllPermissions": "设置所有权限",
+
     "SessionPermission.SessionOrganizationPermission": "会话组织架构",
     "SessionPermission.SessionOrganizationPermission.Create": "新增",
-    "SessionPermission.SessionOrganizationPermission.Update": "新增",
-    "SessionPermission.SessionOrganizationPermission.Delete": "新增"
+    "SessionPermission.SessionOrganizationPermission.Update": "修改",
+    "SessionPermission.SessionOrganizationPermission.Delete": "删除",
+
+    "Chat.SessionPermissionDefinitionPermission": "会话权限定义",
+    "Chat.SessionPermissionDefinitionPermission.Update": "修改",
+    "Chat.SessionPermissionDefinitionPermission.SetAllIsEnabled": "设置全部开启/禁用",
+    "Chat.SessionPermissionDefinitionPermission.SetIsEnabled": "设置开启/禁用",
+
+
+    "Chat.RobotManagementPermission": "机器人管理",
+    "Chat.RobotManagementPermission.Create": "新增机器人",
+    "Chat.RobotManagementPermission.Update": "修改",
+    "Chat.RobotManagementPermission.SetIsEnabled": "设置开启/禁用",
+
+    "Chat.RoomManagementPermission": "群管理",
+    "Chat.RoomManagementPermission.Create": "发起群聊（新建群）",
+    "Chat.RoomManagementPermission.Update": "修改群",
+    "Chat.RoomManagementPermission.SetIsEnabled": "设置开启/禁用",
+
+    "Chat.MessageSenderPermission": "消息发送权限",
+    "Chat.MessageSenderPermission.SendCommand": "发【命令】消息",
+    "Chat.MessageSenderPermission.SendText": "发【文本】消息",
+    "Chat.MessageSenderPermission.SendLink": "发【链接】消息",
+    "Chat.MessageSenderPermission.SendLocation": "发【位置】消息",
+    "Chat.MessageSenderPermission.SendImage": "发【图片】消息",
+    "Chat.MessageSenderPermission.SendSound": "发【语音】消息",
+    "Chat.MessageSenderPermission.SendVideo": "发【视频】消息",
+    "Chat.MessageSenderPermission.SendFile": "发【文件】消息",
+    "Chat.MessageSenderPermission.SendRedpackage": "发【红包】消息",
+    "Chat.MessageSenderPermission.SendHistory": "发【历史】消息",
+    "Chat.MessageSenderPermission.Rollback": "撤回消息",
+    "Chat.MessageSenderPermission.Forward": "转发消息"
+
+
+
+
   }
 }
