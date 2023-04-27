@@ -13,6 +13,8 @@ using IczpNet.Chat.Mottos.Dtos;
 using IczpNet.Chat.Mottos;
 using IczpNet.Chat.Squares.Dtos;
 using IczpNet.Chat.Robots.Dtos;
+using IczpNet.Chat.ShopKeepers.Dtos;
+using IczpNet.Chat.ShopWaiters.Dtos;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -38,8 +40,9 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<ChatObjectUpdateInput, ChatObject>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
 
         CreateMap<ChatObject, SquareDto>();
-
         CreateMap<ChatObject, RobotDto>();
+        CreateMap<ChatObject, ShopKeeperDto>();
+        CreateMap<ChatObject, ShopWaiterDto>();
 
         //Motto
         CreateMap<Motto, MottoDto>();
