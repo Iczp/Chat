@@ -36,6 +36,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
         protected IUnitOfWorkManager UnitOfWorkManager { get; }
         protected ISettingProvider SettingProvider { get; }
         protected ISessionPermissionChecker SessionPermissionChecker { get; }
+        protected ISessionUnitIdGenerator SessionUnitIdGenerator { get; }
         protected List<ChatObjectTypeEnums> DisallowCreateList { get; set; } = new List<ChatObjectTypeEnums>() {
             ChatObjectTypeEnums.Robot,
             ChatObjectTypeEnums.Anonymous,
@@ -54,7 +55,8 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
             IRepository<SessionPermissionUnitGrant> sessionPermissionUnitGrantRepository,
             IUnitOfWorkManager unitOfWorkManager,
             ISettingProvider settingProvider,
-            ISessionPermissionChecker sessionPermissionChecker)
+            ISessionPermissionChecker sessionPermissionChecker,
+            ISessionUnitIdGenerator sessionUnitIdGenerator)
         {
             Repository = repository;
             SessionUnitRepository = sessionUnitRepository;
@@ -68,6 +70,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
             UnitOfWorkManager = unitOfWorkManager;
             SettingProvider = settingProvider;
             SessionPermissionChecker = sessionPermissionChecker;
+            SessionUnitIdGenerator = sessionUnitIdGenerator;
         }
 
         public virtual async Task<SessionRequest> CreateRequestAsync(long ownerId, long destinationId, string requestMessage)
@@ -208,7 +211,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                 var session = await SessionGenerator.MakeAsync(sessionRequest.Owner, sessionRequest.Destination);
 
                 ownerSessionUnit ??= await SessionUnitManager.CreateIfNotContainsAsync(new SessionUnit(
-                      id: GuidGenerator.Create(),
+                      idGenerator: SessionUnitIdGenerator,
                       session: session,
                       ownerId: sessionRequest.OwnerId,
                       destinationId: sessionRequest.DestinationId.Value,
@@ -228,7 +231,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                     case ChatObjectTypeEnums.ShopKeeper:
 
                         var destinationSessionUnit = await SessionUnitManager.CreateIfNotContainsAsync(new SessionUnit(
-                              id: GuidGenerator.Create(),
+                              idGenerator: SessionUnitIdGenerator,
                               session: session,
                               ownerId: sessionRequest.Destination.Id,
                               destinationId: sessionRequest.Owner.Id,
@@ -259,7 +262,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                         }
 
                         var roomOrSquareSessionUnit = await SessionUnitManager.CreateIfNotContainsAsync(new SessionUnit(
-                                 id: GuidGenerator.Create(),
+                                 idGenerator: SessionUnitIdGenerator,
                                  session: session,
                                  ownerId: sessionRequest.Destination.Id,
                                  destinationId: sessionRequest.Destination.Id,

@@ -32,6 +32,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
     protected IUnitOfWorkManager UnitOfWorkManager { get; }
     protected IChatObjectRepository ChatObjectRepository { get; }
     protected IMessageSender MessageSender { get; }
+    protected ISessionUnitIdGenerator SessionUnitIdGenerator { get; }
 
     public RoomManager(
         IChatObjectRepository chatObjectRepository,
@@ -42,7 +43,8 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         IChatObjectTypeManager chatObjectTypeManager,
         ISessionGenerator sessionGenerator,
         IUnitOfWorkManager unitOfWorkManager,
-        IMessageSender messageSender)
+        IMessageSender messageSender, 
+        ISessionUnitIdGenerator sessionUnitIdGenerator)
     {
         Config = options.Value;
         SessionManager = sessionManager;
@@ -54,6 +56,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         UnitOfWorkManager = unitOfWorkManager;
         ChatObjectRepository = chatObjectRepository;
         MessageSender = messageSender;
+        SessionUnitIdGenerator = sessionUnitIdGenerator;
     }
 
     public virtual Task<bool> IsAllowJoinRoomAsync(ChatObjectTypeEnums objectType)
@@ -74,7 +77,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
     private SessionUnit AddRoomSessionUnit(Session session, long roomId)
     {
         return session.AddSessionUnit(new SessionUnit(
-              id: GuidGenerator.Create(),
+              idGenerator: SessionUnitIdGenerator,
               session: session,
               ownerId: roomId,
               destinationId: roomId,
@@ -121,7 +124,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         if (ownerId != null)
         {
             inviterSessionUnit = session.AddSessionUnit(new SessionUnit(
-                id: GuidGenerator.Create(),
+                idGenerator: SessionUnitIdGenerator,
                 session: session,
                 ownerId: ownerId.Value,
                 destinationId: room.Id,
@@ -138,7 +141,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
             .Where(x => x != ownerId).ToList();
 
         _ = _memberIdList.Select(memberId => session.AddSessionUnit(new SessionUnit(
-                id: GuidGenerator.Create(),
+                idGenerator: SessionUnitIdGenerator,
                 session: session,
                 ownerId: memberId,
                 destinationId: room.Id,
@@ -187,7 +190,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
 
         //add room sessionUnit
         var roomSessionUnit = new SessionUnit(
-              id: GuidGenerator.Create(),
+              idGenerator: SessionUnitIdGenerator,
               session: session,
               ownerId: room.Id,
               destinationId: room.Id,
@@ -203,7 +206,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         if (ownerId != null)
         {
             inviterSessionUnit = new SessionUnit(
-                id: GuidGenerator.Create(),
+                idGenerator: SessionUnitIdGenerator,
                 session: session,
                 ownerId: ownerId.Value,
                 destinationId: room.Id,
@@ -220,7 +223,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
             .Where(x => x != ownerId).ToList();
 
         var memberSessionUnitList = _memberIdList.Select(memberId => session.AddSessionUnit(new SessionUnit(
-                id: GuidGenerator.Create(),
+                idGenerator: SessionUnitIdGenerator,
                 session: session,
                 ownerId: memberId,
                 destinationId: room.Id,
@@ -291,7 +294,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
             Assert.If(!IsAllowJoinRoom(member.ObjectType.GetValueOrDefault()), $"不能加入群:[id:${member.Id},ObjectType:{member.ObjectType}]");
 
             result.Add(session.AddSessionUnit(new SessionUnit(
-               id: GuidGenerator.Create(),
+               idGenerator: SessionUnitIdGenerator,
                session: session,
                ownerId: member.Id,
                destinationId: input.RoomId,

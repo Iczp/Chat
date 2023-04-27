@@ -23,7 +23,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
         protected IChannelResolver ChannelResolver => LazyServiceProvider.LazyGetRequiredService<IChannelResolver>();
         protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
         protected IChatObjectManager ChatObjectManager => LazyServiceProvider.LazyGetRequiredService<IChatObjectManager>();
-
+        protected ISessionUnitIdGenerator SessionUnitIdGenerator => LazyServiceProvider.LazyGetRequiredService<ISessionUnitIdGenerator>();
         public SessionGenerator() { }
 
         protected virtual Task<Guid> MakeSesssionIdAsync(string input)
@@ -127,7 +127,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
             {
                 //add robot
                 session.AddSessionUnit(new SessionUnit(
-                        id: GuidGenerator.Create(),
+                        idGenerator: SessionUnitIdGenerator,
                         session: session,
                         ownerId: sender.Id,
                         destinationId: receiver.Id,
@@ -141,7 +141,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
                 //add receiver
                 session.AddSessionUnit(new SessionUnit(
-                        id: GuidGenerator.Create(),
+                        idGenerator: SessionUnitIdGenerator,
                         session: session,
                         ownerId: receiver.Id,
                         destinationId: sender.Id,
@@ -163,7 +163,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
                 //add sender
                 session.AddSessionUnit(new SessionUnit(
-                        id: GuidGenerator.Create(),
+                        idGenerator: SessionUnitIdGenerator,
                         session: session,
                         ownerId: sender.Id,
                         destinationId: shopKeeper.Id,
@@ -177,7 +177,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
                 //add shopKeeper
                 session.AddSessionUnit(new SessionUnit(
-                         id: GuidGenerator.Create(),
+                         idGenerator: SessionUnitIdGenerator,
                          session: session,
                          ownerId: shopKeeper.Id,
                          destinationId: sender.Id,
@@ -195,7 +195,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
                 foreach (var shopWaiter in shopWaiterList)
                 {
                     session.AddSessionUnit(new SessionUnit(
-                        id: GuidGenerator.Create(),
+                        idGenerator: SessionUnitIdGenerator,
                         session: session,
                         ownerId: shopWaiter.Id,
                         destinationId: sender.Id,
@@ -253,11 +253,11 @@ namespace IczpNet.Chat.SessionSections.Sessions
                 {
                     if (!unitList.Any(x => x.OwnerId == message.SenderId.Value && x.DestinationId == message.ReceiverId.Value))
                     {
-                        unitList.Add(new SessionUnit(GuidGenerator.Create(), session, message.Sender.Id, message.Receiver.Id, message.Receiver.ObjectType));
+                        unitList.Add(new SessionUnit(idGenerator: SessionUnitIdGenerator, session, message.Sender.Id, message.Receiver.Id, message.Receiver.ObjectType));
                     }
                     if (!unitList.Any(x => x.OwnerId == message.ReceiverId.Value && x.DestinationId == message.SenderId.Value))
                     {
-                        unitList.Add(new SessionUnit(GuidGenerator.Create(), session, message.Receiver.Id, message.Sender.Id, message.Sender.ObjectType));
+                        unitList.Add(new SessionUnit(idGenerator: SessionUnitIdGenerator, session, message.Receiver.Id, message.Sender.Id, message.Sender.ObjectType));
                     }
                 }
                 session.SetMessageList(item.Items);

@@ -24,6 +24,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using Volo.Abp.SimpleStateChecking;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits
 {
@@ -32,7 +33,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
     [Index(nameof(Sorting), nameof(LastMessageId), AllDescending = true)]
     [Index(nameof(ReadedMessageId), AllDescending = true)]
     [Index(nameof(OwnerId), nameof(DestinationId), AllDescending = true)]
-    public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, IIsStatic, IIsPublic, ISessionId, IHasSimpleStateCheckers<SessionUnit>
+    public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, IIsStatic, IIsPublic, ISessionId, IHasSimpleStateCheckers<SessionUnit>, IMaterializationInterceptor
     {
         public List<ISimpleStateChecker<SessionUnit>> StateCheckers => new();
 
@@ -260,11 +261,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         [NotMapped]
         public virtual long? SessionLastMessageId => Session.LastMessageId;
 
-
-
         protected SessionUnit() { }
-
-        internal SessionUnit(Guid id,
+        internal SessionUnit(ISessionUnitIdGenerator idGenerator,
             [NotNull]
             Session session,
             [NotNull]
@@ -277,8 +275,9 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             bool isCreator = false,
             JoinWays? joinWay = null,
             Guid? inviterUnitId = null,
-            bool isInputEnabled = true) : base(id)
+            bool isInputEnabled = true)
         {
+            Id = idGenerator.Create(ownerId, destinationId);
             Session = session;
             OwnerId = ownerId;
             DestinationId = destinationId;

@@ -22,13 +22,15 @@ namespace IczpNet.Chat.OfficialSections.Officials
         protected IUnitOfWorkManager UnitOfWorkManager { get; }
         protected IMessageSender MessageSender { get; }
         protected ISessionGenerator SessionGenerator { get; }
+        protected ISessionUnitIdGenerator SessionUnitIdGenerator { get; }
         public OfficialManager(
             IChatObjectRepository chatObjectRepository,
             ISessionUnitManager sessionUnitManager,
             IChatObjectManager chatObjectManager,
             IUnitOfWorkManager unitOfWorkManager,
             IMessageSender messageSender,
-            ISessionGenerator sessionGenerator)
+            ISessionGenerator sessionGenerator,
+            ISessionUnitIdGenerator sessionUnitIdGenerator)
         {
             ChatObjectRepository = chatObjectRepository;
             SessionUnitManager = sessionUnitManager;
@@ -36,6 +38,7 @@ namespace IczpNet.Chat.OfficialSections.Officials
             UnitOfWorkManager = unitOfWorkManager;
             MessageSender = messageSender;
             SessionGenerator = sessionGenerator;
+            SessionUnitIdGenerator = sessionUnitIdGenerator;
         }
 
         protected virtual async Task CheckExistsByCreateAsync(ChatObject inputEntity)
@@ -52,7 +55,7 @@ namespace IczpNet.Chat.OfficialSections.Officials
         private SessionUnit AddOfficialSessionUnit(Session session, long officialId)
         {
             return session.AddSessionUnit(new SessionUnit(
-                  id: GuidGenerator.Create(),
+                  idGenerator: SessionUnitIdGenerator,
                   session: session,
                   ownerId: officialId,
                   destinationId: officialId,
@@ -97,7 +100,7 @@ namespace IczpNet.Chat.OfficialSections.Officials
                 var session = await SessionGenerator.MakeAsync(owner, official);
 
                 sessionUnit = session.AddSessionUnit(new SessionUnit(
-                  id: GuidGenerator.Create(),
+                  idGenerator: SessionUnitIdGenerator,
                   session: session,
                   ownerId: ownerId,
                   destinationId: official.Id,
