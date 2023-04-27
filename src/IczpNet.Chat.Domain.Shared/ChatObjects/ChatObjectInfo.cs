@@ -14,6 +14,8 @@ namespace IczpNet.Chat.ChatObjects
 
         public virtual Guid? AppUserId { get; set; }
 
+        public virtual bool IsEnabled { get; set; }
+
         public virtual ChatObjectTypeEnums? ObjectType { get; set; }
     }
 }

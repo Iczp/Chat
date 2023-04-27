@@ -129,26 +129,26 @@ public class ChatHttpApiHostModule : AbpModule
                 options.TagActionsBy(x => new[] { x.ActionDescriptor.RouteValues["controller"] });
 
                 options.SwaggerDoc("v1", new OpenApiInfo { Title = "Chat API", Version = "v1" });
-                //options.DocInclusionPredicate((docName, description) => true);
+                options.DocInclusionPredicate((docName, description) => true);
                 options.SwaggerDoc(ChatRemoteServiceConsts.ModuleName, new OpenApiInfo { Title = "Chat", Version = ChatRemoteServiceConsts.ModuleName });
                 //options.SwaggerDoc(ChatManagementRemoteServiceConsts.ModuleName, new OpenApiInfo { Title = "ChatManagement", Version = ChatManagementRemoteServiceConsts.ModuleName });
                 //System.Diagnostics.Debugger.Launch();
 
-                options.DocInclusionPredicate((docName, apiDesc) =>
-                {
-                    //return true;
-                    if (!apiDesc.TryGetMethodInfo(out MethodInfo methodInfo))
-                    {
-                        return false;
-                    }
-                    var versions = methodInfo.ReflectedType.GetCustomAttributes(true).OfType<ApiExplorerSettingsAttribute>().Select(x => x.GroupName);
-                    System.Diagnostics.Trace.WriteLine($"swagger-{docName}---{apiDesc.ActionDescriptor.DisplayName} -- {string.Join(";", versions)}");
-                    if (docName.ToLower() == "v1" && !versions.Any())
-                    {
-                        return true;
-                    }
-                    return versions.Any(x => x.ToString() == docName);
-                });
+                //options.DocInclusionPredicate((docName, apiDesc) =>
+                //{
+                //    //return true;
+                //    if (!apiDesc.TryGetMethodInfo(out MethodInfo methodInfo))
+                //    {
+                //        return false;
+                //    }
+                //    var versions = methodInfo.ReflectedType.GetCustomAttributes(true).OfType<ApiExplorerSettingsAttribute>().Select(x => x.GroupName);
+                //    System.Diagnostics.Trace.WriteLine($"swagger-{docName}---{apiDesc.ActionDescriptor.DisplayName} -- {string.Join(";", versions)}");
+                //    if (docName.ToLower() == "v1" && !versions.Any())
+                //    {
+                //        return true;
+                //    }
+                //    return versions.Any(x => x.ToString() == docName);
+                //});
                 options.CustomSchemaIds(type => type.FullName);
                 options.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
             });
@@ -255,7 +255,7 @@ public class ChatHttpApiHostModule : AbpModule
         //app.UseSwagger();
         app.UseAbpSwaggerUI(options =>
         {
-            options.SwaggerEndpoint(string.Format("/swagger/{0}/swagger.json", ChatRemoteServiceConsts.ModuleName), "Chat Api");
+            //options.SwaggerEndpoint(string.Format("/swagger/{0}/swagger.json", ChatRemoteServiceConsts.ModuleName), "Chat Api");
             options.SwaggerEndpoint(string.Format("/swagger/{0}/swagger.json", "v1"), "Support APP API");
             //options.SwaggerEndpoint(string.Format("/swagger/{0}/swagger.json", ChatManagementRemoteServiceConsts.ModuleName), "Chat Management Api");
 

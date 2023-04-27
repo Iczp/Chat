@@ -37,6 +37,10 @@ namespace IczpNet.Chat.ChatObjects
             Assert.If(await Repository.AnyAsync((x) => x.Code == inputEntity.Code && !x.Id.Equals(inputEntity.Id)), $" Code[{inputEntity.Code}] already such");
         }
 
+        public override Task<ChatObject> CreateAsync(ChatObject inputEntity, bool isUnique = true)
+        {
+            return base.CreateAsync(inputEntity, isUnique);
+        }
         public virtual async Task<ChatObject> FindByCodeAsync(string code)
         {
             return await Repository.FindAsync(x => x.Code == code);

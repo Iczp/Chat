@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Permissions;
+using IczpNet.Pusher.ShortIds;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System;
@@ -29,13 +30,14 @@ namespace Rctea.IM.Tools
         protected IPermissionDefinitionManager PermissionDefinitionManager { get; }
         protected ISimpleStateCheckerManager<PermissionDefinition> SimpleStateCheckerManager { get; }
         protected IStringEncryptionService StringEncryptionService { get; }
-
+        protected IShortIdGenerator ShortIdGenerator { get; }
         public ToolAppService(IDataSeeder dataSeeder,
             IPermissionManager permissionManager,
             IPermissionDefinitionManager permissionDefinitionManager,
             IOptions<PermissionManagementOptions> options,
             ISimpleStateCheckerManager<PermissionDefinition> simpleStateCheckerManager,
-            IStringEncryptionService stringEncryptionService)
+            IStringEncryptionService stringEncryptionService,
+            IShortIdGenerator shortIdGenerator)
         {
             DataSeeder = dataSeeder;
             Options = options.Value;
@@ -43,6 +45,7 @@ namespace Rctea.IM.Tools
             PermissionDefinitionManager = permissionDefinitionManager;
             SimpleStateCheckerManager = simpleStateCheckerManager;
             StringEncryptionService = stringEncryptionService;
+            ShortIdGenerator = shortIdGenerator;
         }
 
 
@@ -167,6 +170,12 @@ namespace Rctea.IM.Tools
             var ret = new Guid(str);
 
             return ret;
+        }
+
+        [HttpPost]
+        public virtual async Task<string> GenerateShortId()
+        {
+            return await ShortIdGenerator.MakeAsync();
         }
     }
 }

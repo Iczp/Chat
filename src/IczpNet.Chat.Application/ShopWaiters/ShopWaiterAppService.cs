@@ -3,9 +3,11 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.ShopWaiters.Dtos;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.ShopWaiters
 {
@@ -21,6 +23,16 @@ namespace IczpNet.Chat.ShopWaiters
             ShopWaiterManager = shopKeeperManager;
         }
 
+        protected virtual Task<ShopWaiterDto> MapToDtoAsync(ChatObject entity)
+        {
+            return Task.FromResult(MapToDto(entity));
+        }
+
+        protected virtual ShopWaiterDto MapToDto(ChatObject entity)
+        {
+            return ObjectMapper.Map<ChatObject, ShopWaiterDto>(entity);
+        }
+
         [HttpGet]
         public virtual async Task<PagedResultDto<ShopWaiterDto>> GetListAsync(ShopWaiterGetListInput input)
         {
@@ -33,15 +45,25 @@ namespace IczpNet.Chat.ShopWaiters
         }
 
         [HttpPost]
-        public Task<PagedResultDto<ShopWaiterDto>> CreateAsync(ShopWaiterCreateInput input)
+        public virtual async Task<ShopWaiterDto> CreateAsync(ShopWaiterCreateInput input)
         {
-            throw new System.NotImplementedException();
+            var entity = await ShopWaiterManager.CreateAsync(input.ShopKeeperId, input.Name);
+
+            return await MapToDtoAsync(entity);
         }
-       
+
         [HttpPost]
-        public Task<PagedResultDto<ShopWaiterDto>> UpdateAsync(long id, ShopWaiterUpdateInput input)
+        public virtual async Task<ShopWaiterDto> UpdateAsync(long id, ShopWaiterUpdateInput input)
         {
-            throw new System.NotImplementedException();
+            var entity = await ShopWaiterManager.UpdateAsync(id, input.Name);
+
+            return await MapToDtoAsync(entity);
+        }
+
+        [HttpPost]
+        public virtual Task<ShopWaiterDto> BingUserAsync(long id, Guid userId)
+        {
+            throw new NotImplementedException();
         }
     }
 }

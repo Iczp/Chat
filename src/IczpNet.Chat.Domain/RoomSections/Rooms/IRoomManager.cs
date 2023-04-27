@@ -16,11 +16,7 @@ namespace IczpNet.Chat.RoomSections.Rooms
 
         Task<ChatObject> CreateAsync(string name, List<long> memberIdList, long? ownerId);
 
-        Task<ChatObject> CreateWithManyAsync(string name, List<long> memberIdList, long? ownerId);
-
         Task<ChatObject> CreateByAllUsersAsync(string name);
-
-        Task<ChatObject> CreateByAllUsersWithManyAsync(string name);
 
         Task<List<SessionUnit>> InviteAsync(InviteInput input, bool autoSendMessage = true);
 

@@ -43,7 +43,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         IChatObjectTypeManager chatObjectTypeManager,
         ISessionGenerator sessionGenerator,
         IUnitOfWorkManager unitOfWorkManager,
-        IMessageSender messageSender, 
+        IMessageSender messageSender,
         ISessionUnitIdGenerator sessionUnitIdGenerator)
     {
         Config = options.Value;
@@ -90,88 +90,6 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
     }
 
     public virtual async Task<ChatObject> CreateAsync(string name, List<long> memberIdList, long? ownerId)
-    {
-        var allList = memberIdList;
-
-        if (ownerId != null && !allList.Contains(ownerId.Value))
-        {
-            allList.Add(ownerId.Value);
-        }
-
-        var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Room);
-
-        var room = await ChatObjectManager.CreateAsync(new ChatObject(name, chatObjectType, null), isUnique: false);
-
-        var session = await SessionGenerator.MakeAsync(room);
-
-        session.SetOwner(room);
-
-        //add room sessionUnit
-        var roomSessionUnit = AddRoomSessionUnit(session, room.Id);
-
-        ////add Group Assistant
-        //var groupAssistant = await GetGroupAssistantAsync();
-        //var assistantSessionUnit = session.AddSessionUnit(new SessionUnit(
-        //    id: GuidGenerator.Create(),
-        //    session: session,
-        //    ownerId: groupAssistant.Id,
-        //    destinationId: room.Id,
-        //    destinationObjectType: room.ObjectType,
-        //    isPublic: false,
-        //    isStatic: true));
-        SessionUnit inviterSessionUnit = null;
-        //group owner
-        if (ownerId != null)
-        {
-            inviterSessionUnit = session.AddSessionUnit(new SessionUnit(
-                idGenerator: SessionUnitIdGenerator,
-                session: session,
-                ownerId: ownerId.Value,
-                destinationId: room.Id,
-                destinationObjectType: room.ObjectType,
-                isPublic: true,
-                isStatic: true,
-                isCreator: true,
-                joinWay: JoinWays.Creator,
-                inviterUnitId: null,
-                isInputEnabled: true));
-        }
-        // add member
-        var _memberIdList = allList
-            .Where(x => x != ownerId).ToList();
-
-        _ = _memberIdList.Select(memberId => session.AddSessionUnit(new SessionUnit(
-                idGenerator: SessionUnitIdGenerator,
-                session: session,
-                ownerId: memberId,
-                destinationId: room.Id,
-                destinationObjectType: room.ObjectType,
-                isPublic: true,
-                isStatic: false,
-                isCreator: false,
-                joinWay: JoinWays.Invitation,
-                inviterUnitId: inviterSessionUnit?.Id,
-                isInputEnabled: true)))
-            .ToList();
-
-        room.OwnerSessionList.Add(session);
-
-        // commit to db
-        await UnitOfWorkManager.Current.SaveChangesAsync();
-
-        var roomOwner = ownerId.HasValue ? await ChatObjectManager.GetItemByCacheAsync(ownerId.Value) : null;
-
-        var members = await ChatObjectManager.GetManyByCacheAsync(_memberIdList.Take(3).ToList());
-
-        await SendRoomMessageAsync(roomSessionUnit, new CmdContentInfo()
-        {
-            Text = $"{roomOwner?.Name} 创建群聊'{room.Name}',{members.Select(x => x.Name).JoinAsString("、")}等 {_memberIdList.Count} 人加入群聊。",
-        });
-
-        return room;
-    }
-
-    public virtual async Task<ChatObject> CreateWithManyAsync(string name, List<long> memberIdList, long? ownerId)
     {
         var allList = memberIdList;
 
@@ -236,11 +154,13 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
                 isInputEnabled: true)))
             .ToList();
 
+
         room.OwnerSessionList.Add(session);
 
         var insertSessionUnitList = new List<SessionUnit>() { roomSessionUnit }.Concat(memberSessionUnitList).ToList();
 
         await SessionUnitRepository.InsertManyAsync(insertSessionUnitList);
+
         // commit to db
         await UnitOfWorkManager.Current.SaveChangesAsync();
 
@@ -248,9 +168,15 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
 
         var members = await ChatObjectManager.GetManyByCacheAsync(_memberIdList.Take(3).ToList());
 
+        var vtext = members.Select(x => string.Format(
+            "<a session-unit-id=\"{0}\">{1}</a>",
+            insertSessionUnitList.FirstOrDefault(d => d.OwnerId == x.Id)?.Id,
+            x.Name))
+            .JoinAsString("、");
+
         await SendRoomMessageAsync(roomSessionUnit, new CmdContentInfo()
         {
-            Text = $"{roomOwner?.Name} 创建群聊'{room.Name}',{members.Select(x => x.Name).JoinAsString("、")}等 {_memberIdList.Count} 人加入群聊。",
+            Text = $"{roomOwner?.Name} 创建群聊'{room.Name}',{vtext}等 {_memberIdList.Count} 人加入群聊。",
         });
 
         return room;
@@ -337,20 +263,26 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         });
     }
 
+    //发送群消息
     protected virtual async Task SendRoomMessageAsync(long roomId, CmdContentInfo content)
     {
+        //Find the room session unit
         var roomSessionUnit = await SessionUnitManager.FindAsync(roomId, roomId);
 
+        //If the room session unit is not found
         if (roomSessionUnit == null)
         {
+            //Get the session by owner id
             var session = await SessionManager.GetByOwnerIdAsync(roomId);
 
-            //add room sessionUnit
+            //Add the room session unit
             roomSessionUnit = AddRoomSessionUnit(session, roomId);
 
+            //Save the changes
             await UnitOfWorkManager.Current.SaveChangesAsync();
         }
 
+        //Send the room message
         await SendRoomMessageAsync(roomSessionUnit, content);
     }
 
@@ -363,17 +295,6 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         var idList = await AsyncExecuter.ToListAsync(query);
 
         return await CreateAsync(name, idList, null);
-    }
-
-    public virtual async Task<ChatObject> CreateByAllUsersWithManyAsync(string name)
-    {
-        var query = (await ChatObjectRepository.GetQueryableAsync())
-            .Where(x => x.ObjectType == ChatObjectTypeEnums.Personal)
-            .Select(x => x.Id)
-            ;
-        var idList = await AsyncExecuter.ToListAsync(query);
-
-        return await CreateWithManyAsync(name, idList, null);
     }
 
     public virtual Task<int> GetMemberCountAsync(ChatObject room)
@@ -463,13 +384,13 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
 
         var targetSessionUnit = await SessionUnitRepository.GetAsync(targetSessionUnitId);
 
-        Assert.If(sessionUnit.SessionId!= targetSessionUnit.SessionId, "Not in same session");
+        Assert.If(sessionUnit.SessionId != targetSessionUnit.SessionId, "Not in same session");
 
         sessionUnit.SetIsCreator(false);
 
         targetSessionUnit.SetIsCreator(true);
 
-        if(isSendMessageToRoom)
+        if (isSendMessageToRoom)
         {
             await SendRoomMessageAsync(sessionUnit.DestinationId.Value, new CmdContentInfo()
             {
