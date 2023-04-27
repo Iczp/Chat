@@ -36,6 +36,8 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         public virtual MessageTypes MessageType { get; set; }
 
+        public virtual ReminderTypes? ReminderType { get; set; }
+
         public virtual string KeyName { get; set; }
 
         public virtual string KeyValue { get; set; }

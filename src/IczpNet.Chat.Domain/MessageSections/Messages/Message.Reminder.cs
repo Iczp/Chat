@@ -14,6 +14,11 @@ public partial class Message
     /// </summary>
     public virtual bool IsRemindAll { get; protected set; }
 
+    /// <summary>
+    /// 提醒器类型
+    /// </summary>
+    public virtual ReminderTypes? ReminderType { get; protected set; }
+
     [InverseProperty(nameof(MessageReminder.Message))]
     public virtual IList<MessageReminder> MessageReminderList { get; protected set; }
 
