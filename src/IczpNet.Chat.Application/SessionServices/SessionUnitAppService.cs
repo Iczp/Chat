@@ -29,10 +29,11 @@ namespace IczpNet.Chat.SessionServices;
 
 public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 {
+    protected override string GetListPolicyName { get; set; }
+    protected override string GetPolicyName { get; set; }
+
     protected virtual string SetRenamePolicyName { get; set; }
     protected virtual string SetMemberNamePolicyName { get; set; }
-    protected virtual string GetListPolicyName { get; set; }
-    protected virtual string GetPolicyName { get; set; }
     protected virtual string GetDetailPolicyName { get; set; }
     protected virtual string SetReadedPolicyName { get; set; }
     protected virtual string SetImmersedPolicyName { get; set; }

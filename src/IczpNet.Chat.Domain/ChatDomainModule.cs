@@ -2,6 +2,7 @@ using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.TextTemplates;
 using IczpNet.Pusher;
 using IczpNet.Pusher.ShortIds;
 using Microsoft.Extensions.DependencyInjection;

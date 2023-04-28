@@ -6,6 +6,8 @@ using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.TextTemplates;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,7 +48,7 @@ namespace IczpNet.Chat.Services
 
             if (TotalCount == 0)
             {
-                var TotalCount = await ChatObjectRepository.CountAsync(x => x.ObjectType == ChatObjectTypeEnums.Personal);
+                TotalCount = await ChatObjectRepository.CountAsync(x => x.ObjectType == ChatObjectTypeEnums.Personal);
             }
             ChatObjectIdList ??= (await ChatObjectRepository.GetQueryableAsync())
                 .Where(x => x.ObjectType == ChatObjectTypeEnums.Personal)
@@ -93,6 +95,24 @@ namespace IczpNet.Chat.Services
             await SessionRepository.UpdateManyAsync(items);
 
             return items.Count;
+        }
+
+        [HttpPost]
+        public virtual Task<string> TextTemplateAsync(string template, Dictionary<string, object> data)
+        {
+            return Task.FromResult(new TextTemplate(template, data).ToString());
+        }
+
+        [HttpGet]
+        public virtual Task<long> StringToIntAsync(string v, int length = 36)
+        {
+            return Task.FromResult(IntStringHelper.StringToInt(v, length));
+        }
+
+        [HttpGet]
+        public virtual Task<string> IntToStringAsync(long v, int length = 36)
+        {
+            return Task.FromResult(IntStringHelper.IntToString(v, length));
         }
     }
 }
