@@ -15,7 +15,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public virtual long[] Resolving(string sessionUnitId)
         {
-            var arr = sessionUnitId.Split('_').Select(x => IntStringHelper.StringToInt(x)).ToArray();
+            var arr = sessionUnitId.Split('_').Take(2).Select(x => IntStringHelper.StringToInt(x)).ToArray();
             return arr; 
         }
     }
