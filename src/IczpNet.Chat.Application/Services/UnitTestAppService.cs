@@ -126,7 +126,7 @@ namespace IczpNet.Chat.Services
 
 
         [HttpPost]
-        public virtual Task<Dictionary<string, long[]>> SessionUnitIdGenerateByRandomAsync(long count = 50)
+        public virtual Task<Dictionary<string, long[]>> SessionUnitIdGenerateByRandomAsync(long count = 50, long maxValue = 123456)
         {
             var result = new Dictionary<string, long[]>();
 
@@ -134,8 +134,8 @@ namespace IczpNet.Chat.Services
 
             for (int i = 0; i < count; i++)
             {
-                var ownerId = rand.NextInt64(100000);
-                var destinationId = rand.NextInt64(100000);
+                var ownerId = rand.NextInt64(maxValue);
+                var destinationId = rand.NextInt64(maxValue);
                 var ret = SessionUnitIdGenerator.Generate(ownerId, destinationId);
                 result.Add(ret, new long[] { ownerId, destinationId });
             }
