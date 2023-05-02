@@ -37,6 +37,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
     [Index(nameof(IsPublic), AllDescending = true)]
     [Index(nameof(Key), AllDescending = true)]
     [Index(nameof(DestinationObjectType), AllDescending = true)]
+    [Index(nameof(DestinationObjectType), AllDescending = false)]
     public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, IIsStatic, IIsPublic, ISessionId, IHasSimpleStateCheckers<SessionUnit>, IMaterializationInterceptor
     {
         public List<ISimpleStateChecker<SessionUnit>> StateCheckers => new();
