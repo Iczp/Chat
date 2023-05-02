@@ -26,7 +26,7 @@ namespace IczpNet.Chat.ChatObjects
     [Index(nameof(Code))]
     [Index(nameof(Name))]
     [Index(nameof(FullPath))]
-    public class ChatObject : BaseTreeEntity<ChatObject, long>, IName, IChatObject, IHasSimpleStateCheckers<ChatObject>, IIsStatic, IIsActive, IIsPublic, IIsEnabled
+    public class ChatObject : BaseTreeEntity<ChatObject, long>, IName, IChatObject, IHasSimpleStateCheckers<ChatObject>, IIsStatic, IIsActive, IIsPublic, IIsEnabled, IIsDefault
     {
         public List<ISimpleStateChecker<ChatObject>> StateCheckers { get; }
 
@@ -71,13 +71,15 @@ namespace IczpNet.Chat.ChatObjects
         [StringLength(500)]
         public override string Description { get; set; }
 
-        public virtual bool IsStatic { get; set; }
+        public virtual bool IsStatic { get; protected set; }
 
-        public virtual bool IsActive { get; set; }
+        public virtual bool IsActive { get; protected set; }
 
-        public virtual bool IsPublic { get; set; }
+        public virtual bool IsPublic { get; protected set; }
 
-        public virtual bool IsEnabled { get; set; } = true;
+        public virtual bool IsEnabled { get; protected set; } = true;
+
+        public virtual bool IsDefault { get; protected set; } = true;
 
         #region Categorys
         public virtual IList<ChatObjectCategoryUnit> ChatObjectCategoryUnitList { get; set; }
@@ -226,6 +228,11 @@ namespace IczpNet.Chat.ChatObjects
         public virtual void SetVerificationMethod(VerificationMethods verificationMethod)
         {
             VerificationMethod = verificationMethod;
+        }
+
+        internal void SetIsStatic(bool v)
+        {
+            IsStatic = v;
         }
     }
 }

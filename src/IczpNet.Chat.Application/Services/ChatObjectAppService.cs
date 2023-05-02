@@ -59,6 +59,10 @@ namespace IczpNet.Chat.Services
             return (await base.CreateFilteredQueryAsync(input))
                 .WhereIf(!input.ChatObjectTypeId.IsNullOrWhiteSpace(), x => x.ChatObjectTypeId == input.ChatObjectTypeId)
                 .WhereIf(input.ObjectType.HasValue, x => x.ObjectType == input.ObjectType)
+                .WhereIf(input.IsEnabled.HasValue,x=>x.IsEnabled == input.IsEnabled)
+                .WhereIf(input.IsDefault.HasValue, x => x.IsDefault == input.IsDefault)
+                .WhereIf(input.IsPublic.HasValue, x => x.IsPublic == input.IsPublic)
+                .WhereIf(input.IsStatic.HasValue, x => x.IsStatic == input.IsStatic)
                 //CategoryId
                 .WhereIf(!input.IsImportChildCategory && input.CategoryIdList.IsAny(), x => x.ChatObjectCategoryUnitList.Any(d => input.CategoryIdList.Contains(d.CategoryId)))
                 .WhereIf(input.IsImportChildCategory && input.CategoryIdList.IsAny(), x => x.ChatObjectCategoryUnitList.Any(d => categoryIdQuery.Contains(d.CategoryId)))
