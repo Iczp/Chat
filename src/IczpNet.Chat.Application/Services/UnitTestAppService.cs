@@ -6,6 +6,7 @@ using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.TextTemplates;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -28,20 +29,22 @@ namespace IczpNet.Chat.Services
         protected IRepository<Session, Guid> SessionRepository { get; }
         protected IChatObjectRepository ChatObjectRepository { get; }
         protected IMessageManager MessageManager { get; }
-
         protected IMessageSender ChatSender { get; }
+        protected ISessionUnitIdGenerator SessionUnitIdGenerator { get; }
         public UnitTestAppService(
             IMessageRepository messageRepository,
             IChatObjectRepository chatObjectRepository,
             IMessageManager messageManager,
             IMessageSender chatSender,
-            IRepository<Session, Guid> sessionRepository)
+            IRepository<Session, Guid> sessionRepository,
+            ISessionUnitIdGenerator sessionUnitIdGenerator)
         {
             MessageRepository = messageRepository;
             ChatObjectRepository = chatObjectRepository;
             MessageManager = messageManager;
             ChatSender = chatSender;
             SessionRepository = sessionRepository;
+            SessionUnitIdGenerator = sessionUnitIdGenerator;
         }
         public async Task<int> SendToEveryOneAsync(string text, long? receiverId, int count = 100)
         {
@@ -113,6 +116,36 @@ namespace IczpNet.Chat.Services
         public virtual Task<string> IntToStringAsync(long v, int length = 36)
         {
             return Task.FromResult(IntStringHelper.IntToString(v, length));
+        }
+
+        [HttpPost]
+        public virtual Task<string> SessionUnitIdGenerateAsync(long ownerId, long destinationId)
+        {
+            return Task.FromResult(SessionUnitIdGenerator.Generate(ownerId, destinationId));
+        }
+
+
+        [HttpPost]
+        public virtual Task<Dictionary<string, long[]>> SessionUnitIdGenerateByRandomAsync(long count = 50)
+        {
+            var result = new Dictionary<string, long[]>();
+
+            var rand = new Random();
+
+            for (int i = 0; i < count; i++)
+            {
+                var ownerId = rand.NextInt64(100000);
+                var destinationId = rand.NextInt64(100000);
+                var ret = SessionUnitIdGenerator.Generate(ownerId, destinationId);
+                result.Add(ret, new long[] { ownerId, destinationId });
+            }
+            return Task.FromResult(result);
+        }
+
+        [HttpPost]
+        public virtual Task<long[]> SessionUnitIdResolvingAsync(string sessionUnitId)
+        {
+            return Task.FromResult(SessionUnitIdGenerator.Resolving(sessionUnitId));
         }
     }
 }

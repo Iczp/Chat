@@ -6,6 +6,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
     {
         Guid Create(long ownerId, long destinationId);
 
+        string Generate(long ownerId, long destinationId);
+
         long[] Resolving(string sessionUnitId);
     }
 }

@@ -13,13 +13,13 @@ namespace IczpNet.Chat.TextTemplates
 
         public static string IntToString(long v, int length = 36, string inText = StaticCode)
         {
-            var arr = inText.Select(x => x).Take(length).ToArray();
+            var arr = inText.Take(length).ToArray();
 
             string ret = "";
 
             while (v >= 1)
             {
-                int index = Convert.ToInt16(v - (v / length) * length);
+                var index = Convert.ToInt64(v - v / length * length);
 
                 ret = arr[index] + ret;
 
