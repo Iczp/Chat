@@ -1,10 +1,11 @@
 ﻿using IczpNet.Chat.TextTemplates;
 using System;
+using System.Text.RegularExpressions;
 using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits
 {
-    public class SessionUnitIdGenerator : DomainService, ISessionUnitIdGenerator
+    public partial class SessionUnitIdGenerator : DomainService, ISessionUnitIdGenerator
     {
         protected virtual string Separator { get; set; } = "x";
         protected virtual string DestinationInText { get; set; } = "ghijklmnopqrstuvwyzabcdef";
@@ -51,5 +52,14 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         {
             return IntStringHelper.StringToInt(destinationString, DestinationInText.Length, DestinationInText);
         }
+
+        public virtual bool IsVerified(string sessionUnitId)
+        {
+            return SessionUnitIdRegex().IsMatch(sessionUnitId);
+        }
+
+        [GeneratedRegex(@"^[a-wyz]+x[a-wyz]+$")]
+        private static partial Regex SessionUnitIdRegex();
     }
 }
+

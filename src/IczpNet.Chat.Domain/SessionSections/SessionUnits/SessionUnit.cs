@@ -33,6 +33,10 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
     [Index(nameof(Sorting), nameof(LastMessageId), AllDescending = true)]
     [Index(nameof(ReadedMessageId), AllDescending = true)]
     [Index(nameof(OwnerId), nameof(DestinationId), AllDescending = true)]
+    [Index(nameof(IsStatic), AllDescending = true)]
+    [Index(nameof(IsPublic), AllDescending = true)]
+    [Index(nameof(Key), AllDescending = true)]
+    [Index(nameof(DestinationObjectType), AllDescending = true)]
     public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, IIsStatic, IIsPublic, ISessionId, IHasSimpleStateCheckers<SessionUnit>, IMaterializationInterceptor
     {
         public List<ISimpleStateChecker<SessionUnit>> StateCheckers => new();
@@ -42,6 +46,9 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         [ForeignKey(nameof(SessionId))]
         public virtual Session Session { get; protected set; }
+
+        [MaxLength(450)]
+        public virtual string Key { get; protected set; }
 
         public virtual ChatObjectTypeEnums? DestinationObjectType { get; protected set; }
 
@@ -262,6 +269,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public virtual long? SessionLastMessageId => Session.LastMessageId;
 
         protected SessionUnit() { }
+
         internal SessionUnit(ISessionUnitIdGenerator idGenerator,
             [NotNull]
             Session session,
@@ -278,6 +286,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             bool isInputEnabled = true)
         {
             Id = idGenerator.Create(ownerId, destinationId);
+            SetKey(idGenerator.Generate(ownerId, destinationId));
             Session = session;
             OwnerId = ownerId;
             DestinationId = destinationId;
@@ -288,6 +297,11 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             JoinWay = joinWay;
             InviterUnitId = inviterUnitId;
             IsInputEnabled = isInputEnabled;
+        }
+
+        public virtual void SetKey(string key)
+        {
+            Key = key;
         }
 
         internal virtual void SetRename(string rename)

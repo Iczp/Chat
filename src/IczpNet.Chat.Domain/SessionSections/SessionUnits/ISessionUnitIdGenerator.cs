@@ -9,5 +9,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         string Generate(long ownerId, long destinationId);
 
         long[] Resolving(string sessionUnitId);
+
+        bool IsVerified(string sessionUnitId);
     }
 }

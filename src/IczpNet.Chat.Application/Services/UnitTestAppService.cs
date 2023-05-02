@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
@@ -26,18 +27,21 @@ namespace IczpNet.Chat.Services
         private static List<long> ChatObjectIdList;
 
         protected IMessageRepository MessageRepository { get; }
+
         protected IRepository<Session, Guid> SessionRepository { get; }
         protected IChatObjectRepository ChatObjectRepository { get; }
         protected IMessageManager MessageManager { get; }
         protected IMessageSender ChatSender { get; }
         protected ISessionUnitIdGenerator SessionUnitIdGenerator { get; }
+        protected ISessionUnitRepository SessionUnitRepository { get; }
         public UnitTestAppService(
             IMessageRepository messageRepository,
             IChatObjectRepository chatObjectRepository,
             IMessageManager messageManager,
             IMessageSender chatSender,
             IRepository<Session, Guid> sessionRepository,
-            ISessionUnitIdGenerator sessionUnitIdGenerator)
+            ISessionUnitIdGenerator sessionUnitIdGenerator,
+            ISessionUnitRepository sessionUnitRepository)
         {
             MessageRepository = messageRepository;
             ChatObjectRepository = chatObjectRepository;
@@ -45,6 +49,7 @@ namespace IczpNet.Chat.Services
             ChatSender = chatSender;
             SessionRepository = sessionRepository;
             SessionUnitIdGenerator = sessionUnitIdGenerator;
+            SessionUnitRepository = sessionUnitRepository;
         }
         public async Task<int> SendToEveryOneAsync(string text, long? receiverId, int count = 100)
         {
@@ -73,6 +78,7 @@ namespace IczpNet.Chat.Services
             return count;
         }
 
+        [HttpPost]
         public Task<List<int>> GenerateIntAsync(int count, int minValue, int maxValue)
         {
             var items = new List<int>();
@@ -146,6 +152,34 @@ namespace IczpNet.Chat.Services
         public virtual Task<long[]> SessionUnitIdResolvingAsync(string sessionUnitId)
         {
             return Task.FromResult(SessionUnitIdGenerator.Resolving(sessionUnitId));
+        }
+
+        [HttpPost]
+        public virtual Task<bool> SessionUnitIdIsVerifiedAsync(string sessionUnitId)
+        {
+            return Task.FromResult(SessionUnitIdGenerator.IsVerified(sessionUnitId));
+        }
+
+        [HttpPost]
+        public virtual async Task<int> SetSessionUnitKeyAsync(int count = 1000)
+        {
+            var items = (await SessionUnitRepository.GetQueryableAsync())
+                .Where(x => x.Key == null)
+                .Take(count)
+                .ToList();
+            ;
+
+            foreach (var item in items)
+            {
+                item.SetKey(SessionUnitIdGenerator.Generate(item.OwnerId, item.DestinationId.Value));
+            }
+
+            if(items.Count > 0)
+            {
+                await SessionUnitRepository.UpdateManyAsync(items);
+            }
+
+            return items.Count;
         }
     }
 }
