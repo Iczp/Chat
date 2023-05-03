@@ -10,6 +10,8 @@ namespace IczpNet.Chat.ChatObjects
 
         public virtual string Code { get; set; }
 
+        public virtual Genders Gender { get; set; }
+
         public virtual string Portrait { get; set; }
 
         public virtual Guid? AppUserId { get; set; }

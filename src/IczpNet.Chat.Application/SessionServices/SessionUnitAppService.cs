@@ -92,14 +92,17 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return (await Repository.GetQueryableAsync())
             .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
             .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
-            .WhereIf(input.IsKilled.HasValue, x => x.IsKilled == input.IsKilled)
             .WhereIf(input.DestinationObjectType.HasValue, x => x.DestinationObjectType == input.DestinationObjectType)
+            .WhereIf(input.IsKilled.HasValue, x => x.IsKilled == input.IsKilled)
+            .WhereIf(input.IsCreator.HasValue, x => x.IsCreator == input.IsCreator)
             //.WhereIf(input.MinAutoId.HasValue, x => x.Session.LastMessageId > input.MinAutoId)
             //.WhereIf(input.MaxAutoId.HasValue, x => x.Session.LastMessageId < input.MaxAutoId)
             .WhereIf(input.MinAutoId.HasValue && input.MinAutoId.Value > 0, x => x.LastMessageId > input.MinAutoId)
             .WhereIf(input.MaxAutoId.HasValue && input.MaxAutoId.Value > 0, x => x.LastMessageId < input.MaxAutoId)
             .WhereIf(input.IsTopping == true, x => x.Sorting != 0)
             .WhereIf(input.IsTopping == false, x => x.Sorting == 0)
+            .WhereIf(input.IsCantacts.HasValue, x => x.IsCantacts == input.IsCantacts)
+            .WhereIf(input.IsImmersed.HasValue, x => x.IsImmersed == input.IsImmersed)
             .WhereIf(input.IsBadge, x =>
                 x.Session.MessageList.Any(d =>
                     //!x.IsRollbacked &&

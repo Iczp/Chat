@@ -55,6 +55,8 @@ namespace IczpNet.Chat.ChatObjects
         [StringLength(50)]
         public virtual string Code { get; set; }
 
+        public virtual Genders Gender { get; set; }
+
         /// <summary>
         /// 头像
         /// </summary>
@@ -79,7 +81,7 @@ namespace IczpNet.Chat.ChatObjects
 
         public virtual bool IsEnabled { get; protected set; } = true;
 
-        public virtual bool IsDefault { get; protected set; } = true;
+        public virtual bool IsDefault { get; protected set; }
 
         #region Categorys
         public virtual IList<ChatObjectCategoryUnit> ChatObjectCategoryUnitList { get; set; }
@@ -125,7 +127,6 @@ namespace IczpNet.Chat.ChatObjects
         public virtual IList<RedEnvelopeUnit> RedEnvelopeUnitList { get; set; }
 
         #endregion
-
 
         #region Friendship
 

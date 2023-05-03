@@ -10,6 +10,7 @@ using IczpNet.Pusher;
 using Microsoft.AspNetCore.Authorization;
 using IczpNet.Chat.Authorizations;
 using IczpNet.Chat.Permissions;
+using Volo.Abp.PermissionManagement;
 
 namespace IczpNet.Chat;
 [DependsOn(
@@ -29,10 +30,17 @@ public class ChatApplicationModule : AbpModule
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         context.Services.AddAutoMapperObjectMapper<ChatApplicationModule>();
+
+        Configure<PermissionManagementOptions>(options =>
+        {
+            //options.ManagementProviders.Add<ChatObjectPermissionManagementProvider>();
+        });
+
         Configure<AbpAutoMapperOptions>(options =>
         {
             options.AddMaps<ChatApplicationModule>(validate: true);
         });
+
         Configure<AuthorizationOptions>(options =>
         {
             //TODO: Rename UpdatePolicy/DeletePolicy since it's candidate to conflicts with other modules!
