@@ -31,7 +31,6 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 {
     protected override string GetListPolicyName { get; set; }
     protected override string GetPolicyName { get; set; }
-
     protected virtual string SetRenamePolicyName { get; set; }
     protected virtual string SetMemberNamePolicyName { get; set; }
     protected virtual string GetDetailPolicyName { get; set; }
@@ -97,8 +96,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(input.IsCreator.HasValue, x => x.IsCreator == input.IsCreator)
             //.WhereIf(input.MinAutoId.HasValue, x => x.Session.LastMessageId > input.MinAutoId)
             //.WhereIf(input.MaxAutoId.HasValue, x => x.Session.LastMessageId < input.MaxAutoId)
-            .WhereIf(input.MinAutoId.HasValue && input.MinAutoId.Value > 0, x => x.LastMessageId > input.MinAutoId)
-            .WhereIf(input.MaxAutoId.HasValue && input.MaxAutoId.Value > 0, x => x.LastMessageId < input.MaxAutoId)
+            .WhereIf(input.MinMessageId.HasValue && input.MinMessageId.Value > 0, x => x.LastMessageId > input.MinMessageId)
+            .WhereIf(input.MaxMessageId.HasValue && input.MaxMessageId.Value > 0, x => x.LastMessageId < input.MaxMessageId)
             .WhereIf(input.IsTopping == true, x => x.Sorting != 0)
             .WhereIf(input.IsTopping == false, x => x.Sorting == 0)
             .WhereIf(input.IsCantacts.HasValue, x => x.IsCantacts == input.IsCantacts)
@@ -127,10 +126,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
             .WhereIf(input.IsKilled.HasValue, x => x.IsKilled == input.IsKilled)
             .WhereIf(input.DestinationObjectType.HasValue, x => x.Destination.ObjectType == input.DestinationObjectType)
-            .WhereIf(input.MinAutoId.HasValue, x => x.Session.LastMessageId > input.MinAutoId)
-            .WhereIf(input.MaxAutoId.HasValue, x => x.Session.LastMessageId < input.MaxAutoId)
-            //.WhereIf(input.MinAutoId.HasValue && input.MinAutoId.Value > 0, x => x.LastMessageAutoId > input.MinAutoId)
-            //.WhereIf(input.MaxAutoId.HasValue && input.MaxAutoId.Value > 0, x => x.LastMessageAutoId < input.MaxAutoId)
+            .WhereIf(input.MinMessageId.HasValue, x => x.Session.LastMessageId > input.MinMessageId)
+            .WhereIf(input.MaxMessageId.HasValue, x => x.Session.LastMessageId < input.MaxMessageId)
             .WhereIf(input.IsTopping == true, x => x.Sorting != 0)
             .WhereIf(input.IsTopping == false, x => x.Sorting == 0)
             .WhereIf(input.IsBadge, x =>
