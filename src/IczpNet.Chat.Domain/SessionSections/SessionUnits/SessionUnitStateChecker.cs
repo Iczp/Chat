@@ -1,10 +1,9 @@
-﻿using IczpNet.Chat.SessionSections.SessionUnits;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Tasks;
 using Volo.Abp.SimpleStateChecking;
 using Volo.Abp.Users;
 
-namespace IczpNet.Chat.ChatObjects
+namespace IczpNet.Chat.SessionSections.SessionUnits
 {
     public class SessionUnitStateChecker : ISimpleStateChecker<SessionUnit>
     {

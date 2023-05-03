@@ -1,6 +1,5 @@
 ﻿using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
-using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Extensions.Caching.Distributed;
 using System;
 using System.Collections.Generic;
@@ -14,7 +13,7 @@ using Volo.Abp.Domain.Services;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.ReadedRecorders;
 
-namespace IczpNet.Chat.SessionSections.Sessions;
+namespace IczpNet.Chat.SessionSections.SessionUnits;
 
 public class SessionUnitManager : DomainService, ISessionUnitManager
 {
@@ -76,6 +75,17 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
     public virtual Task<SessionUnit> GetAsync(Guid id)
     {
         return Repository.GetAsync(id);
+    }
+
+    public virtual async Task<List<SessionUnit>> GetManyAsync(List<Guid> idList)
+    {
+        var result = new List<SessionUnit>();
+
+        foreach (var id in idList)
+        {
+            result.Add(await GetAsync(id));
+        }
+        return result;
     }
 
     public virtual async Task<SessionUnit> CreateIfNotContainsAsync(SessionUnit sessionUnit)
@@ -154,7 +164,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
                 PrivateBadge = x.Session.MessageList.Count(d =>
                     //!x.IsRollbacked &&
                     d.SenderId != x.OwnerId &&
-                    (d.IsPrivate && d.ReceiverId == x.OwnerId) &&
+                    d.IsPrivate && d.ReceiverId == x.OwnerId &&
                     (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
                     (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
                     (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
@@ -167,7 +177,6 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
 
         return badge;
     }
-
 
     public virtual async Task<int> GetCountAsync(Guid sessionId)
     {

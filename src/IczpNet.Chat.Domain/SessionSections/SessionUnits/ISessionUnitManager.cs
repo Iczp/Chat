@@ -1,5 +1,4 @@
 ﻿using IczpNet.Chat.Enums;
-using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Extensions.Caching.Distributed;
 using System;
 using System.Collections.Generic;
@@ -8,11 +7,13 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace IczpNet.Chat.SessionSections.Sessions
+namespace IczpNet.Chat.SessionSections.SessionUnits
 {
     public interface ISessionUnitManager
     {
         Task<SessionUnit> GetAsync(Guid sessionUnitId);
+
+        Task<List<SessionUnit>> GetManyAsync(List<Guid> idList);
 
         Task<SessionUnit> FindAsync(Expression<Func<SessionUnit, bool>> predicate);
 

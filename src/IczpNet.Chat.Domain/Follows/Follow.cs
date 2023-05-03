@@ -21,5 +21,13 @@ namespace IczpNet.Chat.Follows
         {
             return new object[] { OwnerId, DestinationId };
         }
+
+        protected Follow() { }
+
+        public Follow(SessionUnit owner, Guid destinationId)
+        {
+            Owner = owner; 
+            DestinationId = destinationId;
+        }
     }
 }
