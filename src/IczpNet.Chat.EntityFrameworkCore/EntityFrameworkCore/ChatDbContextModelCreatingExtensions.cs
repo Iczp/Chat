@@ -4,6 +4,7 @@ using IczpNet.Chat.Attributes;
 using IczpNet.Chat.ChatObjectCategoryUnits;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.FavoriteMessages;
+using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Messages;
@@ -81,6 +82,8 @@ public static class ChatDbContextModelCreatingExtensions
         builder.Entity<SessionUnitOrganization>(b => { b.HasKey(x => new { x.SessionUnitId, x.SessionOrganizationId }); });
         builder.Entity<SessionPermissionRoleGrant>(b => { b.HasKey(x => new { x.DefinitionId, x.RoleId }); });
         builder.Entity<SessionPermissionUnitGrant>(b => { b.HasKey(x => new { x.DefinitionId, x.SessionUnitId }); });
+
+        builder.Entity<Follow>(b => { b.HasKey(x => new { x.OwnerId, x.DestinationId }); });
 
         builder.Entity<Message>(b =>
             {

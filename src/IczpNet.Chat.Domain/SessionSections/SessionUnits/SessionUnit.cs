@@ -25,6 +25,7 @@ using System.Linq;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using Volo.Abp.SimpleStateChecking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using IczpNet.Chat.Follows;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits
 {
@@ -226,6 +227,12 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         /// </summary>
         [InverseProperty(nameof(Message.SessionUnit))]
         public virtual List<Message> MessageList { get; protected set; } = new List<Message>();
+
+        [InverseProperty(nameof(Follow.Owner))]
+        public virtual IList<Follow> OwnerFollowList { get; set; }
+
+        //[InverseProperty(nameof(Follow.Destination))]
+        //public virtual IList<Follow> DestinationFollowList { get; set; }
 
         [NotMapped]
         public virtual int ReminderAllCount => GetRemindAllCount();

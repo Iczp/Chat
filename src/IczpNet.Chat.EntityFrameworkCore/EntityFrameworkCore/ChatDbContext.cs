@@ -3,6 +3,7 @@ using IczpNet.Chat.ChatObjectCategorys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.Connections;
+using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.MessageContents;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Messages;
@@ -56,6 +57,9 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     public DbSet<SessionPermissionRoleGrant> SessionPermissionRoleGrant { get; set; }
     public DbSet<SessionPermissionUnitGrant> SessionPermissionUnitGrant { get; set; }
 
+
+    public DbSet<Follow> Follow { get; set; }
+
     public DbSet<ReadedRecorder> ReadedRecorder { get; set; }
 
     public DbSet<Friendship> Friendship { get; set; }
@@ -70,7 +74,7 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
 
     public DbSet<Message> Message { get; set; }
     public DbSet<MessageContent> MessageContent { get; set; }
-    
+
 
     public DbSet<CmdContent> CmdMessage { get; set; }
     public DbSet<TextContent> TextMessage { get; set; }
@@ -95,7 +99,7 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     public DbSet<PaymentPlatform> PaymentPlatform { get; set; }
     public DbSet<WalletRequest> RechargeRequest { get; set; }
 
-    
+
 
     public ChatDbContext(DbContextOptions<ChatDbContext> options)
         : base(options)

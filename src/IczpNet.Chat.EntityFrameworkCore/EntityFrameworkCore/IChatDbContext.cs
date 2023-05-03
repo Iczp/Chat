@@ -3,6 +3,7 @@ using IczpNet.Chat.ChatObjectCategorys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.Connections;
+using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.MessageContents;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Messages;
@@ -54,10 +55,16 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<SessionPermissionDefinition> SessionPermissionDefinition { get; }
     DbSet<SessionPermissionGroup> SessionPermissionGroup { get; }
     DbSet<SessionRequest> SessionRequest { get; }
-    DbSet<SessionPermissionRoleGrant> SessionPermissionRoleGrant { get;  }
-    DbSet<SessionPermissionUnitGrant> SessionPermissionUnitGrant { get;  }
+    DbSet<SessionPermissionRoleGrant> SessionPermissionRoleGrant { get; }
+    DbSet<SessionPermissionUnitGrant> SessionPermissionUnitGrant { get; }
+
+
+    DbSet<Follow> Follow { get; }
 
     DbSet<ReadedRecorder> ReadedRecorder { get; }
+
+
+
     DbSet<Friendship> Friendship { get; }
     DbSet<FriendshipTag> FriendshipTag { get; }
     DbSet<FriendshipTagUnit> FriendshipTagUnit { get; }
@@ -96,5 +103,5 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<WalletRequest> RechargeRequest { get; }
 
 
-   
+
 }
