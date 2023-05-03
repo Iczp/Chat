@@ -457,6 +457,13 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     {
         var entity = await GetEntityAsync(id);
 
+        IQueryable<Guid> followIdList = null;
+
+        if (input.IsFollowed == true)
+        {
+            followIdList = entity.OwnerFollowList.AsQueryable().Select(x => x.DestinationId);
+        }
+
         Assert.NotNull(entity.Session, "session is null");
 
         var query = entity.Session.MessageList.AsQueryable()
@@ -471,6 +478,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(entity.HistoryLastTime.HasValue, x => x.CreationTime < entity.HistoryFristTime)
             .WhereIf(entity.ClearTime.HasValue, x => x.CreationTime > entity.ClearTime)
             .WhereIf(input.MessageType.HasValue, x => x.MessageType == input.MessageType)
+            .WhereIf(followIdList != null, x => followIdList.Contains(x.SessionUnitId.Value))
             .WhereIf(!input.IsRemind.IsEmpty(), x => x.IsRemindAll || x.MessageReminderList.Any(x => x.SessionUnitId == id))
             .WhereIf(!input.SenderId.IsEmpty(), new SenderMessageSpecification(input.SenderId.GetValueOrDefault()).ToExpression())
             .WhereIf(!input.MinAutoId.IsEmpty(), new MinAutoIdMessageSpecification(input.MinAutoId.GetValueOrDefault()).ToExpression())

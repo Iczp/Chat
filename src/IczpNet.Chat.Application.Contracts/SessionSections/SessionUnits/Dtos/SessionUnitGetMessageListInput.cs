@@ -9,9 +9,11 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
     {
         public virtual long? SenderId { get; set; }
 
+        public virtual bool? IsRemind { get; set; }
+
         public virtual MessageTypes? MessageType { get; set; }
 
-        public virtual bool? IsRemind { get; set; }
+        public virtual bool? IsFollowed { get; set; }
 
         public virtual long? MinAutoId { get; set; }
 
