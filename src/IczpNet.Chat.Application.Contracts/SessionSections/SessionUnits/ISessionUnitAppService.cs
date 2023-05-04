@@ -50,7 +50,7 @@ public interface ISessionUnitAppService
 
     Task<SessionUnitOwnerDto> DeleteMessageAsync(Guid id, long messageId);
 
-    Task<PagedResultDto<MessageDto>> GetMessageListAsync(Guid id, SessionUnitGetMessageListInput input);
+    Task<PagedResultDto<MessageItemDto>> GetMessageListAsync(Guid id, SessionUnitGetMessageListInput input);
 
     Task<MessageDto> GetMessageAsync(Guid id, long messageId);
 

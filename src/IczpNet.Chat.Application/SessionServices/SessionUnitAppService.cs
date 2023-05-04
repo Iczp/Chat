@@ -453,7 +453,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     }
 
     [HttpGet]
-    public async Task<PagedResultDto<MessageDto>> GetMessageListAsync(Guid id, SessionUnitGetMessageListInput input)
+    public async Task<PagedResultDto<MessageItemDto>> GetMessageListAsync(Guid id, SessionUnitGetMessageListInput input)
     {
         var entity = await GetEntityAsync(id);
 
@@ -485,7 +485,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(!input.MaxAutoId.IsEmpty(), new MaxAutoIdMessageSpecification(input.MaxAutoId.GetValueOrDefault()).ToExpression())
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TextContentList.Any(d => d.Text.Contains(input.Keyword)))
             ;
-        return await GetPagedListAsync<Message, MessageDto>(query, input, x => x.OrderByDescending(x => x.Id));
+        return await GetPagedListAsync<Message, MessageItemDto>(query, input, x => x.OrderByDescending(x => x.Id));
     }
 
     [HttpGet]

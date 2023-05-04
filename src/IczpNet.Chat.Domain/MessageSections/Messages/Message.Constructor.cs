@@ -4,6 +4,8 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
@@ -95,4 +97,20 @@ public partial class Message
         ReceiverType = receiver.ObjectType;
         IsPrivate = true;
     }
+
+    protected SessionUnit Current { get; private set; }
+
+    public virtual void SetCurrentSessionUnit(SessionUnit sessionUnit)
+    {
+        Current = sessionUnit;
+    }
+
+    [NotMapped]
+    public virtual bool? IsOpened => null;
+
+    [NotMapped]
+    public virtual bool? IsFollowing => Current?.OwnerFollowList.Any(x => x.DestinationId == SessionUnitId);
+
+    [NotMapped]
+    public virtual bool? IsReaded => null;
 }
