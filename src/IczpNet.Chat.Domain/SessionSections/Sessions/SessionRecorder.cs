@@ -13,11 +13,11 @@ namespace IczpNet.Chat.SessionSections.Sessions
     public class SessionRecorder : DomainService, ISessionRecorder
     {
         protected IChatObjectRepository Repository { get; }
-        protected IRepository<ReadedRecorder, Guid> ReadedRecorderRepository { get; }
+        protected IRepository<ReadedRecorder> ReadedRecorderRepository { get; }
 
         public SessionRecorder(
             IChatObjectRepository repository,
-            IRepository<ReadedRecorder, Guid> readedRecorderRepository)
+            IRepository<ReadedRecorder> readedRecorderRepository)
         {
             Repository = repository;
             ReadedRecorderRepository = readedRecorderRepository;

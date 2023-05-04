@@ -60,13 +60,15 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
 
     public DbSet<Follow> Follow { get; set; }
 
-    public DbSet<ReadedRecorder> ReadedRecorder { get; set; }
+    
 
     public DbSet<Friendship> Friendship { get; set; }
     public DbSet<FriendshipTag> FriendshipTag { get; set; }
     public DbSet<FriendshipTagUnit> FriendshipTagUnit { get; set; }
     public DbSet<FriendshipRequest> FriendshipRequest { get; set; }
+
     public DbSet<OpenedRecorder> OpenedRecorder { get; set; }
+    public DbSet<ReadedRecorder> ReadedRecorder { get; set; }
     public DbSet<MessageReminder> MessageReminder { get; set; }
 
     public DbSet<Connection> Connection { get; set; }

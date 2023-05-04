@@ -14,13 +14,14 @@ using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.AbpCommons;
+using IczpNet.AbpCommons.DataFilters;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits;
 
 public class SessionUnitManager : DomainService, ISessionUnitManager
 {
     protected ISessionUnitRepository Repository { get; }
-    protected IRepository<ReadedRecorder, Guid> ReadedRecorderRepository { get; }
+    protected IRepository<ReadedRecorder> ReadedRecorderRepository { get; }
     protected IMessageRepository MessageRepository { get; }
     protected IDistributedCache<List<SessionUnitCacheItem>, string> UnitListCache { get; }
     protected IDistributedCache<string, Guid> UnitCountCache { get; }
@@ -28,7 +29,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
 
     public SessionUnitManager(
         ISessionUnitRepository repository,
-        IRepository<ReadedRecorder, Guid> readedRecorderRepository,
+        IRepository<ReadedRecorder> readedRecorderRepository,
         IMessageRepository messageRepository,
         IDistributedCache<List<SessionUnitCacheItem>, string> unitListCache,
         IDistributedCache<string, Guid> unitCountCache,
@@ -121,9 +122,42 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
     {
         var message = await MessageRepository.GetAsync(messageId);
 
+        Assert.If(entity.SessionId != message.SessionId, $"Not in same session,messageId:{messageId}");
+
         // add readedRecorder
         /// ...
         return await SetEntityAsync(entity, x => x.SetReaded(message.Id, isForce = false));
+    }
+
+    public virtual async Task<int> SetReadedManyAsync(SessionUnit entity, List<long> messageIdList, string deviceId)
+    {
+        var dbMessageIdList = (await MessageRepository.GetQueryableAsync())
+            .Where(x => x.SessionId == entity.SessionId && messageIdList.Contains(x.Id))
+            .Select(x => x.Id)
+            .ToList()
+            ;
+
+        if (!dbMessageIdList.Any())
+        {
+            return 0;
+        }
+
+        var recordedMessageIdList = (await ReadedRecorderRepository.GetQueryableAsync())
+            .Where(x => x.SessionUnitId == entity.Id && dbMessageIdList.Contains(x.MessageId))
+            .Select(x => x.MessageId)
+            .ToList()
+            ;
+
+        var newMessageIdList = dbMessageIdList.Except(recordedMessageIdList)
+            .Select(x => new ReadedRecorder(entity, x, deviceId))
+            .ToList();
+
+        if (newMessageIdList.Any())
+        {
+            await ReadedRecorderRepository.InsertManyAsync(newMessageIdList, autoSave: true);
+        }
+
+        return newMessageIdList.Count;
     }
 
     public virtual async Task<OpenedRecorder> SetOpenedAsync(SessionUnit entity, long messageId, string deviceId)
@@ -136,7 +170,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
 
         if (openedRecorder == null)
         {
-            return await OpenedRecorderRepository.InsertAsync(new OpenedRecorder(entity, message, deviceId), autoSave: true);
+            return await OpenedRecorderRepository.InsertAsync(new OpenedRecorder(entity, messageId, deviceId), autoSave: true);
         }
 
         return openedRecorder;

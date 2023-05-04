@@ -1,5 +1,4 @@
 ﻿using IczpNet.AbpCommons;
-using IczpNet.AbpCommons.Dtos;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
@@ -37,6 +36,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     protected virtual string SetMemberNamePolicyName { get; set; }
     protected virtual string GetDetailPolicyName { get; set; }
     protected virtual string SetReadedPolicyName { get; set; }
+    protected virtual string SetReadedManyPolicyName { get; set; }
     protected virtual string SetImmersedPolicyName { get; set; }
     protected virtual string RemoveSessionPolicyName { get; set; }
     protected virtual string ClearMessagePolicyName { get; set; }
@@ -401,6 +401,16 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     }
 
     [HttpPost]
+    public virtual async Task<int> SetReadedManyAsync(Guid id, List<long> messageIdList, string deviceId)
+    {
+        await CheckPolicyAsync(SetReadedManyPolicyName);
+
+        var entity = await GetEntityAsync(id);
+
+        return await SessionUnitManager.SetReadedManyAsync(entity, messageIdList, deviceId);
+    }
+
+    [HttpPost]
     public async Task<OpenedRecorderDto> SetOpenedAsync(Guid id, long messageId, string deviceId)
     {
         var entity = await GetEntityAsync(id);
@@ -493,11 +503,11 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(followIdList != null, x => followIdList.Contains(x.SessionUnitId.Value))
             .WhereIf(!input.IsRemind.IsEmpty(), x => x.IsRemindAll || x.MessageReminderList.Any(x => x.SessionUnitId == id))
             .WhereIf(!input.SenderId.IsEmpty(), new SenderMessageSpecification(input.SenderId.GetValueOrDefault()).ToExpression())
-            .WhereIf(!input.MinAutoId.IsEmpty(), new MinAutoIdMessageSpecification(input.MinAutoId.GetValueOrDefault()).ToExpression())
-            .WhereIf(!input.MaxAutoId.IsEmpty(), new MaxAutoIdMessageSpecification(input.MaxAutoId.GetValueOrDefault()).ToExpression())
+            .WhereIf(!input.MinMessageId.IsEmpty(), new MinAutoIdMessageSpecification(input.MinMessageId.GetValueOrDefault()).ToExpression())
+            .WhereIf(!input.MaxMessageId.IsEmpty(), new MaxAutoIdMessageSpecification(input.MaxMessageId.GetValueOrDefault()).ToExpression())
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TextContentList.Any(d => d.Text.Contains(input.Keyword)))
             ;
-        return await GetPagedListAsync<Message, MessageItemDto>(query, input, x => x.OrderByDescending(x => x.Id));
+        return await GetPagedListAsync<Message, MessageItemDto>(query, input, x => x.OrderByDescending(x => x.Id), e => e.SetCurrentSessionUnit(entity));
     }
 
     [HttpGet]

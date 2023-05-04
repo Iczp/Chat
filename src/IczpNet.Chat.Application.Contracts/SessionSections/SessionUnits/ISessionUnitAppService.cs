@@ -41,6 +41,8 @@ public interface ISessionUnitAppService
 
     Task<SessionUnitOwnerDto> SetReadedAsync(Guid id, long messageId, bool isForce);
 
+    Task<int> SetReadedManyAsync(Guid id, List<long> messageIdList, string deviceId);
+
     Task<OpenedRecorderDto> SetOpenedAsync(Guid id, long messageId, string deviceId);
 
     Task<SessionUnitOwnerDto> SetImmersedAsync(Guid id, bool isImmersed);

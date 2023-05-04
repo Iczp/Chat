@@ -61,7 +61,7 @@ public interface IChatDbContext : IEfCoreDbContext
 
     DbSet<Follow> Follow { get; }
 
-    DbSet<ReadedRecorder> ReadedRecorder { get; }
+    
 
 
 
@@ -69,7 +69,9 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<FriendshipTag> FriendshipTag { get; }
     DbSet<FriendshipTagUnit> FriendshipTagUnit { get; }
     DbSet<FriendshipRequest> FriendshipRequest { get; }
+
     DbSet<OpenedRecorder> OpenedRecorder { get; }
+    DbSet<ReadedRecorder> ReadedRecorder { get; }
     DbSet<MessageReminder> MessageReminder { get; }
 
 

@@ -106,11 +106,11 @@ public partial class Message
     }
 
     [NotMapped]
-    public virtual bool? IsOpened => null;
+    public virtual bool? IsOpened => Current?.OpenedRecorderList.Any(x => x.MessageId == Id);
 
     [NotMapped]
     public virtual bool? IsFollowing => Current?.OwnerFollowList.Any(x => x.DestinationId == SessionUnitId);
 
     [NotMapped]
-    public virtual bool? IsReaded => null;
+    public virtual bool? IsReaded => Current?.ReadedMessageId > Id;
 }

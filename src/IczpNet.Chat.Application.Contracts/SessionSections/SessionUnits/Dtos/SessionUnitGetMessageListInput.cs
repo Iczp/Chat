@@ -15,9 +15,9 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         public virtual bool? IsFollowed { get; set; }
 
-        public virtual long? MinAutoId { get; set; }
+        public virtual long? MinMessageId { get; set; }
 
-        public virtual long? MaxAutoId { get; set; }
+        public virtual long? MaxMessageId { get; set; }
 
         public virtual string Keyword { get; set; }
     }

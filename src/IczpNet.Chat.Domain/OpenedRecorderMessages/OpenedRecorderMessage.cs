@@ -7,7 +7,6 @@ namespace IczpNet.Chat.OpenedRecorderMessages
 {
     public class OpenedRecorderMessage //: BaseEntity
     {
-
         public virtual long MessageId { get; set; }
 
         [ForeignKey(nameof(MessageId))]

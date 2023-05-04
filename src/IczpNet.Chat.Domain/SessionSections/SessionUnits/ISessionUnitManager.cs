@@ -34,6 +34,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         Task<SessionUnit> SetReadedAsync(SessionUnit entity, long messageId, bool isForce = false);
 
+        Task<int> SetReadedManyAsync(SessionUnit entity, List<long> messageIdList, string deviceId);
+
         Task<OpenedRecorder> SetOpenedAsync(SessionUnit entity, long messageId, string deviceId);
 
         Task<SessionUnit> SetImmersedAsync(SessionUnit entity, bool isImmersed);
