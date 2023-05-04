@@ -40,8 +40,4 @@
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="ReadedRecorders\Dtos\" />
-  </ItemGroup>
-
 </Project>
