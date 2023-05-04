@@ -24,7 +24,6 @@ namespace IczpNet.Chat.SessionSections.Sessions
         protected IRepository<Friendship, Guid> FriendshipRepository { get; }
         protected IRepository<FriendshipRequest, Guid> FriendshipRequestRepository { get; }
         protected IChatObjectManager ChatObjectManager { get; }
-        protected IRepository<OpenedRecorder, Guid> OpenedRecorderRepository { get; }
         protected IMessageRepository MessageRepository { get; }
         protected IRepository<Session, Guid> Repository { get; }
         protected IRepository<SessionUnit, Guid> SessionUnitRepository { get; }
@@ -36,7 +35,6 @@ namespace IczpNet.Chat.SessionSections.Sessions
             IRepository<Friendship, Guid> friendshipRepository,
             IChatObjectManager chatObjectManager,
             IRepository<FriendshipRequest, Guid> friendshipRequestRepository,
-            IRepository<OpenedRecorder, Guid> openedRecorderRepository,
             IMessageRepository messageRepository,
             ISessionRecorder sessionRecorder,
             IRepository<Session, Guid> repository,
@@ -47,7 +45,6 @@ namespace IczpNet.Chat.SessionSections.Sessions
             FriendshipRepository = friendshipRepository;
             ChatObjectManager = chatObjectManager;
             FriendshipRequestRepository = friendshipRequestRepository;
-            OpenedRecorderRepository = openedRecorderRepository;
             MessageRepository = messageRepository;
             SessionRecorder = sessionRecorder;
             Repository = repository;
@@ -158,21 +155,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return friendshipRequest.HandlTime;
         }
 
-        public async Task<OpenedRecorder> SetOpenedAsync(long ownerId, long destinationId, long messageId, string deviceId)
-        {
-            var message = await MessageRepository.GetAsync(messageId);
-
-            var openedRecorder = await OpenedRecorderRepository.FindAsync(x => x.OwnerId == ownerId && x.DestinationId == destinationId);
-
-            if (openedRecorder == null)
-            {
-                return await OpenedRecorderRepository.InsertAsync(new OpenedRecorder(ownerId, destinationId, message, deviceId), autoSave: true);
-            }
-
-            openedRecorder.SetMessage(message, deviceId);
-
-            return await OpenedRecorderRepository.UpdateAsync(openedRecorder, autoSave: true);
-        }
+        
 
         public async Task<SessionTag> AddTagAsync(Session entity, SessionTag sessionTag)
         {

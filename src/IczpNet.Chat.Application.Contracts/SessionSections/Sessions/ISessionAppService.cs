@@ -16,8 +16,6 @@ namespace IczpNet.Chat.SessionSections.Sessions
     {
         Task<PagedResultDto<ChatObjectDto>> GetFriendsAsync(long ownerId, bool? isCantacts, int maxResultCount = 10, int skipCount = 0, string sorting = null);
 
-        Task<OpenedRecorderDto> SetOpenedAsync(OpenedRecorderInput input);
-
         Task<PagedResultDto<SessionDto>> GetListAsync(SessionGetListInput input);
 
         Task<SessionDto> GetAsync(Guid id);

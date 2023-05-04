@@ -26,6 +26,7 @@ using IczpNet.Chat.MessageSections.MessageReminders;
 using Volo.Abp.SimpleStateChecking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using IczpNet.Chat.Follows;
+using IczpNet.Chat.OpenedRecorders;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits
 {
@@ -230,6 +231,9 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         [InverseProperty(nameof(Follow.Owner))]
         public virtual IList<Follow> OwnerFollowList { get; protected set; }
+
+        [InverseProperty(nameof(OpenedRecorder.SessionUnit))]
+        public virtual IList<OpenedRecorder> OpenedRecorderList { get; protected set; }
 
         //[InverseProperty(nameof(Follow.Destination))]
         //public virtual IList<Follow> DestinationFollowList { get; set; }

@@ -66,13 +66,7 @@ namespace IczpNet.Chat.SessionServices
             throw new NotImplementedException();
         }
 
-        [HttpPost]
-        public async Task<OpenedRecorderDto> SetOpenedAsync(OpenedRecorderInput input)
-        {
-            var entity = await SessionManager.SetOpenedAsync(input.OwnerId, input.DestinationId, input.MessageId, input.DeviceId);
-
-            return ObjectMapper.Map<OpenedRecorder, OpenedRecorderDto>(entity);
-        }
+        
 
         [HttpGet]
         public async Task<PagedResultDto<SessionDto>> GetListAsync(SessionGetListInput input)

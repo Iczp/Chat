@@ -6,7 +6,9 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
+using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.SessionSections.Friendships;
+using IczpNet.Chat.SessionSections.OpenedRecordes.Dtos;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
@@ -396,6 +398,16 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         await SessionUnitManager.SetReadedAsync(entity, messageId, isForce);
 
         return await MapToDtoAsync(entity);
+    }
+
+    [HttpPost]
+    public async Task<OpenedRecorderDto> SetOpenedAsync(Guid id, long messageId, string deviceId)
+    {
+        var entity = await GetEntityAsync(id);
+
+        var readedRecorder = await SessionUnitManager.SetOpenedAsync(entity, messageId, deviceId);
+
+        return ObjectMapper.Map<OpenedRecorder, OpenedRecorderDto>(readedRecorder);
     }
 
     [HttpPost]

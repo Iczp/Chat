@@ -4,6 +4,7 @@ using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.SessionTags;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,7 +32,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         Task<DateTime?> HandleRequestAsync(Guid friendshipRequestId, bool isAgreed, string handlMessage);
 
-        Task<OpenedRecorder> SetOpenedAsync(long ownerId, long destinationId, long messageId, string deviceId);
+        
 
         Task<SessionTag> AddTagAsync(Session entity, SessionTag sessionTag);
 

@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.Enums;
+using IczpNet.Chat.OpenedRecorders;
 using Microsoft.Extensions.Caching.Distributed;
 using System;
 using System.Collections.Generic;
@@ -32,6 +33,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         Task<SessionUnit> SetToppingAsync(SessionUnit entity, bool isTopping);
 
         Task<SessionUnit> SetReadedAsync(SessionUnit entity, long messageId, bool isForce = false);
+
+        Task<OpenedRecorder> SetOpenedAsync(SessionUnit entity, long messageId, string deviceId);
 
         Task<SessionUnit> SetImmersedAsync(SessionUnit entity, bool isImmersed);
 
