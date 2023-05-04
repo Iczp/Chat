@@ -106,11 +106,14 @@ public partial class Message
     }
 
     [NotMapped]
-    public virtual bool? IsOpened => Current?.OpenedRecorderList.Any(x => x.MessageId == Id);
+    public virtual bool? IsOpened => Current?.OpenedRecorderList.AsQueryable().Any(x => x.MessageId == Id);
 
     [NotMapped]
-    public virtual bool? IsFollowing => Current?.OwnerFollowList.Any(x => x.DestinationId == SessionUnitId);
+    public virtual bool? IsFollowing => Current?.OwnerFollowList.AsQueryable().Any(x => x.DestinationId == SessionUnitId);
 
     [NotMapped]
     public virtual bool? IsReaded => Current?.ReadedMessageId > Id;
+
+    [NotMapped]
+    public virtual int? ReadedCount => ReadedRecorderList.AsQueryable().WhereIf(Current != null, x => x.SessionUnitId != Current.Id).Count();
 }

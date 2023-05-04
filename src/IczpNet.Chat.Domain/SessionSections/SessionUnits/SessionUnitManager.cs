@@ -15,6 +15,7 @@ using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.DataFilters;
+using IczpNet.Chat.ChatPushers;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits;
 
@@ -156,6 +157,11 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         {
             await ReadedRecorderRepository.InsertManyAsync(newMessageIdList, autoSave: true);
         }
+
+
+        //notice :IChatPusher.
+        //...
+
 
         return newMessageIdList.Count;
     }

@@ -1,7 +1,9 @@
 ﻿using IczpNet.Chat.FavoriteMessages;
 using IczpNet.Chat.OpenedRecorders;
+using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -11,6 +13,9 @@ public partial class Message
 {
     [InverseProperty(nameof(OpenedRecorder.Message))]
     public virtual IList<OpenedRecorder> OpenedRecorderList { get; set; }
+
+    [InverseProperty(nameof(ReadedRecorder.Message))]
+    public virtual IList<ReadedRecorder> ReadedRecorderList { get; set; }
 
 
     [InverseProperty(nameof(FavoriteMessage.Message))]
@@ -40,5 +45,8 @@ public partial class Message
     [InverseProperty(nameof(SessionSections.SessionUnits.SessionUnit.ReadedMessage))]
     public virtual List<SessionUnit> ReadedMessageSessionUnitList { get; protected set; }
 
-
+    internal virtual void SetSessionUnitCount(int sessionUnitCount)
+    {
+        SessionUnitCount = sessionUnitCount;
+    }
 }

@@ -1,4 +1,5 @@
 ﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatPushers;
 using IczpNet.Chat.CommandPayloads;
@@ -63,10 +64,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         {
             var session = await SessionGenerator.MakeAsync(sender, receiver);
 
-            var entity = new Message(sender, receiver, session)
-            {
-                SessionUnitCount = await SessionUnitManager.GetCountAsync(session.Id)
-            };
+            var entity = new Message(sender, receiver, session);
 
             if (func != null)
             {
@@ -75,6 +73,10 @@ namespace IczpNet.Chat.MessageSections.Messages
             }
 
             await MessageValidator.CheckAsync(entity);
+
+            var sessionUnitCount = entity.IsPrivate ? 2 : await SessionUnitManager.GetCountAsync(session.Id);
+
+            entity.SetSessionUnitCount(sessionUnitCount);
 
             await Repository.InsertAsync(entity, autoSave: true);
 
@@ -112,10 +114,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             var session = senderSessionUnit.Session;
 
-            var entity = new Message(senderSessionUnit)
-            {
-                SessionUnitCount = await SessionUnitManager.GetCountAsync(senderSessionUnit.SessionId.Value)
-            };
+            var entity = new Message(senderSessionUnit);
 
             if (getContentEntity != null)
             {
@@ -124,6 +123,10 @@ namespace IczpNet.Chat.MessageSections.Messages
             }
 
             await MessageValidator.CheckAsync(entity);
+
+            var sessionUnitCount = entity.IsPrivate ? 2 : await SessionUnitManager.GetCountAsync(senderSessionUnit.SessionId.Value);
+
+            entity.SetSessionUnitCount(sessionUnitCount);
 
             await Repository.InsertAsync(entity, autoSave: true);
 
@@ -166,7 +169,10 @@ namespace IczpNet.Chat.MessageSections.Messages
                 var messageContent = ObjectMapper.Map<TContentInfo, TContent>(input.Content);
 
                 //remind sessionUnitId
-                entity.SetReminder(input.RemindList, ReminderTypes.Normal);
+                if (input.RemindList.IsAny())
+                {
+                    entity.SetReminder(input.RemindList, ReminderTypes.Normal);
+                }
 
                 return await Task.FromResult(messageContent);
             });

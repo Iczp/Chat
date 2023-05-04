@@ -30,5 +30,7 @@ namespace IczpNet.Chat.MessageSections.Messages.Dtos
         public virtual bool? IsReaded { get; set; }
 
         public virtual bool? IsFollowing { get; set; }
+
+        public virtual int SessionUnitCount { get; set; }
     }
 }

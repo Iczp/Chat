@@ -27,7 +27,7 @@ public partial class Message : BaseEntity<long>, ISessionId
     /// </summary>
     public virtual Guid? SessionUnitId { get; protected set; }
 
-    public virtual int SessionUnitCount { get; internal protected set; }
+    public virtual int SessionUnitCount { get; protected set; }
 
 
     [StringLength(100)]
