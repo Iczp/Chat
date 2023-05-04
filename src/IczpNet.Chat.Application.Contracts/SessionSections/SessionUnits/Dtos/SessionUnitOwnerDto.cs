@@ -66,5 +66,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
         public virtual int ReminderAllCount { get; set; }
 
         public virtual int ReminderMeCount { get; set; }
+
+        public virtual int FollowingCount { get; set; }
     }
 }

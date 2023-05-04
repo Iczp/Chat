@@ -220,7 +220,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public virtual IList<SessionPermissionUnitGrant> GrantList { get; set; }
 
         [InverseProperty(nameof(SessionRequest.Handler))]
-        public virtual IList<SessionRequest> HandlerList { get; set; }
+        public virtual IList<SessionRequest> HandlerList { get; protected set; }
 
         /// <summary>
         /// sender message list
@@ -229,7 +229,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public virtual List<Message> MessageList { get; protected set; } = new List<Message>();
 
         [InverseProperty(nameof(Follow.Owner))]
-        public virtual IList<Follow> OwnerFollowList { get; set; }
+        public virtual IList<Follow> OwnerFollowList { get; protected set; }
 
         //[InverseProperty(nameof(Follow.Destination))]
         //public virtual IList<Follow> DestinationFollowList { get; set; }
@@ -240,20 +240,11 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         [NotMapped]
         public virtual int ReminderMeCount => GetRemindMeCount();
 
-        //[NotMapped]
-        //public virtual int Badge => Session.MessageList.Count(x =>
-        //        //!x.IsRollbacked &&
-        //        (ReadedMessageId == null || x.Id > ReadedMessageId) &&
-        //        x.SenderId != OwnerId &&
-        //        (!HistoryFristTime.HasValue || x.CreationTime > HistoryFristTime) &&
-        //        (!HistoryLastTime.HasValue || x.CreationTime < HistoryLastTime) &&
-        //        (!ClearTime.HasValue || x.CreationTime > ClearTime));
+        [NotMapped]
+        public virtual int ReminderCount => GetReminderCount();
 
         [NotMapped]
         public virtual int Badge => GetBadge();
-
-        [NotMapped]
-        public virtual int ReminderCount => GetReminderCount();
 
         [NotMapped]
         public virtual Message SessionLastMessage => Session.LastMessage;//GetLastMessage();
@@ -269,6 +260,9 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         [NotMapped]
         public virtual List<Guid> RoleIdList => GetRoleIdList();
+
+        [NotMapped]
+        public virtual int FollowingCount => GetFollowingCount();
 
         /// <summary>
         /// last message autoId
@@ -397,7 +391,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         /// @me
         /// </summary>
         /// <returns></returns>
-        protected int GetRemindMeCount()
+        protected virtual int GetRemindMeCount()
         {
             return ReminderList.AsQueryable().Select(x => x.Message).Where(x => !x.IsRollbacked).Count(new SessionUnitMessageSpecification(this).ToExpression());
         }
@@ -406,9 +400,18 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         /// @everyone
         /// </summary>
         /// <returns></returns>
-        protected int GetRemindAllCount()
+        protected virtual int GetRemindAllCount()
         {
             return Session.MessageList.AsQueryable().Where(x => x.IsRemindAll && !x.IsRollbacked).Count(new SessionUnitMessageSpecification(this).ToExpression());
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        protected virtual int GetFollowingCount()
+        {
+            return Session.MessageList.AsQueryable().Where(x => OwnerFollowList.Any(d => d.DestinationId == x.SessionUnitId)).Count(new SessionUnitMessageSpecification(this).ToExpression());
         }
 
         internal virtual void SetTopping(bool isTopping)

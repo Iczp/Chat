@@ -91,6 +91,8 @@ namespace IczpNet.Chat.SessionServices
 
         public virtual int ReminderMeCount { get; set; }
 
+        public virtual int FollowingCount { get; set; }
+
         public virtual double Sorting { get; set; }
     }
 }
