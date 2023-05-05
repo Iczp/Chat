@@ -1,6 +1,5 @@
 ﻿using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
-using IczpNet.Chat.SessionSections.OpenedRecordes.Dtos;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 using IczpNet.Chat.SessionSections.Sessions.Dtos;
 using IczpNet.Chat.SessionSections.SessionTags.Dtos;

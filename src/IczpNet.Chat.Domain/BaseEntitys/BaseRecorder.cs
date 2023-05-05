@@ -1,5 +1,6 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
@@ -8,7 +9,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.BaseEntitys
 {
-    public abstract class BaseRecorder : BaseEntity, IDeviceId
+    public abstract class BaseRecorder : BaseEntity, IDeviceId, IMessageId, ISessionUnitId
     {
         public virtual long MessageId { get; protected set; }
 

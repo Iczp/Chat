@@ -1,7 +1,7 @@
 ﻿using System;
 using Volo.Abp.Application.Dtos;
 
-namespace IczpNet.Chat.SessionSections.OpenedRecordes.Dtos
+namespace IczpNet.Chat.OpenedRecorders.Dtos
 {
     public class OpenedRecorderDto : EntityDto
     {

@@ -11,37 +11,27 @@ using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using IczpNet.AbpCommons.Extensions;
-using IczpNet.Chat.ReadedRecorders;
-using IczpNet.Chat.OpenedRecorders;
 using IczpNet.AbpCommons;
-using IczpNet.AbpCommons.DataFilters;
-using IczpNet.Chat.ChatPushers;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits;
 
 public class SessionUnitManager : DomainService, ISessionUnitManager
 {
     protected ISessionUnitRepository Repository { get; }
-    protected IRepository<ReadedRecorder> ReadedRecorderRepository { get; }
     protected IMessageRepository MessageRepository { get; }
     protected IDistributedCache<List<SessionUnitCacheItem>, string> UnitListCache { get; }
     protected IDistributedCache<string, Guid> UnitCountCache { get; }
-    protected IRepository<OpenedRecorder> OpenedRecorderRepository { get; }
 
     public SessionUnitManager(
         ISessionUnitRepository repository,
-        IRepository<ReadedRecorder> readedRecorderRepository,
         IMessageRepository messageRepository,
         IDistributedCache<List<SessionUnitCacheItem>, string> unitListCache,
-        IDistributedCache<string, Guid> unitCountCache,
-        IRepository<OpenedRecorder> openedRecorderRepository)
+        IDistributedCache<string, Guid> unitCountCache)
     {
         Repository = repository;
-        ReadedRecorderRepository = readedRecorderRepository;
         MessageRepository = messageRepository;
         UnitListCache = unitListCache;
         UnitCountCache = unitCountCache;
-        OpenedRecorderRepository = openedRecorderRepository;
     }
 
     protected virtual async Task<SessionUnit> SetEntityAsync(SessionUnit entity, Action<SessionUnit> action = null)
@@ -128,58 +118,6 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         // add readedRecorder
         /// ...
         return await SetEntityAsync(entity, x => x.SetReaded(message.Id, isForce = false));
-    }
-
-    public virtual async Task<int> SetReadedManyAsync(SessionUnit entity, List<long> messageIdList, string deviceId)
-    {
-        var dbMessageIdList = (await MessageRepository.GetQueryableAsync())
-            .Where(x => x.SessionId == entity.SessionId && messageIdList.Contains(x.Id))
-            .Select(x => x.Id)
-            .ToList()
-            ;
-
-        if (!dbMessageIdList.Any())
-        {
-            return 0;
-        }
-
-        var recordedMessageIdList = (await ReadedRecorderRepository.GetQueryableAsync())
-            .Where(x => x.SessionUnitId == entity.Id && dbMessageIdList.Contains(x.MessageId))
-            .Select(x => x.MessageId)
-            .ToList()
-            ;
-
-        var newMessageIdList = dbMessageIdList.Except(recordedMessageIdList)
-            .Select(x => new ReadedRecorder(entity, x, deviceId))
-            .ToList();
-
-        if (newMessageIdList.Any())
-        {
-            await ReadedRecorderRepository.InsertManyAsync(newMessageIdList, autoSave: true);
-        }
-
-
-        //notice :IChatPusher.
-        //...
-
-
-        return newMessageIdList.Count;
-    }
-
-    public virtual async Task<OpenedRecorder> SetOpenedAsync(SessionUnit entity, long messageId, string deviceId)
-    {
-        var message = await MessageRepository.GetAsync(messageId);
-
-        Assert.If(entity.SessionId != message.SessionId, $"Not in same session,messageId:{messageId}");
-
-        var openedRecorder = await OpenedRecorderRepository.FindAsync(x => x.SessionUnitId == entity.Id && x.MessageId == messageId);
-
-        if (openedRecorder == null)
-        {
-            return await OpenedRecorderRepository.InsertAsync(new OpenedRecorder(entity, messageId, deviceId), autoSave: true);
-        }
-
-        return openedRecorder;
     }
 
     public virtual Task<SessionUnit> SetImmersedAsync(SessionUnit entity, bool isImmersed)

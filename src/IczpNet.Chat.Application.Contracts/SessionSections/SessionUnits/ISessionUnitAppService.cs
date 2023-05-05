@@ -1,6 +1,6 @@
 ﻿using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
-using IczpNet.Chat.SessionSections.OpenedRecordes.Dtos;
+using IczpNet.Chat.OpenedRecorders.Dtos;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using System;
 using System.Collections.Generic;
@@ -40,10 +40,6 @@ public interface ISessionUnitAppService
     Task<SessionUnitOwnerDto> SetToppingAsync(Guid id, bool isTopping);
 
     Task<SessionUnitOwnerDto> SetReadedAsync(Guid id, long messageId, bool isForce);
-
-    Task<int> SetReadedManyAsync(Guid id, List<long> messageIdList, string deviceId);
-
-    Task<OpenedRecorderDto> SetOpenedAsync(Guid id, long messageId, string deviceId);
 
     Task<SessionUnitOwnerDto> SetImmersedAsync(Guid id, bool isImmersed);
 

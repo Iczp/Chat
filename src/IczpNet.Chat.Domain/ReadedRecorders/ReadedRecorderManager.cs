@@ -1,78 +1,54 @@
-﻿using IczpNet.Chat.MessageSections.Messages;
+﻿using IczpNet.Chat.Bases;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.ReadedRecorders
 {
-    public class ReadedRecorderManager : DomainService, IReadedRecorderManager
+    public class ReadedRecorderManager : RecorderManager<ReadedRecorder>, IReadedRecorderManager
     {
-        protected IRepository<ReadedRecorder> Repository { get; }
-
-        protected IMessageRepository MessageRepository { get; }
-        protected ISessionUnitRepository SessionUnitRepository { get; }
-
-        public ReadedRecorderManager(
-            IRepository<ReadedRecorder> repository,
-            IMessageRepository messageRepository,
-            ISessionUnitRepository sessionUnitRepository)
+        public ReadedRecorderManager(IRepository<ReadedRecorder> repository) : base(repository)
         {
-            Repository = repository;
-            MessageRepository = messageRepository;
-            SessionUnitRepository = sessionUnitRepository;
+
+
         }
 
-        /// <inheritdoc/>
-        public virtual async Task<Dictionary<long, int>> GetCountsAsync(List<long> messageIdList)
+        public virtual async Task<int> SetReadedManyAsync(SessionUnit entity, List<long> messageIdList, string deviceId)
         {
-            var dict = messageIdList.ToDictionary(x => x, x => 0);
+            var dbMessageIdList = (await MessageRepository.GetQueryableAsync())
+                .Where(x => x.SessionId == entity.SessionId && messageIdList.Contains(x.Id))
+                .Select(x => x.Id)
+                .ToList()
+                ;
 
-            var groups = (await Repository.GetQueryableAsync())
-                .Where(x => messageIdList.Contains(x.MessageId))
-                .GroupBy(x => x.MessageId);
-
-            foreach( var item in groups)
+            if (!dbMessageIdList.Any())
             {
-                dict[item.Key] = item.Count();
+                return 0;
             }
 
-            return dict;
-        }
+            var recordedMessageIdList = (await Repository.GetQueryableAsync())
+                .Where(x => x.SessionUnitId == entity.Id && dbMessageIdList.Contains(x.MessageId))
+                .Select(x => x.MessageId)
+                .ToList()
+                ;
 
-        /// <inheritdoc/>
-        public virtual async Task<IQueryable<SessionUnit>> QueryReadedAsync(long messageId)
-        {
-            var readedSessionUnitIdList = (await Repository.GetQueryableAsync())
-                .Where(x => x.MessageId == messageId)
-                .Select(x => x.SessionUnitId);
+            var newMessageIdList = dbMessageIdList.Except(recordedMessageIdList)
+                .Select(x => new ReadedRecorder(entity, x, deviceId))
+                .ToList();
 
-            return (await SessionUnitRepository.GetQueryableAsync())
-                .Where(x => readedSessionUnitIdList.Contains(x.Id));
-        }
-
-        /// <inheritdoc/>
-        public virtual async Task<IQueryable<SessionUnit>> QueryUnreadedAsync(long messageId)
-        {
-            var message = await MessageRepository.GetAsync(messageId);
-
-            var readedSessionUnitIdList = (await Repository.GetQueryableAsync())
-                .Where(x => x.MessageId == messageId)
-                .Select(x => x.SessionUnitId);
-
-            var query = (await SessionUnitRepository.GetQueryableAsync())
-                .Where(x => x.SessionId == message.SessionId)
-                .Where(x => x.IsEnabled && x.IsPublic && !x.IsKilled)
-                .Where(new MessageSessionUnitSpecification(message).ToExpression());
-
-            if (message.IsPrivate)
+            if (newMessageIdList.Any())
             {
-                return query.Where(x => x.Id == message.SessionUnitId || (x.OwnerId == message.ReceiverId && x.DestinationId == message.SenderId));
+                await Repository.InsertManyAsync(newMessageIdList, autoSave: true);
             }
 
-            return query.Where(x => !readedSessionUnitIdList.Contains(x.Id));
+
+            //notice :IChatPusher.
+            //...
+
+
+            return newMessageIdList.Count;
         }
     }
 }

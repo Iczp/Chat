@@ -1,6 +1,7 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 
-namespace IczpNet.Chat.SessionSections.OpenedRecordes.Dtos
+namespace IczpNet.Chat.OpenedRecorders.Dtos
 {
     public class OpenedRecorderInput
     {
@@ -8,10 +9,13 @@ namespace IczpNet.Chat.SessionSections.OpenedRecordes.Dtos
 
         //public virtual long DestinationId { get; set; }
 
-        //public virtual string SessionUnitId { get; set; }
+        [Required]
+        public virtual Guid SessionUnitId { get; set; }
+
+        [Required]
+        public virtual long MessageId { get; set; }
 
         public virtual string DeviceId { get; set; }
 
-        public virtual long MessageId { get; set; }
     }
 }
