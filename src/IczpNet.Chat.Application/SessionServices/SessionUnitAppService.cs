@@ -23,6 +23,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Specifications;
 using Volo.Abp.Uow;
 using Volo.Abp.Users;
 
@@ -96,8 +97,6 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(input.DestinationObjectType.HasValue, x => x.DestinationObjectType == input.DestinationObjectType)
             .WhereIf(input.IsKilled.HasValue, x => x.IsKilled == input.IsKilled)
             .WhereIf(input.IsCreator.HasValue, x => x.IsCreator == input.IsCreator)
-            //.WhereIf(input.MinAutoId.HasValue, x => x.Session.LastMessageId > input.MinAutoId)
-            //.WhereIf(input.MaxAutoId.HasValue, x => x.Session.LastMessageId < input.MaxAutoId)
             .WhereIf(input.MinMessageId.HasValue && input.MinMessageId.Value > 0, x => x.LastMessageId > input.MinMessageId)
             .WhereIf(input.MaxMessageId.HasValue && input.MaxMessageId.Value > 0, x => x.LastMessageId < input.MaxMessageId)
             .WhereIf(input.IsTopping == true, x => x.Sorting != 0)

@@ -16,8 +16,8 @@ namespace IczpNet.Chat.ReadedRecorders
         protected ISessionUnitRepository SessionUnitRepository { get; }
 
         public ReadedRecorderManager(
-            IRepository<ReadedRecorder> repository, 
-            IMessageRepository messageRepository, 
+            IRepository<ReadedRecorder> repository,
+            IMessageRepository messageRepository,
             ISessionUnitRepository sessionUnitRepository)
         {
             Repository = repository;
@@ -28,14 +28,15 @@ namespace IczpNet.Chat.ReadedRecorders
         /// <inheritdoc/>
         public virtual async Task<Dictionary<long, int>> GetCountsAsync(List<long> messageIdList)
         {
-            var dict = (await Repository.GetQueryableAsync())
-                .Where(x => messageIdList.Contains(x.MessageId))
-                .GroupBy(x => x.MessageId)
-                .ToDictionary(x => x.Key, x => x.Count());
+            var dict = messageIdList.ToDictionary(x => x, x => 0);
 
-            foreach (var messageId in messageIdList.Except(dict.Keys))
+            var groups = (await Repository.GetQueryableAsync())
+                .Where(x => messageIdList.Contains(x.MessageId))
+                .GroupBy(x => x.MessageId);
+
+            foreach( var item in groups)
             {
-                dict[messageId] = 0;
+                dict[item.Key] = item.Count();
             }
 
             return dict;
@@ -64,8 +65,7 @@ namespace IczpNet.Chat.ReadedRecorders
             var query = (await SessionUnitRepository.GetQueryableAsync())
                 .Where(x => x.SessionId == message.SessionId)
                 .Where(x => x.IsEnabled && x.IsPublic && !x.IsKilled)
-                .Where(x => !x.HistoryFristTime.HasValue || message.CreationTime > x.HistoryFristTime)
-                .Where(x => !x.HistoryLastTime.HasValue || message.CreationTime < x.HistoryLastTime);
+                .Where(new MessageSessionUnitSpecification(message).ToExpression());
 
             if (message.IsPrivate)
             {

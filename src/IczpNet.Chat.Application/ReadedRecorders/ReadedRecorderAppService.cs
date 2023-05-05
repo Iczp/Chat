@@ -31,7 +31,7 @@ namespace IczpNet.Chat.ReadedRecorders
                 ? await ReadedRecorderManager.QueryReadedAsync(messageId)
                 : await ReadedRecorderManager.QueryUnreadedAsync(messageId);
 
-            query = query.WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Rename.Contains(input.Keyword) || x.RenameSpellingAbbreviation.Contains(input.Keyword)  || x.Owner.Name.Contains(input.Keyword) || x.Owner.NameSpellingAbbreviation.Contains(input.Keyword));
+            query = query.WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordSessionUnitSpecification(input.Keyword).ToExpression());
 
             return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query, input);
         }
