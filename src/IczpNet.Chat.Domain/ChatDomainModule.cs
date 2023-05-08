@@ -1,6 +1,7 @@
 using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.Connections;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.TextTemplates;
 using IczpNet.Pusher;
@@ -10,6 +11,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.AutoMapper;
+using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.Domain;
 using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement.Identity;
@@ -60,6 +62,7 @@ public class ChatDomainModule : AbpModule
     {
         //await context.AddBackgroundWorkerAsync<ConnectionWorker>();
         //await context.AddBackgroundWorkerAsync<SendMessageWorker>();
+        await context.AddBackgroundWorkerAsync<SendToRoomWorker>();
         await base.OnPostApplicationInitializationAsync(context);
     }
 }

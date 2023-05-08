@@ -157,7 +157,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
 
         room.OwnerSessionList.Add(session);
 
-        var insertSessionUnitList = new List<SessionUnit>() { roomSessionUnit, creatorSessionUnit }.Concat(memberSessionUnitList).ToList();
+        var insertSessionUnitList = new List<SessionUnit>() { roomSessionUnit, creatorSessionUnit }.Concat(memberSessionUnitList).Where(x => x != null).ToList();
 
         await SessionUnitRepository.InsertManyAsync(insertSessionUnitList);
 
