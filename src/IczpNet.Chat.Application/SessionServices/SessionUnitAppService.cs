@@ -136,25 +136,15 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 
                 var idList = entities.Select(x => x.Id).ToList();
 
-                var badges = await SessionUnitManager.GetBadgeByIdAsync(idList, minMessageId);
-
-                var reminders = await SessionUnitManager.GetReminderCountByIdAsync(idList, minMessageId);
-
-                var following = await SessionUnitManager.GetFollowingCountByIdAsync(idList, minMessageId);
+                var stats = await SessionUnitManager.GetStatsAsync(idList, minMessageId);
 
                 foreach (var e in entities)
                 {
-                    if (badges.TryGetValue(e.Id, out int badge))
+                    if (stats.TryGetValue(e.Id, out SessionUnitStatModel stat))
                     {
-                        e.SetBadge(badge);
-                    }
-                    if (reminders.TryGetValue(e.Id, out int reminderCount))
-                    {
-                        e.SetReminderCount(reminderCount);
-                    }
-                    if (following.TryGetValue(e.Id, out int followingCount))
-                    {
-                        e.SetFollowingCount(followingCount);
+                        e.SetBadge(stat.PublicBadge + stat.PrivateBadge);
+                        e.SetReminderCount(stat.RemindAllCount + stat.RemindMeCount);
+                        e.SetFollowingCount(stat.FollowingCount);
                     }
                 }
                 return entities;

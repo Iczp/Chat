@@ -1,5 +1,4 @@
-﻿using IczpNet.AbpCommons.Dtos;
-using IczpNet.Chat.ChatObjects;
+﻿using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Localization;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.AspNetCore.Authorization;
