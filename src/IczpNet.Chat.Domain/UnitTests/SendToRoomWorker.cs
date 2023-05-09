@@ -1,5 +1,4 @@
-﻿using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.Enums;
+﻿using AutoMapper.Internal;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
@@ -22,7 +21,7 @@ namespace IczpNet.Chat.Connections
     {
         private static List<Guid> SessionUnitIdList;
 
-        private static long? RoomId = null;
+        private static long? RoomId = 6019;
 
         private static int Index = 0;
 
@@ -68,15 +67,23 @@ namespace IczpNet.Chat.Connections
 
             Index++;
 
+            var remindList = new List<Guid>();
+
+            for (int i = 0; i < new Random().Next(1, 10); i++)
+            {
+                remindList.TryAdd(items[new Random().Next(0, items.Count - 1)]);
+            }
+
             await MessageSender.SendTextAsync(sessionunit, new MessageSendInput<TextContentInfo>()
             {
                 Content = new TextContentInfo()
                 {
-                    Text = $"RoomId:{RoomId}-Index-{Index}-{sessionunitId}"
-                }
+                    Text = $"RoomId:{RoomId}-Index-{Index}-{sessionunitId},remindCount:{remindList.Count}"
+                },
+                RemindList = remindList
             });
 
-            Logger.LogInformation($"SendText: RoomId:{RoomId}-Index-{Index}-{sessionunitId}-Name:{sessionunit?.Owner?.Name}");
+            Logger.LogInformation($"SendText: RoomId:{RoomId}-Index-{Index}-{sessionunitId}-Name:{sessionunit?.Owner?.Name},remindCount:{remindList.Count}");
 
         }
 
