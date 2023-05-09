@@ -34,7 +34,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
         [DefaultValue(false)]
         public virtual bool IsBadge { get; set; }
 
-        public virtual bool IsOrderByBadge { get; set; }
+        //public virtual bool IsOrderByBadge { get; set; }
 
         public virtual bool? IsKilled { get; set; }
 

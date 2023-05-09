@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.ChatObjects;
+﻿using IczpNet.AbpCommons.Dtos;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Localization;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.AspNetCore.Authorization;
@@ -33,7 +34,7 @@ public abstract class ChatAppService : ApplicationService
         IQueryable<TEntity> query,
         int maxResultCount = 10,
         int skipCount = 0, string sorting = null,
-        Func<IQueryable<TEntity>, IQueryable<TEntity>> queryableAction = null, Action<TEntity> entityAction = null)
+        Func<IQueryable<TEntity>, IQueryable<TEntity>> queryableAction = null, Func<List<TEntity>, Task<List<TEntity>>> entityAction = null)
     {
         var totalCount = await AsyncExecuter.CountAsync(query);
 
@@ -50,12 +51,9 @@ public abstract class ChatAppService : ApplicationService
 
         var entities = await AsyncExecuter.ToListAsync(query);
 
-        if(entityAction!=null)
+        if (entityAction != null)
         {
-            foreach(var entity in entities)
-            {
-                entityAction?.Invoke(entity);
-            }
+            entities = await entityAction?.Invoke(entities);
         }
 
         var items = ObjectMapper.Map<List<TEntity>, List<TOuputDto>>(entities);
@@ -66,7 +64,7 @@ public abstract class ChatAppService : ApplicationService
     protected virtual Task<PagedResultDto<TOuputDto>> GetPagedListAsync<TEntity, TOuputDto>(
         IQueryable<TEntity> query,
         PagedAndSortedResultRequestDto input,
-        Func<IQueryable<TEntity>, IQueryable<TEntity>> queryableAction = null, Action<TEntity> entityAction = null)
+        Func<IQueryable<TEntity>, IQueryable<TEntity>> queryableAction = null, Func<List<TEntity>, Task<List<TEntity>>> entityAction = null)
     {
         return GetPagedListAsync<TEntity, TOuputDto>(query, input.MaxResultCount, input.SkipCount, input.Sorting, queryableAction, entityAction);
     }

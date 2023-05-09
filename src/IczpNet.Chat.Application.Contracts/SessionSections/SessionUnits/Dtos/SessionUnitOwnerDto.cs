@@ -57,16 +57,21 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
         /// 邀请人
         /// </summary>
         public virtual long? InviterId { get; set; }
-        public virtual MessageDto LastMessage { get; set; }
 
-        public virtual int Badge { get; set; }
+        public virtual MessageDto LastMessage { get; set; }
 
         public virtual long? ReadedMessageId { get; set; }
 
-        public virtual int ReminderAllCount { get; set; }
+        public virtual int? Badge { get; set; }
 
-        public virtual int ReminderMeCount { get; set; }
+        public virtual int? ReminderAllCount { get; set; }
 
-        public virtual int FollowingCount { get; set; }
+        public virtual int? ReminderMeCount { get; set; }
+
+        public virtual int? FollowingCount { get; set; }
+
+        public virtual long? LastMessageId { get; set; }
+
+        public virtual double Sorting { get; set; }
     }
 }

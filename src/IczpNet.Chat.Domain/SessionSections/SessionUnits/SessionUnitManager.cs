@@ -12,6 +12,9 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.AbpCommons;
+using Pipelines.Sockets.Unofficial.Buffers;
+using IczpNet.Chat.DataFilters;
+using IczpNet.Chat.Specifications;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits;
 
@@ -145,36 +148,151 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         throw new NotImplementedException();
     }
 
-    public virtual async Task<int> GetBadgeAsync(long ownerId, bool? isImmersed = null)
+    protected virtual async Task<int> GetBadgeAsync(Func<IQueryable<SessionUnit>, IQueryable<SessionUnit>> queryAction)
     {
-        var badge = (await Repository.GetQueryableAsync())
-            .Where(x => x.OwnerId == ownerId)
-            .WhereIf(isImmersed.HasValue, x => x.IsImmersed == isImmersed)
-            .Select(x => new
-            {
-                PublicBadge = x.Session.MessageList.Count(d =>
-                    //!x.IsRollbacked &&
-                    d.SenderId != x.OwnerId &&
-                    !d.IsPrivate &&
-                    (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
-                    (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
-                    (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
-                    (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)),
-                PrivateBadge = x.Session.MessageList.Count(d =>
-                    //!x.IsRollbacked &&
-                    d.SenderId != x.OwnerId &&
-                    d.IsPrivate && d.ReceiverId == x.OwnerId &&
-                    (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
-                    (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
-                    (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
-                    (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)),
-            })
-            .Select(x => x.PublicBadge + x.PrivateBadge)
-            .Where(x => x > 0)
-            .ToList()
+        var query = queryAction.Invoke(await Repository.GetQueryableAsync());
+
+        var badge = query.Select(x => new
+        {
+            PublicBadge = x.Session.MessageList.Count(d =>
+                !d.IsPrivate &&
+                //!x.IsRollbacked &&
+                d.SenderId != x.OwnerId &&
+                (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
+                (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
+                (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
+                (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)),
+            PrivateBadge = x.Session.MessageList.Count(d =>
+                d.IsPrivate && d.ReceiverId == x.OwnerId &&
+                //!x.IsRollbacked &&
+                d.SenderId != x.OwnerId &&
+                (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
+                (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
+                (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
+                (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)),
+        })
+        .Select(x => x.PublicBadge + x.PrivateBadge)
+        .Where(x => x > 0)
+        .ToList()
         .Sum();
 
         return badge;
+    }
+
+    public virtual Task<int> GetBadgeByOwnerIdAsync(long ownerId, bool? isImmersed = null)
+    {
+        return GetBadgeAsync(q =>
+            q.Where(x => x.OwnerId == ownerId)
+            .WhereIf(isImmersed.HasValue, x => x.IsImmersed == isImmersed));
+    }
+
+    public virtual Task<int> GetBadgeByIdAsync(Guid sessionUnitId, bool? isImmersed = null)
+    {
+        return GetBadgeAsync(q =>
+            q.Where(x => x.Id == sessionUnitId)
+            .WhereIf(isImmersed.HasValue, x => x.IsImmersed == isImmersed));
+    }
+
+    public virtual async Task<Dictionary<Guid, int>> GetBadgeByIdAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
+    {
+        var query = (await Repository.GetQueryableAsync())
+            .Where(x => sessionUnitIdList.Contains(x.Id))
+            .WhereIf(isImmersed.HasValue, x => x.IsImmersed == isImmersed);
+        var badges = query.Select(x => new
+        {
+            x.Id,
+            PublicBadge = x.Session.MessageList
+                .Where(d => d.Id > minMessageId)
+                .Where(d =>
+                    d.SenderId != x.OwnerId &&
+                    (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
+                    (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
+                    (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
+                    (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)
+                )
+                .Count(d => !d.IsPrivate),
+            PrivateBadge = x.Session.MessageList
+                .Where(d => d.Id > minMessageId)
+                .Where(d =>
+                    d.SenderId != x.OwnerId &&
+                    (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
+                    (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
+                    (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
+                    (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)
+                )
+                .Count(d => d.IsPrivate && d.ReceiverId == x.OwnerId),
+        })
+            //.GroupBy(x => x.Id).ToDictionary(x => x.Key, x => x.Sum(d => d.PublicBadge + d.PrivateBadge))
+            .ToDictionary(x => x.Id, x => x.PrivateBadge + x.PublicBadge)
+            ;
+
+        return badges;
+    }
+
+    public virtual async Task<Dictionary<Guid, int>> GetReminderCountByIdAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
+    {
+        var query = (await Repository.GetQueryableAsync())
+            .Where(x => sessionUnitIdList.Contains(x.Id))
+            .WhereIf(isImmersed.HasValue, x => x.IsImmersed == isImmersed);
+        //return ReminderList.AsQueryable().Select(x => x.Message).Where(x => !x.IsRollbacked).Count(new SessionUnitMessageSpecification(this).ToExpression());
+        var reminds = query.Select(x => new
+        {
+            x.Id,
+            RemindMeCount = x.ReminderList.Select(x => x.Message)
+                .Where(d => d.Id > minMessageId)
+                .Where(d =>
+                    d.SenderId != x.OwnerId &&
+                    (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
+                    (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
+                    (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
+                    (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)
+                )
+                .Count(),
+            RemindAllCount = x.Session.MessageList
+                .Where(d => d.IsRemindAll && !d.IsRollbacked)
+                .Where(d => d.Id > minMessageId)
+                .Where(d =>
+                    d.SenderId != x.OwnerId &&
+                    (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
+                    (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
+                    (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
+                    (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)
+                )
+                .Count(),
+        })
+            //.GroupBy(x => x.Id).ToDictionary(x => x.Key, x => x.Sum(d => d.RemindMeCount + d.RemindAllCount))
+            .ToDictionary(x => x.Id, x => x.RemindMeCount + x.RemindAllCount)
+            ;
+
+        return reminds;
+    }
+
+    public virtual async Task<Dictionary<Guid, int>> GetFollowingCountByIdAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
+    {
+        var query = (await Repository.GetQueryableAsync())
+            .Where(x => sessionUnitIdList.Contains(x.Id))
+            .WhereIf(isImmersed.HasValue, x => x.IsImmersed == isImmersed);
+
+        var follows = query.Select(x => new
+        {
+            x.Id,
+            FollowingCount = x.Session.MessageList
+                .Where(d => x.OwnerFollowList.Any(d => d.DestinationId == x.Id))
+                .Where(d => d.Id > minMessageId)
+                .Where(d =>
+                    d.SenderId != x.OwnerId &&
+                    (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
+                    (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
+                    (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
+                    (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)
+                )
+                .Count(),
+        })
+            .ToDictionary(x => x.Id, x => x.FollowingCount)
+            //.GroupBy(x => x.Id).ToDictionary(x => x.Key, x => x.Sum(d => d.FollowingCount))
+            ;
+
+        return follows;
     }
 
     public virtual async Task<int> GetCountAsync(Guid sessionId)

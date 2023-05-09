@@ -20,6 +20,11 @@ namespace IczpNet.Chat.Specifications
 
         public override Expression<Func<Message, bool>> ToExpression()
         {
+            //d.SenderId != x.OwnerId &&
+            //    (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
+            //    (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
+            //    (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
+            //    (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime))
             return x =>
                 //!x.IsRollbacked &&
                 (SessionUnit.ReadedMessageId == null || x.Id > SessionUnit.ReadedMessageId) &&

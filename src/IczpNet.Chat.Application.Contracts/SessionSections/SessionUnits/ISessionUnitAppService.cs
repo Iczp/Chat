@@ -55,7 +55,9 @@ public interface ISessionUnitAppService
 
     Task<MessageDto> GetMessageAsync(Guid id, long messageId);
 
-    Task<BadgeDto> GetBadgeAsync(long ownerId, bool? isImmersed = null);
+    Task<BadgeDto> GetBadgeByIdAsync(Guid id, bool? isImmersed = null);
+
+    Task<BadgeDto> GetBadgeByOwnerIdAsync(long ownerId, bool? isImmersed = null);
 
     Task<List<BadgeDto>> GetBadgeByUserIdAsync(Guid userId, bool? isImmersed = null);
 

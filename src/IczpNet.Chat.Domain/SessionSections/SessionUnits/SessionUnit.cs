@@ -239,21 +239,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         //public virtual IList<Follow> DestinationFollowList { get; set; }
 
         [NotMapped]
-        public virtual int ReminderAllCount => GetRemindAllCount();
-
-        [NotMapped]
-        public virtual int ReminderMeCount => GetRemindMeCount();
-
-        [NotMapped]
-        public virtual int ReminderCount => GetReminderCount();
-
-        [NotMapped]
-        public virtual int Badge => GetBadge();
-
-        [NotMapped]
-        public virtual Message SessionLastMessage => Session.LastMessage;//GetLastMessage();
-
-        [NotMapped]
         public virtual List<SessionTag> TagList => GetTagList();
 
         [NotMapped]
@@ -266,13 +251,19 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public virtual List<Guid> RoleIdList => GetRoleIdList();
 
         [NotMapped]
-        public virtual int FollowingCount => GetFollowingCount();
+        public virtual int? ReminderAllCount { get; private set; }//=> GetRemindAllCount();
 
-        /// <summary>
-        /// last message autoId
-        /// </summary>
         [NotMapped]
-        public virtual long? SessionLastMessageId => Session.LastMessageId;
+        public virtual int? ReminderMeCount { get; private set; }//=> GetRemindMeCount();
+
+        [NotMapped]
+        public virtual int? ReminderCount { get; private set; }//=> GetReminderCount();
+
+        [NotMapped]
+        public virtual int? Badge { get; private set; }//=> GetBadge();
+
+        [NotMapped]
+        public virtual int? FollowingCount { get; private set; }//=> GetFollowingCount();
 
         protected SessionUnit() { }
 
@@ -376,6 +367,22 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             return new object[] { SessionId, OwnerId, DestinationId };
         }
 
+        public SessionUnit SetBadge(int badge)
+        {
+            Badge = badge;
+            return this;
+        }
+
+        public void SetReminderCount(int value)
+        {
+            ReminderAllCount = value;
+        }
+
+        public void SetFollowingCount(int value)
+        {
+            FollowingCount = value;
+        }
+
         protected virtual int GetBadge()
         {
             return Session.MessageList.AsQueryable().Count(new SessionUnitMessageSpecification(this).ToExpression());
@@ -458,5 +465,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             IsCreator = v;
             IsStatic = v;
         }
+
+
     }
 }

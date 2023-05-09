@@ -44,7 +44,15 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         Task<SessionUnit> DeleteMessageAsync(SessionUnit entity, long messageId);
 
-        Task<int> GetBadgeAsync(long ownerId, bool? isImmersed = null);
+        Task<int> GetBadgeByOwnerIdAsync(long ownerId, bool? isImmersed = null);
+
+        Task<int> GetBadgeByIdAsync(Guid sessionUnitId, bool? isImmersed = null);
+
+        Task<Dictionary<Guid, int>> GetBadgeByIdAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null);
+
+        Task<Dictionary<Guid, int>> GetReminderCountByIdAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null);
+
+        Task<Dictionary<Guid, int>> GetFollowingCountByIdAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null);
 
         Task<int> GetCountAsync(Guid sessionId);
 
