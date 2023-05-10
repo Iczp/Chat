@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
@@ -53,6 +54,8 @@ namespace IczpNet.Chat.Connections
         {
             await Task.CompletedTask;
 
+            var stopWatch = Stopwatch.StartNew();
+
             Logger.LogInformation($"SendToRoomWorker");
 
             RoomId ??= (await RoomManager.CreateByAllUsersAsync($"Auto-create:{DateTime.Now}")).Id;
@@ -82,9 +85,10 @@ namespace IczpNet.Chat.Connections
                 },
                 RemindList = remindList
             });
+            stopWatch.Stop();
 
-            Logger.LogInformation($"SendText: RoomId:{RoomId}-Index-{Index}-{sessionunitId}-Name:{sessionunit?.Owner?.Name},remindCount:{remindList.Count}");
-
+            Logger.LogInformation($"SendText: RoomId:{RoomId}-Index-{Index}-{sessionunitId}-Name:{sessionunit?.Owner?.Name},remindCount:{remindList.Count},stopWatch:{stopWatch.ElapsedMilliseconds}");
+            
         }
 
         protected async Task<List<Guid>> GetSessionIdListAsync(long roomId)

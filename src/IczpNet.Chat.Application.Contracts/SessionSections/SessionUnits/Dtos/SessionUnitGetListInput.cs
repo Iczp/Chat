@@ -22,7 +22,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
         public virtual bool IsRemind { get; set; }
 
         [DefaultValue(false)]
-        public virtual bool IsStat { get; set; }
+        public virtual bool IsRealStat { get; set; }
 
         /// <summary>
         /// 是否保存通讯录(群)

@@ -133,7 +133,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
                   .ThenByDescending(x => x.LastMessageId),
             async entities =>
             {
-                if (input.IsStat)
+                if (input.IsRealStat)
                 {
                     var minMessageId = input.MinMessageId.GetValueOrDefault();
 
@@ -200,8 +200,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
                        (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
                        (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)
                  ),
-                ReminderAllCount = x.Session.MessageList.Count(x => !x.IsRollbacked && x.IsRemindAll),
-                ReminderMeCount = x.ReminderList.Select(x => x.Message).Count(d =>
+                RemindAllCount = x.Session.MessageList.Count(x => !x.IsRollbacked && x.IsRemindAll),
+                RemindMeCount = x.ReminderList.Select(x => x.Message).Count(d =>
                         //!x.IsRollbacked &&
                         d.Id > x.ReadedMessageId &&
                         d.SenderId != x.OwnerId &&

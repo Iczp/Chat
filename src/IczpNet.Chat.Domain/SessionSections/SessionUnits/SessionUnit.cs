@@ -259,15 +259,15 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         [NotMapped]
         public virtual int? ReminderCount { get; protected set; }//=> GetReminderCount();
 
-        public virtual int BadgePublic { get; protected set; }
+        public virtual int PublicBadge { get; protected set; }
 
-        public virtual int BadgePrivate { get; protected set; }
-
-        //[NotMapped]
-        public virtual int ReminderAllCount { get; protected set; }//=> GetRemindAllCount();
+        public virtual int PrivateBadge { get; protected set; }
 
         //[NotMapped]
-        public virtual int ReminderMeCount { get; protected set; }//=> GetRemindMeCount();
+        public virtual int RemindAllCount { get; protected set; }//=> GetRemindAllCount();
+
+        //[NotMapped]
+        public virtual int RemindMeCount { get; protected set; }//=> GetRemindMeCount();
 
         //[NotMapped]
         public virtual int FollowingCount { get; protected set; }//=> GetFollowingCount();
@@ -328,6 +328,11 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             {
                 ReadedMessageId = messageAutoId;
             }
+            PublicBadge = 0;
+            PrivateBadge = 0;
+            FollowingCount = 0;
+            RemindAllCount = 0;
+            RemindMeCount = 0;
         }
 
         internal virtual void SetHistoryFristTime(DateTime historyFristTime)
@@ -382,7 +387,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public void SetReminderCount(int value)
         {
-            ReminderAllCount = value;
+            RemindAllCount = value;
         }
 
         public void SetFollowingCount(int value)

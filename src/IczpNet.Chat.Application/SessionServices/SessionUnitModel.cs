@@ -87,11 +87,15 @@ namespace IczpNet.Chat.SessionServices
 
         public virtual long ReadedMessageId { get; set; }
 
-        public virtual int ReminderAllCount { get; set; }
+        public virtual int? PublicBadge { get; set; }
 
-        public virtual int ReminderMeCount { get; set; }
+        public virtual int? PrivateBadge { get; set; }
 
-        public virtual int FollowingCount { get; set; }
+        public virtual int? RemindAllCount { get; set; }
+
+        public virtual int? RemindMeCount { get; set; }
+
+        public virtual int? FollowingCount { get; set; }
 
         public virtual double Sorting { get; set; }
     }

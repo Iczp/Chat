@@ -64,9 +64,13 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         public virtual int? Badge { get; set; }
 
-        public virtual int? ReminderAllCount { get; set; }
+        public virtual int? PublicBadge { get; set; }
 
-        public virtual int? ReminderMeCount { get; set; }
+        public virtual int? PrivateBadge { get; set; }
+
+        public virtual int? RemindAllCount { get; set; }
+
+        public virtual int? RemindMeCount { get; set; }
 
         public virtual int? FollowingCount { get; set; }
 

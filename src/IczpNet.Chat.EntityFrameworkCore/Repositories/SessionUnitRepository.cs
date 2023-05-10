@@ -86,7 +86,7 @@ namespace IczpNet.Chat.Repositories
                 .Where(x => x.SessionId == sessionId)
                 .Where(x => x.Id == receiverSessionUnitId)
                 .ExecuteUpdateAsync(s => s
-                    .SetProperty(b => b.BadgePrivate, b => b.BadgePrivate + 1)
+                    .SetProperty(b => b.PrivateBadge, b => b.PrivateBadge + 1)
                 );
         }
 
@@ -101,7 +101,7 @@ namespace IczpNet.Chat.Repositories
                 .Where(x => x.SessionId == sessionId)
                 .Where(x => x.Id != ignoreSessionUnitId)
                 .ExecuteUpdateAsync(s => s
-                    .SetProperty(b => b.BadgePublic, b => b.BadgePublic + 1)
+                    .SetProperty(b => b.PublicBadge, b => b.PublicBadge + 1)
                 );
         }
 
@@ -118,10 +118,6 @@ namespace IczpNet.Chat.Repositories
                 (x.ClearTime == null || messageCreationTime > x.ClearTime)
             ;
         }
-
-
-
-
 
         public virtual async Task<Dictionary<Guid, SessionUnitStatModel>> GetStatsAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
         {

@@ -2,8 +2,9 @@
 
 use [Chat_Module_v3]
 
+--PublicBadge
 update [dbo].[Chat_SessionUnit] 
-set [dbo].[Chat_SessionUnit].BadgePublic = (
+set [dbo].[Chat_SessionUnit].PublicBadge = (
 
 	select count(1) from [dbo].[Chat_Message] m
 	where 1=1
@@ -16,3 +17,4 @@ set [dbo].[Chat_SessionUnit].BadgePublic = (
 	and (x.ClearTime is null or m.CreationTime> x.ClearTime)
 	)
 from [dbo].[Chat_SessionUnit] x
+
