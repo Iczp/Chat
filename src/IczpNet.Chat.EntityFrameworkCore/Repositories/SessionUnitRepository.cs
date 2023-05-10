@@ -4,6 +4,7 @@ using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using NUglify;
+using Polly;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -119,6 +120,35 @@ namespace IczpNet.Chat.Repositories
             ;
         }
 
+        public virtual async Task<int> BatchUpdateRemindMeCountAsync(DateTime messageCreationTime, List<Guid> sessionUnitIdList)
+        {
+            var context = await GetDbContextAsync();
+
+            var predicate = GetSessionUnitPredicate(messageCreationTime);
+
+            return await context.SessionUnit
+                .Where(predicate)
+                .Where(x => sessionUnitIdList.Contains(x.Id))
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(b => b.RemindMeCount, b => b.RemindMeCount + 1)
+                );
+        }
+
+        public virtual async Task<int> BatchUpdateRemindAllCountAsync(Guid sessionId, DateTime messageCreationTime, Guid ignoreSessionUnitId)
+        {
+            var context = await GetDbContextAsync();
+
+            var predicate = GetSessionUnitPredicate(messageCreationTime);
+
+            return await context.SessionUnit
+                .Where(predicate)
+                .Where(x => x.SessionId == sessionId)
+                .Where(x => x.Id != ignoreSessionUnitId)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(b => b.RemindAllCount, b => b.RemindAllCount + 1)
+                );
+        }
+
         public virtual async Task<Dictionary<Guid, SessionUnitStatModel>> GetStatsAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
         {
             var context = await GetDbContextAsync();
@@ -192,5 +222,7 @@ namespace IczpNet.Chat.Repositories
                 .ToDictionary(x => x.Id)
                 ;
         }
+
+        
     }
 }

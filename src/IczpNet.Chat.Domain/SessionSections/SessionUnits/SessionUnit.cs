@@ -322,11 +322,11 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             MemberNameSpellingAbbreviation = memberName.ConvertToPY().MaxLength(50);
         }
 
-        internal virtual void SetReaded(long messageAutoId, bool isForce = false)
+        internal virtual void SetReaded(long lastMessageId, bool isForce = false)
         {
-            if (isForce || messageAutoId > ReadedMessageId.GetValueOrDefault())
+            if (isForce || lastMessageId > ReadedMessageId.GetValueOrDefault())
             {
-                ReadedMessageId = messageAutoId;
+                ReadedMessageId = lastMessageId;
             }
             PublicBadge = 0;
             PrivateBadge = 0;

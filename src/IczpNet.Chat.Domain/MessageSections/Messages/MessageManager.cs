@@ -135,6 +135,12 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             session.SetLastMessage(entity);
 
+            //IsRemindAll @everyone
+            if (entity.IsRemindAll)
+            {
+                await SessionUnitRepository.BatchUpdateRemindAllCountAsync(session.Id, entity.CreationTime, ignoreSessionUnitId: senderSessionUnit.Id);
+            }
+
             // update LastMessageId
             List<Guid> sessionUnitList = null;
 
@@ -143,7 +149,7 @@ namespace IczpNet.Chat.MessageSections.Messages
                 sessionUnitList = new List<Guid>() { senderSessionUnit.Id, receiverSessionUnit.Id, };
             }
 
-            await SessionUnitManager.BatchUpdateLastMessageIdAsync(session.Id, session.LastMessageId.Value, sessionUnitList);
+            await SessionUnitRepository.BatchUpdateLastMessageIdAsync(session.Id, session.LastMessageId.Value, sessionUnitList);
 
             //update badge
             if (entity.IsPrivate)
@@ -184,6 +190,7 @@ namespace IczpNet.Chat.MessageSections.Messages
                 if (input.RemindList.IsAny())
                 {
                     entity.SetReminder(input.RemindList, ReminderTypes.Normal);
+                    await SessionUnitRepository.BatchUpdateRemindMeCountAsync(entity.CreationTime, input.RemindList);
                 }
 
                 return await Task.FromResult(messageContent);

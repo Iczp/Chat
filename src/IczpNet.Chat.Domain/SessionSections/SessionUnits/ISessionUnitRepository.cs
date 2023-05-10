@@ -14,6 +14,11 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         Task<int> BatchUpdatePrivateBadgeAsync(Guid sessionId, DateTime messageCreationTime, Guid receiverSessionUnitId);
 
+        Task<int> BatchUpdateRemindMeCountAsync(DateTime messageCreationTime, List<Guid> sessionUnitIdList);
+
+        Task<int> BatchUpdateRemindAllCountAsync(Guid sessionId, DateTime messageCreationTime, Guid ignoreSessionUnitId);
+
         Task<Dictionary<Guid, SessionUnitStatModel>> GetStatsAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null);
+        
     }
 }
