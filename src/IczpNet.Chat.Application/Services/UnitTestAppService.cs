@@ -51,32 +51,32 @@ namespace IczpNet.Chat.Services
             SessionUnitIdGenerator = sessionUnitIdGenerator;
             SessionUnitRepository = sessionUnitRepository;
         }
-        public async Task<int> SendToEveryOneAsync(string text, long? receiverId, int count = 100)
-        {
+        //public async Task<int> SendToEveryOneAsync(string text, long? receiverId, int count = 100)
+        //{
 
-            if (TotalCount == 0)
-            {
-                TotalCount = await ChatObjectRepository.CountAsync(x => x.ObjectType == ChatObjectTypeEnums.Personal);
-            }
-            ChatObjectIdList ??= (await ChatObjectRepository.GetQueryableAsync())
-                .Where(x => x.ObjectType == ChatObjectTypeEnums.Personal)
-                .Select(x => x.Id)
-                .ToList();
+        //    if (TotalCount == 0)
+        //    {
+        //        TotalCount = await ChatObjectRepository.CountAsync(x => x.ObjectType == ChatObjectTypeEnums.Personal);
+        //    }
+        //    ChatObjectIdList ??= (await ChatObjectRepository.GetQueryableAsync())
+        //        .Where(x => x.ObjectType == ChatObjectTypeEnums.Personal)
+        //        .Select(x => x.Id)
+        //        .ToList();
 
-            for (int i = 0; i < count; i++)
-            {
-                await ChatSender.SendTextMessageAsync(new MessageInput<TextContentInfo>()
-                {
-                    SenderId = ChatObjectIdList[new Random().Next(0, TotalCount)],
-                    ReceiverId = receiverId ?? ChatObjectIdList[new Random().Next(0, TotalCount)],
-                    Content = new TextContentInfo()
-                    {
-                        Text = i + ". " + text
-                    }
-                });
-            }
-            return count;
-        }
+        //    for (int i = 0; i < count; i++)
+        //    {
+        //        await ChatSender.SendTextMessageAsync(new MessageInput<TextContentInfo>()
+        //        {
+        //            SenderId = ChatObjectIdList[new Random().Next(0, TotalCount)],
+        //            ReceiverId = receiverId ?? ChatObjectIdList[new Random().Next(0, TotalCount)],
+        //            Content = new TextContentInfo()
+        //            {
+        //                Text = i + ". " + text
+        //            }
+        //        });
+        //    }
+        //    return count;
+        //}
 
         [HttpPost]
         public Task<List<int>> GenerateIntAsync(int count, int minValue, int maxValue)

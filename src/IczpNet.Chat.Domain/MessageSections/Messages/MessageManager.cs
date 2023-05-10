@@ -30,6 +30,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         protected ISessionUnitManager SessionUnitManager { get; }
         protected IUnitOfWorkManager UnitOfWorkManager { get; }
         protected IUnitOfWork CurrentUnitOfWork => UnitOfWorkManager?.Current;
+
         protected ChatOption Config { get; }
         protected IChatPusher ChatPusher { get; }
         protected ISessionUnitRepository SessionUnitRepository { get; }
@@ -62,51 +63,62 @@ namespace IczpNet.Chat.MessageSections.Messages
             SessionUnitRepository = sessionUnitRepository;
         }
 
-        public virtual async Task<Message> CreateMessageAsync(IChatObject sender, IChatObject receiver, Func<Message, Task<IMessageContentEntity>> func)
-        {
-            var session = await SessionGenerator.MakeAsync(sender, receiver);
+        //public virtual async Task<Message> CreateMessageAsync(IChatObject sender, IChatObject receiver, Func<Message, Task<IMessageContentEntity>> func)
+        //{
+        //    var session = await SessionGenerator.MakeAsync(sender, receiver);
 
-            var entity = new Message(sender, receiver, session);
+        //    var entity = new Message(sender, receiver, session);
 
-            if (func != null)
-            {
-                var messageContent = await func(entity);
-                entity.SetMessageContent(messageContent);
-            }
+        //    if (func != null)
+        //    {
+        //        var messageContent = await func(entity);
+        //        entity.SetMessageContent(messageContent);
+        //    }
 
-            await MessageValidator.CheckAsync(entity);
+        //    await MessageValidator.CheckAsync(entity);
 
-            var sessionUnitCount = entity.IsPrivate ? 2 : await SessionUnitManager.GetCountAsync(session.Id);
+        //    var sessionUnitCount = entity.IsPrivate ? 2 : await SessionUnitManager.GetCountAsync(session.Id);
 
-            entity.SetSessionUnitCount(sessionUnitCount);
+        //    entity.SetSessionUnitCount(sessionUnitCount);
 
-            await Repository.InsertAsync(entity, autoSave: true);
+        //    await Repository.InsertAsync(entity, autoSave: true);
 
-            session.SetLastMessage(entity);
+        //    session.SetLastMessage(entity);
 
-            await SessionGenerator.UpdateAsync(session);
+        //    await SessionGenerator.UpdateAsync(session);
 
-            return entity;
-        }
+        //    return entity;
+        //}
 
-        public virtual async Task<Message> CreateMessageAsync<TMessageInput>(TMessageInput input, Func<Message, Task<IMessageContentEntity>> func)
-            where TMessageInput : class, IMessageInput
-        {
-            var sender = await ChatObjectManager.GetItemByCacheAsync(input.SenderId);
+        //public virtual async Task<Message> CreateMessageAsync<TMessageInput>(TMessageInput input, Func<Message, Task<IMessageContentEntity>> func)
+        //    where TMessageInput : class, IMessageInput
+        //{
+        //    var sender = await ChatObjectManager.GetItemByCacheAsync(input.SenderId);
 
-            var receiver = await ChatObjectManager.GetItemByCacheAsync(input.ReceiverId);
+        //    var receiver = await ChatObjectManager.GetItemByCacheAsync(input.ReceiverId);
 
-            return await CreateMessageAsync(sender, receiver, async entity =>
-            {
-                entity.SetKey(input.KeyName, input.KeyValue);
+        //    return await CreateMessageAsync(sender, receiver, async entity =>
+        //    {
+        //        entity.SetKey(input.KeyName, input.KeyValue);
 
-                if (input.QuoteMessageId.HasValue)
-                {
-                    entity.SetQuoteMessage(await Repository.GetAsync(input.QuoteMessageId.Value));
-                }
-                return await func(entity);
-            });
-        }
+        //        if (input.QuoteMessageId.HasValue)
+        //        {
+        //            entity.SetQuoteMessage(await Repository.GetAsync(input.QuoteMessageId.Value));
+        //        }
+        //        return await func(entity);
+        //    });
+        //}
+
+        //public virtual async Task<MessageInfo<TContentInfo>> SendMessageAsync<TContentInfo>(MessageInput input, Func<Message, Task<IMessageContentEntity>> func)
+        //{
+        //    var message = await CreateMessageAsync(input, func);
+
+        //    var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
+
+        //    await ChatPusher.ExecuteBySessionIdAsync(message.SessionId.Value, output, input.IgnoreConnections);
+
+        //    return output;
+        //}
 
         public virtual async Task<Message> CreateMessageBySessionUnitAsync(SessionUnit senderSessionUnit, Func<Message, Task<IMessageContentEntity>> getContentEntity, SessionUnit receiverSessionUnit = null)
         {
@@ -146,7 +158,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             //update badge
             await UpdateBadgeAsync(senderSessionUnit, entity);
 
-            //SaveChange
+            //
             await CurrentUnitOfWork.SaveChangesAsync();
 
             return entity;
@@ -239,18 +251,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             return output;
         }
 
-        public virtual async Task<MessageInfo<TContentInfo>> SendMessageAsync<TContentInfo>(MessageInput input, Func<Message, Task<IMessageContentEntity>> func)
-        {
-            var message = await CreateMessageAsync(input, func);
-
-            var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
-
-            await ChatPusher.ExecuteBySessionIdAsync(message.SessionId.Value, output, input.IgnoreConnections);
-
-            return output;
-        }
-
-        public async Task<Dictionary<string, long>> RollbackMessageAsync(Message message)
+        public virtual async Task<Dictionary<string, long>> RollbackMessageAsync(Message message)
         {
             int HOURS = Config.AllowRollbackHours;
 
@@ -273,45 +274,45 @@ namespace IczpNet.Chat.MessageSections.Messages
             });
         }
 
-        public async Task<List<Message>> ForwardMessageAsync(long sourceMessageId, long senderId, List<long> receiverIdList)
-        {
-            var source = await Repository.GetAsync(sourceMessageId);
+        //public virtual async Task<List<Message>> ForwardMessageAsync(long sourceMessageId, long senderId, List<long> receiverIdList)
+        //{
+        //    var source = await Repository.GetAsync(sourceMessageId);
 
-            Assert.If(source.IsRollbacked || source.RollbackTime != null, $"message already rollback：{sourceMessageId}");
+        //    Assert.If(source.IsRollbacked || source.RollbackTime != null, $"message already rollback：{sourceMessageId}");
 
-            var sender = await ChatObjectManager.GetItemByCacheAsync(senderId);
+        //    var sender = await ChatObjectManager.GetItemByCacheAsync(senderId);
 
-            return await ForwardMessageAsync(source, sender, receiverIdList);
-        }
+        //    return await ForwardMessageAsync(source, sender, receiverIdList);
+        //}
 
-        public async Task<List<Message>> ForwardMessageAsync(Message source, IChatObject sender, List<long> receiverIdList)
-        {
-            var isSelfSender = source.Sender.Id == sender.Id;
+        //public virtual async Task<List<Message>> ForwardMessageAsync(Message source, IChatObject sender, List<long> receiverIdList)
+        //{
+        //    var isSelfSender = source.Sender.Id == sender.Id;
 
-            Assert.If(!isSelfSender && source.MessageType == MessageTypes.Sound, $"Cannot forward voice messages from others");
+        //    Assert.If(!isSelfSender && source.MessageType == MessageTypes.Sound, $"Cannot forward voice messages from others");
 
-            Assert.If(source.MessageType.IsDisabledForward(), $"The message type '{source.MessageType}' cannot be forwarded!");
+        //    Assert.If(source.MessageType.IsDisabledForward(), $"The message type '{source.MessageType}' cannot be forwarded!");
 
-            var messageContent = source.GetContent();
+        //    var messageContent = source.GetContent();
 
-            Assert.NotNull(messageContent, $"MessageContent is null. Source message:{source}");
+        //    Assert.NotNull(messageContent, $"MessageContent is null. Source message:{source}");
 
-            var messageList = new List<Message>();
+        //    var messageList = new List<Message>();
 
-            foreach (var receiverId in receiverIdList.Distinct())
-            {
-                var receiver = await ChatObjectManager.GetItemByCacheAsync(receiverId);
+        //    foreach (var receiverId in receiverIdList.Distinct())
+        //    {
+        //        var receiver = await ChatObjectManager.GetItemByCacheAsync(receiverId);
 
-                var newMessage = await CreateMessageAsync(sender, receiver, x =>
-                {
-                    x.SetForwardMessage(source);
-                    return Task.FromResult(messageContent);
-                });
+        //        var newMessage = await CreateMessageAsync(sender, receiver, x =>
+        //        {
+        //            x.SetForwardMessage(source);
+        //            return Task.FromResult(messageContent);
+        //        });
 
-                messageList.Add(newMessage);
-            }
-            return messageList;
-        }
+        //        messageList.Add(newMessage);
+        //    }
+        //    return messageList;
+        //}
 
         public virtual async Task<List<Message>> ForwardMessageAsync(Guid currentSessionUnitId, long sourceMessageId, List<Guid> targetSessionUnitIdList)
         {
