@@ -33,6 +33,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         protected ChatOption Config { get; }
         protected IChatPusher ChatPusher { get; }
+        protected ISessionUnitRepository SessionUnitRepository { get; }
 
         public MessageManager(
             IMessageRepository repository,
@@ -45,7 +46,8 @@ namespace IczpNet.Chat.MessageSections.Messages
             IOptions<ChatOption> options,
             IChatPusher chatPusher,
             ISessionUnitManager sessionUnitManager,
-            IUnitOfWorkManager unitOfWorkManager)
+            IUnitOfWorkManager unitOfWorkManager,
+            ISessionUnitRepository sessionUnitRepository)
         {
             Repository = repository;
             ChatObjectResolver = messageChatObjectResolver;
@@ -58,6 +60,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             ChatPusher = chatPusher;
             SessionUnitManager = sessionUnitManager;
             UnitOfWorkManager = unitOfWorkManager;
+            SessionUnitRepository = sessionUnitRepository;
         }
 
         public virtual async Task<Message> CreateMessageAsync(IChatObject sender, IChatObject receiver, Func<Message, Task<IMessageContentEntity>> func)
@@ -132,15 +135,24 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             session.SetLastMessage(entity);
 
-            if (session.LastMessageId.HasValue)
-            {
-                List<Guid> sessionUnitList = null;
+            // update LastMessageId
+            List<Guid> sessionUnitList = null;
 
-                if (receiverSessionUnit != null)
-                {
-                    sessionUnitList = new List<Guid>() { senderSessionUnit.Id, receiverSessionUnit.Id, };
-                }
-                await SessionUnitManager.BatchUpdateAsync(session.Id, session.LastMessageId.Value, sessionUnitList);
+            if (receiverSessionUnit != null)
+            {
+                sessionUnitList = new List<Guid>() { senderSessionUnit.Id, receiverSessionUnit.Id, };
+            }
+
+            await SessionUnitManager.BatchUpdateLastMessageIdAsync(session.Id, session.LastMessageId.Value, sessionUnitList);
+
+            //update badge
+            if (entity.IsPrivate)
+            {
+                await SessionUnitRepository.BatchUpdatePrivateBadgeAsync(session.Id, entity.CreationTime, receiverSessionUnitId: senderSessionUnit.Id);
+            }
+            else
+            {
+                await SessionUnitRepository.BatchUpdatePublicBadgeAsync(session.Id, entity.CreationTime, ignoreSessionUnitId: senderSessionUnit.Id);
             }
 
             await CurrentUnitOfWork.SaveChangesAsync();

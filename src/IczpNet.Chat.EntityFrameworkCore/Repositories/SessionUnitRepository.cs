@@ -3,9 +3,11 @@ using IczpNet.Chat.EntityFrameworkCore;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using NUglify;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -30,12 +32,12 @@ namespace IczpNet.Chat.Repositories
             return Task.FromResult(table);
         }
 
-        public virtual Task<int> BatchUpdateAsync(Guid sessionId, long lastMessageId, List<Guid> sessionUnitIdList = null)
+        public virtual Task<int> BatchUpdateLastMessageIdAsync(Guid sessionId, long lastMessageId, List<Guid> sessionUnitIdList = null)
         {
-            return BatchUpdateByEf7Async(sessionId, lastMessageId);
+            return BatchUpdateLastMessageIdByEf7Async(sessionId, lastMessageId);
         }
 
-        protected virtual async Task<int> BatchUpdateBySqlAsync(Guid sessionId, long lastMessageId, List<Guid> sessionUnitIdList = null)
+        protected virtual async Task<int> BatchUpdateLastMessageIdBySqlAsync(Guid sessionId, long lastMessageId, List<Guid> sessionUnitIdList = null)
         {
             var context = await GetDbContextAsync();
 
@@ -59,7 +61,7 @@ namespace IczpNet.Chat.Repositories
             return await context.Database.ExecuteSqlRawAsync(sql, parameters);
         }
 
-        protected virtual async Task<int> BatchUpdateByEf7Async(Guid sessionId, long lastMessageId, List<Guid> sessionUnitIdList = null)
+        protected virtual async Task<int> BatchUpdateLastMessageIdByEf7Async(Guid sessionId, long lastMessageId, List<Guid> sessionUnitIdList = null)
         {
             var context = await GetDbContextAsync();
 
@@ -72,6 +74,54 @@ namespace IczpNet.Chat.Repositories
                     .SetProperty(b => b.LastModificationTime, b => DateTime.Now)
                 );
         }
+
+        public virtual async Task<int> BatchUpdatePrivateBadgeAsync(Guid sessionId, DateTime messageCreationTime, Guid receiverSessionUnitId)
+        {
+            var context = await GetDbContextAsync();
+
+            var predicate = GetSessionUnitPredicate(messageCreationTime);
+
+            return await context.SessionUnit
+                .Where(predicate)
+                .Where(x => x.SessionId == sessionId)
+                .Where(x => x.Id == receiverSessionUnitId)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(b => b.BadgePrivate, b => b.BadgePrivate + 1)
+                );
+        }
+
+        public virtual async Task<int> BatchUpdatePublicBadgeAsync(Guid sessionId, DateTime messageCreationTime, Guid ignoreSessionUnitId)
+        {
+            var context = await GetDbContextAsync();
+
+            var predicate = GetSessionUnitPredicate(messageCreationTime);
+
+            return await context.SessionUnit
+                .Where(predicate)
+                .Where(x => x.SessionId == sessionId)
+                .Where(x => x.Id != ignoreSessionUnitId)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(b => b.BadgePublic, b => b.BadgePublic + 1)
+                );
+        }
+
+        private static Expression<Func<SessionUnit, bool>> GetSessionUnitPredicate(DateTime messageCreationTime)
+        {
+            return x =>
+                !x.IsDeleted &&
+                !x.IsKilled &&
+                x.IsEnabled &&
+                x.ServiceStatus == Enums.ServiceStatus.Normal &&
+                (x.HistoryFristTime == null || messageCreationTime > x.HistoryFristTime) &&
+                (x.HistoryLastTime == null || messageCreationTime < x.HistoryLastTime) &&
+                (x.HistoryLastTime == null || messageCreationTime < x.HistoryLastTime) &&
+                (x.ClearTime == null || messageCreationTime > x.ClearTime)
+            ;
+        }
+
+
+
+
 
         public virtual async Task<Dictionary<Guid, SessionUnitStatModel>> GetStatsAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
         {

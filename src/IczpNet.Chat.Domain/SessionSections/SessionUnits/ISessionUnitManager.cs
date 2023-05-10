@@ -58,7 +58,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         Task<int> GetCountAsync(Guid sessionId);
 
-        Task<int> BatchUpdateAsync(Guid sessionId, long lastMessageId, List<Guid> sessionUnitIdList = null);
+        Task<int> BatchUpdateLastMessageIdAsync(Guid sessionId, long lastMessageId, List<Guid> sessionUnitIdList = null);
 
         Task<List<SessionUnitCacheItem>> GetCacheListAsync(string cacheKey);
 

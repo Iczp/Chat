@@ -8,7 +8,11 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
     public interface ISessionUnitRepository : IRepository<SessionUnit, Guid>
     {
 
-        Task<int> BatchUpdateAsync(Guid sessionId, long lastMessageId, List<Guid> sessionUnitIdList = null);
+        Task<int> BatchUpdateLastMessageIdAsync(Guid sessionId, long lastMessageId, List<Guid> sessionUnitIdList = null);
+
+        Task<int> BatchUpdatePublicBadgeAsync(Guid sessionId, DateTime messageCreationTime, Guid ignoreSessionUnitId);
+
+        Task<int> BatchUpdatePrivateBadgeAsync(Guid sessionId, DateTime messageCreationTime, Guid receiverSessionUnitId);
 
         Task<Dictionary<Guid, SessionUnitStatModel>> GetStatsAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null);
     }

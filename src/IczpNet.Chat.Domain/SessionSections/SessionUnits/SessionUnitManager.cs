@@ -333,9 +333,9 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return int.Parse(value);
     }
 
-    public virtual Task<int> BatchUpdateAsync(Guid sessionId, long lastMessageId, List<Guid> sessionUnitIdList = null)
+    public virtual Task<int> BatchUpdateLastMessageIdAsync(Guid sessionId, long lastMessageId, List<Guid> sessionUnitIdList = null)
     {
-        return Repository.BatchUpdateAsync(sessionId, lastMessageId, sessionUnitIdList);
+        return Repository.BatchUpdateLastMessageIdAsync(sessionId, lastMessageId, sessionUnitIdList);
     }
 
     public virtual Task<List<SessionUnitCacheItem>> GetCacheListAsync(string sessionUnitCachKey)
