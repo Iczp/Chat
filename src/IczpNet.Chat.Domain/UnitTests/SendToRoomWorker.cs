@@ -1,4 +1,5 @@
 ﻿using AutoMapper.Internal;
+using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
@@ -33,6 +34,7 @@ namespace IczpNet.Chat.Connections
         protected ISessionUnitManager SessionUnitManager { get; }
 
         protected ISessionUnitRepository SessionUnitRepository { get; }
+        protected IFollowManager FollowManager { get; }
 
 
         public SendToRoomWorker(AbpAsyncTimer timer,
@@ -40,13 +42,15 @@ namespace IczpNet.Chat.Connections
             ISessionUnitRepository sessionUnitRepository,
             IMessageSender messageSender,
             IRoomManager roomManager,
-            ISessionUnitManager sessionUnitManager) : base(timer, serviceScopeFactory)
+            ISessionUnitManager sessionUnitManager,
+            IFollowManager followManager) : base(timer, serviceScopeFactory)
         {
             Timer.Period = 1 * 1000; //1 seconds
             SessionUnitRepository = sessionUnitRepository;
             MessageSender = messageSender;
             RoomManager = roomManager;
             SessionUnitManager = sessionUnitManager;
+            FollowManager = followManager;
         }
 
         [UnitOfWork]
@@ -64,9 +68,19 @@ namespace IczpNet.Chat.Connections
 
             var sessionunitId = items[new Random().Next(0, items.Count - 1)];
 
-            var sessionunit = await SessionUnitManager.GetAsync(sessionunitId);
+            var sessionunit = await SessionUnitRepository.GetAsync(sessionunitId);
 
             Logger.LogInformation($"sessionunit: id:{sessionunit?.Id},name:{sessionunit?.Owner?.Name}");
+
+            // Follow
+            if ( sessionunit.OwnerFollowList.Count< 3)
+            {
+                var tagId = items[new Random().Next(0, items.Count - 1)];
+
+                await FollowManager.CreateAsync(sessionunit, new List<Guid>() { tagId });
+
+                Logger.LogInformation($"Follow: sessionunit: id:{sessionunit?.Id},tagId:{tagId}");
+            }
 
             Index++;
 
