@@ -21,6 +21,9 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
         [DefaultValue(false)]
         public virtual bool IsRemind { get; set; }
 
+        [DefaultValue(false)]
+        public virtual bool IsStat { get; set; }
+
         /// <summary>
         /// 是否保存通讯录(群)
         /// </summary>

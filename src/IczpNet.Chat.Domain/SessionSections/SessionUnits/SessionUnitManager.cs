@@ -222,6 +222,11 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
 
     public virtual async Task<Dictionary<Guid, SessionUnitStatModel>> GetStatsAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
     {
+        return await GetStatsByLinqAsync(sessionUnitIdList, minMessageId, isImmersed);
+    }
+
+    protected virtual async Task<Dictionary<Guid, SessionUnitStatModel>> GetStatsByLinqAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
+    {
         return (await Repository.GetQueryableAsync())
             .Where(x => sessionUnitIdList.Contains(x.Id))
             .WhereIf(isImmersed.HasValue, x => x.IsImmersed == isImmersed)
@@ -234,9 +239,9 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
                     d.Id > minMessageId &&
                     d.SenderId != x.OwnerId &&
                     (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
-                    (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
-                    (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
-                    (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime))
+                    (x.HistoryFristTime == null || d.CreationTime > x.HistoryFristTime) &&
+                    (x.HistoryLastTime == null || d.CreationTime < x.HistoryLastTime) &&
+                    (x.ClearTime == null || d.CreationTime > x.ClearTime))
             })
             .Select(x => new SessionUnitStatModel
             {

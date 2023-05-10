@@ -253,7 +253,7 @@ paket-files/
 
 # Chat
 host/IczpNet.Chat.AuthServer/Logs/logs.txt
-host/IczpNet.Chat.HttpApi.Host/Logs/logs.txt
+host/IczpNet.Chat.HttpApi.Host/Logs/*
 host/IczpNet.Chat.Web.Host/Logs/logs.txt
 host/IczpNet.Chat.Web.Unified/Logs/logs.txt
 host/IczpNet.Chat.Blazor.Server.Host/Logs/logs.txt

@@ -2,6 +2,7 @@
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
@@ -132,23 +133,33 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
                   .ThenByDescending(x => x.LastMessageId),
             async entities =>
             {
-                var minMessageId = input.MinMessageId.GetValueOrDefault();
-
-                var idList = entities.Select(x => x.Id).ToList();
-
-                var stats = await SessionUnitManager.GetStatsAsync(idList, minMessageId);
-
-                foreach (var e in entities)
+                if (input.IsStat)
                 {
-                    if (stats.TryGetValue(e.Id, out SessionUnitStatModel stat))
+                    var minMessageId = input.MinMessageId.GetValueOrDefault();
+
+                    var idList = entities.Select(x => x.Id).ToList();
+
+                    var stats = await SessionUnitManager.GetStatsAsync(idList, minMessageId);
+
+                    foreach (var e in entities)
                     {
-                        e.SetBadge(stat.PublicBadge + stat.PrivateBadge);
-                        e.SetReminderCount(stat.RemindAllCount + stat.RemindMeCount);
-                        e.SetFollowingCount(stat.FollowingCount);
+                        if (stats.TryGetValue(e.Id, out SessionUnitStatModel stat))
+                        {
+                            e.SetBadge(stat.PublicBadge + stat.PrivateBadge);
+                            e.SetReminderCount(stat.RemindAllCount + stat.RemindMeCount);
+                            e.SetFollowingCount(stat.FollowingCount);
+                        }
                     }
                 }
+
                 return entities;
             });
+    }
+
+    [HttpGet]
+    public virtual Task<Dictionary<Guid, SessionUnitStatModel>> GetStatsAsync(List<Guid> idList, long minMessageId)
+    {
+        return SessionUnitManager.GetStatsAsync(idList, minMessageId);
     }
 
     [HttpGet]

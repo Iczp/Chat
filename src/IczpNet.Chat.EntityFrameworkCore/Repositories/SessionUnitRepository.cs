@@ -72,5 +72,79 @@ namespace IczpNet.Chat.Repositories
                     .SetProperty(b => b.LastModificationTime, b => DateTime.Now)
                 );
         }
+
+        public virtual async Task<Dictionary<Guid, SessionUnitStatModel>> GetStatsAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
+        {
+            var context = await GetDbContextAsync();
+
+            return context.SessionUnit
+                .Where(x => sessionUnitIdList.Contains(x.Id))
+                .WhereIf(isImmersed.HasValue, x => x.IsImmersed == isImmersed)
+                .Where(x => sessionUnitIdList.Contains(x.Id))
+                //.Select(x => new
+                //{
+                //    x.Id,
+                //    x.OwnerId,
+                //    //x.OwnerFollowList,
+                //    Messages = context.Message.Where(d =>
+                //        x.SessionId == d.SessionId &&
+                //        d.Id > minMessageId &&
+                //        d.SenderId != x.OwnerId &&
+                //        (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
+                //        (x.HistoryFristTime == null || d.CreationTime > x.HistoryFristTime) &&
+                //        (x.HistoryLastTime == null || d.CreationTime < x.HistoryLastTime) &&
+                //        (x.ClearTime == null || d.CreationTime > x.ClearTime))
+                //})
+                .Select(x => new SessionUnitStatModel
+                {
+                    Id = x.Id,
+                    PublicBadge = context.Message.Where(d =>
+                        x.SessionId == d.SessionId &&
+                        d.Id > minMessageId &&
+                        d.SenderId != x.OwnerId &&
+                        (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
+                        (x.HistoryFristTime == null || d.CreationTime > x.HistoryFristTime) &&
+                        (x.HistoryLastTime == null || d.CreationTime < x.HistoryLastTime) &&
+                        (x.ClearTime == null || d.CreationTime > x.ClearTime))
+                        .Count(d => !d.IsPrivate),
+                    PrivateBadge = context.Message.Where(d =>
+                        x.SessionId == d.SessionId &&
+                        d.Id > minMessageId &&
+                        d.SenderId != x.OwnerId &&
+                        (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
+                        (x.HistoryFristTime == null || d.CreationTime > x.HistoryFristTime) &&
+                        (x.HistoryLastTime == null || d.CreationTime < x.HistoryLastTime) &&
+                        (x.ClearTime == null || d.CreationTime > x.ClearTime))
+                        .Count(d => d.IsPrivate && d.ReceiverId == x.OwnerId),
+                    FollowingCount = context.Message.Where(d =>
+                        x.SessionId == d.SessionId &&
+                        d.Id > minMessageId &&
+                        d.SenderId != x.OwnerId &&
+                        (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
+                        (x.HistoryFristTime == null || d.CreationTime > x.HistoryFristTime) &&
+                        (x.HistoryLastTime == null || d.CreationTime < x.HistoryLastTime) &&
+                        (x.ClearTime == null || d.CreationTime > x.ClearTime))
+                        .Count(d => x.OwnerFollowList.Any(d => d.DestinationId == x.Id)),
+                    RemindAllCount = context.Message.Where(d =>
+                        x.SessionId == d.SessionId &&
+                        d.Id > minMessageId &&
+                        d.SenderId != x.OwnerId &&
+                        (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
+                        (x.HistoryFristTime == null || d.CreationTime > x.HistoryFristTime) &&
+                        (x.HistoryLastTime == null || d.CreationTime < x.HistoryLastTime) &&
+                        (x.ClearTime == null || d.CreationTime > x.ClearTime)).Count(d => d.IsRemindAll && !d.IsRollbacked),
+                    RemindMeCount = context.Message.Where(d =>
+                        x.SessionId == d.SessionId &&
+                        d.Id > minMessageId &&
+                        d.SenderId != x.OwnerId &&
+                        (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
+                        (x.HistoryFristTime == null || d.CreationTime > x.HistoryFristTime) &&
+                        (x.HistoryLastTime == null || d.CreationTime < x.HistoryLastTime) &&
+                        (x.ClearTime == null || d.CreationTime > x.ClearTime))
+                        .Count(d => d.MessageReminderList.Any(g => g.SessionUnitId == x.Id))
+                })
+                .ToDictionary(x => x.Id)
+                ;
+        }
     }
 }

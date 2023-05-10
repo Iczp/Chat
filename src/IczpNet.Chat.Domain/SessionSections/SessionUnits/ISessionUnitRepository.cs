@@ -9,5 +9,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
     {
 
         Task<int> BatchUpdateAsync(Guid sessionId, long lastMessageId, List<Guid> sessionUnitIdList = null);
+
+        Task<Dictionary<Guid, SessionUnitStatModel>> GetStatsAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null);
     }
 }
