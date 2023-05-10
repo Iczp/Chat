@@ -30,7 +30,6 @@ namespace IczpNet.Chat.MessageSections.Messages
         protected ISessionUnitManager SessionUnitManager { get; }
         protected IUnitOfWorkManager UnitOfWorkManager { get; }
         protected IUnitOfWork CurrentUnitOfWork => UnitOfWorkManager?.Current;
-
         protected ChatOption Config { get; }
         protected IChatPusher ChatPusher { get; }
         protected ISessionUnitRepository SessionUnitRepository { get; }
@@ -135,13 +134,38 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             session.SetLastMessage(entity);
 
+            //following
+            await UpdateFollowingCountAsync(senderSessionUnit, entity);
+
             //IsRemindAll @everyone
-            if (entity.IsRemindAll)
-            {
-                await SessionUnitRepository.BatchUpdateRemindAllCountAsync(session.Id, entity.CreationTime, ignoreSessionUnitId: senderSessionUnit.Id);
-            }
+            await UpdateRemindAllCountAsync(senderSessionUnit, entity);
 
             // update LastMessageId
+            await UpdateLastMessageIdAsync(senderSessionUnit, receiverSessionUnit, entity);
+
+            //update badge
+            await UpdateBadgeAsync(senderSessionUnit, entity);
+
+            //SaveChange
+            await CurrentUnitOfWork.SaveChangesAsync();
+
+            return entity;
+        }
+
+        private async Task UpdateBadgeAsync(SessionUnit senderSessionUnit, Message entity)
+        {
+            if (entity.IsPrivate)
+            {
+                await SessionUnitRepository.BatchUpdatePrivateBadgeAsync(senderSessionUnit.SessionId.Value, entity.CreationTime, receiverSessionUnitId: senderSessionUnit.Id);
+            }
+            else
+            {
+                await SessionUnitRepository.BatchUpdatePublicBadgeAsync(senderSessionUnit.SessionId.Value, entity.CreationTime, ignoreSessionUnitId: senderSessionUnit.Id);
+            }
+        }
+
+        private async Task UpdateLastMessageIdAsync(SessionUnit senderSessionUnit, SessionUnit receiverSessionUnit, Message message)
+        {
             List<Guid> sessionUnitList = null;
 
             if (receiverSessionUnit != null)
@@ -149,21 +173,24 @@ namespace IczpNet.Chat.MessageSections.Messages
                 sessionUnitList = new List<Guid>() { senderSessionUnit.Id, receiverSessionUnit.Id, };
             }
 
-            await SessionUnitRepository.BatchUpdateLastMessageIdAsync(session.Id, session.LastMessageId.Value, sessionUnitList);
+            await SessionUnitRepository.BatchUpdateLastMessageIdAsync(senderSessionUnit.SessionId.Value, message.Id, sessionUnitList);
+        }
 
-            //update badge
-            if (entity.IsPrivate)
+        private async Task UpdateRemindAllCountAsync(SessionUnit senderSessionUnit, Message message)
+        {
+            if (message.IsRemindAll)
             {
-                await SessionUnitRepository.BatchUpdatePrivateBadgeAsync(session.Id, entity.CreationTime, receiverSessionUnitId: senderSessionUnit.Id);
+                await SessionUnitRepository.BatchUpdateRemindAllCountAsync(senderSessionUnit.SessionId.Value, message.CreationTime, ignoreSessionUnitId: senderSessionUnit.Id);
             }
-            else
+        }
+
+        private async Task UpdateFollowingCountAsync(SessionUnit senderSessionUnit, Message message)
+        {
+            if (senderSessionUnit.OwnerFollowList.Any())
             {
-                await SessionUnitRepository.BatchUpdatePublicBadgeAsync(session.Id, entity.CreationTime, ignoreSessionUnitId: senderSessionUnit.Id);
+                var destinationSessionUnitIdList = senderSessionUnit.OwnerFollowList.Select(x => x.DestinationId).ToList();
+                await SessionUnitRepository.BatchUpdateFollowingCountAsync(senderSessionUnit.SessionId.Value, message.CreationTime, destinationSessionUnitIdList: destinationSessionUnitIdList);
             }
-
-            await CurrentUnitOfWork.SaveChangesAsync();
-
-            return entity;
         }
 
         public virtual async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContent>(SessionUnit senderSessionUnit, MessageSendInput<TContentInfo> input, SessionUnit receiverSessionUnit = null)

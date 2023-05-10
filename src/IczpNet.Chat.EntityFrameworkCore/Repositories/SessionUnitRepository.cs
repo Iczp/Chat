@@ -72,7 +72,7 @@ namespace IczpNet.Chat.Repositories
                 .WhereIf(sessionUnitIdList.IsAny(), x => sessionUnitIdList.Contains(x.Id))
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(b => b.LastMessageId, b => lastMessageId)
-                    .SetProperty(b => b.LastModificationTime, b => DateTime.Now)
+                //.SetProperty(b => b.LastModificationTime, b => DateTime.Now)
                 );
         }
 
@@ -146,6 +146,21 @@ namespace IczpNet.Chat.Repositories
                 .Where(x => x.Id != ignoreSessionUnitId)
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(b => b.RemindAllCount, b => b.RemindAllCount + 1)
+                );
+        }
+
+        public async Task<int> BatchUpdateFollowingCountAsync(Guid sessionId, DateTime messageCreationTime, List<Guid> destinationSessionUnitIdList)
+        {
+            var context = await GetDbContextAsync();
+
+            var predicate = GetSessionUnitPredicate(messageCreationTime);
+
+            return await context.SessionUnit
+                .Where(predicate)
+                .Where(x => x.SessionId == sessionId)
+                .Where(x => destinationSessionUnitIdList.Contains(x.Id))
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(b => b.FollowingCount, b => b.FollowingCount + 1)
                 );
         }
 
@@ -223,6 +238,6 @@ namespace IczpNet.Chat.Repositories
                 ;
         }
 
-        
+
     }
 }
