@@ -251,19 +251,26 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public virtual List<Guid> RoleIdList => GetRoleIdList();
 
         [NotMapped]
-        public virtual int? ReminderAllCount { get; private set; }//=> GetRemindAllCount();
+        public virtual SessionUnitStatModel Stat { get; protected set; }
 
         [NotMapped]
-        public virtual int? ReminderMeCount { get; private set; }//=> GetRemindMeCount();
+        public virtual int? Badge { get; protected set; }//=> GetBadge();
 
         [NotMapped]
-        public virtual int? ReminderCount { get; private set; }//=> GetReminderCount();
+        public virtual int? ReminderCount { get; protected set; }//=> GetReminderCount();
 
-        [NotMapped]
-        public virtual int? Badge { get; private set; }//=> GetBadge();
+        public virtual int BadgePublic { get; protected set; }
 
-        [NotMapped]
-        public virtual int? FollowingCount { get; private set; }//=> GetFollowingCount();
+        public virtual int BadgePrivate { get; protected set; }
+
+        //[NotMapped]
+        public virtual int ReminderAllCount { get; protected set; }//=> GetRemindAllCount();
+
+        //[NotMapped]
+        public virtual int ReminderMeCount { get; protected set; }//=> GetRemindMeCount();
+
+        //[NotMapped]
+        public virtual int FollowingCount { get; protected set; }//=> GetFollowingCount();
 
         protected SessionUnit() { }
 
