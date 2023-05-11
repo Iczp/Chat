@@ -34,6 +34,14 @@ namespace IczpNet.Chat.Follows
                 .ToList();
         }
 
+        public async Task<List<Guid>> GetFollowerIdListAsync(Guid destinationSessionUnitId)
+        {
+            return (await Repository.GetQueryableAsync())
+               .Where(x => x.DestinationId == destinationSessionUnitId)
+               .Select(x => x.OwnerId)
+               .ToList();
+        }
+
         public async Task<bool> CreateAsync(Guid ownerId, List<Guid> idList)
         {
             var owner = await SessionUnitManager.GetAsync(ownerId);

@@ -8,11 +8,13 @@ using IczpNet.Chat.Follows;
 using IczpNet.Chat.Options;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
@@ -36,6 +38,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         protected IChatPusher ChatPusher { get; }
         protected ISessionUnitRepository SessionUnitRepository { get; }
         protected IFollowManager FollowManager { get; }
+        protected IBackgroundJobManager BackgroundJobManager { get; }
 
         public MessageManager(
             IMessageRepository repository,
@@ -50,7 +53,8 @@ namespace IczpNet.Chat.MessageSections.Messages
             ISessionUnitManager sessionUnitManager,
             IUnitOfWorkManager unitOfWorkManager,
             ISessionUnitRepository sessionUnitRepository,
-            IFollowManager followManager)
+            IFollowManager followManager,
+            IBackgroundJobManager backgroundJobManager)
         {
             Repository = repository;
             ChatObjectResolver = messageChatObjectResolver;
@@ -65,6 +69,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             UnitOfWorkManager = unitOfWorkManager;
             SessionUnitRepository = sessionUnitRepository;
             FollowManager = followManager;
+            BackgroundJobManager = backgroundJobManager;
         }
 
         //public virtual async Task<Message> CreateMessageAsync(IChatObject sender, IChatObject receiver, Func<Message, Task<IMessageContentEntity>> func)
@@ -150,66 +155,33 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             session.SetLastMessage(entity);
 
-            //following
-            await UpdateFollowingCountAsync(senderSessionUnit, entity);
-
-            //IsRemindAll @everyone
-            await UpdateRemindAllCountAsync(senderSessionUnit, entity);
-
-            // update LastMessageId
-            await UpdateLastMessageIdAsync(senderSessionUnit, receiverSessionUnit, entity);
-
-            //update badge
-            await UpdateBadgeAsync(senderSessionUnit, entity);
-
+            //Batch Update SessionUnit
+            await BatchUpdateSessionUnitAsync(senderSessionUnit, entity, receiverSessionUnit?.Id);
             //
             await CurrentUnitOfWork.SaveChangesAsync();
 
             return entity;
         }
 
-        private async Task UpdateBadgeAsync(SessionUnit senderSessionUnit, Message entity)
+        protected virtual async Task BatchUpdateSessionUnitAsync(SessionUnit senderSessionUnit, Message message, Guid? receiverSessionUnitId)
         {
-            if (entity.IsPrivate)
+            if (BackgroundJobManager.IsAvailable())
             {
-                await SessionUnitRepository.BatchUpdatePrivateBadgeAsync(senderSessionUnit.SessionId.Value, entity.CreationTime, receiverSessionUnitId: senderSessionUnit.Id);
-            }
-            else
-            {
-                await SessionUnitRepository.BatchUpdatePublicBadgeAsync(senderSessionUnit.SessionId.Value, entity.CreationTime, ignoreSessionUnitId: senderSessionUnit.Id);
-            }
-        }
+                var jobId = await BackgroundJobManager.EnqueueAsync(new UpdateStatsForSessionUnitArgs()
+                {
+                    SenderSessionUnitId = senderSessionUnit.Id,
+                    MessageId = message.Id,
+                    ReceiverSessionUnitId = receiverSessionUnitId
+                });
 
-        private async Task UpdateLastMessageIdAsync(SessionUnit senderSessionUnit, SessionUnit receiverSessionUnit, Message message)
-        {
-            List<Guid> sessionUnitList = null;
+                Logger.LogInformation($"JobId:{jobId}");
 
-            if (receiverSessionUnit != null)
-            {
-                sessionUnitList = new List<Guid>() { senderSessionUnit.Id, receiverSessionUnit.Id, };
+                return;
             }
 
-            await SessionUnitRepository.BatchUpdateLastMessageIdAsync(senderSessionUnit.SessionId.Value, message.Id, sessionUnitList);
-        }
+            var result = await SessionUnitManager.BatchUpdateAsync(senderSessionUnit, message, receiverSessionUnitId);
 
-        private async Task UpdateRemindAllCountAsync(SessionUnit senderSessionUnit, Message message)
-        {
-            if (message.IsRemindAll)
-            {
-                await SessionUnitRepository.BatchUpdateRemindAllCountAsync(senderSessionUnit.SessionId.Value, message.CreationTime, ignoreSessionUnitId: senderSessionUnit.Id);
-            }
-        }
-
-        private async Task UpdateFollowingCountAsync(SessionUnit senderSessionUnit, Message message)
-        {
-            var followers = await FollowManager.GetFollowersAsync(senderSessionUnit.Id);
-
-            if (followers.Any())
-            {
-                var ownerSessionUnitIdList = followers.Select(x => x.OwnerId).ToList();
-
-                await SessionUnitRepository.BatchUpdateFollowingCountAsync(senderSessionUnit.SessionId.Value, message.CreationTime, ownerSessionUnitIdList: ownerSessionUnitIdList);
-            }
+            Logger.LogInformation($"{nameof(BatchUpdateSessionUnitAsync)}");
         }
 
         public virtual async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContent>(SessionUnit senderSessionUnit, MessageSendInput<TContentInfo> input, SessionUnit receiverSessionUnit = null)

@@ -12,6 +12,10 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.AbpCommons;
+using IczpNet.Chat.Follows;
+using Volo.Abp.Timing;
+using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits;
 
@@ -22,6 +26,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
     protected IDistributedCache<List<SessionUnitCacheItem>, string> UnitListCache { get; }
     protected IDistributedCache<string, Guid> UnitCountCache { get; }
     protected IDistributedCache<SessionUnitCacheItem, Guid> StatsCache { get; }
+    protected IFollowManager FollowManager => LazyServiceProvider.LazyGetRequiredService<IFollowManager>();
 
     public SessionUnitManager(
         ISessionUnitRepository repository,
@@ -445,4 +450,73 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
     }
 
 
+    public virtual async Task<int> UpdateBadgeAsync(SessionUnit senderSessionUnit, Message message)
+    {
+        if (message.IsPrivate)
+        {
+            return await Repository.BatchUpdatePrivateBadgeAsync(senderSessionUnit.SessionId.Value, message.CreationTime, receiverSessionUnitId: senderSessionUnit.Id);
+        }
+        else
+        {
+            return await Repository.BatchUpdatePublicBadgeAsync(senderSessionUnit.SessionId.Value, message.CreationTime, ignoreSessionUnitId: senderSessionUnit.Id);
+        }
+    }
+
+    public virtual async Task<int> UpdateLastMessageIdAsync(SessionUnit senderSessionUnit, Message message, Guid? receiverSessionUnitId)
+    {
+        List<Guid> sessionUnitList = null;
+
+        if (receiverSessionUnitId != null)
+        {
+            sessionUnitList = new List<Guid>() { senderSessionUnit.Id, receiverSessionUnitId.Value, };
+        }
+
+        return await Repository.BatchUpdateLastMessageIdAsync(senderSessionUnit.SessionId.Value, message.Id, sessionUnitList);
+    }
+
+    public virtual async Task<int> UpdateRemindAllCountAsync(SessionUnit senderSessionUnit, Message message)
+    {
+        if (message.IsRemindAll)
+        {
+            return await Repository.BatchUpdateRemindAllCountAsync(senderSessionUnit.SessionId.Value, message.CreationTime, ignoreSessionUnitId: senderSessionUnit.Id);
+        }
+        return 0;
+    }
+
+    public virtual async Task<int> UpdateFollowingCountAsync(SessionUnit senderSessionUnit, Message message)
+    {
+        var ownerSessionUnitIdList = await FollowManager.GetFollowerIdListAsync(senderSessionUnit.Id);
+
+        if (ownerSessionUnitIdList.Any())
+        {
+            return await Repository.BatchUpdateFollowingCountAsync(senderSessionUnit.SessionId.Value, message.CreationTime, ownerSessionUnitIdList: ownerSessionUnitIdList);
+        }
+        return 0;
+    }
+
+    public virtual async Task<UpdateStatsResult> BatchUpdateAsync(SessionUnit senderSessionUnit, Message message, Guid? receiverSessionUnitId)
+    {
+        var stopwatch = Stopwatch.StartNew();
+
+        var result = new UpdateStatsResult()
+        {
+            //following
+            UpdateFollowingCount = await UpdateFollowingCountAsync(senderSessionUnit, message),
+
+            //IsRemindAll @everyone
+            UpdateRemindAllCount = await UpdateRemindAllCountAsync(senderSessionUnit, message),
+
+            // update LastMessageId
+            UpdateLastMessageIdCount = await UpdateLastMessageIdAsync(senderSessionUnit, message, receiverSessionUnitId),
+
+            //update badge
+            UpdateBadgeCount = await UpdateBadgeAsync(senderSessionUnit, message),
+        };
+
+        stopwatch.Stop();
+
+        Logger.LogInformation($"{result}, stopwatch: {stopwatch.ElapsedMilliseconds}ms.");
+
+        return result;
+    }
 }

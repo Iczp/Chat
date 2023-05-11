@@ -55,19 +55,18 @@ namespace IczpNet.Chat.UnitTests
 
             var room = await ChatObjectManager.GetAsync(RoomId.Value);
 
-            var requestMessage = $"{owner.Name} 通过群'{room.Name}' 请求添加 {destination.Name} 为好友";
+            var requestMessage = $"'{owner.Name}' requested to add '{destination.Name}' as friendship by the room '{room.Name}'.";
 
             Logger.LogInformation(requestMessage);
             try
             {
                 var entity = await SessionRequestManager.CreateRequestAsync(owner.Id, destination.Id, requestMessage);
 
-                Logger.LogInformation($"请求成功: {requestMessage}");
+                Logger.LogInformation($"Success: {requestMessage}");
             }
             catch (Exception ex)
             {
-
-                Logger.LogWarning($"请求失败: {ex.Message}");
+                Logger.LogWarning($"Fail: {ex.Message}");
                 throw;
             }
 

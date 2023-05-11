@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.AutoMapper;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.Domain;
 using Volo.Abp.Modularity;
@@ -31,6 +32,7 @@ namespace IczpNet.Chat;
 //[DependsOn(typeof(AbpIdentityDomainModule))]
 [DependsOn(typeof(AbpPermissionManagementDomainIdentityModule))]
 [DependsOn(typeof(PusherDomainModule))]
+[DependsOn(typeof(AbpBackgroundJobsAbstractionsModule))]
 public class ChatDomainModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)

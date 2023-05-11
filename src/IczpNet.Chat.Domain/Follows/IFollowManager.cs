@@ -10,6 +10,8 @@ namespace IczpNet.Chat.Follows
 
         Task<List<Follow>> GetFollowersAsync(Guid destinationSessionUnitId);
 
+        Task<List<Guid>> GetFollowerIdListAsync(Guid destinationSessionUnitId);
+
         Task<bool> CreateAsync(Guid ownerId, List<Guid> idList);
 
         Task<bool> CreateAsync(SessionUnit owner, List<Guid> idList);
@@ -17,6 +19,6 @@ namespace IczpNet.Chat.Follows
         Task DeleteAsync(Guid ownerId, List<Guid> idList);
 
         Task DeleteAsync(SessionUnit owner, List<Guid> idList);
-
+        
     }
 }

@@ -1,4 +1,6 @@
 ﻿using IczpNet.Chat.Enums;
+using IczpNet.Chat.Follows;
+using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.OpenedRecorders;
 using Microsoft.Extensions.Caching.Distributed;
 using System;
@@ -7,6 +9,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits
 {
@@ -81,6 +84,16 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         Task<IQueryable<SessionUnit>> GetSameDestinationQeuryableAsync(long sourceChatObjectId, long targetChatObjectId, List<ChatObjectTypeEnums> chatObjectTypeList = null);
 
         Task<int> GetSameDestinationCountAsync(long sourceChatObjectId, long targetChatObjectId, List<ChatObjectTypeEnums> chatObjectTypeList = null);
+
+        Task<int> UpdateBadgeAsync(SessionUnit senderSessionUnit, Message message);
+
+        Task<int> UpdateLastMessageIdAsync(SessionUnit senderSessionUnit, Message message, Guid? receiverSessionUnitId);
+
+        Task<int> UpdateRemindAllCountAsync(SessionUnit senderSessionUnit, Message message);
+
+        Task<int> UpdateFollowingCountAsync(SessionUnit senderSessionUnit, Message message);
+
+        Task<UpdateStatsResult> BatchUpdateAsync(SessionUnit senderSessionUnit, Message message, Guid? receiverSessionUnitId);
 
     }
 }
