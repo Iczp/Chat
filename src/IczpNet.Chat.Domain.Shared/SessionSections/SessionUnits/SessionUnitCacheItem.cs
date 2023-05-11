@@ -20,5 +20,17 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public virtual ServiceStatus ServiceStatus { get; set; }
 
+        public virtual long? LastMessageId { get; set; }
+
+        public virtual int PublicBadge { get; set; }
+
+        public virtual int PrivateBadge { get; set; }
+
+        public virtual int RemindAllCount { get; set; }
+
+        public virtual int RemindMeCount { get; set; }
+
+        public virtual int FollowingCount { get; set; }
+
     }
 }

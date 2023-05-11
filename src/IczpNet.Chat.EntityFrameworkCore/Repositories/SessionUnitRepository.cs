@@ -108,16 +108,7 @@ namespace IczpNet.Chat.Repositories
 
         private static Expression<Func<SessionUnit, bool>> GetSessionUnitPredicate(DateTime messageCreationTime)
         {
-            return x =>
-                !x.IsDeleted &&
-                !x.IsKilled &&
-                x.IsEnabled &&
-                x.ServiceStatus == Enums.ServiceStatus.Normal &&
-                (x.HistoryFristTime == null || messageCreationTime > x.HistoryFristTime) &&
-                (x.HistoryLastTime == null || messageCreationTime < x.HistoryLastTime) &&
-                (x.HistoryLastTime == null || messageCreationTime < x.HistoryLastTime) &&
-                (x.ClearTime == null || messageCreationTime > x.ClearTime)
-            ;
+            return SessionUnit.GetActivePredicate(messageCreationTime);
         }
 
         public virtual async Task<int> BatchUpdateRemindMeCountAsync(DateTime messageCreationTime, List<Guid> sessionUnitIdList)

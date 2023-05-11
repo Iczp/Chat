@@ -27,6 +27,7 @@ using Volo.Abp.SimpleStateChecking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.OpenedRecorders;
+using System.Linq.Expressions;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits
 {
@@ -42,6 +43,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
     [Index(nameof(DestinationObjectType), AllDescending = false)]
     public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, IIsStatic, IIsPublic, ISessionId, IHasSimpleStateCheckers<SessionUnit>, IMaterializationInterceptor
     {
+
+
         public List<ISimpleStateChecker<SessionUnit>> StateCheckers => new();
 
         [Required]
@@ -301,6 +304,21 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             JoinWay = joinWay;
             InviterUnitId = inviterUnitId;
             IsInputEnabled = isInputEnabled;
+        }
+
+        public static Expression<Func<SessionUnit, bool>> GetActivePredicate(DateTime? messageCreationTime)
+        {
+            var creationTime = messageCreationTime ?? DateTime.Now;
+            return x =>
+                !x.IsDeleted &&
+                !x.IsKilled &&
+                x.IsEnabled &&
+                x.ServiceStatus == ServiceStatus.Normal &&
+                (x.HistoryFristTime == null || creationTime > x.HistoryFristTime) &&
+                (x.HistoryLastTime == null || creationTime < x.HistoryLastTime) &&
+                (x.HistoryLastTime == null || creationTime < x.HistoryLastTime) &&
+                (x.ClearTime == null || creationTime > x.ClearTime)
+            ;
         }
 
         public virtual void SetKey(string key)

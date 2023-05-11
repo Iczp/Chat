@@ -21,17 +21,20 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
     protected IMessageRepository MessageRepository { get; }
     protected IDistributedCache<List<SessionUnitCacheItem>, string> UnitListCache { get; }
     protected IDistributedCache<string, Guid> UnitCountCache { get; }
+    protected IDistributedCache<SessionUnitCacheItem, Guid> StatsCache { get; }
 
     public SessionUnitManager(
         ISessionUnitRepository repository,
         IMessageRepository messageRepository,
         IDistributedCache<List<SessionUnitCacheItem>, string> unitListCache,
-        IDistributedCache<string, Guid> unitCountCache)
+        IDistributedCache<string, Guid> unitCountCache,
+        IDistributedCache<SessionUnitCacheItem, Guid> statsCache)
     {
         Repository = repository;
         MessageRepository = messageRepository;
         UnitListCache = unitListCache;
         UnitCountCache = unitCountCache;
+        StatsCache = statsCache;
     }
 
     protected virtual async Task<SessionUnit> SetEntityAsync(SessionUnit entity, Action<SessionUnit> action = null)
@@ -363,7 +366,8 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
     public virtual async Task<List<SessionUnitCacheItem>> GetListBySessionIdAsync(Guid sessionId)
     {
         var list = (await Repository.GetQueryableAsync())
-            .Where(x => x.SessionId == sessionId && !x.IsKilled && x.IsEnabled)
+            .Where(SessionUnit.GetActivePredicate(Clock.Now))
+            .Where(x => x.SessionId == sessionId)
             .Select(x => new SessionUnitCacheItem()
             {
                 Id = x.Id,
@@ -373,6 +377,12 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
                 DestinationObjectType = x.DestinationObjectType,
                 IsPublic = x.IsPublic,
                 ServiceStatus = x.ServiceStatus,
+                PublicBadge = x.PublicBadge,
+                PrivateBadge = x.PrivateBadge,
+                RemindAllCount = x.RemindAllCount,
+                RemindMeCount = x.RemindMeCount,
+                FollowingCount = x.FollowingCount,
+                LastMessageId = x.LastMessageId,
             })
             .ToList();
 
