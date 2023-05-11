@@ -10,7 +10,9 @@ namespace IczpNet.Chat.Follows
 {
     public interface IFollowAppService
     {
-        Task<PagedResultDto<SessionUnitDestinationDto>> GetListAsync(FollowGetListInput input);
+        Task<PagedResultDto<SessionUnitDestinationDto>> GetFollowingsAsync(GetFollowingsInput input);
+
+        Task<PagedResultDto<SessionUnitDestinationDto>> GetFollowersAsync(GetFollowersInput input);
 
         Task<bool> CreateAsync(FollowCreateInput input);
 

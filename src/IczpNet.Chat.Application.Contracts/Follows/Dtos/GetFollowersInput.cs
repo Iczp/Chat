@@ -3,12 +3,12 @@ using System;
 
 namespace IczpNet.Chat.Follows.Dtos
 {
-    public class FollowGetListInput : BaseGetListInput
+    public class GetFollowersInput : BaseGetListInput
     {
 
         /// <summary>
         /// SessionUnitId
         /// </summary>
-        public Guid OwnerId { get; set; }
+        public Guid DestinationId { get; set; }
     }
 }

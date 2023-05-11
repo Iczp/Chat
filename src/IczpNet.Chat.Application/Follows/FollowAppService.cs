@@ -35,14 +35,28 @@ namespace IczpNet.Chat.Follows
         }
 
         [HttpGet]
-        public async Task<PagedResultDto<SessionUnitDestinationDto>> GetListAsync(FollowGetListInput input)
+        public async Task<PagedResultDto<SessionUnitDestinationDto>> GetFollowingsAsync(GetFollowingsInput input)
         {
             var owner = await SessionUnitManager.GetAsync(input.OwnerId);
 
-            var destinationSessionUnitIdList = (await Repository.GetQueryableAsync()).Where(x => x.OwnerId == owner.Id).Select(x => x.DestinationId);
+            var ownerSessionUnitIdList = (await Repository.GetQueryableAsync()).Where(x => x.OwnerId == owner.Id).Select(x => x.DestinationId);
 
             var query = (await SessionUnitRepository.GetQueryableAsync())
-                .Where(x => destinationSessionUnitIdList.Contains(x.Id));
+                .Where(x => ownerSessionUnitIdList.Contains(x.Id))
+                .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordSessionUnitSpecification(input.Keyword).ToExpression())
+                ;
+
+            return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query);
+        }
+
+        [HttpGet]
+        public async Task<PagedResultDto<SessionUnitDestinationDto>> GetFollowersAsync(GetFollowersInput input)
+        {
+            var query = (await Repository.GetQueryableAsync())
+                .Where(x => x.DestinationId == input.DestinationId)
+                .Select(x => x.Owner)
+                .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordSessionUnitSpecification(input.Keyword).ToExpression())
+                ;
 
             return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query);
         }
@@ -63,5 +77,7 @@ namespace IczpNet.Chat.Follows
             //check owner
             await FollowManager.DeleteAsync(owner, idList);
         }
+
+
     }
 }
