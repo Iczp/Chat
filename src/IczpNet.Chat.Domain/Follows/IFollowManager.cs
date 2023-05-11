@@ -7,6 +7,9 @@ namespace IczpNet.Chat.Follows
 {
     public interface IFollowManager
     {
+
+        Task<List<Follow>> GetFollowersAsync(Guid destinationSessionUnitId);
+
         Task<bool> CreateAsync(Guid ownerId, List<Guid> idList);
 
         Task<bool> CreateAsync(SessionUnit owner, List<Guid> idList);

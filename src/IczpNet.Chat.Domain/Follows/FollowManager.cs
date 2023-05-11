@@ -27,6 +27,13 @@ namespace IczpNet.Chat.Follows
             Repository = repository;
         }
 
+        public async Task<List<Follow>> GetFollowersAsync(Guid destinationSessionUnitId)
+        {
+            return (await Repository.GetQueryableAsync())
+                .Where(x => x.DestinationId == destinationSessionUnitId)
+                .ToList();
+        }
+
         public async Task<bool> CreateAsync(Guid ownerId, List<Guid> idList)
         {
             var owner = await SessionUnitManager.GetAsync(ownerId);
@@ -69,5 +76,7 @@ namespace IczpNet.Chat.Follows
         {
             await DeleteAsync(owner.Id, idList);
         }
+
+
     }
 }

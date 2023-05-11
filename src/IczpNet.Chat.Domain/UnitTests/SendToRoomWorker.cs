@@ -45,7 +45,7 @@ namespace IczpNet.Chat.Connections
             ISessionUnitManager sessionUnitManager,
             IFollowManager followManager) : base(timer, serviceScopeFactory)
         {
-            Timer.Period = 1 * 1000; //1 seconds
+            Timer.Period = 333;
             SessionUnitRepository = sessionUnitRepository;
             MessageSender = messageSender;
             RoomManager = roomManager;
@@ -72,7 +72,7 @@ namespace IczpNet.Chat.Connections
 
             Logger.LogInformation($"sessionunit: id:{sessionunit?.Id},name:{sessionunit?.Owner?.Name}");
 
-            // Follow
+            // Following
             if ( sessionunit.OwnerFollowList.Count< 3)
             {
                 var tagId = items[new Random().Next(0, items.Count - 1)];

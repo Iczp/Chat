@@ -4,6 +4,7 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatPushers;
 using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.Follows;
 using IczpNet.Chat.Options;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
@@ -34,6 +35,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         protected ChatOption Config { get; }
         protected IChatPusher ChatPusher { get; }
         protected ISessionUnitRepository SessionUnitRepository { get; }
+        protected IFollowManager FollowManager { get; }
 
         public MessageManager(
             IMessageRepository repository,
@@ -47,7 +49,8 @@ namespace IczpNet.Chat.MessageSections.Messages
             IChatPusher chatPusher,
             ISessionUnitManager sessionUnitManager,
             IUnitOfWorkManager unitOfWorkManager,
-            ISessionUnitRepository sessionUnitRepository)
+            ISessionUnitRepository sessionUnitRepository,
+            IFollowManager followManager)
         {
             Repository = repository;
             ChatObjectResolver = messageChatObjectResolver;
@@ -61,6 +64,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             SessionUnitManager = sessionUnitManager;
             UnitOfWorkManager = unitOfWorkManager;
             SessionUnitRepository = sessionUnitRepository;
+            FollowManager = followManager;
         }
 
         //public virtual async Task<Message> CreateMessageAsync(IChatObject sender, IChatObject receiver, Func<Message, Task<IMessageContentEntity>> func)
@@ -198,10 +202,13 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         private async Task UpdateFollowingCountAsync(SessionUnit senderSessionUnit, Message message)
         {
-            if (senderSessionUnit.OwnerFollowList.Any())
+            var followers = await FollowManager.GetFollowersAsync(senderSessionUnit.Id);
+
+            if (followers.Any())
             {
-                var destinationSessionUnitIdList = senderSessionUnit.OwnerFollowList.Select(x => x.DestinationId).ToList();
-                await SessionUnitRepository.BatchUpdateFollowingCountAsync(senderSessionUnit.SessionId.Value, message.CreationTime, destinationSessionUnitIdList: destinationSessionUnitIdList);
+                var ownerSessionUnitIdList = followers.Select(x => x.OwnerId).ToList();
+
+                await SessionUnitRepository.BatchUpdateFollowingCountAsync(senderSessionUnit.SessionId.Value, message.CreationTime, ownerSessionUnitIdList: ownerSessionUnitIdList);
             }
         }
 

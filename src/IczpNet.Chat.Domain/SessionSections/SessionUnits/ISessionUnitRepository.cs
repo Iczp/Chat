@@ -18,7 +18,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         Task<int> BatchUpdateRemindAllCountAsync(Guid sessionId, DateTime messageCreationTime, Guid ignoreSessionUnitId);
 
-        Task<int> BatchUpdateFollowingCountAsync(Guid sessionId, DateTime messageCreationTime, List<Guid> destinationSessionUnitIdList);
+        Task<int> BatchUpdateFollowingCountAsync(Guid sessionId, DateTime messageCreationTime, List<Guid> ownerSessionUnitIdList);
 
         Task<Dictionary<Guid, SessionUnitStatModel>> GetStatsAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null);
         
