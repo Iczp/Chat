@@ -26,6 +26,7 @@ using Volo.Abp.AspNetCore.Mvc.UI.MultiTenancy;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.Autofac;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Caching;
 using Volo.Abp.Caching.StackExchangeRedis;
 using Volo.Abp.EntityFrameworkCore;
@@ -57,6 +58,7 @@ typeof(ChatApplicationModule),
     typeof(AbpSwashbuckleModule)
     )]
 //[DependsOn(typeof(ChatManagementApplicationModule))]
+[DependsOn(typeof(AbpBackgroundJobsModule))]
 public class ChatHttpApiHostModule : AbpModule
 {
 
@@ -65,6 +67,10 @@ public class ChatHttpApiHostModule : AbpModule
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
 
+        Configure<AbpBackgroundJobWorkerOptions>(options =>
+        {
+            options.DefaultTimeout = 864000; //10 days (as seconds)
+        });
 
         Configure<PusherOptions>(options =>
         {

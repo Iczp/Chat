@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits
 {
@@ -10,17 +11,22 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
     {
         protected IMessageRepository MessageRepository { get; }
         protected ISessionUnitManager SessionUnitManager { get; }
+        protected IUnitOfWorkManager UnitOfWorkManager { get; }
 
         public UpdateStatsForSessionUnitJob(
             IMessageRepository mssageRepository,
-            ISessionUnitManager sessionUnitManager)
+            ISessionUnitManager sessionUnitManager,
+            IUnitOfWorkManager unitOfWorkManager)
         {
             MessageRepository = mssageRepository;
             SessionUnitManager = sessionUnitManager;
+            UnitOfWorkManager = unitOfWorkManager;
         }
 
         public override async Task ExecuteAsync(UpdateStatsForSessionUnitArgs args)
         {
+            using var uow = UnitOfWorkManager.Begin();
+
             var senderSessionUnit = await SessionUnitManager.GetAsync(args.SenderSessionUnitId);
 
             var message = await MessageRepository.GetAsync(args.MessageId);
