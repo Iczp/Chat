@@ -45,7 +45,7 @@ namespace IczpNet.Chat.UnitTests
             ISessionUnitManager sessionUnitManager,
             IFollowManager followManager) : base(timer, serviceScopeFactory)
         {
-            Timer.Period = 333;
+            Timer.Period = 1000;
             SessionUnitRepository = sessionUnitRepository;
             MessageSender = messageSender;
             RoomManager = roomManager;

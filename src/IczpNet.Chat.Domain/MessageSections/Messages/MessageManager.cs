@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.BackgroundJobs;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
@@ -155,10 +156,11 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             session.SetLastMessage(entity);
 
+            await CurrentUnitOfWork.SaveChangesAsync();
+
             //Batch Update SessionUnit
             await BatchUpdateSessionUnitAsync(senderSessionUnit, entity, receiverSessionUnit?.Id);
             //
-            await CurrentUnitOfWork.SaveChangesAsync();
 
             return entity;
         }
@@ -214,7 +216,9 @@ namespace IczpNet.Chat.MessageSections.Messages
                 return await Task.FromResult(messageContent);
             });
 
-            var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
+            //var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
+
+            var output = new MessageInfo<TContentInfo>() { Id = message.Id };
 
             if (receiverSessionUnit != null)
             {
