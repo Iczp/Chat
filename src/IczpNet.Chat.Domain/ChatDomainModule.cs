@@ -4,6 +4,7 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Connections;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.TextTemplates;
+using IczpNet.Chat.UnitTests;
 using IczpNet.Pusher;
 using IczpNet.Pusher.ShortIds;
 using Microsoft.Extensions.DependencyInjection;
@@ -62,7 +63,10 @@ public class ChatDomainModule : AbpModule
     {
         //await context.AddBackgroundWorkerAsync<ConnectionWorker>();
         //await context.AddBackgroundWorkerAsync<SendMessageWorker>();
-        await context.AddBackgroundWorkerAsync<SendToRoomWorker>();
+
+        
+        await context.AddBackgroundWorkerAsync<SendToRoomUnitTestWorker>();
+        await context.AddBackgroundWorkerAsync<SessionUnitRequestUnitTestWorker>();
         await base.OnPostApplicationInitializationAsync(context);
     }
 }

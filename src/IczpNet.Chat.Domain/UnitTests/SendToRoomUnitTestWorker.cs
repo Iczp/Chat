@@ -17,9 +17,9 @@ using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.Threading;
 using Volo.Abp.Uow;
 
-namespace IczpNet.Chat.Connections
+namespace IczpNet.Chat.UnitTests
 {
-    public class SendToRoomWorker : AsyncPeriodicBackgroundWorkerBase
+    public class SendToRoomUnitTestWorker : AsyncPeriodicBackgroundWorkerBase
     {
         private static List<Guid> SessionUnitIdList;
 
@@ -37,7 +37,7 @@ namespace IczpNet.Chat.Connections
         protected IFollowManager FollowManager { get; }
 
 
-        public SendToRoomWorker(AbpAsyncTimer timer,
+        public SendToRoomUnitTestWorker(AbpAsyncTimer timer,
             IServiceScopeFactory serviceScopeFactory,
             ISessionUnitRepository sessionUnitRepository,
             IMessageSender messageSender,
