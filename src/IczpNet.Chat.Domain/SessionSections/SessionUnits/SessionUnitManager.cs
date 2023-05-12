@@ -534,7 +534,8 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
                sessionId: senderSessionUnit.SessionId.Value,
                lastMessageId: message.Id,
                messageCreationTime: message.CreationTime,
-               senderSessionUnit.Id
+               senderSessionUnit.Id,
+               isRemindAll: message.IsRemindAll
                );
 
         stopwatch.Stop();

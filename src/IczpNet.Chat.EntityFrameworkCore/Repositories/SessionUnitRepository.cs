@@ -76,21 +76,31 @@ namespace IczpNet.Chat.Repositories
                 );
         }
 
-        public async Task<int> BatchUpdateLastMessageIdAndPublicBadgeAndRemindAllCountAsync(Guid sessionId, long lastMessageId, DateTime messageCreationTime, Guid ignoreSessionUnitId)
+        public async Task<int> BatchUpdateLastMessageIdAndPublicBadgeAndRemindAllCountAsync(Guid sessionId, long lastMessageId, DateTime messageCreationTime, Guid ignoreSessionUnitId, bool isRemindAll)
         {
             var context = await GetDbContextAsync();
 
             var predicate = GetSessionUnitPredicate(messageCreationTime);
 
-            return await context.SessionUnit
+            var query = context.SessionUnit
                 .Where(predicate)
                 .Where(x => x.SessionId == sessionId)
                 .Where(x => x.Id != ignoreSessionUnitId)
-                .Where(x => x.LastMessageId != lastMessageId)
-                .ExecuteUpdateAsync(s => s
+                .Where(x => x.LastMessageId != lastMessageId);
+
+            if (isRemindAll)
+            {
+                return await query.ExecuteUpdateAsync(s => s
                     .SetProperty(b => b.PublicBadge, b => b.PublicBadge + 1)
                     .SetProperty(b => b.LastMessageId, b => lastMessageId)
                     .SetProperty(b => b.RemindAllCount, b => b.RemindAllCount + 1)
+                );
+            }
+
+            return await query.ExecuteUpdateAsync(s => s
+                    .SetProperty(b => b.PublicBadge, b => b.PublicBadge + 1)
+                    .SetProperty(b => b.LastMessageId, b => lastMessageId)
+                    //.SetPropertyIf(isRemindAll, b => b.RemindAllCount, b => b.RemindAllCount + 1)
                 );
         }
 
