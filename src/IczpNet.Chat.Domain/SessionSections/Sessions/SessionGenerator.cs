@@ -270,17 +270,5 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
             return sessionList;
         }
-
-        public async Task<Session> UpdateAsync(Session session)
-        {
-            if (session.LastMessageId.HasValue)
-            {
-                await SessionUnitManager.BatchUpdateLastMessageIdAsync(session.Id, session.LastMessageId.Value);
-            }
-            return await SessionRepository.UpdateAsync(session, true);
-
-        }
-
-
     }
 }

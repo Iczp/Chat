@@ -11,8 +11,6 @@ namespace IczpNet.Chat.SessionSections.Sessions
         Task<Session> MakeAsync(IChatObject room);
 
         Task<List<Session>> GenerateSessionByMessageAsync();
-
-        Task<Session> UpdateAsync(Session session);
         
     }
 }

@@ -496,6 +496,15 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             IsStatic = v;
         }
 
+        internal void SetLastMessage(Message message)
+        {
+            LastMessageId = message.Id;
+            LastMessage = message;
+        }
 
+        internal void SetPrivateBadge(int v)
+        {
+            PrivateBadge = v;
+        }
     }
 }

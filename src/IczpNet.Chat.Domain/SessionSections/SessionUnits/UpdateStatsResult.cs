@@ -2,17 +2,17 @@
 {
     public class UpdateStatsResult
     {
-        public int UpdateFollowingCount { get; set; }
-
         public int UpdateRemindAllCount { get; set; }
 
         public int UpdateLastMessageIdCount { get; set; }
 
-        public int UpdateBadgeCount { get; set; }
+        public int UpdatePublicBadgeCount { get; set; }
+
+        public int UpdateLastMessageIdAndPublicBadgeCount { get; set; }
 
         public override string ToString()
         {
-            return $"UpdateStatsResult: {nameof(UpdateFollowingCount)}={UpdateFollowingCount}, {nameof(UpdateRemindAllCount)}={UpdateRemindAllCount}, {nameof(UpdateLastMessageIdCount)}={UpdateLastMessageIdCount}, {nameof(UpdateBadgeCount)}={UpdateBadgeCount}";
+            return $"UpdateStatsResult: {nameof(UpdateRemindAllCount)}={UpdateRemindAllCount}, {nameof(UpdateLastMessageIdCount)}={UpdateLastMessageIdCount}, {nameof(UpdatePublicBadgeCount)}={UpdatePublicBadgeCount}, {nameof(UpdateLastMessageIdAndPublicBadgeCount)}={UpdateLastMessageIdAndPublicBadgeCount}";
         }
     }
 }

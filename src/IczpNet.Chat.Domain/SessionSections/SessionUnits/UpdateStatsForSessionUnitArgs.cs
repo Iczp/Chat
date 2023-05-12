@@ -6,8 +6,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
     {
         public Guid SenderSessionUnitId { get; set; }
 
-        public Guid? ReceiverSessionUnitId { get; set; }
-
         public long MessageId { get; set; }
     }
 }

@@ -31,7 +31,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
             var message = await MessageRepository.GetAsync(args.MessageId);
 
-            var result = await SessionUnitManager.BatchUpdateAsync(senderSessionUnit, message, args.ReceiverSessionUnitId);
+            var result = await SessionUnitManager.BatchUpdateAsync(senderSessionUnit, message);
 
             Logger.LogInformation($"Completed {result}.");
         }

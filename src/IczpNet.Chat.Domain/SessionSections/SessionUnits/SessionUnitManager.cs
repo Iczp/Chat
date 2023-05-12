@@ -341,11 +341,6 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return int.Parse(value);
     }
 
-    public virtual Task<int> BatchUpdateLastMessageIdAsync(Guid sessionId, long lastMessageId, List<Guid> sessionUnitIdList = null)
-    {
-        return Repository.BatchUpdateLastMessageIdAsync(sessionId, lastMessageId, sessionUnitIdList);
-    }
-
     public virtual Task<List<SessionUnitCacheItem>> GetCacheListAsync(string sessionUnitCachKey)
     {
         return UnitListCache.GetAsync(sessionUnitCachKey);
@@ -450,39 +445,6 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
     }
 
 
-    public virtual async Task<int> UpdateBadgeAsync(SessionUnit senderSessionUnit, Message message)
-    {
-        if (message.IsPrivate)
-        {
-            return await Repository.BatchUpdatePrivateBadgeAsync(senderSessionUnit.SessionId.Value, message.CreationTime, receiverSessionUnitId: senderSessionUnit.Id);
-        }
-        else
-        {
-            return await Repository.BatchUpdatePublicBadgeAsync(senderSessionUnit.SessionId.Value, message.CreationTime, ignoreSessionUnitId: senderSessionUnit.Id);
-        }
-    }
-
-    public virtual async Task<int> UpdateLastMessageIdAsync(SessionUnit senderSessionUnit, Message message, Guid? receiverSessionUnitId)
-    {
-        List<Guid> sessionUnitList = null;
-
-        if (receiverSessionUnitId != null)
-        {
-            sessionUnitList = new List<Guid>() { senderSessionUnit.Id, receiverSessionUnitId.Value, };
-        }
-
-        return await Repository.BatchUpdateLastMessageIdAsync(senderSessionUnit.SessionId.Value, message.Id, sessionUnitList);
-    }
-
-    public virtual async Task<int> UpdateRemindAllCountAsync(SessionUnit senderSessionUnit, Message message)
-    {
-        if (message.IsRemindAll)
-        {
-            return await Repository.BatchUpdateRemindAllCountAsync(senderSessionUnit.SessionId.Value, message.CreationTime, ignoreSessionUnitId: senderSessionUnit.Id);
-        }
-        return 0;
-    }
-
     public virtual async Task<int> UpdateFollowingCountAsync(SessionUnit senderSessionUnit, Message message)
     {
         var ownerSessionUnitIdList = await FollowManager.GetFollowerIdListAsync(senderSessionUnit.Id);
@@ -494,28 +456,20 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return 0;
     }
 
-    public virtual async Task<UpdateStatsResult> BatchUpdateAsync(SessionUnit senderSessionUnit, Message message, Guid? receiverSessionUnitId)
+    public virtual async Task<int> BatchUpdateAsync(SessionUnit senderSessionUnit, Message message)
     {
         var stopwatch = Stopwatch.StartNew();
 
-        var result = new UpdateStatsResult()
-        {
-            //following
-            UpdateFollowingCount = await UpdateFollowingCountAsync(senderSessionUnit, message),
-
-            //IsRemindAll @everyone
-            UpdateRemindAllCount = await UpdateRemindAllCountAsync(senderSessionUnit, message),
-
-            // update LastMessageId
-            UpdateLastMessageIdCount = await UpdateLastMessageIdAsync(senderSessionUnit, message, receiverSessionUnitId),
-
-            //update badge
-            UpdateBadgeCount = await UpdateBadgeAsync(senderSessionUnit, message),
-        };
+        var result = await Repository.BatchUpdateLastMessageIdAndPublicBadgeAndRemindAllCountAsync(
+               sessionId: senderSessionUnit.SessionId.Value,
+               lastMessageId: message.Id,
+               messageCreationTime: message.CreationTime,
+               senderSessionUnit.Id
+               );
 
         stopwatch.Stop();
 
-        Logger.LogInformation($"{result}, stopwatch: {stopwatch.ElapsedMilliseconds}ms.");
+        Logger.LogInformation($"BatchUpdateLastMessageIdAndPublicBadgeAndRemindAllCount:{result}, stopwatch: {stopwatch.ElapsedMilliseconds}ms.");
 
         return result;
     }

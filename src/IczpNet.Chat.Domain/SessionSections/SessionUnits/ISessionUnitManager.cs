@@ -63,8 +63,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         Task<int> GetCountAsync(Guid sessionId);
 
-        Task<int> BatchUpdateLastMessageIdAsync(Guid sessionId, long lastMessageId, List<Guid> sessionUnitIdList = null);
-
         Task<List<SessionUnitCacheItem>> GetCacheListAsync(string cacheKey);
 
         Task<List<SessionUnitCacheItem>> GetOrAddCacheListAsync(Guid sessionId);
@@ -85,15 +83,9 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         Task<int> GetSameDestinationCountAsync(long sourceChatObjectId, long targetChatObjectId, List<ChatObjectTypeEnums> chatObjectTypeList = null);
 
-        Task<int> UpdateBadgeAsync(SessionUnit senderSessionUnit, Message message);
-
-        Task<int> UpdateLastMessageIdAsync(SessionUnit senderSessionUnit, Message message, Guid? receiverSessionUnitId);
-
-        Task<int> UpdateRemindAllCountAsync(SessionUnit senderSessionUnit, Message message);
-
         Task<int> UpdateFollowingCountAsync(SessionUnit senderSessionUnit, Message message);
 
-        Task<UpdateStatsResult> BatchUpdateAsync(SessionUnit senderSessionUnit, Message message, Guid? receiverSessionUnitId);
+        Task<int> BatchUpdateAsync(SessionUnit senderSessionUnit, Message message);
 
     }
 }

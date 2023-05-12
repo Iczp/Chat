@@ -33,7 +33,7 @@ namespace IczpNet.Chat.Repositories
             return Task.FromResult(table);
         }
 
-        public virtual Task<int> BatchUpdateLastMessageIdAsync(Guid sessionId, long lastMessageId, List<Guid> sessionUnitIdList = null)
+        protected virtual Task<int> BatchUpdateLastMessageIdAsync(Guid sessionId, long lastMessageId, List<Guid> sessionUnitIdList = null)
         {
             return BatchUpdateLastMessageIdByEf7Async(sessionId, lastMessageId);
         }
@@ -76,7 +76,7 @@ namespace IczpNet.Chat.Repositories
                 );
         }
 
-        public virtual async Task<int> BatchUpdatePrivateBadgeAsync(Guid sessionId, DateTime messageCreationTime, Guid receiverSessionUnitId)
+        public async Task<int> BatchUpdateLastMessageIdAndPublicBadgeAndRemindAllCountAsync(Guid sessionId, long lastMessageId, DateTime messageCreationTime, Guid ignoreSessionUnitId)
         {
             var context = await GetDbContextAsync();
 
@@ -85,13 +85,16 @@ namespace IczpNet.Chat.Repositories
             return await context.SessionUnit
                 .Where(predicate)
                 .Where(x => x.SessionId == sessionId)
-                .Where(x => x.Id == receiverSessionUnitId)
+                .Where(x => x.Id != ignoreSessionUnitId)
+                .Where(x => x.LastMessageId != lastMessageId)
                 .ExecuteUpdateAsync(s => s
-                    .SetProperty(b => b.PrivateBadge, b => b.PrivateBadge + 1)
+                    .SetProperty(b => b.PublicBadge, b => b.PublicBadge + 1)
+                    .SetProperty(b => b.LastMessageId, b => lastMessageId)
+                    .SetProperty(b => b.RemindAllCount, b => b.RemindAllCount + 1)
                 );
         }
 
-        public virtual async Task<int> BatchUpdatePublicBadgeAsync(Guid sessionId, DateTime messageCreationTime, Guid ignoreSessionUnitId)
+        protected virtual async Task<int> BatchUpdatePublicBadgeAsync(Guid sessionId, DateTime messageCreationTime, Guid ignoreSessionUnitId)
         {
             var context = await GetDbContextAsync();
 
@@ -105,6 +108,22 @@ namespace IczpNet.Chat.Repositories
                     .SetProperty(b => b.PublicBadge, b => b.PublicBadge + 1)
                 );
         }
+
+        protected virtual async Task<int> BatchUpdateRemindAllCountAsync(Guid sessionId, DateTime messageCreationTime, Guid ignoreSessionUnitId)
+        {
+            var context = await GetDbContextAsync();
+
+            var predicate = GetSessionUnitPredicate(messageCreationTime);
+
+            return await context.SessionUnit
+                .Where(predicate)
+                .Where(x => x.SessionId == sessionId)
+                .Where(x => x.Id != ignoreSessionUnitId)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(b => b.RemindAllCount, b => b.RemindAllCount + 1)
+                );
+        }
+
 
         private static Expression<Func<SessionUnit, bool>> GetSessionUnitPredicate(DateTime messageCreationTime)
         {
@@ -125,20 +144,6 @@ namespace IczpNet.Chat.Repositories
                 );
         }
 
-        public virtual async Task<int> BatchUpdateRemindAllCountAsync(Guid sessionId, DateTime messageCreationTime, Guid ignoreSessionUnitId)
-        {
-            var context = await GetDbContextAsync();
-
-            var predicate = GetSessionUnitPredicate(messageCreationTime);
-
-            return await context.SessionUnit
-                .Where(predicate)
-                .Where(x => x.SessionId == sessionId)
-                .Where(x => x.Id != ignoreSessionUnitId)
-                .ExecuteUpdateAsync(s => s
-                    .SetProperty(b => b.RemindAllCount, b => b.RemindAllCount + 1)
-                );
-        }
 
         public async Task<int> BatchUpdateFollowingCountAsync(Guid sessionId, DateTime messageCreationTime, List<Guid> destinationSessionUnitIdList)
         {
@@ -153,80 +158,6 @@ namespace IczpNet.Chat.Repositories
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(b => b.FollowingCount, b => b.FollowingCount + 1)
                 );
-        }
-
-        public virtual async Task<Dictionary<Guid, SessionUnitStatModel>> GetStatsAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
-        {
-            var context = await GetDbContextAsync();
-
-            return context.SessionUnit
-                .Where(x => sessionUnitIdList.Contains(x.Id))
-                .WhereIf(isImmersed.HasValue, x => x.IsImmersed == isImmersed)
-                .Where(x => sessionUnitIdList.Contains(x.Id))
-                //.Select(x => new
-                //{
-                //    x.Id,
-                //    x.OwnerId,
-                //    //x.OwnerFollowList,
-                //    Messages = context.Message.Where(d =>
-                //        x.SessionId == d.SessionId &&
-                //        d.Id > minMessageId &&
-                //        d.SenderId != x.OwnerId &&
-                //        (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
-                //        (x.HistoryFristTime == null || d.CreationTime > x.HistoryFristTime) &&
-                //        (x.HistoryLastTime == null || d.CreationTime < x.HistoryLastTime) &&
-                //        (x.ClearTime == null || d.CreationTime > x.ClearTime))
-                //})
-                .Select(x => new SessionUnitStatModel
-                {
-                    Id = x.Id,
-                    PublicBadge = context.Message.Where(d =>
-                        x.SessionId == d.SessionId &&
-                        d.Id > minMessageId &&
-                        d.SenderId != x.OwnerId &&
-                        (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
-                        (x.HistoryFristTime == null || d.CreationTime > x.HistoryFristTime) &&
-                        (x.HistoryLastTime == null || d.CreationTime < x.HistoryLastTime) &&
-                        (x.ClearTime == null || d.CreationTime > x.ClearTime))
-                        .Count(d => !d.IsPrivate),
-                    PrivateBadge = context.Message.Where(d =>
-                        x.SessionId == d.SessionId &&
-                        d.Id > minMessageId &&
-                        d.SenderId != x.OwnerId &&
-                        (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
-                        (x.HistoryFristTime == null || d.CreationTime > x.HistoryFristTime) &&
-                        (x.HistoryLastTime == null || d.CreationTime < x.HistoryLastTime) &&
-                        (x.ClearTime == null || d.CreationTime > x.ClearTime))
-                        .Count(d => d.IsPrivate && d.ReceiverId == x.OwnerId),
-                    FollowingCount = context.Message.Where(d =>
-                        x.SessionId == d.SessionId &&
-                        d.Id > minMessageId &&
-                        d.SenderId != x.OwnerId &&
-                        (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
-                        (x.HistoryFristTime == null || d.CreationTime > x.HistoryFristTime) &&
-                        (x.HistoryLastTime == null || d.CreationTime < x.HistoryLastTime) &&
-                        (x.ClearTime == null || d.CreationTime > x.ClearTime))
-                        .Count(d => x.OwnerFollowList.Any(d => d.DestinationId == x.Id)),
-                    RemindAllCount = context.Message.Where(d =>
-                        x.SessionId == d.SessionId &&
-                        d.Id > minMessageId &&
-                        d.SenderId != x.OwnerId &&
-                        (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
-                        (x.HistoryFristTime == null || d.CreationTime > x.HistoryFristTime) &&
-                        (x.HistoryLastTime == null || d.CreationTime < x.HistoryLastTime) &&
-                        (x.ClearTime == null || d.CreationTime > x.ClearTime)).Count(d => d.IsRemindAll && !d.IsRollbacked),
-                    RemindMeCount = context.Message.Where(d =>
-                        x.SessionId == d.SessionId &&
-                        d.Id > minMessageId &&
-                        d.SenderId != x.OwnerId &&
-                        (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
-                        (x.HistoryFristTime == null || d.CreationTime > x.HistoryFristTime) &&
-                        (x.HistoryLastTime == null || d.CreationTime < x.HistoryLastTime) &&
-                        (x.ClearTime == null || d.CreationTime > x.ClearTime))
-                        .Count(d => d.MessageReminderList.Any(g => g.SessionUnitId == x.Id))
-                })
-                .ToDictionary(x => x.Id)
-                ;
         }
 
 
