@@ -16,6 +16,7 @@ using IczpNet.Chat.Follows;
 using Volo.Abp.Timing;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
+using NUglify.Helpers;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits;
 
@@ -351,11 +352,11 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return UnitListCache.GetOrAddAsync($"{new SessionUnitCacheKey(sessionId)}", () => GetListBySessionIdAsync(sessionId));
     }
 
-    public virtual async Task SetCacheListBySessionIdAsync(Guid sessionId)
+    public virtual async Task SetCacheListBySessionIdAsync(Guid sessionId, List<SessionUnitCacheItem> sessionUnitList)
     {
-        var sessionUnitInfoList = await GetListBySessionIdAsync(sessionId);
+        //var sessionUnitInfoList = await GetListBySessionIdAsync(sessionId);
 
-        await SetCacheListAsync($"{new SessionUnitCacheKey(sessionId)}", sessionUnitInfoList);
+        await SetCacheListAsync($"{new SessionUnitCacheKey(sessionId)}", sessionUnitList);
     }
 
     public virtual async Task SetCacheListAsync(string cacheKey, List<SessionUnitCacheItem> sessionUnitList, DistributedCacheEntryOptions options = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default)
@@ -451,9 +452,35 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
 
         if (ownerSessionUnitIdList.Any())
         {
+            ownerSessionUnitIdList.Remove(senderSessionUnit.Id);
+
             return await Repository.BatchUpdateFollowingCountAsync(senderSessionUnit.SessionId.Value, message.CreationTime, ownerSessionUnitIdList: ownerSessionUnitIdList);
         }
         return 0;
+    }
+
+    public virtual async Task<int> BatchUpdateCacheAsync(SessionUnit senderSessionUnit, Message message)
+    {
+        var stopwatch = Stopwatch.StartNew();
+
+        var sessionUnitList = await GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);
+
+        var items = sessionUnitList.Where(x => x.Id != senderSessionUnit.Id).ToList();
+
+        foreach (var item in items)
+        {
+            item.PublicBadge++;
+            item.RemindAllCount++;
+            item.LastMessageId = message.Id;
+        }
+
+        await SetCacheListBySessionIdAsync(senderSessionUnit.SessionId.Value, sessionUnitList);
+
+        stopwatch.Stop();
+
+        Logger.LogInformation($"BatchUpdateCacheAsync:{items.Count}, stopwatch: {stopwatch.ElapsedMilliseconds}ms.");
+
+        return items.Count;
     }
 
     public virtual async Task<int> BatchUpdateAsync(SessionUnit senderSessionUnit, Message message)

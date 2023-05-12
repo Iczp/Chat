@@ -38,6 +38,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         protected ChatOption Config { get; }
         protected IChatPusher ChatPusher { get; }
         protected ISessionUnitRepository SessionUnitRepository { get; }
+        protected ISessionRepository SessionRepository { get; }
         protected IFollowManager FollowManager { get; }
         protected IBackgroundJobManager BackgroundJobManager { get; }
 
@@ -55,7 +56,8 @@ namespace IczpNet.Chat.MessageSections.Messages
             IUnitOfWorkManager unitOfWorkManager,
             ISessionUnitRepository sessionUnitRepository,
             IFollowManager followManager,
-            IBackgroundJobManager backgroundJobManager)
+            IBackgroundJobManager backgroundJobManager,
+            ISessionRepository sessionRepository)
         {
             Repository = repository;
             ChatObjectResolver = messageChatObjectResolver;
@@ -71,6 +73,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             SessionUnitRepository = sessionUnitRepository;
             FollowManager = followManager;
             BackgroundJobManager = backgroundJobManager;
+            SessionRepository = sessionRepository;
         }
 
         //public virtual async Task<Message> CreateMessageAsync(IChatObject sender, IChatObject receiver, Func<Message, Task<IMessageContentEntity>> func)
@@ -136,8 +139,6 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             Assert.If(!senderSessionUnit.IsInputEnabled, $"Unable to send message, input status is disabled");
 
-            var session = senderSessionUnit.Session;
-
             var entity = new Message(senderSessionUnit);
 
             if (getContentEntity != null)
@@ -155,15 +156,24 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             await Repository.InsertAsync(entity, autoSave: true);
 
-            session.SetLastMessage(entity);
+            // session LastMessage
+            //var session = await SessionRepository.GetAsync(senderSessionUnit.SessionId.Value);
 
+            //session.SetLastMessage(entity);
+
+            //await SessionRepository.UpdateAsync(session, autoSave: true);
+
+            // sender SessionUnit LastMessage
             senderSessionUnit.SetLastMessage(entity);
+
+            await SessionUnitRepository.UpdateAsync(senderSessionUnit, autoSave: true);
 
             // private message
             if (entity.IsPrivate || receiverSessionUnit != null)
             {
                 receiverSessionUnit.SetLastMessage(entity);
                 receiverSessionUnit.SetPrivateBadge(receiverSessionUnit.PrivateBadge + 1);
+                await SessionUnitRepository.UpdateAsync(receiverSessionUnit, autoSave: true);
             }
 
             // Following
@@ -177,7 +187,8 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         protected virtual bool ShouldbeBackgroundJob(SessionUnit senderSessionUnit, Message message)
         {
-            return BackgroundJobManager.IsAvailable() && !message.IsPrivate;
+            //return BackgroundJobManager.IsAvailable() && !message.IsPrivate;
+            return false;
         }
 
         protected virtual async Task BatchUpdateSessionUnitAsync(SessionUnit senderSessionUnit, Message message)
@@ -185,6 +196,8 @@ namespace IczpNet.Chat.MessageSections.Messages
             if (ShouldbeBackgroundJob(senderSessionUnit, message))
             {
                 await CurrentUnitOfWork.SaveChangesAsync();
+
+                await SessionUnitManager.BatchUpdateCacheAsync(senderSessionUnit, message);
 
                 var jobId = await BackgroundJobManager.EnqueueAsync(new UpdateStatsForSessionUnitArgs()
                 {
@@ -203,6 +216,8 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             //SaveChangesAsync
             await CurrentUnitOfWork.SaveChangesAsync();
+
+            await SessionUnitManager.BatchUpdateCacheAsync(senderSessionUnit, message);
         }
 
         public virtual async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContent>(SessionUnit senderSessionUnit, MessageSendInput<TContentInfo> input, SessionUnit receiverSessionUnit = null)

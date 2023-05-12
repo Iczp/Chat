@@ -67,7 +67,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         Task<List<SessionUnitCacheItem>> GetOrAddCacheListAsync(Guid sessionId);
 
-        Task SetCacheListBySessionIdAsync(Guid sessionId);
+        Task SetCacheListBySessionIdAsync(Guid sessionId, List<SessionUnitCacheItem> sessionUnitList);
 
         Task SetCacheListAsync(string cacheKey, List<SessionUnitCacheItem> sessionUnitList, DistributedCacheEntryOptions options = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default);
 
@@ -84,6 +84,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         Task<int> GetSameDestinationCountAsync(long sourceChatObjectId, long targetChatObjectId, List<ChatObjectTypeEnums> chatObjectTypeList = null);
 
         Task<int> UpdateFollowingCountAsync(SessionUnit senderSessionUnit, Message message);
+
+        Task<int> BatchUpdateCacheAsync(SessionUnit senderSessionUnit, Message message);
 
         Task<int> BatchUpdateAsync(SessionUnit senderSessionUnit, Message message);
 

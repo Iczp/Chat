@@ -51,7 +51,9 @@ namespace IczpNet.Chat.Follows
 
         public async Task<bool> CreateAsync(SessionUnit owner, List<Guid> idList)
         {
-            var destinationList = await SessionUnitManager.GetManyAsync(idList);
+            var destinationList = await SessionUnitManager.GetManyAsync(idList.Distinct().ToList());
+
+            Assert.If(idList.Contains(owner.Id), $"Unable following oneself.");
 
             foreach (var item in destinationList)
             {
@@ -64,6 +66,7 @@ namespace IczpNet.Chat.Follows
                  .ToList();
 
             var newList = idList.Except(followedIdList)
+                .Where(X => X != owner.Id)
                 .Select(x => new Follow(owner, x))
                 .ToList();
 

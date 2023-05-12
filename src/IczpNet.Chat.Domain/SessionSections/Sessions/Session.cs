@@ -112,7 +112,6 @@ namespace IczpNet.Chat.SessionSections.Sessions
         {
             LastMessage = lastMessage;
             LastMessageId = lastMessage.Id;
-            LastMessageId = lastMessage.Id;
         }
     }
 }
