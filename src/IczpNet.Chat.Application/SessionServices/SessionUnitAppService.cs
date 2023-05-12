@@ -2,7 +2,6 @@
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
@@ -17,10 +16,8 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
-using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 using Volo.Abp.Users;
@@ -101,20 +98,9 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(input.IsTopping == false, x => x.Sorting == 0)
             .WhereIf(input.IsCantacts.HasValue, x => x.IsCantacts == input.IsCantacts)
             .WhereIf(input.IsImmersed.HasValue, x => x.IsImmersed == input.IsImmersed)
-            .WhereIf(input.IsBadge, x =>
-                x.Session.MessageList.Any(d =>
-                    //!x.IsRollbacked &&
-                    d.Id > x.ReadedMessageId &&
-                    d.SenderId != x.OwnerId &&
-                    (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
-                    (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
-                    (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)
-                )
-            )
-            .WhereIf(input.IsRemind, x =>
-                x.Session.MessageList.Any(d => !d.IsRollbacked && d.IsRemindAll) ||
-                x.ReminderList.Any(d => !d.Message.IsRollbacked)
-            )
+            .WhereIf(input.IsBadge.HasValue, x => x.PublicBadge > 0 || x.PrivateBadge > 0)
+            .WhereIf(input.IsRemind.HasValue, x => x.RemindAllCount > 0 || x.RemindMeCount > 0)
+            .WhereIf(input.IsFollowing.HasValue, x => x.FollowingCount > 0)
             ;
     }
 

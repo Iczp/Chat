@@ -19,6 +19,8 @@ using Volo.Abp.Settings;
 using IczpNet.Chat.Settings;
 using IczpNet.Chat.SessionSections.SessionPermissions;
 using IczpNet.Chat.Permissions;
+using System.Diagnostics;
+using IczpNet.Chat.TextTemplates;
 
 namespace IczpNet.Chat.SessionSections.SessionRequests
 {
@@ -111,6 +113,8 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
             //VerificationMethods is none
             if (destination.VerificationMethod == VerificationMethods.None)
             {
+                Logger.LogWarning("[Automatic handling] VerificationMethod:VerificationMethods.None");
+
                 await HandleRequestAsync(entity.Id, true, "VerificationMethods.None", null);
 
                 return entity;
@@ -171,7 +175,10 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                 {
                     Content = new LinkContentInfo()
                     {
-                        Title = $"{owner?.Name} 请求加入群聊'{destination.Name}'",
+                        Title = new TextTemplate("{Owner} 加入 '{Destination}'")
+                                        .WithData("Owner", new ChatObjectTextTemplate(sessionRequest.Owner))
+                                        .WithData("Destination", new ChatObjectTextTemplate(sessionRequest.Destination))
+                                        .ToString(),
                         Url = $"app://sesson-request/detail?id={sessionRequest.Id}"
                     }
                 });
@@ -190,7 +197,9 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
             {
                 Content = new LinkContentInfo()
                 {
-                    Title = $"{owner?.Name} 请求加为好友",
+                    Title = new TextTemplate("{Owner} 请求加为好友")
+                                .WithData("Owner", new ChatObjectTextTemplate(owner))
+                                .ToString(),
                     Url = $"app://sesson-request/detail?id={sessionRequest.Id}"
                 }
             });
@@ -198,6 +207,10 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
 
         public virtual async Task<SessionRequest> HandleRequestAsync(Guid sessionRequestId, bool isAgreed, string handlMessage, Guid? handlerSessionUnitId)
         {
+            Logger.LogInformation($"HandleRequest:sessionRequestId={sessionRequestId},isAgreed={isAgreed},handlMessage={handlMessage},handlerSessionUnitId={handlerSessionUnitId}");
+
+            var stopwatch = Stopwatch.StartNew();
+
             var sessionRequest = await Repository.GetAsync(sessionRequestId);
 
             Assert.If(sessionRequest.IsHandled, $"Already been handled:IsAgreed={sessionRequest.IsAgreed}");
@@ -278,7 +291,10 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                         {
                             Content = new CmdContentInfo()
                             {
-                                Text = $"欢迎 '<a session-unit-id=\"{ownerSessionUnit.Id}\">{sessionRequest.Owner.Name}</a>' 加入 '{sessionRequest.Destination.Name}'"
+                                Text = new TextTemplate("欢迎 '{Owner}' 加入 '{Destination}'")
+                                        .WithData("Owner", new SessionUnitTextTemplate(ownerSessionUnit.Id, sessionRequest.Owner.Name))
+                                        .WithData("Destination", new ChatObjectTextTemplate(sessionRequest.Destination))
+                                        .ToString(),
                             }
                         });
                         break;
@@ -300,6 +316,11 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                     sessionRequest.SetIsEnabled(false);
                 }
             }
+
+            stopwatch.Stop();
+
+            Logger.LogInformation($"HandleRequest completed:sessionRequestId={sessionRequestId}, stopwatch:{stopwatch.ElapsedMilliseconds}ms.");
+
             return sessionRequest;
         }
 
@@ -316,7 +337,12 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
             {
                 Content = new LinkContentInfo()
                 {
-                    Title = $"拒绝'{sessionRequest.Owner.Name}'请求:{sessionRequest.HandleMessage}",
+                    //Title = $"'{Destination}'拒绝'{sessionRequest.Owner.Name}'请求:{sessionRequest.HandleMessage}",
+                    Title = new TextTemplate("'{Destination}'拒绝'{Owner}'请求:{HandleMessage}")
+                                .WithData("Destination", new ChatObjectTextTemplate(sessionRequest.Destination))
+                                .WithData("Owner", new ChatObjectTextTemplate(sessionRequest.Owner))
+                                .WithData("HandleMessage", sessionRequest.HandleMessage)
+                                .ToString(),
                     Url = $"app://sesson-request/detail?id={sessionRequest.Id}"
                 }
             });

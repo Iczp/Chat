@@ -43,11 +43,11 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         StatsCache = statsCache;
     }
 
-    protected virtual async Task<SessionUnit> SetEntityAsync(SessionUnit entity, Action<SessionUnit> action = null)
+    protected virtual async Task<SessionUnit> SetEntityAsync(SessionUnit entity, Action<SessionUnit> action = null, bool autoSave = false)
     {
         action?.Invoke(entity);
 
-        return await Repository.UpdateAsync(entity);
+        return await Repository.UpdateAsync(entity, autoSave: autoSave);
     }
 
     public virtual async Task<Guid?> FindIdAsync(Expression<Func<SessionUnit, bool>> predicate)
@@ -126,7 +126,27 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
 
         // add readedRecorder
         /// ...
-        return await SetEntityAsync(entity, x => x.SetReaded(message.Id, isForce = false));
+        await SetEntityAsync(entity, x => x.SetReaded(message.Id, isForce = false));
+
+        await UpdateCacheItemsAsync(entity, items =>
+        {
+            var item = items.FirstOrDefault(x => x.Id != entity.Id);
+
+            if (item == null)
+            {
+                return false;
+            }
+
+            item.PublicBadge = 0;
+            item.PrivateBadge = 0;
+            item.RemindAllCount = 0;
+            item.FollowingCount = 0;
+            //item.LastMessageId = messageId;
+
+            return true;
+        });
+
+        return entity;
     }
 
     public virtual Task<SessionUnit> SetImmersedAsync(SessionUnit entity, bool isImmersed)
@@ -459,28 +479,51 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return 0;
     }
 
-    public virtual async Task<int> BatchUpdateCacheAsync(SessionUnit senderSessionUnit, Message message)
+    protected virtual async Task UpdateCacheItemsAsync(SessionUnit senderSessionUnit, Func<List<SessionUnitCacheItem>, bool> action)
     {
         var stopwatch = Stopwatch.StartNew();
 
         var sessionUnitList = await GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);
 
-        var items = sessionUnitList.Where(x => x.Id != senderSessionUnit.Id).ToList();
-
-        foreach (var item in items)
+        if (action.Invoke(sessionUnitList))
         {
-            item.PublicBadge++;
-            item.RemindAllCount++;
-            item.LastMessageId = message.Id;
+            await SetCacheListBySessionIdAsync(senderSessionUnit.SessionId.Value, sessionUnitList);
         }
-
-        await SetCacheListBySessionIdAsync(senderSessionUnit.SessionId.Value, sessionUnitList);
 
         stopwatch.Stop();
 
-        Logger.LogInformation($"BatchUpdateCacheAsync:{items.Count}, stopwatch: {stopwatch.ElapsedMilliseconds}ms.");
+        Logger.LogInformation($"UpdateCacheItems stopwatch: {stopwatch.ElapsedMilliseconds}ms.");
+    }
 
-        return items.Count;
+    public virtual async Task<int> BatchUpdateCacheAsync(SessionUnit senderSessionUnit, Message message)
+    {
+        int count = 0;
+
+        await UpdateCacheItemsAsync(senderSessionUnit, items =>
+        {
+            var self = items.FirstOrDefault(x => x.Id == senderSessionUnit.Id);
+
+            if (self != null)
+            {
+                self.LastMessageId = message.Id;
+            }
+
+            var others = items.Where(x => x.Id != senderSessionUnit.Id).ToList();
+
+            foreach (var item in others)
+            {
+                item.PublicBadge++;
+                item.RemindAllCount++;
+                item.LastMessageId = message.Id;
+            }
+            count = others.Count;
+
+            return true;
+        });
+
+        Logger.LogInformation($"BatchUpdateCacheAsync:{count}");
+
+        return count;
     }
 
     public virtual async Task<int> BatchUpdateAsync(SessionUnit senderSessionUnit, Message message)

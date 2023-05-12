@@ -19,9 +19,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
         public virtual bool? IsTopping { get; set; }
 
         [DefaultValue(false)]
-        public virtual bool IsRemind { get; set; }
-
-        [DefaultValue(false)]
         public virtual bool IsRealStat { get; set; }
 
         /// <summary>
@@ -34,8 +31,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
         /// </summary>
         public virtual bool? IsImmersed { get; set; }
 
-        [DefaultValue(false)]
-        public virtual bool IsBadge { get; set; }
+        
 
         //public virtual bool IsOrderByBadge { get; set; }
 
@@ -44,6 +40,16 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
         public virtual long? MinMessageId { get; set; }
 
         public virtual long? MaxMessageId { get; set; }
+
+
+        [DefaultValue(false)]
+        public virtual bool? IsBadge { get; set; }
+
+        [DefaultValue(false)]
+        public virtual bool? IsRemind { get; set; }
+
+        public virtual bool? IsFollowing { get; set; }
+
 
         //public virtual JoinWays? JoinWay { get; set; }
 

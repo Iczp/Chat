@@ -26,14 +26,14 @@ namespace IczpNet.Chat.TextTemplates
         public SessionUnitTextTemplate(SessionUnit sessionUnit)
         {
             SessionUnitId = sessionUnit.Id;
-            ChatObjectName = sessionUnit.Owner?.Name;
+            ChatObjectName = !sessionUnit.MemberName.IsNullOrWhiteSpace() ? sessionUnit.MemberName : sessionUnit.Owner?.Name;
             SetData();
         }
 
         private void SetData()
         {
-            Data["SessionUnitId"] = SessionUnitId;
-            Data["ChatObjectName"] = ChatObjectName;
+            Data[nameof(SessionUnitId)] = SessionUnitId;
+            Data[nameof(ChatObjectName)] = ChatObjectName;
         }
 
         public override string ToString()
