@@ -13,6 +13,8 @@ public interface ISessionUnitAppService
 {
     Task<Guid> FindIdAsync(long ownerId, long destinactionId);
 
+    Task<PagedResultDto<SessionUnitCacheItem>> GetListCachesAsync(SessionUnitCacheGetListInput input);
+
     Task<PagedResultDto<SessionUnitOwnerDto>> GetListAsync(SessionUnitGetListInput input);
 
     Task<PagedResultDto<SessionUnitOwnerDto>> GetListByLinqAsync(SessionUnitGetListInput input);

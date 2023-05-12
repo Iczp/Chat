@@ -5,6 +5,7 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
+using IczpNet.Chat.SessionSections;
 using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
@@ -21,6 +22,7 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 using Volo.Abp.Users;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace IczpNet.Chat.SessionServices;
 
@@ -576,4 +578,27 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return entity.Id;
     }
 
+    [HttpGet]
+    public async Task<PagedResultDto<SessionUnitCacheItem>> GetListCachesAsync(SessionUnitCacheGetListInput input)
+    {
+        Assert.If(input.SessionUnitId == null && input.SessionId == null, "SessionUnitId Or SessionId cannot both be null");
+
+        var sessionId = input.SessionId;
+
+        if (input.SessionUnitId.HasValue)
+        {
+            var entity = await GetEntityAsync(input.SessionUnitId.Value);
+
+            Assert.If(sessionId.HasValue && sessionId != entity.SessionId.Value, "Not in the same session");
+
+            sessionId = entity.SessionId.Value;
+        }
+
+        var items = await SessionUnitManager.GetListBySessionIdAsync(sessionId.Value);
+
+        var query = items.AsQueryable()
+            .WhereIf(input.SessionUnitId.HasValue, x => x.Id == input.SessionUnitId);
+
+        return await GetPagedListAsync<SessionUnitCacheItem, SessionUnitCacheItem>(query, input);
+    }
 }

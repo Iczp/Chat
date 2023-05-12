@@ -1,13 +1,12 @@
-﻿using IczpNet.AbpCommons.DataFilters;
+﻿using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.Enums;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 {
-    public class SessionUnitGetListDestinationInput : PagedAndSortedResultRequestDto, IKeyword
+    public class SessionUnitGetListDestinationInput : BaseGetListInput
     {
         //[Required]
         //public virtual Guid SessionId { get; set; }
@@ -32,8 +31,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
         public virtual long? InviterId { get; set; }
 
         public virtual Guid? InviterUnitId { get; set; }
-
-        public virtual string Keyword { get; set; }
 
     }
 }
