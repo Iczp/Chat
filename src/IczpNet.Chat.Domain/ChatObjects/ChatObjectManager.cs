@@ -27,6 +27,20 @@ namespace IczpNet.Chat.ChatObjects
 
         }
 
+        public virtual async Task<IQueryable<long>> QueryByKeywordAsync(string keyword)
+        {
+            if (keyword.IsNullOrWhiteSpace())
+            {
+                return null;
+            }
+            return (await Repository.GetQueryableAsync())
+                .WhereIf(!keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(keyword) || x.NameSpellingAbbreviation.Contains(keyword))
+                .Select(x => x.Id)
+
+                ;
+        }
+
+
         protected override async Task CheckExistsByCreateAsync(ChatObject inputEntity)
         {
             Assert.If(await Repository.AnyAsync(x => x.Code == inputEntity.Code), $"Already exists Code:{inputEntity.Code}");
@@ -197,5 +211,7 @@ namespace IczpNet.Chat.ChatObjects
 
             return await base.UpdateAsync(entity, isUnique: isUnique);
         }
+
+
     }
 }

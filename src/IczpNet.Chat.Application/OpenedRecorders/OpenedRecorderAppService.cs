@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Mottos.Dtos;
 using IczpNet.Chat.OpenedRecorders.Dtos;
 using IczpNet.Chat.SessionSections.SessionUnits;
@@ -22,12 +23,19 @@ namespace IczpNet.Chat.OpenedRecorders
 
         protected IOpenedRecorderManager OpenedRecorderManager { get; }
         protected ISessionUnitManager SessionUnitManager { get; }
+        protected IChatObjectManager ChatObjectManager { get; }
 
-        public OpenedRecorderAppService(IOpenedRecorderManager openedRecorderManager, IRepository<OpenedRecorder> repository, ISessionUnitManager sessionUnitManager)
+
+        public OpenedRecorderAppService(
+            IOpenedRecorderManager openedRecorderManager, 
+            IRepository<OpenedRecorder> repository, 
+            ISessionUnitManager sessionUnitManager, 
+            IChatObjectManager chatObjectManager)
         {
             OpenedRecorderManager = openedRecorderManager;
             Repository = repository;
             SessionUnitManager = sessionUnitManager;
+            ChatObjectManager = chatObjectManager;
         }
 
         [HttpGet]
@@ -43,7 +51,7 @@ namespace IczpNet.Chat.OpenedRecorders
                 ? await OpenedRecorderManager.QueryReadedAsync(messageId)
                 : await OpenedRecorderManager.QueryUnreadedAsync(messageId);
 
-            query = query.WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordSessionUnitSpecification(input.Keyword).ToExpression());
+            query = query.WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordOwnerSessionUnitSpecification(input.Keyword, await ChatObjectManager.QueryByKeywordAsync(input.Keyword)));
 
             return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query, input);
         }

@@ -101,6 +101,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(input.IsBadge.HasValue, x => x.PublicBadge > 0 || x.PrivateBadge > 0)
             .WhereIf(input.IsRemind.HasValue, x => x.RemindAllCount > 0 || x.RemindMeCount > 0)
             .WhereIf(input.IsFollowing.HasValue, x => x.FollowingCount > 0)
+            .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordDestinationSessionUnitSpecification(input.Keyword, await ChatObjectManager.QueryByKeywordAsync(input.Keyword)))
             ;
     }
 

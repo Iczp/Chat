@@ -1,11 +1,10 @@
-﻿using IczpNet.Chat.Enums;
-using System;
+﻿using IczpNet.Chat.BaseDtos;
+using IczpNet.Chat.Enums;
 using System.ComponentModel;
-using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 {
-    public class SessionUnitGetListInput : PagedAndSortedResultRequestDto
+    public class SessionUnitGetListInput : BaseGetListInput
     {
         public virtual long? OwnerId { get; set; }
 

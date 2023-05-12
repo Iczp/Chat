@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Follows.Dtos;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
@@ -21,17 +22,20 @@ namespace IczpNet.Chat.Follows
         protected ISessionUnitRepository SessionUnitRepository { get; set; }
 
         protected IRepository<Follow> Repository { get; set; }
+        protected IChatObjectManager ChatObjectManager { get; set; }
 
         public FollowAppService(
             IFollowManager followManager,
             ISessionUnitManager sessionUnitManager,
             ISessionUnitRepository sessionUnitRepository,
-            IRepository<Follow> repository)
+            IRepository<Follow> repository,
+            IChatObjectManager chatObjectManager)
         {
             FollowManager = followManager;
             SessionUnitManager = sessionUnitManager;
             SessionUnitRepository = sessionUnitRepository;
             Repository = repository;
+            ChatObjectManager = chatObjectManager;
         }
 
         [HttpGet]
@@ -43,7 +47,7 @@ namespace IczpNet.Chat.Follows
 
             var query = (await SessionUnitRepository.GetQueryableAsync())
                 .Where(x => ownerSessionUnitIdList.Contains(x.Id))
-                .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordSessionUnitSpecification(input.Keyword).ToExpression())
+                .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordOwnerSessionUnitSpecification(input.Keyword, await ChatObjectManager.QueryByKeywordAsync(input.Keyword)))
                 ;
 
             return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query);
@@ -55,7 +59,8 @@ namespace IczpNet.Chat.Follows
             var query = (await Repository.GetQueryableAsync())
                 .Where(x => x.DestinationId == input.DestinationId)
                 .Select(x => x.Owner)
-                .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordSessionUnitSpecification(input.Keyword).ToExpression())
+                //.WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordDestinationSessionUnitSpecification(input.Keyword).ToExpression())
+                .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordDestinationSessionUnitSpecification(input.Keyword, await ChatObjectManager.QueryByKeywordAsync(input.Keyword)))
                 ;
 
             return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query);

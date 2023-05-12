@@ -2,12 +2,15 @@
 using IczpNet.Chat.Enums;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.ChatObjects
 {
     public interface IChatObjectManager : ITreeManager<ChatObject, long, ChatObjectInfo>
     {
+        Task<IQueryable<long>> QueryByKeywordAsync(string keyword);
+
         Task<ChatObject> FindByCodeAsync(string code);
 
         Task<ChatObject> UpdateAsync(long id, Action<ChatObject> action, bool isUnique = true);
