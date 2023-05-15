@@ -23,7 +23,14 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public override Expression<Func<SessionUnit, bool>> ToExpression()
         {
-            var expression = PredicateBuilder.New<SessionUnit>(x => x.MemberName.Contains(Keyword) || x.MemberNameSpellingAbbreviation.Contains(Keyword));
+            var expression = PredicateBuilder.New<SessionUnit>();
+
+            //expression = expression.Or(x => x.MemberName.StartsWith(Keyword));
+            //expression = expression.Or(x => x.MemberNameSpellingAbbreviation.StartsWith(Keyword));
+
+            //Write diffusion
+            expression = expression.Or(x => x.OwnerName.StartsWith(Keyword));
+            expression = expression.Or(x => x.OwnerNameSpellingAbbreviation.StartsWith(Keyword));
 
             if (DestinationIdList != null)
             {

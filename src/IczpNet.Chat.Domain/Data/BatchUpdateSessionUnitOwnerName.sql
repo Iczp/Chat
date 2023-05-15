@@ -1,5 +1,9 @@
 use [Chat_Module_v3]
 
+
+select COUNT(1) from [dbo].[Chat_SessionUnit] 
+
+
 update [dbo].[Chat_SessionUnit] 
 set 
 [dbo].[Chat_SessionUnit].[OwnerName] = (
@@ -32,8 +36,12 @@ Where 1=1
 --and [OwnerName] is null
 and Id='719D7227-030A-326A-BCE9-3A0B0CF571FE'
 
+declare @aa nvarchar(50) 
 
+DECLARE  @keyword NVARCHAR(50)
+set @keyword  = 'Õı¿º%'
 select top 1000 * from [dbo].[Chat_SessionUnit] 
 where 1=1
 --and  Id='719D7227-030A-326A-BCE9-3A0B0CF571FE'
+and ([OwnerName] like @keyword Or [OwnerNameSpellingAbbreviation] like @keyword)
 ORDER by [LastMessageId] desc
