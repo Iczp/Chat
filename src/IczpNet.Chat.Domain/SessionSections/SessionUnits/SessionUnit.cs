@@ -41,11 +41,24 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
     [Index(nameof(Key), AllDescending = true)]
     [Index(nameof(DestinationObjectType), AllDescending = true)]
     [Index(nameof(DestinationObjectType), AllDescending = false)]
+
+    [Index(nameof(OwnerName), AllDescending = true)]
+    [Index(nameof(OwnerNameSpellingAbbreviation), AllDescending = true)]
+
+    [Index(nameof(DestinationName), AllDescending = true)]
+    [Index(nameof(DestinationNameSpellingAbbreviation), AllDescending = true)]
+
+    [Index(nameof(MemberName), AllDescending = true)]
+    [Index(nameof(MemberNameSpellingAbbreviation), AllDescending = true)]
+
+    [Index(nameof(Rename), AllDescending = true)]
+    [Index(nameof(RenameSpellingAbbreviation), AllDescending = true)]
     public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, IIsStatic, IIsPublic, ISessionId, IHasSimpleStateCheckers<SessionUnit>, IMaterializationInterceptor
     {
 
-
         public List<ISimpleStateChecker<SessionUnit>> StateCheckers => new();
+
+        public virtual Guid? AppUserId { get; protected set; }
 
         [Required]
         public virtual Guid? SessionId { get; protected set; }
@@ -102,7 +115,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         /// <summary>
         /// 会话内的名称
         /// </summary>
-        [StringLength(50)]
+        [MaxLength(50)]
         public virtual string MemberName { get; protected set; }
 
         [MaxLength(300)]
@@ -114,7 +127,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         /// <summary>
         /// 备注名称 Rename for destination
         /// </summary>
-        [StringLength(50)]
+        [MaxLength(50)]
         public virtual string Rename { get; protected set; }
 
         [MaxLength(300)]
@@ -123,10 +136,22 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         [MaxLength(50)]
         public virtual string RenameSpellingAbbreviation { get; protected set; }
 
+        [MaxLength(50)]
+        public virtual string OwnerName { get; protected set; }
+
+        [MaxLength(50)]
+        public virtual string OwnerNameSpellingAbbreviation { get; protected set; }
+
+        [MaxLength(50)]
+        public virtual string DestinationName { get; protected set; }
+
+        [MaxLength(50)]
+        public virtual string DestinationNameSpellingAbbreviation { get; protected set; }
+
         /// <summary>
         /// 备注
         /// </summary>
-        [StringLength(500)]
+        [MaxLength(500)]
         public virtual string Remarks { get; protected set; }
 
         /// <summary>

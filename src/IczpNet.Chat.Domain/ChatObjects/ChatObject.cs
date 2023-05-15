@@ -41,7 +41,7 @@ namespace IczpNet.Chat.ChatObjects
         /// </summary>
         public virtual long MaxMessageAutoId { get; protected set; }
 
-        [StringLength(50)]
+        [MaxLength(50)]
         [Required]
         public override string Name { get; protected set; }
 
@@ -49,10 +49,10 @@ namespace IczpNet.Chat.ChatObjects
         [MaxLength(300)]
         public virtual string NameSpelling { get; protected set; }
 
-        [MaxLength(100)]
+        [MaxLength(50)]
         public virtual string NameSpellingAbbreviation { get; protected set; }
 
-        [StringLength(50)]
+        [MaxLength(50)]
         public virtual string Code { get; set; }
 
         public virtual Genders Gender { get; set; }
@@ -60,8 +60,7 @@ namespace IczpNet.Chat.ChatObjects
         /// <summary>
         /// 头像
         /// </summary>
-        [StringLength(300)]
-        [MaxLength(300)]
+        [MaxLength(1000)]
         public virtual string Portrait { get; protected set; }
 
         public virtual Guid? AppUserId { get; protected set; }
@@ -70,7 +69,7 @@ namespace IczpNet.Chat.ChatObjects
 
         public virtual VerificationMethods VerificationMethod { get; protected set; }
 
-        [StringLength(500)]
+        [MaxLength(500)]
         public override string Description { get; set; }
 
         public virtual bool IsStatic { get; protected set; }

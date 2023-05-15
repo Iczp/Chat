@@ -45,7 +45,7 @@ namespace IczpNet.Chat.UnitTests
             ISessionUnitManager sessionUnitManager,
             IFollowManager followManager) : base(timer, serviceScopeFactory)
         {
-            Timer.Period = 1000;
+            Timer.Period = 500;
             SessionUnitRepository = sessionUnitRepository;
             MessageSender = messageSender;
             RoomManager = roomManager;
@@ -91,7 +91,7 @@ namespace IczpNet.Chat.UnitTests
                 remindList.TryAdd(items[new Random().Next(0, items.Count - 1)]);
             }
 
-            var text = $"RoomId:{RoomId}-Index-{Index}-{sessionunitId},remindCount:{remindList.Count}";
+            var text = $"RoomId:{RoomId}, sessionunitId:{sessionunitId}, remindCount:{remindList.Count}";
 
             if (new Random().Next(3) % 3 == 1)
             {
