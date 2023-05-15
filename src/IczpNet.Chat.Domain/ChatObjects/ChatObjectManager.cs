@@ -21,7 +21,7 @@ namespace IczpNet.Chat.ChatObjects
         protected IMessageSender MessageSender => LazyServiceProvider.LazyGetRequiredService<IMessageSender>();
         protected ISessionGenerator SessionGenerator => LazyServiceProvider.LazyGetRequiredService<ISessionGenerator>();
         protected IDistributedCache<List<long>, Guid> UserChatObjectCache => LazyServiceProvider.LazyGetRequiredService<IDistributedCache<List<long>, Guid>>();
-
+        protected IDistributedCache<List<long>, string> SearchCache => LazyServiceProvider.LazyGetRequiredService<IDistributedCache<List<long>, string>>();
         public ChatObjectManager(IChatObjectRepository repository) : base(repository)
         {
 
@@ -33,11 +33,25 @@ namespace IczpNet.Chat.ChatObjects
             {
                 return null;
             }
+
             return (await Repository.GetQueryableAsync())
                 .WhereIf(!keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(keyword) || x.NameSpellingAbbreviation.Contains(keyword))
                 .Select(x => x.Id)
-
                 ;
+        }
+
+        public virtual async Task<List<long>> SearchKeywordByCacheAsync(string keyword)
+        {
+            if (keyword.IsNullOrWhiteSpace())
+            {
+                return null;
+            }
+
+            return await SearchCache.GetOrAddAsync(keyword,
+                async () => (await Repository.GetQueryableAsync())
+                 .WhereIf(!keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(keyword) || x.NameSpellingAbbreviation.Contains(keyword))
+                 .Select(x => x.Id)
+                 .ToList());
         }
 
 

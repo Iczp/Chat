@@ -25,16 +25,16 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         {
             var expression = PredicateBuilder.New<SessionUnit>();
 
-            //expression = expression.Or(x => x.MemberName.StartsWith(Keyword));
-            //expression = expression.Or(x => x.MemberNameSpellingAbbreviation.StartsWith(Keyword));
+            expression = expression.Or(x => x.MemberName.StartsWith(Keyword));
+            expression = expression.Or(x => x.MemberNameSpellingAbbreviation.StartsWith(Keyword));
 
             //Write diffusion
-            expression = expression.Or(x => x.OwnerName.StartsWith(Keyword));
-            expression = expression.Or(x => x.OwnerNameSpellingAbbreviation.StartsWith(Keyword));
+            //expression = expression.Or(x => x.OwnerName.StartsWith(Keyword));
+            //expression = expression.Or(x => x.OwnerNameSpellingAbbreviation.StartsWith(Keyword));
 
             if (DestinationIdList != null)
             {
-                expression = expression.Or(x => DestinationIdList.Contains(x.OwnerId));
+                expression = expression.Or(x => DestinationIdList.ToList().Contains(x.OwnerId));
             }
             else
             {
