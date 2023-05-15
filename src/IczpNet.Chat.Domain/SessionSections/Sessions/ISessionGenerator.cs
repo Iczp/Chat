@@ -6,9 +6,9 @@ namespace IczpNet.Chat.SessionSections.Sessions
 {
     public interface ISessionGenerator
     {
-        Task<Session> MakeAsync(IChatObject sender, IChatObject receiver);
+        Task<Session> MakeAsync(ChatObject sender, ChatObject receiver);
 
-        Task<Session> MakeAsync(IChatObject room);
+        Task<Session> MakeAsync(ChatObject room);
 
         Task<List<Session>> GenerateSessionByMessageAsync();
         

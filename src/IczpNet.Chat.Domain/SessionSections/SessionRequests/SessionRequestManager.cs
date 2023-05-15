@@ -185,7 +185,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
             }
         }
 
-        protected virtual async Task SendForPersonalAsync(ChatObject owner, IChatObject receiver, SessionRequest sessionRequest)
+        protected virtual async Task SendForPersonalAsync(ChatObject owner, ChatObject receiver, SessionRequest sessionRequest)
         {
             var assistant = await ChatObjectManager.GetOrAddPrivateAssistantAsync();
 
@@ -226,9 +226,8 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                 ownerSessionUnit ??= await SessionUnitManager.CreateIfNotContainsAsync(new SessionUnit(
                       idGenerator: SessionUnitIdGenerator,
                       session: session,
-                      ownerId: sessionRequest.OwnerId,
-                      destinationId: sessionRequest.DestinationId.Value,
-                      destinationObjectType: sessionRequest.Destination.ObjectType,
+                      owner: sessionRequest.Owner,
+                      destination: sessionRequest.Destination,
                       isPublic: true,
                       isStatic: false,
                       isCreator: false,
@@ -246,9 +245,8 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                         var destinationSessionUnit = await SessionUnitManager.CreateIfNotContainsAsync(new SessionUnit(
                               idGenerator: SessionUnitIdGenerator,
                               session: session,
-                              ownerId: sessionRequest.Destination.Id,
-                              destinationId: sessionRequest.Owner.Id,
-                              destinationObjectType: sessionRequest.Owner.ObjectType,
+                              owner: sessionRequest.Destination,
+                              destination: sessionRequest.Owner,
                               isPublic: true,
                               isStatic: false,
                               isCreator: false,
@@ -277,9 +275,8 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                         var roomOrSquareSessionUnit = await SessionUnitManager.CreateIfNotContainsAsync(new SessionUnit(
                                  idGenerator: SessionUnitIdGenerator,
                                  session: session,
-                                 ownerId: sessionRequest.Destination.Id,
-                                 destinationId: sessionRequest.Destination.Id,
-                                 destinationObjectType: sessionRequest.Destination.ObjectType,
+                                 owner: sessionRequest.Destination,
+                                 destination: sessionRequest.Destination,
                                  isPublic: false,
                                  isStatic: true,
                                  isCreator: false,

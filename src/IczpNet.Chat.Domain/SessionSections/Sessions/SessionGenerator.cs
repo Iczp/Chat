@@ -22,7 +22,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
         protected IRepository<Session, Guid> SessionRepository => LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
         protected IChannelResolver ChannelResolver => LazyServiceProvider.LazyGetRequiredService<IChannelResolver>();
         protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
-        protected IChatObjectManager ChatObjectManager => LazyServiceProvider.LazyGetRequiredService<IChatObjectManager>();
+        protected ChatObjectManager ChatObjectManager => LazyServiceProvider.LazyGetRequiredService<ChatObjectManager>();
         protected ISessionUnitIdGenerator SessionUnitIdGenerator => LazyServiceProvider.LazyGetRequiredService<ISessionUnitIdGenerator>();
         public SessionGenerator() { }
 
@@ -40,7 +40,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return objectTypes.Contains(input);
         }
 
-        private async void ResolveShopWaiterId(IChatObject sender, IChatObject receiver, Func<long, Task> matchAction)
+        private async void ResolveShopWaiterId(ChatObject sender, ChatObject receiver, Func<long, Task> matchAction)
         {
             if (IsObjectType(receiver.ObjectType.Value, ChatObjectTypeEnums.ShopWaiter))
             {
@@ -56,7 +56,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
             }
         }
 
-        private async void ResolveSenderIsRobot(IChatObject sender, Func<Task> matchAction)
+        private async void ResolveSenderIsRobot(ChatObject sender, Func<Task> matchAction)
         {
             if (IsObjectType(sender.ObjectType.Value, ChatObjectTypeEnums.Robot))
             {
@@ -64,7 +64,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
             }
         }
 
-        protected virtual async Task<string> MakeSesssionKeyAsync(IChatObject sender, IChatObject receiver)
+        protected virtual async Task<string> MakeSesssionKeyAsync(ChatObject sender, ChatObject receiver)
         {
             await Task.CompletedTask;
 
@@ -101,12 +101,12 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return string.Join(":", arr);
         }
 
-        public virtual Task<Session> MakeAsync(IChatObject room)
+        public virtual Task<Session> MakeAsync(ChatObject room)
         {
             return MakeAsync(room, room);
         }
 
-        public virtual async Task<Session> MakeAsync(IChatObject sender, IChatObject receiver)
+        public virtual async Task<Session> MakeAsync(ChatObject sender, ChatObject receiver)
         {
             var sessionKey = await MakeSesssionKeyAsync(sender, receiver);
 
@@ -129,9 +129,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
                 session.AddSessionUnit(new SessionUnit(
                         idGenerator: SessionUnitIdGenerator,
                         session: session,
-                        ownerId: sender.Id,
-                        destinationId: receiver.Id,
-                        destinationObjectType: receiver.ObjectType,
+                        owner: sender,
+                        destination: receiver,
                         isPublic: true,
                         isStatic: true,
                         isCreator: false,
@@ -143,9 +142,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
                 session.AddSessionUnit(new SessionUnit(
                         idGenerator: SessionUnitIdGenerator,
                         session: session,
-                        ownerId: receiver.Id,
-                        destinationId: sender.Id,
-                        destinationObjectType: sender.ObjectType,
+                        owner: receiver,
+                        destination: sender,
                         isPublic: true,
                         isStatic: true,
                         isCreator: false,
@@ -158,16 +156,13 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
             ResolveShopWaiterId(sender, receiver, async (shopKeeperId) =>
             {
-
-                var shopKeeper = await ChatObjectManager.GetItemByCacheAsync(shopKeeperId);
-
+                var shopKeeper = await ChatObjectManager.GetAsync(shopKeeperId);
                 //add sender
                 session.AddSessionUnit(new SessionUnit(
                         idGenerator: SessionUnitIdGenerator,
                         session: session,
-                        ownerId: sender.Id,
-                        destinationId: shopKeeper.Id,
-                        destinationObjectType: shopKeeper.ObjectType,
+                        owner: sender,
+                        destination: shopKeeper,
                         isPublic: true,
                         isStatic: false,
                         isCreator: false,
@@ -179,9 +174,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
                 session.AddSessionUnit(new SessionUnit(
                          idGenerator: SessionUnitIdGenerator,
                          session: session,
-                         ownerId: shopKeeper.Id,
-                         destinationId: sender.Id,
-                         destinationObjectType: sender.ObjectType,
+                         owner: shopKeeper,
+                         destination: sender,
                          isPublic: true,
                          isStatic: false,
                          isCreator: false,
@@ -197,9 +191,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
                     session.AddSessionUnit(new SessionUnit(
                         idGenerator: SessionUnitIdGenerator,
                         session: session,
-                        ownerId: shopWaiter.Id,
-                        destinationId: sender.Id,
-                        destinationObjectType: sender.ObjectType,
+                        owner: shopWaiter, 
+                        destination: sender,
                         isPublic: true,
                         isStatic: false,
                         isCreator: false,
@@ -253,11 +246,11 @@ namespace IczpNet.Chat.SessionSections.Sessions
                 {
                     if (!unitList.Any(x => x.OwnerId == message.SenderId.Value && x.DestinationId == message.ReceiverId.Value))
                     {
-                        unitList.Add(new SessionUnit(idGenerator: SessionUnitIdGenerator, session, message.Sender.Id, message.Receiver.Id, message.Receiver.ObjectType));
+                        unitList.Add(new SessionUnit(idGenerator: SessionUnitIdGenerator, session, message.Sender, message.Receiver));
                     }
                     if (!unitList.Any(x => x.OwnerId == message.ReceiverId.Value && x.DestinationId == message.SenderId.Value))
                     {
-                        unitList.Add(new SessionUnit(idGenerator: SessionUnitIdGenerator, session, message.Receiver.Id, message.Sender.Id, message.Sender.ObjectType));
+                        unitList.Add(new SessionUnit(idGenerator: SessionUnitIdGenerator, session, message.Receiver, message.Sender));
                     }
                 }
                 session.SetMessageList(item.Items);

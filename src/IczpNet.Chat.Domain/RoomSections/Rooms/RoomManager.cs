@@ -75,14 +75,13 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         return Task.FromResult(Config.AllowCreateRoomObjectTypes.Any(x => x.Equals(objectType)));
     }
 
-    private SessionUnit AddRoomSessionUnit(Session session, long roomId)
+    private SessionUnit AddRoomSessionUnit(Session session, ChatObject room)
     {
         return session.AddSessionUnit(new SessionUnit(
               idGenerator: SessionUnitIdGenerator,
               session: session,
-              ownerId: roomId,
-              destinationId: roomId,
-              destinationObjectType: ChatObjectTypeEnums.Room,
+              owner: room,
+              destination: room,
               isPublic: false,
               isStatic: true,
               isCreator: false,
@@ -111,9 +110,8 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         var roomSessionUnit = new SessionUnit(
               idGenerator: SessionUnitIdGenerator,
               session: session,
-              ownerId: room.Id,
-              destinationId: room.Id,
-              destinationObjectType: ChatObjectTypeEnums.Room,
+              owner: room,
+              destination: room,
               isPublic: false,
               isStatic: true,
               isCreator: false,
@@ -124,12 +122,13 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         //group owner
         if (ownerId != null)
         {
+            var owner = await ChatObjectManager.GetAsync(ownerId.Value);
+
             creatorSessionUnit = new SessionUnit(
                 idGenerator: SessionUnitIdGenerator,
                 session: session,
-                ownerId: ownerId.Value,
-                destinationId: room.Id,
-                destinationObjectType: room.ObjectType,
+                owner: owner,
+                destination: room,
                 isPublic: true,
                 isStatic: true,
                 isCreator: true,
@@ -141,19 +140,36 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         var _memberIdList = allList
             .Where(x => x != ownerId).ToList();
 
-        var memberSessionUnitList = _memberIdList.Select(memberId => new SessionUnit(
+        var memberSessionUnitList = new List<SessionUnit>();
+
+        foreach ( var memberId in _memberIdList )
+        {
+            memberSessionUnitList.Add(new SessionUnit(
                 idGenerator: SessionUnitIdGenerator,
                 session: session,
-                ownerId: memberId,
-                destinationId: room.Id,
-                destinationObjectType: room.ObjectType,
+                owner: await ChatObjectManager.GetAsync(memberId),
+                destination: room,
                 isPublic: true,
                 isStatic: false,
                 isCreator: false,
                 joinWay: JoinWays.Invitation,
                 inviterUnitId: creatorSessionUnit?.Id,
-                isInputEnabled: true))
-            .ToList();
+                isInputEnabled: true));
+        }
+
+        //var memberSessionUnitList = _memberIdList.Select(memberId => new SessionUnit(
+        //        idGenerator: SessionUnitIdGenerator,
+        //        session: session,
+        //        ownerId: memberId,
+        //        destinationId: room.Id,
+        //        destinationObjectType: room.ObjectType,
+        //        isPublic: true,
+        //        isStatic: false,
+        //        isCreator: false,
+        //        joinWay: JoinWays.Invitation,
+        //        inviterUnitId: creatorSessionUnit?.Id,
+        //        isInputEnabled: true))
+        //    .ToList();
 
         room.OwnerSessionList.Add(session);
 
@@ -220,7 +236,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
 
         Assert.If(newMemberIdList.Count == 0, "没有数据:newMemberIdList");
 
-        var joinMembers = await ChatObjectManager.GetManyByCacheAsync(newMemberIdList);
+        var joinMembers = await ChatObjectManager.GetManyAsync(newMemberIdList);
 
         Assert.If(joinMembers.Count == 0, "没有数据:joinMembers");
 
@@ -229,13 +245,14 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
             Assert.If(!IsAllowJoinRoom(member.ObjectType.GetValueOrDefault()), $"不能加入群:[id:${member.Id},ObjectType:{member.ObjectType}]");
         }
 
+        var room = await ChatObjectManager.GetAsync(input.RoomId);
+
         var joinMemberSessionUnitList = joinMembers.Select(x =>
             new SessionUnit(
                 idGenerator: SessionUnitIdGenerator,
                 session: session,
-                ownerId: x.Id,
-                destinationId: input.RoomId,
-                destinationObjectType: ChatObjectTypeEnums.Room,
+                owner: x,
+                destination: room,
                 isPublic: true,
                 isStatic: false,
                 isCreator: false,
@@ -267,7 +284,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
                             .Select(x => new SessionUnitTextTemplate(x.Id, joinMembers.FirstOrDefault(d => d.Id == x.OwnerId)?.Name).ToString())
                             .JoinAsString("、");
 
-        await SendRoomMessageAsync(input.RoomId, new CmdContentInfo()
+        await SendRoomMessageAsync(room, new CmdContentInfo()
         {
             Cmd = MessageKeyNames.JoinRoom,
             //Text = $"{inviterText}{joinMembers.Select(x => x.Name).JoinAsString("、")}等 {joinMembers.Count} 人加入群聊。",
@@ -290,19 +307,19 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
     }
 
     //发送群消息
-    protected virtual async Task SendRoomMessageAsync(long roomId, CmdContentInfo content)
+    protected virtual async Task SendRoomMessageAsync(ChatObject room, CmdContentInfo content)
     {
         //Find the room session unit
-        var roomSessionUnit = await SessionUnitManager.FindAsync(roomId, roomId);
+        var roomSessionUnit = await SessionUnitManager.FindAsync(room.Id, room.Id);
 
         //If the room session unit is not found
         if (roomSessionUnit == null)
         {
             //Get the session by owner id
-            var session = await SessionManager.GetByOwnerIdAsync(roomId);
+            var session = await SessionManager.GetByOwnerIdAsync(room.Id);
 
             //Add the room session unit
-            roomSessionUnit = AddRoomSessionUnit(session, roomId);
+            roomSessionUnit = AddRoomSessionUnit(session, room);
 
             //Save the changes
             await UnitOfWorkManager.Current.SaveChangesAsync();
@@ -384,7 +401,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
     {
         var entity = await ChatObjectManager.UpdateAsync(sessionUnit.DestinationId.Value, x => x.SetName(name), isUnique: false);
 
-        await SendRoomMessageAsync(sessionUnit.DestinationId.Value, new CmdContentInfo()
+        await SendRoomMessageAsync(sessionUnit.Destination, new CmdContentInfo()
         {
             //Cmd = Message
             Text = new TextTemplate("{Operator} 更新群名称:'{RoomName}'")
@@ -399,7 +416,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
     {
         var entity = await ChatObjectManager.UpdateAsync(sessionUnit.DestinationId.Value, x => x.SetPortrait(portrait), isUnique: false);
 
-        await SendRoomMessageAsync(sessionUnit.DestinationId.Value, new CmdContentInfo()
+        await SendRoomMessageAsync(sessionUnit.Destination, new CmdContentInfo()
         {
             Text = new TextTemplate("{Operator} 更新群头像")
                     .WithData("Operator", new SessionUnitTextTemplate(sessionUnit))
@@ -424,7 +441,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
 
         if (isSendMessageToRoom)
         {
-            await SendRoomMessageAsync(sessionUnit.DestinationId.Value, new CmdContentInfo()
+            await SendRoomMessageAsync(sessionUnit.Destination, new CmdContentInfo()
             {
                 Text = new TextTemplate("{Operator} 转让群,{TargetObject} 成为群主")
                     .WithData("Operator", new SessionUnitTextTemplate(sessionUnit))

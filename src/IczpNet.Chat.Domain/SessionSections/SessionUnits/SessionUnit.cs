@@ -71,6 +71,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public virtual ChatObjectTypeEnums? DestinationObjectType { get; protected set; }
 
+        public virtual ChatObjectTypeEnums? OwnerObjectType { get; protected set; }
+
         /// <summary>
         /// 已读的消息
         /// </summary>
@@ -323,6 +325,44 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             OwnerId = ownerId;
             DestinationId = destinationId;
             DestinationObjectType = destinationObjectType;
+            IsStatic = isStatic;
+            IsPublic = isPublic;
+            IsCreator = isCreator;
+            JoinWay = joinWay;
+            InviterUnitId = inviterUnitId;
+            IsInputEnabled = isInputEnabled;
+        }
+        internal SessionUnit(ISessionUnitIdGenerator idGenerator,
+            [NotNull]
+            Session session,
+            [NotNull]
+            ChatObject owner,
+            [NotNull]
+            ChatObject destination,
+            bool isPublic = true,
+            bool isStatic = false,
+            bool isCreator = false,
+            JoinWays? joinWay = null,
+            Guid? inviterUnitId = null,
+            bool isInputEnabled = true)
+        {
+            Id = idGenerator.Create(owner.Id, destination.Id);
+            SetKey(idGenerator.Generate(owner.Id, destination.Id));
+            Session = session;
+            SessionId = session.Id;
+
+            Owner = owner;
+            OwnerId = owner.Id;
+            OwnerName = owner.Name;
+            OwnerNameSpellingAbbreviation = owner.NameSpellingAbbreviation;
+            OwnerObjectType = owner.ObjectType;
+
+            Destination = destination;
+            DestinationId = destination.Id;
+            DestinationName =destination.Name;
+            DestinationNameSpellingAbbreviation = destination.NameSpellingAbbreviation;
+            DestinationObjectType = destination.ObjectType;
+
             IsStatic = isStatic;
             IsPublic = isPublic;
             IsCreator = isCreator;

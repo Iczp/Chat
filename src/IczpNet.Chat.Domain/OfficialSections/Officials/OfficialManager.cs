@@ -52,14 +52,13 @@ namespace IczpNet.Chat.OfficialSections.Officials
         }
 
 
-        private SessionUnit AddOfficialSessionUnit(Session session, long officialId)
+        private SessionUnit AddOfficialSessionUnit(Session session, ChatObject official)
         {
             return session.AddSessionUnit(new SessionUnit(
                   idGenerator: SessionUnitIdGenerator,
                   session: session,
-                  ownerId: officialId,
-                  destinationId: officialId,
-                  destinationObjectType: ChatObjectTypeEnums.Official,
+                  owner: official,
+                  destination: official,
                   isPublic: false,
                   isStatic: true,
                   isCreator: true,
@@ -76,7 +75,7 @@ namespace IczpNet.Chat.OfficialSections.Officials
 
             session.SetOwner(official);
 
-            AddOfficialSessionUnit(session, official.Id);
+            AddOfficialSessionUnit(session, official);
 
             // commit to db
             await UnitOfWorkManager.Current.SaveChangesAsync();
@@ -102,9 +101,8 @@ namespace IczpNet.Chat.OfficialSections.Officials
                 sessionUnit = session.AddSessionUnit(new SessionUnit(
                   idGenerator: SessionUnitIdGenerator,
                   session: session,
-                  ownerId: ownerId,
-                  destinationId: official.Id,
-                  destinationObjectType: ChatObjectTypeEnums.Official,
+                  owner: sessionUnit.Owner,
+                  destination: official,
                   isPublic: true,
                   isStatic: false,
                   isCreator: false,
