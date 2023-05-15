@@ -14,7 +14,7 @@ public static class SessionPermissionDefinitionConsts
         return allNames;
     }
 
-
+    
 
     public class SessionRolePermission
     {
@@ -51,6 +51,17 @@ public static class SessionPermissionDefinitionConsts
     {
         public const string Default = GroupName + "." + nameof(ChatObjectPermission);
         public const string UpdateName = Default + "." + nameof(UpdateName);
+
         public const string UpdatePortrait = Default + "." + nameof(UpdatePortrait);
+        public const string ToggleAllInputEnabled = Default + "." + nameof(ToggleAllInputEnabled);
+    }
+
+    public class SessionUnitPermissions
+    {
+        public const string Default = GroupName + "." + nameof(SessionUnitPermissions);
+        public const string RemindEveryone = Default + "." + nameof(RemindEveryone);
+        public const string RemoveMember = Default + "." + nameof(RemoveMember);
+        public const string RollbackOthersMessage = Default + "." + nameof(RollbackOthersMessage);
+        public const string ToggleInputEnabled = Default + "." + nameof(ToggleInputEnabled);
     }
 }

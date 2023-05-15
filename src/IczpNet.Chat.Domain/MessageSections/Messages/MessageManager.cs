@@ -5,6 +5,7 @@ using IczpNet.Chat.ChatPushers;
 using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
+using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.Options;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
@@ -13,6 +14,7 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Entities;
@@ -22,7 +24,7 @@ using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.MessageSections.Messages
 {
-    public class MessageManager : DomainService, IMessageManager
+    public partial class MessageManager : DomainService, IMessageManager
     {
         protected IObjectMapper ObjectMapper { get; }
         protected IChatObjectManager ChatObjectManager { get; }
@@ -133,7 +135,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         //    return output;
         //}
 
-        public virtual async Task<Message> CreateMessageBySessionUnitAsync(SessionUnit senderSessionUnit, Func<Message, Task<IMessageContentEntity>> getContentEntity, SessionUnit receiverSessionUnit = null)
+        public virtual async Task<Message> CreateMessageBySessionUnitAsync(SessionUnit senderSessionUnit, Func<Message, Task> action, SessionUnit receiverSessionUnit = null)
         {
             Assert.NotNull(senderSessionUnit, $"Unable to send message, senderSessionUnit is null");
 
@@ -141,10 +143,9 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             var entity = new Message(senderSessionUnit);
 
-            if (getContentEntity != null)
+            if (action != null)
             {
-                var messageContent = await getContentEntity(entity);
-                entity.SetMessageContent(messageContent);
+                await action(entity);
             }
 
             await MessageValidator.CheckAsync(entity);
@@ -220,6 +221,78 @@ namespace IczpNet.Chat.MessageSections.Messages
             await SessionUnitManager.BatchUpdateCacheAsync(senderSessionUnit, message);
         }
 
+
+        [GeneratedRegex("@([^ ]+) ?")]
+        private static partial Regex RemindNameRegex();
+
+        private async Task<List<Guid>> GetRemindIdListForTextContentAsync(SessionUnit senderSessionUnit, Message message)
+        {
+            var unitIdList = new List<Guid>();
+            //@XXX
+            if (message.MessageType != MessageTypes.Text)
+            {
+                return unitIdList;
+            }
+            //Guid.TryParse(message.Receiver, out Guid roomId);
+            var textContent = message.GetContent() as TextContent;
+
+            var text = textContent.Text;
+
+            var reg = RemindNameRegex();
+
+            //例如我想提取 @中的NAME值
+            var match = reg.Match(text);
+
+            var nameList = new List<string>();
+
+            for (var i = 0; i < match.Groups.Count; i++)
+            {
+                string value = match.Groups[i].Value;
+
+                if (!value.IsNullOrWhiteSpace())
+                {
+                    nameList.Add(value);
+                }
+            }
+            if (!nameList.Any())
+            {
+                return unitIdList;
+            }
+            var textList = new string[] { "所有人", "everyone" };
+
+            if (nameList.Any(x => textList.Contains(x)))
+            {
+                //creator and manager
+                //if (senderSessionUnit.IsCreator)
+                //{
+                //    message.SetRemindAll();
+                //}
+                message.SetRemindAll();
+
+                return unitIdList;
+            }
+
+            unitIdList = await SessionUnitManager.GetIdListByNameAsync(nameList);
+
+            return unitIdList;
+        }
+
+        protected virtual async Task SetRemindAsync(SessionUnit senderSessionUnit, Message message, List<Guid> remindIdList)
+        {
+            var reminIdList = await GetRemindIdListForTextContentAsync(senderSessionUnit, message);
+
+            var finalRemindIdList = reminIdList.Concat(remindIdList).Distinct().ToList();
+
+            if (!finalRemindIdList.Any())
+            {
+                return;
+            }
+
+            message.SetReminder(finalRemindIdList, ReminderTypes.Normal);
+
+            await SessionUnitRepository.BatchUpdateRemindMeCountAsync(message.CreationTime, finalRemindIdList);
+        }
+
         public virtual async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContent>(SessionUnit senderSessionUnit, MessageSendInput<TContentInfo> input, SessionUnit receiverSessionUnit = null)
             where TContentInfo : IMessageContentInfo
             where TContent : IMessageContentEntity
@@ -238,16 +311,12 @@ namespace IczpNet.Chat.MessageSections.Messages
                     var receiver = await ChatObjectManager.GetAsync(receiverSessionUnit.OwnerId);
                     entity.SetPrivateMessage(receiver);
                 }
+
                 var messageContent = ObjectMapper.Map<TContentInfo, TContent>(input.Content);
 
-                //remind sessionUnitId
-                if (input.RemindList.IsAny())
-                {
-                    entity.SetReminder(input.RemindList, ReminderTypes.Normal);
-                    await SessionUnitRepository.BatchUpdateRemindMeCountAsync(entity.CreationTime, input.RemindList);
-                }
+                entity.SetMessageContent(messageContent);
 
-                return await Task.FromResult(messageContent);
+                await SetRemindAsync(senderSessionUnit, entity, input.RemindList);
             });
 
             //var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
@@ -345,7 +414,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             Assert.If(currentSessionUnit.SessionId != sourceMessage.SessionId, $"The sender and message are not in the same session, messageSessionId:{sourceMessage.SessionId}", nameof(currentSessionUnit.SessionId));
 
-            var messageContent = sourceMessage.GetContent();
+            var messageContent = sourceMessage.GetTypedContent();
 
             Assert.NotNull(messageContent, $"MessageContent is null. Source message:{sourceMessage}");
 
@@ -364,8 +433,8 @@ namespace IczpNet.Chat.MessageSections.Messages
                 var newMessage = await CreateMessageBySessionUnitAsync(targetSessionUnit, async x =>
                 {
                     x.SetForwardMessage(sourceMessage);
-
-                    return await Task.FromResult(messageContent);
+                    x.SetMessageContent(messageContent);
+                    await Task.CompletedTask;
                 });
                 messageList.Add(newMessage);
 
@@ -375,5 +444,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             }
             return messageList;
         }
+
+
     }
 }

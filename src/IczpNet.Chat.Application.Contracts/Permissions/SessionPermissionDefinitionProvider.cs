@@ -11,9 +11,15 @@ public class SessionPermissionDefinitionProvider : PermissionDefinitionProvider
 
         var sessionGroup = context.AddGroup(SessionPermissionDefinitionConsts.GroupName, L($"Permission:{SessionPermissionDefinitionConsts.GroupName}"));
 
+        sessionGroup.AddPermission<SessionPermissionDefinitionConsts.SessionRolePermission>();
+
         sessionGroup.AddPermission<SessionPermissionDefinitionConsts.SessionOrganizationPermission>();
 
-        sessionGroup.AddPermission<SessionPermissionDefinitionConsts.SessionRolePermission>();
+        sessionGroup.AddPermission<SessionPermissionDefinitionConsts.SessionPermissionGroupPermission>();
+
+        sessionGroup.AddPermission<SessionPermissionDefinitionConsts.ChatObjectPermission>();
+
+        sessionGroup.AddPermission<SessionPermissionDefinitionConsts.SessionUnitPermissions>();
     }
 
     private static LocalizableString L(string name)

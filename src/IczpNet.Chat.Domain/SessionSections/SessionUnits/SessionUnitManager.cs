@@ -17,6 +17,7 @@ using Volo.Abp.Timing;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using NUglify.Helpers;
+using IczpNet.Chat.ChatObjects;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits;
 
@@ -28,19 +29,22 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
     protected IDistributedCache<string, Guid> UnitCountCache { get; }
     protected IDistributedCache<SessionUnitCacheItem, Guid> StatsCache { get; }
     protected IFollowManager FollowManager => LazyServiceProvider.LazyGetRequiredService<IFollowManager>();
+    protected IChatObjectRepository ChatObjectRepository { get; }
 
     public SessionUnitManager(
         ISessionUnitRepository repository,
         IMessageRepository messageRepository,
         IDistributedCache<List<SessionUnitCacheItem>, string> unitListCache,
         IDistributedCache<string, Guid> unitCountCache,
-        IDistributedCache<SessionUnitCacheItem, Guid> statsCache)
+        IDistributedCache<SessionUnitCacheItem, Guid> statsCache,
+        IChatObjectRepository chatObjectRepository)
     {
         Repository = repository;
         MessageRepository = messageRepository;
         UnitListCache = unitListCache;
         UnitCountCache = unitCountCache;
         StatsCache = statsCache;
+        ChatObjectRepository = chatObjectRepository;
     }
 
     protected virtual async Task<SessionUnit> SetEntityAsync(SessionUnit entity, Action<SessionUnit> action = null, bool autoSave = false)
@@ -543,5 +547,19 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         Logger.LogInformation($"BatchUpdateLastMessageIdAndPublicBadgeAndRemindAllCount:{result}, stopwatch: {stopwatch.ElapsedMilliseconds}ms.");
 
         return result;
+    }
+
+    public async Task<List<Guid>> GetIdListByNameAsync(List<string> nameList)
+    {
+        var chatObjectIds = (await ChatObjectRepository.GetQueryableAsync())
+            .Where(x => nameList.Contains(x.Name))
+            .Select(x => x.Id)
+            ;
+
+        return (await Repository.GetQueryableAsync())
+            .Where(x => nameList.Contains(x.MemberName))
+            .Where(x => chatObjectIds.Contains(x.OwnerId))
+            .Select(x => x.Id)
+            .ToList();
     }
 }

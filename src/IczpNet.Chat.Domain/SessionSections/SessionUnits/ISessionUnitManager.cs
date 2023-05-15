@@ -19,6 +19,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         Task<List<SessionUnit>> GetManyAsync(List<Guid> idList);
 
+        Task<List<Guid>> GetIdListByNameAsync(List<string> nameList);
+
         Task<SessionUnit> FindAsync(Expression<Func<SessionUnit, bool>> predicate);
 
         Task<SessionUnit> FindAsync(long ownerId, long destinactionId);
@@ -88,6 +90,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         Task<int> BatchUpdateCacheAsync(SessionUnit senderSessionUnit, Message message);
 
         Task<int> BatchUpdateAsync(SessionUnit senderSessionUnit, Message message);
-
+        
     }
 }

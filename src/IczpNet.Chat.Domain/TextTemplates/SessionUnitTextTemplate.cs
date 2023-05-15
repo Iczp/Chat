@@ -6,9 +6,9 @@ namespace IczpNet.Chat.TextTemplates
     public class SessionUnitTextTemplate : TextTemplate
     {
         /// <summary>
-        /// defaultValue:<![CDATA[<a suid="{SessionUnitId}">{ChatObjectName}</a>]]>
+        /// defaultValue:<![CDATA[<a uid="{SessionUnitId}">{ChatObjectName}</a>]]>
         /// </summary>
-        public static string Template { get; set; } = "<a suid=\"{SessionUnitId}\">{ChatObjectName}</a>";
+        public static string Template { get; set; } = "<a uid=\"{SessionUnitId}\">{ChatObjectName}</a>";
 
         public override string Text { get; protected set; } = Template;
 

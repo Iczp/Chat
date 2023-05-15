@@ -28,6 +28,7 @@ public partial class Message
     public virtual void SetRemindAll()
     {
         SetKey(MessageKeyNames.Remind, MessageKeyNames.RemindEveryone);
+        IsRemindAll = true;
     }
 
     /// <summary>
