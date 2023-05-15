@@ -73,7 +73,7 @@ namespace IczpNet.Chat.UnitTests
             Logger.LogInformation($"sessionunit: id:{sessionunit?.Id},name:{sessionunit?.Owner?.Name}");
 
             // Following
-            if ( sessionunit.OwnerFollowList.Count< 3)
+            if (sessionunit.OwnerFollowList.Count < 3)
             {
                 var tagId = items[new Random().Next(0, items.Count - 1)];
 
@@ -91,18 +91,25 @@ namespace IczpNet.Chat.UnitTests
                 remindList.TryAdd(items[new Random().Next(0, items.Count - 1)]);
             }
 
+            var text = $"RoomId:{RoomId}-Index-{Index}-{sessionunitId},remindCount:{remindList.Count}";
+
+            if (new Random().Next(3) % 3 == 1)
+            {
+                text = $"@陈忠培 {text}";
+            }
+
             await MessageSender.SendTextAsync(sessionunit, new MessageSendInput<TextContentInfo>()
             {
                 Content = new TextContentInfo()
                 {
-                    Text = $"RoomId:{RoomId}-Index-{Index}-{sessionunitId},remindCount:{remindList.Count}"
+                    Text = text
                 },
                 RemindList = remindList
             });
             stopWatch.Stop();
 
-            Logger.LogInformation($"SendText: RoomId:{RoomId}-Index-{Index}-{sessionunitId}-Name:{sessionunit?.Owner?.Name},remindCount:{remindList.Count},stopWatch:{stopWatch.ElapsedMilliseconds}");
-            
+            Logger.LogInformation($"SendText: {text},stopWatch:{stopWatch.ElapsedMilliseconds}");
+
         }
 
         protected async Task<List<Guid>> GetSessionIdListAsync(long roomId)

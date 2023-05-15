@@ -549,7 +549,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return result;
     }
 
-    public async Task<List<Guid>> GetIdListByNameAsync(List<string> nameList)
+    public async Task<List<Guid>> GetIdListByNameAsync(Guid sessionId, List<string> nameList)
     {
         var chatObjectIds = (await ChatObjectRepository.GetQueryableAsync())
             .Where(x => nameList.Contains(x.Name))
@@ -557,8 +557,9 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
             ;
 
         return (await Repository.GetQueryableAsync())
-            .Where(x => nameList.Contains(x.MemberName))
-            .Where(x => chatObjectIds.Contains(x.OwnerId))
+            .Where(x => x.SessionId == sessionId)
+            .Where(x => nameList.Contains(x.MemberName) || chatObjectIds.Contains(x.OwnerId))
+            .Where(SessionUnit.GetActivePredicate(null))
             .Select(x => x.Id)
             .ToList();
     }

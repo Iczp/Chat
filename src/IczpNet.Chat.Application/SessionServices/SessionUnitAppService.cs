@@ -240,7 +240,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(!input.JoinWay.IsEmpty(), x => x.JoinWay == input.JoinWay)
             .WhereIf(!input.InviterId.IsEmpty(), x => x.InviterId == input.InviterId)
             .WhereIf(!input.InviterUnitId.IsEmpty(), x => x.InviterUnitId == input.InviterUnitId)
-            .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Owner.Name.Contains(input.Keyword))
+            //.WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Owner.Name.Contains(input.Keyword))
+            .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordOwnerSessionUnitSpecification(input.Keyword, await ChatObjectManager.QueryByKeywordAsync(input.Keyword)))
             ;
 
         return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query, input, q => q.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId));

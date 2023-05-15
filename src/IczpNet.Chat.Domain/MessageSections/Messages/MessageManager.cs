@@ -222,7 +222,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         }
 
 
-        [GeneratedRegex("@([^ ]+) ?")]
+        [GeneratedRegex("@([^@ ]+) ?")]
         private static partial Regex RemindNameRegex();
 
         private async Task<List<Guid>> GetRemindIdListForTextContentAsync(SessionUnit senderSessionUnit, Message message)
@@ -249,7 +249,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             {
                 string value = match.Groups[i].Value;
 
-                if (!value.IsNullOrWhiteSpace())
+                if (!value.IsNullOrWhiteSpace() && !value.StartsWith("@"))
                 {
                     nameList.Add(value);
                 }
@@ -262,26 +262,27 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             if (nameList.Any(x => textList.Contains(x)))
             {
-                //creator and manager
-                //if (senderSessionUnit.IsCreator)
-                //{
-                //    message.SetRemindAll();
-                //}
-                message.SetRemindAll();
-
+                //creator or manager
+                if (senderSessionUnit.IsCreator)
+                {
+                    message.SetRemindAll();
+                }
                 return unitIdList;
             }
 
-            unitIdList = await SessionUnitManager.GetIdListByNameAsync(nameList);
+            unitIdList = await SessionUnitManager.GetIdListByNameAsync(senderSessionUnit.SessionId.Value, nameList);
 
             return unitIdList;
         }
 
         protected virtual async Task SetRemindAsync(SessionUnit senderSessionUnit, Message message, List<Guid> remindIdList)
         {
-            var reminIdList = await GetRemindIdListForTextContentAsync(senderSessionUnit, message);
+            var finalRemindIdList = await GetRemindIdListForTextContentAsync(senderSessionUnit, message);
 
-            var finalRemindIdList = reminIdList.Concat(remindIdList).Distinct().ToList();
+            if (remindIdList.IsAny())
+            {
+                finalRemindIdList = finalRemindIdList.Concat(remindIdList).Distinct().ToList();
+            }
 
             if (!finalRemindIdList.Any())
             {
