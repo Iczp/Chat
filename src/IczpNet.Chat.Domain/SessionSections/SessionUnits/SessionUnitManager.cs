@@ -124,15 +124,18 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
 
     public virtual async Task<SessionUnit> SetReadedAsync(SessionUnit entity, bool isForce = false, long? messageId = null)
     {
-        var lastMessageId = messageId ?? entity.LastMessageId;
+        var isNullOrZero = messageId == null || messageId == 0;
 
-        var message = await MessageRepository.GetAsync(lastMessageId.Value);
+        var lastMessageId = isNullOrZero ? entity.LastMessageId.Value : messageId.Value;
 
-        Assert.If(entity.SessionId != message.SessionId, $"Not in same session,messageId:{messageId}");
+        if (!isNullOrZero)
+        {
+            var message = await MessageRepository.GetAsync(lastMessageId);
 
-        // add readedRecorder
-        /// ...
-        await SetEntityAsync(entity, x => x.SetReaded(message.Id, isForce = false));
+            Assert.If(entity.SessionId != message.SessionId, $"Not in same session,messageId:{messageId}");
+        }
+
+        await SetEntityAsync(entity, x => x.SetReaded(lastMessageId, isForce = false));
 
         await UpdateCacheItemsAsync(entity, items =>
         {
