@@ -3,6 +3,7 @@ using IczpNet.Chat.ChatObjectCategorys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.Connections;
+using IczpNet.Chat.Favorites;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.MessageContents;
 using IczpNet.Chat.MessageSections.MessageReminders;
@@ -65,7 +66,7 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
 
 
     public DbSet<Follow> Follow { get; set; }
-
+    public DbSet<Favorite> Favorite { get; set; }
 
 
     public DbSet<Friendship> Friendship { get; set; }

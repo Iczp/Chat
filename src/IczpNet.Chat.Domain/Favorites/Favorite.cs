@@ -1,21 +1,12 @@
 ﻿using IczpNet.Chat.BaseEntitys;
-using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.DataFilters;
-using IczpNet.Chat.FavoriteMessages;
-using System;
-using System.Collections.Generic;
+using IczpNet.Chat.SessionSections.SessionUnits;
 
 namespace IczpNet.Chat.Favorites
 {
-    public class Favorite : BaseEntity<Guid>, IChatOwner<long>
+    public class Favorite : BaseRecorder
     {
-        public virtual long OwnerId { get; set; }
+        protected Favorite() { }
 
-        public virtual ChatObject Owner { get; set; }
-
-        /// <summary>
-        /// 收藏的消息
-        /// </summary>
-        public virtual IList<FavoriteMessage> FavoriteMessageList { get; set; }
+        public Favorite(SessionUnit sessionUnit, long messageId, string deviceId) : base(sessionUnit, messageId, deviceId) { }
     }
 }

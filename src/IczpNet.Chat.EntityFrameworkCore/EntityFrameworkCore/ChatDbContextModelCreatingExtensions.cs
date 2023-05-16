@@ -4,6 +4,7 @@ using IczpNet.Chat.Attributes;
 using IczpNet.Chat.ChatObjectCategoryUnits;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.FavoriteMessages;
+using IczpNet.Chat.Favorites;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.MessageReminders;
@@ -77,7 +78,7 @@ public static class ChatDbContextModelCreatingExtensions
         builder.Entity<MessageReminder>(b => { b.HasKey(x => new { x.MessageId, x.SessionUnitId }); });
         builder.Entity<OpenedRecorder>(b => { b.HasKey(x => new { x.MessageId, x.SessionUnitId }); });
         builder.Entity<ReadedRecorder>(b => { b.HasKey(x => new { x.MessageId, x.SessionUnitId }); });
-        builder.Entity<FavoriteMessage>(b => { b.HasKey(x => new { x.MessageId, x.FavoriteId }); });
+        //builder.Entity<FavoriteMessage>(b => { b.HasKey(x => new { x.MessageId, x.FavoriteId }); });
         builder.Entity<HistoryMessage>(b => { b.HasKey(x => new { x.MessageId, x.HistoryContentId }); });
         builder.Entity<FriendshipTagUnit>(b => { b.HasKey(x => new { x.FriendshipId, x.FriendshipTagId }); });
 
@@ -88,6 +89,7 @@ public static class ChatDbContextModelCreatingExtensions
         builder.Entity<SessionPermissionUnitGrant>(b => { b.HasKey(x => new { x.DefinitionId, x.SessionUnitId }); });
 
         builder.Entity<Follow>(b => { b.HasKey(x => new { x.OwnerId, x.DestinationId }); });
+        builder.Entity<Favorite>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
 
         builder.Entity<Message>(b =>
             {

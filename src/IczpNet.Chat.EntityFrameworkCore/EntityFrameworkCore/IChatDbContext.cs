@@ -3,6 +3,7 @@ using IczpNet.Chat.ChatObjectCategorys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.Connections;
+using IczpNet.Chat.Favorites;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.MessageContents;
 using IczpNet.Chat.MessageSections.MessageReminders;
@@ -65,6 +66,7 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<SessionPermissionUnitGrant> SessionPermissionUnitGrant { get; }
 
     DbSet<Follow> Follow { get; }
+    DbSet<Favorite> Favorite { get; }
 
 
     DbSet<Friendship> Friendship { get; }

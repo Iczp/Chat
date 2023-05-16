@@ -28,6 +28,8 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.OpenedRecorders;
 using System.Linq.Expressions;
+using IczpNet.Chat.Favorites;
+using IczpNet.Chat.ReadedRecorders;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits
 {
@@ -259,14 +261,26 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         [InverseProperty(nameof(Message.SessionUnit))]
         public virtual List<Message> MessageList { get; protected set; } = new List<Message>();
 
-        [InverseProperty(nameof(Follow.Owner))]
-        public virtual IList<Follow> OwnerFollowList { get; protected set; }
+        
 
         [InverseProperty(nameof(OpenedRecorder.SessionUnit))]
         public virtual IList<OpenedRecorder> OpenedRecorderList { get; protected set; }
 
+        [InverseProperty(nameof(ReadedRecorder.SessionUnit))]
+        public virtual IList<ReadedRecorder> ReadedRecorderList { get; protected set; }
+
+
+        [InverseProperty(nameof(Follow.Owner))]
+        public virtual IList<Follow> OwnerFollowList { get; protected set; }
+
         //[InverseProperty(nameof(Follow.Destination))]
         //public virtual IList<Follow> DestinationFollowList { get; set; }
+
+
+        [InverseProperty(nameof(Favorite.SessionUnit))]
+        public virtual IList<Favorite> FavoriteList { get; protected set; }
+
+       
 
         [NotMapped]
         public virtual List<SessionTag> TagList => GetTagList();

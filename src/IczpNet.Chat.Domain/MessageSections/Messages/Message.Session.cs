@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.FavoriteMessages;
+using IczpNet.Chat.Favorites;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.SessionSections.Sessions;
@@ -18,8 +19,8 @@ public partial class Message
     public virtual IList<ReadedRecorder> ReadedRecorderList { get; set; }
 
 
-    [InverseProperty(nameof(FavoriteMessage.Message))]
-    public virtual IList<FavoriteMessage> FavoriteMessageList { get; set; }
+    [InverseProperty(nameof(Favorite.Message))]
+    public virtual IList<Favorite> FavoriteList { get; set; }
 
     [ForeignKey(nameof(SessionId))]
     public virtual Session Session { get; protected set; }
