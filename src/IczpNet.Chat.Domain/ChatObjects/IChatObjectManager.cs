@@ -65,5 +65,7 @@ namespace IczpNet.Chat.ChatObjects
         Task<ChatObject> CreateAnonymousAsync(string name);
 
         //Task<ChatObjectInfo> GetGroupAssistantAsync();
+
+        Task<ChatObject> BingAppUserIdAsync(long id, Guid appUserId);
     }
 }

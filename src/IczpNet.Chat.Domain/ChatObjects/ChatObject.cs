@@ -234,5 +234,10 @@ namespace IczpNet.Chat.ChatObjects
         {
             IsStatic = v;
         }
+
+        internal void BingAppUserId(Guid appUserId)
+        {
+            AppUserId = appUserId;  
+        }
     }
 }

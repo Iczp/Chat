@@ -27,7 +27,6 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
     protected IMessageRepository MessageRepository { get; }
     protected IDistributedCache<List<SessionUnitCacheItem>, string> UnitListCache { get; }
     protected IDistributedCache<string, Guid> UnitCountCache { get; }
-    protected IDistributedCache<SessionUnitCacheItem, Guid> StatsCache { get; }
     protected IFollowManager FollowManager => LazyServiceProvider.LazyGetRequiredService<IFollowManager>();
     protected IChatObjectRepository ChatObjectRepository { get; }
 
@@ -36,14 +35,12 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         IMessageRepository messageRepository,
         IDistributedCache<List<SessionUnitCacheItem>, string> unitListCache,
         IDistributedCache<string, Guid> unitCountCache,
-        IDistributedCache<SessionUnitCacheItem, Guid> statsCache,
         IChatObjectRepository chatObjectRepository)
     {
         Repository = repository;
         MessageRepository = messageRepository;
         UnitListCache = unitListCache;
         UnitCountCache = unitCountCache;
-        StatsCache = statsCache;
         ChatObjectRepository = chatObjectRepository;
     }
 

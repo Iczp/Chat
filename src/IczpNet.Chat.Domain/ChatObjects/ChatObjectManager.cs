@@ -212,7 +212,7 @@ namespace IczpNet.Chat.ChatObjects
             throw new NotImplementedException();
         }
 
-        public async Task<ChatObject> UpdateAsync(long id, Action<ChatObject> action, bool isUnique = true)
+        public virtual async Task<ChatObject> UpdateAsync(long id, Action<ChatObject> action, bool isUnique = true)
         {
             var entity = await Repository.GetAsync(id);
 
@@ -221,14 +221,14 @@ namespace IczpNet.Chat.ChatObjects
             return await base.UpdateAsync(entity, isUnique: isUnique);
         }
 
-        public async Task<ChatObject> UpdateAsync(ChatObject entity, Action<ChatObject> action, bool isUnique = true)
+        public virtual async Task<ChatObject> UpdateAsync(ChatObject entity, Action<ChatObject> action, bool isUnique = true)
         {
             action?.Invoke(entity);
 
             return await base.UpdateAsync(entity, isUnique: isUnique);
         }
 
-        public async Task<ChatObject> UpdateNameAsync(ChatObject entity, string name)
+        public virtual async Task<ChatObject> UpdateNameAsync(ChatObject entity, string name)
         {
             entity.SetName(name);
 
@@ -239,11 +239,24 @@ namespace IczpNet.Chat.ChatObjects
             return await base.UpdateAsync(entity, isUnique: true);
         }
 
-        public async Task<ChatObject> UpdateNameAsync(long id, string name)
+        public virtual async Task<ChatObject> UpdateNameAsync(long id, string name)
         {
             var entity = await Repository.GetAsync(id);
 
             return await UpdateNameAsync(entity, name);
+        }
+
+        public virtual async Task<ChatObject> BingAppUserIdAsync(long id, Guid appUserId)
+        {
+            var entity = await Repository.GetAsync(id);
+
+            entity.BingAppUserId(appUserId);
+
+            var count = await SessionUnitRepository.BatchUpdateAppUserIdAsync(entity.Id, appUserId);
+
+            Logger.LogInformation($"SessionUnitRepository.BatchUpdateAppUserIdAsync:{count}");
+
+            return await base.UpdateAsync(entity, isUnique: false);
         }
     }
 }
