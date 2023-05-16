@@ -563,4 +563,34 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
             .Select(x => x.Id)
             .ToList();
     }
+
+    public async Task<Dictionary<Guid, string>> GetIdListByName_BackAsync(Guid sessionId, List<string> nameList)
+    {
+        //var chatObjectDicts = (await ChatObjectRepository.GetQueryableAsync())
+        //    .Where(x => nameList.Contains(x.Name))
+        //    .Select(x => new ChatObjectIdName()
+        //    {
+        //        Id = x.Id,
+        //        Name = x.Name
+        //    })
+        //    .ToDictionary(x => x.Id);
+        //;
+
+        //var chatObjectIds = chatObjectDicts.Keys.ToList();
+
+        //var dicts = (await Repository.GetQueryableAsync())
+        //    .Where(x => x.SessionId == sessionId)
+        //    .Where(x => nameList.Contains(x.MemberName) || chatObjectIds.Contains(x.OwnerId))
+        //    .Where(SessionUnit.GetActivePredicate(null))
+        //    .Select(x => new { x.Id, x.OwnerId })
+        //    .ToDictionary(x => x.Id, x => chatObjectDicts[x.OwnerId]);
+
+        //return dicts;
+
+        return (await Repository.GetQueryableAsync())
+            .Where(x => x.SessionId == sessionId)
+            .Where(x => nameList.Contains(x.MemberName) || nameList.Contains(x.OwnerName))
+            .Where(SessionUnit.GetActivePredicate(null))
+            .ToDictionary(x => x.Id, x => !string.IsNullOrEmpty(x.MemberName) ? x.MemberName : x.OwnerName);
+    }
 }
