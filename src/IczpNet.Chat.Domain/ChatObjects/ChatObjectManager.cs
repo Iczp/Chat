@@ -111,6 +111,7 @@ namespace IczpNet.Chat.ChatObjects
                     Description = "我是机器人,会发送私人消息、推送服务等",
                 };
                 entity.SetIsStatic(true);
+
                 await CreateAsync(entity);
 
                 Logger.LogDebug($"Cteate chatObject by code:{entity.Code}");
