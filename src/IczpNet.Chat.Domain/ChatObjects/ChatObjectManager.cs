@@ -35,7 +35,7 @@ namespace IczpNet.Chat.ChatObjects
             }
 
             return (await Repository.GetQueryableAsync())
-                .WhereIf(!keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(keyword) || x.NameSpellingAbbreviation.Contains(keyword))
+                .WhereIf(!keyword.IsNullOrWhiteSpace(), x => x.Name.IndexOf(keyword) == 0 || x.NameSpellingAbbreviation.IndexOf(keyword) == 0)
                 .Select(x => x.Id)
                 ;
         }

@@ -43,5 +43,13 @@ set @keyword  = 'Õı¿º%'
 select top 1000 * from [dbo].[Chat_SessionUnit] 
 where 1=1
 --and  Id='719D7227-030A-326A-BCE9-3A0B0CF571FE'
-and ([OwnerName] like @keyword Or [OwnerNameSpellingAbbreviation] like @keyword)
+--and ([OwnerName] like @keyword Or [OwnerNameSpellingAbbreviation] like @keyword)
+and [OwnerId] in (
+	select [Id] from [dbo].[Chat_ChatObject] c
+	where [Name]  like @keyword
+)
 ORDER by [LastMessageId] desc
+
+
+
+

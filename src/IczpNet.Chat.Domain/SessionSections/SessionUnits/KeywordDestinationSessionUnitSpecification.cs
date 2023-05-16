@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Volo.Abp.Specifications;
+using IczpNet.AbpCommons.Extensions;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits
 {
@@ -9,14 +11,14 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
     {
         public virtual string Keyword { get; }
 
-        public virtual IQueryable<long> OwnerIdList { get; }
+        public virtual IEnumerable<long> OwnerIdList { get; }
 
         //public KeywordDestinationSessionUnitSpecification(string keyword)
         //{
         //    Keyword = keyword;
         //}
 
-        public KeywordDestinationSessionUnitSpecification(string keyword, IQueryable<long> ownerIdList)
+        public KeywordDestinationSessionUnitSpecification(string keyword, IEnumerable<long> ownerIdList)
         {
             Keyword = keyword;
             OwnerIdList = ownerIdList;
@@ -24,15 +26,19 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public override Expression<Func<SessionUnit, bool>> ToExpression()
         {
-            var expression = PredicateBuilder.New<SessionUnit>(x => x.Rename.Contains(Keyword) || x.RenameSpellingAbbreviation.Contains(Keyword));
+            var expression = PredicateBuilder.New<SessionUnit>();
 
-            if (OwnerIdList != null)
+            expression = expression.Or(x => x.Rename.IndexOf(Keyword) == 0);
+            expression = expression.Or(x => x.RenameSpellingAbbreviation.IndexOf(Keyword) == 0);
+
+            //Write diffusion
+            expression = expression.Or(x => x.DestinationName.IndexOf(Keyword) == 0);
+            expression = expression.Or(x => x.DestinationNameSpellingAbbreviation.IndexOf(Keyword) == 0);
+
+
+            if (OwnerIdList.IsAny())
             {
                 expression = expression.Or(x => OwnerIdList.Contains(x.DestinationId.Value));
-            }
-            else
-            {
-                expression = expression.Or(x => x.Destination.Name.Contains(Keyword) || x.Destination.NameSpellingAbbreviation.Contains(Keyword));
             }
 
             return expression;

@@ -11,6 +11,8 @@ namespace IczpNet.Chat.ChatObjects
     {
         Task<IQueryable<long>> QueryByKeywordAsync(string keyword);
 
+        Task<List<long>> SearchKeywordByCacheAsync(string keyword);
+
         Task<ChatObject> FindByCodeAsync(string code);
 
         Task<ChatObject> UpdateAsync(long id, Action<ChatObject> action, bool isUnique = true);
