@@ -125,14 +125,14 @@ namespace IczpNet.Chat.Services
 
         protected override Task MapToEntityAsync(ChatObjectUpdateInput updateInput, ChatObject entity)
         {
-            entity.SetName(updateInput.Name);
+            //entity.SetName(updateInput.Name);
             return base.MapToEntityAsync(updateInput, entity);
         }
 
         protected override ChatObject MapToEntity(ChatObjectCreateInput createInput)
         {
             var entity = base.MapToEntity(createInput);
-            entity.SetName(createInput.Name);
+            //entity.SetName(createInput.Name);
             return entity;
         }
 
@@ -171,9 +171,10 @@ namespace IczpNet.Chat.Services
         }
 
         [HttpPost]
-        public Task<ChatObjectDto> UpdateNameAsync(long id, string name)
+        public async Task<ChatObjectDto> UpdateNameAsync(long id, string name)
         {
-            return UpdateEntityAsync(id, entity => entity.SetName(name));
+            var entity = await ChatObjectManager.UpdateNameAsync(id, name);
+            return await MapToGetOutputDtoAsync(entity);
         }
 
         [HttpPost]

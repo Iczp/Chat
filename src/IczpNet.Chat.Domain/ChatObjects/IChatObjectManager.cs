@@ -19,6 +19,9 @@ namespace IczpNet.Chat.ChatObjects
 
         Task<ChatObject> UpdateAsync(ChatObject entity, Action<ChatObject> action, bool isUnique = true);
 
+        Task<ChatObject> UpdateNameAsync(ChatObject entity, string name);
+
+        Task<ChatObject> UpdateNameAsync(long id, string name);
         /// <summary>
         /// Group Assistant
         /// </summary>

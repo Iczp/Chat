@@ -4,6 +4,7 @@ using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -22,6 +23,7 @@ namespace IczpNet.Chat.ChatObjects
         protected ISessionGenerator SessionGenerator => LazyServiceProvider.LazyGetRequiredService<ISessionGenerator>();
         protected IDistributedCache<List<long>, Guid> UserChatObjectCache => LazyServiceProvider.LazyGetRequiredService<IDistributedCache<List<long>, Guid>>();
         protected IDistributedCache<List<long>, string> SearchCache => LazyServiceProvider.LazyGetRequiredService<IDistributedCache<List<long>, string>>();
+        protected ISessionUnitRepository SessionUnitRepository => LazyServiceProvider.LazyGetRequiredService<ISessionUnitRepository>();
         public ChatObjectManager(IChatObjectRepository repository) : base(repository)
         {
 
@@ -57,12 +59,12 @@ namespace IczpNet.Chat.ChatObjects
 
         protected override async Task CheckExistsByCreateAsync(ChatObject inputEntity)
         {
-            Assert.If(await Repository.AnyAsync(x => x.Code == inputEntity.Code), $"Already exists Code:{inputEntity.Code}");
+            Assert.If(!inputEntity.Code.IsNullOrEmpty() && await Repository.AnyAsync(x => x.Code == inputEntity.Code), $"Already exists Code:{inputEntity.Code}");
         }
 
         protected override async Task CheckExistsByUpdateAsync(ChatObject inputEntity)
         {
-            Assert.If(await Repository.AnyAsync((x) => x.Code == inputEntity.Code && !x.Id.Equals(inputEntity.Id)), $" Code[{inputEntity.Code}] already such");
+            Assert.If(!inputEntity.Code.IsNullOrEmpty() && await Repository.AnyAsync((x) => x.Code == inputEntity.Code && !x.Id.Equals(inputEntity.Id)), $" Code[{inputEntity.Code}] already such");
         }
 
         public override Task<ChatObject> CreateAsync(ChatObject inputEntity, bool isUnique = true)
@@ -226,6 +228,22 @@ namespace IczpNet.Chat.ChatObjects
             return await base.UpdateAsync(entity, isUnique: isUnique);
         }
 
+        public async Task<ChatObject> UpdateNameAsync(ChatObject entity, string name)
+        {
+            entity.SetName(name);
 
+            var count = await SessionUnitRepository.BatchUpdateNameAsync(entity.Id, entity.Name, entity.NameSpelling, entity.NameSpellingAbbreviation);
+
+            Logger.LogInformation($"SessionUnitRepository.BatchUpdateNameAsync:{count}");
+
+            return await base.UpdateAsync(entity, isUnique: true);
+        }
+
+        public async Task<ChatObject> UpdateNameAsync(long id, string name)
+        {
+            var entity = await Repository.GetAsync(id);
+
+            return await UpdateNameAsync(entity, name);
+        }
     }
 }

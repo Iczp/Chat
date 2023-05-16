@@ -399,7 +399,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
 
     public async Task<ChatObject> UpdateNameAsync(SessionUnit sessionUnit, string name)
     {
-        var entity = await ChatObjectManager.UpdateAsync(sessionUnit.DestinationId.Value, x => x.SetName(name), isUnique: false);
+        var entity = await ChatObjectManager.UpdateNameAsync(sessionUnit.DestinationId.Value, name);
 
         await SendRoomMessageAsync(sessionUnit.Destination, new CmdContentInfo()
         {

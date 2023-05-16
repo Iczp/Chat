@@ -76,7 +76,7 @@ namespace IczpNet.Chat.Repositories
                 );
         }
 
-        public async Task<int> BatchUpdateLastMessageIdAndPublicBadgeAndRemindAllCountAsync(Guid sessionId, long lastMessageId, DateTime messageCreationTime, Guid ignoreSessionUnitId, bool isRemindAll)
+        public virtual async Task<int> BatchUpdateLastMessageIdAndPublicBadgeAndRemindAllCountAsync(Guid sessionId, long lastMessageId, DateTime messageCreationTime, Guid ignoreSessionUnitId, bool isRemindAll)
         {
             var context = await GetDbContextAsync();
 
@@ -100,7 +100,7 @@ namespace IczpNet.Chat.Repositories
             return await query.ExecuteUpdateAsync(s => s
                     .SetProperty(b => b.PublicBadge, b => b.PublicBadge + 1)
                     .SetProperty(b => b.LastMessageId, b => lastMessageId)
-                    //.SetPropertyIf(isRemindAll, b => b.RemindAllCount, b => b.RemindAllCount + 1)
+                //.SetPropertyIf(isRemindAll, b => b.RemindAllCount, b => b.RemindAllCount + 1)
                 );
         }
 
@@ -155,7 +155,7 @@ namespace IczpNet.Chat.Repositories
         }
 
 
-        public async Task<int> BatchUpdateFollowingCountAsync(Guid sessionId, DateTime messageCreationTime, List<Guid> destinationSessionUnitIdList)
+        public virtual async Task<int> BatchUpdateFollowingCountAsync(Guid sessionId, DateTime messageCreationTime, List<Guid> destinationSessionUnitIdList)
         {
             var context = await GetDbContextAsync();
 
@@ -170,6 +170,27 @@ namespace IczpNet.Chat.Repositories
                 );
         }
 
+        public virtual async Task<int> BatchUpdateNameAsync(long chatObjectId, string name, string nameSpelling, string nameSpellingAbbreviation)
+        {
+            var context = await GetDbContextAsync();
 
+            var predicate = GetSessionUnitPredicate(DateTime.Now);
+
+            var a = await context.SessionUnit
+                 .Where(predicate)
+                 .Where(x => x.OwnerId == chatObjectId)
+                 .ExecuteUpdateAsync(s => s
+                     .SetProperty(b => b.OwnerName, b => name)
+                     .SetProperty(b => b.OwnerNameSpellingAbbreviation, b => nameSpellingAbbreviation)
+                 );
+            var b = await context.SessionUnit
+                 .Where(predicate)
+                 .Where(x => x.DestinationId == chatObjectId)
+                 .ExecuteUpdateAsync(s => s
+                     .SetProperty(b => b.DestinationName, b => name)
+                     .SetProperty(b => b.DestinationNameSpellingAbbreviation, b => nameSpellingAbbreviation)
+                 );
+            return a + b;
+        }
     }
 }
