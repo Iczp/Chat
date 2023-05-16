@@ -23,7 +23,10 @@ using IczpNet.Chat.SessionSections.SessionRequests;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionTags;
+using IczpNet.Chat.SessionSections.SessionUnitOrganizations;
+using IczpNet.Chat.SessionSections.SessionUnitRoles;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionSections.SessionUnitTags;
 using IczpNet.Chat.Wallets;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Data;
@@ -52,17 +55,16 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<SessionTag> SessionTag { get; }
     DbSet<SessionRole> SessionRole { get; }
     DbSet<SessionOrganization> SessionOrganization { get; }
+    DbSet<SessionUnitTag> SessionUnitTag { get; }
+    DbSet<SessionUnitRole> SessionUnitRole { get; }
+    DbSet<SessionUnitOrganization> SessionUnitOrganization { get; }
     DbSet<SessionPermissionDefinition> SessionPermissionDefinition { get; }
     DbSet<SessionPermissionGroup> SessionPermissionGroup { get; }
     DbSet<SessionRequest> SessionRequest { get; }
     DbSet<SessionPermissionRoleGrant> SessionPermissionRoleGrant { get; }
     DbSet<SessionPermissionUnitGrant> SessionPermissionUnitGrant { get; }
 
-
     DbSet<Follow> Follow { get; }
-
-    
-
 
 
     DbSet<Friendship> Friendship { get; }
@@ -74,10 +76,7 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<ReadedRecorder> ReadedRecorder { get; }
     DbSet<MessageReminder> MessageReminder { get; }
 
-
     DbSet<Connection> Connection { get; }
-
-
 
     DbSet<Message> Message { get; }
     DbSet<MessageContent> MessageContent { get; }

@@ -23,7 +23,10 @@ using IczpNet.Chat.SessionSections.SessionRequests;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionTags;
+using IczpNet.Chat.SessionSections.SessionUnitOrganizations;
+using IczpNet.Chat.SessionSections.SessionUnitRoles;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionSections.SessionUnitTags;
 using IczpNet.Chat.Wallets;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Data;
@@ -51,6 +54,9 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     public DbSet<SessionTag> SessionTag { get; set; }
     public DbSet<SessionRole> SessionRole { get; set; }
     public DbSet<SessionOrganization> SessionOrganization { get; set; }
+    public DbSet<SessionUnitTag> SessionUnitTag { get; set; }
+    public DbSet<SessionUnitRole> SessionUnitRole { get; set; }
+    public DbSet<SessionUnitOrganization> SessionUnitOrganization { get; set; }
     public DbSet<SessionPermissionDefinition> SessionPermissionDefinition { get; set; }
     public DbSet<SessionPermissionGroup> SessionPermissionGroup { get; set; }
     public DbSet<SessionRequest> SessionRequest { get; set; }
@@ -60,7 +66,7 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
 
     public DbSet<Follow> Follow { get; set; }
 
-    
+
 
     public DbSet<Friendship> Friendship { get; set; }
     public DbSet<FriendshipTag> FriendshipTag { get; set; }
