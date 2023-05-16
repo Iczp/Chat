@@ -359,7 +359,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
             Destination = destination;
             DestinationId = destination.Id;
-            DestinationName =destination.Name;
+            DestinationName = destination.Name;
             DestinationNameSpellingAbbreviation = destination.NameSpellingAbbreviation;
             DestinationObjectType = destination.ObjectType;
 
@@ -371,7 +371,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             IsInputEnabled = isInputEnabled;
         }
 
-        public static Expression<Func<SessionUnit, bool>> GetActivePredicate(DateTime? messageCreationTime)
+        public static Expression<Func<SessionUnit, bool>> GetActivePredicate(DateTime? messageCreationTime = null)
         {
             var creationTime = messageCreationTime ?? DateTime.Now;
             return x =>

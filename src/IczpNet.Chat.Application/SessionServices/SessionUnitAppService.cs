@@ -1,11 +1,11 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
-using IczpNet.Chat.SessionSections;
 using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
@@ -22,7 +22,6 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 using Volo.Abp.Users;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace IczpNet.Chat.SessionServices;
 
@@ -247,6 +246,23 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query, input, q => q.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId));
     }
 
+    [HttpGet]
+    public async Task<PagedResultDto<SessionUnitDisplayName>> GetListDestinationNamesAsync(Guid id, BaseGetListInput input)
+    {
+        var entity = await Repository.GetAsync(id);
+
+        var query = (await Repository.GetQueryableAsync())
+            .Where(x => x.SessionId == entity.SessionId && x.IsEnabled)
+            .Where(SessionUnit.GetActivePredicate())
+            .Select(x => new SessionUnitDisplayName
+            {
+                Id = x.Id,
+                DisplayName = !string.IsNullOrEmpty(x.MemberName) ? x.MemberName : x.OwnerName,
+            })
+            .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.DisplayName.Contains(input.Keyword));
+
+        return await GetPagedListAsync<SessionUnitDisplayName, SessionUnitDisplayName>(query, input);
+    }
 
     [HttpGet]
     public virtual async Task<SessionUnitOwnerDto> GetAsync(Guid id)
