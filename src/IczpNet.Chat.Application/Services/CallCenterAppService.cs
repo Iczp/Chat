@@ -1,6 +1,7 @@
 ﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.CallCenters;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -21,8 +22,14 @@ namespace IczpNet.Chat.Services
         }
 
         [HttpPost]
-        public Task TransferToAsync(Guid sessionId, long destinationId)
+        public async Task TransferToAsync(Guid sessionUnitId, long destinationId)
         {
+            var entity = await SessionUnitManager.GetAsync(sessionUnitId);
+
+            if (entity.Owner.ObjectType == ChatObjectTypeEnums.ShopWaiter)
+            {
+
+            }
             throw new NotImplementedException();
         }
     }

@@ -122,9 +122,11 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return SetEntityAsync(entity, x => x.SetTopping(isTopping));
     }
 
-    public virtual async Task<SessionUnit> SetReadedAsync(SessionUnit entity, long messageId, bool isForce = false)
+    public virtual async Task<SessionUnit> SetReadedAsync(SessionUnit entity, bool isForce = false, long? messageId = null)
     {
-        var message = await MessageRepository.GetAsync(messageId);
+        var lastMessageId = messageId ?? entity.LastMessageId;
+
+        var message = await MessageRepository.GetAsync(lastMessageId.Value);
 
         Assert.If(entity.SessionId != message.SessionId, $"Not in same session,messageId:{messageId}");
 
@@ -139,6 +141,11 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
             if (item == null)
             {
                 return false;
+            }
+
+            if (isForce || lastMessageId > item.ReadedMessageId.GetValueOrDefault())
+            {
+                item.ReadedMessageId = lastMessageId;
             }
 
             item.PublicBadge = 0;
@@ -402,6 +409,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
                 DestinationObjectType = x.DestinationObjectType,
                 IsPublic = x.IsPublic,
                 ServiceStatus = x.ServiceStatus,
+                ReadedMessageId = x.ReadedMessageId,
                 PublicBadge = x.PublicBadge,
                 PrivateBadge = x.PrivateBadge,
                 RemindAllCount = x.RemindAllCount,

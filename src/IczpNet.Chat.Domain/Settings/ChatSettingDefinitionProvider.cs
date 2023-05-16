@@ -12,9 +12,9 @@ public class ChatSettingDefinitionProvider : SettingDefinitionProvider
          * Use names from ChatSettings class.
          */
 
-        context.Add(
-            new SettingDefinition(ChatSettings.SessionRequestExpirationHours, "72", L(ChatSettings.SessionRequestExpirationHours))
-        );
+        context.Add(new SettingDefinition(ChatSettings.SessionRequestExpirationHours, "72", L(ChatSettings.SessionRequestExpirationHours)));
+        context.Add(new SettingDefinition(ChatSettings.MaxFollowingCount, "10", L(ChatSettings.MaxFollowingCount)));
+        context.Add(new SettingDefinition(ChatSettings.AllowRollbackHours, "24", L(ChatSettings.AllowRollbackHours)));
     }
 
     private static LocalizableString L(string name)

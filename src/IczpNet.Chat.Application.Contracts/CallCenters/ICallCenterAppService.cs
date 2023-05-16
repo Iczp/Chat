@@ -7,6 +7,6 @@ namespace IczpNet.Chat.CallCenters
     public interface ICallCenterAppService : IApplicationService
     {
 
-        Task TransferToAsync(Guid sessionId, long destinationId);
+        Task TransferToAsync(Guid sessionUnitId, long destinationId);
     }
 }

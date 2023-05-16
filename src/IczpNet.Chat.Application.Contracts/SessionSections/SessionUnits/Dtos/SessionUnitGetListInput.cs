@@ -17,8 +17,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
         [DefaultValue(null)]
         public virtual bool? IsTopping { get; set; }
 
-        [DefaultValue(false)]
-        public virtual bool IsRealStat { get; set; }
+        [DefaultValue(null)]
+        public virtual bool? IsRealStat { get; set; }
 
         /// <summary>
         /// 是否保存通讯录(群)
@@ -41,10 +41,10 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
         public virtual long? MaxMessageId { get; set; }
 
 
-        [DefaultValue(false)]
+        [DefaultValue(null)]
         public virtual bool? IsBadge { get; set; }
 
-        [DefaultValue(false)]
+        [DefaultValue(null)]
         public virtual bool? IsRemind { get; set; }
 
         public virtual bool? IsFollowing { get; set; }

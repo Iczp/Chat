@@ -1,11 +1,13 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.Settings;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.Settings;
 using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.Follows
@@ -18,13 +20,17 @@ namespace IczpNet.Chat.Follows
 
         protected IRepository<Follow> Repository { get; }
 
+        protected ISettingProvider SettingProvider { get; }
+
         public FollowManager(ISessionUnitManager sessionUnitManager,
             IUnitOfWorkManager unitOfWorkManager,
-            IRepository<Follow> repository)
+            IRepository<Follow> repository,
+            ISettingProvider settingProvider)
         {
             SessionUnitManager = sessionUnitManager;
             UnitOfWorkManager = unitOfWorkManager;
             Repository = repository;
+            SettingProvider = settingProvider;
         }
 
         public async Task<List<Follow>> GetFollowersAsync(Guid destinationSessionUnitId)
@@ -36,14 +42,26 @@ namespace IczpNet.Chat.Follows
 
         public async Task<List<Guid>> GetFollowerIdListAsync(Guid destinationSessionUnitId)
         {
+           
             return (await Repository.GetQueryableAsync())
                .Where(x => x.DestinationId == destinationSessionUnitId)
                .Select(x => x.OwnerId)
                .ToList();
         }
 
+        public async Task<int> GetFollowingCountAsync(Guid ownerId)
+        {
+            return await Repository.CountAsync(x => x.OwnerId == ownerId);
+        }
+
         public async Task<bool> CreateAsync(Guid ownerId, List<Guid> idList)
         {
+            var followingCount = await GetFollowingCountAsync(ownerId);
+
+            var maxFollowingCount = await SettingProvider.GetAsync<int>(ChatSettings.MaxFollowingCount);
+
+            Assert.If(followingCount > maxFollowingCount, $"Max following count:{maxFollowingCount}");
+
             var owner = await SessionUnitManager.GetAsync(ownerId);
 
             return await CreateAsync(owner, idList);

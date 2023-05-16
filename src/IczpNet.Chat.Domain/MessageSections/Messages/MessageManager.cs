@@ -9,6 +9,7 @@ using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.Options;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.Settings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -17,9 +18,9 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Volo.Abp.BackgroundJobs;
-using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.ObjectMapping;
+using Volo.Abp.Settings;
 using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.MessageSections.Messages
@@ -43,6 +44,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         protected ISessionRepository SessionRepository { get; }
         protected IFollowManager FollowManager { get; }
         protected IBackgroundJobManager BackgroundJobManager { get; }
+        protected ISettingProvider SettingProvider { get; }
 
         public MessageManager(
             IMessageRepository repository,
@@ -59,7 +61,8 @@ namespace IczpNet.Chat.MessageSections.Messages
             ISessionUnitRepository sessionUnitRepository,
             IFollowManager followManager,
             IBackgroundJobManager backgroundJobManager,
-            ISessionRepository sessionRepository)
+            ISessionRepository sessionRepository,
+            ISettingProvider settingProvider)
         {
             Repository = repository;
             ChatObjectResolver = messageChatObjectResolver;
@@ -76,6 +79,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             FollowManager = followManager;
             BackgroundJobManager = backgroundJobManager;
             SessionRepository = sessionRepository;
+            SettingProvider = settingProvider;
         }
 
         //public virtual async Task<Message> CreateMessageAsync(IChatObject sender, IChatObject receiver, Func<Message, Task<IMessageContentEntity>> func)
@@ -340,7 +344,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         public virtual async Task<Dictionary<string, long>> RollbackMessageAsync(Message message)
         {
-            int HOURS = Config.AllowRollbackHours;
+            int allowRollbackHours = await SettingProvider.GetAsync<int>(ChatSettings.AllowRollbackHours);
 
             var nowTime = Clock.Now;
 
@@ -348,7 +352,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             //Assert.If(message.Sender != LoginInfo.UserId, $"无权限撤回别人消息！");
 
-            Assert.If(nowTime > message.CreationTime.AddHours(HOURS), $"超过{HOURS}小时的消息不能被撤回！");
+            Assert.If(nowTime > message.CreationTime.AddHours(allowRollbackHours), $"超过{allowRollbackHours}小时的消息不能被撤回！");
 
             message.Rollback(nowTime);
 

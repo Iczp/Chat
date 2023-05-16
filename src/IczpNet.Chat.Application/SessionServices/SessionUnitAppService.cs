@@ -11,6 +11,7 @@ using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using IczpNet.Chat.Specifications;
+using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -121,7 +122,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
                   .ThenByDescending(x => x.LastMessageId),
             async entities =>
             {
-                if (input.IsRealStat)
+                if (input.IsRealStat == true)
                 {
                     var minMessageId = input.MinMessageId.GetValueOrDefault();
 
@@ -373,13 +374,13 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     }
 
     [HttpPost]
-    public virtual async Task<SessionUnitOwnerDto> SetReadedAsync(Guid id, long messageId, bool isForce = false)
+    public virtual async Task<SessionUnitOwnerDto> SetReadedAsync(Guid id, bool isForce = false, long? messageId = null)
     {
         await CheckPolicyAsync(SetReadedPolicyName);
 
         var entity = await GetEntityAsync(id);
 
-        await SessionUnitManager.SetReadedAsync(entity, messageId, isForce);
+        await SessionUnitManager.SetReadedAsync(entity, isForce, messageId);
 
         return await MapToDtoAsync(entity);
     }

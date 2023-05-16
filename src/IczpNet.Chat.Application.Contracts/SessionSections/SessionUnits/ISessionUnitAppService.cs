@@ -13,8 +13,6 @@ public interface ISessionUnitAppService
 {
     Task<Guid> FindIdAsync(long ownerId, long destinactionId);
 
-    Task<PagedResultDto<SessionUnitCacheItem>> GetListCachesAsync(SessionUnitCacheGetListInput input);
-
     Task<PagedResultDto<SessionUnitOwnerDto>> GetListAsync(SessionUnitGetListInput input);
 
     Task<PagedResultDto<SessionUnitOwnerDto>> GetListByLinqAsync(SessionUnitGetListInput input);
@@ -41,7 +39,7 @@ public interface ISessionUnitAppService
 
     Task<SessionUnitOwnerDto> SetToppingAsync(Guid id, bool isTopping);
 
-    Task<SessionUnitOwnerDto> SetReadedAsync(Guid id, long messageId, bool isForce);
+    Task<SessionUnitOwnerDto> SetReadedAsync(Guid id, bool isForce = false, long? messageId = null);
 
     Task<SessionUnitOwnerDto> SetImmersedAsync(Guid id, bool isImmersed);
 
@@ -68,4 +66,6 @@ public interface ISessionUnitAppService
     Task<PagedResultDto<SessionUnitDestinationDto>> GetSessionMemberListAsync(Guid id, SessionUnitGetSessionMemberListInput input);
 
     //Task<SessionUnitOwnerDto> GetSessionMemberAsync(Guid sessionId, Guid ownerId);
+
+    Task<PagedResultDto<SessionUnitCacheItem>> GetListCachesAsync(SessionUnitCacheGetListInput input);
 }
