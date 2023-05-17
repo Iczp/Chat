@@ -5,6 +5,7 @@ namespace IczpNet.Chat.Enums
     /// <summary>
     /// 删除渠道
     /// </summary>
+    [Description("删除渠道")]
     public enum KillTypes
     {
         /// <summary>

@@ -5,6 +5,7 @@ namespace IczpNet.Chat.Enums
     /// <summary>
     /// 头像的显示方式
     /// </summary>
+    [Description("头像的显示方式")]
     public enum PortraitDisplayModes
     {
         /// <summary>

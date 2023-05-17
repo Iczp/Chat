@@ -5,6 +5,7 @@ namespace IczpNet.Chat.Enums
     /// <summary>
     /// 加入渠道
     /// </summary>
+    [Description("加入渠道")]
     public enum JoinWays
     {
         /// <summary>

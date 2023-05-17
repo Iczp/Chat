@@ -1,16 +1,19 @@
 ﻿using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Volo.Abp;
-using Volo.Abp.ObjectMapping;
+using IczpNet.AbpCommons.Extensions;
+using Volo.Abp.Domain.Entities;
+using IczpNet.Chat.Enums.Dtos;
 
 namespace IczpNet.Chat.MessageServices
 {
@@ -42,8 +45,24 @@ namespace IczpNet.Chat.MessageServices
             SessionUnitManager = sessionUnitManager;
         }
 
-        [HttpPost]
-        [RemoteService(false)]
+        [HttpGet]
+        [AllowAnonymous]
+        public Task<List<EnumDto>> GetDisabledForwardListAsync()
+        {
+            var result = MessageExtentions.DisabledForwardList
+                .Select(x => new EnumDto()
+                {
+                    Name = Enum.GetName(x),
+                    Description = x.GetDescription(),
+                    Value = (int)x
+                })
+                .ToList();
+
+            return Task.FromResult(result);
+        }
+
+        //[HttpPost]
+        //[RemoteService(false)]
         //public async Task<List<long>> ForwardMessageAsync(long sourceMessageId, long senderId, List<long> receiverIdList)
         //{
         //    var messageList = await MessageManager.ForwardMessageAsync(sourceMessageId, senderId, receiverIdList);
@@ -144,5 +163,7 @@ namespace IczpNet.Chat.MessageServices
 
             return ObjectMapper.Map<List<Message>, List<MessageDto>>(messageList);
         }
+
+
     }
 }

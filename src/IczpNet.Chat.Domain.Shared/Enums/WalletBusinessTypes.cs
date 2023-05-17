@@ -2,7 +2,7 @@
 
 namespace IczpNet.Chat.Enums
 {
-
+    [Description("钱包业务类型")]
     public enum WalletBusinessTypes : int
     {
         /// <summary>

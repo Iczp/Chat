@@ -5,6 +5,7 @@ namespace IczpNet.Chat.Enums
     /// <summary>
     /// 设置加群、加好友、加聊天广场验证方式
     /// </summary>
+    [Description("验证方式")]
     public enum VerificationMethods
     {
         /// <summary>

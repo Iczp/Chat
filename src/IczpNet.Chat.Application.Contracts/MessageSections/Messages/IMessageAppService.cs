@@ -3,11 +3,15 @@ using System.Collections.Generic;
 using System;
 using System.Threading.Tasks;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
+using IczpNet.Chat.Enums.Dtos;
 
 namespace IczpNet.Chat.MessageSections.Messages
 {
     public interface IMessageAppService
     {
+
+
+        Task<List<EnumDto>> GetDisabledForwardListAsync();
 
         //Task<List<long>> ForwardMessageAsync(long sourceMessageId, long senderId, List<long> receiverIdList);
 

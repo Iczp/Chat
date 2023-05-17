@@ -5,6 +5,7 @@ namespace IczpNet.Chat.Enums
     /// <summary>
     /// 客服状态
     /// </summary>
+    [Description("客服状态")]
     public enum ServiceStatus
     {
         /// <summary>

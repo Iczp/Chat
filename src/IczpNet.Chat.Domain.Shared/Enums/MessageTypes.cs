@@ -2,6 +2,7 @@
 
 namespace IczpNet.Chat.Enums
 {
+    [Description("消息类型")]
     public enum MessageTypes
     {
         /// <summary>  

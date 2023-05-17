@@ -5,6 +5,7 @@ namespace IczpNet.Chat.Enums
     /// <summary>
     /// 提醒器类型
     /// </summary>
+    [Description("提醒器类型")]
     public enum ReminderTypes
     {
         /// <summary>

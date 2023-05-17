@@ -6,6 +6,7 @@ namespace IczpNet.Chat.Enums
     /// 文章类型,
     /// 0:常规
     /// </summary>
+    [Description("文章类型")]
     public enum ArticleTypes : int
     {
         /// <summary>

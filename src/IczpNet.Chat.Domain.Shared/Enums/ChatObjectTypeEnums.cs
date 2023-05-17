@@ -2,6 +2,7 @@
 
 namespace IczpNet.Chat.Enums
 {
+    [Description("聊天对象类型")]
     public enum ChatObjectTypeEnums
     {
         [Description("匿名")]

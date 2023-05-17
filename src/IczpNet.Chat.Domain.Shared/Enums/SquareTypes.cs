@@ -2,6 +2,7 @@
 
 namespace IczpNet.Chat.Enums
 {
+    [Description("广场类型")]
     public enum SquareTypes
     {
         /// <summary>

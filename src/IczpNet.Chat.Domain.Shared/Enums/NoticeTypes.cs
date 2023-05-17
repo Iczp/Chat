@@ -8,6 +8,7 @@ namespace IczpNet.Chat.Enums
     /// 1:延时通知
     /// 2:规律性通知
     /// </summary>
+    [Description("通知类型")]
     public enum NoticeTypes : int
     {
         /// <summary>

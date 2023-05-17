@@ -5,6 +5,7 @@ namespace IczpNet.Chat.Enums
     /// <summary>
     /// 公众号事件
     /// </summary>
+    [Description("公众号事件")]
     public enum ActionEvents : int
     {
         /// <summary>

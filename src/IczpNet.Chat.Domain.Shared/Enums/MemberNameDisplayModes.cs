@@ -9,6 +9,7 @@ namespace IczpNet.Chat.Enums
     /// 2:Tasks任务群;
     /// 3:Course课程群;
     /// </summary>
+    [Description("群类型")]
     public enum MemberNameDisplayModes 
     {
         /// <summary>
