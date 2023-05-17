@@ -238,7 +238,7 @@ namespace IczpNet.Chat.MessageSections.Messages
                 return unitIdList;
             }
             //Guid.TryParse(message.Receiver, out Guid roomId);
-            var textContent = message.GetContent() as TextContent;
+            var textContent = message.GetContentEntity() as TextContent;
 
             var text = textContent.Text;
 
@@ -419,11 +419,13 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             Assert.If(currentSessionUnit.SessionId != sourceMessage.SessionId, $"The sender and message are not in the same session, messageSessionId:{sourceMessage.SessionId}", nameof(currentSessionUnit.SessionId));
 
-            var messageContent = sourceMessage.GetTypedContent();
+            var messageContent = sourceMessage.GetTypedContentEntity();
 
             Assert.NotNull(messageContent, $"MessageContent is null. Source message:{sourceMessage}");
 
             var messageList = new List<Message>();
+
+            var args = new List<(Guid, MessageInfo<object>)>();
 
             foreach (var targetSessionUnitId in targetSessionUnitIdList.Distinct())
             {
@@ -443,10 +445,19 @@ namespace IczpNet.Chat.MessageSections.Messages
                 });
                 messageList.Add(newMessage);
 
-                var output = ObjectMapper.Map<Message, MessageInfo<object>>(newMessage);
+                var output = ObjectMapper.Map<Message, MessageInfo<dynamic>>(newMessage);
 
-                await ChatPusher.ExecuteBySessionIdAsync(newMessage.SessionId.Value, output, null);
+                //var output = new MessageInfo<object>() { Id = newMessage.Id };
+
+                args.Add((newMessage.SessionId.Value, output));
             }
+
+            //push
+            foreach (var arg in args)
+            {
+                await ChatPusher.ExecuteBySessionIdAsync(arg.Item1, arg.Item2, null);
+            }
+
             return messageList;
         }
 

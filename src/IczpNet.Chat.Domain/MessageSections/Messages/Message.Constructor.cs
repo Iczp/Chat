@@ -120,5 +120,5 @@ public partial class Message
     public virtual bool? IsReaded => Current?.ReadedMessageId > Id;
 
     [NotMapped]
-    public virtual int? ReadedCount => ReadedRecorderList.AsQueryable().WhereIf(Current != null, x => x.SessionUnitId != Current.Id).Count();
+    public virtual int? ReadedCount => ReadedRecorderList?.AsQueryable().WhereIf(Current != null, x => x.SessionUnitId != Current.Id).Count();
 }

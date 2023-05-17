@@ -15,7 +15,7 @@ public partial class Message
     public virtual IList<OpenedRecorder> OpenedRecorderList { get; set; }
 
     [InverseProperty(nameof(ReadedRecorder.Message))]
-    public virtual IList<ReadedRecorder> ReadedRecorderList { get; set; }
+    public virtual IList<ReadedRecorder> ReadedRecorderList { get; set; }  = new List<ReadedRecorder>();
 
 
     [InverseProperty(nameof(Favorite.Message))]

@@ -68,19 +68,19 @@ public partial class Message
     [InverseProperty(nameof(HistoryMessage.Message))]
     public virtual IList<HistoryMessage> HistoryMessageList { get; set; }
 
-    public virtual dynamic GetContent()
+    public virtual dynamic GetContentEntity()
     {
         return this.GetMessageContent().ToDynamicList().FirstOrDefault();
     }
 
-    public virtual IMessageContentEntity GetTypedContent()
+    public virtual IMessageContentEntity GetTypedContentEntity()
     {
-        return (IMessageContentEntity)GetContent();
+        return (IMessageContentEntity)GetContentEntity();
     }
 
     public virtual object GetContentDto()
     {
-        var content = GetContent();
+        var content = GetContentEntity();
 
         var currentInstance = ProxyUtil.GetUnproxiedInstance(content);
 
