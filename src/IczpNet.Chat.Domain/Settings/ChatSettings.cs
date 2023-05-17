@@ -23,4 +23,8 @@ public static class ChatSettings
     /// </summary>
     public const string AllowRollbackHours = GroupName + ".AllowRollbackHours";
 
+    public const string MaxFavoriteSize = GroupName + ".MaxFavoriteSize";
+
+    public const string MaxFavoriteCount = GroupName + ".MaxFavoriteCount";
+
 }

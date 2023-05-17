@@ -49,8 +49,13 @@ namespace IczpNet.Chat.Favorites
         [HttpGet]
         public Task<long> GetSizeAsync(long ownerId)
         {
-
             return FavoriteManager.GetSizeAsync(ownerId);
+        }
+
+        [HttpGet]
+        public Task<int> GetCountAsync(long ownerId)
+        {
+            return FavoriteManager.GetCountAsync(ownerId);
         }
 
         [HttpPost]
@@ -70,6 +75,5 @@ namespace IczpNet.Chat.Favorites
         }
 
        
-
     }
 }

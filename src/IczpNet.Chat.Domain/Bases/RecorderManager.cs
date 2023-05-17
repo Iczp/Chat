@@ -1,6 +1,5 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.DataFilters;
-using IczpNet.Chat.Favorites;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;

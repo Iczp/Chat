@@ -15,6 +15,8 @@ public class ChatSettingDefinitionProvider : SettingDefinitionProvider
         context.Add(new SettingDefinition(ChatSettings.SessionRequestExpirationHours, "72", L(ChatSettings.SessionRequestExpirationHours)));
         context.Add(new SettingDefinition(ChatSettings.MaxFollowingCount, "10", L(ChatSettings.MaxFollowingCount)));
         context.Add(new SettingDefinition(ChatSettings.AllowRollbackHours, "24", L(ChatSettings.AllowRollbackHours)));
+        context.Add(new SettingDefinition(ChatSettings.MaxFavoriteSize, long.MaxValue.ToString(), L(ChatSettings.MaxFavoriteSize)));
+        context.Add(new SettingDefinition(ChatSettings.MaxFavoriteCount, long.MaxValue.ToString(), L(ChatSettings.MaxFavoriteCount)));
     }
 
     private static LocalizableString L(string name)

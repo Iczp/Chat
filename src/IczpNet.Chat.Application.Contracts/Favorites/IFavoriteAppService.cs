@@ -11,6 +11,8 @@ namespace IczpNet.Chat.Favorites
 
         Task<long> GetSizeAsync(long ownerId);
 
+        Task<int> GetCountAsync(long ownerId);
+
         Task<DateTime> CreateAsync(FavoriteCreateInput input);
 
         Task DeleteAsync(Guid sessionUnitId, long messageId);
