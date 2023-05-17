@@ -3,5 +3,7 @@
     public interface IMessageContentEntity
     {
         string GetBody();
+
+        long GetSize();
     }
 }

@@ -75,6 +75,11 @@ public partial class Message
         MessageType = messageType;
     }
 
+    public virtual void SetSize(long size)
+    {
+        Size = size;
+    }
+
     public void SetContentProvider(Type type)
     {
         Provider = ContentProviderAttribute.GetName(type);

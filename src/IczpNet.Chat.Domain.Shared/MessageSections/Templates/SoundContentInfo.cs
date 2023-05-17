@@ -25,5 +25,10 @@
         /// 语音时长（毫秒）
         /// </summary>
         public virtual int Time { get; set; }
+
+        /// <summary>
+        /// 语音文件大小
+        /// </summary>
+        public virtual long Size { get; set; }
     }
 }

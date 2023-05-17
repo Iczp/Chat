@@ -12,5 +12,7 @@ namespace IczpNet.Chat.MessageSections.Templates
         public virtual string Text { get; set; }
 
         public override string GetBody() => FormatString(Text);
+
+        public override long GetSize() => System.Text.Encoding.Default.GetByteCount(Text);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.Attributes;
 using IczpNet.Chat.Enums;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.MessageSections.Templates
@@ -9,6 +10,7 @@ namespace IczpNet.Chat.MessageSections.Templates
     [ContentOuput(typeof(LocationContentInfo))]
     public class LocationContent : MessageContentEntityBase
     {
+        public override long GetSize() => System.Text.Encoding.Default.GetByteCount(Provider + Name + Address + Image + Latitude + Longitude);
         /// <summary>
         /// AMap(高德地图)、baidu(百度地图)
         /// </summary>

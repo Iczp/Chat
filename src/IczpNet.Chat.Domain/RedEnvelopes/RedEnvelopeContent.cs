@@ -15,6 +15,8 @@ namespace IczpNet.Chat.RedEnvelopes
     [ContentOuput(typeof(RedEnvelopeContentOutput))]
     public class RedEnvelopeContent : MessageContentEntityBase, IChatOwner<long?>
     {
+        public override long GetSize() => 2;
+
         /// <summary>
         /// 创建人(发红包的人)
         /// </summary>

@@ -8,6 +8,7 @@ namespace IczpNet.Chat.MessageSections.Templates
     [ContentOuput(typeof(ImageContentInfo))]
     public class ImageContent : MessageContentEntityBase
     {
+        public override long GetSize() => Size ?? 0;
         /// <summary>
         /// 图片地址
         /// </summary>

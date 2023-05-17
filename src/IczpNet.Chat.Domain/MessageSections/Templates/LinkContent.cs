@@ -8,6 +8,8 @@ namespace IczpNet.Chat.MessageSections.Templates
     [ContentOuput(typeof(LinkContentInfo))]
     public class LinkContent : MessageContentEntityBase
     {
+
+        public override long GetSize() => System.Text.Encoding.Default.GetByteCount(Url + Title + Description + Image);
         /// <summary>
         /// Url
         /// </summary>

@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.Attributes;
 using IczpNet.Chat.Enums;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.MessageSections.Templates
@@ -8,6 +9,8 @@ namespace IczpNet.Chat.MessageSections.Templates
     //[ContentOuput(typeof(ArticleContentInfo))]
     public class ArticleContent : MessageContentEntityBase
     {
+        public override long GetSize() => System.Text.Encoding.Default.GetByteCount(EditorType + Title + Description + Content);
+
         /// <summary>
         /// 文章类型
         /// </summary>

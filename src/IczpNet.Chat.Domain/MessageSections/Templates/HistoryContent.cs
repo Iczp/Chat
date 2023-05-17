@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Drawing;
 
 namespace IczpNet.Chat.MessageSections.Templates
 {
@@ -11,6 +12,7 @@ namespace IczpNet.Chat.MessageSections.Templates
     [ContentOuput(typeof(HistoryContentOutput))]
     public class HistoryContent : MessageContentEntityBase
     {
+        public override long GetSize() => 1;
         /// <summary>
         /// 文本内容
         /// </summary>

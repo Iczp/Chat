@@ -38,5 +38,10 @@ namespace IczpNet.Chat.MessageSections
         {
             return text.Length > 20 ? $"{text[..20]}…" : text;
         }
+
+        public virtual long GetSize()
+        {
+            return 0;
+        }
     }
 }

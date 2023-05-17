@@ -40,6 +40,8 @@ namespace IczpNet.Chat.MessageSections
 
             message.SetMessageType(messageType);
 
+            message.SetSize(messageContent.GetSize());
+
             var list = message.GetMessageContent();
 
             var genericType = list.GetType().GetGenericArguments()[0];

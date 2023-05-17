@@ -12,6 +12,9 @@ namespace IczpNet.Chat.MessageSections.Templates
     [ContentOuput(typeof(ContactsContentInfo))]
     public class ContactsContent : MessageContentEntityBase, IChatOwner<long?>
     {
+
+        public override long GetSize() =>  3;
+
         public virtual long DestinationId { get; protected set; }
 
         [ForeignKey(nameof(DestinationId))]

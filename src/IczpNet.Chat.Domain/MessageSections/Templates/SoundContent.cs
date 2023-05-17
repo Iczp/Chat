@@ -1,6 +1,7 @@
 ﻿using IczpNet.Chat.Attributes;
 using IczpNet.Chat.Enums;
 using System.ComponentModel.DataAnnotations;
+using System.Net;
 
 namespace IczpNet.Chat.MessageSections.Templates
 {
@@ -8,6 +9,7 @@ namespace IczpNet.Chat.MessageSections.Templates
     [ContentOuput(typeof(SoundContentInfo))]
     public class SoundContent : MessageContentEntityBase
     {
+        public override long GetSize() => Size ?? 0;
         /// <summary>
         /// 语音地址
         /// </summary>
@@ -30,5 +32,7 @@ namespace IczpNet.Chat.MessageSections.Templates
         /// </summary>
         [Required(ErrorMessage = "语音时长（毫秒）必填")]
         public virtual int Time { get; set; }
+
+        public virtual long? Size { get; set; }
     }
 }

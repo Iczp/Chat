@@ -1,6 +1,7 @@
 ﻿using IczpNet.Chat.Attributes;
 using IczpNet.Chat.Enums;
 using System.ComponentModel.DataAnnotations;
+using System.Drawing;
 
 namespace IczpNet.Chat.MessageSections.Templates
 {
@@ -8,6 +9,7 @@ namespace IczpNet.Chat.MessageSections.Templates
     [ContentOuput(typeof(FileContentInfo))]
     public class FileContent : MessageContentEntityBase
     {
+        public override long GetSize() => ContentLength ?? 0;
         /// <summary>
         /// 文件地址
         /// </summary>

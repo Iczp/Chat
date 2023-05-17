@@ -8,6 +8,8 @@ namespace IczpNet.Chat.MessageSections.Templates
     [ContentOuput(typeof(CmdContentInfo))]
     public class CmdContent : MessageContentEntityBase
     {
+        public override long GetSize() => System.Text.Encoding.Default.GetByteCount(Text + Url + Cmd);
+
         [StringLength(20)]
         public virtual string Cmd { get; set; }
 
