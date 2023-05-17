@@ -16,8 +16,10 @@ namespace IczpNet.Chat.Enums
     {
         protected static List<EnumTypeDto> EnumItems;
 
-        public Task<PagedResultDto<EnumTypeDto>> GetAllAsync(EnumGetListInput input)
+        public async Task<PagedResultDto<EnumTypeDto>> GetAllAsync(EnumGetListInput input)
         {
+            await Task.CompletedTask;
+
             EnumItems ??= typeof(ChatDomainSharedModule).Assembly.GetExportedTypes()
                 .Where(x => x.IsEnum)
                 .Select(x => new EnumTypeDto()
@@ -28,18 +30,18 @@ namespace IczpNet.Chat.Enums
                 })
                 .ToList();
 
-            return Task.FromResult(new PagedResultDto<EnumTypeDto>(EnumItems.Count, EnumItems));
+            return new PagedResultDto<EnumTypeDto>(EnumItems.Count, EnumItems);
         }
 
-        public Task<List<EnumDto>> GetListByTypeAsync(string type)
+        public async Task<List<EnumDto>> GetListByTypeAsync(string type)
         {
+            await Task.CompletedTask;
+
             var _type = typeof(ChatDomainSharedModule).Assembly.GetType(type);
 
             Assert.NotNull(_type, $"Not found:{type}");
 
-            var names = Enum.GetNames(_type);
-
-            var result = names
+            return Enum.GetNames(_type)
                .Select(x => new EnumDto()
                {
                    Name = x,
@@ -47,8 +49,6 @@ namespace IczpNet.Chat.Enums
                    Description = ((Enum)Enum.Parse(_type, x)).GetDescription()
                })
                .ToList();
-
-            return Task.FromResult(result);
         }
     }
 }
