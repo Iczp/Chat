@@ -40,6 +40,8 @@ namespace IczpNet.Chat.Favorites
             var query = (await Repository.GetQueryableAsync())
                 .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
                 .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
+                .WhereIf(input.MinSize.HasValue, x => x.Size >= input.MinSize)
+                .WhereIf(input.MaxSize.HasValue, x => x.Size < input.MaxSize)
                 ;
             return await GetPagedListAsync<Favorite, FavoriteDto>(query, input);
         }
