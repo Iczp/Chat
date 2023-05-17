@@ -1,4 +1,5 @@
 ﻿using System;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
 
 namespace IczpNet.Chat.Favorites.Dtos
@@ -6,6 +7,10 @@ namespace IczpNet.Chat.Favorites.Dtos
     public class FavoriteDto
     {
         //public virtual long MessageId { get; set; }
+
+        public virtual long Size { get; set; }
+
+        public virtual MessageTypes MessageType { get; set; }
 
         public virtual MessageFavoriteDto Message { get; set; }
 

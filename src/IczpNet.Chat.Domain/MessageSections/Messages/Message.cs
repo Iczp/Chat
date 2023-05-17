@@ -101,10 +101,6 @@ public partial class Message : BaseEntity<long>, ISessionId
     [ForeignKey(nameof(ReceiverId))]
     public virtual ChatObject Receiver { get; protected set; }
 
-
-
-
-
-
+    public virtual long Size { get; protected set; }
 
 }

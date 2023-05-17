@@ -22,7 +22,7 @@ namespace IczpNet.Chat.Favorites
 
         protected override Favorite CreateEntity(SessionUnit sessionUnit, Message message, string deviceId)
         {
-            return new Favorite(sessionUnit, message.Id, deviceId);
+            return new Favorite(sessionUnit, message, deviceId);
         }
     }
 }
