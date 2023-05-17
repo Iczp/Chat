@@ -48,10 +48,14 @@
     "Chat.MessageSenderPermission.SendRedpackage": "发【红包】消息",
     "Chat.MessageSenderPermission.SendHistory": "发【历史】消息",
     "Chat.MessageSenderPermission.Rollback": "撤回消息",
-    "Chat.MessageSenderPermission.Forward": "转发消息"
+    "Chat.MessageSenderPermission.Forward": "转发消息",
 
 
-
+    "ChatSettings:SessionRequestExpirationHours": "好友验证有效期(小时)",
+    "ChatSettings:MaxFollowingCount": "会话最大关注数量",
+    "ChatSettings:AllowRollbackHours": "超过{HOURS}小时的消息不能被撤回,默认 24H",
+    "ChatSettings:MaxFavoriteSize": "最大收藏大小",
+    "ChatSettings:MaxFavoriteCount": "最大收藏数量"
 
   }
 }

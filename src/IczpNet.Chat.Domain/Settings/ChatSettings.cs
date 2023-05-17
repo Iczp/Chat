@@ -11,20 +11,26 @@ public static class ChatSettings
     /// <summary>
     /// 好友验证有效期
     /// </summary>
-    public const string SessionRequestExpirationHours = GroupName + ".SessionRequest.ExpirationHours";
+    public const string SessionRequestExpirationHours = GroupName + "Settings:SessionRequestExpirationHours";
 
     /// <summary>
     /// 会话最大关注数量
     /// </summary>
-    public const string MaxFollowingCount = GroupName + ".MaxFollowingCount";
+    public const string MaxFollowingCount = GroupName + "Settings:MaxFollowingCount";
 
     /// <summary>
     ///  超过{HOURS}小时的消息不能被撤回,默认 24H
     /// </summary>
-    public const string AllowRollbackHours = GroupName + ".AllowRollbackHours";
+    public const string AllowRollbackHours = GroupName + "Settings:AllowRollbackHours";
 
-    public const string MaxFavoriteSize = GroupName + ".MaxFavoriteSize";
+    /// <summary>
+    /// 最大收藏大小
+    /// </summary>
+    public const string MaxFavoriteSize = GroupName + "Settings:MaxFavoriteSize";
 
-    public const string MaxFavoriteCount = GroupName + ".MaxFavoriteCount";
+    /// <summary>
+    /// 最大收藏数量
+    /// </summary>
+    public const string MaxFavoriteCount = GroupName + "Settings:MaxFavoriteCount";
 
 }
