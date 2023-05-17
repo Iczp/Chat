@@ -39,17 +39,16 @@ and Id='719D7227-030A-326A-BCE9-3A0B0CF571FE'
 declare @aa nvarchar(50) 
 
 DECLARE  @keyword NVARCHAR(50)
-set @keyword  = '王兰%'
+set @keyword  = '%王兰%'
+
+
 select top 1000 * from [dbo].[Chat_SessionUnit] 
 where 1=1
 --and  Id='719D7227-030A-326A-BCE9-3A0B0CF571FE'
 --and ([OwnerName] like @keyword Or [OwnerNameSpellingAbbreviation] like @keyword)
-and [OwnerId] in (
-	select [Id] from [dbo].[Chat_ChatObject] c
-	where [Name]  like @keyword
-)
+and [OwnerId] in (456)
 ORDER by [LastMessageId] desc
 
 
 
-
+SELECT CHARINDEX('王兰', '王兰1')

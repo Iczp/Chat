@@ -1,38 +1,46 @@
 ﻿using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
+using System.Collections.Generic;
 
 namespace IczpNet.Chat.TextTemplates
 {
     public class SessionUnitTextTemplate : TextTemplate
     {
         /// <summary>
-        /// defaultValue:<![CDATA[<a uid="{SessionUnitId}">{ChatObjectName}</a>]]>
+        /// defaultValue:<![CDATA[<a uid="{SessionUnitIds}">{ChatObjectName}</a>]]>
         /// </summary>
-        public static string Template { get; set; } = "<a uid=\"{SessionUnitId}\">{ChatObjectName}</a>";
+        public static string Template { get; set; } = "<a uid=\"{SessionUnitIds}\">{ChatObjectName}</a>";
 
         public override string Text { get; protected set; } = Template;
 
-        public Guid SessionUnitId { get; set; }
+        public List<Guid> SessionUnitIds { get; set; }
 
         public string ChatObjectName { get; set; }
 
+        public SessionUnitTextTemplate(List<Guid> sessionUnitIds, string chatObjectName)
+        {
+            SessionUnitIds = sessionUnitIds;
+            ChatObjectName = chatObjectName;
+            SetData();
+        }
+
         public SessionUnitTextTemplate(Guid sessionUnitId, string chatObjectName)
         {
-            SessionUnitId = sessionUnitId;
+            SessionUnitIds = new List<Guid>() { sessionUnitId };
             ChatObjectName = chatObjectName;
             SetData();
         }
 
         public SessionUnitTextTemplate(SessionUnit sessionUnit)
         {
-            SessionUnitId = sessionUnit.Id;
+            SessionUnitIds = new List<Guid>() { sessionUnit.Id };
             ChatObjectName = !sessionUnit.MemberName.IsNullOrWhiteSpace() ? sessionUnit.MemberName : sessionUnit.Owner?.Name;
             SetData();
         }
 
         private void SetData()
         {
-            Data[nameof(SessionUnitId)] = SessionUnitId;
+            Data[nameof(SessionUnitIds)] = SessionUnitIds.JoinAsString(",");
             Data[nameof(ChatObjectName)] = ChatObjectName;
         }
 

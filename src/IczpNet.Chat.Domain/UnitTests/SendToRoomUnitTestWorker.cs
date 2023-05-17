@@ -1,4 +1,6 @@
 ﻿using AutoMapper.Internal;
+using IczpNet.Chat.DataFilters;
+using IczpNet.Chat.Favorites;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
@@ -35,6 +37,7 @@ namespace IczpNet.Chat.UnitTests
 
         protected ISessionUnitRepository SessionUnitRepository { get; }
         protected IFollowManager FollowManager { get; }
+        protected IFavoriteManager FavoriteManager { get; }
 
 
         public SendToRoomUnitTestWorker(AbpAsyncTimer timer,
@@ -43,7 +46,8 @@ namespace IczpNet.Chat.UnitTests
             IMessageSender messageSender,
             IRoomManager roomManager,
             ISessionUnitManager sessionUnitManager,
-            IFollowManager followManager) : base(timer, serviceScopeFactory)
+            IFollowManager followManager,
+            IFavoriteManager favoriteManager) : base(timer, serviceScopeFactory)
         {
             Timer.Period = 500;
             SessionUnitRepository = sessionUnitRepository;
@@ -51,6 +55,7 @@ namespace IczpNet.Chat.UnitTests
             RoomManager = roomManager;
             SessionUnitManager = sessionUnitManager;
             FollowManager = followManager;
+            FavoriteManager = favoriteManager;
         }
 
         [UnitOfWork]
@@ -71,6 +76,8 @@ namespace IczpNet.Chat.UnitTests
             var sessionunit = await SessionUnitRepository.GetAsync(sessionunitId);
 
             Logger.LogInformation($"sessionunit: id:{sessionunit?.Id},name:{sessionunit?.Owner?.Name}");
+
+
 
             // Following
             if (sessionunit.OwnerFollowList.Count < 3)
@@ -98,7 +105,7 @@ namespace IczpNet.Chat.UnitTests
                 text = $"@陈忠培 {text}";
             }
 
-            await MessageSender.SendTextAsync(sessionunit, new MessageSendInput<TextContentInfo>()
+            var sendResult = await MessageSender.SendTextAsync(sessionunit, new MessageSendInput<TextContentInfo>()
             {
                 Content = new TextContentInfo()
                 {
@@ -106,10 +113,18 @@ namespace IczpNet.Chat.UnitTests
                 },
                 RemindList = remindList
             });
+            Logger.LogInformation($"SendText: {text}");
+
+            //Favorite
+            var favoriteSessionunit = await SessionUnitRepository.GetAsync(items[new Random().Next(0, items.Count - 1)]);
+
+            var favorite = await FavoriteManager.CreateIfNotContainsAsync(favoriteSessionunit, sendResult.Id, "");
+
+            Logger.LogInformation($"Favorite messageId:{favorite.MessageId},sessionUnitId:{favorite.SessionUnitId}");
+
             stopWatch.Stop();
 
-            Logger.LogInformation($"SendText: {text},stopWatch:{stopWatch.ElapsedMilliseconds}");
-
+            Logger.LogInformation($"SendToRoomUnitTestWorker stopWatch:{stopWatch.ElapsedMilliseconds}");
         }
 
         protected async Task<List<Guid>> GetSessionIdListAsync(long roomId)
