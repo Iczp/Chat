@@ -7,5 +7,7 @@ namespace IczpNet.Chat.Favorites
     public interface IFavoriteManager : IRecorderManager<Favorite>
     {
         Task DeleteAsync(Guid sessionUnitId, long messageId);
+
+        Task<long> GetSizeAsync(long ownerId);
     }
 }

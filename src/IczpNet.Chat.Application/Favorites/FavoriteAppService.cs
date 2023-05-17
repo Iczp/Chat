@@ -46,6 +46,13 @@ namespace IczpNet.Chat.Favorites
             return await GetPagedListAsync<Favorite, FavoriteDto>(query, input);
         }
 
+        [HttpGet]
+        public Task<long> GetSizeAsync(long ownerId)
+        {
+
+            return FavoriteManager.GetSizeAsync(ownerId);
+        }
+
         [HttpPost]
         public async Task<DateTime> CreateAsync(FavoriteCreateInput input)
         {
@@ -61,5 +68,8 @@ namespace IczpNet.Chat.Favorites
         {
             return FavoriteManager.DeleteAsync(sessionUnitId, messageId);
         }
+
+       
+
     }
 }

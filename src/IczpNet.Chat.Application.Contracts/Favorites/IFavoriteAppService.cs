@@ -9,6 +9,8 @@ namespace IczpNet.Chat.Favorites
     {
         Task<PagedResultDto<FavoriteDto>> GetListAsync(FavoriteGetListInput input);
 
+        Task<long> GetSizeAsync(long ownerId);
+
         Task<DateTime> CreateAsync(FavoriteCreateInput input);
 
         Task DeleteAsync(Guid sessionUnitId, long messageId);
