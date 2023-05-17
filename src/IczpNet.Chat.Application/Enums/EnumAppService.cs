@@ -30,7 +30,11 @@ namespace IczpNet.Chat.Enums
                 })
                 .ToList();
 
-            return new PagedResultDto<EnumTypeDto>(EnumItems.Count, EnumItems);
+            //return new PagedResultDto<EnumTypeDto>(EnumItems.Count, EnumItems);
+
+            var query = EnumItems.AsQueryable();
+
+            return await GetPagedListAsync<EnumTypeDto, EnumTypeDto>(query, input);
         }
 
         public async Task<List<EnumDto>> GetListByTypeAsync(string type)
