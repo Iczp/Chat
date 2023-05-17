@@ -103,4 +103,6 @@ public partial class Message : BaseEntity<long>, ISessionId
 
     public virtual long Size { get; protected set; }
 
+    [NotMapped]
+    public virtual bool IsDisabledForward => this.IsDisabledForward();
 }

@@ -5,7 +5,6 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq.Dynamic.Core;
 
 namespace IczpNet.Chat.MessageSections
 {
@@ -26,7 +25,7 @@ namespace IczpNet.Chat.MessageSections
         /// </summary>
         /// <param name="messageType"></param>
         /// <returns></returns>
-        public static bool IsDisabledForward(this MessageTypes messageType) => DisabledForwardList.Contains(messageType);
+        public static bool IsDisabledForward(this Message message) => DisabledForwardList.Contains(message.MessageType);
 
         public static void SetMessageContent(this Message message, IMessageContentEntity messageContent)
         {

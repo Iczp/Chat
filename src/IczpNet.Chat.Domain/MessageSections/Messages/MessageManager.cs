@@ -415,7 +415,9 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             Assert.If(sourceMessage.IsRollbacked || sourceMessage.RollbackTime != null, $"message already rollback：{sourceMessageId}", nameof(currentSessionUnit.IsEnabled));
 
-            Assert.If(sourceMessage.IsPrivate, $"Private messages cannot be forwarded");
+            Assert.If(sourceMessage.IsDisabledForward, $"MessageType:'{sourceMessage.MessageType}' is disabled forward");
+
+            Assert.If(sourceMessage.IsPrivate, $"Private messages cannot be forward");
 
             Assert.If(currentSessionUnit.SessionId != sourceMessage.SessionId, $"The sender and message are not in the same session, messageSessionId:{sourceMessage.SessionId}", nameof(currentSessionUnit.SessionId));
 
