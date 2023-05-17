@@ -40,8 +40,4 @@
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="SessionSections\OpenedRecordes\Dtos\" />
-  </ItemGroup>
-
 </Project>

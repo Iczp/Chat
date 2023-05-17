@@ -28,6 +28,12 @@ public class MessageSectionApplicationAutoMapperProfile : Profile
         CreateMap<Message, MessageDetailDto>()
             //.ForMember(x => x.MemberCount, o => o.MapFrom(x => x.GetMemberCount()))
             ;
+
+        CreateMap<Message, MessageFavoriteDto>()
+            .ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()))
+            .MaxDepth(1)
+           ;
+
         CreateMap<MessageCreateInput, Message>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
         CreateMap<MessageUpdateInput, Message>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
     }

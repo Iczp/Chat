@@ -19,8 +19,8 @@ namespace IczpNet.Chat.ReadedRecorders
         protected ISessionUnitManager SessionUnitManager { get; }
         protected IChatObjectManager ChatObjectManager { get; }
         public ReadedRecorderAppService(
-            IReadedRecorderManager readedRecorderManager, 
-            ISessionUnitManager sessionUnitManager, 
+            IReadedRecorderManager readedRecorderManager,
+            ISessionUnitManager sessionUnitManager,
             IChatObjectManager chatObjectManager)
         {
             ReadedRecorderManager = readedRecorderManager;
@@ -38,8 +38,8 @@ namespace IczpNet.Chat.ReadedRecorders
         public async Task<PagedResultDto<SessionUnitDestinationDto>> GetListByMessageIdAsync(long messageId, GetListByMessageIdInput input)
         {
             var query = input.IsReaded
-                ? await ReadedRecorderManager.QueryReadedAsync(messageId)
-                : await ReadedRecorderManager.QueryUnreadedAsync(messageId);
+                ? await ReadedRecorderManager.QueryRecordedAsync(messageId)
+                : await ReadedRecorderManager.QueryUnrecordedAsync(messageId);
 
             query = query.WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordOwnerSessionUnitSpecification(input.Keyword, await ChatObjectManager.QueryByKeywordAsync(input.Keyword)));
 
@@ -51,9 +51,11 @@ namespace IczpNet.Chat.ReadedRecorders
         {
             await CheckPolicyAsync(SetReadedManyPolicyName);
 
-            var entity = await SessionUnitManager.GetAsync(input.SessunitUnitId);
+            var sessionUnit = await SessionUnitManager.GetAsync(input.SessunitUnitId);
 
-            return await ReadedRecorderManager.SetReadedManyAsync(entity, input.MessageIdList, input.DeviceId);
+            var entities = await ReadedRecorderManager.CreateManyAsync(sessionUnit, input.MessageIdList, input.DeviceId);
+
+            return entities.Count;
         }
     }
 }

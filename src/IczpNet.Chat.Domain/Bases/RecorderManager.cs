@@ -1,6 +1,9 @@
-﻿using IczpNet.Chat.DataFilters;
+﻿using IczpNet.AbpCommons;
+using IczpNet.Chat.DataFilters;
+using IczpNet.Chat.Favorites;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,7 +13,7 @@ using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.Bases
 {
-    public abstract class RecorderManager<TEntity> : DomainService, IRecorderManager where TEntity : class, IEntity, IMessageId, ISessionUnitId
+    public abstract class RecorderManager<TEntity> : DomainService, IRecorderManager<TEntity> where TEntity : class, IEntity, IMessageId, ISessionUnitId
     {
         protected IRepository<TEntity> Repository { get; }
         protected IMessageRepository MessageRepository => LazyServiceProvider.LazyGetService<IMessageRepository>();
@@ -20,6 +23,8 @@ namespace IczpNet.Chat.Bases
         {
             Repository = repository;
         }
+
+        protected abstract TEntity CreateEntity(SessionUnit sessionUnit, Message message, string deviceId);
 
         /// <inheritdoc/>
         public virtual async Task<Dictionary<long, int>> GetCountsAsync(List<long> messageIdList)
@@ -39,7 +44,7 @@ namespace IczpNet.Chat.Bases
         }
 
         /// <inheritdoc/>
-        public virtual async Task<IQueryable<SessionUnit>> QueryReadedAsync(long messageId)
+        public virtual async Task<IQueryable<SessionUnit>> QueryRecordedAsync(long messageId)
         {
             var readedSessionUnitIdList = (await Repository.GetQueryableAsync())
                 .Where(x => x.MessageId == messageId)
@@ -50,7 +55,7 @@ namespace IczpNet.Chat.Bases
         }
 
         /// <inheritdoc/>
-        public virtual async Task<IQueryable<SessionUnit>> QueryUnreadedAsync(long messageId)
+        public virtual async Task<IQueryable<SessionUnit>> QueryUnrecordedAsync(long messageId)
         {
             var message = await MessageRepository.GetAsync(messageId);
 
@@ -60,8 +65,7 @@ namespace IczpNet.Chat.Bases
 
             var query = (await SessionUnitRepository.GetQueryableAsync())
                 .Where(x => x.SessionId == message.SessionId)
-                .Where(x => x.IsEnabled && x.IsPublic && !x.IsKilled)
-                .Where(new MessageSessionUnitSpecification(message).ToExpression());
+                .Where(SessionUnit.GetActivePredicate(message.CreationTime));
 
             if (message.IsPrivate)
             {
@@ -69,6 +73,61 @@ namespace IczpNet.Chat.Bases
             }
 
             return query.Where(x => !readedSessionUnitIdList.Contains(x.Id));
+        }
+
+        public virtual async Task<TEntity> CreateIfNotContainsAsync(SessionUnit sessionUnit, long messageId, string deviceId)
+        {
+            var message = await MessageRepository.GetAsync(messageId);
+
+            Assert.If(sessionUnit.SessionId != message.SessionId, $"Not in same session,messageId:{messageId}");
+
+            var recorder = await Repository.FindAsync(x => x.SessionUnitId == sessionUnit.Id && x.MessageId == messageId);
+
+            if (recorder == null)
+            {
+                return await Repository.InsertAsync(CreateEntity(sessionUnit, message, deviceId), autoSave: true);
+            }
+
+            return recorder;
+        }
+
+        
+
+        public virtual async Task<List<TEntity>> CreateManyAsync(SessionUnit sessionUnit, List<long> messageIdList, string deviceId)
+        {
+            var dbMessageList = (await MessageRepository.GetQueryableAsync())
+                .Where(x => x.SessionId == sessionUnit.SessionId && messageIdList.Contains(x.Id))
+                .ToList()
+                ;
+
+            if (!dbMessageList.Any())
+            {
+                return new List<TEntity>();
+            }
+
+            var dbMessageIdList = dbMessageList.Select(x => x.Id).ToList();
+
+            var recordedMessageIdList = (await Repository.GetQueryableAsync())
+                .Where(x => x.SessionUnitId == sessionUnit.Id && dbMessageIdList.Contains(x.MessageId))
+                .Select(x => x.MessageId)
+                .ToList()
+                ;
+
+            var newMessageIdList = dbMessageIdList.Except(recordedMessageIdList);
+
+            var newMessages = dbMessageList.Where(x => newMessageIdList.Contains(x.Id))
+                .Select(x => CreateEntity(sessionUnit, x, deviceId))
+                .ToList();
+
+            if (newMessageIdList.Any())
+            {
+                await Repository.InsertManyAsync(newMessages, autoSave: true);
+            }
+
+            //notice :IChatPusher.
+            //...
+
+            return newMessages;
         }
     }
 }

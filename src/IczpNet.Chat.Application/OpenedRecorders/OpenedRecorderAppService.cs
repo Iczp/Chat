@@ -48,8 +48,8 @@ namespace IczpNet.Chat.OpenedRecorders
         public async Task<PagedResultDto<SessionUnitDestinationDto>> GetListByMessageIdAsync(long messageId, GetListByMessageIdInput input)
         {
             var query = input.IsReaded
-                ? await OpenedRecorderManager.QueryReadedAsync(messageId)
-                : await OpenedRecorderManager.QueryUnreadedAsync(messageId);
+                ? await OpenedRecorderManager.QueryRecordedAsync(messageId)
+                : await OpenedRecorderManager.QueryUnrecordedAsync(messageId);
 
             query = query.WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordOwnerSessionUnitSpecification(input.Keyword, await ChatObjectManager.QueryByKeywordAsync(input.Keyword)));
 
@@ -63,7 +63,7 @@ namespace IczpNet.Chat.OpenedRecorders
 
             var sessionUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
 
-            var entity = await OpenedRecorderManager.SetOpenedAsync(sessionUnit, input.MessageId, input.DeviceId);
+            var entity = await OpenedRecorderManager.CreateIfNotContainsAsync(sessionUnit, input.MessageId, input.DeviceId);
 
             return await MapToDtoAsync(entity);
         }

@@ -25,6 +25,8 @@ using IczpNet.Chat.SessionSections.SessionRequests;
 using IczpNet.Chat.SessionSections.SessionPermissionGroups;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.OpenedRecorders.Dtos;
+using IczpNet.Chat.Favorites;
+using IczpNet.Chat.Favorites.Dtos;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -128,5 +130,8 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
 
         //OpenedRecorder
         CreateMap<OpenedRecorder, OpenedRecorderDto>();
+
+        //Favorite
+        CreateMap<Favorite, FavoriteDto>();
     }
 }

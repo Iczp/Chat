@@ -4,8 +4,8 @@ using System.Threading.Tasks;
 
 namespace IczpNet.Chat.OpenedRecorders
 {
-    public interface IOpenedRecorderManager : IRecorderManager
+    public interface IOpenedRecorderManager : IRecorderManager<OpenedRecorder>
     {
-        Task<OpenedRecorder> SetOpenedAsync(SessionUnit entity, long messageId, string deviceId);
+
     }
 }
