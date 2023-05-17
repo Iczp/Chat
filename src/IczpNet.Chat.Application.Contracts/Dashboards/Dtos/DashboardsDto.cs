@@ -35,5 +35,7 @@ namespace IczpNet.Chat.Dashboards.Dtos
         public long SessionUnitOrganizationCount { get; set; }
 
         public long MessageReminderCount { get; set; }
+
+        public long FavoriteCount { get; set; }
     }
 }

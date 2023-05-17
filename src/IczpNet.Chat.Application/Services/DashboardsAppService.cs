@@ -2,6 +2,7 @@
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Dashboards;
 using IczpNet.Chat.Dashboards.Dtos;
+using IczpNet.Chat.Favorites;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Messages;
@@ -39,6 +40,7 @@ namespace IczpNet.Chat.Services
         protected IRepository<SessionUnitRole> SessionUnitRoleRepository { get; }
         protected IRepository<SessionUnitOrganization> SessionUnitOrganizationRepository { get; }
         protected IRepository<MessageReminder> MessageReminderRepository { get; }
+        protected IRepository<Favorite> FavoriteRepository { get; }
 
         public DashboardsAppService(
             IChatObjectRepository chatObjectRepository,
@@ -55,7 +57,8 @@ namespace IczpNet.Chat.Services
             IRepository<SessionUnitTag> sessionUnitTagRepository,
             IRepository<SessionUnitRole> sessionUnitRoleRepository,
             IRepository<SessionUnitOrganization> sessionUnitOrganizationRepository,
-            IRepository<MessageReminder> messageReminderRepository)
+            IRepository<MessageReminder> messageReminderRepository,
+            IRepository<Favorite> favoriteRepository)
         {
             ChatObjectRepository = chatObjectRepository;
             MessageRepository = messageRepository;
@@ -72,6 +75,7 @@ namespace IczpNet.Chat.Services
             SessionUnitRoleRepository = sessionUnitRoleRepository;
             SessionUnitOrganizationRepository = sessionUnitOrganizationRepository;
             MessageReminderRepository = messageReminderRepository;
+            FavoriteRepository = favoriteRepository;
         }
 
 
@@ -95,6 +99,7 @@ namespace IczpNet.Chat.Services
                 SessionUnitRoleCount = await SessionUnitRoleRepository.GetCountAsync(),
                 SessionUnitOrganizationCount = await SessionUnitOrganizationRepository.GetCountAsync(),
                 MessageReminderCount = await MessageReminderRepository.GetCountAsync(),
+                FavoriteCount = await FavoriteRepository.GetCountAsync(),
             };
         }
     }
