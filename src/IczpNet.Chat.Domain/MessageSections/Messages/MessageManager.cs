@@ -7,6 +7,8 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.Options;
+using IczpNet.Chat.Scopeds;
+using IczpNet.Chat.SessionSections;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.Settings;
@@ -158,6 +160,10 @@ namespace IczpNet.Chat.MessageSections.Messages
             var sessionUnitCount = entity.IsPrivate ? 2 : await SessionUnitManager.GetCountAsync(senderSessionUnit.SessionId.Value);
 
             entity.SetSessionUnitCount(sessionUnitCount);
+
+            //var sessionUnitItems = await SessionUnitManager.GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);
+
+            //entity.ScopedList = sessionUnitItems.Select(x => new Scoped(x.Id)).ToList();
 
             await Repository.InsertAsync(entity, autoSave: true);
 

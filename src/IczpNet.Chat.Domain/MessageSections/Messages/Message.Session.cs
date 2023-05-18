@@ -1,6 +1,7 @@
 ﻿using IczpNet.Chat.Favorites;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
+using IczpNet.Chat.Scopeds;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
@@ -20,6 +21,9 @@ public partial class Message
 
     [InverseProperty(nameof(Favorite.Message))]
     public virtual IList<Favorite> FavoriteList { get; set; }
+
+    [InverseProperty(nameof(Scoped.Message))]
+    public virtual IList<Scoped> ScopedList { get; set; }
 
     [ForeignKey(nameof(SessionId))]
     public virtual Session Session { get; protected set; }

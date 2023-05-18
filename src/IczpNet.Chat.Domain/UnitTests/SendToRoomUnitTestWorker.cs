@@ -65,7 +65,7 @@ namespace IczpNet.Chat.UnitTests
 
             var stopWatch = Stopwatch.StartNew();
 
-            Logger.LogInformation($"SendToRoomWorker");
+            Logger.LogInformation($" ------------------- SendToRoomUnitTestWorker Starting ------------------- ");
 
             RoomId ??= (await RoomManager.CreateByAllUsersAsync($"Auto-create:{DateTime.Now}")).Id;
 
@@ -75,7 +75,7 @@ namespace IczpNet.Chat.UnitTests
 
             var sessionunit = await SessionUnitRepository.GetAsync(sessionunitId);
 
-            Logger.LogInformation($"sessionunit: id:{sessionunit?.Id},name:{sessionunit?.Owner?.Name}");
+            Logger.LogInformation($"Sender sessionunit: id:{sessionunit?.Id},name:{sessionunit?.Owner?.Name}");
 
 
 
@@ -86,7 +86,7 @@ namespace IczpNet.Chat.UnitTests
 
                 await FollowManager.CreateAsync(sessionunit, new List<Guid>() { tagId });
 
-                Logger.LogInformation($"Follow: sessionunit: id:{sessionunit?.Id},tagId:{tagId}");
+                Logger.LogInformation($"Following sessionunit: id:{sessionunit?.Id},tagId:{tagId}");
             }
 
             Index++;
@@ -124,7 +124,7 @@ namespace IczpNet.Chat.UnitTests
 
             stopWatch.Stop();
 
-            Logger.LogInformation($"SendToRoomUnitTestWorker stopWatch:{stopWatch.ElapsedMilliseconds}");
+            Logger.LogInformation($" ------------------- SendToRoomUnitTestWorker stopWatch:{stopWatch.ElapsedMilliseconds} -------------------");
         }
 
         protected async Task<List<Guid>> GetSessionIdListAsync(long roomId)

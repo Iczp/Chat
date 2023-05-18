@@ -367,7 +367,10 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
     {
         var value = await UnitCountCache.GetOrAddAsync(sessionId, async () =>
         {
-            var count = await Repository.CountAsync(x => x.SessionId == sessionId && x.IsPublic && !x.IsKilled && x.IsEnabled);
+            var count = (await Repository.GetQueryableAsync())
+                .Where(x => x.SessionId == sessionId)
+                .Where(SessionUnit.GetActivePredicate(Clock.Now))
+                .Count();
             return count.ToString();
         });
         return int.Parse(value);

@@ -9,13 +9,18 @@ namespace IczpNet.Chat.Scopeds
     {
         protected Scoped() { }
 
-        public Guid SessionUnitId { get; set; }
+        public virtual Guid SessionUnitId { get; set; }
 
-        public SessionUnit SessionUnit { get; set; }
+        public virtual SessionUnit SessionUnit { get; set; }
 
-        public long MessageId { get; set; }
+        public virtual long MessageId { get; set; }
 
-        public Message Message { get; set; }
+        public virtual Message Message { get; set; }
+
+        public Scoped(Guid sessionUnitId)
+        {
+            SessionUnitId = sessionUnitId;
+        }
 
         public override object[] GetKeys()
         {
