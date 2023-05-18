@@ -27,7 +27,7 @@ namespace IczpNet.Chat.OpenedRecorders
 
         protected override async Task ChangeMessageIfNotContainsAsync(SessionUnit sessionUnit, Message message)
         {
-            message.FavoritedCount++;
+            message.OpenedCount++;
 
             await Task.CompletedTask;
         }
@@ -36,7 +36,7 @@ namespace IczpNet.Chat.OpenedRecorders
         {
             foreach (Message message in changeMessages)
             {
-                message.FavoritedCount++;
+                message.OpenedCount++;
             }
             await Task.CompletedTask;
         }

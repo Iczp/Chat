@@ -5,6 +5,8 @@ using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.OpenedRecorders;
+using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.RoomSections.Rooms;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +14,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO.Pipelines;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
@@ -38,7 +41,8 @@ namespace IczpNet.Chat.UnitTests
         protected ISessionUnitRepository SessionUnitRepository { get; }
         protected IFollowManager FollowManager { get; }
         protected IFavoriteManager FavoriteManager { get; }
-
+        protected IOpenedRecorderManager OpenedRecorderManager { get; }
+        protected IReadedRecorderManager ReadedRecorderManager { get; }
 
         public SendToRoomUnitTestWorker(AbpAsyncTimer timer,
             IServiceScopeFactory serviceScopeFactory,
@@ -47,7 +51,9 @@ namespace IczpNet.Chat.UnitTests
             IRoomManager roomManager,
             ISessionUnitManager sessionUnitManager,
             IFollowManager followManager,
-            IFavoriteManager favoriteManager) : base(timer, serviceScopeFactory)
+            IFavoriteManager favoriteManager,
+            IOpenedRecorderManager openedRecorderManager,
+            IReadedRecorderManager readedRecorderManager) : base(timer, serviceScopeFactory)
         {
             Timer.Period = 500;
             SessionUnitRepository = sessionUnitRepository;
@@ -56,6 +62,8 @@ namespace IczpNet.Chat.UnitTests
             SessionUnitManager = sessionUnitManager;
             FollowManager = followManager;
             FavoriteManager = favoriteManager;
+            OpenedRecorderManager = openedRecorderManager;
+            ReadedRecorderManager = readedRecorderManager;
         }
 
         [UnitOfWork]
@@ -78,16 +86,9 @@ namespace IczpNet.Chat.UnitTests
             Logger.LogInformation($"Sender sessionunit: id:{sessionunit?.Id},name:{sessionunit?.Owner?.Name}");
 
 
-
             // Following
-            if (sessionunit.OwnerFollowList.Count < 3)
-            {
-                var tagId = items[new Random().Next(0, items.Count - 1)];
+            await FollowingAsync(sessionunit, items);
 
-                await FollowManager.CreateAsync(sessionunit, new List<Guid>() { tagId });
-
-                Logger.LogInformation($"Following sessionunit: id:{sessionunit?.Id},tagId:{tagId}");
-            }
 
             Index++;
 
@@ -115,16 +116,59 @@ namespace IczpNet.Chat.UnitTests
             });
             Logger.LogInformation($"SendText: {text}");
 
-            //Favorite
-            var favoriteSessionunit = await SessionUnitRepository.GetAsync(items[new Random().Next(0, items.Count - 1)]);
+            //Recorder
+            for (int i = 0; i < new Random().Next(1, 10); i++)
+            {
+                await SetFavoritedAsync(items, sendResult.Id);
 
-            var favorite = await FavoriteManager.CreateIfNotContainsAsync(favoriteSessionunit, sendResult.Id, "");
+                await SetOpenedAsync(items, sendResult.Id);
 
-            Logger.LogInformation($"Favorite messageId:{favorite.MessageId},sessionUnitId:{favorite.SessionUnitId}");
+                await SetReadedAsync(items, sendResult.Id);
+            }
 
             stopWatch.Stop();
 
             Logger.LogInformation($" ------------------- SendToRoomUnitTestWorker stopWatch:{stopWatch.ElapsedMilliseconds} -------------------");
+        }
+
+        private async Task SetReadedAsync(List<Guid> items, long messageId)
+        {
+            var sessionunit = await SessionUnitRepository.GetAsync(items[new Random().Next(0, items.Count - 1)]);
+
+            var entity = await ReadedRecorderManager.CreateIfNotContainsAsync(sessionunit, messageId, "");
+
+            Logger.LogInformation($"SetReadedAsync messageId:{entity.MessageId},sessionUnitId:{entity.SessionUnitId}");
+        }
+
+        private async Task SetOpenedAsync(List<Guid> items, long messageId)
+        {
+            var sessionunit = await SessionUnitRepository.GetAsync(items[new Random().Next(0, items.Count - 1)]);
+
+            var entity = await OpenedRecorderManager.CreateIfNotContainsAsync(sessionunit, messageId, "");
+
+            Logger.LogInformation($"SetOpenedAsync messageId:{entity.MessageId},sessionUnitId:{entity.SessionUnitId}");
+        }
+
+        private async Task SetFavoritedAsync(List<Guid> items, long messageId)
+        {
+            var sessionunit = await SessionUnitRepository.GetAsync(items[new Random().Next(0, items.Count - 1)]);
+
+            var entity = await FavoriteManager.CreateIfNotContainsAsync(sessionunit, messageId, "");
+
+            Logger.LogInformation($"SetFavoritedAsync messageId:{entity.MessageId},sessionUnitId:{entity.SessionUnitId}");
+        }
+
+        private async Task FollowingAsync(SessionUnit sessionunit, List<Guid> items)
+        {
+            if (sessionunit.OwnerFollowList.Count > 3)
+            {
+                return;
+            }
+            var tagId = items[new Random().Next(0, items.Count - 1)];
+
+            await FollowManager.CreateAsync(sessionunit, new List<Guid>() { tagId });
+
+            Logger.LogInformation($"Following sessionunit: id:{sessionunit?.Id},tagId:{tagId}");
         }
 
         protected async Task<List<Guid>> GetSessionIdListAsync(long roomId)
