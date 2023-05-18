@@ -57,5 +57,11 @@ namespace IczpNet.Chat.ReadedRecorders
 
             return entities.Count;
         }
+
+        [HttpPost]
+        public Task<int> SetAllAsync(long messageId)
+        {
+            return ReadedRecorderManager.CreateAllAsync(messageId);
+        }
     }
 }

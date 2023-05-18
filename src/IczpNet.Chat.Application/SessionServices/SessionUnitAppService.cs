@@ -500,8 +500,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 
                 foreach (var e in entities)
                 {
-                    e.IsReaded = openedMessageIdList.Contains(e.Id);
-                    e.IsOpened = readedMessageIdList.Contains(e.Id);
+                    e.IsReaded = readedMessageIdList.Contains(e.Id);
+                    e.IsOpened = openedMessageIdList.Contains(e.Id);
                     e.IsFavorited = favoriteMessageIdList.Contains(e.Id);
                     e.IsFollowing = followingIdList.Contains(e.SessionUnitId.Value);
                 }

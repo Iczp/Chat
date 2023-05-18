@@ -16,6 +16,13 @@ namespace IczpNet.Chat.Bases
         Task<Dictionary<long, int>> GetCountsAsync(List<long> messageIdList);
 
         /// <summary>
+        /// Get Count 
+        /// </summary>
+        /// <param name="messageId"></param>
+        /// <returns></returns>
+        Task<int> GetCountByMessageIdAsync(long messageId);
+
+        /// <summary>
         /// Get Recorder MessageIdList
         /// </summary>
         /// <param name="sessionUnitId"></param>
@@ -54,5 +61,8 @@ namespace IczpNet.Chat.Bases
         /// <param name="deviceId"></param>
         /// <returns></returns>
         Task<List<TEntity>> CreateManyAsync(SessionUnit sessionUnit, List<long> messageIdList, string deviceId);
+
+
+
     }
 }

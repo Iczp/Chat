@@ -115,6 +115,5 @@ public partial class Message
     [NotMapped]
     public virtual bool? IsFollowing { get; set; }
 
-    [NotMapped]
-    public virtual int? ReadedCount { get; set; }
+    
 }

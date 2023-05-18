@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using System;
 
 namespace IczpNet.Chat.ReadedRecorders
 {
@@ -10,5 +11,6 @@ namespace IczpNet.Chat.ReadedRecorders
 
         public ReadedRecorder(SessionUnit sessionUnit, long messageId, string deviceId) : base(sessionUnit, messageId, deviceId) { }
 
+        public ReadedRecorder(Guid sessionUnitId, long messageId) : base(sessionUnitId, messageId) { }
     }
 }

@@ -24,6 +24,9 @@ namespace IczpNet.Chat.Bases
         }
 
         protected abstract TEntity CreateEntity(SessionUnit sessionUnit, Message message, string deviceId);
+        protected abstract TEntity CreateEntity(Guid sessionUnitId, long messageId);
+        protected abstract Task ChangeMessageIfNotContainsAsync(SessionUnit sessionUnit, Message message);
+        protected abstract Task ChangeMessagesIfNotContainsAsync(SessionUnit sessionUnit, List<Message> changeMessages);
 
         /// <inheritdoc/>
         public virtual async Task<Dictionary<long, int>> GetCountsAsync(List<long> messageIdList)
@@ -40,6 +43,11 @@ namespace IczpNet.Chat.Bases
             }
 
             return dict;
+        }
+
+        public async Task<int> GetCountByMessageIdAsync(long messageId)
+        {
+            return await Repository.CountAsync(x => x.MessageId == messageId);
         }
 
         public virtual async Task<List<long>> GetRecorderMessageIdListAsync(Guid sessionUnitId, List<long> messageIdList)
@@ -83,6 +91,8 @@ namespace IczpNet.Chat.Bases
             return query.Where(x => !readedSessionUnitIdList.Contains(x.Id));
         }
 
+
+
         public virtual async Task<TEntity> CreateIfNotContainsAsync(SessionUnit sessionUnit, long messageId, string deviceId)
         {
             var message = await MessageRepository.GetAsync(messageId);
@@ -93,12 +103,12 @@ namespace IczpNet.Chat.Bases
 
             if (recorder == null)
             {
+                await ChangeMessageIfNotContainsAsync(sessionUnit, message);
                 return await Repository.InsertAsync(CreateEntity(sessionUnit, message, deviceId), autoSave: true);
             }
 
             return recorder;
         }
-
 
 
         public virtual async Task<List<TEntity>> CreateManyAsync(SessionUnit sessionUnit, List<long> messageIdList, string deviceId)
@@ -123,19 +133,43 @@ namespace IczpNet.Chat.Bases
 
             var newMessageIdList = dbMessageIdList.Except(recordedMessageIdList);
 
-            var newMessages = dbMessageList.Where(x => newMessageIdList.Contains(x.Id))
+            if (!newMessageIdList.Any())
+            {
+                return new List<TEntity>();
+            }
+
+            var changeMessages = dbMessageList.Where(x => newMessageIdList.Contains(x.Id)).ToList();
+
+            var entities = changeMessages
                 .Select(x => CreateEntity(sessionUnit, x, deviceId))
                 .ToList();
 
-            if (newMessageIdList.Any())
-            {
-                await Repository.InsertManyAsync(newMessages, autoSave: true);
-            }
+            await ChangeMessagesIfNotContainsAsync(sessionUnit, changeMessages);
+
+            await Repository.InsertManyAsync(entities, autoSave: true);
 
             //notice :IChatPusher.
             //...
 
-            return newMessages;
+            return entities;
+        }
+
+
+
+        protected virtual async Task<IQueryable<Guid>> QuerySessionUnitIdListAsync(long messageId)
+        {
+            var message = await MessageRepository.GetAsync(messageId);
+
+            var recordedSessionUnitIdList = (await Repository.GetQueryableAsync())
+                .Where(x => x.MessageId == messageId)
+                .Select(x => x.SessionUnitId)
+                ;
+
+            return (await SessionUnitRepository.GetQueryableAsync())
+                 .Where(x => x.SessionId == message.SessionId)
+                 .Where(x => !recordedSessionUnitIdList.Contains(x.Id))
+                 .Select(x => x.Id)
+                 ;
         }
 
 

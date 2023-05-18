@@ -49,13 +49,13 @@ namespace IczpNet.Chat.Favorites
         [HttpGet]
         public Task<long> GetSizeAsync(long ownerId)
         {
-            return FavoriteManager.GetSizeAsync(ownerId);
+            return FavoriteManager.GetSizeByOwnerIdAsync(ownerId);
         }
 
         [HttpGet]
         public Task<int> GetCountAsync(long ownerId)
         {
-            return FavoriteManager.GetCountAsync(ownerId);
+            return FavoriteManager.GetCountByOwnerIdAsync(ownerId);
         }
 
         [HttpPost]

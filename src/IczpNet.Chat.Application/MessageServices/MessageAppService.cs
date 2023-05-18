@@ -1,5 +1,4 @@
 ﻿using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
@@ -12,8 +11,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using IczpNet.AbpCommons.Extensions;
-using Volo.Abp.Domain.Entities;
 using IczpNet.Chat.Enums.Dtos;
+using IczpNet.Chat.ReadedRecorders;
+using IczpNet.Chat.OpenedRecorders;
+using IczpNet.Chat.Favorites;
 
 namespace IczpNet.Chat.MessageServices
 {
@@ -32,17 +33,25 @@ namespace IczpNet.Chat.MessageServices
         protected IMessageSender MessageSender { get; }
         protected IMessageManager MessageManager { get; }
         protected ISessionUnitManager SessionUnitManager { get; }
-
+        protected IReadedRecorderManager ReadedRecorderManager { get; }
+        protected IOpenedRecorderManager OpenedRecorderManager { get; }
+        protected IFavoriteManager FavoriteManager { get; }
 
         public MessageAppService(
             IMessageRepository repository,
             IMessageManager messageManager,
             IMessageSender messageSender,
-            ISessionUnitManager sessionUnitManager) : base(repository)
+            ISessionUnitManager sessionUnitManager,
+            IReadedRecorderManager readedRecorderManager,
+            IOpenedRecorderManager openedRecorderManager,
+            IFavoriteManager favoriteManager) : base(repository)
         {
             MessageSender = messageSender;
             MessageManager = messageManager;
             SessionUnitManager = sessionUnitManager;
+            ReadedRecorderManager = readedRecorderManager;
+            OpenedRecorderManager = openedRecorderManager;
+            FavoriteManager = favoriteManager;
         }
 
         [HttpGet]
@@ -164,6 +173,20 @@ namespace IczpNet.Chat.MessageServices
             return ObjectMapper.Map<List<Message>, List<MessageDto>>(messageList);
         }
 
+        [HttpPost]
+        public async Task<MessageDto> UpdateRecorderAsync(long messageId)
+        {
+            var message = await Repository.GetAsync(messageId);
 
+            message.ReadedCount = await ReadedRecorderManager.GetCountByMessageIdAsync(messageId);
+
+            message.OpenedCount = await OpenedRecorderManager.GetCountByMessageIdAsync(messageId);
+
+            message.FavoritedCount = await FavoriteManager.GetCountByMessageIdAsync(messageId);
+
+            await Repository.UpdateAsync(message, autoSave: true);
+
+            return await MapToGetOutputDtoAsync(message);
+        }
     }
 }

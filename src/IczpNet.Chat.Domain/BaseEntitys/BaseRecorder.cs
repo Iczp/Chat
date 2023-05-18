@@ -42,6 +42,12 @@ namespace IczpNet.Chat.BaseEntitys
 
         protected BaseRecorder() { }
 
+        public BaseRecorder(Guid sessionUnitId, long messageId)
+        {
+            SessionUnitId = sessionUnitId;
+            MessageId = messageId;
+        }
+
         public BaseRecorder(SessionUnit sessionUnit, long messageId, string deviceId)
         {
             SessionUnitId = sessionUnit.Id;

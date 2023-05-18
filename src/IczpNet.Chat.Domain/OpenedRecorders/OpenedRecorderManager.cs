@@ -1,6 +1,9 @@
 ﻿using IczpNet.Chat.Bases;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.OpenedRecorders
@@ -15,6 +18,27 @@ namespace IczpNet.Chat.OpenedRecorders
         protected override OpenedRecorder CreateEntity(SessionUnit entity, Message message, string deviceId)
         {
             return new OpenedRecorder(entity, message.Id, deviceId);
+        }
+
+        protected override OpenedRecorder CreateEntity(Guid sessionUnitId, long messageId)
+        {
+            return new OpenedRecorder(sessionUnitId, messageId);
+        }
+
+        protected override async Task ChangeMessageIfNotContainsAsync(SessionUnit sessionUnit, Message message)
+        {
+            message.FavoritedCount++;
+
+            await Task.CompletedTask;
+        }
+
+        protected override async Task ChangeMessagesIfNotContainsAsync(SessionUnit sessionUnit, List<Message> changeMessages)
+        {
+            foreach (Message message in changeMessages)
+            {
+                message.FavoritedCount++;
+            }
+            await Task.CompletedTask;
         }
     }
 }

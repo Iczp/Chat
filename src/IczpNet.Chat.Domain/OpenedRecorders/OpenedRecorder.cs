@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using System;
 
 namespace IczpNet.Chat.OpenedRecorders
 {
@@ -9,5 +10,6 @@ namespace IczpNet.Chat.OpenedRecorders
 
         public OpenedRecorder(SessionUnit sessionUnit, long messageId, string deviceId) : base(sessionUnit, messageId, deviceId) { }
 
+        public OpenedRecorder(Guid sessionUnitId, long messageId) : base(sessionUnitId, messageId) { }
     }
 }

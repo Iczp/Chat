@@ -4,6 +4,7 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.Settings;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
@@ -22,18 +23,22 @@ namespace IczpNet.Chat.Favorites
         {
             return new Favorite(sessionUnit, message, deviceId);
         }
+        protected override Favorite CreateEntity(Guid sessionUnitId, long messageId)
+        {
+            return new Favorite(sessionUnitId, messageId);
+        }
 
         public override async Task<Favorite> CreateIfNotContainsAsync(SessionUnit sessionUnit, long messageId, string deviceId)
         {
             //check favorite size
             var maxFavoriteSize = await SettingProvider.GetAsync<long>(ChatSettings.MaxFavoriteSize);
 
-            var size = await GetSizeAsync(sessionUnit.OwnerId);
+            var size = await GetSizeByOwnerIdAsync(sessionUnit.OwnerId);
 
             Assert.If(size > maxFavoriteSize, $"MaxFavoriteSize:${maxFavoriteSize}");
 
             //check favorite count
-            var count = await GetCountAsync(sessionUnit.OwnerId);
+            var count = await GetCountByOwnerIdAsync(sessionUnit.OwnerId);
 
             var maxFavoriteCount = await SettingProvider.GetAsync<long>(ChatSettings.MaxFavoriteCount);
 
@@ -47,18 +52,33 @@ namespace IczpNet.Chat.Favorites
             return Repository.DeleteAsync(x => x.SessionUnitId == sessionUnitId && x.MessageId == messageId);
         }
 
-        public async Task<long> GetSizeAsync(long ownerId)
+        public virtual async Task<long> GetSizeByOwnerIdAsync(long ownerId)
         {
             return (await Repository.GetQueryableAsync())
                 .Where(x => x.OwnerId == ownerId)
                 .Sum(x => x.Size);
         }
 
-        public async Task<int> GetCountAsync(long ownerId)
+        public virtual async Task<int> GetCountByOwnerIdAsync(long ownerId)
         {
             return (await Repository.GetQueryableAsync())
                 .Where(x => x.OwnerId == ownerId)
                 .Count();
+        }
+
+        protected override async Task ChangeMessageIfNotContainsAsync(SessionUnit sessionUnit, Message message)
+        {
+            message.FavoritedCount++;
+            await Task.CompletedTask;
+        }
+
+        protected override async Task ChangeMessagesIfNotContainsAsync(SessionUnit sessionUnit, List<Message> changeMessages)
+        {
+            foreach (Message message in changeMessages)
+            {
+                message.FavoritedCount++;
+            }
+            await Task.CompletedTask;
         }
     }
 }
