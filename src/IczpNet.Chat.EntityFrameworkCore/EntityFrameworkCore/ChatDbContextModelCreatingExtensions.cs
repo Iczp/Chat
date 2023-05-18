@@ -17,6 +17,7 @@ using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
 using IczpNet.Chat.SessionSections.SessionUnitOrganizations;
 using IczpNet.Chat.SessionSections.SessionUnitRoles;
 using IczpNet.Chat.SessionSections.SessionUnitTags;
+using IczpNet.Chat.Scopes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
@@ -74,9 +75,7 @@ public static class ChatDbContextModelCreatingExtensions
 
         builder.Entity<ChatObjectCategoryUnit>(b => { b.HasKey(x => new { x.ChatObjectId, x.CategoryId }); });
         builder.Entity<ArticleMessage>(b => { b.HasKey(x => new { x.MessageId, x.ArticleId }); });
-        builder.Entity<MessageReminder>(b => { b.HasKey(x => new { x.MessageId, x.SessionUnitId }); });
-        builder.Entity<OpenedRecorder>(b => { b.HasKey(x => new { x.MessageId, x.SessionUnitId }); });
-        builder.Entity<ReadedRecorder>(b => { b.HasKey(x => new { x.MessageId, x.SessionUnitId }); });
+        
         builder.Entity<HistoryMessage>(b => { b.HasKey(x => new { x.MessageId, x.HistoryContentId }); });
         builder.Entity<FriendshipTagUnit>(b => { b.HasKey(x => new { x.FriendshipId, x.FriendshipTagId }); });
 
@@ -87,7 +86,12 @@ public static class ChatDbContextModelCreatingExtensions
         builder.Entity<SessionPermissionUnitGrant>(b => { b.HasKey(x => new { x.DefinitionId, x.SessionUnitId }); });
 
         builder.Entity<Follow>(b => { b.HasKey(x => new { x.OwnerId, x.DestinationId }); });
+        builder.Entity<MessageReminder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
         builder.Entity<Favorite>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
+        builder.Entity<OpenedRecorder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
+        builder.Entity<ReadedRecorder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
+        //builder.Entity<Scope>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
+        
 
         builder.Entity<Message>(b =>
             {

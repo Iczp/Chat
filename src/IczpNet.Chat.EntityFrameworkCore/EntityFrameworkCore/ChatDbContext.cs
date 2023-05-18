@@ -28,6 +28,7 @@ using IczpNet.Chat.SessionSections.SessionUnitOrganizations;
 using IczpNet.Chat.SessionSections.SessionUnitRoles;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnitTags;
+using IczpNet.Chat.Scopes;
 using IczpNet.Chat.Wallets;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Data;
@@ -77,6 +78,9 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     public DbSet<OpenedRecorder> OpenedRecorder { get; set; }
     public DbSet<ReadedRecorder> ReadedRecorder { get; set; }
     public DbSet<MessageReminder> MessageReminder { get; set; }
+
+    public DbSet<Scope> SessionUnitMessage { get; set; }
+
 
     public DbSet<Connection> Connection { get; set; }
 
