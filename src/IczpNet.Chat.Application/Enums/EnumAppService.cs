@@ -16,7 +16,7 @@ namespace IczpNet.Chat.Enums
     {
         protected static List<EnumTypeDto> EnumItems;
 
-        public async Task<PagedResultDto<EnumTypeDto>> GetAllAsync(EnumGetListInput input)
+        public async Task<PagedResultDto<EnumTypeDto>> GetListAsync(EnumGetListInput input)
         {
             await Task.CompletedTask;
 
@@ -37,7 +37,7 @@ namespace IczpNet.Chat.Enums
             return await GetPagedListAsync<EnumTypeDto, EnumTypeDto>(query, input);
         }
 
-        public async Task<List<EnumDto>> GetListByTypeAsync(string type)
+        public async Task<List<EnumDto>> GetItemsAsync(string type)
         {
             await Task.CompletedTask;
 

@@ -7,8 +7,8 @@ namespace IczpNet.Chat.Enums
 {
     public interface IEnumAppService
     {
-        Task<PagedResultDto<EnumTypeDto>> GetAllAsync(EnumGetListInput input);
+        Task<PagedResultDto<EnumTypeDto>> GetListAsync(EnumGetListInput input);
 
-        Task<List<EnumDto>> GetListByTypeAsync(string type);
+        Task<List<EnumDto>> GetItemsAsync(string type);
     }
 }
