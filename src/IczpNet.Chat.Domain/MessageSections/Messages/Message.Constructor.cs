@@ -5,7 +5,6 @@ using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
