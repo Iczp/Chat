@@ -91,6 +91,11 @@ public partial class Message : BaseEntity<long>, ISessionId
     public virtual bool IsPrivate { get; protected set; }
 
     /// <summary>
+    /// 指定范围
+    /// </summary>
+    public virtual bool IsScoped { get; protected set; }
+
+    /// <summary>
     /// 撤回消息时间
     /// </summary>
     public virtual DateTime? RollbackTime { get; protected set; }

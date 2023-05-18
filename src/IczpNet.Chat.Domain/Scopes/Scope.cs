@@ -3,11 +3,11 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 
-namespace IczpNet.Chat.Scopes
+namespace IczpNet.Chat.Scopeds
 {
-    public class Scope //: BaseEntity
+    public class Scoped : BaseEntity
     {
-        protected Scope() { }
+        protected Scoped() { }
 
         public Guid SessionUnitId { get; set; }
 
@@ -17,9 +17,9 @@ namespace IczpNet.Chat.Scopes
 
         public Message Message { get; set; }
 
-        //public override object[] GetKeys()
-        //{
-        //    return new object[] { SessionUnitId, MessageId };
-        //}
+        public override object[] GetKeys()
+        {
+            return new object[] { SessionUnitId, MessageId };
+        }
     }
 }

@@ -224,6 +224,11 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         /// </summary>
         public virtual ServiceStatus ServiceStatus { get; protected set; }
 
+        /// <summary>
+        /// 指定范围
+        /// </summary>
+        public virtual bool IsScoped { get; protected set; }
+
         public virtual bool IsStatic { get; set; }
 
         public virtual bool IsPublic { get; set; }

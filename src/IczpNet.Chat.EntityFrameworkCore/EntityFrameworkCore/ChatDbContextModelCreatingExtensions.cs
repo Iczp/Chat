@@ -17,7 +17,7 @@ using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
 using IczpNet.Chat.SessionSections.SessionUnitOrganizations;
 using IczpNet.Chat.SessionSections.SessionUnitRoles;
 using IczpNet.Chat.SessionSections.SessionUnitTags;
-using IczpNet.Chat.Scopes;
+using IczpNet.Chat.Scopeds;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
@@ -90,8 +90,8 @@ public static class ChatDbContextModelCreatingExtensions
         builder.Entity<Favorite>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
         builder.Entity<OpenedRecorder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
         builder.Entity<ReadedRecorder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
-        //builder.Entity<Scope>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
-        
+        builder.Entity<Scoped>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
+
 
         builder.Entity<Message>(b =>
             {

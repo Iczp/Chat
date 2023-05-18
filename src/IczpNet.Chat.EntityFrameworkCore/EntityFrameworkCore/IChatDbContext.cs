@@ -28,7 +28,7 @@ using IczpNet.Chat.SessionSections.SessionUnitOrganizations;
 using IczpNet.Chat.SessionSections.SessionUnitRoles;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnitTags;
-using IczpNet.Chat.Scopes;
+using IczpNet.Chat.Scopeds;
 using IczpNet.Chat.Wallets;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Data;
@@ -80,7 +80,7 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<MessageReminder> MessageReminder { get; }
 
 
-    DbSet<Scope> SessionUnitMessage { get; }
+    DbSet<Scoped> SessionUnitMessage { get; }
     
 
     DbSet<Connection> Connection { get; }
