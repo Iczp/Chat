@@ -17,9 +17,12 @@ using IczpNet.Chat.SessionSections.SessionUnitOrganizations;
 using IczpNet.Chat.SessionSections.SessionUnitRoles;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnitTags;
+using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Data;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.Services
 {
@@ -78,7 +81,8 @@ namespace IczpNet.Chat.Services
             FavoriteRepository = favoriteRepository;
         }
 
-
+        [HttpGet]
+        [UnitOfWork(true, IsolationLevel.ReadUncommitted)]
         public async Task<DashboardsDto> GetProfileAsync()
         {
             return new DashboardsDto()

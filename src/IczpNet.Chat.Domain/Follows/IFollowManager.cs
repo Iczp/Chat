@@ -12,6 +12,8 @@ namespace IczpNet.Chat.Follows
 
         Task<List<Guid>> GetFollowerIdListAsync(Guid destinationSessionUnitId);
 
+        Task<List<Guid>> GetFollowingIdListAsync(Guid ownerId);
+
         Task<int> GetFollowingCountAsync(Guid ownerId);
 
         Task<bool> CreateAsync(Guid ownerId, List<Guid> idList);

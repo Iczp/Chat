@@ -45,6 +45,8 @@ public partial class Message
     [InverseProperty(nameof(SessionSections.SessionUnits.SessionUnit.ReadedMessage))]
     public virtual List<SessionUnit> ReadedMessageSessionUnitList { get; protected set; }
 
+    
+
     internal virtual void SetSessionUnitCount(int sessionUnitCount)
     {
         SessionUnitCount = sessionUnitCount;

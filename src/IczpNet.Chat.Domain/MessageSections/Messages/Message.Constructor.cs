@@ -103,22 +103,18 @@ public partial class Message
         IsPrivate = true;
     }
 
-    protected SessionUnit Current { get; private set; }
-
-    public virtual void SetCurrentSessionUnit(SessionUnit sessionUnit)
-    {
-        Current = sessionUnit;
-    }
+    [NotMapped]
+    public virtual bool? IsOpened { get; set; }
 
     [NotMapped]
-    public virtual bool? IsOpened => Current?.OpenedRecorderList.AsQueryable().Any(x => x.MessageId == Id);
+    public virtual bool? IsReaded { get; set; }
 
     [NotMapped]
-    public virtual bool? IsFollowing => Current?.OwnerFollowList.AsQueryable().Any(x => x.DestinationId == SessionUnitId);
+    public virtual bool? IsFavorited { get; set; }
 
     [NotMapped]
-    public virtual bool? IsReaded => Current?.ReadedMessageId > Id;
+    public virtual bool? IsFollowing { get; set; }
 
     [NotMapped]
-    public virtual int? ReadedCount => ReadedRecorderList?.AsQueryable().WhereIf(Current != null, x => x.SessionUnitId != Current.Id).Count();
+    public virtual int? ReadedCount { get; set; }
 }

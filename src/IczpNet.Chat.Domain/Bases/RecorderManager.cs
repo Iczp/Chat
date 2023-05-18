@@ -42,6 +42,15 @@ namespace IczpNet.Chat.Bases
             return dict;
         }
 
+        public virtual async Task<List<long>> GetRecorderMessageIdListAsync(Guid sessionUnitId, List<long> messageIdList)
+        {
+            return (await Repository.GetQueryableAsync())
+                .Where(x => x.SessionUnitId == sessionUnitId)
+                .Where(x => messageIdList.Contains(x.MessageId))
+                .Select(x => x.MessageId)
+                .ToList();
+        }
+
         /// <inheritdoc/>
         public virtual async Task<IQueryable<SessionUnit>> QueryRecordedAsync(long messageId)
         {
@@ -90,7 +99,7 @@ namespace IczpNet.Chat.Bases
             return recorder;
         }
 
-        
+
 
         public virtual async Task<List<TEntity>> CreateManyAsync(SessionUnit sessionUnit, List<long> messageIdList, string deviceId)
         {
@@ -128,5 +137,7 @@ namespace IczpNet.Chat.Bases
 
             return newMessages;
         }
+
+
     }
 }

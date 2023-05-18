@@ -4,8 +4,12 @@ using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.Favorites;
+using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
+using IczpNet.Chat.OpenedRecorders;
+using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
@@ -48,7 +52,10 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     protected ISessionUnitManager SessionUnitManager { get; }
     protected ISessionGenerator SessionGenerator { get; }
     protected IChatObjectManager ChatObjectManager { get; }
-
+    protected IReadedRecorderManager ReadedRecorderManager { get; }
+    protected IOpenedRecorderManager OpenedRecorderManager { get; }
+    protected IFavoriteManager FavoriteManager { get; }
+    protected IFollowManager FollowManager { get; }
 
     public SessionUnitAppService(
         IRepository<Friendship, Guid> chatObjectRepository,
@@ -58,7 +65,11 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         IMessageRepository messageRepository,
         ISessionUnitRepository repository,
         ISessionUnitManager sessionUnitManager,
-        IChatObjectManager chatObjectManager)
+        IChatObjectManager chatObjectManager,
+        IReadedRecorderManager readedRecorderManager,
+        IOpenedRecorderManager openedRecorderManager,
+        IFavoriteManager favoriteManager,
+        IFollowManager followManager)
     {
         FriendshipRepository = chatObjectRepository;
         SessionManager = sessionManager;
@@ -68,6 +79,10 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         Repository = repository;
         SessionUnitManager = sessionUnitManager;
         ChatObjectManager = chatObjectManager;
+        ReadedRecorderManager = readedRecorderManager;
+        OpenedRecorderManager = openedRecorderManager;
+        FavoriteManager = favoriteManager;
+        FollowManager = followManager;
     }
 
     protected override Task CheckPolicyAsync(string policyName)
@@ -440,18 +455,14 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     }
 
     [HttpGet]
-    public async Task<PagedResultDto<MessageItemDto>> GetMessageListAsync(Guid id, SessionUnitGetMessageListInput input)
+    [UnitOfWork(true, IsolationLevel.ReadUncommitted)]
+    public async Task<PagedResultDto<MessageItemDto>> GetListMessagesAsync(Guid id, SessionUnitGetMessageListInput input)
     {
         var entity = await GetEntityAsync(id);
 
-        IQueryable<Guid> followIdList = null;
-
-        if (input.IsFollowed == true)
-        {
-            followIdList = entity.OwnerFollowList.AsQueryable().Select(x => x.DestinationId);
-        }
-
         Assert.NotNull(entity.Session, "session is null");
+
+        var followingIdList = await FollowManager.GetFollowingIdListAsync(id);
 
         var query = (await MessageRepository.GetQueryableAsync())
             .Where(x => x.SessionId == entity.SessionId)
@@ -467,22 +478,35 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(entity.HistoryLastTime.HasValue, x => x.CreationTime < entity.HistoryFristTime)
             .WhereIf(entity.ClearTime.HasValue, x => x.CreationTime > entity.ClearTime)
             .WhereIf(input.MessageType.HasValue, x => x.MessageType == input.MessageType)
-            .WhereIf(followIdList != null, x => followIdList.Contains(x.SessionUnitId.Value))
+            .WhereIf(input.IsFollowed.HasValue, x => followingIdList.Contains(x.SessionUnitId.Value))
             .WhereIf(!input.IsRemind.IsEmpty(), x => x.IsRemindAll || x.MessageReminderList.Any(x => x.SessionUnitId == id))
             .WhereIf(!input.SenderId.IsEmpty(), new SenderMessageSpecification(input.SenderId.GetValueOrDefault()).ToExpression())
-            .WhereIf(!input.MinMessageId.IsEmpty(), new MinAutoIdMessageSpecification(input.MinMessageId.GetValueOrDefault()).ToExpression())
-            .WhereIf(!input.MaxMessageId.IsEmpty(), new MaxAutoIdMessageSpecification(input.MaxMessageId.GetValueOrDefault()).ToExpression())
+            .WhereIf(!input.MinMessageId.IsEmpty(), x => x.Id > input.MinMessageId)
+            .WhereIf(!input.MaxMessageId.IsEmpty(), x => x.Id <= input.MaxMessageId)
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TextContentList.Any(d => d.Text.Contains(input.Keyword)))
             ;
+
         return await GetPagedListAsync<Message, MessageItemDto>(query, input,
             x => x.OrderByDescending(x => x.Id),
-            entities =>
+            async entities =>
             {
+                var messageIdList = entities.Select(x => x.Id).ToList();
+
+                var readedMessageIdList = await ReadedRecorderManager.GetRecorderMessageIdListAsync(id, messageIdList);
+
+                var openedMessageIdList = await OpenedRecorderManager.GetRecorderMessageIdListAsync(id, messageIdList);
+
+                var favoriteMessageIdList = await FavoriteManager.GetRecorderMessageIdListAsync(id, messageIdList);
+
                 foreach (var e in entities)
                 {
-                    e.SetCurrentSessionUnit(entity);
+                    e.IsReaded = openedMessageIdList.Contains(e.Id);
+                    e.IsOpened = readedMessageIdList.Contains(e.Id);
+                    e.IsFavorited = favoriteMessageIdList.Contains(e.Id);
+                    e.IsFollowing = followingIdList.Contains(e.SessionUnitId.Value);
                 }
-                return Task.FromResult(entities);
+                //await Task.CompletedTask;
+                return entities;
             });
     }
 

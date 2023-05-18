@@ -42,11 +42,18 @@ namespace IczpNet.Chat.Follows
 
         public async Task<List<Guid>> GetFollowerIdListAsync(Guid destinationSessionUnitId)
         {
-           
             return (await Repository.GetQueryableAsync())
                .Where(x => x.DestinationId == destinationSessionUnitId)
                .Select(x => x.OwnerId)
                .ToList();
+        }
+
+        public async Task<List<Guid>> GetFollowingIdListAsync(Guid ownerId)
+        {
+            return (await Repository.GetQueryableAsync())
+              .Where(x => x.OwnerId == ownerId)
+              .Select(x => x.DestinationId)
+              .ToList();
         }
 
         public async Task<int> GetFollowingCountAsync(Guid ownerId)
@@ -106,6 +113,6 @@ namespace IczpNet.Chat.Follows
             await DeleteAsync(owner.Id, idList);
         }
 
-
+        
     }
 }

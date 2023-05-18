@@ -18,8 +18,6 @@ namespace IczpNet.Chat.Enums
 
         public async Task<PagedResultDto<EnumTypeDto>> GetListAsync(EnumGetListInput input)
         {
-            await Task.CompletedTask;
-
             EnumItems ??= typeof(ChatDomainSharedModule).Assembly.GetExportedTypes()
                 .Where(x => x.IsEnum)
                 .Select(x => new EnumTypeDto()
