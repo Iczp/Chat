@@ -9,14 +9,20 @@ namespace IczpNet.Chat.Bases
     public interface IRecorderManager<TEntity>
     {
         /// <summary>
-        /// 
+        /// Get Counts 
         /// </summary>
         /// <param name="messageIdList"></param>
         /// <returns></returns>
         Task<Dictionary<long, int>> GetCountsAsync(List<long> messageIdList);
 
-
+        /// <summary>
+        /// Get Recorder MessageIdList
+        /// </summary>
+        /// <param name="sessionUnitId"></param>
+        /// <param name="messageIdList"></param>
+        /// <returns></returns>
         Task<List<long>> GetRecorderMessageIdListAsync(Guid sessionUnitId, List<long> messageIdList);
+
         /// <summary>
         /// 查询已读
         /// </summary>
