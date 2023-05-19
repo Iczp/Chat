@@ -1,5 +1,4 @@
 ﻿using AutoMapper.Internal;
-using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Favorites;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections;
@@ -14,7 +13,6 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO.Pipelines;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
@@ -85,10 +83,8 @@ namespace IczpNet.Chat.UnitTests
 
             Logger.LogInformation($"Sender sessionunit: id:{sessionunit?.Id},name:{sessionunit?.Owner?.Name}");
 
-
             // Following
-            await FollowingAsync(sessionunit, items);
-
+            await FollowingAsync(items);
 
             Index++;
 
@@ -158,17 +154,20 @@ namespace IczpNet.Chat.UnitTests
             Logger.LogInformation($"SetFavoritedAsync messageId:{entity.MessageId},sessionUnitId:{entity.SessionUnitId}");
         }
 
-        private async Task FollowingAsync(SessionUnit sessionunit, List<Guid> items)
+        private async Task FollowingAsync(List<Guid> items)
         {
-            if (sessionunit.OwnerFollowList.Count > 3)
+            var ownerId = items[new Random().Next(0, items.Count - 1)];
+
+            if (await FollowManager.GetFollowingCountAsync(ownerId) > 10)
             {
                 return;
             }
+
             var tagId = items[new Random().Next(0, items.Count - 1)];
 
-            await FollowManager.CreateAsync(sessionunit, new List<Guid>() { tagId });
+            await FollowManager.CreateAsync(ownerId, new List<Guid>() { tagId });
 
-            Logger.LogInformation($"Following sessionunit: id:{sessionunit?.Id},tagId:{tagId}");
+            Logger.LogInformation($"Following sessionunit: id:{ownerId},tagId:{tagId}");
         }
 
         protected async Task<List<Guid>> GetSessionIdListAsync(long roomId)
