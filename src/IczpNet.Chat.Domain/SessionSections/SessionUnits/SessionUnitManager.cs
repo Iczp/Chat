@@ -411,7 +411,6 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
                 OwnerId = x.OwnerId,
                 DestinationObjectType = x.DestinationObjectType,
                 IsPublic = x.IsPublic,
-                ServiceStatus = x.ServiceStatus,
                 ReadedMessageId = x.ReadedMessageId,
                 PublicBadge = x.PublicBadge,
                 PrivateBadge = x.PrivateBadge,

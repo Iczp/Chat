@@ -19,7 +19,6 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Volo.Abp.SimpleStateChecking;
-using IczpNet.Chat.Favorites;
 
 namespace IczpNet.Chat.ChatObjects
 {
@@ -81,6 +80,11 @@ namespace IczpNet.Chat.ChatObjects
         public virtual bool IsEnabled { get; protected set; } = true;
 
         public virtual bool IsDefault { get; protected set; }
+
+        /// <summary>
+        /// 客服状态
+        /// </summary>
+        public virtual ServiceStatus? ServiceStatus { get; protected set; }
 
         #region Categorys
         public virtual IList<ChatObjectCategoryUnit> ChatObjectCategoryUnitList { get; set; }

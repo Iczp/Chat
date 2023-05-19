@@ -20,8 +20,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public virtual bool IsPublic { get; set; }
 
-        public virtual ServiceStatus ServiceStatus { get; set; }
-
         public virtual long? ReadedMessageId { get; set; }
 
         public virtual long? LastMessageId { get; set; }

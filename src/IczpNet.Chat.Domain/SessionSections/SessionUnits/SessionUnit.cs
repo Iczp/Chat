@@ -220,11 +220,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         #endregion
 
         /// <summary>
-        /// 客服状态
-        /// </summary>
-        public virtual ServiceStatus ServiceStatus { get; protected set; }
-
-        /// <summary>
         /// 指定范围
         /// </summary>
         public virtual bool IsScoped { get; protected set; }
@@ -397,7 +392,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
                 !x.IsDeleted &&
                 !x.IsKilled &&
                 x.IsEnabled &&
-                x.ServiceStatus == ServiceStatus.Normal &&
                 (x.HistoryFristTime == null || creationTime > x.HistoryFristTime) &&
                 (x.HistoryLastTime == null || creationTime < x.HistoryLastTime) &&
                 (x.HistoryLastTime == null || creationTime < x.HistoryLastTime) &&

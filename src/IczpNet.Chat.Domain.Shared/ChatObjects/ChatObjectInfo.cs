@@ -21,5 +21,7 @@ namespace IczpNet.Chat.ChatObjects
         public virtual bool IsDefault { get; set; }
 
         public virtual ChatObjectTypeEnums? ObjectType { get; set; }
+
+        public virtual ServiceStatus? ServiceStatus { get; protected set; }
     }
 }

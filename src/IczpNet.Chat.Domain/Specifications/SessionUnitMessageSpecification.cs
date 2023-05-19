@@ -28,7 +28,6 @@ namespace IczpNet.Chat.Specifications
             return x =>
                 //!x.IsRollbacked &&
                 (SessionUnit.ReadedMessageId == null || x.Id > SessionUnit.ReadedMessageId) &&
-                SessionUnit.ServiceStatus == ServiceStatus.Normal &&
                 x.SenderId != SessionUnit.OwnerId &&
                 (!SessionUnit.HistoryFristTime.HasValue || x.CreationTime > SessionUnit.HistoryFristTime) &&
                 (!SessionUnit.HistoryLastTime.HasValue || x.CreationTime < SessionUnit.HistoryLastTime) &&
