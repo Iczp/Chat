@@ -38,12 +38,16 @@ namespace IczpNet.Chat.Follows
             ChatObjectManager = chatObjectManager;
         }
 
+        /// <inheritdoc/>
         [HttpGet]
-        public async Task<PagedResultDto<SessionUnitDestinationDto>> GetFollowingsAsync(GetFollowingsInput input)
+        public async Task<PagedResultDto<SessionUnitDestinationDto>> GetListFollowingAsync(FollowingGetListInput input)
         {
-            var owner = await SessionUnitManager.GetAsync(input.OwnerId);
+            var ownerownerSessionUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
 
-            var ownerSessionUnitIdList = (await Repository.GetQueryableAsync()).Where(x => x.OwnerId == owner.Id).Select(x => x.DestinationId);
+            var ownerSessionUnitIdList = (await Repository.GetQueryableAsync())
+                .Where(x => x.OwnerId == ownerownerSessionUnit.Id)
+                .Select(x => x.DestinationId)
+                ;
 
             var query = (await SessionUnitRepository.GetQueryableAsync())
                 .Where(x => ownerSessionUnitIdList.Contains(x.Id))
@@ -53,11 +57,12 @@ namespace IczpNet.Chat.Follows
             return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query);
         }
 
+        /// <inheritdoc/>
         [HttpGet]
-        public async Task<PagedResultDto<SessionUnitDestinationDto>> GetFollowersAsync(GetFollowersInput input)
+        public async Task<PagedResultDto<SessionUnitDestinationDto>> GetListFollowerAsync(FollowerGetListInput input)
         {
             var query = (await Repository.GetQueryableAsync())
-                .Where(x => x.DestinationId == input.DestinationId)
+                .Where(x => x.DestinationId == input.SessionUnitId)
                 .Select(x => x.Owner)
                 //.WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordDestinationSessionUnitSpecification(input.Keyword).ToExpression())
                 .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordDestinationSessionUnitSpecification(input.Keyword, await ChatObjectManager.QueryByKeywordAsync(input.Keyword)))
@@ -66,6 +71,7 @@ namespace IczpNet.Chat.Follows
             return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query);
         }
 
+        /// <inheritdoc/>
         [HttpPost]
         public async Task<bool> CreateAsync(FollowCreateInput input)
         {
@@ -75,6 +81,7 @@ namespace IczpNet.Chat.Follows
             return await FollowManager.CreateAsync(owner, input.IdList);
         }
 
+        /// <inheritdoc/>
         [HttpPost]
         public async Task DeleteAsync(Guid ownerId, List<Guid> idList)
         {
