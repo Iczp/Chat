@@ -4,14 +4,14 @@ using System;
 namespace IczpNet.Chat.MessageSections
 {
 
-    public interface IMessageInput<T> : IMessageInput where T : class, IMessageContentInfo
+    public interface IMessageInput<T> : IMessageInput where T : class, IContentInfo
     {
         T Content { get; }
     }
 
     public interface IMessageInput
     {
-        //IMessageContentInfo Content { get; }
+        //IContentInfo Content { get; }
         /// <summary>
         /// 发送者
         /// </summary>

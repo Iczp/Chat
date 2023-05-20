@@ -18,7 +18,7 @@ namespace IczpNet.Chat.MessageSections
             Repository = repository;
         }
 
-        public override async Task<IMessageContentInfo> GetContent(long messageId)
+        public override async Task<IContentInfo> GetContent(long messageId)
         {
             var content = await Repository.FindAsync(x => x.MessageList.Any(d => d.Id == messageId));
 

@@ -5,7 +5,7 @@ namespace IczpNet.Chat.MessageSections.Templates
     /// <summary>
     /// HTML消息
     /// </summary>
-    public class HtmlContentInfo : BaseMessageContentInfo, IMessageContentInfo
+    public class HtmlContentInfo : BaseMessageContentInfo, IContentInfo
     {
         /// <summary>
         /// 编辑器类型

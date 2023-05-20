@@ -3,7 +3,7 @@
     /// <summary>
     /// 系统命令（）
     /// </summary>
-    public class CmdContentInfo : BaseMessageContentInfo, IMessageContentInfo
+    public class CmdContentInfo : BaseMessageContentInfo, IContentInfo
     {
         /// <summary>
         /// 执行的命令（需要与前端一致）

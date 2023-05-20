@@ -2,14 +2,14 @@
 
 namespace IczpNet.Chat.MessageSections.Messages
 {
-    public class MessageInput<T> : MessageInput //where T : class, IMessageContentInfo
+    public class MessageInput<T> : MessageInput //where T : class, IContentInfo
     {
         public virtual T Content { get; set; }
     }
 
     public class MessageInput : IMessageInput 
     {
-        //public virtual IMessageContentInfo Content { get; set; }
+        //public virtual IContentInfo Content { get; set; }
 
         /// <summary>
         /// 发送者

@@ -2,7 +2,7 @@
 
 namespace IczpNet.Chat.MessageSections.Templates
 {
-    public class RedEnvelopeContentInput : BaseMessageContentInfo, IMessageContentInfo//, IValidatableObject
+    public class RedEnvelopeContentInput : BaseMessageContentInfo, IContentInfo//, IValidatableObject
     {
 
         public virtual string Password { get; set; }

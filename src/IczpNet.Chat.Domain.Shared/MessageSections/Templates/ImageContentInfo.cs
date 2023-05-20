@@ -3,7 +3,7 @@
     /// <summary>
     /// 图片消息
     /// </summary>
-    public class ImageContentInfo : BaseMessageContentInfo, IMessageContentInfo
+    public class ImageContentInfo : BaseMessageContentInfo, IContentInfo
     {
         /// <summary>
         /// 图片地址

@@ -3,7 +3,7 @@
     /// <summary>
     /// 视频消息
     /// </summary>
-    public class VideoContentInfo : BaseMessageContentInfo, IMessageContentInfo
+    public class VideoContentInfo : BaseMessageContentInfo, IContentInfo
     {
         /// <summary>
         /// 视频地址

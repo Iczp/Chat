@@ -84,7 +84,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             SettingProvider = settingProvider;
         }
 
-        //public virtual async Task<Message> CreateMessageAsync(IChatObject sender, IChatObject receiver, Func<Message, Task<IMessageContentEntity>> func)
+        //public virtual async Task<Message> CreateMessageAsync(IChatObject sender, IChatObject receiver, Func<Message, Task<IContentEntity>> func)
         //{
         //    var session = await SessionGenerator.MakeAsync(sender, receiver);
 
@@ -111,7 +111,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         //    return entity;
         //}
 
-        //public virtual async Task<Message> CreateMessageAsync<TMessageInput>(TMessageInput input, Func<Message, Task<IMessageContentEntity>> func)
+        //public virtual async Task<Message> CreateMessageAsync<TMessageInput>(TMessageInput input, Func<Message, Task<IContentEntity>> func)
         //    where TMessageInput : class, IMessageInput
         //{
         //    var sender = await ChatObjectManager.GetItemByCacheAsync(input.SenderId);
@@ -130,7 +130,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         //    });
         //}
 
-        //public virtual async Task<MessageInfo<TContentInfo>> SendMessageAsync<TContentInfo>(MessageInput input, Func<Message, Task<IMessageContentEntity>> func)
+        //public virtual async Task<MessageInfo<TContentInfo>> SendMessageAsync<TContentInfo>(MessageInput input, Func<Message, Task<IContentEntity>> func)
         //{
         //    var message = await CreateMessageAsync(input, func);
 
@@ -305,8 +305,8 @@ namespace IczpNet.Chat.MessageSections.Messages
         }
 
         public virtual async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContent>(SessionUnit senderSessionUnit, MessageSendInput<TContentInfo> input, SessionUnit receiverSessionUnit = null)
-            where TContentInfo : IMessageContentInfo
-            where TContent : IMessageContentEntity
+            where TContentInfo : IContentInfo
+            where TContent : IContentEntity
         {
             var message = await CreateMessageBySessionUnitAsync(senderSessionUnit, async entity =>
             {

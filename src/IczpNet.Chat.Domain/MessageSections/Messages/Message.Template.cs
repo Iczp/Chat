@@ -73,9 +73,9 @@ public partial class Message
         return this.GetMessageContent().ToDynamicList().FirstOrDefault();
     }
 
-    public virtual IMessageContentEntity GetTypedContentEntity()
+    public virtual IContentEntity GetTypedContentEntity()
     {
-        return (IMessageContentEntity)GetContentEntity();
+        return (IContentEntity)GetContentEntity();
     }
 
     public virtual object GetContentDto()

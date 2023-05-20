@@ -1,6 +1,6 @@
 ﻿namespace IczpNet.Chat.MessageSections
 {
-    public interface IMessageContentEntity
+    public interface IContentEntity
     {
         string GetBody();
 

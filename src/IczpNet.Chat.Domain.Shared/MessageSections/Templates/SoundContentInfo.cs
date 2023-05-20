@@ -3,7 +3,7 @@
     /// <summary>
     /// 语音消息
     /// </summary>
-    public class SoundContentInfo : BaseMessageContentInfo, IMessageContentInfo
+    public class SoundContentInfo : BaseMessageContentInfo, IContentInfo
     {
         /// <summary>
         /// 语音地址

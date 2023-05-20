@@ -4,7 +4,7 @@
     /// 消息内容 Serializable
     /// </summary>
     //[Serializable]
-    public interface IMessageContentInfo //: IMessageType
+    public interface IContentInfo //: IMessageType
     {
         ///// <summary>
         ///// 

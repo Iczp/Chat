@@ -23,7 +23,7 @@ public class ChatApplicationAutoMapperProfile : Profile
 
         //Message
         CreateMap<Message, MessageInfo>().MaxDepth(1);
-        CreateMap<Message, MessageInfo<IMessageContentInfo>>().MaxDepth(1).ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()));
+        CreateMap<Message, MessageInfo<IContentInfo>>().MaxDepth(1).ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()));
         CreateMap<Message, MessageInfo<dynamic>>().MaxDepth(1).ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()));
         
         CreateMap<Message, MessageWithQuoteInfo>().MaxDepth(1);

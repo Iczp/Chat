@@ -3,7 +3,7 @@
     /// <summary>
     /// 位置信息
     /// </summary>
-    public class LocationContentInfo : BaseMessageContentInfo, IMessageContentInfo
+    public class LocationContentInfo : BaseMessageContentInfo, IContentInfo
     {
         /// <summary>
         /// AMap(高德地图)、baidu(百度地图)

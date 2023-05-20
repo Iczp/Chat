@@ -6,7 +6,7 @@ namespace IczpNet.Chat.MessageSections.Templates
     /// <summary>
     /// 联系人消息
     /// </summary>
-    public class ContactsContentInfo : BaseMessageContentInfo, IMessageContentInfo
+    public class ContactsContentInfo : BaseMessageContentInfo, IContentInfo
     {
         public virtual long DestinationId { get; set; }
 

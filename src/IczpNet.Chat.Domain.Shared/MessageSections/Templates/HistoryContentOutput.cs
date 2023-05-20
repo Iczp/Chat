@@ -3,7 +3,7 @@
     /// <summary>
     /// 聊天历史
     /// </summary>
-    public class HistoryContentOutput : BaseMessageContentInfo, IMessageContentInfo
+    public class HistoryContentOutput : BaseMessageContentInfo, IContentInfo
     {
         /// <summary>
         /// 标题内容

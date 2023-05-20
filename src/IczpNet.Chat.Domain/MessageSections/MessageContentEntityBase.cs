@@ -12,7 +12,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.MessageSections
 {
-    public abstract class MessageContentEntityBase : BaseEntity<Guid>, IMessageContentEntity, IIsActive, IChatOwner<long?>
+    public abstract class MessageContentEntityBase : BaseEntity<Guid>, IContentEntity, IIsActive, IChatOwner<long?>
     {
         public virtual bool IsActive { get; protected set; }
 

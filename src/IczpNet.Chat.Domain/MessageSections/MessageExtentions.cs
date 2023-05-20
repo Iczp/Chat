@@ -27,7 +27,7 @@ namespace IczpNet.Chat.MessageSections
         /// <returns></returns>
         public static bool IsDisabledForward(this Message message) => DisabledForwardList.Contains(message.MessageType);
 
-        public static void SetMessageContent(this Message message, IMessageContentEntity messageContent)
+        public static void SetMessageContent(this Message message, IContentEntity messageContent)
         {
             Assert.NotNull(messageContent, $"MessageContent is null. message:{message}");
 

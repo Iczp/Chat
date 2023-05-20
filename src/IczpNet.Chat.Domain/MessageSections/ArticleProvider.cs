@@ -16,7 +16,7 @@ namespace IczpNet.Chat.MessageSections
             Repository = repository;
         }
 
-        public override Task<IMessageContentInfo> GetContent(long messageId)
+        public override Task<IContentInfo> GetContent(long messageId)
         {
             throw new NotImplementedException();
         }

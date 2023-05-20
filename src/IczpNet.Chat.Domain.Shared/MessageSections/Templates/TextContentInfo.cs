@@ -3,7 +3,7 @@
     /// <summary>
     /// 文本消息
     /// </summary>
-    public class TextContentInfo : BaseMessageContentInfo, IMessageContentInfo
+    public class TextContentInfo : BaseMessageContentInfo, IContentInfo
     {
         /// <summary>
         /// 文本内容

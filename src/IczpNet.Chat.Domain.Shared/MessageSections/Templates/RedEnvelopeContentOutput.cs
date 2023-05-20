@@ -1,6 +1,6 @@
 ﻿namespace IczpNet.Chat.MessageSections.Templates
 {
-    public class RedEnvelopeContentOutput : BaseMessageContentInfo, IMessageContentInfo
+    public class RedEnvelopeContentOutput : BaseMessageContentInfo, IContentInfo
     {
         /// <summary>
         /// 文本内容

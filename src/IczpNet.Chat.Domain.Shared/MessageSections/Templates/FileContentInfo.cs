@@ -3,7 +3,7 @@
     /// <summary>
     /// 文件消息
     /// </summary>
-    public class FileContentInfo : BaseMessageContentInfo, IMessageContentInfo
+    public class FileContentInfo : BaseMessageContentInfo, IContentInfo
     {
         /// <summary>
         /// FileName

@@ -6,7 +6,7 @@ namespace IczpNet.Chat.MessageSections.Templates
     /// <summary>
     /// 文本消息
     /// </summary>
-    public class NoticeContentInfo : BaseMessageContentInfo, IMessageContentInfo
+    public class NoticeContentInfo : BaseMessageContentInfo, IContentInfo
     {
         /// <summary>
         /// 通知类型

@@ -3,7 +3,7 @@
     /// <summary>
     /// 分享链接消息
     /// </summary>
-    public class LinkContentInfo : BaseMessageContentInfo, IMessageContentInfo
+    public class LinkContentInfo : BaseMessageContentInfo, IContentInfo
     {
         /// <summary>
         /// Url
