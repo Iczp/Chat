@@ -39,7 +39,7 @@ public interface ISessionUnitAppService
 
     Task<SessionUnitOwnerDto> SetToppingAsync(Guid id, bool isTopping);
 
-    Task<SessionUnitOwnerDto> SetReadedAsync(Guid id, bool isForce = false, long? messageId = null);
+    Task<SessionUnitOwnerDto> SetReadedMessageIdAsync(Guid id, bool isForce = false, long? messageId = null);
 
     Task<SessionUnitOwnerDto> SetImmersedAsync(Guid id, bool isImmersed);
 

@@ -389,13 +389,13 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     }
 
     [HttpPost]
-    public virtual async Task<SessionUnitOwnerDto> SetReadedAsync(Guid id, bool isForce = false, long? messageId = null)
+    public virtual async Task<SessionUnitOwnerDto> SetReadedMessageIdAsync(Guid id, bool isForce = false, long? messageId = null)
     {
         await CheckPolicyAsync(SetReadedPolicyName);
 
         var entity = await GetEntityAsync(id);
 
-        await SessionUnitManager.SetReadedAsync(entity, isForce, messageId);
+        await SessionUnitManager.SetReadedMessageIdAsync(entity, isForce, messageId);
 
         return await MapToDtoAsync(entity);
     }

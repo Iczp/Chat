@@ -119,7 +119,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return SetEntityAsync(entity, x => x.SetTopping(isTopping));
     }
 
-    public virtual async Task<SessionUnit> SetReadedAsync(SessionUnit entity, bool isForce = false, long? messageId = null)
+    public virtual async Task<SessionUnit> SetReadedMessageIdAsync(SessionUnit entity, bool isForce = false, long? messageId = null)
     {
         var isNullOrZero = messageId == null || messageId == 0;
 
@@ -132,7 +132,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
             Assert.If(entity.SessionId != message.SessionId, $"Not in same session,messageId:{messageId}");
         }
 
-        await SetEntityAsync(entity, x => x.SetReaded(lastMessageId, isForce = false));
+        await SetEntityAsync(entity, x => x.SetReadedMessageId(lastMessageId, isForce = false));
 
         await UpdateCacheItemsAsync(entity, items =>
         {

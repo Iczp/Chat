@@ -37,7 +37,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         Task<SessionUnit> SetToppingAsync(SessionUnit entity, bool isTopping);
 
-        Task<SessionUnit> SetReadedAsync(SessionUnit entity, bool isForce = false, long? messageId = null);
+        Task<SessionUnit> SetReadedMessageIdAsync(SessionUnit entity, bool isForce = false, long? messageId = null);
 
         Task<SessionUnit> SetImmersedAsync(SessionUnit entity, bool isImmersed);
 

@@ -418,7 +418,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             MemberNameSpellingAbbreviation = memberName.ConvertToPY().MaxLength(50);
         }
 
-        internal virtual void SetReaded(long lastMessageId, bool isForce = false)
+        internal virtual void SetReadedMessageId(long lastMessageId, bool isForce = false)
         {
             if (isForce || lastMessageId > ReadedMessageId.GetValueOrDefault())
             {
