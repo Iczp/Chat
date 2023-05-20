@@ -14,7 +14,7 @@ namespace IczpNet.Chat.Enums
         /// <summary>  
         /// 系统命令消息
         /// </summary>  
-        [Description("系统命令消息")]
+        [Description("系统消息")]
         Cmd = 1,
 
         /// <summary>  
@@ -38,7 +38,7 @@ namespace IczpNet.Chat.Enums
         /// <summary>
         /// 文件消息
         /// </summary>
-        [Description("文件消息")]
+        [Description("文件")]
         File = 5,
 
         /// <summary>  
@@ -50,13 +50,13 @@ namespace IczpNet.Chat.Enums
         /// <summary>  
         /// 地理位置
         /// </summary>  
-        [Description("地理位置")]
+        [Description("位置")]
         Location = 7,
 
         /// <summary>  
         /// 联系人名片
         /// </summary>  
-        [Description("联系人名片")]
+        [Description("名片")]
         Contacts = 8,
 
         /// <summary>
@@ -80,7 +80,7 @@ namespace IczpNet.Chat.Enums
         /// <summary>
         /// 聊天历史消息
         /// </summary>
-        [Description("聊天历史消息")]
+        [Description("聊天记录")]
         History = 12,
     }
 }
