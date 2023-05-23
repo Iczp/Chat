@@ -12,8 +12,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.MessageSections
 {
-    public abstract class MessageContentEntityBase : BaseEntity<Guid>, IContentEntity, IIsActive, IChatOwner<long?>
+    public abstract class MessageContentEntityBase : BaseEntity<Guid>, IContentEntity, IIsActive, IIsEnabled, IChatOwner<long?>
     {
+        public virtual bool IsVerified { get; protected set; }
+
+        public virtual bool IsEnabled { get; protected set; } = true;
+
         public virtual bool IsActive { get; protected set; }
 
         public virtual IList<Message> MessageList { get; protected set; } = new List<Message>();
