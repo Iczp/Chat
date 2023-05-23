@@ -15,6 +15,8 @@ using IczpNet.Chat.Squares.Dtos;
 using IczpNet.Chat.Robots.Dtos;
 using IczpNet.Chat.ShopKeepers.Dtos;
 using IczpNet.Chat.ShopWaiters.Dtos;
+using IczpNet.Chat.Words;
+using IczpNet.Chat.Words.Dtos;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -77,7 +79,10 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<ConnectionCreateInput, Connection>(MemberList.None).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         //CreateMap<ConnectionUpdateInput, Connection>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
 
-
-
+        //Word
+        CreateMap<Word, WordDto>();
+        CreateMap<Word, WordDetailDto>();
+        CreateMap<WordCreateInput, Word>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<WordUpdateInput, Word>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
     }
 }
