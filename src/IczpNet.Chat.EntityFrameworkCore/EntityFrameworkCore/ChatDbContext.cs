@@ -34,6 +34,8 @@ using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.Identity.EntityFrameworkCore;
+using IczpNet.Chat.TextContentWords;
+using IczpNet.Chat.Words;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -112,7 +114,8 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     public DbSet<PaymentPlatform> PaymentPlatform { get; set; }
     public DbSet<WalletRequest> RechargeRequest { get; set; }
 
-
+    public DbSet<Word> Word { get; set; }
+    public DbSet<TextContentWord> TextContentWord { get; set; }
 
     public ChatDbContext(DbContextOptions<ChatDbContext> options)
         : base(options)

@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace IczpNet.Chat.Badwords
+namespace IczpNet.Chat.Words
 {
-    public interface IBadwordManger
+    public interface IWordManger
     {
     }
 }

@@ -33,6 +33,8 @@ using IczpNet.Chat.Wallets;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
+using IczpNet.Chat.TextContentWords;
+using IczpNet.Chat.Words;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -109,6 +111,11 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<WalletBusiness> WalletBusiness { get; }
     DbSet<PaymentPlatform> PaymentPlatform { get; }
     DbSet<WalletRequest> RechargeRequest { get; }
+
+
+    DbSet<Word> Word { get; }
+    DbSet<TextContentWord> TextContentWord { get; }
+    
 
 
 

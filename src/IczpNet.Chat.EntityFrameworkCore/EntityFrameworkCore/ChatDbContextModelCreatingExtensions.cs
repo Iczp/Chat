@@ -26,6 +26,7 @@ using System.Linq;
 using System.Reflection;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities;
+using IczpNet.Chat.TextContentWords;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -92,6 +93,7 @@ public static class ChatDbContextModelCreatingExtensions
         builder.Entity<ReadedRecorder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
         builder.Entity<Scoped>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
 
+        builder.Entity<TextContentWord>(b => { b.HasKey(x => new { x.TextContentId, x.WordId }); });
 
         builder.Entity<Message>(b =>
             {
