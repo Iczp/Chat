@@ -119,14 +119,14 @@ namespace IczpNet.Chat.ChatObjects
             return entity;
         }
 
-        public override async Task<ChatObject> UpdateAsync(ChatObject entity, bool isUnique = true)
+        public override async Task<ChatObject> UpdateAsync(ChatObject entity, long? newParentId, bool isUnique = true)
         {
             if (entity.ObjectType == ChatObjectTypeEnums.Room)
             {
 
 
             }
-            return await base.UpdateAsync(entity, isUnique);
+            return await base.UpdateAsync(entity, newParentId, isUnique);
         }
 
         public virtual async Task<List<ChatObject>> GetListByUserId(Guid userId)
@@ -219,14 +219,14 @@ namespace IczpNet.Chat.ChatObjects
 
             action?.Invoke(entity);
 
-            return await base.UpdateAsync(entity, isUnique: isUnique);
+            return await base.UpdateAsync(entity, entity.ParentId, isUnique: isUnique);
         }
 
         public virtual async Task<ChatObject> UpdateAsync(ChatObject entity, Action<ChatObject> action, bool isUnique = true)
         {
             action?.Invoke(entity);
 
-            return await base.UpdateAsync(entity, isUnique: isUnique);
+            return await base.UpdateAsync(entity, entity.ParentId, isUnique: isUnique);
         }
 
         public virtual async Task<ChatObject> UpdateNameAsync(ChatObject entity, string name)
@@ -237,7 +237,7 @@ namespace IczpNet.Chat.ChatObjects
 
             Logger.LogInformation($"SessionUnitRepository.BatchUpdateNameAsync:{count}");
 
-            return await base.UpdateAsync(entity, isUnique: true);
+            return await base.UpdateAsync(entity, entity.ParentId, isUnique: true);
         }
 
         public virtual async Task<ChatObject> UpdateNameAsync(long id, string name)
@@ -257,7 +257,7 @@ namespace IczpNet.Chat.ChatObjects
 
             Logger.LogInformation($"SessionUnitRepository.BatchUpdateAppUserIdAsync:{count}");
 
-            return await base.UpdateAsync(entity, isUnique: false);
+            return await base.UpdateAsync(entity, entity.ParentId, isUnique: false);
         }
     }
 }

@@ -55,7 +55,7 @@ namespace IczpNet.Chat.ShopWaiters
 
             await CheckUpdateAsync(entity, name);
 
-            return await ChatObjectManager.UpdateAsync(entity, isUnique: false);
+            return await ChatObjectManager.UpdateAsync(entity, entity.ParentId, isUnique: false);
         }
     }
 }

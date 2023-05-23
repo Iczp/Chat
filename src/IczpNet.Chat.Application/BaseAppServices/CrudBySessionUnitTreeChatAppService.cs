@@ -198,7 +198,7 @@ namespace IczpNet.Chat.BaseAppServices
 
             entity.SetName(input.Name);
 
-            entity.SetParentId(input.ParentId);
+            //entity.SetParentId(input.ParentId);
 
             var source = await TreeManager.CreateAsync(entity);
 
@@ -223,9 +223,9 @@ namespace IczpNet.Chat.BaseAppServices
 
             entity.SetName(input.Name);
 
-            entity.SetParentId(input.ParentId);
+            //entity.SetParentId(input.ParentId);
 
-            await TreeManager.UpdateAsync(entity);
+            await TreeManager.UpdateAsync(entity, entity.ParentId);
 
             return await MapToGetOutputDtoAsync(entity);
         }
