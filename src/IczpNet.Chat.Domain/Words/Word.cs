@@ -1,12 +1,15 @@
 ﻿using IczpNet.Chat.BaseEntitys;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.Words
 {
-    //[Index(nameof(Value), AllDescending = true)]
-    public class Word : BaseEntity<string>
+    [Index(nameof(Value), AllDescending = true)]
+    public class Word : BaseEntity<Guid>
     {
-        //[MaxLength(36)]
-        //public virtual string Value { get; set; }
+        [MaxLength(36)]
+        public virtual string Value { get; set; }
 
         public virtual bool IsEnabled { get; set; }
 

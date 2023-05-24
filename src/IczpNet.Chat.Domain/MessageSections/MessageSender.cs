@@ -141,6 +141,8 @@ namespace IczpNet.Chat.MessageSections
 
         public Task<MessageInfo<TextContentInfo>> SendTextAsync(SessionUnit senderSessionUnit, MessageSendInput<TextContentInfo> input, SessionUnit receiverSessionUnit = null)
         {
+            //
+
             return MessageManager.SendAsync<TextContentInfo, TextContent>(senderSessionUnit, input, receiverSessionUnit);
         }
 

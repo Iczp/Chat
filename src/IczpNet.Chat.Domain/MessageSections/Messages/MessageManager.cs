@@ -190,6 +190,8 @@ namespace IczpNet.Chat.MessageSections.Messages
             // Following
             await SessionUnitManager.UpdateFollowingCountAsync(senderSessionUnit, entity);
 
+            await CurrentUnitOfWork.SaveChangesAsync();
+
             //Batch Update SessionUnit
             await BatchUpdateSessionUnitAsync(senderSessionUnit, entity);
             //
@@ -198,37 +200,30 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         protected virtual bool ShouldbeBackgroundJob(SessionUnit senderSessionUnit, Message message)
         {
-            //return BackgroundJobManager.IsAvailable() && !message.IsPrivate;
-            return false;
+            return BackgroundJobManager.IsAvailable() && !message.IsPrivate && message.SessionUnitCount > 5000;
+            //return false;
         }
 
         protected virtual async Task BatchUpdateSessionUnitAsync(SessionUnit senderSessionUnit, Message message)
         {
-            if (ShouldbeBackgroundJob(senderSessionUnit, message))
+            Logger.LogInformation($"BatchUpdateSessionUnitAsync");
+
+            await SessionUnitManager.BatchUpdateCacheAsync(senderSessionUnit, message);
+
+            if (!ShouldbeBackgroundJob(senderSessionUnit, message))
             {
-                await CurrentUnitOfWork.SaveChangesAsync();
-
                 await SessionUnitManager.BatchUpdateCacheAsync(senderSessionUnit, message);
-
-                var jobId = await BackgroundJobManager.EnqueueAsync(new UpdateStatsForSessionUnitArgs()
-                {
-                    SenderSessionUnitId = senderSessionUnit.Id,
-                    MessageId = message.Id,
-                });
-
-                Logger.LogInformation($"JobId:{jobId}");
 
                 return;
             }
+            var jobId = await BackgroundJobManager.EnqueueAsync(new UpdateStatsForSessionUnitArgs()
+            {
+                SenderSessionUnitId = senderSessionUnit.Id,
+                MessageId = message.Id,
+            });
 
-            await SessionUnitManager.BatchUpdateAsync(senderSessionUnit, message);
+            Logger.LogInformation($"JobId:{jobId}");
 
-            Logger.LogInformation($"BatchUpdateSessionUnitAsync");
-
-            //SaveChangesAsync
-            await CurrentUnitOfWork.SaveChangesAsync();
-
-            await SessionUnitManager.BatchUpdateCacheAsync(senderSessionUnit, message);
         }
 
 
@@ -330,9 +325,9 @@ namespace IczpNet.Chat.MessageSections.Messages
                 await SetRemindAsync(senderSessionUnit, entity, input.RemindList);
             });
 
-            //var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
+            var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
 
-            var output = new MessageInfo<TContentInfo>() { Id = message.Id };
+            //var output = new MessageInfo<TContentInfo>() { Id = message.Id };
 
             if (receiverSessionUnit != null)
             {

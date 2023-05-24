@@ -83,8 +83,8 @@ namespace IczpNet.Chat.UnitTests
 
             Logger.LogInformation($"Sender sessionunit: id:{sessionunit?.Id},name:{sessionunit?.Owner?.Name}");
 
-            // Following
-            await FollowingAsync(items);
+            //// Following
+            //await FollowingAsync(items);
 
             Index++;
 
@@ -112,15 +112,15 @@ namespace IczpNet.Chat.UnitTests
             });
             Logger.LogInformation($"SendText: {text}");
 
-            //Recorder
-            for (int i = 0; i < new Random().Next(1, 10); i++)
-            {
-                await SetFavoritedAsync(items, sendResult.Id);
+            ////Recorder
+            //for (int i = 0; i < new Random().Next(1, 10); i++)
+            //{
+            //    await SetFavoritedAsync(items, sendResult.Id);
 
-                await SetOpenedAsync(items, sendResult.Id);
+            //    await SetOpenedAsync(items, sendResult.Id);
 
-                await SetReadedAsync(items, sendResult.Id);
-            }
+            //    await SetReadedAsync(items, sendResult.Id);
+            //}
 
             stopWatch.Stop();
 

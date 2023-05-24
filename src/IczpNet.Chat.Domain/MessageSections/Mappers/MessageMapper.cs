@@ -1,8 +1,9 @@
 ﻿//using System;
+//using IczpNet.Chat.MessageSections.Messages;
 //using Volo.Abp.DependencyInjection;
 //using Volo.Abp.ObjectMapping;
 
-//namespace IczpNet.Chat.MessageSections.Messages
+//namespace IczpNet.Chat.MessageSections.Mappers
 //{
 //    public class MessageMapper : IObjectMapper<Message, MessageInfo>, ITransientDependency
 //    {

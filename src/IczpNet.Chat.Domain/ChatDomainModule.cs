@@ -70,7 +70,7 @@ public class ChatDomainModule : AbpModule
         await context.AddBackgroundWorkerAsync<SendToRoomUnitTestWorker>();
         await context.AddBackgroundWorkerAsync<SessionUnitRequestUnitTestWorker>();
         await context.AddBackgroundWorkerAsync<RecorderUnitTestWorker>();
-        
+
         await base.OnPostApplicationInitializationAsync(context);
     }
 }

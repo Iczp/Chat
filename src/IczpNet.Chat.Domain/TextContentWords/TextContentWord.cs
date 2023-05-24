@@ -14,7 +14,7 @@ namespace IczpNet.Chat.TextContentWords
         [ForeignKey(nameof(TextContentId))]
         public virtual TextContent TextContent { get; set; }
 
-        public virtual string WordId { get; set; }
+        public virtual Guid WordId { get; set; }
 
         [ForeignKey(nameof(WordId))]
         public virtual Word Word { get; set; }

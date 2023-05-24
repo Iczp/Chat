@@ -1,6 +1,8 @@
-﻿namespace IczpNet.Chat.Words.Dtos;
+﻿using System;
+
+namespace IczpNet.Chat.Words.Dtos;
 
 public class WordCreateInput : WordUpdateInput
 {
-    public virtual string Id { get; set; }
+    public virtual string Value { get; set; }
 }

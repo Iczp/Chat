@@ -4067,8 +4067,8 @@ namespace IczpNet.Chat.Migrations
                     b.Property<Guid>("TextContentId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("WordId")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<Guid>("WordId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -4514,8 +4514,9 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.Words.Word", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -4567,7 +4568,14 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("TenantId");
 
+                    b.Property<string>("Value")
+                        .HasMaxLength(36)
+                        .HasColumnType("nvarchar(36)");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("Value")
+                        .IsDescending();
 
                     b.ToTable("Chat_Word", (string)null);
                 });
