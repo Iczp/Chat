@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.Favorites;
+using IczpNet.Chat.MessageSections.Recorders;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.Scopeds;
@@ -49,7 +50,9 @@ public partial class Message
     [InverseProperty(nameof(SessionSections.SessionUnits.SessionUnit.ReadedMessage))]
     public virtual List<SessionUnit> ReadedMessageSessionUnitList { get; protected set; }
 
-    
+    public virtual ReadedValue ReadedValue { get; protected set; } = new ReadedValue();
+    public virtual OpenedValue OpenedValue { get; protected set; } = new OpenedValue();
+    public virtual FavoritedValue FavoritedValue { get; protected set; } = new FavoritedValue();
 
     internal virtual void SetSessionUnitCount(int sessionUnitCount)
     {

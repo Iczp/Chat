@@ -27,6 +27,7 @@ using System.Reflection;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities;
 using IczpNet.Chat.TextContentWords;
+using IczpNet.Chat.MessageSections.Recorders;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -76,7 +77,7 @@ public static class ChatDbContextModelCreatingExtensions
 
         builder.Entity<ChatObjectCategoryUnit>(b => { b.HasKey(x => new { x.ChatObjectId, x.CategoryId }); });
         builder.Entity<ArticleMessage>(b => { b.HasKey(x => new { x.MessageId, x.ArticleId }); });
-        
+
         builder.Entity<HistoryMessage>(b => { b.HasKey(x => new { x.MessageId, x.HistoryContentId }); });
         builder.Entity<FriendshipTagUnit>(b => { b.HasKey(x => new { x.FriendshipId, x.FriendshipTagId }); });
 
@@ -94,6 +95,10 @@ public static class ChatDbContextModelCreatingExtensions
         builder.Entity<Scoped>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
 
         builder.Entity<TextContentWord>(b => { b.HasKey(x => new { x.TextContentId, x.WordId }); });
+
+        builder.Entity<ReadedValue>(b => { b.HasKey(x => new { x.MessageId }); });
+        builder.Entity<OpenedValue>(b => { b.HasKey(x => new { x.MessageId }); });
+        builder.Entity<FavoritedValue>(b => { b.HasKey(x => new { x.MessageId }); });
 
         builder.Entity<Message>(b =>
             {
@@ -116,6 +121,10 @@ public static class ChatDbContextModelCreatingExtensions
                 //    .HasColumnType("bigint")
                 //    //.HasColumnType("uniqueidentifier")
                 //    .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                b.HasOne(x => x.ReadedValue).WithOne(x => x.Message).HasForeignKey<ReadedValue>(x => x.MessageId).IsRequired(true);
+                b.HasOne(x => x.OpenedValue).WithOne(x => x.Message).HasForeignKey<OpenedValue>(x => x.MessageId).IsRequired(true);
+                b.HasOne(x => x.FavoritedValue).WithOne(x => x.Message).HasForeignKey<FavoritedValue>(x => x.MessageId).IsRequired(true);
             });
 
     }
