@@ -85,7 +85,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         Task<int> UpdateFollowingCountAsync(SessionUnit senderSessionUnit, Message message);
 
-        Task<int> BatchUpdateCacheAsync(SessionUnit senderSessionUnit, Message message);
+        Task<int> UpdateCachesAsync(SessionUnit senderSessionUnit, Message message);
 
         Task<int> BatchUpdateAsync(SessionUnit senderSessionUnit, Message message);
 

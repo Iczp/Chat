@@ -506,7 +506,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         Logger.LogInformation($"UpdateCacheItems stopwatch: {stopwatch.ElapsedMilliseconds}ms.");
     }
 
-    public virtual async Task<int> BatchUpdateCacheAsync(SessionUnit senderSessionUnit, Message message)
+    public virtual async Task<int> UpdateCachesAsync(SessionUnit senderSessionUnit, Message message)
     {
         int count = 0;
 

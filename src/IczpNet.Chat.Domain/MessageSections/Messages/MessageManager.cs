@@ -200,19 +200,19 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         protected virtual bool ShouldbeBackgroundJob(SessionUnit senderSessionUnit, Message message)
         {
-            return BackgroundJobManager.IsAvailable() && !message.IsPrivate && message.SessionUnitCount > 5000;
-            //return false;
+            //return BackgroundJobManager.IsAvailable() && !message.IsPrivate && message.SessionUnitCount > 5000;
+            return false;
         }
 
         protected virtual async Task BatchUpdateSessionUnitAsync(SessionUnit senderSessionUnit, Message message)
         {
             Logger.LogInformation($"BatchUpdateSessionUnitAsync");
 
-            await SessionUnitManager.BatchUpdateCacheAsync(senderSessionUnit, message);
+            await SessionUnitManager.UpdateCachesAsync(senderSessionUnit, message);
 
-            if (!ShouldbeBackgroundJob(senderSessionUnit, message))
+            if (ShouldbeBackgroundJob(senderSessionUnit, message))
             {
-                await SessionUnitManager.BatchUpdateCacheAsync(senderSessionUnit, message);
+                await SessionUnitManager.BatchUpdateAsync(senderSessionUnit, message);
 
                 return;
             }
