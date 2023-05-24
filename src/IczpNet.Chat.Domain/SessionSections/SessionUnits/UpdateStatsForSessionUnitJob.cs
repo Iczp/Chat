@@ -33,7 +33,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
             var result = await SessionUnitManager.BatchUpdateAsync(senderSessionUnit, message);
 
-            Logger.LogInformation($"UpdateStatsForSessionUnitJob Completed {result}.");
+            Logger.LogInformation($"UpdateStatsForSessionUnitJob Completed:{result}.");
         }
     }
 }
