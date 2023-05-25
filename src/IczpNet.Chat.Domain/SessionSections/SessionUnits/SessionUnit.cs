@@ -30,6 +30,7 @@ using IczpNet.Chat.OpenedRecorders;
 using System.Linq.Expressions;
 using IczpNet.Chat.Favorites;
 using IczpNet.Chat.ReadedRecorders;
+using IczpNet.Chat.SessionSections.SessionUnitCounters;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits
 {
@@ -241,6 +242,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public virtual ChatObject Inviter { get; set; }
 
         public virtual double Sorting { get; protected set; }
+
+        public virtual SessionUnitCounter SessionUnitCounter { get; protected set; } = new SessionUnitCounter();
 
         public virtual IList<MessageReminder> ReminderList { get; protected set; } = new List<MessageReminder>();
 
