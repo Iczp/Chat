@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.SessionSections.SessionUnits;
+﻿using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
 using Volo.Abp.Auditing;
@@ -12,6 +13,11 @@ namespace IczpNet.Chat.SessionSections.SessionUnitCounters
 
         [ForeignKey(nameof(SessionUnitId))]
         public virtual SessionUnit SessionUnit { get; set; }
+
+        public virtual long? LastMessageId { get; set; }
+
+        [ForeignKey(nameof(LastMessageId))]
+        public virtual Message LastMessage { get; set; }
 
         public virtual int PublicBadge { get; protected set; }
 
