@@ -3,6 +3,8 @@ using Volo.Abp.Domain.Services;
 using IczpNet.AbpCommons.Extensions;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace IczpNet.Chat.SessionSections.SessionUnitCounters
 {
@@ -23,32 +25,50 @@ namespace IczpNet.Chat.SessionSections.SessionUnitCounters
 
             var stopwatch = Stopwatch.StartNew();
 
-            var counter = 0;
+            var counter = new List<int>();
 
             if (args.IsPrivate)
             {
-                counter += await Repository.IncrementPrivateBadgeAndUpdateLastMessageIdAsync(args.SessionId, args.LastMessageId, args.MessageCreationTime, args.PrivateBadgeSessionUnitIdList);
+                var count = await Repository.IncrementPrivateBadgeAndUpdateLastMessageIdAsync(args.SessionId, args.LastMessageId, args.MessageCreationTime, args.PrivateBadgeSessionUnitIdList);
+
+                Logger.LogInformation($"IncrementPrivateBadgeAndUpdateLastMessageId count:{count}");
+
+                counter.Add(count);
             }
             else
             {
-                counter += await Repository.IncrementPublicBadgeAndRemindAllCountAndUpdateLastMessageIdAsync(args.SessionId, args.LastMessageId, args.MessageCreationTime, args.IgnoreSessionUnitId, args.IsRemindAll);
+                var count = await Repository.IncrementPublicBadgeAndRemindAllCountAndUpdateLastMessageIdAsync(args.SessionId, args.LastMessageId, args.MessageCreationTime, args.IgnoreSessionUnitId, args.IsRemindAll);
+
+                Logger.LogInformation($"IncrementPublicBadgeAndRemindAllCountAndUpdateLastMessageIdAsync count:{count}");
+
+                counter.Add(count);
             }
 
             if (args.RemindSessionUnitIdList.IsAny())
             {
-                counter += await Repository.IncrementRemindMeCountAsync(args.SessionId, args.MessageCreationTime, args.RemindSessionUnitIdList);
+                var count = await Repository.IncrementRemindMeCountAsync(args.SessionId, args.MessageCreationTime, args.RemindSessionUnitIdList);
+
+                Logger.LogInformation($"IncrementRemindMeCountAsync count:{count}");
+
+                counter.Add(count);
             }
 
             if (args.FollowingSessionUnitIdList.IsAny())
             {
-                counter += await Repository.IncrementRemindMeCountAsync(args.SessionId, args.MessageCreationTime, args.FollowingSessionUnitIdList);
+                var count = await Repository.IncrementFollowingCountAsync(args.SessionId, args.MessageCreationTime, args.FollowingSessionUnitIdList);
+
+                Logger.LogInformation($"IncrementFollowingCountAsync count:{count}");
+
+                counter.Add(count);
             }
 
             stopwatch.Stop();
 
-            Logger.LogInformation($"Incremenet counter:{counter}, stopwatch: {stopwatch.ElapsedMilliseconds}ms.");
+            var totalCount = counter.Sum();
 
-            return counter;
+            Logger.LogInformation($"Incremenet totalCount:{totalCount}, stopwatch: {stopwatch.ElapsedMilliseconds}ms.");
+
+            return totalCount;
         }
     }
 }

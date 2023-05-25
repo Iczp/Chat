@@ -151,7 +151,10 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             var entity = new Message(senderSessionUnit);
 
-            var sessionUnitCounterArgs = new SessionUnitCounterArgs(senderSessionUnit.SessionId.Value, entity.CreationTime);
+            var sessionUnitCounterArgs = new SessionUnitCounterArgs()
+            {
+                SessionId = senderSessionUnit.SessionId.Value,
+            };
 
             if (action != null)
             {
@@ -210,14 +213,14 @@ namespace IczpNet.Chat.MessageSections.Messages
                 //
             }
             sessionUnitCounterArgs.LastMessageId = entity.Id;
-
             sessionUnitCounterArgs.IsRemindAll = entity.IsRemindAll;
+            sessionUnitCounterArgs.MessageCreationTime = entity.CreationTime;
 
-            //var jobId = await BackgroundJobManager.EnqueueAsync(sessionUnitCounterArgs);
+            var jobId = await BackgroundJobManager.EnqueueAsync(sessionUnitCounterArgs);
 
-            //Logger.LogInformation($"SessionUnitCounter backgroupJobId:{jobId},args:{sessionUnitCounterArgs}");
+            Logger.LogInformation($"SessionUnitCounter backgroupJobId:{jobId},args:{sessionUnitCounterArgs}");
 
-            await SessionUnitCounterManager.IncremenetAsync(sessionUnitCounterArgs);
+            //await SessionUnitCounterManager.IncremenetAsync(sessionUnitCounterArgs);
 
             return entity;
         }

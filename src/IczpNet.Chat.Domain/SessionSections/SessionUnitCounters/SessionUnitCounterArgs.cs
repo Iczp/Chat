@@ -1,18 +1,12 @@
-﻿using IczpNet.Chat.SessionSections.Sessions;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace IczpNet.Chat.SessionSections.SessionUnitCounters
 {
+    [Serializable]
     public class SessionUnitCounterArgs
     {
-        public SessionUnitCounterArgs(Guid sessionId, DateTime creationTime)
-        {
-            SessionId = sessionId;
-            MessageCreationTime = creationTime;
-        }
-
-        public Guid SessionId { get; protected set; }
+        public Guid SessionId { get; set; }
 
         public bool IsPrivate { get; set; } = false;
 
@@ -22,7 +16,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnitCounters
 
         public long LastMessageId { get; set; }
 
-        public DateTime MessageCreationTime { get; protected set; }
+        public DateTime MessageCreationTime { get; set; }
 
         public List<Guid> RemindSessionUnitIdList { get; set; }
 
@@ -34,6 +28,5 @@ namespace IczpNet.Chat.SessionSections.SessionUnitCounters
         {
             return $"SessionId={SessionId},IsRemindAll={IsRemindAll},LastMessageId={LastMessageId}";
         }
-
     }
 }
