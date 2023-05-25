@@ -7,9 +7,8 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.Options;
-using IczpNet.Chat.Scopeds;
-using IczpNet.Chat.SessionSections;
 using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.SessionUnitCounters;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.Settings;
 using Microsoft.Extensions.Logging;
@@ -47,6 +46,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         protected IFollowManager FollowManager { get; }
         protected IBackgroundJobManager BackgroundJobManager { get; }
         protected ISettingProvider SettingProvider { get; }
+        protected ISessionUnitCounterManager SessionUnitCounterManager { get; }
 
         public MessageManager(
             IMessageRepository repository,
@@ -64,7 +64,8 @@ namespace IczpNet.Chat.MessageSections.Messages
             IFollowManager followManager,
             IBackgroundJobManager backgroundJobManager,
             ISessionRepository sessionRepository,
-            ISettingProvider settingProvider)
+            ISettingProvider settingProvider,
+            ISessionUnitCounterManager sessionUnitCounterManager)
         {
             Repository = repository;
             ChatObjectResolver = messageChatObjectResolver;
@@ -82,6 +83,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             BackgroundJobManager = backgroundJobManager;
             SessionRepository = sessionRepository;
             SettingProvider = settingProvider;
+            SessionUnitCounterManager = sessionUnitCounterManager;
         }
 
         //public virtual async Task<Message> CreateMessageAsync(IChatObject sender, IChatObject receiver, Func<Message, Task<IContentEntity>> func)
@@ -141,7 +143,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         //    return output;
         //}
 
-        public virtual async Task<Message> CreateMessageBySessionUnitAsync(SessionUnit senderSessionUnit, Func<Message, Task> action, SessionUnit receiverSessionUnit = null)
+        public virtual async Task<Message> CreateMessageBySessionUnitAsync(SessionUnit senderSessionUnit, Func<Message, SessionUnitCounterArgs, Task> action, SessionUnit receiverSessionUnit = null)
         {
             Assert.NotNull(senderSessionUnit, $"Unable to send message, senderSessionUnit is null");
 
@@ -149,9 +151,11 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             var entity = new Message(senderSessionUnit);
 
+            var sessionUnitCounterArgs = new SessionUnitCounterArgs(senderSessionUnit.SessionId.Value, entity.CreationTime);
+
             if (action != null)
             {
-                await action(entity);
+                await action(entity, sessionUnitCounterArgs);
             }
 
             await MessageValidator.CheckAsync(entity);
@@ -186,20 +190,47 @@ namespace IczpNet.Chat.MessageSections.Messages
             // private message
             if (entity.IsPrivate || receiverSessionUnit != null)
             {
-                receiverSessionUnit.SetLastMessage(entity);
-                receiverSessionUnit.SetPrivateBadge(receiverSessionUnit.PrivateBadge + 1);
-                await SessionUnitRepository.UpdateAsync(receiverSessionUnit, autoSave: true);
+                //receiverSessionUnit.SetLastMessage(entity);
+                //receiverSessionUnit.SetPrivateBadge(receiverSessionUnit.PrivateBadge + 1);
+                //await SessionUnitRepository.UpdateAsync(receiverSessionUnit, autoSave: true);
+
+                sessionUnitCounterArgs.PrivateBadgeSessionUnitIdList = new List<Guid>() { receiverSessionUnit.Id };
             }
+            else
+            {
+                // Following
+                await SessionUnitManager.IncrementFollowingCountAsync(senderSessionUnit, entity);
 
-            // Following
-            await SessionUnitManager.IncrementFollowingCountAsync(senderSessionUnit, entity);
+                sessionUnitCounterArgs.FollowingSessionUnitIdList = await GetFollowingIdListAsync(senderSessionUnit);
 
-            //await CurrentUnitOfWork.SaveChangesAsync();
+                //await CurrentUnitOfWork.SaveChangesAsync();
 
-            //Batch Update SessionUnit
-            //await BatchUpdateSessionUnitAsync(senderSessionUnit, entity);
-            //
+                //Batch Update SessionUnit
+                //await BatchUpdateSessionUnitAsync(senderSessionUnit, entity);
+                //
+            }
+            sessionUnitCounterArgs.LastMessageId = entity.Id;
+
+            sessionUnitCounterArgs.IsRemindAll = entity.IsRemindAll;
+
+            //var jobId = await BackgroundJobManager.EnqueueAsync(sessionUnitCounterArgs);
+
+            //Logger.LogInformation($"SessionUnitCounter backgroupJobId:{jobId},args:{sessionUnitCounterArgs}");
+
+            await SessionUnitCounterManager.IncremenetAsync(sessionUnitCounterArgs);
+
             return entity;
+        }
+
+        protected virtual async Task<List<Guid>> GetFollowingIdListAsync(SessionUnit senderSessionUnit)
+        {
+            var ownerSessionUnitIdList = await FollowManager.GetFollowerIdListAsync(senderSessionUnit.Id);
+
+            if (ownerSessionUnitIdList.Any())
+            {
+                ownerSessionUnitIdList.Remove(senderSessionUnit.Id);
+            }
+            return ownerSessionUnitIdList;
         }
 
         protected virtual bool ShouldbeBackgroundJob(SessionUnit senderSessionUnit, Message message)
@@ -285,7 +316,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             return unitIdList;
         }
 
-        protected virtual async Task SetRemindAsync(SessionUnit senderSessionUnit, Message message, List<Guid> remindIdList)
+        protected virtual async Task<List<Guid>> GetRemindIdListAsync(SessionUnit senderSessionUnit, Message message, List<Guid> remindIdList)
         {
             var finalRemindIdList = await GetReminderIdListForTextContentAsync(senderSessionUnit, message);
 
@@ -296,19 +327,21 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             if (!finalRemindIdList.Any())
             {
-                return;
+                return new List<Guid>();
             }
 
             message.SetReminder(finalRemindIdList, ReminderTypes.Normal);
 
-            await SessionUnitRepository.IncrementRemindMeCountAsync(message.CreationTime, finalRemindIdList);
+            //await SessionUnitRepository.IncrementRemindMeCountAsync(message.CreationTime, finalRemindIdList);
+
+            return finalRemindIdList;
         }
 
         public virtual async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContent>(SessionUnit senderSessionUnit, MessageSendInput<TContentInfo> input, SessionUnit receiverSessionUnit = null)
             where TContentInfo : IContentInfo
             where TContent : IContentEntity
         {
-            var message = await CreateMessageBySessionUnitAsync(senderSessionUnit, async entity =>
+            var message = await CreateMessageBySessionUnitAsync(senderSessionUnit, async (entity, args) =>
             {
                 entity.SetKey(input.KeyName, input.KeyValue);
 
@@ -327,7 +360,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
                 entity.SetMessageContent(messageContent);
 
-                await SetRemindAsync(senderSessionUnit, entity, input.RemindList);
+                args.RemindSessionUnitIdList = await GetRemindIdListAsync(senderSessionUnit, entity, input.RemindList);
             });
 
             var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
@@ -445,7 +478,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
                 Assert.If(currentSessionUnit.OwnerId != targetSessionUnit.OwnerId, $"[targetSessionUnitId:{targetSessionUnitId}] is fail.");
 
-                var newMessage = await CreateMessageBySessionUnitAsync(targetSessionUnit, async x =>
+                var newMessage = await CreateMessageBySessionUnitAsync(targetSessionUnit, async (x, args) =>
                 {
                     x.SetForwardMessage(sourceMessage);
                     x.SetMessageContent(messageContent);

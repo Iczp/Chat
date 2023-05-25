@@ -9,6 +9,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnitCounters
 {
     public class SessionUnitCounter : Entity, IHasCreationTime, IHasModificationTime
     {
+        //protected SessionUnitCounter() { }
+
         public virtual Guid SessionUnitId { get; set; }
 
         [ForeignKey(nameof(SessionUnitId))]

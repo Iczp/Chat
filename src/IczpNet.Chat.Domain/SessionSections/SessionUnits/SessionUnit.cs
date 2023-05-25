@@ -397,7 +397,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
                 x.IsEnabled &&
                 (x.HistoryFristTime == null || creationTime > x.HistoryFristTime) &&
                 (x.HistoryLastTime == null || creationTime < x.HistoryLastTime) &&
-                (x.HistoryLastTime == null || creationTime < x.HistoryLastTime) &&
                 (x.ClearTime == null || creationTime > x.ClearTime)
             ;
         }

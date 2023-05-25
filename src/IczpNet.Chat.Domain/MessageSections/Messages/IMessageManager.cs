@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.ChatObjects;
+﻿using IczpNet.Chat.SessionSections.SessionUnitCounters;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
@@ -14,7 +14,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         //Task<MessageInfo<TContentInfo>> SendMessageAsync<TContentInfo>(MessageInput input, Func<Message, Task<IContentEntity>> func);
 
-        Task<Message> CreateMessageBySessionUnitAsync(SessionUnit sessionUnit, Func<Message, Task> action, SessionUnit receiverSessionUnit = null);
+        Task<Message> CreateMessageBySessionUnitAsync(SessionUnit sessionUnit, Func<Message, SessionUnitCounterArgs, Task> action, SessionUnit receiverSessionUnit = null);
 
         Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContent>(SessionUnit senderSessionUnit, MessageSendInput<TContentInfo> input, SessionUnit receiverSessionUnit = null)
             where TContentInfo :  IContentInfo
