@@ -83,7 +83,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         Task<int> GetSameDestinationCountAsync(long sourceChatObjectId, long targetChatObjectId, List<ChatObjectTypeEnums> chatObjectTypeList = null);
 
-        Task<int> UpdateFollowingCountAsync(SessionUnit senderSessionUnit, Message message);
+        Task<int> IncrementFollowingCountAsync(SessionUnit senderSessionUnit, Message message);
 
         Task<int> UpdateCachesAsync(SessionUnit senderSessionUnit, Message message);
 

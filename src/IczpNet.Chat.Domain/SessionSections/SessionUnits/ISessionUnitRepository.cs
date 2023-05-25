@@ -12,9 +12,9 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         Task<int> BatchUpdateLastMessageIdAndPublicBadgeAndRemindAllCountAsync(Guid sessionId, long lastMessageId, DateTime messageCreationTime, Guid ignoreSessionUnitId, bool isRemindAll);
 
-        Task<int> BatchUpdateRemindMeCountAsync(DateTime messageCreationTime, List<Guid> sessionUnitIdList);
+        Task<int> IncrementRemindMeCountAsync(DateTime messageCreationTime, List<Guid> sessionUnitIdList);
 
-        Task<int> BatchUpdateFollowingCountAsync(Guid sessionId, DateTime messageCreationTime, List<Guid> ownerSessionUnitIdList);
+        Task<int> IncrementFollowingCountAsync(Guid sessionId, DateTime messageCreationTime, List<Guid> ownerSessionUnitIdList);
 
         Task<int> BatchUpdateNameAsync(long chatObjectId, string name, string nameSpelling, string nameSpellingAbbreviation);
 

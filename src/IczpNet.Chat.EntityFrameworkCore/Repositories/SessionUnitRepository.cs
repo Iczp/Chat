@@ -3,8 +3,6 @@ using IczpNet.Chat.EntityFrameworkCore;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using NUglify;
-using Polly;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -113,7 +111,7 @@ namespace IczpNet.Chat.Repositories
                 );
         }
 
-        protected virtual async Task<int> BatchUpdatePublicBadgeAsync(Guid sessionId, DateTime messageCreationTime, Guid ignoreSessionUnitId)
+        protected virtual async Task<int> IncrementPublicBadgeAsync(Guid sessionId, DateTime messageCreationTime, Guid ignoreSessionUnitId)
         {
             var query = await GetQueryableAsync(messageCreationTime);
 
@@ -125,7 +123,7 @@ namespace IczpNet.Chat.Repositories
                 );
         }
 
-        protected virtual async Task<int> BatchUpdateRemindAllCountAsync(Guid sessionId, DateTime messageCreationTime, Guid ignoreSessionUnitId)
+        protected virtual async Task<int> IncrementRemindAllCountAsync(Guid sessionId, DateTime messageCreationTime, Guid ignoreSessionUnitId)
         {
             var query = await GetQueryableAsync(messageCreationTime);
 
@@ -139,7 +137,7 @@ namespace IczpNet.Chat.Repositories
 
 
 
-        public virtual async Task<int> BatchUpdateRemindMeCountAsync(DateTime messageCreationTime, List<Guid> sessionUnitIdList)
+        public virtual async Task<int> IncrementRemindMeCountAsync(DateTime messageCreationTime, List<Guid> sessionUnitIdList)
         {
             var query = await GetQueryableAsync(messageCreationTime);
 
@@ -151,7 +149,7 @@ namespace IczpNet.Chat.Repositories
         }
 
 
-        public virtual async Task<int> BatchUpdateFollowingCountAsync(Guid sessionId, DateTime messageCreationTime, List<Guid> destinationSessionUnitIdList)
+        public virtual async Task<int> IncrementFollowingCountAsync(Guid sessionId, DateTime messageCreationTime, List<Guid> destinationSessionUnitIdList)
         {
             var query = await GetQueryableAsync(messageCreationTime);
 

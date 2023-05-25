@@ -3,6 +3,7 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 
@@ -27,18 +28,22 @@ namespace IczpNet.Chat.OpenedRecorders
 
         protected override async Task ChangeMessageIfNotContainsAsync(SessionUnit sessionUnit, Message message)
         {
-            message.OpenedCount++;
+            //message.OpenedCount++;
 
-            await Task.CompletedTask;
+            //await Task.CompletedTask;
+
+            await MessageRepository.IncrementOpenedCountAsync(new List<long>() { message.Id});
         }
 
         protected override async Task ChangeMessagesIfNotContainsAsync(SessionUnit sessionUnit, List<Message> changeMessages)
         {
-            foreach (Message message in changeMessages)
-            {
-                message.OpenedCount++;
-            }
-            await Task.CompletedTask;
+            //foreach (Message message in changeMessages)
+            //{
+            //    message.OpenedCount++;
+            //}
+            //await Task.CompletedTask;
+
+            await MessageRepository.IncrementOpenedCountAsync(changeMessages.Select(x => x.Id).ToList());
         }
     }
 }

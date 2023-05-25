@@ -14,7 +14,7 @@ namespace IczpNet.Chat.Repositories
         {
         }
 
-        public virtual async Task<int> BatchUpdateReadedCountAsync(List<long> messageIdList)
+        public virtual async Task<int> IncrementReadedCountAsync(List<long> messageIdList)
         {
             var context = await GetDbContextAsync();
 
@@ -25,7 +25,7 @@ namespace IczpNet.Chat.Repositories
                 );
         }
 
-        public virtual async Task<int> BatchUpdateOpenedCountAsync(List<long> messageIdList)
+        public virtual async Task<int> IncrementOpenedCountAsync(List<long> messageIdList)
         {
             var context = await GetDbContextAsync();
 
@@ -36,7 +36,7 @@ namespace IczpNet.Chat.Repositories
                 );
         }
 
-        public virtual async Task<int> BatchUpdateFavoritedCountAsync(List<long> messageIdList)
+        public virtual async Task<int> IncrementFavoritedCountAsync(List<long> messageIdList)
         {
             var context = await GetDbContextAsync();
 
@@ -47,7 +47,7 @@ namespace IczpNet.Chat.Repositories
                 );
         }
 
-        public virtual async Task<int> BatchUpdateRecorderAsync(List<long> messageIdList)
+        public virtual async Task<int> IncrementRecorderAsync(List<long> messageIdList)
         {
             var context = await GetDbContextAsync();
 

@@ -31,7 +31,10 @@ namespace IczpNet.Chat.MessageSections.Mappers
 
         public TextContent Map(TextContentInfo source, TextContent destination)
         {
+            TextFilter.CheckAsync(source.Text).Wait();
+
             Logger.LogInformation($"TextContentInfo:{source},TextContent:{destination}");
+
             return destination;
         }
     }

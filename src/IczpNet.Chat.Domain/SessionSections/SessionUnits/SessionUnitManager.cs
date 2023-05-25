@@ -477,7 +477,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
     }
 
 
-    public virtual async Task<int> UpdateFollowingCountAsync(SessionUnit senderSessionUnit, Message message)
+    public virtual async Task<int> IncrementFollowingCountAsync(SessionUnit senderSessionUnit, Message message)
     {
         var ownerSessionUnitIdList = await FollowManager.GetFollowerIdListAsync(senderSessionUnit.Id);
 
@@ -485,7 +485,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         {
             ownerSessionUnitIdList.Remove(senderSessionUnit.Id);
 
-            return await Repository.BatchUpdateFollowingCountAsync(senderSessionUnit.SessionId.Value, message.CreationTime, ownerSessionUnitIdList: ownerSessionUnitIdList);
+            return await Repository.IncrementFollowingCountAsync(senderSessionUnit.SessionId.Value, message.CreationTime, ownerSessionUnitIdList: ownerSessionUnitIdList);
         }
         return 0;
     }
@@ -523,6 +523,8 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
 
             foreach (var item in others)
             {
+                //item.RemindMeCount++;
+                //item.FollowingCount++;
                 item.PublicBadge++;
                 item.RemindAllCount++;
                 item.LastMessageId = message.Id;

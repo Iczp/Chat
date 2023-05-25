@@ -40,17 +40,23 @@ namespace IczpNet.Chat.ReadedRecorders
 
         protected override async Task ChangeMessageIfNotContainsAsync(SessionUnit sessionUnit, Message message)
         {
-            message.ReadedCount++;
-            await Task.CompletedTask;
+            //message.ReadedCount++;
+
+            //await Task.CompletedTask;
+
+            await MessageRepository.IncrementReadedCountAsync(new List<long>() { message.Id });
         }
 
         protected override async Task ChangeMessagesIfNotContainsAsync(SessionUnit sessionUnit, List<Message> changeMessages)
         {
-            foreach (var message in changeMessages)
-            {
-                message.ReadedCount++;
-            }
-            await Task.CompletedTask;
+            //foreach (var message in changeMessages)
+            //{
+            //    message.ReadedCount++;
+            //}
+            //await Task.CompletedTask;
+
+            await MessageRepository.IncrementReadedCountAsync(changeMessages.Select(x => x.Id).ToList());
         }
+        
     }
 }

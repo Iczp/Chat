@@ -109,9 +109,11 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(input.DestinationObjectType.HasValue, x => x.DestinationObjectType == input.DestinationObjectType)
             .WhereIf(input.IsKilled.HasValue, x => x.IsKilled == input.IsKilled)
             .WhereIf(input.IsCreator.HasValue, x => x.IsCreator == input.IsCreator)
-            .WhereIf(input.MinMessageId.HasValue, x => x.LastMessageId > input.MinMessageId)
-            .WhereIf(input.MaxMessageId.HasValue, x => x.LastMessageId <= input.MaxMessageId)
-            .WhereIf(input.IsTopping == true, x => x.Sorting != 0)
+            //.WhereIf(input.MinMessageId.HasValue, x => x.LastMessageId > input.MinMessageId)
+            //.WhereIf(input.MaxMessageId.HasValue, x => x.LastMessageId <= input.MaxMessageId)
+            .WhereIf(input.MinMessageId.HasValue, x => x.Session.LastMessageId > input.MinMessageId)
+            .WhereIf(input.MaxMessageId.HasValue, x => x.Session.LastMessageId <= input.MaxMessageId)
+            .WhereIf(input.IsTopping == true, x => x.Sorting > 0)
             .WhereIf(input.IsTopping == false, x => x.Sorting == 0)
             .WhereIf(input.IsCantacts.HasValue, x => x.IsCantacts == input.IsCantacts)
             .WhereIf(input.IsImmersed.HasValue, x => x.IsImmersed == input.IsImmersed)
@@ -130,11 +132,18 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 
         var query = await GetQueryAsync(input);
 
+
+
         return await GetPagedListAsync<SessionUnit, SessionUnitOwnerDto>(
             query,
             input,
-            x => x.OrderByDescending(x => x.Sorting)
-                  .ThenByDescending(x => x.LastMessageId),
+            x => input.IsTopping == true
+                ? x.OrderByDescending(x => x.Sorting)
+                   .ThenByDescending(x => x.Session.LastMessageId)
+                : x.OrderByDescending(x => x.Session.LastMessageId)
+                  //.ThenByDescending(x => x.LastMessageId)
+                  //.ThenByDescending(x => x.Session.LastMessageId)
+                  ,
             async entities =>
             {
                 if (input.IsRealStat == true)
@@ -539,6 +548,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     }
 
     [HttpGet]
+    [UnitOfWork(true, IsolationLevel.ReadUncommitted)]
     public async Task<BadgeDto> GetBadgeByOwnerIdAsync(long ownerId, bool? isImmersed = null)
     {
         var badge = await SessionUnitManager.GetBadgeByOwnerIdAsync(ownerId, isImmersed);

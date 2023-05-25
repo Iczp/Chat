@@ -161,6 +161,8 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             entity.SetSessionUnitCount(sessionUnitCount);
 
+            //entity.Session.SetLastMessage(entity);
+
             //var sessionUnitItems = await SessionUnitManager.GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);
 
             //entity.ScopedList = sessionUnitItems.Select(x => new Scoped(x.Id)).ToList();
@@ -168,6 +170,8 @@ namespace IczpNet.Chat.MessageSections.Messages
             await Repository.InsertAsync(entity, autoSave: true);
 
             // session LastMessage
+            await SessionRepository.UpdateLastMessageIdAsync(senderSessionUnit.SessionId.Value, entity.Id);
+
             //var session = await SessionRepository.GetAsync(senderSessionUnit.SessionId.Value);
 
             //session.SetLastMessage(entity);
@@ -188,12 +192,12 @@ namespace IczpNet.Chat.MessageSections.Messages
             }
 
             // Following
-            await SessionUnitManager.UpdateFollowingCountAsync(senderSessionUnit, entity);
+            await SessionUnitManager.IncrementFollowingCountAsync(senderSessionUnit, entity);
 
-            await CurrentUnitOfWork.SaveChangesAsync();
+            //await CurrentUnitOfWork.SaveChangesAsync();
 
             //Batch Update SessionUnit
-            await BatchUpdateSessionUnitAsync(senderSessionUnit, entity);
+            //await BatchUpdateSessionUnitAsync(senderSessionUnit, entity);
             //
             return entity;
         }
@@ -212,25 +216,26 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             if (ShouldbeBackgroundJob(senderSessionUnit, message))
             {
-                await SessionUnitManager.BatchUpdateAsync(senderSessionUnit, message);
+                var jobId = await BackgroundJobManager.EnqueueAsync(new UpdateStatsForSessionUnitArgs()
+                {
+                    SenderSessionUnitId = senderSessionUnit.Id,
+                    MessageId = message.Id,
+                });
+
+                Logger.LogInformation($"JobId:{jobId}");
 
                 return;
             }
-            var jobId = await BackgroundJobManager.EnqueueAsync(new UpdateStatsForSessionUnitArgs()
-            {
-                SenderSessionUnitId = senderSessionUnit.Id,
-                MessageId = message.Id,
-            });
 
-            Logger.LogInformation($"JobId:{jobId}");
-
+            //
+            await SessionUnitManager.BatchUpdateAsync(senderSessionUnit, message);
         }
 
 
         [GeneratedRegex("@([^@ ]+) ?")]
         private static partial Regex RemindNameRegex();
 
-        private async Task<List<Guid>> GetRemindIdListForTextContentAsync(SessionUnit senderSessionUnit, Message message)
+        private async Task<List<Guid>> GetReminderIdListForTextContentAsync(SessionUnit senderSessionUnit, Message message)
         {
             var unitIdList = new List<Guid>();
             //@XXX
@@ -282,7 +287,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         protected virtual async Task SetRemindAsync(SessionUnit senderSessionUnit, Message message, List<Guid> remindIdList)
         {
-            var finalRemindIdList = await GetRemindIdListForTextContentAsync(senderSessionUnit, message);
+            var finalRemindIdList = await GetReminderIdListForTextContentAsync(senderSessionUnit, message);
 
             if (remindIdList.IsAny())
             {
@@ -296,7 +301,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             message.SetReminder(finalRemindIdList, ReminderTypes.Normal);
 
-            await SessionUnitRepository.BatchUpdateRemindMeCountAsync(message.CreationTime, finalRemindIdList);
+            await SessionUnitRepository.IncrementRemindMeCountAsync(message.CreationTime, finalRemindIdList);
         }
 
         public virtual async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContent>(SessionUnit senderSessionUnit, MessageSendInput<TContentInfo> input, SessionUnit receiverSessionUnit = null)
