@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace IczpNet.Chat.SessionSections.SessionUnitCounters
+namespace IczpNet.Chat.SessionSections.SessionUnits
 {
     [Serializable]
     public class SessionUnitIncrementArgs

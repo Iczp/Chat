@@ -1,11 +1,10 @@
-﻿using IczpNet.Chat.SessionSections.SessionUnits;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Uow;
 
-namespace IczpNet.Chat.SessionSections.SessionUnitCounters
+namespace IczpNet.Chat.SessionSections.SessionUnits
 {
     public class SessionUnitIncrementJob : AsyncBackgroundJob<SessionUnitIncrementArgs>, ITransientDependency
     {
