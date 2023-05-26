@@ -13,7 +13,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnitCounters
     [Index(nameof(SessionUnitId), nameof(LastMessageId), AllDescending = true)]
     public class SessionUnitCounter : Entity, IHasCreationTime, IHasModificationTime
     {
-        //protected Counter() { }
+        //protected Counters() { }
 
         public virtual Guid SessionUnitId { get; set; }
 

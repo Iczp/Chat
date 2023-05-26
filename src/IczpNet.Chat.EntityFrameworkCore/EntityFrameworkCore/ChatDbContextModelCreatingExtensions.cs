@@ -27,9 +27,10 @@ using System.Reflection;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities;
 using IczpNet.Chat.TextContentWords;
-using IczpNet.Chat.MessageSections.Recorders;
+using IczpNet.Chat.MessageSections.Counters;
 using IczpNet.Chat.SessionSections.SessionUnitCounters;
 using IczpNet.Chat.SessionSections.SessionUnitSettings;
+using IczpNet.Chat.SessionSections.SessionUnits;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -98,19 +99,17 @@ public static class ChatDbContextModelCreatingExtensions
 
         builder.Entity<TextContentWord>(b => { b.HasKey(x => new { x.TextContentId, x.WordId }); });
 
-        builder.Entity<ReadedValue>(b => { b.HasKey(x => new { x.MessageId }); });
-        builder.Entity<OpenedValue>(b => { b.HasKey(x => new { x.MessageId }); });
-        builder.Entity<FavoritedValue>(b => { b.HasKey(x => new { x.MessageId }); });
+        builder.Entity<ReadedCounter>(b => { b.HasKey(x => new { x.MessageId }); });
+        builder.Entity<OpenedCounter>(b => { b.HasKey(x => new { x.MessageId }); });
+        builder.Entity<FavoritedCounter>(b => { b.HasKey(x => new { x.MessageId }); });
 
-        builder.Entity<SessionUnitCounter>(b =>
+        builder.Entity<SessionUnitCounter>(b => { b.HasKey(x => new { x.SessionUnitId }); });
+        builder.Entity<SessionUnitSetting>(b => { b.HasKey(x => new { x.SessionUnitId }); });
+
+        builder.Entity<SessionUnit>(b =>
         {
-            b.HasKey(x => new { x.SessionUnitId });
-            b.HasOne(x => x.SessionUnit).WithOne(x => x.Counter).HasForeignKey<SessionUnitCounter>(x => x.SessionUnitId).IsRequired(true);
-        });
-        builder.Entity<SessionUnitSetting>(b =>
-        {
-            b.HasKey(x => new { x.SessionUnitId });
-            b.HasOne(x => x.SessionUnit).WithOne(x => x.Setting).HasForeignKey<SessionUnitSetting>(x => x.SessionUnitId).IsRequired(true);
+            b.HasOne(x => x.Setting).WithOne(x => x.SessionUnit).HasForeignKey<SessionUnitSetting>(x => x.SessionUnitId).IsRequired(true);
+            b.HasOne(x => x.Counter).WithOne(x => x.SessionUnit).HasForeignKey<SessionUnitCounter>(x => x.SessionUnitId).IsRequired(true);
         });
 
         builder.Entity<Message>(b =>
@@ -135,9 +134,9 @@ public static class ChatDbContextModelCreatingExtensions
                 //    //.HasColumnType("uniqueidentifier")
                 //    .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                b.HasOne(x => x.ReadedValue).WithOne(x => x.Message).HasForeignKey<ReadedValue>(x => x.MessageId).IsRequired(true);
-                b.HasOne(x => x.OpenedValue).WithOne(x => x.Message).HasForeignKey<OpenedValue>(x => x.MessageId).IsRequired(true);
-                b.HasOne(x => x.FavoritedValue).WithOne(x => x.Message).HasForeignKey<FavoritedValue>(x => x.MessageId).IsRequired(true);
+                b.HasOne(x => x.ReadedCounter).WithOne(x => x.Message).HasForeignKey<ReadedCounter>(x => x.MessageId).IsRequired(true);
+                b.HasOne(x => x.OpenedCounter).WithOne(x => x.Message).HasForeignKey<OpenedCounter>(x => x.MessageId).IsRequired(true);
+                b.HasOne(x => x.FavoritedCounter).WithOne(x => x.Message).HasForeignKey<FavoritedCounter>(x => x.MessageId).IsRequired(true);
             });
 
     }
