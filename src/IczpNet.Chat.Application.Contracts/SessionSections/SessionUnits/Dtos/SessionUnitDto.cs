@@ -11,13 +11,13 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         public virtual long OwnerId { get; set; }
 
-        public virtual string MemberName { get; set; }
+        //public virtual string MemberName { get; set; }
 
-        public virtual string MemberNameSpellingAbbreviation { get; set; }
+        //public virtual string MemberNameSpellingAbbreviation { get; set; }
 
-        public virtual string Rename { get; set; }
+        //public virtual string Rename { get; set; }
 
-        public virtual string RenameSpellingAbbreviation { get; set; }
+        //public virtual string RenameSpellingAbbreviation { get; set; }
 
         //public virtual long LastMessageId { get; set; }
 

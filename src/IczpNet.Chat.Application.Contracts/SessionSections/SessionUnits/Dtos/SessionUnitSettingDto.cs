@@ -7,6 +7,10 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
     {
         public virtual long? ReadedMessageId { get; set; }
 
+        public virtual string MemberName { get; set; }
+
+        public virtual string Rename { get; set; }
+
         /// <summary>
         /// 备注
         /// </summary>
