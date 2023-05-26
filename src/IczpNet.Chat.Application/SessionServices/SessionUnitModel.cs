@@ -1,6 +1,7 @@
 ﻿using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using System;
 using System.ComponentModel.DataAnnotations;
 
@@ -11,6 +12,8 @@ namespace IczpNet.Chat.SessionServices
         public virtual Guid Id { get; set; }
 
         public virtual Guid? SessionId { get; set; }
+
+        public virtual SessionUnitSettingDto Setting { get; set; }
 
         public virtual long OwnerId { get; set; }
 

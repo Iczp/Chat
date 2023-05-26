@@ -105,7 +105,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     protected virtual async Task<IQueryable<SessionUnit>> GetQueryAsync(SessionUnitGetListInput input)
     {
         return (await Repository.GetQueryableAsync())
-            .Include(x => x.Setting)
+            //.Include(x => x.Setting)
             .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
             .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
             .WhereIf(input.DestinationObjectType.HasValue, x => x.DestinationObjectType == input.DestinationObjectType)
