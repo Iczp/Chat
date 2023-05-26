@@ -14,11 +14,8 @@ using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
-using IczpNet.Chat.Specifications;
-using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -135,7 +132,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return await GetPagedListAsync<SessionUnit, SessionUnitOwnerDto>(
             query,
             input,
-            x => x.OrderByDescending(x => x.Sorting).ThenBy(x => x.LastMessageId),
+            x => x.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId),
             async entities =>
             {
                 if (input.IsRealStat == true)

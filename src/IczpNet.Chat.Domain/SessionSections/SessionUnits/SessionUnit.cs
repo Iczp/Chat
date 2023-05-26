@@ -38,6 +38,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
     [Index(nameof(Sorting), AllDescending = true)]
     [Index(nameof(LastMessageId), IsDescending = new[] { true })]
     [Index(nameof(Sorting), nameof(LastMessageId), AllDescending = true)]
+    [Index(nameof(Sorting), nameof(LastMessageId), IsDescending = new[] { true, false }, Name = "IX_Chat_SessionUnit_Sorting_Desc_LastMessageId_Asc")]
+
     [Index(nameof(ReadedMessageId), AllDescending = true)]
     [Index(nameof(OwnerId), nameof(DestinationId), AllDescending = true)]
     [Index(nameof(IsStatic), AllDescending = true)]
