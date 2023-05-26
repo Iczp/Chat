@@ -20,8 +20,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public override Expression<Func<SessionUnit, bool>> ToExpression()
         {
             return x =>
-                (!x.HistoryFristTime.HasValue || Message.CreationTime > x.HistoryFristTime) &&
-                (!x.HistoryLastTime.HasValue || Message.CreationTime < x.HistoryLastTime)
+                (!x.Setting.HistoryFristTime.HasValue || Message.CreationTime > x.Setting.HistoryFristTime) &&
+                (!x.Setting.HistoryLastTime.HasValue || Message.CreationTime < x.Setting.HistoryLastTime)
             ;
         }
     }

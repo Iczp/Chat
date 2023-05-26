@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230526084608_SessionUnit_Remove_1")]
+    partial class SessionUnit_Remove_1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3766,10 +3769,6 @@ namespace IczpNet.Chat.Migrations
                     b.Property<Guid>("SessionUnitId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("BackgroundImage")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
                     b.Property<DateTime?>("ClearTime")
                         .HasColumnType("datetime2")
                         .HasComment("清除历史消息最后时间,为null时则不限");
@@ -3830,9 +3829,6 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("bit")
                         .HasComment("是否固定成员");
 
-                    b.Property<int?>("JoinWay")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("KillTime")
                         .HasColumnType("datetime2")
                         .HasComment("删除会话时间");
@@ -3853,14 +3849,6 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasComment("会话内的名称");
 
-                    b.Property<string>("MemberNameSpelling")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
-                    b.Property<string>("MemberNameSpellingAbbreviation")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
                     b.Property<long?>("ReadedMessageId")
                         .HasColumnType("bigint")
                         .HasComment("已读的消息");
@@ -3878,14 +3866,6 @@ namespace IczpNet.Chat.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)")
                         .HasComment("备注名称");
-
-                    b.Property<string>("RenameSpelling")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
-                    b.Property<string>("RenameSpellingAbbreviation")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("SessionUnitId");
 
@@ -3948,6 +3928,13 @@ namespace IczpNet.Chat.Migrations
                     b.Property<Guid?>("AppUserId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("BackgroundImage")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("ClearTime")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasMaxLength(40)
@@ -3973,6 +3960,14 @@ namespace IczpNet.Chat.Migrations
                     b.Property<long?>("DestinationId")
                         .HasColumnType("bigint");
 
+                    b.Property<string>("DestinationName")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("DestinationNameSpellingAbbreviation")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<int?>("DestinationObjectType")
                         .HasColumnType("int");
 
@@ -3983,21 +3978,78 @@ namespace IczpNet.Chat.Migrations
                     b.Property<int>("FollowingCount")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("HistoryFristTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("HistoryLastTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("InviterId")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid?>("InviterUnitId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsCantacts")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsCreator")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(false)
                         .HasColumnName("IsDeleted");
 
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsImmersed")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsImportant")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsInputEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsKilled")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsPublic")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsScoped")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsShowMemberName")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsShowReaded")
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsStatic")
                         .HasColumnType("bit");
 
+                    b.Property<int?>("JoinWay")
+                        .HasColumnType("int");
+
                     b.Property<string>("Key")
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("KillTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("KillType")
+                        .HasColumnType("int");
+
+                    b.Property<long?>("KillerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid?>("KillerUnitId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<long?>("LastMessageId")
                         .HasColumnType("bigint");
@@ -4010,8 +4062,28 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("LastModifierId");
 
+                    b.Property<string>("MemberName")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("MemberNameSpelling")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("MemberNameSpellingAbbreviation")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<long>("OwnerId")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("OwnerName")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("OwnerNameSpellingAbbreviation")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<int?>("OwnerObjectType")
                         .HasColumnType("int");
@@ -4025,11 +4097,30 @@ namespace IczpNet.Chat.Migrations
                     b.Property<long?>("ReadedMessageId")
                         .HasColumnType("bigint");
 
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<int>("RemindAllCount")
                         .HasColumnType("int");
 
                     b.Property<int>("RemindMeCount")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("RemoveTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Rename")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("RenameSpelling")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("RenameSpellingAbbreviation")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<Guid?>("SessionId")
                         .IsRequired()
@@ -4049,8 +4140,16 @@ namespace IczpNet.Chat.Migrations
                     b.HasIndex("DestinationObjectType")
                         .IsDescending();
 
+                    b.HasIndex("InviterId");
+
+                    b.HasIndex("InviterUnitId");
+
                     b.HasIndex("Key")
                         .IsDescending();
+
+                    b.HasIndex("KillerId");
+
+                    b.HasIndex("KillerUnitId");
 
                     b.HasIndex("LastMessageId")
                         .IsDescending();
@@ -5639,6 +5738,22 @@ namespace IczpNet.Chat.Migrations
                         .WithMany("DestinationSessionUnitList")
                         .HasForeignKey("DestinationId");
 
+                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Inviter")
+                        .WithMany("InviterSessionUnitList")
+                        .HasForeignKey("InviterId");
+
+                    b.HasOne("IczpNet.Chat.SessionSections.SessionUnits.SessionUnit", "InviterUnit")
+                        .WithMany("InviterUnitList")
+                        .HasForeignKey("InviterUnitId");
+
+                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Killer")
+                        .WithMany("KillerSessionUnitList")
+                        .HasForeignKey("KillerId");
+
+                    b.HasOne("IczpNet.Chat.SessionSections.SessionUnits.SessionUnit", "KillerUnit")
+                        .WithMany("KillerUnitList")
+                        .HasForeignKey("KillerUnitId");
+
                     b.HasOne("IczpNet.Chat.MessageSections.Messages.Message", "LastMessage")
                         .WithMany("LastMessageSessionUnitList")
                         .HasForeignKey("LastMessageId");
@@ -5656,6 +5771,14 @@ namespace IczpNet.Chat.Migrations
                         .IsRequired();
 
                     b.Navigation("Destination");
+
+                    b.Navigation("Inviter");
+
+                    b.Navigation("InviterUnit");
+
+                    b.Navigation("Killer");
+
+                    b.Navigation("KillerUnit");
 
                     b.Navigation("LastMessage");
 
@@ -5899,6 +6022,10 @@ namespace IczpNet.Chat.Migrations
 
                     b.Navigation("DestinationSessionUnitList");
 
+                    b.Navigation("InviterSessionUnitList");
+
+                    b.Navigation("KillerSessionUnitList");
+
                     b.Navigation("MottoList");
 
                     b.Navigation("OwnerFriendshipList");
@@ -6026,7 +6153,11 @@ namespace IczpNet.Chat.Migrations
 
                     b.Navigation("InviterList");
 
+                    b.Navigation("InviterUnitList");
+
                     b.Navigation("KillerList");
+
+                    b.Navigation("KillerUnitList");
 
                     b.Navigation("MessageList");
 

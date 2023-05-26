@@ -140,13 +140,13 @@ namespace IczpNet.Chat.SessionServices
         {
             var query = (await Repository.GetAsync(id))
                 .UnitList.AsQueryable()
-                .Where(x => !x.IsKilled && x.IsEnabled)
+                .Where(x => !x.Setting.IsKilled && x.Setting.IsEnabled)
                 .WhereIf(input.OwnerIdList.IsAny(), x => input.OwnerIdList.Contains(x.OwnerId))
                 .WhereIf(input.OwnerTypeList.IsAny(), x => input.OwnerTypeList.Contains(x.Owner.ObjectType.Value))
                 .WhereIf(!input.TagId.IsEmpty(), x => x.SessionUnitTagList.Any(x => x.SessionTagId == input.TagId))
                 .WhereIf(!input.RoleId.IsEmpty(), x => x.SessionUnitRoleList.Any(x => x.SessionRoleId == input.RoleId))
-                .WhereIf(!input.JoinWay.IsEmpty(), x => x.JoinWay == input.JoinWay)
-                .WhereIf(!input.InviterId.IsEmpty(), x => x.InviterId == input.InviterId)
+                //.WhereIf(!input.JoinWay.IsEmpty(), x => x.JoinWay == input.JoinWay)
+                //.WhereIf(!input.InviterId.IsEmpty(), x => x.InviterId == input.InviterId)
                 .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Owner.Name.Contains(input.Keyword))
                 ;
 

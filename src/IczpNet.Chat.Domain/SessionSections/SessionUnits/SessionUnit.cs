@@ -40,26 +40,27 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
     [Index(nameof(Sorting), nameof(LastMessageId), AllDescending = true)]
     [Index(nameof(Sorting), nameof(LastMessageId), IsDescending = new[] { true, false }, Name = "IX_Chat_SessionUnit_Sorting_Desc_LastMessageId_Asc")]
 
-    [Index(nameof(ReadedMessageId), AllDescending = true)]
-    [Index(nameof(OwnerId), nameof(DestinationId), AllDescending = true)]
-    [Index(nameof(IsStatic), AllDescending = true)]
-    [Index(nameof(IsPublic), AllDescending = true)]
+    //[Index(nameof(ReadedMessageId), AllDescending = true)]
+    //[Index(nameof(OwnerId), nameof(DestinationId), AllDescending = true)]
+    //[Index(nameof(IsStatic), AllDescending = true)]
+    //[Index(nameof(IsPublic), AllDescending = true)]
     [Index(nameof(Key), AllDescending = true)]
     [Index(nameof(DestinationObjectType), AllDescending = true)]
-    [Index(nameof(DestinationObjectType), AllDescending = false)]
+    //[Index(nameof(OwnerObjectType), AllDescending = true)]
+    //[Index(nameof(DestinationObjectType), AllDescending = false)]
 
-    [Index(nameof(OwnerName), AllDescending = true)]
-    [Index(nameof(OwnerNameSpellingAbbreviation), AllDescending = true)]
+    //[Index(nameof(OwnerName), AllDescending = true)]
+    //[Index(nameof(OwnerNameSpellingAbbreviation), AllDescending = true)]
 
-    [Index(nameof(DestinationName), AllDescending = true)]
-    [Index(nameof(DestinationNameSpellingAbbreviation), AllDescending = true)]
+    //[Index(nameof(DestinationName), AllDescending = true)]
+    //[Index(nameof(DestinationNameSpellingAbbreviation), AllDescending = true)]
 
-    [Index(nameof(MemberName), AllDescending = true)]
-    [Index(nameof(MemberNameSpellingAbbreviation), AllDescending = true)]
+    //[Index(nameof(MemberName), AllDescending = true)]
+    //[Index(nameof(MemberNameSpellingAbbreviation), AllDescending = true)]
 
-    [Index(nameof(Rename), AllDescending = true)]
-    [Index(nameof(RenameSpellingAbbreviation), AllDescending = true)]
-    public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, IIsStatic, IIsPublic, ISessionId, IHasSimpleStateCheckers<SessionUnit>, IMaterializationInterceptor
+    //[Index(nameof(Rename), AllDescending = true)]
+    //[Index(nameof(RenameSpellingAbbreviation), AllDescending = true)]
+    public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, ISessionId, IHasSimpleStateCheckers<SessionUnit>, IMaterializationInterceptor
     {
 
         public List<ISimpleStateChecker<SessionUnit>> StateCheckers => new();
@@ -79,170 +80,28 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public virtual ChatObjectTypeEnums? OwnerObjectType { get; protected set; }
 
+        public virtual string Rename => Setting.Rename;
+
+        public virtual string MemberName => Setting.MemberName;
+
+        public virtual bool IsPublic => Setting.IsPublic;
+
+        public virtual bool IsStatic => Setting.IsStatic;
+
+        public virtual bool IsCreator => Setting.IsCreator;
+
         /// <summary>
         /// 已读的消息
         /// </summary>
         public virtual long? ReadedMessageId { get; protected set; }
 
-        [ForeignKey(nameof(ReadedMessageId))]
-        public virtual Message ReadedMessage { get; protected set; }
+        //[ForeignKey(nameof(ReadedMessageId))]
+        //public virtual Message ReadedMessage { get; protected set; }
 
         public virtual long? LastMessageId { get; protected set; }
 
         [ForeignKey(nameof(LastMessageId))]
         public virtual Message LastMessage { get; protected set; }
-
-        /// <summary>
-        /// 为null时，
-        /// </summary>
-        public virtual DateTime? HistoryFristTime { get; protected set; }
-
-        public virtual DateTime? HistoryLastTime { get; protected set; }
-
-        /// <summary>
-        /// KillSession  退出群，但是不删除会话(用于查看历史消息)
-        /// </summary>
-        public virtual bool IsKilled { get; protected set; }
-
-        public virtual KillTypes? KillType { get; protected set; }
-
-        public virtual DateTime? KillTime { get; protected set; }
-
-        public virtual long? KillerId { get; protected set; }
-
-        [ForeignKey(nameof(KillerId))]
-        public virtual ChatObject Killer { get; protected set; }
-
-        public virtual DateTime? ClearTime { get; protected set; }
-
-        /// <summary>
-        /// 不显示消息会话(不退群,不删除消息)
-        /// </summary>
-        public virtual DateTime? RemoveTime { get; protected set; }
-
-        /// <summary>
-        /// 会话内的名称
-        /// </summary>
-        [MaxLength(50)]
-        public virtual string MemberName { get; protected set; }
-
-        [MaxLength(300)]
-        public virtual string MemberNameSpelling { get; protected set; }
-
-        [MaxLength(50)]
-        public virtual string MemberNameSpellingAbbreviation { get; protected set; }
-
-        /// <summary>
-        /// 备注名称 Rename for destination
-        /// </summary>
-        [MaxLength(50)]
-        public virtual string Rename { get; protected set; }
-
-        [MaxLength(300)]
-        public virtual string RenameSpelling { get; protected set; }
-
-        [MaxLength(50)]
-        public virtual string RenameSpellingAbbreviation { get; protected set; }
-
-        [MaxLength(50)]
-        public virtual string OwnerName { get; protected set; }
-
-        [MaxLength(50)]
-        public virtual string OwnerNameSpellingAbbreviation { get; protected set; }
-
-        [MaxLength(50)]
-        public virtual string DestinationName { get; protected set; }
-
-        [MaxLength(50)]
-        public virtual string DestinationNameSpellingAbbreviation { get; protected set; }
-
-        /// <summary>
-        /// 备注
-        /// </summary>
-        [MaxLength(500)]
-        public virtual string Remarks { get; protected set; }
-
-        /// <summary>
-        /// 是否保存通讯录(群)
-        /// </summary>
-        public virtual bool IsCantacts { get; protected set; }
-
-        /// <summary>
-        /// 消息免打扰，默认为 false
-        /// </summary>
-        public virtual bool IsImmersed { get; protected set; }
-
-        /// <summary>
-        /// 是否显示成员名称
-        /// </summary>
-        public virtual bool IsShowMemberName { get; protected set; }
-
-        /// <summary>
-        /// 是否显示已读
-        /// </summary>
-        public virtual bool IsShowReaded { get; protected set; }
-
-        /// <summary>
-        /// 特别关注 for destination
-        /// </summary>
-        public virtual bool IsImportant { get; protected set; }
-
-        /// <summary>
-        /// 聊天背景，默认为 null
-        /// </summary>
-        [StringLength(500)]
-        public virtual string BackgroundImage { get; set; }
-
-        /// <summary>
-        /// 加入方式
-        /// </summary>
-        public virtual JoinWays? JoinWay { get; set; }
-
-        /// <summary>
-        /// 邀请人
-        /// </summary>
-        public virtual long? InviterId { get; set; }
-
-        #region 邀请人 SessionUnit
-        public virtual Guid? InviterUnitId { get; set; }
-
-        [ForeignKey(nameof(InviterUnitId))]
-        public virtual SessionUnit InviterUnit { get; set; }
-
-        [InverseProperty(nameof(InviterUnit))]
-        public virtual List<SessionUnit> InviterUnitList { get; set; }
-        #endregion
-
-        #region 删除人 SessionUnit
-        public virtual Guid? KillerUnitId { get; set; }
-
-        [ForeignKey(nameof(KillerUnitId))]
-        public virtual SessionUnit KillerUnit { get; set; }
-
-        [InverseProperty(nameof(KillerUnit))]
-        public virtual List<SessionUnit> KillerUnitList { get; set; }
-        #endregion
-
-        /// <summary>
-        /// 指定范围
-        /// </summary>
-        public virtual bool IsScoped { get; protected set; }
-
-        public virtual bool IsStatic { get; set; }
-
-        public virtual bool IsPublic { get; set; }
-
-        public virtual bool IsInputEnabled { get; protected set; } = true;
-
-        public virtual bool IsEnabled { get; protected set; } = true;
-
-        /// <summary>
-        /// 是否创建者（群主等）
-        /// </summary>
-        public virtual bool IsCreator { get; protected set; } = false;
-
-        [ForeignKey(nameof(InviterId))]
-        public virtual ChatObject Inviter { get; set; }
 
         public virtual double Sorting { get; protected set; }
 
@@ -334,34 +193,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             [NotNull]
             Session session,
             [NotNull]
-            long ownerId,
-            [NotNull]
-            long destinationId,
-            ChatObjectTypeEnums? destinationObjectType,
-            bool isPublic = true,
-            bool isStatic = false,
-            bool isCreator = false,
-            JoinWays? joinWay = null,
-            Guid? inviterUnitId = null,
-            bool isInputEnabled = true)
-        {
-            Id = idGenerator.Create(ownerId, destinationId);
-            SetKey(idGenerator.Generate(ownerId, destinationId));
-            Session = session;
-            OwnerId = ownerId;
-            DestinationId = destinationId;
-            DestinationObjectType = destinationObjectType;
-            IsStatic = isStatic;
-            IsPublic = isPublic;
-            IsCreator = isCreator;
-            JoinWay = joinWay;
-            InviterUnitId = inviterUnitId;
-            IsInputEnabled = isInputEnabled;
-        }
-        internal SessionUnit(ISessionUnitIdGenerator idGenerator,
-            [NotNull]
-            Session session,
-            [NotNull]
             ChatObject owner,
             [NotNull]
             ChatObject destination,
@@ -379,22 +210,18 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
             Owner = owner;
             OwnerId = owner.Id;
-            OwnerName = owner.Name;
-            OwnerNameSpellingAbbreviation = owner.NameSpellingAbbreviation;
             OwnerObjectType = owner.ObjectType;
 
             Destination = destination;
             DestinationId = destination.Id;
-            DestinationName = destination.Name;
-            DestinationNameSpellingAbbreviation = destination.NameSpellingAbbreviation;
             DestinationObjectType = destination.ObjectType;
 
-            IsStatic = isStatic;
-            IsPublic = isPublic;
-            IsCreator = isCreator;
-            JoinWay = joinWay;
-            InviterUnitId = inviterUnitId;
-            IsInputEnabled = isInputEnabled;
+            Setting.IsStatic = isStatic;
+            Setting.IsPublic = isPublic;
+            Setting.SetIsCreator(isCreator);
+            Setting.JoinWay = joinWay;
+            Setting.InviterId = inviterUnitId;
+            Setting.IsInputEnabled = isInputEnabled;
         }
 
         public static Expression<Func<SessionUnit, bool>> GetActivePredicate(DateTime? messageCreationTime = null)
@@ -415,64 +242,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             Key = key;
         }
 
-        internal virtual void SetRename(string rename)
-        {
-            Rename = rename;
-            RenameSpelling = rename.ConvertToPinyin().MaxLength(300);
-            RenameSpellingAbbreviation = rename.ConvertToPY().MaxLength(50);
-        }
-
-        internal virtual void SetMemberName(string memberName)
-        {
-            MemberName = memberName;
-            MemberNameSpelling = memberName.ConvertToPinyin().MaxLength(300);
-            MemberNameSpellingAbbreviation = memberName.ConvertToPY().MaxLength(50);
-        }
-
-        [Obsolete]
-        internal virtual void SetReadedMessageId(long lastMessageId, bool isForce = false)
-        {
-            if (isForce || lastMessageId > ReadedMessageId.GetValueOrDefault())
-            {
-                ReadedMessageId = lastMessageId;
-            }
-            PublicBadge = 0;
-            PrivateBadge = 0;
-            FollowingCount = 0;
-            RemindAllCount = 0;
-            RemindMeCount = 0;
-        }
-
-        internal virtual void SetHistoryFristTime(DateTime historyFristTime) => HistoryFristTime = historyFristTime;
-
-        /// <summary>
-        /// removeSession 删除消息会话,不退群
-        /// </summary>
-        /// <param name="removeTime"></param>
-        internal virtual void Remove(DateTime removeTime) => RemoveTime = removeTime;
-
-        /// <summary>
-        /// 退群，但不删除会话（用于查看历史I）
-        /// </summary>
-        /// <param name="removeTime"></param>
-        internal virtual void Kill(DateTime killTime, KillTypes? killType = null, ChatObject killer = null)
-        {
-            IsKilled = true;
-            KillTime = killTime;
-            HistoryLastTime = killTime;
-            KillType = killType;
-            if (killer != null)
-            {
-                Killer = killer;
-            }
-        }
-
-        /// <summary>
-        /// 清空消息，不退群 
-        /// </summary>
-        /// <param name="clearTime"></param>
-        internal virtual void ClearMessage(DateTime? clearTime) => ClearTime = clearTime;
-
         public override object[] GetKeys()
         {
             return new object[] { SessionId, OwnerId, DestinationId };
@@ -490,36 +259,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         [Obsolete]
         public void SetFollowingCount(int value) => FollowingCount = value;
 
-        [Obsolete]
-        protected virtual int GetBadge() => Session.MessageList.AsQueryable().Count(new SessionUnitMessageSpecification(this).ToExpression());
-
-        [Obsolete]
-        protected virtual Message GetLastMessage() => Session.MessageList.AsQueryable().OrderByDescending(x => x.Id).FirstOrDefault(new SessionUnitMessageSpecification(this).ToExpression());
-
-        [Obsolete]
-        private int GetReminderCount() => GetRemindMeCount() + GetRemindAllCount();
-
-        /// <summary>
-        /// @me
-        /// </summary>
-        /// <returns></returns>
-        [Obsolete("Move to SessionUnitCounter")]
-        protected virtual int GetRemindMeCount() => ReminderList.AsQueryable().Select(x => x.Message).Where(x => !x.IsRollbacked).Count(new SessionUnitMessageSpecification(this).ToExpression());
-
-        /// <summary>
-        /// @everyone
-        /// </summary>
-        /// <returns></returns>
-        [Obsolete("Move to SessionUnitCounter")]
-        protected virtual int GetRemindAllCount() => Session.MessageList.AsQueryable().Where(x => x.IsRemindAll && !x.IsRollbacked).Count(new SessionUnitMessageSpecification(this).ToExpression());
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        [Obsolete("Move to SessionUnitCounter")]
-        protected virtual int GetFollowingCount() => Session.MessageList.AsQueryable().Where(x => OwnerFollowList.Any(d => d.DestinationId == x.SessionUnitId)).Count(new SessionUnitMessageSpecification(this).ToExpression());
-
         internal virtual void SetTopping(bool isTopping)
         {
             Sorting = isTopping ? DateTime.Now.Ticks : 0;
@@ -536,15 +275,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         private List<Guid> GetRoleIdList() => SessionUnitRoleList.Select(x => x.SessionRoleId).ToList();
 
-        internal virtual void SetImmersed(bool isImmersed) => IsImmersed = isImmersed;
-
-        internal virtual void SetIsEnabled(bool v) => IsEnabled = v;
-
-        internal virtual void SetIsCreator(bool v)
-        {
-            IsCreator = v;
-            IsStatic = v;
-        }
 
         [Obsolete]
         internal void SetPrivateBadge(int v) => PrivateBadge = v;

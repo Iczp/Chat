@@ -114,7 +114,7 @@ namespace IczpNet.Chat.OfficialSections.Officials
             {
                 //Assert.If(sessionUnit.IsEnabled, $"Already enabled,IsEnabled:{sessionUnit.IsEnabled}");
             }
-            sessionUnit.SetIsEnabled(true);
+            sessionUnit.Setting.SetIsEnabled(true);
 
             await UnitOfWorkManager.Current.SaveChangesAsync();
 
@@ -152,9 +152,9 @@ namespace IczpNet.Chat.OfficialSections.Officials
         {
             var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
 
-            Assert.If(sessionUnit.IsEnabled == isEnabled, $"Unchanged IsEnabled:{isEnabled}");
+            Assert.If(sessionUnit.Setting.IsEnabled == isEnabled, $"Unchanged IsEnabled:{isEnabled}");
 
-            sessionUnit.SetIsEnabled(isEnabled);
+            sessionUnit.Setting.SetIsEnabled(isEnabled);
 
             await UnitOfWorkManager.Current.SaveChangesAsync();
 

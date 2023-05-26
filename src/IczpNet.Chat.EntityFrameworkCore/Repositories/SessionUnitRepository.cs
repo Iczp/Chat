@@ -171,24 +171,24 @@ namespace IczpNet.Chat.Repositories
                 );
         }
 
-        public virtual async Task<int> BatchUpdateNameAsync(long chatObjectId, string name, string nameSpelling, string nameSpellingAbbreviation)
-        {
-            var query = await GetQueryableAsync(DateTime.Now);
+        //public virtual async Task<int> BatchUpdateNameAsync(long chatObjectId, string name, string nameSpelling, string nameSpellingAbbreviation)
+        //{
+        //    var query = await GetQueryableAsync(DateTime.Now);
 
-            var a = await query
-                 .Where(x => x.OwnerId == chatObjectId)
-                 .ExecuteUpdateAsync(s => s
-                     .SetProperty(b => b.OwnerName, b => name)
-                     .SetProperty(b => b.OwnerNameSpellingAbbreviation, b => nameSpellingAbbreviation)
-                 );
-            var b = await query
-                 .Where(x => x.DestinationId == chatObjectId)
-                 .ExecuteUpdateAsync(s => s
-                     .SetProperty(b => b.DestinationName, b => name)
-                     .SetProperty(b => b.DestinationNameSpellingAbbreviation, b => nameSpellingAbbreviation)
-                 );
-            return a + b;
-        }
+        //    var a = await query
+        //         .Where(x => x.OwnerId == chatObjectId)
+        //         .ExecuteUpdateAsync(s => s
+        //             .SetProperty(b => b.OwnerName, b => name)
+        //             .SetProperty(b => b.OwnerNameSpellingAbbreviation, b => nameSpellingAbbreviation)
+        //         );
+        //    var b = await query
+        //         .Where(x => x.DestinationId == chatObjectId)
+        //         .ExecuteUpdateAsync(s => s
+        //             .SetProperty(b => b.DestinationName, b => name)
+        //             .SetProperty(b => b.DestinationNameSpellingAbbreviation, b => nameSpellingAbbreviation)
+        //         );
+        //    return a + b;
+        //}
 
         public async Task<int> BatchUpdateAppUserIdAsync(long chatObjectId, Guid appUserId)
         {

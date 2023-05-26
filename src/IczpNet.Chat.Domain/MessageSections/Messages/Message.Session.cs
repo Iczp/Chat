@@ -5,6 +5,7 @@ using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.Scopeds;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionSections.SessionUnitSettings;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -47,8 +48,8 @@ public partial class Message
     /// <summary>
     /// last message list
     /// </summary>
-    [InverseProperty(nameof(SessionSections.SessionUnits.SessionUnit.ReadedMessage))]
-    public virtual List<SessionUnit> ReadedMessageSessionUnitList { get; protected set; }
+    [InverseProperty(nameof(SessionUnitSetting.ReadedMessage))]
+    public virtual List<SessionUnitSetting> ReadedMessageSessionUnitList { get; protected set; }
 
     public virtual ReadedCounter ReadedCounter { get; protected set; } = new ReadedCounter();
     public virtual OpenedCounter OpenedCounter { get; protected set; } = new OpenedCounter();

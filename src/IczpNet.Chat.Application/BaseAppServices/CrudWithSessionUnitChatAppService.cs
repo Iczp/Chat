@@ -68,7 +68,7 @@ namespace IczpNet.Chat.BaseAppServices
         {
             var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
 
-            Assert.If(!sessionUnit.IsEnabled, $"SessionUnit disabled,SessionUnitId:{sessionUnit.Id}");
+            Assert.If(!sessionUnit.Setting.IsEnabled, $"SessionUnit disabled,SessionUnitId:{sessionUnit.Id}");
 
             return sessionUnit;
         }

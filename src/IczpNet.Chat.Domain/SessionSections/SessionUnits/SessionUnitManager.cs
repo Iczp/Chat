@@ -104,12 +104,12 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
 
     public Task<SessionUnit> SetMemberNameAsync(SessionUnit entity, string memberName)
     {
-        return SetEntityAsync(entity, x => x.SetMemberName(memberName));
+        return SetEntityAsync(entity, x => x.Setting.SetMemberName(memberName));
     }
 
     public Task<SessionUnit> SetRenameAsync(SessionUnit entity, string rename)
     {
-        return SetEntityAsync(entity, x => x.SetRename(rename));
+        return SetEntityAsync(entity, x => x.Setting.SetRename(rename));
     }
 
     public virtual Task<SessionUnit> SetToppingAsync(SessionUnit entity, bool isTopping)
@@ -130,7 +130,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
             Assert.If(entity.SessionId != message.SessionId, $"Not in same session,messageId:{messageId}");
         }
 
-        await SetEntityAsync(entity, x => x.SetReadedMessageId(lastMessageId, isForce = false));
+        await SetEntityAsync(entity, x => x.Setting.SetReadedMessageId(lastMessageId, isForce = false));
 
         await UpdateCacheItemsAsync(entity, items =>
         {
@@ -160,22 +160,22 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
 
     public virtual Task<SessionUnit> SetImmersedAsync(SessionUnit entity, bool isImmersed)
     {
-        return SetEntityAsync(entity, x => x.SetImmersed(isImmersed));
+        return SetEntityAsync(entity, x => x.Setting.SetImmersed(isImmersed));
     }
 
     public virtual Task<SessionUnit> RemoveAsync(SessionUnit entity)
     {
-        return SetEntityAsync(entity, x => x.Remove(Clock.Now));
+        return SetEntityAsync(entity, x => x.Setting.Remove(Clock.Now));
     }
 
     public virtual Task<SessionUnit> KillAsync(SessionUnit entity)
     {
-        return SetEntityAsync(entity, x => x.Kill(Clock.Now));
+        return SetEntityAsync(entity, x => x.Setting.Kill(Clock.Now));
     }
 
     public virtual Task<SessionUnit> ClearMessageAsync(SessionUnit entity)
     {
-        return SetEntityAsync(entity, x => x.ClearMessage(Clock.Now));
+        return SetEntityAsync(entity, x => x.Setting.ClearMessage(Clock.Now));
     }
 
     public virtual Task<SessionUnit> DeleteMessageAsync(SessionUnit entity, long messageId)
@@ -193,18 +193,18 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
                 !d.IsPrivate &&
                 //!x.IsRollbacked &&
                 d.SenderId != x.OwnerId &&
-                (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
-                (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
-                (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
-                (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)),
+                (x.Setting.ReadedMessageId == null || d.Id > x.Setting.ReadedMessageId) &&
+                (!x.Setting.HistoryFristTime.HasValue || d.CreationTime > x.Setting.HistoryFristTime) &&
+                (!x.Setting.HistoryLastTime.HasValue || d.CreationTime < x.Setting.HistoryLastTime) &&
+                (!x.Setting.ClearTime.HasValue || d.CreationTime > x.Setting.ClearTime)),
             PrivateBadge = x.Session.MessageList.Count(d =>
                 d.IsPrivate && d.ReceiverId == x.OwnerId &&
                 //!x.IsRollbacked &&
                 d.SenderId != x.OwnerId &&
-                (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
-                (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
-                (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
-                (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)),
+                (x.Setting.ReadedMessageId == null || d.Id > x.Setting.ReadedMessageId) &&
+                (!x.Setting.HistoryFristTime.HasValue || d.CreationTime > x.Setting.HistoryFristTime) &&
+                (!x.Setting.HistoryLastTime.HasValue || d.CreationTime < x.Setting.HistoryLastTime) &&
+                (!x.Setting.ClearTime.HasValue || d.CreationTime > x.Setting.ClearTime)),
         })
         .Select(x => x.PublicBadge + x.PrivateBadge)
         .Where(x => x > 0)
@@ -218,21 +218,21 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
     {
         return GetBadgeAsync(q =>
             q.Where(x => x.OwnerId == ownerId)
-            .WhereIf(isImmersed.HasValue, x => x.IsImmersed == isImmersed));
+            .WhereIf(isImmersed.HasValue, x => x.Setting.IsImmersed == isImmersed));
     }
 
     public virtual Task<int> GetBadgeByIdAsync(Guid sessionUnitId, bool? isImmersed = null)
     {
         return GetBadgeAsync(q =>
             q.Where(x => x.Id == sessionUnitId)
-            .WhereIf(isImmersed.HasValue, x => x.IsImmersed == isImmersed));
+            .WhereIf(isImmersed.HasValue, x => x.Setting.IsImmersed == isImmersed));
     }
 
     public virtual async Task<Dictionary<Guid, int>> GetBadgeByIdAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
     {
         var badges = (await Repository.GetQueryableAsync())
             .Where(x => sessionUnitIdList.Contains(x.Id))
-            .WhereIf(isImmersed.HasValue, x => x.IsImmersed == isImmersed)
+            .WhereIf(isImmersed.HasValue, x => x.Setting.IsImmersed == isImmersed)
             .Select(x => new
             {
                 x.Id,
@@ -240,10 +240,10 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
                 Messages = x.Session.MessageList.Where(d =>
                     d.Id > minMessageId &&
                     d.SenderId != x.OwnerId &&
-                    (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
-                    (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
-                    (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
-                    (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime))
+                    (x.Setting.ReadedMessageId == null || d.Id > x.Setting.ReadedMessageId) &&
+                    (!x.Setting.HistoryFristTime.HasValue || d.CreationTime > x.Setting.HistoryFristTime) &&
+                    (!x.Setting.HistoryLastTime.HasValue || d.CreationTime < x.Setting.HistoryLastTime) &&
+                    (!x.Setting.ClearTime.HasValue || d.CreationTime > x.Setting.ClearTime))
             })
             .Select(x => new
             {
@@ -267,7 +267,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
     {
         return (await Repository.GetQueryableAsync())
             .Where(x => sessionUnitIdList.Contains(x.Id))
-            .WhereIf(isImmersed.HasValue, x => x.IsImmersed == isImmersed)
+            .WhereIf(isImmersed.HasValue, x => x.Setting.IsImmersed == isImmersed)
             .Select(x => new
             {
                 x.Id,
@@ -276,10 +276,10 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
                 Messages = x.Session.MessageList.Where(d =>
                     d.Id > minMessageId &&
                     d.SenderId != x.OwnerId &&
-                    (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
-                    (x.HistoryFristTime == null || d.CreationTime > x.HistoryFristTime) &&
-                    (x.HistoryLastTime == null || d.CreationTime < x.HistoryLastTime) &&
-                    (x.ClearTime == null || d.CreationTime > x.ClearTime))
+                    (x.Setting.ReadedMessageId == null || d.Id > x.Setting.ReadedMessageId) &&
+                    (!x.Setting.HistoryFristTime.HasValue || d.CreationTime > x.Setting.HistoryFristTime) &&
+                    (!x.Setting.HistoryLastTime.HasValue || d.CreationTime < x.Setting.HistoryLastTime) &&
+                    (!x.Setting.ClearTime.HasValue || d.CreationTime > x.Setting.ClearTime))
             })
             .Select(x => new SessionUnitStatModel
             {
@@ -299,7 +299,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
     {
         var query = (await Repository.GetQueryableAsync())
             .Where(x => sessionUnitIdList.Contains(x.Id))
-            .WhereIf(isImmersed.HasValue, x => x.IsImmersed == isImmersed);
+            .WhereIf(isImmersed.HasValue, x => x.Setting.IsImmersed == isImmersed);
         //return ReminderList.AsQueryable().Select(x => x.Message).Where(x => !x.IsRollbacked).Count(new SessionUnitMessageSpecification(this).ToExpression());
         var reminds = query.Select(x => new
         {
@@ -308,10 +308,10 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
                 .Where(d => d.Id > minMessageId)
                 .Where(d =>
                     d.SenderId != x.OwnerId &&
-                    (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
-                    (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
-                    (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
-                    (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)
+                    (x.Setting.ReadedMessageId == null || d.Id > x.Setting.ReadedMessageId) &&
+                    (!x.Setting.HistoryFristTime.HasValue || d.CreationTime > x.Setting.HistoryFristTime) &&
+                    (!x.Setting.HistoryLastTime.HasValue || d.CreationTime < x.Setting.HistoryLastTime) &&
+                    (!x.Setting.ClearTime.HasValue || d.CreationTime > x.Setting.ClearTime)
                 )
                 .Count(),
             RemindAllCount = x.Session.MessageList
@@ -319,10 +319,10 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
                 .Where(d => d.Id > minMessageId)
                 .Where(d =>
                     d.SenderId != x.OwnerId &&
-                    (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
-                    (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
-                    (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
-                    (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)
+                    (x.Setting.ReadedMessageId == null || d.Id > x.Setting.ReadedMessageId) &&
+                    (!x.Setting.HistoryFristTime.HasValue || d.CreationTime > x.Setting.HistoryFristTime) &&
+                    (!x.Setting.HistoryLastTime.HasValue || d.CreationTime < x.Setting.HistoryLastTime) &&
+                    (!x.Setting.ClearTime.HasValue || d.CreationTime > x.Setting.ClearTime)
                 )
                 .Count(),
         })
@@ -337,7 +337,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
     {
         var query = (await Repository.GetQueryableAsync())
             .Where(x => sessionUnitIdList.Contains(x.Id))
-            .WhereIf(isImmersed.HasValue, x => x.IsImmersed == isImmersed);
+            .WhereIf(isImmersed.HasValue, x => x.Setting.IsImmersed == isImmersed);
 
         var follows = query.Select(x => new
         {
@@ -347,10 +347,10 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
                 .Where(d => d.Id > minMessageId)
                 .Where(d =>
                     d.SenderId != x.OwnerId &&
-                    (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
-                    (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
-                    (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
-                    (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)
+                    (x.Setting.ReadedMessageId == null || d.Id > x.Setting.ReadedMessageId) &&
+                    (!x.Setting.HistoryFristTime.HasValue || d.CreationTime > x.Setting.HistoryFristTime) &&
+                    (!x.Setting.HistoryLastTime.HasValue || d.CreationTime < x.Setting.HistoryLastTime) &&
+                    (!x.Setting.ClearTime.HasValue || d.CreationTime > x.Setting.ClearTime)
                 )
                 .Count(),
         })
@@ -408,14 +408,14 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
                 OwnerId = x.OwnerId,
                 DestinationId = x.DestinationId,
                 //DestinationObjectType = x.DestinationObjectType,
-                IsPublic = x.IsPublic,
-                ReadedMessageId = x.ReadedMessageId,
-                PublicBadge = x.Counter == null ? 0 : x.Counter.PublicBadge,
-                PrivateBadge = x.Counter == null ? 0 : x.Counter.PrivateBadge,
-                RemindAllCount = x.Counter == null ? 0 : x.Counter.RemindAllCount,
-                RemindMeCount = x.Counter == null ? 0 : x.Counter.RemindMeCount,
-                FollowingCount = x.Counter == null ? 0 : x.Counter.FollowingCount,
-                LastMessageId = x.Counter == null ? null : x.Counter.LastMessageId,
+                IsPublic = x.Setting.IsPublic,
+                ReadedMessageId = x.Setting.ReadedMessageId,
+                PublicBadge = x.PublicBadge,
+                PrivateBadge = x.PrivateBadge,
+                RemindAllCount = x.RemindAllCount,
+                RemindMeCount = x.RemindMeCount,
+                FollowingCount = x.FollowingCount,
+                LastMessageId = x.LastMessageId,
             })
             .ToList();
 
@@ -432,7 +432,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
     private async Task<IQueryable<SessionUnit>> GetOwnerQueryableAsync(long ownerId, List<ChatObjectTypeEnums> destinationObjectTypeList = null)
     {
         return (await Repository.GetQueryableAsync())
-              .Where(x => x.OwnerId.Equals(ownerId) && !x.IsKilled && x.IsEnabled)
+              .Where(x => x.OwnerId.Equals(ownerId) && !x.Setting.IsKilled && x.Setting.IsEnabled)
               .WhereIf(destinationObjectTypeList.IsAny(), x => destinationObjectTypeList.Contains(x.DestinationObjectType.Value));
 
     }
@@ -568,40 +568,10 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
 
         return (await Repository.GetQueryableAsync())
             .Where(x => x.SessionId == sessionId)
-            .Where(x => nameList.Contains(x.MemberName) || chatObjectIds.Contains(x.OwnerId))
+            .Where(x => nameList.Contains(x.Setting.MemberName) || chatObjectIds.Contains(x.OwnerId))
             .Where(SessionUnit.GetActivePredicate(null))
             .Select(x => x.Id)
             .ToList();
-    }
-
-    public async Task<Dictionary<Guid, string>> GetIdListByName_BackAsync(Guid sessionId, List<string> nameList)
-    {
-        //var chatObjectDicts = (await ChatObjectRepository.GetQueryableAsync())
-        //    .Where(x => nameList.Contains(x.Name))
-        //    .Select(x => new ChatObjectIdName()
-        //    {
-        //        Id = x.Id,
-        //        Name = x.Name
-        //    })
-        //    .ToDictionary(x => x.Id);
-        //;
-
-        //var chatObjectIds = chatObjectDicts.Keys.ToList();
-
-        //var dicts = (await Repository.GetQueryableAsync())
-        //    .Where(x => x.SessionId == sessionId)
-        //    .Where(x => nameList.Contains(x.MemberName) || chatObjectIds.Contains(x.OwnerId))
-        //    .Where(SessionUnit.GetActivePredicate(null))
-        //    .Select(x => new { x.Id, x.OwnerId })
-        //    .ToDictionary(x => x.Id, x => chatObjectDicts[x.OwnerId]);
-
-        //return dicts;
-
-        return (await Repository.GetQueryableAsync())
-            .Where(x => x.SessionId == sessionId)
-            .Where(x => nameList.Contains(x.MemberName) || nameList.Contains(x.OwnerName))
-            .Where(SessionUnit.GetActivePredicate(null))
-            .ToDictionary(x => x.Id, x => !string.IsNullOrEmpty(x.MemberName) ? x.MemberName : x.OwnerName);
     }
 
     /// <inheritdoc/>

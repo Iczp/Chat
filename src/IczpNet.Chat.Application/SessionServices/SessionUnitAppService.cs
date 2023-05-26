@@ -94,7 +94,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     {
         var entity = await Repository.GetAsync(id);
 
-        Assert.If(checkIsKilled && entity.IsKilled, "已经删除的会话单元!");
+        Assert.If(checkIsKilled && entity.Setting.IsKilled, "已经删除的会话单元!");
 
         return entity;
     }
@@ -106,8 +106,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
             .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
             .WhereIf(input.DestinationObjectType.HasValue, x => x.DestinationObjectType == input.DestinationObjectType)
-            .WhereIf(input.IsKilled.HasValue, x => x.IsKilled == input.IsKilled)
-            .WhereIf(input.IsCreator.HasValue, x => x.IsCreator == input.IsCreator)
+            .WhereIf(input.IsKilled.HasValue, x => x.Setting.IsKilled == input.IsKilled)
+            .WhereIf(input.IsCreator.HasValue, x => x.Setting.IsCreator == input.IsCreator)
             .WhereIf(input.MinMessageId.HasValue, x => x.LastMessageId > input.MinMessageId)
             .WhereIf(input.MaxMessageId.HasValue, x => x.LastMessageId <= input.MaxMessageId)
             .WhereIf(input.IsTopping == true, x => x.Sorting > 0)
@@ -165,94 +165,21 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     }
 
     [HttpGet]
-    public virtual async Task<PagedResultDto<SessionUnitOwnerDto>> GetListByLinqAsync(SessionUnitGetListInput input)
-    {
-        await CheckPolicyAsync(GetListPolicyName);
-        var query = (await Repository.GetQueryableAsync())
-        //var query = (await GetQueryAsync(input))
-            .Select(x => new SessionUnitModel
-            {
-                Id = x.Id,
-                OwnerId = x.OwnerId,
-                SessionId = x.SessionId,
-                Sorting = x.Sorting,
-                Destination = x.Destination,
-                LastMessageId = x.LastMessageId,
-                //LastMessage = x.LastMessage,
-                BackgroundImage = x.BackgroundImage,
-                IsEnabled = x.IsEnabled,
-                IsCreator = x.IsCreator,
-                IsKilled = x.IsKilled,
-                InviterId = x.InviterId,
-                IsCantacts = x.IsCantacts,
-                IsImmersed = x.IsImmersed,
-                IsInputEnabled = x.IsInputEnabled,
-                IsShowMemberName = x.IsShowMemberName,
-                Rename = x.Rename,
-                MemberName = x.MemberName,
-                MemberNameSpellingAbbreviation = x.MemberNameSpellingAbbreviation,
-                JoinWay = x.JoinWay,
-                Remarks = x.Remarks,
-                RenameSpellingAbbreviation = x.RenameSpellingAbbreviation,
-                Badge = x.Session.MessageList.Count(d =>
-                       //!x.IsRollbacked &&
-                       d.Id > x.ReadedMessageId &&
-                       d.SenderId != x.OwnerId &&
-                       (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
-                       (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
-                       (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)
-                 ),
-                RemindAllCount = x.Session.MessageList.Count(x => !x.IsRollbacked && x.IsRemindAll),
-                RemindMeCount = x.ReminderList.Select(x => x.Message).Count(d =>
-                        //!x.IsRollbacked &&
-                        d.Id > x.ReadedMessageId &&
-                        d.SenderId != x.OwnerId &&
-                        (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
-                        (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
-                        (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime)
-                 ),
-                FollowingCount = x.Session.MessageList.Where(msg => x.OwnerFollowList.Any(d => d.DestinationId == msg.SessionUnitId)).Count(d =>
-                        //!x.IsRollbacked &&
-                        d.Id > x.ReadedMessageId &&
-                        d.SenderId != x.OwnerId &&
-                        (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
-                        (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
-                        (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime))
-            });
-
-        var totalCount = await AsyncExecuter.CountAsync(query);
-
-        query = query.OrderByDescending(x => x.Sorting)
-            .OrderByDescending(x => x.LastMessageId)
-            //.OrderByDescending(x => x.Badge)
-            ;
-
-        query = query.PageBy(input);
-
-        var models = await AsyncExecuter.ToListAsync(query);
-
-        var items = ObjectMapper.Map<List<SessionUnitModel>, List<SessionUnitOwnerDto>>(models);
-
-        return new PagedResultDto<SessionUnitOwnerDto>(totalCount, items);
-    }
-
-    [HttpGet]
     public async Task<PagedResultDto<SessionUnitDestinationDto>> GetListDestinationAsync(Guid id, SessionUnitGetListDestinationInput input)
     {
         var entity = await Repository.GetAsync(id);
 
         var query = (await Repository.GetQueryableAsync())
-            .Where(x => x.SessionId == entity.SessionId && x.IsEnabled)
-            .WhereIf(input.IsKilled.HasValue, x => x.IsKilled == input.IsKilled)
-            .WhereIf(input.IsStatic.HasValue, x => x.IsStatic == input.IsStatic)
-            .WhereIf(input.IsPublic.HasValue, x => x.IsPublic == input.IsPublic)
+            .Where(x => x.SessionId == entity.SessionId && x.Setting.IsEnabled)
+            .WhereIf(input.IsKilled.HasValue, x => x.Setting.IsKilled == input.IsKilled)
+            .WhereIf(input.IsStatic.HasValue, x => x.Setting.IsStatic == input.IsStatic)
+            .WhereIf(input.IsPublic.HasValue, x => x.Setting.IsPublic == input.IsPublic)
             .WhereIf(input.OwnerIdList.IsAny(), x => input.OwnerIdList.Contains(x.OwnerId))
             .WhereIf(input.OwnerTypeList.IsAny(), x => input.OwnerTypeList.Contains(x.Owner.ObjectType.Value))
             .WhereIf(!input.TagId.IsEmpty(), x => x.SessionUnitTagList.Any(x => x.SessionTagId == input.TagId))
             .WhereIf(!input.RoleId.IsEmpty(), x => x.SessionUnitRoleList.Any(x => x.SessionRoleId == input.RoleId))
-            .WhereIf(!input.JoinWay.IsEmpty(), x => x.JoinWay == input.JoinWay)
-            .WhereIf(!input.InviterId.IsEmpty(), x => x.InviterId == input.InviterId)
-            .WhereIf(!input.InviterUnitId.IsEmpty(), x => x.InviterUnitId == input.InviterUnitId)
+            .WhereIf(!input.JoinWay.IsEmpty(), x => x.Setting.JoinWay == input.JoinWay)
+            .WhereIf(!input.InviterId.IsEmpty(), x => x.Setting.InviterId == input.InviterId)
             //.WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Owner.Name.Contains(input.Keyword))
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordOwnerSessionUnitSpecification(input.Keyword, await ChatObjectManager.SearchKeywordByCacheAsync(input.Keyword)))
             ;
@@ -266,12 +193,12 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         var entity = await Repository.GetAsync(id);
 
         var query = (await Repository.GetQueryableAsync())
-            .Where(x => x.SessionId == entity.SessionId && x.IsEnabled)
+            .Where(x => x.SessionId == entity.SessionId && x.Setting.IsEnabled)
             .Where(SessionUnit.GetActivePredicate())
             .Select(x => new SessionUnitDisplayName
             {
                 Id = x.Id,
-                DisplayName = !string.IsNullOrEmpty(x.MemberName) ? x.MemberName : x.OwnerName,
+                DisplayName = !string.IsNullOrEmpty(x.Setting.MemberName) ? x.Setting.MemberName : x.Setting.Rename,
             })
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.DisplayName.Contains(input.Keyword));
 
@@ -602,7 +529,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         };
 
         var query = entity.Session.UnitList.AsQueryable()
-           .Where(x => !x.IsKilled)
+           .Where(x => !x.Setting.IsKilled)
            .Where(x => objectTypeList.Contains(x.Owner.ObjectType.Value))
            .WhereIf(entity.Session.OwnerId == null, x => x.Id != id)
            .WhereIf(!input.TagId.IsEmpty(), x => x.SessionUnitTagList.Any(d => d.SessionTagId == input.TagId))

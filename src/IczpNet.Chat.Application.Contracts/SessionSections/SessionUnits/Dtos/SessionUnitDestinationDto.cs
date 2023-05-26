@@ -22,17 +22,17 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         public virtual ChatObjectDto Owner { get; set; }
 
-        public virtual long? InviterId { get; set; }
+        //public virtual long? InviterId { get; set; }
 
-        public virtual JoinWays? JoinWay { get; set; }
+        //public virtual JoinWays? JoinWay { get; set; }
 
-        public virtual bool IsKilled { get; set; }
+        //public virtual bool IsKilled { get; set; }
 
-        public virtual bool IsPublic { get; set; }
+        //public virtual bool IsPublic { get; set; }
 
-        public virtual bool IsStatic { get; set; }
+        //public virtual bool IsStatic { get; set; }
 
-        public virtual bool IsCreator { get; set; }
+        //public virtual bool IsCreator { get; set; }
 
         public virtual List<SessionRoleDto> RoleList { get; set; }
 

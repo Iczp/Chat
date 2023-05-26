@@ -18,7 +18,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         Task<int> IncrementFollowingCountAsync(Guid sessionId, DateTime messageCreationTime, List<Guid> destinationSessionUnitIdList);
 
-        Task<int> BatchUpdateNameAsync(long chatObjectId, string name, string nameSpelling, string nameSpellingAbbreviation);
+        //Task<int> BatchUpdateNameAsync(long chatObjectId, string name, string nameSpelling, string nameSpellingAbbreviation);
 
         Task<int> BatchUpdateAppUserIdAsync(long chatObjectId, Guid appUserId);
 

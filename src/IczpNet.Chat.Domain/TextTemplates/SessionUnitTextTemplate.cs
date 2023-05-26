@@ -34,7 +34,7 @@ namespace IczpNet.Chat.TextTemplates
         public SessionUnitTextTemplate(SessionUnit sessionUnit)
         {
             SessionUnitIds = new List<Guid>() { sessionUnit.Id };
-            ChatObjectName = !sessionUnit.MemberName.IsNullOrWhiteSpace() ? sessionUnit.MemberName : sessionUnit.Owner?.Name;
+            ChatObjectName = !sessionUnit.Setting.MemberName.IsNullOrWhiteSpace() ? sessionUnit.Setting.MemberName : sessionUnit.Owner?.Name;
             SetData();
         }
 

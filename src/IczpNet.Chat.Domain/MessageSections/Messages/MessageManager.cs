@@ -145,7 +145,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         {
             Assert.NotNull(senderSessionUnit, $"Unable to send message, senderSessionUnit is null");
 
-            Assert.If(!senderSessionUnit.IsInputEnabled, $"Unable to send message, input status is disabled");
+            Assert.If(!senderSessionUnit.Setting.IsInputEnabled, $"Unable to send message, input status is disabled");
 
             var sessionUnitItems = await SessionUnitManager.GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);
 
@@ -308,7 +308,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             if (nameList.Any(x => textList.Contains(x)))
             {
                 //creator or manager
-                if (senderSessionUnit.IsCreator)
+                if (senderSessionUnit.Setting.IsCreator)
                 {
                     message.SetRemindAll();
                 }
@@ -452,11 +452,11 @@ namespace IczpNet.Chat.MessageSections.Messages
         {
             var currentSessionUnit = await SessionUnitManager.GetAsync(currentSessionUnitId);
 
-            Assert.If(!currentSessionUnit.IsEnabled, $"Current session unit disabled.", nameof(currentSessionUnit.IsEnabled));
+            Assert.If(!currentSessionUnit.Setting.IsEnabled, $"Current session unit disabled.", nameof(currentSessionUnit.Setting.IsEnabled));
 
             var sourceMessage = await Repository.GetAsync(sourceMessageId);
 
-            Assert.If(sourceMessage.IsRollbacked || sourceMessage.RollbackTime != null, $"message already rollback：{sourceMessageId}", nameof(currentSessionUnit.IsEnabled));
+            Assert.If(sourceMessage.IsRollbacked || sourceMessage.RollbackTime != null, $"message already rollback：{sourceMessageId}", nameof(currentSessionUnit.Setting.IsEnabled));
 
             Assert.If(sourceMessage.IsDisabledForward, $"MessageType:'{sourceMessage.MessageType}' is disabled forward");
 
@@ -476,9 +476,9 @@ namespace IczpNet.Chat.MessageSections.Messages
             {
                 var targetSessionUnit = await SessionUnitManager.GetAsync(targetSessionUnitId);
 
-                Assert.If(!targetSessionUnit.IsEnabled, $"Target session unit disabled,id:{targetSessionUnit.Id}");
+                Assert.If(!targetSessionUnit.Setting.IsEnabled, $"Target session unit disabled,id:{targetSessionUnit.Id}");
 
-                Assert.If(!targetSessionUnit.IsInputEnabled, $"Target session unit input state is disabled,id:{targetSessionUnit.Id}");
+                Assert.If(!targetSessionUnit.Setting.IsInputEnabled, $"Target session unit input state is disabled,id:{targetSessionUnit.Id}");
 
                 Assert.If(currentSessionUnit.OwnerId != targetSessionUnit.OwnerId, $"[targetSessionUnitId:{targetSessionUnitId}] is fail.");
 

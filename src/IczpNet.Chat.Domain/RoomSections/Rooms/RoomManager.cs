@@ -380,7 +380,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
     private async Task<IQueryable<SessionUnit>> QuerySessionUnitByOwnerAsync(long ownerId, List<ChatObjectTypeEnums> chatObjectTypeList = null)
     {
         return (await SessionUnitRepository.GetQueryableAsync())
-              .Where(x => x.OwnerId.Equals(ownerId) && !x.IsKilled && x.IsEnabled)
+              .Where(x => x.OwnerId.Equals(ownerId) && !x.Setting.IsKilled && x.Setting.IsEnabled)
               .WhereIf(chatObjectTypeList.IsAny(), x => chatObjectTypeList.Contains(x.DestinationObjectType.Value));
 
     }
@@ -429,15 +429,15 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
     {
         var sessionUnit = await SessionUnitRepository.GetAsync(sessionUnitId);
 
-        Assert.If(!sessionUnit.IsCreator, "Not the session creator");
+        Assert.If(!sessionUnit.Setting.IsCreator, "Not the session creator");
 
         var targetSessionUnit = await SessionUnitRepository.GetAsync(targetSessionUnitId);
 
         Assert.If(sessionUnit.SessionId != targetSessionUnit.SessionId, "Not in same session");
 
-        sessionUnit.SetIsCreator(false);
+        sessionUnit.Setting.SetIsCreator(false);
 
-        targetSessionUnit.SetIsCreator(true);
+        targetSessionUnit.Setting.SetIsCreator(true);
 
         if (isSendMessageToRoom)
         {

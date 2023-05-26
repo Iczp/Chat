@@ -28,9 +28,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         public virtual JoinWays? JoinWay { get; set; }
 
-        public virtual long? InviterId { get; set; }
-
-        public virtual Guid? InviterUnitId { get; set; }
+        public virtual Guid? InviterId { get; set; }
 
     }
 }

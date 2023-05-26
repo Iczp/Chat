@@ -155,7 +155,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
 
             var managerAndCretorList = (await SessionUnitRepository.GetQueryableAsync())
                 .Where(x => x.DestinationId == destination.Id)
-                .Where(x => x.SessionUnitRoleList.Any(d => roleIdList.Contains(d.SessionRoleId)) || sessionUnitIdList.Contains(x.Id) || x.IsCreator)
+                .Where(x => x.SessionUnitRoleList.Any(d => roleIdList.Contains(d.SessionRoleId)) || sessionUnitIdList.Contains(x.Id) || x.Setting.IsCreator)
                 .Select(x => x.Owner)
                 .Distinct()
                 .ToList();

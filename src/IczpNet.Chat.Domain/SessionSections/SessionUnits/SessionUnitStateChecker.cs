@@ -13,7 +13,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             //context.State.Name
             var currentUser = context.ServiceProvider.GetRequiredService<ICurrentUser>();
 
-            return context.State.IsEnabled;
+            return context.State.Setting.IsEnabled;
         }
     }
 }

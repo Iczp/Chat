@@ -59,19 +59,19 @@ namespace IczpNet.Chat.SessionSections.SessionPermissions
 
             Assert.If(!SessionPermissionDefinitionConsts.GetAll().Contains(sessionPermissionDefinitionId), $"Key does not exist:{sessionPermissionDefinitionId}");
 
-            if (!sessionUnit.IsEnabled)
+            if (!sessionUnit.Setting.IsEnabled)
             {
                 Logger.LogDebug($"SessionUnit is disabled, sessionUnitId:{sessionUnit.Id}, sessionPermissionDefinitionId:{sessionPermissionDefinitionId},");
                 return false;
             }
 
-            if (sessionUnit.IsStatic)
+            if (sessionUnit.Setting.IsStatic)
             {
                 Logger.LogDebug($"SessionUnit is Static, sessionUnitId:{sessionUnit.Id}, sessionPermissionDefinitionId:{sessionPermissionDefinitionId},");
                 return true;
             }
 
-            if (sessionUnit.IsCreator)
+            if (sessionUnit.Setting.IsCreator)
             {
                 Logger.LogDebug($"SessionUnit is Creator, sessionUnitId:{sessionUnit.Id}, sessionPermissionDefinitionId:{sessionPermissionDefinitionId},");
                 return true;

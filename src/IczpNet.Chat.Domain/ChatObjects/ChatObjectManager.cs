@@ -233,9 +233,9 @@ namespace IczpNet.Chat.ChatObjects
         {
             entity.SetName(name);
 
-            var count = await SessionUnitRepository.BatchUpdateNameAsync(entity.Id, entity.Name, entity.NameSpelling, entity.NameSpellingAbbreviation);
+            //var count = await SessionUnitRepository.BatchUpdateNameAsync(entity.Id, entity.Name, entity.NameSpelling, entity.NameSpellingAbbreviation);
 
-            Logger.LogInformation($"SessionUnitRepository.BatchUpdateNameAsync:{count}");
+            //Logger.LogInformation($"SessionUnitRepository.BatchUpdateNameAsync:{count}");
 
             return await base.UpdateAsync(entity, entity.ParentId, isUnique: true);
         }

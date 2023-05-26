@@ -19,7 +19,7 @@ namespace IczpNet.Chat.Specifications
 
         public override Expression<Func<Message, bool>> ToExpression()
         {
-            return x => x.Session.UnitList.Any(d => d.OwnerId == OwnerId && (!d.HistoryFristTime.HasValue|| d.HistoryFristTime <= x.CreationTime));
+            return x => x.Session.UnitList.Any(d => d.OwnerId == OwnerId && (!d.Setting.HistoryFristTime.HasValue|| d.Setting.HistoryFristTime <= x.CreationTime));
         }
     }
 }

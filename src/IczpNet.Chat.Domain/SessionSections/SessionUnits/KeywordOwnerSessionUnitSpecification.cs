@@ -27,12 +27,12 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         {
             var expression = PredicateBuilder.New<SessionUnit>();
 
-            expression = expression.Or(x => x.MemberName.IndexOf(Keyword) == 0);
-            expression = expression.Or(x => x.MemberNameSpellingAbbreviation.IndexOf(Keyword) == 0);
+            expression = expression.Or(x => x.Setting.MemberName.IndexOf(Keyword) == 0);
+            expression = expression.Or(x => x.Setting.MemberNameSpellingAbbreviation.IndexOf(Keyword) == 0);
 
             //Write diffusion
-            expression = expression.Or(x => x.OwnerName.IndexOf(Keyword)==0);
-            expression = expression.Or(x => x.OwnerNameSpellingAbbreviation.IndexOf(Keyword) == 0);
+            expression = expression.Or(x => x.Owner.Name.IndexOf(Keyword)==0);
+            expression = expression.Or(x => x.Owner.NameSpellingAbbreviation.IndexOf(Keyword) == 0);
 
             if (DestinationIdList.IsAny())
             {

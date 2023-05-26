@@ -29,11 +29,11 @@ namespace IczpNet.Chat.Repositories
             Expression<Func<SessionUnitCounter, bool>> predicate = x =>
                 x.SessionUnit.SessionId == sessionId &&
                 !x.SessionUnit.IsDeleted &&
-                !x.SessionUnit.IsKilled &&
-                x.SessionUnit.IsEnabled &&
-                (x.SessionUnit.HistoryFristTime == null || creationTime > x.SessionUnit.HistoryFristTime) &&
-                (x.SessionUnit.HistoryLastTime == null || creationTime < x.SessionUnit.HistoryLastTime) &&
-                (x.SessionUnit.ClearTime == null || creationTime > x.SessionUnit.ClearTime);
+                !x.SessionUnit.Setting.IsKilled &&
+                x.SessionUnit.Setting.IsEnabled &&
+                (x.SessionUnit.Setting.HistoryFristTime == null || creationTime > x.SessionUnit.Setting.HistoryFristTime) &&
+                (x.SessionUnit.Setting.HistoryLastTime == null || creationTime < x.SessionUnit.Setting.HistoryLastTime) &&
+                (x.SessionUnit.Setting.ClearTime == null || creationTime > x.SessionUnit.Setting.ClearTime);
 
             return context.SessionUnitCounter.Where(predicate);
         }

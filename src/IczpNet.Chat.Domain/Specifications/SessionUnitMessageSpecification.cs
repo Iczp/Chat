@@ -27,11 +27,11 @@ namespace IczpNet.Chat.Specifications
             //    (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime))
             return x =>
                 //!x.IsRollbacked &&
-                (SessionUnit.ReadedMessageId == null || x.Id > SessionUnit.ReadedMessageId) &&
+                (SessionUnit.Setting.ReadedMessageId == null || x.Id > SessionUnit.Setting.ReadedMessageId) &&
                 x.SenderId != SessionUnit.OwnerId &&
-                (!SessionUnit.HistoryFristTime.HasValue || x.CreationTime > SessionUnit.HistoryFristTime) &&
-                (!SessionUnit.HistoryLastTime.HasValue || x.CreationTime < SessionUnit.HistoryLastTime) &&
-                (!SessionUnit.ClearTime.HasValue || x.CreationTime > SessionUnit.ClearTime)
+                (!SessionUnit.Setting.HistoryFristTime.HasValue || x.CreationTime > SessionUnit.Setting.HistoryFristTime) &&
+                (!SessionUnit.Setting.HistoryLastTime.HasValue || x.CreationTime < SessionUnit.Setting.HistoryLastTime) &&
+                (!SessionUnit.Setting.ClearTime.HasValue || x.CreationTime > SessionUnit.Setting.ClearTime)
 
             ;
         }

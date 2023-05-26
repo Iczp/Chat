@@ -82,7 +82,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
         private async Task<IQueryable<Session>> QuerySessionByUnitOwnerAsync(long ownerId, ChatObjectTypeEnums? chatObjectType = null)
         {
             return (await Repository.GetQueryableAsync())
-                  .Where(x => x.UnitList.Any(d => d.OwnerId.Equals(ownerId) && !d.IsKilled && d.IsEnabled && (chatObjectType != null && d.DestinationObjectType == chatObjectType)));
+                  .Where(x => x.UnitList.Any(d => d.OwnerId.Equals(ownerId) && !d.Setting.IsKilled && d.Setting.IsEnabled && (chatObjectType != null && d.DestinationObjectType == chatObjectType)));
 
         }
 
