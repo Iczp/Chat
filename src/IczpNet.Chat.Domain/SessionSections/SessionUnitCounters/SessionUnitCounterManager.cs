@@ -29,7 +29,12 @@ namespace IczpNet.Chat.SessionSections.SessionUnitCounters
 
             if (args.IsPrivate)
             {
-                var count = await Repository.IncrementPrivateBadgeAndUpdateLastMessageIdAsync(args.SessionId, args.LastMessageId, args.MessageCreationTime, args.PrivateBadgeSessionUnitIdList);
+                var count = await Repository.IncrementPrivateBadgeAndUpdateLastMessageIdAsync(
+                    sessionId: args.SessionId,
+                    lastMessageId: args.LastMessageId,
+                    messageCreationTime: args.MessageCreationTime,
+                    senderSessionUnitId: args.SenderSessionUnitId,
+                    destinationSessionUnitIdList: args.PrivateBadgeSessionUnitIdList);
 
                 Logger.LogInformation($"IncrementPrivateBadgeAndUpdateLastMessageId count:{count}");
 
@@ -37,7 +42,12 @@ namespace IczpNet.Chat.SessionSections.SessionUnitCounters
             }
             else
             {
-                var count = await Repository.IncrementPublicBadgeAndRemindAllCountAndUpdateLastMessageIdAsync(args.SessionId, args.LastMessageId, args.MessageCreationTime, args.IgnoreSessionUnitId, args.IsRemindAll);
+                var count = await Repository.IncrementPublicBadgeAndRemindAllCountAndUpdateLastMessageIdAsync(
+                    sessionId: args.SessionId,
+                    lastMessageId: args.LastMessageId,
+                    messageCreationTime: args.MessageCreationTime,
+                    senderSessionUnitId: args.SenderSessionUnitId,
+                    isRemindAll: args.IsRemindAll);
 
                 Logger.LogInformation($"IncrementPublicBadgeAndRemindAllCountAndUpdateLastMessageIdAsync count:{count}");
 
@@ -46,7 +56,10 @@ namespace IczpNet.Chat.SessionSections.SessionUnitCounters
 
             if (args.RemindSessionUnitIdList.IsAny())
             {
-                var count = await Repository.IncrementRemindMeCountAsync(args.SessionId, args.MessageCreationTime, args.RemindSessionUnitIdList);
+                var count = await Repository.IncrementRemindMeCountAsync(
+                    sessionId: args.SessionId,
+                    messageCreationTime: args.MessageCreationTime,
+                    destinationSessionUnitIdList: args.RemindSessionUnitIdList);
 
                 Logger.LogInformation($"IncrementRemindMeCountAsync count:{count}");
 
@@ -55,7 +68,10 @@ namespace IczpNet.Chat.SessionSections.SessionUnitCounters
 
             if (args.FollowingSessionUnitIdList.IsAny())
             {
-                var count = await Repository.IncrementFollowingCountAsync(args.SessionId, args.MessageCreationTime, args.FollowingSessionUnitIdList);
+                var count = await Repository.IncrementFollowingCountAsync(
+                    sessionId: args.SessionId,
+                    messageCreationTime: args.MessageCreationTime,
+                    destinationSessionUnitIdList: args.FollowingSessionUnitIdList);
 
                 Logger.LogInformation($"IncrementFollowingCountAsync count:{count}");
 

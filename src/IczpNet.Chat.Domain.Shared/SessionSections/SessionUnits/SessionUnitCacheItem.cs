@@ -12,7 +12,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public virtual Guid? AppUserId { get; set; }
 
-        public virtual ChatObjectTypeEnums? DestinationObjectType { get; set; }
+        //public virtual ChatObjectTypeEnums? DestinationObjectType { get; set; }
 
         public virtual long OwnerId { get; set; }
 

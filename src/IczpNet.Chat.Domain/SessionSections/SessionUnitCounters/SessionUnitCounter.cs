@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
 using Volo.Abp.Auditing;
@@ -7,9 +8,12 @@ using Volo.Abp.Domain.Entities;
 
 namespace IczpNet.Chat.SessionSections.SessionUnitCounters
 {
+    [Index(nameof(LastMessageId), AllDescending = true)]
+    [Index(nameof(LastMessageId), AllDescending = false)]
+    [Index(nameof(SessionUnitId), nameof(LastMessageId), AllDescending = true)]
     public class SessionUnitCounter : Entity, IHasCreationTime, IHasModificationTime
     {
-        //protected SessionUnitCounter() { }
+        //protected Counter() { }
 
         public virtual Guid SessionUnitId { get; set; }
 

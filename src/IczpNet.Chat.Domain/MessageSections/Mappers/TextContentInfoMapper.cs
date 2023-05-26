@@ -3,8 +3,6 @@ using Volo.Abp.ObjectMapping;
 using IczpNet.Chat.MessageSections.Templates;
 using Volo.Abp.Domain.Services;
 using Microsoft.Extensions.Logging;
-using IczpNet.AbpCommons;
-using AutoMapper;
 
 namespace IczpNet.Chat.MessageSections.Mappers
 {

@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230526015114_SessionUnitCounter_AddIndex_LastMessageId")]
+    partial class SessionUnitCounter_AddIndex_LastMessageId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3671,9 +3674,6 @@ namespace IczpNet.Chat.Migrations
                     b.HasKey("SessionUnitId");
 
                     b.HasIndex("LastMessageId")
-                        .IsDescending();
-
-                    b.HasIndex("SessionUnitId", "LastMessageId")
                         .IsDescending();
 
                     b.ToTable("Chat_SessionUnitCounter", (string)null);

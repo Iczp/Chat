@@ -10,7 +10,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnitCounters
 
         public bool IsPrivate { get; set; } = false;
 
-        public Guid? IgnoreSessionUnitId { get; set; }
+        public Guid SenderSessionUnitId { get; set; }
 
         public bool IsRemindAll { get; set; }
 

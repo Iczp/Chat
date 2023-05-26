@@ -243,7 +243,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public virtual double Sorting { get; protected set; }
 
-        public virtual SessionUnitCounter SessionUnitCounter { get; protected set; } = new SessionUnitCounter();
+        public virtual SessionUnitCounter Counter { get; protected set; } = new SessionUnitCounter();
 
         public virtual IList<MessageReminder> ReminderList { get; protected set; } = new List<MessageReminder>();
 
@@ -283,8 +283,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         [InverseProperty(nameof(Favorite.SessionUnit))]
         public virtual IList<Favorite> FavoriteList { get; protected set; }
 
-       
-
+ 
         [NotMapped]
         public virtual List<SessionTag> TagList => GetTagList();
 
@@ -306,17 +305,22 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         [NotMapped]
         public virtual int? ReminderCount { get; protected set; }//=> GetReminderCount();
 
+        [Obsolete("Move to SessionUnitCounter")]
         public virtual int PublicBadge { get; protected set; }
 
+        [Obsolete("Move to SessionUnitCounter")]
         public virtual int PrivateBadge { get; protected set; }
 
         //[NotMapped]
+        [Obsolete("Move to SessionUnitCounter")]
         public virtual int RemindAllCount { get; protected set; }//=> GetRemindAllCount();
 
         //[NotMapped]
+        [Obsolete("Move to SessionUnitCounter")]
         public virtual int RemindMeCount { get; protected set; }//=> GetRemindMeCount();
 
         //[NotMapped]
+        [Obsolete("Move to SessionUnitCounter")]
         public virtual int FollowingCount { get; protected set; }//=> GetFollowingCount();
 
         protected SessionUnit() { }
@@ -420,6 +424,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             MemberNameSpellingAbbreviation = memberName.ConvertToPY().MaxLength(50);
         }
 
+        [Obsolete]
         internal virtual void SetReadedMessageId(long lastMessageId, bool isForce = false)
         {
             if (isForce || lastMessageId > ReadedMessageId.GetValueOrDefault())
@@ -433,19 +438,13 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             RemindMeCount = 0;
         }
 
-        internal virtual void SetHistoryFristTime(DateTime historyFristTime)
-        {
-            HistoryFristTime = historyFristTime;
-        }
+        internal virtual void SetHistoryFristTime(DateTime historyFristTime) => HistoryFristTime = historyFristTime;
 
         /// <summary>
         /// removeSession 删除消息会话,不退群
         /// </summary>
         /// <param name="removeTime"></param>
-        internal virtual void Remove(DateTime removeTime)
-        {
-            RemoveTime = removeTime;
-        }
+        internal virtual void Remove(DateTime removeTime) => RemoveTime = removeTime;
 
         /// <summary>
         /// 退群，但不删除会话（用于查看历史I）
@@ -467,10 +466,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         /// 清空消息，不退群 
         /// </summary>
         /// <param name="clearTime"></param>
-        internal virtual void ClearMessage(DateTime? clearTime)
-        {
-            ClearTime = clearTime;
-        }
+        internal virtual void ClearMessage(DateTime? clearTime) => ClearTime = clearTime;
 
         public override object[] GetKeys()
         {
@@ -483,57 +479,41 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             return this;
         }
 
-        public void SetReminderCount(int value)
-        {
-            RemindAllCount = value;
-        }
+        [Obsolete]
+        public void SetReminderCount(int value) => RemindAllCount = value;
 
-        public void SetFollowingCount(int value)
-        {
-            FollowingCount = value;
-        }
+        [Obsolete]
+        public void SetFollowingCount(int value) => FollowingCount = value;
 
-        protected virtual int GetBadge()
-        {
-            return Session.MessageList.AsQueryable().Count(new SessionUnitMessageSpecification(this).ToExpression());
-        }
+        [Obsolete]
+        protected virtual int GetBadge() => Session.MessageList.AsQueryable().Count(new SessionUnitMessageSpecification(this).ToExpression());
 
-        protected virtual Message GetLastMessage()
-        {
-            return Session.MessageList.AsQueryable().OrderByDescending(x => x.Id).FirstOrDefault(new SessionUnitMessageSpecification(this).ToExpression());
-        }
+        [Obsolete]
+        protected virtual Message GetLastMessage() => Session.MessageList.AsQueryable().OrderByDescending(x => x.Id).FirstOrDefault(new SessionUnitMessageSpecification(this).ToExpression());
 
-        private int GetReminderCount()
-        {
-            return GetRemindMeCount() + GetRemindAllCount();
-        }
+        [Obsolete]
+        private int GetReminderCount() => GetRemindMeCount() + GetRemindAllCount();
 
         /// <summary>
         /// @me
         /// </summary>
         /// <returns></returns>
-        protected virtual int GetRemindMeCount()
-        {
-            return ReminderList.AsQueryable().Select(x => x.Message).Where(x => !x.IsRollbacked).Count(new SessionUnitMessageSpecification(this).ToExpression());
-        }
+        [Obsolete("Move to SessionUnitCounter")]
+        protected virtual int GetRemindMeCount() => ReminderList.AsQueryable().Select(x => x.Message).Where(x => !x.IsRollbacked).Count(new SessionUnitMessageSpecification(this).ToExpression());
 
         /// <summary>
         /// @everyone
         /// </summary>
         /// <returns></returns>
-        protected virtual int GetRemindAllCount()
-        {
-            return Session.MessageList.AsQueryable().Where(x => x.IsRemindAll && !x.IsRollbacked).Count(new SessionUnitMessageSpecification(this).ToExpression());
-        }
+        [Obsolete("Move to SessionUnitCounter")]
+        protected virtual int GetRemindAllCount() => Session.MessageList.AsQueryable().Where(x => x.IsRemindAll && !x.IsRollbacked).Count(new SessionUnitMessageSpecification(this).ToExpression());
 
         /// <summary>
         /// 
         /// </summary>
         /// <returns></returns>
-        protected virtual int GetFollowingCount()
-        {
-            return Session.MessageList.AsQueryable().Where(x => OwnerFollowList.Any(d => d.DestinationId == x.SessionUnitId)).Count(new SessionUnitMessageSpecification(this).ToExpression());
-        }
+        [Obsolete("Move to SessionUnitCounter")]
+        protected virtual int GetFollowingCount() => Session.MessageList.AsQueryable().Where(x => OwnerFollowList.Any(d => d.DestinationId == x.SessionUnitId)).Count(new SessionUnitMessageSpecification(this).ToExpression());
 
         internal virtual void SetTopping(bool isTopping)
         {
@@ -545,30 +525,15 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             return SessionUnitTagList.Select(x => x.SessionTag).ToList();
         }
 
-        private List<Guid> GetTagIdList()
-        {
-            return SessionUnitTagList.Select(x => x.SessionTagId).ToList();
-        }
+        private List<Guid> GetTagIdList() => SessionUnitTagList.Select(x => x.SessionTagId).ToList();
 
-        private List<SessionRole> GetRoleList()
-        {
-            return SessionUnitRoleList.Select(x => x.SessionRole).ToList();
-        }
+        private List<SessionRole> GetRoleList() => SessionUnitRoleList.Select(x => x.SessionRole).ToList();
 
-        private List<Guid> GetRoleIdList()
-        {
-            return SessionUnitRoleList.Select(x => x.SessionRoleId).ToList();
-        }
+        private List<Guid> GetRoleIdList() => SessionUnitRoleList.Select(x => x.SessionRoleId).ToList();
 
-        internal virtual void SetImmersed(bool isImmersed)
-        {
-            IsImmersed = isImmersed;
-        }
+        internal virtual void SetImmersed(bool isImmersed) => IsImmersed = isImmersed;
 
-        internal virtual void SetIsEnabled(bool v)
-        {
-            IsEnabled = v;
-        }
+        internal virtual void SetIsEnabled(bool v) => IsEnabled = v;
 
         internal virtual void SetIsCreator(bool v)
         {
@@ -576,15 +541,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             IsStatic = v;
         }
 
-        internal void SetLastMessage(Message message)
-        {
-            LastMessageId = message.Id;
-            LastMessage = message;
-        }
-
-        internal void SetPrivateBadge(int v)
-        {
-            PrivateBadge = v;
-        }
+        [Obsolete]
+        internal void SetPrivateBadge(int v) => PrivateBadge = v;
     }
 }

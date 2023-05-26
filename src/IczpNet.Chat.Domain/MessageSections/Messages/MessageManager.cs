@@ -149,11 +149,14 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             Assert.If(!senderSessionUnit.IsInputEnabled, $"Unable to send message, input status is disabled");
 
+            var sessionUnitItems = await SessionUnitManager.GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);
+
             var entity = new Message(senderSessionUnit);
 
             var sessionUnitCounterArgs = new SessionUnitCounterArgs()
             {
                 SessionId = senderSessionUnit.SessionId.Value,
+                SenderSessionUnitId = senderSessionUnit.Id
             };
 
             if (action != null)
@@ -186,7 +189,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             //await SessionRepository.UpdateAsync(session, autoSave: true);
 
             // sender SessionUnit LastMessage
-            senderSessionUnit.SetLastMessage(entity);
+            //senderSessionUnit.SetLastMessage(entity);
 
             await SessionUnitRepository.UpdateAsync(senderSessionUnit, autoSave: true);
 
@@ -202,7 +205,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             else
             {
                 // Following
-                await SessionUnitManager.IncrementFollowingCountAsync(senderSessionUnit, entity);
+                //await SessionUnitManager.IncrementFollowingCountAsync(senderSessionUnit, entity);
 
                 sessionUnitCounterArgs.FollowingSessionUnitIdList = await GetFollowingIdListAsync(senderSessionUnit);
 

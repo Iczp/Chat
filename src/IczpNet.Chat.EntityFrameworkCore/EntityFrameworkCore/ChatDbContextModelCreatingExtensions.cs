@@ -104,7 +104,7 @@ public static class ChatDbContextModelCreatingExtensions
         builder.Entity<SessionUnitCounter>(b =>
         {
             b.HasKey(x => new { x.SessionUnitId });
-            b.HasOne(x => x.SessionUnit).WithOne(x => x.SessionUnitCounter).HasForeignKey<SessionUnitCounter>(x => x.SessionUnitId).IsRequired(true);
+            b.HasOne(x => x.SessionUnit).WithOne(x => x.Counter).HasForeignKey<SessionUnitCounter>(x => x.SessionUnitId).IsRequired(true);
         });
 
         builder.Entity<Message>(b =>

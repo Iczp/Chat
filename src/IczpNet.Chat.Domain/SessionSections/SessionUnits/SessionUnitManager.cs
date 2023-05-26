@@ -404,17 +404,17 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
             {
                 Id = x.Id,
                 SessionId = x.SessionId,
-                DestinationId = x.DestinationId,
                 OwnerId = x.OwnerId,
-                DestinationObjectType = x.DestinationObjectType,
+                DestinationId = x.DestinationId,
+                //DestinationObjectType = x.DestinationObjectType,
                 IsPublic = x.IsPublic,
                 ReadedMessageId = x.ReadedMessageId,
-                PublicBadge = x.PublicBadge,
-                PrivateBadge = x.PrivateBadge,
-                RemindAllCount = x.RemindAllCount,
-                RemindMeCount = x.RemindMeCount,
-                FollowingCount = x.FollowingCount,
-                LastMessageId = x.LastMessageId,
+                PublicBadge = x.Counter == null ? 0 : x.Counter.PublicBadge,
+                PrivateBadge = x.Counter == null ? 0 : x.Counter.PrivateBadge,
+                RemindAllCount = x.Counter == null ? 0 : x.Counter.RemindAllCount,
+                RemindMeCount = x.Counter == null ? 0 : x.Counter.RemindMeCount,
+                FollowingCount = x.Counter == null ? 0 : x.Counter.FollowingCount,
+                LastMessageId = x.Counter == null ? null : x.Counter.LastMessageId,
             })
             .ToList();
 

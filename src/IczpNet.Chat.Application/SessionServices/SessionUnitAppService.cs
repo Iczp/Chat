@@ -18,6 +18,7 @@ using IczpNet.Chat.Specifications;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -104,6 +105,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     protected virtual async Task<IQueryable<SessionUnit>> GetQueryAsync(SessionUnitGetListInput input)
     {
         return (await Repository.GetQueryableAsync())
+            .Include(x => x.Counter)
             .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
             .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
             .WhereIf(input.DestinationObjectType.HasValue, x => x.DestinationObjectType == input.DestinationObjectType)
@@ -111,15 +113,15 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(input.IsCreator.HasValue, x => x.IsCreator == input.IsCreator)
             //.WhereIf(input.MinMessageId.HasValue, x => x.LastMessageId > input.MinMessageId)
             //.WhereIf(input.MaxMessageId.HasValue, x => x.LastMessageId <= input.MaxMessageId)
-            .WhereIf(input.MinMessageId.HasValue, x => x.Session.LastMessageId > input.MinMessageId)
-            .WhereIf(input.MaxMessageId.HasValue, x => x.Session.LastMessageId <= input.MaxMessageId)
+            .WhereIf(input.MinMessageId.HasValue, x => x.Counter.LastMessageId > input.MinMessageId)
+            .WhereIf(input.MaxMessageId.HasValue, x => x.Counter.LastMessageId <= input.MaxMessageId)
             .WhereIf(input.IsTopping == true, x => x.Sorting > 0)
             .WhereIf(input.IsTopping == false, x => x.Sorting == 0)
             .WhereIf(input.IsCantacts.HasValue, x => x.IsCantacts == input.IsCantacts)
             .WhereIf(input.IsImmersed.HasValue, x => x.IsImmersed == input.IsImmersed)
-            .WhereIf(input.IsBadge.HasValue, x => x.PublicBadge > 0 || x.PrivateBadge > 0)
-            .WhereIf(input.IsRemind.HasValue, x => x.RemindAllCount > 0 || x.RemindMeCount > 0)
-            .WhereIf(input.IsFollowing.HasValue, x => x.FollowingCount > 0)
+            .WhereIf(input.IsBadge.HasValue, x => x.Counter.PublicBadge > 0 || x.Counter.PrivateBadge > 0)
+            .WhereIf(input.IsRemind.HasValue, x => x.Counter.RemindAllCount > 0 || x.Counter.RemindMeCount > 0)
+            .WhereIf(input.IsFollowing.HasValue, x => x.Counter.FollowingCount > 0)
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordDestinationSessionUnitSpecification(input.Keyword, await ChatObjectManager.SearchKeywordByCacheAsync(input.Keyword)))
             ;
     }
@@ -137,12 +139,13 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return await GetPagedListAsync<SessionUnit, SessionUnitOwnerDto>(
             query,
             input,
-            x => input.IsTopping == true
-                ? x.OrderByDescending(x => x.Sorting)
-                   .ThenByDescending(x => x.Session.LastMessageId)
-                : x.OrderByDescending(x => x.Session.LastMessageId)
-                  //.ThenByDescending(x => x.LastMessageId)
-                  //.ThenByDescending(x => x.Session.LastMessageId)
+            x => x.OrderByDescending(x => x.Sorting)
+            //input.IsTopping == true
+            //    ? x.OrderByDescending(x => x.Sorting)
+            //       .ThenByDescending(x => x.Counter.LastMessageId)
+            //    : x.OrderByDescending(x => x.Counter.LastMessageId)
+            //      //.ThenByDescending(x => x.LastMessageId)
+            //      //.ThenByDescending(x => x.Session.LastMessageId)
                   ,
             async entities =>
             {
