@@ -105,23 +105,21 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     protected virtual async Task<IQueryable<SessionUnit>> GetQueryAsync(SessionUnitGetListInput input)
     {
         return (await Repository.GetQueryableAsync())
-            .Include(x => x.Counter)
+            .Include(x => x.Setting)
             .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
             .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
             .WhereIf(input.DestinationObjectType.HasValue, x => x.DestinationObjectType == input.DestinationObjectType)
             .WhereIf(input.IsKilled.HasValue, x => x.IsKilled == input.IsKilled)
             .WhereIf(input.IsCreator.HasValue, x => x.IsCreator == input.IsCreator)
-            //.WhereIf(input.MinMessageId.HasValue, x => x.LastMessageId > input.MinMessageId)
-            //.WhereIf(input.MaxMessageId.HasValue, x => x.LastMessageId <= input.MaxMessageId)
-            .WhereIf(input.MinMessageId.HasValue, x => x.Counter.LastMessageId > input.MinMessageId)
-            .WhereIf(input.MaxMessageId.HasValue, x => x.Counter.LastMessageId <= input.MaxMessageId)
+            .WhereIf(input.MinMessageId.HasValue, x => x.LastMessageId > input.MinMessageId)
+            .WhereIf(input.MaxMessageId.HasValue, x => x.LastMessageId <= input.MaxMessageId)
             .WhereIf(input.IsTopping == true, x => x.Sorting > 0)
             .WhereIf(input.IsTopping == false, x => x.Sorting == 0)
-            .WhereIf(input.IsCantacts.HasValue, x => x.IsCantacts == input.IsCantacts)
-            .WhereIf(input.IsImmersed.HasValue, x => x.IsImmersed == input.IsImmersed)
-            .WhereIf(input.IsBadge.HasValue, x => x.Counter.PublicBadge > 0 || x.Counter.PrivateBadge > 0)
-            .WhereIf(input.IsRemind.HasValue, x => x.Counter.RemindAllCount > 0 || x.Counter.RemindMeCount > 0)
-            .WhereIf(input.IsFollowing.HasValue, x => x.Counter.FollowingCount > 0)
+            .WhereIf(input.IsCantacts.HasValue, x => x.Setting.IsCantacts == input.IsCantacts)
+            .WhereIf(input.IsImmersed.HasValue, x => x.Setting.IsImmersed == input.IsImmersed)
+            .WhereIf(input.IsBadge.HasValue, x => x.PublicBadge > 0 || x.PrivateBadge > 0)
+            .WhereIf(input.IsRemind.HasValue, x => x.RemindAllCount > 0 || x.RemindMeCount > 0)
+            .WhereIf(input.IsFollowing.HasValue, x => x.FollowingCount > 0)
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordDestinationSessionUnitSpecification(input.Keyword, await ChatObjectManager.SearchKeywordByCacheAsync(input.Keyword)))
             ;
     }
@@ -134,19 +132,10 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 
         var query = await GetQueryAsync(input);
 
-
-
         return await GetPagedListAsync<SessionUnit, SessionUnitOwnerDto>(
             query,
             input,
-            x => x.OrderByDescending(x => x.Sorting)
-            //input.IsTopping == true
-            //    ? x.OrderByDescending(x => x.Sorting)
-            //       .ThenByDescending(x => x.Counter.LastMessageId)
-            //    : x.OrderByDescending(x => x.Counter.LastMessageId)
-            //      //.ThenByDescending(x => x.LastMessageId)
-            //      //.ThenByDescending(x => x.Session.LastMessageId)
-                  ,
+            x => x.OrderByDescending(x => x.Sorting).ThenBy(x => x.LastMessageId),
             async entities =>
             {
                 if (input.IsRealStat == true)
@@ -474,6 +463,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 
         Assert.NotNull(entity.Session, "session is null");
 
+        var settting = entity.Setting;
+
         var followingIdList = await FollowManager.GetFollowingIdListAsync(id);
 
         var query = (await MessageRepository.GetQueryableAsync())
@@ -486,9 +477,9 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             //    (x.ReceiverId == entity.OwnerId && x.SenderId == entity.Session.OwnerId) ||
             //    (x.SenderId == x.ReceiverId && x.SenderId == entity.OwnerId)
             //)
-            .WhereIf(entity.HistoryFristTime.HasValue, x => x.CreationTime > entity.HistoryFristTime)
-            .WhereIf(entity.HistoryLastTime.HasValue, x => x.CreationTime < entity.HistoryFristTime)
-            .WhereIf(entity.ClearTime.HasValue, x => x.CreationTime > entity.ClearTime)
+            .WhereIf(settting.HistoryFristTime.HasValue, x => x.CreationTime >= settting.HistoryFristTime)
+            .WhereIf(settting.HistoryLastTime.HasValue, x => x.CreationTime < settting.HistoryFristTime)
+            .WhereIf(settting.ClearTime.HasValue, x => x.CreationTime > settting.ClearTime)
             .WhereIf(input.MessageType.HasValue, x => x.MessageType == input.MessageType)
             .WhereIf(input.IsFollowed.HasValue, x => followingIdList.Contains(x.SessionUnitId.Value))
             .WhereIf(input.IsRemind == true, x => x.IsRemindAll || x.MessageReminderList.Any(x => x.SessionUnitId == id))

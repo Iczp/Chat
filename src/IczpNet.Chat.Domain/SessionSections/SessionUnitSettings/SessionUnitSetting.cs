@@ -1,9 +1,9 @@
-﻿using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.Enums;
+﻿using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Volo.Abp.Auditing;
@@ -44,25 +44,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnitSettings
         [Comment("查看历史消息截止时间,为null时则不限")] 
         public virtual DateTime? HistoryLastTime { get; protected set; }
 
-        /// <summary>
-        /// 删除会话(退出群等)，但是不删除会话(用于查看历史消息)
-        /// </summary>
-         [Comment("删除会话(退出群等)，但是不删除会话(用于查看历史消息)")] 
-        public virtual bool IsKilled { get; protected set; }
-
-        public virtual KillTypes? KillType { get; protected set; }
-
-        [Comment("删除会话时间")] 
-        public virtual DateTime? KillTime { get; protected set; }
-
-        [Comment("删除人Id")]
-        public virtual long? KillerId { get; protected set; }
-
-
-        [Comment("删除人")]
-        [ForeignKey(nameof(KillerId))]
-        public virtual ChatObject Killer { get; protected set; }
-
         [Comment("清除历史消息最后时间,为null时则不限")] 
         public virtual DateTime? ClearTime { get; protected set; }
 
@@ -93,6 +74,53 @@ namespace IczpNet.Chat.SessionSections.SessionUnitSettings
 
         [Comment("是否显示已读")]
         public virtual bool IsShowReaded { get; protected set; }
+
+        [Comment("是否固定成员")]
+        public virtual bool IsStatic { get; set; }
+
+        [Comment("是否公有成员")]
+        public virtual bool IsPublic { get; set; }
+
+        [Comment("是否启用输入框")]
+        public virtual bool IsInputEnabled { get; protected set; } = true;
+
+        [Comment("是否可用")]
+        public virtual bool IsEnabled { get; protected set; } = true;
+
+        /// <summary>
+        /// 是否创建者（群主等）
+        /// </summary>
+        [Comment("是否创建者（群主等）")] 
+        public virtual bool IsCreator { get; protected set; } = false;
+
+        #region 邀请人 SessionUnit
+        public virtual Guid? InviterId { get; set; }
+
+        [ForeignKey(nameof(InviterId))]
+        public virtual SessionUnit Inviter { get; set; }
+
+        #endregion
+
+        #region 删除人 SessionUnit
+
+        /// <summary>
+        /// 删除会话(退出群等)，但是不删除会话(用于查看历史消息)
+        /// </summary>
+        [Comment("删除会话(退出群等)，但是不删除会话(用于查看历史消息)")]
+        public virtual bool IsKilled { get; protected set; }
+
+        public virtual KillTypes? KillType { get; protected set; }
+
+        [Comment("删除会话时间")]
+        public virtual DateTime? KillTime { get; protected set; }
+
+        public virtual Guid? KillerId { get; set; }
+
+        [ForeignKey(nameof(KillerId))]
+        public virtual SessionUnit Killer { get; set; }
+
+       
+        #endregion
 
         [Comment("创建时间")]
         public virtual DateTime CreationTime { get; set; }

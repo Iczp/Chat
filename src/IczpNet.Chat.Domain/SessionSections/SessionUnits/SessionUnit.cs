@@ -244,9 +244,16 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public virtual double Sorting { get; protected set; }
 
-        public virtual SessionUnitCounter Counter { get; protected set; } = new SessionUnitCounter();
+        public virtual SessionUnitCounter Counter { get; protected set; }
 
+        [InverseProperty(nameof(SessionUnitSetting.SessionUnit))]
         public virtual SessionUnitSetting Setting { get; protected set; } = new SessionUnitSetting();
+
+        [InverseProperty(nameof(SessionUnitSetting.Inviter))]
+        public virtual List<SessionUnitSetting> InviterList { get; protected set; }
+
+        [InverseProperty(nameof(SessionUnitSetting.Killer))]
+        public virtual List<SessionUnitSetting> KillerList { get; protected set; }
 
         public virtual IList<MessageReminder> ReminderList { get; protected set; } = new List<MessageReminder>();
 
@@ -267,7 +274,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         [InverseProperty(nameof(Message.SessionUnit))]
         public virtual List<Message> MessageList { get; protected set; } = new List<Message>();
 
-        
+
 
         [InverseProperty(nameof(OpenedRecorder.SessionUnit))]
         public virtual IList<OpenedRecorder> OpenedRecorderList { get; protected set; }
@@ -286,7 +293,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         [InverseProperty(nameof(Favorite.SessionUnit))]
         public virtual IList<Favorite> FavoriteList { get; protected set; }
 
- 
+
         [NotMapped]
         public virtual List<SessionTag> TagList => GetTagList();
 
@@ -308,22 +315,15 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         [NotMapped]
         public virtual int? ReminderCount { get; protected set; }//=> GetReminderCount();
 
-        [Obsolete("Move to SessionUnitCounter")]
+
         public virtual int PublicBadge { get; protected set; }
 
-        [Obsolete("Move to SessionUnitCounter")]
         public virtual int PrivateBadge { get; protected set; }
 
-        //[NotMapped]
-        [Obsolete("Move to SessionUnitCounter")]
         public virtual int RemindAllCount { get; protected set; }//=> GetRemindAllCount();
 
-        //[NotMapped]
-        [Obsolete("Move to SessionUnitCounter")]
         public virtual int RemindMeCount { get; protected set; }//=> GetRemindMeCount();
 
-        //[NotMapped]
-        [Obsolete("Move to SessionUnitCounter")]
         public virtual int FollowingCount { get; protected set; }//=> GetFollowingCount();
 
         protected SessionUnit() { }
@@ -400,11 +400,11 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             var creationTime = messageCreationTime ?? DateTime.Now;
             return x =>
                 !x.IsDeleted &&
-                !x.IsKilled &&
-                x.IsEnabled &&
-                (x.HistoryFristTime == null || creationTime > x.HistoryFristTime) &&
-                (x.HistoryLastTime == null || creationTime < x.HistoryLastTime) &&
-                (x.ClearTime == null || creationTime > x.ClearTime)
+                !x.Setting.IsKilled &&
+                x.Setting.IsEnabled &&
+                (x.Setting.HistoryFristTime == null || creationTime > x.Setting.HistoryFristTime) &&
+                (x.Setting.HistoryLastTime == null || creationTime < x.Setting.HistoryLastTime) &&
+                (x.Setting.ClearTime == null || creationTime > x.Setting.ClearTime)
             ;
         }
 

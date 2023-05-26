@@ -1,11 +1,13 @@
 ﻿using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.EntityFrameworkCore;
+using IczpNet.Chat.SessionSections.SessionUnitCounters;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Volo.Abp.EntityFrameworkCore;
@@ -31,16 +33,22 @@ namespace IczpNet.Chat.Repositories
             return Task.FromResult(table);
         }
 
-        private static Expression<Func<SessionUnit, bool>> GetSessionUnitPredicate(DateTime messageCreationTime)
+        private static Expression<Func<SessionUnit, bool>> GetSessionUnitPredicate(DateTime messageCreationTime, Guid? sessionId = null)
         {
-            return SessionUnit.GetActivePredicate(messageCreationTime);
+            var express = SessionUnit.GetActivePredicate(messageCreationTime);
+
+            if (sessionId.HasValue)
+            {
+                express = express.And(x => x.SessionId == sessionId);
+            }
+            return express;
         }
 
-        private async Task<IQueryable<SessionUnit>> GetQueryableAsync(DateTime messageCreationTime)
+        private async Task<IQueryable<SessionUnit>> GetQueryableAsync(DateTime messageCreationTime, Guid? sessionId = null)
         {
             var context = await GetDbContextAsync();
 
-            var predicate = GetSessionUnitPredicate(messageCreationTime);
+            var predicate = GetSessionUnitPredicate(messageCreationTime, sessionId);
 
             return context.SessionUnit.Where(predicate);
         }
@@ -88,61 +96,64 @@ namespace IczpNet.Chat.Repositories
                 );
         }
 
-        public virtual async Task<int> BatchUpdateLastMessageIdAndPublicBadgeAndRemindAllCountAsync(Guid sessionId, long lastMessageId, DateTime messageCreationTime, Guid ignoreSessionUnitId, bool isRemindAll)
+        private static async Task<int> UpdateSenderLastMessageIdAsync(IQueryable<SessionUnit> query, Guid senderSessionUnitId, long lastMessageId)
         {
-            var query = (await GetQueryableAsync(messageCreationTime))
-                .Where(x => x.SessionId == sessionId)
-                .Where(x => x.Id != ignoreSessionUnitId)
+            //
+            return await query
+                 .Where(x => x.Id == senderSessionUnitId)
+                 .Where(x => x.LastMessageId != lastMessageId)
+                 .ExecuteUpdateAsync(s => s
+                     .SetProperty(b => b.LastModificationTime, b => DateTime.Now)
+                     .SetProperty(b => b.LastMessageId, b => lastMessageId)
+                 );
+        }
+
+        public virtual async Task<int> IncrementPublicBadgeAndRemindAllCountAndUpdateLastMessageIdAsync(Guid sessionId, long lastMessageId, DateTime messageCreationTime, Guid senderSessionUnitId, bool isRemindAll)
+        {
+            var query = (await GetQueryableAsync(messageCreationTime, sessionId))
+                .Where(x => x.Id != senderSessionUnitId)
                 .Where(x => x.LastMessageId != lastMessageId);
+
+            await UpdateSenderLastMessageIdAsync(query, senderSessionUnitId, lastMessageId);
 
             if (isRemindAll)
             {
-                return await query.ExecuteUpdateAsync(s => s
-                    .SetProperty(b => b.PublicBadge, b => b.PublicBadge + 1)
-                    .SetProperty(b => b.LastMessageId, b => lastMessageId)
-                    .SetProperty(b => b.RemindAllCount, b => b.RemindAllCount + 1)
-                );
+                return await query.Where(x => x.Id != senderSessionUnitId)
+                    .ExecuteUpdateAsync(s => s
+                        .SetProperty(b => b.PublicBadge, b => b.PublicBadge + 1)
+                        .SetProperty(b => b.LastMessageId, b => lastMessageId)
+                        .SetProperty(b => b.RemindAllCount, b => b.RemindAllCount + 1)
+                    );
             }
 
-            return await query.ExecuteUpdateAsync(s => s
+            return await query.Where(x => x.Id != senderSessionUnitId)
+                .ExecuteUpdateAsync(s => s
                     .SetProperty(b => b.PublicBadge, b => b.PublicBadge + 1)
                     .SetProperty(b => b.LastMessageId, b => lastMessageId)
-                //.SetPropertyIf(isRemindAll, b => b.RemindAllCount, b => b.RemindAllCount + 1)
                 );
         }
 
-        protected virtual async Task<int> IncrementPublicBadgeAsync(Guid sessionId, DateTime messageCreationTime, Guid ignoreSessionUnitId)
+        public async Task<int> IncrementPrivateBadgeAndUpdateLastMessageIdAsync(Guid sessionId, long lastMessageId, DateTime messageCreationTime, Guid senderSessionUnitId, List<Guid> destinationSessionUnitIdList)
         {
-            var query = await GetQueryableAsync(messageCreationTime);
+            var query = await GetQueryableAsync(messageCreationTime, sessionId);
+
+            await UpdateSenderLastMessageIdAsync(query, senderSessionUnitId, lastMessageId);
 
             return await query
-                .Where(x => x.SessionId == sessionId)
-                .Where(x => x.Id != ignoreSessionUnitId)
+                .Where(x => destinationSessionUnitIdList.Contains(x.Id))
                 .ExecuteUpdateAsync(s => s
-                    .SetProperty(b => b.PublicBadge, b => b.PublicBadge + 1)
+                    .SetProperty(b => b.LastModificationTime, b => DateTime.Now)
+                    .SetProperty(b => b.PrivateBadge, b => b.PrivateBadge + 1)
+                    .SetProperty(b => b.LastMessageId, b => lastMessageId)
                 );
         }
 
-        protected virtual async Task<int> IncrementRemindAllCountAsync(Guid sessionId, DateTime messageCreationTime, Guid ignoreSessionUnitId)
+        public virtual async Task<int> IncrementRemindMeCountAsync(Guid sessionId, DateTime messageCreationTime, List<Guid> destinationSessionUnitIdList)
         {
-            var query = await GetQueryableAsync(messageCreationTime);
+            var query = await GetQueryableAsync(messageCreationTime, sessionId);
 
             return await query
-                .Where(x => x.SessionId == sessionId)
-                .Where(x => x.Id != ignoreSessionUnitId)
-                .ExecuteUpdateAsync(s => s
-                    .SetProperty(b => b.RemindAllCount, b => b.RemindAllCount + 1)
-                );
-        }
-
-
-
-        public virtual async Task<int> IncrementRemindMeCountAsync(DateTime messageCreationTime, List<Guid> sessionUnitIdList)
-        {
-            var query = await GetQueryableAsync(messageCreationTime);
-
-            return await query
-                .Where(x => sessionUnitIdList.Contains(x.Id))
+                .Where(x => destinationSessionUnitIdList.Contains(x.Id))
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(b => b.RemindMeCount, b => b.RemindMeCount + 1)
                 );
@@ -151,10 +162,9 @@ namespace IczpNet.Chat.Repositories
 
         public virtual async Task<int> IncrementFollowingCountAsync(Guid sessionId, DateTime messageCreationTime, List<Guid> destinationSessionUnitIdList)
         {
-            var query = await GetQueryableAsync(messageCreationTime);
+            var query = await GetQueryableAsync(messageCreationTime, sessionId);
 
             return await query
-                .Where(x => x.SessionId == sessionId)
                 .Where(x => destinationSessionUnitIdList.Contains(x.Id))
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(b => b.FollowingCount, b => b.FollowingCount + 1)
@@ -190,5 +200,7 @@ namespace IczpNet.Chat.Repositories
                      .SetProperty(b => b.AppUserId, b => appUserId)
                  );
         }
+
+
     }
 }

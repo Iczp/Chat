@@ -2,6 +2,7 @@
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.OpenedRecorders;
+using IczpNet.Chat.SessionSections.SessionUnitCounters;
 using Microsoft.Extensions.Caching.Distributed;
 using System;
 using System.Collections.Generic;
@@ -90,6 +91,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         Task<int> BatchUpdateAsync(SessionUnit senderSessionUnit, Message message);
 
         Task<List<Guid>> GetIdListByNameAsync(Guid sessionId, List<string> nameList);
+
+        Task<int> IncremenetAsync(SessionUnitIncrementArgs args);
 
     }
 }

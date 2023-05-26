@@ -13,7 +13,7 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    [Migration("20230526023906_SessionUnitSetting_Init")]
+    [Migration("20230526055737_SessionUnitSetting_Init")]
     partial class SessionUnitSetting_Init
     {
         /// <inheritdoc />
@@ -3786,17 +3786,36 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("datetime2")
                         .HasComment("查看历史消息截止时间,为null时则不限");
 
+                    b.Property<Guid?>("InviterId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool>("IsCantacts")
                         .HasColumnType("bit")
                         .HasComment("是否保存通讯录");
+
+                    b.Property<bool>("IsCreator")
+                        .HasColumnType("bit")
+                        .HasComment("是否创建者（群主等）");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("bit")
+                        .HasComment("是否可用");
 
                     b.Property<bool>("IsImmersed")
                         .HasColumnType("bit")
                         .HasComment("消息免打扰，默认为 false");
 
+                    b.Property<bool>("IsInputEnabled")
+                        .HasColumnType("bit")
+                        .HasComment("是否启用输入框");
+
                     b.Property<bool>("IsKilled")
                         .HasColumnType("bit")
                         .HasComment("删除会话(退出群等)，但是不删除会话(用于查看历史消息)");
+
+                    b.Property<bool>("IsPublic")
+                        .HasColumnType("bit")
+                        .HasComment("是否公有成员");
 
                     b.Property<bool>("IsShowMemberName")
                         .HasColumnType("bit")
@@ -3806,6 +3825,10 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("bit")
                         .HasComment("是否显示已读");
 
+                    b.Property<bool>("IsStatic")
+                        .HasColumnType("bit")
+                        .HasComment("是否固定成员");
+
                     b.Property<DateTime?>("KillTime")
                         .HasColumnType("datetime2")
                         .HasComment("删除会话时间");
@@ -3813,9 +3836,8 @@ namespace IczpNet.Chat.Migrations
                     b.Property<int?>("KillType")
                         .HasColumnType("int");
 
-                    b.Property<long?>("KillerId")
-                        .HasColumnType("bigint")
-                        .HasComment("删除人Id");
+                    b.Property<Guid?>("KillerId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("LastModificationTime")
                         .HasColumnType("datetime2")
@@ -3846,6 +3868,8 @@ namespace IczpNet.Chat.Migrations
                         .HasComment("备注名称");
 
                     b.HasKey("SessionUnitId");
+
+                    b.HasIndex("InviterId");
 
                     b.HasIndex("KillerId");
 
@@ -5693,8 +5717,12 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.SessionSections.SessionUnitSettings.SessionUnitSetting", b =>
                 {
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Killer")
-                        .WithMany()
+                    b.HasOne("IczpNet.Chat.SessionSections.SessionUnits.SessionUnit", "Inviter")
+                        .WithMany("InviterList")
+                        .HasForeignKey("InviterId");
+
+                    b.HasOne("IczpNet.Chat.SessionSections.SessionUnits.SessionUnit", "Killer")
+                        .WithMany("KillerList")
                         .HasForeignKey("KillerId");
 
                     b.HasOne("IczpNet.Chat.MessageSections.Messages.Message", "ReadedMessage")
@@ -5706,6 +5734,8 @@ namespace IczpNet.Chat.Migrations
                         .HasForeignKey("IczpNet.Chat.SessionSections.SessionUnitSettings.SessionUnitSetting", "SessionUnitId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Inviter");
 
                     b.Navigation("Killer");
 
@@ -6158,7 +6188,11 @@ namespace IczpNet.Chat.Migrations
 
                     b.Navigation("HandlerList");
 
+                    b.Navigation("InviterList");
+
                     b.Navigation("InviterUnitList");
+
+                    b.Navigation("KillerList");
 
                     b.Navigation("KillerUnitList");
 

@@ -46,7 +46,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         protected IFollowManager FollowManager { get; }
         protected IBackgroundJobManager BackgroundJobManager { get; }
         protected ISettingProvider SettingProvider { get; }
-        protected ISessionUnitCounterManager SessionUnitCounterManager { get; }
+        //protected ISessionUnitCounterManager SessionUnitCounterManager { get; }
 
         public MessageManager(
             IMessageRepository repository,
@@ -64,8 +64,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             IFollowManager followManager,
             IBackgroundJobManager backgroundJobManager,
             ISessionRepository sessionRepository,
-            ISettingProvider settingProvider,
-            ISessionUnitCounterManager sessionUnitCounterManager)
+            ISettingProvider settingProvider)
         {
             Repository = repository;
             ChatObjectResolver = messageChatObjectResolver;
@@ -83,7 +82,6 @@ namespace IczpNet.Chat.MessageSections.Messages
             BackgroundJobManager = backgroundJobManager;
             SessionRepository = sessionRepository;
             SettingProvider = settingProvider;
-            SessionUnitCounterManager = sessionUnitCounterManager;
         }
 
         //public virtual async Task<Message> CreateMessageAsync(IChatObject sender, IChatObject receiver, Func<Message, Task<IContentEntity>> func)
@@ -143,7 +141,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         //    return output;
         //}
 
-        public virtual async Task<Message> CreateMessageBySessionUnitAsync(SessionUnit senderSessionUnit, Func<Message, SessionUnitCounterArgs, Task> action, SessionUnit receiverSessionUnit = null)
+        public virtual async Task<Message> CreateMessageBySessionUnitAsync(SessionUnit senderSessionUnit, Func<Message, SessionUnitIncrementArgs, Task> action, SessionUnit receiverSessionUnit = null)
         {
             Assert.NotNull(senderSessionUnit, $"Unable to send message, senderSessionUnit is null");
 
@@ -153,7 +151,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             var entity = new Message(senderSessionUnit);
 
-            var sessionUnitCounterArgs = new SessionUnitCounterArgs()
+            var sessionUnitIncrementArgs = new SessionUnitIncrementArgs()
             {
                 SessionId = senderSessionUnit.SessionId.Value,
                 SenderSessionUnitId = senderSessionUnit.Id
@@ -161,7 +159,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             if (action != null)
             {
-                await action(entity, sessionUnitCounterArgs);
+                await action(entity, sessionUnitIncrementArgs);
             }
 
             await MessageValidator.CheckAsync(entity);
@@ -200,14 +198,14 @@ namespace IczpNet.Chat.MessageSections.Messages
                 //receiverSessionUnit.SetPrivateBadge(receiverSessionUnit.PrivateBadge + 1);
                 //await SessionUnitRepository.UpdateAsync(receiverSessionUnit, autoSave: true);
 
-                sessionUnitCounterArgs.PrivateBadgeSessionUnitIdList = new List<Guid>() { receiverSessionUnit.Id };
+                sessionUnitIncrementArgs.PrivateBadgeSessionUnitIdList = new List<Guid>() { receiverSessionUnit.Id };
             }
             else
             {
                 // Following
                 //await SessionUnitManager.IncrementFollowingCountAsync(senderSessionUnit, entity);
 
-                sessionUnitCounterArgs.FollowingSessionUnitIdList = await GetFollowingIdListAsync(senderSessionUnit);
+                sessionUnitIncrementArgs.FollowingSessionUnitIdList = await GetFollowingIdListAsync(senderSessionUnit);
 
                 //await CurrentUnitOfWork.SaveChangesAsync();
 
@@ -215,15 +213,15 @@ namespace IczpNet.Chat.MessageSections.Messages
                 //await BatchUpdateSessionUnitAsync(senderSessionUnit, entity);
                 //
             }
-            sessionUnitCounterArgs.LastMessageId = entity.Id;
-            sessionUnitCounterArgs.IsRemindAll = entity.IsRemindAll;
-            sessionUnitCounterArgs.MessageCreationTime = entity.CreationTime;
+            sessionUnitIncrementArgs.LastMessageId = entity.Id;
+            sessionUnitIncrementArgs.IsRemindAll = entity.IsRemindAll;
+            sessionUnitIncrementArgs.MessageCreationTime = entity.CreationTime;
 
-            var jobId = await BackgroundJobManager.EnqueueAsync(sessionUnitCounterArgs);
+            var jobId = await BackgroundJobManager.EnqueueAsync(sessionUnitIncrementArgs);
 
-            Logger.LogInformation($"SessionUnitCounter backgroupJobId:{jobId},args:{sessionUnitCounterArgs}");
+            Logger.LogInformation($"SessionUnitIncrement backgroupJobId:{jobId},args:{sessionUnitIncrementArgs}");
 
-            //await SessionUnitCounterManager.IncremenetAsync(sessionUnitCounterArgs);
+            //await SessionUnitManager.IncremenetAsync(sessionUnitIncrementArgs);
 
             return entity;
         }
