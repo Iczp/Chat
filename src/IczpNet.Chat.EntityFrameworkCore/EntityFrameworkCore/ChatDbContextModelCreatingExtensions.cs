@@ -29,6 +29,7 @@ using Volo.Abp.Domain.Entities;
 using IczpNet.Chat.TextContentWords;
 using IczpNet.Chat.MessageSections.Recorders;
 using IczpNet.Chat.SessionSections.SessionUnitCounters;
+using IczpNet.Chat.SessionSections.SessionUnitSettings;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -105,6 +106,11 @@ public static class ChatDbContextModelCreatingExtensions
         {
             b.HasKey(x => new { x.SessionUnitId });
             b.HasOne(x => x.SessionUnit).WithOne(x => x.Counter).HasForeignKey<SessionUnitCounter>(x => x.SessionUnitId).IsRequired(true);
+        });
+        builder.Entity<SessionUnitSetting>(b =>
+        {
+            b.HasKey(x => new { x.SessionUnitId });
+            b.HasOne(x => x.SessionUnit).WithOne(x => x.Setting).HasForeignKey<SessionUnitSetting>(x => x.SessionUnitId).IsRequired(true);
         });
 
         builder.Entity<Message>(b =>

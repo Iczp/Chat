@@ -36,6 +36,7 @@ using Volo.Abp.EntityFrameworkCore;
 using IczpNet.Chat.TextContentWords;
 using IczpNet.Chat.Words;
 using IczpNet.Chat.SessionSections.SessionUnitCounters;
+using IczpNet.Chat.SessionSections.SessionUnitSettings;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -57,6 +58,7 @@ public interface IChatDbContext : IEfCoreDbContext
 
     DbSet<Session> Session { get; }
     DbSet<SessionUnit> SessionUnit { get; }
+    DbSet<SessionUnitSetting> SessionUnitSetting { get; }
     DbSet<SessionUnitCounter> SessionUnitCounter { get; }
     DbSet<SessionTag> SessionTag { get; }
     DbSet<SessionRole> SessionRole { get; }
