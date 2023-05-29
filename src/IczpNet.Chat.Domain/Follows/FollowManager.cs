@@ -44,6 +44,7 @@ namespace IczpNet.Chat.Follows
         {
             return (await Repository.GetQueryableAsync())
                .Where(x => x.DestinationId == destinationSessionUnitId)
+               .Where(x => x.OwnerId != destinationSessionUnitId)
                .Select(x => x.OwnerId)
                .ToList();
         }
@@ -52,6 +53,7 @@ namespace IczpNet.Chat.Follows
         {
             return (await Repository.GetQueryableAsync())
               .Where(x => x.OwnerId == ownerId)
+              .Where(x => x.DestinationId != ownerId)
               .Select(x => x.DestinationId)
               .ToList();
         }
@@ -113,6 +115,6 @@ namespace IczpNet.Chat.Follows
             await DeleteAsync(owner.Id, idList);
         }
 
-        
+
     }
 }

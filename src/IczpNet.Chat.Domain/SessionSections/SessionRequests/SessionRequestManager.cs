@@ -75,6 +75,15 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
             SessionUnitIdGenerator = sessionUnitIdGenerator;
         }
 
+        protected virtual async Task CheckMaxSessionUnitCountAsync(long ownerId)
+        {
+            var maxSessionUnitCount = await SettingProvider.GetAsync<int>(ChatSettings.MaxSessionUnitCount);
+
+            var sessionUnitCount = await SessionUnitManager.GetCountByOwnerIdAsync(ownerId);
+
+            Assert.If(sessionUnitCount > maxSessionUnitCount, $"maxSessionUnitCount:{maxSessionUnitCount}");
+        }
+
         public virtual async Task<SessionRequest> CreateRequestAsync(long ownerId, long destinationId, string requestMessage)
         {
             Assert.If(await SessionUnitManager.FindAsync(ownerId, destinationId) != null, "Already a friend");
@@ -103,6 +112,8 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
             }
             else
             {
+                await CheckMaxSessionUnitCountAsync(owner.Id);
+
                 entity = new SessionRequest(GuidGenerator.Create(), owner, destination, requestMessage);
 
                 entity.SetExpirationTime(expiractionHours);
@@ -219,6 +230,8 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
 
             if (isAgreed)
             {
+                await CheckMaxSessionUnitCountAsync(sessionRequest.DestinationId.Value);
+
                 sessionRequest.AgreeRequest(handlMessage, handlerSessionUnitId);
 
                 var session = await SessionGenerator.MakeAsync(sessionRequest.Owner, sessionRequest.Destination);

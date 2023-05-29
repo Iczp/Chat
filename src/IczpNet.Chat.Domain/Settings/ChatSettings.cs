@@ -33,4 +33,15 @@ public static class ChatSettings
     /// </summary>
     public const string MaxFavoriteCount = GroupName + "Settings:MaxFavoriteCount";
 
+    /// <summary>
+    /// 使用后台作业发送程序最小会话单元数量
+    /// </summary>
+
+    public const string UseBackgroundJobSenderMinSessionUnitCount = GroupName + "Settings:UseBackgroundJobSenderMinSessionUnitCount";
+
+    /// <summary>
+    /// 好友的最大数量
+    /// </summary>
+
+    public const string MaxSessionUnitCount = GroupName + "Settings:MaxSessionUnitCount";
 }

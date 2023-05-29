@@ -17,6 +17,8 @@ public class ChatSettingDefinitionProvider : SettingDefinitionProvider
         context.Add(new SettingDefinition(ChatSettings.AllowRollbackHours, "24", L(ChatSettings.AllowRollbackHours)));
         context.Add(new SettingDefinition(ChatSettings.MaxFavoriteSize, long.MaxValue.ToString(), L(ChatSettings.MaxFavoriteSize)));
         context.Add(new SettingDefinition(ChatSettings.MaxFavoriteCount, long.MaxValue.ToString(), L(ChatSettings.MaxFavoriteCount)));
+        context.Add(new SettingDefinition(ChatSettings.UseBackgroundJobSenderMinSessionUnitCount, "500", L(ChatSettings.UseBackgroundJobSenderMinSessionUnitCount)));
+        context.Add(new SettingDefinition(ChatSettings.MaxSessionUnitCount, "5000", L(ChatSettings.UseBackgroundJobSenderMinSessionUnitCount)));
     }
 
     private static LocalizableString L(string name)

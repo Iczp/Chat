@@ -66,4 +66,6 @@ public interface ISessionUnitAppService
     //Task<SessionUnitOwnerDto> GetSessionMemberAsync(Guid sessionId, Guid ownerId);
 
     Task<PagedResultDto<SessionUnitCacheItem>> GetListCachesAsync(SessionUnitCacheGetListInput input);
+
+    Task<SessionUnitCounterInfo> GetCounterAsync(Guid sessionUnitId, long minMessageId = 0, bool? isImmersed = null);
 }

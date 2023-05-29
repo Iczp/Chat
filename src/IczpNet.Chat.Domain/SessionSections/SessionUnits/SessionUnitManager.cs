@@ -19,6 +19,7 @@ using Volo.Abp.Domain.Entities;
 using System.Linq.Dynamic.Core;
 using IczpNet.Chat.DataFilters;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using IczpNet.Chat.SessionSections.Sessions;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits;
 
@@ -133,30 +134,32 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
             Assert.If(entity.SessionId != message.SessionId, $"Not in same session,messageId:{messageId}");
         }
 
-        await SetEntityAsync(entity, x => x.SetReadedMessageId(lastMessageId, isForce = false));
+        var counter = await GetCounterAsync(entity.Id, lastMessageId);
 
-        await UpdateCacheItemsAsync(entity, items =>
-        {
-            var item = items.FirstOrDefault(x => x.Id != entity.Id);
+        await SetEntityAsync(entity, x => x.UpdateCounter(counter));
 
-            if (item == null)
-            {
-                return false;
-            }
+        //await UpdateCacheItemsAsync(entity, items =>
+        //{
+        //    var item = items.FirstOrDefault(x => x.Id != entity.Id);
 
-            if (isForce || lastMessageId > item.ReadedMessageId.GetValueOrDefault())
-            {
-                item.ReadedMessageId = lastMessageId;
-            }
+        //    if (item == null)
+        //    {
+        //        return false;
+        //    }
 
-            item.PublicBadge = 0;
-            item.PrivateBadge = 0;
-            item.RemindAllCount = 0;
-            item.FollowingCount = 0;
-            //item.LastMessageId = messageId;
+        //    if (isForce || lastMessageId > item.ReadedMessageId.GetValueOrDefault())
+        //    {
+        //        item.ReadedMessageId = lastMessageId;
+        //    }
 
-            return true;
-        });
+        //    item.PublicBadge = 0;
+        //    item.PrivateBadge = 0;
+        //    item.RemindAllCount = 0;
+        //    item.FollowingCount = 0;
+        //    //item.LastMessageId = messageId;
+
+        //    return true;
+        //});
 
         return entity;
     }
@@ -315,6 +318,36 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return badges;
     }
 
+    public virtual async Task<SessionUnitCounterInfo> GetCounterAsync(Guid sessionUnitId, long minMessageId = 0, bool? isImmersed = null)
+    {
+        var entity = await Repository.GetAsync(sessionUnitId);
+
+        var setting = entity.Setting;
+
+        var lastMessageId = minMessageId == 0 ? entity.LastMessageId : minMessageId;
+
+        var query = (await MessageRepository.GetQueryableAsync())
+        .Where(x => x.SessionId == entity.SessionId)
+        .Where(x => x.Id > lastMessageId)
+        .WhereIf(setting.HistoryFristTime.HasValue, x => x.CreationTime >= setting.HistoryFristTime)
+        .WhereIf(setting.HistoryLastTime.HasValue, x => x.CreationTime < setting.HistoryFristTime)
+        .WhereIf(setting.ClearTime.HasValue, x => x.CreationTime > setting.ClearTime)
+        ;
+
+        var followingIdList = await FollowManager.GetFollowingIdListAsync(sessionUnitId);
+
+        return new SessionUnitCounterInfo()
+        {
+            Id = entity.Id,
+            LastMessageId = lastMessageId,
+            PublicBadge = query.Count(),
+            PrivateBadge = query.Where(x => x.IsPrivate).Count(),
+            FollowingCount = query.Where(x => followingIdList.Contains(x.SessionUnitId.Value)).Count(),
+            RemindAllCount = query.Where(x => x.IsRemindAll && !x.IsRollbacked).Count(),
+            RemindMeCount = query.Where(x => x.MessageReminderList.Any(g => g.SessionUnitId == entity.Id)).Count(),
+        };
+    }
+
     public virtual async Task<Dictionary<Guid, SessionUnitStatModel>> GetStatsAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
     {
         return await GetStatsByEachAsync(sessionUnitIdList, isImmersed);
@@ -450,7 +483,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return follows;
     }
 
-    public virtual async Task<int> GetCountAsync(Guid sessionId)
+    public virtual async Task<int> GetCountBySessionIdAsync(Guid sessionId)
     {
         var value = await UnitCountCache.GetOrAddAsync(sessionId, async () =>
         {
@@ -461,6 +494,14 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
             return count.ToString();
         });
         return int.Parse(value);
+    }
+
+    public virtual async Task<int> GetCountByOwnerIdAsync(long ownerId)
+    {
+        return (await Repository.GetQueryableAsync())
+                .Where(x => x.OwnerId == ownerId)
+                .Where(SessionUnit.GetActivePredicate(Clock.Now))
+                .Count();
     }
 
     public virtual Task<List<SessionUnitCacheItem>> GetCacheListAsync(string sessionUnitCachKey)

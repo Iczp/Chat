@@ -17,8 +17,7 @@ using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
+using Pipelines.Sockets.Unofficial.Buffers;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -575,5 +574,10 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(input.SessionUnitId.HasValue, x => x.Id == input.SessionUnitId);
 
         return await GetPagedListAsync<SessionUnitCacheItem, SessionUnitCacheItem>(query, input);
+    }
+
+    public async Task<SessionUnitCounterInfo> GetCounterAsync(Guid sessionUnitId, long minMessageId = 0, bool? isImmersed = null)
+    {
+        return await SessionUnitManager.GetCounterAsync(sessionUnitId, minMessageId, isImmersed);
     }
 }

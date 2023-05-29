@@ -5,7 +5,7 @@ using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.FavoritedRecorders
 {
-    public interface IFavoritedAppService
+    public interface IFavoriteAppService
     {
         Task<PagedResultDto<FavoritedRecorderDto>> GetListAsync(FavoritedRecorderGetListInput input);
 

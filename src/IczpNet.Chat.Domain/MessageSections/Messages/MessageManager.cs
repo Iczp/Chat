@@ -97,7 +97,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         //    await MessageValidator.CheckAsync(entity);
 
-        //    var sessionUnitCount = entity.IsPrivate ? 2 : await SessionUnitManager.GetCountAsync(session.Id);
+        //    var sessionUnitCount = entity.IsPrivate ? 2 : await SessionUnitManager.GetCountBySessionIdAsync(session.Id);
 
         //    entity.SetSessionUnitCount(sessionUnitCount);
 
@@ -164,7 +164,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             await MessageValidator.CheckAsync(entity);
 
             //sessionUnitCount
-            var sessionUnitCount = entity.IsPrivate ? 2 : await SessionUnitManager.GetCountAsync(senderSessionUnit.SessionId.Value);
+            var sessionUnitCount = entity.IsPrivate ? 2 : await SessionUnitManager.GetCountBySessionIdAsync(senderSessionUnit.SessionId.Value);
 
             entity.SetSessionUnitCount(sessionUnitCount);
 
@@ -204,7 +204,7 @@ namespace IczpNet.Chat.MessageSections.Messages
                 // Following
                 //await SessionUnitManager.IncrementFollowingCountAsync(senderSessionUnit, entity);
 
-                sessionUnitIncrementArgs.FollowingSessionUnitIdList = await GetFollowingIdListAsync(senderSessionUnit);
+                sessionUnitIncrementArgs.FollowingSessionUnitIdList = await FollowManager.GetFollowerIdListAsync(senderSessionUnit.Id);
 
                 //await CurrentUnitOfWork.SaveChangesAsync();
 
@@ -216,7 +216,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             sessionUnitIncrementArgs.IsRemindAll = entity.IsRemindAll;
             sessionUnitIncrementArgs.MessageCreationTime = entity.CreationTime;
 
-            if (ShouldbeBackgroundJob(senderSessionUnit, entity))
+            if (await ShouldbeBackgroundJobAsync(senderSessionUnit, entity))
             {
                 var jobId = await BackgroundJobManager.EnqueueAsync(sessionUnitIncrementArgs);
 
@@ -230,20 +230,10 @@ namespace IczpNet.Chat.MessageSections.Messages
             return entity;
         }
 
-        protected virtual async Task<List<Guid>> GetFollowingIdListAsync(SessionUnit senderSessionUnit)
+        protected virtual async Task<bool> ShouldbeBackgroundJobAsync(SessionUnit senderSessionUnit, Message message)
         {
-            var ownerSessionUnitIdList = await FollowManager.GetFollowerIdListAsync(senderSessionUnit.Id);
-
-            if (ownerSessionUnitIdList.Any())
-            {
-                ownerSessionUnitIdList.Remove(senderSessionUnit.Id);
-            }
-            return ownerSessionUnitIdList;
-        }
-
-        protected virtual bool ShouldbeBackgroundJob(SessionUnit senderSessionUnit, Message message)
-        {
-            return BackgroundJobManager.IsAvailable() && !message.IsPrivate && message.SessionUnitCount > 1000;
+            var useBackgroundJobSenderMinSessionUnitCount = await SettingProvider.GetAsync<int>(ChatSettings.UseBackgroundJobSenderMinSessionUnitCount);
+            return BackgroundJobManager.IsAvailable() && !message.IsPrivate && message.SessionUnitCount > useBackgroundJobSenderMinSessionUnitCount;
             //return false;
         }
 
@@ -253,7 +243,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             await SessionUnitManager.UpdateCachesAsync(senderSessionUnit, message);
 
-            if (ShouldbeBackgroundJob(senderSessionUnit, message))
+            if (await ShouldbeBackgroundJobAsync(senderSessionUnit, message))
             {
                 var jobId = await BackgroundJobManager.EnqueueAsync(new UpdateStatsForSessionUnitArgs()
                 {

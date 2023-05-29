@@ -55,13 +55,17 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         Task<Dictionary<Guid, int>> GetBadgeByIdAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null);
 
+        Task<SessionUnitCounterInfo> GetCounterAsync(Guid sessionUnitId, long minMessageId = 0, bool? isImmersed = null);
+
         Task<Dictionary<Guid, SessionUnitStatModel>> GetStatsAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null);
 
         Task<Dictionary<Guid, int>> GetReminderCountByIdAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null);
 
         Task<Dictionary<Guid, int>> GetFollowingCountByIdAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null);
 
-        Task<int> GetCountAsync(Guid sessionId);
+        Task<int> GetCountBySessionIdAsync(Guid sessionId);
+
+        Task<int> GetCountByOwnerIdAsync(long ownerId);
 
         Task<List<SessionUnitCacheItem>> GetCacheListAsync(string cacheKey);
 
@@ -93,5 +97,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         Task<int> IncremenetAsync(SessionUnitIncrementArgs args);
 
+        
     }
 }

@@ -225,6 +225,16 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             FollowingCount = 0;
         }
 
+        internal virtual void UpdateCounter(SessionUnitCounterInfo counter)
+        {
+            Setting.ReadedMessageId = counter.LastMessageId;
+            PublicBadge = counter.PublicBadge;
+            PrivateBadge = counter.PrivateBadge;
+            RemindAllCount = counter.RemindAllCount;
+            RemindMeCount = counter.RemindMeCount;
+            FollowingCount = counter.FollowingCount;
+        }
+
         public virtual void SetKey(string key)
         {
             Key = key;
