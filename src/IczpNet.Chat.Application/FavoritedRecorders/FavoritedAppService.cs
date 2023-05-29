@@ -11,7 +11,7 @@ using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.FavoritedRecorders
 {
-    public class FavoritedRecorderAppService : ChatAppService, IFavoritedRecorderAppService
+    public class FavoritedAppService : ChatAppService, IFavoritedAppService
     {
         protected ISessionUnitManager SessionUnitManager { get; set; }
         protected IFavoritedRecorderManager FavoritedRecorderManager { get; set; }
@@ -20,7 +20,7 @@ namespace IczpNet.Chat.FavoritedRecorders
         protected IRepository<FavoritedRecorder> Repository { get; set; }
         protected IChatObjectManager ChatObjectManager { get; set; }
 
-        public FavoritedRecorderAppService(
+        public FavoritedAppService(
             IFavoritedRecorderManager favoritedRecorderManager,
             ISessionUnitManager sessionUnitManager,
             ISessionUnitRepository sessionUnitRepository,
