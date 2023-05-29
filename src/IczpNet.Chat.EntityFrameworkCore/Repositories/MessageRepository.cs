@@ -14,50 +14,50 @@ namespace IczpNet.Chat.Repositories
         {
         }
 
-        public virtual async Task<int> IncrementReadedCountAsync(List<long> messageIdList)
-        {
-            var context = await GetDbContextAsync();
+        //public virtual async Task<int> IncrementReadedCountAsync(List<long> messageIdList)
+        //{
+        //    var context = await GetDbContextAsync();
 
-            return await context.Message
-                .Where(x => messageIdList.Contains(x.Id))
-                .ExecuteUpdateAsync(s => s
-                    .SetProperty(b => b.ReadedCount, b => b.ReadedCount + 1)
-                );
-        }
+        //    return await context.Message
+        //        .Where(x => messageIdList.Contains(x.Id))
+        //        .ExecuteUpdateAsync(s => s
+        //            .SetProperty(b => b.ReadedCount, b => b.ReadedCount + 1)
+        //        );
+        //}
 
-        public virtual async Task<int> IncrementOpenedCountAsync(List<long> messageIdList)
-        {
-            var context = await GetDbContextAsync();
+        //public virtual async Task<int> IncrementOpenedCountAsync(List<long> messageIdList)
+        //{
+        //    var context = await GetDbContextAsync();
 
-            return await context.Message
-                .Where(x => messageIdList.Contains(x.Id))
-                .ExecuteUpdateAsync(s => s
-                    .SetProperty(b => b.OpenedCount, b => b.OpenedCount + 1)
-                );
-        }
+        //    return await context.Message
+        //        .Where(x => messageIdList.Contains(x.Id))
+        //        .ExecuteUpdateAsync(s => s
+        //            .SetProperty(b => b.OpenedCount, b => b.OpenedCount + 1)
+        //        );
+        //}
 
-        public virtual async Task<int> IncrementFavoritedCountAsync(List<long> messageIdList)
-        {
-            var context = await GetDbContextAsync();
+        //public virtual async Task<int> IncrementFavoritedCountAsync(List<long> messageIdList)
+        //{
+        //    var context = await GetDbContextAsync();
 
-            return await context.Message
-                .Where(x => messageIdList.Contains(x.Id))
-                .ExecuteUpdateAsync(s => s
-                    .SetProperty(b => b.FavoritedCount, b => b.FavoritedCount + 1)
-                );
-        }
+        //    return await context.Message
+        //        .Where(x => messageIdList.Contains(x.Id))
+        //        .ExecuteUpdateAsync(s => s
+        //            .SetProperty(b => b.FavoritedCount, b => b.FavoritedCount + 1)
+        //        );
+        //}
 
-        public virtual async Task<int> IncrementRecorderAsync(List<long> messageIdList)
-        {
-            var context = await GetDbContextAsync();
+        //public virtual async Task<int> IncrementRecorderAsync(List<long> messageIdList)
+        //{
+        //    var context = await GetDbContextAsync();
 
-            return await context.Message
-                .Where(x => messageIdList.Contains(x.Id))
-                .ExecuteUpdateAsync(s => s
-                    .SetProperty(b => b.FavoritedCount, b => context.Favorite.Count(f => f.MessageId == b.Id))
-                    .SetProperty(b => b.ReadedCount, b => context.ReadedRecorder.Count(f => f.MessageId == b.Id))
-                    .SetProperty(b => b.OpenedCount, b => context.OpenedRecorder.Count(f => f.MessageId == b.Id))
-                );
-        }
+        //    return await context.Message
+        //        .Where(x => messageIdList.Contains(x.Id))
+        //        .ExecuteUpdateAsync(s => s
+        //            .SetProperty(b => b.FavoritedCount, b => context.Favorite.Count(f => f.MessageId == b.Id))
+        //            .SetProperty(b => b.ReadedCount, b => context.ReadedRecorder.Count(f => f.MessageId == b.Id))
+        //            .SetProperty(b => b.OpenedCount, b => context.OpenedRecorder.Count(f => f.MessageId == b.Id))
+        //        );
+        //}
     }
 }

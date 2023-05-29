@@ -29,11 +29,17 @@ public partial class Message : BaseEntity<long>, ISessionId
 
     public virtual int SessionUnitCount { get; protected set; }
 
-    public virtual int ReadedCount { get; set; }
+    public virtual long ReadedCount => ReadedCounter.Count;
 
-    public virtual int OpenedCount { get; set; }
+    public virtual long OpenedCount => OpenedCounter.Count;
 
-    public virtual int FavoritedCount { get; set; }
+    public virtual long FavoritedCount => FavoritedCounter.Count;
+
+    //public virtual int ReadedCount { get; set; }
+
+    //public virtual int OpenedCount { get; set; }
+
+    //public virtual int FavoritedCount { get; set; }
 
     [StringLength(100)]
     //[Required]

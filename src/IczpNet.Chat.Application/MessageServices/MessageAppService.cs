@@ -173,20 +173,20 @@ namespace IczpNet.Chat.MessageServices
             return ObjectMapper.Map<List<Message>, List<MessageDto>>(messageList);
         }
 
-        [HttpPost]
-        public async Task<MessageDto> UpdateRecorderAsync(long messageId)
-        {
-            var message = await Repository.GetAsync(messageId);
+        //[HttpPost]
+        //public async Task<MessageDto> UpdateRecorderAsync(long messageId)
+        //{
+        //    var message = await Repository.GetAsync(messageId);
 
-            message.ReadedCount = await ReadedRecorderManager.GetCountByMessageIdAsync(messageId);
+        //    message.ReadedCount = await ReadedRecorderManager.GetCountByMessageIdAsync(messageId);
 
-            message.OpenedCount = await OpenedRecorderManager.GetCountByMessageIdAsync(messageId);
+        //    message.OpenedCount = await OpenedRecorderManager.GetCountByMessageIdAsync(messageId);
 
-            message.FavoritedCount = await FavoriteManager.GetCountByMessageIdAsync(messageId);
+        //    message.FavoritedCount = await FavoriteManager.GetCountByMessageIdAsync(messageId);
 
-            await Repository.UpdateAsync(message, autoSave: true);
+        //    await Repository.UpdateAsync(message, autoSave: true);
 
-            return await MapToGetOutputDtoAsync(message);
-        }
+        //    return await MapToGetOutputDtoAsync(message);
+        //}
     }
 }

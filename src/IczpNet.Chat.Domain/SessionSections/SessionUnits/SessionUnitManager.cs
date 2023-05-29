@@ -219,6 +219,13 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
 
     public virtual async Task<int> GetBadgeByOwnerIdAsync(long ownerId, bool? isImmersed = null)
     {
+        return (await Repository.GetQueryableAsync())
+            .Where(x => x.OwnerId == ownerId)
+            .WhereIf(isImmersed.HasValue, x => x.Setting.IsImmersed == isImmersed)
+            .Sum(x => x.PublicBadge + x.PrivateBadge);
+        ;
+        //---------------------- 1
+
         //var list = (await Repository.GetQueryableAsync()).Where(x => x.OwnerId == ownerId).Select(x => x.Id).ToList();
 
         //var count = 0;
@@ -229,7 +236,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         //}
         //return count;
 
-        //----------------------
+        //---------------------- 2
 
         //return (await Repository.GetQueryableAsync())
         //        .Where(x => x.OwnerId == ownerId)
@@ -250,10 +257,11 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         //        .Count()
         //        ;
 
+        //---------------------- 3
 
-        return await GetBadgeAsync(q =>
-            q.Where(x => x.OwnerId == ownerId)
-            .WhereIf(isImmersed.HasValue, x => x.Setting.IsImmersed == isImmersed));
+        //return await GetBadgeAsync(q =>
+        //    q.Where(x => x.OwnerId == ownerId)
+        //    .WhereIf(isImmersed.HasValue, x => x.Setting.IsImmersed == isImmersed));
     }
 
     public virtual async Task<int> GetBadgeByIdAsync(Guid sessionUnitId, bool? isImmersed = null)

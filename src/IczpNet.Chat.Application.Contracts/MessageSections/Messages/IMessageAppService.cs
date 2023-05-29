@@ -10,7 +10,7 @@ namespace IczpNet.Chat.MessageSections.Messages
     public interface IMessageAppService
     {
 
-        Task<MessageDto> UpdateRecorderAsync(long messageId);
+        //Task<MessageDto> UpdateRecorderAsync(long messageId);
 
         Task<List<EnumDto>> GetDisabledForwardListAsync();
 
