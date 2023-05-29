@@ -2,7 +2,7 @@
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Dashboards;
 using IczpNet.Chat.Dashboards.Dtos;
-using IczpNet.Chat.FavoriteRecorders;
+using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Messages;

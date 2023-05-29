@@ -2,7 +2,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace IczpNet.Chat.FavoriteRecorders
+namespace IczpNet.Chat.FavoritedRecorders
 {
     public interface IFavoritedRecorderManager : IRecorderManager<FavoritedRecorder>
     {

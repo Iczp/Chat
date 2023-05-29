@@ -28,7 +28,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.OpenedRecorders;
 using System.Linq.Expressions;
-using IczpNet.Chat.FavoriteRecorders;
+using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.SessionSections.SessionUnitCounters;
 using IczpNet.Chat.SessionSections.SessionUnitSettings;

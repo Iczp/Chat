@@ -2,9 +2,9 @@
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
 
-namespace IczpNet.Chat.FavoriteRecorders.Dtos
+namespace IczpNet.Chat.FavoritedRecorders.Dtos
 {
-    public class FavoriteDto
+    public class FavoritedRecorderDto
     {
         //public virtual long MessageId { get; set; }
 

@@ -1,6 +1,6 @@
 ﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.FavoriteRecorders.Dtos;
+using IczpNet.Chat.FavoritedRecorders.Dtos;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -9,25 +9,25 @@ using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 
-namespace IczpNet.Chat.FavoriteRecorders
+namespace IczpNet.Chat.FavoritedRecorders
 {
-    public class FavoriteAppService : ChatAppService, IFavoriteAppService
+    public class FavoritedRecorderAppService : ChatAppService, IFavoritedRecorderAppService
     {
         protected ISessionUnitManager SessionUnitManager { get; set; }
-        protected IFavoritedRecorderManager FavoriteManager { get; set; }
+        protected IFavoritedRecorderManager FavoritedRecorderManager { get; set; }
         protected ISessionUnitRepository SessionUnitRepository { get; set; }
 
         protected IRepository<FavoritedRecorder> Repository { get; set; }
         protected IChatObjectManager ChatObjectManager { get; set; }
 
-        public FavoriteAppService(
-            IFavoritedRecorderManager followManager,
+        public FavoritedRecorderAppService(
+            IFavoritedRecorderManager favoritedRecorderManager,
             ISessionUnitManager sessionUnitManager,
             ISessionUnitRepository sessionUnitRepository,
             IRepository<FavoritedRecorder> repository,
             IChatObjectManager chatObjectManager)
         {
-            FavoriteManager = followManager;
+            FavoritedRecorderManager = favoritedRecorderManager;
             SessionUnitManager = sessionUnitManager;
             SessionUnitRepository = sessionUnitRepository;
             Repository = repository;
@@ -35,7 +35,7 @@ namespace IczpNet.Chat.FavoriteRecorders
         }
 
         [HttpGet]
-        public async Task<PagedResultDto<FavoriteDto>> GetListAsync(FavoriteGetListInput input)
+        public async Task<PagedResultDto<FavoritedRecorderDto>> GetListAsync(FavoritedRecorderGetListInput input)
         {
             var query = (await Repository.GetQueryableAsync())
                 .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
@@ -43,27 +43,27 @@ namespace IczpNet.Chat.FavoriteRecorders
                 .WhereIf(input.MinSize.HasValue, x => x.Size >= input.MinSize)
                 .WhereIf(input.MaxSize.HasValue, x => x.Size < input.MaxSize)
                 ;
-            return await GetPagedListAsync<FavoritedRecorder, FavoriteDto>(query, input);
+            return await GetPagedListAsync<FavoritedRecorder, FavoritedRecorderDto>(query, input);
         }
 
         [HttpGet]
         public Task<long> GetSizeAsync(long ownerId)
         {
-            return FavoriteManager.GetSizeByOwnerIdAsync(ownerId);
+            return FavoritedRecorderManager.GetSizeByOwnerIdAsync(ownerId);
         }
 
         [HttpGet]
         public Task<int> GetCountAsync(long ownerId)
         {
-            return FavoriteManager.GetCountByOwnerIdAsync(ownerId);
+            return FavoritedRecorderManager.GetCountByOwnerIdAsync(ownerId);
         }
 
         [HttpPost]
-        public async Task<DateTime> CreateAsync(FavoriteCreateInput input)
+        public async Task<DateTime> CreateAsync(FavoritedRecorderCreateInput input)
         {
             var sessionUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
 
-            var entity = await FavoriteManager.CreateIfNotContainsAsync(sessionUnit, input.MessageId, input.DeviceId);
+            var entity = await FavoritedRecorderManager.CreateIfNotContainsAsync(sessionUnit, input.MessageId, input.DeviceId);
 
             return entity.CreationTime;
         }
@@ -71,7 +71,7 @@ namespace IczpNet.Chat.FavoriteRecorders
         [HttpPost]
         public Task DeleteAsync(Guid sessionUnitId, long messageId)
         {
-            return FavoriteManager.DeleteAsync(sessionUnitId, messageId);
+            return FavoritedRecorderManager.DeleteAsync(sessionUnitId, messageId);
         }
 
        

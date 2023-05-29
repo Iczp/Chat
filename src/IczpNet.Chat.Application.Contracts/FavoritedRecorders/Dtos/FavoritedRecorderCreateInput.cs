@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace IczpNet.Chat.FavoriteRecorders.Dtos
+namespace IczpNet.Chat.FavoritedRecorders.Dtos
 {
-    public class FavoriteCreateInput
+    public class FavoritedRecorderCreateInput
     {
         public Guid SessionUnitId { get; set; }
 

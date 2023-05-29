@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.FavoriteRecorders;
+﻿using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.MessageSections.Counters;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;

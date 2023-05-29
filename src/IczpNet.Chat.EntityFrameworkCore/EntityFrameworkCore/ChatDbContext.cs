@@ -3,7 +3,7 @@ using IczpNet.Chat.ChatObjectCategorys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.Connections;
-using IczpNet.Chat.FavoriteRecorders;
+using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.MessageContents;
 using IczpNet.Chat.MessageSections.MessageReminders;

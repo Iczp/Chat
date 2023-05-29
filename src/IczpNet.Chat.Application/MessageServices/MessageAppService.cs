@@ -14,7 +14,7 @@ using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.Enums.Dtos;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.OpenedRecorders;
-using IczpNet.Chat.FavoriteRecorders;
+using IczpNet.Chat.FavoritedRecorders;
 
 namespace IczpNet.Chat.MessageServices
 {

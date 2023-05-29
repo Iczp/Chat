@@ -4,7 +4,7 @@ using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
-using IczpNet.Chat.FavoriteRecorders;
+using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;

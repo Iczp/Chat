@@ -1,5 +1,5 @@
 ﻿using AutoMapper.Internal;
-using IczpNet.Chat.FavoriteRecorders;
+using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;

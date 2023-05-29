@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Settings;
 
-namespace IczpNet.Chat.FavoriteRecorders
+namespace IczpNet.Chat.FavoritedRecorders
 {
     public class FavoritedRecorderManager : RecorderManager<FavoritedRecorder>, IFavoritedRecorderManager
     {

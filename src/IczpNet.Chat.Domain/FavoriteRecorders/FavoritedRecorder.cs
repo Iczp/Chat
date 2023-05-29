@@ -4,7 +4,7 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 
-namespace IczpNet.Chat.FavoriteRecorders
+namespace IczpNet.Chat.FavoritedRecorders
 {
     public class FavoritedRecorder : BaseRecorder
     {

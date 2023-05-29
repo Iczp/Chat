@@ -1,9 +1,9 @@
 ﻿using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.Enums;
 
-namespace IczpNet.Chat.FavoriteRecorders.Dtos
+namespace IczpNet.Chat.FavoritedRecorders.Dtos
 {
-    public class FavoriteGetListInput : BaseGetListInput
+    public class FavoritedRecorderGetListInput : BaseGetListInput
     {
         public long? OwnerId { get; set; }
 
