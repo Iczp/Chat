@@ -69,19 +69,23 @@ namespace IczpNet.Chat.Favorites
         protected override async Task ChangeMessageIfNotContainsAsync(SessionUnit sessionUnit, Message message)
         {
             //message.FavoritedCount++;
-            //await Task.CompletedTask;
-            await MessageRepository.IncrementFavoritedCountAsync(new List<long>() { message.Id });
+
+            message.FavoritedCounter.Count++;
+
+            await Task.CompletedTask;
+            //await MessageRepository.IncrementFavoritedCountAsync(new List<long>() { message.Id });
         }
 
         protected override async Task ChangeMessagesIfNotContainsAsync(SessionUnit sessionUnit, List<Message> changeMessages)
         {
-            //foreach (Message message in changeMessages)
-            //{
-            //    message.FavoritedCount++;
-            //}
-            //await Task.CompletedTask;
+            foreach (Message message in changeMessages)
+            {
+                //message.FavoritedCount++;
+                message.FavoritedCounter.Count++;
+            }
+            await Task.CompletedTask;
 
-            await MessageRepository.IncrementFavoritedCountAsync(changeMessages.Select(x => x.Id).ToList());
+            //await MessageRepository.IncrementFavoritedCountAsync(changeMessages.Select(x => x.Id).ToList());
         }
     }
 }

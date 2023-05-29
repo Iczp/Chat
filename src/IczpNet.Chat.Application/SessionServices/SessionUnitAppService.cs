@@ -12,10 +12,13 @@ using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.SessionUnitCounters;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -54,7 +57,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     protected IOpenedRecorderManager OpenedRecorderManager { get; }
     protected IFavoriteManager FavoriteManager { get; }
     protected IFollowManager FollowManager { get; }
-
+    protected IRepository<SessionUnitCounter> SessionUnitCounterRepository { get; }
     public SessionUnitAppService(
         IRepository<Friendship, Guid> chatObjectRepository,
         ISessionManager sessionManager,
@@ -67,7 +70,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         IReadedRecorderManager readedRecorderManager,
         IOpenedRecorderManager openedRecorderManager,
         IFavoriteManager favoriteManager,
-        IFollowManager followManager)
+        IFollowManager followManager,
+        IRepository<SessionUnitCounter> sessionUnitCounterRepository)
     {
         FriendshipRepository = chatObjectRepository;
         SessionManager = sessionManager;
@@ -81,6 +85,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         OpenedRecorderManager = openedRecorderManager;
         FavoriteManager = favoriteManager;
         FollowManager = followManager;
+        SessionUnitCounterRepository = sessionUnitCounterRepository;
     }
 
     protected override Task CheckPolicyAsync(string policyName)
@@ -101,8 +106,17 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 
     protected virtual async Task<IQueryable<SessionUnit>> GetQueryAsync(SessionUnitGetListInput input)
     {
+
+
+        //return from a in (await Repository.GetQueryableAsync())
+        //       join b in await SessionUnitCounterRepository.GetQueryableAsync() on a.Id equals b.SessionUnitId
+        //       select a;
+
+
         return (await Repository.GetQueryableAsync())
             //.Include(x => x.Setting)
+            //.Where(x => x.Counter != null)
+            //.Select(x => x.Counter.SessionUnit)
             .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
             .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
             .WhereIf(input.DestinationObjectType.HasValue, x => x.DestinationObjectType == input.DestinationObjectType)

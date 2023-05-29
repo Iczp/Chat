@@ -1,8 +1,10 @@
-﻿using IczpNet.Chat.MessageSections.Messages;
+﻿using IczpNet.Chat.BaseEntitys;
+using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
+using Volo.Abp;
 using Volo.Abp.Auditing;
 using Volo.Abp.Domain.Entities;
 
@@ -11,7 +13,9 @@ namespace IczpNet.Chat.SessionSections.SessionUnitCounters
     [Index(nameof(LastMessageId), AllDescending = true)]
     [Index(nameof(LastMessageId), AllDescending = false)]
     [Index(nameof(SessionUnitId), nameof(LastMessageId), AllDescending = true)]
-    public class SessionUnitCounter : Entity, IHasCreationTime, IHasModificationTime
+
+    [Index(nameof(SessionUnitId), IsUnique = true)]
+    public class SessionUnitCounter : BaseEntity, IHasCreationTime, IHasModificationTime, ISoftDelete
     {
         //protected Counters() { }
 
@@ -35,9 +39,13 @@ namespace IczpNet.Chat.SessionSections.SessionUnitCounters
 
         public virtual int FollowingCount { get; protected set; }
 
-        public virtual DateTime CreationTime { get; set; }
+        [Comment("创建时间")]
+        public override DateTime CreationTime { get; protected set; }
 
-        public virtual DateTime? LastModificationTime { get; set; }
+        [Comment("修改时间")]
+        public override DateTime? LastModificationTime { get; set; }
+
+        public virtual bool IsDeleted { get; protected set; }
 
         public override object[] GetKeys()
         {

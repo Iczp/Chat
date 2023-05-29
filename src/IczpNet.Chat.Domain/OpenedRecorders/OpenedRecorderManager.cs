@@ -30,20 +30,24 @@ namespace IczpNet.Chat.OpenedRecorders
         {
             //message.OpenedCount++;
 
-            //await Task.CompletedTask;
+            message.OpenedCounter.Count++;
 
-            await MessageRepository.IncrementOpenedCountAsync(new List<long>() { message.Id});
+            await Task.CompletedTask;
+
+            //await MessageRepository.IncrementOpenedCountAsync(new List<long>() { message.Id});
         }
 
         protected override async Task ChangeMessagesIfNotContainsAsync(SessionUnit sessionUnit, List<Message> changeMessages)
         {
-            //foreach (Message message in changeMessages)
-            //{
-            //    message.OpenedCount++;
-            //}
-            //await Task.CompletedTask;
+            foreach (Message message in changeMessages)
+            {
+                //message.OpenedCount++;
 
-            await MessageRepository.IncrementOpenedCountAsync(changeMessages.Select(x => x.Id).ToList());
+                message.OpenedCounter.Count++;
+            }
+            await Task.CompletedTask;
+
+            //await MessageRepository.IncrementOpenedCountAsync(changeMessages.Select(x => x.Id).ToList());
         }
     }
 }

@@ -11,11 +11,12 @@ using Volo.Abp.Domain.Entities;
 using IczpNet.AbpCommons.PinYin;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.AbpCommons.DataFilters;
+using IczpNet.Chat.BaseEntitys;
 
 namespace IczpNet.Chat.SessionSections.SessionUnitSettings
 {
 
-    public class SessionUnitSetting : Entity, IHasCreationTime, IHasModificationTime, IIsStatic, IIsPublic
+    public class SessionUnitSetting : BaseEntity, IHasCreationTime, IHasModificationTime, IIsStatic, IIsPublic
     {
         public virtual Guid SessionUnitId { get; set; }
 
@@ -149,10 +150,10 @@ namespace IczpNet.Chat.SessionSections.SessionUnitSettings
         #endregion
 
         [Comment("创建时间")]
-        public virtual DateTime CreationTime { get; set; }
+        public override DateTime CreationTime { get; protected set; }
 
         [Comment("修改时间")]
-        public virtual DateTime? LastModificationTime { get; set; }
+        public override DateTime? LastModificationTime { get; set; }
 
         public override object[] GetKeys()
         {

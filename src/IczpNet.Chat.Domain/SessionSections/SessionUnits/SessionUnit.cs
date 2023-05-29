@@ -39,27 +39,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
     [Index(nameof(LastMessageId), IsDescending = new[] { true })]
     [Index(nameof(Sorting), nameof(LastMessageId), AllDescending = true)]
     [Index(nameof(Sorting), nameof(LastMessageId), IsDescending = new[] { true, false }, Name = "IX_Chat_SessionUnit_Sorting_Desc_LastMessageId_Asc")]
-
-    //[Index(nameof(ReadedMessageId), AllDescending = true)]
-    //[Index(nameof(OwnerId), nameof(DestinationId), AllDescending = true)]
-    //[Index(nameof(IsStatic), AllDescending = true)]
-    //[Index(nameof(IsPublic), AllDescending = true)]
     [Index(nameof(Key), AllDescending = true)]
     [Index(nameof(DestinationObjectType), AllDescending = true)]
-    //[Index(nameof(OwnerObjectType), AllDescending = true)]
-    //[Index(nameof(DestinationObjectType), AllDescending = false)]
-
-    //[Index(nameof(OwnerName), AllDescending = true)]
-    //[Index(nameof(OwnerNameSpellingAbbreviation), AllDescending = true)]
-
-    //[Index(nameof(DestinationName), AllDescending = true)]
-    //[Index(nameof(DestinationNameSpellingAbbreviation), AllDescending = true)]
-
-    //[Index(nameof(MemberName), AllDescending = true)]
-    //[Index(nameof(MemberNameSpellingAbbreviation), AllDescending = true)]
-
-    //[Index(nameof(Rename), AllDescending = true)]
-    //[Index(nameof(RenameSpellingAbbreviation), AllDescending = true)]
     public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, ISessionId, IHasSimpleStateCheckers<SessionUnit>, IMaterializationInterceptor
     {
 
@@ -90,10 +71,12 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public virtual bool IsCreator => Setting.IsCreator;
 
-        /// <summary>
-        /// 已读的消息
-        /// </summary>
-        public virtual long? ReadedMessageId { get; protected set; }
+        public virtual long? ReadedMessageId => Setting.ReadedMessageId;
+
+        ///// <summary>
+        ///// 已读的消息
+        ///// </summary>
+        //public virtual long? ReadedMessageId { get; protected set; }
 
         //[ForeignKey(nameof(ReadedMessageId))]
         //public virtual Message ReadedMessage { get; protected set; }
@@ -105,7 +88,9 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public virtual double Sorting { get; protected set; }
 
-        public virtual SessionUnitCounter Counter { get; protected set; }
+        [Required]
+        [InverseProperty(nameof(SessionUnitCounter.SessionUnit))]
+        public virtual SessionUnitCounter Counter { get; protected set; } = new SessionUnitCounter();
 
         [InverseProperty(nameof(SessionUnitSetting.SessionUnit))]
         public virtual SessionUnitSetting Setting { get; protected set; } = new SessionUnitSetting();

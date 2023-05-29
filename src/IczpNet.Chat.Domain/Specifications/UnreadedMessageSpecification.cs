@@ -21,7 +21,7 @@ namespace IczpNet.Chat.Specifications
         {
             return x => x.Session.UnitList.Any(d => d.OwnerId == OwnerId 
             && (!d.Setting.HistoryFristTime.HasValue || d.Setting.HistoryFristTime <= x.CreationTime) 
-            && d.ReadedMessageId < x.Id 
+            && d.Setting.ReadedMessageId < x.Id 
             && x.SenderId != d.OwnerId);
         }
     }

@@ -42,21 +42,26 @@ namespace IczpNet.Chat.ReadedRecorders
         {
             //message.ReadedCount++;
 
-            //await Task.CompletedTask;
+            message.ReadedCounter.Count++;
 
-            await MessageRepository.IncrementReadedCountAsync(new List<long>() { message.Id });
+            await Task.CompletedTask;
+
+            //await MessageRepository.IncrementReadedCountAsync(new List<long>() { message.Id });
+
+
         }
 
         protected override async Task ChangeMessagesIfNotContainsAsync(SessionUnit sessionUnit, List<Message> changeMessages)
         {
-            //foreach (var message in changeMessages)
-            //{
-            //    message.ReadedCount++;
-            //}
-            //await Task.CompletedTask;
+            foreach (var message in changeMessages)
+            {
+                //message.ReadedCount++;
+                message.ReadedCounter.Count++;
+            }
+            await Task.CompletedTask;
 
-            await MessageRepository.IncrementReadedCountAsync(changeMessages.Select(x => x.Id).ToList());
+            //await MessageRepository.IncrementReadedCountAsync(changeMessages.Select(x => x.Id).ToList());
         }
-        
+
     }
 }
