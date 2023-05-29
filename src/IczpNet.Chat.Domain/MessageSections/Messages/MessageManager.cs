@@ -216,11 +216,16 @@ namespace IczpNet.Chat.MessageSections.Messages
             sessionUnitIncrementArgs.IsRemindAll = entity.IsRemindAll;
             sessionUnitIncrementArgs.MessageCreationTime = entity.CreationTime;
 
-            var jobId = await BackgroundJobManager.EnqueueAsync(sessionUnitIncrementArgs);
+            if (ShouldbeBackgroundJob(senderSessionUnit, entity))
+            {
+                var jobId = await BackgroundJobManager.EnqueueAsync(sessionUnitIncrementArgs);
 
-            Logger.LogInformation($"SessionUnitIncrement backgroupJobId:{jobId},args:{sessionUnitIncrementArgs}");
-
-            //await SessionUnitManager.IncremenetAsync(sessionUnitIncrementArgs);
+                Logger.LogInformation($"SessionUnitIncrement backgroupJobId:{jobId},args:{sessionUnitIncrementArgs}");
+            }
+            else
+            {
+                await SessionUnitManager.IncremenetAsync(sessionUnitIncrementArgs);
+            }
 
             return entity;
         }
@@ -238,8 +243,8 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         protected virtual bool ShouldbeBackgroundJob(SessionUnit senderSessionUnit, Message message)
         {
-            //return BackgroundJobManager.IsAvailable() && !message.IsPrivate && message.SessionUnitCount > 5000;
-            return false;
+            return BackgroundJobManager.IsAvailable() && !message.IsPrivate && message.SessionUnitCount > 1000;
+            //return false;
         }
 
         protected virtual async Task BatchUpdateSessionUnitAsync(SessionUnit senderSessionUnit, Message message)
