@@ -15,6 +15,8 @@ using IczpNet.Chat.Follows;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using IczpNet.Chat.ChatObjects;
+using Volo.Abp.Domain.Entities;
+using System.Linq.Dynamic.Core;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits;
 
@@ -129,7 +131,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
             Assert.If(entity.SessionId != message.SessionId, $"Not in same session,messageId:{messageId}");
         }
 
-        await SetEntityAsync(entity, x => x.Setting.SetReadedMessageId(lastMessageId, isForce = false));
+        await SetEntityAsync(entity, x => x.SetReadedMessageId(lastMessageId, isForce = false));
 
         await UpdateCacheItemsAsync(entity, items =>
         {
@@ -250,7 +252,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
                 PublicBadge = x.Messages.Count(d => !d.IsPrivate),
                 PrivateBadge = x.Messages.Count(d => d.IsPrivate && d.ReceiverId == x.OwnerId),
             })
-            //.GroupBy(x => x.Id).ToDictionary(x => x.Key, x => x.Sum(d => d.PublicBadge + d.PrivateBadge))
+            //.GroupBy(x => x.Id).ToDictionary(x => x.Key, x => x.Sum(x => x.PublicBadge + x.PrivateBadge))
             .ToDictionary(x => x.Id, x => x.PrivateBadge + x.PublicBadge)
             ;
 
@@ -259,7 +261,39 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
 
     public virtual async Task<Dictionary<Guid, SessionUnitStatModel>> GetStatsAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
     {
-        return await GetStatsByLinqAsync(sessionUnitIdList, minMessageId, isImmersed);
+        return await GetStatsByEachAsync(sessionUnitIdList, minMessageId, isImmersed);
+    }
+
+    protected virtual async Task<Dictionary<Guid, SessionUnitStatModel>> GetStatsByEachAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
+    {
+
+        var dics = new Dictionary<Guid, SessionUnitStatModel>();
+        foreach (var id in sessionUnitIdList.Distinct())
+        {
+            var entity = await Repository.GetAsync(id);
+
+            var setting = entity.Setting;
+
+            var query = (await MessageRepository.GetQueryableAsync())
+            .Where(x => x.SessionId == entity.SessionId)
+            .Where(x => x.Id > setting.ReadedMessageId)
+            .WhereIf(setting.HistoryFristTime.HasValue, x => x.CreationTime >= setting.HistoryFristTime)
+            .WhereIf(setting.HistoryLastTime.HasValue, x => x.CreationTime < setting.HistoryFristTime)
+            .WhereIf(setting.ClearTime.HasValue, x => x.CreationTime > setting.ClearTime)
+            ;
+
+            dics.Add(entity.Id, new SessionUnitStatModel()
+            {
+                Id = entity.Id,
+                PublicBadge = query.Count(),
+                PrivateBadge = query.Where(x => x.IsPrivate).Count(),
+                FollowingCount = query.Where(x => entity.FollowList.Select(d => d.DestinationId).Contains(x.SessionUnitId.Value)).Count(),
+                RemindAllCount = query.Where(x => x.IsRemindAll && !x.IsRollbacked).Count(),
+                RemindMeCount = query.Where(x => x.MessageReminderList.Any(g => g.SessionUnitId == entity.Id)).Count(),
+            });
+
+        }
+        return dics;
     }
 
     protected virtual async Task<Dictionary<Guid, SessionUnitStatModel>> GetStatsByLinqAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
@@ -271,7 +305,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
             {
                 x.Id,
                 x.OwnerId,
-                x.OwnerFollowList,
+                x.FollowList,
                 Messages = x.Session.MessageList.Where(d =>
                     d.Id > minMessageId &&
                     d.SenderId != x.OwnerId &&
@@ -285,11 +319,11 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
                 Id = x.Id,
                 PublicBadge = x.Messages.Count(d => !d.IsPrivate),
                 PrivateBadge = x.Messages.Count(d => d.IsPrivate && d.ReceiverId == x.OwnerId),
-                FollowingCount = x.Messages.Count(d => x.OwnerFollowList.Any(d => d.DestinationId == x.Id)),
+                FollowingCount = x.Messages.Count(d => x.FollowList.Any(d => d.DestinationId == x.Id)),
                 RemindAllCount = x.Messages.Count(d => d.IsRemindAll && !d.IsRollbacked),
                 RemindMeCount = x.Messages.Count(d => d.MessageReminderList.Any(g => g.SessionUnitId == x.Id))
             })
-            //.GroupBy(x => x.Id).ToDictionary(x => x.Key, x => x.Sum(d => d.PublicBadge + d.PrivateBadge))
+            //.GroupBy(x => x.Id).ToDictionary(x => x.Key, x => x.Sum(x => x.PublicBadge + x.PrivateBadge))
             .ToDictionary(x => x.Id)
             ;
     }
@@ -325,7 +359,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
                 )
                 .Count(),
         })
-            //.GroupBy(x => x.Id).ToDictionary(x => x.Key, x => x.Sum(d => d.RemindMeCount + d.RemindAllCount))
+            //.GroupBy(x => x.Id).ToDictionary(x => x.Key, x => x.Sum(x => x.RemindMeCount + x.RemindAllCount))
             .ToDictionary(x => x.Id, x => x.RemindMeCount + x.RemindAllCount)
             ;
 
@@ -342,7 +376,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         {
             x.Id,
             FollowingCount = x.Session.MessageList
-                .Where(d => x.OwnerFollowList.Any(d => d.DestinationId == x.Id))
+                .Where(d => x.FollowList.Any(d => d.DestinationId == x.Id))
                 .Where(d => d.Id > minMessageId)
                 .Where(d =>
                     d.SenderId != x.OwnerId &&
@@ -354,7 +388,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
                 .Count(),
         })
             .ToDictionary(x => x.Id, x => x.FollowingCount)
-            //.GroupBy(x => x.Id).ToDictionary(x => x.Key, x => x.Sum(d => d.FollowingCount))
+            //.GroupBy(x => x.Id).ToDictionary(x => x.Key, x => x.Sum(x => x.FollowingCount))
             ;
 
         return follows;

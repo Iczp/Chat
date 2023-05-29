@@ -86,6 +86,16 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         [ForeignKey(nameof(LastMessageId))]
         public virtual Message LastMessage { get; protected set; }
 
+        public virtual int PublicBadge { get; protected set; }
+
+        public virtual int PrivateBadge { get; protected set; }
+
+        public virtual int RemindAllCount { get; protected set; }
+
+        public virtual int RemindMeCount { get; protected set; }
+
+        public virtual int FollowingCount { get; protected set; }
+
         public virtual double Sorting { get; protected set; }
 
         [Required]
@@ -120,21 +130,14 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         [InverseProperty(nameof(Message.SessionUnit))]
         public virtual List<Message> MessageList { get; protected set; } = new List<Message>();
 
-
-
         [InverseProperty(nameof(OpenedRecorder.SessionUnit))]
         public virtual IList<OpenedRecorder> OpenedRecorderList { get; protected set; }
 
         [InverseProperty(nameof(ReadedRecorder.SessionUnit))]
         public virtual IList<ReadedRecorder> ReadedRecorderList { get; protected set; }
 
-
         [InverseProperty(nameof(Follow.Owner))]
-        public virtual IList<Follow> OwnerFollowList { get; protected set; }
-
-        //[InverseProperty(nameof(Follow.Destination))]
-        //public virtual IList<Follow> DestinationFollowList { get; set; }
-
+        public virtual IList<Follow> FollowList { get; protected set; }
 
         [InverseProperty(nameof(Favorite.SessionUnit))]
         public virtual IList<Favorite> FavoriteList { get; protected set; }
@@ -156,21 +159,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public virtual SessionUnitStatModel Stat { get; protected set; }
 
         [NotMapped]
-        public virtual int? Badge { get; protected set; }//=> GetBadge();
+        public virtual int? Badge { get; protected set; }
 
-        [NotMapped]
-        public virtual int? ReminderCount { get; protected set; }//=> GetReminderCount();
-
-
-        public virtual int PublicBadge { get; protected set; }
-
-        public virtual int PrivateBadge { get; protected set; }
-
-        public virtual int RemindAllCount { get; protected set; }//=> GetRemindAllCount();
-
-        public virtual int RemindMeCount { get; protected set; }//=> GetRemindMeCount();
-
-        public virtual int FollowingCount { get; protected set; }//=> GetFollowingCount();
 
         protected SessionUnit() { }
 
@@ -222,14 +212,22 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             ;
         }
 
+        internal virtual void SetReadedMessageId(long lastMessageId, bool isForce = false)
+        {
+            if (isForce || lastMessageId > Setting.ReadedMessageId.GetValueOrDefault())
+            {
+                Setting.ReadedMessageId = lastMessageId;
+            }
+            PublicBadge = 0;
+            PrivateBadge = 0;
+            RemindAllCount = 0;
+            RemindMeCount = 0;
+            FollowingCount = 0;
+        }
+
         public virtual void SetKey(string key)
         {
             Key = key;
-        }
-
-        public override object[] GetKeys()
-        {
-            return new object[] { SessionId, OwnerId, DestinationId };
         }
 
         public SessionUnit SetBadge(int badge)
@@ -237,12 +235,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             Badge = badge;
             return this;
         }
-
-        [Obsolete]
-        public void SetReminderCount(int value) => RemindAllCount = value;
-
-        [Obsolete]
-        public void SetFollowingCount(int value) => FollowingCount = value;
 
         internal virtual void SetTopping(bool isTopping)
         {
@@ -259,9 +251,5 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         private List<SessionRole> GetRoleList() => SessionUnitRoleList.Select(x => x.SessionRole).ToList();
 
         private List<Guid> GetRoleIdList() => SessionUnitRoleList.Select(x => x.SessionRoleId).ToList();
-
-
-        [Obsolete]
-        internal void SetPrivateBadge(int v) => PrivateBadge = v;
     }
 }

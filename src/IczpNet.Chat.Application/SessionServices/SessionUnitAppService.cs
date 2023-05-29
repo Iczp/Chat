@@ -162,8 +162,6 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
                         if (stats.TryGetValue(e.Id, out SessionUnitStatModel stat))
                         {
                             e.SetBadge(stat.PublicBadge + stat.PrivateBadge);
-                            e.SetReminderCount(stat.RemindAllCount + stat.RemindMeCount);
-                            e.SetFollowingCount(stat.FollowingCount);
                         }
                     }
                 }
@@ -407,14 +405,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 
         var query = (await MessageRepository.GetQueryableAsync())
             .Where(x => x.SessionId == entity.SessionId)
-        //var query = entity.Session.MessageList.AsQueryable()
             .Where(x => !x.IsPrivate || (x.IsPrivate && (x.SenderId == entity.OwnerId || x.ReceiverId == entity.OwnerId)))
-            ////Official
-            //.WhereIf(entity.Session.Owner != null && entity.Session.Owner.ObjectType == ChatObjectTypeEnums.Official, x =>
-            //    (x.SenderId == entity.OwnerId && x.ReceiverId == entity.Session.OwnerId) ||
-            //    (x.ReceiverId == entity.OwnerId && x.SenderId == entity.Session.OwnerId) ||
-            //    (x.SenderId == x.ReceiverId && x.SenderId == entity.OwnerId)
-            //)
             .WhereIf(settting.HistoryFristTime.HasValue, x => x.CreationTime >= settting.HistoryFristTime)
             .WhereIf(settting.HistoryLastTime.HasValue, x => x.CreationTime < settting.HistoryFristTime)
             .WhereIf(settting.ClearTime.HasValue, x => x.CreationTime > settting.ClearTime)

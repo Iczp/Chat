@@ -180,13 +180,13 @@ namespace IczpNet.Chat.SessionSections.SessionUnitSettings
         /// <param name="removeTime"></param>
         internal virtual void Remove(DateTime removeTime) => RemoveTime = removeTime;
 
-        internal virtual void SetReadedMessageId(long lastMessageId, bool isForce = false)
-        {
-            if (isForce || lastMessageId > ReadedMessageId.GetValueOrDefault())
-            {
-                ReadedMessageId = lastMessageId;
-            }
-        }
+        //internal virtual void SetReadedMessageId(long lastMessageId, bool isForce = false)
+        //{
+        //    if (isForce || lastMessageId > ReadedMessageId.GetValueOrDefault())
+        //    {
+        //        ReadedMessageId = lastMessageId;
+        //    }
+        //}
 
         /// <summary>
         /// 退群，但不删除会话（用于查看历史I）
