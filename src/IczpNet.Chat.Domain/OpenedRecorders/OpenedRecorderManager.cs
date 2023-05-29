@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.Bases;
+using IczpNet.Chat.MessageSections.Counters;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
@@ -39,15 +40,20 @@ namespace IczpNet.Chat.OpenedRecorders
 
         protected override async Task ChangeMessagesIfNotContainsAsync(SessionUnit sessionUnit, List<Message> changeMessages)
         {
-            foreach (Message message in changeMessages)
-            {
-                //message.OpenedCount++;
+            //foreach (Message message in changeMessages)
+            //{
+            //    //message.OpenedCount++;
 
-                message.OpenedCounter.Count++;
-            }
-            await Task.CompletedTask;
+            //    message.OpenedCounter.Count++;
+            //}
+            //await Task.CompletedTask;
 
             //await MessageRepository.IncrementOpenedCountAsync(changeMessages.Select(x => x.Id).ToList());
+
+            await BackgroundJobManager.EnqueueAsync(new OpenedCounterArgs()
+            {
+                MessageIdList = changeMessages.Select(x => x.Id).ToList()
+            });
         }
     }
 }

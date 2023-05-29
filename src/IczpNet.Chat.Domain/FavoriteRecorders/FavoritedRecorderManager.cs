@@ -1,5 +1,6 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.Bases;
+using IczpNet.Chat.MessageSections.Counters;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.Settings;
@@ -78,14 +79,19 @@ namespace IczpNet.Chat.FavoritedRecorders
 
         protected override async Task ChangeMessagesIfNotContainsAsync(SessionUnit sessionUnit, List<Message> changeMessages)
         {
-            foreach (Message message in changeMessages)
-            {
-                //message.FavoritedCount++;
-                message.FavoritedCounter.Count++;
-            }
-            await Task.CompletedTask;
+            //foreach (Message message in changeMessages)
+            //{
+            //    //message.FavoritedCount++;
+            //    message.FavoritedCounter.Count++;
+            //}
+            //await Task.CompletedTask;
 
             //await MessageRepository.IncrementFavoritedCountAsync(changeMessages.Select(x => x.Id).ToList());
+
+            await BackgroundJobManager.EnqueueAsync(new FavoritedCounterArgs()
+            {
+                MessageIdList = changeMessages.Select(x => x.Id).ToList()
+            });
         }
     }
 }

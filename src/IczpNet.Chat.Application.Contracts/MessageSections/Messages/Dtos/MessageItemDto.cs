@@ -31,12 +31,12 @@ namespace IczpNet.Chat.MessageSections.Messages.Dtos
 
         public virtual bool? IsFollowing { get; set; }
 
-        //public virtual long SessionUnitCount { get; set; }
+        public virtual long SessionUnitCount { get; set; }
 
-        //public virtual long ReadedCount { get; set; }
+        public virtual long ReadedCount { get; set; }
 
-        //public virtual long OpenedCount { get; set; }
+        public virtual long OpenedCount { get; set; }
 
-        //public virtual long FavoritedCount { get; set; }
+        public virtual long FavoritedCount { get; set; }
     }
 }

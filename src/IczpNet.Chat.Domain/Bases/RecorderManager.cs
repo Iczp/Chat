@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
@@ -17,6 +18,8 @@ namespace IczpNet.Chat.Bases
         protected IRepository<TEntity> Repository { get; }
         protected IMessageRepository MessageRepository => LazyServiceProvider.LazyGetService<IMessageRepository>();
         protected ISessionUnitRepository SessionUnitRepository => LazyServiceProvider.LazyGetService<ISessionUnitRepository>();
+
+        protected IBackgroundJobManager BackgroundJobManager => LazyServiceProvider.LazyGetService<IBackgroundJobManager>();
 
         public RecorderManager(IRepository<TEntity> repository)
         {

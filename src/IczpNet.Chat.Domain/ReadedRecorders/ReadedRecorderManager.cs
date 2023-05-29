@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.Bases;
+using IczpNet.Chat.MessageSections.Counters;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
@@ -53,15 +54,19 @@ namespace IczpNet.Chat.ReadedRecorders
 
         protected override async Task ChangeMessagesIfNotContainsAsync(SessionUnit sessionUnit, List<Message> changeMessages)
         {
-            foreach (var message in changeMessages)
-            {
-                //message.ReadedCount++;
-                message.ReadedCounter.Count++;
-            }
-            await Task.CompletedTask;
+            //foreach (var message in changeMessages)
+            //{
+            //    //message.ReadedCount++;
+            //    message.ReadedCounter.Count++;
+            //}
+            //await Task.CompletedTask;
 
             //await MessageRepository.IncrementReadedCountAsync(changeMessages.Select(x => x.Id).ToList());
-        }
 
+            await BackgroundJobManager.EnqueueAsync(new ReadedCounterArgs()
+            {
+                 MessageIdList = changeMessages.Select(x => x.Id).ToList()
+            });
+        }
     }
 }

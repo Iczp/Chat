@@ -38,6 +38,7 @@ using IczpNet.Chat.TextContentWords;
 using IczpNet.Chat.Words;
 using IczpNet.Chat.SessionSections.SessionUnitCounters;
 using IczpNet.Chat.SessionSections.SessionUnitSettings;
+using IczpNet.Chat.MessageSections.Counters;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -74,7 +75,7 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
 
 
     public DbSet<Follow> Follow { get; set; }
-    public DbSet<FavoritedRecorder> Favorite { get; set; }
+    
 
 
     public DbSet<Friendship> Friendship { get; set; }
@@ -84,6 +85,12 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
 
     public DbSet<OpenedRecorder> OpenedRecorder { get; set; }
     public DbSet<ReadedRecorder> ReadedRecorder { get; set; }
+    public DbSet<FavoritedRecorder> FavoritedRecorder { get; set; }
+
+    public DbSet<OpenedCounter> OpenedCounter { get; set; }
+    public DbSet<ReadedCounter> ReadedCounter { get; set; }
+    public DbSet<FavoritedCounter> FavoritedCounter { get; set; }
+
     public DbSet<MessageReminder> MessageReminder { get; set; }
 
     public DbSet<Scoped> SessionUnitMessage { get; set; }
