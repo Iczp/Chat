@@ -54,7 +54,7 @@ namespace IczpNet.Chat.Repositories
         //    return await context.Message
         //        .Where(x => messageIdList.Contains(x.Id))
         //        .ExecuteUpdateAsync(s => s
-        //            .SetProperty(b => b.FavoritedCount, b => context.Favorite.Count(f => f.MessageId == b.Id))
+        //            .SetProperty(b => b.FavoritedCount, b => context.FavoritedRecorder.Count(f => f.MessageId == b.Id))
         //            .SetProperty(b => b.ReadedCount, b => context.ReadedRecorder.Count(f => f.MessageId == b.Id))
         //            .SetProperty(b => b.OpenedCount, b => context.OpenedRecorder.Count(f => f.MessageId == b.Id))
         //        );

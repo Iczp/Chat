@@ -178,8 +178,8 @@ namespace IczpNet.Chat.ChatObjects
         #endregion
 
         #region Favorite 
-        //[InverseProperty(nameof(Favorite.Owner))]
-        //public virtual IList<Favorite> FavoriteList { get; set; }
+        //[InverseProperty(nameof(FavoritedRecorder.Owner))]
+        //public virtual IList<FavoritedRecorder> FavoriteList { get; set; }
         #endregion
 
 

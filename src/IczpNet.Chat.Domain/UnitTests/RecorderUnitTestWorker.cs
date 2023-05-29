@@ -1,6 +1,6 @@
 ﻿using AutoMapper.Internal;
 using IczpNet.Chat.DataFilters;
-using IczpNet.Chat.Favorites;
+using IczpNet.Chat.FavoriteRecorders;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
@@ -39,7 +39,7 @@ namespace IczpNet.Chat.UnitTests
 
         protected ISessionUnitRepository SessionUnitRepository { get; }
         protected IFollowManager FollowManager { get; }
-        protected IFavoriteManager FavoriteManager { get; }
+        protected IFavoritedRecorderManager FavoriteManager { get; }
         protected IOpenedRecorderManager OpenedRecorderManager { get; }
         protected IReadedRecorderManager ReadedRecorderManager { get; }
         protected IMessageRepository MessageRepository { get; }
@@ -51,7 +51,7 @@ namespace IczpNet.Chat.UnitTests
             IRoomManager roomManager,
             ISessionUnitManager sessionUnitManager,
             IFollowManager followManager,
-            IFavoriteManager favoriteManager,
+            IFavoritedRecorderManager favoriteManager,
             IOpenedRecorderManager openedRecorderManager,
             IReadedRecorderManager readedRecorderManager,
             IMessageRepository messageRepository) : base(timer, serviceScopeFactory)

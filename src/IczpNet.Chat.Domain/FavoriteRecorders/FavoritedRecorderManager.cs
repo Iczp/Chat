@@ -10,25 +10,25 @@ using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Settings;
 
-namespace IczpNet.Chat.Favorites
+namespace IczpNet.Chat.FavoriteRecorders
 {
-    public class FavoriteManager : RecorderManager<Favorite>, IFavoriteManager
+    public class FavoritedRecorderManager : RecorderManager<FavoritedRecorder>, IFavoritedRecorderManager
     {
         protected ISettingProvider SettingProvider { get; }
-        public FavoriteManager(IRepository<Favorite> repository, ISettingProvider settingProvider) : base(repository)
+        public FavoritedRecorderManager(IRepository<FavoritedRecorder> repository, ISettingProvider settingProvider) : base(repository)
         {
             SettingProvider = settingProvider;
         }
-        protected override Favorite CreateEntity(SessionUnit sessionUnit, Message message, string deviceId)
+        protected override FavoritedRecorder CreateEntity(SessionUnit sessionUnit, Message message, string deviceId)
         {
-            return new Favorite(sessionUnit, message, deviceId);
+            return new FavoritedRecorder(sessionUnit, message, deviceId);
         }
-        protected override Favorite CreateEntity(Guid sessionUnitId, long messageId)
+        protected override FavoritedRecorder CreateEntity(Guid sessionUnitId, long messageId)
         {
-            return new Favorite(sessionUnitId, messageId);
+            return new FavoritedRecorder(sessionUnitId, messageId);
         }
 
-        public override async Task<Favorite> CreateIfNotContainsAsync(SessionUnit sessionUnit, long messageId, string deviceId)
+        public override async Task<FavoritedRecorder> CreateIfNotContainsAsync(SessionUnit sessionUnit, long messageId, string deviceId)
         {
             //check favorite size
             var maxFavoriteSize = await SettingProvider.GetAsync<long>(ChatSettings.MaxFavoriteSize);

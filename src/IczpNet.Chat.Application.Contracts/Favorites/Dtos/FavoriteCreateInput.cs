@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace IczpNet.Chat.Favorites.Dtos
+namespace IczpNet.Chat.FavoriteRecorders.Dtos
 {
     public class FavoriteCreateInput
     {

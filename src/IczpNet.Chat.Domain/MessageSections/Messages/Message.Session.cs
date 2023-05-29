@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.Favorites;
+﻿using IczpNet.Chat.FavoriteRecorders;
 using IczpNet.Chat.MessageSections.Counters;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
@@ -21,8 +21,8 @@ public partial class Message
     public virtual IList<ReadedRecorder> ReadedRecorderList { get; set; }  = new List<ReadedRecorder>();
 
 
-    [InverseProperty(nameof(Favorite.Message))]
-    public virtual IList<Favorite> FavoriteList { get; set; }
+    [InverseProperty(nameof(FavoritedRecorder.Message))]
+    public virtual IList<FavoritedRecorder> FavoriteList { get; set; }
 
     [InverseProperty(nameof(Scoped.Message))]
     public virtual IList<Scoped> ScopedList { get; set; }

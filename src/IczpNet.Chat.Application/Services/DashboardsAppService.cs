@@ -2,7 +2,7 @@
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Dashboards;
 using IczpNet.Chat.Dashboards.Dtos;
-using IczpNet.Chat.Favorites;
+using IczpNet.Chat.FavoriteRecorders;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Messages;
@@ -43,7 +43,7 @@ namespace IczpNet.Chat.Services
         protected IRepository<SessionUnitRole> SessionUnitRoleRepository { get; }
         protected IRepository<SessionUnitOrganization> SessionUnitOrganizationRepository { get; }
         protected IRepository<MessageReminder> MessageReminderRepository { get; }
-        protected IRepository<Favorite> FavoriteRepository { get; }
+        protected IRepository<FavoritedRecorder> FavoriteRepository { get; }
 
         public DashboardsAppService(
             IChatObjectRepository chatObjectRepository,
@@ -61,7 +61,7 @@ namespace IczpNet.Chat.Services
             IRepository<SessionUnitRole> sessionUnitRoleRepository,
             IRepository<SessionUnitOrganization> sessionUnitOrganizationRepository,
             IRepository<MessageReminder> messageReminderRepository,
-            IRepository<Favorite> favoriteRepository)
+            IRepository<FavoritedRecorder> favoriteRepository)
         {
             ChatObjectRepository = chatObjectRepository;
             MessageRepository = messageRepository;

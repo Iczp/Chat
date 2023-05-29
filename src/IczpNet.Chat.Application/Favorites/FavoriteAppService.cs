@@ -1,6 +1,6 @@
 ﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.Favorites.Dtos;
+using IczpNet.Chat.FavoriteRecorders.Dtos;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -9,22 +9,22 @@ using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 
-namespace IczpNet.Chat.Favorites
+namespace IczpNet.Chat.FavoriteRecorders
 {
     public class FavoriteAppService : ChatAppService, IFavoriteAppService
     {
         protected ISessionUnitManager SessionUnitManager { get; set; }
-        protected IFavoriteManager FavoriteManager { get; set; }
+        protected IFavoritedRecorderManager FavoriteManager { get; set; }
         protected ISessionUnitRepository SessionUnitRepository { get; set; }
 
-        protected IRepository<Favorite> Repository { get; set; }
+        protected IRepository<FavoritedRecorder> Repository { get; set; }
         protected IChatObjectManager ChatObjectManager { get; set; }
 
         public FavoriteAppService(
-            IFavoriteManager followManager,
+            IFavoritedRecorderManager followManager,
             ISessionUnitManager sessionUnitManager,
             ISessionUnitRepository sessionUnitRepository,
-            IRepository<Favorite> repository,
+            IRepository<FavoritedRecorder> repository,
             IChatObjectManager chatObjectManager)
         {
             FavoriteManager = followManager;
@@ -43,7 +43,7 @@ namespace IczpNet.Chat.Favorites
                 .WhereIf(input.MinSize.HasValue, x => x.Size >= input.MinSize)
                 .WhereIf(input.MaxSize.HasValue, x => x.Size < input.MaxSize)
                 ;
-            return await GetPagedListAsync<Favorite, FavoriteDto>(query, input);
+            return await GetPagedListAsync<FavoritedRecorder, FavoriteDto>(query, input);
         }
 
         [HttpGet]

@@ -4,7 +4,7 @@ using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
-using IczpNet.Chat.Favorites;
+using IczpNet.Chat.FavoriteRecorders;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
@@ -55,7 +55,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     protected IChatObjectManager ChatObjectManager { get; }
     protected IReadedRecorderManager ReadedRecorderManager { get; }
     protected IOpenedRecorderManager OpenedRecorderManager { get; }
-    protected IFavoriteManager FavoriteManager { get; }
+    protected IFavoritedRecorderManager FavoriteManager { get; }
     protected IFollowManager FollowManager { get; }
     protected IRepository<SessionUnitCounter> SessionUnitCounterRepository { get; }
     public SessionUnitAppService(
@@ -69,7 +69,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         IChatObjectManager chatObjectManager,
         IReadedRecorderManager readedRecorderManager,
         IOpenedRecorderManager openedRecorderManager,
-        IFavoriteManager favoriteManager,
+        IFavoritedRecorderManager favoriteManager,
         IFollowManager followManager,
         IRepository<SessionUnitCounter> sessionUnitCounterRepository)
     {

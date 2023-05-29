@@ -2,9 +2,9 @@
 using System;
 using System.Threading.Tasks;
 
-namespace IczpNet.Chat.Favorites
+namespace IczpNet.Chat.FavoriteRecorders
 {
-    public interface IFavoriteManager : IRecorderManager<Favorite>
+    public interface IFavoritedRecorderManager : IRecorderManager<FavoritedRecorder>
     {
         Task DeleteAsync(Guid sessionUnitId, long messageId);
         Task<int> GetCountByOwnerIdAsync(long ownerId);

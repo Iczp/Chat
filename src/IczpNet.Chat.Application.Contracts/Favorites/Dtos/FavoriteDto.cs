@@ -2,7 +2,7 @@
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
 
-namespace IczpNet.Chat.Favorites.Dtos
+namespace IczpNet.Chat.FavoriteRecorders.Dtos
 {
     public class FavoriteDto
     {

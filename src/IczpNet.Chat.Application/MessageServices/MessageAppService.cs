@@ -14,7 +14,7 @@ using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.Enums.Dtos;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.OpenedRecorders;
-using IczpNet.Chat.Favorites;
+using IczpNet.Chat.FavoriteRecorders;
 
 namespace IczpNet.Chat.MessageServices
 {
@@ -35,7 +35,7 @@ namespace IczpNet.Chat.MessageServices
         protected ISessionUnitManager SessionUnitManager { get; }
         protected IReadedRecorderManager ReadedRecorderManager { get; }
         protected IOpenedRecorderManager OpenedRecorderManager { get; }
-        protected IFavoriteManager FavoriteManager { get; }
+        protected IFavoritedRecorderManager FavoriteManager { get; }
 
         public MessageAppService(
             IMessageRepository repository,
@@ -44,7 +44,7 @@ namespace IczpNet.Chat.MessageServices
             ISessionUnitManager sessionUnitManager,
             IReadedRecorderManager readedRecorderManager,
             IOpenedRecorderManager openedRecorderManager,
-            IFavoriteManager favoriteManager) : base(repository)
+            IFavoritedRecorderManager favoriteManager) : base(repository)
         {
             MessageSender = messageSender;
             MessageManager = messageManager;
@@ -182,7 +182,7 @@ namespace IczpNet.Chat.MessageServices
 
         //    message.OpenedCount = await OpenedRecorderManager.GetCountByMessageIdAsync(messageId);
 
-        //    message.FavoritedCount = await FavoriteManager.GetCountByMessageIdAsync(messageId);
+        //    message.FavoritedCount = await FavoritedRecorderManager.GetCountByMessageIdAsync(messageId);
 
         //    await Repository.UpdateAsync(message, autoSave: true);
 

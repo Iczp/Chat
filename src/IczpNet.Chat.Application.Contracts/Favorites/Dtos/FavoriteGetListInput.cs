@@ -1,7 +1,7 @@
 ﻿using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.Enums;
 
-namespace IczpNet.Chat.Favorites.Dtos
+namespace IczpNet.Chat.FavoriteRecorders.Dtos
 {
     public class FavoriteGetListInput : BaseGetListInput
     {

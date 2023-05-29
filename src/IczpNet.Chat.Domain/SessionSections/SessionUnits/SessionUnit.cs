@@ -28,7 +28,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.OpenedRecorders;
 using System.Linq.Expressions;
-using IczpNet.Chat.Favorites;
+using IczpNet.Chat.FavoriteRecorders;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.SessionSections.SessionUnitCounters;
 using IczpNet.Chat.SessionSections.SessionUnitSettings;
@@ -139,8 +139,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         [InverseProperty(nameof(Follow.Owner))]
         public virtual IList<Follow> FollowList { get; protected set; }
 
-        [InverseProperty(nameof(Favorite.SessionUnit))]
-        public virtual IList<Favorite> FavoriteList { get; protected set; }
+        [InverseProperty(nameof(FavoritedRecorder.SessionUnit))]
+        public virtual IList<FavoritedRecorder> FavoriteList { get; protected set; }
 
 
         [NotMapped]
