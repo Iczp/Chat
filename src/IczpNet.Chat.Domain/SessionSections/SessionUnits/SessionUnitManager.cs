@@ -17,6 +17,8 @@ using System.Diagnostics;
 using IczpNet.Chat.ChatObjects;
 using Volo.Abp.Domain.Entities;
 using System.Linq.Dynamic.Core;
+using IczpNet.Chat.DataFilters;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits;
 
@@ -215,18 +217,64 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return badge;
     }
 
-    public virtual Task<int> GetBadgeByOwnerIdAsync(long ownerId, bool? isImmersed = null)
+    public virtual async Task<int> GetBadgeByOwnerIdAsync(long ownerId, bool? isImmersed = null)
     {
-        return GetBadgeAsync(q =>
+        //var list = (await Repository.GetQueryableAsync()).Where(x => x.OwnerId == ownerId).Select(x => x.Id).ToList();
+
+        //var count = 0;
+
+        //foreach (var id in list)
+        //{
+        //    count += await GetBadgeByIdAsync(id);
+        //}
+        //return count;
+
+        //----------------------
+
+        //return (await Repository.GetQueryableAsync())
+        //        .Where(x => x.OwnerId == ownerId)
+        //        .Join(await MessageRepository.GetQueryableAsync(), x => x.SessionId, x => x.SessionId, (unit, message) => new
+        //        {
+        //            unit.Setting,
+        //            Message = message,
+        //            // Badge = messages.Where(x => x.Id > unit.Setting.ReadedMessageId)
+        //            //.Where(x => unit.Setting.HistoryFristTime == null || x.CreationTime >= unit.Setting.HistoryFristTime)
+        //            //.Where(x => unit.Setting.HistoryLastTime == null || x.CreationTime < unit.Setting.HistoryLastTime)
+        //            //.Where(x => unit.Setting.ClearTime == null || x.CreationTime > unit.Setting.ClearTime)
+        //            //.Count()
+        //        })
+        //        .Where(x => x.Setting.ReadedMessageId == null || x.Message.Id > x.Setting.ReadedMessageId)
+        //        .Where(x => x.Setting.HistoryFristTime == null || x.Message.CreationTime >= x.Setting.HistoryFristTime)
+        //        .Where(x => x.Setting.HistoryLastTime == null || x.Message.CreationTime >= x.Setting.HistoryLastTime)
+        //        .Where(x => x.Setting.ClearTime == null || x.Message.CreationTime >= x.Setting.ClearTime)
+        //        .Count()
+        //        ;
+
+
+        return await GetBadgeAsync(q =>
             q.Where(x => x.OwnerId == ownerId)
             .WhereIf(isImmersed.HasValue, x => x.Setting.IsImmersed == isImmersed));
     }
 
-    public virtual Task<int> GetBadgeByIdAsync(Guid sessionUnitId, bool? isImmersed = null)
+    public virtual async Task<int> GetBadgeByIdAsync(Guid sessionUnitId, bool? isImmersed = null)
     {
-        return GetBadgeAsync(q =>
-            q.Where(x => x.Id == sessionUnitId)
-            .WhereIf(isImmersed.HasValue, x => x.Setting.IsImmersed == isImmersed));
+
+        var entity = await Repository.GetAsync(sessionUnitId);
+
+        var setting = entity.Setting;
+
+        var query = (await MessageRepository.GetQueryableAsync())
+        .Where(x => x.SessionId == entity.SessionId)
+        .WhereIf(setting.ReadedMessageId.HasValue, x => x.Id > setting.ReadedMessageId)
+        .WhereIf(setting.HistoryFristTime.HasValue, x => x.CreationTime >= setting.HistoryFristTime)
+        .WhereIf(setting.HistoryLastTime.HasValue, x => x.CreationTime < setting.HistoryLastTime)
+        .WhereIf(setting.ClearTime.HasValue, x => x.CreationTime > setting.ClearTime)
+        ;
+        return query.Count();
+
+        //return GetBadgeAsync(q =>
+        //    q.Where(x => x.Id == sessionUnitId)
+        //    .WhereIf(isImmersed.HasValue, x => x.Setting.IsImmersed == isImmersed));
     }
 
     public virtual async Task<Dictionary<Guid, int>> GetBadgeByIdAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
@@ -261,10 +309,10 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
 
     public virtual async Task<Dictionary<Guid, SessionUnitStatModel>> GetStatsAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
     {
-        return await GetStatsByEachAsync(sessionUnitIdList, minMessageId, isImmersed);
+        return await GetStatsByEachAsync(sessionUnitIdList, isImmersed);
     }
 
-    protected virtual async Task<Dictionary<Guid, SessionUnitStatModel>> GetStatsByEachAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
+    protected virtual async Task<Dictionary<Guid, SessionUnitStatModel>> GetStatsByEachAsync(List<Guid> sessionUnitIdList, bool? isImmersed = null)
     {
 
         var dics = new Dictionary<Guid, SessionUnitStatModel>();
