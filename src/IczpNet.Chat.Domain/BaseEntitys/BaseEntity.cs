@@ -2,7 +2,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using Volo.Abp.Domain.Entities.Auditing;
-using Volo.Abp.Identity.Settings;
 using Volo.Abp.MultiTenancy;
 
 namespace IczpNet.Chat.BaseEntitys
