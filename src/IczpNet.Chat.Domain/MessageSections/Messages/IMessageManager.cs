@@ -27,6 +27,8 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         Task<Dictionary<string, long>> RollbackMessageAsync(Message message);
 
+        //Task<Message> GetLastMessageAsync(SessionUnit sessionUnit);
+
 
     }
 }
