@@ -31,6 +31,9 @@ using IczpNet.Chat.MessageSections.Counters;
 using IczpNet.Chat.SessionSections.SessionUnitCounters;
 using IczpNet.Chat.SessionSections.SessionUnitSettings;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.Developers;
+using System.Reflection.Emit;
+using IczpNet.Chat.HttpRequests;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -110,6 +113,17 @@ public static class ChatDbContextModelCreatingExtensions
         {
             b.HasOne(x => x.Setting).WithOne(x => x.SessionUnit).HasForeignKey<SessionUnitSetting>(x => x.SessionUnitId).IsRequired(true);
             b.HasOne(x => x.Counter).WithOne(x => x.SessionUnit).HasForeignKey<SessionUnitCounter>(x => x.SessionUnitId).IsRequired(true);
+        });
+
+        builder.Entity<Developer>(b =>
+        {
+            b.HasKey(x => x.OwnerId);
+            b.HasOne(x => x.Owner).WithOne(x => x.Developer).HasForeignKey<Developer>(x => x.OwnerId).IsRequired(false);
+        });
+
+        builder.Entity<HttpRequest>(b =>
+        {
+            b.Property(e => e.HttpMethod).HasConversion<string>().HasMaxLength(10);
         });
 
         builder.Entity<Message>(b =>

@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Volo.Abp.SimpleStateChecking;
+using IczpNet.Chat.Developers;
 
 namespace IczpNet.Chat.ChatObjects
 {
@@ -85,6 +86,11 @@ namespace IczpNet.Chat.ChatObjects
         /// 客服状态
         /// </summary>
         public virtual ServiceStatus? ServiceStatus { get; protected set; }
+
+        public virtual bool IsDeveloper { get; protected set; } = false;
+
+        [InverseProperty(nameof(Developers.Developer.Owner))]
+        public virtual Developer Developer { get; protected set; }
 
         #region Categorys
         public virtual IList<ChatObjectCategoryUnit> ChatObjectCategoryUnitList { get; set; }
@@ -241,7 +247,7 @@ namespace IczpNet.Chat.ChatObjects
 
         internal void BingAppUserId(Guid appUserId)
         {
-            AppUserId = appUserId;  
+            AppUserId = appUserId;
         }
     }
 }

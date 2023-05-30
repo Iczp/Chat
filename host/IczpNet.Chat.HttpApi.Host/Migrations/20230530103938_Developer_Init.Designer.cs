@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230530103938_Developer_Init")]
+    partial class Developer_Init
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -854,72 +857,6 @@ namespace IczpNet.Chat.Migrations
                     b.HasKey("OwnerId", "DestinationId");
 
                     b.ToTable("Chat_Follow", (string)null);
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.HttpRequests.HttpRequest", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Cookies")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<long>("EndTime")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Headers")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("HttpMethod")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<bool>("IsSuccess")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Parameters")
-                        .HasMaxLength(5000)
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Referer")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("ResponseContent")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<long>("StartTime")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("StatusCode")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Timeout")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Url")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("UserAgent")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("HttpMethod");
-
-                    b.HasIndex("IsSuccess");
-
-                    b.HasIndex("StatusCode");
-
-                    b.HasIndex("Url");
-
-                    b.ToTable("Chat_HttpRequest", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.Menus.Menu", b =>

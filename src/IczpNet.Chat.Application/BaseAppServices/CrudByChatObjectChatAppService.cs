@@ -49,7 +49,7 @@ namespace IczpNet.Chat.BaseAppServices
         protected virtual string DeleteManyPolicyName { get; set; }
 
         //protected IRepository<Session, Guid> SessionRepository => LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
-        //protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
+        //protected ISessionUnitManager MenuManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
 
         protected ISessionPermissionChecker SessionPermissionChecker => LazyServiceProvider.LazyGetRequiredService<ISessionPermissionChecker>();
 

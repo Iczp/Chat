@@ -40,6 +40,8 @@ using IczpNet.Chat.SessionSections.SessionUnitCounters;
 using IczpNet.Chat.SessionSections.SessionUnitSettings;
 using IczpNet.Chat.MessageSections.Counters;
 using IczpNet.Chat.Menus;
+using IczpNet.Chat.Developers;
+using IczpNet.Chat.HttpRequests;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -97,6 +99,7 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     public DbSet<Scoped> Scoped { get; set; }
 
     public DbSet<Menu> Menu { get; set; }
+    public DbSet<Developer> Developer { get; set; }
 
     public DbSet<Connection> Connection { get; set; }
 
@@ -130,6 +133,10 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
 
     public DbSet<Word> Word { get; set; }
     public DbSet<TextContentWord> TextContentWord { get; set; }
+
+
+    public DbSet<HttpRequest> HttpRequest { get; set; }
+    
 
     public ChatDbContext(DbContextOptions<ChatDbContext> options)
         : base(options)

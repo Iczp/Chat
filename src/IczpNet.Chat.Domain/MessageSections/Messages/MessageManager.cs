@@ -97,7 +97,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         //    await MessageValidator.CheckAsync(entity);
 
-        //    var sessionUnitCount = entity.IsPrivate ? 2 : await SessionUnitManager.GetCountBySessionIdAsync(session.Id);
+        //    var sessionUnitCount = entity.IsPrivate ? 2 : await MenuManager.GetCountBySessionIdAsync(session.Id);
 
         //    entity.SetSessionUnitCount(sessionUnitCount);
 
@@ -170,7 +170,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             //entity.Session.SetLastMessage(entity);
 
-            //var sessionUnitItems = await SessionUnitManager.GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);
+            //var sessionUnitItems = await MenuManager.GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);
 
             //entity.ScopedList = sessionUnitItems.Select(x => new Scoped(x.Id)).ToList();
 
@@ -202,7 +202,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             else
             {
                 // Following
-                //await SessionUnitManager.IncrementFollowingCountAsync(senderSessionUnit, entity);
+                //await MenuManager.IncrementFollowingCountAsync(senderSessionUnit, entity);
 
                 sessionUnitIncrementArgs.FollowingSessionUnitIdList = await FollowManager.GetFollowerIdListAsync(senderSessionUnit.Id);
 
