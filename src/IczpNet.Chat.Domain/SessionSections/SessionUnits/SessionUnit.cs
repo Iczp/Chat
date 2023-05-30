@@ -227,7 +227,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         internal virtual void UpdateCounter(SessionUnitCounterInfo counter)
         {
-            Setting.ReadedMessageId = counter.LastMessageId;
+            Setting.ReadedMessageId = counter.ReadedMessageId;
             PublicBadge = counter.PublicBadge;
             PrivateBadge = counter.PrivateBadge;
             RemindAllCount = counter.RemindAllCount;

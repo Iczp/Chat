@@ -19,7 +19,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         //public virtual string RenameSpellingAbbreviation { get; set; }
 
-        //public virtual long LastMessageId { get; set; }
+        //public virtual long ReadedMessageId { get; set; }
 
         //public virtual double Sorting { get; set; }
 

@@ -15,11 +15,7 @@ using IczpNet.Chat.Follows;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using IczpNet.Chat.ChatObjects;
-using Volo.Abp.Domain.Entities;
 using System.Linq.Dynamic.Core;
-using IczpNet.Chat.DataFilters;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using IczpNet.Chat.SessionSections.Sessions;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits;
 
@@ -147,16 +143,16 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         //        return false;
         //    }
 
-        //    if (isForce || lastMessageId > item.ReadedMessageId.GetValueOrDefault())
+        //    if (isForce || readedMessageId > item.ReadedMessageId.GetValueOrDefault())
         //    {
-        //        item.ReadedMessageId = lastMessageId;
+        //        item.ReadedMessageId = readedMessageId;
         //    }
 
         //    item.PublicBadge = 0;
         //    item.PrivateBadge = 0;
         //    item.RemindAllCount = 0;
         //    item.FollowingCount = 0;
-        //    //item.LastMessageId = messageId;
+        //    //item.ReadedMessageId = messageId;
 
         //    return true;
         //});
@@ -324,11 +320,11 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
 
         var setting = entity.Setting;
 
-        var lastMessageId = minMessageId == 0 ? entity.LastMessageId : minMessageId;
+        var readedMessageId = minMessageId == 0 ? setting.ReadedMessageId : minMessageId;
 
         var query = (await MessageRepository.GetQueryableAsync())
         .Where(x => x.SessionId == entity.SessionId)
-        .Where(x => x.Id > lastMessageId)
+        .Where(x => x.Id > readedMessageId.GetValueOrDefault())
         .WhereIf(setting.HistoryFristTime.HasValue, x => x.CreationTime >= setting.HistoryFristTime)
         .WhereIf(setting.HistoryLastTime.HasValue, x => x.CreationTime < setting.HistoryFristTime)
         .WhereIf(setting.ClearTime.HasValue, x => x.CreationTime > setting.ClearTime)
@@ -339,7 +335,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return new SessionUnitCounterInfo()
         {
             Id = entity.Id,
-            LastMessageId = lastMessageId,
+            ReadedMessageId = readedMessageId,
             PublicBadge = query.Count(),
             PrivateBadge = query.Where(x => x.IsPrivate).Count(),
             FollowingCount = query.Where(x => followingIdList.Contains(x.SessionUnitId.Value)).Count(),

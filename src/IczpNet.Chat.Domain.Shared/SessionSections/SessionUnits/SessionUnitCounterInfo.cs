@@ -6,7 +6,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
     {
         public Guid Id { get; set; }
 
-        public long? LastMessageId { get; set; }
+        public long? ReadedMessageId { get; set; }
 
         public int PublicBadge { get; set; }
 

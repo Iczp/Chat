@@ -8,6 +8,13 @@ namespace IczpNet.Chat.Bases
 {
     public interface IRecorderManager<TEntity>
     {
+
+        /// <summary>
+        /// IsAnyAsync
+        /// </summary>
+        /// <param name="messageIdList"></param>
+        /// <returns></returns>
+        Task<bool> IsAnyAsync(Guid sessionUnitId,long messageId);
         /// <summary>
         /// Get Counts 
         /// </summary>

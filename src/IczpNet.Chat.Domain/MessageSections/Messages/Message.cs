@@ -11,6 +11,10 @@ namespace IczpNet.Chat.MessageSections.Messages;
 
 [Index(nameof(Id), AllDescending = true)]
 [Index(nameof(SessionUnitCount))]
+[Index(nameof(IsPrivate))]
+[Index(nameof(MessageType))]
+[Index(nameof(SessionId))]
+[Index(nameof(SessionId), nameof(IsPrivate), nameof(SenderId), nameof(ReceiverId))]
 public partial class Message : BaseEntity<long>, ISessionId
 {
     //[DatabaseGenerated(DatabaseGeneratedOption.Identity)]

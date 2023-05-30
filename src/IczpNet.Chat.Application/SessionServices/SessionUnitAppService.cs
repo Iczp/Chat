@@ -54,7 +54,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     protected IChatObjectManager ChatObjectManager { get; }
     protected IReadedRecorderManager ReadedRecorderManager { get; }
     protected IOpenedRecorderManager OpenedRecorderManager { get; }
-    protected IFavoritedRecorderManager FavoriteManager { get; }
+    protected IFavoritedRecorderManager FavoritedRecorderManager { get; }
     protected IFollowManager FollowManager { get; }
     protected IRepository<SessionUnitCounter> SessionUnitCounterRepository { get; }
     public SessionUnitAppService(
@@ -82,7 +82,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         ChatObjectManager = chatObjectManager;
         ReadedRecorderManager = readedRecorderManager;
         OpenedRecorderManager = openedRecorderManager;
-        FavoriteManager = favoriteManager;
+        FavoritedRecorderManager = favoriteManager;
         FollowManager = followManager;
         SessionUnitCounterRepository = sessionUnitCounterRepository;
     }
@@ -392,11 +392,11 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 
     [HttpGet]
     [UnitOfWork(true, IsolationLevel.ReadUncommitted)]
-    public async Task<PagedResultDto<MessageItemDto>> GetListMessagesAsync(Guid id, SessionUnitGetMessageListInput input)
+    public async Task<PagedResultDto<MessageOwnerDto>> GetListMessagesAsync(Guid id, SessionUnitGetMessageListInput input)
     {
         var entity = await GetEntityAsync(id);
 
-        Assert.NotNull(entity.Session, "session is null");
+        //Assert.NotNull(entity.Session, "session is null");
 
         var settting = entity.Setting;
 
@@ -417,23 +417,33 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TextContentList.Any(d => d.Text.Contains(input.Keyword)))
             ;
 
-        return await GetPagedListAsync<Message, MessageItemDto>(query, input,
+        return await GetPagedListAsync<Message, MessageOwnerDto>(query, input,
             x => x.OrderByDescending(x => x.Id),
             async entities =>
             {
-                var messageIdList = entities.Select(x => x.Id).ToList();
+                //var messageIdList = entities.Select(x => x.Id).ToList();
 
-                var readedMessageIdList = await ReadedRecorderManager.GetRecorderMessageIdListAsync(id, messageIdList);
+                //var readedMessageIdList = await ReadedRecorderManager.GetRecorderMessageIdListAsync(id, messageIdList);
 
-                var openedMessageIdList = await OpenedRecorderManager.GetRecorderMessageIdListAsync(id, messageIdList);
+                //var openedMessageIdList = await OpenedRecorderManager.GetRecorderMessageIdListAsync(id, messageIdList);
 
-                var favoriteMessageIdList = await FavoriteManager.GetRecorderMessageIdListAsync(id, messageIdList);
+                //var favoriteMessageIdList = await FavoritedRecorderManager.GetRecorderMessageIdListAsync(id, messageIdList);
+
+                //foreach (var e in entities)
+                //{
+                //    e.IsReaded = readedMessageIdList.Contains(e.Id);
+                //    e.IsOpened = openedMessageIdList.Contains(e.Id);
+                //    e.IsFavorited = favoriteMessageIdList.Contains(e.Id);
+                //    e.IsFollowing = followingIdList.Contains(e.SessionUnitId.Value);
+                //}
+
+                //==================================================
 
                 foreach (var e in entities)
                 {
-                    e.IsReaded = readedMessageIdList.Contains(e.Id);
-                    e.IsOpened = openedMessageIdList.Contains(e.Id);
-                    e.IsFavorited = favoriteMessageIdList.Contains(e.Id);
+                    e.IsReaded = await ReadedRecorderManager.IsAnyAsync(id, e.Id);
+                    e.IsOpened = await OpenedRecorderManager.IsAnyAsync(id, e.Id);
+                    e.IsFavorited = await FavoritedRecorderManager.IsAnyAsync(id, e.Id);
                     e.IsFollowing = followingIdList.Contains(e.SessionUnitId.Value);
                 }
                 //await Task.CompletedTask;

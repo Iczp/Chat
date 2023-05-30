@@ -32,6 +32,12 @@ namespace IczpNet.Chat.Bases
         protected abstract Task ChangeMessagesIfNotContainsAsync(SessionUnit sessionUnit, List<Message> changeMessages);
 
         /// <inheritdoc/>
+        public virtual Task<bool> IsAnyAsync(Guid sessionUnitId, long messageId)
+        {
+            return Repository.AnyAsync(x => x.SessionUnitId == sessionUnitId && x.MessageId == messageId);
+        }
+
+        /// <inheritdoc/>
         public virtual async Task<Dictionary<long, int>> GetCountsAsync(List<long> messageIdList)
         {
             var dict = messageIdList.ToDictionary(x => x, x => 0);

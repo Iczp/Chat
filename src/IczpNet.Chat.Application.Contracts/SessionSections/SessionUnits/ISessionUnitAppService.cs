@@ -49,7 +49,7 @@ public interface ISessionUnitAppService
 
     Task<SessionUnitOwnerDto> DeleteMessageAsync(Guid id, long messageId);
 
-    Task<PagedResultDto<MessageItemDto>> GetListMessagesAsync(Guid id, SessionUnitGetMessageListInput input);
+    Task<PagedResultDto<MessageOwnerDto>> GetListMessagesAsync(Guid id, SessionUnitGetMessageListInput input);
 
     Task<MessageDto> GetMessageAsync(Guid id, long messageId);
 
