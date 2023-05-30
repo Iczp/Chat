@@ -39,6 +39,7 @@ using IczpNet.Chat.Words;
 using IczpNet.Chat.SessionSections.SessionUnitCounters;
 using IczpNet.Chat.SessionSections.SessionUnitSettings;
 using IczpNet.Chat.MessageSections.Counters;
+using IczpNet.Chat.ActionMenus;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -93,8 +94,9 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
 
     public DbSet<MessageReminder> MessageReminder { get; set; }
 
-    public DbSet<Scoped> SessionUnitMessage { get; set; }
+    public DbSet<Scoped> Scoped { get; set; }
 
+    public DbSet<ActionMenu> ActionMenu { get; set; }
 
     public DbSet<Connection> Connection { get; set; }
 

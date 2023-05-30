@@ -38,6 +38,7 @@ using IczpNet.Chat.Words;
 using IczpNet.Chat.SessionSections.SessionUnitCounters;
 using IczpNet.Chat.SessionSections.SessionUnitSettings;
 using IczpNet.Chat.MessageSections.Counters;
+using IczpNet.Chat.ActionMenus;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -75,8 +76,6 @@ public interface IChatDbContext : IEfCoreDbContext
 
     DbSet<Follow> Follow { get; }
 
-
-
     DbSet<Friendship> Friendship { get; }
     DbSet<FriendshipTag> FriendshipTag { get; }
     DbSet<FriendshipTagUnit> FriendshipTagUnit { get; }
@@ -91,9 +90,9 @@ public interface IChatDbContext : IEfCoreDbContext
 
     DbSet<MessageReminder> MessageReminder { get; }
 
+    DbSet<Scoped> Scoped { get; }
 
-    DbSet<Scoped> SessionUnitMessage { get; }
-
+    DbSet<ActionMenu> ActionMenu { get; }
 
     DbSet<Connection> Connection { get; }
 

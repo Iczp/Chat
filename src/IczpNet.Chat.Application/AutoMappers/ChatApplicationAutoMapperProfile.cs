@@ -17,6 +17,8 @@ using IczpNet.Chat.ShopKeepers.Dtos;
 using IczpNet.Chat.ShopWaiters.Dtos;
 using IczpNet.Chat.Words;
 using IczpNet.Chat.Words.Dtos;
+using IczpNet.Chat.ActionMenus.Dtos;
+using IczpNet.Chat.ActionMenus;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -45,6 +47,13 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<ChatObject, RobotDto>();
         CreateMap<ChatObject, ShopKeeperDto>();
         CreateMap<ChatObject, ShopWaiterDto>();
+
+        //ActionMenu
+        CreateMap<ActionMenu, ActionMenuDto>();
+        CreateMap<ActionMenu, ActionMenuSimpleDto>();
+        CreateMap<ActionMenu, ActionMenuDetailDto>();
+        CreateMap<ActionMenuCreateInput, ActionMenu>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<ActionMenuUpdateInput, ActionMenu>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
 
         //Motto
         CreateMap<Motto, MottoDto>();
