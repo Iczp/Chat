@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace IczpNet.Chat.ActionMenus.Dtos;
+namespace IczpNet.Chat.Menus.Dtos;
 
-public class ActionMenuCreateInput : ActionMenuUpdateInput
+public class MenuCreateInput : MenuUpdateInput
 {
     [Required]
     public virtual long OwnerId { get; set; }

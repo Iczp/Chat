@@ -1,11 +1,17 @@
 ﻿using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
+using Microsoft.EntityFrameworkCore;
+using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace IczpNet.Chat.ActionMenus
+namespace IczpNet.Chat.Menus
 {
-    public class ActionMenu : BaseTreeEntity<ActionMenu, long>, IChatOwner<long>
+    [Index(nameof(OwnerId))]
+    [Index(nameof(FullPath))]
+    [Index(nameof(Sorting), AllDescending = true)]
+    [Index(nameof(OwnerId), nameof(ParentId), nameof(Sorting), IsDescending = new[] { false, false, true })]
+    public class Menu : BaseTreeEntity<Menu, Guid>, IChatOwner<long>
     {
         public virtual long OwnerId { get; set; }
 

@@ -1,7 +1,7 @@
 ﻿using IczpNet.AbpTrees;
 using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.ActionMenus;
-using IczpNet.Chat.ActionMenus.Dtos;
+using IczpNet.Chat.Menus;
+using IczpNet.Chat.Menus.Dtos;
 using IczpNet.Chat.SessionSections.SessionPermissions;
 using System;
 using System.Collections.Generic;
@@ -9,26 +9,26 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 
-namespace IczpNet.Chat.Services
+namespace IczpNet.Chat.Menus
 {
-    public class ActionMenuAppService
+    public class MenuAppService
         : CrudTreeChatAppService<
-            ActionMenu,
-            long,
-            ActionMenuDto,
-            ActionMenuDto,
-            ActionMenuGetListInput,
-            ActionMenuCreateInput,
-            ActionMenuUpdateInput,
-            ActionMenuInfo>,
-        IActionMenuAppService
+            Menu,
+            Guid,
+            MenuDto,
+            MenuDto,
+            MenuGetListInput,
+            MenuCreateInput,
+            MenuUpdateInput,
+            MenuInfo>,
+        IMenuAppService
     {
-        protected IActionMenuManager ActionMenuManager { get; }
-        protected override ITreeManager<ActionMenu, long> TreeManager => LazyServiceProvider.LazyGetRequiredService<IActionMenuManager>();
+        protected IMenuManager ActionMenuManager { get; }
+        protected override ITreeManager<Menu, Guid> TreeManager => LazyServiceProvider.LazyGetRequiredService<IMenuManager>();
         protected ISessionPermissionChecker SessionPermissionChecker { get; }
-        public ActionMenuAppService(
-            IRepository<ActionMenu,long> repository,
-            IActionMenuManager chatObjectManager,
+        public MenuAppService(
+            IRepository<Menu, Guid> repository,
+            IMenuManager chatObjectManager,
             ISessionPermissionChecker sessionPermissionChecker) : base(repository)
         {
 
@@ -36,7 +36,7 @@ namespace IczpNet.Chat.Services
             SessionPermissionChecker = sessionPermissionChecker;
         }
 
-        protected override async Task<IQueryable<ActionMenu>> CreateFilteredQueryAsync(ActionMenuGetListInput input)
+        protected override async Task<IQueryable<Menu>> CreateFilteredQueryAsync(MenuGetListInput input)
         {
          
             return (await base.CreateFilteredQueryAsync(input))

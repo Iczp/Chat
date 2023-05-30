@@ -1,8 +1,9 @@
 ﻿using IczpNet.AbpTrees;
+using System;
 
-namespace IczpNet.Chat.ActionMenus
+namespace IczpNet.Chat.Menus
 {
-    public class ActionMenuInfo : TreeInfo<long>
+    public class MenuInfo : TreeInfo<Guid>
     {
         public virtual long OwnerId { get; set; }
     }

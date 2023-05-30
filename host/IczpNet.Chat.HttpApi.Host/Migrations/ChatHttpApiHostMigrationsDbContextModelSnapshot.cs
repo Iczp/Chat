@@ -114,99 +114,6 @@ namespace IczpNet.Chat.Migrations
                     b.ToTable("Chat_Message_MapTo_HtmlContent", (string)null);
                 });
 
-            modelBuilder.Entity("IczpNet.Chat.ActionMenus.ActionMenu", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<int>("ChildrenCount")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<int>("Depth")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("ExtraProperties")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<string>("FullPath")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("FullPathName")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
-                    b.Property<long>("OwnerId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long?>("ParentId")
-                        .HasColumnType("bigint");
-
-                    b.Property<double>("Sorting")
-                        .HasColumnType("float");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("TenantId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OwnerId");
-
-                    b.HasIndex("ParentId");
-
-                    b.ToTable("Chat_ActionMenu", (string)null);
-                });
-
             modelBuilder.Entity("IczpNet.Chat.Articles.Article", b =>
                 {
                     b.Property<Guid>("Id")
@@ -897,6 +804,105 @@ namespace IczpNet.Chat.Migrations
                     b.HasKey("OwnerId", "DestinationId");
 
                     b.ToTable("Chat_Follow", (string)null);
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.Menus.Menu", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("ChildrenCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<int>("Depth")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ExtraProperties")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<string>("FullPath")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("FullPathName")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<long>("OwnerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<double>("Sorting")
+                        .HasColumnType("float");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FullPath");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("ParentId");
+
+                    b.HasIndex("Sorting")
+                        .IsDescending();
+
+                    b.HasIndex("OwnerId", "ParentId", "Sorting")
+                        .IsDescending(false, false, true);
+
+                    b.ToTable("Chat_Menu", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Counters.FavoritedCounter", b =>
@@ -5085,23 +5091,6 @@ namespace IczpNet.Chat.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("IczpNet.Chat.ActionMenus.ActionMenu", b =>
-                {
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
-                        .WithMany()
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("IczpNet.Chat.ActionMenus.ActionMenu", "Parent")
-                        .WithMany("Childs")
-                        .HasForeignKey("ParentId");
-
-                    b.Navigation("Owner");
-
-                    b.Navigation("Parent");
-                });
-
             modelBuilder.Entity("IczpNet.Chat.Articles.ArticleMessage", b =>
                 {
                     b.HasOne("IczpNet.Chat.Articles.Article", "Article")
@@ -5216,6 +5205,23 @@ namespace IczpNet.Chat.Migrations
                         .IsRequired();
 
                     b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.Menus.Menu", b =>
+                {
+                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("IczpNet.Chat.Menus.Menu", "Parent")
+                        .WithMany("Childs")
+                        .HasForeignKey("ParentId");
+
+                    b.Navigation("Owner");
+
+                    b.Navigation("Parent");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Counters.FavoritedCounter", b =>
@@ -6101,11 +6107,6 @@ namespace IczpNet.Chat.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("IczpNet.Chat.ActionMenus.ActionMenu", b =>
-                {
-                    b.Navigation("Childs");
-                });
-
             modelBuilder.Entity("IczpNet.Chat.Articles.Article", b =>
                 {
                     b.Navigation("MessageList");
@@ -6158,6 +6159,11 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("RedEnvelopeUnitList");
 
                     b.Navigation("SenderMessageList");
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.Menus.Menu", b =>
+                {
+                    b.Navigation("Childs");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.MessageSections.MessageContents.MessageContent", b =>
