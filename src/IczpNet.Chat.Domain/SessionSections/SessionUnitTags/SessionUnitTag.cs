@@ -3,6 +3,7 @@ using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
+using Volo.Abp.MultiTenancy;
 
 namespace IczpNet.Chat.SessionSections.SessionUnitTags
 {

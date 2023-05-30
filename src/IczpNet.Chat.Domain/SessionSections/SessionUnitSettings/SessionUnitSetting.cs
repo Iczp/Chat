@@ -12,11 +12,13 @@ using IczpNet.AbpCommons.PinYin;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.BaseEntitys;
+using Volo.Abp.MultiTenancy;
+using Volo.Abp;
 
 namespace IczpNet.Chat.SessionSections.SessionUnitSettings
 {
 
-    public class SessionUnitSetting : BaseEntity, IHasCreationTime, IHasModificationTime, IIsStatic, IIsPublic
+    public class SessionUnitSetting : BaseEntity, IHasCreationTime, IHasModificationTime, IIsStatic, IIsPublic//, ISoftDelete
     {
         public virtual Guid SessionUnitId { get; set; }
 
@@ -154,6 +156,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnitSettings
 
         [Comment("修改时间")]
         public override DateTime? LastModificationTime { get; set; }
+
+        //public virtual bool IsDeleted { get; protected set; }
 
         public override object[] GetKeys()
         {
