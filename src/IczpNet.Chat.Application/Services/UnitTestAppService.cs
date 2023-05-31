@@ -2,6 +2,7 @@
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.HttpRequests;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
@@ -13,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
@@ -34,6 +36,7 @@ namespace IczpNet.Chat.Services
         protected IMessageSender ChatSender { get; }
         protected ISessionUnitIdGenerator SessionUnitIdGenerator { get; }
         protected ISessionUnitRepository SessionUnitRepository { get; }
+        protected IHttpRequestManager HttpRequestManager { get; }
         public UnitTestAppService(
             IMessageRepository messageRepository,
             IChatObjectRepository chatObjectRepository,
@@ -41,7 +44,8 @@ namespace IczpNet.Chat.Services
             IMessageSender chatSender,
             IRepository<Session, Guid> sessionRepository,
             ISessionUnitIdGenerator sessionUnitIdGenerator,
-            ISessionUnitRepository sessionUnitRepository)
+            ISessionUnitRepository sessionUnitRepository,
+            IHttpRequestManager httpRequestManager)
         {
             MessageRepository = messageRepository;
             ChatObjectRepository = chatObjectRepository;
@@ -50,6 +54,7 @@ namespace IczpNet.Chat.Services
             SessionRepository = sessionRepository;
             SessionUnitIdGenerator = sessionUnitIdGenerator;
             SessionUnitRepository = sessionUnitRepository;
+            HttpRequestManager = httpRequestManager;
         }
         //public async Task<int> SendToEveryOneAsync(string text, long? receiverId, int count = 100)
         //{
@@ -174,12 +179,19 @@ namespace IczpNet.Chat.Services
                 item.SetKey(SessionUnitIdGenerator.Generate(item.OwnerId, item.DestinationId.Value));
             }
 
-            if(items.Count > 0)
+            if (items.Count > 0)
             {
                 await SessionUnitRepository.UpdateManyAsync(items);
             }
 
             return items.Count;
+        }
+
+        [HttpPost]
+        public virtual async Task<string> HttpRequestAsync(string url)
+        {
+            var req = await HttpRequestManager.RequestAsync(HttpMethod.Get, url);
+            return req.Response?.Content;
         }
     }
 }

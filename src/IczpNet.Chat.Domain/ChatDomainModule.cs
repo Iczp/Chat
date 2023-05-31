@@ -2,11 +2,13 @@ using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Connections;
+using IczpNet.Chat.HttpRequests;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.TextTemplates;
 using IczpNet.Chat.UnitTests;
 using IczpNet.Pusher;
 using IczpNet.Pusher.ShortIds;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -38,6 +40,8 @@ public class ChatDomainModule : AbpModule
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         context.Services.AddAutoMapperObjectMapper<ChatDomainModule>();
+
+        context.Services.AddHttpClient(HttpRequest.ClientName);
 
         Configure<AbpAutoMapperOptions>(options =>
         {

@@ -1,5 +1,4 @@
 ﻿using Volo.Abp.Domain.Services;
-using Volo.Abp.Uow;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -7,8 +6,8 @@ using System.Net.Http;
 using Microsoft.Net.Http.Headers;
 using Volo.Abp.Json;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
-using IczpNet.Chat.Enums;
+using System.Diagnostics;
+using IczpNet.AbpCommons.Extensions;
 
 namespace IczpNet.Chat.HttpRequests
 {
@@ -18,22 +17,18 @@ namespace IczpNet.Chat.HttpRequests
     public class HttpRequestManager : DomainService, IHttpRequestManager
     {
         protected static readonly string DefaultUserAgent = "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0)";
-        protected IServiceScopeFactory ServiceScopeFactory { get; }
         protected IHttpClientFactory HttpClientFactory { get; }
         protected IHttpRequestRepository Repository { get; }
-        protected IUnitOfWorkManager UnitOfWorkManager { get; }
         protected IJsonSerializer JsonSerializer { get; }
 
-        public HttpRequestManager(IUnitOfWorkManager unitOfWorkManager,
+        public HttpRequestManager(
             IHttpRequestRepository httpLogRepository,
             IHttpClientFactory httpClientFactory,
-            IJsonSerializer jsonSerializer, IServiceScopeFactory serviceScopeFactory)
+            IJsonSerializer jsonSerializer)
         {
             Repository = httpLogRepository;
             HttpClientFactory = httpClientFactory;
-            UnitOfWorkManager = unitOfWorkManager;
             JsonSerializer = jsonSerializer;
-            ServiceScopeFactory = serviceScopeFactory;
         }
 
         public async Task<HttpRequest> GetAsync(string url)
@@ -45,7 +40,7 @@ namespace IczpNet.Chat.HttpRequests
         {
             return await RequestAsync(HttpMethod.Post, url, httpContent);
         }
-        
+
 
         public async Task<HttpRequest> RequestAsync(HttpMethod method, string url, HttpContent httpContent = null, IDictionary<string, string> headers = null, string userAgent = null)
         {
@@ -70,36 +65,59 @@ namespace IczpNet.Chat.HttpRequests
                 //var parma= new StringContent(JsonSerializer.Serialize(httpContent), Encoding.UTF8, System.Net.Mime.MediaTypeNames.Application.Json);
             }
 
+            var uri = httpRequestMessage.RequestUri;
+
             var req = new HttpRequest
             {
                 IsSuccess = false,
-                HttpMethod = HttpMethods.Get,
+                HttpMethod = method.ToString(),
                 Timeout = 30,
                 UserAgent = userAgent,
                 Parameters = httpRequestMessage.Content?.ToString(),
                 Headers = headers == null ? null : JsonSerializer.Serialize(httpRequestMessage.Headers),
                 Url = url,
+                Scheme = uri.Scheme,
+                Host = uri.Host.MaxLength(500),
+                Port = uri.Port,
+                IsDefaultPort = uri.IsDefaultPort,
+                Query = uri.Query.MaxLength(500),
+                Fragment = uri.Fragment.MaxLength(500),
+                AbsolutePath = uri.AbsolutePath.MaxLength(500),
                 StartTime = Clock.Now.Ticks,
             };
             try
             {
-                var httpClient = HttpClientFactory.CreateClient();
+                var stopwatch = Stopwatch.StartNew();
+
+                var httpClient = HttpClientFactory.CreateClient(HttpRequest.ClientName);
 
                 Logger.LogInformation($"http [{req.HttpMethod}]:{url}");
 
                 using var httpResponseMessage = await httpClient.SendAsync(httpRequestMessage);
 
-                req.ResponseContent = await httpResponseMessage.Content.ReadAsStringAsync();
+                req.Response = new HttpResponse()
+                {
+                    Content = await httpResponseMessage.Content.ReadAsStringAsync()
+                };
+
+                req.ContentLength = req.Response.Content.Length;
 
                 req.IsSuccess = httpResponseMessage.IsSuccessStatusCode;
 
+                if (req.IsSuccess)
+                {
+                    req.Message = "ok";
+                }
+
                 req.StatusCode = httpResponseMessage.StatusCode;
 
-                Logger.LogInformation($"IsRequestSuccess {req.IsSuccess}");
+                req.Duration = stopwatch.ElapsedMilliseconds;
+
+                Logger.LogInformation($"IsRequestSuccess {req.IsSuccess},stopwatch:${stopwatch.ElapsedMilliseconds}");
             }
             catch (Exception ex)
             {
-                req.ResponseContent = ex.Message;
+                req.Message = ex.Message;
 
                 req.IsSuccess = false;
 

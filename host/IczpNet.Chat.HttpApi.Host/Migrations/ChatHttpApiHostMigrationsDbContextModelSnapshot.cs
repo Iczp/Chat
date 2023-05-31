@@ -870,35 +870,69 @@ namespace IczpNet.Chat.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("AbsolutePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("ContentLength")
+                        .HasColumnType("int");
+
                     b.Property<string>("Cookies")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<long>("Duration")
+                        .HasColumnType("bigint");
+
                     b.Property<long>("EndTime")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("Fragment")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("Headers")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<string>("Host")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<string>("HttpMethod")
-                        .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
+
+                    b.Property<bool>("IsDefaultPort")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsSuccess")
                         .HasColumnType("bit");
 
-                    b.Property<string>("Parameters")
-                        .HasMaxLength(5000)
+                    b.Property<string>("Message")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Parameters")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Port")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Query")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("Referer")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<string>("ResponseContent")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<string>("Scheme")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<long>("StartTime")
                         .HasColumnType("bigint");
@@ -910,8 +944,7 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Url")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserAgent")
                         .HasMaxLength(500)
@@ -919,15 +952,64 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AbsolutePath");
+
+                    b.HasIndex("Host");
+
                     b.HasIndex("HttpMethod");
 
                     b.HasIndex("IsSuccess");
 
+                    b.HasIndex("Port");
+
+                    b.HasIndex("Scheme");
+
                     b.HasIndex("StatusCode");
 
-                    b.HasIndex("Url");
-
                     b.ToTable("Chat_HttpRequest", (string)null);
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.HttpRequests.HttpResponse", b =>
+                {
+                    b.Property<Guid>("HttpRequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<string>("Content")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("ExtraProperties")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
+                    b.HasKey("HttpRequestId");
+
+                    b.ToTable("Chat_HttpResponse", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.Menus.Menu", b =>
@@ -5340,6 +5422,15 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("Owner");
                 });
 
+            modelBuilder.Entity("IczpNet.Chat.HttpRequests.HttpResponse", b =>
+                {
+                    b.HasOne("IczpNet.Chat.HttpRequests.HttpRequest", "HttpRequest")
+                        .WithOne("Response")
+                        .HasForeignKey("IczpNet.Chat.HttpRequests.HttpResponse", "HttpRequestId");
+
+                    b.Navigation("HttpRequest");
+                });
+
             modelBuilder.Entity("IczpNet.Chat.Menus.Menu", b =>
                 {
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
@@ -6294,6 +6385,11 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("RedEnvelopeUnitList");
 
                     b.Navigation("SenderMessageList");
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.HttpRequests.HttpRequest", b =>
+                {
+                    b.Navigation("Response");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.Menus.Menu", b =>

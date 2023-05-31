@@ -8,7 +8,7 @@ namespace IczpNet.Chat.HttpRequests
     /// <summary>
     /// IHttpRequestManager
     /// </summary>
-    public interface IHttpRequestManager : IDomainService
+    public interface IHttpRequestManager
     {
         /// <summary>
         /// HttpGet
