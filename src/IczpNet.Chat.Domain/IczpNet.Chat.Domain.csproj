@@ -16,6 +16,7 @@
   <ItemGroup>
 		<!--<PackageReference Include="IczpNet.AbpCommons.Domain" Version="0.1.3" />-->
 		<PackageReference Include="IczpNet.AbpTrees.Domain" Version="0.1.14" />
+		<PackageReference Include="IczpNet.BizCrypts" Version="0.0.1" />
 		<PackageReference Include="Volo.Abp.BackgroundJobs.Abstractions" Version="7.1.0" />
 		<PackageReference Include="Volo.Abp.Castle.Core" Version="7.1.0" />
 		

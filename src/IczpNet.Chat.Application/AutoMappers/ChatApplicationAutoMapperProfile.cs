@@ -19,6 +19,8 @@ using IczpNet.Chat.Words;
 using IczpNet.Chat.Words.Dtos;
 using IczpNet.Chat.Menus.Dtos;
 using IczpNet.Chat.Menus;
+using IczpNet.Chat.Developers;
+using IczpNet.Chat.Developers.Dtos;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -47,6 +49,8 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<ChatObject, RobotDto>();
         CreateMap<ChatObject, ShopKeeperDto>();
         CreateMap<ChatObject, ShopWaiterDto>();
+
+        CreateMap<Developer, DeveloperDto>().ReverseMap();
 
         //Menu
         CreateMap<Menu, MenuDto>();

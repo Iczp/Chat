@@ -18,13 +18,13 @@ namespace IczpNet.Chat.Developers
         /// 开发者设置的Token
         /// </summary>
         [StringLength(50)]
-        public virtual string Token { get; protected set; }
+        public virtual string Token { get;  set; }
 
         /// <summary>
         /// 开发者设置的EncodingAESKey
         /// </summary>
         [StringLength(43)]
-        public virtual string EncodingAesKey { get; protected set; }
+        public virtual string EncodingAesKey { get;  set; }
 
         /// <summary>
         /// 开发者设置 的 Url
@@ -36,6 +36,11 @@ namespace IczpNet.Chat.Developers
         /// 是否启用开发者
         /// </summary>
         public virtual bool IsEnabled { get; set; }
+
+        ///// <summary>
+        ///// 是否验证
+        ///// </summary>
+        //public virtual bool IsVerified { get; set; }
 
         public override object[] GetKeys()
         {

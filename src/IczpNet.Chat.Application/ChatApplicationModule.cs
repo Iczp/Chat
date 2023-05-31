@@ -11,6 +11,13 @@ using Microsoft.AspNetCore.Authorization;
 using IczpNet.Chat.Authorizations;
 using IczpNet.Chat.Permissions;
 using Volo.Abp.PermissionManagement;
+using FluentValidation;
+using System;
+using IczpNet.Chat.Developers.Dtos;
+using IczpNet.Chat.Developers;
+using Microsoft.AspNetCore.Identity;
+using System.Linq;
+using Polly;
 
 namespace IczpNet.Chat;
 [DependsOn(
@@ -27,9 +34,30 @@ namespace IczpNet.Chat;
 
 public class ChatApplicationModule : AbpModule
 {
+
+
+    private static void ConfigureValidator(IServiceCollection services)
+    {
+        //services.AddValidatorsFromAssemblyContaining<UserValidator>();
+        //services.AddValidatorsFromAssemblyContaining<PersonValidator>();
+        //services.AddScoped<IValidator<ConfigInput>, ConfigInputValidator>();
+
+        var entityTypes = typeof(ChatApplicationModule).Assembly.GetTypes()//.GetExportedTypes()
+               .Where(t => !t.IsAbstract && typeof(IValidator).IsAssignableFrom(t))
+               .ToList();
+
+        foreach (var entityType in entityTypes)
+        {
+            services.AddValidatorsFromAssemblyContaining(entityType);
+        }
+    }
+
+
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         context.Services.AddAutoMapperObjectMapper<ChatApplicationModule>();
+
+        //ConfigureValidator(context.Services);
 
         Configure<PermissionManagementOptions>(options =>
         {

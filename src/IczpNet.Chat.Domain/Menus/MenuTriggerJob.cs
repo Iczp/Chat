@@ -19,6 +19,7 @@ namespace IczpNet.Chat.Menus
             MenuManager = menuManager;
         }
 
+        [UnitOfWork]
         public override async Task ExecuteAsync(MenuTriggerArgs args)
         {
             using var uow = UnitOfWorkManager.Begin();

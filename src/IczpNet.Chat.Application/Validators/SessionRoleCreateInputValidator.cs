@@ -1,6 +1,4 @@
 ﻿using FluentValidation;
-using IczpNet.Chat.SessionSections;
-using IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 
 namespace IczpNet.Chat.Validators

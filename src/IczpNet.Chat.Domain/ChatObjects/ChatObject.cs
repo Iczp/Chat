@@ -90,7 +90,7 @@ namespace IczpNet.Chat.ChatObjects
         public virtual bool IsDeveloper { get; protected set; } = false;
 
         [InverseProperty(nameof(Developers.Developer.Owner))]
-        public virtual Developer Developer { get; protected set; }
+        public virtual Developer Developer { get;  set; }
 
         #region Categorys
         public virtual IList<ChatObjectCategoryUnit> ChatObjectCategoryUnitList { get; set; }
