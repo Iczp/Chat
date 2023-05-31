@@ -1,9 +1,9 @@
-﻿using Volo.Abp.Domain.Entities;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System;
 using System.Net;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations.Schema;
+using IczpNet.Chat.BaseEntitys;
 
 namespace IczpNet.Chat.HttpRequests
 {
@@ -14,7 +14,7 @@ namespace IczpNet.Chat.HttpRequests
     [Index(nameof(AbsolutePath))]
     [Index(nameof(StatusCode))]
     [Index(nameof(IsSuccess))]
-    public class HttpRequest : Entity<Guid>
+    public class HttpRequest : BaseEntity<Guid>
     {
         public static string ClientName => nameof(HttpRequest);
 

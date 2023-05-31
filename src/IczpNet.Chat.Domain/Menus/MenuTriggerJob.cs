@@ -1,6 +1,8 @@
-﻿using IczpNet.BizCrypts;
+﻿using Castle.DynamicProxy;
+using IczpNet.BizCrypts;
 using IczpNet.Chat.Developers;
 using IczpNet.Chat.HttpRequests;
+using IczpNet.Chat.MessageSections.MessageContents;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -18,23 +20,20 @@ namespace IczpNet.Chat.Menus
 {
     public class MenuTriggerJob : AsyncBackgroundJob<MenuTriggerArgs>, ITransientDependency
     {
-        protected IUnitOfWorkManager UnitOfWorkManager { get; }
         protected IMenuManager MenuManager { get; }
 
         public MenuTriggerJob(
-            IUnitOfWorkManager unitOfWorkManager,
             IMenuManager menuManager)
         {
-            UnitOfWorkManager = unitOfWorkManager;
             MenuManager = menuManager;
         }
 
         [UnitOfWork]
         public override async Task ExecuteAsync(MenuTriggerArgs args)
         {
-            //using var uow = UnitOfWorkManager.Begin();
+            var typeName = ProxyUtil.GetUnproxiedType(this).FullName;
 
-            var req = await MenuManager.SendToRemoteHostAsync(args.MenuId, name: nameof(MenuTriggerJob));
+            var req = await MenuManager.SendToRemoteHostAsync(args.MenuId, name: typeName);
 
             Logger.LogInformation($"MenuTriggerJob ReqId={req.Id},[GET,{req.StatusCode}],url={req.Url}");
         }
