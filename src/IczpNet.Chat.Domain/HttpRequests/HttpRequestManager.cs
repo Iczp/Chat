@@ -31,7 +31,7 @@ namespace IczpNet.Chat.HttpRequests
             JsonSerializer = jsonSerializer;
         }
 
-        public async Task<HttpRequest> GetAsync(string url)
+        public async Task<HttpRequest> GetAsync(string url, HttpContent httpContent = null)
         {
             return await RequestAsync(HttpMethod.Get, url, null);
         }
@@ -42,7 +42,7 @@ namespace IczpNet.Chat.HttpRequests
         }
 
 
-        public async Task<HttpRequest> RequestAsync(HttpMethod method, string url, HttpContent httpContent = null, IDictionary<string, string> headers = null, string userAgent = null)
+        public async Task<HttpRequest> RequestAsync(HttpMethod method, string url, HttpContent httpContent = null, IDictionary<string, string> headers = null, string userAgent = null, string name = null)
         {
             var httpRequestMessage = new HttpRequestMessage(method, url)
             {
@@ -69,6 +69,7 @@ namespace IczpNet.Chat.HttpRequests
 
             var req = new HttpRequest
             {
+                Name = name,
                 IsSuccess = false,
                 HttpMethod = method.ToString(),
                 Timeout = 30,

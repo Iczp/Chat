@@ -1,7 +1,16 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
+using IczpNet.BizCrypts;
+using IczpNet.Chat.Developers;
+using IczpNet.Chat.HttpRequests;
+using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Repositories;
 
@@ -10,12 +19,15 @@ namespace IczpNet.Chat.Menus
     public class MenuManager : TreeManager<Menu, Guid, MenuInfo>, IMenuManager
     {
         protected IBackgroundJobManager BackgroundJobManager { get; }
+        protected IHttpRequestManager HttpRequestManager { get; }
 
         public MenuManager(
             IRepository<Menu, Guid> repository,
-            IBackgroundJobManager backgroundJobManager) : base(repository)
+            IBackgroundJobManager backgroundJobManager,
+            IHttpRequestManager httpRequestManager) : base(repository)
         {
             BackgroundJobManager = backgroundJobManager;
+            HttpRequestManager = httpRequestManager;
         }
 
         protected override async Task CheckExistsByCreateAsync(Menu inputEntity)
@@ -28,10 +40,104 @@ namespace IczpNet.Chat.Menus
             Assert.If(await Repository.AnyAsync((x) => x.Name == inputEntity.Name && x.OwnerId == inputEntity.OwnerId && !x.Id.Equals(inputEntity.Id)), $" Name[{inputEntity.Name}] already such");
         }
 
-
-        public virtual Task<string> TriggerAsync(MenuTriggerArgs args)
+        /// <summary>
+        /// 发送一个请求
+        /// </summary>
+        /// <returns></returns>
+        protected virtual async Task<HttpRequest> HttpGetRemoteHostAsync(Developer developer, string requestContent, string name = null)
         {
-            throw new NotImplementedException();
+            var bizCrypt = new BizCrypt(developer.Token, developer.EncodingAesKey, developer.OwnerId.ToString());
+
+            var timeStamp = DateTime.Now.Ticks.ToString();
+
+            var nonce = BizCrypt.CreateRandCode(10, "123456789");
+
+            var echo = bizCrypt.Encrypt(requestContent);
+
+            var signature = BizCrypt.GenerateSignature(developer.Token, timeStamp, nonce, echo);
+
+            var remoteUrl = ParseUrl(developer.PostUrl, new Dictionary<string, string> {
+                {"signature",signature },
+                {"timeStamp",timeStamp },
+                {"nonce",nonce },
+                {"echo",echo },
+            });
+
+            var responseResult = await HttpRequestManager.RequestAsync(HttpMethod.Get, remoteUrl, name: name);
+
+            return responseResult;
+        }
+
+        /// <summary>
+        /// ParseUrl
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        private static string ParseUrl(string url, IDictionary<string, string> parameters)
+        {
+            var list = new List<string>();
+
+            parameters.ToList().ForEach(x => list.Add(string.Join("=", new string[] { x.Key, HttpUtility.UrlEncode(x.Value) })));
+
+            var queryString = string.Join("&", list.ToArray());
+
+            var uri = new StringBuilder(url);
+
+            uri.Append(url.IndexOf('?') != -1 ? "&" : "?");
+
+            uri.Append(queryString);
+
+            return uri.ToString();
+        }
+
+
+        public virtual async Task<string> TriggerAsync(Guid id)
+        {
+            var menu = await Repository.GetAsync(id);
+
+            await CheckMenuAsync(menu);
+
+            var jobId = await BackgroundJobManager.EnqueueAsync(new MenuTriggerArgs()
+            {
+                MenuId = id,
+            });
+
+            Logger.LogInformation($"TriggerAsync jobId={jobId}");
+
+            return jobId;
+        }
+        protected virtual async Task CheckMenuAsync(Menu menu)
+        {
+            Assert.If(!menu.Owner.IsEnabled, $"IsEnabled:{menu.Owner.IsEnabled}");
+
+            Assert.If(!menu.Owner.IsDeveloper, $"IsDeveloper:{menu.Owner.IsDeveloper}");
+
+            var developer = menu.Owner.Developer;
+
+            Assert.If(!IsUrl(developer.PostUrl), $"Fail Url:{developer.PostUrl}", nameof(developer.PostUrl));
+
+            await Task.CompletedTask;
+        }
+
+        private static bool IsUrl(string url)
+        {
+            var httpSchemes = new string[] { Uri.UriSchemeHttp, Uri.UriSchemeHttps };
+
+            return Uri.TryCreate(url, UriKind.RelativeOrAbsolute, out Uri uri) && httpSchemes.Contains(uri.Scheme);
+        }
+
+        public virtual async Task<HttpRequest> SendToRemoteHostAsync(Guid id, string name = null)
+        {
+            var menu = await Repository.GetAsync(id);
+
+            await CheckMenuAsync(menu);
+
+            var req = await HttpGetRemoteHostAsync(menu.Owner.Developer, $"menuId:{menu}", name: name);
+
+            Logger.LogInformation($"SendToRemoteHost ReqId={req.Id},[GET,{req.StatusCode}],url={req.Url}");
+
+            return req;
         }
     }
 }

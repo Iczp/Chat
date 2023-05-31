@@ -1,6 +1,7 @@
 ﻿using IczpNet.AbpTrees;
 using IczpNet.Chat.Menus.Dtos;
 using System;
+using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
 
 namespace IczpNet.Chat.Menus
@@ -22,7 +23,7 @@ namespace IczpNet.Chat.Menus
             MenuCreateInput,
             MenuUpdateInput, MenuInfo>
     {
-        
 
+        Task<string> TriggerAsync(Guid id);
     }
 }

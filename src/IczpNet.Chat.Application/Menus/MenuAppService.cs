@@ -29,16 +29,20 @@ namespace IczpNet.Chat.Menus
         protected override ITreeManager<Menu, Guid> TreeManager => LazyServiceProvider.LazyGetRequiredService<IMenuManager>();
         protected ISessionPermissionChecker SessionPermissionChecker { get; }
         protected IChatObjectRepository ChatObjectRepository { get; }
+        protected IMenuManager MenuManager { get; }
+
         public MenuAppService(
             IRepository<Menu, Guid> repository,
             IMenuManager chatObjectManager,
             ISessionPermissionChecker sessionPermissionChecker,
-            IChatObjectRepository chatObjectRepository) : base(repository)
+            IChatObjectRepository chatObjectRepository,
+            IMenuManager menuManager) : base(repository)
         {
 
             ActionMenuManager = chatObjectManager;
             SessionPermissionChecker = sessionPermissionChecker;
             ChatObjectRepository = chatObjectRepository;
+            MenuManager = menuManager;
         }
 
         protected override async Task<IQueryable<Menu>> CreateFilteredQueryAsync(MenuGetListInput input)
@@ -73,6 +77,12 @@ namespace IczpNet.Chat.Menus
                 Assert.If(perent.OwnerId != entity.OwnerId, $"Parent owner is different,ParentId:{input.ParentId}");
             }
             return await base.UpdateAsync(id, input);
+        }
+
+        [HttpGet]
+        public async Task<string> TriggerAsync(Guid id)
+        {
+            return await MenuManager.TriggerAsync(id);
         }
     }
 }
