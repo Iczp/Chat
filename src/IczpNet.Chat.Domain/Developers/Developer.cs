@@ -14,9 +14,27 @@ namespace IczpNet.Chat.Developers
         [ForeignKey(nameof(OwnerId))]
         public virtual ChatObject Owner { get; set; }
 
-        [MaxLength(100)]
-        public virtual string ApiUrl { get; set; }
+        /// <summary>
+        /// 开发者设置的Token
+        /// </summary>
+        [StringLength(50)]
+        public virtual string Token { get; protected set; }
 
+        /// <summary>
+        /// 开发者设置的EncodingAESKey
+        /// </summary>
+        [StringLength(43)]
+        public virtual string EncodingAesKey { get; protected set; }
+
+        /// <summary>
+        /// 开发者设置 的 Url
+        /// </summary>
+        [StringLength(256)]
+        public virtual string PostUrl { get; set; }
+
+        /// <summary>
+        /// 是否启用开发者
+        /// </summary>
         public virtual bool IsEnabled { get; set; }
 
         public override object[] GetKeys()
