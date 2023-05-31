@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230531112532_FK_Chat_HttpResponse_Chat_HttpRequest_HttpRequestId")]
+    partial class FK_Chat_HttpResponse_Chat_HttpRequest_HttpRequestId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -5419,9 +5422,7 @@ namespace IczpNet.Chat.Migrations
                 {
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
                         .WithOne("Developer")
-                        .HasForeignKey("IczpNet.Chat.Developers.Developer", "OwnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("IczpNet.Chat.Developers.Developer", "OwnerId");
 
                     b.Navigation("Owner");
                 });

@@ -118,14 +118,14 @@ public static class ChatDbContextModelCreatingExtensions
         builder.Entity<Developer>(b =>
         {
             b.HasKey(x => x.OwnerId);
-            b.HasOne(x => x.Owner).WithOne(x => x.Developer).HasForeignKey<Developer>(x => x.OwnerId).IsRequired(false);
+            b.HasOne(x => x.Owner).WithOne(x => x.Developer).HasForeignKey<Developer>(x => x.OwnerId).IsRequired(true);
         });
 
         builder.Entity<HttpResponse>(b => { b.HasKey(x => new { x.HttpRequestId }); });
         builder.Entity<HttpRequest>(b =>
         {
             b.Property(e => e.HttpMethod).HasConversion<string>().HasMaxLength(10);
-            b.HasOne(x => x.Response).WithOne(x => x.HttpRequest).HasForeignKey<HttpResponse>(x => x.HttpRequestId).IsRequired(false);
+            b.HasOne(x => x.Response).WithOne(x => x.HttpRequest).HasForeignKey<HttpResponse>(x => x.HttpRequestId).IsRequired(true);
         });
 
         builder.Entity<Message>(b =>
