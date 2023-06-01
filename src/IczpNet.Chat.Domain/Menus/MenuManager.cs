@@ -3,6 +3,7 @@ using IczpNet.AbpTrees;
 using IczpNet.BizCrypts;
 using IczpNet.Chat.Developers;
 using IczpNet.Chat.HttpRequests;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -74,21 +75,21 @@ namespace IczpNet.Chat.Menus
         /// <param name="url"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        private static string ParseUrl(string url, IDictionary<string, string> parameters)
+        protected virtual string ParseUrl(string url, IDictionary<string, string> parameters)
         {
-            var list = new List<string>();
+            var _uri = new Uri(url);
 
-            parameters.ToList().ForEach(x => list.Add(string.Join("=", new string[] { x.Key, HttpUtility.UrlEncode(x.Value) })));
+            var _params = parameters.Select(x => $"{x.Key}={HttpUtility.UrlEncode(x.Value)}").JoinAsString("&");
 
-            var queryString = string.Join("&", list.ToArray());
+            var _query = new StringBuilder(_uri.Query);
 
-            var uri = new StringBuilder(url);
+            _query.Append(url.IndexOf('?') != -1 ? "&" : "?");
 
-            uri.Append(url.IndexOf('?') != -1 ? "&" : "?");
+            _query.Append(_params);
 
-            uri.Append(queryString);
+            var retUrl = new string[] { _uri.Scheme, "://", _uri.Authority, _uri.AbsolutePath, _query.ToString(), _uri.Fragment };
 
-            return uri.ToString();
+            return retUrl.JoinAsString("");
         }
 
 
