@@ -33,10 +33,8 @@ namespace IczpNet.Chat.Menus
 
             uow.OnCompleted(async () =>
             {
-                Assert.If(!req.IsSuccess, $"{req.Message}");
-
-                Logger.LogWarning($"Error:{req.Message},HttpReqquestId={req.Id},url={req.Url}");
-
+                //throw: BackgroundJob retry
+                Assert.If(!req.IsSuccess, $"Error:{req.Message},HttpReqquestId={req.Id},url={req.Url}");
                 await Task.CompletedTask;
             });
         }
