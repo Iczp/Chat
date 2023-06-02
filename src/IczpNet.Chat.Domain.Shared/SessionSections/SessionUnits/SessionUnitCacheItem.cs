@@ -34,5 +34,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public virtual int FollowingCount { get; set; }
 
+        public virtual double Ticks { get; set; }
+
     }
 }

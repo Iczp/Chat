@@ -505,6 +505,11 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return UnitListCache.GetAsync(sessionUnitCachKey);
     }
 
+    public virtual Task<List<SessionUnitCacheItem>> GetCacheListBySessionIdAsync(Guid  sessionId)
+    {
+        return UnitListCache.GetAsync(sessionId.ToString());
+    }
+
     public virtual Task<List<SessionUnitCacheItem>> GetOrAddCacheListAsync(Guid sessionId)
     {
         return UnitListCache.GetOrAddAsync($"{new SessionUnitCacheKey(sessionId)}", () => GetListBySessionIdAsync(sessionId));
@@ -542,6 +547,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
                 RemindMeCount = x.RemindMeCount,
                 FollowingCount = x.FollowingCount,
                 LastMessageId = x.LastMessageId,
+                Ticks = x.Ticks,
             })
             .ToList();
 

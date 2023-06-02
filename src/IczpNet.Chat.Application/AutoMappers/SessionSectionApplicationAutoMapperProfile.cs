@@ -28,6 +28,7 @@ using IczpNet.Chat.OpenedRecorders.Dtos;
 using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.FavoritedRecorders.Dtos;
 using IczpNet.Chat.SessionSections.SessionUnitSettings;
+using IczpNet.Chat.SessionUnits;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -46,7 +47,7 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
 
         //SessionUnit
         CreateMap<SessionUnit, SessionUnitDto>();
-        CreateMap<SessionUnit, SessionUnitOwnerDto>();
+        CreateMap<SessionUnit, SessionUnitOwnerDto>().AfterMap<SessionUnitOwnerDtoMappingAction>();
         CreateMap<SessionUnit, SessionUnitDestinationDetailDto>();
         CreateMap<SessionUnit, SessionUnitDestinationDto>();
         CreateMap<SessionUnit, SessionUnitWithDestinationDto>();
