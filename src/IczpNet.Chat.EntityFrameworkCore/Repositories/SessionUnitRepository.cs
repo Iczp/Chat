@@ -101,7 +101,7 @@ namespace IczpNet.Chat.Repositories
             //
             return await query
                  .Where(x => x.Id == senderSessionUnitId)
-                 .Where(x => x.LastMessageId != lastMessageId)
+                 .Where(x => x.LastMessageId < lastMessageId)
                  .ExecuteUpdateAsync(s => s
                      .SetProperty(b => b.LastModificationTime, b => DateTime.Now)
                      .SetProperty(b => b.LastMessageId, b => lastMessageId)
@@ -110,26 +110,30 @@ namespace IczpNet.Chat.Repositories
 
         public virtual async Task<int> IncrementPublicBadgeAndRemindAllCountAndUpdateLastMessageIdAsync(Guid sessionId, long lastMessageId, DateTime messageCreationTime, Guid senderSessionUnitId, bool isRemindAll)
         {
-            var query = (await GetQueryableAsync(messageCreationTime, sessionId))
-                .Where(x => x.Id != senderSessionUnitId)
-                .Where(x => x.LastMessageId != lastMessageId);
+            var query = (await GetQueryableAsync(messageCreationTime, sessionId));
 
             await UpdateSenderLastMessageIdAsync(query, senderSessionUnitId, lastMessageId);
 
+            query = query.Where(x => x.Id != senderSessionUnitId);
+
+            var ticks = DateTime.Now.Ticks;
+
             if (isRemindAll)
             {
-                return await query.Where(x => x.Id != senderSessionUnitId)
+                return await query
                     .ExecuteUpdateAsync(s => s
                         .SetProperty(b => b.PublicBadge, b => b.PublicBadge + 1)
                         .SetProperty(b => b.LastMessageId, b => lastMessageId)
+                        .SetProperty(b => b.Ticks, b => ticks)
                         .SetProperty(b => b.RemindAllCount, b => b.RemindAllCount + 1)
                     );
             }
 
-            return await query.Where(x => x.Id != senderSessionUnitId)
+            return await query
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(b => b.PublicBadge, b => b.PublicBadge + 1)
                     .SetProperty(b => b.LastMessageId, b => lastMessageId)
+                    .SetProperty(b => b.Ticks, b => ticks)
                 );
         }
 
@@ -139,12 +143,17 @@ namespace IczpNet.Chat.Repositories
 
             await UpdateSenderLastMessageIdAsync(query, senderSessionUnitId, lastMessageId);
 
+            query = query.Where(x => x.Id != senderSessionUnitId);
+
+            var ticks = DateTime.Now.Ticks;
+
             return await query
                 .Where(x => destinationSessionUnitIdList.Contains(x.Id))
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(b => b.LastModificationTime, b => DateTime.Now)
                     .SetProperty(b => b.PrivateBadge, b => b.PrivateBadge + 1)
                     .SetProperty(b => b.LastMessageId, b => lastMessageId)
+                    .SetProperty(b => b.Ticks, b => ticks)
                 );
         }
 
@@ -192,7 +201,7 @@ namespace IczpNet.Chat.Repositories
 
         public async Task<int> BatchUpdateAppUserIdAsync(long chatObjectId, Guid appUserId)
         {
-            var query = await GetQueryableAsync(DateTime.Now);
+            var query = await GetQueryableAsync(DateTime.Now, sessionId: null);
 
             return await query
                 .Where(x => x.OwnerId == chatObjectId)

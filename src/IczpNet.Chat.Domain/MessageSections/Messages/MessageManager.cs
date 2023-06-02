@@ -365,7 +365,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             //var output = new MessageInfo<TContentInfo>() { Id = message.Id };
 
-            if (receiverSessionUnit != null)
+            if (message.IsPrivate)
             {
                 await ChatPusher.ExecutePrivateAsync(new List<SessionUnit>()
                 {

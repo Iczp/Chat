@@ -7,9 +7,11 @@ using IczpNet.Chat.SessionSections.SessionPermissions;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.Menus
 {
@@ -80,6 +82,7 @@ namespace IczpNet.Chat.Menus
         }
 
         [HttpGet]
+        //[UnitOfWork(true, IsolationLevel.ReadUncommitted)]
         public async Task<string> TriggerAsync(Guid id)
         {
             return await MenuManager.TriggerAsync(id);

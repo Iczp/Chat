@@ -1,6 +1,4 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
-using IczpNet.AbpCommons.PinYin;
-using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseEntitys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
@@ -14,7 +12,6 @@ using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionUnitOrganizations;
 using IczpNet.Chat.SessionSections.SessionUnitRoles;
 using IczpNet.Chat.SessionSections.SessionUnitTags;
-using IczpNet.Chat.Specifications;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -36,7 +33,9 @@ using IczpNet.Chat.SessionSections.SessionUnitSettings;
 namespace IczpNet.Chat.SessionSections.SessionUnits
 {
     [Index(nameof(Sorting), AllDescending = true)]
+    [Index(nameof(Ticks), AllDescending = true)]
     [Index(nameof(LastMessageId), IsDescending = new[] { true })]
+    [Index(nameof(Sorting), nameof(Ticks), AllDescending = true)]
     [Index(nameof(Sorting), nameof(LastMessageId), AllDescending = true)]
     [Index(nameof(Sorting), nameof(LastMessageId), IsDescending = new[] { true, false }, Name = "IX_Chat_SessionUnit_Sorting_Desc_LastMessageId_Asc")]
     [Index(nameof(Key), AllDescending = true)]
@@ -97,6 +96,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public virtual int FollowingCount { get; protected set; }
 
         public virtual double Sorting { get; protected set; }
+
+        public virtual double Ticks { get; protected set; } = DateTime.Now.Ticks;
 
         [Required]
         [InverseProperty(nameof(SessionUnitCounter.SessionUnit))]
@@ -212,19 +213,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             ;
         }
 
-        internal virtual void SetReadedMessageId(long lastMessageId, bool isForce = false)
-        {
-            if (isForce || lastMessageId > Setting.ReadedMessageId.GetValueOrDefault())
-            {
-                Setting.ReadedMessageId = lastMessageId;
-            }
-            PublicBadge = 0;
-            PrivateBadge = 0;
-            RemindAllCount = 0;
-            RemindMeCount = 0;
-            FollowingCount = 0;
-        }
-
         internal virtual void UpdateCounter(SessionUnitCounterInfo counter)
         {
             Setting.ReadedMessageId = counter.ReadedMessageId;
@@ -233,6 +221,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             RemindAllCount = counter.RemindAllCount;
             RemindMeCount = counter.RemindMeCount;
             FollowingCount = counter.FollowingCount;
+            //Ticks = DateTime.Now.Ticks;
         }
 
         public virtual void SetKey(string key)

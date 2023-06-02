@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230602021954_SessionUnit_AddProp_Ticks")]
+    partial class SessionUnit_AddProp_Ticks
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -4539,9 +4542,6 @@ namespace IczpNet.Chat.Migrations
                         .IsDescending();
 
                     b.HasIndex("Sorting", "LastMessageId")
-                        .IsDescending();
-
-                    b.HasIndex("Sorting", "Ticks")
                         .IsDescending();
 
                     b.HasIndex(new[] { "Sorting", "LastMessageId" }, "IX_Chat_SessionUnit_Sorting_Desc_LastMessageId_Asc")

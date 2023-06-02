@@ -198,6 +198,8 @@ public class ChatAuthServerModule : AbpModule
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
 
+        //app.UseStaticAutoMapper();
+
         if (env.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();

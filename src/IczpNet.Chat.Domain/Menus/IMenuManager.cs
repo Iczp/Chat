@@ -9,6 +9,10 @@ namespace IczpNet.Chat.Menus
     {
         Task<string> TriggerAsync(Guid id);
 
-        Task<HttpRequest> SendToRemoteHostAsync(Guid id, string name = null);
+        Task<HttpRequest> SendToRemoteHostAsync(Menu menu, string name = null);
+
+        Task CheckMenuAsync(Menu menu);
+
+        Task<bool> IsCheckMenuAsync(Menu menu);
     }
 }

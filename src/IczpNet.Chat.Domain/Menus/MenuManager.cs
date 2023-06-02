@@ -3,7 +3,6 @@ using IczpNet.AbpTrees;
 using IczpNet.BizCrypts;
 using IczpNet.Chat.Developers;
 using IczpNet.Chat.HttpRequests;
-using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -95,20 +94,21 @@ namespace IczpNet.Chat.Menus
 
         public virtual async Task<string> TriggerAsync(Guid id)
         {
-            var menu = await Repository.GetAsync(id);
+            //var menu = await Repository.GetAsync(id);
 
-            await CheckMenuAsync(menu);
+            //await CheckMenuAsync(menu);
 
             var jobId = await BackgroundJobManager.EnqueueAsync(new MenuTriggerArgs()
             {
                 MenuId = id,
             });
 
-            Logger.LogInformation($"TriggerAsync jobId={jobId}");
+            Logger.LogInformation($"Trigger:MenuId={id},jobId={jobId}");
 
             return jobId;
         }
-        protected virtual async Task CheckMenuAsync(Menu menu)
+
+        public virtual async Task CheckMenuAsync(Menu menu)
         {
             Assert.If(!menu.Owner.IsEnabled, $"IsEnabled:{menu.Owner.IsEnabled}");
 
@@ -117,8 +117,12 @@ namespace IczpNet.Chat.Menus
             var developer = menu.Owner.Developer;
 
             Assert.If(!IsUrl(developer.PostUrl), $"Fail Url:{developer.PostUrl}", nameof(developer.PostUrl));
-
             await Task.CompletedTask;
+        }
+
+        public virtual Task<bool> IsCheckMenuAsync(Menu menu)
+        {
+            return Task.FromResult(menu.Owner.IsEnabled && menu.Owner.IsDeveloper && IsUrl(menu.Owner.Developer.PostUrl));
         }
 
         private static bool IsUrl(string url)
@@ -128,11 +132,11 @@ namespace IczpNet.Chat.Menus
             return Uri.TryCreate(url, UriKind.RelativeOrAbsolute, out Uri uri) && httpSchemes.Contains(uri.Scheme);
         }
 
-        public virtual async Task<HttpRequest> SendToRemoteHostAsync(Guid id, string name = null)
+        public virtual async Task<HttpRequest> SendToRemoteHostAsync(Menu menu, string name = null)
         {
-            var menu = await Repository.GetAsync(id);
+            //var menu = await Repository.GetAsync(id);
 
-            await CheckMenuAsync(menu);
+            //await CheckMenuAsync(menu);
 
             var req = await HttpGetRemoteHostAsync(menu.Owner.Developer, $"menuId:{menu}", name: name);
 
