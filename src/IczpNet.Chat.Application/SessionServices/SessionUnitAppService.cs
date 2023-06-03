@@ -87,13 +87,14 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         SessionUnitCounterRepository = sessionUnitCounterRepository;
     }
 
+    /// <inheritdoc/>
     protected override Task CheckPolicyAsync(string policyName)
     {
         return base.CheckPolicyAsync(policyName);
     }
 
 
-
+    /// <inheritdoc/>
     protected virtual async Task<SessionUnit> GetEntityAsync(Guid id, bool checkIsKilled = true)
     {
         var entity = await Repository.GetAsync(id);
@@ -103,6 +104,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return entity;
     }
 
+    /// <inheritdoc/>
     protected virtual async Task<IQueryable<SessionUnit>> GetQueryAsync(SessionUnitGetListInput input)
     {
 
@@ -134,6 +136,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             ;
     }
 
+    /// <inheritdoc/>
     [HttpGet]
     [UnitOfWork(true, IsolationLevel.ReadCommitted)]
     public virtual async Task<PagedResultDto<SessionUnitOwnerDto>> GetListAsync(SessionUnitGetListInput input)
@@ -169,12 +172,14 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             });
     }
 
+    /// <inheritdoc/>
     [HttpGet]
     public virtual Task<Dictionary<Guid, SessionUnitStatModel>> GetStatsAsync(List<Guid> idList, long minMessageId)
     {
         return SessionUnitManager.GetStatsAsync(idList, minMessageId);
     }
 
+    /// <inheritdoc/>
     [HttpGet]
     public async Task<PagedResultDto<SessionUnitDestinationDto>> GetListDestinationAsync(Guid id, SessionUnitGetListDestinationInput input)
     {
@@ -198,6 +203,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query, input, q => q.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId));
     }
 
+    /// <inheritdoc/>
     [HttpGet]
     public async Task<PagedResultDto<SessionUnitDisplayName>> GetListDestinationNamesAsync(Guid id, BaseGetListInput input)
     {
@@ -216,6 +222,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return await GetPagedListAsync<SessionUnitDisplayName, SessionUnitDisplayName>(query, input);
     }
 
+    /// <inheritdoc/>
     [HttpGet]
     public virtual async Task<SessionUnitOwnerDto> GetAsync(Guid id)
     {
@@ -226,6 +233,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return await MapToDtoAsync(entity);
     }
 
+    /// <inheritdoc/>
     [HttpGet]
     public virtual async Task<SessionUnitDestinationDetailDto> GetDetailAsync(Guid id)
     {
@@ -236,6 +244,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return ObjectMapper.Map<SessionUnit, SessionUnitDestinationDetailDto>(entity);
     }
 
+    /// <inheritdoc/>
     [HttpGet]
     public virtual async Task<SessionUnitDestinationDto> GetDestinationAsync(Guid id, Guid destinationId)
     {
@@ -248,6 +257,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return await MapToDestinationDtoAsync(destinationEntity);
     }
 
+    /// <inheritdoc/>
     [HttpGet]
     public async Task<PagedResultDto<SessionUnitDto>> GetListSameDestinationAsync(SessionUnitGetListSameDestinationInput input)
     {
@@ -257,6 +267,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return await GetPagedListAsync<SessionUnit, SessionUnitDto>(query, input, x => x.OrderByDescending(x => x.Id));
     }
 
+    /// <inheritdoc/>
     [HttpGet]
     public async Task<PagedResultDto<SessionUnitDto>> GetListSameSessionAsync(SessionUnitGetListSameSessionInput input)
     {
@@ -266,28 +277,33 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return await GetPagedListAsync<SessionUnit, SessionUnitDto>(query, input, x => x.OrderByDescending(x => x.Id));
     }
 
+    /// <inheritdoc/>
     [HttpGet]
     public Task<int> GetSameSessionCountAsync(long sourceId, long targetId, List<ChatObjectTypeEnums> objectTypeList)
     {
         return SessionUnitManager.GetSameSessionCountAsync(sourceId, targetId, objectTypeList);
     }
 
+    /// <inheritdoc/>
     [HttpGet]
     public Task<int> GetSameDestinationCountAsync(long sourceId, long targetId, List<ChatObjectTypeEnums> objectTypeList)
     {
         return SessionUnitManager.GetSameDestinationCountAsync(sourceId, targetId, objectTypeList);
     }
 
+    /// <inheritdoc/>
     protected virtual Task<SessionUnitOwnerDto> MapToDtoAsync(SessionUnit entity)
     {
         return Task.FromResult(ObjectMapper.Map<SessionUnit, SessionUnitOwnerDto>(entity));
     }
 
+    /// <inheritdoc/>
     protected virtual Task<SessionUnitDestinationDto> MapToDestinationDtoAsync(SessionUnit entity)
     {
         return Task.FromResult(ObjectMapper.Map<SessionUnit, SessionUnitDestinationDto>(entity));
     }
 
+    /// <inheritdoc/>
     [HttpPost]
     public async Task<SessionUnitOwnerDto> SetMemberNameAsync(Guid id, string memberName)
     {
@@ -300,6 +316,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return await MapToDtoAsync(entity);
     }
 
+    /// <inheritdoc/>
     [HttpPost]
     public async Task<SessionUnitOwnerDto> SetRenameAsync(Guid id, string rename)
     {
@@ -312,6 +329,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return await MapToDtoAsync(entity);
     }
 
+    /// <inheritdoc/>
     [HttpPost]
     public virtual async Task<SessionUnitOwnerDto> SetToppingAsync(Guid id, bool isTopping)
     {
@@ -324,6 +342,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return await MapToDtoAsync(entity);
     }
 
+    /// <inheritdoc/>
     [HttpPost]
     public virtual async Task<SessionUnitOwnerDto> SetReadedMessageIdAsync(Guid id, bool isForce = false, long? messageId = null)
     {
@@ -336,6 +355,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return await MapToDtoAsync(entity);
     }
 
+    /// <inheritdoc/>
     [HttpPost]
     public async Task<SessionUnitOwnerDto> SetImmersedAsync(Guid id, bool isImmersed)
     {
@@ -348,6 +368,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return await MapToDtoAsync(entity);
     }
 
+
+    /// <inheritdoc/>
     [HttpPost]
     public virtual async Task<SessionUnitOwnerDto> RemoveAsync(Guid id)
     {
@@ -360,6 +382,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return await MapToDtoAsync(entity);
     }
 
+    /// <inheritdoc/>
     [HttpPost]
     public virtual async Task<SessionUnitOwnerDto> KillAsync(Guid id)
     {
@@ -370,6 +393,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return await MapToDtoAsync(entity);
     }
 
+    /// <inheritdoc/>
     [HttpPost]
     public virtual async Task<SessionUnitOwnerDto> ClearMessageAsync(Guid id)
     {
@@ -382,6 +406,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return await MapToDtoAsync(entity);
     }
 
+    /// <inheritdoc/>
     [HttpPost]
     public virtual async Task<SessionUnitOwnerDto> DeleteMessageAsync(Guid id, long messageId)
     {
@@ -390,6 +415,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         throw new NotImplementedException();
     }
 
+    /// <inheritdoc/>
     [HttpGet]
     [UnitOfWork(true, IsolationLevel.ReadUncommitted)]
     public async Task<PagedResultDto<MessageOwnerDto>> GetListMessagesAsync(Guid id, SessionUnitGetMessageListInput input)
@@ -421,24 +447,6 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             x => x.OrderByDescending(x => x.Id),
             async entities =>
             {
-                //var messageIdList = entities.Select(x => x.Id).ToList();
-
-                //var readedMessageIdList = await ReadedRecorderManager.GetRecorderMessageIdListAsync(id, messageIdList);
-
-                //var openedMessageIdList = await OpenedRecorderManager.GetRecorderMessageIdListAsync(id, messageIdList);
-
-                //var favoriteMessageIdList = await FavoritedRecorderManager.GetRecorderMessageIdListAsync(id, messageIdList);
-
-                //foreach (var e in entities)
-                //{
-                //    e.IsReaded = readedMessageIdList.Contains(e.Id);
-                //    e.IsOpened = openedMessageIdList.Contains(e.Id);
-                //    e.IsFavorited = favoriteMessageIdList.Contains(e.Id);
-                //    e.IsFollowing = followingIdList.Contains(e.SessionUnitId.Value);
-                //}
-
-                //==================================================
-
                 foreach (var e in entities)
                 {
                     e.IsReaded = await ReadedRecorderManager.IsAnyAsync(id, e.Id);
@@ -451,6 +459,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             });
     }
 
+    /// <inheritdoc/>
     [HttpGet]
     public async Task<MessageDto> GetMessageAsync(Guid id, long messageId)
     {
@@ -479,6 +488,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return ObjectMapper.Map<Message, MessageDto>(message);
     }
 
+    /// <inheritdoc/>
     [HttpGet]
     [UnitOfWork(true, IsolationLevel.ReadUncommitted)]
     public async Task<BadgeDto> GetBadgeByOwnerIdAsync(long ownerId, bool? isImmersed = null)
@@ -495,6 +505,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         };
     }
 
+    /// <inheritdoc/>
     [HttpGet]
     public async Task<BadgeDto> GetBadgeByIdAsync(Guid id, bool? isImmersed = null)
     {
@@ -510,6 +521,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         };
     }
 
+    /// <inheritdoc/>
     [HttpGet]
     public async Task<List<BadgeDto>> GetBadgeByUserIdAsync(Guid userId, bool? isImmersed = null)
     {
@@ -524,6 +536,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return result;
     }
 
+    /// <inheritdoc/>
     [HttpGet]
     [Authorize]
     public Task<List<BadgeDto>> GetBadgeByCurrentUserAsync(bool? isImmersed = null)
@@ -531,6 +544,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return GetBadgeByUserIdAsync(CurrentUser.GetId(), isImmersed);
     }
 
+    /// <inheritdoc/>
     [HttpGet]
     [Obsolete("Move to GetListBySessionIdAsync")]
     public async Task<PagedResultDto<SessionUnitDestinationDto>> GetSessionMemberListAsync(Guid id, SessionUnitGetSessionMemberListInput input)
@@ -552,6 +566,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query, input);
     }
 
+    /// <inheritdoc/>
     [HttpGet]
     public async Task<Guid> FindIdAsync(long ownerId, long destinactionId)
     {
@@ -562,6 +577,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return entity.Id;
     }
 
+    /// <inheritdoc/>
     [HttpGet]
     public async Task<PagedResultDto<SessionUnitCacheItem>> GetListCachesAsync(SessionUnitCacheGetListInput input)
     {
@@ -586,6 +602,17 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return await GetPagedListAsync<SessionUnitCacheItem, SessionUnitCacheItem>(query, input);
     }
 
+    /// <inheritdoc/>
+    [HttpGet]
+    public async Task<SessionUnitCacheItem> GetCacheAsync(Guid sessionUnitId)
+    {
+        var entity = await GetEntityAsync(sessionUnitId);
+
+        return await SessionUnitManager.GetCacheItemAsync(entity);
+    }
+
+    /// <inheritdoc/>
+    [HttpGet]
     public async Task<SessionUnitCounterInfo> GetCounterAsync(Guid sessionUnitId, long minMessageId = 0, bool? isImmersed = null)
     {
         return await SessionUnitManager.GetCounterAsync(sessionUnitId, minMessageId, isImmersed);

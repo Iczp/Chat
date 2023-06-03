@@ -10,14 +10,15 @@ using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.AutoMappers
 {
-    public class MessageOwnerDtoMapping : DomainService, IMappingAction<Message, MessageOwnerDto>, ITransientDependency
+    public class MessageOwnerDtoMappingAction : DomainService, IMappingAction<Message, MessageOwnerDto>, ITransientDependency
     {
 
         protected IReadedRecorderManager ReadedRecorderManager { get; }
         protected IOpenedRecorderManager OpenedRecorderManager { get; }
         protected IFavoritedRecorderManager FavoritedRecorderManager { get; }
 
-        public MessageOwnerDtoMapping(
+
+        public MessageOwnerDtoMappingAction(
             IReadedRecorderManager readedRecorderManager, 
             IOpenedRecorderManager openedRecorderManager, 
             IFavoritedRecorderManager favoritedRecorderManager)

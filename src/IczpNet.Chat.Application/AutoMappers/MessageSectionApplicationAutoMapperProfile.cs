@@ -26,7 +26,7 @@ public class MessageSectionApplicationAutoMapperProfile : Profile
             .ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()))
             .MaxDepth(1)
             //.ForMember(x => x.MemberCount, o => o.MapFrom(x => x.GetMemberCount()))
-            //.AfterMap<MessageOwnerDtoMapping>()
+            //.AfterMap<MessageOwnerDtoMappingAction>()
             ;
 
         CreateMap<Message, MessageDetailDto>()
