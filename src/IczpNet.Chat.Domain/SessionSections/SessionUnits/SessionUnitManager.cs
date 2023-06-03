@@ -505,9 +505,21 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return UnitListCache.GetAsync(sessionUnitCachKey);
     }
 
-    public virtual Task<List<SessionUnitCacheItem>> GetCacheListBySessionIdAsync(Guid  sessionId)
+    public virtual Task<List<SessionUnitCacheItem>> GetCacheListBySessionIdAsync(Guid sessionId)
     {
         return UnitListCache.GetAsync($"{new SessionUnitCacheKey(sessionId)}");
+    }
+
+    public virtual async Task<SessionUnitCacheItem> GetCacheItemAsync(Guid sessionId, Guid sessionUnitId)
+    {
+        var items = await GetCacheListBySessionIdAsync(sessionId);
+
+        return items?.FirstOrDefault(x => x.Id == sessionUnitId);
+    }
+
+    public virtual Task<SessionUnitCacheItem> GetCacheItemAsync(SessionUnit sessionUnit)
+    {
+        return GetCacheItemAsync(sessionUnit.SessionId.Value, sessionUnit.Id);
     }
 
     public virtual Task<List<SessionUnitCacheItem>> GetOrAddCacheListAsync(Guid sessionId)

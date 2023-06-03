@@ -73,6 +73,10 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         Task<List<SessionUnitCacheItem>> GetCacheListBySessionIdAsync(Guid sessionId);
 
+        Task<SessionUnitCacheItem> GetCacheItemAsync(Guid sessionId, Guid sessionUnitId);
+
+        Task<SessionUnitCacheItem> GetCacheItemAsync(SessionUnit sessionUnit);
+
         Task SetCacheListBySessionIdAsync(Guid sessionId, List<SessionUnitCacheItem> sessionUnitList);
 
         Task SetCacheListAsync(string cacheKey, List<SessionUnitCacheItem> sessionUnitList, DistributedCacheEntryOptions options = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default);
@@ -99,6 +103,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         Task<int> IncremenetAsync(SessionUnitIncrementArgs args);
 
-        
+
     }
 }

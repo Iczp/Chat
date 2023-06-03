@@ -150,6 +150,7 @@ namespace IczpNet.Chat.MessageServices
         //    return MessageSender.SendHistoryMessageAsync(input);
         //}
 
+        /// <inheritdoc/>
         [HttpPost]
         public async Task<Dictionary<string, long>> RollbackMessageAsync(long messageId)
         {
@@ -157,18 +158,20 @@ namespace IczpNet.Chat.MessageServices
             return await MessageManager.RollbackMessageAsync(message);
         }
 
+        /// <inheritdoc/>
         [HttpPost]
-        public async Task<MessageInfo<TextContentInfo>> SendTextAsync(MessageSendInput<TextContentInfo> input)
+        public async Task<MessageInfo<TextContentInfo>> SendTextAsync(Guid sessionUnitId, MessageSendInput<TextContentInfo> input)
         {
-            var sessionunit = await SessionUnitManager.GetAsync(input.SessionUnitId);
+            var sessionunit = await SessionUnitManager.GetAsync(sessionUnitId);
 
             return await MessageSender.SendTextAsync(sessionunit, input);
         }
 
+        /// <inheritdoc/>
         [HttpPost]
-        public async Task<List<MessageDto>> ForwardMessageAsync(Guid currentSessionUnitId, long messageId, List<Guid> targetSessionUnitIdList)
+        public async Task<List<MessageDto>> ForwardMessageAsync(Guid sessionUnitId, long messageId, List<Guid> targets)
         {
-            var messageList = await MessageManager.ForwardMessageAsync(currentSessionUnitId, messageId, targetSessionUnitIdList);
+            var messageList = await MessageManager.ForwardMessageAsync(sessionUnitId, messageId, targets);
 
             return ObjectMapper.Map<List<Message>, List<MessageDto>>(messageList);
         }

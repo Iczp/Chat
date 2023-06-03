@@ -14,7 +14,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         /// <summary>
         /// SessionUnitId
         /// </summary>
-        public virtual Guid SessionUnitId { get; set; }
+        //public virtual Guid SessionUnitId { get; set; }
 
         /// <summary>
         /// 扩展（键名）根据业务自义，如:"courseId"、"course-userId"、"erp-userId"

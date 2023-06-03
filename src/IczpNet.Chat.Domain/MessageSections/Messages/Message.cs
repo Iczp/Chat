@@ -10,6 +10,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace IczpNet.Chat.MessageSections.Messages;
 
 [Index(nameof(Id), AllDescending = true)]
+[Index(nameof(Id), IsDescending = new[] { false }, Name = "IX_Chat_Message_Id_Asc")]
+[Index(nameof(CreationTime), AllDescending = true)]
+[Index(nameof(CreationTime), IsDescending = new[] { false }, Name = "IX_Chat_Message_CreationTime_Asc")]
 [Index(nameof(SessionUnitCount))]
 [Index(nameof(IsPrivate))]
 [Index(nameof(MessageType))]

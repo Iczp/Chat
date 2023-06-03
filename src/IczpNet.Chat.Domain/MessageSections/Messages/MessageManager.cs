@@ -232,9 +232,15 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         protected virtual async Task<bool> ShouldbeBackgroundJobAsync(SessionUnit senderSessionUnit, Message message)
         {
-            var useBackgroundJobSenderMinSessionUnitCount = await SettingProvider.GetAsync<int>(ChatSettings.UseBackgroundJobSenderMinSessionUnitCount);
-            return BackgroundJobManager.IsAvailable() && !message.IsPrivate && message.SessionUnitCount > useBackgroundJobSenderMinSessionUnitCount;
-            //return false;
+            await Task.CompletedTask;
+
+            return BackgroundJobManager.IsAvailable();
+
+            //var useBackgroundJobSenderMinSessionUnitCount = await SettingProvider.GetAsync<int>(ChatSettings.UseBackgroundJobSenderMinSessionUnitCount);
+
+            //return BackgroundJobManager.IsAvailable() && !message.IsPrivate && message.SessionUnitCount > useBackgroundJobSenderMinSessionUnitCount;
+
+            ////return false;
         }
 
         protected virtual async Task BatchUpdateSessionUnitAsync(SessionUnit senderSessionUnit, Message message)
@@ -442,9 +448,9 @@ namespace IczpNet.Chat.MessageSections.Messages
         //    return messageList;
         //}
 
-        public virtual async Task<List<Message>> ForwardMessageAsync(Guid currentSessionUnitId, long sourceMessageId, List<Guid> targetSessionUnitIdList)
+        public virtual async Task<List<Message>> ForwardMessageAsync(Guid sessionUnitId, long sourceMessageId, List<Guid> targetSessionUnitIdList)
         {
-            var currentSessionUnit = await SessionUnitManager.GetAsync(currentSessionUnitId);
+            var currentSessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
 
             Assert.If(!currentSessionUnit.Setting.IsEnabled, $"Current session unit disabled.", nameof(currentSessionUnit.Setting.IsEnabled));
 

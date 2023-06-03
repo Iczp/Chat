@@ -9,7 +9,7 @@ namespace IczpNet.Chat.MessageSections
 
     public interface IMessageSendInput
     {
-        Guid SessionUnitId { get; set; }
+        //Guid SessionUnitId { get; set; }
 
         string KeyName { get; set; }
 

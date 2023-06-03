@@ -4,7 +4,6 @@ using Volo.Abp.Domain.Services;
 using Microsoft.Extensions.Logging;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
-using System.Linq;
 
 namespace IczpNet.Chat.SessionUnits
 {
@@ -20,34 +19,24 @@ namespace IczpNet.Chat.SessionUnits
 
         public void Process(SessionUnit source, SessionUnitOwnerDto destination, ResolutionContext context)
         {
-            var cacheItems = SessionUnitManager.GetCacheListBySessionIdAsync(source.SessionId.Value).GetAwaiter().GetResult();
+            var item = SessionUnitManager.GetCacheItemAsync(source).GetAwaiter().GetResult();
 
-            if (cacheItems != null)
+            if (item != null)
             {
-                //destination.
-                var item = cacheItems.FirstOrDefault(x => x.Id == source.Id);
+                //destination.PublicBadge = item.PublicBadge;
+                //destination.PrivateBadge = item.PrivateBadge;
+                //destination.FollowingCount = item.FollowingCount;
+                //destination.RemindAllCount = item.RemindAllCount;
+                //destination.RemindMeCount = item.RemindMeCount;
+                //destination.LastMessageId = item.LastMessageId;
+                //destination.Ticks = item.Ticks;
 
-                if (item != null)
-                {
-                    destination.PublicBadge = item.PublicBadge;
-                    destination.PrivateBadge = item.PrivateBadge;
-                    destination.FollowingCount = item.FollowingCount;
-                    destination.RemindAllCount = item.RemindAllCount;
-                    destination.RemindMeCount = item.RemindMeCount;
-                    destination.LastMessageId = item.LastMessageId;
-                    destination.Ticks = item.Ticks;
-
-                    Logger.LogError($"SessionUnitId:{source.SessionId}");
-                }
-
-
-                Logger.LogWarning($"SessionUnitOwnerDtoMappingAction");
+                //Logger.LogError($"SessionUnitId:{source.SessionId}");
             }
             else
             {
-                Logger.LogWarning($"SessionUnit CacheItems = null");
+                //Logger.LogWarning($"CacheItem = null, sessionUnitId:{source.Id}");
             }
-
         }
     }
 }

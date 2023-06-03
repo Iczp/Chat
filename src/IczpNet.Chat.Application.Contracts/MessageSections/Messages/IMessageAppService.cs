@@ -31,8 +31,15 @@ namespace IczpNet.Chat.MessageSections.Messages
         Task<Dictionary<string, long>> RollbackMessageAsync(long messageId);
 
 
-        Task<MessageInfo<TextContentInfo>> SendTextAsync(MessageSendInput<TextContentInfo> input);
+        Task<MessageInfo<TextContentInfo>> SendTextAsync(Guid sessionUnitId, MessageSendInput<TextContentInfo> input);
 
-        Task<List<MessageDto>> ForwardMessageAsync(Guid currentSessionUnitId, long messageId, List<Guid> targetSessionUnitIdList);
+        /// <summary>
+        /// 转发消息
+        /// </summary>
+        /// <param name="sessionUnitId">当前会话单元</param>
+        /// <param name="messageId">原消息</param>
+        /// <param name="targets">目标</param>
+        /// <returns></returns>
+        Task<List<MessageDto>> ForwardMessageAsync(Guid sessionUnitId, long messageId, List<Guid> targets);
     }
 }
