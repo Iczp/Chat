@@ -578,7 +578,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             sessionId = entity.SessionId.Value;
         }
 
-        var items = await SessionUnitManager.GetListBySessionIdAsync(sessionId.Value);
+        var items = await SessionUnitManager.GetOrAddCacheListAsync(sessionId.Value);
 
         var query = items.AsQueryable()
             .WhereIf(input.SessionUnitId.HasValue, x => x.Id == input.SessionUnitId);

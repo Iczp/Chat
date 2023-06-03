@@ -51,7 +51,7 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
         CreateMap<SessionUnit, SessionUnitDestinationDetailDto>();
         CreateMap<SessionUnit, SessionUnitDestinationDto>();
         CreateMap<SessionUnit, SessionUnitWithDestinationDto>();
-        CreateMap<SessionUnitModel, SessionUnitOwnerDto>();
+        //CreateMap<SessionUnitModel, SessionUnitOwnerDto>();
 
         CreateMap<SessionUnitSetting, SessionUnitSettingDto>();
 

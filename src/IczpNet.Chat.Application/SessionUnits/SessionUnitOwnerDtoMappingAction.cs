@@ -36,6 +36,8 @@ namespace IczpNet.Chat.SessionUnits
                     destination.RemindMeCount = item.RemindMeCount;
                     destination.LastMessageId = item.LastMessageId;
                     destination.Ticks = item.Ticks;
+
+                    Logger.LogError($"SessionUnitId:{source.SessionId}");
                 }
 
 

@@ -101,5 +101,7 @@ namespace IczpNet.Chat.SessionServices
         public virtual int? FollowingCount { get; set; }
 
         public virtual double Sorting { get; set; }
+
+        public virtual double Ticks { get; set; }
     }
 }

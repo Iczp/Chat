@@ -507,7 +507,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
 
     public virtual Task<List<SessionUnitCacheItem>> GetCacheListBySessionIdAsync(Guid  sessionId)
     {
-        return UnitListCache.GetAsync(sessionId.ToString());
+        return UnitListCache.GetAsync($"{new SessionUnitCacheKey(sessionId)}");
     }
 
     public virtual Task<List<SessionUnitCacheItem>> GetOrAddCacheListAsync(Guid sessionId)
