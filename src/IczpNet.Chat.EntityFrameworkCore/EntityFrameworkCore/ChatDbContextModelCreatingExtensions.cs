@@ -36,6 +36,7 @@ using System.Reflection.Emit;
 using IczpNet.Chat.HttpRequests;
 using IczpNet.Chat.ChatObjectEntryValues;
 using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
+using IczpNet.Chat.DbTables;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -66,12 +67,19 @@ public static class ChatDbContextModelCreatingExtensions
         });
         */
 
+
+
         builder.ConfigEntitys<ChatDomainModule>(ChatDbProperties.DbTablePrefix, ChatDbProperties.DbSchema);
 
         ConfigMessageTemplateEntitys(builder);
         ForEachEntitys(builder);
         //ConfigKeys(builder);
 
+        builder.Entity<DbTable>(b =>
+        {
+            b.HasNoKey();
+            b.ToTable("TableRow", t => t.ExcludeFromMigrations());
+        });
 
         builder.Entity<ChatObject>(b =>
         {
@@ -170,7 +178,8 @@ public static class ChatDbContextModelCreatingExtensions
 
         var entityTypes = moduleType.Assembly.GetExportedTypes()
                 .Where(t => t.Namespace.StartsWith(entityNamespace) && !t.IsAbstract
-                    && t.GetInterfaces().Any(x => typeof(IEntity).IsAssignableFrom(x) || x.IsGenericType && typeof(IEntity<>).IsAssignableFrom(x.GetGenericTypeDefinition())));
+                    && t.GetInterfaces().Any(x => typeof(IEntity).IsAssignableFrom(x) || x.IsGenericType && typeof(IEntity<>).IsAssignableFrom(x.GetGenericTypeDefinition())))
+                .Where(t => t.GetCustomAttribute<NotMappedAttribute>() == null);
 
 
         //foreach (var t in entityTypes)

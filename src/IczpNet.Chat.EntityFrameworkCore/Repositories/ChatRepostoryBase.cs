@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Linq;
 using IczpNet.Chat.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace IczpNet.Chat.Repositories;
 
@@ -33,7 +35,6 @@ public abstract class ChatRepositoryBase<TEntity> : EfCoreRepository<ChatDbConte
     {
 
     }
-
 }
 
 

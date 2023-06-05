@@ -46,6 +46,7 @@ using IczpNet.Chat.ChatObjectEntryValues;
 using IczpNet.Chat.EntryNames;
 using IczpNet.Chat.EntryValues;
 using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
+using IczpNet.Chat.DbTables;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -55,12 +56,16 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     /* Add DbSet for each Aggregate Root here. Example:
      * public DbSet<Question> Questions { get; set; }
      */
+
+
+    public DbSet<DbTable> DbTable { get; set; }
+
     public DbSet<ChatObject> ChatObject { get; set; }
     public DbSet<ChatObjectCategory> ChatObjectCategory { get; set; }
     public DbSet<ChatObjectType> ChatObjectType { get; set; }
     public DbSet<ChatObjectEntryValue> ChatObjectEntryValue { get; set; }
     public DbSet<ChatObjectTargetEntryValue> ChatObjectTargetEntryValue { get; set; }
-    
+
     public DbSet<Motto> Motto { get; set; }
 
     public DbSet<EntryName> EntryName { get; set; }
@@ -89,7 +94,7 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
 
 
     public DbSet<Follow> Follow { get; set; }
-    
+
 
 
     public DbSet<Friendship> Friendship { get; set; }
@@ -147,7 +152,7 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
 
 
     public DbSet<HttpRequest> HttpRequest { get; set; }
-    
+
 
     public ChatDbContext(DbContextOptions<ChatDbContext> options)
         : base(options)

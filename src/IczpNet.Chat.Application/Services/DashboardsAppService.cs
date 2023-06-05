@@ -17,12 +17,20 @@ using IczpNet.Chat.SessionSections.SessionUnitOrganizations;
 using IczpNet.Chat.SessionSections.SessionUnitRoles;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnitTags;
+using IczpNet.Chat.DbTables;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
+using Microsoft.EntityFrameworkCore;
+using Volo.Abp.Application.Dtos;
+using System.Linq;
+using IczpNet.Chat.BaseDtos;
+using System.Linq.Dynamic.Core;
+using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.Services
 {
@@ -44,6 +52,9 @@ namespace IczpNet.Chat.Services
         protected IRepository<SessionUnitOrganization> SessionUnitOrganizationRepository { get; }
         protected IRepository<MessageReminder> MessageReminderRepository { get; }
         protected IRepository<FavoritedRecorder> FavoriteRepository { get; }
+        protected IDbTableRepository DbTableRepository { get; }
+
+
 
         public DashboardsAppService(
             IChatObjectRepository chatObjectRepository,
@@ -61,7 +72,8 @@ namespace IczpNet.Chat.Services
             IRepository<SessionUnitRole> sessionUnitRoleRepository,
             IRepository<SessionUnitOrganization> sessionUnitOrganizationRepository,
             IRepository<MessageReminder> messageReminderRepository,
-            IRepository<FavoritedRecorder> favoriteRepository)
+            IRepository<FavoritedRecorder> favoriteRepository,
+            IDbTableRepository dbTableRepository)
         {
             ChatObjectRepository = chatObjectRepository;
             MessageRepository = messageRepository;
@@ -79,6 +91,7 @@ namespace IczpNet.Chat.Services
             SessionUnitOrganizationRepository = sessionUnitOrganizationRepository;
             MessageReminderRepository = messageReminderRepository;
             FavoriteRepository = favoriteRepository;
+            DbTableRepository = dbTableRepository;
         }
 
         [HttpGet]
@@ -106,5 +119,17 @@ namespace IczpNet.Chat.Services
                 FavoriteCount = await FavoriteRepository.GetCountAsync(),
             };
         }
+
+        [HttpGet]
+        public virtual async Task<PagedResultDto<DbTableDto>> GetListTableRowAsync(BaseGetListInput input)
+        {
+            var allList = await (await DbTableRepository.GetQueryableAsync()).ToListAsync();
+
+            var query = allList.AsQueryable()
+                .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TableName.Contains(input.Keyword));
+
+            return await GetPagedListAsync<DbTable, DbTableDto>(query, input);
+        }
+
     }
 }

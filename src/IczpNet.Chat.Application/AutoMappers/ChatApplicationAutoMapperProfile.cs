@@ -21,6 +21,8 @@ using IczpNet.Chat.Menus.Dtos;
 using IczpNet.Chat.Menus;
 using IczpNet.Chat.Developers;
 using IczpNet.Chat.Developers.Dtos;
+using IczpNet.Chat.Dashboards.Dtos;
+using IczpNet.Chat.DbTables;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -97,5 +99,9 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<Word, WordDetailDto>();
         CreateMap<WordCreateInput, Word>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         CreateMap<WordUpdateInput, Word>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+
+        //DbTable
+        CreateMap<DbTable, DbTableDto>();
+
     }
 }
