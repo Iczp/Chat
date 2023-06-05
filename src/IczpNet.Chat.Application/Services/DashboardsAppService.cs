@@ -28,6 +28,7 @@ using Volo.Abp.Uow;
 using Volo.Abp.Application.Dtos;
 using System.Linq;
 using IczpNet.Chat.BaseDtos;
+using Volo.Abp;
 
 namespace IczpNet.Chat.Services
 {
@@ -92,6 +93,7 @@ namespace IczpNet.Chat.Services
         }
 
         [HttpGet]
+        [RemoteService(false)]
         [UnitOfWork(true, IsolationLevel.ReadUncommitted)]
         public async Task<DashboardsDto> GetProfileAsync()
         {
