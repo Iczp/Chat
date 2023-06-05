@@ -25,5 +25,7 @@ namespace IczpNet.Chat.EntryValues
         public virtual IList<SessionUnitEntryValue> SessionUnitEntryValueList { get; set; }
 
         public virtual IList<ChatObjectEntryValue> ChatObjectEntryValueList { get; set; }
+
+        public virtual IList<ChatObjectTargetEntryValue> ChatObjectTargetEntryValueList { get; set; }
     }
 }

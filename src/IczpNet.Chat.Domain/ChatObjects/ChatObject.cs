@@ -238,6 +238,9 @@ namespace IczpNet.Chat.ChatObjects
         #region ChatObjectEntryValue 
         [InverseProperty(nameof(ChatObjectEntryValue.Owner))]
         public virtual IList<ChatObjectEntryValue> ChatObjectEntryValueList { get; protected set; }
+
+        [InverseProperty(nameof(ChatObjectTargetEntryValue.Destination))]
+        public virtual IList<ChatObjectTargetEntryValue> ChatObjectTargetEntryValueList { get; protected set; }
         #endregion
 
         #region Motto 

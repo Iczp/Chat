@@ -83,6 +83,7 @@ public static class ChatDbContextModelCreatingExtensions
         });
 
         builder.Entity<ChatObjectEntryValue>(b => { b.HasKey(x => new { x.OwnerId, x.EntryValueId }); });
+        builder.Entity<ChatObjectTargetEntryValue>(b => { b.HasKey(x => new { x.OwnerId, x.EntryValueId }); });
         builder.Entity<ChatObjectCategoryUnit>(b => { b.HasKey(x => new { x.ChatObjectId, x.CategoryId }); });
         builder.Entity<ArticleMessage>(b => { b.HasKey(x => new { x.MessageId, x.ArticleId }); });
 

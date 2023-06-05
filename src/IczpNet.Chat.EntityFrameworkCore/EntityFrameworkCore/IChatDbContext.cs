@@ -59,6 +59,7 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<ChatObjectCategory> ChatObjectCategory { get; }
     DbSet<ChatObjectType> ChatObjectType { get; }
     DbSet<ChatObjectEntryValue> ChatObjectEntryValue { get; }
+    DbSet<ChatObjectTargetEntryValue> ChatObjectTargetEntryValue { get; }
 
     DbSet<Motto> Motto { get; }
 

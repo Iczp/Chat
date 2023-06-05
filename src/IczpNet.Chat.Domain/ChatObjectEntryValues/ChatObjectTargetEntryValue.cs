@@ -9,7 +9,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace IczpNet.Chat.ChatObjectEntryValues
 {
     [Index(nameof(CreationTime))]
-    public class ChatObjectEntryValue : BaseEntity, IChatOwner<long>
+    public class ChatObjectTargetEntryValue : BaseEntity, IChatOwner<long>
     {
 
         public virtual long OwnerId { get; set; }
