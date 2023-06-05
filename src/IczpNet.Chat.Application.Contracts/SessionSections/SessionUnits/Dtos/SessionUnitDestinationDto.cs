@@ -16,7 +16,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
         /// 会话内的名称
         /// </summary>
         [StringLength(50)]
-        public virtual string MemberName { get; set; }
+        public virtual string DisplayName { get; set; }
 
         public virtual Guid SessionId { get; set; }
 

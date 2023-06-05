@@ -42,6 +42,8 @@ public partial class Message : BaseEntity<long>, ISessionId
 
     public virtual long FavoritedCount => FavoritedCounter.Count;
 
+    public virtual string SenderName => SessionUnit?.DisplayName?? SessionUnit?.Owner?.Name;
+
     //public virtual int ReadedCount { get; set; }
 
     //public virtual int OpenedCount { get; set; }

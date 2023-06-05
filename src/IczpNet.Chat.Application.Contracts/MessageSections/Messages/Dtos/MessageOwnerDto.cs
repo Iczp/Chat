@@ -5,6 +5,8 @@ namespace IczpNet.Chat.MessageSections.Messages.Dtos
 {
     public class MessageOwnerDto : MessageDto, IEntityDto<long>
     {
+        //public virtual string SenderName { get; set; }
+
         /// <summary>
         /// 转发来源Id(转发才有)
         /// </summary>

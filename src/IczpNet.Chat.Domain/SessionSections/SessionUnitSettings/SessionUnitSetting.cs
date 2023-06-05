@@ -3,17 +3,11 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Volo.Abp.Auditing;
-using Volo.Abp.Domain.Entities;
-using IczpNet.AbpCommons.PinYin;
-using IczpNet.AbpCommons.Extensions;
 using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.BaseEntitys;
-using Volo.Abp.MultiTenancy;
-using Volo.Abp;
 
 namespace IczpNet.Chat.SessionSections.SessionUnitSettings
 {

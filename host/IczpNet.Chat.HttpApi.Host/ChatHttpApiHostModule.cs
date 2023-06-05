@@ -156,7 +156,7 @@ public class ChatHttpApiHostModule : AbpModule
                 //        return false;
                 //    }
                 //    var versions = methodInfo.ReflectedType.GetCustomAttributes(true).OfType<ApiExplorerSettingsAttribute>().Select(x => x.GroupName);
-                //    System.Diagnostics.Trace.WriteLine($"swagger-{docName}---{apiDesc.ActionDescriptor.DisplayName} -- {string.Join(";", versions)}");
+                //    System.Diagnostics.Trace.WriteLine($"swagger-{docName}---{apiDesc.ActionDescriptor.SenderName} -- {string.Join(";", versions)}");
                 //    if (docName.ToLower() == "v1" && !versions.Any())
                 //    {
                 //        return true;

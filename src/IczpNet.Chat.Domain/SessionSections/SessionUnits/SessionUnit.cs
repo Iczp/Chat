@@ -62,7 +62,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         public virtual string Rename => Setting.Rename;
 
-        public virtual string MemberName => Setting.MemberName;
+        public virtual string DisplayName => Setting.MemberName;
 
         public virtual bool IsPublic => Setting.IsPublic;
 

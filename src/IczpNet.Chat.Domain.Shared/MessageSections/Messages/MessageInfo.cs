@@ -28,19 +28,19 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         //public virtual Guid SessionId { get; set; }
 
-        public virtual long? SenderId { get; set; }
+        //public virtual long? SenderId { get; set; }
 
         //public virtual ChatObjectInfo Sender { get; set; }
 
-        public virtual long? ReceiverId { get; set; }
+        //public virtual long? ReceiverId { get; set; }
 
         public virtual MessageTypes MessageType { get; set; }
 
         public virtual ReminderTypes? ReminderType { get; set; }
 
-        public virtual string KeyName { get; set; }
+        //public virtual string KeyName { get; set; }
 
-        public virtual string KeyValue { get; set; }
+        //public virtual string KeyValue { get; set; }
 
         public virtual bool IsPrivate { get; set; }
 
@@ -51,6 +51,6 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         public virtual DateTime CreationTime { get; set; }
 
-        public virtual SessionUnitSenderInfo SessionUnit { get; set; }
+        //public virtual SessionUnitSenderInfo SessionUnit { get; set; }
     }
 }
