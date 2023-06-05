@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.Permissions;
-using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Volo.Abp.Data;
@@ -12,7 +11,7 @@ using Volo.Abp.MultiTenancy;
 using Volo.Abp.Timing;
 using Volo.Abp.Uow;
 
-namespace Rctea.IM.GlobalPermissions;
+namespace IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 
 public class SessionPermissionDefinitionDataSeedContributor : IDataSeedContributor, ITransientDependency
 {

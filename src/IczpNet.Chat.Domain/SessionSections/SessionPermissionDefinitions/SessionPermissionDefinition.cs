@@ -28,9 +28,8 @@ namespace IczpNet.Chat.SessionSections.SessionPermissionDefinitions
         [ForeignKey(nameof(GroupId))]
         public virtual SessionPermissionGroup Group { get; set; }
 
-        [StringLength(50)]
         [Required]
-        [MaxLength(50)]
+        [MaxLength(120)]
         //[Unique]
         public virtual string Name { get; set; }
 

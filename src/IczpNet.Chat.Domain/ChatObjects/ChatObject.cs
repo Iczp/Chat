@@ -20,6 +20,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Volo.Abp.SimpleStateChecking;
 using IczpNet.Chat.Developers;
+using IczpNet.Chat.ChatObjectEntryValues;
 
 namespace IczpNet.Chat.ChatObjects
 {
@@ -41,20 +42,34 @@ namespace IczpNet.Chat.ChatObjects
         /// </summary>
         public virtual long MaxMessageAutoId { get; protected set; }
 
+        /// <summary>
+        /// 名称
+        /// </summary>
         [MaxLength(50)]
         [Required]
         public override string Name { get; protected set; }
 
-
+        /// <summary>
+        /// 拼音
+        /// </summary>
         [MaxLength(300)]
         public virtual string NameSpelling { get; protected set; }
 
+        /// <summary>
+        /// 拼音简写
+        /// </summary>
         [MaxLength(50)]
         public virtual string NameSpellingAbbreviation { get; protected set; }
 
+        /// <summary>
+        /// 编码
+        /// </summary>
         [MaxLength(50)]
         public virtual string Code { get; set; }
 
+        /// <summary>
+        /// 性别
+        /// </summary>
         public virtual Genders Gender { get; set; }
 
         /// <summary>
@@ -63,23 +78,50 @@ namespace IczpNet.Chat.ChatObjects
         [MaxLength(1000)]
         public virtual string Portrait { get; protected set; }
 
+        /// <summary>
+        /// 用户ID
+        /// </summary>
         public virtual Guid? AppUserId { get; protected set; }
 
+        /// <summary>
+        /// 对象类型
+        /// </summary>
         public virtual ChatObjectTypeEnums? ObjectType { get; protected set; }
 
+        /// <summary>
+        /// 验证方式
+        /// </summary>
         public virtual VerificationMethods VerificationMethod { get; protected set; }
 
+        /// <summary>
+        /// 说明
+        /// </summary>
         [MaxLength(500)]
         public override string Description { get; set; }
 
+        /// <summary>
+        /// 是否固有
+        /// </summary>
         public virtual bool IsStatic { get; protected set; }
 
+        /// <summary>
+        /// 是否活跃
+        /// </summary>
         public virtual bool IsActive { get; protected set; }
 
+        /// <summary>
+        /// 是否公开
+        /// </summary>
         public virtual bool IsPublic { get; protected set; }
 
+        /// <summary>
+        /// 是否可用
+        /// </summary>
         public virtual bool IsEnabled { get; protected set; } = true;
 
+        /// <summary>
+        /// default by appUserId
+        /// </summary>
         public virtual bool IsDefault { get; protected set; }
 
         /// <summary>
@@ -87,10 +129,15 @@ namespace IczpNet.Chat.ChatObjects
         /// </summary>
         public virtual ServiceStatus? ServiceStatus { get; protected set; }
 
+        /// <summary>
+        /// 是否开发者
+        /// </summary>
         public virtual bool IsDeveloper { get; protected set; } = false;
 
+        #region Developer
         [InverseProperty(nameof(Developers.Developer.Owner))]
         public virtual Developer Developer { get;  set; }
+        #endregion
 
         #region Categorys
         public virtual IList<ChatObjectCategoryUnit> ChatObjectCategoryUnitList { get; set; }
@@ -188,6 +235,10 @@ namespace IczpNet.Chat.ChatObjects
         //public virtual IList<FavoritedRecorder> FavoriteList { get; set; }
         #endregion
 
+        #region ChatObjectEntryValue 
+        [InverseProperty(nameof(ChatObjectEntryValue.Owner))]
+        public virtual IList<ChatObjectEntryValue> ChatObjectEntryValueList { get; protected set; }
+        #endregion
 
         #region Motto 
         public virtual Guid? MottoId { get; protected set; }

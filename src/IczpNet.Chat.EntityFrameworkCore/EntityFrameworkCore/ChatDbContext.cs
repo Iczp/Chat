@@ -42,6 +42,10 @@ using IczpNet.Chat.MessageSections.Counters;
 using IczpNet.Chat.Menus;
 using IczpNet.Chat.Developers;
 using IczpNet.Chat.HttpRequests;
+using IczpNet.Chat.ChatObjectEntryValues;
+using IczpNet.Chat.EntryNames;
+using IczpNet.Chat.EntryValues;
+using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -54,13 +58,19 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     public DbSet<ChatObject> ChatObject { get; set; }
     public DbSet<ChatObjectCategory> ChatObjectCategory { get; set; }
     public DbSet<ChatObjectType> ChatObjectType { get; set; }
+    public DbSet<ChatObjectEntryValue> ChatObjectEntryValue { get; set; }
+
     public DbSet<Motto> Motto { get; set; }
+
+    public DbSet<EntryName> EntryName { get; set; }
+    public DbSet<EntryValue> EntryValue { get; set; }
 
     public DbSet<Article> Article { get; set; }
     public DbSet<ArticleMessage> ArticleMessage { get; set; }
 
     public DbSet<Session> Session { get; set; }
     public DbSet<SessionUnit> SessionUnit { get; set; }
+    public DbSet<SessionUnitEntryValue> SessionUnitEntryValue { get; set; }
     public DbSet<SessionUnitSetting> SessionUnitSetting { get; set; }
     public DbSet<SessionUnitCounter> SessionUnitCounter { get; set; }
 

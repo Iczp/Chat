@@ -27,7 +27,7 @@ namespace IczpNet.Chat.ChatObjects
         }
 
         [UnitOfWork]
-        public async Task SeedAsync(DataSeedContext context)
+        public virtual async Task SeedAsync(DataSeedContext context)
         {
             using (CurrentTenant.Change(context?.TenantId))
             {

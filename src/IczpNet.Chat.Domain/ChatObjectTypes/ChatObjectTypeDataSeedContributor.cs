@@ -11,7 +11,7 @@ using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
 using IczpNet.AbpCommons.Extensions;
 
-namespace IczpNet.Chat.Wallets
+namespace IczpNet.Chat.ChatObjectTypes
 {
     public class ChatObjectTypeDataSeedContributor : IDataSeedContributor, ITransientDependency
     {
@@ -33,7 +33,7 @@ namespace IczpNet.Chat.Wallets
         }
 
         [UnitOfWork]
-        public async Task SeedAsync(DataSeedContext context)
+        public virtual async Task SeedAsync(DataSeedContext context)
         {
             using (CurrentTenant.Change(context?.TenantId))
             {

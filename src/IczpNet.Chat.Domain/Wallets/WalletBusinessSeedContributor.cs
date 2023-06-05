@@ -36,7 +36,7 @@ namespace IczpNet.Chat.Wallets
         }
 
         [UnitOfWork]
-        public async Task SeedAsync(DataSeedContext context)
+        public virtual async Task SeedAsync(DataSeedContext context)
         {
             using (CurrentTenant.Change(context?.TenantId))
             {

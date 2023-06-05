@@ -34,6 +34,8 @@ using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.Developers;
 using System.Reflection.Emit;
 using IczpNet.Chat.HttpRequests;
+using IczpNet.Chat.ChatObjectEntryValues;
+using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -80,13 +82,15 @@ public static class ChatDbContextModelCreatingExtensions
             b.UseTptMappingStrategy();
         });
 
-
+        builder.Entity<ChatObjectEntryValue>(b => { b.HasKey(x => new { x.OwnerId, x.EntryValueId }); });
         builder.Entity<ChatObjectCategoryUnit>(b => { b.HasKey(x => new { x.ChatObjectId, x.CategoryId }); });
         builder.Entity<ArticleMessage>(b => { b.HasKey(x => new { x.MessageId, x.ArticleId }); });
 
         builder.Entity<HistoryMessage>(b => { b.HasKey(x => new { x.MessageId, x.HistoryContentId }); });
         builder.Entity<FriendshipTagUnit>(b => { b.HasKey(x => new { x.FriendshipId, x.FriendshipTagId }); });
 
+
+        builder.Entity<SessionUnitEntryValue>(b => { b.HasKey(x => new { x.SessionUnitId, x.EntryValueId }); });
         builder.Entity<SessionUnitTag>(b => { b.HasKey(x => new { x.SessionUnitId, x.SessionTagId }); });
         builder.Entity<SessionUnitRole>(b => { b.HasKey(x => new { x.SessionUnitId, x.SessionRoleId }); });
         builder.Entity<SessionUnitOrganization>(b => { b.HasKey(x => new { x.SessionUnitId, x.SessionOrganizationId }); });

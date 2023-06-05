@@ -29,6 +29,7 @@ using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.SessionSections.SessionUnitCounters;
 using IczpNet.Chat.SessionSections.SessionUnitSettings;
+using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits
 {
@@ -142,6 +143,9 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
 
         [InverseProperty(nameof(FavoritedRecorder.SessionUnit))]
         public virtual IList<FavoritedRecorder> FavoriteList { get; protected set; }
+
+        [InverseProperty(nameof(SessionUnitEntryValue.SessionUnit))]
+        public virtual IList<SessionUnitEntryValue> SessionUnitEntryValueList { get; protected set; }
 
 
         [NotMapped]
