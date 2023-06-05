@@ -25,12 +25,9 @@ using System.Data;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
-using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Application.Dtos;
 using System.Linq;
 using IczpNet.Chat.BaseDtos;
-using System.Linq.Dynamic.Core;
-using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.Services
 {
@@ -120,16 +117,24 @@ namespace IczpNet.Chat.Services
             };
         }
 
-        [HttpGet]
-        public virtual async Task<PagedResultDto<DbTableDto>> GetListTableRowAsync(BaseGetListInput input)
-        {
-            var allList = await (await DbTableRepository.GetQueryableAsync()).ToListAsync();
+        //[HttpGet]
+        //public virtual async Task<PagedResultDto<DbTableDto>> GetListTableRowAsync(BaseGetListInput input)
+        //{
+        //    var allList = await (await DbTableRepository.GetQueryableAsync()).ToListAsync();
 
-            var query = allList.AsQueryable()
+        //    var query = allList.AsQueryable()
+        //        .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TableName.Contains(input.Keyword));
+
+        //    return await GetPagedListAsync<DbTable, DbTableDto>(query, input);
+        //}
+
+        [HttpGet]
+        public virtual async Task<PagedResultDto<DbTableDto>> GetListDbTablesAsync(BaseGetListInput input)
+        {
+            var query =  (await DbTableRepository.GetQueryableAsync())
                 .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TableName.Contains(input.Keyword));
 
             return await GetPagedListAsync<DbTable, DbTableDto>(query, input);
         }
-
     }
 }

@@ -9,6 +9,8 @@ namespace IczpNet.Chat.Dashboards
     {
         Task<DashboardsDto> GetProfileAsync();
 
-        Task<PagedResultDto<DbTableDto>> GetListTableRowAsync(BaseGetListInput input);
+        //Task<PagedResultDto<DbTableDto>> GetListTableRowAsync(BaseGetListInput input);
+
+        Task<PagedResultDto<DbTableDto>> GetListDbTablesAsync(BaseGetListInput input);
     }
 }
