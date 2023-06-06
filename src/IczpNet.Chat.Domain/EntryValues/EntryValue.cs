@@ -23,6 +23,12 @@ namespace IczpNet.Chat.EntryValues
         [MaxLength(500)]
         public virtual string Value { get; set; }
 
+        public virtual bool IsStatic { get; set; }
+
+        public virtual bool IsPublic { get; set; }
+
+        public virtual bool IsOption { get; set; }
+
         public virtual IList<SessionUnitEntryValue> SessionUnitEntryValueList { get; set; }
 
         public virtual IList<ChatObjectEntryValue> ChatObjectEntryValueList { get; set; }

@@ -1,9 +1,12 @@
-﻿using IczpNet.Chat.MessageSections.Messages.Dtos;
+﻿using IczpNet.Chat.ChatObjects.Dtos;
+using IczpNet.Chat.MessageSections.Messages.Dtos;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 {
     public class SessionUnitOwnerDto : SessionUnitDto
     {
+        public virtual ChatObjectDto Destination { get; set; }
+
         public virtual SessionUnitSettingDto Setting { get; set; }
 
         public virtual MessageDto LastMessage { get; set; }

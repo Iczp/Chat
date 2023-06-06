@@ -27,10 +27,10 @@ public interface ISessionUnitAppService
 
     Task<SessionUnitOwnerDto> GetAsync(Guid id);
 
-    Task<SessionUnitDestinationDetailDto> GetDetailAsync(Guid id);
+    Task<SessionUnitOwnerDetailDto> GetDetailAsync(Guid id);
 
     Task<SessionUnitDestinationDto> GetDestinationAsync(Guid id, Guid destinationId);
-
+    //Task<SessionUnitDestinationDto> GetDestinationDetailAsync(Guid id);
     Task<SessionUnitOwnerDto> SetMemberNameAsync(Guid id, string memberName);
 
     Task<SessionUnitOwnerDto> SetRenameAsync(Guid id, string rename);

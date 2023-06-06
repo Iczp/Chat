@@ -38,5 +38,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         public virtual List<SessionTagDto> TagList { get; set; }
 
+        public virtual ChatObjectDto Destination { get; set; }
+
     }
 }

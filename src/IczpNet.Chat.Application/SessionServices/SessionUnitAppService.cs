@@ -2,10 +2,7 @@
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.BaseDtos;
-using IczpNet.Chat.ChatObjectEntryValues;
 using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.ChatObjects.Dtos;
-using IczpNet.Chat.Comparers;
 using IczpNet.Chat.EntryNames;
 using IczpNet.Chat.EntryValues;
 using IczpNet.Chat.EntryValues.Dtos;
@@ -19,12 +16,10 @@ using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnitCounters;
-using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Pipelines.Sockets.Unofficial.Buffers;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -248,13 +243,13 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 
     /// <inheritdoc/>
     [HttpGet]
-    public virtual async Task<SessionUnitDestinationDetailDto> GetDetailAsync(Guid id)
+    public virtual async Task<SessionUnitOwnerDetailDto> GetDetailAsync(Guid id)
     {
         await CheckPolicyAsync(GetDetailPolicyName);
 
         var entity = await GetEntityAsync(id);
 
-        return ObjectMapper.Map<SessionUnit, SessionUnitDestinationDetailDto>(entity);
+        return ObjectMapper.Map<SessionUnit, SessionUnitOwnerDetailDto>(entity);
     }
 
     /// <inheritdoc/>

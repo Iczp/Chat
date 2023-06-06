@@ -118,8 +118,11 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<EntryNameUpdateInput, EntryName>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
 
         //EntryValue
+        CreateMap<EntryValue, EntryValueDto>();
         CreateMap<EntryValue, EntryValueSimpleDto>();
-
+        CreateMap<EntryValue, EntryValueDetailDto>();
+        CreateMap<EntryValueCreateInput, EntryValue>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<EntryValueUpdateInput, EntryValue>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
 
         //ChatObjectEntryValue
         CreateMap<SessionUnitEntryValue, EntryObjectDto>()

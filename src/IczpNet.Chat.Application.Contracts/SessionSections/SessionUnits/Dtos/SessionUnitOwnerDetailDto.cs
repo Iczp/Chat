@@ -1,17 +1,17 @@
 ﻿using IczpNet.Chat.ChatObjects.Dtos;
+using IczpNet.Chat.EntryNameValues.Dtos;
 using System;
+using System.Collections.Generic;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 {
-    public class SessionUnitDto
+    public class SessionUnitOwnerDetailDto : SessionUnitDto
     {
-        public virtual Guid Id { get; set; }
-
-        public virtual Guid SessionId { get; set; }
+        //public virtual Guid SessionId { get; set; }
 
         //public virtual long OwnerId { get; set; }
 
-        //public virtual string DisplayName { get; set; }
+        public virtual string DisplayName { get; set; }
 
         //public virtual string MemberNameSpellingAbbreviation { get; set; }
 
@@ -23,6 +23,8 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         //public virtual double Sorting { get; set; }
 
-        
+        public virtual ChatObjectDto Destination { get; set; }
+
+        public virtual List<EntryObjectDto> Entries { get; set; }
     }
 }
