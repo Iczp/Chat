@@ -2,7 +2,13 @@
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.BaseDtos;
+using IczpNet.Chat.ChatObjectEntryValues;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.ChatObjects.Dtos;
+using IczpNet.Chat.Comparers;
+using IczpNet.Chat.EntryNames;
+using IczpNet.Chat.EntryValues;
+using IczpNet.Chat.EntryValues.Dtos;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
@@ -13,6 +19,7 @@ using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnitCounters;
+using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using Microsoft.AspNetCore.Authorization;
@@ -57,6 +64,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     protected IFavoritedRecorderManager FavoritedRecorderManager { get; }
     protected IFollowManager FollowManager { get; }
     protected IRepository<SessionUnitCounter> SessionUnitCounterRepository { get; }
+    protected IRepository<EntryName, Guid> EntryNameRepository { get; }
+    protected IRepository<EntryValue, Guid> EntryValueRepository { get; }
     public SessionUnitAppService(
         IRepository<Friendship, Guid> chatObjectRepository,
         ISessionManager sessionManager,
@@ -70,7 +79,9 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         IOpenedRecorderManager openedRecorderManager,
         IFavoritedRecorderManager favoriteManager,
         IFollowManager followManager,
-        IRepository<SessionUnitCounter> sessionUnitCounterRepository)
+        IRepository<SessionUnitCounter> sessionUnitCounterRepository,
+        IRepository<EntryName, Guid> entryNameRepository,
+        IRepository<EntryValue, Guid> entryValueRepository)
     {
         FriendshipRepository = chatObjectRepository;
         SessionManager = sessionManager;
@@ -85,6 +96,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         FavoritedRecorderManager = favoriteManager;
         FollowManager = followManager;
         SessionUnitCounterRepository = sessionUnitCounterRepository;
+        EntryNameRepository = entryNameRepository;
+        EntryValueRepository = entryValueRepository;
     }
 
     /// <inheritdoc/>
@@ -617,4 +630,51 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     {
         return await SessionUnitManager.GetCounterAsync(sessionUnitId, minMessageId, isImmersed);
     }
+
+
+    protected virtual async Task CheckEntriesInputAsync(ChatObject chatObject, Dictionary<Guid, List<EntryValueInput>> input)
+    {
+
+        foreach (var item in input)
+        {
+            var entryName = Assert.NotNull(await EntryNameRepository.FindAsync(item.Key), $"不存在EntryNameId:{item.Key}");
+
+            Assert.If(entryName.IsRequired && item.Value.Count == 0, $"${entryName.Name}必填");
+
+            Assert.If(item.Value.Count > entryName.MaxCount, $"${entryName.Name}最大个数：{entryName.MaxCount}");
+
+            Assert.If(item.Value.Count < entryName.MinCount, $"${entryName.Name}最小个数：{entryName.MinCount}");
+
+            foreach (var entryValue in item.Value)
+            {
+                Assert.If(entryValue.Value.Length > entryName.MaxLenth, $"${entryName.Name}[{item.Value.IndexOf(entryValue) + 1}]最大长度：{entryName.MaxLenth}");
+
+                Assert.If(entryValue.Value.Length < entryName.MinLenth, $"${entryName.Name}[{item.Value.IndexOf(entryValue) + 1}]最小长度：{entryName.MinLenth}");
+
+                //if (entryName.IsUniqued)
+                //{
+                //    var isAny = !await EntryValueRepository.AnyAsync(x => x.EntryNameId == entryName.Id && x.Value == entryValue.Value);
+                //    Assert.If(isAny, $"${entryName.Name}已经存在值：{entryValue.Value}");
+                //}
+            }
+        }
+    }
+
+    protected virtual async Task<List<T>> FormatItemsAsync<T>(Dictionary<Guid, List<EntryValueInput>> input, Func<Guid, string, Task<T>> createOrFindEntity)
+    {
+        var inputItems = new List<T>();
+
+        foreach (var entry in input)
+        {
+            Assert.If(!await EntryNameRepository.AnyAsync(x => x.Id == entry.Key), $"不存在EntryNameId:{entry.Key}");
+
+            foreach (var valueInput in entry.Value)
+            {
+                inputItems.Add(await createOrFindEntity(entry.Key, valueInput.Value));
+            }
+        }
+        return inputItems;
+    }
+
+    
 }

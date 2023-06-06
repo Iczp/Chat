@@ -10,6 +10,7 @@ using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Auditing;
 
 namespace IczpNet.Chat.BaseAppServices;
 
@@ -86,5 +87,20 @@ public abstract class ChatAppService : ApplicationService
         }
 
         await AuthorizationService.CheckAsync(sessionUnit, policyName);
+    }
+
+    protected virtual void TryToSetLastModificationTime<T>(T entity)
+    {
+        if (entity is IHasModificationTime)
+        {
+            var propertyInfo = entity.GetType().GetProperty(nameof(IHasModificationTime.LastModificationTime));
+
+            if (propertyInfo == null || propertyInfo.GetSetMethod(true) == null)
+            {
+                return;
+            }
+
+            propertyInfo.SetValue(entity, Clock.Now);
+        }
     }
 }

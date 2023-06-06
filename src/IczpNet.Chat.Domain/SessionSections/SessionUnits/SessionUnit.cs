@@ -145,7 +145,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public virtual IList<FavoritedRecorder> FavoriteList { get; protected set; }
 
         [InverseProperty(nameof(SessionUnitEntryValue.SessionUnit))]
-        public virtual IList<SessionUnitEntryValue> SessionUnitEntryValueList { get; protected set; }
+        public virtual IList<SessionUnitEntryValue> Entries { get; set; }
 
 
         [NotMapped]

@@ -29,6 +29,7 @@ using IczpNet.Chat.ChatObjectEntryValues;
 using IczpNet.Chat.EntryNameValues.Dtos;
 using IczpNet.Chat.EntryValues;
 using IczpNet.Chat.EntryValues.Dtos;
+using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -120,6 +121,12 @@ public class ChatApplicationAutoMapperProfile : Profile
 
         //EntryValue
         CreateMap<EntryValue, EntryValueSimpleDto>();
+
+
+        //ChatObjectEntryValue
+        CreateMap<SessionUnitEntryValue, EntryObjectDto>()
+           .ForMember(x => x.EntryName, o => o.MapFrom(x => x.EntryValue.EntryName))
+           ;
 
         //ChatObjectEntryValue
         CreateMap<ChatObjectEntryValue, EntryObjectDto>()

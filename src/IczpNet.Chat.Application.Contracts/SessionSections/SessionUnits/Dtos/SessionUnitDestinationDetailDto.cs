@@ -1,4 +1,6 @@
-﻿using System;
+﻿using IczpNet.Chat.EntryNameValues.Dtos;
+using System;
+using System.Collections.Generic;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 {
@@ -12,5 +14,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         //public virtual DateTime? RemoveTime { get;  set; }
 
+        public virtual List<EntryObjectDto> Entries { get; set; }
     }
 }
