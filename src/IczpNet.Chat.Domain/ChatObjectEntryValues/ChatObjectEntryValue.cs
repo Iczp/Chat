@@ -21,11 +21,6 @@ namespace IczpNet.Chat.ChatObjectEntryValues
         [ForeignKey(nameof(EntryValueId))]
         public virtual EntryValue EntryValue { get; set; }
 
-        public virtual long? DestinationId { get; set; }
-
-        [ForeignKey(nameof(DestinationId))]
-        public virtual ChatObject Destination { get; set; }
-
         public override object[] GetKeys()
         {
             return new object[] { OwnerId, EntryValueId };

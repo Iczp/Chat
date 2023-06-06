@@ -12,7 +12,7 @@ namespace IczpNet.Chat.EntryValues
 {
     [Index(nameof(Value))]
     [Index(nameof(CreationTime))]
-    //[Index(nameof(EntryNameId), nameof(Value))]
+    [Index(nameof(EntryNameId), nameof(Value))]
     public class EntryValue : BaseEntity<Guid>
     {
         public virtual Guid EntryNameId { get; set; }
