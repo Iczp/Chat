@@ -44,13 +44,11 @@ public class ChatApplicationAutoMapperProfile : Profile
         //ChatObject
         CreateMap<ChatObject, ChatObjectDto>();
         CreateMap<ChatObject, ChatObjectSimpleDto>();
-        CreateMap<ChatObject, ChatObjectDestinationDetailDto>();
         CreateMap<ChatObject, ChatObjectDetailDto>()
             //.ForMember(x => x.SenderMessageCount, o => o.MapFrom(x => x.SenderMessageList.Count))
             //.ForMember(x => x.ReceiverMessageCount, o => o.MapFrom(x => x.ReceiverMessageList.Count))
             //.ForMember(x => x.FriendCount, o => o.MapFrom(x => x.OwnerFriendshipList.Count))
             //.ForMember(x => x.InFriendCount, o => o.MapFrom(x => x.DestinationFriendshipList.Count))
-
             ;
         CreateMap<ChatObjectCreateInput, ChatObject>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         CreateMap<ChatObjectUpdateInput, ChatObject>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
@@ -138,10 +136,10 @@ public class ChatApplicationAutoMapperProfile : Profile
            .ForMember(x => x.Value, o => o.MapFrom(x => x.EntryValue.Value))
            ;
 
-        //ChatObjectTargetEntryValue
-        CreateMap<ChatObjectTargetEntryValue, EntryObjectDto>()
-           .ForMember(x => x.EntryName, o => o.MapFrom(x => x.EntryValue.EntryName))
-           ;
+        ////ChatObjectTargetEntryValue
+        //CreateMap<ChatObjectTargetEntryValue, EntryObjectDto>()
+        //   .ForMember(x => x.EntryName, o => o.MapFrom(x => x.EntryValue.EntryName))
+        //   ;
 
     }
 }

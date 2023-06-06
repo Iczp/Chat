@@ -64,7 +64,6 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     public DbSet<ChatObjectCategory> ChatObjectCategory { get; set; }
     public DbSet<ChatObjectType> ChatObjectType { get; set; }
     public DbSet<ChatObjectEntryValue> ChatObjectEntryValue { get; set; }
-    public DbSet<ChatObjectTargetEntryValue> ChatObjectTargetEntryValue { get; set; }
 
     public DbSet<Motto> Motto { get; set; }
 

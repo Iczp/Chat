@@ -1,10 +1,7 @@
 ﻿using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjects.Dtos;
-using IczpNet.Chat.EntryNames.Dtos;
-using IczpNet.Chat.EntryValues.Dtos;
 using IczpNet.Chat.Enums;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -45,10 +42,6 @@ namespace IczpNet.Chat.ChatObjects
         Task<ChatObjectDto> SetVerificationMethodAsync(long id, VerificationMethods verificationMethod);
 
         Task<ChatObjectDetailDto> GetDetailAsync(long id);
-
-        Task<ChatObjectDetailDto> SetEntriesAsync(long id, Dictionary<Guid, List<EntryValueInput>> input);
-
-        Task<ChatObjectDestinationDetailDto> SetDestinationEntriesAsync(long ownerId, long destinationId, Dictionary<Guid, List<EntryValueInput>> input);
 
     }
 }
