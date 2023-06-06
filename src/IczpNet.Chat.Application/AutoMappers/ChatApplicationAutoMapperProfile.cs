@@ -23,6 +23,12 @@ using IczpNet.Chat.Developers;
 using IczpNet.Chat.Developers.Dtos;
 using IczpNet.Chat.Dashboards.Dtos;
 using IczpNet.Chat.DbTables;
+using IczpNet.Chat.EntryNames;
+using IczpNet.Chat.EntryNames.Dtos;
+using IczpNet.Chat.ChatObjectEntryValues;
+using IczpNet.Chat.EntryNameValues.Dtos;
+using IczpNet.Chat.EntryValues;
+using IczpNet.Chat.EntryValues.Dtos;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -38,10 +44,10 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<ChatObject, ChatObjectDto>();
         CreateMap<ChatObject, ChatObjectSimpleDto>();
         CreateMap<ChatObject, ChatObjectDetailDto>()
-            .ForMember(x => x.SenderMessageCount, o => o.MapFrom(x => x.SenderMessageList.Count))
-            .ForMember(x => x.ReceiverMessageCount, o => o.MapFrom(x => x.ReceiverMessageList.Count))
-            .ForMember(x => x.FriendCount, o => o.MapFrom(x => x.OwnerFriendshipList.Count))
-            .ForMember(x => x.InFriendCount, o => o.MapFrom(x => x.DestinationFriendshipList.Count))
+            //.ForMember(x => x.SenderMessageCount, o => o.MapFrom(x => x.SenderMessageList.Count))
+            //.ForMember(x => x.ReceiverMessageCount, o => o.MapFrom(x => x.ReceiverMessageList.Count))
+            //.ForMember(x => x.FriendCount, o => o.MapFrom(x => x.OwnerFriendshipList.Count))
+            //.ForMember(x => x.InFriendCount, o => o.MapFrom(x => x.DestinationFriendshipList.Count))
 
             ;
         CreateMap<ChatObjectCreateInput, ChatObject>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
@@ -51,6 +57,10 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<ChatObject, RobotDto>();
         CreateMap<ChatObject, ShopKeeperDto>();
         CreateMap<ChatObject, ShopWaiterDto>();
+
+       
+
+       
 
         CreateMap<Developer, DeveloperDto>().ReverseMap();
 
@@ -102,6 +112,26 @@ public class ChatApplicationAutoMapperProfile : Profile
 
         //DbTable
         CreateMap<DbTable, DbTableDto>();
+
+
+        //EntryName
+        CreateMap<EntryName, EntryNameDto>();
+        CreateMap<EntryName, EntryNameSimpleDto>();
+        CreateMap<EntryName, EntryNameDetailDto>();
+        CreateMap<EntryNameCreateInput, EntryName>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<EntryNameUpdateInput, EntryName>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+
+        //EntryValue
+        CreateMap<EntryValue, EntryValueSimpleDto>();
+
+        //ChatObjectEntryValue
+        CreateMap<ChatObjectEntryValue, EntryObjectDto>()
+           .ForMember(x => x.EntryName, o => o.MapFrom(x => x.EntryValue.EntryName))
+           ;
+        CreateMap<ChatObjectEntryValue, EntrySimpleDto>()
+           .ForMember(x => x.Name, o => o.MapFrom(x => x.EntryValue.EntryName.Name))
+           .ForMember(x => x.Value, o => o.MapFrom(x => x.EntryValue.Value))
+           ;
 
     }
 }

@@ -19,9 +19,30 @@ namespace IczpNet.Chat.EntryNames
         [MaxLength(20)]
         public virtual string Code { get; set; }
 
-        public virtual bool IsStatic { get; set; }
+        [MaxLength(100)]
+        public virtual string Regex { get; set; } = null;
 
-        public virtual bool IsPublic { get; set; }
+        public virtual int MaxLenth { get; set; } = 1;
+
+        public virtual int MinLenth { get; set; } = 1;
+
+        public virtual int MaxCount { get; set; } = 1;
+
+        public virtual int MinCount { get; set; } = 1;
+
+        public virtual bool IsUniqued { get; set; } = false;
+
+        public virtual bool IsRequired { get; set; } = false;
+
+        public virtual bool IsStatic { get; set; } = false;
+
+        public virtual bool IsPublic { get; set; } = true;
+
+        [MaxLength(200)]
+        public virtual string Description { get; set; }
+
+        [MaxLength(200)]
+        public virtual string ErrorMessage { get; set; }
 
         public virtual IList<EntryValue> EntryValueList { get; set; }
 

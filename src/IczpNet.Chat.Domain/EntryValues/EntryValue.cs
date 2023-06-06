@@ -3,6 +3,7 @@ using IczpNet.Chat.ChatObjectEntryValues;
 using IczpNet.Chat.EntryNames;
 using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
 using Microsoft.EntityFrameworkCore;
+using Pipelines.Sockets.Unofficial.Buffers;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -27,5 +28,13 @@ namespace IczpNet.Chat.EntryValues
         public virtual IList<ChatObjectEntryValue> ChatObjectEntryValueList { get; set; }
 
         public virtual IList<ChatObjectTargetEntryValue> ChatObjectTargetEntryValueList { get; set; }
+
+        protected EntryValue() { }
+
+        public EntryValue(Guid id, Guid entryNameId, string value) : base(id)
+        {
+            EntryNameId = entryNameId;
+            Value = value;
+        }
     }
 }
