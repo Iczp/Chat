@@ -48,5 +48,7 @@ namespace IczpNet.Chat.ChatObjects
 
         Task<ChatObjectDetailDto> SetEntriesAsync(long id, Dictionary<Guid, List<EntryValueInput>> input);
 
+        Task<ChatObjectDestinationDetailDto> SetDestinationEntriesAsync(long ownerId, long destinationId, Dictionary<Guid, List<EntryValueInput>> input);
+
     }
 }

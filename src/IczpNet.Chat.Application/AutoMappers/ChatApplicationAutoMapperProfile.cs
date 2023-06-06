@@ -43,6 +43,7 @@ public class ChatApplicationAutoMapperProfile : Profile
         //ChatObject
         CreateMap<ChatObject, ChatObjectDto>();
         CreateMap<ChatObject, ChatObjectSimpleDto>();
+        CreateMap<ChatObject, ChatObjectDestinationDetailDto>();
         CreateMap<ChatObject, ChatObjectDetailDto>()
             //.ForMember(x => x.SenderMessageCount, o => o.MapFrom(x => x.SenderMessageList.Count))
             //.ForMember(x => x.ReceiverMessageCount, o => o.MapFrom(x => x.ReceiverMessageList.Count))
@@ -57,10 +58,6 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<ChatObject, RobotDto>();
         CreateMap<ChatObject, ShopKeeperDto>();
         CreateMap<ChatObject, ShopWaiterDto>();
-
-       
-
-       
 
         CreateMap<Developer, DeveloperDto>().ReverseMap();
 
@@ -128,9 +125,15 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<ChatObjectEntryValue, EntryObjectDto>()
            .ForMember(x => x.EntryName, o => o.MapFrom(x => x.EntryValue.EntryName))
            ;
+
         CreateMap<ChatObjectEntryValue, EntrySimpleDto>()
            .ForMember(x => x.Name, o => o.MapFrom(x => x.EntryValue.EntryName.Name))
            .ForMember(x => x.Value, o => o.MapFrom(x => x.EntryValue.Value))
+           ;
+
+        //ChatObjectTargetEntryValue
+        CreateMap<ChatObjectTargetEntryValue, EntryObjectDto>()
+           .ForMember(x => x.EntryName, o => o.MapFrom(x => x.EntryValue.EntryName))
            ;
 
     }

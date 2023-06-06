@@ -55,19 +55,23 @@ namespace IczpNet.Chat.Services
         protected IRepository<EntryName, Guid> EntryNameRepository { get; }
         protected IRepository<EntryValue, Guid> EntryValueRepository { get; }
 
+        protected IRepository<ChatObjectTargetEntryValue> ChatObjectTargetEntryValueRepository { get; }
+
         public ChatObjectAppService(
             IChatObjectRepository repository,
             IChatObjectCategoryManager chatObjectCategoryManager,
             IChatObjectManager chatObjectManager,
             ISessionPermissionChecker sessionPermissionChecker,
             IRepository<EntryName, Guid> entryNameRepository,
-            IRepository<EntryValue, Guid> entryValueRepository) : base(repository)
+            IRepository<EntryValue, Guid> entryValueRepository,
+            IRepository<ChatObjectTargetEntryValue> chatObjectTargetEntryValueRepository) : base(repository)
         {
             ChatObjectCategoryManager = chatObjectCategoryManager;
             ChatObjectManager = chatObjectManager;
             SessionPermissionChecker = sessionPermissionChecker;
             EntryNameRepository = entryNameRepository;
             EntryValueRepository = entryValueRepository;
+            ChatObjectTargetEntryValueRepository = chatObjectTargetEntryValueRepository;
         }
 
         protected override async Task<IQueryable<ChatObject>> CreateFilteredQueryAsync(ChatObjectGetListInput input)
@@ -148,14 +152,14 @@ namespace IczpNet.Chat.Services
 
         protected override Task MapToEntityAsync(ChatObjectUpdateInput updateInput, ChatObject entity)
         {
-            //entity.SetName(updateInput.Name);
+            //owner.SetName(updateInput.Name);
             return base.MapToEntityAsync(updateInput, entity);
         }
 
         protected override ChatObject MapToEntity(ChatObjectCreateInput createInput)
         {
             var entity = base.MapToEntity(createInput);
-            //entity.SetName(createInput.Name);
+            //owner.SetName(createInput.Name);
             return entity;
         }
 
@@ -224,12 +228,23 @@ namespace IczpNet.Chat.Services
             return UpdateEntityAsync(id, entity => entity.SetVerificationMethod(verificationMethod));
         }
 
+        protected virtual async Task<ChatObjectDetailDto> MapToEntityDetailAsync(ChatObject entity)
+        {
+            await Task.CompletedTask;
+            return ObjectMapper.Map<ChatObject, ChatObjectDetailDto>(entity);
+        }
+
+        protected virtual async Task<ChatObjectDestinationDetailDto> MapToEntityDestinationDetailAsync(ChatObject entity)
+        {
+            await Task.CompletedTask;
+            return ObjectMapper.Map<ChatObject, ChatObjectDestinationDetailDto>(entity);
+        }
         [HttpGet]
         public async Task<ChatObjectDetailDto> GetDetailAsync(long id)
         {
             var entity = await ChatObjectManager.GetAsync(id);
 
-            return ObjectMapper.Map<ChatObject, ChatObjectDetailDto>(entity);
+            return await MapToEntityDetailAsync(entity);
         }
 
         protected virtual async Task CheckEntriesInputAsync(ChatObject chatObject, Dictionary<Guid, List<EntryValueInput>> input)
@@ -260,34 +275,6 @@ namespace IczpNet.Chat.Services
             }
         }
 
-        [HttpPost]
-        public async Task<ChatObjectDetailDto> SetEntriesAsync(long id, Dictionary<Guid, List<EntryValueInput>> input)
-        {
-            var entity = await ChatObjectManager.GetAsync(id);
-
-            await CheckEntriesInputAsync(entity, input);
-
-            //entity.Entries?.Clear();
-
-            var inputItems = await FormatItemsAsync(input, async (Guid key, string value) =>
-            {
-                var entryValue = await EntryValueRepository.FirstOrDefaultAsync(x => x.EntryNameId == key && x.Value == value)
-                                   ?? new EntryValue(GuidGenerator.Create(), key, value);
-                return new ChatObjectEntryValue()
-                {
-                    OwnerId = entity.Id,
-                    Owner = entity,
-                    EntryValue = entryValue,
-                    EntryValueId = entryValue.Id
-                };
-            });
-
-            var entityComparer = new EntityComparer<ChatObjectEntryValue>(x => x.GetKeys().JoinAsString(","));
-
-            entity.Entries = await CudItemsAsync(entity.Entries, inputItems, entityComparer);
-
-            return ObjectMapper.Map<ChatObject, ChatObjectDetailDto>(entity);
-        }
 
         /// <summary>
         /// Create | Update | Delete items
@@ -340,7 +327,99 @@ namespace IczpNet.Chat.Services
             return inputItems;
         }
 
+        [HttpPost]
+        public async Task<ChatObjectDetailDto> SetEntriesAsync(long id, Dictionary<Guid, List<EntryValueInput>> input)
+        {
+            var entity = await ChatObjectManager.GetAsync(id);
+
+            await CheckEntriesInputAsync(entity, input);
+
+            //owner.Entries?.Clear();
+
+            var inputItems = await FormatItemsAsync(input, async (Guid key, string value) =>
+            {
+                var entryValue = await EntryValueRepository.FirstOrDefaultAsync(x => x.EntryNameId == key && x.Value == value)
+                                   ?? new EntryValue(GuidGenerator.Create(), key, value);
+                return new ChatObjectEntryValue()
+                {
+                    OwnerId = entity.Id,
+                    Owner = entity,
+                    EntryValue = entryValue,
+                    EntryValueId = entryValue.Id
+                };
+            });
+
+            var entityComparer = new EntityComparer<ChatObjectEntryValue>(x => x.GetKeys().JoinAsString(","));
+
+            entity.Entries = await CudItemsAsync(entity.Entries, inputItems, entityComparer);
+
+            return await MapToEntityDetailAsync(entity);
+        }
+
+        [HttpPost]
+        public async Task<ChatObjectDestinationDetailDto> SetDestinationEntriesAsync(long ownerId, long destinationId, Dictionary<Guid, List<EntryValueInput>> input)
+        {
+            var owner = await ChatObjectManager.GetAsync(ownerId);
+
+            var destination = await ChatObjectManager.GetAsync(destinationId);
+
+            await CheckEntriesInputAsync(owner, input);
+
+            //owner.Entries?.Clear();
+
+            var inputItems = await FormatItemsAsync(input, async (Guid key, string value) =>
+            {
+                var entryValue = await EntryValueRepository.FirstOrDefaultAsync(x => x.EntryNameId == key && x.Value == value)
+                                   ?? new EntryValue(GuidGenerator.Create(), key, value);
+                return new ChatObjectTargetEntryValue()
+                {
+                    OwnerId = owner.Id,
+                    Owner = owner,
+                    EntryValue = entryValue,
+                    EntryValueId = entryValue.Id,
+                    Destination = destination,
+                    DestinationId = destination.Id,
+                };
+            });
+
+            var entityComparer = new EntityComparer<ChatObjectTargetEntryValue>(x => x.GetKeys().JoinAsString(","));
+
+            var targetEntries = (await ChatObjectTargetEntryValueRepository.GetQueryableAsync())
+                .Where(x => x.OwnerId == owner.Id && x.DestinationId == destination.Id)
+                //.Where(x=> input.Keys.Contains(x.EntryValue.EntryNameId))
+                .ToList();
+
+            //delete
+            var deleteItems = targetEntries.Except(inputItems, entityComparer).ToList();
+
+            await ChatObjectTargetEntryValueRepository.DeleteManyAsync(deleteItems, autoSave: true);
+
+            foreach (var item in deleteItems)
+            {
+                targetEntries.Remove(item);
+            }
+
+            //create
+            var createItems = inputItems.Except(targetEntries, entityComparer).ToList();
+
+            await ChatObjectTargetEntryValueRepository.InsertManyAsync(createItems, autoSave: true);
+
+            //modify
+            var modifyItems = targetEntries.Intersect(inputItems, entityComparer).ToList();
+
+            foreach (var item in modifyItems)
+            {
+                TryToSetLastModificationTime(item);
+            }
+
+            await ChatObjectTargetEntryValueRepository.UpdateManyAsync(modifyItems, autoSave: true);
+
+            var entity = await ChatObjectManager.GetAsync(destinationId);
+
+            entity.SetViewerEntries(targetEntries);
+
+            return await MapToEntityDestinationDetailAsync(entity);
+        }
+
     }
-
-
 }

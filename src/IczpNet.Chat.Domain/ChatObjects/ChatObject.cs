@@ -136,7 +136,7 @@ namespace IczpNet.Chat.ChatObjects
 
         #region Developer
         [InverseProperty(nameof(Developers.Developer.Owner))]
-        public virtual Developer Developer { get;  set; }
+        public virtual Developer Developer { get; set; }
         #endregion
 
         #region Categorys
@@ -237,10 +237,13 @@ namespace IczpNet.Chat.ChatObjects
 
         #region ChatObjectEntryValue 
         [InverseProperty(nameof(ChatObjectEntryValue.Owner))]
-        public virtual IList<ChatObjectEntryValue> Entries { get;  set; } = new List<ChatObjectEntryValue>();
+        public virtual IList<ChatObjectEntryValue> Entries { get; set; } = new List<ChatObjectEntryValue>();
 
         [InverseProperty(nameof(ChatObjectTargetEntryValue.Destination))]
-        public virtual IList<ChatObjectTargetEntryValue> TargetEntries { get; protected set; } = new List<ChatObjectTargetEntryValue>();
+        public virtual IList<ChatObjectTargetEntryValue> TargetEntries { get; set; } = new List<ChatObjectTargetEntryValue>();
+
+        [NotMapped]
+        public virtual IList<ChatObjectTargetEntryValue> ViewerEntries { get; private set; }
         #endregion
 
         #region Motto 
@@ -302,6 +305,11 @@ namespace IczpNet.Chat.ChatObjects
         internal void BingAppUserId(Guid appUserId)
         {
             AppUserId = appUserId;
+        }
+
+        public virtual void SetViewerEntries(List<ChatObjectTargetEntryValue> viewerEntryValueList)
+        {
+            ViewerEntries = viewerEntryValueList;
         }
     }
 }
