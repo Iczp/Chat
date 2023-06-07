@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace IczpNet.Chat.EntryNameValues.Dtos
+namespace IczpNet.Chat.Entrys.Dtos
 {
     public class EntryInput
     {

@@ -132,7 +132,7 @@ namespace IczpNet.Chat.Entrys
         }
 
         [HttpPost]
-        public async Task<ChatObjectDetailDto> SetEntriesAsync(long ownerId, Dictionary<Guid, List<EntryValueInput>> input)
+        public async Task<ChatObjectDetailDto> SetForChatObjectAsync(long ownerId, Dictionary<Guid, List<EntryValueInput>> input)
         {
             var owner = await ChatObjectManager.GetAsync(ownerId);
 
@@ -161,7 +161,7 @@ namespace IczpNet.Chat.Entrys
         }
 
         [HttpPost]
-        public async Task<SessionUnitDestinationDetailDto> SetSessionUnitEntriesAsync(Guid sessionUnitId, Dictionary<Guid, List<EntryValueInput>> input)
+        public async Task<SessionUnitDestinationDetailDto> SetForSessionUnitAsync(Guid sessionUnitId, Dictionary<Guid, List<EntryValueInput>> input)
         {
             var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
 

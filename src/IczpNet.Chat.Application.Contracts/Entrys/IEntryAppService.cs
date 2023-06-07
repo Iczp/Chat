@@ -9,8 +9,8 @@ namespace IczpNet.Chat.Entrys
 {
     public interface IEntryAppService
     {
-        Task<ChatObjectDetailDto> SetEntriesAsync(long ownerId, Dictionary<Guid, List<EntryValueInput>> input);
+        Task<ChatObjectDetailDto> SetForChatObjectAsync(long ownerId, Dictionary<Guid, List<EntryValueInput>> input);
 
-        Task<SessionUnitDestinationDetailDto> SetSessionUnitEntriesAsync(Guid sessionUnitId, Dictionary<Guid, List<EntryValueInput>> input);
+        Task<SessionUnitDestinationDetailDto> SetForSessionUnitAsync(Guid sessionUnitId, Dictionary<Guid, List<EntryValueInput>> input);
     }
 }

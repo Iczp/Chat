@@ -105,6 +105,7 @@ Update-Database
 - [x] 店小二(ShopWaiter)
 - [x] 聊天广场(Square)
 - [x] 匿名(Anonymous)
+- [x] 动态信息添加（添加手机，QQ，职位等）
 
 ### 聊天对象扩展(ChatObject)
 
@@ -156,6 +157,7 @@ Update-Database
 - [x] 【私有消息】角标统计
 - [x] 【特别关注】角标统计
 - [x] 【@我】角标统计
+- [x] 动态属性备注（添加手机，QQ，职位等）
 
 ### 会话管理功能
 
@@ -171,7 +173,7 @@ Update-Database
   - [x] 权限分组
   - [ ] 权限启用与禁用
   - [ ] 会话标签（SessionTag）-- 
-  - [ ] 会话菜单功能
+  - [x] 会话菜单功能
   - [ ] “拍一拍”
   - [x] @所有人、@XXX
   - [ ] 禁言（管理员、群主）
@@ -282,6 +284,7 @@ Update-Database
   - [x] 消息已读记录器(ReadedRecorder)
   - [x] 消息打开记录器(OpenedRecorder)
   - [ ] **敏感词过滤\审核**
+  - [ ] Elasticsearch（elastic.co）
 
 
 
@@ -299,6 +302,19 @@ Update-Database
 - [x] 机器人账号
 - [x] 机器人主动发通知
 - [ ] ChatGPT
+
+
+
+### 开发者功能
+
+- [x] 开发者设置（Token、EncodingAesKey、PostUrl）
+- [x] 开启与关闭功能
+- [x] 验证及验签（signature）
+- [x] Http请求开发者服务日志
+- [x] 后台作业调用开发者及重试功能
+- [ ] 验证开发者主机（HOST）
+- [ ] 开发者Demo
+- [ ] 开发者SDK
 
 
 

@@ -40,8 +40,4 @@
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Entrys\Dtos\" />
-  </ItemGroup>
-
 </Project>

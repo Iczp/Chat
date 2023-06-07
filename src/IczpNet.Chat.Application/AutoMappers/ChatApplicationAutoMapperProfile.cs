@@ -26,10 +26,10 @@ using IczpNet.Chat.DbTables;
 using IczpNet.Chat.EntryNames;
 using IczpNet.Chat.EntryNames.Dtos;
 using IczpNet.Chat.ChatObjectEntryValues;
-using IczpNet.Chat.EntryNameValues.Dtos;
 using IczpNet.Chat.EntryValues;
 using IczpNet.Chat.EntryValues.Dtos;
 using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
+using IczpNet.Chat.Entrys.Dtos;
 
 namespace IczpNet.Chat.AutoMappers;
 
