@@ -56,4 +56,19 @@ public class ChatPermissions
         public const string Update = Default + "." + nameof(Update);
         public const string SetIsEnabled = Default + "." + nameof(SetIsEnabled);
     }
+
+    public class EntryNamePermission
+    {
+        public const string Default = GroupName + "." + nameof(EntryNamePermission);
+        public const string Create = Default + "." + nameof(Create);
+        public const string Update = Default + "." + nameof(Update);
+        public const string Delete = Default + "." + nameof(Delete);
+    }
+    public class EntryValuePermission
+    {
+        public const string Default = GroupName + "." + nameof(EntryValuePermission);
+        public const string Create = Default + "." + nameof(Create);
+        public const string Update = Default + "." + nameof(Update);
+        public const string Delete = Default + "." + nameof(Delete);
+    }
 }

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using IczpNet.AbpCommons;
+using IczpNet.Chat.Permissions;
 
 namespace IczpNet.Chat.EntryValues
 {
@@ -19,6 +20,12 @@ namespace IczpNet.Chat.EntryValues
             EntryValueUpdateInput>,
         IEntryValueAppService
     {
+        protected override string GetPolicyName { get; set; } = ChatPermissions.EntryValuePermission.Default;
+        protected override string GetListPolicyName { get; set; } = ChatPermissions.EntryValuePermission.Default;
+        protected override string CreatePolicyName { get; set; } = ChatPermissions.EntryValuePermission.Create;
+        protected override string UpdatePolicyName { get; set; } = ChatPermissions.EntryValuePermission.Update;
+        protected override string DeletePolicyName { get; set; } = ChatPermissions.EntryValuePermission.Delete;
+
         public EntryValueAppService(IRepository<EntryValue, Guid> repository) : base(repository)
         {
         }

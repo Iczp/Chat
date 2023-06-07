@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.EntryNames.Dtos;
+using IczpNet.Chat.Permissions;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,7 +19,14 @@ namespace IczpNet.Chat.EntryNames
             EntryNameUpdateInput>,
         IEntryNameAppService
     {
-        public EntryNameAppService(IRepository<EntryName, Guid> repository) : base(repository)
+        protected override string GetPolicyName { get; set; } = ChatPermissions.EntryNamePermission.Default;
+        protected override string GetListPolicyName { get; set; } = ChatPermissions.EntryNamePermission.Default;
+        protected override string CreatePolicyName { get; set; } = ChatPermissions.EntryNamePermission.Create;
+        protected override string UpdatePolicyName { get; set; } = ChatPermissions.EntryNamePermission.Update;
+        protected override string DeletePolicyName { get; set; } = ChatPermissions.EntryNamePermission.Delete;
+
+        public EntryNameAppService(
+            IRepository<EntryName, Guid> repository) : base(repository)
         {
         }
 
