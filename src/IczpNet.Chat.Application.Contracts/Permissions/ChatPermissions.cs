@@ -14,6 +14,8 @@ public class ChatPermissions
     public class ChatObjectPermission
     {
         public const string Default = GroupName + "." + nameof(ChatObjectPermission);
+        public const string GetItem = Default + "." + nameof(GetItem);
+        public const string GetList = Default + "." + nameof(GetList);
         public const string Create = Default + "." + nameof(Create);
         public const string Update = Default + "." + nameof(Update);
         public const string Delete = Default + "." + nameof(Delete);

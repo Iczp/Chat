@@ -5,6 +5,7 @@ using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjectCategorys;
 using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionPermissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -31,6 +32,11 @@ namespace IczpNet.Chat.ChatObjects
             ChatObjectInfo>,
         IChatObjectAppService
     {
+        protected override string GetPolicyName { get; set; } = ChatPermissions.ChatObjectPermission.GetItem;
+        protected override string GetListPolicyName { get; set; } = ChatPermissions.ChatObjectPermission.GetList;
+        protected override string CreatePolicyName { get; set; } = ChatPermissions.ChatObjectPermission.Create;
+        protected override string UpdatePolicyName { get; set; } = ChatPermissions.ChatObjectPermission.Update;
+        protected override string DeletePolicyName { get; set; } = ChatPermissions.ChatObjectPermission.Delete;
         protected IChatObjectManager ChatObjectManager { get; }
         protected IChatObjectCategoryManager ChatObjectCategoryManager { get; }
         protected ISessionPermissionChecker SessionPermissionChecker { get; }

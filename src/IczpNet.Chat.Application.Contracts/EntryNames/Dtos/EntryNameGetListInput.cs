@@ -7,7 +7,7 @@ public class EntryNameGetListInput : BaseTreeGetListInput<Guid>
 {
     public virtual bool? IsChoice { get; set; }
 
-    public virtual bool? IsUniqued { get; set; } = false;
+    public virtual bool? IsUniqued { get; set; }
 
     public virtual bool? IsRequired { get; set; }
 
