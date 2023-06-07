@@ -26,6 +26,11 @@ namespace IczpNet.Chat.EntryNames
         protected override async Task<IQueryable<EntryName>> CreateFilteredQueryAsync(EntryNameGetListInput input)
         {
             return (await ReadOnlyRepository.GetQueryableAsync())
+                .WhereIf(input.IsChoice.HasValue, x => x.IsChoice == input.IsChoice)
+                .WhereIf(input.IsPublic.HasValue, x => x.IsPublic == input.IsPublic)
+                .WhereIf(input.IsStatic.HasValue, x => x.IsStatic == input.IsStatic)
+                .WhereIf(input.IsUniqued.HasValue, x => x.IsUniqued == input.IsUniqued)
+                
                 .WhereIf(!input.Keyword.IsNullOrEmpty(), x => x.Name.Contains(input.Keyword));
         }
 

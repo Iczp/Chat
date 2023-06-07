@@ -30,6 +30,8 @@ namespace IczpNet.Chat.EntryNames
 
         public virtual int MinCount { get; set; } = 1;
 
+        public virtual bool IsChoice { get; set; }
+
         public virtual bool IsUniqued { get; set; } = false;
 
         public virtual bool IsRequired { get; set; } = false;
@@ -45,6 +47,7 @@ namespace IczpNet.Chat.EntryNames
         public virtual string ErrorMessage { get; set; }
 
         public virtual IList<EntryValue> EntryValueList { get; set; }
+        
 
         protected EntryName() { }
 

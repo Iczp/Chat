@@ -20,6 +20,8 @@ namespace IczpNet.Chat.EntryNames.Dtos
 
         public virtual int MinCount { get; set; } = 1;
 
+        public virtual bool IsChoice { get; set; }
+
         public virtual bool IsUniqued { get; set; } = false;
 
         public virtual bool IsRequired { get; set; }
