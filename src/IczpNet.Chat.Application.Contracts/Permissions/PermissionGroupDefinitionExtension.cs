@@ -1,11 +1,12 @@
 ﻿using IczpNet.Chat.Localization;
+using System;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Localization;
 using Volo.Abp.Reflection;
 
 namespace IczpNet.Chat.Permissions
 {
-    internal static class PermissionGroupDefinitionExtension
+    public static class PermissionGroupDefinitionExtension
     {
         public static void AddPermission(this PermissionGroupDefinition group, string[] names)
         {
@@ -19,11 +20,27 @@ namespace IczpNet.Chat.Permissions
 
         public static void AddPermission<T>(this PermissionGroupDefinition group)
         {
-            var names = ReflectionHelper.GetPublicConstantsRecursively(typeof(T));
+            AddPermission(group, typeof(T));
+        }
+
+        public static void AddPermission(this PermissionGroupDefinition group, Type type)
+        {
+            var names = ReflectionHelper.GetPublicConstantsRecursively(type);
 
             AddPermission(group, names);
         }
 
+        public static void AddPermissions(this PermissionGroupDefinition group, Type rootPermissionType)
+        {
+            foreach (var nestedType in rootPermissionType.GetNestedTypes())
+            {
+                AddPermission(group, nestedType);
+            }
+        }
+        public static void AddPermissions<T>(this PermissionGroupDefinition group)
+        {
+            AddPermissions(group, typeof(T));
+        }
         public static LocalizableString L(string name)
         {
             return LocalizableString.Create<ChatResource>(name);

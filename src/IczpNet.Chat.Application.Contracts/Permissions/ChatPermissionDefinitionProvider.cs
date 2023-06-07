@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.Localization;
+using System.Linq;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Localization;
 using Volo.Abp.Reflection;
@@ -13,13 +14,16 @@ public class ChatPermissionDefinitionProvider : PermissionDefinitionProvider
 
         //SessionPermissionDefinitionPermission
 
-        chatGroup.AddPermission<ChatPermissions.SessionPermissionDefinitionPermission>();
+        //chatGroup.AddPermission<ChatPermissions.SessionPermissionDefinitionPermission>();
 
-        chatGroup.AddPermission<ChatPermissions.RobotManagementPermission>();
+        //chatGroup.AddPermission<ChatPermissions.RobotManagementPermission>();
 
-        chatGroup.AddPermission<ChatPermissions.RoomManagementPermission>();
+        //chatGroup.AddPermission<ChatPermissions.RoomManagementPermission>();
 
-        chatGroup.AddPermission<ChatPermissions.MessageSenderPermission>();
+        //chatGroup.AddPermission<ChatPermissions.MessageSenderPermission>();
+
+        chatGroup.AddPermissions<ChatPermissions>();
+
     }
 
     private static LocalizableString L(string name)
