@@ -55,7 +55,9 @@ namespace IczpNet.Chat.BaseAppServices
         protected ISessionPermissionChecker SessionPermissionChecker => LazyServiceProvider.LazyGetRequiredService<ISessionPermissionChecker>();
         protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
 
-        protected CrudWithSessionUnitTreeChatAppService(IRepository<TEntity, TKey> repository) : base(repository)
+        protected CrudWithSessionUnitTreeChatAppService(
+            IRepository<TEntity, TKey> repository,
+            ITreeManager<TEntity, TKey, TTreeInfo> treeManager) : base(repository, treeManager)
         {
         }
 

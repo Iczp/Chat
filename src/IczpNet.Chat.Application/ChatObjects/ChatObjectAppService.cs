@@ -1,10 +1,8 @@
 ﻿using Castle.Components.DictionaryAdapter.Xml;
 using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
-using IczpNet.AbpTrees;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjectCategorys;
-using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.SessionSections.SessionPermissions;
@@ -19,7 +17,7 @@ using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Users;
 
-namespace IczpNet.Chat.Services
+namespace IczpNet.Chat.ChatObjects
 {
     public class ChatObjectAppService
         : CrudTreeChatAppService<
@@ -34,15 +32,14 @@ namespace IczpNet.Chat.Services
         IChatObjectAppService
     {
         protected IChatObjectManager ChatObjectManager { get; }
-        protected override ITreeManager<ChatObject, long> TreeManager => LazyServiceProvider.LazyGetRequiredService<IChatObjectManager>();
         protected IChatObjectCategoryManager ChatObjectCategoryManager { get; }
         protected ISessionPermissionChecker SessionPermissionChecker { get; }
 
         public ChatObjectAppService(
             IChatObjectRepository repository,
-            IChatObjectCategoryManager chatObjectCategoryManager,
             IChatObjectManager chatObjectManager,
-            ISessionPermissionChecker sessionPermissionChecker) : base(repository)
+            IChatObjectCategoryManager chatObjectCategoryManager,
+            ISessionPermissionChecker sessionPermissionChecker) : base(repository, chatObjectManager)
         {
             ChatObjectCategoryManager = chatObjectCategoryManager;
             ChatObjectManager = chatObjectManager;

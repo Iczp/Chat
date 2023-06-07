@@ -1,6 +1,5 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
-using IczpNet.AbpTrees;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionOrganizations;
@@ -33,11 +32,10 @@ namespace IczpNet.Chat.SessionServices
         protected override string DeletePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Delete;
         protected override string DeleteManyPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Delete;
 
-        protected override ITreeManager<SessionOrganization, long> TreeManager => LazyServiceProvider.LazyGetRequiredService<ISessionOrganizationManager>();
-
         public SessionOrganiztionBySessionUnitAppService(
-            IRepository<SessionOrganization, long> repository)
-            : base(repository)
+            IRepository<SessionOrganization, long> repository,
+            ISessionOrganizationManager sessionOrganizationManager)
+            : base(repository, sessionOrganizationManager)
         {
         }
 

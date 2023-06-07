@@ -7,11 +7,9 @@ using IczpNet.Chat.SessionSections.SessionPermissions;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.Menus
 {
@@ -27,24 +25,20 @@ namespace IczpNet.Chat.Menus
             MenuInfo>,
         IMenuAppService
     {
-        protected IMenuManager ActionMenuManager { get; }
-        protected override ITreeManager<Menu, Guid> TreeManager => LazyServiceProvider.LazyGetRequiredService<IMenuManager>();
         protected ISessionPermissionChecker SessionPermissionChecker { get; }
         protected IChatObjectRepository ChatObjectRepository { get; }
-        protected IMenuManager MenuManager { get; }
+        protected new IMenuManager TreeManager { get; }
 
         public MenuAppService(
             IRepository<Menu, Guid> repository,
-            IMenuManager chatObjectManager,
+            IMenuManager menuManager,
             ISessionPermissionChecker sessionPermissionChecker,
-            IChatObjectRepository chatObjectRepository,
-            IMenuManager menuManager) : base(repository)
+            IChatObjectRepository chatObjectRepository) : base(repository, menuManager)
         {
 
-            ActionMenuManager = chatObjectManager;
             SessionPermissionChecker = sessionPermissionChecker;
             ChatObjectRepository = chatObjectRepository;
-            MenuManager = menuManager;
+            TreeManager = menuManager;
         }
 
         protected override async Task<IQueryable<Menu>> CreateFilteredQueryAsync(MenuGetListInput input)
@@ -85,7 +79,7 @@ namespace IczpNet.Chat.Menus
         //[UnitOfWork(true, IsolationLevel.ReadUncommitted)]
         public async Task<string> TriggerAsync(Guid id)
         {
-            return await MenuManager.TriggerAsync(id);
+            return await TreeManager.TriggerAsync(id);
         }
     }
 }

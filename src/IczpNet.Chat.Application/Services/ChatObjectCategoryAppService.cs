@@ -1,6 +1,8 @@
 ﻿using IczpNet.AbpCommons;
+using IczpNet.AbpTrees;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjectCategorys.Dtos;
+using IczpNet.Chat.ChatObjects;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,7 +22,9 @@ namespace IczpNet.Chat.ChatObjectCategorys
             ChatObjectCategoryInfo>,
         IChatObjectCategoryAppService
     {
-        public ChatObjectCategoryAppService(IRepository<ChatObjectCategory, Guid> repository) : base(repository)
+        public ChatObjectCategoryAppService(
+            IRepository<ChatObjectCategory, Guid> repository,
+            IChatObjectCategoryManager treeManager) : base(repository, treeManager)
         {
         }
 

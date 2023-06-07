@@ -33,12 +33,12 @@ namespace IczpNet.Chat.SessionServices
         protected override string UpdatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Update;
         protected override string DeletePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Delete;
 
-        protected override ITreeManager<SessionOrganization, long> TreeManager => LazyServiceProvider.LazyGetRequiredService<ISessionOrganizationManager>();
         protected IRepository<Session, Guid> SessionRepository { get; set; }
         public SessionOrganizationAppService(
             IRepository<SessionOrganization, long> repository,
+            ISessionOrganizationManager sessionOrganizationManager,
             IRepository<Session, Guid> sessionRepository)
-            : base(repository)
+            : base(repository, sessionOrganizationManager)
         {
             SessionRepository = sessionRepository;
         }

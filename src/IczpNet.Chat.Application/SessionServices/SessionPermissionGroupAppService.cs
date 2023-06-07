@@ -30,12 +30,10 @@ namespace IczpNet.Chat.SessionServices
         //protected override string UpdatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionPermissionGroupPermission.Update;
         //protected override string DeletePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionPermissionGroupPermission.Delete;
 
-
-        protected override ITreeManager<SessionPermissionGroup, long> TreeManager => LazyServiceProvider.LazyGetRequiredService<ISessionPermissionGroupManager>();
-
         public SessionPermissionGroupAppService(
-            IRepository<SessionPermissionGroup, long> repository)
-            : base(repository)
+            IRepository<SessionPermissionGroup, long> repository,
+            ISessionPermissionGroupManager sessionPermissionGroupManager)
+            : base(repository, sessionPermissionGroupManager)
         {
         }
 

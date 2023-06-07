@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Auditing;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.MultiTenancy;
 
 namespace IczpNet.Chat.BaseAppServices
 {
@@ -41,7 +40,9 @@ namespace IczpNet.Chat.BaseAppServices
         where TTreeInfo : ITreeInfo<TKey>
     {
         protected ICurrentChatObject CurrentChatObject => LazyServiceProvider.LazyGetRequiredService<ICurrentChatObject>();
-        protected CrudTreeChatAppService(IRepository<TEntity, TKey> repository) : base(repository)
+        protected CrudTreeChatAppService(
+            IRepository<TEntity, TKey> repository,
+            ITreeManager<TEntity, TKey, TTreeInfo> treeManager) : base(repository, treeManager)
         {
 
         }
@@ -91,7 +92,9 @@ namespace IczpNet.Chat.BaseAppServices
         where TUpdateInput : ITreeInput<TKey>
     {
         protected ICurrentChatObject CurrentChatObject => LazyServiceProvider.LazyGetRequiredService<ICurrentChatObject>();
-        protected CrudTreeChatAppService(IRepository<TEntity, TKey> repository) : base(repository)
+        protected CrudTreeChatAppService(
+            IRepository<TEntity, TKey> repository, 
+            ITreeManager<TEntity, TKey> treeManager) : base(repository, treeManager)
         {
 
         }

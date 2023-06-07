@@ -26,7 +26,8 @@ namespace IczpNet.Chat.EntryNames
         protected override string DeletePolicyName { get; set; } = ChatPermissions.EntryNamePermission.Delete;
 
         public EntryNameAppService(
-            IRepository<EntryName, Guid> repository) : base(repository)
+            IRepository<EntryName, Guid> repository,
+            IEntryNameManager entryNameManager) : base(repository, entryNameManager)
         {
         }
 
@@ -37,7 +38,7 @@ namespace IczpNet.Chat.EntryNames
                 .WhereIf(input.IsPublic.HasValue, x => x.IsPublic == input.IsPublic)
                 .WhereIf(input.IsStatic.HasValue, x => x.IsStatic == input.IsStatic)
                 .WhereIf(input.IsUniqued.HasValue, x => x.IsUniqued == input.IsUniqued)
-                
+
                 .WhereIf(!input.Keyword.IsNullOrEmpty(), x => x.Name.Contains(input.Keyword));
         }
 
