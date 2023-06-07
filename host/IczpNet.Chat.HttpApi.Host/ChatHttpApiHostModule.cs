@@ -69,6 +69,13 @@ public class ChatHttpApiHostModule : AbpModule
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
 
+        if (hostingEnvironment.IsDevelopment())
+        {
+            //----------alert------------
+
+            context.Services.AddAlwaysAllowAuthorization();
+        }
+
         Configure<AbpBackgroundJobWorkerOptions>(options =>
         {
             options.DefaultTimeout = 864000; //10 days (as seconds)
