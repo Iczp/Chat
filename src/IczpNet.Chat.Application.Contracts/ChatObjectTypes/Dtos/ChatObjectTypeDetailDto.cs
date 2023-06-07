@@ -2,5 +2,5 @@
 
 public class ChatObjectTypeDetailDto : ChatObjectTypeDto
 {
-    public virtual string Description { get; set; }
+    //public virtual string Description { get; set; }
 }

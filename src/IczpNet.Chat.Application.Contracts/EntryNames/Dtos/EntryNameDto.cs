@@ -1,5 +1,4 @@
-﻿using IczpNet.Chat.BaseDtos;
-using IczpNet.Chat.BaseInfos;
+﻿using IczpNet.Chat.BaseInfos;
 using System;
 using Volo.Abp.Application.Dtos;
 
