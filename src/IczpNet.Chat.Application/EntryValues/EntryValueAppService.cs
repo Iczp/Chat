@@ -27,6 +27,9 @@ namespace IczpNet.Chat.EntryValues
         {
             return (await ReadOnlyRepository.GetQueryableAsync())
                 .WhereIf(input.EntryNameId.HasValue, x => x.EntryNameId == input.EntryNameId)
+                .WhereIf(input.IsOption.HasValue, x => x.IsOption == input.IsOption)
+                .WhereIf(input.IsPublic.HasValue, x => x.IsPublic == input.IsPublic)
+                .WhereIf(input.IsStatic.HasValue, x => x.IsStatic == input.IsStatic)
                 .WhereIf(!input.Keyword.IsNullOrEmpty(), x => x.Value.Contains(input.Keyword));
         }
 
