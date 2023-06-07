@@ -12,7 +12,7 @@ namespace IczpNet.Chat.Developers
                 .NotNull()
                 .NotEmpty()
                 //.MustAsync((_, _) => Task.FromResult(true)) 👈 can't use async validators
-                .IsUrl()
+                .Url()
                 ;
 
             RuleFor(x => x.EncodingAesKey)

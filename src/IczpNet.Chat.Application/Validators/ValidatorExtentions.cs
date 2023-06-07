@@ -1,8 +1,6 @@
 ﻿using FluentValidation;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace IczpNet.Chat.Validators
 {
@@ -25,7 +23,6 @@ namespace IczpNet.Chat.Validators
 
         public static IRuleBuilderOptions<T, IList<TElement>> MinCount<T, TElement>(this IRuleBuilder<T, IList<TElement>> ruleBuilder, int minCount)
         {
-
             return ruleBuilder.Must((rootObject, list, context) =>
             {
                 context.MessageFormatter
@@ -36,17 +33,10 @@ namespace IczpNet.Chat.Validators
             .WithMessage("{PropertyName} must contain fewer than {MaxElements} items. The list contains {TotalElements} element");
         }
 
-        public static IRuleBuilderOptions<T, TProperty> IsUrl<T, TProperty>(this IRuleBuilder<T, TProperty> ruleBuilder, UriKind uriKind = UriKind.RelativeOrAbsolute)
+        public static IRuleBuilderOptions<T, string> Url<T>(this IRuleBuilder<T, string> ruleBuilder, UriKind uriKind = UriKind.RelativeOrAbsolute)
         {
-            return ruleBuilder.Must((x, val, context) =>
-            {
-                //context.MessageFormatter
-                // .AppendArgument("MaxElements", minCount)
-                // .AppendArgument("TotalElements", list.Count);
-
-                return Uri.TryCreate(val.ToString(), uriKind, out Uri uriResult) && UriSchemes.Contains(uriResult.Scheme);
-            })
-            .WithMessage("{PropertyName} is fail(Url)"); 
+            return ruleBuilder.SetValidator(new UrlValidator<T>(uriKind))
+                .WithMessage("'{PropertyName}' is fail(Url):{PropertyValue}");
         }
     }
 }
