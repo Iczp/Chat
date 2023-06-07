@@ -1,21 +1,19 @@
-﻿using IczpNet.AbpTrees.Dtos;
-using System;
-using System.ComponentModel;
+﻿using System;
+using Volo.Abp.Application.Dtos;
+using Volo.Abp.Auditing;
 
 namespace IczpNet.Chat.BaseDtos
 {
-    public class BaseTreeInputDto<TKey> : ITreeInput<TKey> where TKey : struct
+
+
+    public class BaseTreeDto<TKey> : EntityDto<TKey>, IHasCreationTime where TKey : struct
     {
-        [DefaultValue(null)]
         public virtual TKey? ParentId { get; set; }
 
         public virtual string Name { get; set; }
 
-        //public virtual string Code { get; set; }
+        public virtual int ChildrenCount { get; set; }
 
-        //public virtual bool IsActive { get; set; }
-
-        public virtual double Sorting { get; set; }
-
+        public virtual DateTime CreationTime { get; set; }
     }
 }

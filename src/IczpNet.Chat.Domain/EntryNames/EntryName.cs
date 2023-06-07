@@ -11,10 +11,11 @@ namespace IczpNet.Chat.EntryNames
     [Index(nameof(Name))]
     [Index(nameof(Code))]
     [Index(nameof(IsStatic))]
-    public class EntryName : BaseEntity<Guid>, IIsStatic, IIsPublic
+    [Index(nameof(FullPath))]
+    public class EntryName : BaseTreeEntity<EntryName, Guid>, IIsStatic, IIsPublic
     {
-        [MaxLength(20)]
-        public virtual string Name { get; set; }
+        //[MaxLength(20)]
+        //public virtual string Name { get; set; }
 
         [MaxLength(20)]
         public virtual string Code { get; set; }
@@ -40,17 +41,17 @@ namespace IczpNet.Chat.EntryNames
 
         public virtual bool IsPublic { get; set; } = true;
 
-        [MaxLength(200)]
-        public virtual string Description { get; set; }
+        //[MaxLength(200)]
+        //public virtual string Description { get; set; }
 
         [MaxLength(200)]
         public virtual string ErrorMessage { get; set; }
 
         public virtual IList<EntryValue> EntryValueList { get; set; }
-        
+
 
         protected EntryName() { }
 
-        public EntryName(Guid id) : base(id) { }
+        public EntryName(Guid id, string name, Guid? parentId) : base(id, name, parentId) { }
     }
 }

@@ -4,16 +4,15 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
-using IczpNet.AbpCommons;
 
 namespace IczpNet.Chat.EntryNames
 {
     public class EntryNameAppService
-        : CrudChatAppService<
+        : CrudTreeChatAppService<
             EntryName,
+            Guid,
             EntryNameDetailDto,
             EntryNameDto,
-            Guid,
             EntryNameGetListInput,
             EntryNameCreateInput,
             EntryNameUpdateInput>,
@@ -35,15 +34,17 @@ namespace IczpNet.Chat.EntryNames
         }
 
 
-        protected override async Task CheckCreateAsync(EntryNameCreateInput input)
-        {
-            Assert.If(await Repository.AnyAsync(x => x.Name.Equals(input.Name)), $"Already exists [{input.Name}] ");
-            await base.CheckCreateAsync(input);
-        }
+        //protected override async Task CheckCreateAsync(EntryNameCreateInput input)
+        //{
+        //    Assert.If(await Repository.AnyAsync(x => x.Name.Equals(input.Name)), $"Already exists [{input.Name}] ");
+        //    await base.CheckCreateAsync(input);
+        //}
 
-        protected override async Task CheckUpdateAsync(Guid id, EntryName entity, EntryNameUpdateInput input)
-        {
-            await base.CheckUpdateAsync(id, entity, input);
-        }
+        //protected override async Task CheckUpdateAsync(Guid id, EntryName entity, EntryNameUpdateInput input)
+        //{
+        //    await base.CheckUpdateAsync(id, entity, input);
+        //}
+
+
     }
 }

@@ -1,8 +1,9 @@
 ﻿using IczpNet.Chat.BaseDtos;
+using System;
 
 namespace IczpNet.Chat.EntryNames.Dtos;
 
-public class EntryNameGetListInput : BaseGetListInput
+public class EntryNameGetListInput : BaseTreeGetListInput<Guid>
 {
     public virtual bool? IsChoice { get; set; }
 

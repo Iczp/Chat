@@ -1,11 +1,12 @@
 ﻿using IczpNet.Chat.BaseDtos;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.EntryNames.Dtos;
 
-public class EntryNameUpdateInput : BaseInput
+public class EntryNameUpdateInput : BaseTreeInputDto<Guid>
 {
-    public virtual string Name { get; set; }
+    //public virtual string Name { get; set; }
 
     public virtual string Code { get; set; }
 

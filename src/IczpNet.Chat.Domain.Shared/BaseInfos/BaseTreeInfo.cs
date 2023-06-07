@@ -3,7 +3,7 @@ using System;
 
 namespace IczpNet.Chat.BaseInfos
 {
-    public class BaseTreeInfo : TreeInfo<Guid>
+    public class BaseTreeInfo<TKey> : TreeInfo<TKey> where TKey : struct
     {
         //public virtual string Code { get; set; }
 

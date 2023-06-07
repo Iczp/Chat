@@ -51,9 +51,9 @@ namespace IczpNet.Chat.EntryNames
                 {
                     continue;
                 }
-                var entity = await Repository.InsertAsync(new EntryName(GuidGenerator.Create())
+                var entity = await Repository.InsertAsync(new EntryName(GuidGenerator.Create(), name, null)
                 {
-                    Name = name,
+                    //Name = name,
                     Code = name,
                     IsStatic = true,
                     IsPublic = true,
