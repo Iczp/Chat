@@ -15,6 +15,7 @@ using Volo.Abp.Auditing;
 namespace IczpNet.Chat.BaseAppServices;
 
 [ApiExplorerSettings(GroupName = ChatRemoteServiceConsts.ModuleName)]
+[Authorize]
 public abstract class ChatAppService : ApplicationService
 {
     protected virtual string CreatePolicyName { get; set; }

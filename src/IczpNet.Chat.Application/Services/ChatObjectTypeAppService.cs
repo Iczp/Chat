@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using IczpNet.AbpCommons;
+using IczpNet.Chat.Permissions;
 
 namespace IczpNet.Chat.ChatObjectTypeServices
 {
@@ -20,7 +21,15 @@ namespace IczpNet.Chat.ChatObjectTypeServices
             ChatObjectTypeUpdateInput>,
         IChatObjectTypeAppService
     {
-        public ChatObjectTypeAppService(IRepository<ChatObjectType, string> repository) : base(repository)
+
+        protected override string GetPolicyName { get; set; } = ChatPermissions.ChatObjectTypePermission.Default;
+        protected override string GetListPolicyName { get; set; } = ChatPermissions.ChatObjectTypePermission.Default;
+        protected override string CreatePolicyName { get; set; } = ChatPermissions.ChatObjectTypePermission.Create;
+        protected override string UpdatePolicyName { get; set; } = ChatPermissions.ChatObjectTypePermission.Update;
+        protected override string DeletePolicyName { get; set; } = ChatPermissions.ChatObjectTypePermission.Delete;
+
+        public ChatObjectTypeAppService(
+            IRepository<ChatObjectType, string> repository) : base(repository)
         {
         }
 

@@ -16,6 +16,8 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace IczpNet.Chat.BaseAppServices
 {
+    [ApiExplorerSettings(GroupName = ChatRemoteServiceConsts.ModuleName)]
+    [Authorize]
     public abstract class CrudByChatObjectChatAppService<
         TEntity,
         TGetOutputDto,

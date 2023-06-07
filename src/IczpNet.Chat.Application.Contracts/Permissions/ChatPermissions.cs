@@ -11,6 +11,38 @@ public class ChatPermissions
         return ReflectionHelper.GetPublicConstantsRecursively(typeof(ChatPermissions));
     }
 
+    public class ChatObjectPermission
+    {
+        public const string Default = GroupName + "." + nameof(ChatObjectPermission);
+        public const string Create = Default + "." + nameof(Create);
+        public const string Update = Default + "." + nameof(Update);
+        public const string Delete = Default + "." + nameof(Delete);
+    }
+
+    public class DeveloperPermission
+    {
+        public const string Default = GroupName + "." + nameof(DeveloperPermission);
+        public const string Update = Default + "." + nameof(Update);
+        public const string SetIsEnabled = Default + "." + nameof(SetIsEnabled);
+    }
+
+    public class ChatObjectCategoryPermission
+    {
+        public const string Default = GroupName + "." + nameof(ChatObjectCategoryPermission);
+        public const string Create = Default + "." + nameof(Create);
+        public const string Update = Default + "." + nameof(Update);
+        public const string Delete = Default + "." + nameof(Delete);
+    }
+
+    public class ChatObjectTypePermission
+    {
+        public const string Default = GroupName + "." + nameof(ChatObjectTypePermission);
+        public const string Create = Default + "." + nameof(Create);
+        public const string Update = Default + "." + nameof(Update);
+        public const string Delete = Default + "." + nameof(Delete);
+    }
+
+    
 
     public class MessageSenderPermission
     {

@@ -2,6 +2,8 @@
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Developers.Dtos;
+using IczpNet.Chat.Permissions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
@@ -10,6 +12,8 @@ namespace IczpNet.Chat.Developers
 {
     public class DeveloperAppService : ChatAppService, IDeveloperAppService
     {
+        protected virtual string SetIsEnabledPolicyName { get; set; } = ChatPermissions.DeveloperPermission.SetIsEnabled;
+
         protected IChatObjectManager ChatObjectManager { get; }
 
         public DeveloperAppService(IChatObjectManager chatObjectManager)
@@ -48,6 +52,8 @@ namespace IczpNet.Chat.Developers
         [HttpPost]
         public async Task<bool> SetIsEnabledAsync(long id, bool isEnabled)
         {
+            await CheckPolicyAsync(SetIsEnabledPolicyName);
+
             var entity = await ChatObjectManager.GetAsync(id);
 
             entity.Developer.IsEnabled = isEnabled;
@@ -103,6 +109,7 @@ namespace IczpNet.Chat.Developers
         /// <param name="input"></param>
         /// <returns></returns>
         [HttpPost]
+        [AllowAnonymous]
         public async Task<GenerateSignatureOutput> GenerateSignature([FromQuery] GenerateSignatureInput input)
         {
             string signature = BizCrypt.GenerateSignature(input.Token, input.TimeStamp, input.Nonce, input.Echo);
@@ -123,6 +130,7 @@ namespace IczpNet.Chat.Developers
         /// <param name="cipherText">密文</param>
         /// <returns></returns>
         [HttpPost]
+        [AllowAnonymous]
         public async Task<bool> VerifySignature(string signature, string token, string timeStamp, string nonce, string cipherText)
         {
             var retult = BizCrypt.VerifySignature(signature, token, timeStamp, nonce, cipherText);
@@ -136,6 +144,7 @@ namespace IczpNet.Chat.Developers
         /// <param name="input"></param>
         /// <returns></returns>
         [HttpPost]
+        [AllowAnonymous]
         public async Task<string> StringToBase64Async(string input)
         {
             byte[] b = System.Text.Encoding.Default.GetBytes(input);
@@ -149,6 +158,7 @@ namespace IczpNet.Chat.Developers
         /// <param name="base64String"></param>
         /// <returns></returns>
         [HttpPost]
+        [AllowAnonymous]
         public async Task<string> Base64ToStringAsync(string base64String)
         {
             byte[] b = Convert.FromBase64String(base64String);
@@ -164,6 +174,7 @@ namespace IczpNet.Chat.Developers
         /// <param name="count"></param>
         /// <returns></returns>
         [HttpPost]
+        [AllowAnonymous]
         public async Task<string> GenerateEncodingAesKeyAsync()
         {
             return await Task.FromResult(BizCrypt.CreateRandCode(43));

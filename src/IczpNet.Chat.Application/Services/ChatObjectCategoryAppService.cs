@@ -1,8 +1,7 @@
 ﻿using IczpNet.AbpCommons;
-using IczpNet.AbpTrees;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjectCategorys.Dtos;
-using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.Permissions;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -22,6 +21,13 @@ namespace IczpNet.Chat.ChatObjectCategorys
             ChatObjectCategoryInfo>,
         IChatObjectCategoryAppService
     {
+
+        protected override string GetPolicyName { get; set; } = ChatPermissions.ChatObjectCategoryPermission.Default;
+        protected override string GetListPolicyName { get; set; } = ChatPermissions.ChatObjectCategoryPermission.Default;
+        protected override string CreatePolicyName { get; set; } = ChatPermissions.ChatObjectCategoryPermission.Create;
+        protected override string UpdatePolicyName { get; set; } = ChatPermissions.ChatObjectCategoryPermission.Update;
+        protected override string DeletePolicyName { get; set; } = ChatPermissions.ChatObjectCategoryPermission.Delete;
+
         public ChatObjectCategoryAppService(
             IRepository<ChatObjectCategory, Guid> repository,
             IChatObjectCategoryManager treeManager) : base(repository, treeManager)

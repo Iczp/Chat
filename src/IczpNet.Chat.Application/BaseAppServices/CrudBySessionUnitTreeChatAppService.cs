@@ -13,9 +13,12 @@ using System.Linq;
 using System.Linq.Expressions;
 using IczpNet.Chat.SessionSections;
 using Volo.Abp;
+using Microsoft.AspNetCore.Authorization;
 
 namespace IczpNet.Chat.BaseAppServices
 {
+    [ApiExplorerSettings(GroupName = ChatRemoteServiceConsts.ModuleName)]
+    [Authorize]
     public abstract class CrudBySessionUnitTreeChatAppService<
         TEntity,
         TKey,

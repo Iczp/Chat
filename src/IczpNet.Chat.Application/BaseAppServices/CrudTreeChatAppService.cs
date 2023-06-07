@@ -1,6 +1,7 @@
 ﻿using IczpNet.AbpTrees;
 using IczpNet.AbpTrees.Dtos;
 using IczpNet.Chat.ChatObjects;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Auditing;
@@ -9,6 +10,7 @@ using Volo.Abp.Domain.Repositories;
 namespace IczpNet.Chat.BaseAppServices
 {
     [ApiExplorerSettings(GroupName = ChatRemoteServiceConsts.ModuleName)]
+    [Authorize]
     public abstract class CrudTreeChatAppService<
         TEntity,
         TKey,
