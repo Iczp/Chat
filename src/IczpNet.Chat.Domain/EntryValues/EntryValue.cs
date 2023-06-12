@@ -20,7 +20,7 @@ namespace IczpNet.Chat.EntryValues
         [ForeignKey(nameof(EntryNameId))]
         public virtual EntryName EntryName { get; set; }
 
-        public virtual string Name => EntryName.Name;
+        public virtual string Name => EntryName?.Name;
 
         [MaxLength(500)]
         public virtual string Value { get; set; }
