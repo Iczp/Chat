@@ -4,6 +4,7 @@ using IczpNet.BizCrypts;
 using IczpNet.Chat.Developers;
 using IczpNet.Chat.HttpRequests;
 using Microsoft.Extensions.Logging;
+using NUglify.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -110,23 +111,35 @@ namespace IczpNet.Chat.Menus
 
         public virtual async Task CheckMenuAsync(Menu menu)
         {
-            Assert.If(!menu.Owner.IsEnabled, $"IsEnabled:{menu.Owner.IsEnabled}");
+            var owner = Assert.NotNull(menu.Owner, $"Owner is null");
 
-            Assert.If(!menu.Owner.IsDeveloper, $"IsDeveloper:{menu.Owner.IsDeveloper}");
+            Assert.If(!owner.IsEnabled, $"IsEnabled:{owner.IsEnabled}");
 
-            var developer = menu.Owner.Developer;
+            Assert.If(!owner.IsDeveloper, $"IsDeveloper:{owner.IsDeveloper}");
+
+            var developer = Assert.NotNull(owner.Developer, $"Developer is null");
 
             Assert.If(!IsUrl(developer.PostUrl), $"Fail Url:{developer.PostUrl}", nameof(developer.PostUrl));
+
             await Task.CompletedTask;
         }
 
-        public virtual Task<bool> IsCheckMenuAsync(Menu menu)
+        public virtual async Task<bool> IsCheckMenuAsync(Menu menu)
         {
-            return Task.FromResult(menu.Owner.IsEnabled && menu.Owner.IsDeveloper && IsUrl(menu.Owner.Developer.PostUrl));
+            await Task.CompletedTask;
+
+            var owner = menu.Owner;
+
+            return owner != null && owner.IsEnabled && owner.IsDeveloper && IsUrl(owner.Developer?.PostUrl);
         }
 
         private static bool IsUrl(string url)
         {
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                return false;
+            }
+
             var httpSchemes = new string[] { Uri.UriSchemeHttp, Uri.UriSchemeHttps };
 
             return Uri.TryCreate(url, UriKind.RelativeOrAbsolute, out Uri uri) && httpSchemes.Contains(uri.Scheme);

@@ -18,6 +18,7 @@ namespace IczpNet.Chat.MessageSections.Counters
             UnitOfWorkManager = unitOfWorkManager;
         }
 
+        [UnitOfWork]
         public override async Task ExecuteAsync(OpenedCounterArgs args)
         {
             using var uow = UnitOfWorkManager.Begin();

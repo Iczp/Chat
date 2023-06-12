@@ -19,6 +19,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
             SessionUnitManager = sessionUnitManager;
         }
 
+        [UnitOfWork]
         public override async Task ExecuteAsync(SessionUnitIncrementArgs args)
         {
             using var uow = UnitOfWorkManager.Begin();
