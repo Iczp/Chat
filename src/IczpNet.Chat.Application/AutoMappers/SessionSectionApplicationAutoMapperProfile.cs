@@ -1,9 +1,4 @@
 ﻿using AutoMapper;
-using IczpNet.Chat.FriendshipTagSections.FriendshipTags.Dtos;
-using IczpNet.Chat.SessionSections.FriendshipRequests;
-using IczpNet.Chat.SessionSections.FriendshipRequests.Dtos;
-using IczpNet.Chat.SessionSections.Friendships;
-using IczpNet.Chat.SessionSections.Friendships.Dtos;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 using IczpNet.Chat.SessionSections.Sessions;
@@ -11,7 +6,6 @@ using IczpNet.Chat.SessionSections.Sessions.Dtos;
 using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
-using IczpNet.Chat.SessionServices;
 using IczpNet.Chat.SessionSections.SessionOrganizations;
 using IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;
 using IczpNet.Chat.SessionSections.SessionTags.Dtos;
@@ -28,7 +22,6 @@ using IczpNet.Chat.OpenedRecorders.Dtos;
 using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.FavoritedRecorders.Dtos;
 using IczpNet.Chat.SessionSections.SessionUnitSettings;
-using IczpNet.Chat.SessionUnits;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -106,32 +99,11 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
         CreateMap<SessionPermissionGroupUpdateInput, SessionPermissionGroup>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         CreateMap<SessionPermissionGroup, SessionPermissionGroupInfo>();
 
-
         //SessionRequest
         CreateMap<SessionRequest, SessionRequestDto>();
         CreateMap<SessionRequest, SessionRequestDetailDto>();
         CreateMap<SessionRequestCreateInput, SessionRequest>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         CreateMap<SessionRequestUpdateInput, SessionRequest>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
-
-        //Friendship
-        CreateMap<Friendship, FriendshipDto>();
-        CreateMap<Friendship, FriendshipDetailDto>();
-        CreateMap<FriendshipCreateInput, Friendship>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
-        CreateMap<FriendshipUpdateInput, Friendship>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
-
-        //FriendshipRequest
-        CreateMap<FriendshipRequest, FriendshipRequestDto>();
-        CreateMap<FriendshipRequest, FriendshipRequestDetailDto>().ForMember(x => x.FriendshipIdList, o => o.MapFrom(x => x.GetFriendshipIdList()));
-        CreateMap<FriendshipRequestCreateInput, FriendshipRequest>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
-        CreateMap<FriendshipRequestUpdateInput, FriendshipRequest>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
-
-        //FriendshipTag
-        CreateMap<FriendshipTag, FriendshipTagDto>();
-        CreateMap<FriendshipTag, FriendshipTagDetailDto>();
-        CreateMap<FriendshipTag, FriendshipTagSimpleDto>();
-        CreateMap<FriendshipTagCreateInput, FriendshipTag>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
-        CreateMap<FriendshipTagUpdateInput, FriendshipTag>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
-
 
         //OpenedRecorder
         CreateMap<OpenedRecorder, OpenedRecorderDto>();

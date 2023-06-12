@@ -8,8 +8,6 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.Mottos;
 using IczpNet.Chat.RedEnvelopes;
-using IczpNet.Chat.SessionSections.FriendshipRequests;
-using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionSettings;
 using IczpNet.Chat.SessionSections.SessionUnits;
@@ -182,24 +180,6 @@ namespace IczpNet.Chat.ChatObjects
         [InverseProperty(nameof(RedEnvelopeUnit.Owner))]
         public virtual IList<RedEnvelopeUnit> RedEnvelopeUnitList { get; set; }
 
-        #endregion
-
-        #region Friendship
-
-        [InverseProperty(nameof(Friendship.Owner))]
-        public virtual IList<Friendship> OwnerFriendshipList { get; set; }
-
-        [InverseProperty(nameof(Friendship.Destination))]
-        public virtual IList<Friendship> DestinationFriendshipList { get; set; }
-
-        #endregion FriendshipRequest
-
-        #region FriendshipRequest
-        [InverseProperty(nameof(FriendshipRequest.Owner))]
-        public virtual IList<FriendshipRequest> OwnerFriendshipRequestList { get; set; }
-
-        [InverseProperty(nameof(FriendshipRequest.Destination))]
-        public virtual IList<FriendshipRequest> DestinationFriendshipRequestList { get; set; }
         #endregion
 
         #region SessionSetting

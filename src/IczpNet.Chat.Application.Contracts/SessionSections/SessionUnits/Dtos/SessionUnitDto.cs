@@ -1,5 +1,4 @@
-﻿using IczpNet.Chat.ChatObjects.Dtos;
-using System;
+﻿using System;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 {

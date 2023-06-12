@@ -13,14 +13,16 @@ namespace IczpNet.Chat.SessionSections.Sessions.Dtos
 
         public virtual string SessionKey { get; set; }
 
-        public virtual ChatObjectDto Owner { get; set; }
+        public virtual long? OwnerId { get; set; }
+
+        //public virtual ChatObjectDto Owner { get; set; }
 
         //public virtual int MemberCount { get; set; }
 
-        public virtual int MessageCount { get; set; }
+        //public virtual int MessageCount { get; set; }
 
-        public virtual int TagCount { get; set; }
+        //public virtual int TagCount { get; set; }
 
-        public virtual int RoleCount { get; set; }
+        //public virtual int RoleCount { get; set; }
     }
 }

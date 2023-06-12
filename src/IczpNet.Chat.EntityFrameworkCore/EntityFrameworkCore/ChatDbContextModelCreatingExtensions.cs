@@ -12,7 +12,6 @@ using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.RedEnvelopes;
-using IczpNet.Chat.SessionSections.FriendshipTagUnits;
 using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
 using IczpNet.Chat.SessionSections.SessionUnitOrganizations;
 using IczpNet.Chat.SessionSections.SessionUnitRoles;
@@ -32,7 +31,6 @@ using IczpNet.Chat.SessionSections.SessionUnitCounters;
 using IczpNet.Chat.SessionSections.SessionUnitSettings;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.Developers;
-using System.Reflection.Emit;
 using IczpNet.Chat.HttpRequests;
 using IczpNet.Chat.ChatObjectEntryValues;
 using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
@@ -95,8 +93,6 @@ public static class ChatDbContextModelCreatingExtensions
         builder.Entity<ArticleMessage>(b => { b.HasKey(x => new { x.MessageId, x.ArticleId }); });
 
         builder.Entity<HistoryMessage>(b => { b.HasKey(x => new { x.MessageId, x.HistoryContentId }); });
-        builder.Entity<FriendshipTagUnit>(b => { b.HasKey(x => new { x.FriendshipId, x.FriendshipTagId }); });
-
 
         builder.Entity<SessionUnitEntryValue>(b => { b.HasKey(x => new { x.SessionUnitId, x.EntryValueId }); });
         builder.Entity<SessionUnitTag>(b => { b.HasKey(x => new { x.SessionUnitId, x.SessionTagId }); });

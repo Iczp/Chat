@@ -13,9 +13,6 @@ using IczpNet.Chat.Mottos;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.RedEnvelopes;
-using IczpNet.Chat.SessionSections.FriendshipRequests;
-using IczpNet.Chat.SessionSections.Friendships;
-using IczpNet.Chat.SessionSections.FriendshipTagUnits;
 using IczpNet.Chat.SessionSections.SessionOrganizations;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionPermissionGroups;
@@ -93,13 +90,6 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
 
 
     public DbSet<Follow> Follow { get; set; }
-
-
-
-    public DbSet<Friendship> Friendship { get; set; }
-    public DbSet<FriendshipTag> FriendshipTag { get; set; }
-    public DbSet<FriendshipTagUnit> FriendshipTagUnit { get; set; }
-    public DbSet<FriendshipRequest> FriendshipRequest { get; set; }
 
     public DbSet<OpenedRecorder> OpenedRecorder { get; set; }
     public DbSet<ReadedRecorder> ReadedRecorder { get; set; }

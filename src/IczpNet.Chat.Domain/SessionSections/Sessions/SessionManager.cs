@@ -2,9 +2,6 @@
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
-using IczpNet.Chat.OpenedRecorders;
-using IczpNet.Chat.SessionSections.FriendshipRequests;
-using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionUnitRoles;
@@ -21,8 +18,6 @@ namespace IczpNet.Chat.SessionSections.Sessions
 {
     public class SessionManager : DomainService, ISessionManager
     {
-        protected IRepository<Friendship, Guid> FriendshipRepository { get; }
-        protected IRepository<FriendshipRequest, Guid> FriendshipRequestRepository { get; }
         protected IChatObjectManager ChatObjectManager { get; }
         protected IMessageRepository MessageRepository { get; }
         protected IRepository<Session, Guid> Repository { get; }
@@ -32,9 +27,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
         protected ISessionRecorder SessionRecorder { get; }
 
         public SessionManager(
-            IRepository<Friendship, Guid> friendshipRepository,
             IChatObjectManager chatObjectManager,
-            IRepository<FriendshipRequest, Guid> friendshipRequestRepository,
             IMessageRepository messageRepository,
             ISessionRecorder sessionRecorder,
             IRepository<Session, Guid> repository,
@@ -42,9 +35,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
             IRepository<SessionTag, Guid> sessionTagRepository,
             IRepository<SessionUnit, Guid> sessionUnitRepository)
         {
-            FriendshipRepository = friendshipRepository;
             ChatObjectManager = chatObjectManager;
-            FriendshipRequestRepository = friendshipRequestRepository;
             MessageRepository = messageRepository;
             SessionRecorder = sessionRecorder;
             Repository = repository;
@@ -74,10 +65,6 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return Assert.NotNull(await Repository.FindAsync(x => x.OwnerId == roomId), $"No such session by roomId:{roomId}");
         }
 
-        public Task<bool> IsFriendshipAsync(long ownerId, long destinationId)
-        {
-            return FriendshipRepository.AnyAsync(x => x.OwnerId == ownerId && x.DestinationId == destinationId);
-        }
 
         private async Task<IQueryable<Session>> QuerySessionByUnitOwnerAsync(long ownerId, ChatObjectTypeEnums? chatObjectType = null)
         {
@@ -95,67 +82,10 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return source.Intersect(target);
         }
 
-        public async Task<Friendship> CreateFriendshipAsync(long ownerId, long destinationId, bool IsPassive, Guid? friendshipRequestId)
-        {
-            var owner = await ChatObjectManager.GetItemByCacheAsync(ownerId);
-
-            var destination = await ChatObjectManager.GetItemByCacheAsync(destinationId);
-
-            return await CreateFriendshipAsync(owner, destination, IsPassive, friendshipRequestId);
-        }
-
-        public async Task<Friendship> CreateFriendshipAsync(IChatObject owner, IChatObject destination, bool IsPassive, Guid? friendshipRequestId)
-        {
-            Assert.NotNull(owner, nameof(owner));
-
-            Assert.NotNull(destination, nameof(destination));
-
-            var entity = await FriendshipRepository.FindAsync(x => x.OwnerId == owner.Id && x.DestinationId == destination.Id);
-
-            entity ??= await FriendshipRepository.InsertAsync(new Friendship(owner.Id, destination.Id, IsPassive, friendshipRequestId), autoSave: true);
-
-            return entity;
-        }
-
         public Task<DateTime> DeleteFriendshipAsync(long ownerId, long destinationId)
         {
             throw new NotImplementedException();
         }
-
-        public Task DeleteFriendshipRequestAsync(long ownerId, long destinationId)
-        {
-            return FriendshipRequestRepository.DeleteAsync(x =>
-                x.OwnerId == ownerId && x.DestinationId == destinationId && !x.IsHandled ||
-                x.OwnerId == destinationId && x.DestinationId == ownerId && !x.IsHandled
-            );
-        }
-
-        public async Task<DateTime?> HandleRequestAsync(Guid friendshipRequestId, bool isAgreed, string handleMessage)
-        {
-            var friendshipRequest = await FriendshipRequestRepository.GetAsync(friendshipRequestId);
-
-            Assert.If(friendshipRequest.IsHandled, $"Already been handled:IsAgreed={friendshipRequest.IsAgreed}");
-
-            if (isAgreed)
-            {
-                await CreateFriendshipAsync(friendshipRequest.OwnerId, friendshipRequest.DestinationId.Value, IsPassive: true, friendshipRequest.Id);
-
-                await CreateFriendshipAsync(friendshipRequest.Destination.Id, friendshipRequest.OwnerId, IsPassive: false, friendshipRequest.Id);
-
-                friendshipRequest.AgreeRequest(handleMessage);
-            }
-            else
-            {
-                friendshipRequest.DisagreeRequest(handleMessage);
-            }
-            await FriendshipRequestRepository.UpdateAsync(friendshipRequest, autoSave: true);
-
-            await DeleteFriendshipRequestAsync(friendshipRequest.OwnerId, friendshipRequest.DestinationId.Value);
-
-            return friendshipRequest.HandlTime;
-        }
-
-        
 
         public async Task<SessionTag> AddTagAsync(Session entity, SessionTag sessionTag)
         {

@@ -13,7 +13,6 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
-using IczpNet.Chat.SessionSections.Friendships;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnitCounters;
 using IczpNet.Chat.SessionSections.SessionUnits;
@@ -46,7 +45,6 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     protected virtual string ClearMessagePolicyName { get; set; }
     protected virtual string DeleteMessagePolicyName { get; set; }
 
-    protected IRepository<Friendship, Guid> FriendshipRepository { get; }
     protected IRepository<Session, Guid> SessionRepository { get; }
     protected ISessionUnitRepository Repository { get; }
     protected IMessageRepository MessageRepository { get; }
@@ -62,7 +60,6 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     protected IRepository<EntryName, Guid> EntryNameRepository { get; }
     protected IRepository<EntryValue, Guid> EntryValueRepository { get; }
     public SessionUnitAppService(
-        IRepository<Friendship, Guid> chatObjectRepository,
         ISessionManager sessionManager,
         ISessionGenerator sessionGenerator,
         IRepository<Session, Guid> sessionRepository,
@@ -78,7 +75,6 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         IRepository<EntryName, Guid> entryNameRepository,
         IRepository<EntryValue, Guid> entryValueRepository)
     {
-        FriendshipRepository = chatObjectRepository;
         SessionManager = sessionManager;
         SessionGenerator = sessionGenerator;
         SessionRepository = sessionRepository;

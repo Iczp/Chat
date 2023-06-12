@@ -49,17 +49,17 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public virtual IList<SessionRole> RoleList { get; protected set; } = new List<SessionRole>();
 
-        [NotMapped]
-        public virtual int MemberCount => GetMemberCount();
+        //[NotMapped]
+        //public virtual int MemberCount => GetMemberCount();
 
-        [NotMapped]
-        public virtual int MessageCount => MessageList.Count;
+        //[NotMapped]
+        //public virtual int MessageCount => MessageList.Count;
 
-        [NotMapped]
-        public virtual int TagCount => TagList.Count;
+        //[NotMapped]
+        //public virtual int TagCount => TagList.Count;
 
-        [NotMapped]
-        public virtual int RoleCount => RoleList.Count;
+        //[NotMapped]
+        //public virtual int RoleCount => RoleList.Count;
 
         protected Session() { }
 
@@ -69,10 +69,10 @@ namespace IczpNet.Chat.SessionSections.Sessions
             Channel = channel;
         }
 
-        internal virtual int GetMemberCount()
-        {
-            return UnitList.Count();
-        }
+        //internal virtual int GetMemberCount()
+        //{
+        //    return UnitList.Count();
+        //}
 
         internal virtual void SetUnitList(List<SessionUnit> unitList)
         {

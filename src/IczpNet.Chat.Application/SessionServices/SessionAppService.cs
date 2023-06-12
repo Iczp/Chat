@@ -1,19 +1,10 @@
-﻿using IczpNet.AbpCommons.Extensions;
-using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.ChatObjects.Dtos;
-using IczpNet.Chat.MessageSections.Messages;
-using IczpNet.Chat.MessageSections.Messages.Dtos;
-using IczpNet.Chat.SessionSections.Friendships;
+﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.Sessions.Dtos;
 using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionTags.Dtos;
-using IczpNet.Chat.SessionSections.SessionUnits;
-using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
-using IczpNet.Chat.Specifications;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -27,44 +18,19 @@ namespace IczpNet.Chat.SessionServices
 {
     public class SessionAppService : ChatAppService, ISessionAppService
     {
-
-        protected IRepository<Friendship, Guid> FriendshipRepository { get; }
         protected IRepository<Session, Guid> Repository { get; }
         protected ISessionManager SessionManager { get; }
         protected ISessionGenerator SessionGenerator { get; }
 
         public SessionAppService(
-            IRepository<Friendship, Guid> chatObjectRepository,
             ISessionManager sessionManager,
             ISessionGenerator sessionGenerator,
             IRepository<Session, Guid> repository)
         {
-            FriendshipRepository = chatObjectRepository;
             SessionManager = sessionManager;
             SessionGenerator = sessionGenerator;
             Repository = repository;
         }
-
-
-        public async Task<PagedResultDto<ChatObjectDto>> GetFriendsAsync(long ownerId, bool? isCantacts, int maxResultCount = 10, int skipCount = 0, string sorting = null)
-        {
-            var query = (await FriendshipRepository.GetQueryableAsync())
-                .Where(x => x.OwnerId == ownerId)
-                //.Where(x => x.IsPassive)
-                .WhereIf(isCantacts.HasValue, x => x.IsCantacts)
-                .Select(x => x.Destination)
-                .Distinct()
-                ;
-
-            return await GetPagedListAsync<ChatObject, ChatObjectDto>(query, maxResultCount, skipCount, sorting);
-        }
-
-        public Task<DateTime> RequestForFriendshipAsync(long ownerId, long friendId, string message)
-        {
-            throw new NotImplementedException();
-        }
-
-        
 
         [HttpGet]
         public async Task<PagedResultDto<SessionDto>> GetListAsync(SessionGetListInput input)
@@ -100,19 +66,6 @@ namespace IczpNet.Chat.SessionServices
         }
 
         [HttpGet]
-        public async Task<PagedResultDto<MessageDto>> GetMessageListAsync(Guid id, SessionGetMessageListInput input)
-        {
-            var query = (await Repository.GetAsync(id))
-                .MessageList.AsQueryable()
-                .WhereIf(!input.SenderId.IsEmpty(), new SenderMessageSpecification(input.SenderId.GetValueOrDefault()).ToExpression())
-                .WhereIf(!input.MinAutoId.IsEmpty(), new MinAutoIdMessageSpecification(input.MinAutoId.GetValueOrDefault()).ToExpression())
-                .WhereIf(!input.MaxAutoId.IsEmpty(), new MaxAutoIdMessageSpecification(input.MaxAutoId.GetValueOrDefault()).ToExpression())
-                ;
-
-            return await GetPagedListAsync<Message, MessageDto>(query, input, x => x.OrderByDescending(x => x.Id));
-        }
-
-        [HttpGet]
         public async Task<PagedResultDto<SessionTagDto>> GetTagListAsync(SessionTagGetListInput input)
         {
             var query = (await Repository.GetAsync(input.SessionId))
@@ -132,25 +85,6 @@ namespace IczpNet.Chat.SessionServices
                 ;
 
             return await GetPagedListAsync<SessionRole, SessionRoleDto>(query, input);
-        }
-
-        [HttpGet]
-        [Obsolete("Move to SessionUnitAppService.GetListBySessionIdAsync")]
-        public async Task<PagedResultDto<SessionUnitDestinationDto>> GetSessionUnitListAsync(Guid id, SessionUnitGetListDestinationInput input)
-        {
-            var query = (await Repository.GetAsync(id))
-                .UnitList.AsQueryable()
-                .Where(x => !x.Setting.IsKilled && x.Setting.IsEnabled)
-                .WhereIf(input.OwnerIdList.IsAny(), x => input.OwnerIdList.Contains(x.OwnerId))
-                .WhereIf(input.OwnerTypeList.IsAny(), x => input.OwnerTypeList.Contains(x.Owner.ObjectType.Value))
-                .WhereIf(!input.TagId.IsEmpty(), x => x.SessionUnitTagList.Any(x => x.SessionTagId == input.TagId))
-                .WhereIf(!input.RoleId.IsEmpty(), x => x.SessionUnitRoleList.Any(x => x.SessionRoleId == input.RoleId))
-                //.WhereIf(!input.JoinWay.IsEmpty(), x => x.JoinWay == input.JoinWay)
-                //.WhereIf(!input.InviterId.IsEmpty(), x => x.InviterId == input.InviterId)
-                .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Owner.Name.Contains(input.Keyword))
-                ;
-
-            return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query, input, q => q.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId));
         }
 
         [HttpPost]
