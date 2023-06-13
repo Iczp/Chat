@@ -9,7 +9,6 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.Mottos;
 using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.SessionSections.Sessions;
-using IczpNet.Chat.SessionSections.SessionSettings;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -179,16 +178,6 @@ namespace IczpNet.Chat.ChatObjects
         /// </summary>
         [InverseProperty(nameof(RedEnvelopeUnit.Owner))]
         public virtual IList<RedEnvelopeUnit> RedEnvelopeUnitList { get; set; }
-
-        #endregion
-
-        #region SessionSetting
-
-        [InverseProperty(nameof(SessionSetting.Owner))]
-        public virtual IList<SessionSetting> OwnerSessionSettingList { get; set; }
-
-        [InverseProperty(nameof(SessionSetting.Destination))]
-        public virtual IList<SessionSetting> DestinationSessionSettingList { get; set; }
 
         #endregion
 

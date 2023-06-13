@@ -76,7 +76,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnitSettings
         public virtual string Remarks { get; protected set; }
 
         [Comment("是否保存通讯录")]
-        public virtual bool IsCantacts { get; protected set; }
+        public virtual bool IsContacts { get; protected set; }
 
         [Comment("消息免打扰，默认为 false")]
         public virtual bool IsImmersed { get; protected set; } = false;

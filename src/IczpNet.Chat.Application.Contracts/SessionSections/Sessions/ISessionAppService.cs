@@ -13,7 +13,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 {
     public interface ISessionAppService
     {
-        //Task<PagedResultDto<ChatObjectDto>> GetFriendsAsync(long ownerId, bool? isCantacts, int maxResultCount = 10, int skipCount = 0, string sorting = null);
+        //Task<PagedResultDto<ChatObjectDto>> GetFriendsAsync(long ownerId, bool? isContacts, int maxResultCount = 10, int skipCount = 0, string sorting = null);
 
         Task<PagedResultDto<SessionDto>> GetListAsync(SessionGetListInput input);
 

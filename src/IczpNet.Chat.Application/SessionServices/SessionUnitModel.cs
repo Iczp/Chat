@@ -34,7 +34,7 @@ namespace IczpNet.Chat.SessionServices
         /// <summary>
         /// 是否保存通讯录(群)
         /// </summary>
-        public virtual bool IsCantacts { get; set; }
+        public virtual bool IsContacts { get; set; }
 
         /// <summary>
         /// 消息免打扰，默认为 false

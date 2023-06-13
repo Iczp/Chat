@@ -49,17 +49,17 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public virtual IList<SessionRole> RoleList { get; protected set; } = new List<SessionRole>();
 
-        //[NotMapped]
-        //public virtual int MemberCount => GetMemberCount();
+        [NotMapped]
+        public virtual int? MemberCount { get; set; } //=> GetMemberCount();
 
-        //[NotMapped]
-        //public virtual int MessageCount => MessageList.Count;
+        [NotMapped]
+        public virtual int? MessageCount { get; set; } //=> MessageList.Count;
 
-        //[NotMapped]
-        //public virtual int TagCount => TagList.Count;
+        [NotMapped]
+        public virtual int? TagCount { get; set; } // => TagList.Count;
 
-        //[NotMapped]
-        //public virtual int RoleCount => RoleList.Count;
+        [NotMapped]
+        public virtual int? RoleCount { get; set; } //=> RoleList.Count;
 
         protected Session() { }
 

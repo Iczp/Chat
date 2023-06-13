@@ -131,7 +131,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(input.MaxMessageId.HasValue, x => x.LastMessageId <= input.MaxMessageId)
             .WhereIf(input.IsTopping == true, x => x.Sorting > 0)
             .WhereIf(input.IsTopping == false, x => x.Sorting == 0)
-            .WhereIf(input.IsCantacts.HasValue, x => x.Setting.IsCantacts == input.IsCantacts)
+            .WhereIf(input.IsContacts.HasValue, x => x.Setting.IsContacts == input.IsContacts)
             .WhereIf(input.IsImmersed.HasValue, x => x.Setting.IsImmersed == input.IsImmersed)
             .WhereIf(input.IsBadge.HasValue, x => x.PublicBadge > 0 || x.PrivateBadge > 0)
             .WhereIf(input.IsRemind.HasValue, x => x.RemindAllCount > 0 || x.RemindMeCount > 0)
