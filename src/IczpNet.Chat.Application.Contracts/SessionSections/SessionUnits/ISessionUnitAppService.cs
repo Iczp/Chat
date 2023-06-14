@@ -31,23 +31,6 @@ public interface ISessionUnitAppService
 
     Task<SessionUnitDestinationDto> GetDestinationAsync(Guid id, Guid destinationId);
     //Task<SessionUnitDestinationDto> GetDestinationDetailAsync(Guid id);
-    Task<SessionUnitOwnerDto> SetMemberNameAsync(Guid id, string memberName);
-
-    Task<SessionUnitOwnerDto> SetRenameAsync(Guid id, string rename);
-
-    Task<SessionUnitOwnerDto> SetToppingAsync(Guid id, bool isTopping);
-
-    Task<SessionUnitOwnerDto> SetReadedMessageIdAsync(Guid id, bool isForce = false, long? messageId = null);
-
-    Task<SessionUnitOwnerDto> SetImmersedAsync(Guid id, bool isImmersed);
-
-    Task<SessionUnitOwnerDto> RemoveAsync(Guid id);
-
-    Task<SessionUnitOwnerDto> KillAsync(Guid id);
-
-    Task<SessionUnitOwnerDto> ClearMessageAsync(Guid id);
-
-    Task<SessionUnitOwnerDto> DeleteMessageAsync(Guid id, long messageId);
 
     Task<PagedResultDto<MessageOwnerDto>> GetListMessagesAsync(Guid id, SessionUnitGetMessageListInput input);
 
@@ -61,11 +44,9 @@ public interface ISessionUnitAppService
 
     Task<List<BadgeDto>> GetBadgeByCurrentUserAsync(bool? isImmersed = null);
 
-    Task<PagedResultDto<SessionUnitDestinationDto>> GetSessionMemberListAsync(Guid id, SessionUnitGetSessionMemberListInput input);
-
-    //Task<SessionUnitOwnerDto> GetSessionMemberAsync(Guid sessionId, Guid ownerId);
-
     Task<PagedResultDto<SessionUnitCacheItem>> GetListCachesAsync(SessionUnitCacheGetListInput input);
+
+    Task<SessionUnitCacheItem> GetCacheAsync(Guid sessionUnitId);
 
     Task<SessionUnitCounterInfo> GetCounterAsync(Guid sessionUnitId, long minMessageId = 0, bool? isImmersed = null);
 }

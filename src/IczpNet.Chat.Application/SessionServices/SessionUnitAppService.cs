@@ -3,9 +3,6 @@ using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.EntryNames;
-using IczpNet.Chat.EntryValues;
-using IczpNet.Chat.EntryValues.Dtos;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
@@ -13,8 +10,6 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
-using IczpNet.Chat.SessionSections.Sessions;
-using IczpNet.Chat.SessionSections.SessionUnitCounters;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using Microsoft.AspNetCore.Authorization;
@@ -25,7 +20,6 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
-using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 using Volo.Abp.Users;
 
@@ -39,30 +33,22 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     protected virtual string SetMemberNamePolicyName { get; set; }
     protected virtual string GetDetailPolicyName { get; set; }
     protected virtual string SetReadedPolicyName { get; set; }
-    protected virtual string SetReadedManyPolicyName { get; set; }
+    protected virtual string SetToppingPolicyName { get; set; }
     protected virtual string SetImmersedPolicyName { get; set; }
     protected virtual string RemoveSessionPolicyName { get; set; }
     protected virtual string ClearMessagePolicyName { get; set; }
     protected virtual string DeleteMessagePolicyName { get; set; }
 
-    protected IRepository<Session, Guid> SessionRepository { get; }
     protected ISessionUnitRepository Repository { get; }
     protected IMessageRepository MessageRepository { get; }
-    protected ISessionManager SessionManager { get; }
     protected ISessionUnitManager SessionUnitManager { get; }
-    protected ISessionGenerator SessionGenerator { get; }
     protected IChatObjectManager ChatObjectManager { get; }
     protected IReadedRecorderManager ReadedRecorderManager { get; }
     protected IOpenedRecorderManager OpenedRecorderManager { get; }
     protected IFavoritedRecorderManager FavoritedRecorderManager { get; }
     protected IFollowManager FollowManager { get; }
-    protected IRepository<SessionUnitCounter> SessionUnitCounterRepository { get; }
-    protected IRepository<EntryName, Guid> EntryNameRepository { get; }
-    protected IRepository<EntryValue, Guid> EntryValueRepository { get; }
+
     public SessionUnitAppService(
-        ISessionManager sessionManager,
-        ISessionGenerator sessionGenerator,
-        IRepository<Session, Guid> sessionRepository,
         IMessageRepository messageRepository,
         ISessionUnitRepository repository,
         ISessionUnitManager sessionUnitManager,
@@ -70,14 +56,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         IReadedRecorderManager readedRecorderManager,
         IOpenedRecorderManager openedRecorderManager,
         IFavoritedRecorderManager favoriteManager,
-        IFollowManager followManager,
-        IRepository<SessionUnitCounter> sessionUnitCounterRepository,
-        IRepository<EntryName, Guid> entryNameRepository,
-        IRepository<EntryValue, Guid> entryValueRepository)
+        IFollowManager followManager)
     {
-        SessionManager = sessionManager;
-        SessionGenerator = sessionGenerator;
-        SessionRepository = sessionRepository;
         MessageRepository = messageRepository;
         Repository = repository;
         SessionUnitManager = sessionUnitManager;
@@ -86,9 +66,6 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         OpenedRecorderManager = openedRecorderManager;
         FavoritedRecorderManager = favoriteManager;
         FollowManager = followManager;
-        SessionUnitCounterRepository = sessionUnitCounterRepository;
-        EntryNameRepository = entryNameRepository;
-        EntryValueRepository = entryValueRepository;
     }
 
     /// <inheritdoc/>
@@ -111,12 +88,9 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     /// <inheritdoc/>
     protected virtual async Task<IQueryable<SessionUnit>> CreateQueryAsync(SessionUnitGetListInput input)
     {
-
-
         //return from a in (await Repository.GetQueryableAsync())
         //       join b in await SessionUnitCounterRepository.GetQueryableAsync() on a.Id equals b.SessionUnitId
         //       select a;
-
 
         return (await Repository.GetQueryableAsync())
             //.Include(x => x.Setting)
@@ -287,118 +261,6 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     }
 
     /// <inheritdoc/>
-    [HttpPost]
-    public async Task<SessionUnitOwnerDto> SetMemberNameAsync(Guid id, string memberName)
-    {
-        await CheckPolicyAsync(SetMemberNamePolicyName);
-
-        var entity = await GetEntityAsync(id);
-
-        await SessionUnitManager.SetMemberNameAsync(entity, memberName);
-
-        return await MapToDtoAsync(entity);
-    }
-
-    /// <inheritdoc/>
-    [HttpPost]
-    public async Task<SessionUnitOwnerDto> SetRenameAsync(Guid id, string rename)
-    {
-        await CheckPolicyAsync(SetRenamePolicyName);
-
-        var entity = await GetEntityAsync(id);
-
-        await SessionUnitManager.SetRenameAsync(entity, rename);
-
-        return await MapToDtoAsync(entity);
-    }
-
-    /// <inheritdoc/>
-    [HttpPost]
-    public virtual async Task<SessionUnitOwnerDto> SetToppingAsync(Guid id, bool isTopping)
-    {
-        await CheckPolicyAsync(SetReadedPolicyName);
-
-        var entity = await GetEntityAsync(id);
-
-        await SessionUnitManager.SetToppingAsync(entity, isTopping);
-
-        return await MapToDtoAsync(entity);
-    }
-
-    /// <inheritdoc/>
-    [HttpPost]
-    public virtual async Task<SessionUnitOwnerDto> SetReadedMessageIdAsync(Guid id, bool isForce = false, long? messageId = null)
-    {
-        await CheckPolicyAsync(SetReadedPolicyName);
-
-        var entity = await GetEntityAsync(id);
-
-        await SessionUnitManager.SetReadedMessageIdAsync(entity, isForce, messageId);
-
-        return await MapToDtoAsync(entity);
-    }
-
-    /// <inheritdoc/>
-    [HttpPost]
-    public async Task<SessionUnitOwnerDto> SetImmersedAsync(Guid id, bool isImmersed)
-    {
-        await CheckPolicyAsync(SetImmersedPolicyName);
-
-        var entity = await GetEntityAsync(id);
-
-        await SessionUnitManager.SetImmersedAsync(entity, isImmersed);
-
-        return await MapToDtoAsync(entity);
-    }
-
-
-    /// <inheritdoc/>
-    [HttpPost]
-    public virtual async Task<SessionUnitOwnerDto> RemoveAsync(Guid id)
-    {
-        await CheckPolicyAsync(RemoveSessionPolicyName);
-
-        var entity = await GetEntityAsync(id);
-
-        await SessionUnitManager.RemoveAsync(entity);
-
-        return await MapToDtoAsync(entity);
-    }
-
-    /// <inheritdoc/>
-    [HttpPost]
-    public virtual async Task<SessionUnitOwnerDto> KillAsync(Guid id)
-    {
-        var entity = await GetEntityAsync(id);
-
-        await SessionUnitManager.KillAsync(entity);
-
-        return await MapToDtoAsync(entity);
-    }
-
-    /// <inheritdoc/>
-    [HttpPost]
-    public virtual async Task<SessionUnitOwnerDto> ClearMessageAsync(Guid id)
-    {
-        await CheckPolicyAsync(ClearMessagePolicyName);
-
-        var entity = await GetEntityAsync(id);
-
-        await SessionUnitManager.ClearMessageAsync(entity);
-
-        return await MapToDtoAsync(entity);
-    }
-
-    /// <inheritdoc/>
-    [HttpPost]
-    public virtual async Task<SessionUnitOwnerDto> DeleteMessageAsync(Guid id, long messageId)
-    {
-        await CheckPolicyAsync(DeleteMessagePolicyName);
-
-        throw new NotImplementedException();
-    }
-
-    /// <inheritdoc/>
     [HttpGet]
     [UnitOfWork(true, IsolationLevel.ReadUncommitted)]
     public async Task<PagedResultDto<MessageOwnerDto>> GetListMessagesAsync(Guid id, SessionUnitGetMessageListInput input)
@@ -529,28 +391,6 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 
     /// <inheritdoc/>
     [HttpGet]
-    [Obsolete("Move to GetListBySessionIdAsync")]
-    public async Task<PagedResultDto<SessionUnitDestinationDto>> GetSessionMemberListAsync(Guid id, SessionUnitGetSessionMemberListInput input)
-    {
-        var entity = await GetEntityAsync(id);
-
-        var objectTypeList = new List<ChatObjectTypeEnums>()
-        {
-             ChatObjectTypeEnums.Personal, ChatObjectTypeEnums.Official, ChatObjectTypeEnums.ShopKeeper, ChatObjectTypeEnums.Customer, ChatObjectTypeEnums.Robot,
-        };
-
-        var query = entity.Session.UnitList.AsQueryable()
-           .Where(x => !x.Setting.IsKilled)
-           .Where(x => objectTypeList.Contains(x.Owner.ObjectType.Value))
-           .WhereIf(entity.Session.OwnerId == null, x => x.Id != id)
-           .WhereIf(!input.TagId.IsEmpty(), x => x.SessionUnitTagList.Any(d => d.SessionTagId == input.TagId))
-           .WhereIf(!input.RoleId.IsEmpty(), x => x.SessionUnitRoleList.Any(d => d.SessionRoleId == input.RoleId))
-           ;
-        return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query, input);
-    }
-
-    /// <inheritdoc/>
-    [HttpGet]
     public async Task<Guid> FindIdAsync(long ownerId, long destinactionId)
     {
         var entity = await SessionUnitManager.FindAsync(ownerId, destinactionId);
@@ -599,52 +439,5 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     public async Task<SessionUnitCounterInfo> GetCounterAsync(Guid sessionUnitId, long minMessageId = 0, bool? isImmersed = null)
     {
         return await SessionUnitManager.GetCounterAsync(sessionUnitId, minMessageId, isImmersed);
-    }
-
-
-    protected virtual async Task CheckEntriesInputAsync(ChatObject chatObject, Dictionary<Guid, List<EntryValueInput>> input)
-    {
-
-        foreach (var item in input)
-        {
-            var entryName = Assert.NotNull(await EntryNameRepository.FindAsync(item.Key), $"不存在EntryNameId:{item.Key}");
-
-            Assert.If(entryName.IsRequired && item.Value.Count == 0, $"${entryName.Name}必填");
-
-            Assert.If(item.Value.Count > entryName.MaxCount, $"${entryName.Name}最大个数：{entryName.MaxCount}");
-
-            Assert.If(item.Value.Count < entryName.MinCount, $"${entryName.Name}最小个数：{entryName.MinCount}");
-
-            foreach (var entryValue in item.Value)
-            {
-                Assert.If(entryValue.Value.Length > entryName.MaxLenth, $"${entryName.Name}[{item.Value.IndexOf(entryValue) + 1}]最大长度：{entryName.MaxLenth}");
-
-                Assert.If(entryValue.Value.Length < entryName.MinLenth, $"${entryName.Name}[{item.Value.IndexOf(entryValue) + 1}]最小长度：{entryName.MinLenth}");
-
-                //if (entryName.IsUniqued)
-                //{
-                //    var isAny = !await EntryValueRepository.AnyAsync(x => x.EntryNameId == entryName.Id && x.Value == entryValue.Value);
-                //    Assert.If(isAny, $"${entryName.Name}已经存在值：{entryValue.Value}");
-                //}
-            }
-        }
-    }
-
-    protected virtual async Task<List<T>> FormatItemsAsync<T>(Dictionary<Guid, List<EntryValueInput>> input, Func<Guid, string, Task<T>> createOrFindEntity)
-    {
-        var inputItems = new List<T>();
-
-        foreach (var entry in input)
-        {
-            Assert.If(!await EntryNameRepository.AnyAsync(x => x.Id == entry.Key), $"不存在EntryNameId:{entry.Key}");
-
-            foreach (var valueInput in entry.Value)
-            {
-                inputItems.Add(await createOrFindEntity(entry.Key, valueInput.Value));
-            }
-        }
-        return inputItems;
-    }
-
-    
+    }   
 }

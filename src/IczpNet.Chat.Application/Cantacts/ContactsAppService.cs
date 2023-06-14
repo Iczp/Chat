@@ -14,6 +14,7 @@ namespace IczpNet.Chat.Contacts
 {
     public class ContactsAppService : ChatAppService, IContactsAppService
     {
+        protected override string GetListPolicyName { get; set; }
         protected ISessionUnitRepository Repository { get; }
         protected IChatObjectManager ChatObjectManager { get; }
         public ContactsAppService(
