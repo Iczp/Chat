@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits;
@@ -75,5 +76,19 @@ public interface ISettingAppService
     /// <returns></returns>
     Task<SessionUnitOwnerDto> ClearMessageAsync(Guid sessionUnitId);
 
-    Task<SessionUnitOwnerDto> DeleteMessageAsync(Guid sessionUnitId, long messageId);
+    /// <summary>
+    /// 删除消息
+    /// </summary>
+    /// <param name="sessionUnitId"></param>
+    /// <param name="messageId"></param>
+    /// <returns></returns>
+    Task DeleteMessageAsync(Guid sessionUnitId, long messageId);
+
+    /// <summary>
+    /// 设置联系人标签
+    /// </summary>
+    /// <param name="sessionUnitId"></param>
+    /// <param name="ContactTagIdList"></param>
+    /// <returns></returns>
+    Task SetContactTagsAsync(Guid sessionUnitId, List<Guid> ContactTagIdList);
 }

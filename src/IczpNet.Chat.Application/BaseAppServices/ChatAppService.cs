@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.ChatObjects;
+﻿using IczpNet.AbpCommons;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Localization;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.AspNetCore.Authorization;
@@ -25,6 +26,7 @@ public abstract class ChatAppService : ApplicationService
     protected virtual string GetListPolicyName { get; set; }
 
     protected ICurrentChatObject CurrentChatObject => LazyServiceProvider.LazyGetRequiredService<ICurrentChatObject>();
+    protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
     protected ChatAppService()
     {
         LocalizationResource = typeof(ChatResource);
@@ -88,6 +90,17 @@ public abstract class ChatAppService : ApplicationService
         }
 
         await AuthorizationService.CheckAsync(sessionUnit, policyName);
+    }
+
+    protected virtual async Task<SessionUnit> GetAndCheckPolicyAsync(string policyName, Guid sessionUnitId, bool checkIsKilled = true)
+    {
+        var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+
+        Assert.If(checkIsKilled && sessionUnit.Setting.IsKilled, "已经删除的会话单元!");
+
+        await CheckPolicyAsync(policyName, sessionUnit);
+
+        return sessionUnit;
     }
 
     protected virtual void TryToSetLastModificationTime<T>(T entity)

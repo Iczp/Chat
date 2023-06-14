@@ -4,6 +4,7 @@ using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.SessionServices;
@@ -21,24 +22,18 @@ public class SettingAppService : ChatAppService, ISettingAppService
     protected virtual string RemoveSessionPolicyName { get; set; }
     protected virtual string ClearMessagePolicyName { get; set; }
     protected virtual string DeleteMessagePolicyName { get; set; }
+    protected virtual string SetContactTagsPolicyName { get; set; }
+    protected virtual string KillPolicyName { get; set; }
 
     protected ISessionUnitRepository Repository { get; }
-    protected ISessionUnitManager SessionUnitManager { get; }
+    //protected ISessionUnitManager SessionUnitManager { get; }
+    
 
     public SettingAppService(
-        ISessionUnitRepository repository,
-        ISessionUnitManager sessionUnitManager)
+        ISessionUnitRepository repository)
     {
         Repository = repository;
-        SessionUnitManager = sessionUnitManager;
     }
-
-    /// <inheritdoc/>
-    protected override Task CheckPolicyAsync(string policyName)
-    {
-        return base.CheckPolicyAsync(policyName);
-    }
-
 
     /// <inheritdoc/>
     protected virtual async Task<SessionUnit> GetEntityAsync(Guid id, bool checkIsKilled = true)
@@ -66,9 +61,7 @@ public class SettingAppService : ChatAppService, ISettingAppService
     [HttpPost]
     public async Task<SessionUnitOwnerDto> SetMemberNameAsync(Guid sessionUnitId, string memberName)
     {
-        await CheckPolicyAsync(SetMemberNamePolicyName);
-
-        var entity = await GetEntityAsync(sessionUnitId);
+        var entity = await GetAndCheckPolicyAsync(SetMemberNamePolicyName, sessionUnitId);
 
         await SessionUnitManager.SetMemberNameAsync(entity, memberName);
 
@@ -79,9 +72,7 @@ public class SettingAppService : ChatAppService, ISettingAppService
     [HttpPost]
     public async Task<SessionUnitOwnerDto> SetRenameAsync(Guid sessionUnitId, string rename)
     {
-        await CheckPolicyAsync(SetRenamePolicyName);
-
-        var entity = await GetEntityAsync(sessionUnitId);
+        var entity = await GetAndCheckPolicyAsync(SetRenamePolicyName, sessionUnitId);
 
         await SessionUnitManager.SetRenameAsync(entity, rename);
 
@@ -92,9 +83,7 @@ public class SettingAppService : ChatAppService, ISettingAppService
     [HttpPost]
     public virtual async Task<SessionUnitOwnerDto> SetToppingAsync(Guid sessionUnitId, bool isTopping)
     {
-        await CheckPolicyAsync(SetToppingPolicyName);
-
-        var entity = await GetEntityAsync(sessionUnitId);
+        var entity = await GetAndCheckPolicyAsync(SetToppingPolicyName, sessionUnitId);
 
         await SessionUnitManager.SetToppingAsync(entity, isTopping);
 
@@ -105,9 +94,7 @@ public class SettingAppService : ChatAppService, ISettingAppService
     [HttpPost]
     public virtual async Task<SessionUnitOwnerDto> SetReadedMessageIdAsync(Guid sessionUnitId, bool isForce = false, long? messageId = null)
     {
-        await CheckPolicyAsync(SetReadedPolicyName);
-
-        var entity = await GetEntityAsync(sessionUnitId);
+        var entity = await GetAndCheckPolicyAsync(SetReadedPolicyName, sessionUnitId);
 
         await SessionUnitManager.SetReadedMessageIdAsync(entity, isForce, messageId);
 
@@ -118,9 +105,7 @@ public class SettingAppService : ChatAppService, ISettingAppService
     [HttpPost]
     public async Task<SessionUnitOwnerDto> SetImmersedAsync(Guid sessionUnitId, bool isImmersed)
     {
-        await CheckPolicyAsync(SetImmersedPolicyName);
-
-        var entity = await GetEntityAsync(sessionUnitId);
+        var entity = await GetAndCheckPolicyAsync(SetImmersedPolicyName, sessionUnitId);
 
         await SessionUnitManager.SetImmersedAsync(entity, isImmersed);
 
@@ -132,9 +117,7 @@ public class SettingAppService : ChatAppService, ISettingAppService
     [HttpPost]
     public virtual async Task<SessionUnitOwnerDto> RemoveAsync(Guid sessionUnitId)
     {
-        await CheckPolicyAsync(RemoveSessionPolicyName);
-
-        var entity = await GetEntityAsync(sessionUnitId);
+        var entity = await GetAndCheckPolicyAsync(RemoveSessionPolicyName, sessionUnitId);
 
         await SessionUnitManager.RemoveAsync(entity);
 
@@ -145,9 +128,7 @@ public class SettingAppService : ChatAppService, ISettingAppService
     [HttpPost]
     public virtual async Task<SessionUnitOwnerDto> ExitAsync(Guid sessionUnitId)
     {
-        await CheckPolicyAsync(RemoveSessionPolicyName);
-
-        var entity = await GetEntityAsync(sessionUnitId);
+        var entity = await GetAndCheckPolicyAsync(RemoveSessionPolicyName, sessionUnitId);
 
         await SessionUnitManager.RemoveAsync(entity);
 
@@ -158,7 +139,7 @@ public class SettingAppService : ChatAppService, ISettingAppService
     [HttpPost]
     public virtual async Task<SessionUnitOwnerDto> KillAsync(Guid sessionUnitId)
     {
-        var entity = await GetEntityAsync(sessionUnitId);
+        var entity = await GetAndCheckPolicyAsync(KillPolicyName, sessionUnitId);
 
         await SessionUnitManager.KillAsync(entity);
 
@@ -169,9 +150,7 @@ public class SettingAppService : ChatAppService, ISettingAppService
     [HttpPost]
     public virtual async Task<SessionUnitOwnerDto> ClearMessageAsync(Guid sessionUnitId)
     {
-        await CheckPolicyAsync(ClearMessagePolicyName);
-
-        var entity = await GetEntityAsync(sessionUnitId);
+        var entity = await GetAndCheckPolicyAsync(ClearMessagePolicyName, sessionUnitId);
 
         await SessionUnitManager.ClearMessageAsync(entity);
 
@@ -180,9 +159,18 @@ public class SettingAppService : ChatAppService, ISettingAppService
 
     /// <inheritdoc/>
     [HttpPost]
-    public virtual async Task<SessionUnitOwnerDto> DeleteMessageAsync(Guid sessionUnitId, long messageId)
+    public virtual async Task DeleteMessageAsync(Guid sessionUnitId, long messageId)
     {
-        await CheckPolicyAsync(DeleteMessagePolicyName);
+        var entity = await GetAndCheckPolicyAsync(DeleteMessagePolicyName, sessionUnitId);
+
+        throw new NotImplementedException();
+    }
+
+    /// <inheritdoc/>
+    [HttpPost]
+    public async Task SetContactTagsAsync(Guid sessionUnitId, List<Guid> ContactTagIdList)
+    {
+        var entity = await GetAndCheckPolicyAsync(SetContactTagsPolicyName, sessionUnitId);
 
         throw new NotImplementedException();
     }
