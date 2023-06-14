@@ -30,6 +30,8 @@ using IczpNet.Chat.EntryValues;
 using IczpNet.Chat.EntryValues.Dtos;
 using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
 using IczpNet.Chat.Entrys.Dtos;
+using IczpNet.Chat.ContactTags.Dtos;
+using IczpNet.Chat.ContactTags;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -143,6 +145,12 @@ public class ChatApplicationAutoMapperProfile : Profile
         //CreateMap<ChatObjectTargetEntryValue, EntryObjectDto>()
         //   .ForMember(x => x.EntryName, o => o.MapFrom(x => x.EntryValue.EntryName))
         //   ;
+
+        //ContactTag
+        CreateMap<ContactTag, ContactTagDto>();
+        CreateMap<ContactTag, ContactTagDetailDto>();
+        CreateMap<ContactTagCreateInput, ContactTag>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<ContactTagUpdateInput, ContactTag>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
 
     }
 }

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using IczpNet.AbpCommons;
-using Newtonsoft.Json.Linq;
+using IczpNet.Chat.Permissions;
 
 namespace IczpNet.Chat.Words
 {
@@ -20,6 +20,12 @@ namespace IczpNet.Chat.Words
             WordUpdateInput>,
         IWordAppService
     {
+        protected override string GetPolicyName { get; set; } = ChatPermissions.WordPermission.Default;
+        protected override string GetListPolicyName { get; set; } = ChatPermissions.WordPermission.Default;
+        protected override string CreatePolicyName { get; set; } = ChatPermissions.WordPermission.Create;
+        protected override string UpdatePolicyName { get; set; } = ChatPermissions.WordPermission.Update;
+        protected override string DeletePolicyName { get; set; } = ChatPermissions.WordPermission.Delete;
+
         public WordAppService(IRepository<Word, Guid> repository) : base(repository)
         {
         }

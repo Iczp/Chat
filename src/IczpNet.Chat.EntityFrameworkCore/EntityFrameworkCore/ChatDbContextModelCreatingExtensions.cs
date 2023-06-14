@@ -36,6 +36,7 @@ using IczpNet.Chat.ChatObjectEntryValues;
 using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
 using IczpNet.Chat.DbTables;
 using IczpNet.Chat.Blobs;
+using IczpNet.Chat.SessionSections.SessionUnitContactTags;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -97,6 +98,8 @@ public static class ChatDbContextModelCreatingExtensions
 
         builder.Entity<SessionUnitEntryValue>(b => { b.HasKey(x => new { x.SessionUnitId, x.EntryValueId }); });
         builder.Entity<SessionUnitTag>(b => { b.HasKey(x => new { x.SessionUnitId, x.SessionTagId }); });
+        builder.Entity<SessionUnitContactTag>(b => { b.HasKey(x => new { x.SessionUnitId, x.TagId }); });
+        
         builder.Entity<SessionUnitRole>(b => { b.HasKey(x => new { x.SessionUnitId, x.SessionRoleId }); });
         builder.Entity<SessionUnitOrganization>(b => { b.HasKey(x => new { x.SessionUnitId, x.SessionOrganizationId }); });
         builder.Entity<SessionPermissionRoleGrant>(b => { b.HasKey(x => new { x.DefinitionId, x.RoleId }); });

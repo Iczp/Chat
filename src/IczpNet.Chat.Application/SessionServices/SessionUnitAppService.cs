@@ -152,28 +152,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         return await GetPagedListAsync<SessionUnit, SessionUnitOwnerDto>(
             query,
             input,
-            x => x.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId),
-            async entities =>
-            {
-                if (input.IsRealStat == true)
-                {
-                    var minMessageId = input.MinMessageId.GetValueOrDefault();
-
-                    var idList = entities.Select(x => x.Id).ToList();
-
-                    var stats = await SessionUnitManager.GetStatsAsync(idList, minMessageId);
-
-                    foreach (var e in entities)
-                    {
-                        if (stats.TryGetValue(e.Id, out SessionUnitStatModel stat))
-                        {
-                            e.SetBadge(stat.PublicBadge + stat.PrivateBadge);
-                        }
-                    }
-                }
-
-                return entities;
-            });
+            x => x.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId));
     }
 
     /// <inheritdoc/>

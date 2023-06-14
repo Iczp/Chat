@@ -30,6 +30,7 @@ using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.SessionSections.SessionUnitCounters;
 using IczpNet.Chat.SessionSections.SessionUnitSettings;
 using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
+using IczpNet.Chat.SessionSections.SessionUnitContactTags;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits
 {
@@ -147,6 +148,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         [InverseProperty(nameof(SessionUnitEntryValue.SessionUnit))]
         public virtual IList<SessionUnitEntryValue> Entries { get; set; }
 
+        public virtual IList<SessionUnitContactTag> SessionUnitContactTagList { get; set; }
 
         [NotMapped]
         public virtual List<SessionTag> TagList => GetTagList();

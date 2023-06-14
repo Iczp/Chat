@@ -43,6 +43,8 @@ using IczpNet.Chat.EntryValues;
 using IczpNet.Chat.ChatObjectEntryValues;
 using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
 using IczpNet.Chat.Blobs;
+using IczpNet.Chat.SessionSections.SessionUnitContactTags;
+using IczpNet.Chat.ContactTags;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -57,6 +59,8 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<ChatObjectCategory> ChatObjectCategory { get; }
     DbSet<ChatObjectType> ChatObjectType { get; }
     DbSet<ChatObjectEntryValue> ChatObjectEntryValue { get; }
+
+    DbSet<ContactTag> ContactTag { get; set; }
 
     DbSet<Motto> Motto { get; }
 
@@ -75,6 +79,7 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<SessionRole> SessionRole { get; }
     DbSet<SessionOrganization> SessionOrganization { get; }
     DbSet<SessionUnitTag> SessionUnitTag { get; }
+    DbSet<SessionUnitContactTag> SessionUnitContactTag { get; }
     DbSet<SessionUnitRole> SessionUnitRole { get; }
     DbSet<SessionUnitOrganization> SessionUnitOrganization { get; }
     DbSet<SessionPermissionDefinition> SessionPermissionDefinition { get; }
