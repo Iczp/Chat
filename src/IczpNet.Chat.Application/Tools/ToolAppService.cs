@@ -21,7 +21,7 @@ namespace Rctea.IM.Tools
     /// <summary>
     /// 数据种子
     /// </summary>
-    [Route($"Api/[Controller]/[Action]")]
+    //[Route($"Api/[Controller]/[Action]")]
     public class ToolAppService : ChatAppService
     {
         protected IDataSeeder DataSeeder { get; }

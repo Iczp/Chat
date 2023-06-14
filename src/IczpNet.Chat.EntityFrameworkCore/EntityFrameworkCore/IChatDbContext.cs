@@ -42,6 +42,7 @@ using IczpNet.Chat.EntryNames;
 using IczpNet.Chat.EntryValues;
 using IczpNet.Chat.ChatObjectEntryValues;
 using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
+using IczpNet.Chat.Blobs;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -130,5 +131,8 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<TextContentWord> TextContentWord { get; }
 
     DbSet<HttpRequest> HttpRequest { get; }
+
+    DbSet<Blob> Blob { get; }
+    DbSet<BlobContent> BlobContent { get; }
 
 }

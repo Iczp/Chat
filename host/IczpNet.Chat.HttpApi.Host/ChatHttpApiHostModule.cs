@@ -107,7 +107,10 @@ public class ChatHttpApiHostModule : AbpModule
         {
             options
                 .ConventionalControllers
-                .Create(typeof(ChatApplicationModule).Assembly);
+                .Create(typeof(ChatApplicationModule).Assembly, conf =>
+                {
+                    conf.RootPath = ChatRemoteServiceConsts.RemoteServiceName.ToLower();
+                });
             //options
             //    .ConventionalControllers
             //    .Create(typeof(ChatManagementApplicationModule).Assembly);

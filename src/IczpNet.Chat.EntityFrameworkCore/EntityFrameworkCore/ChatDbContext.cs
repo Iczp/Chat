@@ -44,6 +44,7 @@ using IczpNet.Chat.EntryNames;
 using IczpNet.Chat.EntryValues;
 using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
 using IczpNet.Chat.DbTables;
+using IczpNet.Chat.Blobs;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -142,6 +143,8 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
 
     public DbSet<HttpRequest> HttpRequest { get; set; }
 
+    public DbSet<Blob> Blob { get; set; }
+    public DbSet<BlobContent> BlobContent { get; set; }
 
     public ChatDbContext(DbContextOptions<ChatDbContext> options)
         : base(options)

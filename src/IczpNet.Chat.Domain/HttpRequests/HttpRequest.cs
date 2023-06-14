@@ -24,6 +24,7 @@ namespace IczpNet.Chat.HttpRequests
         /// 请求方式
         /// </summary>
         [Column(TypeName = "nvarchar(10)")]
+        [MaxLength(10)]
         public virtual string HttpMethod { get; set; }
 
         [MaxLength(500)]

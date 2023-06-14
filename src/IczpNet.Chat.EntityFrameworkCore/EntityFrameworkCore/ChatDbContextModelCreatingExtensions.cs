@@ -35,6 +35,7 @@ using IczpNet.Chat.HttpRequests;
 using IczpNet.Chat.ChatObjectEntryValues;
 using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
 using IczpNet.Chat.DbTables;
+using IczpNet.Chat.Blobs;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -129,11 +130,15 @@ public static class ChatDbContextModelCreatingExtensions
             b.HasOne(x => x.Owner).WithOne(x => x.Developer).HasForeignKey<Developer>(x => x.OwnerId).IsRequired(true);
         });
 
-        builder.Entity<HttpResponse>(b => { b.HasKey(x => new { x.HttpRequestId }); });
-        builder.Entity<HttpRequest>(b =>
+        builder.Entity<HttpResponse>(b => { 
+            b.HasKey(x => new { x.HttpRequestId });
+            b.HasOne(x => x.HttpRequest).WithOne(x => x.Response).HasForeignKey<HttpResponse>(x => x.HttpRequestId).IsRequired(true);
+        });
+
+        builder.Entity<BlobContent>(b =>
         {
-            b.Property(e => e.HttpMethod).HasConversion<string>().HasMaxLength(10);
-            b.HasOne(x => x.Response).WithOne(x => x.HttpRequest).HasForeignKey<HttpResponse>(x => x.HttpRequestId).IsRequired(true);
+            b.HasKey(x => new { x.BlobId });
+            b.HasOne(x => x.Blob).WithOne(x => x.Content).HasForeignKey<BlobContent>(x => x.BlobId).IsRequired(true);
         });
 
         builder.Entity<Message>(b =>
