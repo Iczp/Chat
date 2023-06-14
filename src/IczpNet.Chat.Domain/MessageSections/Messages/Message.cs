@@ -17,7 +17,7 @@ namespace IczpNet.Chat.MessageSections.Messages;
 [Index(nameof(IsPrivate))]
 [Index(nameof(MessageType))]
 [Index(nameof(SessionId))]
-[Index(nameof(SessionId), nameof(IsPrivate), nameof(SenderId), nameof(ReceiverId))]
+[Index(nameof(SessionId), nameof(IsPrivate), nameof(SenderId), nameof(ReceiverId), nameof(IsDeleted), nameof(TenantId))]
 public partial class Message : BaseEntity<long>, ISessionId
 {
     //[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -42,7 +42,7 @@ public partial class Message : BaseEntity<long>, ISessionId
 
     public virtual long FavoritedCount => FavoritedCounter.Count;
 
-    public virtual string SenderName => SessionUnit?.DisplayName?? SessionUnit?.Owner?.Name;
+    public virtual string SenderName => SessionUnit?.DisplayName ?? SessionUnit?.Owner?.Name;
 
     //public virtual int ReadedCount { get; set; }
 
