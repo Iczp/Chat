@@ -1,5 +1,4 @@
-﻿using IczpNet.Chat.Permissions;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using Volo.Abp.Reflection;
 
 namespace IczpNet.Chat.EntryNames

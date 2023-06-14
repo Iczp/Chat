@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace IczpNet.Chat.Etos
 {
+    [Serializable]
     public class SendDataEto
     {
         public List<Guid> TargetIdList { get; set; }

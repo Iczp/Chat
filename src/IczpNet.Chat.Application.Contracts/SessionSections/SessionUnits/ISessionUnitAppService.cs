@@ -1,6 +1,4 @@
 ﻿using IczpNet.Chat.Enums;
-using IczpNet.Chat.MessageSections.Messages.Dtos;
-using IczpNet.Chat.OpenedRecorders.Dtos;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using System;
 using System.Collections.Generic;
@@ -30,11 +28,6 @@ public interface ISessionUnitAppService
     Task<SessionUnitOwnerDetailDto> GetDetailAsync(Guid id);
 
     Task<SessionUnitDestinationDto> GetDestinationAsync(Guid id, Guid destinationId);
-    //Task<SessionUnitDestinationDto> GetDestinationDetailAsync(Guid id);
-
-    Task<PagedResultDto<MessageOwnerDto>> GetListMessagesAsync(Guid id, SessionUnitGetMessageListInput input);
-
-    Task<MessageDto> GetMessageAsync(Guid id, long messageId);
 
     Task<BadgeDto> GetBadgeByIdAsync(Guid id, bool? isImmersed = null);
 

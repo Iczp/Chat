@@ -143,6 +143,19 @@ public class SettingAppService : ChatAppService, ISettingAppService
 
     /// <inheritdoc/>
     [HttpPost]
+    public virtual async Task<SessionUnitOwnerDto> ExitAsync(Guid sessionUnitId)
+    {
+        await CheckPolicyAsync(RemoveSessionPolicyName);
+
+        var entity = await GetEntityAsync(sessionUnitId);
+
+        await SessionUnitManager.RemoveAsync(entity);
+
+        return await MapToDtoAsync(entity);
+    }
+
+    /// <inheritdoc/>
+    [HttpPost]
     public virtual async Task<SessionUnitOwnerDto> KillAsync(Guid sessionUnitId)
     {
         var entity = await GetEntityAsync(sessionUnitId);
