@@ -109,7 +109,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     }
 
     /// <inheritdoc/>
-    protected virtual async Task<IQueryable<SessionUnit>> GetQueryAsync(SessionUnitGetListInput input)
+    protected virtual async Task<IQueryable<SessionUnit>> CreateQueryAsync(SessionUnitGetListInput input)
     {
 
 
@@ -147,7 +147,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     {
         await CheckPolicyAsync(GetListPolicyName);
 
-        var query = await GetQueryAsync(input);
+        var query = await CreateQueryAsync(input);
 
         return await GetPagedListAsync<SessionUnit, SessionUnitOwnerDto>(
             query,

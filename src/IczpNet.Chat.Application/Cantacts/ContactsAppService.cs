@@ -1,8 +1,10 @@
 ﻿using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Contacts.Dtos;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,11 +15,13 @@ namespace IczpNet.Chat.Contacts
     public class ContactsAppService : ChatAppService, IContactsAppService
     {
         protected ISessionUnitRepository Repository { get; }
-
+        protected IChatObjectManager ChatObjectManager { get; }
         public ContactsAppService(
-            ISessionUnitRepository repository)
+            ISessionUnitRepository repository, 
+            IChatObjectManager chatObjectManager)
         {
             Repository = repository;
+            ChatObjectManager = chatObjectManager;
         }
 
         /// <inheritdoc/>
@@ -27,7 +31,8 @@ namespace IczpNet.Chat.Contacts
                 .Where(x => x.Setting.IsContacts)
                 .Where(x => x.OwnerId == input.OwnerId)
                 .WhereIf(input.DestinationObjectType.HasValue, x => x.DestinationObjectType == input.DestinationObjectType)
-                //.WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordDestinationSessionUnitSpecification(input.Keyword, await ChatObjectManager.SearchKeywordByCacheAsync(input.Keyword)))
+                .WhereIf(input.TagId.HasValue, x => x.SessionUnitContactTagList.Any(d => d.TagId == input.TagId))
+                .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordDestinationSessionUnitSpecification(input.Keyword, await ChatObjectManager.SearchKeywordByCacheAsync(input.Keyword)))
                 ;
         }
 
