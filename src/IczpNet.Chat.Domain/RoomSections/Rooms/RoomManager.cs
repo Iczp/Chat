@@ -300,7 +300,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
 
     protected virtual Task SendRoomMessageAsync(SessionUnit roomSessionUnit, CmdContentInfo content)
     {
-        return MessageSender.SendCmdAsync(roomSessionUnit, new MessageSendInput<CmdContentInfo>()
+        return MessageSender.SendCmdAsync(roomSessionUnit, new MessageInput<CmdContentInfo>()
         {
             Content = content
         });

@@ -102,7 +102,7 @@ namespace IczpNet.Chat.UnitTests
                 text = $"@陈忠培 {text}";
             }
 
-            var sendResult = await MessageSender.SendTextAsync(sessionunit, new MessageSendInput<TextContentInfo>()
+            var sendResult = await MessageSender.SendTextAsync(sessionunit, new MessageInput<TextContentInfo>()
             {
                 Content = new TextContentInfo()
                 {

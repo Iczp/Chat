@@ -48,57 +48,57 @@ namespace IczpNet.Chat.MessageServices
         //}
 
         //[HttpPost]
-        //public Task<MessageInfo<RedEnvelopeContentOutput>> SendRedEnvelopeMessageAsync(MessageInput<RedEnvelopeContentInput> input)
+        //public Task<MessageInfo<RedEnvelopeContentOutput>> SendRedEnvelopeAsync(MessageInput<RedEnvelopeContentInput> input)
         //{
-        //    return MessageSender.SendRedEnvelopeMessageAsync(input);
+        //    return MessageSender.SendRedEnvelopeAsync(input);
         //}
 
         //[HttpPost]
-        //public Task<MessageInfo<HtmlContentInfo>> SendHtmlMessageAsync(MessageInput<HtmlContentInfo> input)
+        //public Task<MessageInfo<HtmlContentInfo>> SendHtmlAsync(MessageInput<HtmlContentInfo> input)
         //{
-        //    return MessageSender.SendHtmlMessageAsync(input);
+        //    return MessageSender.SendHtmlAsync(input);
         //}
 
         //[HttpPost]
-        //public Task<MessageInfo<ImageContentInfo>> SendImageMessageAsync(MessageInput<ImageContentInfo> input)
+        //public Task<MessageInfo<ImageContentInfo>> SendImageAsync(MessageInput<ImageContentInfo> input)
         //{
-        //    return MessageSender.SendImageMessageAsync(input);
+        //    return MessageSender.SendImageAsync(input);
         //}
 
         //[HttpPost]
-        //public Task<MessageInfo<SoundContentInfo>> SendSoundMessageAsync(MessageInput<SoundContentInfo> input)
+        //public Task<MessageInfo<SoundContentInfo>> SendSoundAsync(MessageInput<SoundContentInfo> input)
         //{
-        //    return MessageSender.SendSoundMessageAsync(input);
+        //    return MessageSender.SendSoundAsync(input);
         //}
 
         //[HttpPost]
-        //public Task<MessageInfo<VideoContentInfo>> SendVideoMessageAsync(MessageInput<VideoContentInfo> input)
+        //public Task<MessageInfo<VideoContentInfo>> SendVideoAsync(MessageInput<VideoContentInfo> input)
         //{
-        //    return MessageSender.SendVideoMessageAsync(input);
+        //    return MessageSender.SendVideoAsync(input);
         //}
 
         //[HttpPost]
-        //public Task<MessageInfo<FileContentInfo>> SendFileMessageAsync(MessageInput<FileContentInfo> input)
+        //public Task<MessageInfo<FileContentInfo>> SendFileAsync(MessageInput<FileContentInfo> input)
         //{
-        //    return MessageSender.SendFileMessageAsync(input);
+        //    return MessageSender.SendFileAsync(input);
         //}
 
         //[HttpPost]
-        //public Task<MessageInfo<LocationContentInfo>> SendLocationMessageAsync(MessageInput<LocationContentInfo> input)
+        //public Task<MessageInfo<LocationContentInfo>> SendLocationAsync(MessageInput<LocationContentInfo> input)
         //{
-        //    return MessageSender.SendLocationMessageAsync(input);
+        //    return MessageSender.SendLocationAsync(input);
         //}
 
         //[HttpPost]
-        //public Task<MessageInfo<ContactsContentInfo>> SendContactsMessageAsync(MessageInput<ContactsContentInfo> input)
+        //public Task<MessageInfo<ContactsContentInfo>> SendContactsAsync(MessageInput<ContactsContentInfo> input)
         //{
-        //    return MessageSender.SendContactsMessageAsync(input);
+        //    return MessageSender.SendContactsAsync(input);
         //}
 
         //[HttpPost]
-        //public Task<MessageInfo<LinkContentInfo>> SendLinkMessageAsync(MessageInput<LinkContentInfo> input)
+        //public Task<MessageInfo<LinkContentInfo>> SendLinkAsync(MessageInput<LinkContentInfo> input)
         //{
-        //    return MessageSender.SendLinkMessageAsync(input);
+        //    return MessageSender.SendLinkAsync(input);
         //}
 
         //[HttpPost]
@@ -117,7 +117,7 @@ namespace IczpNet.Chat.MessageServices
 
         /// <inheritdoc/>
         [HttpPost]
-        public async Task<MessageInfo<TextContentInfo>> SendTextAsync(Guid sessionUnitId, MessageSendInput<TextContentInfo> input)
+        public async Task<MessageInfo<TextContentInfo>> SendTextAsync(Guid sessionUnitId, MessageInput<TextContentInfo> input)
         {
             var sessionunit = await SessionUnitManager.GetAsync(sessionUnitId);
 

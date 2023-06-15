@@ -28,7 +28,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         Task<Dictionary<string, long>> RollbackMessageAsync(long messageId);
 
 
-        Task<MessageInfo<TextContentInfo>> SendTextAsync(Guid sessionUnitId, MessageSendInput<TextContentInfo> input);
+        Task<MessageInfo<TextContentInfo>> SendTextAsync(Guid sessionUnitId, MessageInput<TextContentInfo> input);
 
         /// <summary>
         /// 转发消息

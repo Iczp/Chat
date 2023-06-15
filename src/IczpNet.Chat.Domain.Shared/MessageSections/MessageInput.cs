@@ -4,12 +4,12 @@ using System.ComponentModel;
 
 namespace IczpNet.Chat.MessageSections.Messages
 {
-    public class MessageSendInput<T> : MessageSendInput, IMessageSendInput<T> 
+    public class MessageInput<T> : MessageInput, IMessageInput<T> 
     {
         public virtual T Content { get; set; }
     }
 
-    public class MessageSendInput : IMessageSendInput
+    public class MessageInput : IMessageInput
     {
         /// <summary>
         /// SessionUnitId

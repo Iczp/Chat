@@ -182,7 +182,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
 
                 var senderSessionUnit = await SessionUnitManager.FindAsync(assistant.Id, managerOrCretor.Id);
 
-                await MessageSender.SendLinkAsync(senderSessionUnit, new MessageSendInput<LinkContentInfo>()
+                await MessageSender.SendLinkAsync(senderSessionUnit, new MessageInput<LinkContentInfo>()
                 {
                     Content = new LinkContentInfo()
                     {
@@ -204,7 +204,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
 
             var sessionUnit = await SessionUnitManager.FindAsync(assistant.Id, receiver.Id);
 
-            await MessageSender.SendLinkAsync(sessionUnit, new MessageSendInput<LinkContentInfo>()
+            await MessageSender.SendLinkAsync(sessionUnit, new MessageInput<LinkContentInfo>()
             {
                 Content = new LinkContentInfo()
                 {
@@ -267,7 +267,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                               inviterUnitId: null,
                               isInputEnabled: true));
 
-                        await MessageSender.SendCmdAsync(destinationSessionUnit, new MessageSendInput<CmdContentInfo>()
+                        await MessageSender.SendCmdAsync(destinationSessionUnit, new MessageInput<CmdContentInfo>()
                         {
                             Content = new CmdContentInfo()
                             {
@@ -297,7 +297,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                                  inviterUnitId: null,
                                  isInputEnabled: true));
 
-                        await MessageSender.SendCmdAsync(roomOrSquareSessionUnit, new MessageSendInput<CmdContentInfo>()
+                        await MessageSender.SendCmdAsync(roomOrSquareSessionUnit, new MessageInput<CmdContentInfo>()
                         {
                             Content = new CmdContentInfo()
                             {
@@ -343,7 +343,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
 
             var sessionUnit = await SessionUnitManager.FindAsync(assistant.Id, sessionRequest.Owner.Id);
 
-            await MessageSender.SendLinkAsync(sessionUnit, new MessageSendInput<LinkContentInfo>()
+            await MessageSender.SendLinkAsync(sessionUnit, new MessageInput<LinkContentInfo>()
             {
                 Content = new LinkContentInfo()
                 {

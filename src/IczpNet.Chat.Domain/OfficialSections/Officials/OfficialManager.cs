@@ -128,7 +128,7 @@ namespace IczpNet.Chat.OfficialSections.Officials
             var officialSessionUnit = await SessionUnitManager.FindAsync(receiverSessionUnit.DestinationId.Value, receiverSessionUnit.DestinationId.Value);
             await MessageSender.SendCmdAsync(
                 senderSessionUnit: officialSessionUnit,
-                input: new MessageSendInput<CmdContentInfo>()
+                input: new MessageInput<CmdContentInfo>()
                 {
                     Content = new CmdContentInfo()
                     {

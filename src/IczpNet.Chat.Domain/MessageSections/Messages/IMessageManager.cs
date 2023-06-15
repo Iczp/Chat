@@ -15,14 +15,14 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContentEntity>(
             SessionUnit senderSessionUnit,
-            MessageSendInput<TContentInfo> input,
+            MessageInput<TContentInfo> input,
             SessionUnit receiverSessionUnit = null)
             where TContentInfo : IContentInfo
             where TContentEntity : IContentEntity;
 
         Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContentEntity>(
             SessionUnit senderSessionUnit,
-            MessageSendInput input,
+            MessageInput input,
             TContentEntity contentEntity,
             SessionUnit receiverSessionUnit = null)
             where TContentInfo : IContentInfo
