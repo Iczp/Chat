@@ -45,7 +45,6 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<HistoryContent, HistoryContentOutput>();
 
         CreateMap<RedEnvelopeContentInput, RedEnvelopeContent>().UsingMessageTemplate();
-        CreateMap<RedEnvelopeContent, RedEnvelopeContentOutput>();
         //RedEnvelope
         CreateMap<RedEnvelopeContent, RedEnvelopeContentOutput>()
           //.ForMember(d => d.Detail, options => options.MapFrom<DetailResolver>())
