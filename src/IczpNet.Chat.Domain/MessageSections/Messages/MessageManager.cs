@@ -306,7 +306,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             return output;
         }
 
-        public virtual async Task<Dictionary<string, long>> RollbackMessageAsync(Message message)
+        public virtual async Task<Dictionary<string, long>> RollbackAsync(Message message)
         {
             int allowRollbackHours = await SettingProvider.GetAsync<int>(ChatSettings.AllowRollbackHours);
 
@@ -329,7 +329,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             });
         }
 
-        public virtual async Task<List<Message>> ForwardMessageAsync(Guid sessionUnitId, long sourceMessageId, List<Guid> targetSessionUnitIdList)
+        public virtual async Task<List<Message>> ForwardAsync(Guid sessionUnitId, long sourceMessageId, List<Guid> targetSessionUnitIdList)
         {
             var currentSessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
 

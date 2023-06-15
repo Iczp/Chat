@@ -28,8 +28,8 @@ namespace IczpNet.Chat.MessageSections.Messages
             where TContentInfo : IContentInfo
             where TContentEntity : IContentEntity;
 
-        Task<List<Message>> ForwardMessageAsync(Guid currentSessionUnitId, long sourceMessageId, List<Guid> targetSessionUnitIdList);
+        Task<List<Message>> ForwardAsync(Guid currentSessionUnitId, long sourceMessageId, List<Guid> targetSessionUnitIdList);
 
-        Task<Dictionary<string, long>> RollbackMessageAsync(Message message);
+        Task<Dictionary<string, long>> RollbackAsync(Message message);
     }
 }
