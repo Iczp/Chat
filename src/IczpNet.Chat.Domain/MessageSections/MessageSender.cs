@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.MessageSections.Messages;
+﻿using IczpNet.Chat.Enums;
+using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.SessionSections.SessionUnits;
@@ -126,9 +127,9 @@ namespace IczpNet.Chat.MessageSections
         //    return await MessageManager.SendMessageAsync<RedEnvelopeContentOutput>(input, async x => await Task.FromResult(messageContent));
         //}
 
-        protected virtual IContentProvider GetContentProvider(string providerName)
+        protected virtual IContentProvider GetContentProvider(MessageTypes messageType)
         {
-            var providerType = ContentResolver.GetProviderTypeOrDefault(providerName);
+            var providerType = ContentResolver.GetProviderTypeOrDefault(messageType);
             return LazyServiceProvider.LazyGetService(providerType) as IContentProvider;
         }
 

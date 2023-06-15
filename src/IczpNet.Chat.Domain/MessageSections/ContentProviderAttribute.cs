@@ -1,5 +1,4 @@
 ﻿using IczpNet.AbpCommons;
-using IczpNet.Chat.Attributes;
 using IczpNet.Chat.Enums;
 using System;
 using System.Reflection;
@@ -9,14 +8,7 @@ namespace IczpNet.Chat.MessageSections
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public class ContentProviderAttribute : Attribute
     {
-        public string ProviderName { get; }
-
         public MessageTypes MessageType { get; }
-
-        public ContentProviderAttribute(string providerName)
-        {
-            ProviderName = providerName;
-        }
 
         public ContentProviderAttribute(MessageTypes messageType)
         {

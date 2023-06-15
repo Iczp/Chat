@@ -1,4 +1,5 @@
-﻿using System;
+﻿using IczpNet.Chat.Enums;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -6,8 +7,8 @@ namespace IczpNet.Chat.MessageSections
 {
     public interface IContentResolver
     {
-        Type GetProviderType(string name);
+        Type GetProviderType(MessageTypes messageType);
 
-        Type GetProviderTypeOrDefault(string name);
+        Type GetProviderTypeOrDefault(MessageTypes messageType);
     }
 }

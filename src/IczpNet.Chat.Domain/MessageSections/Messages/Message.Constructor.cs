@@ -79,16 +79,6 @@ public partial class Message
         Size = size;
     }
 
-    public void SetContentProvider(Type type)
-    {
-        Provider = ContentProviderAttribute.GetMessageType(type);
-    }
-
-    public void SetContentProvider<T>()
-    {
-        Provider = ContentProviderAttribute.GetMessageType<T>();
-    }
-
     internal void Rollback(DateTime now)
     {
         IsRollbacked = true;

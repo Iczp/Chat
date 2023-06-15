@@ -1,4 +1,5 @@
-﻿using System;
+﻿using IczpNet.Chat.Enums;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,9 +10,9 @@ namespace IczpNet.Chat.MessageSections
 {
     public class ContentResolver : IContentResolver, ISingletonDependency
     {
-        public ConcurrentDictionary<string, Type> Providers => _providers;
+        public ConcurrentDictionary<MessageTypes, Type> Providers => _providers;
 
-        private readonly ConcurrentDictionary<string, Type> _providers = new();
+        private readonly ConcurrentDictionary<MessageTypes, Type> _providers = new();
 
         public ContentResolver()
         {
@@ -21,18 +22,18 @@ namespace IczpNet.Chat.MessageSections
 
             foreach (var type in typeList)
             {
-                _providers.TryAdd(type.GetCustomAttribute<ContentProviderAttribute>(true).ProviderName, type);
+                _providers.TryAdd(type.GetCustomAttribute<ContentProviderAttribute>(true).MessageType, type);
             }
         }
 
-        public Type GetProviderType(string name)
+        public Type GetProviderType(MessageTypes messageType)
         {
-            return _providers[name];
+            return _providers[messageType];
         }
 
-        public Type GetProviderTypeOrDefault(string name)
+        public Type GetProviderTypeOrDefault(MessageTypes messageType)
         {
-            return _providers.GetOrDefault(name);
+            return _providers.GetOrDefault(messageType);
         }
     }
 }
