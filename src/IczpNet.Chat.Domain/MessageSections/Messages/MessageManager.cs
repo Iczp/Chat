@@ -87,27 +87,27 @@ namespace IczpNet.Chat.MessageSections.Messages
         //{
         //    var session = await SessionGenerator.MakeAsync(sender, receiver);
 
-        //    var entity = new Message(sender, receiver, session);
+        //    var message = new Message(sender, receiver, session);
 
         //    if (func != null)
         //    {
-        //        var messageContent = await func(entity);
-        //        entity.SetMessageContent(messageContent);
+        //        var messageContent = await func(message);
+        //        message.SetMessageContent(messageContent);
         //    }
 
-        //    await MessageValidator.CheckAsync(entity);
+        //    await MessageValidator.CheckAsync(message);
 
-        //    var sessionUnitCount = entity.IsPrivate ? 2 : await MenuManager.GetCountBySessionIdAsync(session.Id);
+        //    var sessionUnitCount = message.IsPrivate ? 2 : await MenuManager.GetCountBySessionIdAsync(session.Id);
 
-        //    entity.SetSessionUnitCount(sessionUnitCount);
+        //    message.SetSessionUnitCount(sessionUnitCount);
 
-        //    await Repository.InsertAsync(entity, autoSave: true);
+        //    await Repository.InsertAsync(message, autoSave: true);
 
-        //    session.SetLastMessage(entity);
+        //    session.SetLastMessage(message);
 
         //    await SessionGenerator.UpdateAsync(session);
 
-        //    return entity;
+        //    return message;
         //}
 
         //public virtual async Task<Message> CreateMessageAsync<TMessageInput>(TMessageInput input, Func<Message, Task<IContentEntity>> func)
@@ -117,15 +117,15 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         //    var receiver = await ChatObjectManager.GetItemByCacheAsync(input.ReceiverId);
 
-        //    return await CreateMessageAsync(sender, receiver, async entity =>
+        //    return await CreateMessageAsync(sender, receiver, async message =>
         //    {
-        //        entity.SetKey(input.KeyName, input.KeyValue);
+        //        message.SetKey(input.KeyName, input.KeyValue);
 
         //        if (input.QuoteMessageId.HasValue)
         //        {
-        //            entity.SetQuoteMessage(await Repository.GetAsync(input.QuoteMessageId.Value));
+        //            message.SetQuoteMessage(await Repository.GetAsync(input.QuoteMessageId.Value));
         //        }
-        //        return await func(entity);
+        //        return await func(message);
         //    });
         //}
 
@@ -140,7 +140,12 @@ namespace IczpNet.Chat.MessageSections.Messages
         //    return output;
         //}
 
-        public virtual async Task<Message> CreateMessageBySessionUnitAsync(SessionUnit senderSessionUnit, Func<Message, SessionUnitIncrementArgs, Task> action, SessionUnit receiverSessionUnit = null)
+        public virtual async Task<Message> CreateMessageBySessionUnitAsync(
+            SessionUnit senderSessionUnit,
+            Func<Message, SessionUnitIncrementArgs, Task> action,
+            SessionUnit receiverSessionUnit = null,
+            long? quoteMessageId = null,
+            List<Guid> remindList = null)
         {
             Assert.NotNull(senderSessionUnit, $"Unable to send message, senderSessionUnit is null");
 
@@ -148,7 +153,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             var sessionUnitItems = await SessionUnitManager.GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);
 
-            var entity = new Message(senderSessionUnit);
+            var message = new Message(senderSessionUnit);
 
             var sessionUnitIncrementArgs = new SessionUnitIncrementArgs()
             {
@@ -156,44 +161,68 @@ namespace IczpNet.Chat.MessageSections.Messages
                 SenderSessionUnitId = senderSessionUnit.Id
             };
 
-            if (action != null)
+            //private message
+            if (receiverSessionUnit != null)
             {
-                await action(entity, sessionUnitIncrementArgs);
+                var receiver = await ChatObjectManager.GetAsync(receiverSessionUnit.OwnerId);
+                message.SetPrivateMessage(receiver);
             }
 
-            await MessageValidator.CheckAsync(entity);
+            //quote message
+            if (quoteMessageId.HasValue)
+            {
+                message.SetQuoteMessage(await Repository.GetAsync(quoteMessageId.Value));
+            }
+
+            //// message content
+            //var messageContent = ObjectMapper.Map<TContentInfo, TContent>(input.Content);
+
+            //message.SetMessageContent(messageContent);
+
+            //remind List
+            if (remindList != null)
+            {
+                sessionUnitIncrementArgs.RemindSessionUnitIdList = await GetRemindIdListAsync(senderSessionUnit, message, remindList);
+            }
+
+            if (action != null)
+            {
+                await action(message, sessionUnitIncrementArgs);
+            }
+
+            await MessageValidator.CheckAsync(message);
 
             //sessionUnitCount
-            var sessionUnitCount = entity.IsPrivate ? 2 : await SessionUnitManager.GetCountBySessionIdAsync(senderSessionUnit.SessionId.Value);
+            var sessionUnitCount = message.IsPrivate ? 2 : await SessionUnitManager.GetCountBySessionIdAsync(senderSessionUnit.SessionId.Value);
 
-            entity.SetSessionUnitCount(sessionUnitCount);
+            message.SetSessionUnitCount(sessionUnitCount);
 
-            //entity.Session.SetLastMessage(entity);
+            //message.Session.SetLastMessage(message);
 
             //var sessionUnitItems = await MenuManager.GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);
 
-            //entity.ScopedList = sessionUnitItems.Select(x => new Scoped(x.Id)).ToList();
+            //message.ScopedList = sessionUnitItems.Select(x => new Scoped(x.Id)).ToList();
 
-            await Repository.InsertAsync(entity, autoSave: true);
+            await Repository.InsertAsync(message, autoSave: true);
 
             // session LastMessage
-            await SessionRepository.UpdateLastMessageIdAsync(senderSessionUnit.SessionId.Value, entity.Id);
+            await SessionRepository.UpdateLastMessageIdAsync(senderSessionUnit.SessionId.Value, message.Id);
 
             //var session = await SessionRepository.GetAsync(senderSessionUnit.SessionId.Value);
 
-            //session.SetLastMessage(entity);
+            //session.SetLastMessage(message);
 
             //await SessionRepository.UpdateAsync(session, autoSave: true);
 
             // sender SessionUnit LastMessage
-            //senderSessionUnit.SetLastMessage(entity);
+            //senderSessionUnit.SetLastMessage(message);
 
             await SessionUnitRepository.UpdateAsync(senderSessionUnit, autoSave: true);
 
             // private message
-            if (entity.IsPrivate || receiverSessionUnit != null)
+            if (message.IsPrivate || receiverSessionUnit != null)
             {
-                //receiverSessionUnit.SetLastMessage(entity);
+                //receiverSessionUnit.SetLastMessage(message);
                 //receiverSessionUnit.SetPrivateBadge(receiverSessionUnit.PrivateBadge + 1);
                 //await SessionUnitRepository.UpdateAsync(receiverSessionUnit, autoSave: true);
 
@@ -202,21 +231,21 @@ namespace IczpNet.Chat.MessageSections.Messages
             else
             {
                 // Following
-                //await MenuManager.IncrementFollowingCountAsync(senderSessionUnit, entity);
+                //await MenuManager.IncrementFollowingCountAsync(senderSessionUnit, message);
 
                 sessionUnitIncrementArgs.FollowingSessionUnitIdList = await FollowManager.GetFollowerIdListAsync(senderSessionUnit.Id);
 
                 //await CurrentUnitOfWork.SaveChangesAsync();
 
                 //Batch Update SessionUnit
-                //await BatchUpdateSessionUnitAsync(senderSessionUnit, entity);
+                //await BatchUpdateSessionUnitAsync(senderSessionUnit, message);
                 //
             }
-            sessionUnitIncrementArgs.LastMessageId = entity.Id;
-            sessionUnitIncrementArgs.IsRemindAll = entity.IsRemindAll;
-            sessionUnitIncrementArgs.MessageCreationTime = entity.CreationTime;
+            sessionUnitIncrementArgs.LastMessageId = message.Id;
+            sessionUnitIncrementArgs.IsRemindAll = message.IsRemindAll;
+            sessionUnitIncrementArgs.MessageCreationTime = message.CreationTime;
 
-            if (await ShouldbeBackgroundJobAsync(senderSessionUnit, entity))
+            if (await ShouldbeBackgroundJobAsync(senderSessionUnit, message))
             {
                 var jobId = await BackgroundJobManager.EnqueueAsync(sessionUnitIncrementArgs);
 
@@ -227,7 +256,7 @@ namespace IczpNet.Chat.MessageSections.Messages
                 await SessionUnitManager.IncremenetAsync(sessionUnitIncrementArgs);
             }
 
-            return entity;
+            return message;
         }
 
         protected virtual async Task<bool> ShouldbeBackgroundJobAsync(SessionUnit senderSessionUnit, Message message)
@@ -349,23 +378,14 @@ namespace IczpNet.Chat.MessageSections.Messages
             {
                 entity.SetKey(input.KeyName, input.KeyValue);
 
-                if (input.QuoteMessageId.HasValue)
-                {
-                    entity.SetQuoteMessage(await Repository.GetAsync(input.QuoteMessageId.Value));
-                }
-
-                if (receiverSessionUnit != null)
-                {
-                    var receiver = await ChatObjectManager.GetAsync(receiverSessionUnit.OwnerId);
-                    entity.SetPrivateMessage(receiver);
-                }
-
                 var messageContent = ObjectMapper.Map<TContentInfo, TContent>(input.Content);
 
                 entity.SetMessageContent(messageContent);
 
-                args.RemindSessionUnitIdList = await GetRemindIdListAsync(senderSessionUnit, entity, input.RemindList);
-            });
+                await Task.Yield();
+            },
+            quoteMessageId: input.QuoteMessageId,
+            remindList: input.RemindList);
 
             var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
 

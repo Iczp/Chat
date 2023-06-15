@@ -13,11 +13,11 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         //Task<MessageInfo<TContentInfo>> SendMessageAsync<TContentInfo>(MessageInput input, Func<Message, Task<IContentEntity>> func);
 
-        Task<Message> CreateMessageBySessionUnitAsync(SessionUnit sessionUnit, Func<Message, SessionUnitIncrementArgs, Task> action, SessionUnit receiverSessionUnit = null);
+        Task<Message> CreateMessageBySessionUnitAsync(SessionUnit sessionUnit, Func<Message, SessionUnitIncrementArgs, Task> action, SessionUnit receiverSessionUnit = null, long? quoteMessageId = null, List<Guid> remindList = null);
 
         Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContent>(SessionUnit senderSessionUnit, MessageSendInput<TContentInfo> input, SessionUnit receiverSessionUnit = null)
-            where TContentInfo :  IContentInfo
-            where TContent :  IContentEntity;
+            where TContentInfo : IContentInfo
+            where TContent : IContentEntity;
 
         //Task<List<Message>> ForwardMessageAsync(long sourceMessageId, long senderId, List<long> receiverIdList);
 

@@ -3,6 +3,7 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -142,8 +143,6 @@ namespace IczpNet.Chat.MessageSections
 
         public Task<MessageInfo<TextContentInfo>> SendTextAsync(SessionUnit senderSessionUnit, MessageSendInput<TextContentInfo> input, SessionUnit receiverSessionUnit = null)
         {
-            //
-
             return MessageManager.SendAsync<TextContentInfo, TextContent>(senderSessionUnit, input, receiverSessionUnit);
         }
 
@@ -155,6 +154,27 @@ namespace IczpNet.Chat.MessageSections
         public Task<MessageInfo<LinkContentInfo>> SendLinkAsync(SessionUnit senderSessionUnit, MessageSendInput<LinkContentInfo> input, SessionUnit receiverSessionUnit = null)
         {
             return MessageManager.SendAsync<LinkContentInfo, LinkContent>(senderSessionUnit, input, receiverSessionUnit);
+        }
+
+        public virtual async Task<MessageInfo<HistoryContentOutput>> SendHistoryAsync(SessionUnit senderSessionUnit, MessageSendInput<HistoryContentInput> input, SessionUnit receiverSessionUnit = null)
+        {
+            var messageIdList = input.Content.MessageIdList;
+
+            var selectedMessageList = (await Repository.GetQueryableAsync())
+                .Where(x => messageIdList.Contains(x.Id))
+                .Where(x => !x.IsRollbacked)
+                .OrderBy(x => x.Id)
+            //.Select(x => x.Id)
+                .ToList();
+            var description = selectedMessageList.Take(3)
+                .Select(x => $"{x.Sender?.Name}:{x.GetTypedContentEntity()?.GetBody()}")
+                .ToArray()
+                .JoinAsString("\n");
+
+            var messageContent = new HistoryContent(GuidGenerator.Create(), $"聊天记录({selectedMessageList.Count})", description);
+
+            throw new NotImplementedException();
+            //return await MessageManager.SendAsync<HistoryContentOutput, HistoryContent>(senderSessionUnit, input, receiverSessionUnit);
         }
 
     }
