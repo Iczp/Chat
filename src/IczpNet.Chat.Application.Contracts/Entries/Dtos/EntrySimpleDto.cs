@@ -1,4 +1,4 @@
-﻿namespace IczpNet.Chat.Entrys.Dtos
+﻿namespace IczpNet.Chat.Entries.Dtos
 {
     public class EntrySimpleDto
     {

@@ -16,18 +16,15 @@ namespace IczpNet.Chat.MessageServices
         protected IMessageRepository Repository { get; }
         protected IMessageSender MessageSender { get; }
         protected IMessageManager MessageManager { get; }
-        protected ISessionUnitManager SessionUnitManager { get; }
 
         public MessageSenderAppService(
             IMessageRepository repository,
             IMessageManager messageManager,
-            IMessageSender messageSender,
-            ISessionUnitManager sessionUnitManager) 
+            IMessageSender messageSender) 
         {
             Repository = repository;
             MessageSender = messageSender;
             MessageManager = messageManager;
-            SessionUnitManager = sessionUnitManager;
         }
 
         //[HttpPost]

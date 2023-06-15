@@ -1,8 +1,8 @@
 ﻿using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.Cantacts.Dtos;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Contacts.Dtos;
 using IczpNet.Chat.SessionSections.SessionUnits;
-using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -16,13 +16,10 @@ namespace IczpNet.Chat.Contacts
     {
         protected override string GetListPolicyName { get; set; }
         protected ISessionUnitRepository Repository { get; }
-        protected IChatObjectManager ChatObjectManager { get; }
         public ContactsAppService(
-            ISessionUnitRepository repository, 
-            IChatObjectManager chatObjectManager)
+            ISessionUnitRepository repository)
         {
             Repository = repository;
-            ChatObjectManager = chatObjectManager;
         }
 
         /// <inheritdoc/>
@@ -39,13 +36,13 @@ namespace IczpNet.Chat.Contacts
 
 
         [HttpGet]
-        public async Task<PagedResultDto<SessionUnitOwnerDto>> GetListAsync(ContactsGetListInput input)
+        public async Task<PagedResultDto<ContactsDto>> GetListAsync(ContactsGetListInput input)
         {
             await CheckPolicyAsync(GetListPolicyName);
 
             var query = await CreateQueryAsync(input);
 
-            return await GetPagedListAsync<SessionUnit, SessionUnitOwnerDto>(
+            return await GetPagedListAsync<SessionUnit, ContactsDto>(
                 query,
                 input,
                 x => x.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId),

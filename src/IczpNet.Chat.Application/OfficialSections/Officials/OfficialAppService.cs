@@ -19,25 +19,20 @@ public class OfficialAppService : ChatAppService, IOfficialAppService
     public virtual string InvitePolicyName { get; set; }
     public virtual string CreateOfficialPolicyName { get; set; }
     protected IOfficialManager OfficialManager { get; }
-    protected IChatObjectManager ChatObjectManager { get; }
     protected IChatObjectTypeManager ChatObjectTypeManager { get; }
-    protected ISessionUnitManager SessionUnitManager { get; }
+    //protected ISessionUnitManager SessionUnitManager { get; }
     protected IMessageSender MessageSender { get; }
     protected IChatObjectCategoryManager ChatObjectCategoryManager { get; }
 
     public OfficialAppService(IOfficialManager roomManager,
         IChatObjectCategoryManager chatObjectCategoryManager,
         IChatObjectTypeManager chatObjectTypeManager,
-        ISessionUnitManager sessionUnitManager,
-        IMessageSender messageSender,
-        IChatObjectManager chatObjectManager)
+        IMessageSender messageSender)
     {
         OfficialManager = roomManager;
         ChatObjectCategoryManager = chatObjectCategoryManager;
         ChatObjectTypeManager = chatObjectTypeManager;
-        SessionUnitManager = sessionUnitManager;
         MessageSender = messageSender;
-        ChatObjectManager = chatObjectManager;
     }
 
 

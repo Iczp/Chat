@@ -31,6 +31,7 @@ using IczpNet.Chat.SessionSections.SessionUnitCounters;
 using IczpNet.Chat.SessionSections.SessionUnitSettings;
 using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
 using IczpNet.Chat.SessionSections.SessionUnitContactTags;
+using IczpNet.Chat.ContactTags;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits
 {
@@ -38,7 +39,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
     [Index(nameof(Ticks), AllDescending = true)]
     [Index(nameof(LastMessageId), IsDescending = new[] { true })]
     [Index(nameof(Sorting), nameof(Ticks), AllDescending = true)]
-    
+
     [Index(nameof(Key), AllDescending = true)]
     [Index(nameof(DestinationObjectType), AllDescending = true)]
     [Index(nameof(IsDeleted))]
@@ -154,6 +155,9 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         public virtual IList<SessionUnitEntryValue> Entries { get; set; }
 
         public virtual IList<SessionUnitContactTag> SessionUnitContactTagList { get; set; }
+
+        [NotMapped]
+        public virtual List<ContactTag> ContactTags => SessionUnitContactTagList.Select(x => x.Tag).ToList();
 
         [NotMapped]
         public virtual List<SessionTag> TagList => GetTagList();

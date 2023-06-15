@@ -27,6 +27,7 @@ public abstract class ChatAppService : ApplicationService
 
     protected ICurrentChatObject CurrentChatObject => LazyServiceProvider.LazyGetRequiredService<ICurrentChatObject>();
     protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
+    protected IChatObjectManager ChatObjectManager => LazyServiceProvider.LazyGetRequiredService<IChatObjectManager>();
     protected ChatAppService()
     {
         LocalizationResource = typeof(ChatResource);

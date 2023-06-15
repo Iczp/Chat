@@ -20,7 +20,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnitContactTags
 
         protected SessionUnitContactTag() { }
 
-        public SessionUnitContactTag(ContactTag sessionTag, SessionUnit sessionUnit)
+        public SessionUnitContactTag(SessionUnit sessionUnit, ContactTag sessionTag)
         {
             Tag = sessionTag;
             SessionUnit = sessionUnit;

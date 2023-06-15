@@ -22,20 +22,13 @@ namespace IczpNet.Chat.OpenedRecorders
         protected IRepository<OpenedRecorder> Repository { get; }
 
         protected IOpenedRecorderManager OpenedRecorderManager { get; }
-        protected ISessionUnitManager SessionUnitManager { get; }
-        protected IChatObjectManager ChatObjectManager { get; }
-
 
         public OpenedRecorderAppService(
             IOpenedRecorderManager openedRecorderManager, 
-            IRepository<OpenedRecorder> repository, 
-            ISessionUnitManager sessionUnitManager, 
-            IChatObjectManager chatObjectManager)
+            IRepository<OpenedRecorder> repository)
         {
             OpenedRecorderManager = openedRecorderManager;
             Repository = repository;
-            SessionUnitManager = sessionUnitManager;
-            ChatObjectManager = chatObjectManager;
         }
 
         [HttpGet]

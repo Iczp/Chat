@@ -1,11 +1,15 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.ContactTags;
+using IczpNet.Chat.SessionSections.SessionUnitContactTags;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.SessionServices;
 
@@ -26,13 +30,15 @@ public class SettingAppService : ChatAppService, ISettingAppService
     protected virtual string KillPolicyName { get; set; }
 
     protected ISessionUnitRepository Repository { get; }
-    //protected ISessionUnitManager SessionUnitManager { get; }
-    
+    protected IRepository<ContactTag, Guid> ContactTagRepository { get; }
+
 
     public SettingAppService(
-        ISessionUnitRepository repository)
+        ISessionUnitRepository repository,
+        IRepository<ContactTag, Guid> contactTagRepository)
     {
         Repository = repository;
+        ContactTagRepository = contactTagRepository;
     }
 
     /// <inheritdoc/>
@@ -168,10 +174,17 @@ public class SettingAppService : ChatAppService, ISettingAppService
 
     /// <inheritdoc/>
     [HttpPost]
-    public async Task SetContactTagsAsync(Guid sessionUnitId, List<Guid> ContactTagIdList)
+    public async Task SetContactTagsAsync(Guid sessionUnitId, List<Guid> contactTagIdList)
     {
         var entity = await GetAndCheckPolicyAsync(SetContactTagsPolicyName, sessionUnitId);
 
-        throw new NotImplementedException();
+        var contactTags = (await ContactTagRepository.GetQueryableAsync())
+            .Where(x => x.OwnerId == entity.OwnerId)
+            .Where(x => contactTagIdList.Contains(x.Id))
+            .ToList();
+
+        entity.SessionUnitContactTagList?.Clear();
+
+        entity.SessionUnitContactTagList = contactTags.Select(x => new SessionUnitContactTag(entity, x)).ToList();
     }
 }

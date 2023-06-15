@@ -16,16 +16,10 @@ namespace IczpNet.Chat.ReadedRecorders
     {
         protected string SetReadedManyPolicyName { get; set; }
         protected IReadedRecorderManager ReadedRecorderManager { get; }
-        protected ISessionUnitManager SessionUnitManager { get; }
-        protected IChatObjectManager ChatObjectManager { get; }
         public ReadedRecorderAppService(
-            IReadedRecorderManager readedRecorderManager,
-            ISessionUnitManager sessionUnitManager,
-            IChatObjectManager chatObjectManager)
+            IReadedRecorderManager readedRecorderManager)
         {
             ReadedRecorderManager = readedRecorderManager;
-            SessionUnitManager = sessionUnitManager;
-            ChatObjectManager = chatObjectManager;
         }
 
         [HttpGet]

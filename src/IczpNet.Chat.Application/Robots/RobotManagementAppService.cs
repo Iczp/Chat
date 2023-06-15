@@ -15,14 +15,11 @@ namespace IczpNet.Chat.Robots
         protected override string UpdatePolicyName { get; set; } = ChatPermissions.RobotManagementPermission.Update;
 
         protected IChatObjectRepository Repository { get; }
-        protected IChatObjectManager ChatObjectManager { get; }
 
         public RobotManagementAppService(
-            IChatObjectRepository repository, 
-            IChatObjectManager chatObjectManager)
+            IChatObjectRepository repository)
         {
             Repository = repository;
-            ChatObjectManager = chatObjectManager;
         }
 
         [HttpPost]

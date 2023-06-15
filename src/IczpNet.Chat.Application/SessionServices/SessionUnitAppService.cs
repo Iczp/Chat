@@ -41,8 +41,6 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 
     protected ISessionUnitRepository Repository { get; }
     protected IMessageRepository MessageRepository { get; }
-    protected ISessionUnitManager SessionUnitManager { get; }
-    protected IChatObjectManager ChatObjectManager { get; }
     protected IReadedRecorderManager ReadedRecorderManager { get; }
     protected IOpenedRecorderManager OpenedRecorderManager { get; }
     protected IFavoritedRecorderManager FavoritedRecorderManager { get; }
@@ -51,8 +49,6 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     public SessionUnitAppService(
         IMessageRepository messageRepository,
         ISessionUnitRepository repository,
-        ISessionUnitManager sessionUnitManager,
-        IChatObjectManager chatObjectManager,
         IReadedRecorderManager readedRecorderManager,
         IOpenedRecorderManager openedRecorderManager,
         IFavoritedRecorderManager favoriteManager,
@@ -60,8 +56,6 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     {
         MessageRepository = messageRepository;
         Repository = repository;
-        SessionUnitManager = sessionUnitManager;
-        ChatObjectManager = chatObjectManager;
         ReadedRecorderManager = readedRecorderManager;
         OpenedRecorderManager = openedRecorderManager;
         FavoritedRecorderManager = favoriteManager;

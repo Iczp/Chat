@@ -1,6 +1,5 @@
 ﻿using IczpNet.BizCrypts;
 using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Developers.Dtos;
 using IczpNet.Chat.Permissions;
 using Microsoft.AspNetCore.Authorization;
@@ -14,12 +13,7 @@ namespace IczpNet.Chat.Developers
     {
         protected virtual string SetIsEnabledPolicyName { get; set; } = ChatPermissions.DeveloperPermission.SetIsEnabled;
 
-        protected IChatObjectManager ChatObjectManager { get; }
-
-        public DeveloperAppService(IChatObjectManager chatObjectManager)
-        {
-            ChatObjectManager = chatObjectManager;
-        }
+        public DeveloperAppService() { }
 
         [HttpGet]
         public async Task<DeveloperDto> GetAsync(long id)

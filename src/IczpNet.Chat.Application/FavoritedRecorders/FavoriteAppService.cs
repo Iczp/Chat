@@ -13,25 +13,15 @@ namespace IczpNet.Chat.FavoritedRecorders
 {
     public class FavoriteAppService : ChatAppService, IFavoriteAppService
     {
-        protected ISessionUnitManager SessionUnitManager { get; set; }
         protected IFavoritedRecorderManager FavoritedRecorderManager { get; set; }
-        protected ISessionUnitRepository SessionUnitRepository { get; set; }
-
         protected IRepository<FavoritedRecorder> Repository { get; set; }
-        protected IChatObjectManager ChatObjectManager { get; set; }
 
         public FavoriteAppService(
             IFavoritedRecorderManager favoritedRecorderManager,
-            ISessionUnitManager sessionUnitManager,
-            ISessionUnitRepository sessionUnitRepository,
-            IRepository<FavoritedRecorder> repository,
-            IChatObjectManager chatObjectManager)
+            IRepository<FavoritedRecorder> repository)
         {
             FavoritedRecorderManager = favoritedRecorderManager;
-            SessionUnitManager = sessionUnitManager;
-            SessionUnitRepository = sessionUnitRepository;
             Repository = repository;
-            ChatObjectManager = chatObjectManager;
         }
 
         [HttpGet]

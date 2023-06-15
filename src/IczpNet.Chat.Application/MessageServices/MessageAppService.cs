@@ -2,7 +2,6 @@
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
-using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -19,7 +18,6 @@ using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Uow;
 using System.Data;
-using Volo.Abp.Domain.Repositories;
 using IczpNet.AbpCommons;
 
 namespace IczpNet.Chat.MessageServices
@@ -27,7 +25,6 @@ namespace IczpNet.Chat.MessageServices
     public class MessageAppService : ChatAppService, IMessageAppService
     {
         protected IMessageRepository Repository { get; }
-        protected ISessionUnitManager SessionUnitManager { get; }
         protected IReadedRecorderManager ReadedRecorderManager { get; }
         protected IOpenedRecorderManager OpenedRecorderManager { get; }
         protected IFavoritedRecorderManager FavoritedRecorderManager { get; }
@@ -35,14 +32,12 @@ namespace IczpNet.Chat.MessageServices
 
         public MessageAppService(
             IMessageRepository repository,
-            ISessionUnitManager sessionUnitManager,
             IReadedRecorderManager readedRecorderManager,
             IOpenedRecorderManager openedRecorderManager,
             IFavoritedRecorderManager favoriteManager,
             IFollowManager followManager) 
         {
             Repository = repository;
-            SessionUnitManager = sessionUnitManager;
             ReadedRecorderManager = readedRecorderManager;
             OpenedRecorderManager = openedRecorderManager;
             FavoritedRecorderManager = favoriteManager;

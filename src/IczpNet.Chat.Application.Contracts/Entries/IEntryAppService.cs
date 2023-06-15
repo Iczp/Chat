@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace IczpNet.Chat.Entrys
+namespace IczpNet.Chat.Entries
 {
     public interface IEntryAppService
     {

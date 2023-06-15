@@ -48,8 +48,6 @@ namespace Rctea.IM.Tools
             ShortIdGenerator = shortIdGenerator;
         }
 
-
-
         [HttpPost]
         public string Encrypt(string value)
         {

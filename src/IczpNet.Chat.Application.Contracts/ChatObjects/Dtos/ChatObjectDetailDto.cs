@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.Entrys.Dtos;
+﻿using IczpNet.Chat.Entries.Dtos;
 using System;
 using System.Collections.Generic;
 

@@ -16,26 +16,18 @@ namespace IczpNet.Chat.Follows
 {
     public class FollowAppService : ChatAppService, IFollowAppService
     {
-
-        protected ISessionUnitManager SessionUnitManager { get; set; }
         protected IFollowManager FollowManager { get; set; }
         protected ISessionUnitRepository SessionUnitRepository { get; set; }
-
         protected IRepository<Follow> Repository { get; set; }
-        protected IChatObjectManager ChatObjectManager { get; set; }
 
         public FollowAppService(
             IFollowManager followManager,
-            ISessionUnitManager sessionUnitManager,
             ISessionUnitRepository sessionUnitRepository,
-            IRepository<Follow> repository,
-            IChatObjectManager chatObjectManager)
+            IRepository<Follow> repository)
         {
             FollowManager = followManager;
-            SessionUnitManager = sessionUnitManager;
             SessionUnitRepository = sessionUnitRepository;
             Repository = repository;
-            ChatObjectManager = chatObjectManager;
         }
 
         /// <inheritdoc/>

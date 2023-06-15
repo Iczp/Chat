@@ -1,7 +1,7 @@
 ﻿using IczpNet.Chat.EntryNames.Dtos;
 using IczpNet.Chat.EntryValues.Dtos;
 
-namespace IczpNet.Chat.Entrys.Dtos
+namespace IczpNet.Chat.Entries.Dtos
 {
     public class EntryObjectDto
     {

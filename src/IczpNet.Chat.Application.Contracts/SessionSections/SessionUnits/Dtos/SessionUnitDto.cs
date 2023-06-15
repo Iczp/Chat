@@ -8,7 +8,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         public virtual Guid SessionId { get; set; }
 
-        //public virtual long OwnerId { get; set; }
+        public virtual long OwnerId { get; set; }
 
         //public virtual string DisplayName { get; set; }
 
@@ -22,6 +22,6 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 
         //public virtual double Sorting { get; set; }
 
-        
+
     }
 }

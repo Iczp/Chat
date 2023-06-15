@@ -21,7 +21,6 @@ public class RoomAdminAppService : ChatAppService, IRoomAdminAppService
     public virtual string InvitePolicyName { get; set; }
     public virtual string CreateRoomPolicyName { get; set; }
     protected IRoomManager RoomManager { get; }
-    protected ISessionUnitManager SessionUnitManager { get; }
     protected IChatObjectCategoryManager ChatObjectCategoryManager { get; }
     protected ISessionPermissionChecker SessionPermissionChecker { get; }
 
@@ -32,7 +31,6 @@ public class RoomAdminAppService : ChatAppService, IRoomAdminAppService
     {
         RoomManager = roomManager;
         ChatObjectCategoryManager = chatObjectCategoryManager;
-        SessionUnitManager = sessionUnitManager;
         SessionPermissionChecker = sessionPermissionChecker;
     }
 

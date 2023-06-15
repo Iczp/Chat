@@ -18,24 +18,18 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 
-namespace IczpNet.Chat.Entrys
+namespace IczpNet.Chat.Entries
 {
     public class EntryAppService : ChatAppService, IEntryAppService
     {
-        protected IChatObjectManager ChatObjectManager { get; }
-        protected ISessionUnitManager SessionUnitManager { get; }
         protected ISessionPermissionChecker SessionPermissionChecker { get; }
         protected IRepository<EntryName, Guid> EntryNameRepository { get; }
         protected IRepository<EntryValue, Guid> EntryValueRepository { get; }
         public EntryAppService(
-            IChatObjectManager chatObjectManager,
-            ISessionUnitManager sessionUnitManager,
             ISessionPermissionChecker sessionPermissionChecker,
             IRepository<EntryName, Guid> entryNameRepository,
             IRepository<EntryValue, Guid> entryValueRepository)
         {
-            ChatObjectManager = chatObjectManager;
-            SessionUnitManager = sessionUnitManager;
             SessionPermissionChecker = sessionPermissionChecker;
             EntryNameRepository = entryNameRepository;
             EntryValueRepository = entryValueRepository;
