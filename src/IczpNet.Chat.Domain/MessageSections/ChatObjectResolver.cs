@@ -25,7 +25,7 @@ namespace IczpNet.Chat.MessageSections
 
         public virtual async Task<List<ChatObject>> GetListAsync(Message message)
         {
-            await Task.CompletedTask;
+            await Task.Yield();
 
             var result = new List<ChatObject>();
 

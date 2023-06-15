@@ -71,7 +71,7 @@ namespace IczpNet.Chat.UnitTests
         [UnitOfWork]
         protected override async Task DoWorkAsync(PeriodicBackgroundWorkerContext workerContext)
         {
-            await Task.CompletedTask;
+            await Task.Yield();
 
             var stopWatch = Stopwatch.StartNew();
 

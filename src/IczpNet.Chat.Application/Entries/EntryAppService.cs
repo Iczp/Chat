@@ -37,13 +37,13 @@ namespace IczpNet.Chat.Entries
 
         protected virtual async Task<ChatObjectDetailDto> MapToEntityDetailAsync(ChatObject entity)
         {
-            await Task.CompletedTask;
+            await Task.Yield();
             return ObjectMapper.Map<ChatObject, ChatObjectDetailDto>(entity);
         }
 
         protected virtual async Task<SessionUnitDestinationDetailDto> MapToSessionUnitDetailDtoAsync(SessionUnit entity)
         {
-            await Task.CompletedTask;
+            await Task.Yield();
             return ObjectMapper.Map<SessionUnit, SessionUnitDestinationDetailDto>(entity);
         }
 
@@ -103,7 +103,7 @@ namespace IczpNet.Chat.Entries
                 TryToSetLastModificationTime(item);
             }
 
-            await Task.CompletedTask;
+            await Task.Yield();
 
             //reset
             return createItems.Concat(modifyItems).ToList();

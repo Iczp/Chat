@@ -208,7 +208,7 @@ namespace IczpNet.Chat.ChatObjects
 
         protected virtual async Task<ChatObjectDetailDto> MapToEntityDetailAsync(ChatObject entity)
         {
-            await Task.CompletedTask;
+            await Task.Yield();
             return ObjectMapper.Map<ChatObject, ChatObjectDetailDto>(entity);
         }
 

@@ -121,12 +121,12 @@ namespace IczpNet.Chat.Menus
 
             Assert.If(!IsUrl(developer.PostUrl), $"Fail Url:{developer.PostUrl}", nameof(developer.PostUrl));
 
-            await Task.CompletedTask;
+            await Task.Yield();
         }
 
         public virtual async Task<bool> IsCheckMenuAsync(Menu menu)
         {
-            await Task.CompletedTask;
+            await Task.Yield();
 
             var owner = menu.Owner;
 

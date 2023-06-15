@@ -45,7 +45,7 @@ namespace IczpNet.Chat.ReadedRecorders
 
             message.ReadedCounter.Count++;
 
-            await Task.CompletedTask;
+            await Task.Yield();
 
             //await MessageRepository.IncrementReadedCountAsync(new List<long>() { message.Id });
 
@@ -59,7 +59,7 @@ namespace IczpNet.Chat.ReadedRecorders
             //    //message.ReadedCount++;
             //    message.ReadedCounter.Count++;
             //}
-            //await Task.CompletedTask;
+            //await Task.Yield();
 
             //await MessageRepository.IncrementReadedCountAsync(changeMessages.Select(x => x.Id).ToList());
 

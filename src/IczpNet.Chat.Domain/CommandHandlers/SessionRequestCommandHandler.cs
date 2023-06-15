@@ -19,7 +19,7 @@ public class SessionRequestCommandHandler : CommandHandlerBase
     //[Audited]
     public override async Task HanderAsync(ChannelMessagePayload commandPayload)
     {
-        await Task.CompletedTask;
+        await Task.Yield();
 
         using var uow = UnitOfWorkManager.Begin();
 

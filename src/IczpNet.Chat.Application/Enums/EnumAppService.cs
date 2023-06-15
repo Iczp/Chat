@@ -27,17 +27,15 @@ namespace IczpNet.Chat.Enums
                     Names = Enum.GetNames(x)
                 })
                 .ToList();
-
-            //return new PagedResultDto<EnumTypeDto>(EnumItems.Count, EnumItems);
-
-            var query = EnumItems.AsQueryable();
+            var query = EnumItems.AsQueryable()
+                .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Description.Contains(input.Keyword) || x.Names.Contains(input.Keyword));
 
             return await GetPagedListAsync<EnumTypeDto, EnumTypeDto>(query, input);
         }
 
         public async Task<List<EnumDto>> GetItemsAsync(string type)
         {
-            await Task.CompletedTask;
+            await Task.Yield();
 
             var _type = typeof(ChatDomainSharedModule).Assembly.GetType(type);
 

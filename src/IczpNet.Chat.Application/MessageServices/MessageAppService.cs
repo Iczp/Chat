@@ -99,7 +99,7 @@ namespace IczpNet.Chat.MessageServices
                         e.IsFavorited = await FavoritedRecorderManager.IsAnyAsync(sessionUnitId, e.Id);
                         e.IsFollowing = followingIdList.Contains(e.SessionUnitId.Value);
                     }
-                    //await Task.CompletedTask;
+                    //await Task.Yield();
                     return entities;
                 });
         }

@@ -27,7 +27,7 @@ namespace IczpNet.Chat.Robots
         public async Task<RobotDto> CreateAsync(RobotCreateInput input)
         {
             //await CheckPolicyAsync(CreatePolicyName);
-            await Task.CompletedTask;
+            await Task.Yield();
             throw new System.NotImplementedException();
         }
 
@@ -36,7 +36,7 @@ namespace IczpNet.Chat.Robots
         public async Task<RobotDto> UpdateAsync(long id, RobotUpdateInput input)
         {
             //await CheckPolicyAsync(UpdatePolicyName);
-            await Task.CompletedTask;
+            await Task.Yield();
             throw new System.NotImplementedException();
         }
     }

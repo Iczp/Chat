@@ -9,7 +9,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
     {
         public virtual async Task<bool> IsEnabledAsync(SimpleStateCheckerContext<SessionUnit> context)
         {
-            await Task.CompletedTask;
+            await Task.Yield();
             //context.State.Name
             var currentUser = context.ServiceProvider.GetRequiredService<ICurrentUser>();
 

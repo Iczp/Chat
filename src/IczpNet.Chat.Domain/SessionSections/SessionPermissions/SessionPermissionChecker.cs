@@ -50,7 +50,7 @@ namespace IczpNet.Chat.SessionSections.SessionPermissions
 
         public async Task<bool> IsGrantedAsync(string sessionPermissionDefinitionId, SessionUnit sessionUnit)
         {
-            await Task.CompletedTask;
+            await Task.Yield();
 
             //if (!CurrentUser.GetChatObjectIdList().Contains(sessionUnit.OwnerId))
             //{
@@ -98,7 +98,7 @@ namespace IczpNet.Chat.SessionSections.SessionPermissions
 
         public virtual async Task CheckAsync(string sessionPermissionDefinitionId, ChatObject chatObject)
         {
-            await Task.CompletedTask;
+            await Task.Yield();
 
             var definition = await Repository.GetAsync(sessionPermissionDefinitionId);
 
@@ -109,7 +109,7 @@ namespace IczpNet.Chat.SessionSections.SessionPermissions
 
         public async Task<bool> IsGrantedAsync(string sessionPermissionDefinitionId, ChatObject chatObject)
         {
-            await Task.CompletedTask;
+            await Task.Yield();
 
             if (!chatObject.IsEnabled)
             {
@@ -122,7 +122,7 @@ namespace IczpNet.Chat.SessionSections.SessionPermissions
 
         public virtual async Task<bool> IsLoginAsync(ChatObject chatObject)
         {
-            await Task.CompletedTask;
+            await Task.Yield();
 
             return CurrentUser.GetChatObjectIdList().Contains(chatObject.Id);
         }

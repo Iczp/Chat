@@ -20,6 +20,6 @@ public abstract class CommandHandlerBase : DomainService, ICommandHandler, ITran
 
     public virtual async Task HanderAsync(ChannelMessagePayload commandPayload)
     {
-        await Task.CompletedTask;
+        await Task.Yield();
     }
 }

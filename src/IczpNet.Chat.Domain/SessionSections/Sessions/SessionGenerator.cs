@@ -66,7 +66,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         protected virtual async Task<string> MakeSesssionKeyAsync(ChatObject sender, ChatObject receiver)
         {
-            await Task.CompletedTask;
+            await Task.Yield();
 
             var senderId = sender.Id;
 
@@ -85,13 +85,13 @@ namespace IczpNet.Chat.SessionSections.Sessions
             ResolveShopWaiterId(sender, receiver, async (v) =>
             {
                 receiverId = v;
-                await Task.CompletedTask;
+                await Task.Yield();
             });
 
             ResolveShopWaiterId(receiver, sender, async (v) =>
             {
                 senderId = v;
-                await Task.CompletedTask;
+                await Task.Yield();
             });
 
             var arr = new[] { senderId, receiverId };
@@ -151,7 +151,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
                         inviterUnitId: null,
                         isInputEnabled: true));
 
-                await Task.CompletedTask;
+                await Task.Yield();
             });
 
             ResolveShopWaiterId(sender, receiver, async (shopKeeperId) =>
@@ -202,7 +202,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
                 }
 
                 //add or update sessionUnit
-                await Task.CompletedTask;
+                await Task.Yield();
             });
 
             //if (sender.ObjectType == ChatObjectTypeEnums.Official)

@@ -232,7 +232,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         protected virtual async Task<bool> ShouldbeBackgroundJobAsync(SessionUnit senderSessionUnit, Message message)
         {
-            await Task.CompletedTask;
+            await Task.Yield();
 
             return BackgroundJobManager.IsAvailable();
 
@@ -486,7 +486,7 @@ namespace IczpNet.Chat.MessageSections.Messages
                 {
                     x.SetForwardMessage(sourceMessage);
                     x.SetMessageContent(messageContent);
-                    await Task.CompletedTask;
+                    await Task.Yield();
                 });
                 messageList.Add(newMessage);
 

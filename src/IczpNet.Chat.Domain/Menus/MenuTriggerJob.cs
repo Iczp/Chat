@@ -51,7 +51,7 @@ namespace IczpNet.Chat.Menus
             {
                 //throw: BackgroundJob retry
                 Assert.If(!req.IsSuccess, $"Error:{req.Message},HttpReqquestId={req.Id},url={req.Url}");
-                await Task.CompletedTask;
+                await Task.Yield();
             });
         }
     }

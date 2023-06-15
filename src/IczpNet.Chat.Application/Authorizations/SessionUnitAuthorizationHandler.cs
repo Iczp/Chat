@@ -35,7 +35,7 @@ namespace IczpNet.Chat.Authorizations
                 context.Succeed(requirement);
             }
 
-            await Task.CompletedTask;
+            await Task.Yield();
         }
     }
 }

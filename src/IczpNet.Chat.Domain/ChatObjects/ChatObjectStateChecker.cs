@@ -9,7 +9,7 @@ namespace IczpNet.Chat.ChatObjects
     {
         public virtual async Task<bool> IsEnabledAsync(SimpleStateCheckerContext<ChatObject> context)
         {
-            await Task.CompletedTask;
+            await Task.Yield();
             //context.State.Name
             var currentUser = context.ServiceProvider.GetRequiredService<ICurrentUser>();
 

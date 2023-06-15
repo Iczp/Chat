@@ -33,7 +33,7 @@ GROUP BY
         sOBJ.schema_id
         , sOBJ.name
 ";
-            await Task.CompletedTask;
+            await Task.Yield();
 
             return context.DbTable.FromSqlRaw(sql);
         }

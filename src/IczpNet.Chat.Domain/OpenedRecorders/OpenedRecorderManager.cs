@@ -33,7 +33,7 @@ namespace IczpNet.Chat.OpenedRecorders
 
             message.OpenedCounter.Count++;
 
-            await Task.CompletedTask;
+            await Task.Yield();
 
             //await MessageRepository.IncrementOpenedCountAsync(new List<long>() { message.Id});
         }
@@ -46,7 +46,7 @@ namespace IczpNet.Chat.OpenedRecorders
 
             //    message.OpenedCounter.Count++;
             //}
-            //await Task.CompletedTask;
+            //await Task.Yield();
 
             //await MessageRepository.IncrementOpenedCountAsync(changeMessages.Select(x => x.Id).ToList());
 

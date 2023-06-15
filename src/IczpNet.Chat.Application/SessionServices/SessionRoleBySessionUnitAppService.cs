@@ -53,7 +53,7 @@ namespace IczpNet.Chat.SessionServices
 
         protected override async Task<SessionRole> MapToEntityAsync(SessionUnit sessionUnit, SessionRoleCreateBySessionUnitInput input)
         {
-            await Task.CompletedTask;
+            await Task.Yield();
 
             var entity = new SessionRole(GuidGenerator.Create(), sessionUnit.SessionId.Value, input.Name);
 
@@ -90,7 +90,7 @@ namespace IczpNet.Chat.SessionServices
 
         protected virtual async Task<SessionRolePermissionDto> MapToPermissionDtoAsync(SessionRole entity)
         {
-            await Task.CompletedTask;
+            await Task.Yield();
 
             return MapToPermissionDto(entity);
         }

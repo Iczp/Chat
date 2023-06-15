@@ -26,12 +26,12 @@ namespace IczpNet.Chat.MessageSections
                 Assert.If(regex.IsMatch(text), $"不能发送'{match.Value}'", "Gag");
             }
 
-            await Task.CompletedTask;
+            await Task.Yield();
         }
 
         public virtual async Task<bool> IsContainsAsync(string text)
         {
-            await Task.CompletedTask;
+            await Task.Yield();
             return false;
         }
     }

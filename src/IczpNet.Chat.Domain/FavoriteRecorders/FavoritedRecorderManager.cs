@@ -73,7 +73,7 @@ namespace IczpNet.Chat.FavoritedRecorders
 
             message.FavoritedCounter.Count++;
 
-            await Task.CompletedTask;
+            await Task.Yield();
             //await MessageRepository.IncrementFavoritedCountAsync(new List<long>() { message.Id });
         }
 
@@ -84,7 +84,7 @@ namespace IczpNet.Chat.FavoritedRecorders
             //    //message.FavoritedCount++;
             //    message.FavoritedCounter.Count++;
             //}
-            //await Task.CompletedTask;
+            //await Task.Yield();
 
             //await MessageRepository.IncrementFavoritedCountAsync(changeMessages.Select(x => x.Id).ToList());
 

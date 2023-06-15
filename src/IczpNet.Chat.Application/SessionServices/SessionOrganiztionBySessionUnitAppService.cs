@@ -52,7 +52,7 @@ namespace IczpNet.Chat.SessionServices
 
         protected override async Task<SessionOrganization> MapToEntityAsync(SessionUnit sessionUnit, SessionOrganizationCreateBySessionUnitInput createInput)
         {
-            await Task.CompletedTask;
+            await Task.Yield();
 
             return new SessionOrganization(createInput.Name, sessionUnit.SessionId.Value, createInput.ParentId);
         }

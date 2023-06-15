@@ -7,7 +7,6 @@ using Volo.Abp.Domain.Repositories;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 using Microsoft.AspNetCore.Mvc;
-using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionPermissions;
 using System.Collections.Generic;
 using IczpNet.Chat.SessionSections.Sessions;
@@ -61,7 +60,7 @@ namespace IczpNet.Chat.SessionServices
 
         protected override async Task<SessionRole> MapToEntityAsync(SessionRoleCreateInput createInput)
         {
-            await Task.CompletedTask;
+            await Task.Yield();
 
             var entity = new SessionRole(GuidGenerator.Create(), createInput.SessionId.Value, createInput.Name);
 
@@ -89,7 +88,7 @@ namespace IczpNet.Chat.SessionServices
 
         protected virtual async Task<SessionRolePermissionDto> MapToPermissionDtoAsync(SessionRole entity)
         {
-            await Task.CompletedTask;
+            await Task.Yield();
 
             return MapToPermissionDto(entity);
         }
