@@ -1,5 +1,6 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.Attributes;
+using IczpNet.Chat.Enums;
 using System;
 using System.Reflection;
 
@@ -10,22 +11,28 @@ namespace IczpNet.Chat.MessageSections
     {
         public string ProviderName { get; }
 
+        public MessageTypes MessageType { get; }
+
         public ContentProviderAttribute(string providerName)
         {
             ProviderName = providerName;
         }
 
-
-        public static string GetName<T>()
+        public ContentProviderAttribute(MessageTypes messageType)
         {
-            return GetName(typeof(T));
+            MessageType = messageType;
         }
 
-        public static string GetName(Type type)
+        public static MessageTypes GetMessageType<T>()
+        {
+            return GetMessageType(typeof(T));
+        }
+
+        public static MessageTypes GetMessageType(Type type)
         {
             var attribute = type.GetCustomAttribute<ContentProviderAttribute>();
-            Assert.NotNull(attribute, $"Non-existent {nameof(MessageTemplateAttribute)} attribute of type:'{type}'.");
-            return attribute.ProviderName;
+            Assert.NotNull(attribute, $"Non-existent {nameof(ContentProviderAttribute)} attribute of type:'{type}'.");
+            return attribute.MessageType;
         }
     }
 }

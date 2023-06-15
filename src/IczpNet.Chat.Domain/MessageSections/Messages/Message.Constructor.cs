@@ -81,12 +81,12 @@ public partial class Message
 
     public void SetContentProvider(Type type)
     {
-        Provider = ContentProviderAttribute.GetName(type);
+        Provider = ContentProviderAttribute.GetMessageType(type);
     }
 
     public void SetContentProvider<T>()
     {
-        Provider = ContentProviderAttribute.GetName<T>();
+        Provider = ContentProviderAttribute.GetMessageType<T>();
     }
 
     internal void Rollback(DateTime now)

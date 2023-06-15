@@ -1,19 +1,21 @@
-﻿using IczpNet.Chat.MessageSections.Templates;
+﻿using IczpNet.Chat.Enums;
+using IczpNet.Chat.MessageSections.Templates;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.MessageSections
 {
-    [ContentProvider(Name)]
-    public class ArticleProvider : ContentProviderBase
+    [ContentProvider(MessageTypes.Article)]
+    public class ArticleProvider : ContentProviderBase<ArticleContent>
     {
         public const string Name = "Article";
-        protected IRepository<ArticleContent, Guid> Repository { get; set; }
 
-        public ArticleProvider(IRepository<ArticleContent, Guid> repository)
+        public override string ProviderName => Name;
+
+        public ArticleProvider(IRepository<ArticleContent, Guid> repository) : base(repository)
         {
-            Repository = repository;
+
         }
 
         public override Task<IContentInfo> GetContentInfoAsync(long messageId)

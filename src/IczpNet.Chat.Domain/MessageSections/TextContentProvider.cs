@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.MessageSections.Templates;
+﻿using IczpNet.Chat.Enums;
+using IczpNet.Chat.MessageSections.Templates;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
@@ -7,7 +8,7 @@ using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.MessageSections
 {
-    [ContentProvider(Name)]
+    [ContentProvider(MessageTypes.Text)]
     public class TextContentProvider : ContentProviderBase<TextContent>
     {
         public const string Name = "Text";
