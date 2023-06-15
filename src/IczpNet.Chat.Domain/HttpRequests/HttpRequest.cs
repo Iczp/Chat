@@ -3,7 +3,7 @@ using System;
 using System.Net;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations.Schema;
-using IczpNet.Chat.BaseEntitys;
+using IczpNet.Chat.BaseEntities;
 
 namespace IczpNet.Chat.HttpRequests
 {

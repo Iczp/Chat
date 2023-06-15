@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.BaseEntitys;
+﻿using IczpNet.Chat.BaseEntities;
 using System;
 using System.ComponentModel.DataAnnotations;
 

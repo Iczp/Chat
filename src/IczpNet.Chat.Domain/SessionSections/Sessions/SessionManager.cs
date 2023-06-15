@@ -18,26 +18,17 @@ namespace IczpNet.Chat.SessionSections.Sessions
 {
     public class SessionManager : DomainService, ISessionManager
     {
-        protected IChatObjectManager ChatObjectManager { get; }
-        protected IMessageRepository MessageRepository { get; }
         protected IRepository<Session, Guid> Repository { get; }
         protected IRepository<SessionUnit, Guid> SessionUnitRepository { get; }
         protected IRepository<SessionRole, Guid> SessionRoleRepository { get; }
         protected IRepository<SessionTag, Guid> SessionTagRepository { get; }
-        protected ISessionRecorder SessionRecorder { get; }
 
         public SessionManager(
-            IChatObjectManager chatObjectManager,
-            IMessageRepository messageRepository,
-            ISessionRecorder sessionRecorder,
             IRepository<Session, Guid> repository,
             IRepository<SessionRole, Guid> sessionRoleRepository,
             IRepository<SessionTag, Guid> sessionTagRepository,
             IRepository<SessionUnit, Guid> sessionUnitRepository)
         {
-            ChatObjectManager = chatObjectManager;
-            MessageRepository = messageRepository;
-            SessionRecorder = sessionRecorder;
             Repository = repository;
             SessionRoleRepository = sessionRoleRepository;
             SessionTagRepository = sessionTagRepository;
@@ -50,12 +41,17 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return await Repository.UpdateAsync(entity, autoSave: true);
         }
 
+        public virtual async Task<bool> IsEnabledAsync(Guid sessionId)
+        {
+            return (await GetAsync(sessionId)).IsEnabled;
+        }
+
         public Task<Session> GetAsync(Guid sessionId)
         {
             return Repository.GetAsync(sessionId);
         }
 
-        public async Task<Session> GetByKeyAsync(string sessionKey)
+        public virtual async Task<Session> GetByKeyAsync(string sessionKey)
         {
             return Assert.NotNull(await Repository.FindAsync(x => x.SessionKey == sessionKey), $"No such session by sessionKey:{sessionKey}");
         }
@@ -65,27 +61,6 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return Assert.NotNull(await Repository.FindAsync(x => x.OwnerId == roomId), $"No such session by roomId:{roomId}");
         }
 
-
-        private async Task<IQueryable<Session>> QuerySessionByUnitOwnerAsync(long ownerId, ChatObjectTypeEnums? chatObjectType = null)
-        {
-            return (await Repository.GetQueryableAsync())
-                  .Where(x => x.UnitList.Any(d => d.OwnerId.Equals(ownerId) && !d.Setting.IsKilled && d.Setting.IsEnabled && (chatObjectType != null && d.DestinationObjectType == chatObjectType)));
-
-        }
-
-        public async Task<IQueryable<Session>> InSameAsync(long sourceChatObjectId, long destinationChatObjectId, ChatObjectTypeEnums? chatObjectType = null)
-        {
-            var source = await QuerySessionByUnitOwnerAsync(sourceChatObjectId, chatObjectType);
-
-            var target = await QuerySessionByUnitOwnerAsync(destinationChatObjectId, chatObjectType);
-
-            return source.Intersect(target);
-        }
-
-        public Task<DateTime> DeleteFriendshipAsync(long ownerId, long destinationId)
-        {
-            throw new NotImplementedException();
-        }
 
         public async Task<SessionTag> AddTagAsync(Session entity, SessionTag sessionTag)
         {

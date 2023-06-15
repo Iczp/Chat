@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.BaseEntitys;
+﻿using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.EntityFrameworkCore;

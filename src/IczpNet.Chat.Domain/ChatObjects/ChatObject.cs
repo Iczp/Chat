@@ -1,7 +1,7 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
 using IczpNet.AbpCommons.PinYin;
 using IczpNet.AbpCommons.Extensions;
-using IczpNet.Chat.BaseEntitys;
+using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.ChatObjectCategoryUnits;
 using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.Enums;

@@ -1,5 +1,5 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
-using IczpNet.Chat.BaseEntitys;
+using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.SessionSections.SessionPermissionGroups;
 using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
 using Microsoft.EntityFrameworkCore;

@@ -10,15 +10,13 @@ namespace IczpNet.Chat.SessionSections.Sessions
 {
     public interface ISessionManager
     {
+        Task<bool> IsEnabledAsync(Guid sessionId);
+
         Task<Session> GetAsync(Guid sessionId);
 
         Task<Session> GetByOwnerIdAsync(long roomId);
 
         Task<Session> GetByKeyAsync(string sessionKey);
-
-        Task<IQueryable<Session>> InSameAsync(long sourceChatObjectId, long destinationChatObjectId, ChatObjectTypeEnums? chatObjectType = null);
-
-        Task<DateTime> DeleteFriendshipAsync(long ownerId, long destinationId);
 
         Task<SessionTag> AddTagAsync(Session entity, SessionTag sessionTag);
 

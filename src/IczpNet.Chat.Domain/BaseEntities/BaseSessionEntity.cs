@@ -3,7 +3,7 @@ using IczpNet.Chat.DataFilters;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace IczpNet.Chat.BaseEntitys
+namespace IczpNet.Chat.BaseEntities
 {
     public abstract class BaseSessionEntity<TKey> : BaseEntity<Guid>, IChatOwner<long>
     {

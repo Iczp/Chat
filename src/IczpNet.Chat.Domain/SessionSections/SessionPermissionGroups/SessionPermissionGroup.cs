@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.BaseEntitys;
+﻿using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;

@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.BaseEntitys;
+﻿using IczpNet.AbpCommons.DataFilters;
+using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
@@ -17,7 +18,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 {
     [Index(nameof(LastMessageId), AllDescending = true)]
     [Index(nameof(SessionKey))]
-    public class Session : BaseEntity<Guid>, IChatOwner<long?>
+    public class Session : BaseEntity<Guid>, IChatOwner<long?>, IIsEnabled
     {
         [StringLength(80)]
         public virtual string SessionKey { get; protected set; }
@@ -35,6 +36,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         [ForeignKey(nameof(OwnerId))]
         public virtual ChatObject Owner { get; protected set; }
+
+        public virtual bool IsEnabled { get; protected set; }
 
         public virtual long? LastMessageId { get; protected set; }
 

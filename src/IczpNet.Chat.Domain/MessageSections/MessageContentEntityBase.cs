@@ -2,7 +2,7 @@
 using IczpNet.AbpCommons.DataFilters;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.Attributes;
-using IczpNet.Chat.BaseEntitys;
+using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.MessageSections.Messages;

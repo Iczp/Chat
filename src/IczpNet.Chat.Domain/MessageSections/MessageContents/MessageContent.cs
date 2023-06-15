@@ -1,5 +1,5 @@
 ﻿using Castle.Components.DictionaryAdapter;
-using IczpNet.Chat.BaseEntitys;
+using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.MessageSections.Messages;
 using System;
 using System.Collections.Generic;

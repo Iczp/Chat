@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.BaseEntitys;
+﻿using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;

@@ -7,7 +7,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace IczpNet.Chat.BaseEntitys
+namespace IczpNet.Chat.BaseEntities
 {
     public abstract class BaseRecorder : BaseEntity, IDeviceId, IMessageId, ISessionUnitId
     {

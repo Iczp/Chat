@@ -3,7 +3,7 @@ using IczpNet.AbpTrees;
 using System;
 using Volo.Abp.MultiTenancy;
 
-namespace IczpNet.Chat.BaseEntitys
+namespace IczpNet.Chat.BaseEntities
 {
     public abstract class BaseTreeEntity<T, TKey> : TreeEntity<T, TKey>, IMultiTenant, ISorting
         where T : ITreeEntity<TKey>

@@ -1,5 +1,5 @@
 ﻿using IczpNet.AbpCommons;
-using IczpNet.Chat.BaseEntitys;
+using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
 using System;

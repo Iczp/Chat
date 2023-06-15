@@ -7,7 +7,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Volo.Abp.Auditing;
 using IczpNet.AbpCommons.DataFilters;
-using IczpNet.Chat.BaseEntitys;
+using IczpNet.Chat.BaseEntities;
 
 namespace IczpNet.Chat.SessionSections.SessionUnitSettings
 {
@@ -132,11 +132,13 @@ namespace IczpNet.Chat.SessionSections.SessionUnitSettings
         [Comment("删除会话(退出群等)，但是不删除会话(用于查看历史消息)")]
         public virtual bool IsKilled { get; set; }
 
+        [Comment("删除渠道")]
         public virtual KillTypes? KillType { get; set; }
 
         [Comment("删除会话时间")]
         public virtual DateTime? KillTime { get; set; }
 
+        [Comment("删除人")]
         public virtual Guid? KillerId { get; set; }
 
         [ForeignKey(nameof(KillerId))]

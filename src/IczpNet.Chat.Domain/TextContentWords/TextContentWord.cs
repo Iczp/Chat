@@ -1,5 +1,5 @@
 ﻿using IczpNet.Chat.Words;
-using IczpNet.Chat.BaseEntitys;
+using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.MessageSections.Templates;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
