@@ -11,9 +11,9 @@ namespace IczpNet.Chat.MessageSections
     {
         //Guid SessionUnitId { get; set; }
 
-        string KeyName { get; set; }
+        //string KeyName { get; set; }
 
-        string KeyValue { get; set; }
+        //string KeyValue { get; set; }
 
         long? QuoteMessageId { get; set; }
     }

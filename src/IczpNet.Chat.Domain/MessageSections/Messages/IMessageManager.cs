@@ -7,28 +7,29 @@ namespace IczpNet.Chat.MessageSections.Messages
 {
     public interface IMessageManager
     {
-        //Task<Message> CreateMessageAsync(IChatObject sender, IChatObject receiver, Func<Message, Task<IContentEntity>> func);
+        Task<Message> CreateMessageAsync(SessionUnit senderSessionUnit,
+            Func<Message, SessionUnitIncrementArgs, Task<IContentEntity>> action,
+            SessionUnit receiverSessionUnit = null,
+            long? quoteMessageId = null,
+            List<Guid> remindList = null);
 
-        //Task<Message> CreateMessageAsync<TMessageInput>(TMessageInput input, Func<Message, Task<IContentEntity>> func) where TMessageInput : class, IMessageInput;
-
-        //Task<MessageInfo<TContentInfo>> SendMessageAsync<TContentInfo>(MessageInput input, Func<Message, Task<IContentEntity>> func);
-
-        Task<Message> CreateMessageBySessionUnitAsync(SessionUnit sessionUnit, Func<Message, SessionUnitIncrementArgs, Task> action, SessionUnit receiverSessionUnit = null, long? quoteMessageId = null, List<Guid> remindList = null);
-
-        Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContent>(SessionUnit senderSessionUnit, MessageSendInput<TContentInfo> input, SessionUnit receiverSessionUnit = null)
+        Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContentEntity>(
+            SessionUnit senderSessionUnit,
+            MessageSendInput<TContentInfo> input,
+            SessionUnit receiverSessionUnit = null)
             where TContentInfo : IContentInfo
-            where TContent : IContentEntity;
+            where TContentEntity : IContentEntity;
 
-        //Task<List<Message>> ForwardMessageAsync(long sourceMessageId, long senderId, List<long> receiverIdList);
-
-        //Task<List<Message>> ForwardMessageAsync(Message source, IChatObject sender, List<long> receiverIdList);
+        Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContentEntity>(
+            SessionUnit senderSessionUnit,
+            MessageSendInput input,
+            TContentEntity contentEntity,
+            SessionUnit receiverSessionUnit = null)
+            where TContentInfo : IContentInfo
+            where TContentEntity : IContentEntity;
 
         Task<List<Message>> ForwardMessageAsync(Guid currentSessionUnitId, long sourceMessageId, List<Guid> targetSessionUnitIdList);
 
         Task<Dictionary<string, long>> RollbackMessageAsync(Message message);
-
-        //Task<Message> GetLastMessageAsync(SessionUnit sessionUnit);
-
-
     }
 }

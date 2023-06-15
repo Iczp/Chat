@@ -6,9 +6,9 @@ namespace IczpNet.Chat.MessageSections
 {
     public class MessageValidator : DomainService, IMessageValidator
     {
-        public virtual Task CheckAsync(Message entity)
+        public virtual async Task CheckAsync(Message entity)
         {
-            return Task.CompletedTask;
+            await Task.Yield();
         }
     }
 }

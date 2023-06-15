@@ -6,12 +6,10 @@ using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Templates;
-using IczpNet.Chat.Options;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.Settings;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,119 +28,44 @@ namespace IczpNet.Chat.MessageSections.Messages
         protected IObjectMapper ObjectMapper { get; }
         protected IChatObjectManager ChatObjectManager { get; }
         protected IMessageRepository Repository { get; }
-        protected ISessionGenerator SessionGenerator { get; }
         protected IMessageValidator MessageValidator { get; }
-        protected IChatObjectResolver ChatObjectResolver { get; }
-        protected IContentResolver ContentResolver { get; }
         protected ISessionUnitManager SessionUnitManager { get; }
         protected IUnitOfWorkManager UnitOfWorkManager { get; }
-        protected IUnitOfWork CurrentUnitOfWork => UnitOfWorkManager?.Current;
-
-        protected ChatOption Config { get; }
         protected IChatPusher ChatPusher { get; }
-        protected ISessionUnitRepository SessionUnitRepository { get; }
         protected ISessionRepository SessionRepository { get; }
         protected IFollowManager FollowManager { get; }
         protected IBackgroundJobManager BackgroundJobManager { get; }
         protected ISettingProvider SettingProvider { get; }
-        //protected ISessionUnitCounterManager SessionUnitCounterManager { get; }
 
         public MessageManager(
             IMessageRepository repository,
-            IChatObjectResolver messageChatObjectResolver,
             IChatObjectManager chatObjectManager,
-            IContentResolver contentResolver,
             IObjectMapper objectMapper,
             IMessageValidator messageValidator,
-            ISessionGenerator sessionIdGenerator,
-            IOptions<ChatOption> options,
             IChatPusher chatPusher,
             ISessionUnitManager sessionUnitManager,
             IUnitOfWorkManager unitOfWorkManager,
-            ISessionUnitRepository sessionUnitRepository,
             IFollowManager followManager,
             IBackgroundJobManager backgroundJobManager,
             ISessionRepository sessionRepository,
             ISettingProvider settingProvider)
         {
             Repository = repository;
-            ChatObjectResolver = messageChatObjectResolver;
             ChatObjectManager = chatObjectManager;
-            ContentResolver = contentResolver;
             ObjectMapper = objectMapper;
             MessageValidator = messageValidator;
-            SessionGenerator = sessionIdGenerator;
-            Config = options.Value;
             ChatPusher = chatPusher;
             SessionUnitManager = sessionUnitManager;
             UnitOfWorkManager = unitOfWorkManager;
-            SessionUnitRepository = sessionUnitRepository;
             FollowManager = followManager;
             BackgroundJobManager = backgroundJobManager;
             SessionRepository = sessionRepository;
             SettingProvider = settingProvider;
         }
 
-        //public virtual async Task<Message> CreateMessageAsync(IChatObject sender, IChatObject receiver, Func<Message, Task<IContentEntity>> func)
-        //{
-        //    var session = await SessionGenerator.MakeAsync(sender, receiver);
-
-        //    var message = new Message(sender, receiver, session);
-
-        //    if (func != null)
-        //    {
-        //        var messageContent = await func(message);
-        //        message.SetMessageContent(messageContent);
-        //    }
-
-        //    await MessageValidator.CheckAsync(message);
-
-        //    var sessionUnitCount = message.IsPrivate ? 2 : await MenuManager.GetCountBySessionIdAsync(session.Id);
-
-        //    message.SetSessionUnitCount(sessionUnitCount);
-
-        //    await Repository.InsertAsync(message, autoSave: true);
-
-        //    session.SetLastMessage(message);
-
-        //    await SessionGenerator.UpdateAsync(session);
-
-        //    return message;
-        //}
-
-        //public virtual async Task<Message> CreateMessageAsync<TMessageInput>(TMessageInput input, Func<Message, Task<IContentEntity>> func)
-        //    where TMessageInput : class, IMessageInput
-        //{
-        //    var sender = await ChatObjectManager.GetItemByCacheAsync(input.SenderId);
-
-        //    var receiver = await ChatObjectManager.GetItemByCacheAsync(input.ReceiverId);
-
-        //    return await CreateMessageAsync(sender, receiver, async message =>
-        //    {
-        //        message.SetKey(input.KeyName, input.KeyValue);
-
-        //        if (input.QuoteMessageId.HasValue)
-        //        {
-        //            message.SetQuoteMessage(await Repository.GetAsync(input.QuoteMessageId.Value));
-        //        }
-        //        return await func(message);
-        //    });
-        //}
-
-        //public virtual async Task<MessageInfo<TContentInfo>> SendMessageAsync<TContentInfo>(MessageInput input, Func<Message, Task<IContentEntity>> func)
-        //{
-        //    var message = await CreateMessageAsync(input, func);
-
-        //    var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
-
-        //    await ChatPusher.ExecuteBySessionIdAsync(message.SessionId.Value, output, input.IgnoreConnections);
-
-        //    return output;
-        //}
-
-        public virtual async Task<Message> CreateMessageBySessionUnitAsync(
+        public virtual async Task<Message> CreateMessageAsync(
             SessionUnit senderSessionUnit,
-            Func<Message, SessionUnitIncrementArgs, Task> action,
+            Func<Message, SessionUnitIncrementArgs, Task<IContentEntity>> action,
             SessionUnit receiverSessionUnit = null,
             long? quoteMessageId = null,
             List<Guid> remindList = null)
@@ -151,7 +74,8 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             Assert.If(!senderSessionUnit.Setting.IsInputEnabled, $"Unable to send message, input status is disabled");
 
-            var sessionUnitItems = await SessionUnitManager.GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);
+            //cache
+            await SessionUnitManager.GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);
 
             var message = new Message(senderSessionUnit);
 
@@ -174,21 +98,18 @@ namespace IczpNet.Chat.MessageSections.Messages
                 message.SetQuoteMessage(await Repository.GetAsync(quoteMessageId.Value));
             }
 
-            //// message content
-            //var messageContent = ObjectMapper.Map<TContentInfo, TContent>(input.Content);
-
-            //message.SetMessageContent(messageContent);
-
             //remind List
             if (remindList != null)
             {
                 sessionUnitIncrementArgs.RemindSessionUnitIdList = await GetRemindIdListAsync(senderSessionUnit, message, remindList);
             }
 
-            if (action != null)
-            {
-                await action(message, sessionUnitIncrementArgs);
-            }
+            // message content
+            var messageContent = await action(message, sessionUnitIncrementArgs);
+
+            Assert.NotNull(messageContent, $"Message content is null");
+
+            message.SetMessageContent(messageContent);
 
             await MessageValidator.CheckAsync(message);
 
@@ -197,53 +118,27 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             message.SetSessionUnitCount(sessionUnitCount);
 
-            //message.Session.SetLastMessage(message);
-
-            //var sessionUnitItems = await MenuManager.GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);
-
-            //message.ScopedList = sessionUnitItems.Select(x => new Scoped(x.Id)).ToList();
-
             await Repository.InsertAsync(message, autoSave: true);
 
             // session LastMessage
             await SessionRepository.UpdateLastMessageIdAsync(senderSessionUnit.SessionId.Value, message.Id);
 
-            //var session = await SessionRepository.GetAsync(senderSessionUnit.SessionId.Value);
-
-            //session.SetLastMessage(message);
-
-            //await SessionRepository.UpdateAsync(session, autoSave: true);
-
-            // sender SessionUnit LastMessage
-            //senderSessionUnit.SetLastMessage(message);
-
-            await SessionUnitRepository.UpdateAsync(senderSessionUnit, autoSave: true);
-
             // private message
             if (message.IsPrivate || receiverSessionUnit != null)
             {
-                //receiverSessionUnit.SetLastMessage(message);
-                //receiverSessionUnit.SetPrivateBadge(receiverSessionUnit.PrivateBadge + 1);
-                //await SessionUnitRepository.UpdateAsync(receiverSessionUnit, autoSave: true);
-
                 sessionUnitIncrementArgs.PrivateBadgeSessionUnitIdList = new List<Guid>() { receiverSessionUnit.Id };
             }
             else
             {
                 // Following
-                //await MenuManager.IncrementFollowingCountAsync(senderSessionUnit, message);
-
                 sessionUnitIncrementArgs.FollowingSessionUnitIdList = await FollowManager.GetFollowerIdListAsync(senderSessionUnit.Id);
-
-                //await CurrentUnitOfWork.SaveChangesAsync();
-
-                //Batch Update SessionUnit
-                //await BatchUpdateSessionUnitAsync(senderSessionUnit, message);
-                //
             }
+
             sessionUnitIncrementArgs.LastMessageId = message.Id;
             sessionUnitIncrementArgs.IsRemindAll = message.IsRemindAll;
             sessionUnitIncrementArgs.MessageCreationTime = message.CreationTime;
+
+            //await CurrentUnitOfWork.SaveChangesAsync();
 
             if (await ShouldbeBackgroundJobAsync(senderSessionUnit, message))
             {
@@ -290,7 +185,6 @@ namespace IczpNet.Chat.MessageSections.Messages
 
                 return;
             }
-
             //
             await SessionUnitManager.BatchUpdateAsync(senderSessionUnit, message);
         }
@@ -370,22 +264,29 @@ namespace IczpNet.Chat.MessageSections.Messages
             return finalRemindIdList;
         }
 
-        public virtual async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContent>(SessionUnit senderSessionUnit, MessageSendInput<TContentInfo> input, SessionUnit receiverSessionUnit = null)
+        public async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContentEntity>(
+            SessionUnit senderSessionUnit, 
+            MessageSendInput<TContentInfo> input, 
+            SessionUnit receiverSessionUnit = null)
             where TContentInfo : IContentInfo
-            where TContent : IContentEntity
+            where TContentEntity : IContentEntity
         {
-            var message = await CreateMessageBySessionUnitAsync(senderSessionUnit, async (entity, args) =>
-            {
-                entity.SetKey(input.KeyName, input.KeyValue);
+            var messageContent = ObjectMapper.Map<TContentInfo, TContentEntity>(input.Content);
+            return await SendAsync<TContentInfo, TContentEntity>(senderSessionUnit, input, messageContent, receiverSessionUnit);
+        }
 
-                var messageContent = ObjectMapper.Map<TContentInfo, TContent>(input.Content);
-
-                entity.SetMessageContent(messageContent);
-
-                await Task.Yield();
-            },
-            quoteMessageId: input.QuoteMessageId,
-            remindList: input.RemindList);
+        public virtual async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContentEntity>(
+            SessionUnit senderSessionUnit, 
+            MessageSendInput input, 
+            TContentEntity contentEntity, 
+            SessionUnit receiverSessionUnit = null)
+            where TContentInfo : IContentInfo
+            where TContentEntity : IContentEntity
+        {
+            var message = await CreateMessageAsync(senderSessionUnit,
+                async (entity, args) => await Task.FromResult(contentEntity),
+                quoteMessageId: input.QuoteMessageId,
+                remindList: input.RemindList);
 
             var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
 
@@ -420,53 +321,13 @@ namespace IczpNet.Chat.MessageSections.Messages
             message.Rollback(nowTime);
 
             //await Repository.UpdateAsync(message, true);
-            await CurrentUnitOfWork.SaveChangesAsync();
+            await UnitOfWorkManager.Current.SaveChangesAsync();
 
             return await ChatPusher.ExecuteBySessionIdAsync(message.SessionId.Value, new RollbackMessageCommandPayload
             {
                 MessageId = message.Id,
             });
         }
-
-        //public virtual async Task<List<Message>> ForwardMessageAsync(long sourceMessageId, long senderId, List<long> receiverIdList)
-        //{
-        //    var source = await Repository.GetAsync(sourceMessageId);
-
-        //    Assert.If(source.IsRollbacked || source.RollbackTime != null, $"message already rollback：{sourceMessageId}");
-
-        //    var sender = await ChatObjectManager.GetItemByCacheAsync(senderId);
-
-        //    return await ForwardMessageAsync(source, sender, receiverIdList);
-        //}
-
-        //public virtual async Task<List<Message>> ForwardMessageAsync(Message source, IChatObject sender, List<long> receiverIdList)
-        //{
-        //    var isSelfSender = source.Sender.Id == sender.Id;
-
-        //    Assert.If(!isSelfSender && source.MessageType == MessageTypes.Sound, $"Cannot forward voice messages from others");
-
-        //    Assert.If(source.MessageType.IsDisabledForward(), $"The message type '{source.MessageType}' cannot be forwarded!");
-
-        //    var messageContent = source.GetContentInfoAsync();
-
-        //    Assert.NotNull(messageContent, $"MessageContent is null. Source message:{source}");
-
-        //    var messageList = new List<Message>();
-
-        //    foreach (var receiverId in receiverIdList.Distinct())
-        //    {
-        //        var receiver = await ChatObjectManager.GetItemByCacheAsync(receiverId);
-
-        //        var newMessage = await CreateMessageAsync(sender, receiver, x =>
-        //        {
-        //            x.SetForwardMessage(source);
-        //            return Task.FromResult(messageContent);
-        //        });
-
-        //        messageList.Add(newMessage);
-        //    }
-        //    return messageList;
-        //}
 
         public virtual async Task<List<Message>> ForwardMessageAsync(Guid sessionUnitId, long sourceMessageId, List<Guid> targetSessionUnitIdList)
         {
@@ -502,11 +363,11 @@ namespace IczpNet.Chat.MessageSections.Messages
 
                 Assert.If(currentSessionUnit.OwnerId != targetSessionUnit.OwnerId, $"[targetSessionUnitId:{targetSessionUnitId}] is fail.");
 
-                var newMessage = await CreateMessageBySessionUnitAsync(targetSessionUnit, async (x, args) =>
+                var newMessage = await CreateMessageAsync(targetSessionUnit, async (x, args) =>
                 {
                     x.SetForwardMessage(sourceMessage);
-                    x.SetMessageContent(messageContent);
                     await Task.Yield();
+                    return messageContent;
                 });
                 messageList.Add(newMessage);
 
