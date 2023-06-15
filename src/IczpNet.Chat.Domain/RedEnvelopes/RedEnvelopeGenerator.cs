@@ -10,8 +10,6 @@ namespace IczpNet.Chat.RedEnvelopes
 {
     public class RedEnvelopeGenerator : DomainService, IRedEnvelopeGenerator
     {
-
-
         public virtual async Task<IList<RedEnvelopeUnit>> MakeAsync(GrantModes grantMode, Guid redEnvelopeContentId, decimal amount, int count, decimal totalAmount)
         {
             var result = new List<RedEnvelopeUnit>();
@@ -33,6 +31,7 @@ namespace IczpNet.Chat.RedEnvelopes
             }
             return await Task.FromResult(result);
         }
+
         public virtual async Task<IList<RedEnvelopeUnit>> MakeForRandomAsync(Guid redEnvelopeContentId, int count, decimal totalAmount)
         {
             var result = AllocateRandomResult(Math.Truncate(totalAmount), count, 0.01m)
