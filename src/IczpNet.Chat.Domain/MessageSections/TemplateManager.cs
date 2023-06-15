@@ -26,7 +26,7 @@ namespace IczpNet.Chat.MessageSections
         //public virtual async Task<MessageInfo<TextContentInfo>> SendMessageAsync(MessageInput<TextContentInfo> input)
         //{
         //    var provider = GetContentProvider(TextContentProvider.Name);
-        //    var content = await provider.Create<TextContentInfo, TextContent>(input.Content);
+        //    var content = await provider.CreateAsync<TextContentInfo, TextContent>(input.Content);
         //    return await MessageManager.CreateMessageAsync<TextContentInfo>(input, x => x.SetMessageContent(content));
         //}
     }

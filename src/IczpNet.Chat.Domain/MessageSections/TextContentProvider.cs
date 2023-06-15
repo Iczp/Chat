@@ -8,19 +8,20 @@ using Volo.Abp.Domain.Repositories;
 namespace IczpNet.Chat.MessageSections
 {
     [ContentProvider(Name)]
-    public class TextContentProvider : ContentProviderBase
+    public class TextContentProvider : ContentProviderBase<TextContent>
     {
         public const string Name = "Text";
-        protected IRepository<TextContent, Guid> Repository { get; set; }
 
-        public TextContentProvider(IRepository<TextContent, Guid> repository)
+        public override string ProviderName => Name;
+
+        public TextContentProvider(IRepository<TextContent, Guid> repository) : base(repository)
         {
-            Repository = repository;
+
         }
 
-        public override async Task<IContentInfo> GetContent(long messageId)
+        public override async Task<IContentInfo> GetContentInfoAsync(long messageId)
         {
-            var content = await Repository.FindAsync(x => x.MessageList.Any(d => d.Id == messageId));
+            var content = await Repository.FirstOrDefaultAsync(x => x.MessageList.Any(d => d.Id == messageId));
 
             if (content == null)
             {
@@ -30,7 +31,7 @@ namespace IczpNet.Chat.MessageSections
             return ObjectMapper.Map<TextContent, TextContentInfo>(content);
         }
 
-        public override Task<TOutput> Create<TInput, TOutput>(TInput input)
+        public override Task<TOutput> CreateAsync<TInput, TOutput>(TInput input)
         {
             return Task.FromResult(ObjectMapper.Map<TInput, TOutput>(input));
         }

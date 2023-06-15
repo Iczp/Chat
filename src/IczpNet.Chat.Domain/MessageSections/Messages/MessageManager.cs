@@ -427,7 +427,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         //    Assert.If(source.MessageType.IsDisabledForward(), $"The message type '{source.MessageType}' cannot be forwarded!");
 
-        //    var messageContent = source.GetContent();
+        //    var messageContent = source.GetContentInfoAsync();
 
         //    Assert.NotNull(messageContent, $"MessageContent is null. Source message:{source}");
 

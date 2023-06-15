@@ -212,11 +212,11 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
             //if (channel == Channels.PrivateChannel)
             //{
-            //    session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session, sender.Id, receiver.Id, receiver.ObjectType));
+            //    session.AddSessionUnit(new SessionUnit(GuidGenerator.CreateAsync(), session, sender.Id, receiver.Id, receiver.ObjectType));
 
             //    if (sender.Id != receiver.Id)
             //    {
-            //        session.AddSessionUnit(new SessionUnit(GuidGenerator.Create(), session, receiver.Id, sender.Id, sender.ObjectType));
+            //        session.AddSessionUnit(new SessionUnit(GuidGenerator.CreateAsync(), session, receiver.Id, sender.Id, sender.ObjectType));
             //    }
             //}
             return await SessionRepository.InsertAsync(session, autoSave: true);

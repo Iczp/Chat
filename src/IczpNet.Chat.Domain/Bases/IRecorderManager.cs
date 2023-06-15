@@ -61,7 +61,7 @@ namespace IczpNet.Chat.Bases
         Task<TEntity> CreateIfNotContainsAsync(SessionUnit sessionUnit, long messageId, string deviceId);
 
         /// <summary>
-        /// Create Many
+        /// CreateAsync Many
         /// </summary>
         /// <param name="sessionUnit"></param>
         /// <param name="messageIdList"></param>

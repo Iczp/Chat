@@ -113,7 +113,7 @@ public class ChatHttpApiHostModule : AbpModule
                 });
             //options
             //    .ConventionalControllers
-            //    .Create(typeof(ChatManagementApplicationModule).Assembly);
+            //    .CreateAsync(typeof(ChatManagementApplicationModule).Assembly);
         });
 
         Configure<AbpDbContextOptions>(options =>

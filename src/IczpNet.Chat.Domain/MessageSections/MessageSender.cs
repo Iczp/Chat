@@ -94,7 +94,7 @@ namespace IczpNet.Chat.MessageSections
         //        .ToArray()
         //        .JoinAsString("\n");
 
-        //    var messageContent = new HistoryContent(GuidGenerator.Create(), $"聊天记录({selectedMessageList.Count})", description);
+        //    var messageContent = new HistoryContent(GuidGenerator.CreateAsync(), $"聊天记录({selectedMessageList.Count})", description);
 
         //    return await MessageManager.SendMessageAsync<HistoryContentOutput>(input, async message =>
         //    {
@@ -111,7 +111,7 @@ namespace IczpNet.Chat.MessageSections
         //{
         //    var content = input.Content;
         //    var messageContent = new RedEnvelopeContent(
-        //        id: GuidGenerator.Create(),
+        //        id: GuidGenerator.CreateAsync(),
         //        grantMode: content.GrantMode,
         //        amount: content.Amount,
         //        count: content.Count,
@@ -135,7 +135,7 @@ namespace IczpNet.Chat.MessageSections
         //public virtual async Task<MessageInfo<TextContentInfo>> SendTextTemplateMessageAsync(MessageInput<TextContentInfo> input)
         //{
         //    var provider = GetContentProvider(TextContentProvider.Name);
-        //    var content = await provider.Create<TextContentInfo, TextContent>(input.Content);
+        //    var content = await provider.CreateAsync<TextContentInfo, TextContent>(input.Content);
         //    return await MessageManager.SendMessageAsync<TextContentInfo>(input, async x => await Task.FromResult(content));
         //}
 

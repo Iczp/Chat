@@ -23,7 +23,7 @@ namespace IczpNet.Chat.ContactTags
     {
         //protected override string GetPolicyName { get; set; } = ChatPermissions.EntryNamePermission.Default;
         //protected override string GetListPolicyName { get; set; } = ChatPermissions.EntryNamePermission.Default;
-        //protected override string CreatePolicyName { get; set; } = ChatPermissions.EntryNamePermission.Create;
+        //protected override string CreatePolicyName { get; set; } = ChatPermissions.EntryNamePermission.CreateAsync;
         //protected override string UpdatePolicyName { get; set; } = ChatPermissions.EntryNamePermission.Update;
         //protected override string DeletePolicyName { get; set; } = ChatPermissions.EntryNamePermission.Delete;
 

@@ -75,7 +75,7 @@ namespace IczpNet.Chat.Entries
         }
 
         /// <summary>
-        /// Create | Update | Delete items
+        /// CreateAsync | Update | Delete items
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="source"></param>

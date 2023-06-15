@@ -5,9 +5,11 @@ namespace IczpNet.Chat.MessageSections
 {
     public interface IContentProvider
     {
-        Task<IContentInfo> GetContent(long messageId);
+        string ProviderName { get; }
 
-        Task<TOutput> Create<TInput, TOutput>(TInput input);
+        Task<IContentInfo> GetContentInfoAsync(long messageId);
+
+        Task<TOutput> CreateAsync<TInput, TOutput>(TInput input);
     }
 
 }

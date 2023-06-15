@@ -9,7 +9,7 @@
 //    {
 //        public MessageInfo Map(Message source)
 //        {
-//            //TODO: Create a new MessageInfo
+//            //TODO: CreateAsync a new MessageInfo
 //            throw new NotImplementedException();
 //        }
 

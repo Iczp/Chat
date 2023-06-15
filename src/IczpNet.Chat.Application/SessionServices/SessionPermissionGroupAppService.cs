@@ -26,7 +26,7 @@ namespace IczpNet.Chat.SessionServices
     {
         //protected override string GetPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionPermissionGroupPermission.Default;
         //protected override string GetListPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionPermissionGroupPermission.Default;
-        //protected override string CreatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionPermissionGroupPermission.Create;
+        //protected override string CreatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionPermissionGroupPermission.CreateAsync;
         //protected override string UpdatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionPermissionGroupPermission.Update;
         //protected override string DeletePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionPermissionGroupPermission.Delete;
 

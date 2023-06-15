@@ -16,7 +16,7 @@ namespace IczpNet.Chat.MessageSections.Messages;
 
 public partial class Message
 {
-    //public virtual dynamic Content => GetContent();
+    //public virtual dynamic Content => GetContentInfoAsync();
     public virtual dynamic Content => GetContentDto();
 
     public virtual Guid? MessageContentId { get; protected set; }

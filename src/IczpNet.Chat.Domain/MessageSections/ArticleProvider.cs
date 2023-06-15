@@ -16,12 +16,12 @@ namespace IczpNet.Chat.MessageSections
             Repository = repository;
         }
 
-        public override Task<IContentInfo> GetContent(long messageId)
+        public override Task<IContentInfo> GetContentInfoAsync(long messageId)
         {
             throw new NotImplementedException();
         }
 
-        public override Task<TOutput> Create<TInput, TOutput>(TInput input)
+        public override Task<TOutput> CreateAsync<TInput, TOutput>(TInput input)
         {
             throw new NotImplementedException();
         }
