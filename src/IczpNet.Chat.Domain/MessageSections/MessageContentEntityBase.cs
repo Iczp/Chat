@@ -20,12 +20,12 @@ namespace IczpNet.Chat.MessageSections
 
         public virtual bool IsActive { get; protected set; }
 
-        public virtual IList<Message> MessageList { get; protected set; } = new List<Message>();
-
         public virtual long? OwnerId { get; protected set; }
 
         [ForeignKey(nameof(OwnerId))]
         public virtual ChatObject Owner { get; protected set; }
+
+        public virtual IList<Message> MessageList { get; protected set; } = new List<Message>();
 
         protected MessageContentEntityBase() { }
 
@@ -46,6 +46,11 @@ namespace IczpNet.Chat.MessageSections
         public virtual long GetSize()
         {
             return 0;
+        }
+
+        public virtual void SetOwnerId(long? ownerId)
+        {
+            OwnerId = ownerId;
         }
     }
 }

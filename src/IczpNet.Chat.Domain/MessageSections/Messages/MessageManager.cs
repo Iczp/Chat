@@ -3,6 +3,7 @@ using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatPushers;
 using IczpNet.Chat.CommandPayloads;
+using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Templates;
@@ -15,6 +16,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Volo.Abp.Auditing;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.ObjectMapping;
@@ -63,6 +65,21 @@ namespace IczpNet.Chat.MessageSections.Messages
             SettingProvider = settingProvider;
         }
 
+        protected virtual void TryToSetOwnerId<T, TKey>(T entity, TKey ownerId)
+        {
+            if (entity is IChatOwner<TKey>)
+            {
+                var propertyInfo = entity.GetType().GetProperty(nameof(IChatOwner<TKey>.OwnerId));
+
+                if (propertyInfo == null || propertyInfo.GetSetMethod(true) == null)
+                {
+                    return;
+                }
+
+                propertyInfo.SetValue(entity, ownerId);
+            }
+        }
+
         public virtual async Task<Message> CreateMessageAsync(
             SessionUnit senderSessionUnit,
             Func<Message, SessionUnitIncrementArgs, Task<IContentEntity>> action,
@@ -106,6 +123,9 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             // message content
             var messageContent = await action(message, sessionUnitIncrementArgs);
+
+            //TryToSetOwnerId(messageContent, senderSessionUnit.OwnerId);
+            messageContent.SetOwnerId(senderSessionUnit.OwnerId);
 
             Assert.NotNull(messageContent, $"Message content is null");
 
@@ -265,8 +285,8 @@ namespace IczpNet.Chat.MessageSections.Messages
         }
 
         public async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContentEntity>(
-            SessionUnit senderSessionUnit, 
-            MessageInput<TContentInfo> input, 
+            SessionUnit senderSessionUnit,
+            MessageInput<TContentInfo> input,
             SessionUnit receiverSessionUnit = null)
             where TContentInfo : IContentInfo
             where TContentEntity : IContentEntity
@@ -276,9 +296,9 @@ namespace IczpNet.Chat.MessageSections.Messages
         }
 
         public virtual async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContentEntity>(
-            SessionUnit senderSessionUnit, 
-            MessageInput input, 
-            TContentEntity contentEntity, 
+            SessionUnit senderSessionUnit,
+            MessageInput input,
+            TContentEntity contentEntity,
             SessionUnit receiverSessionUnit = null)
             where TContentInfo : IContentInfo
             where TContentEntity : IContentEntity

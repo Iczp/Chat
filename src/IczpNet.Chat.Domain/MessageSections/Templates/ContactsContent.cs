@@ -15,7 +15,7 @@ namespace IczpNet.Chat.MessageSections.Templates
 
         public override long GetSize() =>  3;
 
-        public virtual long DestinationId { get; protected set; }
+        public virtual long DestinationId { get;  set; }
 
         [ForeignKey(nameof(DestinationId))]
         public virtual ChatObject Destination { get; protected set; }
