@@ -8,7 +8,7 @@ public class WalletOrderCreateInput : WalletOrderUpdateInput
 {
     public virtual long? OwnerId { get; set; }
 
-    public virtual string WalletBusinessId { get; set; }
+    public virtual string BusinessId { get; set; }
 
-    public virtual WalletBusinessTypes WalletBusinessType { get; set; }
+    public virtual WalletBusinessTypes BusinessType { get; set; }
 }
