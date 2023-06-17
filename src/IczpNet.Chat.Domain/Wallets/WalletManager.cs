@@ -76,5 +76,15 @@ namespace IczpNet.Chat.Wallets
         {
             return IncomeAsync(owner, RedPacketConsts.Recharge, amount, description, concurrencyStamp);
         }
+
+        public Task<Wallet> LockAmountAsync(Wallet wallet, decimal amount, string description, string concurrencyStamp)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Wallet> UnlockAmountAsync(Wallet wallet, decimal amount, string description, string concurrencyStamp)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
