@@ -11,7 +11,7 @@ using Volo.Abp.Guids;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
 
-namespace IczpNet.Chat.Wallets
+namespace IczpNet.Chat.WalletBusinesses
 {
     public class WalletBusinessSeedContributor : IDataSeedContributor, ITransientDependency
     {

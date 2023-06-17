@@ -1,6 +1,9 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.RedEnvelopes;
+using IczpNet.Chat.WalletBusinesses;
+using IczpNet.Chat.WalletRecorders;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
@@ -13,15 +16,17 @@ namespace IczpNet.Chat.Wallets
         protected IRepository<Wallet, Guid> Repository { get; }
         protected IRepository<WalletBusiness, string> WalletBusinessRepository { get; }
         protected IRepository<WalletRecorder, Guid> WalletRecorderRepository { get; }
-
+        protected IChatObjectManager ChatObjectManager { get; }
         public WalletManager(
             IRepository<Wallet, Guid> repository,
             IRepository<WalletBusiness, string> walletBusinessRepository,
-            IRepository<WalletRecorder, Guid> walletRecorderRepository)
+            IRepository<WalletRecorder, Guid> walletRecorderRepository,
+            IChatObjectManager chatObjectManager)
         {
             Repository = repository;
             WalletBusinessRepository = walletBusinessRepository;
             WalletRecorderRepository = walletRecorderRepository;
+            ChatObjectManager = chatObjectManager;
         }
 
         /// <inheritdoc/>
@@ -33,13 +38,13 @@ namespace IczpNet.Chat.Wallets
         /// <inheritdoc/>
         public async Task<WalletBusiness> GetWalletBusinessAsync(string walletBusinessId)
         {
-            return Assert.NotNull(await WalletBusinessRepository.FindAsync(x => x.Id.Equals(walletBusinessId)), $"No such WalletBusiness by id:{walletBusinessId}");
+            return Assert.NotNull(await WalletBusinessRepository.FirstOrDefaultAsync(x => x.Id.Equals(walletBusinessId)), $"No such WalletBusiness by id:{walletBusinessId}");
         }
 
         /// <inheritdoc/>
         public async Task<Wallet> GetWalletAsync(long ownerId)
         {
-            var wallet = await Repository.FindAsync(x => x.OwnerId == ownerId);
+            var wallet = await Repository.FirstOrDefaultAsync(x => x.OwnerId == ownerId);
 
             wallet ??= await Repository.InsertAsync(new Wallet(GuidGenerator.Create(), ownerId), autoSave: true);
 
@@ -47,42 +52,61 @@ namespace IczpNet.Chat.Wallets
         }
 
         /// <inheritdoc/>
-        public Task<Wallet> ExpenditureAsync(ChatObject owner, string walletBusinessId, decimal amount, string description, string concurrencyStamp)
+        protected virtual async Task<Wallet> UpdateAndRecordAsync(Wallet wallet, long ownerId, string walletBusinessId, decimal amount, string description, Action<Wallet, WalletRecorder> action)
         {
-            throw new NotImplementedException();
-        }
+            Assert.If(wallet.IsEnabled, $"Wallet is disabled", code: "Wallet.Disabled");
 
-        /// <inheritdoc/>
-        public async Task<Wallet> IncomeAsync(ChatObject owner, string walletBusinessId, decimal amount, string description, string concurrencyStamp)
-        {
-            var wallet = await GetWalletAsync(owner.Id);
+            Assert.If(wallet.IsLocked, $"Wallet is locked", code: "Wallet.Lock");
+
+            Assert.If(wallet.OwnerId != ownerId, $"Fail ownerId:{ownerId}", code: "Wallet.Fail");
+
+            var owner = await ChatObjectManager.GetAsync(ownerId);
 
             var walletBusiness = await GetWalletBusinessAsync(walletBusinessId);
 
-            var walletRecorder = new WalletRecorder(GuidGenerator.Create(), owner, wallet);
+            var walletRecorder = new WalletRecorder(GuidGenerator.Create(), walletBusiness, owner, wallet, amount, description);
 
-            wallet.Income(amount, walletRecorder);
+            action?.Invoke(wallet, walletRecorder);
 
-            walletRecorder.SetChangedAfter(walletBusiness, wallet, amount, description);
+            walletRecorder.SetChangedAfter(wallet);
 
-            //var env = context.GetEnvironment();
             //wallet.ConcurrencyStamp = concurrencyStamp;
 
             return await Repository.UpdateAsync(wallet, autoSave: true);
         }
 
         /// <inheritdoc/>
-        public Task<Wallet> RechargeAsync(ChatObject owner, decimal amount, string description, string concurrencyStamp)
+        public Task<Wallet> ExpenditureAsync(Wallet wallet, long ownerId, string walletBusinessId, decimal amount, string description)
         {
-            return IncomeAsync(owner, RedPacketConsts.Recharge, amount, description, concurrencyStamp);
+            return UpdateAndRecordAsync(wallet, ownerId, walletBusinessId, amount, description, (wallet, walletRecorder) =>
+            {
+                wallet.Expenditure(amount, walletRecorder);
+            });
         }
 
-        public Task<Wallet> LockAmountAsync(Wallet wallet, decimal amount, string description, string concurrencyStamp)
+        /// <inheritdoc/>
+        public Task<Wallet> IncomeAsync(Wallet wallet, long ownerId, string walletBusinessId, decimal amount, string description)
+        {
+            return UpdateAndRecordAsync(wallet, ownerId, walletBusinessId, amount, description, (wallet, walletRecorder) =>
+            {
+                wallet.Income(amount, walletRecorder);
+            });
+        }
+
+        /// <inheritdoc/>
+        public Task<Wallet> RechargeAsync(Wallet wallet, long ownerId, decimal amount, string description)
+        {
+            return IncomeAsync(wallet, ownerId, RedPacketConsts.Recharge, amount, description);
+        }
+
+        /// <inheritdoc/>
+        public Task<Wallet> LockAmountAsync(Wallet wallet, long ownerId, decimal amount, string description)
         {
             throw new NotImplementedException();
         }
 
-        public Task<Wallet> UnlockAmountAsync(Wallet wallet, decimal amount, string description, string concurrencyStamp)
+        /// <inheritdoc/>
+        public Task<Wallet> UnlockAmountAsync(Wallet wallet, long ownerId, decimal amount, string description)
         {
             throw new NotImplementedException();
         }

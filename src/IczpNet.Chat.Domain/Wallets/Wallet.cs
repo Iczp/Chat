@@ -1,8 +1,10 @@
 ﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.WalletRecorders;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -11,7 +13,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.Wallets
 {
-    public class Wallet : BaseEntity<Guid>, IChatOwner<long>
+    public class Wallet : BaseEntity<Guid>, IChatOwner<long>,IIsEnabled
     {
         public virtual Guid? AppUserId { get; protected set; }
 
@@ -39,6 +41,10 @@ namespace IczpNet.Chat.Wallets
         [Comment("密码")]
         public virtual string Password { get; protected set; }
 
+        public virtual bool IsEnabled { get; protected set; }
+
+        public virtual bool IsLocked { get; protected set; }
+
         public virtual List<WalletRecorder> WalletRecorderList { get; protected set; } = new List<WalletRecorder>();
 
         protected Wallet()
@@ -64,6 +70,7 @@ namespace IczpNet.Chat.Wallets
         internal void Expenditure(decimal amount, WalletRecorder walletRecorder)
         {
             Assert.If(walletRecorder.WalletBusinessType != WalletBusinessTypes.Expenditure, "");
+            Assert.If(AvailableAmount < amount, $"Insufficient available amount:{amount}");
             SetOriginalAvailableAmount();
             AvailableAmount -= amount;
             UpdateTotalAmount();
@@ -82,7 +89,7 @@ namespace IczpNet.Chat.Wallets
         /// <param name="walletRecorder"></param>
         internal void Income(decimal amount, WalletRecorder walletRecorder)
         {
-            Assert.If(walletRecorder.WalletBusinessType != WalletBusinessTypes.Income, "");
+            Assert.If(walletRecorder.WalletBusinessType != WalletBusinessTypes.Income, $"'{walletRecorder.WalletBusinessId}' WalletBusinessType '{walletRecorder.WalletBusinessType}' must be [Income]");
             SetOriginalAvailableAmount();
             AvailableAmount += amount;
             UpdateTotalAmount();

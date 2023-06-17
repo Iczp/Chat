@@ -1,11 +1,12 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.WalletRecorders;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace IczpNet.Chat.Wallets
+namespace IczpNet.Chat.WalletBusinesses
 {
     public class WalletBusiness : BaseEntity<string>, IIsEnabled, IIsStatic
     {

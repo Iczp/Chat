@@ -14,6 +14,10 @@ public interface IWalletAppService :
         WalletCreateInput,
         WalletUpdateInput>
 {
-
+    /// <summary>
+    /// 充值
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
     public Task<WalletDto> RechargeAsync(RechargeInput input);
 }

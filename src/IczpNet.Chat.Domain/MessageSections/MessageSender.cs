@@ -22,11 +22,13 @@ namespace IczpNet.Chat.MessageSections
         protected IContentResolver ContentResolver => LazyServiceProvider.LazyGetRequiredService<IContentResolver>();
         protected IMessageManager MessageManager => LazyServiceProvider.LazyGetRequiredService<IMessageManager>();
         protected IRepository<RedEnvelopeContent, Guid> RedEnvelopeContentRepository { get; }
+        protected IRedPacketManager RedPacketManager { get; }
 
         public MessageSender(
-            IRepository<RedEnvelopeContent, Guid> redEnvelopeContentRepository)
+            IRepository<RedEnvelopeContent, Guid> redEnvelopeContentRepository, IRedPacketManager redPacketManager)
         {
             RedEnvelopeContentRepository = redEnvelopeContentRepository;
+            RedPacketManager = redPacketManager;
         }
 
         protected virtual IContentProvider GetContentProvider(MessageTypes messageType)
@@ -141,20 +143,13 @@ namespace IczpNet.Chat.MessageSections
 
             await CheckRedEnvelopeAsync(redEnvelope);
 
-            var messageContent = new RedEnvelopeContent(
-                id: GuidGenerator.Create(),
-                grantMode: redEnvelope.GrantMode,
-                amount: redEnvelope.Amount,
-                count: redEnvelope.Count,
-                totalAmount: redEnvelope.TotalAmount,
-                text: redEnvelope.Text
-                );
-
-            var redEnvelopeUnitList = await RedEnvelopeGenerator.MakeAsync(redEnvelope.GrantMode, messageContent.Id, redEnvelope.Amount, redEnvelope.Count, redEnvelope.TotalAmount);
-
-            messageContent.SetRedEnvelopeUnitList(redEnvelopeUnitList);
-
-            await RedEnvelopeContentRepository.InsertAsync(messageContent, autoSave: true);
+            var messageContent = await RedPacketManager.CreateAsync(
+                 ownerId: senderSessionUnit.OwnerId,
+                 grantMode: redEnvelope.GrantMode,
+                 amount: redEnvelope.Amount,
+                 count: redEnvelope.Count,
+                 totalAmount: redEnvelope.TotalAmount,
+                 text: redEnvelope.Text);
 
             return await MessageManager.SendAsync<RedEnvelopeContentOutput, RedEnvelopeContent>(senderSessionUnit, input, messageContent, receiverSessionUnit);
         }

@@ -6,6 +6,11 @@ namespace IczpNet.Chat.Enums
     public enum WalletBusinessTypes : int
     {
         /// <summary>
+        /// 不变
+        /// </summary>
+        [Description("不变")]
+        Unchanging = 0,
+        /// <summary>
         /// 收入
         /// </summary>
         [Description("收入")]

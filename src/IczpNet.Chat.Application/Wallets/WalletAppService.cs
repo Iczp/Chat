@@ -1,14 +1,12 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.Wallets.Dtos;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.Wallets
 {
@@ -54,8 +52,10 @@ namespace IczpNet.Chat.Wallets
 
         public async Task<WalletDto> RechargeAsync(RechargeInput input)
         {
-            var owner = await ChatObjectManager.GetAsync(input.OwnerId);
-            var wallet = await WalletManager.RechargeAsync(owner, input.Amount, input.Description, input.ConcurrencyStamp);
+            var wallet = await WalletManager.GetWalletAsync(input.OwnerId);
+
+            wallet = await WalletManager.RechargeAsync(wallet, input.OwnerId, input.Amount, input.Description);
+
             return ObjectMapper.Map<Wallet, WalletDto>(wallet);
         }
     }

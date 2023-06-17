@@ -1,4 +1,6 @@
 ﻿using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.WalletBusinesses;
+using System;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.Wallets
@@ -33,7 +35,7 @@ namespace IczpNet.Chat.Wallets
         /// <param name="amount"></param>
         /// <param name="description"></param>
         /// <returns></returns>
-        Task<Wallet> ExpenditureAsync(ChatObject owner, string walletBusinessId, decimal amount, string description, string concurrencyStamp);
+        Task<Wallet> ExpenditureAsync(Wallet wallet, long ownerId, string walletBusinessId, decimal amount, string description);
 
         /// <summary>
         /// 收入
@@ -42,7 +44,7 @@ namespace IczpNet.Chat.Wallets
         /// <param name="amount"></param>
         /// <param name="description"></param>
         /// <returns></returns>
-        Task<Wallet> IncomeAsync(ChatObject owner, string walletBusinessId, decimal amount, string description, string concurrencyStamp);
+        Task<Wallet> IncomeAsync(Wallet wallet, long ownerId, string walletBusinessId, decimal amount, string description);
 
         /// <summary>
         /// 充值
@@ -52,7 +54,7 @@ namespace IczpNet.Chat.Wallets
         /// <param name="description"></param>
         /// <param name="concurrencyStamp"></param>
         /// <returns></returns>
-        Task<Wallet> RechargeAsync(ChatObject owner, decimal amount, string description, string concurrencyStamp);
+        Task<Wallet> RechargeAsync(Wallet wallet, long ownerId, decimal amount, string description);
 
         /// <summary>
         /// 冻结金额
@@ -62,7 +64,7 @@ namespace IczpNet.Chat.Wallets
         /// <param name="description"></param>
         /// <param name="concurrencyStamp"></param>
         /// <returns></returns>
-        Task<Wallet> LockAmountAsync(Wallet wallet, decimal amount, string description, string concurrencyStamp);
+        Task<Wallet> LockAmountAsync(Wallet wallet, long ownerId, decimal amount, string description);
 
         /// <summary>
         /// 解除冻结金额
@@ -72,7 +74,7 @@ namespace IczpNet.Chat.Wallets
         /// <param name="description"></param>
         /// <param name="concurrencyStamp"></param>
         /// <returns></returns>
-        Task<Wallet> UnlockAmountAsync(Wallet wallet, decimal amount, string description, string concurrencyStamp);
+        Task<Wallet> UnlockAmountAsync(Wallet wallet, long ownerId, decimal amount, string description);
 
     }
 }

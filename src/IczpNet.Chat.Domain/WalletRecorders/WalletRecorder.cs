@@ -2,12 +2,14 @@
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.WalletBusinesses;
+using IczpNet.Chat.Wallets;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace IczpNet.Chat.Wallets
+namespace IczpNet.Chat.WalletRecorders
 {
     public class WalletRecorder : BaseEntity<Guid>, IChatOwner<long?>
     {
@@ -69,24 +71,29 @@ namespace IczpNet.Chat.Wallets
 
         protected WalletRecorder() { }
 
-        public WalletRecorder(Guid id, ChatObject owner, Wallet wallet) : base(id)
+        public WalletRecorder(Guid id, WalletBusiness walletBusiness, ChatObject owner, Wallet wallet, decimal amount, string description) : base(id)
         {
+            WalletBusiness = walletBusiness;
+            WalletBusinessType = WalletBusiness.BusinessType;
+            WalletBusinessId = walletBusiness.Id;
             Owner = owner;
+            OwnerId = owner.Id;
+            Amount = amount;
+            Description = description;
+
+            //BeforeChange
             AvailableAmountBeforeChange = wallet.AvailableAmount;
             TotalAmountBeforeChange = wallet.TotalAmount;
             LockAmountBeforeChange = wallet.LockAmount;
         }
 
-        public void SetChangedAfter(WalletBusiness walletBusiness, Wallet wallet, decimal amount, string description)
+        public void SetChangedAfter(Wallet wallet)
         {
-            WalletBusiness = walletBusiness;
-            WalletBusinessType = WalletBusiness.BusinessType;
-
-            Amount = amount;
+            //WalletBusiness = walletBusiness;
+            //WalletBusinessType = WalletBusiness.BusinessType;
             AvailableAmount = wallet.AvailableAmount;
             TotalAmount = wallet.TotalAmount;
             LockAmount = wallet.LockAmount;
-            Description = description;
         }
     }
 }

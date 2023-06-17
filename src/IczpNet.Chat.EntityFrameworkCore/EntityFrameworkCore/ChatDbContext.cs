@@ -47,6 +47,8 @@ using IczpNet.Chat.DbTables;
 using IczpNet.Chat.Blobs;
 using IczpNet.Chat.SessionSections.SessionUnitContactTags;
 using IczpNet.Chat.ContactTags;
+using IczpNet.Chat.WalletBusinesses;
+using IczpNet.Chat.WalletRecorders;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 

@@ -1,6 +1,8 @@
 ﻿using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
+using IczpNet.Chat.WalletBusinesses;
+using IczpNet.Chat.WalletRecorders;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -28,6 +30,7 @@ namespace IczpNet.Chat.Wallets
 
         [Column(TypeName = "decimal(18,2)")]
         [Range(0.0, (double)decimal.MaxValue)]
+        [Display(Name = "Amount")]
         public virtual decimal Amount { get; protected set; }
 
         public virtual string PaymentPlatformId { get; protected set; }
@@ -42,6 +45,7 @@ namespace IczpNet.Chat.Wallets
         /// 是否入账
         /// </summary>
         public virtual bool IsPosting { get; protected set; }
+
         public virtual DateTime? PostDate { get; protected set; }
 
         public void Posting(WalletRecorder walletRecorder)
