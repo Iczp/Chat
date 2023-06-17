@@ -47,6 +47,7 @@ using IczpNet.Chat.SessionSections.SessionUnitContactTags;
 using IczpNet.Chat.ContactTags;
 using IczpNet.Chat.WalletBusinesses;
 using IczpNet.Chat.WalletRecorders;
+using IczpNet.Chat.WalletOrders;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -128,11 +129,11 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<HistoryMessage> HistoryMessage { get; }
 
     DbSet<Wallet> Wallet { get; }
+    DbSet<WalletOrder> WalletOrder { get; }
     DbSet<WalletRecorder> WalletRecorder { get; }
     DbSet<WalletBusiness> WalletBusiness { get; }
     DbSet<PaymentPlatform> PaymentPlatform { get; }
     DbSet<WalletRequest> RechargeRequest { get; }
-
 
     DbSet<Word> Word { get; }
     DbSet<TextContentWord> TextContentWord { get; }

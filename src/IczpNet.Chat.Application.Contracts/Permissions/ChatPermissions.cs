@@ -113,4 +113,12 @@ public class ChatPermissions
         public const string Update = Default + "." + nameof(Update);
         public const string Delete = Default + "." + nameof(Delete);
     }
+
+    public class WalletOrderPermission
+    {
+        public const string Default = GroupName + "." + nameof(WordPermission);
+        public const string Create = Default + "." + nameof(Create);
+        public const string Update = Default + "." + nameof(Update);
+        public const string Delete = Default + "." + nameof(Delete);
+    }
 }

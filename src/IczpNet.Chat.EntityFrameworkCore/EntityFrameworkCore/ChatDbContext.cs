@@ -49,6 +49,7 @@ using IczpNet.Chat.SessionSections.SessionUnitContactTags;
 using IczpNet.Chat.ContactTags;
 using IczpNet.Chat.WalletBusinesses;
 using IczpNet.Chat.WalletRecorders;
+using IczpNet.Chat.WalletOrders;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -139,7 +140,11 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
 
 
     public DbSet<Wallet> Wallet { get; set; }
+
+    public DbSet<WalletOrder> WalletOrder { get; set; }
+
     public DbSet<WalletRecorder> WalletRecorder { get; set; }
+    
     public DbSet<WalletBusiness> WalletBusiness { get; set; }
     public DbSet<PaymentPlatform> PaymentPlatform { get; set; }
     public DbSet<WalletRequest> RechargeRequest { get; set; }
