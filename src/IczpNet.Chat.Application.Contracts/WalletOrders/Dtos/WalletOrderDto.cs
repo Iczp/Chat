@@ -2,7 +2,6 @@
 using System;
 using Volo.Abp.Application.Dtos;
 using IczpNet.Chat.ChatObjects.Dtos;
-using IczpNet.Pusher.Commands;
 
 namespace IczpNet.Chat.WalletOrders.Dtos
 {
@@ -16,9 +15,11 @@ namespace IczpNet.Chat.WalletOrders.Dtos
 
         public virtual Guid? WalletId { get; set; }
 
-        public virtual string WalletBusinessId { get; set; }
+        public virtual string BusinessId { get; set; }
 
-        public virtual WalletBusinessTypes WalletBusinessType { get; set; }
+        public virtual WalletBusinessTypes BusinessType { get; set; }
+
+        public virtual string BusinessTypeName { get; set; }
 
         public virtual string OrderNo { get; set; }
 

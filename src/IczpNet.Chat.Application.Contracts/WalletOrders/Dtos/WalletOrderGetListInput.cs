@@ -9,11 +9,11 @@ public class WalletOrderGetListInput : BaseGetListInput
 
     public virtual long? OwnerId { get; set; }
 
-    public virtual string WalletBusinessId { get; set; }
+    public virtual string BusinessId { get; set; }
 
     public virtual WalletOrderStatus? Status { get; set; }
 
-    public virtual WalletBusinessTypes? WalletBusinessType { get; set; }
+    public virtual WalletBusinessTypes? BusinessType { get; set; }
 
     public virtual decimal? MinAmount { get; set; }
 

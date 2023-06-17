@@ -38,8 +38,8 @@ namespace IczpNet.Chat.WalletOrders
                 .WhereIf(input.MaxAmount.HasValue, x => x.Amount == input.MaxAmount)
                 .WhereIf(input.Status.HasValue, x => x.Status == input.Status)
                 .WhereIf(input.IsEnabled.HasValue, x => x.IsEnabled == input.IsEnabled)
-                .WhereIf(input.WalletBusinessType.HasValue, x => x.WalletBusinessType == input.WalletBusinessType)
-                .WhereIf(!input.WalletBusinessId.IsNullOrEmpty(), x => x.WalletBusinessId == input.WalletBusinessId)
+                .WhereIf(input.BusinessType.HasValue, x => x.BusinessType == input.BusinessType)
+                .WhereIf(!input.BusinessId.IsNullOrEmpty(), x => x.BusinessId == input.BusinessId)
                 .WhereIf(!input.Keyword.IsNullOrEmpty(), x => x.Description.Contains(input.Keyword));
         }
 

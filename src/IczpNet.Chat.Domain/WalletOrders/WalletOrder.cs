@@ -24,19 +24,24 @@ namespace IczpNet.Chat.WalletOrders
         [ForeignKey(nameof(OwnerId))]
         public virtual ChatObject Owner { get; protected set; }
 
+        [Required]
         [Comment("钱包Id")]
         public virtual Guid? WalletId { get; protected set; }
 
         [ForeignKey(nameof(WalletId))]
         public virtual Wallet Wallet { get; protected set; }
 
+        [Required]
         [Comment("钱包业务Id")]
-        public virtual string WalletBusinessId { get; protected set; }
+        public virtual string BusinessId { get; protected set; }
 
-        [ForeignKey(nameof(WalletBusinessId))]
-        public virtual WalletBusiness WalletBusiness { get; protected set; }
+        [ForeignKey(nameof(BusinessId))]
+        public virtual WalletBusiness Business { get; protected set; }
 
-        public virtual WalletBusinessTypes WalletBusinessType { get; protected set; }
+        public virtual WalletBusinessTypes BusinessType { get; protected set; }
+
+        [MaxLength(100)]
+        public virtual string BusinessTypeName { get; protected set; }
 
         [MaxLength(100)]
         [Comment("标题")]

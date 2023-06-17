@@ -19,9 +19,10 @@ namespace IczpNet.Chat.Migrations
                     OrderNo = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: true),
                     AppUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     OwnerId = table.Column<long>(type: "bigint", nullable: true),
-                    WalletId = table.Column<Guid>(type: "uniqueidentifier", nullable: true, comment: "钱包Id"),
-                    WalletBusinessId = table.Column<string>(type: "nvarchar(450)", nullable: true, comment: "钱包业务Id"),
-                    WalletBusinessType = table.Column<int>(type: "int", nullable: false),
+                    WalletId = table.Column<Guid>(type: "uniqueidentifier", nullable: false, comment: "钱包Id"),
+                    BusinessId = table.Column<string>(type: "nvarchar(450)", nullable: false, comment: "钱包业务Id"),
+                    BusinessType = table.Column<int>(type: "int", nullable: false),
+                    BusinessTypeName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     Title = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true, comment: "标题"),
                     Description = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true, comment: "说明"),
                     Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false, comment: "变更金额"),
@@ -49,26 +50,28 @@ namespace IczpNet.Chat.Migrations
                         principalTable: "Chat_ChatObject",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_Chat_WalletOrder_Chat_WalletBusiness_WalletBusinessId",
-                        column: x => x.WalletBusinessId,
+                        name: "FK_Chat_WalletOrder_Chat_WalletBusiness_BusinessId",
+                        column: x => x.BusinessId,
                         principalTable: "Chat_WalletBusiness",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Chat_WalletOrder_Chat_Wallet_WalletId",
                         column: x => x.WalletId,
                         principalTable: "Chat_Wallet",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Chat_WalletOrder_BusinessId",
+                table: "Chat_WalletOrder",
+                column: "BusinessId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Chat_WalletOrder_OwnerId",
                 table: "Chat_WalletOrder",
                 column: "OwnerId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Chat_WalletOrder_WalletBusinessId",
-                table: "Chat_WalletOrder",
-                column: "WalletBusinessId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Chat_WalletOrder_WalletId",

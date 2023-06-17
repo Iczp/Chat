@@ -89,8 +89,8 @@ namespace IczpNet.Chat.WalletRecorders
 
         public void SetChangedAfter(Wallet wallet)
         {
-            //WalletBusiness = walletBusiness;
-            //WalletBusinessType = WalletBusiness.BusinessType;
+            //Business = walletBusiness;
+            //BusinessType = Business.BusinessType;
             AvailableAmount = wallet.AvailableAmount;
             TotalAmount = wallet.TotalAmount;
             LockAmount = wallet.LockAmount;

@@ -13,7 +13,7 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    [Migration("20230617100141_WalletOrder_Init")]
+    [Migration("20230617101408_WalletOrder_Init")]
     partial class WalletOrder_Init
     {
         /// <inheritdoc />
@@ -4963,6 +4963,18 @@ namespace IczpNet.Chat.Migrations
                     b.Property<Guid?>("AppUserId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("BusinessId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)")
+                        .HasComment("钱包业务Id");
+
+                    b.Property<int>("BusinessType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("BusinessTypeName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasMaxLength(40)
@@ -5040,22 +5052,16 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("nvarchar(100)")
                         .HasComment("标题");
 
-                    b.Property<string>("WalletBusinessId")
-                        .HasColumnType("nvarchar(450)")
-                        .HasComment("钱包业务Id");
-
-                    b.Property<int>("WalletBusinessType")
-                        .HasColumnType("int");
-
                     b.Property<Guid?>("WalletId")
+                        .IsRequired()
                         .HasColumnType("uniqueidentifier")
                         .HasComment("钱包Id");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OwnerId");
+                    b.HasIndex("BusinessId");
 
-                    b.HasIndex("WalletBusinessId");
+                    b.HasIndex("OwnerId");
 
                     b.HasIndex("WalletId");
 
@@ -6567,23 +6573,27 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.WalletOrders.WalletOrder", b =>
                 {
+                    b.HasOne("IczpNet.Chat.WalletBusinesses.WalletBusiness", "Business")
+                        .WithMany()
+                        .HasForeignKey("BusinessId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
                         .WithMany()
                         .HasForeignKey("OwnerId");
 
-                    b.HasOne("IczpNet.Chat.WalletBusinesses.WalletBusiness", "WalletBusiness")
-                        .WithMany()
-                        .HasForeignKey("WalletBusinessId");
-
                     b.HasOne("IczpNet.Chat.Wallets.Wallet", "Wallet")
                         .WithMany()
-                        .HasForeignKey("WalletId");
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Business");
 
                     b.Navigation("Owner");
 
                     b.Navigation("Wallet");
-
-                    b.Navigation("WalletBusiness");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.WalletRecorders.WalletRecorder", b =>
