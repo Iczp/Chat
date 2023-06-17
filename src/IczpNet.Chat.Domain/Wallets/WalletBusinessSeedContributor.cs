@@ -48,35 +48,35 @@ namespace IczpNet.Chat.Wallets
         {
             var list = new List<WalletBusiness>(){
                 new WalletBusiness(
-                        id: RedEnvelopeConsts.Recharge,
+                        id: RedPacketConsts.Recharge,
                         name: "充值",
                         walletBusinessType: WalletBusinessTypes.Income,
                         description: "账户充值",
                         isEnabled: true,
                         isStatic: true),
                  new WalletBusiness(
-                        id: RedEnvelopeConsts.Withdrawal,
+                        id: RedPacketConsts.Withdrawal,
                         name: "提现",
                         walletBusinessType: WalletBusinessTypes.Expenditure,
                         description: "红包提现",
                         isEnabled: true,
                         isStatic: true),
                 new WalletBusiness(
-                        id: RedEnvelopeConsts.Give,
+                        id: RedPacketConsts.Send,
                         name: "发红包",
                         walletBusinessType: WalletBusinessTypes.Expenditure,
                         description: "发红包给其他人",
                         isEnabled: true,
                         isStatic: true),
                 new WalletBusiness(
-                        id: RedEnvelopeConsts.Received,
+                        id: RedPacketConsts.Received,
                         name: "领红包",
                         walletBusinessType: WalletBusinessTypes.Income,
                         description: "领取自己或他人发的红包",
                         isEnabled: true,
                         isStatic: true),
                 new WalletBusiness(
-                        id: RedEnvelopeConsts.Return,
+                        id: RedPacketConsts.Refund,
                         name: "退回红包",
                         walletBusinessType: WalletBusinessTypes.Income,
                         description: "未领取的红包退回发红包人的账户",

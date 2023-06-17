@@ -213,7 +213,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
 
     public virtual async Task<List<SessionUnit>> InviteAsync(InviteInput input, bool autoSendMessage = true)
     {
-        //var room = await GetAsync(roomId);
+        //var room = await GetWalletAsync(roomId);
 
         var session = await SessionManager.GetByOwnerIdAsync(input.RoomId);
 

@@ -2,6 +2,8 @@
 using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
+using IczpNet.Chat.Enums;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -20,17 +22,21 @@ namespace IczpNet.Chat.Wallets
 
         [Column(TypeName = "decimal(18,2)")]
         [Range(0.0, (double)decimal.MaxValue)]
+        [Comment("可用金额")]
         public virtual decimal AvailableAmount { get; protected set; }
 
 
         [Column(TypeName = "decimal(18,2)")]
         [Range(0.0, (double)decimal.MaxValue)]
+        [Comment("冻结金额")]
         public virtual decimal LockAmount { get; protected set; }
 
         [Column(TypeName = "decimal(18,2)")]
+        [Comment("总金额=可用金额+冻结金额")]
         public virtual decimal TotalAmount { get; protected set; }
 
         [StringLength(100)]
+        [Comment("密码")]
         public virtual string Password { get; protected set; }
 
         public virtual List<WalletRecorder> WalletRecorderList { get; protected set; } = new List<WalletRecorder>();
@@ -50,9 +56,14 @@ namespace IczpNet.Chat.Wallets
             OwnerId = ownerId;
         }
 
+        /// <summary>
+        /// 支出
+        /// </summary>
+        /// <param name="amount"></param>
+        /// <param name="walletRecorder"></param>
         internal void Expenditure(decimal amount, WalletRecorder walletRecorder)
         {
-            Assert.If(walletRecorder.WalletBusinessType != Enums.WalletBusinessTypes.Expenditure, "");
+            Assert.If(walletRecorder.WalletBusinessType != WalletBusinessTypes.Expenditure, "");
             SetOriginalAvailableAmount();
             AvailableAmount -= amount;
             UpdateTotalAmount();
@@ -64,9 +75,14 @@ namespace IczpNet.Chat.Wallets
 
         }
 
+        /// <summary>
+        /// 收入
+        /// </summary>
+        /// <param name="amount"></param>
+        /// <param name="walletRecorder"></param>
         internal void Income(decimal amount, WalletRecorder walletRecorder)
         {
-            Assert.If(walletRecorder.WalletBusinessType != Enums.WalletBusinessTypes.Income, "");
+            Assert.If(walletRecorder.WalletBusinessType != WalletBusinessTypes.Income, "");
             SetOriginalAvailableAmount();
             AvailableAmount += amount;
             UpdateTotalAmount();
@@ -79,7 +95,7 @@ namespace IczpNet.Chat.Wallets
         ///// </summary>
         ///// <param name="amount"></param>
         ///// <param name="description"></param>
-        //public virtual void Expenditure(Guid recordId, decimal amount, string description)
+        //public virtual void ExpenditureAsync(Guid recordId, decimal amount, string description)
         //{
         //    WalletRecorderList.Add(new WalletRecorder(recordId, this, Owner, amount, description));
         //    AvailableAmount -= amount;
@@ -90,7 +106,7 @@ namespace IczpNet.Chat.Wallets
         ///// </summary>
         ///// <param name="amount"></param>
         ///// <param name="description"></param>
-        //public virtual void Income(Guid recordId, decimal amount, string description)
+        //public virtual void IncomeAsync(Guid recordId, decimal amount, string description)
         //{
         //    WalletRecorderList.Add(new WalletRecorder(recordId, this, Owner, amount, description));
         //    AvailableAmount += amount;

@@ -52,10 +52,10 @@ namespace IczpNet.Chat.Wallets
             return base.CheckDeleteAsync(entity);
         }
 
-        public async Task<WalletDto> Recharge(RechargeInput input)
+        public async Task<WalletDto> RechargeAsync(RechargeInput input)
         {
             var owner = await ChatObjectManager.GetAsync(input.OwnerId);
-            var wallet = await WalletManager.Recharge(owner, input.Amount, input.Description, input.ConcurrencyStamp);
+            var wallet = await WalletManager.RechargeAsync(owner, input.Amount, input.Description, input.ConcurrencyStamp);
             return ObjectMapper.Map<Wallet, WalletDto>(wallet);
         }
     }

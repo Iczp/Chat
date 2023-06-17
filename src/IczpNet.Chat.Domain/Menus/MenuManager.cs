@@ -95,7 +95,7 @@ namespace IczpNet.Chat.Menus
 
         public virtual async Task<string> TriggerAsync(Guid id)
         {
-            //var menu = await Repository.GetAsync(id);
+            //var menu = await Repository.GetWalletAsync(id);
 
             //await CheckMenuAsync(menu);
 
@@ -147,7 +147,7 @@ namespace IczpNet.Chat.Menus
 
         public virtual async Task<HttpRequest> SendToRemoteHostAsync(Menu menu, string name = null)
         {
-            //var menu = await Repository.GetAsync(id);
+            //var menu = await Repository.GetWalletAsync(id);
 
             //await CheckMenuAsync(menu);
 

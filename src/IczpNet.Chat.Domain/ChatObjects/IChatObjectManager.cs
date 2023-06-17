@@ -40,7 +40,7 @@ namespace IczpNet.Chat.ChatObjects
 
         Task<List<long>> GetIdListByUserId(Guid userId);
 
-        //Task<ChatObject> GetAsync(Guid chatObjectId);
+        //Task<ChatObject> GetWalletAsync(Guid chatObjectId);
 
         //Task<ChatObjectInfo> GetItemByCacheAsync(Guid chatObjectId);
 

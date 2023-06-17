@@ -4,9 +4,11 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.ObjectMapping;
 
@@ -19,8 +21,13 @@ namespace IczpNet.Chat.MessageSections
         protected IRedEnvelopeGenerator RedEnvelopeGenerator => LazyServiceProvider.LazyGetRequiredService<IRedEnvelopeGenerator>();
         protected IContentResolver ContentResolver => LazyServiceProvider.LazyGetRequiredService<IContentResolver>();
         protected IMessageManager MessageManager => LazyServiceProvider.LazyGetRequiredService<IMessageManager>();
+        protected IRepository<RedEnvelopeContent, Guid> RedEnvelopeContentRepository { get; }
 
-        public MessageSender() { }
+        public MessageSender(
+            IRepository<RedEnvelopeContent, Guid> redEnvelopeContentRepository)
+        {
+            RedEnvelopeContentRepository = redEnvelopeContentRepository;
+        }
 
         protected virtual IContentProvider GetContentProvider(MessageTypes messageType)
         {
@@ -146,6 +153,8 @@ namespace IczpNet.Chat.MessageSections
             var redEnvelopeUnitList = await RedEnvelopeGenerator.MakeAsync(redEnvelope.GrantMode, messageContent.Id, redEnvelope.Amount, redEnvelope.Count, redEnvelope.TotalAmount);
 
             messageContent.SetRedEnvelopeUnitList(redEnvelopeUnitList);
+
+            await RedEnvelopeContentRepository.InsertAsync(messageContent, autoSave: true);
 
             return await MessageManager.SendAsync<RedEnvelopeContentOutput, RedEnvelopeContent>(senderSessionUnit, input, messageContent, receiverSessionUnit);
         }

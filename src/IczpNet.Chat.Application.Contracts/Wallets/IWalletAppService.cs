@@ -15,5 +15,5 @@ public interface IWalletAppService :
         WalletUpdateInput>
 {
 
-    public Task<WalletDto> Recharge(RechargeInput input);
+    public Task<WalletDto> RechargeAsync(RechargeInput input);
 }

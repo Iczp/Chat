@@ -180,7 +180,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             return BackgroundJobManager.IsAvailable();
 
-            //var useBackgroundJobSenderMinSessionUnitCount = await SettingProvider.GetAsync<int>(ChatSettings.UseBackgroundJobSenderMinSessionUnitCount);
+            //var useBackgroundJobSenderMinSessionUnitCount = await SettingProvider.GetWalletAsync<int>(ChatSettings.UseBackgroundJobSenderMinSessionUnitCount);
 
             //return BackgroundJobManager.IsAvailable() && !message.IsPrivate && message.SessionUnitCount > useBackgroundJobSenderMinSessionUnitCount;
 
@@ -332,7 +332,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             var nowTime = Clock.Now;
 
-            //var message = await Repository.GetAsync(messageId);
+            //var message = await Repository.GetWalletAsync(messageId);
 
             //Assert.If(message.Sender != LoginInfo.UserId, $"无权限撤回别人消息！");
 
