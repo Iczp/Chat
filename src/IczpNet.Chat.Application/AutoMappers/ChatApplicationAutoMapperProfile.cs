@@ -68,6 +68,7 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<Menu, MenuDetailDto>();
         CreateMap<MenuCreateInput, Menu>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         CreateMap<MenuUpdateInput, Menu>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<Menu, MenuInfo>();
 
         //Motto
         CreateMap<Motto, MottoDto>();

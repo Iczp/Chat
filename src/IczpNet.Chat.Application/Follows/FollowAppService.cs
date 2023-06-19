@@ -65,9 +65,10 @@ namespace IczpNet.Chat.Follows
 
         /// <inheritdoc/>
         [HttpPost]
-        public async Task<bool> CreateAsync(FollowCreateInput input)
+        public async Task<bool> CreateAsync([FromQuery] FollowCreateInput input)
         {
             var owner = await SessionUnitManager.GetAsync(input.OwnerId);
+
             //check owner
 
             return await FollowManager.CreateAsync(owner, input.IdList);
@@ -75,13 +76,13 @@ namespace IczpNet.Chat.Follows
 
         /// <inheritdoc/>
         [HttpPost]
-        public async Task DeleteAsync(Guid ownerId, List<Guid> idList)
+        public async Task DeleteAsync([FromQuery] FollowDeleteInput input)
         {
-            var owner = await SessionUnitManager.GetAsync(ownerId);
+            var owner = await SessionUnitManager.GetAsync(input.OwnerId);
             //check owner
-            await FollowManager.DeleteAsync(owner, idList);
+            await FollowManager.DeleteAsync(input.OwnerId, input.IdList);
         }
-
+        
 
     }
 }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace IczpNet.Chat.Follows.Dtos
 {
-    public class FollowCreateInput
+    public class FollowDeleteInput
     {
 
         /// <summary>
@@ -12,7 +12,7 @@ namespace IczpNet.Chat.Follows.Dtos
         public Guid OwnerId { get; set; }
 
         /// <summary>
-        /// 要关注的 SessionUnitId
+        /// 要取消关注的 SessionUnitId
         /// </summary>
         public List<Guid> IdList { get; set; }
     }

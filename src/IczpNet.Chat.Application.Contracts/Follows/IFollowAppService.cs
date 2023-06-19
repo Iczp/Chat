@@ -36,9 +36,8 @@ namespace IczpNet.Chat.Follows
         /// <summary>
         /// 取消关注
         /// </summary>
-        /// <param name="ownerId"></param>
-        /// <param name="idList"></param>
+        /// <param name="input"></param>
         /// <returns></returns>
-        Task DeleteAsync(Guid ownerId, List<Guid> idList);
+        Task DeleteAsync(FollowDeleteInput input);
     }
 }
