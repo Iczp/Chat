@@ -49,7 +49,7 @@ namespace IczpNet.Chat.FavoritedRecorders
         }
 
         [HttpPost]
-        public async Task<DateTime> CreateAsync(FavoritedRecorderCreateInput input)
+        public async Task<DateTime> CreateAsync([FromQuery] FavoritedRecorderCreateInput input)
         {
             var sessionUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
 

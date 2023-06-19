@@ -1,7 +1,9 @@
 ﻿using System.ComponentModel;
+using System.Text.Json.Serialization;
 
 namespace IczpNet.Chat.Enums
 {
+    //[JsonConverter(typeof(JsonStringEnumConverter))]
     [Description("消息类型")]
     public enum MessageTypes
     {

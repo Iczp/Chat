@@ -20,6 +20,7 @@ using Volo.Abp.Users;
 
 namespace IczpNet.Chat.ChatObjects
 {
+    /// <inheritdoc cref="IChatObjectAppService"/>
     public class ChatObjectAppService
         : CrudTreeChatAppService<
             ChatObject,

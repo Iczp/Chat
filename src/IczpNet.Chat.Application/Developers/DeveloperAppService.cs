@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace IczpNet.Chat.Developers
 {
+    /// <inheritdoc/>
     public class DeveloperAppService : ChatAppService, IDeveloperAppService
     {
         protected virtual string SetIsEnabledPolicyName { get; set; } = ChatPermissions.DeveloperPermission.SetIsEnabled;
@@ -43,6 +44,7 @@ namespace IczpNet.Chat.Developers
             return ObjectMapper.Map<Developer, DeveloperDto>(developer);
         }
 
+        /// <inheritdoc/>
         [HttpPost]
         public async Task<bool> SetIsEnabledAsync(long id, bool isEnabled)
         {
@@ -55,11 +57,7 @@ namespace IczpNet.Chat.Developers
             return isEnabled;
         }
 
-        /// <summary>
-        /// 加密
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         [HttpPost]
         public async Task<EncryptOutput> EncryptAsync(EncryptInput input)
         {
@@ -76,13 +74,9 @@ namespace IczpNet.Chat.Developers
             });
         }
 
-        /// <summary>
-        /// 解密(失败时 EncryptData=Null)
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns>失败 EncryptData=Null</returns>
+        /// <inheritdoc/>
         [HttpPost]
-        public async Task<DecryptOutput> DecryptAsync(DecryptInput input)
+        public async Task<DecryptOutput> DecryptAsync([FromQuery] DecryptInput input)
         {
             var bizCrypt = new BizCrypt(input.Token, input.EncodingAesKey, input.ChatObjectId);
 
@@ -97,14 +91,10 @@ namespace IczpNet.Chat.Developers
             });
         }
 
-        /// <summary>
-        /// 生成签名
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         [HttpPost]
         [AllowAnonymous]
-        public async Task<GenerateSignatureOutput> GenerateSignature([FromQuery] GenerateSignatureInput input)
+        public async Task<GenerateSignatureOutput> GenerateSignatureAsync([FromQuery] GenerateSignatureInput input)
         {
             string signature = BizCrypt.GenerateSignature(input.Token, input.TimeStamp, input.Nonce, input.Echo);
 
@@ -114,29 +104,17 @@ namespace IczpNet.Chat.Developers
             });
         }
 
-        /// <summary>
-        ///  验证签名
-        /// </summary>
-        /// <param name="signature">签名</param>
-        /// <param name="token">公众平台上，开发者设置的Token</param>
-        /// <param name="timeStamp">时间戳</param>
-        /// <param name="nonce">随机数</param>
-        /// <param name="cipherText">密文</param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         [HttpPost]
         [AllowAnonymous]
-        public async Task<bool> VerifySignature(string signature, string token, string timeStamp, string nonce, string cipherText)
+        public async Task<bool> VerifySignatureAsync([FromQuery] VerifySignatureInput input)
         {
-            var retult = BizCrypt.VerifySignature(signature, token, timeStamp, nonce, cipherText);
+            var retult = BizCrypt.VerifySignature(input.Signature, input.Token, input.TimeStamp, input.Nonce, input.CipherText);
 
             return await Task.FromResult(retult);
         }
 
-        /// <summary>
-        /// String => Base64
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         [HttpPost]
         [AllowAnonymous]
         public async Task<string> StringToBase64Async(string input)
@@ -146,11 +124,7 @@ namespace IczpNet.Chat.Developers
             return await Task.FromResult(Convert.ToBase64String(b));
         }
 
-        /// <summary>
-        /// Base64 => String
-        /// </summary>
-        /// <param name="base64String"></param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         [HttpPost]
         [AllowAnonymous]
         public async Task<string> Base64ToStringAsync(string base64String)
@@ -162,11 +136,7 @@ namespace IczpNet.Chat.Developers
             return await Task.FromResult(output);
         }
 
-        /// <summary>
-        /// 生成 EncodingAesKey
-        /// </summary>
-        /// <param name="count"></param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         [HttpPost]
         [AllowAnonymous]
         public async Task<string> GenerateEncodingAesKeyAsync()

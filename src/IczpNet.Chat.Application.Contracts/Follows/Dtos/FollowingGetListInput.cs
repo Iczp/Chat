@@ -6,8 +6,11 @@ namespace IczpNet.Chat.Follows.Dtos
 {
     public class FollowingGetListInput : BaseGetListInput
     {
+        /// <summary>
+        /// 会话单元Id
+        /// </summary>
         [Required]
-        public Guid SessionUnitId { get; set; }
+        public virtual Guid SessionUnitId { get; set; }
 
         //public bool? OwnerId { get; set; }
     }

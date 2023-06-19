@@ -1,7 +1,7 @@
 ﻿namespace IczpNet.Chat.Developers.Dtos
 {
     /// <summary>
-    /// GenerateSignatureInput
+    /// 生成签名
     /// </summary>
     public class GenerateSignatureInput
     {

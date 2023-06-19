@@ -22,7 +22,7 @@ public class WalletSectionApplicationAutoMapperProfile : Profile
         CreateMap<Wallet, WalletDto>();
         CreateMap<Wallet, WalletDetailDto>();
 
-        ///WalletRecorder
+        //WalletRecorder
         CreateMap<WalletRecorder, WalletRecorderDto>();
 
         //WalletOrder

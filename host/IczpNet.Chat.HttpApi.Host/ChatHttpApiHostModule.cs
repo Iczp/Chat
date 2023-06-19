@@ -1,6 +1,7 @@
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.EntityFrameworkCore;
 using IczpNet.Chat.MultiTenancy;
+using IczpNet.Chat.SchemaFilters;
 using IczpNet.Pusher;
 using IczpNet.Pusher.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -101,6 +102,7 @@ public class ChatHttpApiHostModule : AbpModule
             options.JsonSerializerOptions.MaxDepth = 16;
             options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
             //options.JsonSerializerOptions.WriteIndented = true;
+            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         });
 
         Configure<AbpAspNetCoreMvcOptions>(options =>
@@ -155,6 +157,9 @@ public class ChatHttpApiHostModule : AbpModule
                 options.SwaggerDoc("v1", new OpenApiInfo { Title = "Chat API", Version = "v1" });
                 options.DocInclusionPredicate((docName, description) => true);
                 options.SwaggerDoc(ChatRemoteServiceConsts.ModuleName, new OpenApiInfo { Title = "Chat", Version = ChatRemoteServiceConsts.ModuleName });
+
+                options.SchemaFilter<EnumSchemaFilter>();
+
                 //options.SwaggerDoc(ChatManagementRemoteServiceConsts.ModuleName, new OpenApiInfo { Title = "ChatManagement", Version = ChatManagementRemoteServiceConsts.ModuleName });
                 //System.Diagnostics.Debugger.Launch();
 
@@ -175,6 +180,21 @@ public class ChatHttpApiHostModule : AbpModule
                 //});
                 options.CustomSchemaIds(type => type.FullName);
                 options.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
+
+                var includeModuleXmlComments = (string[] nameSpaces) =>
+                {
+                    foreach (var nameSpace in nameSpaces)
+                    {
+                        options.IncludeXmlComments(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{nameSpace}.Application.xml"), true);
+                        options.IncludeXmlComments(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{nameSpace}.Application.Contracts.xml"), true);
+                        options.IncludeXmlComments(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{nameSpace}.Domain.xml"), true);
+                        options.IncludeXmlComments(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{nameSpace}.Domain.Shared.xml"), true);
+                        options.IncludeXmlComments(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{nameSpace}.HttpApi.xml"), true);
+                    }
+                };
+                includeModuleXmlComments(new[] {
+                   $"IczpNet.{ChatRemoteServiceConsts.RemoteServiceName}",
+                });
             });
 
 

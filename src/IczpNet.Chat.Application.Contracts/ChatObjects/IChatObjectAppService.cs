@@ -8,6 +8,9 @@ using Volo.Abp.Application.Services;
 
 namespace IczpNet.Chat.ChatObjects
 {
+    /// <summary>
+    /// 聊天对象
+    /// </summary>
     public interface IChatObjectAppService :
         ICrudAppService<
             ChatObjectDto,

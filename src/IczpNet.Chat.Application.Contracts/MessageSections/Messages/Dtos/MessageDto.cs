@@ -14,5 +14,6 @@ namespace IczpNet.Chat.MessageSections.Messages.Dtos
         //public virtual long OpenedCount { get; set; }
 
         //public virtual long FavoritedCount { get; set; }
+
     }
 }

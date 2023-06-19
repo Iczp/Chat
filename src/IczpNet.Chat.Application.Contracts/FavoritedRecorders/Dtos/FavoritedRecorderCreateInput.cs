@@ -4,10 +4,13 @@ namespace IczpNet.Chat.FavoritedRecorders.Dtos
 {
     public class FavoritedRecorderCreateInput
     {
-        public Guid SessionUnitId { get; set; }
+        /// <summary>
+        /// 会话单元Id
+        /// </summary>
+        public virtual Guid SessionUnitId { get; set; }
 
-        public long MessageId { get; set; }
+        public virtual long MessageId { get; set; }
 
-        public string DeviceId { get; set; }
+        public virtual string DeviceId { get; set; }
     }
 }

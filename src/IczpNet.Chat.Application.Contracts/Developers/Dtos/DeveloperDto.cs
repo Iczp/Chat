@@ -1,7 +1,4 @@
-﻿using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
-
-namespace IczpNet.Chat.Developers.Dtos
+﻿namespace IczpNet.Chat.Developers.Dtos
 {
     public class DeveloperDto
     {

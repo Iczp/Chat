@@ -68,6 +68,8 @@ namespace IczpNet.Chat.RedEnvelopes
         /// </summary>
         public virtual IList<RedEnvelopeUnit> RedEnvelopeUnitList { get; protected set; } = new List<RedEnvelopeUnit>();
 
+        protected RedEnvelopeContent() { }
+
         internal RedEnvelopeContent(Guid id, GrantModes grantMode, decimal amount, int count, decimal totalAmount, string text) : base(id)
         {
             GrantMode = grantMode;

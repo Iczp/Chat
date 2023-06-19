@@ -1,13 +1,15 @@
 ﻿using IczpNet.Chat.Developers.Dtos;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.Developers
 {
+    /// <summary>
+    /// 开发者
+    /// </summary>
     public interface IDeveloperAppService
     {
         /// <summary>
-        /// 
+        /// 设置
         /// </summary>
         /// <param name="id"></param>
         /// <param name="input"></param>
@@ -15,7 +17,7 @@ namespace IczpNet.Chat.Developers
         Task<DeveloperDto> SetConfigAsync(long id, ConfigInput input);
 
         /// <summary>
-        /// 
+        /// 启用或禁用
         /// </summary>
         /// <param name="id"></param>
         /// <param name="isEnabled"></param>
@@ -41,18 +43,12 @@ namespace IczpNet.Chat.Developers
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        Task<GenerateSignatureOutput> GenerateSignature(GenerateSignatureInput input);
+        Task<GenerateSignatureOutput> GenerateSignatureAsync(GenerateSignatureInput input);
 
         /// <summary>
         ///  验证签名
         /// </summary>
-        /// <param name="signature">签名 signature</param>
-        /// <param name="token">公众平台上，开发者设置的Token</param>
-        /// <param name="timeStamp">时间戳</param>
-        /// <param name="nonce">随机数</param>
-        /// <param name="cipherText">密文</param>
-        /// <returns></returns>
-        Task<bool> VerifySignature(string signature, string token, string timeStamp, string nonce, string cipherText);
+        Task<bool> VerifySignatureAsync(VerifySignatureInput input);
 
         /// <summary>
         /// String To Base64
