@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.BaseEntities;
+﻿using IczpNet.AbpCommons.DataFilters;
+using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
@@ -11,6 +12,11 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.WalletRecorders
 {
+    [Index(nameof(OwnerId))]
+    [Index(nameof(WalletBusinessType))]
+    [Index(nameof(TotalAmount))]
+    [Index(nameof(LockAmount))]
+    [Index(nameof(AvailableAmount))]
     public class WalletRecorder : BaseEntity<Guid>, IChatOwner<long?>
     {
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]

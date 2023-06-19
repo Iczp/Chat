@@ -11,7 +11,7 @@ namespace IczpNet.Chat.WalletOrders.Dtos
 
         public virtual long? OwnerId { get; set; }
 
-        public virtual ChatObjectDto Owner { get; set; }
+        //public virtual ChatObjectDto Owner { get; set; }
 
         public virtual Guid? WalletId { get; set; }
 

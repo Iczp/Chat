@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.WalletOrders.Dtos;
 using System;
+using System.Threading.Tasks;
 
 namespace IczpNet.Chat.WalletOrders
 {
@@ -12,7 +13,7 @@ namespace IczpNet.Chat.WalletOrders
             WalletOrderCreateInput,
             WalletOrderUpdateInput>
     {
-
+        Task<WalletOrderDetailDto> CloseAsync(Guid id);
 
     }
 }

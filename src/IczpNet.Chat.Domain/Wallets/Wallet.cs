@@ -13,6 +13,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.Wallets
 {
+    [Index(nameof(AppUserId))]
+    [Index(nameof(OwnerId))]
+    [Index(nameof(TotalAmount))]
+    [Index(nameof(LockAmount))]
+    [Index(nameof(AvailableAmount))]
+    [Index(nameof(IsEnabled))]
+    [Index(nameof(IsLocked))]
+
     public class Wallet : BaseEntity<Guid>, IChatOwner<long>,IIsEnabled
     {
         public virtual Guid? AppUserId { get; protected set; }
