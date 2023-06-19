@@ -71,7 +71,6 @@ namespace IczpNet.Chat.Developers
         /// <summary>
         /// 生成 EncodingAesKey
         /// </summary>
-        /// <param name="count"></param>
         /// <returns></returns>
         Task<string> GenerateEncodingAesKeyAsync();
     }

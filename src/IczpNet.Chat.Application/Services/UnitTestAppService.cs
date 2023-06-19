@@ -1,11 +1,8 @@
-﻿using IczpNet.AbpCommons.Extensions;
-using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.Enums;
 using IczpNet.Chat.HttpRequests;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
-using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.TextTemplates;
@@ -15,7 +12,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
@@ -24,12 +20,7 @@ namespace IczpNet.Chat.Services
 {
     public class UnitTestAppService : ChatAppService
     {
-
-        private static int TotalCount = 0;
-        private static List<long> ChatObjectIdList;
-
         protected IMessageRepository MessageRepository { get; }
-
         protected IRepository<Session, Guid> SessionRepository { get; }
         protected IChatObjectRepository ChatObjectRepository { get; }
         protected IMessageManager MessageManager { get; }

@@ -31,7 +31,6 @@ namespace IczpNet.Chat.RoomSections.Rooms
         /// 解散群
         /// </summary>
         /// <param name="sessionUnitId"></param>
-        /// <param name="targetSessionUnitId"></param>
         /// <returns></returns>
         Task DissolveAsync(Guid sessionUnitId);
         

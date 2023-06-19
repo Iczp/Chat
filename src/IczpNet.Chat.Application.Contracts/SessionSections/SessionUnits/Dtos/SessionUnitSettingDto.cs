@@ -40,7 +40,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
         /// <summary>
         /// 聊天背景，默认为 null
         /// </summary>
-        //public virtual string BackgroundImage { get; set; }
+        public virtual string BackgroundImage { get; set; }
 
         /// <summary>
         /// 加入方式

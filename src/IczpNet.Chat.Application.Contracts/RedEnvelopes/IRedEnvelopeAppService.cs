@@ -9,7 +9,8 @@ namespace IczpNet.Chat.RedEnvelopes
         /// <summary>
         /// 抢红包
         /// </summary>
-        /// <param name="input"></param>
+        /// <param name="messageId"></param>
+        /// <param name="redEnvelopeContentId"></param>
         /// <returns></returns>
         Task<GrabRedEnvelopeOutput> Grab(long messageId, Guid redEnvelopeContentId);
 

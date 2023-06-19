@@ -29,8 +29,6 @@ namespace IczpNet.Chat.UnitTests
 
         private static long? RoomId = 6019;
 
-        private static int Index = 0;
-
         protected IMessageSender MessageSender { get; }
 
         protected IRoomManager RoomManager { get; }
