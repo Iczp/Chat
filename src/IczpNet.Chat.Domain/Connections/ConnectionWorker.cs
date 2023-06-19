@@ -31,7 +31,7 @@ namespace IczpNet.Chat.Connections
 
             var count = await ConnectionManager.DeleteInactiveAsync();
 
-            double ticks = (DateTime.Now.Ticks - startTicks); /// 10000;
+            double ticks = (DateTime.Now.Ticks - startTicks); // 10000;
 
             Logger.LogInformation($"ConnectionWorker delete inactive connection count:{count},run ticks:{ticks}");
         }

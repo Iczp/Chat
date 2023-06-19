@@ -14,6 +14,7 @@ namespace IczpNet.Chat.HttpRequests
         /// HttpGet
         /// </summary>
         /// <param name="url"></param>
+        /// <param name="httpContent"></param>
         /// <returns></returns>
         Task<HttpRequest> GetAsync(string url, HttpContent httpContent = null);
 
@@ -33,6 +34,7 @@ namespace IczpNet.Chat.HttpRequests
         /// <param name="httpContent"></param>
         /// <param name="headers"></param>
         /// <param name="userAgent"></param>
+        /// <param name="name"></param>
         /// <returns></returns>
         Task<HttpRequest> RequestAsync(HttpMethod method, string url, HttpContent httpContent = null, IDictionary<string, string> headers = null, string userAgent = null, string name = null);
     }

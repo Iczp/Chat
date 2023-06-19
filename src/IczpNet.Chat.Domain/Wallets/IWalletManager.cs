@@ -31,7 +31,9 @@ namespace IczpNet.Chat.Wallets
         /// <summary>
         /// 支出
         /// </summary>
-        /// <param name="owner"></param>
+        /// <param name="wallet"></param>
+        /// <param name="ownerId"></param>
+        /// <param name="walletBusinessId"></param>
         /// <param name="amount"></param>
         /// <param name="description"></param>
         /// <returns></returns>
@@ -40,7 +42,9 @@ namespace IczpNet.Chat.Wallets
         /// <summary>
         /// 收入
         /// </summary>
-        /// <param name="owner"></param>
+        /// <param name="wallet"></param>
+        /// <param name="ownerId"></param>
+        /// <param name="walletBusinessId"></param>
         /// <param name="amount"></param>
         /// <param name="description"></param>
         /// <returns></returns>
@@ -49,30 +53,30 @@ namespace IczpNet.Chat.Wallets
         /// <summary>
         /// 充值
         /// </summary>
-        /// <param name="owner"></param>
+        /// <param name="wallet"></param>
+        /// <param name="ownerId"></param>
         /// <param name="amount"></param>
         /// <param name="description"></param>
-        /// <param name="concurrencyStamp"></param>
         /// <returns></returns>
         Task<Wallet> RechargeAsync(Wallet wallet, long ownerId, decimal amount, string description);
 
         /// <summary>
         /// 冻结金额
         /// </summary>
-        /// <param name="owner"></param>
+        /// <param name="wallet"></param>
+        /// <param name="ownerId"></param>
         /// <param name="amount"></param>
         /// <param name="description"></param>
-        /// <param name="concurrencyStamp"></param>
         /// <returns></returns>
         Task<Wallet> LockAmountAsync(Wallet wallet, long ownerId, decimal amount, string description);
 
         /// <summary>
         /// 解除冻结金额
         /// </summary>
-        /// <param name="owner"></param>
+        /// <param name="wallet"></param>
+        /// <param name="ownerId"></param>
         /// <param name="amount"></param>
         /// <param name="description"></param>
-        /// <param name="concurrencyStamp"></param>
         /// <returns></returns>
         Task<Wallet> UnlockAmountAsync(Wallet wallet, long ownerId, decimal amount, string description);
 

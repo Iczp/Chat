@@ -12,7 +12,8 @@ namespace IczpNet.Chat.Bases
         /// <summary>
         /// IsAnyAsync
         /// </summary>
-        /// <param name="messageIdList"></param>
+        /// <param name="sessionUnitId"></param>
+        /// <param name="messageId"></param>
         /// <returns></returns>
         Task<bool> IsAnyAsync(Guid sessionUnitId,long messageId);
         /// <summary>

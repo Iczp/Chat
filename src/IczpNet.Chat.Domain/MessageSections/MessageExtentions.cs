@@ -23,7 +23,7 @@ namespace IczpNet.Chat.MessageSections
         /// <summary>
         /// 是否禁止转发的消息类型
         /// </summary>
-        /// <param name="messageType"></param>
+        /// <param name="message"></param>
         /// <returns></returns>
         public static bool IsDisabledForward(this Message message) => DisabledForwardList.Contains(message.MessageType);
 

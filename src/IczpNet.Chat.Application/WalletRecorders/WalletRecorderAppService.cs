@@ -31,6 +31,5 @@ namespace IczpNet.Chat.WalletRecorders
                 .WhereIf(!input.Keyword.IsNullOrEmpty(), x => x.Description.Contains(input.Keyword));
         }
 
-
     }
 }

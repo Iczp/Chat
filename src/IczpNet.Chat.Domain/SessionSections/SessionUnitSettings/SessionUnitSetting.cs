@@ -191,7 +191,9 @@ namespace IczpNet.Chat.SessionSections.SessionUnitSettings
         /// <summary>
         /// 退群，但不删除会话（用于查看历史I）
         /// </summary>
-        /// <param name="removeTime"></param>
+        /// <param name="killTime"></param>
+        /// <param name="killType"></param>
+        /// <param name="killerId"></param>
         internal virtual void Kill(DateTime killTime, KillTypes? killType = null, Guid? killerId = null)
         {
             IsKilled = true;

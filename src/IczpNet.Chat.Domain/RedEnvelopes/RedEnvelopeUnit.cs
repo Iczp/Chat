@@ -68,7 +68,8 @@ namespace IczpNet.Chat.RedEnvelopes
         /// <summary>
         /// 领取红包
         /// </summary>
-        /// <param name="ownerUserId">领取人UserId</param>
+        /// <param name="ownerId"></param>
+        /// <param name="ownedTime"></param>
         public void SetGrabed(long ownerId, DateTime ownedTime)
         {
             OwnerId = ownerId;
