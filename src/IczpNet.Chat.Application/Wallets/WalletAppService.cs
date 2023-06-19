@@ -1,7 +1,7 @@
-﻿using IczpNet.AbpCommons;
-using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Wallets.Dtos;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,9 +16,7 @@ namespace IczpNet.Chat.Wallets
             WalletDetailDto,
             WalletDto,
             Guid,
-            WalletGetListInput,
-            WalletCreateInput,
-            WalletUpdateInput>,
+            WalletGetListInput>,
         IWalletAppService
     {
 
@@ -41,15 +39,7 @@ namespace IczpNet.Chat.Wallets
                 ;
         }
 
-        protected override Task CheckDeleteAsync(Wallet entity)
-        {
-            var count = entity.WalletRecorderList.Count;
-
-            Assert.If(count != 0, $"Wallet's Recorder count: {count}");
-
-            return base.CheckDeleteAsync(entity);
-        }
-
+        [HttpPost]
         public async Task<WalletDto> RechargeAsync(RechargeInput input)
         {
             var wallet = await WalletManager.GetWalletAsync(input.OwnerId);

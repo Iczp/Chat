@@ -13,7 +13,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace IczpNet.Chat.WalletRecorders
 {
     [Index(nameof(OwnerId))]
-    [Index(nameof(WalletBusinessType))]
+    [Index(nameof(BusinessType))]
     [Index(nameof(TotalAmount))]
     [Index(nameof(LockAmount))]
     [Index(nameof(AvailableAmount))]
@@ -34,12 +34,12 @@ namespace IczpNet.Chat.WalletRecorders
         public virtual Wallet Wallet { get; protected set; }
 
         [Comment("钱包业务Id")]
-        public virtual string WalletBusinessId { get; protected set; }
+        public virtual string BusinessId { get; protected set; }
 
-        [ForeignKey(nameof(WalletBusinessId))]
-        public virtual WalletBusiness WalletBusiness { get; protected set; }
+        [ForeignKey(nameof(BusinessId))]
+        public virtual WalletBusiness Business { get; protected set; }
 
-        public virtual WalletBusinessTypes WalletBusinessType { get; protected set; }
+        public virtual WalletBusinessTypes BusinessType { get; protected set; }
 
         [Column(TypeName = "decimal(18,2)")]
         [Comment("变化前-可用金额")]
@@ -79,9 +79,9 @@ namespace IczpNet.Chat.WalletRecorders
 
         public WalletRecorder(Guid id, WalletBusiness walletBusiness, ChatObject owner, Wallet wallet, decimal amount, string description) : base(id)
         {
-            WalletBusiness = walletBusiness;
-            WalletBusinessType = WalletBusiness.BusinessType;
-            WalletBusinessId = walletBusiness.Id;
+            Business = walletBusiness;
+            BusinessType = Business.BusinessType;
+            BusinessId = walletBusiness.Id;
             Owner = owner;
             OwnerId = owner.Id;
             Amount = amount;

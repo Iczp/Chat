@@ -18,7 +18,7 @@ namespace IczpNet.Chat.WalletBusinesses
         [StringLength(100)]
         public virtual string Description { get; protected set; }
 
-        [InverseProperty(nameof(WalletRecorder.WalletBusiness))]
+        [InverseProperty(nameof(WalletRecorder.Business))]
         public virtual List<WalletRecorder> WalletRecorderList { get; protected set; }
 
         public virtual bool IsEnabled { get; protected set; }

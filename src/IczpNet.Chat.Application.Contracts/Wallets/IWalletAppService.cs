@@ -6,13 +6,11 @@ using Volo.Abp.Application.Services;
 namespace IczpNet.Chat.Wallets;
 
 public interface IWalletAppService :
-    ICrudAppService<
+    ICrudChatAppService<
         WalletDetailDto,
         WalletDto,
         Guid,
-        WalletGetListInput,
-        WalletCreateInput,
-        WalletUpdateInput>
+        WalletGetListInput>
 {
     /// <summary>
     /// 充值

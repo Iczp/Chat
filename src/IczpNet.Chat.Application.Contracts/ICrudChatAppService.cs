@@ -1,9 +1,27 @@
-﻿using System.Collections.Generic;
+﻿using IczpNet.Chat.BaseDtos;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
 
 namespace IczpNet.Chat
 {
+
+    public interface ICrudChatAppService<
+        TGetOutputDto,
+        TGetListOutputDto,
+        TKey,
+        TGetListInput>
+        :
+        ICrudChatAppService<
+            TGetOutputDto,
+            TGetListOutputDto,
+            TKey,
+            TGetListInput,
+            BaseInput,
+            BaseInput>
+    {
+
+    }
 
     public interface ICrudChatAppService<
         TGetOutputDto,

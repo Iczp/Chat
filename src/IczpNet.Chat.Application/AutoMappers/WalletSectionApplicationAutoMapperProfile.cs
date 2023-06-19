@@ -5,6 +5,8 @@ using IczpNet.Chat.Words.Dtos;
 using IczpNet.Chat.Words;
 using IczpNet.Chat.WalletOrders;
 using IczpNet.Chat.WalletOrders.Dtos;
+using IczpNet.Chat.WalletRecorders.Dtos;
+using IczpNet.Chat.WalletRecorders;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -19,8 +21,9 @@ public class WalletSectionApplicationAutoMapperProfile : Profile
         //Wallet
         CreateMap<Wallet, WalletDto>();
         CreateMap<Wallet, WalletDetailDto>();
-        //CreateMap<WalletCreateInput, Wallet>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
-        //CreateMap<WalletUpdateInput, Wallet>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+
+        ///WalletRecorder
+        CreateMap<WalletRecorder, WalletRecorderDto>();
 
         //WalletOrder
         CreateMap<WalletOrder, WalletOrderDto>();

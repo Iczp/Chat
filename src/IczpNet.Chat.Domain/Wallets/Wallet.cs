@@ -77,7 +77,7 @@ namespace IczpNet.Chat.Wallets
         /// <param name="walletRecorder"></param>
         internal void Expenditure(decimal amount, WalletRecorder walletRecorder)
         {
-            Assert.If(walletRecorder.WalletBusinessType != WalletBusinessTypes.Expenditure, "");
+            Assert.If(walletRecorder.BusinessType != WalletBusinessTypes.Expenditure, "");
             Assert.If(AvailableAmount < amount, $"Insufficient available amount:{amount}");
             SetOriginalAvailableAmount();
             AvailableAmount -= amount;
@@ -97,7 +97,7 @@ namespace IczpNet.Chat.Wallets
         /// <param name="walletRecorder"></param>
         internal void Income(decimal amount, WalletRecorder walletRecorder)
         {
-            Assert.If(walletRecorder.WalletBusinessType != WalletBusinessTypes.Income, $"'{walletRecorder.WalletBusinessId}' WalletBusinessType '{walletRecorder.WalletBusinessType}' must be [Income]");
+            Assert.If(walletRecorder.BusinessType != WalletBusinessTypes.Income, $"'{walletRecorder.BusinessId}' WalletBusinessType '{walletRecorder.BusinessType}' must be [Income]");
             SetOriginalAvailableAmount();
             AvailableAmount += amount;
             UpdateTotalAmount();

@@ -10,8 +10,58 @@ using Volo.Abp.Domain.Repositories;
 using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.AspNetCore.Authorization;
+using IczpNet.Chat.BaseDtos;
+using Volo.Abp;
+using System.Collections.Generic;
 
 namespace IczpNet.Chat.BaseAppServices;
+
+
+public abstract class CrudChatAppService<
+    TEntity,
+    TGetOutputDto,
+    TGetListOutputDto,
+    TKey,
+    TGetListInput>
+    :
+    CrudAbpCommonsAppService<
+        TEntity,
+        TGetOutputDto,
+        TGetListOutputDto,
+        TKey,
+        TGetListInput,
+        BaseInput,
+        BaseInput>
+    ,
+    ICrudChatAppService<
+        TGetOutputDto,
+        TGetListOutputDto,
+        TKey,
+        TGetListInput,
+        BaseInput,
+        BaseInput>
+
+    where TEntity : class, IEntity<TKey>
+    where TGetOutputDto : IEntityDto<TKey>
+    where TGetListOutputDto : IEntityDto<TKey>
+{
+    protected CrudChatAppService(IRepository<TEntity, TKey> repository) : base(repository)
+    {
+    }
+
+    [RemoteService(false)]
+    public override Task<TGetOutputDto> CreateAsync(BaseInput input) => throw new NotImplementedException();
+
+    [RemoteService(false)]
+    public override Task<TGetOutputDto> UpdateAsync(TKey id, BaseInput input) => throw new NotImplementedException();
+
+    [RemoteService(false)]
+    public override Task DeleteAsync(TKey id) => throw new NotImplementedException();
+
+    [RemoteService(false)]
+    public override Task DeleteManyAsync(List<TKey> idList) => throw new NotImplementedException();
+
+}
 
 [ApiExplorerSettings(GroupName = ChatRemoteServiceConsts.ModuleName)]
 [Authorize]
