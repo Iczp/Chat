@@ -141,7 +141,7 @@ public class RoomAppService : ChatAppService, IRoomAppService
     /// 转让群主
     /// </summary>
     /// <param name="sessionUnitId">会话单元Id</param>
-    /// <param name="targetSessionUnitId"></param>
+    /// <param name="targetSessionUnitId">目标会话单元Id(新群主Id)</param>
     /// <returns></returns>
     [HttpPost]
     public virtual Task TransferCreatorAsync(Guid sessionUnitId, Guid targetSessionUnitId)

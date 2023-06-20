@@ -13,6 +13,9 @@ using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.SessionServices;
 
+/// <summary>
+/// 聊天设置
+/// </summary>
 public class SettingAppService : ChatAppService, ISettingAppService
 {
     protected override string GetListPolicyName { get; set; }
@@ -63,7 +66,12 @@ public class SettingAppService : ChatAppService, ISettingAppService
         return Task.FromResult(ObjectMapper.Map<SessionUnit, SessionUnitDestinationDto>(entity));
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// 设置成员（群内名称，会话内名称）
+    /// </summary>
+    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <param name="memberName">会话内名称</param>
+    /// <returns></returns>
     [HttpPost]
     public async Task<SessionUnitOwnerDto> SetMemberNameAsync(Guid sessionUnitId, string memberName)
     {
@@ -74,7 +82,12 @@ public class SettingAppService : ChatAppService, ISettingAppService
         return await MapToDtoAsync(entity);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// 备注名称
+    /// </summary>
+    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <param name="rename">名称</param>
+    /// <returns></returns>
     [HttpPost]
     public async Task<SessionUnitOwnerDto> SetRenameAsync(Guid sessionUnitId, string rename)
     {
@@ -85,7 +98,12 @@ public class SettingAppService : ChatAppService, ISettingAppService
         return await MapToDtoAsync(entity);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// 设置置顶
+    /// </summary>
+    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <param name="isTopping">是否置顶</param>
+    /// <returns></returns>
     [HttpPost]
     public virtual async Task<SessionUnitOwnerDto> SetToppingAsync(Guid sessionUnitId, bool isTopping)
     {
@@ -96,7 +114,13 @@ public class SettingAppService : ChatAppService, ISettingAppService
         return await MapToDtoAsync(entity);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// 设置已读消息Id
+    /// </summary>
+    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <param name="isForce">是否强制</param>
+    /// <param name="messageId">消息Id</param>
+    /// <returns></returns>
     [HttpPost]
     public virtual async Task<SessionUnitOwnerDto> SetReadedMessageIdAsync(Guid sessionUnitId, bool isForce = false, long? messageId = null)
     {
@@ -107,7 +131,12 @@ public class SettingAppService : ChatAppService, ISettingAppService
         return await MapToDtoAsync(entity);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// 设置为静默模式（免打扰）
+    /// </summary>
+    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <param name="isImmersed"></param>
+    /// <returns></returns>
     [HttpPost]
     public async Task<SessionUnitOwnerDto> SetImmersedAsync(Guid sessionUnitId, bool isImmersed)
     {
@@ -119,7 +148,11 @@ public class SettingAppService : ChatAppService, ISettingAppService
     }
 
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// 移除会话
+    /// </summary>
+    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <returns></returns>
     [HttpPost]
     public virtual async Task<SessionUnitOwnerDto> RemoveAsync(Guid sessionUnitId)
     {
@@ -130,7 +163,11 @@ public class SettingAppService : ChatAppService, ISettingAppService
         return await MapToDtoAsync(entity);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// 退出会话
+    /// </summary>
+    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <returns></returns>
     [HttpPost]
     public virtual async Task<SessionUnitOwnerDto> ExitAsync(Guid sessionUnitId)
     {
@@ -141,7 +178,11 @@ public class SettingAppService : ChatAppService, ISettingAppService
         return await MapToDtoAsync(entity);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// 删除会话
+    /// </summary>
+    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <returns></returns>
     [HttpPost]
     public virtual async Task<SessionUnitOwnerDto> KillAsync(Guid sessionUnitId)
     {
@@ -152,7 +193,11 @@ public class SettingAppService : ChatAppService, ISettingAppService
         return await MapToDtoAsync(entity);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// 清空消息
+    /// </summary>
+    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <returns></returns>
     [HttpPost]
     public virtual async Task<SessionUnitOwnerDto> ClearMessageAsync(Guid sessionUnitId)
     {
@@ -163,7 +208,13 @@ public class SettingAppService : ChatAppService, ISettingAppService
         return await MapToDtoAsync(entity);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// 删除消息
+    /// </summary>
+    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <param name="messageId">消息Id</param>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
     [HttpPost]
     public virtual async Task DeleteMessageAsync(Guid sessionUnitId, long messageId)
     {
@@ -172,7 +223,12 @@ public class SettingAppService : ChatAppService, ISettingAppService
         throw new NotImplementedException();
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// 设置联系人标签
+    /// </summary>
+    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <param name="contactTagIdList">联系人标签Id</param>
+    /// <returns></returns>
     [HttpPost]
     public async Task SetContactTagsAsync(Guid sessionUnitId, List<Guid> contactTagIdList)
     {

@@ -30,6 +30,12 @@ public class DeveloperAppService : ChatAppService, IDeveloperAppService
         return ObjectMapper.Map<Developer, DeveloperDto>(entity.Developer);
     }
 
+    /// <summary>
+    /// 开发者设置
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="input"></param>
+    /// <returns></returns>
     [HttpPost]
     public async Task<DeveloperDto> SetConfigAsync(long id, [FromQuery] ConfigInput input)
     {
@@ -46,7 +52,12 @@ public class DeveloperAppService : ChatAppService, IDeveloperAppService
         return ObjectMapper.Map<Developer, DeveloperDto>(developer);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// 启用与关闭
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="isEnabled"></param>
+    /// <returns></returns>
     [HttpPost]
     public async Task<bool> SetIsEnabledAsync(long id, bool isEnabled)
     {
@@ -59,7 +70,11 @@ public class DeveloperAppService : ChatAppService, IDeveloperAppService
         return isEnabled;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// 加密
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
     [HttpPost]
     public async Task<EncryptOutput> EncryptAsync(EncryptInput input)
     {
@@ -76,7 +91,11 @@ public class DeveloperAppService : ChatAppService, IDeveloperAppService
         });
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// 解密
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
     [HttpPost]
     public async Task<DecryptOutput> DecryptAsync([FromQuery] DecryptInput input)
     {
@@ -93,7 +112,11 @@ public class DeveloperAppService : ChatAppService, IDeveloperAppService
         });
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// 生成签名
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
     [HttpPost]
     [AllowAnonymous]
     public async Task<GenerateSignatureOutput> GenerateSignatureAsync([FromQuery] GenerateSignatureInput input)
@@ -106,7 +129,11 @@ public class DeveloperAppService : ChatAppService, IDeveloperAppService
         });
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// 验证签名
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
     [HttpPost]
     [AllowAnonymous]
     public async Task<bool> VerifySignatureAsync([FromQuery] VerifySignatureInput input)
@@ -116,7 +143,11 @@ public class DeveloperAppService : ChatAppService, IDeveloperAppService
         return await Task.FromResult(retult);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// String转Base64
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
     [HttpPost]
     [AllowAnonymous]
     public async Task<string> StringToBase64Async(string input)
@@ -126,7 +157,11 @@ public class DeveloperAppService : ChatAppService, IDeveloperAppService
         return await Task.FromResult(Convert.ToBase64String(b));
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Base64转String
+    /// </summary>
+    /// <param name="base64String"></param>
+    /// <returns></returns>
     [HttpPost]
     [AllowAnonymous]
     public async Task<string> Base64ToStringAsync(string base64String)
@@ -138,7 +173,10 @@ public class DeveloperAppService : ChatAppService, IDeveloperAppService
         return await Task.FromResult(output);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// 生成 EncodingAesKey(43)
+    /// </summary>
+    /// <returns></returns>
     [HttpPost]
     [AllowAnonymous]
     public async Task<string> GenerateEncodingAesKeyAsync()
