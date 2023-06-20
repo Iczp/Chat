@@ -151,6 +151,12 @@ namespace IczpNet.Chat.BaseAppServices
             return owner;
         }
 
+        /// <summary>
+        /// 获取一条数据
+        /// </summary>
+        /// <param name="ownerId">聊天对象Id</param>
+        /// <param name="id"></param>
+        /// <returns></returns>
         [HttpGet]
         public virtual async Task<TGetOutputDto> GetAsync(long ownerId, TKey id)
         {
@@ -165,7 +171,12 @@ namespace IczpNet.Chat.BaseAppServices
             return await MapToGetOutputDtoAsync(entity);
         }
 
-
+        /// <summary>
+        /// 获取列表
+        /// </summary>
+        /// <param name="ownerId">聊天对象Id</param>
+        /// <param name="input"></param>
+        /// <returns></returns>
         [HttpGet]
         public virtual async Task<PagedResultDto<TGetListOutputDto>> GetListAsync(long ownerId, TGetListInput input)
         {
@@ -196,6 +207,12 @@ namespace IczpNet.Chat.BaseAppServices
             );
         }
 
+        /// <summary>
+        /// 新增
+        /// </summary>
+        /// <param name="ownerId">聊天对象Id</param>
+        /// <param name="input"></param>
+        /// <returns></returns>
         [HttpPost]
         public virtual async Task<TGetOutputDto> CreateAsync(long ownerId, TCreateInput input)
         {
@@ -203,6 +220,7 @@ namespace IczpNet.Chat.BaseAppServices
 
             return await CreateAsync(owner, input);
         }
+
 
         protected virtual async Task<TGetOutputDto> CreateAsync(ChatObject owner, TCreateInput input)
         {
@@ -233,6 +251,13 @@ namespace IczpNet.Chat.BaseAppServices
             return base.SetCreateEntityAsync(entity, input);
         }
 
+        /// <summary>
+        /// 修改
+        /// </summary>
+        /// <param name="ownerId">聊天对象Id</param>
+        /// <param name="id"></param>
+        /// <param name="input"></param>
+        /// <returns></returns>
         [HttpPost]
         public virtual async Task<TGetOutputDto> UpdateAsync(long ownerId, TKey id, TUpdateInput input)
         {
@@ -260,6 +285,12 @@ namespace IczpNet.Chat.BaseAppServices
             await MapToEntityAsync(input, entity);
         }
 
+        /// <summary>
+        /// 删除一条数据
+        /// </summary>
+        /// <param name="ownerId">聊天对象Id</param>
+        /// <param name="id"></param>
+        /// <returns></returns>
         [HttpPost]
         public virtual async Task DeleteByAsync(long ownerId, TKey id)
         {
@@ -272,7 +303,12 @@ namespace IczpNet.Chat.BaseAppServices
             await base.DeleteAsync(id);
         }
 
-
+        /// <summary>
+        /// 删除多条数据
+        /// </summary>
+        /// <param name="ownerId">聊天对象Id</param>
+        /// <param name="idList"></param>
+        /// <returns></returns>
         [HttpPost]
         public virtual async Task DeleteManyAsync(long ownerId, List<TKey> idList)
         {

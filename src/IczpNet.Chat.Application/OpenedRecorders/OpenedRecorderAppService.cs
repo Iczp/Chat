@@ -13,62 +13,75 @@ using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 
-namespace IczpNet.Chat.OpenedRecorders
+namespace IczpNet.Chat.OpenedRecorders;
+
+/// <summary>
+/// 消息[打开]记录器
+/// </summary>
+public class OpenedRecorderAppService : ChatAppService, IOpenedRecorderAppService
 {
-    public class OpenedRecorderAppService : ChatAppService, IOpenedRecorderAppService
+    protected virtual string SetReadedPolicyName { get; set; }
+
+    protected IRepository<OpenedRecorder> Repository { get; }
+
+    protected IOpenedRecorderManager OpenedRecorderManager { get; }
+
+    public OpenedRecorderAppService(
+        IOpenedRecorderManager openedRecorderManager, 
+        IRepository<OpenedRecorder> repository)
     {
-        protected virtual string SetReadedPolicyName { get; set; }
+        OpenedRecorderManager = openedRecorderManager;
+        Repository = repository;
+    }
 
-        protected IRepository<OpenedRecorder> Repository { get; }
+    [HttpGet]
+    public Task<Dictionary<long, int>> GetCountsAsync(List<long> messageIdList)
+    {
+        return OpenedRecorderManager.GetCountsAsync(messageIdList);
+    }
 
-        protected IOpenedRecorderManager OpenedRecorderManager { get; }
+    /// <summary>
+    /// 获取已打消息的聊天对象
+    /// </summary>
+    /// <param name="messageId"></param>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [HttpGet]
+    public async Task<PagedResultDto<SessionUnitDestinationDto>> GetListByMessageIdAsync(long messageId, GetListByMessageIdInput input)
+    {
+        var query = input.IsReaded
+            ? await OpenedRecorderManager.QueryRecordedAsync(messageId)
+            : await OpenedRecorderManager.QueryUnrecordedAsync(messageId);
 
-        public OpenedRecorderAppService(
-            IOpenedRecorderManager openedRecorderManager, 
-            IRepository<OpenedRecorder> repository)
-        {
-            OpenedRecorderManager = openedRecorderManager;
-            Repository = repository;
-        }
+        query = query.WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordOwnerSessionUnitSpecification(input.Keyword, await ChatObjectManager.QueryByKeywordAsync(input.Keyword)));
 
-        [HttpGet]
-        public Task<Dictionary<long, int>> GetCountsAsync(List<long> messageIdList)
-        {
-            return OpenedRecorderManager.GetCountsAsync(messageIdList);
-        }
+        return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query, input);
+    }
 
-        [HttpGet]
-        public async Task<PagedResultDto<SessionUnitDestinationDto>> GetListByMessageIdAsync(long messageId, GetListByMessageIdInput input)
-        {
-            var query = input.IsReaded
-                ? await OpenedRecorderManager.QueryRecordedAsync(messageId)
-                : await OpenedRecorderManager.QueryUnrecordedAsync(messageId);
+    /// <summary>
+    /// 设置为【已打开】
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [HttpPost]
+    public virtual async Task<OpenedRecorderDto> SetOpenedAsync(OpenedRecorderInput input)
+    {
+        await CheckPolicyAsync(SetReadedPolicyName);
 
-            query = query.WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordOwnerSessionUnitSpecification(input.Keyword, await ChatObjectManager.QueryByKeywordAsync(input.Keyword)));
+        var sessionUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
 
-            return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query, input);
-        }
+        var entity = await OpenedRecorderManager.CreateIfNotContainsAsync(sessionUnit, input.MessageId, input.DeviceId);
 
-        [HttpPost]
-        public virtual async Task<OpenedRecorderDto> SetOpenedAsync(OpenedRecorderInput input)
-        {
-            await CheckPolicyAsync(SetReadedPolicyName);
+        return await MapToDtoAsync(entity);
+    }
 
-            var sessionUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
+    protected virtual Task<OpenedRecorderDto> MapToDtoAsync(OpenedRecorder entity)
+    {
+        return Task.FromResult(MapToDto(entity));
+    }
 
-            var entity = await OpenedRecorderManager.CreateIfNotContainsAsync(sessionUnit, input.MessageId, input.DeviceId);
-
-            return await MapToDtoAsync(entity);
-        }
-
-        protected virtual Task<OpenedRecorderDto> MapToDtoAsync(OpenedRecorder entity)
-        {
-            return Task.FromResult(MapToDto(entity));
-        }
-
-        protected virtual OpenedRecorderDto MapToDto(OpenedRecorder entity)
-        {
-            return ObjectMapper.Map<OpenedRecorder, OpenedRecorderDto>(entity);
-        }
+    protected virtual OpenedRecorderDto MapToDto(OpenedRecorder entity)
+    {
+        return ObjectMapper.Map<OpenedRecorder, OpenedRecorderDto>(entity);
     }
 }

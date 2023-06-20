@@ -1,12 +1,14 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
+using IczpNet.Chat.BaseDtos;
 using System;
 
 namespace IczpNet.Chat.SessionSections.SessionRoles.Dtos
 {
-    public class SessionRoleGetListInput : SessionRoleGetListBySessionUnitInput, IKeyword, ISessionId
+    public class SessionRoleGetListInput : BaseGetListInput, ISessionId
     {
+        /// <summary>
+        /// 会话Id
+        /// </summary>
         public virtual Guid? SessionId { get; set; }
-
-        //public virtual string Keyword { get; set; }
     }
 }

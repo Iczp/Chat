@@ -19,8 +19,14 @@ namespace IczpNet.Chat.Controllers
             ChatObjectAppService = chatObjectAppService;
         }
 
+        /// <summary>
+        /// 更新头像
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="file"></param>
+        /// <returns></returns>
         [HttpPost]
-        public Task<ChatObjectDto> UpdatePortraitAsync(long id, IFormFile portrait)
+        public Task<ChatObjectDto> UpdatePortraitAsync(long id, IFormFile file)
         {
             return ChatObjectAppService.UpdatePortraitAsync(id, "");
         }

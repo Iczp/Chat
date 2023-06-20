@@ -41,6 +41,12 @@ namespace IczpNet.Chat.ChatObjects
 
         Task<ChatObjectDto> UpdateNameAsync(long id, string name);
 
+        /// <summary>
+        /// 更新头像
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="portrait"></param>
+        /// <returns></returns>
         Task<ChatObjectDto> UpdatePortraitAsync(long id, string portrait);
 
         Task<ChatObjectDto> SetVerificationMethodAsync(long id, VerificationMethods verificationMethod);

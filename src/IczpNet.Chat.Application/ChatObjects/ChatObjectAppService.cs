@@ -79,6 +79,11 @@ public class ChatObjectAppService
             ;
     }
 
+    /// <summary>
+    /// 获取一条数据[code]
+    /// </summary>
+    /// <param name="code"></param>
+    /// <returns></returns>
     [HttpGet]
     public virtual async Task<ChatObjectDto> GetByCodeAsync(string code)
     {
@@ -142,7 +147,11 @@ public class ChatObjectAppService
     }
 
 
-
+    /// <summary>
+    /// 创建聊天对象[掌柜]
+    /// </summary>
+    /// <param name="name"></param>
+    /// <returns></returns>
     [HttpPost]
     public virtual async Task<ChatObjectDto> CreateShopKeeperAsync(string name)
     {
@@ -151,6 +160,12 @@ public class ChatObjectAppService
         return ObjectMapper.Map<ChatObject, ChatObjectDto>(shopKeeper);
     }
 
+    /// <summary>
+    /// 创建聊天对象[店小二]
+    /// </summary>
+    /// <param name="shopKeeperId"></param>
+    /// <param name="name"></param>
+    /// <returns></returns>
     [HttpPost]
     public virtual async Task<ChatObjectDto> CreateShopWaiterAsync(long shopKeeperId, string name)
     {
@@ -159,6 +174,11 @@ public class ChatObjectAppService
         return ObjectMapper.Map<ChatObject, ChatObjectDto>(shopWaiter);
     }
 
+    /// <summary>
+    /// 创建聊天对象[机器人]
+    /// </summary>
+    /// <param name="name"></param>
+    /// <returns></returns>
     [HttpPost]
     public virtual async Task<ChatObjectDto> CreateRobotAsync(string name)
     {
@@ -167,6 +187,11 @@ public class ChatObjectAppService
         return ObjectMapper.Map<ChatObject, ChatObjectDto>(entity);
     }
 
+    /// <summary>
+    /// 创建聊天对象[聊天广场]
+    /// </summary>
+    /// <param name="name"></param>
+    /// <returns></returns>
     [HttpPost]
     public virtual async Task<ChatObjectDto> CreateSquareAsync(string name)
     {
@@ -175,6 +200,12 @@ public class ChatObjectAppService
         return ObjectMapper.Map<ChatObject, ChatObjectDto>(entity);
     }
 
+    /// <summary>
+    /// 修改名称
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="name"></param>
+    /// <returns></returns>
     [HttpPost]
     public async Task<ChatObjectDto> UpdateNameAsync(long id, string name)
     {
@@ -182,6 +213,7 @@ public class ChatObjectAppService
         return await MapToGetOutputDtoAsync(entity);
     }
 
+    /// <inheritdoc/>
     [HttpPost]
     [RemoteService(false)]
     public Task<ChatObjectDto> UpdatePortraitAsync(long id, string portrait)
@@ -200,6 +232,13 @@ public class ChatObjectAppService
         return await MapToGetOutputDtoAsync(entity);
     }
 
+
+    /// <summary>
+    /// 设置验证方式(好友|群|广场等)
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="verificationMethod"></param>
+    /// <returns></returns>
     [HttpPost]
     public virtual Task<ChatObjectDto> SetVerificationMethodAsync(long id, VerificationMethods verificationMethod)
     {
@@ -212,6 +251,11 @@ public class ChatObjectAppService
         return ObjectMapper.Map<ChatObject, ChatObjectDetailDto>(entity);
     }
 
+    /// <summary>
+    /// 获取详情
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
     [HttpGet]
     public async Task<ChatObjectDetailDto> GetDetailAsync(long id)
     {

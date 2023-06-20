@@ -1,11 +1,8 @@
-﻿using IczpNet.AbpCommons.DataFilters;
-using System;
-using Volo.Abp.Application.Dtos;
+﻿using IczpNet.Chat.BaseDtos;
 
 namespace IczpNet.Chat.SessionSections.SessionRoles.Dtos
 {
-    public class SessionRoleGetListBySessionUnitInput : PagedAndSortedResultRequestDto, IKeyword
+    public class SessionRoleGetListBySessionUnitInput : BaseGetListInput
     {
-        public virtual string Keyword { get; set; }
     }
 }

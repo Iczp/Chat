@@ -1,13 +1,13 @@
-﻿using IczpNet.AbpCommons.DataFilters;
+﻿using IczpNet.Chat.BaseDtos;
 using System;
-using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.SessionSections.SessionTags.Dtos
 {
-    public class SessionTagGetListInput : PagedAndSortedResultRequestDto, IKeyword
+    public class SessionTagGetListInput : BaseGetListInput
     {
+        /// <summary>
+        /// 会话单元Id
+        /// </summary>
         public virtual Guid SessionId { get; set; }
-
-        public virtual string Keyword { get; set; }
     }
 }

@@ -118,4 +118,9 @@ public abstract class ChatAppService : ApplicationService
             propertyInfo.SetValue(entity, Clock.Now);
         }
     }
+
+    #region 重写备注
+
+
+    #endregion
 }

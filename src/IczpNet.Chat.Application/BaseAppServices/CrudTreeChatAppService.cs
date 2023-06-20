@@ -89,9 +89,6 @@ public abstract class CrudTreeChatAppService<
 
     }
 
-
-
-
     protected virtual void TryToSetLastModificationTime<T>(T entity)
     {
         if (entity is IHasModificationTime)
@@ -146,9 +143,10 @@ public abstract class CrudTreeChatAppService<
         return GetPagedListAsync<T, TOuputDto>(query, input.MaxResultCount, input.SkipCount, input.Sorting, queryableAction, entityAction);
     }
 
+    #region 重写备注
 
     /// <summary>
-    /// 列表
+    /// 列表(缓存)
     /// </summary>
     /// <param name="input"></param>
     /// <returns></returns>
@@ -157,4 +155,114 @@ public abstract class CrudTreeChatAppService<
     {
         return base.GetAllByCacheAsync(input);
     }
+
+    /// <summary>
+    /// 列表(缓存)
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [HttpGet]
+    public override Task<PagedResultDto<TGetListOutputDto>> GetListAsync(TGetListInput input)
+    {
+        return base.GetListAsync(input);
+    }
+
+    /// <summary>
+    /// 获取一条数据
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    [HttpGet]
+    public override Task<TGetOutputDto> GetAsync(TKey id)
+    {
+        return base.GetAsync(id);
+    }
+
+    /// <summary>
+    /// 获取一条数据(缓存)
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    [HttpGet]
+    public override Task<TTreeInfo> GetItemByCacheAsync(TKey id)
+    {
+        return base.GetItemByCacheAsync(id);
+    }
+
+    /// <summary>
+    /// 获取多条数据
+    /// </summary>
+    /// <param name="idList"></param>
+    /// <returns></returns>
+    [HttpGet]
+    public override Task<List<TGetOutputDto>> GetManyAsync(List<TKey> idList)
+    {
+        return base.GetManyAsync(idList);
+    }
+
+    /// <summary>
+    /// 获取多条数据(缓存)
+    /// </summary>
+    /// <param name="idList"></param>
+    /// <returns></returns>
+    [HttpGet]
+    public override Task<List<TTreeInfo>> GetManayByCacheAsync(List<TKey> idList)
+    {
+        return base.GetManayByCacheAsync(idList);
+    }
+    /// <summary>
+    /// 修改
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [HttpPost]
+    public override Task<TGetOutputDto> UpdateAsync(TKey id, TUpdateInput input)
+    {
+        return base.UpdateAsync(id, input);
+    }
+
+    /// <summary>
+    /// 新增
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [HttpPost]
+    public override Task<TGetOutputDto> CreateAsync(TCreateInput input)
+    {
+        return base.CreateAsync(input);
+    }
+
+    /// <summary>
+    /// 删除一条数据
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    [HttpPost]
+    public override Task DeleteAsync(TKey id)
+    {
+        return base.DeleteAsync(id);
+    }
+
+    /// <summary>
+    /// 删除多条数据
+    /// </summary>
+    /// <param name="idList"></param>
+    /// <returns></returns>
+    [HttpPost]
+    public override Task DeleteManyAsync(List<TKey> idList)
+    {
+        return base.DeleteManyAsync(idList);
+    }
+
+    /// <summary>
+    /// 修复数据（fullPath,fullName,childrenCount,depth等）
+    /// </summary>
+    /// <returns></returns>
+    [HttpPost]
+    public override Task<DateTime> RepairDataAsync()
+    {
+        return base.RepairDataAsync();
+    }
+    #endregion
 }
