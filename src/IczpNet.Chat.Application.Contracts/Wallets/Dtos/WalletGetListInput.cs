@@ -3,7 +3,7 @@ using System;
 
 namespace IczpNet.Chat.Wallets.Dtos;
 
-public class WalletGetListInput : BaseGetListInput
+public class WalletGetListInput : GetListInput
 {
 
     public virtual long? OwnerId { get; set; }

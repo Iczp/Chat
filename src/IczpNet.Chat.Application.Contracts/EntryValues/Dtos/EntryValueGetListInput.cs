@@ -3,7 +3,7 @@ using System;
 
 namespace IczpNet.Chat.EntryValues.Dtos;
 
-public class EntryValueGetListInput : BaseGetListInput
+public class EntryValueGetListInput : GetListInput
 {
     public virtual Guid? EntryNameId { get; set; }
 

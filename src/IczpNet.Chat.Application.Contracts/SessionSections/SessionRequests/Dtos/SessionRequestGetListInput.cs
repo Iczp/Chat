@@ -3,7 +3,7 @@ using System;
 
 namespace IczpNet.Chat.SessionSections.SessionRequests.Dtos;
 
-public class SessionRequestGetListInput : BaseGetListInput
+public class SessionRequestGetListInput : GetListInput
 {
     public virtual long? OwnerId { get; set; }
 

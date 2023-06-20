@@ -19,7 +19,7 @@ using Volo.Abp.SimpleStateChecking;
 namespace Rctea.IM.Tools
 {
     /// <summary>
-    /// 数据种子
+    /// 工具
     /// </summary>
     //[Route($"Api/[Controller]/[Action]")]
     public class ToolAppService : ChatAppService
@@ -48,20 +48,32 @@ namespace Rctea.IM.Tools
             ShortIdGenerator = shortIdGenerator;
         }
 
+        /// <summary>
+        /// Abp加密
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
         [HttpPost]
         public string Encrypt(string value)
         {
             // To enrcypt a value
             return StringEncryptionService.Encrypt(value);
         }
+
+        /// <summary>
+        /// Abp解密
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
         [HttpPost]
         public string Decrpyt(string value)
         {
             // To decrypt a value
             return StringEncryptionService.Decrypt(value);
         }
+
         /// <summary>
-        /// 数
+        /// 数据播种
         /// </summary>
         /// <returns></returns>
         [HttpPost]
@@ -71,6 +83,12 @@ namespace Rctea.IM.Tools
             return Clock.Now;
         }
 
+        /// <summary>
+        /// 获取系统权限列表
+        /// </summary>
+        /// <param name="providerName"></param>
+        /// <param name="providerKey"></param>
+        /// <returns></returns>
         [HttpPost]
         public virtual async Task<GetPermissionListResultDto> GetAsync(string providerName, string providerKey)
         {
@@ -149,6 +167,11 @@ namespace Rctea.IM.Tools
             return result;
         }
 
+        /// <summary>
+        /// 转Md5
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
         [HttpPost]
         public virtual string ToMD5(string input)
         {
@@ -159,6 +182,11 @@ namespace Rctea.IM.Tools
             return hashString;
         }
 
+        /// <summary>
+        /// string 转 Md5 再转 Guid
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
         [HttpPost]
         public virtual Guid ToGuid(string input)
         {
@@ -170,6 +198,10 @@ namespace Rctea.IM.Tools
             return ret;
         }
 
+        /// <summary>
+        /// 生成短Id(ShortId)
+        /// </summary>
+        /// <returns></returns>
         [HttpPost]
         public virtual async Task<string> GenerateShortId()
         {

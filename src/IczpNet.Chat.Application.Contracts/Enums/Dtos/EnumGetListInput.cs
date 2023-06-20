@@ -2,7 +2,7 @@
 
 namespace IczpNet.Chat.Enums.Dtos
 {
-    public class EnumGetListInput : BaseGetListInput
+    public class EnumGetListInput : GetListInput
     {
     }
 }

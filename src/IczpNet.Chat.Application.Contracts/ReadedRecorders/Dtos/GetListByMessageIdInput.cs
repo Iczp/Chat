@@ -3,7 +3,7 @@ using System.ComponentModel;
 
 namespace IczpNet.Chat.ReadedRecorders.Dtos
 {
-    public class GetListByMessageIdInput : BaseGetListInput
+    public class GetListByMessageIdInput : GetListInput
     {
         /// <summary>
         /// 是否已读

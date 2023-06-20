@@ -5,7 +5,7 @@ using System.ComponentModel;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 {
-    public class SessionUnitGetListSameDestinationInput : BaseGetListInput
+    public class SessionUnitGetListSameDestinationInput : GetListInput
     {
         /// <summary>
         /// 原聊天对象Id

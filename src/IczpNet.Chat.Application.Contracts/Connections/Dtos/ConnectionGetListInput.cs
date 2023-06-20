@@ -4,7 +4,7 @@ using System;
 
 namespace IczpNet.Chat.Connections.Dtos;
 
-public class ConnectionGetListInput : BaseGetListInput
+public class ConnectionGetListInput : GetListInput
 {
     
     

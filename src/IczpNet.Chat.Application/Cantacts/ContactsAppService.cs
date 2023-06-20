@@ -36,7 +36,11 @@ public class ContactsAppService : ChatAppService, IContactsAppService
             ;
     }
 
-
+    /// <summary>
+    /// 通讯录列表
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
     [HttpGet]
     public async Task<PagedResultDto<ContactsDto>> GetListAsync(ContactsGetListInput input)
     {

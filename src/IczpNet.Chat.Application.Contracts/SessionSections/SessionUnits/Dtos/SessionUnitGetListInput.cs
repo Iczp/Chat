@@ -4,7 +4,7 @@ using System.ComponentModel;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 {
-    public class SessionUnitGetListInput : BaseGetListInput
+    public class SessionUnitGetListInput : GetListInput
     {
         /// <summary>
         /// 所属聊天对象Id

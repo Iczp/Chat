@@ -29,9 +29,9 @@ namespace IczpNet.Chat.ChatObjects
             ChatObjectCreateInput,
             ChatObjectUpdateInput, ChatObjectInfo>
     {
-        Task<PagedResultDto<ChatObjectDto>> GetListByUserIdAsync(Guid userId, BaseGetListInput input);
+        Task<PagedResultDto<ChatObjectDto>> GetListByUserIdAsync(Guid userId, GetListInput input);
 
-        Task<PagedResultDto<ChatObjectDto>> GetListByCurrentUserAsync(BaseGetListInput input);
+        Task<PagedResultDto<ChatObjectDto>> GetListByCurrentUserAsync(GetListInput input);
 
         Task<ChatObjectDto> GetByCodeAsync(string code);
 

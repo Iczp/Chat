@@ -6,7 +6,7 @@ namespace IczpNet.Chat.RedEnvelopes.Dtos
     /// <summary>
     /// GetMyRedEnvelopeDetailListInput
     /// </summary>
-    public class GetMyRedEnvelopeDetailListInput : BaseGetListInput
+    public class GetMyRedEnvelopeDetailListInput : GetListInput
     {
         /// <summary>
         /// 红包归属UserId

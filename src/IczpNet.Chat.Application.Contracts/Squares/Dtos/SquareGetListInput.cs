@@ -1,8 +1,8 @@
-﻿using Volo.Abp.Application.Dtos;
+﻿using IczpNet.Chat.BaseDtos;
 
 namespace IczpNet.Chat.Squares.Dtos
 {
-    public class SquareGetListInput : PagedAndSortedResultRequestDto
+    public class SquareGetListInput : GetListInput
     {
     }
 }

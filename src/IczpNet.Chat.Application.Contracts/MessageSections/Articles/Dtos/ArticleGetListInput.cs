@@ -4,7 +4,7 @@ using System;
 
 namespace IczpNet.Chat.Articles.Dtos;
 
-public class ArticleGetListInput : BaseGetListInput
+public class ArticleGetListInput : GetListInput
 {
     /// <summary>
     /// 群主

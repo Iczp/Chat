@@ -2,7 +2,7 @@
 
 namespace IczpNet.Chat.Mottos.Dtos;
 
-public class MottoAdminGetListInput : BaseGetListInput
+public class MottoAdminGetListInput : GetListInput
 {
     public long? OwnerId { get; set; }
 }

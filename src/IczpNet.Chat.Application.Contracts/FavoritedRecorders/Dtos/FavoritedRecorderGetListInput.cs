@@ -3,7 +3,7 @@ using IczpNet.Chat.Enums;
 
 namespace IczpNet.Chat.FavoritedRecorders.Dtos
 {
-    public class FavoritedRecorderGetListInput : BaseGetListInput
+    public class FavoritedRecorderGetListInput : GetListInput
     {
         public long? OwnerId { get; set; }
 

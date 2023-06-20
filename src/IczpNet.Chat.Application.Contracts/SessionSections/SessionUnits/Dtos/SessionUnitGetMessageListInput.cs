@@ -3,7 +3,7 @@ using IczpNet.Chat.Enums;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 {
-    public class SessionUnitGetMessageListInput : BaseGetListInput
+    public class SessionUnitGetMessageListInput : GetListInput
     {
         /// <summary>
         /// 发送人【聊天对象】

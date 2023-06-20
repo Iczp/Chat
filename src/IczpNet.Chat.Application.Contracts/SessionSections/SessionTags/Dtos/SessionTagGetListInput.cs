@@ -3,7 +3,7 @@ using System;
 
 namespace IczpNet.Chat.SessionSections.SessionTags.Dtos
 {
-    public class SessionTagGetListInput : BaseGetListInput
+    public class SessionTagGetListInput : GetListInput
     {
         /// <summary>
         /// 会话单元Id

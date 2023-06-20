@@ -4,7 +4,7 @@ using System;
 
 namespace IczpNet.Chat.SessionSections.SessionRoles.Dtos
 {
-    public class SessionRoleGetListInput : BaseGetListInput, ISessionId
+    public class SessionRoleGetListInput : GetListInput, ISessionId
     {
         /// <summary>
         /// 会话Id

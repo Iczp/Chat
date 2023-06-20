@@ -14,95 +14,108 @@ using IczpNet.Chat.SessionSections.SessionOrganizations;
 using Microsoft.AspNetCore.Mvc;
 using IczpNet.Chat.Permissions;
 
-namespace IczpNet.Chat.SessionServices
+namespace IczpNet.Chat.SessionServices;
+
+/// <summary>
+/// 会话内权限定义
+/// </summary>
+public class SessionPermissionDefinitionAppService
+    : CrudChatAppService<
+        SessionPermissionDefinition,
+        SessionPermissionDefinitionDetailDto,
+        SessionPermissionDefinitionDto,
+        string,
+        SessionPermissionDefinitionGetListInput,
+        SessionPermissionDefinitionCreateInput,
+        SessionPermissionDefinitionUpdateInput>,
+    ISessionPermissionDefinitionAppService
 {
-    public class SessionPermissionDefinitionAppService
-        : CrudChatAppService<
-            SessionPermissionDefinition,
-            SessionPermissionDefinitionDetailDto,
-            SessionPermissionDefinitionDto,
-            string,
-            SessionPermissionDefinitionGetListInput,
-            SessionPermissionDefinitionCreateInput,
-            SessionPermissionDefinitionUpdateInput>,
-        ISessionPermissionDefinitionAppService
+
+    protected override string UpdatePolicyName { get; set; } = ChatPermissions.SessionPermissionDefinitionPermission.Update;
+    protected virtual string SetIsEnabledPolicyName { get; set; } = ChatPermissions.SessionPermissionDefinitionPermission.SetIsEnabled;
+    protected virtual string SetAllIsEnabledPolicyName { get; set; } //= ChatPermissions.SessionPermissionDefinitionPermission.SetAllIsEnabled;
+    protected IChatObjectRepository ChatObjectRepository { get; }
+    protected IRepository<Session, Guid> SessionRepository { get; }
+    protected ISessionPermissionGroupManager SessionPermissionGroupManager { get; }
+    protected new ISessionPermissionDefinitionRepository Repository { get; }
+
+    public SessionPermissionDefinitionAppService(
+        ISessionPermissionDefinitionRepository repository,
+        IChatObjectRepository chatObjectRepository,
+        IRepository<Session, Guid> sessionRepository,
+        ISessionPermissionGroupManager sessionPermissionGroupManager) : base(repository)
+    {
+        Repository = repository;
+        ChatObjectRepository = chatObjectRepository;
+        SessionRepository = sessionRepository;
+        SessionPermissionGroupManager = sessionPermissionGroupManager;
+    }
+
+    protected override async Task<IQueryable<SessionPermissionDefinition>> CreateFilteredQueryAsync(SessionPermissionDefinitionGetListInput input)
     {
 
-        protected override string UpdatePolicyName { get; set; } = ChatPermissions.SessionPermissionDefinitionPermission.Update;
-        protected virtual string SetIsEnabledPolicyName { get; set; } = ChatPermissions.SessionPermissionDefinitionPermission.SetIsEnabled;
-        protected virtual string SetAllIsEnabledPolicyName { get; set; } //= ChatPermissions.SessionPermissionDefinitionPermission.SetAllIsEnabled;
-        protected IChatObjectRepository ChatObjectRepository { get; }
-        protected IRepository<Session, Guid> SessionRepository { get; }
-        protected ISessionPermissionGroupManager SessionPermissionGroupManager { get; }
-        protected new ISessionPermissionDefinitionRepository Repository { get; }
+        IQueryable<long> groupIdQuery = null;
 
-        public SessionPermissionDefinitionAppService(
-            ISessionPermissionDefinitionRepository repository,
-            IChatObjectRepository chatObjectRepository,
-            IRepository<Session, Guid> sessionRepository,
-            ISessionPermissionGroupManager sessionPermissionGroupManager) : base(repository)
+        if (input.IsImportChildGroup && input.GroupIdList.IsAny())
         {
-            Repository = repository;
-            ChatObjectRepository = chatObjectRepository;
-            SessionRepository = sessionRepository;
-            SessionPermissionGroupManager = sessionPermissionGroupManager;
+            groupIdQuery = (await SessionPermissionGroupManager.QueryCurrentAndAllChildsAsync(input.GroupIdList)).Select(x => x.Id);
         }
+        return (await base.CreateFilteredQueryAsync(input))
+            //GroupId
+            .WhereIf(!input.IsImportChildGroup && input.GroupIdList.IsAny(), x => input.GroupIdList.Contains(x.GroupId.Value))
+            .WhereIf(input.IsImportChildGroup && input.GroupIdList.IsAny(), x => groupIdQuery.Contains(x.GroupId.Value))
+            .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(input.Keyword))
+            ;
+    }
 
-        protected override async Task<IQueryable<SessionPermissionDefinition>> CreateFilteredQueryAsync(SessionPermissionDefinitionGetListInput input)
-        {
+    protected override IQueryable<SessionPermissionDefinition> ApplyDefaultSorting(IQueryable<SessionPermissionDefinition> query)
+    {
+        return query.OrderByDescending(x => x.Group.Sorting)
+            .ThenBy(x => x.Group.FullPathName)
+            .ThenByDescending(x => x.Sorting);
+    }
 
-            IQueryable<long> groupIdQuery = null;
+    [RemoteService(false)]
+    public override Task<SessionPermissionDefinitionDetailDto> CreateAsync(SessionPermissionDefinitionCreateInput input) => throw new NotImplementedException();
 
-            if (input.IsImportChildGroup && input.GroupIdList.IsAny())
-            {
-                groupIdQuery = (await SessionPermissionGroupManager.QueryCurrentAndAllChildsAsync(input.GroupIdList)).Select(x => x.Id);
-            }
-            return (await base.CreateFilteredQueryAsync(input))
-                //GroupId
-                .WhereIf(!input.IsImportChildGroup && input.GroupIdList.IsAny(), x => input.GroupIdList.Contains(x.GroupId.Value))
-                .WhereIf(input.IsImportChildGroup && input.GroupIdList.IsAny(), x => groupIdQuery.Contains(x.GroupId.Value))
-                .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(input.Keyword))
-                ;
-        }
+    [RemoteService(false)]
+    public override Task DeleteAsync(string id) => base.DeleteAsync(id);
 
-        protected override IQueryable<SessionPermissionDefinition> ApplyDefaultSorting(IQueryable<SessionPermissionDefinition> query)
-        {
-            return query.OrderByDescending(x => x.Group.Sorting)
-                .ThenBy(x => x.Group.FullPathName)
-                .ThenByDescending(x => x.Sorting);
-        }
+    [RemoteService(false)]
+    public override Task DeleteManyAsync(List<string> idList)
+    {
+        return base.DeleteManyAsync(idList);
+    }
 
-        [RemoteService(false)]
-        public override Task<SessionPermissionDefinitionDetailDto> CreateAsync(SessionPermissionDefinitionCreateInput input) => throw new NotImplementedException();
+    /// <summary>
+    /// 启用或禁用
+    /// </summary>
+    /// <param name="id">权限Id</param>
+    /// <param name="isEnabled">启用或禁用</param>
+    /// <returns></returns>
+    [HttpPost]
+    public async Task<SessionPermissionDefinitionDto> SetIsEnabledAsync(string id, bool isEnabled)
+    {
+        await CheckPolicyAsync(SetIsEnabledPolicyName);
 
-        [RemoteService(false)]
-        public override Task DeleteAsync(string id) => base.DeleteAsync(id);
+        var entity = await Repository.GetAsync(id);
 
-        [RemoteService(false)]
-        public override Task DeleteManyAsync(List<string> idList)
-        {
-            return base.DeleteManyAsync(idList);
-        }
+        entity.IsEnabled = isEnabled;
 
-        public async Task<SessionPermissionDefinitionDto> SetIsEnabledAsync(string id, bool isEnabled)
-        {
-            await CheckPolicyAsync(SetIsEnabledPolicyName);
+        await Repository.UpdateAsync(entity, autoSave: true);
 
-            var entity = await Repository.GetAsync(id);
+        return await MapToGetOutputDtoAsync(entity);
+    }
+    /// <summary>
+    /// 全部启用或禁用
+    /// </summary>
+    /// <param name="isEnabled">启用或禁用</param>
+    /// <returns></returns>
+    [HttpPost]
+    public virtual async Task<int> SetAllIsEnabledAsync(bool isEnabled)
+    {
+        await CheckPolicyAsync(SetAllIsEnabledPolicyName);
 
-            entity.IsEnabled = isEnabled;
-
-            await Repository.UpdateAsync(entity, autoSave: true);
-
-            return await MapToGetOutputDtoAsync(entity);
-        }
-
-        [HttpPost]
-        public virtual async Task<int> SetAllIsEnabledAsync(bool isEnabled)
-        {
-            await CheckPolicyAsync(SetAllIsEnabledPolicyName);
-
-            return await Repository.BatchUpdateIsEnabledAsync(isEnabled);
-        }
+        return await Repository.BatchUpdateIsEnabledAsync(isEnabled);
     }
 }

@@ -95,6 +95,10 @@ public class DashboardsAppService : ChatAppService, IDashboardsAppService
         DbTableRepository = dbTableRepository;
     }
 
+    /// <summary>
+    /// 获取各表的数据数量
+    /// </summary>
+    /// <returns></returns>
     [HttpGet]
     [RemoteService(false)]
     [UnitOfWork(true, IsolationLevel.ReadUncommitted)]
@@ -123,7 +127,7 @@ public class DashboardsAppService : ChatAppService, IDashboardsAppService
     }
 
     //[HttpGet]
-    //public virtual async Task<PagedResultDto<DbTableDto>> GetListTableRowAsync(BaseGetListInput input)
+    //public virtual async Task<PagedResultDto<DbTableDto>> GetListTableRowAsync(GetListInput input)
     //{
     //    var allList = await (await DbTableRepository.GetQueryableAsync()).ToListAsync();
 
@@ -134,7 +138,7 @@ public class DashboardsAppService : ChatAppService, IDashboardsAppService
     //}
 
     [HttpGet]
-    public virtual async Task<PagedResultDto<DbTableDto>> GetListDbTablesAsync(BaseGetListInput input)
+    public virtual async Task<PagedResultDto<DbTableDto>> GetListDbTablesAsync(GetListInput input)
     {
         var query =  (await DbTableRepository.GetQueryableAsync())
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TableName.Contains(input.Keyword));

@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.Follows.Dtos
 {
-    public class FollowingGetListInput : BaseGetListInput
+    public class FollowingGetListInput : GetListInput
     {
         /// <summary>
         /// 会话单元Id

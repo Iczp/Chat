@@ -2,7 +2,7 @@
 
 namespace IczpNet.Chat.RoomSections.Rooms.Dtos
 {
-    public class SameGetListInput : BaseGetListInput
+    public class SameGetListInput : GetListInput
     {
 
         /// <summary>

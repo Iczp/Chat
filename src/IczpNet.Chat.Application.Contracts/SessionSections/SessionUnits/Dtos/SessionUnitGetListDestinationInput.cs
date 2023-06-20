@@ -6,7 +6,7 @@ using System.ComponentModel;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 {
-    public class SessionUnitGetListDestinationInput : BaseGetListInput
+    public class SessionUnitGetListDestinationInput : GetListInput
     {
         //[Required]
         //public virtual Guid SessionId { get; set; }

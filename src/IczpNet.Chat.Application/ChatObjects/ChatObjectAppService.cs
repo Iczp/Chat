@@ -103,7 +103,7 @@ public class ChatObjectAppService
     /// <param name="input"></param>
     /// <returns></returns>
     [HttpGet]
-    public virtual async Task<PagedResultDto<ChatObjectDto>> GetListByUserIdAsync(Guid userId, BaseGetListInput input)
+    public virtual async Task<PagedResultDto<ChatObjectDto>> GetListByUserIdAsync(Guid userId, GetListInput input)
     {
         await CheckGetListPolicyAsync();
 
@@ -120,7 +120,7 @@ public class ChatObjectAppService
     /// <returns></returns>
     [HttpGet]
     [Authorize]
-    public virtual Task<PagedResultDto<ChatObjectDto>> GetListByCurrentUserAsync(BaseGetListInput input)
+    public virtual Task<PagedResultDto<ChatObjectDto>> GetListByCurrentUserAsync(GetListInput input)
     {
         return GetListByUserIdAsync(CurrentUser.GetId(), input);
     }

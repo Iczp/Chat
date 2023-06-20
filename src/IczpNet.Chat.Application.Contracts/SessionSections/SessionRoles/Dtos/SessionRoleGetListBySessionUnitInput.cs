@@ -2,7 +2,7 @@
 
 namespace IczpNet.Chat.SessionSections.SessionRoles.Dtos
 {
-    public class SessionRoleGetListBySessionUnitInput : BaseGetListInput
+    public class SessionRoleGetListBySessionUnitInput : GetListInput
     {
     }
 }

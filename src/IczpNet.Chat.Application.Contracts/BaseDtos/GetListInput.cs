@@ -4,7 +4,7 @@ using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.BaseDtos
 {
-    public class BaseGetListInput : PagedAndSortedResultRequestDto, IKeyword
+    public class GetListInput : PagedAndSortedResultRequestDto, IKeyword
     {
         /// <summary>
         /// 关键字(支持拼音)

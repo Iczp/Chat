@@ -2,7 +2,7 @@
 
 namespace IczpNet.Chat.MessageSections.Messages.Dtos;
 
-public class MessageGetListInput : BaseGetListInput
+public class MessageGetListInput : GetListInput
 {
 
 }

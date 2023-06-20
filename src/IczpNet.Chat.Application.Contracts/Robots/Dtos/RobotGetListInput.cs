@@ -5,7 +5,7 @@ using System.ComponentModel;
 
 namespace IczpNet.Chat.Robots.Dtos
 {
-    public class RobotGetListInput : BaseGetListInput
+    public class RobotGetListInput : GetListInput
     {
         /// <summary>
         /// 是否可用

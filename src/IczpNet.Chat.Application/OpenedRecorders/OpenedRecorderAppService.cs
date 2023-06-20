@@ -34,6 +34,11 @@ public class OpenedRecorderAppService : ChatAppService, IOpenedRecorderAppServic
         Repository = repository;
     }
 
+    /// <summary>
+    /// 获取消息【已打开】的数量
+    /// </summary>
+    /// <param name="messageIdList"></param>
+    /// <returns></returns>
     [HttpGet]
     public Task<Dictionary<long, int>> GetCountsAsync(List<long> messageIdList)
     {
@@ -41,7 +46,7 @@ public class OpenedRecorderAppService : ChatAppService, IOpenedRecorderAppServic
     }
 
     /// <summary>
-    /// 获取已打消息的聊天对象
+    /// 获取消息【已打开】的聊天对象
     /// </summary>
     /// <param name="messageId"></param>
     /// <param name="input"></param>

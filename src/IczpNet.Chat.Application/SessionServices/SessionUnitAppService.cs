@@ -176,7 +176,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     /// <param name="input"></param>
     /// <returns></returns>
     [HttpGet]
-    public async Task<PagedResultDto<SessionUnitDisplayName>> GetListDestinationNamesAsync(Guid id, BaseGetListInput input)
+    public async Task<PagedResultDto<SessionUnitDisplayName>> GetListDestinationNamesAsync(Guid id, GetListInput input)
     {
         var entity = await Repository.GetAsync(id);
 

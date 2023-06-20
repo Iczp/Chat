@@ -2,7 +2,7 @@
 
 namespace IczpNet.Chat.Mottos.Dtos;
 
-public class MottoGetListInput : BaseGetListInput
+public class MottoGetListInput : GetListInput
 {
 
 }

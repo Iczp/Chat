@@ -157,7 +157,7 @@ public abstract class CrudTreeChatAppService<
     }
 
     /// <summary>
-    /// 列表(缓存)
+    /// 列表
     /// </summary>
     /// <param name="input"></param>
     /// <returns></returns>

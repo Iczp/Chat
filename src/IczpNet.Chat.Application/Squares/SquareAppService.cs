@@ -2,6 +2,7 @@
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Squares.Dtos;
+using Microsoft.AspNetCore.Mvc;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
@@ -26,6 +27,12 @@ public class SquareAppService : ChatAppService, ISquareAppService
         return Repository.GetQueryableAsync();
     }
 
+    /// <summary>
+    /// 获取区有聊天场
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [HttpGet]
     public virtual async Task<PagedResultDto<SquareDto>> GetListAsync(SquareGetListInput input)
     {
         var query = (await Repository.GetQueryableAsync())

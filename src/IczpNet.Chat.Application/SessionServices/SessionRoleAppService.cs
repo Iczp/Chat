@@ -96,6 +96,11 @@ public class SessionRoleAppService
         return MapToPermissionDto(entity);
     }
 
+    /// <summary>
+    /// 获取角色权限
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
     [HttpGet]
     public virtual async Task<SessionRolePermissionDto> GetPermissionsAsync(Guid id)
     {
@@ -104,6 +109,12 @@ public class SessionRoleAppService
         return await MapToPermissionDtoAsync(entity);
     }
 
+    /// <summary>
+    /// 授予角色所有权限
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="permissionGrantValue"></param>
+    /// <returns></returns>
     //[Authorize(policy: SessionPermissionDefinitionConsts.SessionRolePermission.SetAllPermissions)]
     [HttpPost]
     public virtual async Task<SessionRolePermissionDto> SetAllPermissionsAsync(Guid id, PermissionGrantValue permissionGrantValue)

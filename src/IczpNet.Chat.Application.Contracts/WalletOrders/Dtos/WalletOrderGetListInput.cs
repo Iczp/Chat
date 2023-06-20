@@ -3,7 +3,7 @@ using IczpNet.Chat.Enums;
 
 namespace IczpNet.Chat.WalletOrders.Dtos;
 
-public class WalletOrderGetListInput : BaseGetListInput
+public class WalletOrderGetListInput : GetListInput
 {
     //public virtual Guid? AppUserId { get; set; }
 

@@ -3,7 +3,7 @@ using IczpNet.Chat.Enums;
 
 namespace IczpNet.Chat.WalletRecorders.Dtos
 {
-    public class WalletRecorderGetListInput : BaseGetListInput
+    public class WalletRecorderGetListInput : GetListInput
     {
         public virtual long? OwnerId { get; set; }
 

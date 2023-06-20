@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace IczpNet.Chat.ChatObjectTypes.Dtos;
 
-public class ChatObjectTypeGetListInput : BaseGetListInput
+public class ChatObjectTypeGetListInput : GetListInput
 {
 
 }
