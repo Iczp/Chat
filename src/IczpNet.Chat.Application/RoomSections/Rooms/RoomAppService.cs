@@ -36,7 +36,11 @@ public class RoomAppService : ChatAppService, IRoomAppService
         SessionPermissionChecker = sessionPermissionChecker;
     }
 
-
+    /// <summary>
+    /// 创建群
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
     [HttpPost]
     public virtual async Task<ChatObjectDto> CreateAsync(RoomCreateInput input)
     {
@@ -57,7 +61,11 @@ public class RoomAppService : ChatAppService, IRoomAppService
         return Task.FromResult(ObjectMapper.Map<ChatObject, ChatObjectDto>(chatObject));
     }
 
-
+    /// <summary>
+    /// 邀请加入群聊
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
     [HttpPost]
     public virtual async Task<List<SessionUnitSenderInfo>> InviteAsync(InviteInput input)
     {
@@ -68,21 +76,37 @@ public class RoomAppService : ChatAppService, IRoomAppService
         return ObjectMapper.Map<List<SessionUnit>, List<SessionUnitSenderInfo>>(list);
     }
 
+    /// <summary>
+    /// 获取共同所在的群列表
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
     [HttpGet]
-    public async Task<PagedResultDto<SessionUnitDto>> GetSameAsync(long sourceChatObjectId, long targetChatObjectId, int maxResultCount = 10,
-        int skipCount = 0, string sorting = null)
+    public async Task<PagedResultDto<SessionUnitDto>> GetSameAsync(SameGetListInput input)
     {
-        var query = await SessionUnitManager.GetSameSessionQeuryableAsync(sourceChatObjectId, targetChatObjectId, new List<ChatObjectTypeEnums>() { ChatObjectTypeEnums.Room });
+        var query = await SessionUnitManager.GetSameSessionQeuryableAsync(input.SourceChatObjectId, input.TargetChatObjectId, new List<ChatObjectTypeEnums>() { ChatObjectTypeEnums.Room });
 
-        return await GetPagedListAsync<SessionUnit, SessionUnitDto>(query, maxResultCount, skipCount, sorting, null);
+        return await GetPagedListAsync<SessionUnit, SessionUnitDto>(query, input);
     }
 
+    /// <summary>
+    /// 获取共同所在的群数量
+    /// </summary>
+    /// <param name="sourceChatObjectId">原聊天对象Id</param>
+    /// <param name="targetChatObjectId">目标对象Id</param>
+    /// <returns></returns>
     [HttpGet]
     public Task<int> GetSameCountAsync(long sourceChatObjectId, long targetChatObjectId)
     {
         return SessionUnitManager.GetSameSessionCountAsync(sourceChatObjectId, targetChatObjectId, new List<ChatObjectTypeEnums>() { ChatObjectTypeEnums.Room });
     }
 
+    /// <summary>
+    /// 更新群名称并群内公告
+    /// </summary>
+    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <param name="name">群名字</param>
+    /// <returns></returns>
     [HttpPost]
     public async Task<ChatObjectDto> UpdateNameAsync(Guid sessionUnitId, string name)
     {
@@ -95,6 +119,12 @@ public class RoomAppService : ChatAppService, IRoomAppService
         return await MapToChatObjectDtoAsync(entity);
     }
 
+    /// <summary>
+    /// 修改群头像
+    /// </summary>
+    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <param name="portrait">头像,全地址或相对地址:"http://www.icpz.net/logo.png","/logo.png"</param>
+    /// <returns></returns>
     [HttpPost]
     public virtual async Task<ChatObjectDto> UpdatePortraitAsync(Guid sessionUnitId, string portrait)
     {
@@ -107,12 +137,24 @@ public class RoomAppService : ChatAppService, IRoomAppService
         return await MapToChatObjectDtoAsync(entity);
     }
 
+    /// <summary>
+    /// 转让群主
+    /// </summary>
+    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <param name="targetSessionUnitId"></param>
+    /// <returns></returns>
     [HttpPost]
     public virtual Task TransferCreatorAsync(Guid sessionUnitId, Guid targetSessionUnitId)
     {
         return RoomManager.TransferCreatorAsync(sessionUnitId, targetSessionUnitId);
     }
 
+    /// <summary>
+    /// 解散群
+    /// </summary>
+    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
     [HttpPost]
     public virtual Task DissolveAsync(Guid sessionUnitId)
     {

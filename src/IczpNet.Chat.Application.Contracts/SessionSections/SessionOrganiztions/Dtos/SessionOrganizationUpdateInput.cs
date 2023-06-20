@@ -8,5 +8,8 @@ namespace IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;
 /// </summary>
 public class SessionOrganizationUpdateInput : BaseTreeInputDto<long>
 {
+    /// <summary>
+    /// 说明
+    /// </summary>
     public virtual string Description { get; set; }
 }

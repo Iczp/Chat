@@ -2,10 +2,10 @@
 
 namespace IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;
 
-/// <summary>
-/// SessionOrganization CreateInput
-/// </summary>
 public class SessionOrganizationCreateInput : SessionOrganizationCreateBySessionUnitInput, ISessionId
 {
+    /// <summary>
+    /// 会话Id
+    /// </summary>
     public virtual Guid? SessionId { get; set; }
 }
