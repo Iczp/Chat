@@ -16,6 +16,9 @@ using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.RoomSections.Rooms;
 
+/// <summary>
+/// 群
+/// </summary>
 public class RoomAppService : ChatAppService, IRoomAppService
 {
     public virtual string InvitePolicyName { get; set; }

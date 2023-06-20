@@ -7,141 +7,142 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
 
-namespace IczpNet.Chat.Developers
+namespace IczpNet.Chat.Developers;
+
+/// <summary>
+/// 开发者
+/// </summary>
+public class DeveloperAppService : ChatAppService, IDeveloperAppService
 {
-    /// <inheritdoc/>
-    public class DeveloperAppService : ChatAppService, IDeveloperAppService
+    protected virtual string SetIsEnabledPolicyName { get; set; } = ChatPermissions.DeveloperPermission.SetIsEnabled;
+
+    public DeveloperAppService() { }
+
+    [HttpGet]
+    public async Task<DeveloperDto> GetAsync(long id)
     {
-        protected virtual string SetIsEnabledPolicyName { get; set; } = ChatPermissions.DeveloperPermission.SetIsEnabled;
+        var entity = await ChatObjectManager.GetAsync(id);
 
-        public DeveloperAppService() { }
-
-        [HttpGet]
-        public async Task<DeveloperDto> GetAsync(long id)
+        if (entity.Developer == null)
         {
-            var entity = await ChatObjectManager.GetAsync(id);
-
-            if (entity.Developer == null)
-            {
-                return null;
-            }
-            return ObjectMapper.Map<Developer, DeveloperDto>(entity.Developer);
+            return null;
         }
+        return ObjectMapper.Map<Developer, DeveloperDto>(entity.Developer);
+    }
 
-        [HttpPost]
-        public async Task<DeveloperDto> SetConfigAsync(long id, [FromQuery] ConfigInput input)
+    [HttpPost]
+    public async Task<DeveloperDto> SetConfigAsync(long id, [FromQuery] ConfigInput input)
+    {
+        var entity = await ChatObjectManager.GetAsync(id);
+
+        var developer = entity.Developer ??= new Developer();
+
+        developer.Token = input.Token;
+
+        developer.EncodingAesKey = input.EncodingAesKey;
+
+        developer.PostUrl = input.PostUrl;
+
+        return ObjectMapper.Map<Developer, DeveloperDto>(developer);
+    }
+
+    /// <inheritdoc/>
+    [HttpPost]
+    public async Task<bool> SetIsEnabledAsync(long id, bool isEnabled)
+    {
+        await CheckPolicyAsync(SetIsEnabledPolicyName);
+
+        var entity = await ChatObjectManager.GetAsync(id);
+
+        entity.Developer.IsEnabled = isEnabled;
+
+        return isEnabled;
+    }
+
+    /// <inheritdoc/>
+    [HttpPost]
+    public async Task<EncryptOutput> EncryptAsync(EncryptInput input)
+    {
+        var bizCrypt = new BizCrypt(input.Token, input.EncodingAesKey, input.ChatObjectId);
+
+        string encrypt = bizCrypt.Encrypt(input.EncryptData);
+
+        return await Task.FromResult(new EncryptOutput()
         {
-            var entity = await ChatObjectManager.GetAsync(id);
+            ChatObjectId = input.ChatObjectId,
+            EncodingAesKey = input.EncodingAesKey,
+            Token = input.Token,
+            Echo = encrypt
+        });
+    }
 
-            var developer = entity.Developer ??= new Developer();
+    /// <inheritdoc/>
+    [HttpPost]
+    public async Task<DecryptOutput> DecryptAsync([FromQuery] DecryptInput input)
+    {
+        var bizCrypt = new BizCrypt(input.Token, input.EncodingAesKey, input.ChatObjectId);
 
-            developer.Token = input.Token;
+        string encrypt = bizCrypt.Decrypt(input.Echo);
 
-            developer.EncodingAesKey = input.EncodingAesKey;
-
-            developer.PostUrl = input.PostUrl;
-
-            return ObjectMapper.Map<Developer, DeveloperDto>(developer);
-        }
-
-        /// <inheritdoc/>
-        [HttpPost]
-        public async Task<bool> SetIsEnabledAsync(long id, bool isEnabled)
+        return await Task.FromResult(new DecryptOutput()
         {
-            await CheckPolicyAsync(SetIsEnabledPolicyName);
+            ChatObjectId = input.ChatObjectId,
+            EncodingAesKey = input.EncodingAesKey,
+            Token = input.Token,
+            EncryptData = encrypt
+        });
+    }
 
-            var entity = await ChatObjectManager.GetAsync(id);
+    /// <inheritdoc/>
+    [HttpPost]
+    [AllowAnonymous]
+    public async Task<GenerateSignatureOutput> GenerateSignatureAsync([FromQuery] GenerateSignatureInput input)
+    {
+        string signature = BizCrypt.GenerateSignature(input.Token, input.TimeStamp, input.Nonce, input.Echo);
 
-            entity.Developer.IsEnabled = isEnabled;
-
-            return isEnabled;
-        }
-
-        /// <inheritdoc/>
-        [HttpPost]
-        public async Task<EncryptOutput> EncryptAsync(EncryptInput input)
+        return await Task.FromResult(new GenerateSignatureOutput()
         {
-            var bizCrypt = new BizCrypt(input.Token, input.EncodingAesKey, input.ChatObjectId);
+            Signature = signature
+        });
+    }
 
-            string encrypt = bizCrypt.Encrypt(input.EncryptData);
+    /// <inheritdoc/>
+    [HttpPost]
+    [AllowAnonymous]
+    public async Task<bool> VerifySignatureAsync([FromQuery] VerifySignatureInput input)
+    {
+        var retult = BizCrypt.VerifySignature(input.Signature, input.Token, input.TimeStamp, input.Nonce, input.CipherText);
 
-            return await Task.FromResult(new EncryptOutput()
-            {
-                ChatObjectId = input.ChatObjectId,
-                EncodingAesKey = input.EncodingAesKey,
-                Token = input.Token,
-                Echo = encrypt
-            });
-        }
+        return await Task.FromResult(retult);
+    }
 
-        /// <inheritdoc/>
-        [HttpPost]
-        public async Task<DecryptOutput> DecryptAsync([FromQuery] DecryptInput input)
-        {
-            var bizCrypt = new BizCrypt(input.Token, input.EncodingAesKey, input.ChatObjectId);
+    /// <inheritdoc/>
+    [HttpPost]
+    [AllowAnonymous]
+    public async Task<string> StringToBase64Async(string input)
+    {
+        byte[] b = System.Text.Encoding.Default.GetBytes(input);
 
-            string encrypt = bizCrypt.Decrypt(input.Echo);
+        return await Task.FromResult(Convert.ToBase64String(b));
+    }
 
-            return await Task.FromResult(new DecryptOutput()
-            {
-                ChatObjectId = input.ChatObjectId,
-                EncodingAesKey = input.EncodingAesKey,
-                Token = input.Token,
-                EncryptData = encrypt
-            });
-        }
+    /// <inheritdoc/>
+    [HttpPost]
+    [AllowAnonymous]
+    public async Task<string> Base64ToStringAsync(string base64String)
+    {
+        byte[] b = Convert.FromBase64String(base64String);
 
-        /// <inheritdoc/>
-        [HttpPost]
-        [AllowAnonymous]
-        public async Task<GenerateSignatureOutput> GenerateSignatureAsync([FromQuery] GenerateSignatureInput input)
-        {
-            string signature = BizCrypt.GenerateSignature(input.Token, input.TimeStamp, input.Nonce, input.Echo);
+        var output = System.Text.Encoding.Default.GetString(b);
 
-            return await Task.FromResult(new GenerateSignatureOutput()
-            {
-                Signature = signature
-            });
-        }
+        return await Task.FromResult(output);
+    }
 
-        /// <inheritdoc/>
-        [HttpPost]
-        [AllowAnonymous]
-        public async Task<bool> VerifySignatureAsync([FromQuery] VerifySignatureInput input)
-        {
-            var retult = BizCrypt.VerifySignature(input.Signature, input.Token, input.TimeStamp, input.Nonce, input.CipherText);
-
-            return await Task.FromResult(retult);
-        }
-
-        /// <inheritdoc/>
-        [HttpPost]
-        [AllowAnonymous]
-        public async Task<string> StringToBase64Async(string input)
-        {
-            byte[] b = System.Text.Encoding.Default.GetBytes(input);
-
-            return await Task.FromResult(Convert.ToBase64String(b));
-        }
-
-        /// <inheritdoc/>
-        [HttpPost]
-        [AllowAnonymous]
-        public async Task<string> Base64ToStringAsync(string base64String)
-        {
-            byte[] b = Convert.FromBase64String(base64String);
-
-            var output = System.Text.Encoding.Default.GetString(b);
-
-            return await Task.FromResult(output);
-        }
-
-        /// <inheritdoc/>
-        [HttpPost]
-        [AllowAnonymous]
-        public async Task<string> GenerateEncodingAesKeyAsync()
-        {
-            return await Task.FromResult(BizCrypt.CreateRandCode(43));
-        }
+    /// <inheritdoc/>
+    [HttpPost]
+    [AllowAnonymous]
+    public async Task<string> GenerateEncodingAesKeyAsync()
+    {
+        return await Task.FromResult(BizCrypt.CreateRandCode(43));
     }
 }
