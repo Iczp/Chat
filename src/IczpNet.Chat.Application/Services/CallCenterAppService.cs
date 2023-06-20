@@ -7,10 +7,20 @@ using System.Threading.Tasks;
 
 namespace IczpNet.Chat.Services
 {
+    /// <summary>
+    /// 呼叫中心
+    /// </summary>
     public class CallCenterAppService : ChatAppService, ICallCenterAppService
     {
 
         public CallCenterAppService() { }
+
+        /// <summary>
+        /// 转接
+        /// </summary>
+        /// <param name="sessionUnitId">当前会话单元Id</param>
+        /// <param name="destinationId">目标会话单元Id</param>
+        /// <returns></returns>
         [HttpPost]
         public async Task TransferToAsync(Guid sessionUnitId, long destinationId)
         {

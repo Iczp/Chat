@@ -1,5 +1,4 @@
 ﻿using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Follows.Dtos;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
@@ -14,6 +13,9 @@ using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.Follows
 {
+    /// <summary>
+    /// 关注
+    /// </summary>
     public class FollowAppService : ChatAppService, IFollowAppService
     {
         protected IFollowManager FollowManager { get; set; }
@@ -30,7 +32,11 @@ namespace IczpNet.Chat.Follows
             Repository = repository;
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// 我关注的
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
         [HttpGet]
         public async Task<PagedResultDto<SessionUnitDestinationDto>> GetListFollowingAsync(FollowingGetListInput input)
         {
@@ -49,7 +55,11 @@ namespace IczpNet.Chat.Follows
             return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query);
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// 关注我的
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
         [HttpGet]
         public async Task<PagedResultDto<SessionUnitDestinationDto>> GetListFollowerAsync(FollowerGetListInput input)
         {
@@ -63,7 +73,11 @@ namespace IczpNet.Chat.Follows
             return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query);
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// 添加关注
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
         [HttpPost]
         public async Task<bool> CreateAsync([FromQuery] FollowCreateInput input)
         {
@@ -74,7 +88,11 @@ namespace IczpNet.Chat.Follows
             return await FollowManager.CreateAsync(owner, input.IdList);
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// 取消关注
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
         [HttpPost]
         public async Task DeleteAsync([FromQuery] FollowDeleteInput input)
         {

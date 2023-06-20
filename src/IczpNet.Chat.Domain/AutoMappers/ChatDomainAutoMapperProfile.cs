@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
@@ -14,6 +15,9 @@ public class ChatApplicationAutoMapperProfile : Profile
 {
     public ChatApplicationAutoMapperProfile()
     {
+
+        CreateMap(typeof(TreeEntity<,>),typeof(TreeInfo<>));
+
         //SessionUnit
         CreateMap<SessionUnit, SessionUnitCacheItem>();
 

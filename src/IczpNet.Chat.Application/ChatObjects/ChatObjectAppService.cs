@@ -58,7 +58,7 @@ namespace IczpNet.Chat.ChatObjects
             //Category
             IQueryable<Guid> categoryIdQuery = null;
 
-            if (input.IsImportChildCategory && input.CategoryIdList.IsAny())
+            if (input.IsImportChildCategory == true && input.CategoryIdList.IsAny())
             {
                 categoryIdQuery = (await ChatObjectCategoryManager.QueryCurrentAndAllChildsAsync(input.CategoryIdList)).Select(x => x.Id);
             }
@@ -70,8 +70,8 @@ namespace IczpNet.Chat.ChatObjects
                 .WhereIf(input.IsPublic.HasValue, x => x.IsPublic == input.IsPublic)
                 .WhereIf(input.IsStatic.HasValue, x => x.IsStatic == input.IsStatic)
                 //CategoryId
-                .WhereIf(!input.IsImportChildCategory && input.CategoryIdList.IsAny(), x => x.ChatObjectCategoryUnitList.Any(d => input.CategoryIdList.Contains(d.CategoryId)))
-                .WhereIf(input.IsImportChildCategory && input.CategoryIdList.IsAny(), x => x.ChatObjectCategoryUnitList.Any(d => categoryIdQuery.Contains(d.CategoryId)))
+                .WhereIf(input.IsImportChildCategory == false && input.CategoryIdList.IsAny(), x => x.ChatObjectCategoryUnitList.Any(d => input.CategoryIdList.Contains(d.CategoryId)))
+                .WhereIf(input.IsImportChildCategory == true && input.CategoryIdList.IsAny(), x => x.ChatObjectCategoryUnitList.Any(d => categoryIdQuery.Contains(d.CategoryId)))
                 .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(input.Keyword) || x.Code.Contains(input.Keyword) || x.NameSpellingAbbreviation.Contains(input.Keyword))
                 ;
         }

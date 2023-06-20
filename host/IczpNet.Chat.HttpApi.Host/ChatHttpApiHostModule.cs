@@ -157,8 +157,7 @@ public class ChatHttpApiHostModule : AbpModule
                 options.SwaggerDoc("v1", new OpenApiInfo { Title = "Chat API", Version = "v1" });
                 options.DocInclusionPredicate((docName, description) => true);
                 options.SwaggerDoc(ChatRemoteServiceConsts.ModuleName, new OpenApiInfo { Title = "Chat", Version = ChatRemoteServiceConsts.ModuleName });
-
-                options.SchemaFilter<EnumSchemaFilter>();
+                //options.SchemaFilter<EnumSchemaFilter>();
 
                 //options.SwaggerDoc(ChatManagementRemoteServiceConsts.ModuleName, new OpenApiInfo { Title = "ChatManagement", Version = ChatManagementRemoteServiceConsts.ModuleName });
                 //System.Diagnostics.Debugger.Launch();

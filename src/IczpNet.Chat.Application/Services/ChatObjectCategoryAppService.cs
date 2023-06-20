@@ -9,6 +9,9 @@ using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.ChatObjectCategorys
 {
+    /// <summary>
+    /// 聊天对象目录（分组）
+    /// </summary>
     public class ChatObjectCategoryAppService
         : CrudTreeChatAppService<
             ChatObjectCategory,

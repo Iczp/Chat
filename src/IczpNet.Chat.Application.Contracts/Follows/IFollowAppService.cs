@@ -27,7 +27,7 @@ namespace IczpNet.Chat.Follows
         Task<PagedResultDto<SessionUnitDestinationDto>> GetListFollowerAsync(FollowerGetListInput input);
 
         /// <summary>
-        /// 关注
+        /// 添加关注
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>

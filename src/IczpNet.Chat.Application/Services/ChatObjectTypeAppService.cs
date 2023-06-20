@@ -10,6 +10,9 @@ using IczpNet.Chat.Permissions;
 
 namespace IczpNet.Chat.ChatObjectTypeServices
 {
+    /// <summary>
+    /// 聊天对象类型
+    /// </summary>
     public class ChatObjectTypeAppService
         : CrudChatAppService<
             ChatObjectType,
