@@ -1,4 +1,5 @@
 ﻿using IczpNet.AbpTrees;
+using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.Enums;
 using System;
@@ -28,9 +29,9 @@ namespace IczpNet.Chat.ChatObjects
             ChatObjectCreateInput,
             ChatObjectUpdateInput, ChatObjectInfo>
     {
-        Task<PagedResultDto<ChatObjectDto>> GetListByUserIdAsync(Guid userId, int maxResultCount = 10, int skipCount = 0, string sorting = null);
+        Task<PagedResultDto<ChatObjectDto>> GetListByUserIdAsync(Guid userId, BaseGetListInput input);
 
-        Task<PagedResultDto<ChatObjectDto>> GetListByCurrentUserAsync(int maxResultCount = 10, int skipCount = 0, string sorting = null);
+        Task<PagedResultDto<ChatObjectDto>> GetListByCurrentUserAsync(BaseGetListInput input);
 
         Task<ChatObjectDto> GetByCodeAsync(string code);
 

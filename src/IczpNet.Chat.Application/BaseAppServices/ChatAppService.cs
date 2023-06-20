@@ -34,11 +34,11 @@ public abstract class ChatAppService : ApplicationService
         ObjectMapperContext = typeof(ChatApplicationModule);
     }
 
-    protected virtual async Task<PagedResultDto<TOuputDto>> GetPagedListAsync<TEntity, TOuputDto>(
-        IQueryable<TEntity> query,
+    protected virtual async Task<PagedResultDto<TOuputDto>> GetPagedListAsync<T, TOuputDto>(
+        IQueryable<T> query,
         int maxResultCount = 10,
         int skipCount = 0, string sorting = null,
-        Func<IQueryable<TEntity>, IQueryable<TEntity>> queryableAction = null, Func<List<TEntity>, Task<List<TEntity>>> entityAction = null)
+        Func<IQueryable<T>, IQueryable<T>> queryableAction = null, Func<List<T>, Task<List<T>>> entityAction = null)
     {
         var totalCount = await AsyncExecuter.CountAsync(query);
 
@@ -60,17 +60,17 @@ public abstract class ChatAppService : ApplicationService
             entities = await entityAction?.Invoke(entities);
         }
 
-        var items = ObjectMapper.Map<List<TEntity>, List<TOuputDto>>(entities);
+        var items = ObjectMapper.Map<List<T>, List<TOuputDto>>(entities);
 
         return new PagedResultDto<TOuputDto>(totalCount, items);
     }
 
-    protected virtual Task<PagedResultDto<TOuputDto>> GetPagedListAsync<TEntity, TOuputDto>(
-        IQueryable<TEntity> query,
+    protected virtual Task<PagedResultDto<TOuputDto>> GetPagedListAsync<T, TOuputDto>(
+        IQueryable<T> query,
         PagedAndSortedResultRequestDto input,
-        Func<IQueryable<TEntity>, IQueryable<TEntity>> queryableAction = null, Func<List<TEntity>, Task<List<TEntity>>> entityAction = null)
+        Func<IQueryable<T>, IQueryable<T>> queryableAction = null, Func<List<T>, Task<List<T>>> entityAction = null)
     {
-        return GetPagedListAsync<TEntity, TOuputDto>(query, input.MaxResultCount, input.SkipCount, input.Sorting, queryableAction, entityAction);
+        return GetPagedListAsync<T, TOuputDto>(query, input.MaxResultCount, input.SkipCount, input.Sorting, queryableAction, entityAction);
     }
 
     protected virtual async Task CheckPolicyAsync(string policyName, ChatObject owner)

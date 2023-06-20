@@ -11,9 +11,9 @@ namespace IczpNet.Chat.MessageSections.Messages
 
     public class MessageInput : IMessageInput
     {
-        /// <summary>
-        /// SessionUnitId
-        /// </summary>
+        ///// <summary>
+        ///// SessionUnitId
+        ///// </summary>
         //public virtual Guid SessionUnitId { get; set; }
 
         ///// <summary>

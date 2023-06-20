@@ -1,25 +1,19 @@
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.EntityFrameworkCore;
 using IczpNet.Chat.MultiTenancy;
-using IczpNet.Chat.SchemaFilters;
-using IczpNet.Pusher;
 using IczpNet.Pusher.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
-using Swashbuckle.AspNetCore.SwaggerGen;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Volo.Abp;
 using Volo.Abp.AspNetCore.ExceptionHandling;
@@ -151,8 +145,9 @@ public class ChatHttpApiHostModule : AbpModule
             options =>
             {
                 options.UseInlineDefinitionsForEnums();
-                //options.OrderActionsBy((apiDesc) => $"{apiDesc.ActionDescriptor.RouteValues["controller"]}_{apiDesc.ActionDescriptor.RouteValues["action"]}_{apiDesc.HttpMethod}");
-                options.TagActionsBy(x => new[] { x.ActionDescriptor.RouteValues["controller"] });
+                //options.OrderActionsBy((x) => $"{x.ActionDescriptor.RouteValues["controller"]}_{x.ActionDescriptor.RouteValues["action"]}_{x.HttpMethod}");
+                options.OrderActionsBy((x) => $"{x.ActionDescriptor.RouteValues["controller"]}_{x.RelativePath}");
+                options.TagActionsBy(x => new[] { x.ActionDescriptor.RouteValues["controller"]});
 
                 options.SwaggerDoc("v1", new OpenApiInfo { Title = "Chat API", Version = "v1" });
                 options.DocInclusionPredicate((docName, description) => true);
@@ -162,15 +157,15 @@ public class ChatHttpApiHostModule : AbpModule
                 //options.SwaggerDoc(ChatManagementRemoteServiceConsts.ModuleName, new OpenApiInfo { Title = "ChatManagement", Version = ChatManagementRemoteServiceConsts.ModuleName });
                 //System.Diagnostics.Debugger.Launch();
 
-                //options.DocInclusionPredicate((docName, apiDesc) =>
+                //options.DocInclusionPredicate((docName, x) =>
                 //{
                 //    //return true;
-                //    if (!apiDesc.TryGetMethodInfo(out MethodInfo methodInfo))
+                //    if (!x.TryGetMethodInfo(out MethodInfo methodInfo))
                 //    {
                 //        return false;
                 //    }
                 //    var versions = methodInfo.ReflectedType.GetCustomAttributes(true).OfType<ApiExplorerSettingsAttribute>().Select(x => x.GroupName);
-                //    System.Diagnostics.Trace.WriteLine($"swagger-{docName}---{apiDesc.ActionDescriptor.SenderName} -- {string.Join(";", versions)}");
+                //    System.Diagnostics.Trace.WriteLine($"swagger-{docName}---{x.ActionDescriptor.DisplayName} -- {string.Join(";", versions)}");
                 //    if (docName.ToLower() == "v1" && !versions.Any())
                 //    {
                 //        return true;

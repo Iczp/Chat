@@ -20,6 +20,9 @@ using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.Entries
 {
+    /// <summary>
+    /// 条目
+    /// </summary>
     public class EntryAppService : ChatAppService, IEntryAppService
     {
         protected ISessionPermissionChecker SessionPermissionChecker { get; }
