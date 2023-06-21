@@ -145,8 +145,8 @@ public class ChatHttpApiHostModule : AbpModule
             options =>
             {
                 options.UseInlineDefinitionsForEnums();
-                //options.OrderActionsBy((x) => $"{x.ActionDescriptor.RouteValues["controller"]}_{x.ActionDescriptor.RouteValues["action"]}_{x.HttpMethod}");
-                options.OrderActionsBy((x) => $"{x.ActionDescriptor.RouteValues["controller"]}_{x.RelativePath}");
+                options.OrderActionsBy((x) => $"{x.ActionDescriptor.RouteValues["controller"]}_{x.ActionDescriptor.RouteValues["action"]}_{x.HttpMethod}");
+                //options.OrderActionsBy((x) => $"{x.GroupName}_{x.ActionDescriptor.RouteValues["controller"]}_{x.HttpMethod}");
                 options.TagActionsBy(x => new[] { x.ActionDescriptor.RouteValues["controller"]});
 
                 options.SwaggerDoc("v1", new OpenApiInfo { Title = "Chat API", Version = "v1" });
