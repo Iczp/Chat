@@ -1,6 +1,7 @@
 ﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.Extensions;
 using IczpNet.Chat.Squares.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
@@ -38,7 +39,7 @@ public class SquareAppService : ChatAppService, ISquareAppService
         var query = (await Repository.GetQueryableAsync())
             .Where(x => x.ObjectType == ChatObjectTypeEnums.Square);
 
-        return await GetPagedListAsync<ChatObject, SquareDto>(query, input, x => x.OrderBy(d => d.Name));
+        return await query.ToPagedListAsync<ChatObject, SquareDto>(AsyncExecuter, ObjectMapper, input, x => x.OrderBy(d => d.Name));
 
     }
 }

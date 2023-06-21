@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.Extensions;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 using IczpNet.Chat.SessionSections.Sessions;
@@ -46,7 +47,7 @@ public class SessionAppService : ChatAppService, ISessionAppService
         var query = (await Repository.GetQueryableAsync())
             .WhereIf(input.OwnerId.HasValue, x => x.UnitList.Any(m => m.OwnerId == input.OwnerId))
             ;
-        return await GetPagedListAsync<Session, SessionDto>(query, input, q => q.OrderByDescending(x => x.LastMessageId));
+        return await query.ToPagedListAsync<Session, SessionDto>(AsyncExecuter, ObjectMapper, input, q => q.OrderByDescending(x => x.LastMessageId));
     }
 
     /// <summary>
@@ -96,7 +97,7 @@ public class SessionAppService : ChatAppService, ISessionAppService
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(input.Keyword))
             ;
 
-        return await GetPagedListAsync<SessionTag, SessionTagDto>(query, input);
+        return await query.ToPagedListAsync<SessionTag, SessionTagDto>(AsyncExecuter, ObjectMapper, input);
     }
 
     /// <summary>
@@ -112,7 +113,7 @@ public class SessionAppService : ChatAppService, ISessionAppService
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(input.Keyword))
             ;
 
-        return await GetPagedListAsync<SessionRole, SessionRoleDto>(query, input);
+        return await query.ToPagedListAsync<SessionRole, SessionRoleDto>(AsyncExecuter, ObjectMapper, input);
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.Extensions;
 using IczpNet.Chat.FavoritedRecorders.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -39,7 +40,7 @@ public class FavoriteAppService : ChatAppService, IFavoriteAppService
             .WhereIf(input.MinSize.HasValue, x => x.Size >= input.MinSize)
             .WhereIf(input.MaxSize.HasValue, x => x.Size < input.MaxSize)
             ;
-        return await GetPagedListAsync<FavoritedRecorder, FavoritedRecorderDto>(query, input);
+        return await query.ToPagedListAsync<FavoritedRecorder, FavoritedRecorderDto>(AsyncExecuter, ObjectMapper, input);
     }
 
     /// <summary>

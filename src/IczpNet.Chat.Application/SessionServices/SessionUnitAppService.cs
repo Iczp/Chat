@@ -3,6 +3,7 @@ using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.Extensions;
 using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
@@ -122,8 +123,9 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 
         var query = await CreateQueryAsync(input);
 
-        return await GetPagedListAsync<SessionUnit, SessionUnitOwnerDto>(
-            query,
+        return await query.ToPagedListAsync<SessionUnit, SessionUnitOwnerDto>(
+            AsyncExecuter, 
+            ObjectMapper, 
             input,
             x => x.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId));
     }
@@ -131,7 +133,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     /// <summary>
     /// 消息统计
     /// </summary>
-    /// <param name="idList"></param>
+    /// <param name="idList">会话单元Id</param>
     /// <param name="minMessageId">最小消息Id</param>
     /// <returns></returns>
     [HttpGet]
@@ -166,13 +168,13 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordOwnerSessionUnitSpecification(input.Keyword, await ChatObjectManager.SearchKeywordByCacheAsync(input.Keyword)))
             ;
 
-        return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query, input, q => q.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId));
+        return await query.ToPagedListAsync<SessionUnit, SessionUnitDestinationDto>(AsyncExecuter, ObjectMapper, input, q => q.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId));
     }
 
     /// <summary>
     /// 获取目标名称列表
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="id">会话单元Id</param>
     /// <param name="input"></param>
     /// <returns></returns>
     [HttpGet]
@@ -190,13 +192,13 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             })
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.DisplayName.Contains(input.Keyword));
 
-        return await GetPagedListAsync<SessionUnitDisplayName, SessionUnitDisplayName>(query, input);
+        return await query.ToPagedListAsync<SessionUnitDisplayName, SessionUnitDisplayName>(AsyncExecuter, ObjectMapper, input);
     }
 
     /// <summary>
     /// 获取一个会话单元
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="id">会话单元Id</param>
     /// <returns></returns>
     [HttpGet]
     public virtual async Task<SessionUnitOwnerDto> GetAsync(Guid id)
@@ -211,7 +213,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     /// <summary>
     /// 获取一个会话单元（详情）
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="id">会话单元Id</param>
     /// <returns></returns>
     [HttpGet]
     public virtual async Task<SessionUnitOwnerDetailDto> GetDetailAsync(Guid id)
@@ -226,8 +228,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     /// <summary>
     /// 获取一个会话单元（目标）
     /// </summary>
-    /// <param name="id"></param>
-    /// <param name="destinationId"></param>
+    /// <param name="id">会话单元Id</param>
+    /// <param name="destinationId">目标会话单元Id</param>
     /// <returns></returns>
     [HttpGet]
     public virtual async Task<SessionUnitDestinationDto> GetDestinationAsync(Guid id, Guid destinationId)
@@ -252,7 +254,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         var query = (await SessionUnitManager.GetSameDestinationQeuryableAsync(input.SourceId, input.TargetId, input.ObjectTypeList))
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Destination.Name.Contains(input.Keyword))
             ;
-        return await GetPagedListAsync<SessionUnit, SessionUnitDto>(query, input, x => x.OrderByDescending(x => x.Id));
+        return await query.ToPagedListAsync<SessionUnit, SessionUnitDto>(AsyncExecuter, ObjectMapper, input, x => x.OrderByDescending(x => x.Id));
     }
 
     /// <summary>
@@ -266,15 +268,15 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         var query = (await SessionUnitManager.GetSameSessionQeuryableAsync(input.SourceId, input.TargetId, input.ObjectTypeList))
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Destination.Name.Contains(input.Keyword))
             ;
-        return await GetPagedListAsync<SessionUnit, SessionUnitDto>(query, input, x => x.OrderByDescending(x => x.Id));
+        return await query.ToPagedListAsync<SessionUnit, SessionUnitDto>(AsyncExecuter, ObjectMapper, input, x => x.OrderByDescending(x => x.Id));
     }
 
     /// <summary>
     /// 获取相同的会话单元数量(好友、共同好友、群、聊天广场等)
     /// </summary>
-    /// <param name="sourceId"></param>
-    /// <param name="targetId"></param>
-    /// <param name="objectTypeList"></param>
+    /// <param name="sourceId">原聊天对象Id</param>
+    /// <param name="targetId">目标聊天对象Id</param>
+    /// <param name="objectTypeList">聊天对象类型</param>
     /// <returns></returns>
     [HttpGet]
     public Task<int> GetSameSessionCountAsync(long sourceId, long targetId, List<ChatObjectTypeEnums> objectTypeList)
@@ -373,13 +375,13 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     /// <summary>
     /// 获取当前用户总的消息角标（新消息）
     /// </summary>
-    /// <param name="isImmersed"></param>
+    /// <param name="isImmersed">是否包含免打扰的消息</param>
     /// <returns></returns>
     [HttpGet]
     [Authorize]
     public Task<List<BadgeDto>> GetBadgeByCurrentUserAsync(bool? isImmersed = null)
     {
-        return GetBadgeByUserIdAsync(CurrentUser.GetId(), isImmersed);
+        return GetBadgeByUserIdAsync(Assert.NotNull(CurrentUser.GetId(), "未登录"), isImmersed);
     }
 
     /// <summary>
@@ -424,13 +426,13 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         var query = items.AsQueryable()
             .WhereIf(input.SessionUnitId.HasValue, x => x.Id == input.SessionUnitId);
 
-        return await GetPagedListAsync<SessionUnitCacheItem, SessionUnitCacheItem>(query, input);
+        return await query.ToPagedListAsync<SessionUnitCacheItem, SessionUnitCacheItem>(AsyncExecuter, ObjectMapper, input);
     }
 
     /// <summary>
     /// 获取一个会话单元【缓存】
     /// </summary>
-    /// <param name="sessionUnitId"></param>
+    /// <param name="sessionUnitId">会话单元Id</param>
     /// <returns></returns>
     [HttpGet]
     public async Task<SessionUnitCacheItem> GetCacheAsync(Guid sessionUnitId)
@@ -443,13 +445,13 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     /// <summary>
     /// 获取会话单元记数器（新消息，提醒、@我、@所有人等）
     /// </summary>
-    /// <param name="sessionUnitId"></param>
-    /// <param name="minMessageId"></param>
-    /// <param name="isImmersed"></param>
+    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <param name="minMessageId">最小消息Id</param>
+    /// <param name="isImmersed">是否包含免打扰</param>
     /// <returns></returns>
     [HttpGet]
     public async Task<SessionUnitCounterInfo> GetCounterAsync(Guid sessionUnitId, long minMessageId = 0, bool? isImmersed = null)
     {
         return await SessionUnitManager.GetCounterAsync(sessionUnitId, minMessageId, isImmersed);
-    }   
+    }
 }

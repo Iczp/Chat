@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.AbpCommons;
+using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Locations.Dto;
 using IczpNet.Chat.MessageSections;
@@ -6,6 +7,7 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.TextTemplates;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Distributed;
 using System;
@@ -60,9 +62,10 @@ public class LocationAppService : ChatAppService, ILocationAppService
     /// <param name="input"></param>
     /// <returns></returns>
     [HttpPost]
+    [Authorize]
     public async Task<ShareLocationOutput> SharingAsync(ShareLocationInput input)
     {
-        var currentUserId = input.UserLocation.UserId.Value; //CurrentUser.GetId();
+        var currentUserId = Assert.NotNull(CurrentUser.GetId(), "未登录");
 
         var expiredTime = Clock.Now.AddSeconds(-ExpiredSeconds);
 

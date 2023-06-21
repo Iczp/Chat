@@ -3,6 +3,7 @@ using IczpNet.Chat.ChatObjectCategorys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.Extensions;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.RoomSections.Rooms.Dtos;
 using IczpNet.Chat.SessionSections.SessionPermissions;
@@ -86,7 +87,7 @@ public class RoomAppService : ChatAppService, IRoomAppService
     {
         var query = await SessionUnitManager.GetSameSessionQeuryableAsync(input.SourceChatObjectId, input.TargetChatObjectId, new List<ChatObjectTypeEnums>() { ChatObjectTypeEnums.Room });
 
-        return await GetPagedListAsync<SessionUnit, SessionUnitDto>(query, input);
+        return await query.ToPagedListAsync<SessionUnit, SessionUnitDto>(AsyncExecuter, ObjectMapper, input);
     }
 
     /// <summary>

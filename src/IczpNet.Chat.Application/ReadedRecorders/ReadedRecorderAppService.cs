@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.Extensions;
 using IczpNet.Chat.ReadedRecorders.Dtos;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
@@ -50,7 +51,7 @@ public class ReadedRecorderAppService : ChatAppService, IReadedRecorderAppServic
 
         query = query.WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordOwnerSessionUnitSpecification(input.Keyword, await ChatObjectManager.QueryByKeywordAsync(input.Keyword)));
 
-        return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query, input);
+        return await query.ToPagedListAsync<SessionUnit, SessionUnitDestinationDto>(AsyncExecuter, ObjectMapper, input);
     }
 
     /// <summary>

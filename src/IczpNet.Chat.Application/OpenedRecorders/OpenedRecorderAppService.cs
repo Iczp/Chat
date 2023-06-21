@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.Extensions;
 using IczpNet.Chat.Mottos.Dtos;
 using IczpNet.Chat.OpenedRecorders.Dtos;
 using IczpNet.Chat.SessionSections.SessionUnits;
@@ -60,7 +61,7 @@ public class OpenedRecorderAppService : ChatAppService, IOpenedRecorderAppServic
 
         query = query.WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordOwnerSessionUnitSpecification(input.Keyword, await ChatObjectManager.QueryByKeywordAsync(input.Keyword)));
 
-        return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query, input);
+        return await query.ToPagedListAsync<SessionUnit, SessionUnitDestinationDto>(AsyncExecuter, ObjectMapper, input);
     }
 
     /// <summary>

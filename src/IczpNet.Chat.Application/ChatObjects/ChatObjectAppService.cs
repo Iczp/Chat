@@ -6,6 +6,7 @@ using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.ChatObjectCategorys;
 using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.Extensions;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionPermissions;
 using Microsoft.AspNetCore.Authorization;
@@ -110,7 +111,7 @@ public class ChatObjectAppService
         var query = (await Repository.GetQueryableAsync())
             .Where(x => x.AppUserId == userId);
 
-        return await GetPagedListAsync<ChatObject, ChatObjectDto>(query, input);
+        return await query.ToPagedListAsync<ChatObject, ChatObjectDto>(AsyncExecuter, ObjectMapper, input);
     }
 
     /// <summary>
@@ -122,10 +123,8 @@ public class ChatObjectAppService
     [Authorize]
     public virtual Task<PagedResultDto<ChatObjectDto>> GetListByCurrentUserAsync(GetListInput input)
     {
-        return GetListByUserIdAsync(CurrentUser.GetId(), input);
+        return GetListByUserIdAsync(Assert.NotNull(CurrentUser.GetId(), "未登录"), input);
     }
-
-
 
     [RemoteService(false)]
     public override Task DeleteAsync(long id)

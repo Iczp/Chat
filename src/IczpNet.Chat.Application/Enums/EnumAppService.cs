@@ -3,6 +3,7 @@ using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Enums.Dtos;
+using IczpNet.Chat.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -40,7 +41,7 @@ public class EnumAppService : ChatAppService, IEnumAppService
         var query = EnumItems.AsQueryable()
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Description.Contains(input.Keyword) || x.Names.Contains(input.Keyword));
 
-        return await GetPagedListAsync<EnumTypeDto, EnumTypeDto>(query, input);
+        return await query.ToPagedListAsync<EnumTypeDto, EnumTypeDto>(AsyncExecuter, ObjectMapper, input);
     }
 
     /// <summary>

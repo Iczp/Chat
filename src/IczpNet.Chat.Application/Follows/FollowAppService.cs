@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.Extensions;
 using IczpNet.Chat.Follows.Dtos;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
@@ -52,7 +53,7 @@ namespace IczpNet.Chat.Follows
                 .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordOwnerSessionUnitSpecification(input.Keyword, await ChatObjectManager.QueryByKeywordAsync(input.Keyword)))
                 ;
 
-            return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query);
+            return await query.ToPagedListAsync<SessionUnit, SessionUnitDestinationDto>(AsyncExecuter, ObjectMapper, input);
         }
 
         /// <summary>
@@ -70,7 +71,7 @@ namespace IczpNet.Chat.Follows
                 .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordDestinationSessionUnitSpecification(input.Keyword, await ChatObjectManager.QueryByKeywordAsync(input.Keyword)))
                 ;
 
-            return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query);
+            return await query.ToPagedListAsync<SessionUnit, SessionUnitDestinationDto>(AsyncExecuter, ObjectMapper, input);
         }
 
         /// <summary>
@@ -100,7 +101,7 @@ namespace IczpNet.Chat.Follows
             //check owner
             await FollowManager.DeleteAsync(input.OwnerId, input.IdList);
         }
-        
+
 
     }
 }

@@ -1,6 +1,7 @@
 ﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.Extensions;
 using IczpNet.Chat.ShopKeepers.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
@@ -35,7 +36,7 @@ public class ShopKeeperAppService : ChatAppService, IShopKeeperAppService
         var query = (await Repository.GetQueryableAsync())
             .Where(x => x.ObjectType == ChatObjectTypeEnums.ShopKeeper);
 
-        return await GetPagedListAsync<ChatObject, ShopKeeperDto>(query, input, x => x.OrderBy(d => d.Name));
+        return await query.ToPagedListAsync<ChatObject, ShopKeeperDto>(AsyncExecuter, ObjectMapper, input, x => x.OrderBy(d => d.Name));
     }
 
     /// <summary>

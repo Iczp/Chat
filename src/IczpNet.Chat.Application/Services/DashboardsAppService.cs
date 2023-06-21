@@ -29,6 +29,7 @@ using Volo.Abp.Application.Dtos;
 using System.Linq;
 using IczpNet.Chat.BaseDtos;
 using Volo.Abp;
+using IczpNet.Chat.Extensions;
 
 namespace IczpNet.Chat.Services;
 
@@ -134,7 +135,7 @@ public class DashboardsAppService : ChatAppService, IDashboardsAppService
     //    var query = allList.AsQueryable()
     //        .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TableName.Contains(input.Keyword));
 
-    //    return await GetPagedListAsync<DbTable, DbTableDto>(query, input);
+    //    return await ToPagedListAsync<DbTable, DbTableDto>(query, input);
     //}
 
     [HttpGet]
@@ -143,6 +144,6 @@ public class DashboardsAppService : ChatAppService, IDashboardsAppService
         var query =  (await DbTableRepository.GetQueryableAsync())
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TableName.Contains(input.Keyword));
 
-        return await GetPagedListAsync<DbTable, DbTableDto>(query, input);
+        return await query.ToPagedListAsync<DbTable, DbTableDto>(AsyncExecuter, ObjectMapper, input);
     }
 }
