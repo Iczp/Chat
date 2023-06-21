@@ -81,7 +81,7 @@ public class SessionOrganizationAppService
     /// <summary>
     /// 修改组织
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="id">主建Id</param>
     /// <param name="input"></param>
     /// <returns></returns>
     [HttpPost]

@@ -201,7 +201,7 @@ public class ChatObjectAppService
     /// <summary>
     /// 修改名称
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="id">主建Id</param>
     /// <param name="name"></param>
     /// <returns></returns>
     [HttpPost]
@@ -234,7 +234,7 @@ public class ChatObjectAppService
     /// <summary>
     /// 设置验证方式(好友|群|广场等)
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="id">主建Id</param>
     /// <param name="verificationMethod"></param>
     /// <returns></returns>
     [HttpPost]
@@ -252,7 +252,7 @@ public class ChatObjectAppService
     /// <summary>
     /// 获取详情
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="id">主建Id</param>
     /// <returns></returns>
     [HttpGet]
     public async Task<ChatObjectDetailDto> GetDetailAsync(long id)

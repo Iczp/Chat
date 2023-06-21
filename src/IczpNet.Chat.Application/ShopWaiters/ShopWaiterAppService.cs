@@ -68,7 +68,7 @@ public class ShopWaiterAppService : ChatAppService, IShopWaiterAppService
     /// <summary>
     /// 修改店小二
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="id">主建Id</param>
     /// <param name="input"></param>
     /// <returns></returns>
     [HttpPost]
@@ -82,7 +82,7 @@ public class ShopWaiterAppService : ChatAppService, IShopWaiterAppService
     /// <summary>
     /// 店小二绑定用户
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="id">主建Id</param>
     /// <param name="userId"></param>
     /// <returns></returns>
     /// <exception cref="NotImplementedException"></exception>

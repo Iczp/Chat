@@ -1,5 +1,6 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionPermissions;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
@@ -27,12 +28,12 @@ public class SessionRoleAppService
         SessionRoleUpdateInput>,
     ISessionRoleAppService
 {
-    //protected override string GetPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Default;
-    //protected override string GetListPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Default;
-    //protected override string CreatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.CreateAsync;
-    //protected override string UpdatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Update;
-    //protected override string DeletePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Delete;
-    //protected virtual string SetAllPermissionsPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.SetAllPermissions;
+    protected override string GetPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Default;
+    protected override string GetListPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Default;
+    protected override string CreatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Create;
+    protected override string UpdatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Update;
+    protected override string DeletePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Delete;
+    protected virtual string SetAllPermissionsPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.SetAllPermissions;
 
     protected ISessionRoleManager SessionRoleManager { get; }
     protected IRepository<Session, Guid> SessionRepository{ get; }
@@ -99,7 +100,7 @@ public class SessionRoleAppService
     /// <summary>
     /// 获取角色权限
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="id">主建Id</param>
     /// <returns></returns>
     [HttpGet]
     public virtual async Task<SessionRolePermissionDto> GetPermissionsAsync(Guid id)
@@ -112,8 +113,8 @@ public class SessionRoleAppService
     /// <summary>
     /// 授予角色所有权限
     /// </summary>
-    /// <param name="id"></param>
-    /// <param name="permissionGrantValue"></param>
+    /// <param name="id">主建Id</param>
+    /// <param name="permissionGrantValue">授予值</param>
     /// <returns></returns>
     //[Authorize(policy: SessionPermissionDefinitionConsts.SessionRolePermission.SetAllPermissions)]
     [HttpPost]

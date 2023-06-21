@@ -11,7 +11,7 @@ namespace IczpNet.Chat.Developers
         /// <summary>
         /// 设置
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="id">主建Id</param>
         /// <param name="input"></param>
         /// <returns></returns>
         Task<DeveloperDto> SetConfigAsync(long id, ConfigInput input);
@@ -19,7 +19,7 @@ namespace IczpNet.Chat.Developers
         /// <summary>
         /// 启用或禁用
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="id">主建Id</param>
         /// <param name="isEnabled"></param>
         /// <returns></returns>
         Task<bool> SetIsEnabledAsync(long id, bool isEnabled);

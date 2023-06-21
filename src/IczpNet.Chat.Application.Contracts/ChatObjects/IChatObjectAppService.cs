@@ -44,7 +44,7 @@ namespace IczpNet.Chat.ChatObjects
         /// <summary>
         /// 更新头像
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="id">主建Id</param>
         /// <param name="portrait"></param>
         /// <returns></returns>
         Task<ChatObjectDto> UpdatePortraitAsync(long id, string portrait);

@@ -33,7 +33,7 @@ public class DeveloperAppService : ChatAppService, IDeveloperAppService
     /// <summary>
     /// 开发者设置
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="id">主建Id</param>
     /// <param name="input"></param>
     /// <returns></returns>
     [HttpPost]
@@ -55,7 +55,7 @@ public class DeveloperAppService : ChatAppService, IDeveloperAppService
     /// <summary>
     /// 启用与关闭
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="id">主建Id</param>
     /// <param name="isEnabled"></param>
     /// <returns></returns>
     [HttpPost]

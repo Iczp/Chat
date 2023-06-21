@@ -14,7 +14,13 @@ public class SessionPermissionDefinitionConsts
         return allNames;
     }
 
-
+    public class SessionTagPermission
+    {
+        public const string Default = GroupName + "." + nameof(SessionTagPermission);
+        public const string Create = Default + "." + nameof(Create);
+        public const string Update = Default + "." + nameof(Update);
+        public const string Delete = Default + "." + nameof(Delete);
+    }
 
     public class SessionRolePermission
     {

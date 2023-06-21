@@ -22,7 +22,7 @@ namespace IczpNet.Chat.Controllers
         /// <summary>
         /// 更新头像
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="id">主建Id</param>
         /// <param name="file"></param>
         /// <returns></returns>
         [HttpPost]

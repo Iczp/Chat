@@ -155,7 +155,7 @@ namespace IczpNet.Chat.BaseAppServices
         /// 获取一条数据
         /// </summary>
         /// <param name="ownerId">聊天对象Id</param>
-        /// <param name="id"></param>
+        /// <param name="id">主建Id</param>
         /// <returns></returns>
         [HttpGet]
         public virtual async Task<TGetOutputDto> GetAsync(long ownerId, TKey id)
@@ -255,7 +255,7 @@ namespace IczpNet.Chat.BaseAppServices
         /// 修改
         /// </summary>
         /// <param name="ownerId">聊天对象Id</param>
-        /// <param name="id"></param>
+        /// <param name="id">主建Id</param>
         /// <param name="input"></param>
         /// <returns></returns>
         [HttpPost]
@@ -289,7 +289,7 @@ namespace IczpNet.Chat.BaseAppServices
         /// 删除一条数据
         /// </summary>
         /// <param name="ownerId">聊天对象Id</param>
-        /// <param name="id"></param>
+        /// <param name="id">主建Id</param>
         /// <returns></returns>
         [HttpPost]
         public virtual async Task DeleteByAsync(long ownerId, TKey id)

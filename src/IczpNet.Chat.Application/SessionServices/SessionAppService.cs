@@ -53,7 +53,7 @@ public class SessionAppService : ChatAppService, ISessionAppService
     /// <summary>
     /// 获取一个聊天会话
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="id">主建Id</param>
     /// <returns></returns>
     [HttpGet]
     public async Task<SessionDto> GetAsync(Guid id)
@@ -70,7 +70,7 @@ public class SessionAppService : ChatAppService, ISessionAppService
     /// <summary>
     /// 聊天会话详情
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="id">主建Id</param>
     /// <returns></returns>
     [HttpGet]
     public async Task<SessionDetailDto> GetDetailAsync(Guid id)
@@ -82,38 +82,6 @@ public class SessionAppService : ChatAppService, ISessionAppService
     protected virtual Task<SessionDetailDto> MapToDetailDtoAsync(Session entity)
     {
         return Task.FromResult(ObjectMapper.Map<Session, SessionDetailDto>(entity));
-    }
-
-    /// <summary>
-    /// 会话标签列表
-    /// </summary>
-    /// <param name="input"></param>
-    /// <returns></returns>
-    [HttpGet]
-    public async Task<PagedResultDto<SessionTagDto>> GetTagListAsync(SessionTagGetListInput input)
-    {
-        var query = (await Repository.GetAsync(input.SessionId))
-            .TagList.AsQueryable()
-            .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(input.Keyword))
-            ;
-
-        return await query.ToPagedListAsync<SessionTag, SessionTagDto>(AsyncExecuter, ObjectMapper, input);
-    }
-
-    /// <summary>
-    /// 会话角色列表
-    /// </summary>
-    /// <param name="input"></param>
-    /// <returns></returns>
-    [HttpGet]
-    public async Task<PagedResultDto<SessionRoleDto>> GetRoleListAsync(SessionRoleGetListInput input)
-    {
-        var query = (await Repository.GetAsync(input.SessionId.Value))
-            .RoleList.AsQueryable()
-            .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(input.Keyword))
-            ;
-
-        return await query.ToPagedListAsync<SessionRole, SessionRoleDto>(AsyncExecuter, ObjectMapper, input);
     }
 
     /// <summary>
