@@ -82,7 +82,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         public virtual async Task<Message> CreateMessageAsync(
             SessionUnit senderSessionUnit,
-            Func<Message, SessionUnitIncrementArgs, Task<IContentEntity>> action,
+            Func<Message,  Task<IContentEntity>> action,
             SessionUnit receiverSessionUnit = null,
             long? quoteMessageId = null,
             List<Guid> remindList = null)
@@ -96,11 +96,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             var message = new Message(senderSessionUnit);
 
-            var sessionUnitIncrementArgs = new SessionUnitIncrementArgs()
-            {
-                SessionId = senderSessionUnit.SessionId.Value,
-                SenderSessionUnitId = senderSessionUnit.Id
-            };
+            
 
             //private message
             if (receiverSessionUnit != null)
@@ -115,14 +111,8 @@ namespace IczpNet.Chat.MessageSections.Messages
                 message.SetQuoteMessage(await Repository.GetAsync(quoteMessageId.Value));
             }
 
-            //remind List
-            if (remindList != null)
-            {
-                sessionUnitIncrementArgs.RemindSessionUnitIdList = await GetRemindIdListAsync(senderSessionUnit, message, remindList);
-            }
-
             // message content
-            var messageContent = await action(message, sessionUnitIncrementArgs);
+            var messageContent = await action(message);
 
             //TryToSetOwnerId(messageContent, senderSessionUnit.OwnerId);
             messageContent.SetOwnerId(senderSessionUnit.OwnerId);
@@ -131,7 +121,21 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             message.SetMessageContent(messageContent);
 
+            // Message Validator
             await MessageValidator.CheckAsync(message);
+
+            // Args
+            var sessionUnitIncrementArgs = new SessionUnitIncrementArgs()
+            {
+                SessionId = senderSessionUnit.SessionId.Value,
+                SenderSessionUnitId = senderSessionUnit.Id
+            };
+
+            //remind List
+            if (remindList != null)
+            {
+                sessionUnitIncrementArgs.RemindSessionUnitIdList = await GetRemindIdListAsync(senderSessionUnit, message, remindList);
+            }
 
             //sessionUnitCount
             var sessionUnitCount = message.IsPrivate ? 2 : await SessionUnitManager.GetCountBySessionIdAsync(senderSessionUnit.SessionId.Value);
@@ -224,6 +228,8 @@ namespace IczpNet.Chat.MessageSections.Messages
             //Guid.TryParse(message.Receiver, out Guid roomId);
             var textContent = message.GetContentEntity() as TextContent;
 
+            Assert.If(textContent == null, "TextContent is null");
+
             var text = textContent.Text;
 
             var reg = RemindNameRegex();
@@ -304,7 +310,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             where TContentEntity : IContentEntity
         {
             var message = await CreateMessageAsync(senderSessionUnit,
-                async (entity, args) => await Task.FromResult(contentEntity),
+                async (entity) => await Task.FromResult(contentEntity),
                 quoteMessageId: input.QuoteMessageId,
                 remindList: input.RemindList);
 
@@ -383,7 +389,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
                 Assert.If(currentSessionUnit.OwnerId != targetSessionUnit.OwnerId, $"[targetSessionUnitId:{targetSessionUnitId}] is fail.");
 
-                var newMessage = await CreateMessageAsync(targetSessionUnit, async (x, args) =>
+                var newMessage = await CreateMessageAsync(targetSessionUnit, async (x) =>
                 {
                     x.SetForwardMessage(sourceMessage);
                     await Task.Yield();

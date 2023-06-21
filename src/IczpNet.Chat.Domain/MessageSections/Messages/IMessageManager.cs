@@ -8,7 +8,7 @@ namespace IczpNet.Chat.MessageSections.Messages
     public interface IMessageManager
     {
         Task<Message> CreateMessageAsync(SessionUnit senderSessionUnit,
-            Func<Message, SessionUnitIncrementArgs, Task<IContentEntity>> action,
+            Func<Message,  Task<IContentEntity>> action,
             SessionUnit receiverSessionUnit = null,
             long? quoteMessageId = null,
             List<Guid> remindList = null);
