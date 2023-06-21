@@ -1,7 +1,7 @@
-﻿using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.AbpCommons.Extensions;
+using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
-using IczpNet.Chat.Extensions;
 using IczpNet.Chat.Squares.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;

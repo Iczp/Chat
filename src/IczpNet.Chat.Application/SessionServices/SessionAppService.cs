@@ -1,5 +1,5 @@
-﻿using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.Extensions;
+﻿using IczpNet.AbpCommons.Extensions;
+using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 using IczpNet.Chat.SessionSections.Sessions;

@@ -1,7 +1,7 @@
 ﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Cantacts.Dtos;
 using IczpNet.Chat.Contacts.Dtos;
-using IczpNet.Chat.Extensions;
+using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.AspNetCore.Mvc;
 using System;

@@ -6,7 +6,6 @@ using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.ChatObjectCategorys;
 using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.Enums;
-using IczpNet.Chat.Extensions;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionPermissions;
 using Microsoft.AspNetCore.Authorization;
