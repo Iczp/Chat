@@ -55,7 +55,7 @@ public class RobotAppService : ChatAppService, IRobotAppService
               .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(input.Keyword) || x.Code.Contains(input.Keyword) || x.NameSpellingAbbreviation.Contains(input.Keyword))
               ;
 
-        return await query.ToPagedListAsync<ChatObject, RobotDto>(AsyncExecuter, ObjectMapper, input, x => x.OrderBy(d => d.Name));
+        return await GetPagedListAsync<ChatObject, RobotDto>(query, input, x => x.OrderBy(d => d.Name));
 
     }
 }

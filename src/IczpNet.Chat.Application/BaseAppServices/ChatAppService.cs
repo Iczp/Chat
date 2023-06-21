@@ -1,11 +1,15 @@
 ﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Localization;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Auditing;
 
@@ -28,6 +32,17 @@ public abstract class ChatAppService : ApplicationService
     {
         LocalizationResource = typeof(ChatResource);
         ObjectMapperContext = typeof(ChatApplicationModule);
+    }
+
+    protected virtual async Task<PagedResultDto<TOuputDto>> GetPagedListAsync<T, TOuputDto>(
+        IQueryable<T> query,
+        PagedAndSortedResultRequestDto input,
+        Func<IQueryable<T>, IQueryable<T>> queryableAction = null,
+        Func<List<T>, Task<List<T>>> entityAction = null)
+    {
+        await CheckPolicyAsync(GetListPolicyName);
+
+        return await query.ToPagedListAsync<T, TOuputDto>(AsyncExecuter, ObjectMapper, input, queryableAction, entityAction);
     }
 
     protected virtual async Task CheckPolicyAsync(string policyName, ChatObject owner)
@@ -59,6 +74,17 @@ public abstract class ChatAppService : ApplicationService
         await CheckPolicyAsync(policyName, sessionUnit);
 
         return sessionUnit;
+    }
+
+    protected virtual async Task<ChatObject> GetAndCheckPolicyAsync(string policyName, long chatObjectId, bool checkIsKilled = true)
+    {
+        var chatObject = await ChatObjectManager.GetAsync(chatObjectId);
+
+        Assert.If(checkIsKilled && chatObject.IsEnabled, "被禁用的聊天对象");
+
+        await CheckPolicyAsync(policyName, chatObject);
+
+        return chatObject;
     }
 
     protected virtual void TryToSetLastModificationTime<T>(T entity)

@@ -122,9 +122,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 
         var query = await CreateQueryAsync(input);
 
-        return await query.ToPagedListAsync<SessionUnit, SessionUnitOwnerDto>(
-            AsyncExecuter, 
-            ObjectMapper, 
+        return await GetPagedListAsync<SessionUnit, SessionUnitOwnerDto>(
+            query, 
             input,
             x => x.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId));
     }
@@ -167,7 +166,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordOwnerSessionUnitSpecification(input.Keyword, await ChatObjectManager.SearchKeywordByCacheAsync(input.Keyword)))
             ;
 
-        return await query.ToPagedListAsync<SessionUnit, SessionUnitDestinationDto>(AsyncExecuter, ObjectMapper, input, q => q.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId));
+        return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query, input, q => q.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId));
     }
 
     /// <summary>
@@ -191,7 +190,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             })
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.DisplayName.Contains(input.Keyword));
 
-        return await query.ToPagedListAsync<SessionUnitDisplayName, SessionUnitDisplayName>(AsyncExecuter, ObjectMapper, input);
+        return await GetPagedListAsync<SessionUnitDisplayName, SessionUnitDisplayName>(query, input);
     }
 
     /// <summary>
@@ -253,7 +252,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         var query = (await SessionUnitManager.GetSameDestinationQeuryableAsync(input.SourceId, input.TargetId, input.ObjectTypeList))
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Destination.Name.Contains(input.Keyword))
             ;
-        return await query.ToPagedListAsync<SessionUnit, SessionUnitDto>(AsyncExecuter, ObjectMapper, input, x => x.OrderByDescending(x => x.Id));
+        return await GetPagedListAsync<SessionUnit, SessionUnitDto>(query, input, x => x.OrderByDescending(x => x.Id));
     }
 
     /// <summary>
@@ -267,7 +266,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         var query = (await SessionUnitManager.GetSameSessionQeuryableAsync(input.SourceId, input.TargetId, input.ObjectTypeList))
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Destination.Name.Contains(input.Keyword))
             ;
-        return await query.ToPagedListAsync<SessionUnit, SessionUnitDto>(AsyncExecuter, ObjectMapper, input, x => x.OrderByDescending(x => x.Id));
+        return await GetPagedListAsync<SessionUnit, SessionUnitDto>(query, input, x => x.OrderByDescending(x => x.Id));
     }
 
     /// <summary>
@@ -425,7 +424,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         var query = items.AsQueryable()
             .WhereIf(input.SessionUnitId.HasValue, x => x.Id == input.SessionUnitId);
 
-        return await query.ToPagedListAsync<SessionUnitCacheItem, SessionUnitCacheItem>(AsyncExecuter, ObjectMapper, input);
+        return await GetPagedListAsync<SessionUnitCacheItem, SessionUnitCacheItem>(query, input);
     }
 
     /// <summary>

@@ -144,6 +144,6 @@ public class DashboardsAppService : ChatAppService, IDashboardsAppService
         var query =  (await DbTableRepository.GetQueryableAsync())
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TableName.Contains(input.Keyword));
 
-        return await query.ToPagedListAsync<DbTable, DbTableDto>(AsyncExecuter, ObjectMapper, input);
+        return await GetPagedListAsync<DbTable, DbTableDto>(query, input);
     }
 }

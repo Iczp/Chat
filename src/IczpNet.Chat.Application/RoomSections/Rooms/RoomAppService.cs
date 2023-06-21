@@ -87,7 +87,7 @@ public class RoomAppService : ChatAppService, IRoomAppService
     {
         var query = await SessionUnitManager.GetSameSessionQeuryableAsync(input.SourceChatObjectId, input.TargetChatObjectId, new List<ChatObjectTypeEnums>() { ChatObjectTypeEnums.Room });
 
-        return await query.ToPagedListAsync<SessionUnit, SessionUnitDto>(AsyncExecuter, ObjectMapper, input);
+        return await GetPagedListAsync<SessionUnit, SessionUnitDto>(query, input);
     }
 
     /// <summary>

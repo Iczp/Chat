@@ -36,7 +36,7 @@ public class ShopKeeperAppService : ChatAppService, IShopKeeperAppService
         var query = (await Repository.GetQueryableAsync())
             .Where(x => x.ObjectType == ChatObjectTypeEnums.ShopKeeper);
 
-        return await query.ToPagedListAsync<ChatObject, ShopKeeperDto>(AsyncExecuter, ObjectMapper, input, x => x.OrderBy(d => d.Name));
+        return await GetPagedListAsync<ChatObject, ShopKeeperDto>(query, input, x => x.OrderBy(d => d.Name));
     }
 
     /// <summary>

@@ -48,7 +48,7 @@ public class ShopWaiterAppService : ChatAppService, IShopWaiterAppService
             .Where(x => x.ParentId == input.ShopKeeperId)
             .Where(x => x.ObjectType == ChatObjectTypeEnums.ShopWaiter);
 
-        return await query.ToPagedListAsync<ChatObject, ShopWaiterDto>(AsyncExecuter, ObjectMapper, input, x => x.OrderBy(d => d.Name));
+        return await GetPagedListAsync<ChatObject, ShopWaiterDto>(query, input, x => x.OrderBy(d => d.Name));
 
     }
 

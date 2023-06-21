@@ -17,7 +17,7 @@ namespace IczpNet.Chat.RoomSections.Rooms
 
         Task<List<SessionUnitSenderInfo>> InviteAsync(InviteInput input);
 
-        Task<PagedResultDto<SessionUnitDto>> GetSameAsync(long sourceChatObjectId, long targetChatObjectId, int maxResultCount = 10, int skipCount = 0, string sorting = null);
+        Task<PagedResultDto<SessionUnitDto>> GetSameAsync(SameGetListInput input);
 
         Task<int> GetSameCountAsync(long sourceChatObjectId, long targetChatObjectId);
 

@@ -100,7 +100,7 @@ public class MessageAppService : ChatAppService, IMessageAppService
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TextContentList.Any(d => d.Text.Contains(input.Keyword)))
             ;
 
-        return await query.ToPagedListAsync<Message, MessageOwnerDto>(AsyncExecuter, ObjectMapper, input,
+        return await GetPagedListAsync<Message, MessageOwnerDto>(query, input,
             x => x.OrderByDescending(x => x.Id),
             async entities =>
             {

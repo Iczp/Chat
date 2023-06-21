@@ -1,7 +1,6 @@
 ﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Cantacts.Dtos;
 using IczpNet.Chat.Contacts.Dtos;
-using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -45,13 +44,12 @@ public class ContactsAppService : ChatAppService, IContactsAppService
     [HttpGet]
     public async Task<PagedResultDto<ContactsDto>> GetListAsync(ContactsGetListInput input)
     {
-        await CheckPolicyAsync(GetListPolicyName);
+        var owner = GetAndCheckPolicyAsync(GetListPolicyName, input.OwnerId);
 
         var query = await CreateQueryAsync(input);
 
-        return await query.ToPagedListAsync<SessionUnit, ContactsDto>(
-            AsyncExecuter,
-            ObjectMapper,
+        return await GetPagedListAsync<SessionUnit, ContactsDto>(
+            query,
             input,
             x => x.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId),
             async entities =>

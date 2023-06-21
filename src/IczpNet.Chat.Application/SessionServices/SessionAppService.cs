@@ -47,7 +47,7 @@ public class SessionAppService : ChatAppService, ISessionAppService
         var query = (await Repository.GetQueryableAsync())
             .WhereIf(input.OwnerId.HasValue, x => x.UnitList.Any(m => m.OwnerId == input.OwnerId))
             ;
-        return await query.ToPagedListAsync<Session, SessionDto>(AsyncExecuter, ObjectMapper, input, q => q.OrderByDescending(x => x.LastMessageId));
+        return await GetPagedListAsync<Session, SessionDto>(query, input, q => q.OrderByDescending(x => x.LastMessageId));
     }
 
     /// <summary>

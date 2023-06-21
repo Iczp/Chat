@@ -39,7 +39,7 @@ public class SquareAppService : ChatAppService, ISquareAppService
         var query = (await Repository.GetQueryableAsync())
             .Where(x => x.ObjectType == ChatObjectTypeEnums.Square);
 
-        return await query.ToPagedListAsync<ChatObject, SquareDto>(AsyncExecuter, ObjectMapper, input, x => x.OrderBy(d => d.Name));
+        return await GetPagedListAsync<ChatObject, SquareDto>(query, input, x => x.OrderBy(d => d.Name));
 
     }
 }

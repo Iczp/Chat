@@ -51,7 +51,7 @@ public class ReadedRecorderAppService : ChatAppService, IReadedRecorderAppServic
 
         query = query.WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordOwnerSessionUnitSpecification(input.Keyword, await ChatObjectManager.QueryByKeywordAsync(input.Keyword)));
 
-        return await query.ToPagedListAsync<SessionUnit, SessionUnitDestinationDto>(AsyncExecuter, ObjectMapper, input);
+        return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query, input);
     }
 
     /// <summary>

@@ -110,7 +110,7 @@ public class ChatObjectAppService
         var query = (await Repository.GetQueryableAsync())
             .Where(x => x.AppUserId == userId);
 
-        return await query.ToPagedListAsync<ChatObject, ChatObjectDto>(AsyncExecuter, ObjectMapper, input);
+        return await GetPagedListAsync<ChatObject, ChatObjectDto>(query, input);
     }
 
     /// <summary>

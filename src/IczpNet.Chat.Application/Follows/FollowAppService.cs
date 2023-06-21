@@ -53,7 +53,7 @@ namespace IczpNet.Chat.Follows
                 .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordOwnerSessionUnitSpecification(input.Keyword, await ChatObjectManager.QueryByKeywordAsync(input.Keyword)))
                 ;
 
-            return await query.ToPagedListAsync<SessionUnit, SessionUnitDestinationDto>(AsyncExecuter, ObjectMapper, input);
+            return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query, input);
         }
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace IczpNet.Chat.Follows
                 .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordDestinationSessionUnitSpecification(input.Keyword, await ChatObjectManager.QueryByKeywordAsync(input.Keyword)))
                 ;
 
-            return await query.ToPagedListAsync<SessionUnit, SessionUnitDestinationDto>(AsyncExecuter, ObjectMapper, input);
+            return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query, input);
         }
 
         /// <summary>

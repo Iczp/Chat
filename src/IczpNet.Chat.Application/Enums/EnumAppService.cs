@@ -40,7 +40,7 @@ public class EnumAppService : ChatAppService, IEnumAppService
         var query = EnumItems.AsQueryable()
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Description.Contains(input.Keyword) || x.Names.Contains(input.Keyword));
 
-        return await query.ToPagedListAsync<EnumTypeDto, EnumTypeDto>(AsyncExecuter, ObjectMapper, input);
+        return await GetPagedListAsync<EnumTypeDto, EnumTypeDto>(query, input);
     }
 
     /// <summary>

@@ -40,7 +40,7 @@ public class FavoriteAppService : ChatAppService, IFavoriteAppService
             .WhereIf(input.MinSize.HasValue, x => x.Size >= input.MinSize)
             .WhereIf(input.MaxSize.HasValue, x => x.Size < input.MaxSize)
             ;
-        return await query.ToPagedListAsync<FavoritedRecorder, FavoritedRecorderDto>(AsyncExecuter, ObjectMapper, input);
+        return await GetPagedListAsync<FavoritedRecorder, FavoritedRecorderDto>(query, input);
     }
 
     /// <summary>

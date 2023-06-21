@@ -74,12 +74,11 @@ public class RoomAdminAppService : ChatAppService, IRoomAdminAppService
     }
 
     [HttpGet]
-    public async Task<PagedResultDto<SessionUnitDto>> GetSameAsync(long sourceChatObjectId, long targetChatObjectId, int maxResultCount = 10,
-        int skipCount = 0, string sorting = null)
+    public async Task<PagedResultDto<SessionUnitDto>> GetSameAsync(SameGetListInput input)
     {
-        var query = await SessionUnitManager.GetSameSessionQeuryableAsync(sourceChatObjectId, targetChatObjectId, new List<ChatObjectTypeEnums>() { ChatObjectTypeEnums.Room });
+        var query = await SessionUnitManager.GetSameSessionQeuryableAsync(input.SourceChatObjectId, input.TargetChatObjectId, new List<ChatObjectTypeEnums>() { ChatObjectTypeEnums.Room });
 
-        return await query.ToPagedListAsync<SessionUnit, SessionUnitDto>(AsyncExecuter, ObjectMapper, maxResultCount, skipCount, sorting, null);
+        return await GetPagedListAsync<SessionUnit, SessionUnitDto>(query, input, null);
     }
 
     [HttpGet]

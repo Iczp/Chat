@@ -1,10 +1,12 @@
-﻿using IczpNet.AbpTrees;
+﻿using IczpNet.AbpCommons.Extensions;
+using IczpNet.AbpTrees;
 using IczpNet.AbpTrees.Dtos;
 using IczpNet.Chat.ChatObjects;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Auditing;
@@ -85,6 +87,17 @@ public abstract class CrudTreeChatAppService<
         ITreeManager<TEntity, TKey, TTreeInfo> treeManager) : base(repository, treeManager)
     {
 
+    }
+
+    protected virtual async Task<PagedResultDto<TOuputDto>> GetPagedListAsync<T, TOuputDto>(
+        IQueryable<T> query,
+        PagedAndSortedResultRequestDto input,
+        Func<IQueryable<T>, IQueryable<T>> queryableAction = null,
+        Func<List<T>, Task<List<T>>> entityAction = null)
+    {
+        await CheckPolicyAsync(GetListPolicyName);
+
+        return await query.ToPagedListAsync<T, TOuputDto>(AsyncExecuter, ObjectMapper, input, queryableAction, entityAction);
     }
 
     protected virtual void TryToSetLastModificationTime<T>(T entity)
