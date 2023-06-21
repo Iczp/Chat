@@ -1,18 +1,18 @@
 ﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons.DataFilters;
+using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Localization;
+using IczpNet.Chat.SessionSections.SessionUnits;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
-using IczpNet.AbpCommons.DataFilters;
-using IczpNet.Chat.SessionSections.SessionUnits;
-using Microsoft.AspNetCore.Authorization;
-using IczpNet.Chat.BaseDtos;
-using Volo.Abp;
-using System.Collections.Generic;
 
 namespace IczpNet.Chat.BaseAppServices;
 
@@ -170,7 +170,7 @@ public abstract class CrudChatAppService<
     /// <summary>
     /// 获取多条数据
     /// </summary>
-    /// <param name="idList"></param>
+    /// <param name="idList">主键Id[多个]</param>
     /// <returns></returns>
     [HttpGet]
     public override Task<List<TGetOutputDto>> GetManyAsync(List<TKey> idList)
@@ -181,7 +181,7 @@ public abstract class CrudChatAppService<
     /// <summary>
     /// 获取一条记录 Get
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="id">主键Id</param>
     /// <returns></returns>
     [HttpGet]
     public override Task<TGetOutputDto> GetAsync(TKey id)
@@ -204,7 +204,7 @@ public abstract class CrudChatAppService<
     /// <summary>
     /// 修改
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="id">主键Id</param>
     /// <param name="input"></param>
     /// <returns></returns>
     [HttpPost]
@@ -216,7 +216,7 @@ public abstract class CrudChatAppService<
     /// <summary>
     /// 删除一条数据
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="id">主键Id</param>
     /// <returns></returns>
     [HttpPost]
     public override Task DeleteAsync(TKey id)
@@ -227,7 +227,7 @@ public abstract class CrudChatAppService<
     /// <summary>
     /// 删除多条数据
     /// </summary>
-    /// <param name="idList"></param>
+    /// <param name="idList">主键Id[多个]</param>
     /// <returns></returns>
     [HttpPost]
     public override Task DeleteManyAsync(List<TKey> idList)

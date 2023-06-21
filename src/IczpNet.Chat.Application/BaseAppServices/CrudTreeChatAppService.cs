@@ -5,8 +5,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Auditing;
@@ -131,7 +129,7 @@ public abstract class CrudTreeChatAppService<
     /// <summary>
     /// 获取一条数据
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="id">主键Id</param>
     /// <returns></returns>
     [HttpGet]
     public override Task<TGetOutputDto> GetAsync(TKey id)
@@ -142,7 +140,7 @@ public abstract class CrudTreeChatAppService<
     /// <summary>
     /// 获取一条数据(缓存)
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="id">主键Id</param>
     /// <returns></returns>
     [HttpGet]
     public override Task<TTreeInfo> GetItemByCacheAsync(TKey id)
@@ -153,7 +151,7 @@ public abstract class CrudTreeChatAppService<
     /// <summary>
     /// 获取多条数据
     /// </summary>
-    /// <param name="idList"></param>
+    /// <param name="idList">主键Id[多个]</param>
     /// <returns></returns>
     [HttpGet]
     public override Task<List<TGetOutputDto>> GetManyAsync(List<TKey> idList)
@@ -164,7 +162,7 @@ public abstract class CrudTreeChatAppService<
     /// <summary>
     /// 获取多条数据(缓存)
     /// </summary>
-    /// <param name="idList"></param>
+    /// <param name="idList">主键Id[多个]</param>
     /// <returns></returns>
     [HttpGet]
     public override Task<List<TTreeInfo>> GetManayByCacheAsync(List<TKey> idList)
@@ -174,7 +172,7 @@ public abstract class CrudTreeChatAppService<
     /// <summary>
     /// 修改
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="id">主键Id</param>
     /// <param name="input"></param>
     /// <returns></returns>
     [HttpPost]
@@ -197,7 +195,7 @@ public abstract class CrudTreeChatAppService<
     /// <summary>
     /// 删除一条数据
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="id">主键Id</param>
     /// <returns></returns>
     [HttpPost]
     public override Task DeleteAsync(TKey id)
@@ -208,7 +206,7 @@ public abstract class CrudTreeChatAppService<
     /// <summary>
     /// 删除多条数据
     /// </summary>
-    /// <param name="idList"></param>
+    /// <param name="idList">主键Id[多个]</param>
     /// <returns></returns>
     [HttpPost]
     public override Task DeleteManyAsync(List<TKey> idList)
