@@ -177,18 +177,16 @@ public class ChatHttpApiHostModule : AbpModule
 
                 var includeModuleXmlComments = (string[] nameSpaces) =>
                 {
+                    var xmls = new[] { ".Application.xml", ".Application.Contracts.xml", ".Domain.xml", ".Domain.Shared.xml", ".HttpApi.xml", };
                     foreach (var nameSpace in nameSpaces)
                     {
-                        options.IncludeXmlComments(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{nameSpace}.Application.xml"), true);
-                        options.IncludeXmlComments(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{nameSpace}.Application.Contracts.xml"), true);
-                        options.IncludeXmlComments(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{nameSpace}.Domain.xml"), true);
-                        options.IncludeXmlComments(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{nameSpace}.Domain.Shared.xml"), true);
-                        options.IncludeXmlComments(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{nameSpace}.HttpApi.xml"), true);
+                        foreach (var xml in xmls)
+                        {
+                            options.IncludeXmlComments(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{nameSpace}{xml}"), true);
+                        }
                     }
                 };
-                includeModuleXmlComments(new[] {
-                   $"IczpNet.{ChatRemoteServiceConsts.RemoteServiceName}",
-                });
+                includeModuleXmlComments(new[] { $"IczpNet.{ChatRemoteServiceConsts.RemoteServiceName}", });
             });
 
 
