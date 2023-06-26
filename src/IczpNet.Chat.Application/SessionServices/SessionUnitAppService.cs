@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -230,7 +231,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     /// <param name="destinationId">目标会话单元Id</param>
     /// <returns></returns>
     [HttpGet]
-    public virtual async Task<SessionUnitDestinationDto> GetDestinationAsync(Guid id, Guid destinationId)
+    public virtual async Task<SessionUnitDestinationDto> GetDestinationAsync([Required] Guid id, [Required] Guid destinationId)
     {
         var destinationEntity = await GetEntityAsync(destinationId);
 
@@ -315,7 +316,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     /// <returns></returns>
     [HttpGet]
     [UnitOfWork(true, IsolationLevel.ReadUncommitted)]
-    public async Task<BadgeDto> GetBadgeByOwnerIdAsync(long ownerId, bool? isImmersed = null)
+    public async Task<BadgeDto> GetBadgeByOwnerIdAsync([Required] long ownerId, bool? isImmersed = null)
     {
         var badge = await SessionUnitManager.GetBadgeByOwnerIdAsync(ownerId, isImmersed);
 
@@ -336,7 +337,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     /// <param name="isImmersed">是否包含免打扰的消息</param>
     /// <returns></returns>
     [HttpGet]
-    public async Task<BadgeDto> GetBadgeByIdAsync(Guid id, bool? isImmersed = null)
+    public async Task<BadgeDto> GetBadgeByIdAsync([Required] Guid id, bool? isImmersed = null)
     {
         var entity = await GetEntityAsync(id);
 
@@ -357,7 +358,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     /// <param name="isImmersed">是否包含免打扰的消息</param>
     /// <returns></returns>
     [HttpGet]
-    public async Task<List<BadgeDto>> GetBadgeByUserIdAsync(Guid userId, bool? isImmersed = null)
+    public async Task<List<BadgeDto>> GetBadgeByUserIdAsync([Required] Guid userId, bool? isImmersed = null)
     {
         var chatObjectIdList = await ChatObjectManager.GetIdListByUserId(userId);
 
@@ -389,7 +390,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     /// <param name="destinactionId">目标聊天对象Id</param>
     /// <returns></returns>
     [HttpGet]
-    public async Task<Guid> FindIdAsync(long ownerId, long destinactionId)
+    public async Task<Guid> FindIdAsync([Required] long ownerId, long destinactionId)
     {
         var entity = await SessionUnitManager.FindAsync(ownerId, destinactionId);
 
@@ -433,7 +434,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     /// <param name="sessionUnitId">会话单元Id</param>
     /// <returns></returns>
     [HttpGet]
-    public async Task<SessionUnitCacheItem> GetCacheAsync(Guid sessionUnitId)
+    public async Task<SessionUnitCacheItem> GetCacheAsync([Required] Guid sessionUnitId)
     {
         var entity = await GetEntityAsync(sessionUnitId);
 
@@ -443,13 +444,10 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     /// <summary>
     /// 获取会话单元记数器（新消息，提醒、@我、@所有人等）
     /// </summary>
-    /// <param name="sessionUnitId">会话单元Id</param>
-    /// <param name="minMessageId">最小消息Id</param>
-    /// <param name="isImmersed">是否包含免打扰</param>
     /// <returns></returns>
     [HttpGet]
-    public async Task<SessionUnitCounterInfo> GetCounterAsync(Guid sessionUnitId, long minMessageId = 0, bool? isImmersed = null)
+    public async Task<SessionUnitCounterInfo> GetCounterAsync(SessionUnitGetCounterInput input)
     {
-        return await SessionUnitManager.GetCounterAsync(sessionUnitId, minMessageId, isImmersed);
+        return await SessionUnitManager.GetCounterAsync(input.SessionUnitId, input.MinMessageId, input.IsImmersed);
     }
 }

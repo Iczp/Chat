@@ -41,5 +41,5 @@ public interface ISessionUnitAppService
 
     Task<SessionUnitCacheItem> GetCacheAsync(Guid sessionUnitId);
 
-    Task<SessionUnitCounterInfo> GetCounterAsync(Guid sessionUnitId, long minMessageId = 0, bool? isImmersed = null);
+    Task<SessionUnitCounterInfo> GetCounterAsync(SessionUnitGetCounterInput input);
 }
