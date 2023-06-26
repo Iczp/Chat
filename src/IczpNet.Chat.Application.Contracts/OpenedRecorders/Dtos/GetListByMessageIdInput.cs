@@ -1,14 +1,20 @@
-﻿using IczpNet.AbpCommons.DataFilters;
+﻿using IczpNet.Chat.BaseDtos;
 using System.ComponentModel;
-using Volo.Abp.Application.Dtos;
+using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.OpenedRecorders.Dtos
 {
-    public class GetListByMessageIdInput : PagedAndSortedResultRequestDto, IKeyword
+    public class GetListByMessageIdInput : GetListInput
     {
+        /// <summary>
+        /// 消息Id
+        /// </summary>
+        [Required]
+        public virtual long MessageId { get; set; }
+        /// <summary>
+        /// 是否已读
+        /// </summary>
         [DefaultValue(true)]
         public virtual bool IsReaded { get; set; }
-
-        public virtual string Keyword { get; set; }
     }
 }

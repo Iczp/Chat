@@ -1,5 +1,4 @@
-﻿using IczpNet.AbpCommons.Extensions;
-using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.OpenedRecorders.Dtos;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
@@ -25,7 +24,7 @@ public class OpenedRecorderAppService : ChatAppService, IOpenedRecorderAppServic
     protected IOpenedRecorderManager OpenedRecorderManager { get; }
 
     public OpenedRecorderAppService(
-        IOpenedRecorderManager openedRecorderManager, 
+        IOpenedRecorderManager openedRecorderManager,
         IRepository<OpenedRecorder> repository)
     {
         OpenedRecorderManager = openedRecorderManager;
@@ -46,15 +45,14 @@ public class OpenedRecorderAppService : ChatAppService, IOpenedRecorderAppServic
     /// <summary>
     /// 获取消息【已打开】的聊天对象
     /// </summary>
-    /// <param name="messageId"></param>
     /// <param name="input"></param>
     /// <returns></returns>
     [HttpGet]
-    public async Task<PagedResultDto<SessionUnitDestinationDto>> GetListByMessageIdAsync(long messageId, GetListByMessageIdInput input)
+    public async Task<PagedResultDto<SessionUnitDestinationDto>> GetListByMessageIdAsync(GetListByMessageIdInput input)
     {
         var query = input.IsReaded
-            ? await OpenedRecorderManager.QueryRecordedAsync(messageId)
-            : await OpenedRecorderManager.QueryUnrecordedAsync(messageId);
+            ? await OpenedRecorderManager.QueryRecordedAsync(input.MessageId)
+            : await OpenedRecorderManager.QueryUnrecordedAsync(input.MessageId);
 
         query = query.WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordOwnerSessionUnitSpecification(input.Keyword, await ChatObjectManager.QueryByKeywordAsync(input.Keyword)));
 
@@ -67,7 +65,7 @@ public class OpenedRecorderAppService : ChatAppService, IOpenedRecorderAppServic
     /// <param name="input"></param>
     /// <returns></returns>
     [HttpPost]
-    public virtual async Task<OpenedRecorderDto> SetOpenedAsync(OpenedRecorderInput input)
+    public virtual async Task<OpenedRecorderDto> SetOpenedAsync([FromQuery] OpenedRecorderInput input)
     {
         await CheckPolicyAsync(SetReadedPolicyName);
 

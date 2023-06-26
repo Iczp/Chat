@@ -3,6 +3,7 @@ using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.FavoritedRecorders.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
@@ -46,10 +47,10 @@ public class FavoriteAppService : ChatAppService, IFavoriteAppService
     /// <summary>
     /// 获取收藏的总大小
     /// </summary>
-    /// <param name="ownerId"></param>
+    /// <param name="ownerId">聊天对象Id</param>
     /// <returns></returns>
     [HttpGet]
-    public Task<long> GetSizeAsync(long ownerId)
+    public Task<long> GetSizeAsync([Required] long ownerId)
     {
         return FavoritedRecorderManager.GetSizeByOwnerIdAsync(ownerId);
     }
@@ -57,10 +58,10 @@ public class FavoriteAppService : ChatAppService, IFavoriteAppService
     /// <summary>
     /// 获取收藏数量
     /// </summary>
-    /// <param name="ownerId"></param>
+    /// <param name="ownerId">聊天对象Id</param>
     /// <returns></returns>
     [HttpGet]
-    public Task<int> GetCountAsync(long ownerId)
+    public Task<int> GetCountAsync([Required] long ownerId)
     {
         return FavoritedRecorderManager.GetCountByOwnerIdAsync(ownerId);
     }
@@ -83,14 +84,12 @@ public class FavoriteAppService : ChatAppService, IFavoriteAppService
     /// <summary>
     /// 取消收藏
     /// </summary>
-    /// <param name="sessionUnitId">会话单元Id</param>
-    /// <param name="messageId">消息Id</param>
+    /// <param name="input"></param>
     /// <returns></returns>
     [HttpPost]
-    public Task DeleteAsync(Guid sessionUnitId, long messageId)
+    public Task DeleteAsync([FromQuery] FavoritedRecorderDeleteInput input)
     {
-        return FavoritedRecorderManager.DeleteAsync(sessionUnitId, messageId);
+        return FavoritedRecorderManager.DeleteAsync(input.SessionUnitId, input.MessageId);
     }
 
-   
 }

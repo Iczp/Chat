@@ -5,6 +5,7 @@ using IczpNet.Chat.SessionSections.SessionRequests.Dtos;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -74,7 +75,7 @@ public class SessionRequestAppService
     /// <param name="input"></param>
     /// <returns></returns>
     [HttpPost]
-    public override async Task<SessionRequestDetailDto> CreateAsync(SessionRequestCreateInput input)
+    public override async Task<SessionRequestDetailDto> CreateAsync([FromQuery] SessionRequestCreateInput input)
     {
         var entity = await SessionRequestManager.CreateRequestAsync(input.OwnerId, input.DestinationId, input.RequestMessage);
 
@@ -84,22 +85,13 @@ public class SessionRequestAppService
 
     [HttpPost]
     [RemoteService(false)]
-    public override Task<SessionRequestDetailDto> UpdateAsync(Guid id, SessionRequestUpdateInput input)
-    {
-        return base.UpdateAsync(id, input);
-    }
+    public override Task<SessionRequestDetailDto> UpdateAsync(Guid id, SessionRequestUpdateInput input) => base.UpdateAsync(id, input);
 
     [RemoteService(false)]
-    public override Task DeleteAsync(Guid id)
-    {
-        return base.DeleteAsync(id);
-    }
+    public override Task DeleteAsync(Guid id) => base.DeleteAsync(id);
 
     [RemoteService(false)]
-    public override Task DeleteManyAsync(List<Guid> idList)
-    {
-        return base.DeleteManyAsync(idList);
-    }
+    public override Task DeleteManyAsync(List<Guid> idList) => base.DeleteManyAsync(idList);
 
     /// <summary>
     /// 处理申请
@@ -107,7 +99,7 @@ public class SessionRequestAppService
     /// <param name="input"></param>
     /// <returns></returns>
     [HttpPost]
-    public async Task<SessionRequestDetailDto> HandleRequestAsync(SessionRequestHandleInput input)
+    public async Task<SessionRequestDetailDto> HandleRequestAsync([FromQuery] SessionRequestHandleInput input)
     {
         var entity = await SessionRequestManager.HandleRequestAsync(input.SessionRequestId, input.IsAgreed, input.HandleMessage, null);
 

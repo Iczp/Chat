@@ -11,7 +11,7 @@ namespace IczpNet.Chat.OpenedRecorders
     {
         Task<Dictionary<long, int>> GetCountsAsync(List<long> messageIdList);
 
-        Task<PagedResultDto<SessionUnitDestinationDto>> GetListByMessageIdAsync(long messageId, GetListByMessageIdInput input);
+        Task<PagedResultDto<SessionUnitDestinationDto>> GetListByMessageIdAsync(GetListByMessageIdInput input);
 
         Task<OpenedRecorderDto> SetOpenedAsync(OpenedRecorderInput input);
     }

@@ -294,7 +294,10 @@ public class ChatHttpApiHostModule : AbpModule
             //options.SwaggerEndpoint(string.Format("/swagger/{0}/swagger.json", ChatRemoteServiceConsts.ModuleName), "Chat Api");
             options.SwaggerEndpoint(string.Format("/swagger/{0}/swagger.json", "v1"), "Support APP API");
             //options.SwaggerEndpoint(string.Format("/swagger/{0}/swagger.json", ChatManagementRemoteServiceConsts.ModuleName), "Chat Management Api");
-
+            options.EnableDeepLinking();
+            options.EnableFilter();
+            options.EnableTryItOutByDefault();
+            options.EnablePersistAuthorization();
             var configuration = context.GetConfiguration();
             options.OAuthClientId(configuration["AuthServer:SwaggerClientId"]);
             options.OAuthScopes("Chat");

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.FavoritedRecorders.Dtos
 {
-    public class FavoritedRecorderCreateInput
+    public class FavoritedRecorderDeleteInput
     {
         /// <summary>
         /// 会话单元Id

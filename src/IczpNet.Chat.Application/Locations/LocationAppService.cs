@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Distributed;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
@@ -158,7 +159,7 @@ public class LocationAppService : ChatAppService, ILocationAppService
     /// <param name="sessionUnitId">会话单元</param>
     /// <returns></returns>
     [HttpGet]
-    public async Task<PagedResultDto<UserLocationDto>> GetListAsync(Guid sessionUnitId)
+    public async Task<PagedResultDto<UserLocationDto>> GetListAsync([Required] Guid sessionUnitId)
     {
         var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
 
