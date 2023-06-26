@@ -1,16 +1,20 @@
-﻿using IczpNet.AbpCommons.DataFilters;
+﻿using IczpNet.Chat.BaseDtos;
 using System.Collections.Generic;
 using System.ComponentModel;
-using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.SessionSections.SessionPermissionDefinitions.Dtos
 {
-    public class SessionPermissionDefinitionGetListInput : PagedAndSortedResultRequestDto, IKeyword
+    public class SessionPermissionDefinitionGetListInput : GetListInput
     {
+        /// <summary>
+        /// 分组Id
+        /// </summary>
         [DefaultValue(null)]
         public virtual List<long> GroupIdList { get; set; }
-        public bool IsImportChildGroup { get; set; }
 
-        public virtual string Keyword { get; set; }
+        /// <summary>
+        /// 是否包含子组分组
+        /// </summary>
+        public bool IsImportChildGroup { get; set; }
     }
 }

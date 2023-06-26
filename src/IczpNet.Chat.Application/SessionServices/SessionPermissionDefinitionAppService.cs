@@ -33,7 +33,7 @@ public class SessionPermissionDefinitionAppService
 
     protected override string UpdatePolicyName { get; set; } = ChatPermissions.SessionPermissionDefinitionPermission.Update;
     protected virtual string SetIsEnabledPolicyName { get; set; } = ChatPermissions.SessionPermissionDefinitionPermission.SetIsEnabled;
-    protected virtual string SetAllIsEnabledPolicyName { get; set; } //= ChatPermissions.SessionPermissionDefinitionPermission.SetAllIsEnabled;
+    protected virtual string SetAllIsEnabledPolicyName { get; set; } = ChatPermissions.SessionPermissionDefinitionPermission.SetAllIsEnabled;
     protected IChatObjectRepository ChatObjectRepository { get; }
     protected IRepository<Session, Guid> SessionRepository { get; }
     protected ISessionPermissionGroupManager SessionPermissionGroupManager { get; }
@@ -82,10 +82,7 @@ public class SessionPermissionDefinitionAppService
     public override Task DeleteAsync(string id) => base.DeleteAsync(id);
 
     [RemoteService(false)]
-    public override Task DeleteManyAsync(List<string> idList)
-    {
-        return base.DeleteManyAsync(idList);
-    }
+    public override Task DeleteManyAsync(List<string> idList) => base.DeleteManyAsync(idList);
 
     /// <summary>
     /// 启用或禁用
@@ -106,6 +103,7 @@ public class SessionPermissionDefinitionAppService
 
         return await MapToGetOutputDtoAsync(entity);
     }
+
     /// <summary>
     /// 全部启用或禁用
     /// </summary>
