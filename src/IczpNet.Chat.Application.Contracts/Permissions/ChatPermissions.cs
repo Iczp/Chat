@@ -66,6 +66,14 @@ public class ChatPermissions
     }
 
 
+    public class SessionPermissionGroupPermission
+    {
+        public const string Default = GroupName + "." + nameof(SessionPermissionGroupPermission);
+        public const string Create = Default + "." + nameof(Create);
+        public const string Update = Default + "." + nameof(Update);
+        public const string Delete = Default + "." + nameof(Delete);
+    }
+
     public class SessionPermissionDefinitionPermission
     {
         public const string Default = GroupName + "." + nameof(SessionPermissionDefinitionPermission);

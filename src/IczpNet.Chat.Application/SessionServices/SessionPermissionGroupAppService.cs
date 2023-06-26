@@ -1,14 +1,13 @@
 ﻿using IczpNet.AbpCommons;
-using IczpNet.AbpTrees;
 using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.SessionSections.SessionPermissionGroups;
+using IczpNet.Chat.Permissions;
+using IczpNet.Chat.SessionSections.SessionOrganizations;
 using IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;
+using IczpNet.Chat.SessionSections.SessionPermissionGroups;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
-using IczpNet.Chat.SessionSections.SessionOrganizations;
-using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 
 namespace IczpNet.Chat.SessionServices
 {
@@ -24,11 +23,11 @@ namespace IczpNet.Chat.SessionServices
             SessionPermissionGroupInfo>,
         ISessionPermissionGroupAppService
     {
-        //protected override string GetPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionPermissionGroupPermission.Default;
-        //protected override string GetListPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionPermissionGroupPermission.Default;
-        //protected override string CreatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionPermissionGroupPermission.CreateAsync;
-        //protected override string UpdatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionPermissionGroupPermission.Update;
-        //protected override string DeletePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionPermissionGroupPermission.Delete;
+        protected override string GetPolicyName { get; set; } = ChatPermissions.SessionPermissionGroupPermission.Default;
+        protected override string GetListPolicyName { get; set; } = ChatPermissions.SessionPermissionGroupPermission.Default;
+        protected override string CreatePolicyName { get; set; } = ChatPermissions.SessionPermissionGroupPermission.Create;
+        protected override string UpdatePolicyName { get; set; } = ChatPermissions.SessionPermissionGroupPermission.Update;
+        protected override string DeletePolicyName { get; set; } = ChatPermissions.SessionPermissionGroupPermission.Delete;
 
         public SessionPermissionGroupAppService(
             IRepository<SessionPermissionGroup, long> repository,

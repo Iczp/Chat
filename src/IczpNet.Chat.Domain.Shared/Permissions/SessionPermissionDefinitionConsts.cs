@@ -2,6 +2,9 @@
 
 namespace IczpNet.Chat.Permissions;
 
+/// <summary>
+/// 会话内权限
+/// </summary>
 public class SessionPermissionDefinitionConsts
 {
     public const string GroupName = "SessionPermission";
@@ -40,14 +43,6 @@ public class SessionPermissionDefinitionConsts
     public class SessionOrganizationPermission
     {
         public const string Default = GroupName + "." + nameof(SessionOrganizationPermission);
-        public const string Create = Default + "." + nameof(Create);
-        public const string Update = Default + "." + nameof(Update);
-        public const string Delete = Default + "." + nameof(Delete);
-    }
-
-    public class SessionPermissionGroupPermission
-    {
-        public const string Default = GroupName + "." + nameof(SessionPermissionGroupPermission);
         public const string Create = Default + "." + nameof(Create);
         public const string Update = Default + "." + nameof(Update);
         public const string Delete = Default + "." + nameof(Delete);

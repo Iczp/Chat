@@ -10,7 +10,7 @@ public static class ChatObjectPermissionDefinitionConsts
 
     public static string[] GetAll()
     {
-        allNames ??= ReflectionHelper.GetPublicConstantsRecursively(typeof(SessionPermissionDefinitionConsts));
+        allNames ??= ReflectionHelper.GetPublicConstantsRecursively(typeof(ChatObjectPermissionDefinitionConsts));
         return allNames;
     }
 
