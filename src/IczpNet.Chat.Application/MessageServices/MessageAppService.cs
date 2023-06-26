@@ -9,7 +9,6 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
-using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -18,6 +17,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.MessageServices;
@@ -38,7 +38,7 @@ public class MessageAppService : ChatAppService, IMessageAppService
         IReadedRecorderManager readedRecorderManager,
         IOpenedRecorderManager openedRecorderManager,
         IFavoritedRecorderManager favoriteManager,
-        IFollowManager followManager) 
+        IFollowManager followManager)
     {
         Repository = repository;
         ReadedRecorderManager = readedRecorderManager;
@@ -70,14 +70,15 @@ public class MessageAppService : ChatAppService, IMessageAppService
     /// <summary>
     /// 获取消息列表
     /// </summary>
-    /// <param name="sessionUnitId"></param>
     /// <param name="input"></param>
     /// <returns></returns>
     [HttpGet]
     [UnitOfWork(true, IsolationLevel.ReadUncommitted)]
-    public async Task<PagedResultDto<MessageOwnerDto>> GetListAsync(Guid sessionUnitId, SessionUnitGetMessageListInput input)
+    public async Task<PagedResultDto<MessageOwnerDto>> GetListAsync(MessageGetListInput input)
     {
-        var entity = await SessionUnitManager.GetAsync(sessionUnitId);
+        var sessionUnitId = input.SessionUnitId;
+
+        var entity = await GetAndCheckPolicyAsync(GetListPolicyName, sessionUnitId);
 
         //Assert.NotNull(entity.Session, "session is null");
 
@@ -120,17 +121,19 @@ public class MessageAppService : ChatAppService, IMessageAppService
     /// <summary>
     /// 获取一条消息
     /// </summary>
-    /// <param name="sessionUnitId">会话单元Id</param>
-    /// <param name="messageId">消息Id</param>
     /// <returns></returns>
     [HttpGet]
-    public async Task<MessageDto> GetItemAsync(Guid sessionUnitId, long messageId)
+    public async Task<MessageDto> GetItemAsync(MessageGetItemInput input)
     {
-        var entity = await SessionUnitManager.GetAsync(sessionUnitId);
+        var sessionUnitId = input.SessionUnitId;
+
+        var messageId = input.MessageId;
+
+        var entity = await GetAndCheckPolicyAsync(GetListPolicyName, sessionUnitId);
 
         //var message = entity.Session.MessageList.FirstOrDefault(x => x.Id == messageId);
 
-        var message = await Repository.FindAsync(messageId);
+        var message = await Repository.FindAsync(input.MessageId);
 
         Assert.NotNull(message, "消息不存在!");
 

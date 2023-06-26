@@ -45,7 +45,8 @@ public class SessionAppService : ChatAppService, ISessionAppService
     public async Task<PagedResultDto<SessionDto>> GetListAsync(SessionGetListInput input)
     {
         var query = (await Repository.GetQueryableAsync())
-            .WhereIf(input.OwnerId.HasValue, x => x.UnitList.Any(m => m.OwnerId == input.OwnerId))
+            //.WhereIf(input.OwnerId.HasValue, x => x.UnitList.Any(m => m.OwnerId == input.OwnerId))
+            .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
             ;
         return await GetPagedListAsync<Session, SessionDto>(query, input, q => q.OrderByDescending(x => x.LastMessageId));
     }

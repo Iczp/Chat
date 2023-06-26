@@ -1,6 +1,7 @@
 ﻿using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.Enums;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 {
@@ -9,6 +10,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
         /// <summary>
         /// 所属聊天对象Id
         /// </summary>
+        //[Required]
         public virtual long? OwnerId { get; set; }
 
         /// <summary>
@@ -42,7 +44,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
         /// </summary>
         public virtual bool? IsImmersed { get; set; }
 
-        
+
 
         //public virtual bool IsOrderByBadge { get; set; }
         /// <summary>

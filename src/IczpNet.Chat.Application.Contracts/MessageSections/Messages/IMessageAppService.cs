@@ -1,6 +1,5 @@
 ﻿using IczpNet.Chat.Enums.Dtos;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
-using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -12,9 +11,9 @@ namespace IczpNet.Chat.MessageSections.Messages
     {
         Task<List<EnumDto>> GetDisabledForwardListAsync();
 
-        Task<PagedResultDto<MessageOwnerDto>> GetListAsync(Guid sessionUnitId, SessionUnitGetMessageListInput input);
+        Task<PagedResultDto<MessageOwnerDto>> GetListAsync(MessageGetListInput input);
 
-        Task<MessageDto> GetItemAsync(Guid sessionUnitId, long messageId);
+        Task<MessageDto> GetItemAsync(MessageGetItemInput input);
 
 
     }
