@@ -13,6 +13,7 @@ using Volo.Abp;
 using Volo.Abp.Domain.Entities;
 using IczpNet.Chat.ChatObjects;
 using Microsoft.AspNetCore.Authorization;
+using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.BaseAppServices
 {
@@ -158,7 +159,7 @@ namespace IczpNet.Chat.BaseAppServices
         /// <param name="id">主建Id</param>
         /// <returns></returns>
         [HttpGet]
-        public virtual async Task<TGetOutputDto> GetAsync(long ownerId, TKey id)
+        public virtual async Task<TGetOutputDto> GetAsync([Required] long ownerId, TKey id)
         {
             //await SessionPermissionChecker.CheckAsync(GetPolicyName, ownerId);
 
@@ -178,7 +179,7 @@ namespace IczpNet.Chat.BaseAppServices
         /// <param name="input"></param>
         /// <returns></returns>
         [HttpGet]
-        public virtual async Task<PagedResultDto<TGetListOutputDto>> GetListAsync(long ownerId, TGetListInput input)
+        public virtual async Task<PagedResultDto<TGetListOutputDto>> GetListAsync([Required] long ownerId, TGetListInput input)
         {
             var owner = await GetAndCheckChatObjectAsync(ownerId);
 
@@ -214,7 +215,7 @@ namespace IczpNet.Chat.BaseAppServices
         /// <param name="input"></param>
         /// <returns></returns>
         [HttpPost]
-        public virtual async Task<TGetOutputDto> CreateAsync(long ownerId, TCreateInput input)
+        public virtual async Task<TGetOutputDto> CreateAsync([Required] long ownerId, TCreateInput input)
         {
             var owner = await GetAndCheckChatObjectAsync(ownerId);
 
@@ -259,7 +260,7 @@ namespace IczpNet.Chat.BaseAppServices
         /// <param name="input"></param>
         /// <returns></returns>
         [HttpPost]
-        public virtual async Task<TGetOutputDto> UpdateAsync(long ownerId, TKey id, TUpdateInput input)
+        public virtual async Task<TGetOutputDto> UpdateAsync([Required] long ownerId, TKey id, TUpdateInput input)
         {
             var owner = await GetAndCheckChatObjectAsync(ownerId);
 
@@ -292,7 +293,7 @@ namespace IczpNet.Chat.BaseAppServices
         /// <param name="id">主建Id</param>
         /// <returns></returns>
         [HttpPost]
-        public virtual async Task DeleteByAsync(long ownerId, TKey id)
+        public virtual async Task DeleteByAsync([Required] long ownerId, TKey id)
         {
             var owner = await GetAndCheckChatObjectAsync(ownerId);
 
@@ -310,7 +311,7 @@ namespace IczpNet.Chat.BaseAppServices
         /// <param name="idList"></param>
         /// <returns></returns>
         [HttpPost]
-        public virtual async Task DeleteManyAsync(long ownerId, List<TKey> idList)
+        public virtual async Task DeleteManyAsync([Required] long ownerId, List<TKey> idList)
         {
             var owner = await GetAndCheckChatObjectAsync(ownerId);
 

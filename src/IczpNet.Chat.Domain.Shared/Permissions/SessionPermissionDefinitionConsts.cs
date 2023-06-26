@@ -52,7 +52,6 @@ public class SessionPermissionDefinitionConsts
     {
         public const string Default = GroupName + "." + nameof(ChatObjectPermission);
         public const string UpdateName = Default + "." + nameof(UpdateName);
-
         public const string UpdatePortrait = Default + "." + nameof(UpdatePortrait);
         public const string ToggleAllInputEnabled = Default + "." + nameof(ToggleAllInputEnabled);
     }

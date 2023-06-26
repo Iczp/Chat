@@ -1,5 +1,4 @@
 ﻿using IczpNet.AbpCommons;
-using IczpNet.AbpTrees;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Menus.Dtos;
@@ -48,8 +47,7 @@ public class MenuAppService
     {
      
         return (await base.CreateFilteredQueryAsync(input))
-            .WhereIf(!input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
-          
+            .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(input.Keyword))
             ;
     }
