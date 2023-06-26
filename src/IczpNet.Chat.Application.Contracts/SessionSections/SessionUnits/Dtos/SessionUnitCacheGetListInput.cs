@@ -1,9 +1,9 @@
-﻿using System;
-using Volo.Abp.Application.Dtos;
+﻿using IczpNet.Chat.BaseDtos;
+using System;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits.Dtos
 {
-    public class SessionUnitCacheGetListInput : PagedAndSortedResultRequestDto
+    public class SessionUnitCacheGetListInput : GetListInput
     {
         /// <summary>
         /// 会话Id（二者不能同时为null）

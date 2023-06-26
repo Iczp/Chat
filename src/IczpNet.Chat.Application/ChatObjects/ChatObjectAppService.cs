@@ -235,7 +235,7 @@ public class ChatObjectAppService
     /// 设置验证方式(好友|群|广场等)
     /// </summary>
     /// <param name="id">主建Id</param>
-    /// <param name="verificationMethod"></param>
+    /// <param name="verificationMethod">验证方式</param>
     /// <returns></returns>
     [HttpPost]
     public virtual Task<ChatObjectDto> SetVerificationMethodAsync(long id, VerificationMethods verificationMethod)

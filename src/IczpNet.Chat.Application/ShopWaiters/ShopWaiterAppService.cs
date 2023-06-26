@@ -1,5 +1,4 @@
-﻿using IczpNet.AbpCommons.Extensions;
-using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.ShopWaiters.Dtos;
@@ -83,7 +82,7 @@ public class ShopWaiterAppService : ChatAppService, IShopWaiterAppService
     /// 店小二绑定用户
     /// </summary>
     /// <param name="id">主建Id</param>
-    /// <param name="userId"></param>
+    /// <param name="userId">用户Id</param>
     /// <returns></returns>
     /// <exception cref="NotImplementedException"></exception>
     [HttpPost]

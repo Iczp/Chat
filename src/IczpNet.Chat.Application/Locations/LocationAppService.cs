@@ -194,7 +194,7 @@ public class LocationAppService : ChatAppService, ILocationAppService
     /// <param name="input"></param>
     /// <returns></returns>
     [HttpPost]
-    public Task<bool> StopSharingAsync(StopShareLocationInput input)
+    public Task<bool> StopSharingAsync([Required] StopShareLocationInput input)
     {
         throw new NotImplementedException();
     }

@@ -20,8 +20,13 @@
     "SessionPermission.SessionOrganizationPermission.Update": "修改",
     "SessionPermission.SessionOrganizationPermission.Delete": "删除",
 
+    "Chat.SessionPermissionGroupPermission": "会话权限分组管理",
+    "Chat.SessionPermissionGroupPermission.Create": "新增分组",
+    "Chat.SessionPermissionGroupPermission.Update": "修改分组",
+    "Chat.SessionPermissionGroupPermission.Delete": "删除分组",
+
     "Chat.SessionPermissionDefinitionPermission": "会话权限定义",
-    "Chat.SessionPermissionDefinitionPermission.Update": "修改",
+    "Chat.SessionPermissionDefinitionPermission.Update": "修改权限定义",
     "Chat.SessionPermissionDefinitionPermission.SetAllIsEnabled": "设置全部开启/禁用",
     "Chat.SessionPermissionDefinitionPermission.SetIsEnabled": "设置开启/禁用",
 

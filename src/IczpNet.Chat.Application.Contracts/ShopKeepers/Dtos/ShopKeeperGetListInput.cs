@@ -1,8 +1,8 @@
-﻿using Volo.Abp.Application.Dtos;
+﻿using IczpNet.Chat.BaseDtos;
 
 namespace IczpNet.Chat.ShopKeepers.Dtos
 {
-    public class ShopKeeperGetListInput : PagedAndSortedResultRequestDto
+    public class ShopKeeperGetListInput : GetListInput
     {
     }
 }
