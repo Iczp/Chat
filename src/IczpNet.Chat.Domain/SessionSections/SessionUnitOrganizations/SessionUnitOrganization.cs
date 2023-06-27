@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System;
-using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.SessionSections.SessionOrganizations;
+using IczpNet.Chat.SessionUnits;
 
 namespace IczpNet.Chat.SessionSections.SessionUnitOrganizations
 {

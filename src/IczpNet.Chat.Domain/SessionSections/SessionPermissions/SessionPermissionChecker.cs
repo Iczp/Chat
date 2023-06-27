@@ -3,7 +3,7 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
-using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnits;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;

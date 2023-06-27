@@ -3,7 +3,7 @@ using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Localization;
-using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnits;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;

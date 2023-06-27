@@ -6,7 +6,7 @@ using Volo.Abp.Uow;
 using Volo.Abp.Domain.Services;
 using IczpNet.Pusher.Connections;
 using IczpNet.Pusher.Commands;
-using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnits;
 
 namespace IczpNet.Chat.CommandHandlers;
 

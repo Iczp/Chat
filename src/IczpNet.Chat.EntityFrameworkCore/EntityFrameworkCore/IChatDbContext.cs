@@ -23,7 +23,6 @@ using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionUnitOrganizations;
 using IczpNet.Chat.SessionSections.SessionUnitRoles;
-using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnitTags;
 using IczpNet.Chat.Scopeds;
 using IczpNet.Chat.Wallets;
@@ -33,7 +32,6 @@ using Volo.Abp.EntityFrameworkCore;
 using IczpNet.Chat.TextContentWords;
 using IczpNet.Chat.Words;
 using IczpNet.Chat.SessionSections.SessionUnitCounters;
-using IczpNet.Chat.SessionSections.SessionUnitSettings;
 using IczpNet.Chat.MessageSections.Counters;
 using IczpNet.Chat.Menus;
 using IczpNet.Chat.Developers;
@@ -48,6 +46,7 @@ using IczpNet.Chat.ContactTags;
 using IczpNet.Chat.WalletBusinesses;
 using IczpNet.Chat.WalletRecorders;
 using IczpNet.Chat.WalletOrders;
+using IczpNet.Chat.SessionUnits;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 

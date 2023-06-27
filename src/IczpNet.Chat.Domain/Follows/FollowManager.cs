@@ -1,5 +1,5 @@
 ﻿using IczpNet.AbpCommons;
-using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.Settings;
 using System;
 using System.Collections.Generic;

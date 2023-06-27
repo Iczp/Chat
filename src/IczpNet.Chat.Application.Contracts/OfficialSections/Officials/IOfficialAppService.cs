@@ -1,6 +1,6 @@
 ﻿using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.OfficialSections.Officials.Dtos;
-using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
+using IczpNet.Chat.SessionUnits.Dtos;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;

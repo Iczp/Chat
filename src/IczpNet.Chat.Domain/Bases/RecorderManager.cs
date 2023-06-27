@@ -1,7 +1,7 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.MessageSections.Messages;
-using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnits;
 using System;
 using System.Collections.Generic;
 using System.Linq;

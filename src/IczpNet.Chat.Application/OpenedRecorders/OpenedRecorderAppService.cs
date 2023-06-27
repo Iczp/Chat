@@ -1,7 +1,7 @@
 ﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.OpenedRecorders.Dtos;
-using IczpNet.Chat.SessionSections.SessionUnits;
-using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
+using IczpNet.Chat.SessionUnits;
+using IczpNet.Chat.SessionUnits.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;

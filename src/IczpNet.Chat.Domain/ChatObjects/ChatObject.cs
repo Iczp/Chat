@@ -9,7 +9,6 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.Mottos;
 using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.SessionSections.Sessions;
-using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -18,6 +17,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using Volo.Abp.SimpleStateChecking;
 using IczpNet.Chat.Developers;
 using IczpNet.Chat.ChatObjectEntryValues;
+using IczpNet.Chat.SessionUnits;
 
 namespace IczpNet.Chat.ChatObjects
 {

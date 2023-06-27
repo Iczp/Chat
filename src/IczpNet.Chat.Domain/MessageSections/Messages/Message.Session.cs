@@ -4,8 +4,7 @@ using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.Scopeds;
 using IczpNet.Chat.SessionSections.Sessions;
-using IczpNet.Chat.SessionSections.SessionUnits;
-using IczpNet.Chat.SessionSections.SessionUnitSettings;
+using IczpNet.Chat.SessionUnits;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -42,7 +41,7 @@ public partial class Message
     /// <summary>
     /// last message list
     /// </summary>
-    [InverseProperty(nameof(SessionSections.SessionUnits.SessionUnit.LastMessage))]
+    [InverseProperty(nameof(SessionUnits.SessionUnit.LastMessage))]
     public virtual List<SessionUnit> LastMessageSessionUnitList { get; protected set; }
 
     /// <summary>

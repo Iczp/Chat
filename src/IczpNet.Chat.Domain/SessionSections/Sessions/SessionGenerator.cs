@@ -1,7 +1,6 @@
 ﻿using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
-using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -13,6 +12,7 @@ using Volo.Abp.Domain.Services;
 using Volo.Abp.Uow;
 using System.Security.Cryptography;
 using IczpNet.AbpCommons;
+using IczpNet.Chat.SessionUnits;
 
 namespace IczpNet.Chat.SessionSections.Sessions
 {

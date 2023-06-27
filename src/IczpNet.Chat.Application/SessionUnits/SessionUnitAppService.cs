@@ -9,7 +9,7 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.SessionSections.SessionUnits;
-using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
+using IczpNet.Chat.SessionUnits.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;

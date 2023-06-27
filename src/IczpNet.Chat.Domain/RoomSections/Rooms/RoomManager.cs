@@ -8,7 +8,7 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.Options;
 using IczpNet.Chat.SessionSections.Sessions;
-using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.TextTemplates;
 using Microsoft.Extensions.Options;
 using System;

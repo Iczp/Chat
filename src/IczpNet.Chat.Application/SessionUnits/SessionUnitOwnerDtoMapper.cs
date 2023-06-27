@@ -1,5 +1,4 @@
-﻿using IczpNet.Chat.SessionSections.SessionUnits;
-using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
+﻿using IczpNet.Chat.SessionUnits.Dtos;
 using System;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Services;

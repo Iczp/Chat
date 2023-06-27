@@ -3,7 +3,7 @@ using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.MessageSections.Templates;
-using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnits;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;

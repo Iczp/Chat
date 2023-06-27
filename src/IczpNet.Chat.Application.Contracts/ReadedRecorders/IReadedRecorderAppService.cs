@@ -1,5 +1,5 @@
 ﻿using IczpNet.Chat.ReadedRecorders.Dtos;
-using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
+using IczpNet.Chat.SessionUnits.Dtos;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;

@@ -21,6 +21,7 @@ using IczpNet.Chat.SessionSections.SessionPermissions;
 using IczpNet.Chat.Permissions;
 using System.Diagnostics;
 using IczpNet.Chat.TextTemplates;
+using IczpNet.Chat.SessionUnits;
 
 namespace IczpNet.Chat.SessionSections.SessionRequests
 {

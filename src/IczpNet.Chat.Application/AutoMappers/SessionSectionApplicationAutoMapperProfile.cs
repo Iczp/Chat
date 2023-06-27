@@ -4,8 +4,6 @@ using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.Sessions.Dtos;
 using IczpNet.Chat.SessionSections.SessionTags;
-using IczpNet.Chat.SessionSections.SessionUnits;
-using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using IczpNet.Chat.SessionSections.SessionOrganizations;
 using IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;
 using IczpNet.Chat.SessionSections.SessionTags.Dtos;
@@ -21,8 +19,9 @@ using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.OpenedRecorders.Dtos;
 using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.FavoritedRecorders.Dtos;
-using IczpNet.Chat.SessionSections.SessionUnitSettings;
 using IczpNet.Chat.Cantacts.Dtos;
+using IczpNet.Chat.SessionUnits.Dtos;
+using IczpNet.Chat.SessionUnits;
 
 namespace IczpNet.Chat.AutoMappers;
 

@@ -28,8 +28,6 @@ using Volo.Abp.Domain.Entities;
 using IczpNet.Chat.TextContentWords;
 using IczpNet.Chat.MessageSections.Counters;
 using IczpNet.Chat.SessionSections.SessionUnitCounters;
-using IczpNet.Chat.SessionSections.SessionUnitSettings;
-using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.Developers;
 using IczpNet.Chat.HttpRequests;
 using IczpNet.Chat.ChatObjectEntryValues;
@@ -37,6 +35,7 @@ using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
 using IczpNet.Chat.DbTables;
 using IczpNet.Chat.Blobs;
 using IczpNet.Chat.SessionSections.SessionUnitContactTags;
+using IczpNet.Chat.SessionUnits;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 

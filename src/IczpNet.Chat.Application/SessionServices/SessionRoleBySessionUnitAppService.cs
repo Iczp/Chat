@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
-using IczpNet.Chat.SessionSections.SessionUnits;
 using System.Linq.Expressions;
 using IczpNet.Chat.Permissions;
+using IczpNet.Chat.SessionUnits;
 
 namespace IczpNet.Chat.SessionServices
 {

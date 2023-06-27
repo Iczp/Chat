@@ -1,6 +1,6 @@
 ﻿using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.MessageSections.Messages;
-using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnits;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;

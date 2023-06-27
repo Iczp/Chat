@@ -1,6 +1,6 @@
 ﻿using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionPermissions;
-using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnits;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using System.Linq;

@@ -2,8 +2,7 @@
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Services;
 using Microsoft.Extensions.Logging;
-using IczpNet.Chat.SessionSections.SessionUnits;
-using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
+using IczpNet.Chat.SessionUnits.Dtos;
 
 namespace IczpNet.Chat.SessionUnits
 {

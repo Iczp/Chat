@@ -1,7 +1,7 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnits;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;

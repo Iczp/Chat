@@ -4,7 +4,7 @@ using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionOrganizations;
 using IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;
-using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnits;
 using System;
 using System.Collections.Generic;
 using System.Linq;

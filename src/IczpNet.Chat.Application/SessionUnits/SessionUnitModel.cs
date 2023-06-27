@@ -1,7 +1,7 @@
 ﻿using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
-using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
+using IczpNet.Chat.SessionUnits.Dtos;
 using System;
 using System.ComponentModel.DataAnnotations;
 

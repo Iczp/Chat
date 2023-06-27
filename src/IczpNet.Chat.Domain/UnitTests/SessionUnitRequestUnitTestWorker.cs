@@ -1,6 +1,6 @@
 ﻿using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.SessionSections.SessionRequests;
-using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnits;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;

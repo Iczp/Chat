@@ -2,7 +2,7 @@
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.MessageSections.Messages;
-using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnits;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;

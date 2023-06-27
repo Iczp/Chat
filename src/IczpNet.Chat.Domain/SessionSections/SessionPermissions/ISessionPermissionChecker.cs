@@ -1,5 +1,5 @@
 ﻿using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnits;
 using System;
 using System.Threading.Tasks;
 

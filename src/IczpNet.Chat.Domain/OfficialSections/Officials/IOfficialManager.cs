@@ -1,7 +1,7 @@
 ﻿using IczpNet.Chat.ChatObjects;
 using System.Threading.Tasks;
 using System;
-using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnits;
 
 namespace IczpNet.Chat.OfficialSections.Officials
 {

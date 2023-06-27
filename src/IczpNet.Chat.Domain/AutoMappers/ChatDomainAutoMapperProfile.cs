@@ -8,6 +8,7 @@ using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.SessionSections.SessionOrganizations;
 using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnits;
 
 namespace IczpNet.Chat.AutoMappers;
 

@@ -3,7 +3,7 @@ using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Connections;
 using IczpNet.Chat.HttpRequests;
-using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.TextTemplates;
 using IczpNet.Chat.UnitTests;
 using IczpNet.Pusher;

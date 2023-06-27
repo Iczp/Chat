@@ -5,7 +5,7 @@ using IczpNet.Chat.Locations.Dto;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
-using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.TextTemplates;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

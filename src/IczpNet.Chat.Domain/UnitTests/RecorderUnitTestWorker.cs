@@ -8,7 +8,7 @@ using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.RoomSections.Rooms;
-using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnits;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
