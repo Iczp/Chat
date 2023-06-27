@@ -55,12 +55,23 @@
     "Chat.MessageSenderPermission.Rollback": "撤回消息",
     "Chat.MessageSenderPermission.Forward": "转发消息",
 
-
     "ChatSettings:SessionRequestExpirationHours": "好友验证有效期(小时)",
     "ChatSettings:MaxFollowingCount": "会话最大关注数量",
     "ChatSettings:AllowRollbackHours": "超过{HOURS}小时的消息不能被撤回,默认 24H",
     "ChatSettings:MaxFavoriteSize": "最大收藏大小",
-    "ChatSettings:MaxFavoriteCount": "最大收藏数量"
+    "ChatSettings:MaxFavoriteCount": "最大收藏数量",
 
+    "Chat.SessionUnitPermissions": "会话单元",
+    "Chat.SessionUnitPermissions.MessageBus": "消息总线",
+
+    "Chat.SessionUnitSettingPermissions": "聊天设置",
+    "Chat.SessionUnitSettingPermissions.SetRename": "备注名称",
+    "Chat.SessionUnitSettingPermissions.SetMemberName": "设置会话内成员名称（群内名称等）",
+    "Chat.SessionUnitSettingPermissions.SetImmersed": "设置免打扰",
+    "Chat.SessionUnitSettingPermissions.RemoveSession": "删除会话",
+    "Chat.SessionUnitSettingPermissions.ClearMessage": "清空消息",
+    "Chat.SessionUnitSettingPermissions.DeleteMessage": "删除消息",
+    "Chat.SessionUnitSettingPermissions.SetContactTags": "通讯录标签",
+    "Chat.SessionUnitSettingPermissions.Kill": "退出会话"
   }
 }

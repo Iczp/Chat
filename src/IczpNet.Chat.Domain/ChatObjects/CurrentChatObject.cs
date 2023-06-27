@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.Enums;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Users;
@@ -16,7 +17,7 @@ namespace IczpNet.Chat.ChatObjects
 
         public ChatObject ChatObject
         {
-            get => _chatObject ??= ChatObjectManager.GetAsync(Id).Result;
+            get => _chatObject ??= ChatObjectManager.GetAsync(Id).GetAwaiter().GetResult();
         }
 
         public CurrentChatObject(
@@ -39,5 +40,6 @@ namespace IczpNet.Chat.ChatObjects
 
         public virtual long? GetId() => CurrentUser.GetChatObjectIdList().FirstOrDefault();
 
+        public virtual List<long> GetIdList() => CurrentUser.GetChatObjectIdList();
     }
 }

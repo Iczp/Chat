@@ -83,6 +83,27 @@ public class ChatPermissions
 
     }
 
+    public class SessionUnitPermissions
+    {
+        public const string Default = GroupName + "." + nameof(SessionUnitPermissions);
+        public const string MessageBus  = Default + "." + nameof(MessageBus);
+    }
+
+    public class SessionUnitSettingPermissions
+    {
+        public const string Default = GroupName + "." + nameof(SessionUnitSettingPermissions);
+        public const string SetRename = Default + "." + nameof(SetRename);
+        public const string SetMemberName = Default + "." + nameof(SetMemberName);
+        public const string SetReaded = Default + "." + nameof(SetReaded);
+        public const string SetTopping = Default + "." + nameof(SetTopping);
+        public const string SetImmersed = Default + "." + nameof(SetImmersed);
+        public const string RemoveSession = Default + "." + nameof(RemoveSession);
+        public const string ClearMessage = Default + "." + nameof(ClearMessage);
+        public const string DeleteMessage = Default + "." + nameof(DeleteMessage);
+        public const string SetContactTags = Default + "." + nameof(SetContactTags);
+        public const string Kill = Default + "." + nameof(Kill);
+    }
+
     public class RobotManagementPermission
     {
         public const string Default = GroupName + "." + nameof(RobotManagementPermission);

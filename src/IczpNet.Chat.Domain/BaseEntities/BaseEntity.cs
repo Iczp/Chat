@@ -17,7 +17,7 @@ namespace IczpNet.Chat.BaseEntities
         protected BaseEntity(TKey id) : base(id) { }
     }
 
-    public abstract class BaseSpellingEntity<TKey> : FullAuditedAggregateRoot<TKey>, IMultiTenant, IName//, IIsActive, IIsStatic, IIsEnabled
+    public abstract class BaseSpellingEntity<TKey> : FullAuditedAggregateRoot<TKey>, IName, IMultiTenant//, IIsActive, IIsStatic, IIsEnabled
     {
         public virtual Guid? TenantId { get; set; }
 

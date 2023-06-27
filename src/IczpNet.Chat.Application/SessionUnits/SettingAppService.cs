@@ -1,6 +1,7 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ContactTags;
+using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionUnitContactTags;
 using IczpNet.Chat.SessionUnits.Dtos;
 using Microsoft.AspNetCore.Mvc;
@@ -17,19 +18,16 @@ namespace IczpNet.Chat.SessionUnits;
 /// </summary>
 public class SettingAppService : ChatAppService, ISettingAppService
 {
-    protected override string GetListPolicyName { get; set; }
-    protected override string GetPolicyName { get; set; }
-    protected virtual string SetRenamePolicyName { get; set; }
-    protected virtual string SetMemberNamePolicyName { get; set; }
-    protected virtual string GetDetailPolicyName { get; set; }
-    protected virtual string SetReadedPolicyName { get; set; }
-    protected virtual string SetToppingPolicyName { get; set; }
-    protected virtual string SetImmersedPolicyName { get; set; }
-    protected virtual string RemoveSessionPolicyName { get; set; }
-    protected virtual string ClearMessagePolicyName { get; set; }
-    protected virtual string DeleteMessagePolicyName { get; set; }
-    protected virtual string SetContactTagsPolicyName { get; set; }
-    protected virtual string KillPolicyName { get; set; }
+    protected virtual string SetRenamePolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.SetRename;
+    protected virtual string SetMemberNamePolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.SetMemberName;
+    protected virtual string SetReadedPolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.SetReaded;
+    protected virtual string SetToppingPolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.SetTopping;
+    protected virtual string SetImmersedPolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.SetImmersed;
+    protected virtual string RemoveSessionPolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.RemoveSession;
+    protected virtual string ClearMessagePolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.ClearMessage;
+    protected virtual string DeleteMessagePolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.DeleteMessage;
+    protected virtual string SetContactTagsPolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.SetContactTags;
+    protected virtual string KillPolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.Kill;
 
     protected ISessionUnitRepository Repository { get; }
     protected IRepository<ContactTag, Guid> ContactTagRepository { get; }

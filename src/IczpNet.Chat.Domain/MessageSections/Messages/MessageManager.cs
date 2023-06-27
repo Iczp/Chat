@@ -97,8 +97,6 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             var message = new Message(senderSessionUnit);
 
-            
-
             //private message
             if (receiverSessionUnit != null)
             {

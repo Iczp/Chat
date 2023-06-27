@@ -7,6 +7,7 @@ using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.OpenedRecorders;
+using IczpNet.Chat.Permissions;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
@@ -29,17 +30,9 @@ namespace IczpNet.Chat.SessionUnits;
 /// </summary>
 public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 {
-    protected override string GetListPolicyName { get; set; }
+    //protected override string GetListPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.MessageBus;
     protected override string GetPolicyName { get; set; }
-    protected virtual string SetRenamePolicyName { get; set; }
-    protected virtual string SetMemberNamePolicyName { get; set; }
     protected virtual string GetDetailPolicyName { get; set; }
-    protected virtual string SetReadedPolicyName { get; set; }
-    protected virtual string SetToppingPolicyName { get; set; }
-    protected virtual string SetImmersedPolicyName { get; set; }
-    protected virtual string RemoveSessionPolicyName { get; set; }
-    protected virtual string ClearMessagePolicyName { get; set; }
-    protected virtual string DeleteMessagePolicyName { get; set; }
 
     protected ISessionUnitRepository Repository { get; }
     protected IMessageRepository MessageRepository { get; }

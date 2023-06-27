@@ -19,5 +19,10 @@ namespace IczpNet.Chat.ChatObjects
         {
             return int.TryParse(currentUser.FindClaimValue(ChatObjectClaims.Count), out var count) ? count : 0;
         }
+
+        public static bool IsIn(this ICurrentUser currentUser, long chatObjectId)
+        {
+            return currentUser.GetChatObjectIdList().Contains(chatObjectId);
+        }
     }
 }
