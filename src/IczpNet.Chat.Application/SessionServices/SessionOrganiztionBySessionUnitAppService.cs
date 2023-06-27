@@ -25,12 +25,12 @@ namespace IczpNet.Chat.SessionServices
             SessionOrganizationUpdateInput>,
         ISessionOrganiztionBySessionUnitAppService
     {
-        protected override string GetPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Default;
-        protected override string GetListPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Default;
-        protected override string CreatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Create;
-        protected override string UpdatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Update;
-        protected override string DeletePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Delete;
-        protected override string DeleteManyPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Delete;
+        //protected override string GetPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Default;
+        //protected override string GetListPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Default;
+        //protected override string CreatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Create;
+        //protected override string UpdatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Update;
+        //protected override string DeletePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Delete;
+        //protected override string DeleteManyPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Delete;
 
         public SessionOrganiztionBySessionUnitAppService(
             IRepository<SessionOrganization, long> repository,

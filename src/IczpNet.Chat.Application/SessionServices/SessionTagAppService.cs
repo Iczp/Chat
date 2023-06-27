@@ -29,11 +29,11 @@ public class SessionTagAppService
     ISessionTagAppService
 {
 
-    protected override string GetPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionTagPermission.Default;
-    protected override string GetListPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionTagPermission.Default;
-    protected override string CreatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionTagPermission.Create;
-    protected override string UpdatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionTagPermission.Update;
-    protected override string DeletePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionTagPermission.Delete;
+    //protected override string GetPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionTagPermission.Default;
+    //protected override string GetListPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionTagPermission.Default;
+    //protected override string CreatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionTagPermission.Create;
+    //protected override string UpdatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionTagPermission.Update;
+    //protected override string DeletePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionTagPermission.Delete;
 
     protected IChatObjectRepository ChatObjectRepository { get; }
     protected IRepository<Session, Guid> SessionRepository { get; }
