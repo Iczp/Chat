@@ -40,6 +40,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         public virtual long? LastMessageId { get; protected set; }
 
+        public virtual bool IsEnableSetImmersed { get; protected set; } = true;
+
         [ForeignKey(nameof(LastMessageId))]
         public virtual Message LastMessage { get; protected set; }
 

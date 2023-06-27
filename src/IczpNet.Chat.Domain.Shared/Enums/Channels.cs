@@ -2,6 +2,9 @@
 
 namespace IczpNet.Chat.Enums
 {
+    /// <summary>
+    /// 会话频道
+    /// </summary>
     [Description("Channels")]
     public enum Channels
     {

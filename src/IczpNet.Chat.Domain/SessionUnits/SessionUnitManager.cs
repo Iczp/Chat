@@ -163,6 +163,8 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
 
     public virtual Task<SessionUnit> SetImmersedAsync(SessionUnit entity, bool isImmersed)
     {
+        Assert.If(!entity.Session.IsEnableSetImmersed, "Session is disable to set immersed.");
+
         return SetEntityAsync(entity, x => x.Setting.SetImmersed(isImmersed));
     }
 
