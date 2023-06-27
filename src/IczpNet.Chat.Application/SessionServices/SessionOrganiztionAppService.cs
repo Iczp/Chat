@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.SessionServices;
@@ -29,11 +30,11 @@ public class SessionOrganizationAppService
         SessionOrganizationInfo>,
     ISessionOrganizationAppService
 {
-    protected override string GetPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Default;
-    protected override string GetListPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Default;
-    protected override string CreatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Create;
-    protected override string UpdatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Update;
-    protected override string DeletePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Delete;
+    //protected override string GetPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Default;
+    //protected override string GetListPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Default;
+    //protected override string CreatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Create;
+    //protected override string UpdatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Update;
+    //protected override string DeletePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Delete;
 
     protected IRepository<Session, Guid> SessionRepository { get; set; }
     public SessionOrganizationAppService(
@@ -52,8 +53,24 @@ public class SessionOrganizationAppService
         return (await Repository.GetQueryableAsync())
             .WhereIf(input.DepthList.IsAny(), (x) => input.DepthList.Contains(x.Depth))
             .WhereIf(input.SessionId.HasValue, (x) => x.SessionId == input.SessionId)
+            //.WhereIf(input.SessionUnitId.HasValue, (x) => x.session == input.SessionId)
             .WhereIf(input.IsEnabledParentId, (x) => x.ParentId == input.ParentId)
             .WhereIf(!string.IsNullOrWhiteSpace(input.Keyword), x => x.Name.Contains(input.Keyword));
+    }
+
+    /// <summary>
+    /// 获取列表
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [HttpGet]
+    public override Task<PagedResultDto<SessionOrganizationDto>> GetListAsync(SessionOrganizationGetListInput input)
+    {
+        if (input.SessionUnitId == null)
+        {
+            CheckPolicyAsync(GetListPolicyName);
+        }
+        return base.GetListAsync(input);
     }
 
     protected override async Task<SessionOrganization> MapToEntityAsync(SessionOrganizationCreateInput createInput)

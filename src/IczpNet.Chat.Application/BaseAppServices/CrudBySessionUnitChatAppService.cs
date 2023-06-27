@@ -46,7 +46,7 @@ namespace IczpNet.Chat.BaseAppServices
         protected virtual string DeleteManyPolicyName { get; set; }
         protected IRepository<Session, Guid> SessionRepository => LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
         protected ISessionPermissionChecker SessionPermissionChecker => LazyServiceProvider.LazyGetRequiredService<ISessionPermissionChecker>();
-        protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
+        //protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
 
         protected CrudBySessionUnitChatAppService(IRepository<TEntity, TKey> repository) : base(repository)
         {
@@ -174,10 +174,7 @@ namespace IczpNet.Chat.BaseAppServices
                 entityDtos = await MapToGetListOutputDtosAsync(entities);
             }
 
-            return new PagedResultDto<TGetListOutputDto>(
-                totalCount,
-                entityDtos
-            );
+            return new PagedResultDto<TGetListOutputDto>(totalCount, entityDtos);
         }
 
         [HttpPost]

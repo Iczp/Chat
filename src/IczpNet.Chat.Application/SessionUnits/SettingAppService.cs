@@ -11,7 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 
-namespace IczpNet.Chat.SessionServices;
+namespace IczpNet.Chat.SessionUnits;
 
 /// <summary>
 /// 聊天设置

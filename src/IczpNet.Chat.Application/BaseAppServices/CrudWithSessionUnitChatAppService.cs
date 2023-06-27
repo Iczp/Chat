@@ -51,7 +51,7 @@ namespace IczpNet.Chat.BaseAppServices
         protected virtual string DeleteManyBySessionUnitPolicyName { get; set; }
         protected IRepository<Session, Guid> SessionRepository => LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
         protected ISessionPermissionChecker SessionPermissionChecker => LazyServiceProvider.LazyGetRequiredService<ISessionPermissionChecker>();
-        protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
+        //protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
 
         protected CrudWithSessionUnitChatAppService(IRepository<TEntity, TKey> repository) : base(repository)
         {

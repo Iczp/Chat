@@ -21,11 +21,9 @@ namespace IczpNet.Chat.MottoServices
             MottoUpdateInput>,
         IMottoAdminAppService
     {
-        protected IChatObjectManager ChatObjectManager { get; }
-        public MottoAdminAppService(IRepository<Motto, Guid> repository,
-            IChatObjectManager chatObjectManager) : base(repository)
+        public MottoAdminAppService(IRepository<Motto, Guid> repository) : base(repository)
         {
-            ChatObjectManager = chatObjectManager;
+
         }
 
         protected override async Task<IQueryable<Motto>> CreateFilteredQueryAsync(MottoAdminGetListInput input)

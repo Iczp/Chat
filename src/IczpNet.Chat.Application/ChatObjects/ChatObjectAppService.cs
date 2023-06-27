@@ -41,7 +41,7 @@ public class ChatObjectAppService
     protected override string CreatePolicyName { get; set; } = ChatPermissions.ChatObjectPermission.Create;
     protected override string UpdatePolicyName { get; set; } = ChatPermissions.ChatObjectPermission.Update;
     protected override string DeletePolicyName { get; set; } = ChatPermissions.ChatObjectPermission.Delete;
-    protected IChatObjectManager ChatObjectManager { get; }
+    //protected IChatObjectManager ChatObjectManager { get; }
     protected IChatObjectCategoryManager ChatObjectCategoryManager { get; }
     protected ISessionPermissionChecker SessionPermissionChecker { get; }
 
@@ -52,7 +52,7 @@ public class ChatObjectAppService
         ISessionPermissionChecker sessionPermissionChecker) : base(repository, chatObjectManager)
     {
         ChatObjectCategoryManager = chatObjectCategoryManager;
-        ChatObjectManager = chatObjectManager;
+        //ChatObjectManager = chatObjectManager;
         SessionPermissionChecker = sessionPermissionChecker;
     }
 

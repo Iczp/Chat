@@ -1,7 +1,9 @@
-﻿using IczpNet.AbpCommons.Extensions;
+﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons.Extensions;
 using IczpNet.AbpTrees;
 using IczpNet.AbpTrees.Dtos;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -82,6 +84,8 @@ public abstract class CrudTreeChatAppService<
     where TTreeInfo : ITreeInfo<TKey>
 {
     protected ICurrentChatObject CurrentChatObject => LazyServiceProvider.LazyGetRequiredService<ICurrentChatObject>();
+    protected IChatObjectManager ChatObjectManager => LazyServiceProvider.LazyGetRequiredService<IChatObjectManager>();
+    protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
     protected CrudTreeChatAppService(
         IRepository<TEntity, TKey> repository,
         ITreeManager<TEntity, TKey, TTreeInfo> treeManager) : base(repository, treeManager)
@@ -114,6 +118,67 @@ public abstract class CrudTreeChatAppService<
             propertyInfo.SetValue(entity, Clock.Now);
         }
     }
+
+    #region  CheckPolicyAsync
+    protected virtual async Task CheckPolicyAsync(string policyName, long ownerId)
+    {
+
+        var owner = await ChatObjectManager.GetAsync(ownerId);
+
+        await CheckPolicyAsync(policyName, owner);
+    }
+
+    protected virtual async Task CheckPolicyAsync(string policyName, ChatObject owner)
+    {
+
+        if (string.IsNullOrEmpty(policyName))
+        {
+            return;
+        }
+
+        await AuthorizationService.CheckAsync(owner, policyName);
+    }
+
+    protected virtual async Task CheckPolicyAsync(string policyName, Guid sessionUnitId)
+    {
+        var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+
+        await CheckPolicyAsync(policyName, sessionUnit);
+    }
+
+    protected virtual async Task CheckPolicyAsync(string policyName, SessionUnit sessionUnit)
+    {
+        if (string.IsNullOrEmpty(policyName))
+        {
+            return;
+        }
+
+        await AuthorizationService.CheckAsync(sessionUnit, policyName);
+    }
+
+    protected virtual async Task<SessionUnit> GetAndCheckPolicyAsync(string policyName, Guid sessionUnitId, bool checkIsKilled = true)
+    {
+        var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+
+        Assert.If(checkIsKilled && sessionUnit.Setting.IsKilled, "已经删除的会话单元!");
+
+        await CheckPolicyAsync(policyName, sessionUnit);
+
+        return sessionUnit;
+    }
+
+    protected virtual async Task<ChatObject> GetAndCheckPolicyAsync(string policyName, long chatObjectId, bool checkIsKilled = true)
+    {
+        var chatObject = await ChatObjectManager.GetAsync(chatObjectId);
+
+        Assert.If(checkIsKilled && chatObject.IsEnabled, "被禁用的聊天对象");
+
+        await CheckPolicyAsync(policyName, chatObject);
+
+        return chatObject;
+    }
+
+    #endregion
 
     #region 重写备注
 

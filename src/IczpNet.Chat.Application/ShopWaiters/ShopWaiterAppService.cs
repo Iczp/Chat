@@ -43,9 +43,11 @@ public class ShopWaiterAppService : ChatAppService, IShopWaiterAppService
     [HttpGet]
     public virtual async Task<PagedResultDto<ShopWaiterDto>> GetListAsync(ShopWaiterGetListInput input)
     {
+
         var query = (await Repository.GetQueryableAsync())
-            .Where(x => x.ParentId == input.ShopKeeperId)
-            .Where(x => x.ObjectType == ChatObjectTypeEnums.ShopWaiter);
+            .Where(x => x.ObjectType == ChatObjectTypeEnums.ShopWaiter)
+            .WhereIf(input.ShopKeeperId.HasValue, x => x.ParentId == input.ShopKeeperId)
+            ;
 
         return await GetPagedListAsync<ChatObject, ShopWaiterDto>(query, input, x => x.OrderBy(d => d.Name));
 

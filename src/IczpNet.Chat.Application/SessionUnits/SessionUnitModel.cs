@@ -5,7 +5,7 @@ using IczpNet.Chat.SessionSections.SessionUnits.Dtos;
 using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace IczpNet.Chat.SessionServices
+namespace IczpNet.Chat.SessionUnits
 {
     public class SessionUnitModel
     {

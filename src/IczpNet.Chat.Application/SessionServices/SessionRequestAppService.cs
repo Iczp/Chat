@@ -28,16 +28,12 @@ public class SessionRequestAppService
         SessionRequestUpdateInput>,
     ISessionRequestAppService
 {
-    protected ISessionUnitManager SessionUnitManager { get; }
     protected ISessionRequestManager SessionRequestManager { get; }
-
 
     public SessionRequestAppService(
         IRepository<SessionRequest, Guid> repository,
-        ISessionUnitManager sessionUnitManager,
         ISessionRequestManager sessionRequestManager) : base(repository)
     {
-        SessionUnitManager = sessionUnitManager;
         SessionRequestManager = sessionRequestManager;
     }
 

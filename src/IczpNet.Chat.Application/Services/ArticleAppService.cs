@@ -28,16 +28,16 @@ public class ArticleAppService
 
     //protected IChatObjectRepository ChatObjectRepository { get; } 
 
-    protected IChatObjectManager ChatObjectManager { get; }
+    //protected IChatObjectManager ChatObjectManager { get; }
 
     protected IMessageManager MessageManager { get; }
 
     public ArticleAppService(
         IRepository<Article, Guid> repository,
-        IChatObjectManager chatObjectManager,
+        //IChatObjectManager chatObjectManager,
         IMessageManager messageManager) : base(repository)
     {
-        ChatObjectManager = chatObjectManager;
+        //ChatObjectManager = chatObjectManager;
         MessageManager = messageManager;
     }
 

@@ -34,6 +34,21 @@ public abstract class ChatAppService : ApplicationService
         ObjectMapperContext = typeof(ChatApplicationModule);
     }
 
+    protected virtual void TryToSetLastModificationTime<T>(T entity)
+    {
+        if (entity is IHasModificationTime)
+        {
+            var propertyInfo = entity.GetType().GetProperty(nameof(IHasModificationTime.LastModificationTime));
+
+            if (propertyInfo == null || propertyInfo.GetSetMethod(true) == null)
+            {
+                return;
+            }
+
+            propertyInfo.SetValue(entity, Clock.Now);
+        }
+    }
+
     protected virtual async Task<PagedResultDto<TOuputDto>> GetPagedListAsync<T, TOuputDto>(
         IQueryable<T> query,
         PagedAndSortedResultRequestDto input,
@@ -45,14 +60,31 @@ public abstract class ChatAppService : ApplicationService
         return await query.ToPagedListAsync<T, TOuputDto>(AsyncExecuter, ObjectMapper, input, queryableAction, entityAction);
     }
 
+    #region  CheckPolicyAsync
+    protected virtual async Task CheckPolicyAsync(string policyName, long ownerId)
+    {
+
+        var owner = await ChatObjectManager.GetAsync(ownerId);
+
+        await CheckPolicyAsync(policyName, owner);
+    }
+
     protected virtual async Task CheckPolicyAsync(string policyName, ChatObject owner)
     {
+
         if (string.IsNullOrEmpty(policyName))
         {
             return;
         }
 
         await AuthorizationService.CheckAsync(owner, policyName);
+    }
+
+    protected virtual async Task CheckPolicyAsync(string policyName, Guid sessionUnitId)
+    {
+        var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+
+        await CheckPolicyAsync(policyName, sessionUnit);
     }
 
     protected virtual async Task CheckPolicyAsync(string policyName, SessionUnit sessionUnit)
@@ -87,20 +119,7 @@ public abstract class ChatAppService : ApplicationService
         return chatObject;
     }
 
-    protected virtual void TryToSetLastModificationTime<T>(T entity)
-    {
-        if (entity is IHasModificationTime)
-        {
-            var propertyInfo = entity.GetType().GetProperty(nameof(IHasModificationTime.LastModificationTime));
-
-            if (propertyInfo == null || propertyInfo.GetSetMethod(true) == null)
-            {
-                return;
-            }
-
-            propertyInfo.SetValue(entity, Clock.Now);
-        }
-    }
+    #endregion
 
     #region 重写备注
 

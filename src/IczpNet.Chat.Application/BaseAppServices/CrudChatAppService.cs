@@ -100,6 +100,8 @@ public abstract class CrudChatAppService<
 {
 
     protected ICurrentChatObject CurrentChatObject => LazyServiceProvider.LazyGetRequiredService<ICurrentChatObject>();
+    protected IChatObjectManager ChatObjectManager => LazyServiceProvider.LazyGetRequiredService<IChatObjectManager>();
+    protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
     protected CrudChatAppService(IRepository<TEntity, TKey> repository) : base(repository)
     {
         LocalizationResource = typeof(ChatResource);
@@ -133,6 +135,15 @@ public abstract class CrudChatAppService<
         }
     }
 
+    #region  CheckPolicyAsync
+    protected virtual async Task CheckPolicyAsync(string policyName, long ownerId)
+    {
+
+        var owner = await ChatObjectManager.GetAsync(ownerId);
+
+        await CheckPolicyAsync(policyName, owner);
+    }
+
     protected virtual async Task CheckPolicyAsync(string policyName, ChatObject owner)
     {
 
@@ -144,6 +155,13 @@ public abstract class CrudChatAppService<
         await AuthorizationService.CheckAsync(owner, policyName);
     }
 
+    protected virtual async Task CheckPolicyAsync(string policyName, Guid sessionUnitId)
+    {
+        var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+
+        await CheckPolicyAsync(policyName, sessionUnit);
+    }
+
     protected virtual async Task CheckPolicyAsync(string policyName, SessionUnit sessionUnit)
     {
         if (string.IsNullOrEmpty(policyName))
@@ -153,6 +171,30 @@ public abstract class CrudChatAppService<
 
         await AuthorizationService.CheckAsync(sessionUnit, policyName);
     }
+
+    protected virtual async Task<SessionUnit> GetAndCheckPolicyAsync(string policyName, Guid sessionUnitId, bool checkIsKilled = true)
+    {
+        var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+
+        Assert.If(checkIsKilled && sessionUnit.Setting.IsKilled, "已经删除的会话单元!");
+
+        await CheckPolicyAsync(policyName, sessionUnit);
+
+        return sessionUnit;
+    }
+
+    protected virtual async Task<ChatObject> GetAndCheckPolicyAsync(string policyName, long chatObjectId, bool checkIsKilled = true)
+    {
+        var chatObject = await ChatObjectManager.GetAsync(chatObjectId);
+
+        Assert.If(checkIsKilled && chatObject.IsEnabled, "被禁用的聊天对象");
+
+        await CheckPolicyAsync(policyName, chatObject);
+
+        return chatObject;
+    }
+
+    #endregion
 
     #region 重写备注
 

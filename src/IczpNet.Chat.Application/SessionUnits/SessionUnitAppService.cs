@@ -22,7 +22,7 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Uow;
 using Volo.Abp.Users;
 
-namespace IczpNet.Chat.SessionServices;
+namespace IczpNet.Chat.SessionUnits;
 
 /// <summary>
 /// 会话单元
@@ -124,7 +124,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         var query = await CreateQueryAsync(input);
 
         return await GetPagedListAsync<SessionUnit, SessionUnitOwnerDto>(
-            query, 
+            query,
             input,
             x => x.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId));
     }
