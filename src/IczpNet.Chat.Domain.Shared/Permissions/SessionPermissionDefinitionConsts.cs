@@ -7,7 +7,7 @@ namespace IczpNet.Chat.Permissions;
 /// </summary>
 public class SessionPermissionDefinitionConsts
 {
-    public const string GroupName = "SessionPermission";
+    public const string GroupName = nameof(SessionPermissionDefinitionConsts);
 
     private static string[] allNames;
 

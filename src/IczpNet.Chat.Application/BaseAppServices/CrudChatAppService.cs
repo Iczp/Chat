@@ -3,11 +3,13 @@ using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Localization;
+using IczpNet.Chat.SessionSections.SessionRequests.Dtos;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -106,6 +108,40 @@ public abstract class CrudChatAppService<
     {
         LocalizationResource = typeof(ChatResource);
         ObjectMapperContext = typeof(ChatApplicationModule);
+    }
+
+    protected virtual async Task<bool> IsAnyCurrentUserAsync(IEnumerable<long?> ownerIdList)
+    {
+        var appUserId = CurrentUser.Id;
+
+        if (appUserId == null || ownerIdList.Where(x => x.HasValue).Any())
+        {
+            return false;
+        }
+
+        var chatObjectIdList = await ChatObjectManager.GetIdListByUserId(appUserId.Value);
+
+        return chatObjectIdList.Any(x => ownerIdList.Contains(x));
+    }
+
+    protected virtual Task<bool> IsCurrentUserAsync(long? ownerId)
+    {
+        return IsAnyCurrentUserAsync(new[] { ownerId });
+    }
+
+    protected virtual async Task CheckPolicyForUserAsync(IEnumerable<long?> ownerIdList, Func<Task> func)
+    {
+        if (await IsAnyCurrentUserAsync(ownerIdList))
+        {
+            return;
+        }
+
+        await func();
+    }
+
+    protected virtual Task CheckPolicyForUserAsync(long? ownerId, Func<Task> func)
+    {
+        return CheckPolicyForUserAsync(new[] { ownerId }, func);
     }
 
     

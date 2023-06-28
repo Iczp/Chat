@@ -2,14 +2,33 @@
 using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.SessionUnits;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.SessionSections.SessionRequests
 {
+    [Index(nameof(CreationTime), AllDescending = true, Name = $"IX_Chat_{nameof(SessionRequest)}_{nameof(CreationTime)}_Desc")]
+    [Index(nameof(HandleTime), AllDescending = true, Name = $"IX_Chat_{nameof(SessionRequest)}_{nameof(HandleTime)}_Desc")]
+    [Index(nameof(CreationTime))]
+    [Index(nameof(HandleTime))]
+    [Index(nameof(OwnerId))]
+    [Index(nameof(DestinationId))]
+    [Index(nameof(IsHandled))]
+    [Index(nameof(IsAgreed))]
     public class SessionRequest : BaseSessionEntity<Guid>, IDeviceId, IIsEnabled
     {
+        /// <summary>
+        /// 发起者
+        /// </summary>
+        public override long OwnerId { get; protected set; }
+
+        /// <summary>
+        /// 被请求者
+        /// </summary>
+        public override long? DestinationId { get; protected set; }
+
         [StringLength(36)]
         public virtual string DeviceId { get; set; }
 

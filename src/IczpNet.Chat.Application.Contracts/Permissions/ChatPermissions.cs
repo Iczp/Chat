@@ -4,7 +4,7 @@ namespace IczpNet.Chat.Permissions;
 
 public class ChatPermissions
 {
-    public const string GroupName = "Chat";
+    public const string GroupName = nameof(ChatPermissions);
 
     public static string[] GetAll()
     {
@@ -102,6 +102,16 @@ public class ChatPermissions
         public const string DeleteMessage = Default + "." + nameof(DeleteMessage);
         public const string SetContactTags = Default + "." + nameof(SetContactTags);
         public const string Kill = Default + "." + nameof(Kill);
+    }
+
+    public class SessionRequestPermissions
+    {
+        public const string Default = GroupName + "." + nameof(SessionRequestPermissions);
+        public const string GetAll = Default + "." + nameof(GetAll);
+        public const string Create = Default + "." + nameof(Create);
+        public const string Update = Default + "." + nameof(Update);
+        public const string Delete = Default + "." + nameof(Delete);
+        public const string HandleRquest = Default + "." + nameof(HandleRquest);
     }
 
     public class RobotManagementPermission

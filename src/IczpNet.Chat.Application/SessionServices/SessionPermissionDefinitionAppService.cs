@@ -70,7 +70,8 @@ public class SessionPermissionDefinitionAppService
 
     protected override IQueryable<SessionPermissionDefinition> ApplyDefaultSorting(IQueryable<SessionPermissionDefinition> query)
     {
-        return query.OrderByDescending(x => x.Group.Sorting)
+        return query
+            .OrderByDescending(x => x.Group.Sorting)
             .ThenBy(x => x.Group.FullPathName)
             .ThenByDescending(x => x.Sorting);
     }

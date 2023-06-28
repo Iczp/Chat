@@ -1,11 +1,10 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionRequests;
 using IczpNet.Chat.SessionSections.SessionRequests.Dtos;
-using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -28,6 +27,10 @@ public class SessionRequestAppService
         SessionRequestUpdateInput>,
     ISessionRequestAppService
 {
+    protected override string GetListPolicyName { get; set; } = ChatPermissions.SessionRequestPermissions.GetAll;
+    protected override string CreatePolicyName { get; set; } = ChatPermissions.SessionRequestPermissions.Create;
+    protected virtual string HandleRquestPolicyName { get; set; } = ChatPermissions.SessionRequestPermissions.HandleRquest;
+
     protected ISessionRequestManager SessionRequestManager { get; }
 
     public SessionRequestAppService(
@@ -54,6 +57,11 @@ public class SessionRequestAppService
             ;
     }
 
+    protected override async Task CheckGetListPolicyAsync(SessionRequestGetListInput input)
+    {
+        await CheckPolicyForUserAsync(new[] { input.OwnerId, input.DestinationId }, () => base.CheckGetListPolicyAsync(input));
+    }
+
     protected override SessionRequest MapToEntity(SessionRequestCreateInput createInput)
     {
         return new SessionRequest(createInput.OwnerId, createInput.DestinationId, createInput.RequestMessage);
@@ -73,6 +81,8 @@ public class SessionRequestAppService
     [HttpPost]
     public override async Task<SessionRequestDetailDto> CreateAsync([FromQuery] SessionRequestCreateInput input)
     {
+        await CheckPolicyForUserAsync(input.OwnerId, () => base.CheckCreateAsync(input));
+
         var entity = await SessionRequestManager.CreateRequestAsync(input.OwnerId, input.DestinationId, input.RequestMessage);
 
         return await MapToGetOutputDtoAsync(entity);
@@ -97,6 +107,10 @@ public class SessionRequestAppService
     [HttpPost]
     public async Task<SessionRequestDetailDto> HandleRequestAsync([FromQuery] SessionRequestHandleInput input)
     {
+        var sessionRequest = await Repository.GetAsync(input.SessionRequestId);
+
+        await CheckPolicyForUserAsync(sessionRequest.DestinationId, () => CheckPolicyAsync(HandleRquestPolicyName));
+
         var entity = await SessionRequestManager.HandleRequestAsync(input.SessionRequestId, input.IsAgreed, input.HandleMessage, null);
 
         return await MapToGetOutputDtoAsync(entity);
