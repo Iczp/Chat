@@ -88,7 +88,7 @@ namespace IczpNet.Chat.BaseAppServices
         public override Task DeleteManyAsync(List<TKey> idList) => base.DeleteManyAsync(idList);
 
         [RemoteService(false)]
-        public override Task<DateTime> RepairDataAsync() => base.RepairDataAsync();
+        public override Task<string> RepairDataAsync(int maxResultCount = 100, int skinCount = 0)=> base.RepairDataAsync(maxResultCount, skinCount);
 
         //[Obsolete("CheckPolicyAsync(string policyName, SessionUnit sessionUnit)", true)]
         protected override Task CheckPolicyAsync(string policyName)
