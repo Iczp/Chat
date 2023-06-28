@@ -94,6 +94,11 @@ public abstract class ChatAppService : ApplicationService
     {
         return CheckPolicyForUserAsync(new[] { ownerId }, func);
     }
+
+    protected virtual Task CheckPolicyForUserAsync(IEnumerable<long> ownerIdList, Func<Task> func = null)
+    {
+        return CheckPolicyForUserAsync(ownerIdList.Select(x => (long?)x), func);
+    }
     #endregion
 
     #region  CheckPolicyAsync
@@ -139,7 +144,7 @@ public abstract class ChatAppService : ApplicationService
 
         Assert.If(checkIsKilled && sessionUnit.Setting.IsKilled, "已经删除的会话单元!");
 
-        await CheckPolicyAsync(policyName, sessionUnit);
+        await CheckPolicyForUserAsync(sessionUnit.OwnerId, () => CheckPolicyAsync(policyName, sessionUnit));
 
         return sessionUnit;
     }

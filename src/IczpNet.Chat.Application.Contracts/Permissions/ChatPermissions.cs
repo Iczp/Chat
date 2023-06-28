@@ -86,7 +86,11 @@ public class ChatPermissions
     public class SessionUnitPermissions
     {
         public const string Default = GroupName + "." + nameof(SessionUnitPermissions);
-        public const string MessageBus  = Default + "." + nameof(MessageBus);
+        public const string MessageBus = Default + "." + nameof(MessageBus);
+        public const string GetSameSession = Default + "." + nameof(GetSameSession);
+        public const string GetBadge  = Default + "." + nameof(GetBadge);
+        public const string Find = Default + "." + nameof(Find);
+        public const string GetCounter = Default + "." + nameof(GetCounter);
     }
 
     public class SessionUnitSettingPermissions

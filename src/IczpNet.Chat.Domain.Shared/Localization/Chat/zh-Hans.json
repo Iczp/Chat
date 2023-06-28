@@ -63,6 +63,10 @@
 
     "ChatPermissions.SessionUnitPermissions": "会话单元",
     "ChatPermissions.SessionUnitPermissions.MessageBus": "消息总线",
+    "ChatPermissions.SessionUnitPermissions.GetSameSession": "查看同一会话成员",
+    "ChatPermissions.SessionUnitPermissions.GetBadge": "获取消息角标（新消息）",
+    "ChatPermissions.SessionUnitPermissions.Find": "查询会话单元",
+    "ChatPermissions.SessionUnitPermissions.GetCounter": "查看计数器",
 
     "ChatPermissions.SessionUnitSettingPermissions": "聊天设置",
     "ChatPermissions.SessionUnitSettingPermissions.SetRename": "备注名称",

@@ -144,6 +144,11 @@ public abstract class CrudChatAppService<
     {
         return CheckPolicyForUserAsync(new[] { ownerId }, func);
     }
+
+    protected virtual Task CheckPolicyForUserAsync(IEnumerable<long> ownerIdList, Func<Task> func = null)
+    {
+        return CheckPolicyForUserAsync(ownerIdList.Select(x => (long?)x), func);
+    }
     #endregion
 
     protected virtual bool HasNameProperty(TEntity entity)

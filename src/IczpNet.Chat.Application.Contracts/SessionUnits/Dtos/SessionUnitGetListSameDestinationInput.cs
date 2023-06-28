@@ -2,6 +2,7 @@
 using IczpNet.Chat.Enums;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.SessionUnits.Dtos
 {
@@ -10,11 +11,13 @@ namespace IczpNet.Chat.SessionUnits.Dtos
         /// <summary>
         /// 原聊天对象Id
         /// </summary>
+        [Required]
         public virtual long SourceId { get; set; }
 
         /// <summary>
         /// 目标对象Id
         /// </summary>
+        [Required]
         public virtual long TargetId { get; set; }
 
         /// <summary>

@@ -68,7 +68,7 @@ public class ChatHttpApiHostModule : AbpModule
         {
             //----------alert------------
 
-            //context.Services.AddAlwaysAllowAuthorization();
+            context.Services.AddAlwaysAllowAuthorization();
         }
 
         Configure<AbpBackgroundJobWorkerOptions>(options =>
