@@ -83,11 +83,14 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         public virtual async Task<Message> CreateMessageAsync(
             SessionUnit senderSessionUnit,
-            Func<Message,  Task<IContentEntity>> action,
+            Func<Message, Task<IContentEntity>> action,
             SessionUnit receiverSessionUnit = null,
             long? quoteMessageId = null,
             List<Guid> remindList = null)
         {
+
+            Assert.If(!await SettingProvider.IsTrueAsync(ChatSettings.IsMessageSenderEnabled), $"MessageSender main switch is off.");
+
             Assert.NotNull(senderSessionUnit, $"Unable to send message, senderSessionUnit is null");
 
             Assert.If(!senderSessionUnit.Setting.IsInputEnabled, $"Unable to send message, input status is disabled");

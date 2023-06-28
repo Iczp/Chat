@@ -1,47 +1,62 @@
-﻿namespace IczpNet.Chat.Settings;
+﻿using System.ComponentModel;
+
+namespace IczpNet.Chat.Settings;
 
 public static class ChatSettings
 {
-    public const string GroupName = "Chat";
+    public const string GroupName = nameof(ChatSettings);
 
     /* Add constants for setting names. Example:
      * public const string MySettingName = GroupName + ".MySettingName";
      */
 
     /// <summary>
+    /// 消息发送器总开关
+    /// </summary>
+    [DefaultValue(true)]
+    public const string IsMessageSenderEnabled = $"{GroupName}:{nameof(IsMessageSenderEnabled)}";
+
+    /// <summary>
     /// 好友验证有效期
     /// </summary>
-    public const string SessionRequestExpirationHours = GroupName + "Settings:SessionRequestExpirationHours";
+    [DefaultValue(72)] 
+    public const string SessionRequestExpirationHours = $"{GroupName}:{nameof(SessionRequestExpirationHours)}";
 
     /// <summary>
     /// 会话最大关注数量
     /// </summary>
-    public const string MaxFollowingCount = GroupName + "Settings:MaxFollowingCount";
+    [DefaultValue(10)] 
+    public const string MaxFollowingCount = $"{GroupName}:{nameof(MaxFollowingCount)}";
 
     /// <summary>
     ///  超过{HOURS}小时的消息不能被撤回,默认 24H
     /// </summary>
-    public const string AllowRollbackHours = GroupName + "Settings:AllowRollbackHours";
+    [DefaultValue(24)] 
+    public const string AllowRollbackHours = $"{GroupName}:{nameof(AllowRollbackHours)}";
 
     /// <summary>
     /// 最大收藏大小
     /// </summary>
-    public const string MaxFavoriteSize = GroupName + "Settings:MaxFavoriteSize";
+    [DefaultValue(long.MaxValue)] 
+    public const string MaxFavoriteSize = $"{GroupName}:{nameof(MaxFavoriteSize)}";
 
     /// <summary>
     /// 最大收藏数量
     /// </summary>
-    public const string MaxFavoriteCount = GroupName + "Settings:MaxFavoriteCount";
+    [DefaultValue(long.MaxValue)] 
+    public const string MaxFavoriteCount = $"{GroupName}:{nameof(MaxFavoriteCount)}";
 
     /// <summary>
     /// 使用后台作业发送程序最小会话单元数量
     /// </summary>
 
-    public const string UseBackgroundJobSenderMinSessionUnitCount = GroupName + "Settings:UseBackgroundJobSenderMinSessionUnitCount";
+    [DefaultValue(500)] 
+    public const string UseBackgroundJobSenderMinSessionUnitCount = $"{GroupName}:{nameof(UseBackgroundJobSenderMinSessionUnitCount)}";
 
     /// <summary>
     /// 好友的最大数量
     /// </summary>
 
-    public const string MaxSessionUnitCount = GroupName + "Settings:MaxSessionUnitCount";
+    [DefaultValue(5000)] 
+    public const string MaxSessionUnitCount = $"{GroupName}:{nameof(MaxSessionUnitCount)}";
 }

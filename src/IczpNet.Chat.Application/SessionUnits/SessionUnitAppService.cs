@@ -1,4 +1,5 @@
-﻿using IczpNet.AbpCommons;
+﻿using Castle.Core.Internal;
+using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.BaseDtos;
@@ -11,10 +12,12 @@ using IczpNet.Chat.Permissions;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
+using IczpNet.Chat.Settings;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
 using System.Linq;
@@ -38,7 +41,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     protected virtual string GetBadgePolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.GetBadge;
     protected virtual string FindPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.Find;
     protected virtual string GetCounterPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.GetCounter;
-    
+
     protected ISessionUnitRepository Repository { get; }
     protected IMessageRepository MessageRepository { get; }
     protected IReadedRecorderManager ReadedRecorderManager { get; }
