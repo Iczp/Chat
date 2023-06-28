@@ -28,7 +28,7 @@ public class SessionRoleAppService
         SessionRoleUpdateInput>,
     ISessionRoleAppService
 {
-    //protected override string GetPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Default;
+    //protected override string GetItemPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Default;
     //protected override string GetListPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Default;
     //protected override string CreatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Create;
     //protected override string UpdatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Update;

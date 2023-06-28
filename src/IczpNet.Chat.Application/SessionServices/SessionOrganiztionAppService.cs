@@ -30,7 +30,7 @@ public class SessionOrganizationAppService
         SessionOrganizationInfo>,
     ISessionOrganizationAppService
 {
-    //protected override string GetPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Default;
+    //protected override string GetItemPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Default;
     //protected override string GetListPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Default;
     //protected override string CreatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Create;
     //protected override string UpdatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Update;

@@ -22,7 +22,7 @@ public abstract class ChatAppService : ApplicationService
     protected virtual string CreatePolicyName { get; set; }
     protected virtual string UpdatePolicyName { get; set; }
     protected virtual string DeletePolicyName { get; set; }
-    protected virtual string GetPolicyName { get; set; }
+    protected virtual string GetItemPolicyName { get; set; }
     protected virtual string GetListPolicyName { get; set; }
 
     protected ICurrentChatObject CurrentChatObject => LazyServiceProvider.LazyGetRequiredService<ICurrentChatObject>();
@@ -55,10 +55,46 @@ public abstract class ChatAppService : ApplicationService
         Func<IQueryable<T>, IQueryable<T>> queryableAction = null,
         Func<List<T>, Task<List<T>>> entityAction = null)
     {
-        await CheckPolicyAsync(GetListPolicyName);
+        //await CheckPolicyAsync(GetListPolicyName);
 
         return await query.ToPagedListAsync<T, TOuputDto>(AsyncExecuter, ObjectMapper, input, queryableAction, entityAction);
     }
+
+    #region CheckPolicyForUserAsync
+    protected virtual async Task<bool> IsAnyCurrentUserAsync(IEnumerable<long?> ownerIdList)
+    {
+        var appUserId = CurrentUser.Id;
+
+        if (appUserId == null || ownerIdList.Where(x => x.HasValue).Any())
+        {
+            return false;
+        }
+
+        var chatObjectIdList = await ChatObjectManager.GetIdListByUserId(appUserId.Value);
+
+        return chatObjectIdList.Any(x => ownerIdList.Contains(x));
+    }
+
+    protected virtual Task<bool> IsCurrentUserAsync(long? ownerId)
+    {
+        return IsAnyCurrentUserAsync(new[] { ownerId });
+    }
+
+    protected virtual async Task CheckPolicyForUserAsync(IEnumerable<long?> ownerIdList, Func<Task> func = null)
+    {
+        if (await IsAnyCurrentUserAsync(ownerIdList))
+        {
+            return;
+        }
+
+        await func?.Invoke();
+    }
+
+    protected virtual Task CheckPolicyForUserAsync(long? ownerId, Func<Task> func = null)
+    {
+        return CheckPolicyForUserAsync(new[] { ownerId }, func);
+    }
+    #endregion
 
     #region  CheckPolicyAsync
     protected virtual async Task CheckPolicyAsync(string policyName, long ownerId)

@@ -30,8 +30,10 @@ namespace IczpNet.Chat.SessionUnits;
 /// </summary>
 public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 {
-    //protected override string GetListPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.MessageBus;
-    protected override string GetPolicyName { get; set; }
+    protected override string GetListPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.MessageBus;
+    protected override string GetItemPolicyName { get; set; }
+    protected virtual string GetListForSameSessionPolicyName { get; set; }
+    protected virtual string GetItemForSameSessionPolicyName { get; set; }
     protected virtual string GetDetailPolicyName { get; set; }
 
     protected ISessionUnitRepository Repository { get; }
@@ -112,7 +114,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     [UnitOfWork(true, IsolationLevel.ReadCommitted)]
     public virtual async Task<PagedResultDto<SessionUnitOwnerDto>> GetListAsync(SessionUnitGetListInput input)
     {
-        await CheckPolicyAsync(GetListPolicyName);
+        await CheckPolicyForUserAsync(input.OwnerId, () => CheckPolicyAsync(GetListPolicyName));
 
         var query = await CreateQueryAsync(input);
 
@@ -145,6 +147,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     {
         var entity = await Repository.GetAsync(id);
 
+        await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetListForSameSessionPolicyName));
+
         var query = (await Repository.GetQueryableAsync())
             .Where(x => x.SessionId == entity.SessionId && x.Setting.IsEnabled)
             .WhereIf(input.IsKilled.HasValue, x => x.Setting.IsKilled == input.IsKilled)
@@ -174,6 +178,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     {
         var entity = await Repository.GetAsync(id);
 
+        await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetListForSameSessionPolicyName));
+
         var query = (await Repository.GetQueryableAsync())
             .Where(x => x.SessionId == entity.SessionId && x.Setting.IsEnabled)
             .Where(SessionUnit.GetActivePredicate())
@@ -195,9 +201,9 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     [HttpGet]
     public virtual async Task<SessionUnitOwnerDto> GetAsync(Guid id)
     {
-        await CheckPolicyAsync(GetPolicyName);
-
         var entity = await GetEntityAsync(id);
+
+        await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetItemPolicyName));
 
         return await MapToDtoAsync(entity);
     }
@@ -210,9 +216,9 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     [HttpGet]
     public virtual async Task<SessionUnitOwnerDetailDto> GetDetailAsync(Guid id)
     {
-        await CheckPolicyAsync(GetDetailPolicyName);
-
         var entity = await GetEntityAsync(id);
+
+        await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetDetailPolicyName));
 
         return ObjectMapper.Map<SessionUnit, SessionUnitOwnerDetailDto>(entity);
     }
@@ -226,11 +232,13 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     [HttpGet]
     public virtual async Task<SessionUnitDestinationDto> GetDestinationAsync([Required] Guid id, [Required] Guid destinationId)
     {
+        var entity = await GetEntityAsync(id);
+
+        await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetItemForSameSessionPolicyName));
+
         var destinationEntity = await GetEntityAsync(destinationId);
 
-        var selfEntity = await GetEntityAsync(id);
-
-        Assert.If(selfEntity.SessionId != destinationEntity.SessionId, $"Not in the same session");
+        Assert.If(entity.SessionId != destinationEntity.SessionId, $"Not in the same session");
 
         return await MapToDestinationDtoAsync(destinationEntity);
     }

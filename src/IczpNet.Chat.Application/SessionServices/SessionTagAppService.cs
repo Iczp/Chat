@@ -29,7 +29,7 @@ public class SessionTagAppService
     ISessionTagAppService
 {
 
-    //protected override string GetPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionTagPermission.Default;
+    //protected override string GetItemPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionTagPermission.Default;
     //protected override string GetListPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionTagPermission.Default;
     //protected override string CreatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionTagPermission.Create;
     //protected override string UpdatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionTagPermission.Update;

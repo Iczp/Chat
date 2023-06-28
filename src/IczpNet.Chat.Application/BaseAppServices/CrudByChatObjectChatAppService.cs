@@ -161,7 +161,7 @@ namespace IczpNet.Chat.BaseAppServices
         [HttpGet]
         public virtual async Task<TGetOutputDto> GetAsync([Required] long ownerId, TKey id)
         {
-            //await SessionPermissionChecker.CheckAsync(GetPolicyName, ownerId);
+            //await SessionPermissionChecker.CheckAsync(GetItemPolicyName, ownerId);
 
             var owner = await GetAndCheckChatObjectAsync(ownerId);
 

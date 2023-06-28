@@ -22,7 +22,7 @@ public class ContactTagAppService
         ContactTagUpdateInput>,
     IContactTagAppService
 {
-    //protected override string GetPolicyName { get; set; } = ChatPermissions.EntryNamePermission.Default;
+    //protected override string GetItemPolicyName { get; set; } = ChatPermissions.EntryNamePermission.Default;
     //protected override string GetListPolicyName { get; set; } = ChatPermissions.EntryNamePermission.Default;
     //protected override string CreatePolicyName { get; set; } = ChatPermissions.EntryNamePermission.CreateAsync;
     //protected override string UpdatePolicyName { get; set; } = ChatPermissions.EntryNamePermission.Update;

@@ -110,6 +110,7 @@ public abstract class CrudChatAppService<
         ObjectMapperContext = typeof(ChatApplicationModule);
     }
 
+    #region CheckPolicyForUserAsync
     protected virtual async Task<bool> IsAnyCurrentUserAsync(IEnumerable<long?> ownerIdList)
     {
         var appUserId = CurrentUser.Id;
@@ -129,7 +130,7 @@ public abstract class CrudChatAppService<
         return IsAnyCurrentUserAsync(new[] { ownerId });
     }
 
-    protected virtual async Task CheckPolicyForUserAsync(IEnumerable<long?> ownerIdList, Func<Task> func)
+    protected virtual async Task CheckPolicyForUserAsync(IEnumerable<long?> ownerIdList, Func<Task> func = null)
     {
         if (await IsAnyCurrentUserAsync(ownerIdList))
         {
@@ -139,10 +140,11 @@ public abstract class CrudChatAppService<
         await func?.Invoke();
     }
 
-    protected virtual Task CheckPolicyForUserAsync(long? ownerId, Func<Task> func)
+    protected virtual Task CheckPolicyForUserAsync(long? ownerId, Func<Task> func = null)
     {
         return CheckPolicyForUserAsync(new[] { ownerId }, func);
     }
+    #endregion
 
     protected virtual bool HasNameProperty(TEntity entity)
     {
