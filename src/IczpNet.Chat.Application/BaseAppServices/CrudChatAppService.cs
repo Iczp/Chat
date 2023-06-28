@@ -136,15 +136,13 @@ public abstract class CrudChatAppService<
             return;
         }
 
-        await func();
+        await func?.Invoke();
     }
 
     protected virtual Task CheckPolicyForUserAsync(long? ownerId, Func<Task> func)
     {
         return CheckPolicyForUserAsync(new[] { ownerId }, func);
     }
-
-    
 
     protected virtual bool HasNameProperty(TEntity entity)
     {
