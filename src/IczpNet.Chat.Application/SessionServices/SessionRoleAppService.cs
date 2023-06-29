@@ -62,6 +62,11 @@ public class SessionRoleAppService
         Assert.If(await Repository.AnyAsync(x => x.SessionId == input.SessionId && x.Name == input.Name), $"Already exists [{input.Name}].");
     }
 
+    protected override Task CheckCreatePolicyAsync(SessionRoleCreateInput input)
+    {
+        return base.CheckCreatePolicyAsync(input);
+    }
+
     protected override async Task<SessionRole> MapToEntityAsync(SessionRoleCreateInput createInput)
     {
         await Task.Yield();

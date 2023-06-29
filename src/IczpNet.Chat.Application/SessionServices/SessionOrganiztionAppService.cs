@@ -58,19 +58,14 @@ public class SessionOrganizationAppService
             .WhereIf(!string.IsNullOrWhiteSpace(input.Keyword), x => x.Name.Contains(input.Keyword));
     }
 
-    /// <summary>
-    /// 获取列表
-    /// </summary>
-    /// <param name="input"></param>
-    /// <returns></returns>
-    [HttpGet]
-    public override Task<PagedResultDto<SessionOrganizationDto>> GetListAsync(SessionOrganizationGetListInput input)
+    protected override async Task CheckGetListPolicyAsync(SessionOrganizationGetListInput input)
     {
-        if (input.SessionUnitId == null)
+        if (input.SessionUnitId.HasValue)
         {
-            CheckPolicyAsync(GetListPolicyName);
+            await CheckPolicyAsync(GetListPolicyName, input.SessionUnitId.Value);
         }
-        return base.GetListAsync(input);
+
+        await base.CheckGetListPolicyAsync(input);
     }
 
     protected override async Task<SessionOrganization> MapToEntityAsync(SessionOrganizationCreateInput createInput)

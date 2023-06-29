@@ -4,6 +4,7 @@ using IczpNet.Chat.SessionSections.SessionUnitCounters;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Polly;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -96,16 +97,23 @@ namespace IczpNet.Chat.Repositories
                 );
         }
 
-        private static async Task<int> UpdateSenderLastMessageIdAsync(IQueryable<SessionUnit> query, Guid senderSessionUnitId, long lastMessageId)
+        protected virtual async Task<int> UpdateSenderLastMessageIdAsync(IQueryable<SessionUnit> query, Guid senderSessionUnitId, long lastMessageId)
         {
             //
             return await query
                  .Where(x => x.Id == senderSessionUnitId)
-                 .Where(x => x.LastMessageId < lastMessageId)
+                 .Where(x => x.LastMessageId == null || x.LastMessageId < lastMessageId)
                  .ExecuteUpdateAsync(s => s
                      .SetProperty(b => b.LastModificationTime, b => DateTime.Now)
                      .SetProperty(b => b.LastMessageId, b => lastMessageId)
                  );
+        }
+
+        public virtual async Task<int> UpdateLastMessageIdAsync(Guid senderSessionUnitId, long lastMessageId)
+        {
+            var query = await GetQueryableAsync(DateTime.Now, null);
+
+            return await UpdateSenderLastMessageIdAsync(query, senderSessionUnitId, lastMessageId);
         }
 
         public virtual async Task<int> IncrementPublicBadgeAndRemindAllCountAndUpdateLastMessageIdAsync(Guid sessionId, long lastMessageId, DateTime messageCreationTime, Guid senderSessionUnitId, bool isRemindAll)

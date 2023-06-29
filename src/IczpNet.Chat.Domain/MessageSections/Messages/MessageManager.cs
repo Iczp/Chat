@@ -146,9 +146,9 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             await Repository.InsertAsync(message, autoSave: true);
 
-            // session LastMessage
+            // LastMessage
             await SessionRepository.UpdateLastMessageIdAsync(senderSessionUnit.SessionId.Value, message.Id);
-
+            //senderSessionUnit.LastMessageId = message.Id;
             // private message
             if (message.IsPrivate || receiverSessionUnit != null)
             {
