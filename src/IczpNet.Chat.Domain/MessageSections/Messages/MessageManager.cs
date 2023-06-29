@@ -8,7 +8,6 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionSections.Sessions;
-using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.Settings;
 using Microsoft.Extensions.Logging;
@@ -17,7 +16,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Volo.Abp.Auditing;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.ObjectMapping;
@@ -148,6 +146,9 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             // LastMessage
             await SessionRepository.UpdateLastMessageIdAsync(senderSessionUnit.SessionId.Value, message.Id);
+            ////以下可能导致锁表
+            //await SessionUnitRepository.UpdateLastMessageIdAsync(senderSessionUnit.Id, message.Id);
+            
             //senderSessionUnit.LastMessageId = message.Id;
             // private message
             if (message.IsPrivate || receiverSessionUnit != null)

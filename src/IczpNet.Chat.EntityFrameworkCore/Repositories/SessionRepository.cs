@@ -1,11 +1,10 @@
 ﻿using IczpNet.Chat.EntityFrameworkCore;
-using Volo.Abp.EntityFrameworkCore;
 using IczpNet.Chat.SessionSections.Sessions;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Volo.Abp.EntityFrameworkCore;
 
 namespace IczpNet.Chat.Repositories
 {
@@ -23,6 +22,7 @@ namespace IczpNet.Chat.Repositories
                 .Where(x => x.Id == sessionId)
                 .Where(x => x.LastMessageId == null || x.LastMessageId.Value < lastMessageId)
                 .ExecuteUpdateAsync(s => s
+                    .SetProperty(b => b.LastModificationTime, b => DateTime.Now)
                     .SetProperty(b => b.LastMessageId, b => lastMessageId)
                 );
         }
