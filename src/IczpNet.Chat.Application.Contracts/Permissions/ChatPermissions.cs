@@ -21,6 +21,8 @@ public class ChatPermissions
         public const string Delete = Default + "." + nameof(Delete);
     }
 
+    
+
     public class DeveloperPermission
     {
         public const string Default = GroupName + "." + nameof(DeveloperPermission);
@@ -44,7 +46,15 @@ public class ChatPermissions
         public const string Delete = Default + "." + nameof(Delete);
     }
 
-    
+    public class ContactTagPermission
+    {
+        public const string Default = GroupName + "." + nameof(ContactTagPermission);
+        public const string GetList = Default + "." + nameof(GetList);
+        public const string GetItem = Default + "." + nameof(GetItem);
+        public const string Create = Default + "." + nameof(Create);
+        public const string Update = Default + "." + nameof(Update);
+        public const string Delete = Default + "." + nameof(Delete);
+    }
 
     public class MessageSenderPermission
     {
@@ -149,6 +159,7 @@ public class ChatPermissions
         public const string Update = Default + "." + nameof(Update);
         public const string Delete = Default + "." + nameof(Delete);
     }
+
     public class EntryValuePermission
     {
         public const string Default = GroupName + "." + nameof(EntryValuePermission);

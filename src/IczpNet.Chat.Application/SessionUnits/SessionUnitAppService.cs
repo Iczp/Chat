@@ -1,5 +1,4 @@
-﻿using Castle.Core.Internal;
-using IczpNet.AbpCommons;
+﻿using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.BaseDtos;
@@ -12,12 +11,9 @@ using IczpNet.Chat.Permissions;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
-using IczpNet.Chat.Settings;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
 using System.Linq;
@@ -34,7 +30,7 @@ namespace IczpNet.Chat.SessionUnits;
 public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 {
     protected override string GetListPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.MessageBus;
-    protected override string GetItemPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.MessageBus;
+    protected override string GetPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.MessageBus;
     protected virtual string GetDetailPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.MessageBus;
     protected virtual string GetListForSameSessionPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.GetSameSession;
     protected virtual string GetItemForSameSessionPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.GetSameSession;
@@ -209,7 +205,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     {
         var entity = await GetEntityAsync(id);
 
-        await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetItemPolicyName));
+        await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetPolicyName));
 
         return await MapToDtoAsync(entity);
     }
@@ -398,7 +394,6 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     /// <param name="isImmersed">是否包含免打扰的消息</param>
     /// <returns></returns>
     [HttpGet]
-    [Authorize]
     public Task<List<BadgeDto>> GetBadgeByCurrentUserAsync(bool? isImmersed = null)
     {
         return GetBadgeByUserIdAsync(Assert.NotNull(CurrentUser.GetId(), "未登录"), isImmersed);
@@ -467,7 +462,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     {
         var entity = await GetEntityAsync(sessionUnitId);
 
-        await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetItemPolicyName));
+        await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetPolicyName));
 
         return await SessionUnitManager.GetCacheItemAsync(entity);
     }
@@ -479,6 +474,10 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     [HttpGet]
     public async Task<SessionUnitCounterInfo> GetCounterAsync(SessionUnitGetCounterInput input)
     {
+        var entity = await GetEntityAsync(input.SessionUnitId);
+
+        await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetCounterPolicyName));
+
         return await SessionUnitManager.GetCounterAsync(input.SessionUnitId, input.MinMessageId, input.IsImmersed);
     }
 }

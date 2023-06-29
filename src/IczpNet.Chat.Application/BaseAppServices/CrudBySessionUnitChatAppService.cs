@@ -138,7 +138,7 @@ namespace IczpNet.Chat.BaseAppServices
         [HttpGet]
         public virtual async Task<TGetOutputDto> GetAsync(Guid sessionUnitId, TKey id)
         {
-            //await SessionPermissionChecker.CheckAsync(GetItemPolicyName, sessionUnitId);
+            //await SessionPermissionChecker.CheckAsync(GetPolicyName, sessionUnitId);
 
             var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
 

@@ -19,11 +19,11 @@ namespace IczpNet.Chat.BaseAppServices;
 [Authorize]
 public abstract class ChatAppService : ApplicationService
 {
+    protected virtual string GetListPolicyName { get; set; }
+    protected virtual string GetPolicyName { get; set; }
     protected virtual string CreatePolicyName { get; set; }
     protected virtual string UpdatePolicyName { get; set; }
     protected virtual string DeletePolicyName { get; set; }
-    protected virtual string GetItemPolicyName { get; set; }
-    protected virtual string GetListPolicyName { get; set; }
 
     protected ICurrentChatObject CurrentChatObject => LazyServiceProvider.LazyGetRequiredService<ICurrentChatObject>();
     protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
@@ -55,8 +55,6 @@ public abstract class ChatAppService : ApplicationService
         Func<IQueryable<T>, IQueryable<T>> queryableAction = null,
         Func<List<T>, Task<List<T>>> entityAction = null)
     {
-        //await CheckPolicyAsync(GetListPolicyName);
-
         return await query.ToPagedListAsync<T, TOuputDto>(AsyncExecuter, ObjectMapper, input, queryableAction, entityAction);
     }
 
@@ -144,7 +142,7 @@ public abstract class ChatAppService : ApplicationService
 
         Assert.If(checkIsKilled && sessionUnit.Setting.IsKilled, "已经删除的会话单元!");
 
-        await CheckPolicyForUserAsync(sessionUnit.OwnerId, () => CheckPolicyAsync(policyName, sessionUnit));
+        await CheckPolicyForUserAsync(sessionUnit.OwnerId, () => CheckPolicyAsync(policyName));
 
         return sessionUnit;
     }
