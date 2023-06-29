@@ -1,6 +1,7 @@
 ﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Cantacts.Dtos;
 using IczpNet.Chat.Contacts.Dtos;
+using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -16,7 +17,10 @@ namespace IczpNet.Chat.Contacts;
 /// </summary>
 public class ContactsAppService : ChatAppService, IContactsAppService
 {
-    protected override string GetListPolicyName { get; set; }
+    protected override string GetListPolicyName { get; set; } = ChatPermissions.ContactPermission.GetList;
+    protected override string GetPolicyName { get; set; } = ChatPermissions.ContactPermission.GetItem;
+    protected override string DeletePolicyName { get; set; } = ChatPermissions.ContactPermission.Delete;
+
     protected ISessionUnitRepository Repository { get; }
     public ContactsAppService(
         ISessionUnitRepository repository)
@@ -44,7 +48,8 @@ public class ContactsAppService : ChatAppService, IContactsAppService
     [HttpGet]
     public async Task<PagedResultDto<ContactsDto>> GetListAsync(ContactsGetListInput input)
     {
-        var owner = GetAndCheckPolicyAsync(GetListPolicyName, input.OwnerId);
+
+        await CheckPolicyForUserAsync(input.OwnerId, () => CheckPolicyAsync(GetListPolicyName));
 
         var query = await CreateQueryAsync(input);
 

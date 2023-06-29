@@ -153,7 +153,7 @@ public abstract class ChatAppService : ApplicationService
 
         Assert.If(checkIsKilled && chatObject.IsEnabled, "被禁用的聊天对象");
 
-        await CheckPolicyAsync(policyName, chatObject);
+        await CheckPolicyForUserAsync(chatObjectId, () => CheckPolicyAsync(policyName));
 
         return chatObject;
     }

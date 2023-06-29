@@ -76,6 +76,19 @@
     "ChatPermissions.SessionUnitSettingPermissions.ClearMessage": "清空消息",
     "ChatPermissions.SessionUnitSettingPermissions.DeleteMessage": "删除消息",
     "ChatPermissions.SessionUnitSettingPermissions.SetContactTags": "通讯录标签",
-    "ChatPermissions.SessionUnitSettingPermissions.Kill": "退出会话"
+    "ChatPermissions.SessionUnitSettingPermissions.Kill": "退出会话",
+
+    "ChatPermissions.ContactTagPermission": "标签(联系人)",
+    "ChatPermissions.ContactTagPermission.Create": "新增",
+    "ChatPermissions.ContactTagPermission.Update": "修改",
+    "ChatPermissions.ContactTagPermission.GetList": "查看列表",
+    "ChatPermissions.ContactTagPermission.GetItem": "查看详情",
+    "ChatPermissions.ContactTagPermission.Delete": "删除",
+
+    "ChatPermissions.ContactPermission": "通讯录",
+    "ChatPermissions.ContactPermission.GetList": "查看列表",
+    "ChatPermissions.ContactPermission.GetItem": "查看详情",
+    "ChatPermissions.ContactPermission.Delete": "删除"
+
   }
 }

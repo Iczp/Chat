@@ -11,7 +11,7 @@ namespace IczpNet.Chat.Contacts.Dtos
         /// 所属聊天对象Id
         /// </summary>
         [Required]
-        public virtual long OwnerId { get; set; }
+        public virtual long? OwnerId { get; set; }
 
         /// <summary>
         /// 目标聊天对象类型

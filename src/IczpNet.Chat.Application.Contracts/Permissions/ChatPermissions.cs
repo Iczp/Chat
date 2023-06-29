@@ -46,6 +46,13 @@ public class ChatPermissions
         public const string Delete = Default + "." + nameof(Delete);
     }
 
+    public class ContactPermission
+    {
+        public const string Default = GroupName + "." + nameof(ContactPermission);
+        public const string GetList = Default + "." + nameof(GetList);
+        public const string GetItem = Default + "." + nameof(GetItem);
+        public const string Delete = Default + "." + nameof(Delete);
+    }
     public class ContactTagPermission
     {
         public const string Default = GroupName + "." + nameof(ContactTagPermission);
