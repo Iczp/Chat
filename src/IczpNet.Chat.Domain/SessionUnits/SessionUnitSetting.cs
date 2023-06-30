@@ -1,16 +1,16 @@
-﻿using IczpNet.Chat.Enums;
+﻿using IczpNet.AbpCommons.DataFilters;
+using IczpNet.Chat.BaseEntities;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Volo.Abp.Auditing;
-using IczpNet.AbpCommons.DataFilters;
-using IczpNet.Chat.BaseEntities;
 
 namespace IczpNet.Chat.SessionUnits
 {
-
+    [Index(nameof(MuteExpireTime))]
     public class SessionUnitSetting : BaseEntity, IHasCreationTime, IHasModificationTime, IIsStatic, IIsPublic//, ISoftDelete
     {
         public virtual Guid SessionUnitId { get; set; }
@@ -152,6 +152,9 @@ namespace IczpNet.Chat.SessionUnits
         [Comment("修改时间")]
         public override DateTime? LastModificationTime { get; set; }
 
+        [Comment("禁言过期时间，为空则不禁言")]
+        public virtual DateTime? MuteExpireTime { get; protected set; }
+
         //public virtual bool IsDeleted { get; protected set; }
 
         public override object[] GetKeys()
@@ -211,7 +214,6 @@ namespace IczpNet.Chat.SessionUnits
         /// <param name="clearTime"></param>
         internal virtual void ClearMessage(DateTime? clearTime) => ClearTime = clearTime;
 
-
         internal virtual void SetImmersed(bool isImmersed) => IsImmersed = isImmersed;
 
         internal virtual void SetIsEnabled(bool v) => IsEnabled = v;
@@ -220,6 +222,11 @@ namespace IczpNet.Chat.SessionUnits
         {
             IsCreator = v;
             IsStatic = v;
+        }
+
+        public virtual void SetMuteExpireTime(DateTime? muteExpireTime)
+        {
+            MuteExpireTime = muteExpireTime;
         }
     }
 }

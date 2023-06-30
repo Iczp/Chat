@@ -1,4 +1,5 @@
-﻿using Volo.Abp.Reflection;
+﻿using System.ComponentModel;
+using Volo.Abp.Reflection;
 
 namespace IczpNet.Chat.Permissions;
 
@@ -54,6 +55,9 @@ public class SessionPermissionDefinitionConsts
         public const string UpdateName = Default + "." + nameof(UpdateName);
         public const string UpdatePortrait = Default + "." + nameof(UpdatePortrait);
         public const string ToggleAllInputEnabled = Default + "." + nameof(ToggleAllInputEnabled);
+        public const string VerificationMethod = Default + "." + nameof(VerificationMethod);
+        public const string SetServiceStatus = Default + "." + nameof(SetServiceStatus);
+
     }
 
     public class SessionUnitPermissions
@@ -63,5 +67,7 @@ public class SessionPermissionDefinitionConsts
         public const string RemoveMember = Default + "." + nameof(RemoveMember);
         public const string RollbackOthersMessage = Default + "." + nameof(RollbackOthersMessage);
         public const string ToggleInputEnabled = Default + "." + nameof(ToggleInputEnabled);
+        [Description("设置禁言过期时间")]
+        public const string SetMuteExpireTime = Default + "." + nameof(SetMuteExpireTime);
     }
 }

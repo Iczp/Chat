@@ -91,4 +91,13 @@ public interface ISettingAppService
     /// <param name="ContactTagIdList"></param>
     /// <returns></returns>
     Task SetContactTagsAsync(Guid sessionUnitId, List<Guid> ContactTagIdList);
+
+    /// <summary>
+    /// 禁言过期时间，为空则不禁言
+    /// </summary>
+    /// <param name="muterSessionUnitId">被设置的会话单元Id</param>
+    /// <param name="setterSessionUnitId">设置者会话单元Id</param>
+    /// <param name="muteExpireTime">为空则不禁言</param>
+    /// <returns>禁言过期时间</returns>
+    Task<DateTime?> SetMuteExpireTimeAsync(Guid muterSessionUnitId, Guid setterSessionUnitId, DateTime? muteExpireTime);
 }

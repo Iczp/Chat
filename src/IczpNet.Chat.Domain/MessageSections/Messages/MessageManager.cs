@@ -93,6 +93,8 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             Assert.If(!senderSessionUnit.Setting.IsInputEnabled, $"Unable to send message, input status is disabled");
 
+            Assert.If(senderSessionUnit.Setting.MuteExpireTime > Clock.Now, $"Unable to send message,sessionUnit has been muted.");
+
             //cache
             await SessionUnitManager.GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);
 
@@ -148,7 +150,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             await SessionRepository.UpdateLastMessageIdAsync(senderSessionUnit.SessionId.Value, message.Id);
             ////以下可能导致锁表
             //await SessionUnitRepository.UpdateLastMessageIdAsync(senderSessionUnit.Id, message.Id);
-            
+
             //senderSessionUnit.LastMessageId = message.Id;
             // private message
             if (message.IsPrivate || receiverSessionUnit != null)

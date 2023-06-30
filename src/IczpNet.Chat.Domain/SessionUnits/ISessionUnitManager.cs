@@ -1,7 +1,5 @@
 ﻿using IczpNet.Chat.Enums;
-using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
-using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Extensions.Caching.Distributed;
 using System;
@@ -10,7 +8,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.SessionUnits
 {
@@ -104,6 +101,8 @@ namespace IczpNet.Chat.SessionUnits
 
         Task<int> IncremenetAsync(SessionUnitIncrementArgs args);
 
+        Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime, SessionUnit setterSessionUnit, bool isSendMessage);
 
+        Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime);
     }
 }

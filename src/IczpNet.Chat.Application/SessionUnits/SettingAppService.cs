@@ -1,12 +1,14 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ContactTags;
+using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionUnitContactTags;
 using IczpNet.Chat.SessionUnits.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
@@ -28,7 +30,7 @@ public class SettingAppService : ChatAppService, ISettingAppService
     protected virtual string DeleteMessagePolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.DeleteMessage;
     protected virtual string SetContactTagsPolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.SetContactTags;
     protected virtual string KillPolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.Kill;
-
+    protected virtual string SetMuteExpireTimePolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.SetMuteExpireTime;
     protected ISessionUnitRepository Repository { get; }
     protected IRepository<ContactTag, Guid> ContactTagRepository { get; }
 
@@ -42,7 +44,7 @@ public class SettingAppService : ChatAppService, ISettingAppService
     }
 
     /// <inheritdoc/>
-    protected virtual async Task<SessionUnit> GetEntityAsync(Guid id, bool checkIsKilled = true)
+    protected virtual async Task<SessionUnit> GetEntityAsync([Required] Guid id, bool checkIsKilled = true)
     {
         var entity = await Repository.GetAsync(id);
 
@@ -70,7 +72,7 @@ public class SettingAppService : ChatAppService, ISettingAppService
     /// <param name="memberName">会话内名称</param>
     /// <returns></returns>
     [HttpPost]
-    public async Task<SessionUnitOwnerDto> SetMemberNameAsync(Guid sessionUnitId, string memberName)
+    public async Task<SessionUnitOwnerDto> SetMemberNameAsync([Required] Guid sessionUnitId, string memberName)
     {
         var entity = await GetAndCheckPolicyAsync(SetMemberNamePolicyName, sessionUnitId);
 
@@ -86,7 +88,7 @@ public class SettingAppService : ChatAppService, ISettingAppService
     /// <param name="rename">名称</param>
     /// <returns></returns>
     [HttpPost]
-    public async Task<SessionUnitOwnerDto> SetRenameAsync(Guid sessionUnitId, string rename)
+    public async Task<SessionUnitOwnerDto> SetRenameAsync([Required] Guid sessionUnitId, string rename)
     {
         var entity = await GetAndCheckPolicyAsync(SetRenamePolicyName, sessionUnitId);
 
@@ -102,7 +104,7 @@ public class SettingAppService : ChatAppService, ISettingAppService
     /// <param name="isTopping">是否置顶</param>
     /// <returns></returns>
     [HttpPost]
-    public virtual async Task<SessionUnitOwnerDto> SetToppingAsync(Guid sessionUnitId, bool isTopping)
+    public virtual async Task<SessionUnitOwnerDto> SetToppingAsync([Required] Guid sessionUnitId, bool isTopping)
     {
         var entity = await GetAndCheckPolicyAsync(SetToppingPolicyName, sessionUnitId);
 
@@ -119,7 +121,7 @@ public class SettingAppService : ChatAppService, ISettingAppService
     /// <param name="messageId">消息Id</param>
     /// <returns></returns>
     [HttpPost]
-    public virtual async Task<SessionUnitOwnerDto> SetReadedMessageIdAsync(Guid sessionUnitId, bool isForce = false, long? messageId = null)
+    public virtual async Task<SessionUnitOwnerDto> SetReadedMessageIdAsync([Required] Guid sessionUnitId, bool isForce = false, long? messageId = null)
     {
         var entity = await GetAndCheckPolicyAsync(SetReadedPolicyName, sessionUnitId);
 
@@ -135,7 +137,7 @@ public class SettingAppService : ChatAppService, ISettingAppService
     /// <param name="isImmersed"></param>
     /// <returns></returns>
     [HttpPost]
-    public async Task<SessionUnitOwnerDto> SetImmersedAsync(Guid sessionUnitId, bool isImmersed)
+    public async Task<SessionUnitOwnerDto> SetImmersedAsync([Required] Guid sessionUnitId, bool isImmersed)
     {
         var entity = await GetAndCheckPolicyAsync(SetImmersedPolicyName, sessionUnitId);
 
@@ -151,7 +153,7 @@ public class SettingAppService : ChatAppService, ISettingAppService
     /// <param name="sessionUnitId">会话单元Id</param>
     /// <returns></returns>
     [HttpPost]
-    public virtual async Task<SessionUnitOwnerDto> RemoveAsync(Guid sessionUnitId)
+    public virtual async Task<SessionUnitOwnerDto> RemoveAsync([Required] Guid sessionUnitId)
     {
         var entity = await GetAndCheckPolicyAsync(RemoveSessionPolicyName, sessionUnitId);
 
@@ -166,7 +168,7 @@ public class SettingAppService : ChatAppService, ISettingAppService
     /// <param name="sessionUnitId">会话单元Id</param>
     /// <returns></returns>
     [HttpPost]
-    public virtual async Task<SessionUnitOwnerDto> ExitAsync(Guid sessionUnitId)
+    public virtual async Task<SessionUnitOwnerDto> ExitAsync([Required] Guid sessionUnitId)
     {
         var entity = await GetAndCheckPolicyAsync(RemoveSessionPolicyName, sessionUnitId);
 
@@ -181,7 +183,7 @@ public class SettingAppService : ChatAppService, ISettingAppService
     /// <param name="sessionUnitId">会话单元Id</param>
     /// <returns></returns>
     [HttpPost]
-    public virtual async Task<SessionUnitOwnerDto> KillAsync(Guid sessionUnitId)
+    public virtual async Task<SessionUnitOwnerDto> KillAsync([Required] Guid sessionUnitId)
     {
         var entity = await GetAndCheckPolicyAsync(KillPolicyName, sessionUnitId);
 
@@ -196,7 +198,7 @@ public class SettingAppService : ChatAppService, ISettingAppService
     /// <param name="sessionUnitId">会话单元Id</param>
     /// <returns></returns>
     [HttpPost]
-    public virtual async Task<SessionUnitOwnerDto> ClearMessageAsync(Guid sessionUnitId)
+    public virtual async Task<SessionUnitOwnerDto> ClearMessageAsync([Required] Guid sessionUnitId)
     {
         var entity = await GetAndCheckPolicyAsync(ClearMessagePolicyName, sessionUnitId);
 
@@ -213,7 +215,7 @@ public class SettingAppService : ChatAppService, ISettingAppService
     /// <returns></returns>
     /// <exception cref="NotImplementedException"></exception>
     [HttpPost]
-    public virtual async Task DeleteMessageAsync(Guid sessionUnitId, long messageId)
+    public virtual async Task DeleteMessageAsync([Required] Guid sessionUnitId, long messageId)
     {
         var entity = await GetAndCheckPolicyAsync(DeleteMessagePolicyName, sessionUnitId);
 
@@ -227,7 +229,7 @@ public class SettingAppService : ChatAppService, ISettingAppService
     /// <param name="contactTagIdList">联系人标签Id</param>
     /// <returns></returns>
     [HttpPost]
-    public async Task SetContactTagsAsync(Guid sessionUnitId, List<Guid> contactTagIdList)
+    public async Task SetContactTagsAsync([Required] Guid sessionUnitId, List<Guid> contactTagIdList)
     {
         var entity = await GetAndCheckPolicyAsync(SetContactTagsPolicyName, sessionUnitId);
 
@@ -239,5 +241,23 @@ public class SettingAppService : ChatAppService, ISettingAppService
         entity.SessionUnitContactTagList?.Clear();
 
         entity.SessionUnitContactTagList = contactTags.Select(x => new SessionUnitContactTag(entity, x)).ToList();
+    }
+
+    /// <summary>
+    /// 禁言过期时间，为空则不禁言
+    /// </summary>
+    /// <param name="muterSessionUnitId">被设置的会话单元Id</param>
+    /// <param name="setterSessionUnitId">设置者会话单元Id</param>
+    /// <param name="muteExpireTime">为空则不禁言</param>
+    /// <returns>禁言过期时间</returns>
+    public async Task<DateTime?> SetMuteExpireTimeAsync([Required] Guid muterSessionUnitId, [Required] Guid setterSessionUnitId, DateTime? muteExpireTime)
+    {
+        var setterSessionUnit = await GetEntityAsync(setterSessionUnitId);
+
+        await CheckPolicyAsync(SessionPermissionDefinitionConsts.SessionUnitPermissions.SetMuteExpireTime, setterSessionUnit);
+
+        var muterSessionUnit = await GetEntityAsync(muterSessionUnitId);
+
+        return await SessionUnitManager.SetMuteExpireTimeAsync(muterSessionUnit, muteExpireTime, setterSessionUnit, true);
     }
 }

@@ -123,6 +123,7 @@ public class ChatPermissions
         public const string DeleteMessage = Default + "." + nameof(DeleteMessage);
         public const string SetContactTags = Default + "." + nameof(SetContactTags);
         public const string Kill = Default + "." + nameof(Kill);
+        public const string SetMuteExpireTime = Default + "." + nameof(SetMuteExpireTime);
     }
 
     public class SessionRequestPermissions

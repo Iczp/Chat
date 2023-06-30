@@ -17,6 +17,10 @@ using System.Diagnostics;
 using IczpNet.Chat.ChatObjects;
 using System.Linq.Dynamic.Core;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.MessageSections;
+using Volo.Abp.Domain.Repositories;
+using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.TextTemplates;
 
 namespace IczpNet.Chat.SessionUnits;
 
@@ -28,19 +32,21 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
     protected IDistributedCache<string, Guid> UnitCountCache { get; }
     protected IFollowManager FollowManager => LazyServiceProvider.LazyGetRequiredService<IFollowManager>();
     protected IChatObjectRepository ChatObjectRepository { get; }
-
+    protected IMessageSender MessageSender { get; }
     public SessionUnitManager(
         ISessionUnitRepository repository,
         IMessageRepository messageRepository,
         IDistributedCache<List<SessionUnitCacheItem>, string> unitListCache,
         IDistributedCache<string, Guid> unitCountCache,
-        IChatObjectRepository chatObjectRepository)
+        IChatObjectRepository chatObjectRepository,
+        IMessageSender messageSender)
     {
         Repository = repository;
         MessageRepository = messageRepository;
         UnitListCache = unitListCache;
         UnitCountCache = unitCountCache;
         ChatObjectRepository = chatObjectRepository;
+        MessageSender = messageSender;
     }
 
     protected virtual async Task<SessionUnit> SetEntityAsync(SessionUnit entity, Action<SessionUnit> action = null, bool autoSave = false)
@@ -135,9 +141,9 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
 
         await SetEntityAsync(entity, x => x.UpdateCounter(counter));
 
-        //await UpdateCacheItemsAsync(entity, items =>
+        //await UpdateCacheItemsAsync(muterSessionUnit, items =>
         //{
-        //    var item = items.FirstOrDefault(x => x.Id != entity.Id);
+        //    var item = items.FirstOrDefault(x => x.Id != muterSessionUnit.Id);
 
         //    if (item == null)
         //    {
@@ -788,5 +794,52 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         Logger.LogInformation($"Incremenet totalCount:{totalCount}, stopwatch: {stopwatch.ElapsedMilliseconds}ms.");
 
         return totalCount;
+    }
+
+    public async Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime, SessionUnit setterSessionUnit, bool isSendMessage)
+    {
+        Assert.If(muterSessionUnit.IsCreator, $"Creator can't be mute.");
+
+        var allowList = new List<ChatObjectTypeEnums?> { ChatObjectTypeEnums.Room, ChatObjectTypeEnums.Square, ChatObjectTypeEnums.Official, ChatObjectTypeEnums.Subscription, };
+
+        Assert.If(!allowList.Contains(muterSessionUnit.DestinationObjectType), $"DestinationObjectType '{muterSessionUnit.DestinationObjectType}' can't be mute.");
+
+        await SetEntityAsync(muterSessionUnit, x => x.Setting.SetMuteExpireTime(muteExpireTime));
+
+        if (!isSendMessage)
+        {
+            return muteExpireTime;
+        }
+
+        if (setterSessionUnit == null)
+        {
+            Logger.LogWarning($"SetMuteExpireTime send message fial,SessionUnitId={muterSessionUnit.Id}");
+            return muteExpireTime;
+        }
+
+        var timeSpan = muteExpireTime - Clock.Now;
+
+        var isMuted = timeSpan.HasValue && timeSpan.Value.Milliseconds > 0;
+
+        //sendMessage
+        await MessageSender.SendCmdAsync(setterSessionUnit, new MessageInput<CmdContentInfo>()
+        {
+            Content = new CmdContentInfo()
+            {
+                Text = new TextTemplate(isMuted ? "{MuteObject} 被禁言 {Minutes} 分钟" : "{MuteObject} 被取消禁言")
+                        .WithData("MuteObject", new SessionUnitTextTemplate(muterSessionUnit))
+                        .WithData("Minutes", timeSpan?.Minutes)
+                        .ToString(),
+            }
+        });
+
+        return muteExpireTime;
+    }
+
+    public async Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime)
+    {
+        var setterSessionUnit = await Repository.FirstOrDefaultAsync(x => x.SessionId == muterSessionUnit.SessionId && x.IsStatic && !x.IsPublic && x.Id != muterSessionUnit.Id);
+
+        return await SetMuteExpireTimeAsync(muterSessionUnit, muteExpireTime, setterSessionUnit, setterSessionUnit != null);
     }
 }

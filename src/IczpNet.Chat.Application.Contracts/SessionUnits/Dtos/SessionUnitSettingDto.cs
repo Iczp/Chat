@@ -57,5 +57,10 @@ namespace IczpNet.Chat.SessionUnits.Dtos
         /// 邀请人
         /// </summary>
         public virtual Guid? InviterId { get; set; }
+
+        /// <summary>
+        /// 禁言过期时间
+        /// </summary>
+        public virtual DateTime? MuteExpireTime { get; set; }
     }
 }
