@@ -248,15 +248,17 @@ public class SettingAppService : ChatAppService, ISettingAppService
     /// </summary>
     /// <param name="muterSessionUnitId">被设置的会话单元Id</param>
     /// <param name="setterSessionUnitId">设置者会话单元Id</param>
-    /// <param name="muteExpireTime">为空则不禁言</param>
+    /// <param name="seconds">禁言(秒)，为0则取消禁言</param>
     /// <returns>禁言过期时间</returns>
-    public async Task<DateTime?> SetMuteExpireTimeAsync([Required] Guid muterSessionUnitId, [Required] Guid setterSessionUnitId, DateTime? muteExpireTime)
+    public async Task<DateTime?> SetMuteExpireTimeAsync([Required] Guid muterSessionUnitId, [Required] Guid setterSessionUnitId, int seconds)
     {
         var setterSessionUnit = await GetEntityAsync(setterSessionUnitId);
 
         await CheckPolicyAsync(SessionPermissionDefinitionConsts.SessionUnitPermissions.SetMuteExpireTime, setterSessionUnit);
 
         var muterSessionUnit = await GetEntityAsync(muterSessionUnitId);
+
+        DateTime? muteExpireTime = seconds == 0 ? null : Clock.Now.AddSeconds(seconds);
 
         return await SessionUnitManager.SetMuteExpireTimeAsync(muterSessionUnit, muteExpireTime, setterSessionUnit, true);
     }
