@@ -44,11 +44,10 @@ namespace IczpNet.Chat.SessionUnits
     [Index(nameof(Key), AllDescending = true)]
     [Index(nameof(DestinationObjectType), AllDescending = true)]
     [Index(nameof(IsDeleted))]
-    [Index(nameof(TenantId))]
     [Index(nameof(CreationTime), AllDescending = true)]
 
-    [Index(nameof(Sorting), nameof(LastMessageId), nameof(IsDeleted), nameof(TenantId), AllDescending = true)]
-    [Index(nameof(Sorting), nameof(LastMessageId), nameof(IsDeleted), nameof(TenantId), IsDescending = new[] { true, false, true, true }, Name = "IX_Chat_SessionUnit_Sorting_Desc_LastMessageId_Asc")]
+    [Index(nameof(Sorting), nameof(LastMessageId), nameof(IsDeleted), AllDescending = true)]
+    [Index(nameof(Sorting), nameof(LastMessageId), nameof(IsDeleted), IsDescending = new[] { true, false, true }, Name = "IX_Chat_SessionUnit_Sorting_Desc_LastMessageId_Asc")]
     public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, ISessionId, IHasSimpleStateCheckers<SessionUnit>, IMaterializationInterceptor
     {
 
