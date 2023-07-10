@@ -1,5 +1,4 @@
 ﻿using IczpNet.Chat.ChatObjects.Dtos;
-using IczpNet.Chat.EntryValues.Dtos;
 using IczpNet.Chat.SessionUnits.Dtos;
 using System;
 using System.Collections.Generic;
@@ -9,8 +8,8 @@ namespace IczpNet.Chat.Entries
 {
     public interface IEntryAppService
     {
-        Task<ChatObjectDetailDto> SetForChatObjectAsync(long ownerId, Dictionary<Guid, List<EntryValueInput>> input);
+        Task<ChatObjectDetailDto> SetForChatObjectAsync(long ownerId, Dictionary<Guid, List<string>> entries);
 
-        Task<SessionUnitDestinationDetailDto> SetForSessionUnitAsync(Guid sessionUnitId, Dictionary<Guid, List<EntryValueInput>> input);
+        Task<SessionUnitDestinationDetailDto> SetForSessionUnitAsync(Guid sessionUnitId, Dictionary<Guid, List<string>> entries);
     }
 }

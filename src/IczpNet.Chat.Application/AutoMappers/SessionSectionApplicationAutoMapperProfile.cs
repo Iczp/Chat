@@ -22,6 +22,7 @@ using IczpNet.Chat.FavoritedRecorders.Dtos;
 using IczpNet.Chat.Cantacts.Dtos;
 using IczpNet.Chat.SessionUnits.Dtos;
 using IczpNet.Chat.SessionUnits;
+using System.Linq;
 
 namespace IczpNet.Chat.AutoMappers;
 

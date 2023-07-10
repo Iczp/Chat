@@ -6,7 +6,6 @@ using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.Comparers;
 using IczpNet.Chat.EntryNames;
 using IczpNet.Chat.EntryValues;
-using IczpNet.Chat.EntryValues.Dtos;
 using IczpNet.Chat.SessionSections.SessionPermissions;
 using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
 using IczpNet.Chat.SessionUnits;
@@ -14,6 +13,7 @@ using IczpNet.Chat.SessionUnits.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
@@ -50,9 +50,9 @@ public class EntryAppService : ChatAppService, IEntryAppService
         return ObjectMapper.Map<SessionUnit, SessionUnitDestinationDetailDto>(entity);
     }
 
-    protected virtual async Task CheckEntriesInputAsync(Dictionary<Guid, List<EntryValueInput>> input)
+    protected virtual async Task CheckEntriesInputAsync(Dictionary<Guid, List<string>> entries)
     {
-        foreach (var item in input)
+        foreach (var item in entries)
         {
             var entryName = Assert.NotNull(await EntryNameRepository.FindAsync(item.Key), $"不存在EntryNameId:{item.Key}");
 
@@ -62,16 +62,16 @@ public class EntryAppService : ChatAppService, IEntryAppService
 
             Assert.If(item.Value.Count < entryName.MinCount, $"${entryName.Name}最小个数：{entryName.MinCount}");
 
-            foreach (var entryValue in item.Value)
+            foreach (var value in item.Value)
             {
-                Assert.If(entryValue.Value.Length > entryName.MaxLenth, $"${entryName.Name}[{item.Value.IndexOf(entryValue) + 1}]最大长度：{entryName.MaxLenth}");
+                Assert.If(value.Length > entryName.MaxLenth, $"${entryName.Name}[{item.Value.IndexOf(value) + 1}]最大长度：{entryName.MaxLenth}");
 
-                Assert.If(entryValue.Value.Length < entryName.MinLenth, $"${entryName.Name}[{item.Value.IndexOf(entryValue) + 1}]最小长度：{entryName.MinLenth}");
+                Assert.If(value.Length < entryName.MinLenth, $"${entryName.Name}[{item.Value.IndexOf(value) + 1}]最小长度：{entryName.MinLenth}");
 
                 //if (entryName.IsUniqued)
                 //{
-                //    var isAny = !await EntryValueRepository.AnyAsync(x => x.EntryNameId == entryName.Id && x.Value == entryValue.Value);
-                //    Assert.If(isAny, $"${entryName.Name}已经存在值：{entryValue.Value}");
+                //    var isAny = !await EntryValueRepository.AnyAsync(x => x.EntryNameId == entryName.Id && x.Value == value.Value);
+                //    Assert.If(isAny, $"${entryName.Name}已经存在值：{value.Value}");
                 //}
             }
         }
@@ -112,32 +112,38 @@ public class EntryAppService : ChatAppService, IEntryAppService
         return createItems.Concat(modifyItems).ToList();
     }
 
-    protected virtual async Task<List<T>> FormatItemsAsync<T>(Dictionary<Guid, List<EntryValueInput>> input, Func<Guid, string, Task<T>> createOrFindEntity)
+    protected virtual async Task<List<T>> FormatItemsAsync<T>(Dictionary<Guid, List<string>> entries, Func<Guid, string, Task<T>> createOrFindEntity)
     {
         var inputItems = new List<T>();
 
-        foreach (var entry in input)
+        foreach (var entry in entries)
         {
             Assert.If(!await EntryNameRepository.AnyAsync(x => x.Id == entry.Key), $"不存在EntryNameId:{entry.Key}");
 
-            foreach (var valueInput in entry.Value)
+            foreach (var value in entry.Value)
             {
-                inputItems.Add(await createOrFindEntity(entry.Key, valueInput.Value));
+                inputItems.Add(await createOrFindEntity(entry.Key, value));
             }
         }
         return inputItems;
     }
 
+    /// <summary>
+    /// 设置聊天对象条目
+    /// </summary>
+    /// <param name="ownerId">聊天对象Id</param>
+    /// <param name="entries">{entryNameId:["v1","v2"]}</param>
+    /// <returns></returns>
     [HttpPost]
-    public async Task<ChatObjectDetailDto> SetForChatObjectAsync(long ownerId, Dictionary<Guid, List<EntryValueInput>> input)
+    public async Task<ChatObjectDetailDto> SetForChatObjectAsync([Required] long ownerId, [Required] Dictionary<Guid, List<string>> entries)
     {
         var owner = await ChatObjectManager.GetAsync(ownerId);
 
-        await CheckEntriesInputAsync(input);
+        await CheckEntriesInputAsync(entries);
 
         //owner.Entries?.Clear();
 
-        var inputItems = await FormatItemsAsync(input, async (Guid key, string value) =>
+        var inputItems = await FormatItemsAsync(entries, async (Guid key, string value) =>
         {
             var entryValue = await EntryValueRepository.FirstOrDefaultAsync(x => x.EntryNameId == key && x.Value == value)
                                ?? new EntryValue(GuidGenerator.Create(), key, value);
@@ -157,16 +163,22 @@ public class EntryAppService : ChatAppService, IEntryAppService
         return await MapToEntityDetailAsync(owner);
     }
 
+    /// <summary>
+    /// 设置会话单元Id条目值
+    /// </summary>
+    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <param name="entries">{entryNameId:["v1","v2"]}</param>
+    /// <returns></returns>
     [HttpPost]
-    public async Task<SessionUnitDestinationDetailDto> SetForSessionUnitAsync(Guid sessionUnitId, Dictionary<Guid, List<EntryValueInput>> input)
+    public async Task<SessionUnitDestinationDetailDto> SetForSessionUnitAsync([Required] Guid sessionUnitId, [Required] Dictionary<Guid, List<string>> entries)
     {
         var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
 
-        await CheckEntriesInputAsync(input);
+        await CheckEntriesInputAsync(entries);
 
         //owner.Entries?.Clear();
 
-        var inputItems = await FormatItemsAsync(input, async (Guid key, string value) =>
+        var inputItems = await FormatItemsAsync(entries, async (Guid key, string value) =>
         {
             var entryValue = await EntryValueRepository.FirstOrDefaultAsync(x => x.EntryNameId == key && x.Value == value)
                                ?? new EntryValue(GuidGenerator.Create(), key, value);
