@@ -8,8 +8,10 @@ namespace IczpNet.Chat.SessionUnits.Dtos
 {
     public class SessionUnitGetListDestinationInput : GetListInput
     {
-        //[Required]
-        //public virtual Guid SessionId { get; set; }
+        /// <summary>
+        /// 是否被禁言
+        /// </summary>
+        public virtual bool? IsMuted { get; set; }
 
         /// <summary>
         /// 是否已删除的
@@ -56,6 +58,7 @@ namespace IczpNet.Chat.SessionUnits.Dtos
         /// 邀请人Id
         /// </summary>
         public virtual Guid? InviterId { get; set; }
+
 
     }
 }

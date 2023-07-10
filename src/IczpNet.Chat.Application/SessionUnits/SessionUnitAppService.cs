@@ -156,6 +156,8 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(input.IsKilled.HasValue, x => x.Setting.IsKilled == input.IsKilled)
             .WhereIf(input.IsStatic.HasValue, x => x.Setting.IsStatic == input.IsStatic)
             .WhereIf(input.IsPublic.HasValue, x => x.Setting.IsPublic == input.IsPublic)
+            .WhereIf(input.IsMuted == true, x => x.Setting.MuteExpireTime != null && x.Setting.MuteExpireTime <= Clock.Now)
+            .WhereIf(input.IsMuted == false, x => x.Setting.MuteExpireTime == null || x.Setting.MuteExpireTime > Clock.Now)
             .WhereIf(input.OwnerIdList.IsAny(), x => input.OwnerIdList.Contains(x.OwnerId))
             .WhereIf(input.OwnerTypeList.IsAny(), x => input.OwnerTypeList.Contains(x.Owner.ObjectType.Value))
             .WhereIf(!input.TagId.IsEmpty(), x => x.SessionUnitTagList.Any(x => x.SessionTagId == input.TagId))

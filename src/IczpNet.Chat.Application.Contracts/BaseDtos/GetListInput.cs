@@ -1,5 +1,6 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.BaseDtos
@@ -15,8 +16,9 @@ namespace IczpNet.Chat.BaseDtos
         /// <summary>
         /// 显示数量
         /// </summary>
-        [DefaultValue(10)]
-        public override int MaxResultCount { get; set; }
+        //[DefaultValue(null)]
+        [Range(1, 1000)]
+        public override int MaxResultCount { get; set; } = 10;
 
         /// <summary>
         /// 跳过数量
