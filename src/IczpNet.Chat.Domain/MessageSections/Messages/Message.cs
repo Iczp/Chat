@@ -16,13 +16,15 @@ namespace IczpNet.Chat.MessageSections.Messages;
 [Index(nameof(SessionUnitCount))]
 [Index(nameof(IsPrivate))]
 [Index(nameof(MessageType))]
+[Index(nameof(IsDeleted))]
 [Index(nameof(SessionId))]
-[Index(nameof(SessionId), nameof(IsPrivate), nameof(SenderId), nameof(ReceiverId), nameof(IsDeleted))]
+[Index(nameof(SessionId), nameof(IsPrivate), nameof(SenderId), nameof(ReceiverId), nameof(IsDeleted), nameof(CreationTime))]
 public partial class Message : BaseEntity<long>, ISessionId
 {
     //[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     //public virtual long Id { get;  }
 
+    //[Comment("")]
     [StringLength(100)]
     //[Required]
     public virtual string SessionKey { get; protected set; }

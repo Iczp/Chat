@@ -10,7 +10,7 @@ using Volo.Abp.Domain.Entities;
 
 namespace IczpNet.Chat.SessionSections.SessionUnitCounters
 {
-    [Index(nameof(LastMessageId), AllDescending = true)]
+    [Index(nameof(LastMessageId), AllDescending = true, Name = $"IX_Chat_{nameof(SessionUnitCounter)}_{nameof(LastMessageId)}_Desc")]
     [Index(nameof(LastMessageId), AllDescending = false)]
     [Index(nameof(SessionUnitId), nameof(LastMessageId), AllDescending = true)]
 

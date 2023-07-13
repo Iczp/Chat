@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230713070508_Message_AddIndex_SenderId_ReceiverId")]
+    partial class Message_AddIndex_SenderId_ReceiverId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1934,15 +1937,15 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("ReceiverId");
 
-                    b.HasIndex("SenderId");
-
                     b.HasIndex("SessionId");
 
                     b.HasIndex("SessionUnitCount");
 
                     b.HasIndex("SessionUnitId");
 
-                    b.HasIndex("SessionId", "IsPrivate", "SenderId", "ReceiverId", "IsDeleted", "CreationTime");
+                    b.HasIndex("SenderId", "ReceiverId");
+
+                    b.HasIndex("SessionId", "IsPrivate", "SenderId", "ReceiverId", "IsDeleted");
 
                     b.HasIndex(new[] { "CreationTime" }, "IX_Chat_Message_CreationTime_Asc");
 

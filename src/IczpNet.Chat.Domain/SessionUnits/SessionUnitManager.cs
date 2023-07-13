@@ -184,9 +184,11 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return SetEntityAsync(entity, x => x.Setting.Kill(Clock.Now));
     }
 
-    public virtual Task<SessionUnit> ClearMessageAsync(SessionUnit entity)
+    public virtual async Task<SessionUnit> ClearMessageAsync(SessionUnit entity)
     {
-        return SetEntityAsync(entity, x => x.Setting.ClearMessage(Clock.Now));
+        await SetReadedMessageIdAsync(entity, false);
+
+        return await SetEntityAsync(entity, x => x.Setting.ClearMessage(Clock.Now));
     }
 
     public virtual Task<SessionUnit> DeleteMessageAsync(SessionUnit entity, long messageId)
@@ -798,7 +800,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
 
     public async Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime, SessionUnit setterSessionUnit, bool isSendMessage)
     {
-        Assert.If(muterSessionUnit.IsCreator, $"Creator can't be mute.");
+        Assert.If(muterSessionUnit.Setting.IsCreator, $"Creator can't be mute.");
 
         var allowList = new List<ChatObjectTypeEnums?> { ChatObjectTypeEnums.Room, ChatObjectTypeEnums.Square, ChatObjectTypeEnums.Official, ChatObjectTypeEnums.Subscription, };
 

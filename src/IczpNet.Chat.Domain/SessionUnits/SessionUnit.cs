@@ -53,21 +53,44 @@ namespace IczpNet.Chat.SessionUnits
 
         public List<ISimpleStateChecker<SessionUnit>> StateCheckers => new();
 
+        /// <summary>
+        /// 用户Id
+        /// </summary>
+        [Comment("用户Id")]
         public virtual Guid? AppUserId { get; protected set; }
 
+        /// <summary>
+        /// 会话Id
+        /// </summary>
         [Required]
+        [Comment("会话Id")] 
         public virtual Guid? SessionId { get; protected set; }
 
+        /// <summary>
+        /// 会话
+        /// </summary>
         [ForeignKey(nameof(SessionId))]
         public virtual Session Session { get; protected set; }
 
+        /// <summary>
+        /// Key
+        /// </summary>
         [MaxLength(450)]
         public virtual string Key { get; protected set; }
 
+        /// <summary>
+        /// 目标对象类型
+        /// </summary>
         public virtual ChatObjectTypeEnums? DestinationObjectType { get; protected set; }
 
+        /// <summary>
+        /// 所有者对象类型
+        /// </summary>
         public virtual ChatObjectTypeEnums? OwnerObjectType { get; protected set; }
 
+        /// <summary>
+        /// 备注名称
+        /// </summary>
         public virtual string Rename => Setting.Rename;
 
         public virtual string DisplayName => Setting.MemberName;
@@ -88,26 +111,66 @@ namespace IczpNet.Chat.SessionUnits
         //[ForeignKey(nameof(ReadedMessageId))]
         //public virtual Message ReadedMessage { get; protected set; }
 
+        /// <summary>
+        /// 最后一条消息Id
+        /// </summary>
+        [Comment("最后一条消息Id")] 
         public virtual long? LastMessageId { get; protected set; }
 
+        /// <summary>
+        /// 最后一条消息Id
+        /// </summary>
         [ForeignKey(nameof(LastMessageId))]
+        [Comment("最后一条消息Id")]
         public virtual Message LastMessage { get; protected set; }
 
+        /// <summary>
+        /// 消息角标(未读消息数量)
+        /// </summary>
+        [Comment("最后一条消息Id")] 
         public virtual int PublicBadge { get; protected set; }
 
+        /// <summary>
+        /// 私有消息角标(未读消息数量)
+        /// </summary>
+        [Comment("私有消息角标(未读消息数量)")] 
         public virtual int PrivateBadge { get; protected set; }
 
+        /// <summary>
+        /// 提醒器数量(@所有人)
+        /// </summary>
+        [Comment("提醒器数量(@所有人)")]
         public virtual int RemindAllCount { get; protected set; }
 
+        /// <summary>
+        /// 提醒器数量(@我)
+        /// </summary>
+        [Comment("提醒器数量(@我)")]
         public virtual int RemindMeCount { get; protected set; }
 
+        /// <summary>
+        /// 特别关注数量
+        /// </summary>
+        [Comment("特别关注数量")]
         public virtual int FollowingCount { get; protected set; }
 
+        /// <summary>
+        /// 置顶(排序)
+        /// </summary>
+        [Comment("置顶(排序)")] 
         public virtual double Sorting { get; protected set; }
 
+        /// <summary>
+        /// 时间
+        /// </summary>
+        [Comment("时间")] 
         public virtual double Ticks { get; protected set; } = DateTime.Now.Ticks;
 
+        /// <summary>
+        /// 计数器（弃用）
+        /// </summary>
         [Required]
+        [Comment("计数器（弃用）")]
         [InverseProperty(nameof(SessionUnitCounter.SessionUnit))]
         public virtual SessionUnitCounter Counter { get; protected set; } = new SessionUnitCounter();
 
