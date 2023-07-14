@@ -266,7 +266,7 @@ public class ChatHttpApiHostModule : AbpModule
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
 
-        app.UseStaticAutoMapper();
+        app.ApplicationServices.UseStaticAutoMapper();
 
         //app.UsePusherSubscriber();
 

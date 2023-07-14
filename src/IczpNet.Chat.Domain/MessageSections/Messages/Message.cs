@@ -179,7 +179,7 @@ public partial class Message : BaseEntity<long>, ISessionId
     ///// 创建时间/发送时间(UnixTime)
     ///// </summary>
     //[Comment("创建时间/发送时间(UnixTime)")]
-    //public virtual long SendTimespan { get; protected set; } = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
+    //public virtual long SendTimestamp { get; protected set; } = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
 
     [NotMapped]
     public virtual bool IsDisabledForward => this.IsDisabledForward();
