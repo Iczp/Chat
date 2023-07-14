@@ -15,6 +15,7 @@ using Volo.Abp.MultiTenancy;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.Security.Encryption;
 using Volo.Abp.SimpleStateChecking;
+using Volo.Abp.Timing;
 
 namespace Rctea.IM.Tools
 {
@@ -206,6 +207,28 @@ namespace Rctea.IM.Tools
         public virtual async Task<string> GenerateShortId()
         {
             return await ShortIdGenerator.MakeAsync();
+        }
+
+        /// <summary>
+        /// ToUnixTimeSeconds
+        /// </summary>
+        /// <param name="dateTime"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public virtual Task<long> ToUnixTimeSeconds(DateTime? dateTime)
+        {
+            return Task.FromResult(new DateTimeOffset(dateTime??Clock.Now).ToUnixTimeSeconds());
+        }
+
+        /// <summary>
+        /// ToUnixTimeMilliseconds
+        /// </summary>
+        /// <param name="dateTime"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public virtual Task<long> ToUnixTimeMilliseconds(DateTime? dateTime)
+        {
+            return Task.FromResult(new DateTimeOffset(dateTime ?? Clock.Now).ToUnixTimeMilliseconds());
         }
     }
 }
