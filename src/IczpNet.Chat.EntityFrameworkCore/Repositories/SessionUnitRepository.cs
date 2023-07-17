@@ -193,7 +193,7 @@ namespace IczpNet.Chat.Repositories
         //    var query = await GetQueryableAsync(DateTime.Now);
 
         //    var a = await query
-        //         .Where(x => x.OwnerId == chatObjectId)
+        //         .Where(x => x.SessionUnitId == chatObjectId)
         //         .ExecuteUpdateAsync(s => s
         //             .SetProperty(b => b.OwnerName, b => name)
         //             .SetProperty(b => b.OwnerNameSpellingAbbreviation, b => nameSpellingAbbreviation)

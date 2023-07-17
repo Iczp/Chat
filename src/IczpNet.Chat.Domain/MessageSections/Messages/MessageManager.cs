@@ -116,7 +116,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             // message content
             var messageContent = await action(message);
 
-            //TryToSetOwnerId(messageContent, senderSessionUnit.OwnerId);
+            //TryToSetOwnerId(messageContent, senderSessionUnit.SessionUnitId);
             messageContent.SetOwnerId(senderSessionUnit.OwnerId);
 
             Assert.NotNull(messageContent, $"Message content is null");

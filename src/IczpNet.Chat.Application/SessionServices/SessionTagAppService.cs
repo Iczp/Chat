@@ -55,7 +55,7 @@ public class SessionTagAppService
 
     protected override async Task<SessionTag> MapToEntityAsync(SessionTagCreateInput createInput)
     {
-        //var owner = Assert.NotNull(await ChatObjectRepository.FindAsync(createInput.SessionId), $"No such Entity by OwnerId:{createInput.SessionId}.");
+        //var owner = Assert.NotNull(await ChatObjectRepository.FindAsync(createInput.SessionId), $"No such Entity by SessionUnitId:{createInput.SessionId}.");
 
         Assert.If(await Repository.AnyAsync(x => x.SessionId == createInput.SessionId && x.Name == createInput.Name), $"Already exists [{createInput.Name}].");
 

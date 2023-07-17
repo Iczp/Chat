@@ -44,34 +44,34 @@ namespace IczpNet.Chat.Follows
         {
             return (await Repository.GetQueryableAsync())
                .Where(x => x.DestinationId == destinationSessionUnitId)
-               .Where(x => x.OwnerId != destinationSessionUnitId)
-               .Select(x => x.OwnerId)
+               .Where(x => x.SessionUnitId != destinationSessionUnitId)
+               .Select(x => x.SessionUnitId)
                .ToList();
         }
 
-        public async Task<List<Guid>> GetFollowingIdListAsync(Guid ownerId)
+        public async Task<List<Guid>> GetFollowingIdListAsync(Guid sessionUnitId)
         {
             return (await Repository.GetQueryableAsync())
-              .Where(x => x.OwnerId == ownerId)
-              .Where(x => x.DestinationId != ownerId)
+              .Where(x => x.SessionUnitId == sessionUnitId)
+              .Where(x => x.DestinationId != sessionUnitId)
               .Select(x => x.DestinationId)
               .ToList();
         }
 
         public async Task<int> GetFollowingCountAsync(Guid ownerId)
         {
-            return await Repository.CountAsync(x => x.OwnerId == ownerId);
+            return await Repository.CountAsync(x => x.SessionUnitId == ownerId);
         }
 
-        public async Task<bool> CreateAsync(Guid ownerId, List<Guid> idList)
+        public async Task<bool> CreateAsync(Guid sessionUnitId, List<Guid> idList)
         {
-            var followingCount = await GetFollowingCountAsync(ownerId);
+            var followingCount = await GetFollowingCountAsync(sessionUnitId);
 
             var maxFollowingCount = await SettingProvider.GetAsync<int>(ChatSettings.MaxFollowingCount);
 
             Assert.If(followingCount > maxFollowingCount, $"Max following count:{maxFollowingCount}");
 
-            var owner = await SessionUnitManager.GetAsync(ownerId);
+            var owner = await SessionUnitManager.GetAsync(sessionUnitId);
 
             return await CreateAsync(owner, idList);
         }
@@ -88,7 +88,7 @@ namespace IczpNet.Chat.Follows
             }
 
             var followedIdList = (await Repository.GetQueryableAsync())
-                 .Where(x => x.OwnerId == owner.Id)
+                 .Where(x => x.SessionUnitId == owner.Id)
                  .Select(x => x.DestinationId)
                  .ToList();
 
@@ -105,9 +105,9 @@ namespace IczpNet.Chat.Follows
             return true;
         }
 
-        public async Task DeleteAsync(Guid ownerId, List<Guid> idList)
+        public async Task DeleteAsync(Guid sessionUnitId, List<Guid> idList)
         {
-            await Repository.DeleteAsync(x => x.OwnerId == ownerId && idList.Contains(x.DestinationId));
+            await Repository.DeleteAsync(x => x.SessionUnitId == sessionUnitId && idList.Contains(x.DestinationId));
         }
 
         public async Task DeleteAsync(SessionUnit owner, List<Guid> idList)

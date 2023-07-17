@@ -29,9 +29,19 @@ namespace IczpNet.Chat.MessageSections.Messages.Dtos
         public virtual MessageTypes? MessageType { get; set; }
 
         /// <summary>
-        /// 是否转发的
+        /// 是否特别关注
         /// </summary>
         public virtual bool? IsFollowed { get; set; }
+
+        /// <summary>
+        /// 转发层级
+        /// </summary>
+        public virtual int? ForwardDepth { get; set; }
+
+        /// <summary>
+        /// 引用层级
+        /// </summary>
+        public virtual int? QuoteDepth { get; set; }
 
         /// <summary>
         /// 最小消息Id

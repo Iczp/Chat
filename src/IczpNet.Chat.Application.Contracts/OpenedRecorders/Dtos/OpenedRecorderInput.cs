@@ -5,7 +5,7 @@ namespace IczpNet.Chat.OpenedRecorders.Dtos
 {
     public class OpenedRecorderInput
     {
-        //public virtual long OwnerId { get; set; }
+        //public virtual long SessionUnitId { get; set; }
 
         //public virtual long DestinationId { get; set; }
 

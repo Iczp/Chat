@@ -9,6 +9,7 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
+using IczpNet.Chat.SessionUnits;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -17,6 +18,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 
@@ -32,19 +34,22 @@ public class MessageAppService : ChatAppService, IMessageAppService
     protected IOpenedRecorderManager OpenedRecorderManager { get; }
     protected IFavoritedRecorderManager FavoritedRecorderManager { get; }
     protected IFollowManager FollowManager { get; }
+    protected ISessionUnitRepository SessionUnitRepository { get; }
 
     public MessageAppService(
         IMessageRepository repository,
         IReadedRecorderManager readedRecorderManager,
         IOpenedRecorderManager openedRecorderManager,
         IFavoritedRecorderManager favoriteManager,
-        IFollowManager followManager)
+        IFollowManager followManager,
+        ISessionUnitRepository sessionUnitRepository)
     {
         Repository = repository;
         ReadedRecorderManager = readedRecorderManager;
         OpenedRecorderManager = openedRecorderManager;
         FavoritedRecorderManager = favoriteManager;
         FollowManager = followManager;
+        SessionUnitRepository = sessionUnitRepository;
     }
 
     /// <summary>
@@ -96,6 +101,8 @@ public class MessageAppService : ChatAppService, IMessageAppService
             .WhereIf(input.IsFollowed.HasValue, x => followingIdList.Contains(x.SessionUnitId.Value))
             .WhereIf(input.IsRemind == true, x => x.IsRemindAll || x.MessageReminderList.Any(x => x.SessionUnitId == sessionUnitId))
             .WhereIf(input.SenderId.HasValue, x => x.SenderId == input.SenderId)
+            .WhereIf(input.ForwardDepth.HasValue, x => x.ForwardDepth == input.ForwardDepth.Value)
+            .WhereIf(input.QuoteDepth.HasValue, x => x.QuoteDepth == input.QuoteDepth.Value)
             .WhereIf(input.MinMessageId.HasValue, x => x.Id > input.MinMessageId)
             .WhereIf(input.MaxMessageId.HasValue, x => x.Id <= input.MaxMessageId)
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TextContentList.Any(d => d.Text.Contains(input.Keyword)))
@@ -139,6 +146,14 @@ public class MessageAppService : ChatAppService, IMessageAppService
 
         Assert.If(message.IsRollbacked, "消息已撤回!");
 
+        var isSameSession = await IsInSameSessionAsync(message.SessionId.Value, entity.OwnerId);
+
+        if (isSameSession)
+        {
+            return ObjectMapper.Map<Message, MessageDto>(message);
+        }
+
+        var isInQuoteSession = await Repository.AnyAsync(x => x.QuotedMessageList.Any(d => d.Id == messageId));
         //...是否包含在哪个聊天记录里，是否包含在引用消息里
         //...以下待测试...
 
@@ -152,5 +167,15 @@ public class MessageAppService : ChatAppService, IMessageAppService
         Assert.If(!isCanRead, "非法访问!");
 
         return ObjectMapper.Map<Message, MessageDto>(message);
+    }
+
+    protected virtual Task<bool> IsInSameSessionAsync(List<Guid> sessionIdList, long ownerId)
+    {
+        return SessionUnitRepository.AnyAsync(x => sessionIdList.Contains(x.SessionId.Value) && x.OwnerId == ownerId);
+    }
+
+    protected virtual Task<bool> IsInSameSessionAsync(Guid sessionId, long ownerId)
+    {
+        return SessionUnitRepository.AnyAsync(x => x.SessionId == sessionId && x.OwnerId == ownerId);
     }
 }

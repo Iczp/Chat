@@ -236,7 +236,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         ;
         //---------------------- 1
 
-        //var list = (await Repository.GetQueryableAsync()).Where(x => x.OwnerId == ownerId).Select(x => x.Id).ToList();
+        //var list = (await Repository.GetQueryableAsync()).Where(x => x.SessionUnitId == ownerId).Select(x => x.Id).ToList();
 
         //var count = 0;
 
@@ -249,7 +249,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         //---------------------- 2
 
         //return (await Repository.GetQueryableAsync())
-        //        .Where(x => x.OwnerId == ownerId)
+        //        .Where(x => x.SessionUnitId == ownerId)
         //        .Join(await MessageRepository.GetQueryableAsync(), x => x.SessionId, x => x.SessionId, (unit, message) => new
         //        {
         //            unit.Setting,
@@ -270,7 +270,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         //---------------------- 3
 
         //return await GetBadgeAsync(q =>
-        //    q.Where(x => x.OwnerId == ownerId)
+        //    q.Where(x => x.SessionUnitId == ownerId)
         //    .WhereIf(isImmersed.HasValue, x => x.Setting.IsImmersed == isImmersed));
     }
 

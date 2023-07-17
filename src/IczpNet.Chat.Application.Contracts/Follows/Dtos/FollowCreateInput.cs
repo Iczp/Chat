@@ -9,7 +9,7 @@ namespace IczpNet.Chat.Follows.Dtos
         /// <summary>
         /// 会话单元ID SessionUnitId
         /// </summary>
-        public Guid OwnerId { get; set; }
+        public Guid SessionUnitId { get; set; }
 
         /// <summary>
         /// 要关注的 SessionUnitId

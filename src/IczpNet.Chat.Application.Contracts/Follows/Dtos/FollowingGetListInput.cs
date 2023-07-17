@@ -12,6 +12,6 @@ namespace IczpNet.Chat.Follows.Dtos
         [Required]
         public virtual Guid SessionUnitId { get; set; }
 
-        //public bool? OwnerId { get; set; }
+        //public bool? SessionUnitId { get; set; }
     }
 }

@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230715024922_Message_FixIndex_ForwardDepth_QuoteDepth")]
+    partial class Message_FixIndex_ForwardDepth_QuoteDepth
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1269,7 +1272,7 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.Follows.Follow", b =>
                 {
-                    b.Property<Guid>("SessionUnitId")
+                    b.Property<Guid>("OwnerId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("DestinationId")
@@ -1301,7 +1304,7 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("LastModifierId");
 
-                    b.HasKey("SessionUnitId", "DestinationId");
+                    b.HasKey("OwnerId", "DestinationId");
 
                     b.ToTable("Chat_Follow", (string)null);
                 });
@@ -5746,7 +5749,7 @@ namespace IczpNet.Chat.Migrations
                 {
                     b.HasOne("IczpNet.Chat.SessionUnits.SessionUnit", "Owner")
                         .WithMany("FollowList")
-                        .HasForeignKey("SessionUnitId")
+                        .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

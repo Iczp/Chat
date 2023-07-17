@@ -39,7 +39,7 @@ public class MottoAppService
 
     protected override Task CheckGetPolicyAsync(ChatObject owner, Motto entity)
     {
-        //Assert.If(entity.OwnerId == owner.Id, "Not my entity");
+        //Assert.If(entity.SessionUnitId == owner.Id, "Not my entity");
 
         return base.CheckGetPolicyAsync(owner, entity);
     }

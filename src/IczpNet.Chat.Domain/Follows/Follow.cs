@@ -10,22 +10,25 @@ namespace IczpNet.Chat.Follows
         /// <summary>
         /// Owner SessionUnitId
         /// </summary>
-        public virtual Guid OwnerId { get; set; }
+        public virtual Guid SessionUnitId { get; protected set; }
 
-        [ForeignKey(nameof(OwnerId))]
-        public virtual SessionUnit Owner { get; set; }
+        /// <summary>
+        /// SessionUnit
+        /// </summary>
+        [ForeignKey(nameof(SessionUnitId))]
+        public virtual SessionUnit Owner { get; protected set; }
 
         /// <summary>
         /// Destination SessionUnitId
         /// </summary>
-        public virtual Guid DestinationId { get; set; }
+        public virtual Guid DestinationId { get; protected set; }
 
         //[ForeignKey(nameof(DestinationId))]
         //public virtual SessionUnit Destination { get; set; }
 
         public override object[] GetKeys()
         {
-            return new object[] { OwnerId, DestinationId };
+            return new object[] { SessionUnitId, DestinationId };
         }
 
         protected Follow() { }

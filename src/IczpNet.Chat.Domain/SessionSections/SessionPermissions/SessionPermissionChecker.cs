@@ -52,7 +52,7 @@ namespace IczpNet.Chat.SessionSections.SessionPermissions
         {
             await Task.Yield();
 
-            //if (!CurrentUser.GetChatObjectIdList().Contains(sessionUnit.OwnerId))
+            //if (!CurrentUser.GetChatObjectIdList().Contains(sessionUnit.SessionUnitId))
             //{
             //    return false;
             //}

@@ -44,7 +44,7 @@ namespace IczpNet.Chat.Follows
             var ownerownerSessionUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
 
             var ownerSessionUnitIdList = (await Repository.GetQueryableAsync())
-                .Where(x => x.OwnerId == ownerownerSessionUnit.Id)
+                .Where(x => x.SessionUnitId == ownerownerSessionUnit.Id)
                 .Select(x => x.DestinationId)
                 ;
 
@@ -82,7 +82,7 @@ namespace IczpNet.Chat.Follows
         [HttpPost]
         public async Task<bool> CreateAsync([FromQuery] FollowCreateInput input)
         {
-            var owner = await SessionUnitManager.GetAsync(input.OwnerId);
+            var owner = await SessionUnitManager.GetAsync(input.SessionUnitId);
 
             //check owner
 
@@ -97,9 +97,9 @@ namespace IczpNet.Chat.Follows
         [HttpPost]
         public async Task DeleteAsync([FromQuery] FollowDeleteInput input)
         {
-            var owner = await SessionUnitManager.GetAsync(input.OwnerId);
+            var owner = await SessionUnitManager.GetAsync(input.SessionUnitId);
             //check owner
-            await FollowManager.DeleteAsync(input.OwnerId, input.IdList);
+            await FollowManager.DeleteAsync(input.SessionUnitId, input.IdList);
         }
 
 
