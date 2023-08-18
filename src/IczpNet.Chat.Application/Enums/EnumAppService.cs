@@ -28,6 +28,8 @@ public class EnumAppService : ChatAppService, IEnumAppService
     [HttpGet]
     public async Task<PagedResultDto<EnumTypeDto>> GetListAsync(EnumGetListInput input)
     {
+        await Task.Yield();
+
         EnumItems ??= typeof(ChatDomainSharedModule).Assembly.GetExportedTypes()
             .Where(x => x.IsEnum)
             .Select(x => new EnumTypeDto()
@@ -37,8 +39,13 @@ public class EnumAppService : ChatAppService, IEnumAppService
                 Names = Enum.GetNames(x)
             })
             .ToList();
+
         var query = EnumItems.AsQueryable()
-            .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Description.Contains(input.Keyword) || x.Names.Contains(input.Keyword));
+            .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => (x.Description != null && x.Description.Contains(input.Keyword)) || x.Names.Contains(input.Keyword));
+
+        //var items = query.Skip(input.SkipCount).Take(input.MaxResultCount).ToList();
+
+        //return new PagedResultDto<EnumTypeDto>(EnumItems.Count, EnumItems);
 
         return await GetPagedListAsync<EnumTypeDto, EnumTypeDto>(query, input);
     }
