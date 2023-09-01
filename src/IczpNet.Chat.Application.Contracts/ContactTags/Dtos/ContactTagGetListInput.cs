@@ -5,6 +5,6 @@ namespace IczpNet.Chat.ContactTags.Dtos;
 
 public class ContactTagGetListInput : GetListInput
 {
-    [Required]
+    //[Required]
     public virtual long? OwnerId { get; set; }
 }

@@ -5,6 +5,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.Follows
 {
+    /// <summary>
+    /// 关注
+    /// </summary>
     public class Follow : BaseEntity
     {
         /// <summary>

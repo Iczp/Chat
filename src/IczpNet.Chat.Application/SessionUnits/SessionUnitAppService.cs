@@ -244,6 +244,13 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 
         Assert.If(entity.SessionId != destinationEntity.SessionId, $"Not in the same session");
 
+        //var friendEntity = await SessionUnitManager.FindAsync(entity.OwnerId, destinationEntity.OwnerId);
+
+        //if (friendEntity != null)
+        //{
+        //    return await MapToDestinationDtoAsync(friendEntity);
+        //}
+
         return await MapToDestinationDtoAsync(destinationEntity);
     }
 

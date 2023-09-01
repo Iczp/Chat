@@ -43,6 +43,7 @@ namespace IczpNet.Chat.SessionUnits
 
     [Index(nameof(Key), AllDescending = true)]
     [Index(nameof(DestinationObjectType), AllDescending = true)]
+    [Index(nameof(OwnerObjectType), AllDescending = true)]
     [Index(nameof(IsDeleted))]
     [Index(nameof(CreationTime), AllDescending = true)]
 

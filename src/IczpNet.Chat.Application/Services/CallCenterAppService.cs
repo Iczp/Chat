@@ -3,6 +3,7 @@ using IczpNet.Chat.CallCenters;
 using IczpNet.Chat.Enums;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.Services
@@ -22,7 +23,7 @@ namespace IczpNet.Chat.Services
         /// <param name="destinationId">目标会话单元Id</param>
         /// <returns></returns>
         [HttpPost]
-        public async Task TransferToAsync(Guid sessionUnitId, long destinationId)
+        public async Task TransferToAsync([Required] Guid sessionUnitId, [Required] long destinationId)
         {
             var entity = await SessionUnitManager.GetAsync(sessionUnitId);
 
