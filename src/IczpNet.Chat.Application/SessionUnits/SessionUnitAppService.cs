@@ -1,4 +1,5 @@
 ﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons.Dtos;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.BaseDtos;
@@ -169,6 +170,33 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             ;
 
         return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query, input, q => q.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId));
+    }
+
+    /// <summary>
+    /// 获取目标OwnerId列表（好友、群、群成员、机器人等）
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    [HttpGet]
+    public async Task<List<long>> GetListDestinationOwnerIdListAsync(Guid id)
+    {
+        var entity = await Repository.GetAsync(id);
+
+        await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetListForSameSessionPolicyName));
+
+        var list = await SessionUnitManager.GetListBySessionIdAsync(entity.SessionId.Value);
+
+        return list.Select(x => x.OwnerId).ToList();
+
+        //var ownerIdList = (await Repository.GetQueryableAsync())
+        //    .Where(x => x.SessionId == entity.SessionId && x.Setting.IsEnabled)
+        //    .Where(x => x.Setting.IsKilled == false)
+        //    .Where(x => x.Setting.IsPublic == true)
+        //    .Select(x => x.OwnerId)
+        //    .Distinct()
+        //    .ToList();
+
+        //return ownerIdList;
     }
 
     /// <summary>

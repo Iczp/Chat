@@ -40,8 +40,8 @@ namespace IczpNet.Chat.BaseDtos
         /// <summary>
         /// 显示数量
         /// </summary>
-        [DefaultValue(10)]
-        public override int MaxResultCount { get; set; }
+        //[DefaultValue(10)]
+        public override int MaxResultCount { get; set; } = 10;
 
         /// <summary>
         /// 跳过数量
