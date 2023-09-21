@@ -50,10 +50,16 @@ public class OfficialAppService : ChatAppService, IOfficialAppService
 
         var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Official);
 
-        var official = await ChatObjectManager.CreateAsync(new ChatObject(input.Name, chatObjectType, null)
+        var chatObject = new ChatObject(input.Name, chatObjectType, null)
         {
+            Code = input.Code,
+            //Portrait = input.Portrait,
             Description = input.Description,
-        });
+        };
+
+        chatObject.SetPortrait(input.Portrait);
+
+        var official = await ChatObjectManager.CreateAsync(chatObject, true);
 
         return ObjectMapper.Map<ChatObject, ChatObjectDto>(official);
     }

@@ -60,12 +60,14 @@ namespace IczpNet.Chat.ChatObjects
 
         protected override async Task CheckExistsByCreateAsync(ChatObject inputEntity)
         {
+            Assert.If(await Repository.AnyAsync(x => x.Name == inputEntity.Name), $"Already exists Name:{inputEntity.Name}");
+
             Assert.If(!inputEntity.Code.IsNullOrEmpty() && await Repository.AnyAsync(x => x.Code == inputEntity.Code), $"Already exists Code:{inputEntity.Code}");
         }
 
         protected override async Task CheckExistsByUpdateAsync(ChatObject inputEntity)
         {
-            Assert.If(!inputEntity.Code.IsNullOrEmpty() && await Repository.AnyAsync((x) => x.Code == inputEntity.Code && !x.Id.Equals(inputEntity.Id)), $" Code[{inputEntity.Code}] already such");
+            Assert.If(!inputEntity.Code.IsNullOrEmpty() && await Repository.AnyAsync(x => (x.Code == inputEntity.Code || x.Name == inputEntity.Name) && !x.Id.Equals(inputEntity.Id)), $" Code[{inputEntity.Code}] already such");
         }
 
         public override Task<ChatObject> CreateAsync(ChatObject inputEntity, bool isUnique = true)

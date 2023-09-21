@@ -8,6 +8,11 @@ namespace IczpNet.Chat.MessageSections.Messages.Dtos
         //public virtual string SenderName { get; set; }
 
         /// <summary>
+        /// Sender SessionUnitId
+        /// </summary>
+        public virtual Guid SessionUnitId { get; set; }
+
+        /// <summary>
         /// 转发来源Id(转发才有)
         /// </summary>
         public virtual long? ForwardMessageId { get; set; }

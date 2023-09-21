@@ -364,6 +364,25 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     /// <returns></returns>
     [HttpGet]
     [UnitOfWork(true, IsolationLevel.ReadUncommitted)]
+    public async Task<Dictionary<ChatObjectTypeEnums, int>> GetTypedBadgeByOwnerIdAsync([Required] long ownerId, bool? isImmersed = null)
+    {
+        await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetBadgePolicyName));
+
+        var badges = await SessionUnitManager.GetTypeBadgeByOwnerIdAsync(ownerId, isImmersed);
+
+        var chatObjectInfo = await ChatObjectManager.GetItemByCacheAsync(ownerId);
+
+        return badges;
+    }
+
+    /// <summary>
+    /// 获取消息角标（新消息）- ownerId
+    /// </summary>
+    /// <param name="ownerId">聊天对象Id</param>
+    /// <param name="isImmersed">是否包含免打扰的消息</param>
+    /// <returns></returns>
+    [HttpGet]
+    [UnitOfWork(true, IsolationLevel.ReadUncommitted)]
     public async Task<BadgeDto> GetBadgeByOwnerIdAsync([Required] long ownerId, bool? isImmersed = null)
     {
         await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetBadgePolicyName));

@@ -47,6 +47,8 @@ namespace IczpNet.Chat.SessionUnits
 
         Task<SessionUnit> DeleteMessageAsync(SessionUnit entity, long messageId);
 
+        Task<Dictionary<ChatObjectTypeEnums, int>> GetTypeBadgeByOwnerIdAsync(long ownerId, bool? isImmersed = null);
+
         Task<int> GetBadgeByOwnerIdAsync(long ownerId, bool? isImmersed = null);
 
         Task<int> GetBadgeByIdAsync(Guid sessionUnitId, bool? isImmersed = null);

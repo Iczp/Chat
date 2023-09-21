@@ -35,6 +35,8 @@ public interface ISessionUnitAppService
 
     Task<BadgeDto> GetBadgeByIdAsync(Guid id, bool? isImmersed = null);
 
+    Task<Dictionary<ChatObjectTypeEnums, int>> GetTypedBadgeByOwnerIdAsync([Required] long ownerId, bool? isImmersed = null);
+
     Task<BadgeDto> GetBadgeByOwnerIdAsync([Required] long ownerId, bool? isImmersed = null);
 
     Task<List<BadgeDto>> GetBadgeByUserIdAsync([Required] Guid userId, bool? isImmersed = null);

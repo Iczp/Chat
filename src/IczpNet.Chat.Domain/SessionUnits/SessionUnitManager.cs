@@ -227,6 +227,22 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return badge;
     }
 
+    public virtual async Task<Dictionary<ChatObjectTypeEnums, int>> GetTypeBadgeByOwnerIdAsync(long ownerId, bool? isImmersed = null)
+    {
+        var ret = (await Repository.GetQueryableAsync())
+            .Where(x => x.OwnerId == ownerId)
+            .Where(x => x.DestinationObjectType.HasValue)
+            .WhereIf(isImmersed.HasValue, x => x.Setting.IsImmersed == isImmersed)
+            .GroupBy(x => x.DestinationObjectType, (c, f) => new
+            {
+                DestinationObjectType = c.Value,
+                Badge = f.Sum(x => x.PublicBadge) + f.Sum(x => x.PrivateBadge),
+            })
+            .ToDictionary(x => x.DestinationObjectType, x => x.Badge);
+
+        return ret;
+    }
+
     public virtual async Task<int> GetBadgeByOwnerIdAsync(long ownerId, bool? isImmersed = null)
     {
         return (await Repository.GetQueryableAsync())
@@ -294,6 +310,8 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         //    q.Where(x => x.Id == sessionUnitId)
         //    .WhereIf(isImmersed.HasValue, x => x.Setting.IsImmersed == isImmersed));
     }
+
+
 
     public virtual async Task<Dictionary<Guid, int>> GetBadgeByIdAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
     {
