@@ -17,31 +17,80 @@ namespace IczpNet.Chat.SessionSections.Sessions
 {
     [Index(nameof(LastMessageId), AllDescending = true)]
     [Index(nameof(SessionKey))]
+    [Index(nameof(MessageTotalCount), AllDescending = true)]
+    [Index(nameof(MessageTotalCountUpdateTime), AllDescending = true)]
     public class Session : BaseEntity<Guid>, IChatOwner<long?>, IIsEnabled
     {
+        /// <summary>
+        /// 
+        /// </summary>
         [StringLength(80)]
+        [Comment("SessionKey")]
         public virtual string SessionKey { get; protected set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         //[StringLength(36)]
+        [Comment("Channel")]
         public virtual Channels Channel { get; protected set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         [StringLength(50)]
         public virtual string Title { get; set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         [StringLength(100)]
+        [Comment("Description")]
         public virtual string Description { get; set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public virtual long? OwnerId { get; protected set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         [ForeignKey(nameof(OwnerId))]
+        [Comment("Owner")]
         public virtual ChatObject Owner { get; protected set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public virtual bool IsEnabled { get; protected set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public virtual long? LastMessageId { get; protected set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        [Comment("是否可以设置为'免打扰'")]
         public virtual bool IsEnableSetImmersed { get; protected set; } = true;
 
+        /// <summary>
+        /// 消息总数量
+        /// </summary>
+        [Comment("消息总数量")]
+        public virtual int MessageTotalCount { get; protected set; }
+
+        /// <summary>
+        /// 更新消息总数量时间
+        /// </summary>
+        [Comment("更新消息总数量时间")]
+        public virtual DateTime MessageTotalCountUpdateTime { get; protected set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
         [ForeignKey(nameof(LastMessageId))]
         public virtual Message LastMessage { get; protected set; }
 

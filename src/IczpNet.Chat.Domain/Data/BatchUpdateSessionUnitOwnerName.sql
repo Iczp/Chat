@@ -23,7 +23,7 @@ set
 	select top 1 [Name] from [dbo].[Chat_ChatObject] c
 	where Id=x.DestinationId
 	),
-[dbo].[Chat_SessionUnit].[DestinationNameSpellingAbbreviation] = (
+[dbo].[Chat_SessionUnit].[DestinationNameSpellingAbbreviation] = (se
 	select top 1 [NameSpellingAbbreviation] from [dbo].[Chat_ChatObject] c
 	where Id=x.DestinationId
 	),

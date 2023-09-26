@@ -104,5 +104,17 @@ public partial class Message
     [NotMapped]
     public virtual bool? IsFollowing { get; set; }
 
-    
+    /// <summary>
+    /// 朋友关系Id
+    /// </summary>
+    [NotMapped]
+    public virtual Guid? FriendshipSessionUnitId { get; set; }
+
+    /// <summary>
+    /// 发送人显示名称
+    /// </summary>
+    [NotMapped]
+    public virtual string SenderDisplayName { get; set; }
+
+
 }

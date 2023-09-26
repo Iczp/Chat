@@ -114,6 +114,12 @@ public class MessageAppService : ChatAppService, IMessageAppService
             {
                 foreach (var e in entities)
                 {
+                    if (e.SenderId.HasValue && entity.OwnerId != e.SenderId)
+                    {
+                        var friendshipSessionUnit = await SessionUnitManager.FindAsync(entity.OwnerId, e.SenderId.Value);
+                        e.SenderDisplayName = friendshipSessionUnit?.Setting.Rename;
+                        e.FriendshipSessionUnitId = friendshipSessionUnit?.Id;
+                    }
                     e.IsReaded = await ReadedRecorderManager.IsAnyAsync(sessionUnitId, e.Id);
                     e.IsOpened = await OpenedRecorderManager.IsAnyAsync(sessionUnitId, e.Id);
                     e.IsFavorited = await FavoritedRecorderManager.IsAnyAsync(sessionUnitId, e.Id);
