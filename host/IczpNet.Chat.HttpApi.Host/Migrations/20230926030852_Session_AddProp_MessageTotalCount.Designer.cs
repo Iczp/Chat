@@ -13,7 +13,7 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    [Migration("20230926030345_Session_AddProp_MessageTotalCount")]
+    [Migration("20230926030852_Session_AddProp_MessageTotalCount")]
     partial class Session_AddProp_MessageTotalCount
     {
         /// <inheritdoc />
@@ -4377,7 +4377,7 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("int")
                         .HasComment("消息总数量");
 
-                    b.Property<DateTime>("MessageTotalCountUpdateTime")
+                    b.Property<DateTime?>("MessageTotalCountUpdateTime")
                         .HasColumnType("datetime2")
                         .HasComment("更新消息总数量时间");
 

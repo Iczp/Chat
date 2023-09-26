@@ -65,8 +65,7 @@ namespace IczpNet.Chat.Migrations
                 name: "MessageTotalCountUpdateTime",
                 table: "Chat_Session",
                 type: "datetime2",
-                nullable: false,
-                defaultValue: new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                nullable: true,
                 comment: "更新消息总数量时间");
 
             migrationBuilder.CreateIndex(

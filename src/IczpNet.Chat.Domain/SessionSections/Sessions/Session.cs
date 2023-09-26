@@ -86,7 +86,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
         /// 更新消息总数量时间
         /// </summary>
         [Comment("更新消息总数量时间")]
-        public virtual DateTime MessageTotalCountUpdateTime { get; protected set; }
+        public virtual DateTime? MessageTotalCountUpdateTime { get; protected set; }
 
         /// <summary>
         /// 

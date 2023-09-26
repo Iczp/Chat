@@ -4374,7 +4374,7 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("int")
                         .HasComment("消息总数量");
 
-                    b.Property<DateTime>("MessageTotalCountUpdateTime")
+                    b.Property<DateTime?>("MessageTotalCountUpdateTime")
                         .HasColumnType("datetime2")
                         .HasComment("更新消息总数量时间");
 
