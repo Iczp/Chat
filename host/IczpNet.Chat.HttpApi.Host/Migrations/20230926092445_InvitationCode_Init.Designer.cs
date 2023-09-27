@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230926092445_InvitationCode_Init")]
+    partial class InvitationCode_Init
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1552,11 +1555,6 @@ namespace IczpNet.Chat.Migrations
                     b.Property<long?>("OwnerId")
                         .HasColumnType("bigint")
                         .HasComment("所属聊天对象");
-
-                    b.Property<string>("Title")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)")
-                        .HasComment("标题");
 
                     b.HasKey("Id");
 
@@ -3126,47 +3124,6 @@ namespace IczpNet.Chat.Migrations
                     b.HasIndex("OwnerId");
 
                     b.ToTable("Chat_Message_Template_VideoContent", (string)null);
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.MessageWords.MessageWord", b =>
-                {
-                    b.Property<long>("MessageId")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("WordId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<string>("ExtraProperties")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.HasKey("MessageId", "WordId");
-
-                    b.HasIndex("WordId");
-
-                    b.ToTable("Chat_MessageWord", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.Mottos.Motto", b =>
@@ -6159,25 +6116,6 @@ namespace IczpNet.Chat.Migrations
                         .HasForeignKey("OwnerId");
 
                     b.Navigation("Owner");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.MessageWords.MessageWord", b =>
-                {
-                    b.HasOne("IczpNet.Chat.MessageSections.Messages.Message", "Message")
-                        .WithMany()
-                        .HasForeignKey("MessageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("IczpNet.Chat.Words.Word", "Word")
-                        .WithMany()
-                        .HasForeignKey("WordId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Message");
-
-                    b.Navigation("Word");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.Mottos.Motto", b =>

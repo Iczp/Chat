@@ -32,6 +32,8 @@ using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
 using IczpNet.Chat.Entries.Dtos;
 using IczpNet.Chat.ContactTags.Dtos;
 using IczpNet.Chat.ContactTags;
+using IczpNet.Chat.InvitationCodes;
+using IczpNet.Chat.InvitationCodes.Dtos;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -76,6 +78,13 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<Motto, MottoDetailDto>();
         CreateMap<MottoCreateInput, Motto>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         CreateMap<MottoUpdateInput, Motto>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+
+        //InvitationCode
+        CreateMap<InvitationCode, InvitationCodeDto>();
+        CreateMap<InvitationCode, InvitationCodeSimpleDto>();
+        CreateMap<InvitationCode, InvitationCodeDetailDto>();
+        CreateMap<InvitationCodeCreateInput, InvitationCode>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<InvitationCodeUpdateInput, InvitationCode>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
 
         //ChatObjectCategory
         CreateMap<ChatObjectCategory, ChatObjectCategoryDto>();

@@ -47,6 +47,8 @@ using IczpNet.Chat.WalletBusinesses;
 using IczpNet.Chat.WalletRecorders;
 using IczpNet.Chat.WalletOrders;
 using IczpNet.Chat.SessionUnits;
+using IczpNet.Chat.InvitationCodes;
+using IczpNet.Chat.MessageWords;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -109,6 +111,7 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<Connection> Connection { get; }
 
     DbSet<Message> Message { get; }
+    DbSet<MessageWord> MessageWord { get; }
     DbSet<MessageContent> MessageContent { get; }
 
     DbSet<CmdContent> CmdMessage { get; }
@@ -141,5 +144,7 @@ public interface IChatDbContext : IEfCoreDbContext
 
     DbSet<Blob> Blob { get; }
     DbSet<BlobContent> BlobContent { get; }
+
+    DbSet<InvitationCode> InvitationCode { get; }
 
 }
