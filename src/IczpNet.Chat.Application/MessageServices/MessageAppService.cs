@@ -122,7 +122,6 @@ public class MessageAppService : ChatAppService, IMessageAppService
                     }
                     e.IsReaded = await ReadedRecorderManager.IsAnyAsync(sessionUnitId, e.Id);
                     e.IsOpened = await OpenedRecorderManager.IsAnyAsync(sessionUnitId, e.Id);
-                    
                     e.IsFavorited = await FavoritedRecorderManager.IsAnyAsync(sessionUnitId, e.Id);
                     e.IsFollowing = e.SenderSessionUnitId.HasValue && followingIdList.Contains(e.SenderSessionUnitId.Value);
                 }

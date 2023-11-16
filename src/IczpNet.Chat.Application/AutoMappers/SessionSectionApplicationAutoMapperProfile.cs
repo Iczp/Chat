@@ -23,6 +23,7 @@ using IczpNet.Chat.Cantacts.Dtos;
 using IczpNet.Chat.SessionUnits.Dtos;
 using IczpNet.Chat.SessionUnits;
 using System.Linq;
+using Volo.Abp.AutoMapper;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -47,6 +48,12 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
         CreateMap<SessionUnit, SessionUnitDestinationDetailDto>();
         CreateMap<SessionUnit, SessionUnitDestinationDto>();
         CreateMap<SessionUnit, SessionUnitWithDestinationDto>();
+        CreateMap<SessionUnit, SessionUnitSenderDto>()
+            .Ignore(x => x.IsFriendship)
+            .Ignore(x => x.FriendshipName)
+            .Ignore(x => x.FriendshipSessionUnitId)
+            ;
+
         //CreateMap<SessionUnitModel, SessionUnitOwnerDto>();
 
         CreateMap<SessionUnitSetting, SessionUnitSettingDto>();

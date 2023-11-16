@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.ChatObjects.Dtos;
+﻿using IczpNet.Chat.SessionUnits.Dtos;
 using System;
 using Volo.Abp.Application.Dtos;
 
@@ -23,10 +23,12 @@ namespace IczpNet.Chat.MessageSections.Messages.Dtos
         /// </summary>
         public virtual Guid? FriendshipSessionUnitId { get; set; }
 
-        /// <summary>
-        /// 发送人
-        /// </summary>
-        public virtual ChatObjectDto Sender { get; set; }
+        ///// <summary>
+        ///// 发送人
+        ///// </summary>
+        //public virtual ChatObjectDto Sender { get; set; }
+
+        public virtual SessionUnitSenderDto SenderSessionUnit { get; set; }
 
         /// <summary>
         /// 转发来源Id(转发才有)

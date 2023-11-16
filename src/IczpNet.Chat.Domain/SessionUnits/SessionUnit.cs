@@ -96,6 +96,8 @@ namespace IczpNet.Chat.SessionUnits
 
         public virtual string DisplayName => Setting.MemberName;
 
+        public virtual string MemberName => Setting.MemberName;
+
         public virtual bool IsPublic => Setting.IsPublic;
 
         public virtual bool IsStatic => Setting.IsStatic;
