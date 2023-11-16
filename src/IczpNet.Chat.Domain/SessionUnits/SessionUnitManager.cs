@@ -377,7 +377,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
             ReadedMessageId = readedMessageId,
             PublicBadge = query.Count(),
             PrivateBadge = query.Where(x => x.IsPrivate).Count(),
-            FollowingCount = query.Where(x => followingIdList.Contains(x.SessionUnitId.Value)).Count(),
+            FollowingCount = query.Where(x => followingIdList.Contains(x.SenderSessionUnitId.Value)).Count(),
             RemindAllCount = query.Where(x => x.IsRemindAll && !x.IsRollbacked).Count(),
             RemindMeCount = query.Where(x => x.MessageReminderList.Any(g => g.SessionUnitId == entity.Id)).Count(),
         };
@@ -411,7 +411,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
                 Id = entity.Id,
                 PublicBadge = query.Count(),
                 PrivateBadge = query.Where(x => x.IsPrivate).Count(),
-                FollowingCount = query.Where(x => entity.FollowList.Select(d => d.DestinationId).Contains(x.SessionUnitId.Value)).Count(),
+                FollowingCount = query.Where(x => entity.FollowList.Select(d => d.DestinationId).Contains(x.SenderSessionUnitId.Value)).Count(),
                 RemindAllCount = query.Where(x => x.IsRemindAll && !x.IsRollbacked).Count(),
                 RemindMeCount = query.Where(x => x.MessageReminderList.Any(g => g.SessionUnitId == entity.Id)).Count(),
             });

@@ -43,7 +43,7 @@ public partial class Message : BaseEntity<long>, ISessionId
     /// sender session unit
     /// </summary>
     [Comment("会话单元Id")] 
-    public virtual Guid? SessionUnitId { get; protected set; }
+    public virtual Guid? SenderSessionUnitId { get; protected set; }
 
     /// <summary>
     /// 

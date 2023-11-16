@@ -94,7 +94,7 @@ namespace IczpNet.Chat.Bases
 
             if (message.IsPrivate)
             {
-                return query.Where(x => x.Id == message.SessionUnitId || (x.OwnerId == message.ReceiverId && x.DestinationId == message.SenderId));
+                return query.Where(x => x.Id == message.SenderSessionUnitId || (x.OwnerId == message.ReceiverId && x.DestinationId == message.SenderId));
             }
 
             return query.Where(x => !readedSessionUnitIdList.Contains(x.Id));

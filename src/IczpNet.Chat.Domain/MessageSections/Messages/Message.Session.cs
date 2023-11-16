@@ -32,7 +32,7 @@ public partial class Message
     /// <summary>
     /// sender session unit
     /// </summary>
-    [ForeignKey(nameof(SessionUnitId))]
+    [ForeignKey(nameof(SenderSessionUnitId))]
     public virtual SessionUnit SenderSessionUnit { get; protected set; }
 
     [InverseProperty(nameof(SessionSections.Sessions.Session.LastMessage))]

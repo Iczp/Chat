@@ -98,7 +98,7 @@ public class MessageAppService : ChatAppService, IMessageAppService
             .WhereIf(settting.HistoryLastTime.HasValue, x => x.CreationTime < settting.HistoryFristTime)
             .WhereIf(settting.ClearTime.HasValue, x => x.CreationTime > settting.ClearTime)
             .WhereIf(input.MessageType.HasValue, x => x.MessageType == input.MessageType)
-            .WhereIf(input.IsFollowed.HasValue, x => followingIdList.Contains(x.SessionUnitId.Value))
+            .WhereIf(input.IsFollowed.HasValue, x => followingIdList.Contains(x.SenderSessionUnitId.Value))
             .WhereIf(input.IsRemind == true, x => x.IsRemindAll || x.MessageReminderList.Any(x => x.SessionUnitId == sessionUnitId))
             .WhereIf(input.SenderId.HasValue, x => x.SenderId == input.SenderId)
             .WhereIf(input.ForwardDepth.HasValue, x => x.ForwardDepth == input.ForwardDepth.Value)
@@ -124,7 +124,7 @@ public class MessageAppService : ChatAppService, IMessageAppService
                     e.IsOpened = await OpenedRecorderManager.IsAnyAsync(sessionUnitId, e.Id);
                     
                     e.IsFavorited = await FavoritedRecorderManager.IsAnyAsync(sessionUnitId, e.Id);
-                    e.IsFollowing = e.SessionUnitId.HasValue && followingIdList.Contains(e.SessionUnitId.Value);
+                    e.IsFollowing = e.SenderSessionUnitId.HasValue && followingIdList.Contains(e.SenderSessionUnitId.Value);
                 }
                 //await Task.Yield();
                 return entities;
