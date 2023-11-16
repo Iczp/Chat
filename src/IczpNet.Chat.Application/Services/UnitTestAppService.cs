@@ -6,6 +6,7 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.TextTemplates;
+using JiebaNet.Segmenter;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -183,6 +184,19 @@ namespace IczpNet.Chat.Services
         {
             var req = await HttpRequestManager.RequestAsync(HttpMethod.Get, url);
             return req.Response?.Content;
+        }
+
+        [HttpPost]
+        public virtual async Task<string[]> TextSegmenterAsync(string text)
+        {
+            await Task.Yield();
+
+            var segmenter = new JiebaSegmenter();
+
+            // 使用Jieba进行分词
+            var words = segmenter.Cut(text);
+
+            return words.ToArray();
         }
     }
 }

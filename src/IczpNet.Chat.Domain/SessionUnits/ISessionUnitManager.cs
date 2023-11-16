@@ -39,6 +39,10 @@ namespace IczpNet.Chat.SessionUnits
 
         Task<SessionUnit> SetImmersedAsync(SessionUnit entity, bool isImmersed);
 
+        Task<SessionUnit> SetIsContactsAsync(SessionUnit entity, bool isContacts);
+
+        Task<SessionUnit> SetIsShowMemberNameAsync(SessionUnit entity, bool isShowMemberName);
+
         Task<SessionUnit> RemoveAsync(SessionUnit entity);
 
         Task<SessionUnit> KillAsync(SessionUnit entity);
@@ -106,5 +110,6 @@ namespace IczpNet.Chat.SessionUnits
         Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime, SessionUnit setterSessionUnit, bool isSendMessage);
 
         Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime);
+        
     }
 }

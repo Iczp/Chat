@@ -31,7 +31,7 @@ public partial class Message
 
     public Message(SessionUnit sessionUnit) : base()
     {
-        SessionUnit = sessionUnit;
+        SenderSessionUnit = sessionUnit;
         SenderId = sessionUnit.OwnerId;
         SenderType = sessionUnit.Owner?.ObjectType;
         ReceiverId = sessionUnit.DestinationId;

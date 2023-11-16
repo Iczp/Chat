@@ -118,6 +118,8 @@ public class ChatPermissions
         public const string SetReaded = Default + "." + nameof(SetReaded);
         public const string SetTopping = Default + "." + nameof(SetTopping);
         public const string SetImmersed = Default + "." + nameof(SetImmersed);
+        public const string SetIsContacts = Default + "." + nameof(SetIsContacts);
+        public const string SetIsShowMemberName = Default + "." + nameof(SetIsShowMemberName);
         public const string RemoveSession = Default + "." + nameof(RemoveSession);
         public const string ClearMessage = Default + "." + nameof(ClearMessage);
         public const string DeleteMessage = Default + "." + nameof(DeleteMessage);

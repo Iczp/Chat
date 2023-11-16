@@ -68,7 +68,7 @@ public partial class Message : BaseEntity<long>, ISessionId
     /// <summary>
     /// 
     /// </summary>
-    public virtual string SenderName => SessionUnit?.DisplayName ?? SessionUnit?.Owner?.Name;
+    public virtual string SenderName => SenderSessionUnit?.DisplayName ?? SenderSessionUnit?.Owner?.Name;
 
     //public virtual int ReadedCount { get; set; }
 

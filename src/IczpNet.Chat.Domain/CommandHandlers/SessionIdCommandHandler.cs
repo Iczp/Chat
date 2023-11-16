@@ -49,6 +49,8 @@ public abstract class SessionIdCommandHandler : CommandHandlerBase
                 continue;
             }
 
+            //var sessionUnitCaches = sessionUnitInfoList.Where(x=> chatObjectIdList.Contains(x.OwnerId)).ToList();
+
             var units = onlineSessionInfo.ChatObjectIdList
                 .Where(chatObjectIdList.Contains)
                 .Select(chatObjectId => new ScopeUnit
@@ -60,7 +62,8 @@ public abstract class SessionIdCommandHandler : CommandHandlerBase
             var message = JsonSerializer.Serialize(new PushPayload()
             {
                 AppUserId = onlineSessionInfo.AppUserId,
-                Scopes = units,
+                Scopes = units,//sessionUnitCaches.Select(x=>x as object).ToList(),
+                //Caches = sessionUnitCaches,
                 Command = commandPayload.Command,
                 Payload = commandPayload.Payload,
             });

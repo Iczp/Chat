@@ -200,7 +200,7 @@ namespace IczpNet.Chat.SessionUnits
         /// <summary>
         /// sender message list
         /// </summary>
-        [InverseProperty(nameof(Message.SessionUnit))]
+        [InverseProperty(nameof(Message.SenderSessionUnit))]
         public virtual List<Message> MessageList { get; protected set; } = new List<Message>();
 
         [InverseProperty(nameof(OpenedRecorder.SessionUnit))]

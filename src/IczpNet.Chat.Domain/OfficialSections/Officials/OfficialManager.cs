@@ -101,7 +101,7 @@ namespace IczpNet.Chat.OfficialSections.Officials
                 sessionUnit = session.AddSessionUnit(new SessionUnit(
                   idGenerator: SessionUnitIdGenerator,
                   session: session,
-                  owner: sessionUnit.Owner,
+                  owner: owner,
                   destination: official,
                   isPublic: true,
                   isStatic: false,

@@ -1,6 +1,7 @@
 ﻿using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.FavoritedRecorders.Dtos;
+using IczpNet.Chat.SessionUnits;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.ComponentModel.DataAnnotations;
@@ -92,4 +93,24 @@ public class FavoriteAppService : ChatAppService, IFavoriteAppService
         return FavoritedRecorderManager.DeleteAsync(input.SessionUnitId, input.MessageId);
     }
 
+    /// <summary>
+    /// 添加/取消收藏
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
+    [HttpPost]
+    public async Task<bool> SetAsync([FromQuery] FavoritedRecorderInput input)
+    {
+        if (input.IsFavorite)
+        {
+            var sessionUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
+            await FavoritedRecorderManager.CreateIfNotContainsAsync(sessionUnit, input.MessageId, input.DeviceId);
+        }
+        else
+        {
+            await FavoritedRecorderManager.DeleteAsync(input.SessionUnitId, input.MessageId);
+        }
+        return input.IsFavorite;
+    }
 }

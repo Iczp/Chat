@@ -170,7 +170,7 @@ namespace IczpNet.Chat.SessionUnits
         /// <summary>
         /// 加入方式
         /// </summary>
-        [Comment("加入方式")] 
+        [Comment("加入方式")]
         public virtual JoinWays? JoinWay { get; set; }
 
         /// <summary>
@@ -190,7 +190,7 @@ namespace IczpNet.Chat.SessionUnits
         /// 邀请人
         /// </summary>
         [ForeignKey(nameof(InviterId))]
-        [Comment("邀请人")] 
+        [Comment("邀请人")]
         public virtual SessionUnit Inviter { get; set; }
 
         #endregion
@@ -308,6 +308,10 @@ namespace IczpNet.Chat.SessionUnits
 
         internal virtual void SetImmersed(bool isImmersed) => IsImmersed = isImmersed;
 
+        internal virtual void SetIsContacts(bool isContacts) => IsContacts = isContacts;
+
+        internal virtual void SetIsShowMemberName(bool isShowMemberName) => IsShowMemberName = isShowMemberName;
+
         internal virtual void SetIsEnabled(bool v) => IsEnabled = v;
 
         internal virtual void SetIsCreator(bool v)
@@ -320,5 +324,6 @@ namespace IczpNet.Chat.SessionUnits
         {
             MuteExpireTime = muteExpireTime;
         }
+
     }
 }

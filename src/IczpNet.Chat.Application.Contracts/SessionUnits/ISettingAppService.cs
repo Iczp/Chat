@@ -49,6 +49,22 @@ public interface ISettingAppService
     Task<SessionUnitOwnerDto> SetImmersedAsync(Guid sessionUnitId, bool isImmersed);
 
     /// <summary>
+    /// 保存到通讯录
+    /// </summary>
+    /// <param name="sessionUnitId"></param>
+    /// <param name="isContacts"></param>
+    /// <returns></returns>
+    Task<SessionUnitOwnerDto> SetIsContactsAsync(Guid sessionUnitId, bool isContacts);
+
+    /// <summary>
+    /// 是否显示成员名称
+    /// </summary>
+    /// <param name="sessionUnitId"></param>
+    /// <param name="isShowMemberName"></param>
+    /// <returns></returns>
+    Task<SessionUnitOwnerDto> SetIsShowMemberNameAsync(Guid sessionUnitId, bool isShowMemberName);
+
+    /// <summary>
     /// 退出聊天（主动）
     /// </summary>
     /// <param name="sessionUnitId"></param>

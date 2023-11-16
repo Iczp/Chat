@@ -24,6 +24,10 @@ public class SettingAppService : ChatAppService, ISettingAppService
     protected virtual string SetReadedPolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.SetReaded;
     protected virtual string SetToppingPolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.SetTopping;
     protected virtual string SetImmersedPolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.SetImmersed;
+    protected virtual string SetIsContactsPolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.SetIsContacts;
+    protected virtual string SetIsShowMemberNamePolicyName { get; set; } //= ChatPermissions.SessionUnitSettingPermissions.SetIsShowMemberName;
+    
+
     protected virtual string RemoveSessionPolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.RemoveSession;
     protected virtual string ClearMessagePolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.ClearMessage;
     protected virtual string DeleteMessagePolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.DeleteMessage;
@@ -144,6 +148,37 @@ public class SettingAppService : ChatAppService, ISettingAppService
 
         return await MapToDtoAsync(entity);
     }
+
+    /// <summary>
+    /// 保存到通讯录
+    /// </summary>
+    /// <param name="sessionUnitId"></param>
+    /// <param name="isContacts"></param>
+    [HttpPost]
+    public async Task<SessionUnitOwnerDto> SetIsContactsAsync([Required] Guid sessionUnitId, bool isContacts)
+    {
+        var entity = await GetAndCheckPolicyAsync(SetIsContactsPolicyName, sessionUnitId);
+
+        await SessionUnitManager.SetIsContactsAsync(entity, isContacts);
+
+        return await MapToDtoAsync(entity);
+    }
+
+    /// <summary>
+    /// 是否显示成员名称
+    /// </summary>
+    /// <param name="sessionUnitId"></param>
+    /// <param name="isShowMemberName"></param>
+    [HttpPost]
+    public async Task<SessionUnitOwnerDto> SetIsShowMemberNameAsync([Required] Guid sessionUnitId, bool isShowMemberName)
+    {
+        var entity = await GetAndCheckPolicyAsync(SetIsShowMemberNamePolicyName, sessionUnitId);
+
+        await SessionUnitManager.SetIsShowMemberNameAsync(entity, isShowMemberName);
+
+        return await MapToDtoAsync(entity);
+    }
+
 
 
     /// <summary>

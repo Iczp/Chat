@@ -16,5 +16,7 @@ namespace IczpNet.Chat.FavoritedRecorders
         Task<DateTime> CreateAsync(FavoritedRecorderCreateInput input);
 
         Task DeleteAsync(FavoritedRecorderDeleteInput input);
+
+        Task<bool> SetAsync(FavoritedRecorderInput input);
     }
 }

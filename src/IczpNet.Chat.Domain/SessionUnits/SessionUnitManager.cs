@@ -174,6 +174,16 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return SetEntityAsync(entity, x => x.Setting.SetImmersed(isImmersed));
     }
 
+    public virtual Task<SessionUnit> SetIsContactsAsync(SessionUnit entity, bool isContacts)
+    {
+        return SetEntityAsync(entity, x => x.Setting.SetIsContacts(isContacts));
+    }
+
+    public virtual Task<SessionUnit> SetIsShowMemberNameAsync(SessionUnit entity, bool isShowMemberName)
+    {
+        return SetEntityAsync(entity, x => x.Setting.SetIsShowMemberName(isShowMemberName));
+    }
+
     public virtual Task<SessionUnit> RemoveAsync(SessionUnit entity)
     {
         return SetEntityAsync(entity, x => x.Setting.Remove(Clock.Now));

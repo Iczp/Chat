@@ -64,6 +64,11 @@ namespace IczpNet.Chat.MessageSections.Messages.Dtos
         public virtual bool? IsFollowing { get; set; }
 
         /// <summary>
+        /// 是否收藏
+        /// </summary>
+        public virtual bool? IsFavorited { get; set; }
+
+        /// <summary>
         /// 成员数量
         /// </summary>
         public virtual long SessionUnitCount { get; set; }

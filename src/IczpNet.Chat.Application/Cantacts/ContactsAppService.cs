@@ -32,7 +32,7 @@ public class ContactsAppService : ChatAppService, IContactsAppService
     protected virtual async Task<IQueryable<SessionUnit>> CreateQueryAsync(ContactsGetListInput input)
     {
         return (await Repository.GetQueryableAsync())
-            .Where(x => x.Setting.IsContacts)
+            //.Where(x => x.Setting.IsContacts)
             .Where(x => x.OwnerId == input.OwnerId)
             .WhereIf(input.DestinationObjectType.HasValue, x => x.DestinationObjectType == input.DestinationObjectType)
             .WhereIf(input.TagId.HasValue, x => x.SessionUnitContactTagList.Any(d => d.TagId == input.TagId))

@@ -33,6 +33,8 @@ namespace IczpNet.Chat.MessageSections.Messages
 
         //public virtual long? ReceiverId { get; set; }
 
+        public virtual string SenderName { get; set; }
+
         public virtual MessageTypes MessageType { get; set; }
 
         public virtual ReminderTypes? ReminderType { get; set; }
