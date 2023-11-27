@@ -1,34 +1,20 @@
-﻿using IczpNet.Chat.SessionUnits.Dtos;
+﻿using IczpNet.Pusher.Commands;
 using System;
 using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.MessageSections.Messages.Dtos
 {
-    public class MessageOwnerDto : MessageDto, IEntityDto<long>
+    public class MessageOwnerDto : MessageQuoteDto, IEntityDto<long>
     {
-        //public virtual string SenderName { get; set; }
-
-        /// <summary>
-        /// 发送人显示名称
-        /// </summary>
-        public virtual string SenderDisplayName { get; set; }
-
-        ///// <summary>
-        ///// Sender SessionUnitId
-        ///// </summary>
-        //public virtual Guid SessionUnitId { get; set; }
-
         /// <summary>
         /// 朋友Id
         /// </summary>
         public virtual Guid? FriendshipSessionUnitId { get; set; }
 
-        ///// <summary>
-        ///// 发送人
-        ///// </summary>
-        //public virtual ChatObjectDto Sender { get; set; }
-
-        public virtual SessionUnitSenderDto SenderSessionUnit { get; set; }
+        /// <summary>
+        /// 引用消息
+        /// </summary>
+        public virtual MessageQuoteDto QuoteMessage { get; set; }
 
         /// <summary>
         /// 转发来源Id(转发才有)
@@ -69,6 +55,16 @@ namespace IczpNet.Chat.MessageSections.Messages.Dtos
         /// 是否收藏
         /// </summary>
         public virtual bool? IsFavorited { get; set; }
+
+        /// <summary>
+        /// 是否@所有人
+        /// </summary>
+        public virtual bool IsRemindAll { get; set; }
+
+        /// <summary>
+        /// 是否@我
+        /// </summary>
+        public virtual bool? IsRemindMe { get; set; }
 
         /// <summary>
         /// 成员数量

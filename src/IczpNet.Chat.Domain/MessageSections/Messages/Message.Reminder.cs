@@ -10,9 +10,15 @@ namespace IczpNet.Chat.MessageSections.Messages;
 public partial class Message
 {
     /// <summary>
-    /// Remind Everyone
+    /// @所有人 Remind Everyone 
     /// </summary>
     public virtual bool IsRemindAll { get; protected set; }
+
+    /// <summary>
+    /// 是否@我
+    /// </summary>
+    [NotMapped]
+    public virtual bool? IsRemindMe { get; set; }
 
     /// <summary>
     /// 提醒器类型

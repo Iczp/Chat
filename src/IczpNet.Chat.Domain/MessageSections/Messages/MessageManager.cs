@@ -6,6 +6,7 @@ using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
+using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionUnits;
@@ -17,6 +18,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Volo.Abp.BackgroundJobs;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.ObjectMapping;
 using Volo.Abp.Settings;
@@ -37,6 +39,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         protected IFollowManager FollowManager { get; }
         protected IBackgroundJobManager BackgroundJobManager { get; }
         protected ISettingProvider SettingProvider { get; }
+        protected IRepository<MessageReminder> MessageReminderRepository { get; }
 
         public MessageManager(
             IMessageRepository repository,
@@ -49,7 +52,8 @@ namespace IczpNet.Chat.MessageSections.Messages
             IFollowManager followManager,
             IBackgroundJobManager backgroundJobManager,
             ISessionRepository sessionRepository,
-            ISettingProvider settingProvider)
+            ISettingProvider settingProvider,
+            IRepository<MessageReminder> messageReminderRepository)
         {
             Repository = repository;
             ChatObjectManager = chatObjectManager;
@@ -62,6 +66,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             BackgroundJobManager = backgroundJobManager;
             SessionRepository = sessionRepository;
             SettingProvider = settingProvider;
+            MessageReminderRepository = messageReminderRepository;
         }
 
         protected virtual void TryToSetOwnerId<T, TKey>(T entity, TKey ownerId)
@@ -91,9 +96,9 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             Assert.NotNull(senderSessionUnit, $"Unable to send message, senderSessionUnit is null");
 
-            Assert.If(!senderSessionUnit.Setting.IsInputEnabled, $"Unable to send message, input status is disabled");
+            Assert.If(!senderSessionUnit.Setting.IsInputEnabled, $"Unable to send message, input status is disabled,senderSessionUnitId:{senderSessionUnit.Id}");
 
-            Assert.If(senderSessionUnit.Setting.MuteExpireTime > Clock.Now, $"Unable to send message,sessionUnit has been muted.");
+            Assert.If(senderSessionUnit.Setting.MuteExpireTime > Clock.Now, $"Unable to send message,sessionUnit has been muted.senderSessionUnitId:{senderSessionUnit.Id}");
 
             //cache
             await SessionUnitManager.GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);
@@ -134,10 +139,10 @@ namespace IczpNet.Chat.MessageSections.Messages
             };
 
             //remind List
-            if (remindList != null)
-            {
-                sessionUnitIncrementArgs.RemindSessionUnitIdList = await GetRemindIdListAsync(senderSessionUnit, message, remindList);
-            }
+            //if (remindList != null)
+            //{
+            sessionUnitIncrementArgs.RemindSessionUnitIdList = await GetRemindIdListAsync(senderSessionUnit, message, remindList);
+            //}
 
             //sessionUnitCount
             var sessionUnitCount = message.IsPrivate ? 2 : await SessionUnitManager.GetCountBySessionIdAsync(senderSessionUnit.SessionId.Value);
@@ -262,10 +267,10 @@ namespace IczpNet.Chat.MessageSections.Messages
             if (nameList.Any(x => textList.Contains(x)))
             {
                 //creator or manager
-                if (senderSessionUnit.Setting.IsCreator)
-                {
-                    message.SetRemindAll();
-                }
+                //if (senderSessionUnit.Setting.IsCreator)
+                //{
+                message.SetRemindAll();
+                //}
                 return unitIdList;
             }
 
@@ -418,6 +423,9 @@ namespace IczpNet.Chat.MessageSections.Messages
             return messageList;
         }
 
-
+        public Task<bool> IsRemindAsync(long messageId, Guid sessionUnitId)
+        {
+            return MessageReminderRepository.AnyAsync(x => x.MessageId == messageId && x.SessionUnitId == sessionUnitId);
+        }
     }
 }

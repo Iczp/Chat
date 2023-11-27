@@ -8,7 +8,7 @@ namespace IczpNet.Chat.MessageSections.Messages
     public interface IMessageManager
     {
         Task<Message> CreateMessageAsync(SessionUnit senderSessionUnit,
-            Func<Message,  Task<IContentEntity>> action,
+            Func<Message, Task<IContentEntity>> action,
             SessionUnit receiverSessionUnit = null,
             long? quoteMessageId = null,
             List<Guid> remindList = null);
@@ -31,5 +31,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         Task<List<Message>> ForwardAsync(Guid currentSessionUnitId, long sourceMessageId, List<Guid> targetSessionUnitIdList);
 
         Task<Dictionary<string, long>> RollbackAsync(Message message);
+
+        Task<bool> IsRemindAsync(long messageId, Guid sessionUnitId);
     }
 }

@@ -35,6 +35,7 @@ public class MessageAppService : ChatAppService, IMessageAppService
     protected IFavoritedRecorderManager FavoritedRecorderManager { get; }
     protected IFollowManager FollowManager { get; }
     protected ISessionUnitRepository SessionUnitRepository { get; }
+    protected IMessageManager MessageManager { get; }
 
     public MessageAppService(
         IMessageRepository repository,
@@ -42,7 +43,8 @@ public class MessageAppService : ChatAppService, IMessageAppService
         IOpenedRecorderManager openedRecorderManager,
         IFavoritedRecorderManager favoriteManager,
         IFollowManager followManager,
-        ISessionUnitRepository sessionUnitRepository)
+        ISessionUnitRepository sessionUnitRepository,
+        IMessageManager messageManager)
     {
         Repository = repository;
         ReadedRecorderManager = readedRecorderManager;
@@ -50,6 +52,7 @@ public class MessageAppService : ChatAppService, IMessageAppService
         FavoritedRecorderManager = favoriteManager;
         FollowManager = followManager;
         SessionUnitRepository = sessionUnitRepository;
+        MessageManager = messageManager;
     }
 
     /// <summary>
@@ -124,6 +127,7 @@ public class MessageAppService : ChatAppService, IMessageAppService
                     e.IsOpened = await OpenedRecorderManager.IsAnyAsync(sessionUnitId, e.Id);
                     e.IsFavorited = await FavoritedRecorderManager.IsAnyAsync(sessionUnitId, e.Id);
                     e.IsFollowing = e.SenderSessionUnitId.HasValue && followingIdList.Contains(e.SenderSessionUnitId.Value);
+                    e.IsRemindMe = await MessageManager.IsRemindAsync(e.Id, sessionUnitId);
                 }
                 //await Task.Yield();
                 return entities;
