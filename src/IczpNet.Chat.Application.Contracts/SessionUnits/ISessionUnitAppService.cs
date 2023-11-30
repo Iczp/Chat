@@ -29,6 +29,8 @@ public interface ISessionUnitAppService
 
     Task<SessionUnitOwnerDto> GetAsync(Guid id);
 
+    Task<PagedResultDto<SessionUnitOwnerDto>> GetManyAsync(List<Guid> idList);
+
     Task<SessionUnitOwnerDetailDto> GetDetailAsync(Guid id);
 
     Task<SessionUnitDestinationDto> GetDestinationAsync(Guid id, Guid destinationId);

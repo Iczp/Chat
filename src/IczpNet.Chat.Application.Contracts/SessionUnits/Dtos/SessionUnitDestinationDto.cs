@@ -1,9 +1,7 @@
-﻿using IczpNet.Chat.ChatObjects.Dtos;
+﻿using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.Enums;
-using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
-using IczpNet.Chat.SessionSections.SessionTags.Dtos;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.SessionUnits.Dtos
@@ -25,7 +23,12 @@ namespace IczpNet.Chat.SessionUnits.Dtos
         /// <summary>
         /// 对象类型
         /// </summary>
-        public virtual ChatObjectTypeEnums OwnerObjectType { get; set; }
+        public virtual ChatObjectTypeEnums? OwnerObjectType { get; set; }
+
+        /// <summary>
+        /// 聊天对象类型:个人|群|服务号等
+        /// </summary>
+        public virtual ChatObjectTypeEnums? DestinationObjectType { get; set; }
 
         /// <summary>
         /// 显示名称
@@ -53,7 +56,7 @@ namespace IczpNet.Chat.SessionUnits.Dtos
 
         //public virtual bool IsStatic { get; set; }
 
-        public virtual ChatObjectDto Owner { get; set; }
+        public virtual IChatObject Owner { get; set; }
 
     }
 }

@@ -1,6 +1,6 @@
 ﻿namespace IczpNet.Chat.ChatObjects.Dtos
 {
-    public class ChatObjectDto : ChatObjectSimpleDto
+    public class ChatObjectDto : ChatObjectSimpleDto, IChatObject
     {
 
         //public MottoSimpleDto Motto { get; set; }

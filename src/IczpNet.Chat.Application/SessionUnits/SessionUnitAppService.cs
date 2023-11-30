@@ -241,6 +241,27 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     }
 
     /// <summary>
+    /// 获取多个个会话单元
+    /// </summary>
+    /// <param name="idList"></param>
+    /// <returns></returns>
+    [HttpGet]
+    public virtual async Task<PagedResultDto<SessionUnitOwnerDto>> GetManyAsync(List<Guid> idList)
+    {
+        var items = new List<SessionUnitOwnerDto>();
+
+        foreach (var id in idList.Distinct())
+        {
+            var entity = await GetEntityAsync(id);
+
+            await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetPolicyName));
+
+            items.Add(await MapToDtoAsync(entity));
+        }
+        return new PagedResultDto<SessionUnitOwnerDto>(items.Count, items);
+    }
+
+    /// <summary>
     /// 获取一个会话单元（详情）
     /// </summary>
     /// <param name="id">会话单元Id</param>
@@ -252,7 +273,11 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
 
         await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetDetailPolicyName));
 
-        return ObjectMapper.Map<SessionUnit, SessionUnitOwnerDetailDto>(entity);
+        var result = ObjectMapper.Map<SessionUnit, SessionUnitOwnerDetailDto>(entity);
+
+        result.SessionUnitCount = await SessionUnitManager.GetCountBySessionIdAsync(entity.SessionId.Value);
+
+        return result;
     }
 
     /// <summary>

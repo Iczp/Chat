@@ -137,7 +137,21 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
             Assert.If(entity.SessionId != message.SessionId, $"Not in same session,messageId:{messageId}");
         }
 
-        var counter = await GetCounterAsync(entity.Id, lastMessageId);
+        var counter = new SessionUnitCounterInfo()
+        {
+            Id = entity.Id,
+            ReadedMessageId = lastMessageId,
+            PublicBadge = 0,
+            PrivateBadge = 0,
+            RemindAllCount = 0,
+            RemindMeCount = 0,
+            FollowingCount = 0,
+        };
+
+        if (isForce)
+        {
+            counter = await GetCounterAsync(entity.Id, lastMessageId);
+        }
 
         await SetEntityAsync(entity, x => x.UpdateCounter(counter));
 

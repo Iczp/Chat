@@ -1,7 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using IczpNet.Chat.ChatPushers;
+using IczpNet.Chat.CommandPayloads;
+using IczpNet.Chat.MessageSections.Messages;
+using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.SessionUnits
@@ -10,13 +15,19 @@ namespace IczpNet.Chat.SessionUnits
     {
         protected IUnitOfWorkManager UnitOfWorkManager { get; }
         protected ISessionUnitManager SessionUnitManager { get; }
+        protected IChatPusher ChatPusher { get; }
+        protected IObjectMapper ObjectMapper { get; }
 
         public SessionUnitIncrementJob(
             IUnitOfWorkManager unitOfWorkManager,
-            ISessionUnitManager sessionUnitManager)
+            ISessionUnitManager sessionUnitManager,
+            IChatPusher chatPusher,
+            IObjectMapper objectMapper)
         {
             UnitOfWorkManager = unitOfWorkManager;
             SessionUnitManager = sessionUnitManager;
+            ChatPusher = chatPusher;
+            ObjectMapper = objectMapper;
         }
 
         [UnitOfWork]
@@ -27,6 +38,11 @@ namespace IczpNet.Chat.SessionUnits
             var totalCount = await SessionUnitManager.IncremenetAsync(args);
 
             Logger.LogInformation($"SessionUnitIncrementJob Completed totalCount:{totalCount}.");
+
+            await ChatPusher.ExecuteBySessionIdAsync(args.SessionId, new IncrementCompletedCommandPayload()
+            {
+                MessageId = args.LastMessageId
+            });
         }
     }
 }

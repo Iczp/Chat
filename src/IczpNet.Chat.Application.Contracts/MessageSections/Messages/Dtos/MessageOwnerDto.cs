@@ -37,6 +37,11 @@ namespace IczpNet.Chat.MessageSections.Messages.Dtos
         public virtual long QuoteDepth { get; set; }
 
         /// <summary>
+        /// 是否@所有人
+        /// </summary>
+        public virtual bool IsRemindAll { get; set; }
+
+        /// <summary>
         /// 是否已打开
         /// </summary>
         public virtual bool? IsOpened { get; set; }
@@ -55,11 +60,6 @@ namespace IczpNet.Chat.MessageSections.Messages.Dtos
         /// 是否收藏
         /// </summary>
         public virtual bool? IsFavorited { get; set; }
-
-        /// <summary>
-        /// 是否@所有人
-        /// </summary>
-        public virtual bool IsRemindAll { get; set; }
 
         /// <summary>
         /// 是否@我

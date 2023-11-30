@@ -9,5 +9,7 @@
 
         public const string SessionRequest = nameof(SessionRequest);
 
+        public const string IncrementCompleted = nameof(IncrementCompleted);
+
     }
 }
