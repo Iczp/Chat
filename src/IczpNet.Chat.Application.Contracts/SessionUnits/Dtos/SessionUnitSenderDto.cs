@@ -24,7 +24,10 @@ namespace IczpNet.Chat.SessionUnits.Dtos
         /// </summary>
         public virtual Guid? FriendshipSessionUnitId { get; set; }
 
-        public virtual SessionUnitSettingDto Setting { get; set; }
+        /// <summary>
+        /// 发送人设置
+        /// </summary>
+        public virtual SessionUnitSettingSimpleDto Setting { get; set; }
 
     }
 }
