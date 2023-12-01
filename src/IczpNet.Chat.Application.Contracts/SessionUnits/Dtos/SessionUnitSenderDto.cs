@@ -7,7 +7,7 @@ namespace IczpNet.Chat.SessionUnits.Dtos
     /// <summary>
     /// 发送人会话单元
     /// </summary>
-    public class SessionUnitSenderDto :  SessionUnitDestinationDto, ISessionUnitSenderInfo
+    public class SessionUnitSenderDto : SessionUnitSenderInfo
     {
         /// <summary>
         /// 是否好友
@@ -23,6 +23,8 @@ namespace IczpNet.Chat.SessionUnits.Dtos
         /// 好友会话Id
         /// </summary>
         public virtual Guid? FriendshipSessionUnitId { get; set; }
+
+        public virtual SessionUnitSettingDto Setting { get; set; }
 
     }
 }

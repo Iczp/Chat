@@ -1,12 +1,11 @@
-﻿using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.ChatObjects.Dtos;
+﻿using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.Enums;
 using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.SessionUnits.Dtos
 {
-    public class SessionUnitDestinationDto
+    public class SessionUnitDestinationDto//: SessionUnitSenderInfo
     {
         public virtual Guid Id { get; set; }
 
@@ -56,7 +55,7 @@ namespace IczpNet.Chat.SessionUnits.Dtos
 
         //public virtual bool IsStatic { get; set; }
 
-        public virtual IChatObject Owner { get; set; }
+        public virtual ChatObjectDto Owner { get; set; }
 
     }
 }

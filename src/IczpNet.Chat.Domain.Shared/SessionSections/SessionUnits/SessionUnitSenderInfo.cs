@@ -1,13 +1,24 @@
 ﻿using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.SessionSections.SessionTags;
 using System;
 using System.Collections.Generic;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits
 {
-    public class SessionUnitSenderInfo: ISessionUnitSenderInfo
+    public class SessionUnitSenderInfo
     {
         public virtual Guid Id { get; set; }
+
+        /// <summary>
+        /// 聊天对象Id
+        /// </summary>
+        public virtual long OwnerId { get; set; }
+
+        /// <summary>
+        /// 对象类型
+        /// </summary>
+        public virtual ChatObjectTypeEnums? OwnerObjectType { get; set; }
 
         /// <summary>
         /// 
@@ -19,17 +30,7 @@ namespace IczpNet.Chat.SessionSections.SessionUnits
         /// </summary>
         public virtual string MemberName { get; set; }
 
-        //public virtual Guid SessionId { get; set; }
-
-        //public virtual long OwnerId { get; set; }
-
-        public virtual IChatObject Owner { get; set; }
-
-        public virtual bool IsPublic { get; set; }
-
-        public virtual bool IsStatic { get; set; }
-
-        public virtual bool IsCreator { get; set; }
+        public virtual ChatObjectInfo Owner { get; set; }
 
         public virtual List<SessionTagInfo> TagList { get; set; }
     }
