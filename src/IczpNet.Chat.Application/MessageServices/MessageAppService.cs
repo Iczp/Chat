@@ -107,7 +107,7 @@ public class MessageAppService : ChatAppService, IMessageAppService
             .WhereIf(input.ForwardDepth.HasValue, x => x.ForwardDepth == input.ForwardDepth.Value)
             .WhereIf(input.QuoteDepth.HasValue, x => x.QuoteDepth == input.QuoteDepth.Value)
             .WhereIf(input.MinMessageId.HasValue, x => x.Id > input.MinMessageId)
-            .WhereIf(input.MaxMessageId.HasValue, x => x.Id <= input.MaxMessageId)
+            .WhereIf(input.MaxMessageId.HasValue, x => x.Id < input.MaxMessageId)
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TextContentList.Any(d => d.Text.Contains(input.Keyword)))
             ;
 
