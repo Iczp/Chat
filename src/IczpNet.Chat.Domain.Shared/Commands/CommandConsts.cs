@@ -11,5 +11,7 @@
 
         public const string IncrementCompleted = nameof(IncrementCompleted);
 
+        public const string SettingChanged = nameof(SettingChanged);
+
     }
 }
