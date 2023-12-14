@@ -2,8 +2,14 @@
 
 public class SessionUnitSettingDto : SessionUnitSettingSimpleDto
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public virtual long? ReadedMessageId { get; set; }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public virtual string Rename { get; set; }
 
     /// <summary>

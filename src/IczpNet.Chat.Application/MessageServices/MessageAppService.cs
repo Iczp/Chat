@@ -111,18 +111,18 @@ public class MessageAppService : ChatAppService, IMessageAppService
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TextContentList.Any(d => d.Text.Contains(input.Keyword)))
             ;
 
-        return await GetPagedListAsync<Message, MessageOwnerDto>(query, input,
+        var result = await GetPagedListAsync<Message, MessageOwnerDto>(query, input,
             x => x.OrderByDescending(x => x.Id),
             async entities =>
             {
                 foreach (var e in entities)
                 {
-                    if (e.SenderId.HasValue && entity.OwnerId != e.SenderId)
-                    {
-                        var friendshipSessionUnit = await SessionUnitManager.FindAsync(entity.OwnerId, e.SenderId.Value);
-                        e.SenderDisplayName = friendshipSessionUnit?.Setting.Rename;
-                        e.FriendshipSessionUnitId = friendshipSessionUnit?.Id;
-                    }
+                    //if (e.SenderId.HasValue && entity.OwnerId != e.SenderId)
+                    //{
+                    //    var friendshipSessionUnit = await SessionUnitManager.FindAsync(entity.OwnerId, e.SenderId.Value);
+                    //    e.SenderDisplayName = friendshipSessionUnit?.Setting.Rename;
+                    //    e.FriendshipSessionUnitId = friendshipSessionUnit?.Id;
+                    //}
                     e.IsReaded = await ReadedRecorderManager.IsAnyAsync(sessionUnitId, e.Id);
                     e.IsOpened = await OpenedRecorderManager.IsAnyAsync(sessionUnitId, e.Id);
                     e.IsFavorited = await FavoritedRecorderManager.IsAnyAsync(sessionUnitId, e.Id);
@@ -132,6 +132,23 @@ public class MessageAppService : ChatAppService, IMessageAppService
                 //await Task.Yield();
                 return entities;
             });
+
+        // friendship
+        var dicts = new Dictionary<string, SessionUnit>();
+        foreach (var item in result.Items)
+        {
+            var key = entity.OwnerId.ToString() + '-' + item.SenderSessionUnit.OwnerId.ToString();
+            if (!dicts.TryGetValue(key, out var friendshipSessionUnit))
+            {
+                friendshipSessionUnit = await SessionUnitManager.FindAsync(entity.OwnerId, item.SenderSessionUnit.OwnerId);
+                dicts.TryAdd(key, friendshipSessionUnit);
+            }
+            item.SenderSessionUnit.IsFriendship = friendshipSessionUnit != null;
+            item.SenderSessionUnit.FriendshipSessionUnitId = friendshipSessionUnit?.Id;
+            item.SenderSessionUnit.FriendshipName = friendshipSessionUnit?.Setting.Rename;
+            item.SenderSessionUnit.MemberName = friendshipSessionUnit?.Setting.MemberName;
+        }
+        return result;
     }
 
 

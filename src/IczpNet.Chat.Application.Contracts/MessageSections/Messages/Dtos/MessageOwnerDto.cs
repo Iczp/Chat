@@ -6,10 +6,10 @@ namespace IczpNet.Chat.MessageSections.Messages.Dtos
 {
     public class MessageOwnerDto : MessageQuoteDto, IEntityDto<long>
     {
-        /// <summary>
-        /// 朋友Id
-        /// </summary>
-        public virtual Guid? FriendshipSessionUnitId { get; set; }
+        ///// <summary>
+        ///// 朋友Id
+        ///// </summary>
+        //public virtual Guid? FriendshipSessionUnitId { get; set; }
 
         /// <summary>
         /// 引用消息

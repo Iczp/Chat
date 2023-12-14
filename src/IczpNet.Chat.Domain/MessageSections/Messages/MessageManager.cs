@@ -397,7 +397,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
                 Assert.If(!targetSessionUnit.Setting.IsInputEnabled, $"Target session unit input state is disabled,id:{targetSessionUnit.Id}");
 
-                Assert.If(currentSessionUnit.OwnerId != targetSessionUnit.OwnerId, $"[targetSessionUnitId:{targetSessionUnitId}] is fail.");
+                Assert.If(currentSessionUnit.OwnerId != targetSessionUnit.OwnerId, $"[TargetSessionUnitId:{targetSessionUnitId}] is fail.");
 
                 var newMessage = await CreateMessageAsync(targetSessionUnit, async (x) =>
                 {

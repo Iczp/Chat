@@ -22,6 +22,7 @@ namespace IczpNet.Chat.MessageSections.Messages;
 [Index(nameof(ForwardDepth))]
 [Index(nameof(QuoteDepth))]
 [Index(nameof(SessionId))]
+[Index(nameof(SessionId), nameof(Id), AllDescending = true)]
 [Index(nameof(SessionId), nameof(IsPrivate), nameof(SenderId), nameof(ReceiverId), nameof(IsDeleted), nameof(CreationTime), nameof(ForwardDepth), nameof(QuoteDepth))]
 public partial class Message : BaseEntity<long>, ISessionId
 {
@@ -36,13 +37,13 @@ public partial class Message : BaseEntity<long>, ISessionId
     /// <summary>
     /// 
     /// </summary>
-    [Comment("会话Id")] 
+    [Comment("会话Id")]
     public virtual Guid? SessionId { get; protected set; }
 
     /// <summary>
     /// sender session unit
     /// </summary>
-    [Comment("会话单元Id")] 
+    [Comment("会话单元Id")]
     public virtual Guid? SenderSessionUnitId { get; protected set; }
 
     /// <summary>
@@ -83,7 +84,7 @@ public partial class Message : BaseEntity<long>, ISessionId
     /// <summary>
     /// 发送者
     /// </summary>
-    [Comment("发送者")] 
+    [Comment("发送者")]
     public virtual long? SenderId { get; protected set; }
 
     /// <summary>
@@ -147,7 +148,7 @@ public partial class Message : BaseEntity<long>, ISessionId
     /// <summary>
     /// 私有消息(只有发送人[senderId]和接收人[receiverId]才能看)
     /// </summary>
-    [Comment("私有消息(只有发送人[senderId]和接收人[receiverId]才能看)")] 
+    [Comment("私有消息(只有发送人[senderId]和接收人[receiverId]才能看)")]
     public virtual bool IsPrivate { get; protected set; }
 
     /// <summary>
@@ -158,7 +159,7 @@ public partial class Message : BaseEntity<long>, ISessionId
     /// <summary>
     /// 撤回消息时间
     /// </summary>
-    [Comment("撤回消息时间")] 
+    [Comment("撤回消息时间")]
     public virtual DateTime? RollbackTime { get; protected set; }
 
     /// <summary>
@@ -176,7 +177,7 @@ public partial class Message : BaseEntity<long>, ISessionId
     /// <summary>
     /// 消息大小kb
     /// </summary>
-    [Comment("消息大小kb")] 
+    [Comment("消息大小kb")]
     public virtual long Size { get; protected set; }
 
     ///// <summary>

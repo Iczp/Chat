@@ -1,5 +1,8 @@
 ﻿using IczpNet.Chat.ChatObjects.Dtos;
+using IczpNet.Chat.ContactTags.Dtos;
+using IczpNet.Chat.SessionUnits.Dtos;
 using System;
+using System.Collections.Generic;
 
 namespace IczpNet.Chat.Cantacts.Dtos
 {
@@ -20,7 +23,9 @@ namespace IczpNet.Chat.Cantacts.Dtos
         /// </summary>
         public virtual ChatObjectDto Destination { get; set; }
 
-        //public virtual List<ContactTagSimpleDto> ContactTags { get; set; }
+        public virtual SessionUnitSettingDto Setting { get; set; }
+
+        public virtual List<ContactTagSimpleDto> ContactTags { get; set; }
 
     }
 }

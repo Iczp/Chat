@@ -247,7 +247,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                       isCreator: false,
                       joinWay: JoinWays.Normal,
                       inviterUnitId: null,
-                      isInputEnabled: false));
+                      isInputEnabled: true));
 
                 switch (sessionRequest.Destination.ObjectType)
                 {
