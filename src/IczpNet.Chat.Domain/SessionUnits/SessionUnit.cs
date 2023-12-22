@@ -128,9 +128,9 @@ namespace IczpNet.Chat.SessionUnits
         public virtual Message LastMessage { get; protected set; }
 
         /// <summary>
-        /// 消息角标(未读消息数量)
+        /// 消息角标,包含了私有消息 PrivateBadge (未读消息数量)
         /// </summary>
-        [Comment("最后一条消息Id")] 
+        [Comment("消息角标,包含了私有消息 PrivateBadge (未读消息数量)")] 
         public virtual int PublicBadge { get; protected set; }
 
         /// <summary>

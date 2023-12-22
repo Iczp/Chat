@@ -159,6 +159,7 @@ namespace IczpNet.Chat.Repositories
                 .Where(x => destinationSessionUnitIdList.Contains(x.Id))
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(b => b.LastModificationTime, b => DateTime.Now)
+                    .SetProperty(b => b.PublicBadge, b => b.PublicBadge + 1)
                     .SetProperty(b => b.PrivateBadge, b => b.PrivateBadge + 1)
                     .SetProperty(b => b.LastMessageId, b => lastMessageId)
                     .SetProperty(b => b.Ticks, b => ticks)

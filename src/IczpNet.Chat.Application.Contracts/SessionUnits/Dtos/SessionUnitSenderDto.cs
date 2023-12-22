@@ -29,5 +29,10 @@ namespace IczpNet.Chat.SessionUnits.Dtos
         /// </summary>
         public virtual SessionUnitSettingSimpleDto Setting { get; set; }
 
+        /// <summary>
+        /// 创建时间
+        /// </summary>
+        public virtual DateTime CreationTime { get; set; }
+
     }
 }

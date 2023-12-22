@@ -260,7 +260,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
             .GroupBy(x => x.DestinationObjectType, (c, f) => new
             {
                 DestinationObjectType = c.Value,
-                Badge = f.Sum(x => x.PublicBadge) + f.Sum(x => x.PrivateBadge),
+                Badge = f.Sum(x => x.PublicBadge),
             })
             .ToDictionary(x => x.DestinationObjectType, x => x.Badge);
 
@@ -272,7 +272,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return (await Repository.GetQueryableAsync())
             .Where(x => x.OwnerId == ownerId)
             .WhereIf(isImmersed.HasValue, x => x.Setting.IsImmersed == isImmersed)
-            .Sum(x => x.PublicBadge + x.PrivateBadge);
+            .Sum(x => x.PublicBadge);
         ;
         //---------------------- 1
 
