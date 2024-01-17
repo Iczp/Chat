@@ -64,7 +64,7 @@ namespace IczpNet.Chat.SessionUnits
         /// 会话Id
         /// </summary>
         [Required]
-        [Comment("会话Id")] 
+        [Comment("会话Id")]
         public virtual Guid? SessionId { get; protected set; }
 
         /// <summary>
@@ -117,7 +117,7 @@ namespace IczpNet.Chat.SessionUnits
         /// <summary>
         /// 最后一条消息Id
         /// </summary>
-        [Comment("最后一条消息Id")] 
+        [Comment("最后一条消息Id")]
         public virtual long? LastMessageId { get; protected set; }
 
         /// <summary>
@@ -130,13 +130,13 @@ namespace IczpNet.Chat.SessionUnits
         /// <summary>
         /// 消息角标,包含了私有消息 PrivateBadge (未读消息数量)
         /// </summary>
-        [Comment("消息角标,包含了私有消息 PrivateBadge (未读消息数量)")] 
+        [Comment("消息角标,包含了私有消息 PrivateBadge (未读消息数量)")]
         public virtual int PublicBadge { get; protected set; }
 
         /// <summary>
         /// 私有消息角标(未读消息数量)
         /// </summary>
-        [Comment("私有消息角标(未读消息数量)")] 
+        [Comment("私有消息角标(未读消息数量)")]
         public virtual int PrivateBadge { get; protected set; }
 
         /// <summary>
@@ -160,13 +160,13 @@ namespace IczpNet.Chat.SessionUnits
         /// <summary>
         /// 置顶(排序)
         /// </summary>
-        [Comment("置顶(排序)")] 
+        [Comment("置顶(排序)")]
         public virtual double Sorting { get; protected set; }
 
         /// <summary>
         /// 时间
         /// </summary>
-        [Comment("时间")] 
+        [Comment("时间")]
         public virtual double Ticks { get; protected set; } = DateTime.Now.Ticks;
 
         /// <summary>
@@ -178,7 +178,7 @@ namespace IczpNet.Chat.SessionUnits
         public virtual SessionUnitCounter Counter { get; protected set; } = new SessionUnitCounter();
 
         [InverseProperty(nameof(SessionUnitSetting.SessionUnit))]
-        public virtual SessionUnitSetting Setting { get; protected set; } = new SessionUnitSetting();
+        public virtual SessionUnitSetting Setting { get; protected set; } //= new SessionUnitSetting();
 
         [InverseProperty(nameof(SessionUnitSetting.Inviter))]
         public virtual List<SessionUnitSetting> InviterList { get; protected set; }
@@ -264,6 +264,7 @@ namespace IczpNet.Chat.SessionUnits
             SetKey(idGenerator.Generate(owner.Id, destination.Id));
             Session = session;
             SessionId = session.Id;
+            Setting = new SessionUnitSetting(Session);
 
             Owner = owner;
             OwnerId = owner.Id;

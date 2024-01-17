@@ -2,6 +2,7 @@
 using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.SessionSections.Sessions;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.ComponentModel.DataAnnotations;
@@ -30,6 +31,17 @@ namespace IczpNet.Chat.SessionUnits
         /// </summary>
         [ForeignKey(nameof(SessionUnitId))]
         public virtual SessionUnit SessionUnit { get; set; }
+
+        /// <summary>
+        /// 会话Id
+        /// </summary>
+        public virtual Guid? SessionId { get; set; }
+
+        /// <summary>
+        /// 会话Id
+        /// </summary>
+        [ForeignKey(nameof(SessionId))]
+        public virtual Session Session { get; set; }
 
         /// <summary>
         /// 已读的消息
@@ -269,6 +281,17 @@ namespace IczpNet.Chat.SessionUnits
         public virtual DateTime? MuteExpireTime { get; protected set; }
 
         //public virtual bool IsDeleted { get; protected set; }
+
+        public SessionUnitSetting()
+        {
+
+        }
+
+        public SessionUnitSetting(Session session)
+        {
+            Session = session;
+            SessionId = Session.Id;
+        }
 
         public override object[] GetKeys()
         {
