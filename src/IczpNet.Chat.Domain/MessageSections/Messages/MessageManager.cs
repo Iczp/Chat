@@ -36,6 +36,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         protected IUnitOfWorkManager UnitOfWorkManager { get; }
         protected IChatPusher ChatPusher { get; }
         protected ISessionRepository SessionRepository { get; }
+        protected ISessionUnitSettingRepository SessionUnitSettingRepository { get; }
         protected IFollowManager FollowManager { get; }
         protected IBackgroundJobManager BackgroundJobManager { get; }
         protected ISettingProvider SettingProvider { get; }
@@ -53,7 +54,8 @@ namespace IczpNet.Chat.MessageSections.Messages
             IBackgroundJobManager backgroundJobManager,
             ISessionRepository sessionRepository,
             ISettingProvider settingProvider,
-            IRepository<MessageReminder> messageReminderRepository)
+            IRepository<MessageReminder> messageReminderRepository,
+            ISessionUnitSettingRepository sessionUnitSettingRepository)
         {
             Repository = repository;
             ChatObjectManager = chatObjectManager;
@@ -67,6 +69,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             SessionRepository = sessionRepository;
             SettingProvider = settingProvider;
             MessageReminderRepository = messageReminderRepository;
+            SessionUnitSettingRepository = sessionUnitSettingRepository;
         }
 
         protected virtual void TryToSetOwnerId<T, TKey>(T entity, TKey ownerId)
@@ -108,7 +111,7 @@ namespace IczpNet.Chat.MessageSections.Messages
                 CreationTime = Clock.Now
             };
 
-            senderSessionUnit.Setting.SetLastSendMessage(message);
+            //senderSessionUnit.Setting.SetLastSendMessage(message);//并发时可能导致锁表
 
             //private message
             if (receiverSessionUnit != null)
@@ -158,6 +161,8 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             // LastMessage
             await SessionRepository.UpdateLastMessageIdAsync(senderSessionUnit.SessionId.Value, message.Id);
+            // Last send message
+            await SessionUnitSettingRepository.UpdateLastSendMessageAsync(senderSessionUnit.Id, message.Id, message.CreationTime);
             ////以下可能导致锁表
             //await SessionUnitRepository.UpdateLastMessageIdAsync(senderSessionUnit.Id, message.Id);
 

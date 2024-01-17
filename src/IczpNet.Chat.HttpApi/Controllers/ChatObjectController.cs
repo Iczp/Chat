@@ -2,6 +2,7 @@
 using IczpNet.Chat.ChatObjects.Dtos;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Threading.Tasks;
 using Volo.Abp;
 
@@ -26,9 +27,12 @@ namespace IczpNet.Chat.Controllers
         /// <param name="file"></param>
         /// <returns></returns>
         [HttpPost]
-        public Task<ChatObjectDto> UpdatePortraitAsync(long id, IFormFile file)
+        public async Task<string> UpdatePortraitAsync(long id, IFormFile file)
         {
-            return ChatObjectAppService.UpdatePortraitAsync(id, "");
+            await Task.Yield();
+            return $"id:{id}/{file.FileName}";
+            //return null;
+            //return ChatObjectAppService.UpdatePortraitAsync(id, "");
         }
     }
 }
