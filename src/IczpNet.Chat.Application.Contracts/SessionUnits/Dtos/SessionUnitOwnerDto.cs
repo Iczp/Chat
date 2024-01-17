@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
+using System;
 
 namespace IczpNet.Chat.SessionUnits.Dtos
 {
@@ -26,5 +27,10 @@ namespace IczpNet.Chat.SessionUnits.Dtos
         public virtual double Sorting { get; set; }
 
         public virtual double Ticks { get; set; }
+
+        /// <summary>
+        /// CreationTime
+        /// </summary>
+        public virtual DateTime CreationTime { get; set; }
     }
 }

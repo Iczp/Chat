@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.SessionSections.SessionPermissions
 {
@@ -10,6 +11,8 @@ namespace IczpNet.Chat.SessionSections.SessionPermissions
         Task<Dictionary<string, PermissionGrantValue>> GetGrantedBySessionRoleAsync(Guid sessionRoleId);
 
         Task<SessionPermissionGrantDto> GetGrantedBySessionUnitAsync(string definitionId, Guid sessionUnitId);
+
+        Task<PagedResultDto<SessionPermissionGrantDto>> GetAllGrantedBySessionUnitAsync(Guid sessionUnitId);
 
         Task<SessionPermissionUnitGrantDto> GrantBySessionUnitAsync(string definitionId, Guid sessionUnitId, PermissionGrantValue permissionGrantValue);
 

@@ -1,6 +1,8 @@
-﻿using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.AbpCommons.Extensions;
+using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Cantacts.Dtos;
 using IczpNet.Chat.Contacts.Dtos;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.AspNetCore.Mvc;
@@ -34,6 +36,7 @@ public class ContactsAppService : ChatAppService, IContactsAppService
         return (await Repository.GetQueryableAsync())
             //.Where(x => x.Setting.IsContacts)
             .Where(x => x.OwnerId == input.OwnerId)
+            .WhereIf(input.ObjectTypes.IsAny(), x => input.ObjectTypes.Contains((ChatObjectTypeEnums)x.DestinationObjectType))
             .WhereIf(input.DestinationObjectType.HasValue, x => x.DestinationObjectType == input.DestinationObjectType)
             .WhereIf(input.TagId.HasValue, x => x.SessionUnitContactTagList.Any(d => d.TagId == input.TagId))
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordDestinationSessionUnitSpecification(input.Keyword, await ChatObjectManager.SearchKeywordByCacheAsync(input.Keyword)))

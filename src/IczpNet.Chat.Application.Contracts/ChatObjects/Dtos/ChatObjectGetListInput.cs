@@ -38,6 +38,11 @@ public class ChatObjectGetListInput : BaseTreeGetListInput<long>
     /// </summary>
     public virtual ChatObjectTypeEnums? ObjectType { get; set; }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    public virtual List<ChatObjectTypeEnums> ObjectTypes { get; set; }
+
     [DefaultValue(null)]
     public virtual List<Guid> CategoryIdList { get; set; }
 

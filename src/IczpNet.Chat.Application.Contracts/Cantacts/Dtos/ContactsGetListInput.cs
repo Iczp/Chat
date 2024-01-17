@@ -1,6 +1,7 @@
 ﻿using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.Enums;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.Contacts.Dtos
@@ -17,6 +18,11 @@ namespace IczpNet.Chat.Contacts.Dtos
         /// 目标聊天对象类型
         /// </summary>
         public virtual ChatObjectTypeEnums? DestinationObjectType { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public virtual List<ChatObjectTypeEnums> ObjectTypes { get; set; }
 
         /// <summary>
         /// 联系人标签

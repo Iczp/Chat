@@ -51,4 +51,14 @@ public class SessionRequestDto : BaseDto<Guid>
     /// </summary>
     public virtual DateTime? ExpirationTime { get; set; }
 
+    /// <summary>
+    /// 处理消息
+    /// </summary>
+    public virtual string HandleMessage { get; set; }
+
+    /// <summary>
+    /// 处理时间
+    /// </summary>
+    public virtual DateTime? HandleTime { get; set; }
+
 }

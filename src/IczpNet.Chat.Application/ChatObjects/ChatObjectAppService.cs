@@ -67,6 +67,7 @@ public class ChatObjectAppService
         }
         return (await base.CreateFilteredQueryAsync(input))
             .WhereIf(!input.ChatObjectTypeId.IsNullOrWhiteSpace(), x => x.ChatObjectTypeId == input.ChatObjectTypeId)
+            .WhereIf(input.ObjectTypes.IsAny(), x => input.ObjectTypes.Contains((ChatObjectTypeEnums)x.ObjectType))
             .WhereIf(input.ObjectType.HasValue, x => x.ObjectType == input.ObjectType)
             .WhereIf(input.IsEnabled.HasValue, x => x.IsEnabled == input.IsEnabled)
             .WhereIf(input.IsDefault.HasValue, x => x.IsDefault == input.IsDefault)

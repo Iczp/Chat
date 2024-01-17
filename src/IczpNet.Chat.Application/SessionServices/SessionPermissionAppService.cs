@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.AbpCommons.Dtos;
+using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions.Dtos;
 using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
@@ -11,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.SessionServices;
@@ -44,6 +46,22 @@ public class SessionPermissionAppService : ChatAppService, ISessionPermissionApp
         throw new NotImplementedException();
     }
 
+    protected virtual async Task<SessionPermissionGrantDto> GetGrantedItemAsync(SessionPermissionDefinition permissionDefinition, SessionUnit sessionUnit)
+    {
+        await Task.Yield();
+
+        var roleGrants = sessionUnit.SessionUnitRoleList.SelectMany(x => x.SessionRole.GrantList.Where(d => d.DefinitionId == permissionDefinition.Id)).ToList();
+
+        var unitGrants = sessionUnit.GrantList.Where(x => x.DefinitionId == permissionDefinition.Id).ToList();
+
+        return new SessionPermissionGrantDto()
+        {
+            Definition = ObjectMapper.Map<SessionPermissionDefinition, SessionPermissionDefinitionDto>(permissionDefinition),
+            RoleGrants = ObjectMapper.Map<List<SessionPermissionRoleGrant>, List<SessionPermissionRoleGrantDto>>(roleGrants),
+            UnitGrants = ObjectMapper.Map<List<SessionPermissionUnitGrant>, List<SessionPermissionUnitGrantDto>>(unitGrants),
+        };
+    }
+
     /// <summary>
     /// 获取授予权限的会话单元
     /// </summary>
@@ -54,19 +72,27 @@ public class SessionPermissionAppService : ChatAppService, ISessionPermissionApp
     public async Task<SessionPermissionGrantDto> GetGrantedBySessionUnitAsync(string permissionDefinitionId, Guid sessionUnitId)
     {
         var permissionDefinition = await SessionPermissionDefinitionRepository.GetAsync(permissionDefinitionId);
-
         var sessionUnit = await SessionUnitRepository.GetAsync(sessionUnitId);
+        return await GetGrantedItemAsync(permissionDefinition, sessionUnit);
+    }
+    /// <summary>
+    /// 获取所有授予权限的会话单元
+    /// </summary>
+    /// <param name="sessionUnitId"></param>
+    /// <returns></returns>
+    [HttpGet]
+    public async Task<PagedResultDto<SessionPermissionGrantDto>> GetAllGrantedBySessionUnitAsync(Guid sessionUnitId)
+    {
+        var definitionList = await SessionPermissionDefinitionRepository.GetListAsync();
+        var sessionUnit = await SessionUnitRepository.GetAsync(sessionUnitId);
+        var items = new List<SessionPermissionGrantDto>();
 
-        var roleGrants = sessionUnit.SessionUnitRoleList.SelectMany(x => x.SessionRole.GrantList.Where(d => d.DefinitionId == permissionDefinitionId)).ToList();
-
-        var unitGrants = sessionUnit.GrantList.Where(x => x.DefinitionId == permissionDefinitionId).ToList();
-
-        return new SessionPermissionGrantDto()
+        foreach (var definition in definitionList)
         {
-            Definition = ObjectMapper.Map<SessionPermissionDefinition, SessionPermissionDefinitionDto>(permissionDefinition),
-            RoleGrants = ObjectMapper.Map<List<SessionPermissionRoleGrant>, List<SessionPermissionRoleGrantDto>>(roleGrants),
-            UnitGrants = ObjectMapper.Map<List<SessionPermissionUnitGrant>, List<SessionPermissionUnitGrantDto>>(unitGrants),
-        };
+            var item = await GetGrantedItemAsync(definition, sessionUnit);
+            items.Add(item);
+        }
+        return new PagedResultDto<SessionPermissionGrantDto>(definitionList.Count, items);
     }
 
     /// <summary>

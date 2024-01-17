@@ -57,5 +57,12 @@ namespace IczpNet.Chat.SessionUnits.Dtos
 
         public virtual ChatObjectDto Owner { get; set; }
 
+        public virtual SessionUnitSettingSimpleDto Setting { get; set; }
+
+        /// <summary>
+        /// CreationTime
+        /// </summary>
+        public virtual DateTime CreationTime { get; set; }
+
     }
 }
