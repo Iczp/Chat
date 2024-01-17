@@ -105,6 +105,8 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             var message = new Message(senderSessionUnit);
 
+            senderSessionUnit.Setting.SetLastSendMessage(message);
+
             //private message
             if (receiverSessionUnit != null)
             {

@@ -14,6 +14,8 @@ namespace IczpNet.Chat.SessionUnits
     /// 会话设置
     /// </summary>
     [Index(nameof(MuteExpireTime))]
+    [Index(nameof(LastSendMessageId), AllDescending = true)]
+    [Index(nameof(LastSendTime), AllDescending = true)]
     [Comment("会话设置")]
     public class SessionUnitSetting : BaseEntity, IHasCreationTime, IHasModificationTime, IIsStatic, IIsPublic//, ISoftDelete
     {
@@ -41,6 +43,25 @@ namespace IczpNet.Chat.SessionUnits
         [Comment("已读的消息")]
         [ForeignKey(nameof(ReadedMessageId))]
         public virtual Message ReadedMessage { get; protected set; }
+
+        /// <summary>
+        /// 最后发言的消息
+        /// </summary>
+        [Comment("最后发言的消息")]
+        public virtual long? LastSendMessageId { get; set; }
+
+        /// <summary>
+        /// 最后发言的消息
+        /// </summary>
+        [Comment("最后发言的消息")]
+        [ForeignKey(nameof(LastSendMessageId))]
+        public virtual Message LastSendMessage { get; protected set; }
+
+        /// <summary>
+        /// 最后发言时间
+        /// </summary>
+        [Comment("最后发言时间")]
+        public virtual DateTime? LastSendTime { get; protected set; }
 
         /// <summary>
         /// 查看历史消息起始时间,为null时则不限
@@ -314,6 +335,12 @@ namespace IczpNet.Chat.SessionUnits
 
         internal virtual void SetIsEnabled(bool v) => IsEnabled = v;
 
+        internal virtual void SetLastSendMessage(Message message)
+        {
+            LastSendMessageId = message.Id;
+            LastSendMessage = message;
+            LastSendTime = message.CreationTime;
+        }
         internal virtual void SetIsCreator(bool v)
         {
             IsCreator = v;
