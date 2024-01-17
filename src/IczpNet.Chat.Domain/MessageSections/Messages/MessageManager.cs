@@ -103,7 +103,10 @@ namespace IczpNet.Chat.MessageSections.Messages
             //cache
             await SessionUnitManager.GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);
 
-            var message = new Message(senderSessionUnit);
+            var message = new Message(senderSessionUnit)
+            {
+                CreationTime = Clock.Now
+            };
 
             senderSessionUnit.Setting.SetLastSendMessage(message);
 
