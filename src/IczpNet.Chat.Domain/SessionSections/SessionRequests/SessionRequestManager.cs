@@ -187,9 +187,9 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                 {
                     Content = new LinkContentInfo()
                     {
-                        Title = new TextTemplate("{Owner} 加入 '{Destination}'")
-                                        .WithData("Owner", new ChatObjectTextTemplate(sessionRequest.Owner))
-                                        .WithData("Destination", new ChatObjectTextTemplate(sessionRequest.Destination))
+                        Title = new TextTemplate("{owner} 加入 '{destination}'")
+                                        .WithData("owner", new ChatObjectTextTemplate(sessionRequest.Owner))
+                                        .WithData("destination", new ChatObjectTextTemplate(sessionRequest.Destination))
                                         .ToString(),
                         Url = $"app://sesson-request/detail?id={sessionRequest.Id}"
                     }
@@ -209,8 +209,8 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
             {
                 Content = new LinkContentInfo()
                 {
-                    Title = new TextTemplate("{Owner} 请求加为好友")
-                                .WithData("Owner", new ChatObjectTextTemplate(owner))
+                    Title = new TextTemplate("{owner} 请求加为好友")
+                                .WithData("owner", new ChatObjectTextTemplate(owner))
                                 .ToString(),
                     Url = $"app://sesson-request/detail?id={sessionRequest.Id}"
                 }
@@ -302,9 +302,9 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                         {
                             Content = new CmdContentInfo()
                             {
-                                Text = new TextTemplate("欢迎 '{Owner}' 加入 '{Destination}'")
-                                        .WithData("Owner", new SessionUnitTextTemplate(ownerSessionUnit.Id, sessionRequest.Owner.Name))
-                                        .WithData("Destination", new ChatObjectTextTemplate(sessionRequest.Destination))
+                                Text = new TextTemplate("欢迎 '{owner}' 加入 '{destination}'")
+                                        .WithData("owner", new SessionUnitTextTemplate(ownerSessionUnit.Id, sessionRequest.Owner.Name))
+                                        .WithData("destination", new ChatObjectTextTemplate(sessionRequest.Destination))
                                         .ToString(),
                             }
                         });
@@ -349,10 +349,10 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                 Content = new LinkContentInfo()
                 {
                     //Title = $"'{Destination}'拒绝'{sessionRequest.Owner.Name}'请求:{sessionRequest.HandleMessage}",
-                    Title = new TextTemplate("'{Destination}'拒绝'{Owner}'请求:{HandleMessage}")
-                                .WithData("Destination", new ChatObjectTextTemplate(sessionRequest.Destination))
-                                .WithData("Owner", new ChatObjectTextTemplate(sessionRequest.Owner))
-                                .WithData("HandleMessage", sessionRequest.HandleMessage)
+                    Title = new TextTemplate("'{destination}' 拒绝 '{Owner}' 请求:{handleMessage}")
+                                .WithData("destination", new ChatObjectTextTemplate(sessionRequest.Destination))
+                                .WithData("owner", new ChatObjectTextTemplate(sessionRequest.Owner))
+                                .WithData("handleMessage", sessionRequest.HandleMessage)
                                 .ToString(),
                     Url = $"app://sesson-request/detail?id={sessionRequest.Id}"
                 }

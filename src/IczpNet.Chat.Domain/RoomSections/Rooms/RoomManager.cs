@@ -142,7 +142,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
 
         var memberSessionUnitList = new List<SessionUnit>();
 
-        foreach ( var memberId in _memberIdList )
+        foreach (var memberId in _memberIdList)
         {
             memberSessionUnitList.Add(new SessionUnit(
                 idGenerator: SessionUnitIdGenerator,
@@ -193,18 +193,19 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         {
             var creator = await ChatObjectManager.GetItemByCacheAsync(ownerId.Value);
 
-            creatorText = new TextTemplate("{Creator}创建群聊,")
-                .WithData("Creator", new SessionUnitTextTemplate(creatorSessionUnit.Id, creator.Name))
+            creatorText = new TextTemplate("{creator} 创建群聊 '{name}',")
+                .WithData("name", new ChatObjectTextTemplate(room.Id, room.Name))
+                .WithData("creator", new SessionUnitTextTemplate(creatorSessionUnit.Id, creator.Name))
                 .ToString();
         }
 
         await SendRoomMessageAsync(roomSessionUnit, new CmdContentInfo()
         {
             //Text = $"{roomOwner?.Name} 创建群聊'{room.Name}',{vtext}等 {_memberIdList.Count} 人加入群聊。",
-            Text = new TextTemplate("{CreatorText}{MembersJoinText}等 {Count} 人加入群聊")
-                        .WithData("CreatorText", creatorText)
-                        .WithData("MembersJoinText", membersJoinText)
-                        .WithData("Count", _memberIdList.Count)
+            Text = new TextTemplate("{creatorText} {membersJoinText}等 {count} 人加入群聊")
+                        .WithData("creatorText", creatorText)
+                        .WithData("membersJoinText", membersJoinText)
+                        .WithData("count", _memberIdList.Count)
                         .ToString(),
         });
 
@@ -275,8 +276,8 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         if (input.InviterId != null)
         {
             var inviter = await ChatObjectManager.GetAsync(input.InviterId.Value);
-            inviterText = new TextTemplate("{InviterObject} 邀请 ")
-                            .WithData("InviterObject", new SessionUnitTextTemplate(inviterSessionUnit))
+            inviterText = new TextTemplate("{inviterObject} 邀请 ")
+                            .WithData("inviterObject", new SessionUnitTextTemplate(inviterSessionUnit))
                             .ToString();
         }
 
@@ -288,10 +289,10 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         {
             Cmd = MessageKeyNames.JoinRoom,
             //Text = $"{inviterText}{joinMembers.Select(x => x.Name).JoinAsString("、")}等 {joinMembers.Count} 人加入群聊。",
-            Text = new TextTemplate("{InviterText}{MembersJoinText}等 {Count} 人加入群聊")
-                        .WithData("InviterText", inviterText)
-                        .WithData("MembersJoinText", membersJoinText)
-                        .WithData("Count", joinMembers.Count)
+            Text = new TextTemplate("{inviterText} {membersJoinText} 等 {count} 人加入群聊")
+                        .WithData("inviterText", inviterText)
+                        .WithData("membersJoinText", membersJoinText)
+                        .WithData("count", joinMembers.Count)
                         .ToString(),
         });
 
@@ -404,9 +405,9 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         await SendRoomMessageAsync(sessionUnit.Destination, new CmdContentInfo()
         {
             //Cmd = Message
-            Text = new TextTemplate("{Operator} 更新群名称:'{RoomName}'")
-                    .WithData("Operator", new SessionUnitTextTemplate(sessionUnit))
-                    .WithData("RoomName", name)
+            Text = new TextTemplate("{operator} 更新群名称:'{roomName}'")
+                    .WithData("operator", new SessionUnitTextTemplate(sessionUnit))
+                    .WithData("roomName", name)
                     .ToString(),
         });
         return entity;
@@ -418,8 +419,8 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
 
         await SendRoomMessageAsync(sessionUnit.Destination, new CmdContentInfo()
         {
-            Text = new TextTemplate("{Operator} 更新群头像")
-                    .WithData("Operator", new SessionUnitTextTemplate(sessionUnit))
+            Text = new TextTemplate("{operator} 更新群头像")
+                    .WithData("operator", new SessionUnitTextTemplate(sessionUnit))
                     .ToString(),
         });
         return entity;
@@ -443,9 +444,9 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         {
             await SendRoomMessageAsync(sessionUnit.Destination, new CmdContentInfo()
             {
-                Text = new TextTemplate("{Operator} 转让群,{TargetObject} 成为群主")
-                    .WithData("Operator", new SessionUnitTextTemplate(sessionUnit))
-                    .WithData("TargetObject", new SessionUnitTextTemplate(targetSessionUnit))
+                Text = new TextTemplate("{operator} 转让群,{targetObject} 成为群主")
+                    .WithData("operator", new SessionUnitTextTemplate(sessionUnit))
+                    .WithData("targetObject", new SessionUnitTextTemplate(targetSessionUnit))
                     .ToString(),
             });
         }

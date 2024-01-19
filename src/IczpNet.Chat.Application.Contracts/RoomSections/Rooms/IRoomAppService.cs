@@ -1,4 +1,6 @@
 ﻿using IczpNet.Chat.ChatObjects.Dtos;
+using IczpNet.Chat.Enums;
+using IczpNet.Chat.Enums.Dtos;
 using IczpNet.Chat.RoomSections.Rooms.Dtos;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
@@ -31,5 +33,11 @@ namespace IczpNet.Chat.RoomSections.Rooms
         /// <param name="sessionUnitId"></param>
         /// <returns></returns>
         Task DissolveAsync(Guid sessionUnitId);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        Task<PagedResultDto<EnumDto>> GetListAllowJoinTypes();
     }
 }

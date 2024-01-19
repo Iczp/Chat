@@ -4,6 +4,7 @@ using IczpNet.Chat.ChatObjectCategorys;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.Enums.Dtos;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.RoomSections.Rooms.Dtos;
 using IczpNet.Chat.SessionSections.SessionPermissions;
@@ -13,6 +14,7 @@ using IczpNet.Chat.SessionUnits.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 
@@ -161,5 +163,24 @@ public class RoomAppService : ChatAppService, IRoomAppService
     public virtual Task DissolveAsync(Guid sessionUnitId)
     {
         throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// 允许加入群的聊天对象类型
+    /// </summary>
+    /// <returns></returns>
+    [HttpGet]
+    public virtual async Task<PagedResultDto<EnumDto>> GetListAllowJoinTypes()
+    {
+        await Task.Yield();
+
+        var items = ChatConsts.AllowJoinRoomObjectTypes.Select(x => new EnumDto()
+        {
+            Name = x.ToString(),
+            Value = (int)x,
+            Description = x.GetDescription()
+        }).ToList();
+
+        return new PagedResultDto<EnumDto>(items.Count, items);
     }
 }

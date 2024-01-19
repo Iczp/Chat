@@ -870,9 +870,9 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         {
             Content = new CmdContentInfo()
             {
-                Text = new TextTemplate(isMuted ? "{MuteObject} 被禁言 {Minutes} 分钟" : "{MuteObject} 被取消禁言")
-                        .WithData("MuteObject", new SessionUnitTextTemplate(muterSessionUnit))
-                        .WithData("Minutes", timeSpan?.Minutes)
+                Text = new TextTemplate(isMuted ? "'{muteObject}' 被禁言 {Minutes} 分钟" : "'{muteObject}' 被取消禁言")
+                        .WithData("muteObject", new SessionUnitTextTemplate(muterSessionUnit))
+                        .WithData("minutes", timeSpan?.Minutes)
                         .ToString(),
             }
         });

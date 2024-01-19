@@ -21,7 +21,7 @@ namespace IczpNet.Chat.SessionUnits.Dtos
         /// <summary>
         /// 是否公开的
         /// </summary>
-        public virtual bool? IsPublic { get; set; }
+        public virtual bool? IsPublic { get; set; } = true;
 
         /// <summary>
         /// 是否固定成员
