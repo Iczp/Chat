@@ -405,9 +405,9 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         await SendRoomMessageAsync(sessionUnit.Destination, new CmdContentInfo()
         {
             //Cmd = Message
-            Text = new TextTemplate("{operator} 更新群名称:'{roomName}'")
+            Text = new TextTemplate("{operator} 更新群名称:'{name}'")
                     .WithData("operator", new SessionUnitTextTemplate(sessionUnit))
-                    .WithData("roomName", name)
+                    .WithData("name", new ChatObjectTextTemplate(entity))
                     .ToString(),
         });
         return entity;

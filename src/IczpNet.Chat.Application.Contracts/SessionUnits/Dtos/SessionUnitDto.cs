@@ -1,4 +1,5 @@
-﻿using System;
+﻿using IczpNet.Chat.Enums;
+using System;
 
 namespace IczpNet.Chat.SessionUnits.Dtos
 {
@@ -9,6 +10,8 @@ namespace IczpNet.Chat.SessionUnits.Dtos
         public virtual Guid SessionId { get; set; }
 
         public virtual long OwnerId { get; set; }
+
+        public virtual ChatObjectTypeEnums OwnerObjectType { get; set; }
 
         //public virtual string DisplayName { get; set; }
 
