@@ -37,6 +37,7 @@ public class EntryNameAppService
     protected override async Task<IQueryable<EntryName>> CreateFilteredQueryAsync(EntryNameGetListInput input)
     {
         return (await ReadOnlyRepository.GetQueryableAsync())
+            .WhereIf(!input.InputType.IsNullOrEmpty(), x => x.InputType.StartsWith(input.InputType))
             .WhereIf(input.IsChoice.HasValue, x => x.IsChoice == input.IsChoice)
             .WhereIf(input.IsPublic.HasValue, x => x.IsPublic == input.IsPublic)
             .WhereIf(input.IsStatic.HasValue, x => x.IsStatic == input.IsStatic)

@@ -10,6 +10,7 @@ namespace IczpNet.Chat.EntryNames
 {
     [Index(nameof(Name))]
     [Index(nameof(Code))]
+    [Index(nameof(InputType))]
     [Index(nameof(IsStatic))]
     [Index(nameof(FullPath))]
     public class EntryName : BaseTreeEntity<EntryName, Guid>, IIsStatic, IIsPublic
@@ -20,16 +21,28 @@ namespace IczpNet.Chat.EntryNames
         [MaxLength(20)]
         public virtual string Code { get; set; }
 
+        /// <summary>
+        /// Text | Number | Textarea | Radio | Checkbox | Select | Switch | Slider | Upload | Date | Time |
+        /// </summary>
+        [MaxLength(20)]
+        public virtual string InputType { get; set; }
+
+        [MaxLength(500)]
+        public virtual string Help { get; set; }
+
+        [MaxLength(500)]
+        public virtual string DefaultValue { get; set; } = null;
+
         [MaxLength(100)]
         public virtual string Regex { get; set; } = null;
 
-        public virtual int MaxLenth { get; set; } = 1;
+        public virtual int? MaxLenth { get; set; } 
 
-        public virtual int MinLenth { get; set; } = 1;
+        public virtual int? MinLenth { get; set; }
 
-        public virtual int MaxCount { get; set; } = 1;
+        public virtual int? MaxCount { get; set; } 
 
-        public virtual int MinCount { get; set; } = 1;
+        public virtual int? MinCount { get; set; } 
 
         public virtual bool IsChoice { get; set; }
 

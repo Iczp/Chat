@@ -58,15 +58,15 @@ public class EntryAppService : ChatAppService, IEntryAppService
 
             Assert.If(entryName.IsRequired && item.Value.Count == 0, $"${entryName.Name}必填");
 
-            Assert.If(item.Value.Count > entryName.MaxCount, $"${entryName.Name}最大个数：{entryName.MaxCount}");
+            Assert.If(entryName.MaxCount.HasValue && item.Value.Count > entryName.MaxCount, $"{entryName.Name}最大个数：{entryName.MaxCount}");
 
-            Assert.If(item.Value.Count < entryName.MinCount, $"${entryName.Name}最小个数：{entryName.MinCount}");
+            Assert.If(entryName.MinCount.HasValue && item.Value.Count < entryName.MinCount, $"{entryName.Name}最小个数：{entryName.MinCount}");
 
             foreach (var value in item.Value)
             {
-                Assert.If(value.Length > entryName.MaxLenth, $"${entryName.Name}[{item.Value.IndexOf(value) + 1}]最大长度：{entryName.MaxLenth}");
+                Assert.If(entryName.MaxLenth.HasValue && value.Length > entryName.MaxLenth, $"{entryName.Name}({entryName.Code})[{item.Value.IndexOf(value) + 1}]最大长度：{entryName.MaxLenth}");
 
-                Assert.If(value.Length < entryName.MinLenth, $"${entryName.Name}[{item.Value.IndexOf(value) + 1}]最小长度：{entryName.MinLenth}");
+                Assert.If(entryName.MinLenth.HasValue && value.Length < entryName.MinLenth, $"{entryName.Name}({entryName.Code})[{item.Value.IndexOf(value) + 1}]最小长度：{entryName.MinLenth}");
 
                 //if (entryName.IsUniqued)
                 //{

@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.Entries.Dtos;
+using IczpNet.Chat.Enums;
 using System;
 using System.Collections.Generic;
 
@@ -6,6 +7,14 @@ namespace IczpNet.Chat.ChatObjects.Dtos
 {
     public class ChatObjectDetailDto : ChatObjectDto
     {
+        /// <summary>
+        /// 设置加群、加好友、加聊天广场验证方式
+        /// </summary>
+        public virtual VerificationMethods VerificationMethod { get; set; }
+
+        /// <summary>
+        /// 说明
+        /// </summary>
         public virtual string Description { get; set; }
 
         ///// <summary>

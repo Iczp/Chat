@@ -12,13 +12,13 @@ public class EntryNameUpdateInput : BaseTreeInputDto<Guid>
 
     public virtual string Regex { get; set; }
 
-    public virtual int MaxLenth { get; set; }
+    public virtual int? MaxLenth { get; set; }
 
-    public virtual int MinLenth { get; set; } = 1;
+    public virtual int? MinLenth { get; set; } = 1;
 
-    public virtual int MaxCount { get; set; }
+    public virtual int? MaxCount { get; set; }
 
-    public virtual int MinCount { get; set; } = 1;
+    public virtual int? MinCount { get; set; } = 1;
 
     public virtual bool IsUniqued { get; set; } = false;
 

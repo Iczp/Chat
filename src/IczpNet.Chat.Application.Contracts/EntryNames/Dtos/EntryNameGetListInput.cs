@@ -8,6 +8,10 @@ public class EntryNameGetListInput : BaseTreeGetListInput<Guid>
     /// <summary>
     /// 是否选择
     /// </summary>
+    public virtual string InputType { get; set; }
+    /// <summary>
+    /// 是否选择
+    /// </summary>
     public virtual bool? IsChoice { get; set; }
 
     /// <summary>
