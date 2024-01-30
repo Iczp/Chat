@@ -124,6 +124,8 @@ namespace IczpNet.Chat.ChatObjects
 
         public override async Task<ChatObject> UpdateAsync(ChatObject entity, long? newParentId, bool isUnique = true)
         {
+            Assert.If(entity.ObjectType == ChatObjectTypeEnums.ShopWaiter && !newParentId.HasValue, "[ShopWaiter] ParentId is null");
+
             if (entity.ObjectType == ChatObjectTypeEnums.Room)
             {
 

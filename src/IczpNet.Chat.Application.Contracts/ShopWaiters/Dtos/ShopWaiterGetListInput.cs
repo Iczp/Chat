@@ -7,6 +7,6 @@ namespace IczpNet.Chat.ShopWaiters.Dtos
         /// <summary>
         /// 掌柜Id[聊天对象]
         /// </summary>
-        public virtual long? ShopKeeperId { get; set; }
+        public virtual long ShopKeeperId { get; set; }
     }
 }

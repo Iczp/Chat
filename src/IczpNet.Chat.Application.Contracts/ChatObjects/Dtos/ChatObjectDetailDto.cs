@@ -12,10 +12,10 @@ namespace IczpNet.Chat.ChatObjects.Dtos
         /// </summary>
         public virtual VerificationMethods VerificationMethod { get; set; }
 
-        /// <summary>
-        /// 说明
-        /// </summary>
-        public virtual string Description { get; set; }
+        ///// <summary>
+        ///// 说明
+        ///// </summary>
+        //public virtual string Description { get; set; }
 
         ///// <summary>
         ///// 朋友数量

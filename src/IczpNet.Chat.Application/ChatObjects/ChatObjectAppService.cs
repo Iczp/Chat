@@ -8,6 +8,7 @@ using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionPermissions;
+using IdentityModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -17,6 +18,7 @@ using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Users;
 
 namespace IczpNet.Chat.ChatObjects;
@@ -197,6 +199,30 @@ public class ChatObjectAppService
         var entity = await ChatObjectManager.CreateSquareAsync(name);
 
         return ObjectMapper.Map<ChatObject, ChatObjectDto>(entity);
+    }
+
+    /// <summary>
+    /// 更新
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [HttpPost]
+    public override async Task<ChatObjectDto> UpdateAsync(long id, ChatObjectUpdateInput input)
+    {
+
+        //return await UpdateEntityAsync(id, x =>
+        //{
+        //    x.SetName(input.Name);
+        //    x.SetVerificationMethod(input.VerificationMethod);
+        //    x.Gender = input.Gender;
+        //    x.Sorting = input.Sorting;
+        //    x.Description = input.Description;
+        //});
+        //return await MapToGetOutputDtoAsync(entity);
+        var entity = await ChatObjectManager.GetAsync(id);
+        input.ParentId = entity.ParentId;
+        return await base.UpdateAsync(id, input);
     }
 
     /// <summary>
