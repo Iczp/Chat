@@ -309,10 +309,10 @@ namespace IczpNet.Chat.SessionUnits
             DestinationId = destination.Id;
             DestinationObjectType = destination.ObjectType;
 
-            setting(Setting);
+            setting?.Invoke(Setting);
         }
 
-            public static Expression<Func<SessionUnit, bool>> GetActivePredicate(DateTime? messageCreationTime = null)
+        public static Expression<Func<SessionUnit, bool>> GetActivePredicate(DateTime? messageCreationTime = null)
         {
             var creationTime = messageCreationTime ?? DateTime.Now;
             return x =>

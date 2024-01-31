@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using System;
 using Volo.Abp.Application.Services;
+using IczpNet.Chat.SessionUnits.Dtos;
 
 namespace IczpNet.Chat.CallCenters
 {
@@ -13,6 +14,6 @@ namespace IczpNet.Chat.CallCenters
         /// <param name="sessionUnitId">当前会话单元Id</param>
         /// <param name="destinationId">目标会话单元Id</param>
         /// <returns></returns>
-        Task TransferToAsync(Guid sessionUnitId, long destinationId);
+        Task<SessionUnitOwnerDetailDto> TransferToAsync(Guid sessionUnitId, long destinationId);
     }
 }

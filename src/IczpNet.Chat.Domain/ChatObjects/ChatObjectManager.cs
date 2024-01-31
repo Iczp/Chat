@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
@@ -67,7 +68,9 @@ namespace IczpNet.Chat.ChatObjects
 
         protected override async Task CheckExistsByUpdateAsync(ChatObject inputEntity)
         {
-            Assert.If(!inputEntity.Code.IsNullOrEmpty() && await Repository.AnyAsync(x => (x.Code == inputEntity.Code || x.Name == inputEntity.Name) && !x.Id.Equals(inputEntity.Id)), $" Code[{inputEntity.Code}] already such");
+            Assert.If(!inputEntity.Code.IsNullOrEmpty() &&
+                await Repository.AnyAsync(x => (x.Code == inputEntity.Code) && !x.Id.Equals(inputEntity.Id)),
+                $"Already exists code[{inputEntity.Code}]");
         }
 
         public override Task<ChatObject> CreateAsync(ChatObject inputEntity, bool isUnique = true)
@@ -252,6 +255,22 @@ namespace IczpNet.Chat.ChatObjects
             return await UpdateNameAsync(entity, name);
         }
 
+        public async Task<bool> IsSomeRootAsync(params long[] idList)
+        {
+            Assert.If(idList.Length < 2, "idList.Length < 2");
+
+            var queryable = (await Repository.GetQueryableAsync()).Where(x => idList.Contains(x.Id));
+
+            var parent = queryable.FirstOrDefault(x => x.ParentId == null);
+
+            if (parent != null)
+            {
+                return queryable.Any(x => x.Id != x.ParentId && x.ParentId == parent.Id);
+            }
+
+            return queryable.GroupBy(x => x.ParentId).Any();
+        }
+
         public virtual async Task<ChatObject> BingAppUserIdAsync(long id, Guid appUserId)
         {
             var entity = await Repository.GetAsync(id);
@@ -263,6 +282,11 @@ namespace IczpNet.Chat.ChatObjects
             Logger.LogInformation($"SessionUnitRepository.BatchUpdateAppUserIdAsync:{count}");
 
             return await base.UpdateAsync(entity, entity.ParentId, isUnique: false);
+        }
+
+        public override Task<int> RepairDataAsync(int maxResultCount = 100, int skinCount = 0)
+        {
+            return base.RepairDataAsync(maxResultCount, skinCount);
         }
     }
 }

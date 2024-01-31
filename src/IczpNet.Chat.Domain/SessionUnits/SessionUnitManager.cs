@@ -21,6 +21,8 @@ using IczpNet.Chat.MessageSections;
 using Volo.Abp.Domain.Repositories;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.TextTemplates;
+using IczpNet.Chat.SessionSections.Sessions;
+using JetBrains.Annotations;
 
 namespace IczpNet.Chat.SessionUnits;
 
@@ -33,13 +35,15 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
     protected IFollowManager FollowManager => LazyServiceProvider.LazyGetRequiredService<IFollowManager>();
     protected IChatObjectRepository ChatObjectRepository { get; }
     protected IMessageSender MessageSender { get; }
+    protected ISessionUnitIdGenerator IdGenerator { get; }
     public SessionUnitManager(
         ISessionUnitRepository repository,
         IMessageRepository messageRepository,
         IDistributedCache<List<SessionUnitCacheItem>, string> unitListCache,
         IDistributedCache<string, Guid> unitCountCache,
         IChatObjectRepository chatObjectRepository,
-        IMessageSender messageSender)
+        IMessageSender messageSender,
+        ISessionUnitIdGenerator idGenerator)
     {
         Repository = repository;
         MessageRepository = messageRepository;
@@ -47,6 +51,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         UnitCountCache = unitCountCache;
         ChatObjectRepository = chatObjectRepository;
         MessageSender = messageSender;
+        IdGenerator = idGenerator;
     }
 
     protected virtual async Task<SessionUnit> SetEntityAsync(SessionUnit entity, Action<SessionUnit> action = null, bool autoSave = false)
@@ -55,6 +60,8 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
 
         return await Repository.UpdateAsync(entity, autoSave: autoSave);
     }
+
+    
 
     public virtual async Task<Guid?> FindIdAsync(Expression<Func<SessionUnit, bool>> predicate)
     {
@@ -105,6 +112,16 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return result;
     }
 
+    public SessionUnit Create(Session session, ChatObject owner, ChatObject destination, Action<SessionUnitSetting> action)
+    {
+        return session.AddSessionUnit(new SessionUnit(
+                    idGenerator: IdGenerator,
+                    session: session,
+                    owner: owner,
+                    destination: destination,
+                    action));
+    }
+
     public virtual async Task<SessionUnit> CreateIfNotContainsAsync(SessionUnit sessionUnit)
     {
         var entity = await FindAsync(sessionUnit.OwnerId, sessionUnit.DestinationId.Value);
@@ -113,6 +130,20 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
 
         return entity;
     }
+
+    public virtual Task<SessionUnit> CreateIfNotContainsAsync(
+            [NotNull]
+            Session session,
+            [NotNull]
+            ChatObject owner,
+            [NotNull]
+            ChatObject destination,
+            Action<SessionUnitSetting> setting)
+    {
+        return CreateIfNotContainsAsync(new SessionUnit(IdGenerator, session, owner, destination, setting));
+    }
+
+
 
     public Task<SessionUnit> SetMemberNameAsync(SessionUnit entity, string memberName)
     {

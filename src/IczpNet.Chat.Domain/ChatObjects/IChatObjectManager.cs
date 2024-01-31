@@ -66,6 +66,8 @@ namespace IczpNet.Chat.ChatObjects
 
         //Task<ChatObjectInfo> GetGroupAssistantAsync();
 
+        Task<bool> IsSomeRootAsync(params long[] idList);
+
         Task<ChatObject> BingAppUserIdAsync(long id, Guid appUserId);
     }
 }

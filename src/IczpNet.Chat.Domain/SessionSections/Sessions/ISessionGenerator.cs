@@ -11,7 +11,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
         Task<Session> MakeAsync(ChatObject room);
 
-        Task<List<SessionUnit>> AddShopWaitersIfNotContains(Session session, ChatObject sender, long shopKeeperId);
+        Task<List<SessionUnit>> AddShopWaitersIfNotContains(Session session, ChatObject destination, long shopKeeperId);
 
         Task<List<Session>> GenerateSessionByMessageAsync();
         

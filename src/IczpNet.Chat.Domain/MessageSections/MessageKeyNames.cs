@@ -7,6 +7,8 @@ namespace IczpNet.Chat.MessageSections
     /// </summary>
     public static class MessageKeyNames
     {
+        
+
         /// <summary>
         /// CreateRoom  创建群
         /// </summary>
@@ -84,8 +86,10 @@ namespace IczpNet.Chat.MessageSections
         /// 退出位置共享
         /// </summary>
         public static string StopShareLocation { get; set; } = nameof(StopShareLocation);
-
-        
+        /// <summary>
+        /// 客服转接
+        /// </summary>
+        public static string Transfer { get; set; } = nameof(Transfer);
     }
 
 }

@@ -51,22 +51,18 @@ namespace IczpNet.Chat.OfficialSections.Officials
             Assert.If(await ChatObjectRepository.AnyAsync((x) => x.ObjectType == inputEntity.ObjectType && x.Name == inputEntity.Name && !x.Id.Equals(inputEntity.Id)), $" Name[{inputEntity.Name}] already such,,ObjectType:{inputEntity.ObjectType}");
         }
 
-
         private SessionUnit AddOfficialSessionUnit(Session session, ChatObject official)
         {
-            return session.AddSessionUnit(new SessionUnit(
-                  idGenerator: SessionUnitIdGenerator,
+            return SessionUnitManager.Create(
                   session: session,
                   owner: official,
                   destination: official,
-                  isPublic: false,
-                  isStatic: true,
-                  isDisplay:true,
-                  isVisible:true,
-                  isCreator: true,
-                  joinWay: JoinWays.System,
-                  inviterUnitId: null,
-                  isInputEnabled: true));
+                  x =>
+                  {
+                      x.IsPublic = false;
+                      x.IsStatic = true;
+                      x.JoinWay = JoinWays.System;
+                  });
         }
 
         public virtual async Task<ChatObject> CreateAsync(ChatObject inputEntity, bool isUnique = true)
@@ -100,19 +96,7 @@ namespace IczpNet.Chat.OfficialSections.Officials
 
                 var session = await SessionGenerator.MakeAsync(owner, official);
 
-                sessionUnit = session.AddSessionUnit(new SessionUnit(
-                  idGenerator: SessionUnitIdGenerator,
-                  session: session,
-                  owner: owner,
-                  destination: official,
-                  isPublic: true,
-                  isStatic: false,
-                  isDisplay: true,
-                  isVisible: true,
-                  isCreator: false,
-                  joinWay: JoinWays.Normal,
-                  inviterUnitId: null,
-                  isInputEnabled: false));
+                sessionUnit = SessionUnitManager.Create(session: session, owner: owner, destination: official, x => x.JoinWay = JoinWays.Normal);
             }
             else
             {

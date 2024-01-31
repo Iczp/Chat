@@ -1,4 +1,5 @@
-﻿using System;
+﻿using IczpNet.Chat.SessionUnits;
+using System;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Services;
 
@@ -10,9 +11,10 @@ namespace IczpNet.Chat.CallCenters
         /// <summary>
         /// 转接
         /// </summary>
-        /// <param name="sessionId"></param>
-        /// <param name="destinationId"></param>
+        /// <param name="sessionUnitId"></param>
+        /// <param name="waiterId"></param>
+        /// <param name="isNotice"></param>
         /// <returns></returns>
-        Task TransferToAsync(Guid sessionId, long destinationId);
+        Task<SessionUnit> TransferToAsync(Guid sessionUnitId, long waiterId, bool isNotice = true);
     }
 }

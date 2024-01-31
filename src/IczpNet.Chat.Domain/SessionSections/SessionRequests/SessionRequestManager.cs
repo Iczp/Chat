@@ -237,19 +237,19 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
 
                 var session = await SessionGenerator.MakeAsync(sessionRequest.Owner, sessionRequest.Destination);
 
-                ownerSessionUnit ??= await SessionUnitManager.CreateIfNotContainsAsync(new SessionUnit(
-                      idGenerator: SessionUnitIdGenerator,
+                ownerSessionUnit ??= await SessionUnitManager.CreateIfNotContainsAsync(
                       session: session,
                       owner: sessionRequest.Owner,
                       destination: sessionRequest.Destination,
-                      isPublic: true,
-                      isStatic: false,
-                      isDisplay: true,
-                      isVisible: true,
-                      isCreator: false,
-                      joinWay: JoinWays.Normal,
-                      inviterUnitId: null,
-                      isInputEnabled: true));
+                      x =>
+                      {
+                          x.JoinWay = JoinWays.Normal;
+                          x.IsPublic = true;
+                          x.IsStatic = false;
+                          x.IsDisplay = true;
+                          x.IsVisible = true;
+                          x.IsInputEnabled = true;
+                      });
 
                 switch (sessionRequest.Destination.ObjectType)
                 {
@@ -258,19 +258,19 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                     case ChatObjectTypeEnums.Customer:
                     case ChatObjectTypeEnums.ShopKeeper:
 
-                        var destinationSessionUnit = await SessionUnitManager.CreateIfNotContainsAsync(new SessionUnit(
-                              idGenerator: SessionUnitIdGenerator,
+                        var destinationSessionUnit = await SessionUnitManager.CreateIfNotContainsAsync(
                               session: session,
                               owner: sessionRequest.Destination,
                               destination: sessionRequest.Owner,
-                              isPublic: true,
-                              isStatic: false,
-                              isDisplay: true,
-                              isVisible: true,
-                              isCreator: false,
-                              joinWay: JoinWays.Normal,
-                              inviterUnitId: null,
-                              isInputEnabled: true));
+                              x =>
+                              {
+                                  x.JoinWay = JoinWays.Normal;
+                                  x.IsPublic = true;
+                                  x.IsStatic = false;
+                                  x.IsDisplay = true;
+                                  x.IsVisible = true;
+                                  x.IsInputEnabled = true;
+                              });
 
                         await MessageSender.SendCmdAsync(destinationSessionUnit, new MessageInput<CmdContentInfo>()
                         {
@@ -290,19 +290,19 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                             await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.SessionRequestPermission.Handle, handlerSessionUnit);
                         }
 
-                        var roomOrSquareSessionUnit = await SessionUnitManager.CreateIfNotContainsAsync(new SessionUnit(
-                                 idGenerator: SessionUnitIdGenerator,
+                        var roomOrSquareSessionUnit = await SessionUnitManager.CreateIfNotContainsAsync(
                                  session: session,
                                  owner: sessionRequest.Destination,
                                  destination: sessionRequest.Destination,
-                                 isPublic: false,
-                                 isStatic: true,
-                                 isDisplay: true,
-                                 isVisible: true,
-                                 isCreator: false,
-                                 joinWay: JoinWays.Normal,
-                                 inviterUnitId: null,
-                                 isInputEnabled: true));
+                                 x =>
+                                 {
+                                     x.JoinWay = JoinWays.Normal;
+                                     x.IsPublic = false;
+                                     x.IsStatic = false;
+                                     x.IsDisplay = true;
+                                     x.IsVisible = true;
+                                     x.IsInputEnabled = true;
+                                 });
 
                         await MessageSender.SendCmdAsync(roomOrSquareSessionUnit, new MessageInput<CmdContentInfo>()
                         {

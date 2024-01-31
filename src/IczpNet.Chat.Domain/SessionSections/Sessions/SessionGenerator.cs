@@ -11,7 +11,6 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Uow;
 using System.Security.Cryptography;
-using IczpNet.AbpCommons;
 using IczpNet.Chat.SessionUnits;
 
 namespace IczpNet.Chat.SessionSections.Sessions
@@ -127,89 +126,61 @@ namespace IczpNet.Chat.SessionSections.Sessions
             ResolveSenderIsRobot(sender, async () =>
             {
                 //add robot
-                session.AddSessionUnit(new SessionUnit(
-                        idGenerator: SessionUnitIdGenerator,
-                        session: session,
+                SessionUnitManager.Create(session: session,
                         owner: sender,
                         destination: receiver,
-                        isPublic: true,
-                        isStatic: true,
-                        isDisplay: true,
-                        isVisible: true,
-                        isCreator: false,
-                        joinWay: JoinWays.AutoJoin,
-                        inviterUnitId: null,
-                        isInputEnabled: true));
+                        x =>
+                        {
+                            x.JoinWay = JoinWays.AutoJoin;
+                        });
 
                 //add receiver
-                session.AddSessionUnit(new SessionUnit(
-                        idGenerator: SessionUnitIdGenerator,
-                        session: session,
+                SessionUnitManager.Create(session: session,
                         owner: receiver,
                         destination: sender,
-                        isPublic: true,
-                        isStatic: true,
-                        isDisplay: true,
-                        isVisible: true,
-                        isCreator: false,
-                        joinWay: JoinWays.AutoJoin,
-                        inviterUnitId: null,
-                        isInputEnabled: true));
+                        x =>
+                        {
+                            x.JoinWay = JoinWays.AutoJoin;
+                        });
 
                 await Task.Yield();
             });
+
+
 
             ResolveShopWaiterId(sender, receiver, async (shopKeeperId) =>
             {
                 var shopKeeper = await ChatObjectManager.GetAsync(shopKeeperId);
                 //add sender
-                session.AddSessionUnit(new SessionUnit(
-                        idGenerator: SessionUnitIdGenerator,
-                        session: session,
+                SessionUnitManager.Create(session: session,
                         owner: sender,
                         destination: shopKeeper,
-                        isPublic: true,
-                        isStatic: false,
-                        isDisplay: true,
-                        isVisible: true,
-                        isCreator: false,
-                        joinWay: JoinWays.AutoJoin,
-                        inviterUnitId: null,
-                        isInputEnabled: true));
+                        x =>
+                        {
+                            x.JoinWay = JoinWays.AutoJoin;
+                        });
 
                 //add shopKeeper
-                session.AddSessionUnit(new SessionUnit(
-                         idGenerator: SessionUnitIdGenerator,
-                         session: session,
+                SessionUnitManager.Create(session: session,
                          owner: shopKeeper,
                          destination: sender,
-                         isPublic: true,
-                         isStatic: false,
-                         isDisplay: true,
-                         isVisible: true,
-                         isCreator: false,
-                         joinWay: JoinWays.AutoJoin,
-                         inviterUnitId: null,
-                         isInputEnabled: true));
+                         x =>
+                         {
+                             x.JoinWay = JoinWays.AutoJoin;
+                         });
 
                 //Cache GetChildsByCacheAsync
                 var shopWaiterList = await ChatObjectManager.GetChildsAsync(shopKeeperId);
 
                 foreach (var shopWaiter in shopWaiterList)
                 {
-                    session.AddSessionUnit(new SessionUnit(
-                        idGenerator: SessionUnitIdGenerator,
-                        session: session,
+                    SessionUnitManager.Create(session: session,
                         owner: shopWaiter,
                         destination: sender,
-                        isPublic: true,
-                        isStatic: false,
-                        isDisplay: true,
-                        isVisible: true,
-                        isCreator: false,
-                        joinWay: JoinWays.AutoJoin,
-                        inviterUnitId: null,
-                        isInputEnabled: true));
+                        x =>
+                        {
+                            x.JoinWay = JoinWays.AutoJoin;
+                        });
                 }
 
                 //add or update sessionUnit
@@ -234,7 +205,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
             return await SessionRepository.InsertAsync(session, autoSave: true);
         }
 
-        public virtual async Task<List<SessionUnit>> AddShopWaitersIfNotContains(Session session, ChatObject sender, long shopKeeperId)
+        public virtual async Task<List<SessionUnit>> AddShopWaitersIfNotContains(Session session, ChatObject destination, long shopKeeperId)
         {
             var shopWaiterList = await ChatObjectManager.GetChildsAsync(shopKeeperId);
 
@@ -242,7 +213,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
             foreach (var shopWaiter in shopWaiterList)
             {
-                var isAny = await SessionUnitManager.IsAnyAsync(shopWaiter.Id, sender.Id);
+                var isAny = await SessionUnitManager.IsAnyAsync(shopWaiter.Id, destination.Id);
 
                 if (!isAny)
                 {
@@ -250,15 +221,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
                     idGenerator: SessionUnitIdGenerator,
                     session: session,
                     owner: shopWaiter,
-                    destination: sender,
-                    isPublic: true,
-                    isStatic: false,
-                    isDisplay: true,
-                    isVisible: true,
-                    isCreator: false,
-                    joinWay: JoinWays.AutoJoin,
-                    inviterUnitId: null,
-                    isInputEnabled: true));
+                    destination: destination,
+                    x => x.JoinWay = JoinWays.AutoJoin));
                 }
             }
 

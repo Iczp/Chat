@@ -1,5 +1,7 @@
-﻿using IczpNet.Chat.Enums;
+﻿using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Extensions.Caching.Distributed;
 using System;
@@ -21,7 +23,11 @@ namespace IczpNet.Chat.SessionUnits
 
         Task<SessionUnit> FindAsync(long ownerId, long destinactionId);
 
+        SessionUnit Create(Session session, ChatObject owner, ChatObject destination, Action<SessionUnitSetting> action);
+
         Task<SessionUnit> CreateIfNotContainsAsync(SessionUnit sessionUnit);
+
+        Task<SessionUnit> CreateIfNotContainsAsync(Session session, ChatObject owner, ChatObject destination, Action<SessionUnitSetting> setting);
 
         Task<SessionUnit> FindBySessionIdAsync(Guid sessionId, long ownerId);
 
@@ -112,6 +118,6 @@ namespace IczpNet.Chat.SessionUnits
         Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime, SessionUnit setterSessionUnit, bool isSendMessage);
 
         Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime);
-        
+
     }
 }
