@@ -134,6 +134,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
                         destination: receiver,
                         isPublic: true,
                         isStatic: true,
+                        isDisplay: true,
+                        isVisible: true,
                         isCreator: false,
                         joinWay: JoinWays.AutoJoin,
                         inviterUnitId: null,
@@ -147,6 +149,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
                         destination: sender,
                         isPublic: true,
                         isStatic: true,
+                        isDisplay: true,
+                        isVisible: true,
                         isCreator: false,
                         joinWay: JoinWays.AutoJoin,
                         inviterUnitId: null,
@@ -166,6 +170,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
                         destination: shopKeeper,
                         isPublic: true,
                         isStatic: false,
+                        isDisplay: true,
+                        isVisible: true,
                         isCreator: false,
                         joinWay: JoinWays.AutoJoin,
                         inviterUnitId: null,
@@ -179,6 +185,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
                          destination: sender,
                          isPublic: true,
                          isStatic: false,
+                         isDisplay: true,
+                         isVisible: true,
                          isCreator: false,
                          joinWay: JoinWays.AutoJoin,
                          inviterUnitId: null,
@@ -196,6 +204,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
                         destination: sender,
                         isPublic: true,
                         isStatic: false,
+                        isDisplay: true,
+                        isVisible: true,
                         isCreator: false,
                         joinWay: JoinWays.AutoJoin,
                         inviterUnitId: null,
@@ -243,6 +253,8 @@ namespace IczpNet.Chat.SessionSections.Sessions
                     destination: sender,
                     isPublic: true,
                     isStatic: false,
+                    isDisplay: true,
+                    isVisible: true,
                     isCreator: false,
                     joinWay: JoinWays.AutoJoin,
                     inviterUnitId: null,
@@ -250,7 +262,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
                 }
             }
 
-            foreach(var item in list)
+            foreach (var item in list)
             {
                 session.AddSessionUnit(item);
             }

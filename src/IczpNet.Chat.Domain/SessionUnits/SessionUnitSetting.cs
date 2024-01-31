@@ -173,25 +173,25 @@ namespace IczpNet.Chat.SessionUnits
         /// 是否固定成员
         /// </summary>
         [Comment("是否固定成员")]
-        public virtual bool IsStatic { get; set; }
+        public virtual bool IsStatic { get; set; } = false;
 
         /// <summary>
         /// 是否公有成员
         /// </summary>
         [Comment("是否公有成员")]
-        public virtual bool IsPublic { get; set; }
+        public virtual bool IsPublic { get; set; } = true;
 
         /// <summary>
         /// 是否可见的
         /// </summary>
         [Comment("是否可见的")]
-        public virtual bool IsVisible { get; set; }
+        public virtual bool IsVisible { get; set; } = true;
 
         /// <summary>
         /// 是否显示
         /// </summary>
         [Comment("是否显示")]
-        public virtual bool IsDisplay { get; set; }
+        public virtual bool IsDisplay { get; set; } = true;
 
         /// <summary>
         /// 是否启用输入框

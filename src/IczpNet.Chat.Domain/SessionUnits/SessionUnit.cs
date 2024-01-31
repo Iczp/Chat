@@ -255,6 +255,8 @@ namespace IczpNet.Chat.SessionUnits
             ChatObject destination,
             bool isPublic = true,
             bool isStatic = false,
+            bool isVisible = true,
+            bool isDisplay = true,
             bool isCreator = false,
             JoinWays? joinWay = null,
             Guid? inviterUnitId = null,
@@ -276,13 +278,41 @@ namespace IczpNet.Chat.SessionUnits
 
             Setting.IsStatic = isStatic;
             Setting.IsPublic = isPublic;
+            Setting.IsDisplay = isDisplay;
+            Setting.IsVisible = isVisible;
             Setting.SetIsCreator(isCreator);
             Setting.JoinWay = joinWay;
             Setting.InviterId = inviterUnitId;
             Setting.IsInputEnabled = isInputEnabled;
         }
 
-        public static Expression<Func<SessionUnit, bool>> GetActivePredicate(DateTime? messageCreationTime = null)
+        internal SessionUnit(ISessionUnitIdGenerator idGenerator,
+            [NotNull]
+            Session session,
+            [NotNull]
+            ChatObject owner,
+            [NotNull]
+            ChatObject destination,
+            Action<SessionUnitSetting> setting)
+        {
+            Id = idGenerator.Create(owner.Id, destination.Id);
+            SetKey(idGenerator.Generate(owner.Id, destination.Id));
+            Session = session;
+            SessionId = session.Id;
+            Setting = new SessionUnitSetting(Session);
+
+            Owner = owner;
+            OwnerId = owner.Id;
+            OwnerObjectType = owner.ObjectType;
+
+            Destination = destination;
+            DestinationId = destination.Id;
+            DestinationObjectType = destination.ObjectType;
+
+            setting(Setting);
+        }
+
+            public static Expression<Func<SessionUnit, bool>> GetActivePredicate(DateTime? messageCreationTime = null)
         {
             var creationTime = messageCreationTime ?? DateTime.Now;
             return x =>
