@@ -41,6 +41,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         protected IBackgroundJobManager BackgroundJobManager { get; }
         protected ISettingProvider SettingProvider { get; }
         protected IRepository<MessageReminder> MessageReminderRepository { get; }
+        protected ISessionGenerator SessionGenerator { get; }
 
         public MessageManager(
             IMessageRepository repository,
@@ -55,7 +56,8 @@ namespace IczpNet.Chat.MessageSections.Messages
             ISessionRepository sessionRepository,
             ISettingProvider settingProvider,
             IRepository<MessageReminder> messageReminderRepository,
-            ISessionUnitSettingRepository sessionUnitSettingRepository)
+            ISessionUnitSettingRepository sessionUnitSettingRepository,
+            ISessionGenerator sessionGenerator)
         {
             Repository = repository;
             ChatObjectManager = chatObjectManager;
@@ -70,6 +72,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             SettingProvider = settingProvider;
             MessageReminderRepository = messageReminderRepository;
             SessionUnitSettingRepository = sessionUnitSettingRepository;
+            SessionGenerator = sessionGenerator;
         }
 
         protected virtual void TryToSetOwnerId<T, TKey>(T entity, TKey ownerId)
@@ -87,6 +90,15 @@ namespace IczpNet.Chat.MessageSections.Messages
             }
         }
 
+        public virtual async Task CreateSessionUnitByMessageAsync(SessionUnit senderSessionUnit)
+        {
+            //ShopKeeper
+            if (senderSessionUnit.Destination.ObjectType == ChatObjectTypeEnums.ShopKeeper)
+            {
+                await SessionGenerator.AddShopWaitersIfNotContains(senderSessionUnit.Session, senderSessionUnit.Owner, senderSessionUnit.DestinationId.Value);
+            }
+            await Task.Yield();
+        }
         public virtual async Task<Message> CreateMessageAsync(
             SessionUnit senderSessionUnit,
             Func<Message, Task<IContentEntity>> action,
@@ -102,6 +114,8 @@ namespace IczpNet.Chat.MessageSections.Messages
             Assert.If(!senderSessionUnit.Setting.IsInputEnabled, $"Unable to send message, input status is disabled,senderSessionUnitId:{senderSessionUnit.Id}");
 
             Assert.If(senderSessionUnit.Setting.MuteExpireTime > Clock.Now, $"Unable to send message,sessionUnit has been muted.senderSessionUnitId:{senderSessionUnit.Id}");
+
+            await CreateSessionUnitByMessageAsync(senderSessionUnit);
 
             //cache
             await SessionUnitManager.GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);

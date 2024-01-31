@@ -21,7 +21,7 @@ namespace IczpNet.Chat.ChatObjects
             var expression = PredicateBuilder.New<ChatObject>();
 
             //Write diffusion
-            expression = expression.Or(x => x.Name.IndexOf(Keyword) == 0);
+            expression = expression.Or(x => x.Name.Contains(Keyword));
             expression = expression.Or(x => x.NameSpellingAbbreviation.IndexOf(Keyword) == 0);
 
             return expression;

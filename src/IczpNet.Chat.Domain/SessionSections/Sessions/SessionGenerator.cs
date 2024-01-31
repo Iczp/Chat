@@ -20,6 +20,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
     {
         protected IMessageRepository MessageRepository => LazyServiceProvider.LazyGetRequiredService<IMessageRepository>();
         protected IRepository<Session, Guid> SessionRepository => LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
+        protected ISessionUnitRepository SessionUnitRepository => LazyServiceProvider.LazyGetRequiredService<ISessionUnitRepository>();
         protected IChannelResolver ChannelResolver => LazyServiceProvider.LazyGetRequiredService<IChannelResolver>();
         protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
         protected ChatObjectManager ChatObjectManager => LazyServiceProvider.LazyGetRequiredService<ChatObjectManager>();
@@ -191,7 +192,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
                     session.AddSessionUnit(new SessionUnit(
                         idGenerator: SessionUnitIdGenerator,
                         session: session,
-                        owner: shopWaiter, 
+                        owner: shopWaiter,
                         destination: sender,
                         isPublic: true,
                         isStatic: false,
@@ -204,6 +205,7 @@ namespace IczpNet.Chat.SessionSections.Sessions
                 //add or update sessionUnit
                 await Task.Yield();
             });
+
 
             //if (sender.ObjectType == ChatObjectTypeEnums.Official)
             //{
@@ -220,6 +222,40 @@ namespace IczpNet.Chat.SessionSections.Sessions
             //    }
             //}
             return await SessionRepository.InsertAsync(session, autoSave: true);
+        }
+
+        public virtual async Task<List<SessionUnit>> AddShopWaitersIfNotContains(Session session, ChatObject sender, long shopKeeperId)
+        {
+            var shopWaiterList = await ChatObjectManager.GetChildsAsync(shopKeeperId);
+
+            var list = new List<SessionUnit>();
+
+            foreach (var shopWaiter in shopWaiterList)
+            {
+                var isAny = await SessionUnitManager.IsAnyAsync(shopWaiter.Id, sender.Id);
+
+                if (!isAny)
+                {
+                    list.Add(new SessionUnit(
+                    idGenerator: SessionUnitIdGenerator,
+                    session: session,
+                    owner: shopWaiter,
+                    destination: sender,
+                    isPublic: true,
+                    isStatic: false,
+                    isCreator: false,
+                    joinWay: JoinWays.AutoJoin,
+                    inviterUnitId: null,
+                    isInputEnabled: true));
+                }
+            }
+
+            foreach(var item in list)
+            {
+                session.AddSessionUnit(item);
+            }
+
+            return list;
         }
 
         [UnitOfWork(true, IsolationLevel.ReadUncommitted)]

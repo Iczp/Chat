@@ -27,6 +27,8 @@ namespace IczpNet.Chat.SessionUnits
 
         Task<Guid?> FindIdAsync(long ownerId, long destinactionId);
 
+        Task<bool> IsAnyAsync(long ownerId, long destinactionId);
+
         Task<Guid?> FindIdAsync(Expression<Func<SessionUnit, bool>> predicate);
 
         Task<SessionUnit> SetMemberNameAsync(SessionUnit entity, string memberName);

@@ -182,6 +182,18 @@ namespace IczpNet.Chat.SessionUnits
         public virtual bool IsPublic { get; set; }
 
         /// <summary>
+        /// 是否可见的
+        /// </summary>
+        [Comment("是否可见的")]
+        public virtual bool IsVisible { get; set; }
+
+        /// <summary>
+        /// 是否显示
+        /// </summary>
+        [Comment("是否显示")]
+        public virtual bool IsDisplay { get; set; }
+
+        /// <summary>
         /// 是否启用输入框
         /// </summary>
         [Comment("是否启用输入框")]

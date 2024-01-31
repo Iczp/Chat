@@ -69,6 +69,11 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return FindIdAsync(x => x.OwnerId == ownerId && x.DestinationId == destinactionId);
     }
 
+    public virtual async Task<bool> IsAnyAsync(long ownerId, long destinactionId)
+    {
+        return await Repository.AnyAsync(x => x.OwnerId == ownerId && x.DestinationId == destinactionId);
+    }
+
     public virtual Task<SessionUnit> FindAsync(long ownerId, long destinactionId)
     {
         return FindAsync(x => x.OwnerId == ownerId && x.DestinationId == destinactionId);

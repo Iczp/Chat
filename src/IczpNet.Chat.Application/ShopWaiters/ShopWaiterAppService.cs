@@ -45,19 +45,20 @@ public class ShopWaiterAppService : ChatAppService, IShopWaiterAppService
     [HttpGet]
     public virtual async Task<PagedResultDto<ShopWaiterDto>> GetListAsync(ShopWaiterGetListInput input)
     {
-        var query1 = (await Repository.GetQueryableAsync())
-           .Where(x => x.ObjectType == ChatObjectTypeEnums.ShopKeeper)
-           .Where(x => x.Id == input.ShopKeeperId);
-
-        var query2 = (await Repository.GetQueryableAsync())
+        var query = (await Repository.GetQueryableAsync())
             .Where(x => x.ObjectType == ChatObjectTypeEnums.ShopWaiter)
             .Where(x => x.ParentId == input.ShopKeeperId)
             ;
-        var query = query1.Concat(query2)
-            .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordChatObjectSpecification(input.Keyword))
-            ;
+        if (input.IsContainsShopKeeper)
+        {
+            var query1 = (await Repository.GetQueryableAsync())
+           .Where(x => x.ObjectType == ChatObjectTypeEnums.ShopKeeper)
+           .Where(x => x.Id == input.ShopKeeperId);
+            query = query.Concat(query1);
+        }
+        query = query.WhereIf(!input.Keyword.IsEmpty(), new KeywordChatObjectSpecification(input.Keyword));
 
-        return await GetPagedListAsync<ChatObject, ShopWaiterDto>(query, input, x => x.OrderBy(d => d.Name));
+        return await GetPagedListAsync<ChatObject, ShopWaiterDto>(query, input, x => x.OrderBy(x => x.Depth).ThenBy(d => d.Name));
 
     }
 
