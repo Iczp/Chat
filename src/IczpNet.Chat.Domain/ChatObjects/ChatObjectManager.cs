@@ -255,7 +255,7 @@ namespace IczpNet.Chat.ChatObjects
             return await UpdateNameAsync(entity, name);
         }
 
-        public async Task<bool> IsSomeRootAsync(params long[] idList)
+        public virtual async Task<bool> IsSomeRootAsync(params long[] idList)
         {
             Assert.If(idList.Length < 2, "idList.Length < 2");
 
@@ -265,7 +265,9 @@ namespace IczpNet.Chat.ChatObjects
 
             if (parent != null)
             {
-                return queryable.Any(x => x.Id != x.ParentId && x.ParentId == parent.Id);
+                var sp= "/";
+                //return queryable.Any(x => x.Id != parent.Id && x.ParentId == parent.Id);
+                return queryable.Any(x => (x.FullPath + sp).StartsWith($"{parent.Id}{sp}"));
             }
 
             return queryable.GroupBy(x => x.ParentId).Any();

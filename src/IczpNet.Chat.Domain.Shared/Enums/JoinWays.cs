@@ -38,5 +38,10 @@ namespace IczpNet.Chat.Enums
         /// </summary>
         [Description("自动加入")]
         AutoJoin = 5,
+        /// <summary>
+        /// 好友请求
+        /// </summary>
+        [Description("好友请求")]
+        Request = 6,
     }
 }

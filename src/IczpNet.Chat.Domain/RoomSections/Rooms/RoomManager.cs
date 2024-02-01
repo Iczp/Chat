@@ -77,18 +77,16 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
 
     private SessionUnit AddRoomSessionUnit(Session session, ChatObject room)
     {
-        return session.AddSessionUnit(new SessionUnit(
-              idGenerator: SessionUnitIdGenerator,
+        return SessionUnitManager.Create(
               session: session,
               owner: room,
               destination: room,
-              isPublic: false,
-              isStatic: true,
-              isDisplay: true,
-              isVisible: true,
-              isCreator: false,
-              joinWay: JoinWays.System,
-              inviterUnitId: null));
+              x =>
+              {
+                  x.IsPublic = false;
+                  x.IsStatic = true;
+                  x.JoinWay = JoinWays.System;
+              });
     }
 
     public virtual async Task<ChatObject> CreateAsync(string name, List<long> memberIdList, long? ownerId)
@@ -109,18 +107,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         session.SetOwner(room);
 
         //add room sessionUnit
-        var roomSessionUnit = new SessionUnit(
-              idGenerator: SessionUnitIdGenerator,
-              session: session,
-              owner: room,
-              destination: room,
-              isPublic: false,
-              isStatic: true,
-              isDisplay: true,
-              isVisible: true,
-              isCreator: false,
-              joinWay: JoinWays.System,
-              inviterUnitId: null);
+        var roomSessionUnit = AddRoomSessionUnit(session, room);
 
         SessionUnit creatorSessionUnit = null;
         //group owner
@@ -128,19 +115,17 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         {
             var owner = await ChatObjectManager.GetAsync(ownerId.Value);
 
-            creatorSessionUnit = new SessionUnit(
-                idGenerator: SessionUnitIdGenerator,
+            creatorSessionUnit = SessionUnitManager.Generate(
                 session: session,
                 owner: owner,
                 destination: room,
-                isPublic: true,
-                isStatic: true,
-                isDisplay: true,
-                isVisible: true,
-                isCreator: true,
-                joinWay: JoinWays.Creator,
-                inviterUnitId: null,
-                isInputEnabled: true);
+                x =>
+                {
+                    x.IsPublic = true;
+                    x.IsStatic = true;
+                    x.SetIsCreator(true);
+                    x.JoinWay = JoinWays.Creator;
+                });
         }
         // add member
         var _memberIdList = allList
@@ -150,34 +135,17 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
 
         foreach (var memberId in _memberIdList)
         {
-            memberSessionUnitList.Add(new SessionUnit(
-                idGenerator: SessionUnitIdGenerator,
+            memberSessionUnitList.Add(SessionUnitManager.Generate(
                 session: session,
                 owner: await ChatObjectManager.GetAsync(memberId),
                 destination: room,
-                isPublic: true,
-                isStatic: false,
-                isDisplay: true,
-                isVisible: true,
-                isCreator: false,
-                joinWay: JoinWays.Invitation,
-                inviterUnitId: creatorSessionUnit?.Id,
-                isInputEnabled: true));
+                x =>
+                {
+                    x.IsStatic = false;
+                    x.JoinWay = JoinWays.Invitation;
+                    x.InviterId = creatorSessionUnit?.Id;
+                }));
         }
-
-        //var memberSessionUnitList = _memberIdList.Select(memberId => new SessionUnit(
-        //        idGenerator: SessionUnitIdGenerator,
-        //        session: session,
-        //        ownerId: memberId,
-        //        destinationId: room.Id,
-        //        destinationObjectType: room.ObjectType,
-        //        isPublic: true,
-        //        isStatic: false,
-        //        isCreator: false,
-        //        joinWay: JoinWays.Invitation,
-        //        inviterUnitId: creatorSessionUnit?.Id,
-        //        isInputEnabled: true))
-        //    .ToList();
 
         room.OwnerSessionList.Add(session);
 
@@ -187,7 +155,6 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
 
         // commit to db
         await UnitOfWorkManager.Current.SaveChangesAsync();
-
 
         var members = await ChatObjectManager.GetManyByCacheAsync(_memberIdList.Take(3).ToList());
 
@@ -257,19 +224,15 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         var room = await ChatObjectManager.GetAsync(input.RoomId);
 
         var joinMemberSessionUnitList = joinMembers.Select(x =>
-            new SessionUnit(
-                idGenerator: SessionUnitIdGenerator,
+            SessionUnitManager.Generate(
                 session: session,
                 owner: x,
                 destination: room,
-                isPublic: true,
-                isStatic: false,
-                isDisplay: true,
-                isVisible: true,
-                isCreator: false,
-                joinWay: JoinWays.Invitation,
-                inviterUnitId: inviterSessionUnit?.Id,
-                isInputEnabled: true))
+                x =>
+                {
+                    x.JoinWay = JoinWays.Invitation;
+                    x.InviterId = inviterSessionUnit?.Id;
+                }))
             .ToList();
 
         await SessionUnitRepository.InsertManyAsync(joinMemberSessionUnitList);

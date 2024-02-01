@@ -61,7 +61,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return await Repository.UpdateAsync(entity, autoSave: autoSave);
     }
 
-    
+
 
     public virtual async Task<Guid?> FindIdAsync(Expression<Func<SessionUnit, bool>> predicate)
     {
@@ -114,12 +114,21 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
 
     public SessionUnit Create(Session session, ChatObject owner, ChatObject destination, Action<SessionUnitSetting> action)
     {
-        return session.AddSessionUnit(new SessionUnit(
-                    idGenerator: IdGenerator,
+        return session.AddSessionUnit(Generate(
+                    //idGenerator: IdGenerator,
                     session: session,
                     owner: owner,
                     destination: destination,
                     action));
+    }
+    public SessionUnit Generate(Session session, ChatObject owner, ChatObject destination, Action<SessionUnitSetting> action)
+    {
+        return new SessionUnit(
+                    idGenerator: IdGenerator,
+                    session: session,
+                    owner: owner,
+                    destination: destination,
+                    action);
     }
 
     public virtual async Task<SessionUnit> CreateIfNotContainsAsync(SessionUnit sessionUnit)
@@ -140,7 +149,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
             ChatObject destination,
             Action<SessionUnitSetting> setting)
     {
-        return CreateIfNotContainsAsync(new SessionUnit(IdGenerator, session, owner, destination, setting));
+        return CreateIfNotContainsAsync(Generate(session, owner, destination, setting));
     }
 
 

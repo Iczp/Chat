@@ -1,27 +1,26 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
-using IczpNet.Chat.MessageSections;
+using IczpNet.Chat.Permissions;
+using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
+using IczpNet.Chat.SessionSections.SessionPermissions;
 using IczpNet.Chat.SessionSections.Sessions;
-using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnits;
+using IczpNet.Chat.Settings;
+using IczpNet.Chat.TextTemplates;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
-using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
-using System.Linq;
-using System.Collections.Generic;
-using Volo.Abp.Uow;
 using Volo.Abp.Settings;
-using IczpNet.Chat.Settings;
-using IczpNet.Chat.SessionSections.SessionPermissions;
-using IczpNet.Chat.Permissions;
-using System.Diagnostics;
-using IczpNet.Chat.TextTemplates;
-using IczpNet.Chat.SessionUnits;
+using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.SessionSections.SessionRequests
 {
@@ -39,7 +38,6 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
         protected IUnitOfWorkManager UnitOfWorkManager { get; }
         protected ISettingProvider SettingProvider { get; }
         protected ISessionPermissionChecker SessionPermissionChecker { get; }
-        protected ISessionUnitIdGenerator SessionUnitIdGenerator { get; }
         protected List<ChatObjectTypeEnums> DisallowCreateList { get; set; } = new List<ChatObjectTypeEnums>() {
             ChatObjectTypeEnums.Robot,
             ChatObjectTypeEnums.Anonymous,
@@ -58,8 +56,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
             IRepository<SessionPermissionUnitGrant> sessionPermissionUnitGrantRepository,
             IUnitOfWorkManager unitOfWorkManager,
             ISettingProvider settingProvider,
-            ISessionPermissionChecker sessionPermissionChecker,
-            ISessionUnitIdGenerator sessionUnitIdGenerator)
+            ISessionPermissionChecker sessionPermissionChecker)
         {
             Repository = repository;
             SessionUnitRepository = sessionUnitRepository;
@@ -73,7 +70,6 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
             UnitOfWorkManager = unitOfWorkManager;
             SettingProvider = settingProvider;
             SessionPermissionChecker = sessionPermissionChecker;
-            SessionUnitIdGenerator = sessionUnitIdGenerator;
         }
 
         protected virtual async Task CheckMaxSessionUnitCountAsync(long ownerId)
@@ -243,12 +239,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                       destination: sessionRequest.Destination,
                       x =>
                       {
-                          x.JoinWay = JoinWays.Normal;
-                          x.IsPublic = true;
-                          x.IsStatic = false;
-                          x.IsDisplay = true;
-                          x.IsVisible = true;
-                          x.IsInputEnabled = true;
+                          x.JoinWay = JoinWays.Request;
                       });
 
                 switch (sessionRequest.Destination.ObjectType)
@@ -264,12 +255,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                               destination: sessionRequest.Owner,
                               x =>
                               {
-                                  x.JoinWay = JoinWays.Normal;
-                                  x.IsPublic = true;
-                                  x.IsStatic = false;
-                                  x.IsDisplay = true;
-                                  x.IsVisible = true;
-                                  x.IsInputEnabled = true;
+                                  x.JoinWay = JoinWays.Request;
                               });
 
                         await MessageSender.SendCmdAsync(destinationSessionUnit, new MessageInput<CmdContentInfo>()
@@ -296,12 +282,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
                                  destination: sessionRequest.Destination,
                                  x =>
                                  {
-                                     x.JoinWay = JoinWays.Normal;
-                                     x.IsPublic = false;
-                                     x.IsStatic = false;
-                                     x.IsDisplay = true;
-                                     x.IsVisible = true;
-                                     x.IsInputEnabled = true;
+                                     x.JoinWay = JoinWays.Request;
                                  });
 
                         await MessageSender.SendCmdAsync(roomOrSquareSessionUnit, new MessageInput<CmdContentInfo>()

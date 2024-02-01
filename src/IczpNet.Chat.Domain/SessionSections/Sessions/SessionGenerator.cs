@@ -19,11 +19,9 @@ namespace IczpNet.Chat.SessionSections.Sessions
     {
         protected IMessageRepository MessageRepository => LazyServiceProvider.LazyGetRequiredService<IMessageRepository>();
         protected IRepository<Session, Guid> SessionRepository => LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
-        protected ISessionUnitRepository SessionUnitRepository => LazyServiceProvider.LazyGetRequiredService<ISessionUnitRepository>();
         protected IChannelResolver ChannelResolver => LazyServiceProvider.LazyGetRequiredService<IChannelResolver>();
         protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
         protected ChatObjectManager ChatObjectManager => LazyServiceProvider.LazyGetRequiredService<ChatObjectManager>();
-        protected ISessionUnitIdGenerator SessionUnitIdGenerator => LazyServiceProvider.LazyGetRequiredService<ISessionUnitIdGenerator>();
         public SessionGenerator() { }
 
         protected virtual Task<Guid> MakeSesssionIdAsync(string input)
@@ -217,12 +215,11 @@ namespace IczpNet.Chat.SessionSections.Sessions
 
                 if (!isAny)
                 {
-                    list.Add(new SessionUnit(
-                    idGenerator: SessionUnitIdGenerator,
-                    session: session,
-                    owner: shopWaiter,
-                    destination: destination,
-                    x => x.JoinWay = JoinWays.AutoJoin));
+                    list.Add(SessionUnitManager.Generate(
+                        session: session,
+                        owner: shopWaiter,
+                        destination: destination,
+                        x => x.JoinWay = JoinWays.AutoJoin));
                 }
             }
 
@@ -258,11 +255,11 @@ namespace IczpNet.Chat.SessionSections.Sessions
                 {
                     if (!unitList.Any(x => x.OwnerId == message.SenderId.Value && x.DestinationId == message.ReceiverId.Value))
                     {
-                        unitList.Add(new SessionUnit(idGenerator: SessionUnitIdGenerator, session, message.Sender, message.Receiver));
+                        unitList.Add(SessionUnitManager.Generate(session, message.Sender, message.Receiver, null));
                     }
                     if (!unitList.Any(x => x.OwnerId == message.ReceiverId.Value && x.DestinationId == message.SenderId.Value))
                     {
-                        unitList.Add(new SessionUnit(idGenerator: SessionUnitIdGenerator, session, message.Receiver, message.Sender));
+                        unitList.Add(SessionUnitManager.Generate(session, message.Receiver, message.Sender, null));
                     }
                 }
                 session.SetMessageList(item.Items);

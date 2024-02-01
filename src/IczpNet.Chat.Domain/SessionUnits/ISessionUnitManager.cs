@@ -25,6 +25,8 @@ namespace IczpNet.Chat.SessionUnits
 
         SessionUnit Create(Session session, ChatObject owner, ChatObject destination, Action<SessionUnitSetting> action);
 
+        SessionUnit Generate(Session session, ChatObject owner, ChatObject destination, Action<SessionUnitSetting> action);
+
         Task<SessionUnit> CreateIfNotContainsAsync(SessionUnit sessionUnit);
 
         Task<SessionUnit> CreateIfNotContainsAsync(Session session, ChatObject owner, ChatObject destination, Action<SessionUnitSetting> setting);
