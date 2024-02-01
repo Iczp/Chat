@@ -115,6 +115,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             Assert.If(senderSessionUnit.Setting.MuteExpireTime > Clock.Now, $"Unable to send message,sessionUnit has been muted.senderSessionUnitId:{senderSessionUnit.Id}");
 
+            // Create SessionUnit By Message
             await CreateSessionUnitByMessageAsync(senderSessionUnit);
 
             //cache
@@ -163,7 +164,7 @@ namespace IczpNet.Chat.MessageSections.Messages
             //remind List
             //if (remindList != null)
             //{
-            sessionUnitIncrementArgs.RemindSessionUnitIdList = await GetRemindIdListAsync(senderSessionUnit, message, remindList);
+            sessionUnitIncrementArgs.RemindSessionUnitIdList = await ApplyRemindIdListAsync(senderSessionUnit, message, remindList);
             //}
 
             //sessionUnitCount
@@ -251,7 +252,7 @@ namespace IczpNet.Chat.MessageSections.Messages
         [GeneratedRegex("@([^@ ]+) ?")]
         private static partial Regex RemindNameRegex();
 
-        private async Task<List<Guid>> GetReminderIdListForTextContentAsync(SessionUnit senderSessionUnit, Message message)
+        private async Task<List<Guid>> ApplyReminderIdListForTextContentAsync(SessionUnit senderSessionUnit, Message message)
         {
             var unitIdList = new List<Guid>();
             //@XXX
@@ -303,9 +304,9 @@ namespace IczpNet.Chat.MessageSections.Messages
             return unitIdList;
         }
 
-        protected virtual async Task<List<Guid>> GetRemindIdListAsync(SessionUnit senderSessionUnit, Message message, List<Guid> remindIdList)
+        protected virtual async Task<List<Guid>> ApplyRemindIdListAsync(SessionUnit senderSessionUnit, Message message, List<Guid> remindIdList)
         {
-            var finalRemindIdList = await GetReminderIdListForTextContentAsync(senderSessionUnit, message);
+            var finalRemindIdList = await ApplyReminderIdListForTextContentAsync(senderSessionUnit, message);
 
             if (remindIdList.IsAny())
             {

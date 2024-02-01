@@ -376,6 +376,11 @@ namespace IczpNet.Chat.SessionUnits
             LastSendMessage = message;
             LastSendTime = message.CreationTime;
         }
+        internal virtual void SetLastSendMessage(long messageId, DateTime lastSendTime)
+        {
+            LastSendMessageId = messageId;
+            LastSendTime = lastSendTime;
+        }
         internal virtual void SetIsCreator(bool v)
         {
             IsCreator = v;

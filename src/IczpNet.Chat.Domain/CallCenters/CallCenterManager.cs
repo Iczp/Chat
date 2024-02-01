@@ -73,17 +73,18 @@ namespace IczpNet.Chat.CallCenters
             waiterSessionUnit.Setting.IsInputEnabled = true;
             if (isNotice)
             {
-                await MessageSender.SendCmdAsync(sessionUnit, new MessageInput<CmdContentInfo>()
+                var message = await MessageSender.SendCmdAsync(sessionUnit, new MessageInput<CmdContentInfo>()
                 {
                     Content = new CmdContentInfo()
                     {
                         Cmd = MessageKeyNames.Transfer,
                         Text = new TextTemplate("{source} 转接给 {destination}")
-                         .WithData("source", new SessionUnitTextTemplate(sessionUnit))
-                         .WithData("destination", new SessionUnitTextTemplate(waiterSessionUnit))
-                         .ToString(),
+                           .WithData("source", new SessionUnitTextTemplate(sessionUnit))
+                           .WithData("destination", new SessionUnitTextTemplate(waiterSessionUnit))
+                           .ToString(),
                     }
                 });
+                sessionUnit.Setting.ReadedMessageId = message.Id;
             }
             return waiterSessionUnit;
         }
