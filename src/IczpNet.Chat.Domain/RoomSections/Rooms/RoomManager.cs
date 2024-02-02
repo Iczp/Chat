@@ -7,6 +7,7 @@ using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.Options;
+using IczpNet.Chat.SessionSections.SessionRequests;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.TextTemplates;
@@ -169,7 +170,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
             var creator = await ChatObjectManager.GetItemByCacheAsync(ownerId.Value);
 
             creatorText = new TextTemplate("{creator} 创建群聊 '{name}',")
-                .WithData("name", new ChatObjectTextTemplate(room.Id, room.Name))
+                .WithData("name", new SessionUnitTextTemplate(roomSessionUnit.Id, room.Name))
                 .WithData("creator", new SessionUnitTextTemplate(creatorSessionUnit.Id, creator.Name))
                 .ToString();
         }
@@ -281,7 +282,18 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
     }
 
     //发送群消息
-    protected virtual async Task SendRoomMessageAsync(ChatObject room, CmdContentInfo content)
+    protected virtual Task SendRoomMessageAsync(ChatObject room, CmdContentInfo content)
+    {
+        return SendRoomMessageAsync(room, x => content);
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="room"></param>
+    /// <param name="func"></param>
+    /// <returns></returns>
+    protected virtual async Task SendRoomMessageAsync(ChatObject room, Func<SessionUnit, CmdContentInfo> func)
     {
         //Find the room session unit
         var roomSessionUnit = await SessionUnitManager.FindAsync(room.Id, room.Id);
@@ -298,6 +310,8 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
             //Save the changes
             await UnitOfWorkManager.Current.SaveChangesAsync();
         }
+
+        var content = func(roomSessionUnit);
 
         //Send the room message
         await SendRoomMessageAsync(roomSessionUnit, content);
@@ -375,12 +389,12 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
     {
         var entity = await ChatObjectManager.UpdateNameAsync(sessionUnit.DestinationId.Value, name);
 
-        await SendRoomMessageAsync(sessionUnit.Destination, new CmdContentInfo()
+        await SendRoomMessageAsync(sessionUnit.Destination, x => new CmdContentInfo()
         {
             //Cmd = Message
             Text = new TextTemplate("{operator} 更新群名称:'{name}'")
                     .WithData("operator", new SessionUnitTextTemplate(sessionUnit))
-                    .WithData("name", new ChatObjectTextTemplate(entity))
+                    .WithData("name", new SessionUnitTextTemplate(x.Id, entity.Name))
                     .ToString(),
         });
         return entity;

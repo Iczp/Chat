@@ -24,6 +24,8 @@ namespace IczpNet.Chat.SessionUnits.Dtos
 
         public virtual int FollowingCount { get; set; }
 
+        public virtual bool IsWaiter { get; set; }
+
         public virtual double Sorting { get; set; }
 
         public virtual double Ticks { get; set; }

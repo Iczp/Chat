@@ -243,6 +243,11 @@ namespace IczpNet.Chat.SessionUnits
         [NotMapped]
         public virtual int? Badge { get; protected set; }
 
+        /// <summary>
+        /// 是否客服
+        /// </summary>
+        [NotMapped]
+        public virtual bool IsWaiter => IsWaiterOfDestination() && IsWaiterOfOwner();
 
         protected SessionUnit() { }
 
@@ -305,6 +310,20 @@ namespace IczpNet.Chat.SessionUnits
         {
             Badge = badge;
             return this;
+        }
+
+        public virtual bool IsWaiterOfDestination()
+        {
+            var destinationObjectTypes = new List<ChatObjectTypeEnums?>() { ChatObjectTypeEnums.Personal, ChatObjectTypeEnums.Anonymous, ChatObjectTypeEnums.Customer };
+
+            return destinationObjectTypes.Contains(DestinationObjectType);
+        }
+
+        public virtual bool IsWaiterOfOwner()
+        {
+            var shopObjectTypes = new List<ChatObjectTypeEnums?>() { ChatObjectTypeEnums.ShopKeeper, ChatObjectTypeEnums.ShopWaiter };
+
+            return shopObjectTypes.Contains(OwnerObjectType);
         }
 
         internal virtual void SetTopping(bool isTopping)

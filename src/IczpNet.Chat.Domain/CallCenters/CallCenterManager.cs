@@ -46,11 +46,9 @@ namespace IczpNet.Chat.CallCenters
 
             Assert.If(sessionUnit.OwnerId == waiterId, "Unable to transfer to oneself");
 
-            var shopObjectTypes = new List<ChatObjectTypeEnums?>() { ChatObjectTypeEnums.ShopKeeper, ChatObjectTypeEnums.ShopWaiter };
+            Assert.If(!sessionUnit.IsWaiterOfDestination(), "Destination object type error");
 
-            var ownerObjectType = sessionUnit.OwnerObjectType;
-
-            Assert.If(!shopObjectTypes.Contains(ownerObjectType), "Object Type Error");
+            Assert.If(!sessionUnit.IsWaiterOfOwner(), "Owner object type error");
 
             Assert.If(!await ChatObjectManager.IsSomeRootAsync(sessionUnit.OwnerId, waiterId), "Is not some root");
 
