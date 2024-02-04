@@ -38,6 +38,11 @@ public class SessionUnitSettingDto : SessionUnitSettingSimpleDto
     public virtual bool IsShowReaded { get; set; }
 
     /// <summary>
+    /// 是否隐藏角标
+    /// </summary>
+    public virtual bool IsHideBadge { get; set; }
+
+    /// <summary>
     /// 聊天背景，默认为 null
     /// </summary>
     public virtual string BackgroundImage { get; set; }

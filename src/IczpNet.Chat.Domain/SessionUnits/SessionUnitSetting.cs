@@ -200,6 +200,12 @@ namespace IczpNet.Chat.SessionUnits
         public virtual bool IsInputEnabled { get; set; } = true;
 
         /// <summary>
+        /// 是否隐藏角标
+        /// </summary>
+        [Comment("是否隐藏角标")]
+        public virtual bool IsHideBadge { get; set; } = false;
+
+        /// <summary>
         /// 是否可用
         /// </summary>
         [Comment("是否可用")]
