@@ -34,7 +34,7 @@ public class SettingChangedCommandHander : CommandHandlerBase
 
         Assert.If(!commandPayload.Command.Any(), "Commands is null.");
 
-        var onlineList = (await ConnectionManager.GetAllAsync())
+        var onlineList = (await PoolsManager.GetAllAsync())
             //.Where(x => x.ChatObjectIdList.Any(d => chatObjectIdList.Contains(d)))
             .ToList();
 

@@ -35,7 +35,7 @@ public abstract class SessionIdCommandHandler : CommandHandlerBase
             .Select(x => x.OwnerId)
             .ToList();
 
-        var onlineList = (await ConnectionManager.GetAllAsync())
+        var onlineList = (await PoolsManager.GetAllAsync())
             .Where(x => x.ChatObjectIdList.Any(d => chatObjectIdList.Contains(d)))
             .ToList();
 
@@ -68,7 +68,7 @@ public abstract class SessionIdCommandHandler : CommandHandlerBase
                 Payload = commandPayload.Payload,
             });
 
-            await ConnectionManager.SendMessageAsync(onlineSessionInfo, message);
+            await PoolsManager.SendMessageAsync(onlineSessionInfo, message);
         }
     }
 }

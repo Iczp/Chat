@@ -106,6 +106,7 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<Scoped> Scoped { get; }
 
     DbSet<Menu> Menu { get; }
+
     DbSet<Developer> Developer { get; }
 
     DbSet<Connection> Connection { get; }

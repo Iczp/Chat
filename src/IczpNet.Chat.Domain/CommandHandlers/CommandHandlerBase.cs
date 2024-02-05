@@ -4,7 +4,7 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Json;
 using Volo.Abp.Uow;
 using Volo.Abp.Domain.Services;
-using IczpNet.Pusher.Connections;
+using IczpNet.Pusher.Pools;
 using IczpNet.Pusher.Commands;
 using IczpNet.Chat.SessionUnits;
 
@@ -14,7 +14,7 @@ public abstract class CommandHandlerBase : DomainService, ICommandHandler, ITran
 {
     protected IUnitOfWorkManager UnitOfWorkManager => LazyServiceProvider.LazyGetRequiredService<IUnitOfWorkManager>();
     protected IJsonSerializer JsonSerializer => LazyServiceProvider.LazyGetRequiredService<IJsonSerializer>();
-    protected IConnectionManager ConnectionManager => LazyServiceProvider.LazyGetRequiredService<IConnectionManager>();
+    protected IPoolsManager PoolsManager => LazyServiceProvider.LazyGetRequiredService<IPoolsManager>();
     protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
     public CommandHandlerBase() { }
 

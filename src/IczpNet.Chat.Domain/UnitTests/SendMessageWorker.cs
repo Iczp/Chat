@@ -13,7 +13,7 @@
 //using Volo.Abp.Threading;
 //using Volo.Abp.Uow;
 
-//namespace IczpNet.Chat.Connections
+//namespace IczpNet.Chat.Pools
 //{
 //    public class SendMessageWorker : AsyncPeriodicBackgroundWorkerBase
 //    {
