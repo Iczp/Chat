@@ -297,11 +297,12 @@ public abstract class CrudTreeChatAppService<
     /// </summary>
     /// <param name="maxResultCount">每次修复最大数量（过多可能导致数据库超时）</param>
     /// <param name="skinCount">跳过数量</param>
+    /// <param name="sorting"></param>
     /// <returns></returns>
     [HttpPost]
-    public override Task<string> RepairDataAsync(int maxResultCount = 100, int skinCount = 0)
+    public override Task<string> RepairDataAsync(int maxResultCount = 100, int skinCount = 0, string sorting = null)
     {
-        return base.RepairDataAsync(maxResultCount, skinCount);
+        return base.RepairDataAsync(maxResultCount, skinCount, sorting);
     }
     #endregion
 }

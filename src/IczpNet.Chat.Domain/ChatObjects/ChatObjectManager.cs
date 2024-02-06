@@ -285,10 +285,5 @@ namespace IczpNet.Chat.ChatObjects
 
             return await base.UpdateAsync(entity, entity.ParentId, isUnique: false);
         }
-
-        public override Task<int> RepairDataAsync(int maxResultCount = 100, int skinCount = 0)
-        {
-            return base.RepairDataAsync(maxResultCount, skinCount);
-        }
     }
 }
