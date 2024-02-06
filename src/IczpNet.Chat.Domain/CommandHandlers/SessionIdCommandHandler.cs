@@ -31,7 +31,7 @@ public abstract class SessionIdCommandHandler : CommandHandlerBase
 
         var chatObjectIdList = sessionUnitInfoList
             .Where(x => x != null)
-            //.Where(x => x.ServiceStatus == ServiceStatus.Normal)
+            //.Where(x => x.ServiceStatus == ServiceStatus.Online)
             .Select(x => x.OwnerId)
             .ToList();
 

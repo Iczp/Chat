@@ -68,7 +68,7 @@ public abstract class ChatAppService : ApplicationService
             return false;
         }
 
-        var chatObjectIdList = await ChatObjectManager.GetIdListByUserId(appUserId.Value);
+        var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(appUserId.Value);
 
         return chatObjectIdList.Any(x => ownerIdList.Contains(x));
     }

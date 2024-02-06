@@ -136,6 +136,7 @@ namespace IczpNet.Chat.ChatObjects
         /// <summary>
         /// 客服状态
         /// </summary>
+        [NotMapped]
         public virtual ServiceStatus? ServiceStatus { get; protected set; }
 
         /// <summary>

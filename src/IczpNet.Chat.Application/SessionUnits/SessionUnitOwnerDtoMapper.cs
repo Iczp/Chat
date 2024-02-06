@@ -10,12 +10,18 @@ namespace IczpNet.Chat.SessionUnits
     {
         public SessionUnitOwnerDto Map(SessionUnit source)
         {
-            throw new NotImplementedException();
+            return new SessionUnitOwnerDto()
+            {
+                Id = source.Id,
+                Ticks = 456,
+            };
         }
 
         public SessionUnitOwnerDto Map(SessionUnit source, SessionUnitOwnerDto destination)
         {
-            throw new NotImplementedException();
+            destination.Ticks = 123;
+
+            return destination;
         }
     }
 }

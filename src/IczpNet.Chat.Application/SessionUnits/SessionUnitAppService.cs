@@ -456,7 +456,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     [HttpGet]
     public async Task<List<BadgeDto>> GetBadgeByUserIdAsync([Required] Guid userId, bool? isImmersed = null)
     {
-        var chatObjectIdList = await ChatObjectManager.GetIdListByUserId(userId);
+        var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(userId);
 
         await CheckPolicyForUserAsync(chatObjectIdList, () => CheckPolicyAsync(GetBadgePolicyName));
 

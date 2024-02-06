@@ -2,6 +2,7 @@
 using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.ServiceStates;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
@@ -52,6 +53,10 @@ namespace IczpNet.Chat.ChatObjects
         Task<ChatObjectDto> SetVerificationMethodAsync(long id, VerificationMethods verificationMethod);
 
         Task<ChatObjectDetailDto> GetDetailAsync(long id);
+
+        Task<ServiceStatusCacheItem> GetServiceStatusAsync(long id);
+
+        Task<ServiceStatusCacheItem> SetServiceStatusAsync(long id, ServiceStatus status);
 
     }
 }

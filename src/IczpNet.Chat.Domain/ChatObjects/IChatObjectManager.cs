@@ -36,9 +36,9 @@ namespace IczpNet.Chat.ChatObjects
 
         Task<List<ChatObject>> GetAllListAsync(ChatObjectTypeEnums objectType);
 
-        Task<List<ChatObject>> GetListByUserId(Guid userId);
+        Task<List<ChatObject>> GetListByUserIdAsync(Guid userId);
 
-        Task<List<long>> GetIdListByUserId(Guid userId);
+        Task<List<long>> GetIdListByUserIdAsync(Guid userId);
 
         //Task<ChatObject> GetWalletAsync(Guid chatObjectId);
 

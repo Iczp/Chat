@@ -7,8 +7,8 @@ using IczpNet.Chat.ChatObjectCategorys;
 using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Permissions;
+using IczpNet.Chat.ServiceStates;
 using IczpNet.Chat.SessionSections.SessionPermissions;
-using IdentityModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -18,7 +18,6 @@ using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
-using Volo.Abp.Domain.Entities;
 using Volo.Abp.Users;
 
 namespace IczpNet.Chat.ChatObjects;
@@ -46,16 +45,19 @@ public class ChatObjectAppService
     //protected IChatObjectManager ChatObjectManager { get; }
     protected IChatObjectCategoryManager ChatObjectCategoryManager { get; }
     protected ISessionPermissionChecker SessionPermissionChecker { get; }
+    protected IServiceStateManager ServiceStateManager { get; }
 
     public ChatObjectAppService(
         IChatObjectRepository repository,
         IChatObjectManager chatObjectManager,
         IChatObjectCategoryManager chatObjectCategoryManager,
-        ISessionPermissionChecker sessionPermissionChecker) : base(repository, chatObjectManager)
+        ISessionPermissionChecker sessionPermissionChecker,
+        IServiceStateManager serviceStateManager) : base(repository, chatObjectManager)
     {
         ChatObjectCategoryManager = chatObjectCategoryManager;
         //ChatObjectManager = chatObjectManager;
         SessionPermissionChecker = sessionPermissionChecker;
+        ServiceStateManager = serviceStateManager;
     }
 
     protected override async Task<IQueryable<ChatObject>> CreateFilteredQueryAsync(ChatObjectGetListInput input)
@@ -288,5 +290,15 @@ public class ChatObjectAppService
 
         return await MapToEntityDetailAsync(entity);
     }
+    [HttpGet]
+    public async Task<ServiceStatusCacheItem> GetServiceStatusAsync(long id)
+    {
+        return await ServiceStateManager.GetAsync(id);
+    }
 
+    [HttpPost]
+    public async Task<ServiceStatusCacheItem> SetServiceStatusAsync(long id, ServiceStatus status)
+    {
+        return await ServiceStateManager.SetAsync(id, status);
+    }
 }

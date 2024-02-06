@@ -46,7 +46,8 @@ public class ChatApplicationAutoMapperProfile : Profile
          * into multiple profile classes for a better organization. */
 
         //ChatObject
-        CreateMap<ChatObject, ChatObjectDto>();
+        CreateMap<ChatObject, ChatObjectDto>()
+            .ForMember(x => x.ServiceStatus, opts => opts.MapFrom<ChatObjectServiceStutusResolver>());
         CreateMap<ChatObject, ChatObjectSimpleDto>();
         CreateMap<ChatObject, ChatObjectDetailDto>()
             //.ForMember(x => x.SenderMessageCount, o => o.MapFrom(x => x.SenderMessageList.Count))

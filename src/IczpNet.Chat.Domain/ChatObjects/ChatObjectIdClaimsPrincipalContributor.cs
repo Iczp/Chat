@@ -27,7 +27,7 @@ namespace IczpNet.Chat.ChatObjects
                 return;
             }
 
-            var chatObjectIdList = await ChatObjectManager.GetIdListByUserId(userId.Value);
+            var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(userId.Value);
 
             foreach (var chatObjectId in chatObjectIdList)
             {

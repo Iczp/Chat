@@ -137,12 +137,12 @@ namespace IczpNet.Chat.ChatObjects
             return await base.UpdateAsync(entity, newParentId, isUnique);
         }
 
-        public virtual async Task<List<ChatObject>> GetListByUserId(Guid userId)
+        public virtual async Task<List<ChatObject>> GetListByUserIdAsync(Guid userId)
         {
             return await Repository.GetListAsync(x => x.AppUserId == userId);
         }
 
-        public virtual Task<List<long>> GetIdListByUserId(Guid userId)
+        public virtual Task<List<long>> GetIdListByUserIdAsync(Guid userId)
         {
             return UserChatObjectCache.GetOrAddAsync(userId, async () =>
             {
