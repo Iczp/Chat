@@ -5,11 +5,11 @@ namespace IczpNet.Chat.ServiceStates;
 
 public class ServiceStatusCacheItem
 {
-    public ServiceStatus? Status { get; protected set; } = null;
+    public ServiceStatus? Status { get; set; }
 
-    public DateTime? ActiveTime { get; protected set; }
+    public DateTime? ActiveTime { get; set; }
 
-    public long? ChatObjectId { get; protected set; }
+    public long? ChatObjectId { get; set; }
 
     public ServiceStatusCacheItem() { }
 

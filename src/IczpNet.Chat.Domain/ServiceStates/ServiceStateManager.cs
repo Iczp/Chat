@@ -36,19 +36,9 @@ public class ServiceStateManager : DomainService, IServiceStateManager
         };
         await Cache.SetAsync(chatObjectId, val, options);
 
-        
-
         Logger.LogInformation($"Set chatObjectId:{chatObjectId},ServiceStatus:{status}");
 
         Logger.LogInformation($"ServiceStatusCacheItem Set:{val}");
-
-        var v = await Cache.GetOrAddAsync(chatObjectId, () => Task.FromResult(val), () => options);
-
-        Logger.LogInformation($"ServiceStatusCacheItem Get:{v}");
-
-        //var v2 =  Cache.Get(chatObjectId);
-
-        //Logger.LogInformation($"ServiceStatusCacheItem GetV2:{v2}");
 
         return val;
     }

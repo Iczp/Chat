@@ -33,7 +33,7 @@ namespace IczpNet.Chat.ChatObjects
     [Index(nameof(IsEnabled))]
     [Index(nameof(IsDefault))]
     [Index(nameof(IsDeveloper))]
-    
+
     [Index(nameof(CreationTime), AllDescending = true)]
 
     public class ChatObject : BaseTreeEntity<ChatObject, long>, IName, IChatObject, IHasSimpleStateCheckers<ChatObject>, IIsStatic, IIsActive, IIsPublic, IIsEnabled, IIsDefault, IAppUserId
@@ -137,7 +137,7 @@ namespace IczpNet.Chat.ChatObjects
         /// 客服状态
         /// </summary>
         [NotMapped]
-        public virtual ServiceStatus? ServiceStatus { get; protected set; }
+        public virtual ServiceStatus? ServiceStatus => null;
 
         /// <summary>
         /// 是否开发者
