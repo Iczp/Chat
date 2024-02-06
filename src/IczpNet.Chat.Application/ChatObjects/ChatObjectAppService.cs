@@ -9,6 +9,7 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.ServiceStates;
 using IczpNet.Chat.SessionSections.SessionPermissions;
+using IczpNet.Pusher.DeviceIds;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -46,18 +47,21 @@ public class ChatObjectAppService
     protected IChatObjectCategoryManager ChatObjectCategoryManager { get; }
     protected ISessionPermissionChecker SessionPermissionChecker { get; }
     protected IServiceStateManager ServiceStateManager { get; }
+    protected IDeviceIdResolver DeviceIdResolver { get; }
 
     public ChatObjectAppService(
         IChatObjectRepository repository,
         IChatObjectManager chatObjectManager,
         IChatObjectCategoryManager chatObjectCategoryManager,
         ISessionPermissionChecker sessionPermissionChecker,
-        IServiceStateManager serviceStateManager) : base(repository, chatObjectManager)
+        IServiceStateManager serviceStateManager,
+        IDeviceIdResolver deviceIdResolver) : base(repository, chatObjectManager)
     {
         ChatObjectCategoryManager = chatObjectCategoryManager;
         //ChatObjectManager = chatObjectManager;
         SessionPermissionChecker = sessionPermissionChecker;
         ServiceStateManager = serviceStateManager;
+        DeviceIdResolver = deviceIdResolver;
     }
 
     protected override async Task<IQueryable<ChatObject>> CreateFilteredQueryAsync(ChatObjectGetListInput input)
@@ -291,14 +295,21 @@ public class ChatObjectAppService
         return await MapToEntityDetailAsync(entity);
     }
     [HttpGet]
-    public async Task<ServiceStatusCacheItem> GetServiceStatusAsync(long id)
+    public async Task<List<ServiceStatusCacheItem>> GetServiceStatusAsync(long id)
     {
         return await ServiceStateManager.GetAsync(id);
     }
 
     [HttpPost]
-    public async Task<ServiceStatusCacheItem> SetServiceStatusAsync(long id, ServiceStatus status)
+    public async Task<List<ServiceStatusCacheItem>> SetServiceStatusAsync(long id, ServiceStatus status)
     {
-        return await ServiceStateManager.SetAsync(id, status);
+        var deviceId = await DeviceIdResolver.GetDeviceIdAsync();
+
+        if (deviceId == null)
+        {
+            //...
+        }
+
+        return await ServiceStateManager.SetAsync(id, deviceId, status);
     }
 }

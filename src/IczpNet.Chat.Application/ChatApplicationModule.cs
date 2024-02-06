@@ -56,7 +56,7 @@ public class ChatApplicationModule : AbpModule
 
         Configure<PermissionManagementOptions>(options =>
         {
-            //options.ManagementProviders.Add<ChatObjectPermissionManagementProvider>();
+            //distributedCacheEntryOptions.ManagementProviders.Add<ChatObjectPermissionManagementProvider>();
         });
 
         Configure<AbpAutoMapperOptions>(options =>
@@ -67,8 +67,8 @@ public class ChatApplicationModule : AbpModule
         Configure<AuthorizationOptions>(options =>
         {
             //TODO: Rename UpdatePolicy/DeletePolicy since it's candidate to conflicts with other modules!
-            //options.AddPolicy("BloggingUpdatePolicy", policy => policy.Requirements.Add(CommonOperations.Update));
-            //options.AddPolicy("BloggingDeletePolicy", policy => policy.Requirements.Add(CommonOperations.Delete));
+            //distributedCacheEntryOptions.AddPolicy("BloggingUpdatePolicy", policy => policy.Requirements.Add(CommonOperations.Update));
+            //distributedCacheEntryOptions.AddPolicy("BloggingDeletePolicy", policy => policy.Requirements.Add(CommonOperations.Delete));
 
             foreach (var item in SessionPermissionDefinitionConsts.GetAll())
             {

@@ -2,7 +2,10 @@
 using IczpNet.Chat.Enums;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
+using NUglify;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Services;
@@ -12,50 +15,113 @@ namespace IczpNet.Chat.ServiceStates;
 public class ServiceStateManager : DomainService, IServiceStateManager
 {
     protected IChatObjectManager ChatObjectManager { get; }
-    protected IDistributedCache<ServiceStatusCacheItem, long> Cache { get; }
+    protected IDistributedCache<List<ServiceStatusCacheItem>, long> Cache { get; }
+    protected virtual DistributedCacheEntryOptions DistributedCacheEntryOptions { get; set; } = new()
+    {
+        AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1),
+    };
 
-    public ServiceStateManager(IChatObjectManager chatObjectManager,
-        IDistributedCache<ServiceStatusCacheItem, long> cache)
+    public ServiceStateManager(
+        IChatObjectManager chatObjectManager,
+        IDistributedCache<List<ServiceStatusCacheItem>, long> cache)
     {
         ChatObjectManager = chatObjectManager;
         Cache = cache;
     }
 
-    public async Task<ServiceStatusCacheItem> GetAsync(long chatObjectId)
+    public virtual async Task<List<ServiceStatusCacheItem>> GetAsync(long chatObjectId)
     {
         return await Cache.GetAsync(chatObjectId);
     }
 
-    public async Task<ServiceStatusCacheItem> SetAsync(long chatObjectId, ServiceStatus status)
+    public virtual async Task<ServiceStatus?> GetStatusAsync(long chatObjectId)
     {
-        var val = new ServiceStatusCacheItem(chatObjectId, status);
+        var items = await GetAsync(chatObjectId);
 
-        var options = new DistributedCacheEntryOptions()
+        ServiceStatus? status = null;
+
+        if (items != null)
         {
-            AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1),
-        };
-        await Cache.SetAsync(chatObjectId, val, options);
+            status = items.Count == 1 ? items[0].Status : items.OrderByDescending(x => x.ActiveTime).FirstOrDefault().Status;
+        }
+        Logger.LogDebug($"ChatObjectId:{chatObjectId},ServiceStatus:{status}");
 
-        Logger.LogInformation($"Set chatObjectId:{chatObjectId},ServiceStatus:{status}");
-
-        Logger.LogInformation($"ServiceStatusCacheItem Set:{val}");
-
-        return val;
+        return status;
     }
 
-    public Task RemoveAsync(long chatObjectId)
+    public virtual async Task<List<ServiceStatusCacheItem>> SetAsync(long chatObjectId, string deviceId, ServiceStatus status)
     {
-        return Cache.RemoveAsync(chatObjectId);
+        var items = await Cache.GetAsync(chatObjectId);
+
+        if (items == null)
+        {
+            items = new List<ServiceStatusCacheItem>() { new ServiceStatusCacheItem(chatObjectId, deviceId, status) };
+        }
+        else
+        {
+            var item = items.FirstOrDefault(x => x.DeviceId == deviceId);
+
+            if (item != null)
+            {
+                item.Status = status;
+                item.ActiveTime = Clock.Now;
+            }
+            else
+            {
+                items.Add(new ServiceStatusCacheItem(chatObjectId, deviceId, status));
+            }
+        }
+        await Cache.SetAsync(chatObjectId, items, DistributedCacheEntryOptions);
+
+        Logger.LogInformation($"ServiceStatusCacheItem Set:{items}");
+
+        return items;
     }
 
-    public async Task SetAppUserIdAsync(Guid appUserId, ServiceStatus status)
+    public async Task RemoveDeviceAsync(long chatObjectId, string deviceId)
+    {
+        var items = await Cache.GetAsync(chatObjectId);
+
+        if (items == null)
+        {
+            return;
+        }
+
+        var item = items.FirstOrDefault(x => x.DeviceId == deviceId);
+
+        if (item != null)
+        {
+            items.Remove(item);
+        }
+        if (items.Count == 0)
+        {
+            await Cache.RemoveAsync(chatObjectId);
+            return;
+        }
+        await Cache.SetAsync(chatObjectId, items, DistributedCacheEntryOptions);
+    }
+
+    public async Task<Dictionary<long, List<ServiceStatusCacheItem>>> SetAppUserIdAsync(Guid appUserId, string deviceId, ServiceStatus status)
+    {
+        var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(appUserId);
+
+        var dic = new Dictionary<long, List<ServiceStatusCacheItem>>();
+
+        foreach (var chatObjectId in chatObjectIdList)
+        {
+            var item = await SetAsync(chatObjectId, deviceId, status);
+            dic.TryAdd(chatObjectId, item);
+        }
+        return dic;
+    }
+
+    public async Task RemoveAppUserIdAsync(Guid appUserId, string deviceId)
     {
         var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(appUserId);
 
         foreach (var chatObjectId in chatObjectIdList)
         {
-            await SetAsync(chatObjectId, status);
-            //await Cache.GetOrAddAsync(chatObjectId, () => Task.FromResult(new ServiceStatusCacheItem(status)));
+            await RemoveDeviceAsync(chatObjectId, deviceId);
         }
     }
 }

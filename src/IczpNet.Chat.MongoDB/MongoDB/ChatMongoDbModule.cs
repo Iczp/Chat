@@ -17,7 +17,7 @@ namespace IczpNet.Chat.MongoDB;
         context.Services.AddMongoDbContext<ChatMongoDbContext>(options =>
         {
                 /* Add custom repositories here. Example:
-                 * options.AddRepository<Question, MongoQuestionRepository>();
+                 * distributedCacheEntryOptions.AddRepository<Question, MongoQuestionRepository>();
                  */
         });
     }

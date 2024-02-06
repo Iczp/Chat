@@ -4,6 +4,7 @@ using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.ServiceStates;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -54,9 +55,9 @@ namespace IczpNet.Chat.ChatObjects
 
         Task<ChatObjectDetailDto> GetDetailAsync(long id);
 
-        Task<ServiceStatusCacheItem> GetServiceStatusAsync(long id);
+        Task<List<ServiceStatusCacheItem>> GetServiceStatusAsync(long id);
 
-        Task<ServiceStatusCacheItem> SetServiceStatusAsync(long id, ServiceStatus status);
+        Task<List<ServiceStatusCacheItem>> SetServiceStatusAsync(long id, ServiceStatus status);
 
     }
 }

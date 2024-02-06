@@ -11,12 +11,15 @@ public class ServiceStatusCacheItem
 
     public long? ChatObjectId { get; set; }
 
+    public string DeviceId { get; set; }
+
     public ServiceStatusCacheItem() { }
 
-    public ServiceStatusCacheItem(long chatObjectId, ServiceStatus status)
+    public ServiceStatusCacheItem(long chatObjectId, string deviceId, ServiceStatus status)
     {
         ChatObjectId = chatObjectId;
         Status = status;
+        DeviceId = deviceId;
         ActiveTime = DateTime.Now;
     }
 

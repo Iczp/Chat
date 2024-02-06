@@ -18,13 +18,13 @@ public class MessageSectionApplicationAutoMapperProfile : Profile
         //Message
         CreateMap<Message, MessageDto>()
             .ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()))
-            .MaxDepth(1)
+            .MaxDepth(5)
             //.ForMember(x => x.MemberCount, o => o.MapFrom(x => x.GetMemberCount()))
             ;
     
         CreateMap<Message, MessageOwnerDto>()
             .ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()))
-            .MaxDepth(1)
+            .MaxDepth(5)
             //.ForMember(x => x.MemberCount, o => o.MapFrom(x => x.GetMemberCount()))
             //.AfterMap<MessageOwnerDtoMappingAction>()
             ;
@@ -35,7 +35,7 @@ public class MessageSectionApplicationAutoMapperProfile : Profile
 
         CreateMap<Message, MessageFavoriteDto>()
             .ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()))
-            .MaxDepth(1)
+            .MaxDepth(5)
            ;
 
         CreateMap<MessageCreateInput, Message>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();

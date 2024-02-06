@@ -60,8 +60,10 @@ public class ChatApplicationAutoMapperProfile : Profile
 
         CreateMap<ChatObject, SquareDto>();
         CreateMap<ChatObject, RobotDto>();
-        CreateMap<ChatObject, ShopKeeperDto>();
-        CreateMap<ChatObject, ShopWaiterDto>();
+        CreateMap<ChatObject, ShopKeeperDto>()
+            .IncludeBase<ChatObject, ChatObjectDto>(); 
+        CreateMap<ChatObject, ShopWaiterDto>()
+            .IncludeBase<ChatObject, ChatObjectDto>();
 
         CreateMap<Developer, DeveloperDto>().ReverseMap();
 

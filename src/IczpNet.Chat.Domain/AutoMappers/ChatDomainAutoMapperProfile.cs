@@ -26,13 +26,13 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<ChatObject, ChatObjectInfo>();
 
         //Message
-        CreateMap<Message, MessageInfo>().MaxDepth(1);
-        CreateMap<Message, MessageInfo<IContentInfo>>().MaxDepth(1).ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()));
-        CreateMap<Message, MessageInfo<dynamic>>().MaxDepth(1).ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()));
+        CreateMap<Message, MessageInfo>().MaxDepth(3);
+        CreateMap<Message, MessageInfo<IContentInfo>>().MaxDepth(3).ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()));
+        CreateMap<Message, MessageInfo<dynamic>>().MaxDepth(3).ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()));
         
-        CreateMap<Message, MessageWithQuoteInfo>().MaxDepth(1);
-        CreateMap(typeof(Message), typeof(MessageInfo<>)).MaxDepth(1);
-        CreateMap(typeof(Message), typeof(MessageWithQuoteInfo<>)).MaxDepth(1);
+        CreateMap<Message, MessageWithQuoteInfo>().MaxDepth(3);
+        CreateMap(typeof(Message), typeof(MessageInfo<>)).MaxDepth(3);
+        CreateMap(typeof(Message), typeof(MessageWithQuoteInfo<>)).MaxDepth(3);
 
         //MessageContent
 
@@ -52,8 +52,8 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<RedEnvelopeContentInput, RedEnvelopeContent>().UsingMessageTemplate();
         //RedEnvelope
         CreateMap<RedEnvelopeContent, RedEnvelopeContentOutput>()
-          //.ForMember(d => d.Detail, options => options.MapFrom<DetailResolver>())
-          //.ForMember(d => d.IsFinished, options => options.MapFrom<IsFinishedResolver>())
+          //.ForMember(d => d.Detail, distributedCacheEntryOptions => distributedCacheEntryOptions.MapFrom<DetailResolver>())
+          //.ForMember(d => d.IsFinished, distributedCacheEntryOptions => distributedCacheEntryOptions.MapFrom<IsFinishedResolver>())
           ;
 
 

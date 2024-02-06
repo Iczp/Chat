@@ -26,7 +26,7 @@ public class ChatEntityFrameworkCoreModule : AbpModule
         context.Services.AddAbpDbContext<ChatDbContext>(options =>
         {
             /* Add custom repositories here. Example:
-             * options.AddRepository<Question, EfCoreQuestionRepository>();
+             * distributedCacheEntryOptions.AddRepository<Question, EfCoreQuestionRepository>();
              */
             options.AddDefaultRepositories(includeAllEntities: true);
         });
@@ -34,7 +34,7 @@ public class ChatEntityFrameworkCoreModule : AbpModule
         {
             /* The main point to change your DBMS.
              * See also IMMigrationsDbContextFactory for EF Core tooling. */
-            //options.UseSqlServer();
+            //distributedCacheEntryOptions.UseSqlServer();
             options.PreConfigure<ChatDbContext>(opts =>
             {
                 // 1.安装 Microsoft.EntityFrameworkCore.Proxies 包到你的项目(通常是 EF Core 集成项目)

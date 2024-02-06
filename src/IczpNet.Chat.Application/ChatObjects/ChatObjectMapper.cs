@@ -25,10 +25,6 @@ namespace IczpNet.Chat.ChatObjects
 
         public ChatObjectDto Map(ChatObject source, ChatObjectDto destination)
         {
-            var state = ServiceStateManager.GetAsync(source.Id).Result;
-
-            destination.ServiceStatus = state.Status;
-
             return destination;
         }
     }
