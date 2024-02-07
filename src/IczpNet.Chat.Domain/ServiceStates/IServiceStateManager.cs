@@ -19,4 +19,18 @@ public interface IServiceStateManager : ITransientDependency
     Task<Dictionary<long, List<ServiceStatusCacheItem>>> SetAppUserIdAsync(Guid appUserId, string deviceId, ServiceStatus status);
 
     Task RemoveAppUserIdAsync(Guid appUserId, string deviceId);
+
+    /// <summary>
+    /// 是否空闲
+    /// </summary>
+    /// <param name="chatObjectId"></param>
+    /// <returns></returns>
+    Task<bool> IsIdledAsync(long chatObjectId);
+
+    /// <summary>
+    /// 是否在线
+    /// </summary>
+    /// <param name="chatObjectId"></param>
+    /// <returns></returns>
+    Task<bool> IsOnlineAsync(long chatObjectId);
 }

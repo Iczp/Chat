@@ -265,7 +265,7 @@ namespace IczpNet.Chat.ChatObjects
 
             if (parent != null)
             {
-                var sp= "/";
+                var sp = parent.GetSplitString();
                 //return queryable.Any(x => x.Id != parent.Id && x.ParentId == parent.Id);
                 return queryable.Any(x => (x.FullPath + sp).StartsWith($"{parent.Id}{sp}"));
             }

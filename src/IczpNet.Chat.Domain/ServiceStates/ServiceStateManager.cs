@@ -124,4 +124,18 @@ public class ServiceStateManager : DomainService, IServiceStateManager
             await RemoveDeviceAsync(chatObjectId, deviceId);
         }
     }
+
+    /// <inheritdoc/>
+    public Task<bool> IsIdledAsync(long chatObjectId)
+    {
+        throw new NotImplementedException();
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> IsOnlineAsync(long chatObjectId)
+    {
+        var status = await GetStatusAsync(chatObjectId);
+
+        return status != null;
+    }
 }

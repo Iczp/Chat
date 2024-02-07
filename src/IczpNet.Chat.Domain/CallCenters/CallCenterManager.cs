@@ -11,32 +11,34 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Services;
 using IczpNet.Chat.TextTemplates;
+using IczpNet.Chat.ServiceStates;
+using Microsoft.Extensions.Logging;
 
 namespace IczpNet.Chat.CallCenters
 {
     public class CallCenterManager : DomainService, ICallCenterManager
     {
         protected ISessionUnitManager SessionUnitManager { get; }
-
         protected ISessionGenerator SessionGenerator { get; }
-
         protected ISessionUnitIdGenerator SessionUnitIdGenerator { get; }
-
         protected IChatObjectManager ChatObjectManager { get; }
-
         protected IMessageSender MessageSender { get; }
+        protected IServiceStateManager ServiceStateManager { get; }
+
 
         public CallCenterManager(ISessionUnitManager sessionUnitManager,
             ISessionGenerator sessionGenerator,
             ISessionUnitIdGenerator sessionUnitIdGenerator,
             IChatObjectManager chatObjectManager,
-            IMessageSender messageSender)
+            IMessageSender messageSender,
+            IServiceStateManager serviceStateManager)
         {
             SessionUnitManager = sessionUnitManager;
             SessionGenerator = sessionGenerator;
             SessionUnitIdGenerator = sessionUnitIdGenerator;
             ChatObjectManager = chatObjectManager;
             MessageSender = messageSender;
+            ServiceStateManager = serviceStateManager;
         }
 
         /// <inheritdoc/>
@@ -53,6 +55,13 @@ namespace IczpNet.Chat.CallCenters
             Assert.If(!await ChatObjectManager.IsSomeRootAsync(sessionUnit.OwnerId, waiterId), "Is not some root");
 
             var shopWaiter = await ChatObjectManager.GetAsync(waiterId);
+
+            var isOnline = await ServiceStateManager.IsOnlineAsync(waiterId);
+
+            if (!isOnline)
+            {
+                Logger.LogWarning($"Waiter Name:${shopWaiter.Name},Id:{shopWaiter.Id} is offline");
+            }
 
             var waiterSessionUnit = await SessionUnitManager.CreateIfNotContainsAsync(
                     session: sessionUnit.Session,
