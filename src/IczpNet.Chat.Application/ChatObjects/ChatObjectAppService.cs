@@ -142,14 +142,14 @@ public class ChatObjectAppService
 
     protected override Task MapToEntityAsync(ChatObjectUpdateInput updateInput, ChatObject entity)
     {
-        //owner.SetName(updateInput.Name);
+        //owner.SetName(updateInput.Title);
         return base.MapToEntityAsync(updateInput, entity);
     }
 
     protected override ChatObject MapToEntity(ChatObjectCreateInput createInput)
     {
         var entity = base.MapToEntity(createInput);
-        //owner.SetName(createInput.Name);
+        //owner.SetName(createInput.Title);
         return entity;
     }
 
@@ -219,7 +219,7 @@ public class ChatObjectAppService
 
         //return await UpdateEntityAsync(id, x =>
         //{
-        //    x.SetName(input.Name);
+        //    x.SetName(input.Title);
         //    x.SetVerificationMethod(input.VerificationMethod);
         //    x.Gender = input.Gender;
         //    x.Sorting = input.Sorting;

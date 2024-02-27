@@ -7,7 +7,6 @@ using Volo.Abp.Domain.Repositories;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 using System.Linq.Expressions;
-using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionUnits;
 
 namespace IczpNet.Chat.SessionServices
@@ -40,25 +39,20 @@ namespace IczpNet.Chat.SessionServices
         protected override async Task<IQueryable<SessionRole>> CreateFilteredQueryAsync(SessionUnit sessionUnit, SessionRoleGetListBySessionUnitInput input)
         {
             return (await base.CreateFilteredQueryAsync(sessionUnit, input))
-                .Where(x => x.SessionId.Value == sessionUnit.SessionId);
-            ;
+                .Where(x => x.SessionId.Value == sessionUnit.SessionId)
+                .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(input.Keyword))
+                ;
         }
 
-        protected override Task SetCreateEntityAsync(SessionRole entity, SessionRoleCreateBySessionUnitInput input)
+        protected override Task SetCreateEntityAsync(SessionUnit sessionUnit, SessionRole entity, SessionRoleCreateBySessionUnitInput input)
         {
+            entity.SetSessionId(sessionUnit.SessionId.Value);
+
             entity.SetPermissionGrant(input.PermissionGrant);
-            //entity.SessionId = 
-            return base.SetCreateEntityAsync(entity, input);
+
+            return base.SetCreateEntityAsync(sessionUnit, entity, input);
         }
 
-        protected override async Task<SessionRole> MapToEntityAsync(SessionUnit sessionUnit, SessionRoleCreateBySessionUnitInput input)
-        {
-            await Task.Yield();
-
-            var entity = new SessionRole(GuidGenerator.Create(), sessionUnit.SessionId.Value, input.Name);
-
-            return entity;
-        }
 
         protected override async Task CheckCreatePolicyAsync(SessionUnit sessionUnit, SessionRoleCreateBySessionUnitInput input)
         {

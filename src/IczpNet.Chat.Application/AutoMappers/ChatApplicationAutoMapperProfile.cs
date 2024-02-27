@@ -34,6 +34,8 @@ using IczpNet.Chat.ContactTags.Dtos;
 using IczpNet.Chat.ContactTags;
 using IczpNet.Chat.InvitationCodes;
 using IczpNet.Chat.InvitationCodes.Dtos;
+using IczpNet.Chat.Blobs;
+using IczpNet.Chat.Blobs.Dtos;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -165,6 +167,13 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<ContactTag, ContactTagDetailDto>();
         CreateMap<ContactTagCreateInput, ContactTag>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         CreateMap<ContactTagUpdateInput, ContactTag>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+
+        //Blob
+        CreateMap<Blob, BlobDto>();
+        CreateMap<Blob, BlobSimpleDto>();
+        CreateMap<Blob, BlobDetailDto>();
+        CreateMap<BlobCreateInput, Blob>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<BlobUpdateInput, Blob>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
 
     }
 }

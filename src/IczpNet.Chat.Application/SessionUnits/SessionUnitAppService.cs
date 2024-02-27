@@ -165,7 +165,7 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
             .WhereIf(!input.RoleId.IsEmpty(), x => x.SessionUnitRoleList.Any(x => x.SessionRoleId == input.RoleId))
             .WhereIf(!input.JoinWay.IsEmpty(), x => x.Setting.JoinWay == input.JoinWay)
             .WhereIf(!input.InviterId.IsEmpty(), x => x.Setting.InviterId == input.InviterId)
-            //.WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Owner.Name.Contains(input.Keyword))
+            //.WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Owner.Title.Contains(input.Keyword))
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordOwnerSessionUnitSpecification(input.Keyword, await ChatObjectManager.SearchKeywordByCacheAsync(input.Keyword)))
             ;
 

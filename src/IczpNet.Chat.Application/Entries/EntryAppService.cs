@@ -71,7 +71,7 @@ public class EntryAppService : ChatAppService, IEntryAppService
                 //if (entryName.IsUniqued)
                 //{
                 //    var isAny = !await EntryValueRepository.AnyAsync(x => x.EntryNameId == entryName.Id && x.Value == value.Value);
-                //    Assert.If(isAny, $"${entryName.Name}已经存在值：{value.Value}");
+                //    Assert.If(isAny, $"${entryName.Title}已经存在值：{value.Value}");
                 //}
             }
         }

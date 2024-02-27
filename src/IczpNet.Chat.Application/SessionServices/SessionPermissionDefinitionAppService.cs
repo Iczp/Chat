@@ -1,14 +1,11 @@
 ﻿using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.ChatObjects;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp;
-using Volo.Abp.Domain.Repositories;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions.Dtos;
-using IczpNet.Chat.SessionSections.Sessions;
 using System.Collections.Generic;
 using IczpNet.Chat.SessionSections.SessionOrganizations;
 using Microsoft.AspNetCore.Mvc;
@@ -34,20 +31,14 @@ public class SessionPermissionDefinitionAppService
     protected override string UpdatePolicyName { get; set; } = ChatPermissions.SessionPermissionDefinitionPermission.Update;
     protected virtual string SetIsEnabledPolicyName { get; set; } = ChatPermissions.SessionPermissionDefinitionPermission.SetIsEnabled;
     protected virtual string SetAllIsEnabledPolicyName { get; set; } = ChatPermissions.SessionPermissionDefinitionPermission.SetAllIsEnabled;
-    protected IChatObjectRepository ChatObjectRepository { get; }
-    protected IRepository<Session, Guid> SessionRepository { get; }
     protected ISessionPermissionGroupManager SessionPermissionGroupManager { get; }
     protected new ISessionPermissionDefinitionRepository Repository { get; }
 
     public SessionPermissionDefinitionAppService(
         ISessionPermissionDefinitionRepository repository,
-        IChatObjectRepository chatObjectRepository,
-        IRepository<Session, Guid> sessionRepository,
         ISessionPermissionGroupManager sessionPermissionGroupManager) : base(repository)
     {
         Repository = repository;
-        ChatObjectRepository = chatObjectRepository;
-        SessionRepository = sessionRepository;
         SessionPermissionGroupManager = sessionPermissionGroupManager;
     }
 
@@ -117,4 +108,6 @@ public class SessionPermissionDefinitionAppService
 
         return await Repository.BatchUpdateIsEnabledAsync(isEnabled);
     }
+
+   
 }

@@ -1,6 +1,8 @@
 ﻿using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.SessionUnits.Dtos
@@ -55,14 +57,16 @@ namespace IczpNet.Chat.SessionUnits.Dtos
 
         //public virtual bool IsStatic { get; set; }
 
-        public virtual ChatObjectDto Owner { get; set; }
-
-        public virtual SessionUnitSettingSimpleDto Setting { get; set; }
-
         /// <summary>
         /// CreationTime
         /// </summary>
         public virtual DateTime CreationTime { get; set; }
+
+        public virtual ChatObjectDto Owner { get; set; }
+
+        public virtual SessionUnitSettingSimpleDto Setting { get; set; }
+
+        public virtual List<SessionRoleSimpleDto> RoleList { get; set; }
 
     }
 }

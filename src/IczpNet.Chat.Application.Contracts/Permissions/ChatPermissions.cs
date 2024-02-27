@@ -185,4 +185,11 @@ public class ChatPermissions
         public const string Update = Default + "." + nameof(Update);
         public const string Delete = Default + "." + nameof(Delete);
     }
+    public class BlobPermission
+    {
+        public const string Default = GroupName + "." + nameof(BlobPermission);
+        public const string Create = Default + "." + nameof(Create);
+        public const string Update = Default + "." + nameof(Update);
+        public const string Delete = Default + "." + nameof(Delete);
+    }
 }

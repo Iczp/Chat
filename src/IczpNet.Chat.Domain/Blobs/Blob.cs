@@ -22,7 +22,7 @@ namespace IczpNet.Chat.Blobs
         /// <summary>
         /// Blob名称
         /// </summary>
-        [MaxLength(256)]
+        [MaxLength(500)]
         public virtual string Name { get; set; }
 
         /// <summary>
@@ -39,7 +39,7 @@ namespace IczpNet.Chat.Blobs
         /// <summary>
         /// 类型 ContentType
         /// </summary>
-        [MaxLength(50)]
+        [MaxLength(100)]
         public virtual string MimeType { get; set; }
 
         /// <summary>
@@ -66,7 +66,7 @@ namespace IczpNet.Chat.Blobs
 
         public virtual BlobContent Content { get; set; } = new BlobContent();
 
-        protected Blob() { }
+        public Blob() { }
 
         public Blob(Guid id, string container) : base(id)
         {

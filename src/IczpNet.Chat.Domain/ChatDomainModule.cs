@@ -1,21 +1,16 @@
 using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.Connections;
 using IczpNet.Chat.HttpRequests;
 using IczpNet.Chat.SessionUnits;
-using IczpNet.Chat.TextTemplates;
-using IczpNet.Chat.UnitTests;
 using IczpNet.Pusher;
 using IczpNet.Pusher.ShortIds;
-using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.DependencyInjection;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.BackgroundJobs;
-using Volo.Abp.BackgroundWorkers;
+using Volo.Abp.BlobStoring;
 using Volo.Abp.Domain;
 using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement.Identity;
@@ -35,6 +30,9 @@ namespace IczpNet.Chat;
 [DependsOn(typeof(AbpPermissionManagementDomainIdentityModule))]
 [DependsOn(typeof(PusherDomainModule))]
 [DependsOn(typeof(AbpBackgroundJobsAbstractionsModule))]
+
+[DependsOn(typeof(AbpBlobStoringModule))]
+//[DependsOn(typeof(AbpBlobStoringMinioModule))] //minio
 public class ChatDomainModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)

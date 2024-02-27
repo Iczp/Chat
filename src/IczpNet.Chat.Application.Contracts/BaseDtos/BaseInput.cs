@@ -3,7 +3,7 @@
     public class BaseInput //: IName
     {
         //[DefaultValue("")]
-        //public virtual string Name { get; set; }
+        //public virtual string Title { get; set; }
 
         //[DefaultValue("")]
         //public virtual string Code { get; set; }

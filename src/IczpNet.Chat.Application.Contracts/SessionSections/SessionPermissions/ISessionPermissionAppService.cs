@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.SessionSections.SessionPermissions.Dtos;
+﻿using IczpNet.Chat.SessionSections.SessionPermissionDefinitions.Dtos;
+using IczpNet.Chat.SessionSections.SessionPermissions.Dtos;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -13,6 +14,8 @@ namespace IczpNet.Chat.SessionSections.SessionPermissions
         Task<SessionPermissionGrantDto> GetGrantedBySessionUnitAsync(string definitionId, Guid sessionUnitId);
 
         Task<PagedResultDto<SessionPermissionGrantDto>> GetAllGrantedBySessionUnitAsync(Guid sessionUnitId);
+
+        Task<List<SessionPermissionDefinitionTreeDto>> GetDefinitionsAsync();
 
         Task<SessionPermissionUnitGrantDto> GrantBySessionUnitAsync(string definitionId, Guid sessionUnitId, PermissionGrantValue permissionGrantValue);
 

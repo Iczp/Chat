@@ -2,6 +2,7 @@
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions.Dtos;
+using IczpNet.Chat.SessionSections.SessionPermissionGroups;
 using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
 using IczpNet.Chat.SessionSections.SessionPermissions;
 using IczpNet.Chat.SessionSections.SessionPermissions.Dtos;
@@ -25,13 +26,16 @@ public class SessionPermissionAppService : ChatAppService, ISessionPermissionApp
     protected ISessionUnitRepository SessionUnitRepository { get; }
     protected IRepository<SessionRole, Guid> SessionRoleRepository { get; }
     protected ISessionPermissionDefinitionRepository SessionPermissionDefinitionRepository { get; }
+    protected IRepository<SessionPermissionGroup, long> SessionPermissionGroupRepository { get; }
     public SessionPermissionAppService(ISessionUnitRepository sessionUnitRepository,
         ISessionPermissionDefinitionRepository sessionPermissionDefinitionRepository,
-        IRepository<SessionRole, Guid> sessionRoleRepository)
+        IRepository<SessionRole, Guid> sessionRoleRepository,
+        IRepository<SessionPermissionGroup, long> sessionPermissionGroupRepository)
     {
         SessionUnitRepository = sessionUnitRepository;
         SessionPermissionDefinitionRepository = sessionPermissionDefinitionRepository;
         SessionRoleRepository = sessionRoleRepository;
+        SessionPermissionGroupRepository = sessionPermissionGroupRepository;
     }
 
     /// <summary>
@@ -161,5 +165,80 @@ public class SessionPermissionAppService : ChatAppService, ISessionPermissionApp
         await CurrentUnitOfWork.SaveChangesAsync();
 
         return ObjectMapper.Map<SessionPermissionRoleGrant, SessionPermissionRoleGrantDto>(sessionPermissionUnitGrant);
+    }
+
+    /// <summary>
+    /// 获取权限定义(Tree)
+    /// </summary>
+    /// <returns></returns>
+    [HttpGet]
+    public virtual async Task<List<SessionPermissionDefinitionTreeDto>> GetDefinitionsAsync()
+    {
+        var groupData = await SessionPermissionGroupRepository.GetListAsync();
+
+        var permissionData = await SessionPermissionDefinitionRepository.GetListAsync();
+
+        var list = await FindChildrenGroupAsync(groupData, permissionData, null);
+
+        var ungroupList = await GetPermissionsAsync(permissionData, null);
+
+        if (ungroupList.Count != 0)
+        {
+            list.Add(new SessionPermissionDefinitionTreeDto()
+            {
+                Id = $"groupid:{0}",
+                IsGroup =true,
+                 Title = "Ungrouped",
+                 Description = "",
+                 Children = ungroupList
+            });
+        }
+
+        return list;
+    }
+
+    protected virtual async Task<List<SessionPermissionDefinitionTreeDto>> FindChildrenGroupAsync(List<SessionPermissionGroup> groupData, List<SessionPermissionDefinition> permissionData, long? parentId)
+    {
+        var ret = new List<SessionPermissionDefinitionTreeDto>();
+
+        var items = groupData.Where(x => x.ParentId == parentId).ToList();
+
+        foreach (var group in items)
+        {
+            var children = await FindChildrenGroupAsync(groupData, permissionData, group.Id);
+
+            if (children.Count == 0)
+            {
+                children = await GetPermissionsAsync(permissionData, group.Id);
+            }
+            ret.Add(new SessionPermissionDefinitionTreeDto()
+            {
+                IsGroup = true,
+                Id = $"groupid:{group.Id}",
+                Title = group.Name,
+                Children = children,
+            });
+        }
+        return ret;
+    }
+    protected virtual async Task<List<SessionPermissionDefinitionTreeDto>> GetPermissionsAsync(List<SessionPermissionDefinition> permissionData, long? groupId)
+    {
+        await Task.Yield();
+
+        var ret = new List<SessionPermissionDefinitionTreeDto>();
+
+        var permissions = permissionData.Where(x => x.GroupId == groupId).ToList();
+
+        foreach (var permission in permissions)
+        {
+            ret.Add(new SessionPermissionDefinitionTreeDto()
+            {
+                IsGroup = false,
+                Id = permission.Id,
+                Title = permission.Name,
+                Description = permission.Description,
+            });
+        }
+        return ret;
     }
 }

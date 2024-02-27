@@ -136,9 +136,13 @@ namespace IczpNet.Chat.MessageSections.Messages
             }
 
             //quote message
-            if (quoteMessageId.HasValue)
+            if (quoteMessageId.HasValue && quoteMessageId.Value > 0)
             {
-                message.SetQuoteMessage(await Repository.GetAsync(quoteMessageId.Value));
+                var quoteMessage = await Repository.GetAsync(quoteMessageId.Value);
+
+                Assert.If(quoteMessage.SessionId != senderSessionUnit.SessionId, $"QuoteMessageId:{quoteMessageId.Value} not in same session");
+
+                message.SetQuoteMessage(quoteMessage);
             }
 
             // message content
@@ -315,7 +319,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
             if (!finalRemindIdList.Any())
             {
-                return new List<Guid>();
+                return [];
             }
 
             message.SetReminder(finalRemindIdList, ReminderTypes.Normal);

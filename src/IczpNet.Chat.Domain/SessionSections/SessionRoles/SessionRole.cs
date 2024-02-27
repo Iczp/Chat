@@ -53,5 +53,10 @@ namespace IczpNet.Chat.SessionSections.SessionRoles
         {
             return GrantList?.ToDictionary(x => x.DefinitionId);
         }
+
+        public virtual void SetSessionId(Guid sessionId)
+        {
+            SessionId = sessionId;
+        }
     }
 }

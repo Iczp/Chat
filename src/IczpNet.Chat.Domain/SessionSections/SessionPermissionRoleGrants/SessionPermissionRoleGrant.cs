@@ -14,7 +14,7 @@ namespace IczpNet.Chat.SessionSections.SessionPermissionRoleGrants
     {
         protected SessionPermissionRoleGrant() { }
 
-        public SessionPermissionRoleGrant(string definitionId,Guid roleId, long value, bool isEnabled)
+        public SessionPermissionRoleGrant(string definitionId, Guid roleId, long value, bool isEnabled)
         {
             Assert.If(!SessionPermissionDefinitionConsts.GetAll().Contains(definitionId), $"Key does not exist:{definitionId}");
             DefinitionId = definitionId;

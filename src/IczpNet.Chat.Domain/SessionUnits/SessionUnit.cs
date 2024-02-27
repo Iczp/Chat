@@ -48,7 +48,7 @@ namespace IczpNet.Chat.SessionUnits
     [Index(nameof(CreationTime), AllDescending = true)]
 
     [Index(nameof(Sorting), nameof(LastMessageId), nameof(IsDeleted), AllDescending = true)]
-    [Index(nameof(Sorting), nameof(LastMessageId), nameof(IsDeleted), IsDescending = new[] { true, false, true }, Name = "IX_Chat_SessionUnit_Sorting_Desc_LastMessageId_Asc")]
+    [Index(nameof(Sorting), nameof(LastMessageId), nameof(IsDeleted), IsDescending = [true, false, true], Name = "IX_Chat_SessionUnit_Sorting_Desc_LastMessageId_Asc")]
     public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, ISessionId, IHasSimpleStateCheckers<SessionUnit>, IMaterializationInterceptor
     {
 
@@ -186,11 +186,11 @@ namespace IczpNet.Chat.SessionUnits
         [InverseProperty(nameof(SessionUnitSetting.Killer))]
         public virtual List<SessionUnitSetting> KillerList { get; protected set; }
 
-        public virtual IList<MessageReminder> ReminderList { get; protected set; } = new List<MessageReminder>();
+        public virtual IList<MessageReminder> ReminderList { get; protected set; } = [];
 
-        public virtual List<SessionUnitTag> SessionUnitTagList { get; protected set; } = new List<SessionUnitTag>();
+        public virtual List<SessionUnitTag> SessionUnitTagList { get; protected set; } = [];
 
-        public virtual List<SessionUnitRole> SessionUnitRoleList { get; protected set; } = new List<SessionUnitRole>();
+        public virtual List<SessionUnitRole> SessionUnitRoleList { get; protected set; } = [];
 
         public virtual List<SessionUnitOrganization> SessionUnitOrganizationList { get; protected set; }
 
@@ -203,7 +203,7 @@ namespace IczpNet.Chat.SessionUnits
         /// sender message list
         /// </summary>
         [InverseProperty(nameof(Message.SenderSessionUnit))]
-        public virtual List<Message> MessageList { get; protected set; } = new List<Message>();
+        public virtual List<Message> MessageList { get; protected set; } = [];
 
         [InverseProperty(nameof(OpenedRecorder.SessionUnit))]
         public virtual IList<OpenedRecorder> OpenedRecorderList { get; protected set; }

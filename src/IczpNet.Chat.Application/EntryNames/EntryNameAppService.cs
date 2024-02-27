@@ -49,7 +49,7 @@ public class EntryNameAppService
 
     //protected override async Task CheckCreateAsync(EntryNameCreateInput input)
     //{
-    //    Assert.If(await Repository.AnyAsync(x => x.Name.Equals(input.Name)), $"Already exists [{input.Name}] ");
+    //    Assert.If(await Repository.AnyAsync(x => x.Title.Equals(input.Title)), $"Already exists [{input.Title}] ");
     //    await base.CheckCreateAsync(input);
     //}
 
