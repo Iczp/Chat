@@ -6,7 +6,7 @@ namespace IczpNet.Chat.MessageSections.Templates
 {
     [MessageTemplate(MessageTypes.Image)]
     [ContentOuput(typeof(ImageContentInfo))]
-    public class ImageContent : MessageContentEntityBase
+    public class ImageContent : MessageContentAttachmentsEntityBase
     {
         public override long GetSize() => Size ?? 0;
         /// <summary>
@@ -14,7 +14,7 @@ namespace IczpNet.Chat.MessageSections.Templates
         /// </summary>
         //[Required(ErrorMessage = "图片地址[Url]必填")] 
         [StringLength(500)]
-        public virtual string Url { get; set; }
+        public override string Url { get; set; }
         /// <summary>
         /// MinIO控制器URL
         /// </summary>

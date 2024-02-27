@@ -18,7 +18,6 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
-using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 
@@ -150,14 +149,33 @@ public class MessageAppService : ChatAppService, IMessageAppService
         }
         return result;
     }
-
-
     /// <summary>
     /// 获取一条消息
     /// </summary>
     /// <returns></returns>
     [HttpGet]
-    public async Task<MessageDto> GetItemAsync(MessageGetItemInput input)
+    public async Task<MessageOwnerDto> GetItemAsync(MessageGetItemInput input)
+    {
+        var message = await GetMessageAsync(input);
+
+        return await MapToMessageAsync(message);
+    }
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="message"></param>
+    /// <returns></returns>
+    protected virtual async Task<MessageOwnerDto> MapToMessageAsync(Message message)
+    {
+        await Task.Yield();
+        return ObjectMapper.Map<Message, MessageOwnerDto>(message);
+    }
+
+    /// <summary>
+    /// 获取一条消息
+    /// </summary>
+    /// <returns></returns>
+    protected virtual async Task<Message> GetMessageAsync(MessageGetItemInput input)
     {
         var sessionUnitId = input.SessionUnitId;
 
@@ -177,7 +195,7 @@ public class MessageAppService : ChatAppService, IMessageAppService
 
         if (isSameSession)
         {
-            return ObjectMapper.Map<Message, MessageDto>(message);
+            return message;
         }
 
         var isInQuoteSession = await Repository.AnyAsync(x => x.QuotedMessageList.Any(d => d.Id == messageId));
@@ -193,7 +211,7 @@ public class MessageAppService : ChatAppService, IMessageAppService
 
         Assert.If(!isCanRead, "非法访问!");
 
-        return ObjectMapper.Map<Message, MessageDto>(message);
+        return message;
     }
 
     protected virtual Task<bool> IsInSameSessionAsync(List<Guid> sessionIdList, long ownerId)
@@ -204,5 +222,19 @@ public class MessageAppService : ChatAppService, IMessageAppService
     protected virtual Task<bool> IsInSameSessionAsync(Guid sessionId, long ownerId)
     {
         return SessionUnitRepository.AnyAsync(x => x.SessionId == sessionId && x.OwnerId == ownerId);
+    }
+
+    /// <summary>
+    /// 获取一条消息(File)
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [HttpGet]
+    public async Task<MessageOwnerDto> GetFileAsync(MessageGetItemInput input)
+    {
+        var message = await GetMessageAsync(input);
+
+        throw new NotImplementedException();
+
     }
 }

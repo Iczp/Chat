@@ -1,23 +1,22 @@
-﻿namespace IczpNet.Chat.MessageSections.Templates
+﻿namespace IczpNet.Chat.MessageSections.Templates;
+
+/// <summary>
+/// 系统命令（）
+/// </summary>
+public class CmdContentInfo : MessageContentInfoBase, IContentInfo
 {
     /// <summary>
-    /// 系统命令（）
+    /// 执行的命令（需要与前端一致）
     /// </summary>
-    public class CmdContentInfo : BaseMessageContentInfo, IContentInfo
-    {
-        /// <summary>
-        /// 执行的命令（需要与前端一致）
-        /// </summary>
-        public virtual string Cmd { get; set; }
-        /// <summary>
-        /// 显示内容
-        /// </summary>
+    public virtual string Cmd { get; set; }
+    /// <summary>
+    /// 显示内容
+    /// </summary>
 
-        public virtual string Text { get; set; }
-        /// <summary>
-        /// app:///pages/im/notice?id=123
-        /// </summary>
-        public virtual string Url { get; set; }
+    public virtual string Text { get; set; }
+    /// <summary>
+    /// app:///pages/im/notice?id=123
+    /// </summary>
+    public virtual string Url { get; set; }
 
-    }
 }

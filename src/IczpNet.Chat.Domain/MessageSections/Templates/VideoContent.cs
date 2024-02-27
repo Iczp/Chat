@@ -6,14 +6,14 @@ namespace IczpNet.Chat.MessageSections.Templates
 {
     [MessageTemplate(MessageTypes.Video)]
     [ContentOuput(typeof(VideoContentInfo))]
-    public class VideoContent : MessageContentEntityBase
+    public class VideoContent : MessageContentAttachmentsEntityBase
     {
         /// <summary>
         /// 视频地址
         /// </summary>
         [Required(ErrorMessage = "视频地址必填")]
         [StringLength(256)]
-        public virtual string Url { get; set; }
+        public override string Url { get; set; }
 
         /// <summary>
         /// 视频封面Width

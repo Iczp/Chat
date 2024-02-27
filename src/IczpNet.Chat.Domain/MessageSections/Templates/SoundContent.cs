@@ -7,7 +7,7 @@ namespace IczpNet.Chat.MessageSections.Templates
 {
     [MessageTemplate(MessageTypes.Sound)]
     [ContentOuput(typeof(SoundContentInfo))]
-    public class SoundContent : MessageContentEntityBase
+    public class SoundContent : MessageContentAttachmentsEntityBase
     {
         public override long GetSize() => Size ?? 0;
         /// <summary>
@@ -15,7 +15,7 @@ namespace IczpNet.Chat.MessageSections.Templates
         /// </summary>
         [Required(ErrorMessage = "语音地址必填")]
         [StringLength(500)]
-        public virtual string Url { get; set; }
+        public override string Url { get; set; }
         /// <summary>
         /// 手机的存储路径(前端使用字段，服务端不能存这个字段)
         /// </summary>

@@ -6,42 +6,41 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Drawing;
 
-namespace IczpNet.Chat.MessageSections.Templates
+namespace IczpNet.Chat.MessageSections.Templates;
+
+[MessageTemplate(MessageTypes.History)]
+[ContentOuput(typeof(HistoryContentOutput))]
+public class HistoryContent : MessageContentEntityBase
 {
-    [MessageTemplate(MessageTypes.History)]
-    [ContentOuput(typeof(HistoryContentOutput))]
-    public class HistoryContent : MessageContentEntityBase
+    public override long GetSize() => 1;
+    /// <summary>
+    /// 文本内容
+    /// </summary>
+    [Required(ErrorMessage = "标题内容[Title]必填！")]
+    [StringLength(256)]
+    //[Index]
+    public virtual string Title { get; protected set; }
+
+    /// <summary>
+    /// 简要说明
+    /// </summary>
+    [StringLength(500)]
+    //[Index]
+    public virtual string Description { get; protected set; }
+
+    [InverseProperty(nameof(HistoryMessage.HistoryContent))]
+    public virtual IList<HistoryMessage> HistoryMessageList { set; protected get; }
+
+    protected HistoryContent() { }
+
+    public HistoryContent(Guid id, string title, string description) : base(id)
     {
-        public override long GetSize() => 1;
-        /// <summary>
-        /// 文本内容
-        /// </summary>
-        [Required(ErrorMessage = "标题内容[Title]必填！")]
-        [StringLength(256)]
-        //[Index]
-        public virtual string Title { get; protected set; }
+        Title = title;
+        Description = description;
+    }
 
-        /// <summary>
-        /// 简要说明
-        /// </summary>
-        [StringLength(500)]
-        //[Index]
-        public virtual string Description { get; protected set; }
-
-        [InverseProperty(nameof(HistoryMessage.HistoryContent))]
-        public virtual IList<HistoryMessage> HistoryMessageList { set; protected get; }
-
-        protected HistoryContent() { }
-
-        public HistoryContent(Guid id, string title, string description) : base(id)
-        {
-            Title = title;
-            Description = description;
-        }
-
-        public void SetHistoryMessageList(IList<HistoryMessage> historyMessageList)
-        {
-            HistoryMessageList = historyMessageList;
-        }
+    public void SetHistoryMessageList(IList<HistoryMessage> historyMessageList)
+    {
+        HistoryMessageList = historyMessageList;
     }
 }
