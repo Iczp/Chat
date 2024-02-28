@@ -48,7 +48,7 @@ namespace IczpNet.Chat.Controllers
                 Content = new FileContentInfo()
                 {
                     ContentType = file.ContentType,
-                    ContentLength = blob.FileSize,
+                    Size = blob.FileSize,
                     FileName = file.FileName,
                     Suffix = blob.Suffix,
                     Url = $"/file?id={blob.Id}",

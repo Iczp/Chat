@@ -11,6 +11,8 @@ namespace IczpNet.Chat.Controllers
     public class FileController : ChatController
     {
         [HttpGet]
+        [Route("{id}")]
+        [Route("")]
         public async Task<IActionResult> GetAsync(Guid id)
         {
             var blob = await BlobManager.GetAsync(id);

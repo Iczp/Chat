@@ -33,6 +33,6 @@ namespace IczpNet.Chat.MessageSections.Templates
         [Required(ErrorMessage = "语音时长（毫秒）必填")]
         public virtual int Time { get; set; }
 
-        public virtual long? Size { get; set; }
+        public override long? Size { get; set; }
     }
 }

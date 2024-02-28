@@ -25,9 +25,9 @@ public abstract class MessageContentAttachmentsInfoBase: MessageContentInfoBase
     public virtual string ContentType { get; set; }
 
     /// <summary>
-    /// 大小 ContentLength(Size)
+    /// 大小 Size(Size)
     /// </summary>
-    public virtual long? ContentLength { get; set; }
+    public virtual long? Size { get; set; }
 
     /// <summary>
     /// 文件后缀名

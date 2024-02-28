@@ -9,7 +9,7 @@ namespace IczpNet.Chat.MessageSections.Templates;
 [ContentOuput(typeof(FileContentInfo))]
 public class FileContent : MessageContentAttachmentsEntityBase
 {
-    public override long GetSize() => ContentLength ?? 0;
+    public override long GetSize() => Size ?? 0;
 
     /// <summary>
     /// FileName

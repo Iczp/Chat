@@ -28,7 +28,7 @@ namespace IczpNet.Chat.MessageSections.Templates
         /// <summary>
         /// 视频大小
         /// </summary>
-        public virtual int? Size { get; set; }
+        public override long? Size { get; set; }
 
         /// <summary>
         /// 视频封面

@@ -44,10 +44,6 @@ namespace IczpNet.Chat.MessageSections.Templates
         /// </summary>
         public virtual int? Height { get; set; }
         /// <summary>
-        /// Size
-        /// </summary>
-        public virtual int? Size { get; set; }
-        /// <summary>
         /// 二维码信息
         /// </summary>
         [StringLength(500)]

@@ -1,5 +1,7 @@
-﻿using IczpNet.Chat.ChatObjects;
+﻿using IczpNet.Chat.Blobs.Dtos;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
+using IczpNet.Chat.SessionUnits;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -10,7 +12,7 @@ namespace IczpNet.Chat.Controllers
 {
     [Area(ChatRemoteServiceConsts.ModuleName)]
     [RemoteService(Name = ChatRemoteServiceConsts.RemoteServiceName)]
-    //[Route($"Api/{ChatRemoteServiceConsts.ModuleName}[Controller]/[Action]")]
+    [Route($"/api/{ChatRemoteServiceConsts.ModuleName}/chat-object")]
     public class ChatObjectController : ChatController
     {
         protected IChatObjectAppService ChatObjectAppService { get; }
@@ -27,12 +29,14 @@ namespace IczpNet.Chat.Controllers
         /// <param name="file"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<string> UpdatePortraitAsync(long id, IFormFile file)
+        [Route("{id}/update-protrait")]
+        public async Task<BlobDto> UpdatePortraitAsync(long id, IFormFile file)
         {
-            await Task.Yield();
-            return $"id:{id}/{file.FileName}";
-            //return null;
-            //return ChatObjectAppService.UpdatePortraitAsync(id, "");
+            var blob = await UploadFileAsync(file, UserPortraitsContainer, $"{id}", true);
+
+            await ChatObjectAppService.UpdatePortraitAsync(id, $"/file?id={blob.Id}");
+
+            return blob;
         }
     }
 }

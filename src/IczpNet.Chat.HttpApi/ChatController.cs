@@ -7,6 +7,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc;
 using IczpNet.AbpCommons;
+using IczpNet.Pusher.ShortIds;
 
 namespace IczpNet.Chat;
 
@@ -15,7 +16,7 @@ namespace IczpNet.Chat;
 [ApiExplorerSettings(GroupName = ChatRemoteServiceConsts.ModuleName)]
 public abstract class ChatController : AbpControllerBase
 {
-
+    protected IShortIdGenerator ShortIdGenerator => LazyServiceProvider.LazyGetRequiredService<IShortIdGenerator>();
     protected IBlobManager BlobManager => LazyServiceProvider.LazyGetRequiredService<IBlobManager>();
     public virtual string ChatFilesContainer => "chat-files";
     public virtual string EditorFilesContainer => "editor-files";

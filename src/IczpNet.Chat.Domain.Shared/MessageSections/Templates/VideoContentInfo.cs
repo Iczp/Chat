@@ -21,11 +21,6 @@ public class VideoContentInfo : MessageContentAttachmentsInfoBase, IContentInfo
     public virtual int Height { get; set; }
 
     /// <summary>
-    /// 视频大小
-    /// </summary>
-    public virtual double Size { get; set; }
-
-    /// <summary>
     /// 视频封面
     /// </summary>
     public virtual string ImageUrl { get; set; }

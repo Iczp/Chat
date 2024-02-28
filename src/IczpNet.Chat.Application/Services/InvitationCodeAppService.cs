@@ -37,7 +37,7 @@ public class InvitationCodeAppService
 
     protected override async Task SetCreateEntityAsync(InvitationCode entity, InvitationCodeCreateInput input)
     {
-        var code = await ShortIdGenerator.MakeAsync();
+        var code = await ShortIdGenerator.CreateAsync();
 
         entity.SetOwnerId(input.OwnerId);
 

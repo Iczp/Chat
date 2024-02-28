@@ -8,7 +8,6 @@ namespace IczpNet.Chat.MessageSections;
 public abstract class MessageContentAttachmentsEntityBase : MessageContentEntityBase, IAttachments
 {
 
-
     /// <summary>
     /// BlobId
     /// </summary>
@@ -18,7 +17,7 @@ public abstract class MessageContentAttachmentsEntityBase : MessageContentEntity
     /// Blob
     /// </summary>
     [ForeignKey(nameof(BlobId))]
-    public virtual Blob Blob { get; set; }
+    public virtual Blob Blob { get; protected set; }
 
     /// <summary>
     /// 文件地址
@@ -28,6 +27,8 @@ public abstract class MessageContentAttachmentsEntityBase : MessageContentEntity
     public virtual string Url { get; set; }
 
     /// <summary>
+    /// 
+    /// 
     /// ContentType
     /// </summary>
     [StringLength(100)]
@@ -35,9 +36,9 @@ public abstract class MessageContentAttachmentsEntityBase : MessageContentEntity
     public virtual string ContentType { get; set; }
 
     /// <summary>
-    /// 大小 ContentLength(Size)
+    /// 大小 Size(Size)
     /// </summary>
-    public virtual long? ContentLength { get; set; }
+    public virtual long? Size { get; set; }
 
     /// <summary>
     /// 文件后缀名

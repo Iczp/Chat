@@ -206,7 +206,7 @@ namespace Rctea.IM.Tools
         [HttpPost]
         public virtual async Task<string> GenerateShortId()
         {
-            return await ShortIdGenerator.MakeAsync();
+            return await ShortIdGenerator.CreateAsync();
         }
 
         /// <summary>
