@@ -244,9 +244,14 @@ public class ChatObjectAppService
         return await MapToGetOutputDtoAsync(entity);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// 更新头像
+    /// </summary>
+    /// <param name="id">主建Id</param>
+    /// <param name="portrait"></param>
+    /// <returns></returns>
     [HttpPost]
-    [RemoteService(false)]
+    //[RemoteService(false)]
     public Task<ChatObjectDto> UpdatePortraitAsync(long id, string portrait)
     {
         return UpdateEntityAsync(id, entity => entity.SetPortrait(portrait));

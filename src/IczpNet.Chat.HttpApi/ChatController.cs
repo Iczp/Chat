@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc;
 using IczpNet.AbpCommons;
 using IczpNet.Pusher.ShortIds;
+using System;
 
 namespace IczpNet.Chat;
 
@@ -20,8 +21,7 @@ public abstract class ChatController : AbpControllerBase
     protected IBlobManager BlobManager => LazyServiceProvider.LazyGetRequiredService<IBlobManager>();
     public virtual string ChatFilesContainer => "chat-files";
     public virtual string EditorFilesContainer => "editor-files";
-    public virtual string UserPortraitsContainer => "user-portraits";
-    public virtual string RoomPortraitsContainer => "room-portraits";
+    public virtual string PortraitsContainer => "chat-object-portraits";
     public virtual string PkgFilesContainer => "pkg-files";
 
     protected ChatController()
@@ -29,7 +29,7 @@ public abstract class ChatController : AbpControllerBase
         LocalizationResource = typeof(ChatResource);
     }
 
-    protected virtual async Task<BlobDto> UploadFileAsync(IFormFile file, string container, string folder, bool isPublic)
+    protected virtual async Task<BlobDto> UploadFileAsync(Guid blobId, IFormFile file, string container, string folder, bool isPublic)
     {
         Assert.If(file == null, "No file found!");
 
@@ -37,7 +37,7 @@ public abstract class ChatController : AbpControllerBase
 
         var bytes = await file.GetAllBytesAsync();
 
-        var entity = await BlobManager.CreateAsync(new Blob(GuidGenerator.Create(), container)
+        var entity = await BlobManager.CreateAsync(new Blob(blobId, container)
         {
             IsPublic = isPublic,
             FileSize = bytes.Length,

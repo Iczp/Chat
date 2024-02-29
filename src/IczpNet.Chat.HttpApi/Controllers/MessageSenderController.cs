@@ -39,7 +39,7 @@ namespace IczpNet.Chat.Controllers
         {
             var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
 
-            var blob = await UploadFileAsync(file, ChatFilesContainer, $"{sessionUnit.SessionId}/{sessionUnitId}", false);
+            var blob = await UploadFileAsync(GuidGenerator.Create(), file, ChatFilesContainer, $"{sessionUnit.SessionId}/{sessionUnitId}", false);
 
             var sendResult = await MessageSenderAppService.SendFileAsync(sessionUnitId, new MessageInput<FileContentInfo>()
             {

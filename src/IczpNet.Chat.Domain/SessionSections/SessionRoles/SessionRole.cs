@@ -14,6 +14,7 @@ using System.Linq;
 namespace IczpNet.Chat.SessionSections.SessionRoles
 {
     [Index(nameof(IsDefault), AllDescending = true)]
+    [Index(nameof(PermissionCount), AllDescending = true)]
     public class SessionRole : BaseEntity<Guid>, IName, IIsDefault, ISessionId
     {
         protected SessionRole() { }
@@ -37,6 +38,8 @@ namespace IczpNet.Chat.SessionSections.SessionRoles
 
         public virtual bool IsDefault { get; set; }
 
+        public virtual int PermissionCount { get; protected set; }
+
         public virtual List<SessionUnitRole> SessionUnitRoleList { get; protected set; }
 
         public virtual IList<SessionPermissionRoleGrant> GrantList { get; set; }
@@ -45,6 +48,7 @@ namespace IczpNet.Chat.SessionSections.SessionRoles
         {
             GrantList?.Clear();
             GrantList = permissionGrant.Select(x => new SessionPermissionRoleGrant(x.Key, Id, x.Value.Value, x.Value.IsEnabled)).ToList();
+            PermissionCount = permissionGrant.Count;
         }
 
         public Dictionary<string, SessionPermissionRoleGrant> PermissionGrant => GetPermissionGrant();

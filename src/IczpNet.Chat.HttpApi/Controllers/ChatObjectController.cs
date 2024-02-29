@@ -1,6 +1,9 @@
-﻿using IczpNet.Chat.Blobs.Dtos;
+﻿using IczpNet.AbpCommons;
+using IczpNet.Chat.Blobs.Dtos;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
+using IczpNet.Chat.DataFilters;
+using IczpNet.Chat.RoomSections.Rooms;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -23,20 +26,22 @@ namespace IczpNet.Chat.Controllers
         }
 
         /// <summary>
-        /// 更新头像
+        /// 上传头像
         /// </summary>
         /// <param name="id">主建Id</param>
         /// <param name="file"></param>
         /// <returns></returns>
         [HttpPost]
-        [Route("{id}/update-protrait")]
-        public async Task<BlobDto> UpdatePortraitAsync(long id, IFormFile file)
+        [Route("{id}/upload-portrait")]
+        public async Task<BlobDto> UploadPortraitAsync(long id, IFormFile file)
         {
-            var blob = await UploadFileAsync(file, UserPortraitsContainer, $"{id}", true);
+            Assert.If(file == null, "No file found!");
 
-            await ChatObjectAppService.UpdatePortraitAsync(id, $"/file?id={blob.Id}");
+            var blobId = GuidGenerator.Create();
 
-            return blob;
+            await ChatObjectAppService.UpdatePortraitAsync(id, $"/file?id={blobId}");
+
+            return await UploadFileAsync(blobId, file, PortraitsContainer, $"{id}", true);
         }
     }
 }

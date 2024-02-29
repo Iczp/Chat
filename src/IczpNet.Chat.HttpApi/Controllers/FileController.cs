@@ -30,7 +30,7 @@ namespace IczpNet.Chat.Controllers
         [HttpPost]
         public async Task<BlobDto> UploadAsync(IFormFile file, string container, string folder, bool isPublic)
         {
-            return await UploadFileAsync(file, container, folder, isPublic);
+            return await UploadFileAsync(GuidGenerator.Create(), file, container, folder, isPublic);
         }
 
     }

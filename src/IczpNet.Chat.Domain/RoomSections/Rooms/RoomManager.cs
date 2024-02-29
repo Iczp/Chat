@@ -7,7 +7,6 @@ using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.Options;
-using IczpNet.Chat.SessionSections.SessionRequests;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.TextTemplates;
@@ -250,6 +249,7 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         if (input.InviterId != null)
         {
             var inviter = await ChatObjectManager.GetAsync(input.InviterId.Value);
+
             inviterText = new TextTemplate("{inviterObject} 邀请 ")
                             .WithData("inviterObject", new SessionUnitTextTemplate(inviterSessionUnit))
                             .ToString();
@@ -275,6 +275,8 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
 
     protected virtual Task SendRoomMessageAsync(SessionUnit roomSessionUnit, CmdContentInfo content)
     {
+        Assert.If(roomSessionUnit.OwnerObjectType != ChatObjectTypeEnums.Room, $"Fail ObjectType:{roomSessionUnit.OwnerObjectType}");
+
         return MessageSender.SendCmdAsync(roomSessionUnit, new MessageInput<CmdContentInfo>()
         {
             Content = content
@@ -295,6 +297,8 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
     /// <returns></returns>
     protected virtual async Task SendRoomMessageAsync(ChatObject room, Func<SessionUnit, CmdContentInfo> func)
     {
+        Assert.If(room.ObjectType != ChatObjectTypeEnums.Room, $"Fail ObjectType:{room.ObjectType}");
+
         //Find the room session unit
         var roomSessionUnit = await SessionUnitManager.FindAsync(room.Id, room.Id);
 
