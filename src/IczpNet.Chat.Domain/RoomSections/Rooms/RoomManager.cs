@@ -408,10 +408,11 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
     {
         var entity = await ChatObjectManager.UpdateAsync(sessionUnit.DestinationId.Value, x => x.SetPortrait(portrait), isUnique: false);
 
-        await SendRoomMessageAsync(sessionUnit.Destination, new CmdContentInfo()
+        await SendRoomMessageAsync(sessionUnit.Destination, x => new CmdContentInfo()
         {
-            Text = new TextTemplate("{operator} 更新群头像")
+            Text = new TextTemplate("{operator} 更新群头像:'{room}'")
                     .WithData("operator", new SessionUnitTextTemplate(sessionUnit))
+                    .WithData("room", new SessionUnitTextTemplate(x.Id, entity.Name))
                     .ToString(),
         });
         return entity;
