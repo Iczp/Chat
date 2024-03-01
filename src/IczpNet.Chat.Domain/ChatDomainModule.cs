@@ -15,6 +15,7 @@ using Volo.Abp.Domain;
 using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement.Identity;
 using Volo.Abp.SimpleStateChecking;
+using Volo.Abp.Imaging;
 
 namespace IczpNet.Chat;
 
@@ -33,7 +34,8 @@ namespace IczpNet.Chat;
 
 [DependsOn(typeof(AbpBlobStoringModule))]
 //[DependsOn(typeof(AbpBlobStoringMinioModule))] //minio
-public class ChatDomainModule : AbpModule
+[DependsOn(typeof(AbpImagingAbstractionsModule))]
+    public class ChatDomainModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {

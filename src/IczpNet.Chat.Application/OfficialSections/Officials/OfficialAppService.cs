@@ -57,7 +57,7 @@ public class OfficialAppService : ChatAppService, IOfficialAppService
             Description = input.Description,
         };
 
-        chatObject.SetPortrait(input.Portrait);
+        chatObject.SetPortrait(input.Thumbnail, input.Portrait);
 
         var official = await ChatObjectManager.CreateAsync(chatObject, true);
 

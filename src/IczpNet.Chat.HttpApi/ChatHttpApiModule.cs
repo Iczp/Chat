@@ -6,6 +6,7 @@ using Volo.Abp.Modularity;
 using Microsoft.Extensions.DependencyInjection;
 using IczpNet.AbpCommons;
 using Volo.Abp.Identity;
+using Volo.Abp.Imaging;
 
 namespace IczpNet.Chat;
 
@@ -14,7 +15,8 @@ namespace IczpNet.Chat;
     typeof(AbpAspNetCoreMvcModule))]
 //[DependsOn(typeof(AbpCommonsHttpApiModule))]
 [DependsOn(typeof(AbpIdentityHttpApiModule))]
-public class ChatHttpApiModule : AbpModule
+    [DependsOn(typeof(AbpImagingImageSharpModule))]
+    public class ChatHttpApiModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {

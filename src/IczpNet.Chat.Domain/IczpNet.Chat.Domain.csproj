@@ -25,6 +25,7 @@
 		
     <PackageReference Include="Volo.Abp.Ddd.Domain" Version="7.3.0" />
 		<PackageReference Include="Volo.Abp.EntityFrameworkCore" Version="7.3.0" />
+		<PackageReference Include="Volo.Abp.Imaging.Abstractions" Version="7.3.0" />
     <PackageReference Include="Volo.Abp.PermissionManagement.Domain.Identity" Version="7.3.0" />
     <ProjectReference Include="..\..\..\IczpNet.AbpCommons\src\IczpNet.AbpCommons.Domain\IczpNet.AbpCommons.Domain.csproj" />
     <!--<ProjectReference Include="..\..\..\IczpNet.AbpTrees\src\IczpNet.AbpTrees.Domain\IczpNet.AbpTrees.Domain.csproj" />-->

@@ -248,13 +248,14 @@ public class ChatObjectAppService
     /// 更新头像
     /// </summary>
     /// <param name="id">主建Id</param>
+    /// <param name="thumbnail"></param>
     /// <param name="portrait"></param>
     /// <returns></returns>
     [HttpPost]
     //[RemoteService(false)]
-    public Task<ChatObjectDto> UpdatePortraitAsync(long id, string portrait)
+    public Task<ChatObjectDto> UpdatePortraitAsync(long id, string thumbnail, string portrait)
     {
-        return UpdateEntityAsync(id, entity => entity.SetPortrait(portrait));
+        return UpdateEntityAsync(id, entity => entity.SetPortrait(thumbnail, portrait));
     }
 
     protected virtual async Task<ChatObjectDto> UpdateEntityAsync(long id, Action<ChatObject> action)

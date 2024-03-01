@@ -8,8 +8,10 @@ public class OfficialCreateInput : BaseInput
 
     public virtual string Code { get; set; }
 
+    public virtual string Thumbnail { get; set; }
+
     public virtual string Portrait { get; set; }
 
     public virtual string Description { get; set; }
-
+    
 }

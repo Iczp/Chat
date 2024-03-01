@@ -101,13 +101,13 @@ public class RoomAdminAppService : ChatAppService, IRoomAdminAppService
     }
 
     [HttpPost]
-    public virtual async Task<ChatObjectDto> UpdatePortraitAsync(Guid sessionUnitId, string portrait)
+    public virtual async Task<ChatObjectDto> UpdatePortraitAsync(Guid sessionUnitId, string thubmnail, string portrait)
     {
         var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
 
         await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.ChatObjectPermission.UpdatePortrait, sessionUnit);
 
-        var entity = await RoomManager.UpdatePortraitAsync(sessionUnit, portrait);
+        var entity = await RoomManager.UpdatePortraitAsync(sessionUnit, thubmnail, portrait);
 
         return await MapToChatObjectDtoAsync(entity);
     }

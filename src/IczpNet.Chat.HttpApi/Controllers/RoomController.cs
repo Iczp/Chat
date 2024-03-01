@@ -1,5 +1,7 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.Blobs.Dtos;
+using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.RoomSections.Rooms;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -29,17 +31,32 @@ namespace IczpNet.Chat.Controllers
         /// <returns></returns>
         [HttpPost]
         [Route("upload-portrait/{sessionUnitId}")]
-        public async Task<BlobDto> UploadPortraitAsync(Guid sessionUnitId, IFormFile file)
+        public async Task<ChatObjectDto> UploadPortraitAsync(Guid sessionUnitId, IFormFile file)
         {
+            //Assert.If(file == null, "No file found!");
+
+            //var blobId = GuidGenerator.Create();
+
+            //var chatObjectDto = await RoomAppService.UpdatePortraitWithTaskAsync(sessionUnitId, $"/file?id={blobId}", $"/file?id={blobId}");
+
+            //var blob = await UploadFileAsync(blobId, file, PortraitsContainer, $"{chatObjectDto.Id}", true);
+
             Assert.If(file == null, "No file found!");
 
-            var blobId = GuidGenerator.Create();
+            Assert.If(!IsImageMimeType(file.ContentType), $"No Image:{file.ContentType}");
 
-            var chatObjectDto = await RoomAppService.UpdatePortraitAsync(sessionUnitId, $"/file?id={blobId}");
+            var bigImgBlobId = GuidGenerator.Create();
 
-            var blob = await UploadFileAsync(blobId, file, PortraitsContainer, $"{chatObjectDto.Id}", true);
+            var thumbnailBlobId = GuidGenerator.Create();
 
-            return blob;
+            var chatObjectDto = await RoomAppService.UpdatePortraitAsync(
+                sessionUnitId,
+                $"/file?id={thumbnailBlobId}",
+                $"/file?id={bigImgBlobId}");
+
+            await SavePortraitAsync(file, chatObjectDto.Id, thumbnailBlobId, bigImgBlobId);
+
+            return chatObjectDto;
         }
     }
 }

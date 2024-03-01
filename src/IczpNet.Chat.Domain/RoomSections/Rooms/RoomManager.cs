@@ -404,9 +404,14 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         return entity;
     }
 
-    public async Task<ChatObject> UpdatePortraitAsync(SessionUnit sessionUnit, string portrait)
+    public async Task<ChatObject> UpdatePortraitAsync(SessionUnit sessionUnit, string thumbnail, string portrait, Action<long> beforeSend = null)
     {
-        var entity = await ChatObjectManager.UpdateAsync(sessionUnit.DestinationId.Value, x => x.SetPortrait(portrait), isUnique: false);
+        var entity = await ChatObjectManager.UpdateAsync(
+            sessionUnit.DestinationId.Value,
+            x => x.SetPortrait(thumbnail, portrait),
+            isUnique: false);
+
+        //beforeSend?.Invoke(entity.Id);
 
         await SendRoomMessageAsync(sessionUnit.Destination, x => new CmdContentInfo()
         {
@@ -417,6 +422,8 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
         });
         return entity;
     }
+
+
 
     public async Task TransferCreatorAsync(Guid sessionUnitId, Guid targetSessionUnitId, bool isSendMessageToRoom = true)
     {

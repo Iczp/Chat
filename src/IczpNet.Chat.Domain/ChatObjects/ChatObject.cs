@@ -82,10 +82,18 @@ namespace IczpNet.Chat.ChatObjects
         public virtual Genders Gender { get; set; }
 
         /// <summary>
+        /// 头像(略图)
+        /// </summary>
+        [MaxLength(1000)]
+        public virtual string Thumbnail { get; protected set; }
+
+        /// <summary>
         /// 头像
         /// </summary>
         [MaxLength(1000)]
         public virtual string Portrait { get; protected set; }
+
+
 
         /// <summary>
         /// 用户ID
@@ -257,8 +265,9 @@ namespace IczpNet.Chat.ChatObjects
             MaxMessageAutoId = maxMessageAutoId;
         }
 
-        public void SetPortrait(string portrait)
+        public void SetPortrait(string thumbnail, string portrait)
         {
+            Thumbnail = thumbnail;
             Portrait = portrait;
         }
 

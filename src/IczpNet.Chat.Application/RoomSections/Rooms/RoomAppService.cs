@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.RoomSections.Rooms;
@@ -127,16 +128,17 @@ public class RoomAppService : ChatAppService, IRoomAppService
     /// 修改群头像
     /// </summary>
     /// <param name="sessionUnitId">会话单元Id</param>
+    /// <param name="thubmnail"></param>
     /// <param name="portrait">头像,全地址或相对地址:"http://www.icpz.net/logo.png","/logo.png"</param>
     /// <returns></returns>
     [HttpPost]
-    public virtual async Task<ChatObjectDto> UpdatePortraitAsync(Guid sessionUnitId, string portrait)
+    public virtual async Task<ChatObjectDto> UpdatePortraitAsync(Guid sessionUnitId, string thubmnail, string portrait)
     {
         var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
 
         await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.ChatObjectPermission.UpdatePortrait, sessionUnit);
 
-        var entity = await RoomManager.UpdatePortraitAsync(sessionUnit, portrait);
+        var entity = await RoomManager.UpdatePortraitAsync(sessionUnit, thubmnail, portrait);
 
         return await MapToChatObjectDtoAsync(entity);
     }
