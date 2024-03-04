@@ -11,6 +11,7 @@ using IczpNet.Pusher.ShortIds;
 using System;
 using Volo.Abp.Imaging;
 using System.Collections.Generic;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace IczpNet.Chat;
 
@@ -34,6 +35,14 @@ public abstract class ChatController : AbpControllerBase
         LocalizationResource = typeof(ChatResource);
     }
 
+    protected virtual async Task CheckImageAsync(IFormFile file)
+    {
+        await Task.Yield();
+
+        Assert.If(file == null, "No file found!");
+
+        Assert.If(!IsImageMimeType(file.ContentType), $"No Image:{file.ContentType}");
+    }
     protected virtual bool IsImageMimeType(string mimeType)
     {
         var imageMimetypes = new List<string>() { "image/jpg", "image/jpeg", "image/gif", "image/png" };
@@ -81,7 +90,8 @@ public abstract class ChatController : AbpControllerBase
             FileName = file.FileName,
             Name = $"{folder}/{GuidGenerator.Create()}{suffix}",
             Suffix = Path.GetExtension(file.FileName),
-        }, bytes);
+            Bytes = bytes
+        });
 
         return ObjectMapper.Map<Blob, BlobDto>(entity);
     }
@@ -101,7 +111,7 @@ public abstract class ChatController : AbpControllerBase
         var suffix = GetExtension(file.ContentType, file.FileName);
 
         //var compressorBytes = await ImageCompressor.CompressAsync(resizedBytes.Result);
-        async Task<Blob> SaveFileAsync(Guid blobId, byte[] bytes, string name, int size)
+        async Task<Blob> SaveImageAsync(Guid blobId, byte[] bytes, string name, int size)
         {
             var resizedBytes = await ImageResizer.ResizeAsync(bytes, new ImageResizeArgs()
             {
@@ -118,18 +128,21 @@ public abstract class ChatController : AbpControllerBase
                 FileName = file.FileName,
                 Name = name,
                 Suffix = suffix,
-            }, resizedBytes.Result);
+                Bytes = bytes
+            });
             return entity;
         }
 
         var randomName = GuidGenerator.Create();
 
         //thumbnail
-        await SaveFileAsync(thumbnailBlobId, bytes, $"{chatObjectId}/{randomName}_128{suffix}", 128);
+        await SaveImageAsync(thumbnailBlobId, bytes, $"{chatObjectId}/{randomName}_128{suffix}", 128);
 
         //bigImage
-        await SaveFileAsync(bigImgBlobId, bytes, $"{chatObjectId}/{randomName}_540{suffix}", 540);
+        await SaveImageAsync(bigImgBlobId, bytes, $"{chatObjectId}/{randomName}_540{suffix}", 540);
     }
+
+    
 
 
 }

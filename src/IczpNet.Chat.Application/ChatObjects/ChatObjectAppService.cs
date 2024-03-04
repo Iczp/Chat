@@ -216,16 +216,6 @@ public class ChatObjectAppService
     [HttpPost]
     public override async Task<ChatObjectDto> UpdateAsync(long id, ChatObjectUpdateInput input)
     {
-
-        //return await UpdateEntityAsync(id, x =>
-        //{
-        //    x.SetName(input.Title);
-        //    x.SetVerificationMethod(input.VerificationMethod);
-        //    x.Gender = input.Gender;
-        //    x.Sorting = input.Sorting;
-        //    x.Description = input.Description;
-        //});
-        //return await MapToGetOutputDtoAsync(entity);
         var entity = await ChatObjectManager.GetAsync(id);
         input.ParentId = entity.ParentId;
         return await base.UpdateAsync(id, input);

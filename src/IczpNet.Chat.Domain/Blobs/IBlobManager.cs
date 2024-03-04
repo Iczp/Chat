@@ -12,7 +12,7 @@ namespace IczpNet.Chat.Blobs
 
         Task<byte[]> GetBytesAsync(string container, string name);
 
-        Task<Blob> CreateAsync(Blob blob, byte[] bytes);
+        Task<Blob> CreateAsync(Blob blob);
 
         Task<Blob> GetEntityAsync(string container, string name);
 

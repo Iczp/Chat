@@ -3,6 +3,7 @@ using IczpNet.Chat.BaseEntities;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.Blobs
 {
@@ -58,11 +59,11 @@ namespace IczpNet.Chat.Blobs
         /// </summary>
         public virtual bool IsStatic { get; set; }
 
-        ///// <summary>
-        ///// 内容
-        ///// </summary>
-        //[NotMapped]
-        //public virtual byte[] Content { get; set; }
+        /// <summary>
+        /// 内容
+        /// </summary>
+        [NotMapped]
+        public virtual byte[] Bytes { get; set; }
 
         public virtual BlobContent Content { get; set; } = new BlobContent();
 

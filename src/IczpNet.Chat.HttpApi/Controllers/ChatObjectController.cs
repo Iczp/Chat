@@ -32,9 +32,7 @@ namespace IczpNet.Chat.Controllers
         [Route("{id}/upload-portrait")]
         public async Task<ChatObjectDto> UpdatePortraitAsync(long id, IFormFile file)
         {
-            Assert.If(file == null, "No file found!");
-
-            Assert.If(!IsImageMimeType(file.ContentType), $"No Image:{file.ContentType}");
+            await CheckImageAsync(file);
 
             var bigImgBlobId = GuidGenerator.Create();
 
@@ -46,6 +44,6 @@ namespace IczpNet.Chat.Controllers
 
             return chatObjectDto;
         }
-        
+
     }
 }

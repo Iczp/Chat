@@ -14,10 +14,10 @@ public class BlobManager(
     protected IRepository<Blob, Guid> Repository { get; set; } = repository;
 
 
-    public virtual async Task<Blob> CreateAsync(Blob blob, byte[] bytes)
+    public virtual async Task<Blob> CreateAsync(Blob blob)
     {
         var entity = await Repository.InsertAsync(blob);
-        await SaveBytesAsync(entity.Container, entity.Name, bytes);
+        await SaveBytesAsync(entity.Container, entity.Name, entity.Bytes);
         return entity;
     }
 

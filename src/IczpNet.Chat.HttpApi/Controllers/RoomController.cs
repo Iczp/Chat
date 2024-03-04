@@ -41,9 +41,7 @@ namespace IczpNet.Chat.Controllers
 
             //var blob = await UploadFileAsync(blobId, file, PortraitsContainer, $"{chatObjectDto.Id}", true);
 
-            Assert.If(file == null, "No file found!");
-
-            Assert.If(!IsImageMimeType(file.ContentType), $"No Image:{file.ContentType}");
+            await CheckImageAsync(file);
 
             var bigImgBlobId = GuidGenerator.Create();
 
