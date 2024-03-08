@@ -72,8 +72,6 @@ public class MessageSenderController : ChatController
     {
         var bytes = await file.GetAllBytesAsync();
 
-        using Image image = Image.Load(bytes);
-
         var suffix = GetExtension(file.ContentType, file.FileName);
 
         // SaveImageAsync
@@ -123,14 +121,20 @@ public class MessageSenderController : ChatController
             Suffix = suffix
         };
 
-        var maxSize = new List<int> { image.Width, image.Height }.Max();
+        using Image image = Image.Load(bytes);
+
+        //using var image1 = System.Drawing.Image.FromStream(file.OpenReadStream());
+
+       
 
         var bigImageSize = ImageResizeOption.Value.BigSize;
 
-        if (isOriginal || maxSize < bigImageSize)
+        if (isOriginal)
         {
             //original
             var originalBlobId = GuidGenerator.Create();
+
+            var maxSize = new List<int> { image.Width, image.Height }.Max();
 
             await SaveImageAsync(originalBlobId, bytes, $"{prefixName}_original{suffix}", maxSize, false);
 
@@ -149,7 +153,9 @@ public class MessageSenderController : ChatController
 
             var blob = await SaveImageAsync(bigImgBlobId, bytes, $"{prefixName}_{bigImageSize}{suffix}", bigImageSize, true);
 
-            double p = (double)image.Width / image.Height;
+            using Image img = Image.Load(blob.Bytes);
+
+            double p = (double)img.Width / img.Height;
 
             imageContent.Width = p > 1 ? bigImageSize : Convert.ToInt32(bigImageSize * p);
 
