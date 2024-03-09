@@ -12,7 +12,7 @@ namespace IczpNet.Chat.MessageSections.Templates
         /// 视频地址
         /// </summary>
         [Required(ErrorMessage = "视频地址必填")]
-        [StringLength(256)]
+        [StringLength(500)]
         public override string Url { get; set; }
 
         /// <summary>
@@ -33,7 +33,7 @@ namespace IczpNet.Chat.MessageSections.Templates
         /// <summary>
         /// 视频封面
         /// </summary>
-        [StringLength(256)]
+        [StringLength(500)]
         public virtual string ImageUrl { get; set; }
 
         /// <summary>
@@ -55,5 +55,11 @@ namespace IczpNet.Chat.MessageSections.Templates
         /// 选定视频的时间长度，单位为 （毫秒）
         /// </summary>
         public virtual int? Duration { get; set; }
+
+        /// <summary>
+        /// GifUrl
+        /// </summary>
+        [StringLength(500)]
+        public virtual string GifUrl { get; set; }
     }
 }

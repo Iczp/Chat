@@ -1,4 +1,6 @@
-﻿namespace IczpNet.Chat.MessageSections.Templates;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace IczpNet.Chat.MessageSections.Templates;
 
 /// <summary>
 /// 视频消息
@@ -21,7 +23,7 @@ public class VideoContentInfo : MessageContentAttachmentsInfoBase, IContentInfo
     public virtual int Height { get; set; }
 
     /// <summary>
-    /// 视频封面
+    /// 视频封面 CoverImageUrl
     /// </summary>
     public virtual string ImageUrl { get; set; }
 
@@ -45,4 +47,8 @@ public class VideoContentInfo : MessageContentAttachmentsInfoBase, IContentInfo
     /// </summary>
     public virtual double Duration { get; set; }
 
+    /// <summary>
+    /// GifUrl
+    /// </summary>
+    public virtual string GifUrl { get; set; }
 }

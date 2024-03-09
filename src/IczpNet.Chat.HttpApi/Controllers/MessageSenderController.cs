@@ -145,6 +145,8 @@ public class MessageSenderController : ChatController
             imageContent.Size = bytes.Length;
 
             imageContent.Url = $"/file?id={originalBlobId}";
+
+            imageContent.Description = $"width={image.Width},height={image.Height}";
         }
         else
         {
@@ -164,6 +166,8 @@ public class MessageSenderController : ChatController
             imageContent.Size = blob.Bytes.Length;
 
             imageContent.Url = $"/file?id={bigImgBlobId}";
+
+            imageContent.Description = $"width={img.Width},height={img.Height}";
         }
 
         var sendResult = await MessageSenderAppService.SendImageAsync(sessionUnitId, new MessageInput<ImageContentInfo>()

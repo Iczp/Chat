@@ -47,6 +47,13 @@ public abstract class MessageContentAttachmentsEntityBase : MessageContentEntity
     //[Index]
     public virtual string Suffix { get; set; }
 
+    /// <summary>
+    /// Description
+    /// </summary>
+    [StringLength(500)]
+    //[Index]
+    public virtual string Description { get; set; }
+
     protected MessageContentAttachmentsEntityBase() { }
 
     protected MessageContentAttachmentsEntityBase(Guid id) : base(id) { }
