@@ -14,7 +14,8 @@ using Image = SixLabors.ImageSharp.Image;
 using System.Linq;
 using IczpNet.Chat.Options;
 using Microsoft.Extensions.Options;
-
+using SixLabors.ImageSharp.Metadata.Profiles.Exif;
+using System.Linq.Dynamic;
 namespace IczpNet.Chat.Controllers;
 
 [Route($"/api/{ChatRemoteServiceConsts.ModuleName}/message-sender")]
@@ -64,6 +65,40 @@ public class MessageSenderController : ChatController
             }
         });
         return new JsonResult(sendResult);
+    }
+
+    /// <summary>
+    /// 获取真实宽高
+    /// </summary>
+    /// <param name="image"></param>
+    /// <returns></returns>
+    public static (int width, int height) GetActualDimensions(Image image)
+    {
+        int width = image.Width;
+        int height = image.Height;
+
+        // Check if image has Exif metadata
+        if (image.Metadata.ExifProfile != null)
+        {
+            foreach (var exifValue in image.Metadata.ExifProfile.Values)
+            {
+                if (exifValue.Tag == ExifTag.Orientation)
+                {
+                    var orientation = (ushort)exifValue.GetValue();
+
+                    if (orientation == 6 || orientation == 8) // 6: Rotate 90 degrees CW, 8: Rotate 90 degrees CCW
+                    {
+                        // Swap width and height if rotated 90 or 270 degrees
+                        (height, width) = (width, height);
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        return (width, height);
+
     }
 
     [HttpPost]
@@ -125,8 +160,6 @@ public class MessageSenderController : ChatController
 
         //using var image1 = System.Drawing.Image.FromStream(file.OpenReadStream());
 
-       
-
         var bigImageSize = ImageResizeOption.Value.BigSize;
 
         if (isOriginal)
@@ -138,9 +171,11 @@ public class MessageSenderController : ChatController
 
             await SaveImageAsync(originalBlobId, bytes, $"{prefixName}_original{suffix}", maxSize, false);
 
-            imageContent.Width = image.Width;
+            (int width, int height) = GetActualDimensions(image);
 
-            imageContent.Height = image.Height;
+            imageContent.Width = width;
+
+            imageContent.Height = height;
 
             imageContent.Size = bytes.Length;
 
@@ -157,7 +192,9 @@ public class MessageSenderController : ChatController
 
             using Image img = Image.Load(blob.Bytes);
 
-            double p = (double)img.Width / img.Height;
+            (int width, int height) = GetActualDimensions(img);
+
+            double p = (double)width / height;
 
             imageContent.Width = p > 1 ? bigImageSize : Convert.ToInt32(bigImageSize * p);
 

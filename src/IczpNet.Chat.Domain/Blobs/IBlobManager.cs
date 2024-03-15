@@ -17,5 +17,7 @@ namespace IczpNet.Chat.Blobs
         Task<Blob> GetEntityAsync(string container, string name);
 
         Task<Blob> GetAsync(Guid id);
+
+        Task<Blob> FindAsync(Guid id);
     }
 }

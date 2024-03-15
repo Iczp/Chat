@@ -42,4 +42,9 @@ public class BlobManager(
     {
         return await Repository.GetAsync( id);
     }
+
+    public async Task<Blob> FindAsync(Guid id)
+    {
+        return await Repository.FindAsync(id);
+    }
 }

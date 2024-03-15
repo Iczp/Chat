@@ -15,7 +15,7 @@ public class FileController : ChatController
     [Route("")]
     public async Task<IActionResult> GetAsync(Guid id)
     {
-        var blob = await BlobManager.GetAsync(id);
+        var blob = await BlobManager.FindAsync(id);
 
         if (blob == null)
         {
@@ -24,7 +24,8 @@ public class FileController : ChatController
 
         var bytes = await BlobManager.GetBytesAsync(blob.Container, blob.Name);
 
-        return File(bytes, blob.MimeType, blob.FileName);
+        //PhysicalFile
+        return File(bytes, blob.MimeType, blob.FileName, enableRangeProcessing: true);
     }
 
     [HttpPost]
