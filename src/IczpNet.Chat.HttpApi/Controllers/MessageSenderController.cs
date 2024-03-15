@@ -16,6 +16,8 @@ using IczpNet.Chat.Options;
 using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp.Metadata.Profiles.Exif;
 using System.Linq.Dynamic;
+using IczpNet.Chat.Models;
+using Volo.Abp.Json;
 namespace IczpNet.Chat.Controllers;
 
 [Route($"/api/{ChatRemoteServiceConsts.ModuleName}/message-sender")]
@@ -24,15 +26,18 @@ public class MessageSenderController : ChatController
     protected IMessageSenderAppService MessageSenderAppService { get; set; }
     protected ISessionUnitManager SessionUnitManager { get; set; }
     protected IOptions<ImageContentOptions> ImageResizeOption { get; set; }
+    protected IJsonSerializer JsonSerializer { get; set; }
 
     public MessageSenderController(
-        ISessionUnitManager sessionUnitManager,
-        IMessageSenderAppService messageSenderAppService,
-        IOptions<ImageContentOptions> imageResizeOption)
+            ISessionUnitManager sessionUnitManager,
+            IMessageSenderAppService messageSenderAppService,
+            IOptions<ImageContentOptions> imageResizeOption,
+            IJsonSerializer jsonSerializer)
     {
         SessionUnitManager = sessionUnitManager;
         MessageSenderAppService = messageSenderAppService;
         ImageResizeOption = imageResizeOption;
+        JsonSerializer = jsonSerializer;
     }
 
     /// <summary>
@@ -101,6 +106,36 @@ public class MessageSenderController : ChatController
 
     }
 
+    protected static List<ProfileEntry> GetProfile(Image image)
+    {
+        var items = new List<ProfileEntry>();
+
+        if (image.Metadata.ExifProfile != null)
+        {
+            foreach (var exifValue in image.Metadata.ExifProfile.Values)
+            {
+                items.Add(new ProfileEntry()
+                {
+                    Tag = exifValue.Tag.ToString(),
+                    Name = exifValue.ToString(),
+                    Value = exifValue.GetValue().ToString()
+                });
+            }
+        }
+        return items;
+    }
+
+    protected string GetProfileJson(Image image, List<ProfileEntry> otherEntries = null)
+    {
+        var profileEntries = GetProfile(image);
+        if (otherEntries != null)
+        {
+            profileEntries = [.. profileEntries, .. otherEntries];
+        }
+        var json = JsonSerializer.Serialize(profileEntries);
+        return json;
+    }
+
     [HttpPost]
     [Route("send-upload-image/{sessionUnitId}")]
     public async Task<IActionResult> SendUploadImageAsync(Guid sessionUnitId, IFormFile file, long quoteMessageId, List<Guid> remindList, bool isOriginal)
@@ -156,14 +191,13 @@ public class MessageSenderController : ChatController
             Suffix = suffix
         };
 
-        using Image image = Image.Load(bytes);
-
         //using var image1 = System.Drawing.Image.FromStream(file.OpenReadStream());
 
         var bigImageSize = ImageResizeOption.Value.BigSize;
 
         if (isOriginal)
         {
+            using Image image = Image.Load(bytes);
             //original
             var originalBlobId = GuidGenerator.Create();
 
@@ -181,7 +215,7 @@ public class MessageSenderController : ChatController
 
             imageContent.Url = $"/file?id={originalBlobId}";
 
-            imageContent.Description = $"width={image.Width},height={image.Height}";
+            imageContent.Profile = GetProfileJson(image);
         }
         else
         {
@@ -204,7 +238,7 @@ public class MessageSenderController : ChatController
 
             imageContent.Url = $"/file?id={bigImgBlobId}";
 
-            imageContent.Description = $"width={img.Width},height={img.Height}";
+            imageContent.Profile = GetProfileJson(img);
         }
 
         var sendResult = await MessageSenderAppService.SendImageAsync(sessionUnitId, new MessageInput<ImageContentInfo>()

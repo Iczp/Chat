@@ -45,4 +45,9 @@ public class ImageContentInfo : MessageContentAttachmentsInfoBase, IContentInfo
     /// </summary>
     public virtual string Qrcode { get; set; }
 
+    /// <summary>
+    /// 图片其他信息
+    /// </summary>
+    public virtual string Profile { get; set; }
+
 }

@@ -48,5 +48,10 @@ namespace IczpNet.Chat.MessageSections.Templates
         /// </summary>
         [StringLength(500)]
         public virtual string Qrcode { get; set; }
+        /// <summary>
+        /// 图片其他信息
+        /// </summary>
+        [StringLength(5000)]
+        public virtual string Profile { get; set; }
     }
 }
