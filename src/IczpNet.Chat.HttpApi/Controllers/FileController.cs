@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.Blobs.Dtos;
+﻿using IczpNet.Chat.Blobs;
+using IczpNet.Chat.Blobs.Dtos;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
@@ -31,7 +32,9 @@ public class FileController : ChatController
     [HttpPost]
     public async Task<BlobDto> UploadAsync(IFormFile file, string container, string folder, bool isPublic)
     {
-        return await UploadFileAsync(GuidGenerator.Create(), file, container, folder, isPublic);
+        var entity = await UploadFileAsync(GuidGenerator.Create(), file, container, folder, isPublic);
+
+        return ObjectMapper.Map<Blob, BlobDto>(entity);
     }
 
 }

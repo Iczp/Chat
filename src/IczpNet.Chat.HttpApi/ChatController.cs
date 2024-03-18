@@ -74,7 +74,7 @@ public abstract class ChatController : AbpControllerBase
 
     }
 
-    protected virtual async Task<BlobDto> UploadFileAsync(Guid blobId, IFormFile file, string container, string folder, bool isPublic)
+    protected virtual async Task<Blob> UploadFileAsync(Guid blobId, IFormFile file, string container, string folder, bool isPublic)
     {
         Assert.If(file == null, "No file found!");
 
@@ -92,8 +92,9 @@ public abstract class ChatController : AbpControllerBase
             Suffix = Path.GetExtension(file.FileName),
             Bytes = bytes
         });
+        return entity;
 
-        return ObjectMapper.Map<Blob, BlobDto>(entity);
+        
     }
 
     /// <summary>

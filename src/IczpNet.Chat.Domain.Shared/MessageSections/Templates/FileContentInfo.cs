@@ -6,11 +6,6 @@
 public class FileContentInfo : MessageContentAttachmentsInfoBase, IContentInfo
 {
     /// <summary>
-    /// FileName
-    /// </summary>
-    public virtual string FileName { get; set; }
-
-    /// <summary>
     /// 文件地址
     /// </summary>
     public virtual string ActionUrl { get; set; }

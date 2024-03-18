@@ -16,6 +16,11 @@ public abstract class MessageContentAttachmentsInfoBase: MessageContentInfoBase
     public virtual string Url { get; set; }
 
     /// <summary>
+    /// FileName
+    /// </summary>
+    public virtual string FileName { get; set; }
+
+    /// <summary>
     /// ContentType
     /// </summary>
     public virtual string ContentType { get; set; }

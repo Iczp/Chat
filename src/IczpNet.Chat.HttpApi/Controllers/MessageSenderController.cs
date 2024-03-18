@@ -1,5 +1,4 @@
-﻿using IczpNet.Chat.Blobs;
-using IczpNet.Chat.MessageSections.Messages;
+﻿using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.AspNetCore.Http;
@@ -15,9 +14,11 @@ using System.Linq;
 using IczpNet.Chat.Options;
 using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp.Metadata.Profiles.Exif;
-using System.Linq.Dynamic;
-using IczpNet.Chat.Models;
 using Volo.Abp.Json;
+using IczpNet.Chat.Medias;
+using Microsoft.CodeAnalysis;
+using Volo.Abp.Http;
+using Blob = IczpNet.Chat.Blobs.Blob;
 namespace IczpNet.Chat.Controllers;
 
 [Route($"/api/{ChatRemoteServiceConsts.ModuleName}/message-sender")]
@@ -25,19 +26,22 @@ public class MessageSenderController : ChatController
 {
     protected IMessageSenderAppService MessageSenderAppService { get; set; }
     protected ISessionUnitManager SessionUnitManager { get; set; }
-    protected IOptions<ImageContentOptions> ImageResizeOption { get; set; }
+    protected MessageOptions MessageSetting { get; set; }
+    protected IMediaResolver MediaResolver { get; set; }
     protected IJsonSerializer JsonSerializer { get; set; }
 
     public MessageSenderController(
             ISessionUnitManager sessionUnitManager,
             IMessageSenderAppService messageSenderAppService,
-            IOptions<ImageContentOptions> imageResizeOption,
-            IJsonSerializer jsonSerializer)
+            IOptions<MessageOptions> imageSetting,
+            IJsonSerializer jsonSerializer,
+            IMediaResolver mediaResolver)
     {
         SessionUnitManager = sessionUnitManager;
         MessageSenderAppService = messageSenderAppService;
-        ImageResizeOption = imageResizeOption;
+        MessageSetting = imageSetting.Value;
         JsonSerializer = jsonSerializer;
+        MediaResolver = mediaResolver;
     }
 
     /// <summary>
@@ -77,44 +81,40 @@ public class MessageSenderController : ChatController
     /// </summary>
     /// <param name="image"></param>
     /// <returns></returns>
-    public static (int width, int height) GetActualDimensions(Image image)
+    protected static (int width, int height) GetActualDimensions(Image image)
     {
         int width = image.Width;
+
         int height = image.Height;
 
         // Check if image has Exif metadata
         if (image.Metadata.ExifProfile != null)
         {
-            foreach (var exifValue in image.Metadata.ExifProfile.Values)
+            var item = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == ExifTag.Orientation);
+
+            if (item != null)
             {
-                if (exifValue.Tag == ExifTag.Orientation)
+                var orientation = (ushort)item.GetValue();
+
+                if (orientation == 6 || orientation == 8) // 6: Rotate 90 degrees CW, 8: Rotate 90 degrees CCW
                 {
-                    var orientation = (ushort)exifValue.GetValue();
-
-                    if (orientation == 6 || orientation == 8) // 6: Rotate 90 degrees CW, 8: Rotate 90 degrees CCW
-                    {
-                        // Swap width and height if rotated 90 or 270 degrees
-                        (height, width) = (width, height);
-                    }
-
-                    break;
+                    // Swap width and height if rotated 90 or 270 degrees
+                    (height, width) = (width, height);
                 }
             }
         }
-
         return (width, height);
-
     }
 
-    protected static List<ProfileEntry> GetProfile(Image image)
+    protected static List<ImageProfileEntry> GetProfile(Image image)
     {
-        var items = new List<ProfileEntry>();
+        var items = new List<ImageProfileEntry>();
 
         if (image.Metadata.ExifProfile != null)
         {
             foreach (var exifValue in image.Metadata.ExifProfile.Values)
             {
-                items.Add(new ProfileEntry()
+                items.Add(new ImageProfileEntry()
                 {
                     Tag = exifValue.Tag.ToString(),
                     Name = exifValue.ToString(),
@@ -125,7 +125,7 @@ public class MessageSenderController : ChatController
         return items;
     }
 
-    protected string GetProfileJson(Image image, List<ProfileEntry> otherEntries = null)
+    protected string GetProfileJson(Image image, List<ImageProfileEntry> otherEntries = null)
     {
         var profileEntries = GetProfile(image);
         if (otherEntries != null)
@@ -180,7 +180,7 @@ public class MessageSenderController : ChatController
         //thumbnail
         var thumbnailBlobId = GuidGenerator.Create();
 
-        var thumbnailImageSize = ImageResizeOption.Value.ThumbnailSize;
+        var thumbnailImageSize = MessageSetting.ImageSetting.ThumbnailSize;
 
         await SaveImageAsync(thumbnailBlobId, bytes, $"{prefixName}_{thumbnailImageSize}{suffix}", thumbnailImageSize, true);
 
@@ -193,7 +193,7 @@ public class MessageSenderController : ChatController
 
         //using var image1 = System.Drawing.Image.FromStream(file.OpenReadStream());
 
-        var bigImageSize = ImageResizeOption.Value.BigSize;
+        var bigImageSize = MessageSetting.ImageSetting.BigSize;
 
         if (isOriginal)
         {
@@ -249,5 +249,86 @@ public class MessageSenderController : ChatController
         });
 
         return new JsonResult(sendResult);
+    }
+
+    [HttpPost]
+    [Route("send-upload-video/{sessionUnitId}")]
+    public async Task<IActionResult> SendUploadVideoAsync(Guid sessionUnitId, IFormFile file, long quoteMessageId, List<Guid> remindList, bool isOriginal)
+    {
+        var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+
+        var prefixName = $"{sessionUnit.SessionId}/{sessionUnitId}/Video/{GuidGenerator.Create()}";
+
+        var blob = await UploadFileAsync(GuidGenerator.Create(), file, ChatFilesContainer, prefixName, false);
+
+        var content = new VideoContentInfo()
+        {
+            ContentType = file.ContentType,
+            Size = file.Length,
+            FileName = Path.GetFileName(file.FileName),
+            Suffix = Path.GetExtension(file.FileName),
+            Url = $"/file?id={blob.Id}"
+        };
+
+        var mediaInfo = await MediaResolver.GetVideoInfoAsync(blob.Bytes, file.FileName);
+
+        if (mediaInfo != null)
+        {
+            content.Width = mediaInfo.Width.GetValueOrDefault();
+
+            content.Height = mediaInfo.Height.GetValueOrDefault();
+
+            if (mediaInfo.Duration != null)
+            {
+                content.Duration = mediaInfo.Duration.Value.TotalSeconds;
+            }
+
+            if (!string.IsNullOrWhiteSpace(mediaInfo.ImageSnapshotPath))
+            {
+                var snapBlob = await UploadToBlobStoreAsync(mediaInfo.ImageSnapshotPath, $"{prefixName}/snapshot/");
+                content.ImageUrl = $"/file?id={snapBlob.Id}";
+            }
+            if (!string.IsNullOrWhiteSpace(mediaInfo.GifSnapshotPath))
+            {
+                var gifBlob = await UploadToBlobStoreAsync(mediaInfo.GifSnapshotPath, $"{prefixName}/gif/");
+                content.GifUrl = $"/file?id={gifBlob.Id}";
+            }
+        }
+
+        var sendResult = await MessageSenderAppService.SendVideoAsync(sessionUnitId, new MessageInput<VideoContentInfo>()
+        {
+            QuoteMessageId = quoteMessageId,
+            RemindList = remindList,
+            Content = content
+        });
+        return new JsonResult(sendResult);
+    }
+
+    protected async Task<Blob> UploadToBlobStoreAsync(string filePath, string floder)
+    {
+        using var file = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+
+        var bytes = await file.GetAllBytesAsync();
+
+        string mimeType = MimeTypes.GetByExtension(filePath);
+
+        var blobId = GuidGenerator.Create();
+
+        var suffix = Path.GetExtension(filePath);
+
+        var fielName = Path.GetFileName(filePath);
+
+        var entity = await BlobManager.CreateAsync(new Blob(blobId, ChatFilesContainer)
+        {
+            IsPublic = true,
+            FileSize = bytes.Length,
+            MimeType = MimeTypes.GetByExtension(filePath),
+            FileName = fielName,
+            Name = $"{floder}{fielName}{suffix}",
+            Suffix = suffix,
+            Bytes = bytes
+        });
+
+        return entity;
     }
 }

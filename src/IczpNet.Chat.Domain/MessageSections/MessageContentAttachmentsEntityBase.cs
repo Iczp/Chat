@@ -27,8 +27,13 @@ public abstract class MessageContentAttachmentsEntityBase : MessageContentEntity
     public virtual string Url { get; set; }
 
     /// <summary>
-    /// 
-    /// 
+    /// FileName
+    /// </summary>
+    [StringLength(256)]
+    //[Index]
+    public virtual string FileName { get; set; }
+
+    /// <summary>
     /// ContentType
     /// </summary>
     [StringLength(100)]

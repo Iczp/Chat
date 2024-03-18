@@ -12,13 +12,6 @@ public class FileContent : MessageContentAttachmentsEntityBase
     public override long GetSize() => Size ?? 0;
 
     /// <summary>
-    /// FileName
-    /// </summary>
-    [StringLength(256)]
-    //[Index]
-    public virtual string FileName { get; set; }
-
-    /// <summary>
     /// 文件地址
     /// </summary>
     //[Required(ErrorMessage = "文件控制器地址")]

@@ -1,9 +1,9 @@
 ﻿using System;
 
-namespace IczpNet.Chat.Models;
+namespace IczpNet.Chat.MessageSections.Templates;
 
 [Serializable]
-public class ProfileEntry
+public class ImageProfileEntry
 {
     public string Name { get; set; }
     public string Tag { get; set; }
