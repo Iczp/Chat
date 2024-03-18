@@ -13,6 +13,10 @@ public class MessageOptions
     public class VideoOptions
     {
         /// <summary>
+        /// 是否生成视频快照
+        /// </summary>
+        public bool IsGenerateSnapshot { get; set; } = true;
+        /// <summary>
         /// 
         /// </summary>
         public int ImgCaptureSeconds { get; set; } = 0;
@@ -28,6 +32,11 @@ public class MessageOptions
         /// 
         /// </summary>
         public int GifSeconds { get; set; } = 5;
+
+        /// <summary>
+        /// 快照略缩图大小
+        /// </summary>
+        public int SnapshotThumbnailSize { get; set; } = 160;
 
     }
 

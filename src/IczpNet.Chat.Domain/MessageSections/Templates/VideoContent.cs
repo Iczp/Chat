@@ -34,7 +34,13 @@ namespace IczpNet.Chat.MessageSections.Templates
         /// 视频封面
         /// </summary>
         [StringLength(500)]
-        public virtual string ImageUrl { get; set; }
+        public virtual string SnapshotUrl { get; set; }
+
+        /// <summary>
+        /// 封面缩略图
+        /// </summary>
+        [StringLength(500)]
+        public virtual string SnapshotThumbnailUrl { get; set; }
 
         /// <summary>
         /// 视频Width

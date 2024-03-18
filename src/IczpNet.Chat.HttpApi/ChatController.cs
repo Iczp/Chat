@@ -82,19 +82,25 @@ public abstract class ChatController : AbpControllerBase
 
         var bytes = await file.GetAllBytesAsync();
 
+        var fileName = await GenerateFileNameAsync(suffix);
+
         var entity = await BlobManager.CreateAsync(new Blob(blobId, container)
         {
             IsPublic = isPublic,
             FileSize = bytes.Length,
             MimeType = file.ContentType,
             FileName = file.FileName,
-            Name = $"{folder}/{GuidGenerator.Create()}{suffix}",
+            Name = $"{folder}/{fileName}",
             Suffix = Path.GetExtension(file.FileName),
             Bytes = bytes
         });
         return entity;
+    }
 
-        
+    protected virtual async Task<string> GenerateFileNameAsync(string suffix)
+    {
+        await Task.Yield();
+        return Clock.Now.ToString("yyyyMMdd") + ShortIdGenerator.Create() + suffix;
     }
 
     /// <summary>
@@ -143,7 +149,7 @@ public abstract class ChatController : AbpControllerBase
         await SaveImageAsync(bigImgBlobId, bytes, $"{chatObjectId}/{randomName}_540{suffix}", 540);
     }
 
-    
+
 
 
 }

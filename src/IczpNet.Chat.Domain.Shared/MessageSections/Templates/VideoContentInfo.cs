@@ -25,7 +25,12 @@ public class VideoContentInfo : MessageContentAttachmentsInfoBase, IContentInfo
     /// <summary>
     /// 视频封面 CoverImageUrl
     /// </summary>
-    public virtual string ImageUrl { get; set; }
+    public virtual string SnapshotUrl { get; set; }
+
+    /// <summary>
+    /// 封面缩略图
+    /// </summary>
+    public virtual string SnapshotThumbnailUrl { get; set; }
 
     /// <summary>
     /// 视频Width
