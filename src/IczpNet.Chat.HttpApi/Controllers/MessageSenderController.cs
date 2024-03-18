@@ -300,7 +300,7 @@ public class MessageSenderController : ChatController
 
         var mediaInfo = await MediaResolver.GetVideoInfoAsync(videoBlob.Bytes, videoBlob.FileName);
 
-        if (mediaInfo != null)
+        if (mediaInfo == null)
         {
             Logger.LogWarning($"GetVideoInfoAsync:videoBlobId:{videoBlob.Id} is null");
             return;
