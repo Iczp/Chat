@@ -73,15 +73,13 @@ public class OpenedRecorderAppService : ChatAppService, IOpenedRecorderAppServic
     [HttpPost]
     public virtual async Task<OpenedRecorderDto> SetOpenedAsync([FromQuery] OpenedRecorderInput input)
     {
-        var deviceId = await DeviceIdResolver.GetDeviceIdAsync();
-
-        Assert.If(deviceId.Equals(input.DeviceId), "DeviceId Fail");
+        var deviceId = await OpenedRecorderManager.CheckDeviceIdAsync(input.DeviceId);
 
         await CheckPolicyAsync(SetReadedPolicyName);
 
         var sessionUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
 
-        var entity = await OpenedRecorderManager.CreateIfNotContainsAsync(sessionUnit, input.MessageId, input.DeviceId);
+        var entity = await OpenedRecorderManager.CreateIfNotContainsAsync(sessionUnit, input.MessageId, deviceId);
 
         return await MapToDtoAsync(entity);
     }

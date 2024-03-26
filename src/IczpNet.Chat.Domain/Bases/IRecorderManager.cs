@@ -15,7 +15,7 @@ namespace IczpNet.Chat.Bases
         /// <param name="sessionUnitId"></param>
         /// <param name="messageId"></param>
         /// <returns></returns>
-        Task<bool> IsAnyAsync(Guid sessionUnitId,long messageId);
+        Task<bool> IsAnyAsync(Guid sessionUnitId, long messageId);
         /// <summary>
         /// Get Counts 
         /// </summary>
@@ -69,6 +69,8 @@ namespace IczpNet.Chat.Bases
         /// <param name="deviceId"></param>
         /// <returns></returns>
         Task<List<TEntity>> CreateManyAsync(SessionUnit sessionUnit, List<long> messageIdList, string deviceId);
+
+        Task<string> CheckDeviceIdAsync(string inputDeviceId, bool allowEmpty = true);
 
 
 

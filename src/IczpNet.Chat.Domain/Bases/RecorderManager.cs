@@ -2,6 +2,7 @@
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionUnits;
+using IczpNet.Pusher.DeviceIds;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,9 +19,8 @@ namespace IczpNet.Chat.Bases
         protected IRepository<TEntity> Repository { get; }
         protected IMessageRepository MessageRepository => LazyServiceProvider.LazyGetService<IMessageRepository>();
         protected ISessionUnitRepository SessionUnitRepository => LazyServiceProvider.LazyGetService<ISessionUnitRepository>();
-
         protected IBackgroundJobManager BackgroundJobManager => LazyServiceProvider.LazyGetService<IBackgroundJobManager>();
-
+        protected IDeviceIdResolver DeviceIdResolver => LazyServiceProvider.LazyGetService<IDeviceIdResolver>();
         public RecorderManager(IRepository<TEntity> repository)
         {
             Repository = repository;
@@ -181,6 +181,20 @@ namespace IczpNet.Chat.Bases
                  ;
         }
 
+        public virtual async Task<string> CheckDeviceIdAsync(string inputDeviceId, bool allowEmpty = true)
+        {
+            Assert.If(!allowEmpty && string.IsNullOrWhiteSpace(inputDeviceId), $"Fail DeviceId(Empty):{inputDeviceId}");
 
+            var deviceId = await DeviceIdResolver.GetDeviceIdAsync();
+
+            if (string.IsNullOrWhiteSpace(deviceId))
+            {
+                return inputDeviceId;
+            }
+
+            Assert.If(!deviceId.Equals(inputDeviceId), $"Fail DeviceId:{inputDeviceId}");
+
+            return deviceId;
+        }
     }
 }
