@@ -59,4 +59,10 @@ public static class ChatSettings
 
     [DefaultValue(5000)] 
     public const string MaxSessionUnitCount = $"{GroupName}:{nameof(MaxSessionUnitCount)}";
+
+    [DefaultValue(128)]
+    public const string PortraitThumbnailSize = $"{GroupName}:{nameof(PortraitThumbnailSize)}";
+
+    [DefaultValue(540)]
+    public const string PortraitBigSize = $"{GroupName}:{nameof(PortraitBigSize)}";
 }

@@ -11,7 +11,8 @@ using IczpNet.Pusher.ShortIds;
 using System;
 using Volo.Abp.Imaging;
 using System.Collections.Generic;
-using SixLabors.ImageSharp.PixelFormats;
+using Volo.Abp.Settings;
+using IczpNet.Chat.Settings;
 
 namespace IczpNet.Chat;
 
@@ -24,7 +25,7 @@ public abstract class ChatController : AbpControllerBase
     protected IBlobManager BlobManager => LazyServiceProvider.LazyGetRequiredService<IBlobManager>();
     protected IImageResizer ImageResizer => LazyServiceProvider.LazyGetRequiredService<IImageResizer>();
     protected IImageCompressor ImageCompressor => LazyServiceProvider.LazyGetRequiredService<IImageCompressor>();
-
+    protected ISettingProvider SettingProvider => LazyServiceProvider.LazyGetRequiredService<ISettingProvider>();
     public virtual string ChatFilesContainer => "chat-files";
     public virtual string EditorFilesContainer => "editor-files";
     public virtual string PortraitsContainer => "chat-object-portraits";
@@ -113,8 +114,6 @@ public abstract class ChatController : AbpControllerBase
     /// <returns></returns>
     protected async Task SavePortraitAsync(IFormFile file, long chatObjectId, Guid thumbnailBlobId, Guid bigImgBlobId)
     {
-        var bytes = await file.GetAllBytesAsync();
-
         var suffix = GetExtension(file.ContentType, file.FileName);
 
         //var compressorBytes = await ImageCompressor.CompressAsync(resizedBytes.Result);
@@ -135,18 +134,22 @@ public abstract class ChatController : AbpControllerBase
                 FileName = file.FileName,
                 Name = name,
                 Suffix = suffix,
-                Bytes = bytes
+                Bytes = resizedBytes.Result,
             });
             return entity;
         }
 
         var randomName = GuidGenerator.Create();
 
+        var bytes = await file.GetAllBytesAsync();
+
+        var thumbnailSize = await SettingProvider.GetAsync(ChatSettings.PortraitThumbnailSize, 128);
         //thumbnail
-        await SaveImageAsync(thumbnailBlobId, bytes, $"{chatObjectId}/{randomName}_128{suffix}", 128);
+        await SaveImageAsync(thumbnailBlobId, bytes, $"{chatObjectId}/{randomName}_{thumbnailSize}{suffix}", thumbnailSize);
 
         //bigImage
-        await SaveImageAsync(bigImgBlobId, bytes, $"{chatObjectId}/{randomName}_540{suffix}", 540);
+        var bigSize = await SettingProvider.GetAsync(ChatSettings.PortraitBigSize, 540);
+        await SaveImageAsync(bigImgBlobId, bytes, $"{chatObjectId}/{randomName}_{bigSize}{suffix}", bigSize);
     }
 
 
