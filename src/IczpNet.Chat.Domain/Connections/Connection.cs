@@ -16,7 +16,7 @@ namespace IczpNet.Chat.Connections
         [StringLength(200)]
         public virtual string Server { get; set; }
 
-        [StringLength(50)]
+        [StringLength(128)]
         public virtual string DeviceId { get; set; }
 
         [StringLength(36)]

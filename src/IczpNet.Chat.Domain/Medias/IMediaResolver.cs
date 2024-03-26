@@ -8,7 +8,7 @@ public interface IMediaResolver
 
     Task<VideoInfo> GetVideoInfoAsync(byte[] bytes, string fileName);
 
-    Task<AudioInfo> GetAudioInfoAsync(string videoPath);
+    //Task<AudioInfo> GetAudioInfoAsync(string audioPath);
 
-    //Task<AudioInfo> GetAudioInfoAsync(byte[] bytes);
+    Task<AudioInfo> GetAudioInfoAsync(byte[] bytes, string fileName);
 }

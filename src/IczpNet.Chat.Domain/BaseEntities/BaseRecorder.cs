@@ -37,7 +37,8 @@ namespace IczpNet.Chat.BaseEntities
         [ForeignKey(nameof(DestinationId))]
         public virtual ChatObject Destination { get; protected set; }
 
-        [StringLength(36)]
+
+        [StringLength(128)]
         public virtual string DeviceId { get; set; }
 
         protected BaseRecorder() { }

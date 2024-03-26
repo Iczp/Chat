@@ -29,7 +29,7 @@ namespace IczpNet.Chat.SessionSections.SessionRequests
         /// </summary>
         public override long? DestinationId { get; protected set; }
 
-        [StringLength(36)]
+        [StringLength(128)]
         public virtual string DeviceId { get; set; }
 
         [StringLength(200)]

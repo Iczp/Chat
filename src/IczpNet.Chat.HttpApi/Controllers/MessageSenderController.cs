@@ -19,7 +19,6 @@ using IczpNet.Chat.Medias;
 using Microsoft.CodeAnalysis;
 using Volo.Abp.Http;
 using Blob = IczpNet.Chat.Blobs.Blob;
-using SixLabors.ImageSharp.PixelFormats;
 using Microsoft.Extensions.Logging;
 namespace IczpNet.Chat.Controllers;
 
@@ -55,8 +54,8 @@ public class MessageSenderController : ChatController
     /// <param name="sessionUnitId"></param>
     /// <returns></returns>
     [HttpPost]
-    [Route("send-upload/{sessionUnitId}")]
-    public async Task<IActionResult> UploadToSendAsync(Guid sessionUnitId, IFormFile file, long quoteMessageId, List<Guid> remindList)
+    [Route("send-upload-file/{sessionUnitId}")]
+    public async Task<IActionResult> SendUploadFileAsync(Guid sessionUnitId, IFormFile file, long quoteMessageId, List<Guid> remindList)
     {
         var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
 
@@ -254,6 +253,45 @@ public class MessageSenderController : ChatController
     }
 
     [HttpPost]
+    [Route("send-upload-sound/{sessionUnitId}")]
+    public async Task<IActionResult> SendUploadSoundAsync(Guid sessionUnitId, IFormFile file, long quoteMessageId, List<Guid> remindList, [FromForm] int? duration)
+    {
+        var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+
+        var prefixName = $"{sessionUnit.SessionId}/{sessionUnitId}/Sound/";
+
+        var soundBlob = await UploadFileAsync(GuidGenerator.Create(), file, ChatFilesContainer, prefixName, false);
+
+        var content = new SoundContentInfo()
+        {
+            ContentType = file.ContentType,
+            Size = file.Length,
+            FileName = Path.GetFileName(file.FileName),
+            Suffix = Path.GetExtension(file.FileName),
+            Url = $"/file?id={soundBlob.Id}",
+            Time = duration.GetValueOrDefault(),
+        };
+
+        if(!duration.HasValue)
+        {
+            var audioInfo = await MediaResolver.GetAudioInfoAsync(soundBlob.Bytes, soundBlob.FileName);
+
+            if (audioInfo != null)
+            {
+                content.Time = (int)audioInfo.Duration.Value.TotalMilliseconds;
+            }
+        }
+
+        var sendResult = await MessageSenderAppService.SendSoundAsync(sessionUnitId, new MessageInput<SoundContentInfo>()
+        {
+            QuoteMessageId = quoteMessageId,
+            RemindList = remindList,
+            Content = content
+        });
+        return new JsonResult(sendResult);
+    }
+
+    [HttpPost]
     [Route("send-upload-video/{sessionUnitId}")]
     public async Task<IActionResult> SendUploadVideoAsync(Guid sessionUnitId, IFormFile file, long quoteMessageId, List<Guid> remindList, bool isOriginal)
     {
@@ -328,9 +366,9 @@ public class MessageSenderController : ChatController
             // Actual width | height
             using Image snapshotImg = Image.Load(snapBlob.Bytes);
 
-            content.Width = snapshotImg.Width;
+            content.ImageWidth = snapshotImg.Width;
 
-            content.Height = snapshotImg.Height;
+            content.ImageHeight = snapshotImg.Height;
 
             (int width, int height) = GetActualDimensions(snapshotImg);
 

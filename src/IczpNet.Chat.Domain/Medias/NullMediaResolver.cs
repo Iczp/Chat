@@ -1,10 +1,8 @@
 ﻿using IczpNet.Chat.Options;
 using Microsoft.Extensions.Options;
-using System.Collections;
 using System.IO;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Services;
-using Volo.Abp.Timing;
 
 namespace IczpNet.Chat.Medias;
 
@@ -12,8 +10,9 @@ public class NullMediaResolver : DomainService, IMediaResolver
 {
     protected MessageOptions Options => LazyServiceProvider.LazyGetRequiredService<IOptions<MessageOptions>>().Value;
 
-    public virtual Task<AudioInfo> GetAudioInfoAsync(string videoPath)
+    public async Task<AudioInfo> GetAudioInfoAsync(byte[] bytes, string fileName)
     {
+        await Task.Yield();
         return null;
     }
 

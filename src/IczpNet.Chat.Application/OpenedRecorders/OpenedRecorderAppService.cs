@@ -1,7 +1,9 @@
-﻿using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.AbpCommons;
+using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.OpenedRecorders.Dtos;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
+using IczpNet.Pusher.DeviceIds;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -23,12 +25,16 @@ public class OpenedRecorderAppService : ChatAppService, IOpenedRecorderAppServic
 
     protected IOpenedRecorderManager OpenedRecorderManager { get; }
 
+    protected IDeviceIdResolver DeviceIdResolver { get; }
+
     public OpenedRecorderAppService(
         IOpenedRecorderManager openedRecorderManager,
-        IRepository<OpenedRecorder> repository)
+        IRepository<OpenedRecorder> repository,
+        IDeviceIdResolver deviceIdResolver)
     {
         OpenedRecorderManager = openedRecorderManager;
         Repository = repository;
+        DeviceIdResolver = deviceIdResolver;
     }
 
     /// <summary>
@@ -67,6 +73,10 @@ public class OpenedRecorderAppService : ChatAppService, IOpenedRecorderAppServic
     [HttpPost]
     public virtual async Task<OpenedRecorderDto> SetOpenedAsync([FromQuery] OpenedRecorderInput input)
     {
+        var deviceId = await DeviceIdResolver.GetDeviceIdAsync();
+
+        Assert.If(deviceId.Equals(input.DeviceId), "DeviceId Fail");
+
         await CheckPolicyAsync(SetReadedPolicyName);
 
         var sessionUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
