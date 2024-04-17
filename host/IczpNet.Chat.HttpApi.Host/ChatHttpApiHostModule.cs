@@ -23,6 +23,8 @@ using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.Autofac;
 using Volo.Abp.BackgroundJobs;
+using Volo.Abp.BlobStoring;
+using Volo.Abp.BlobStoring.FileSystem;
 using Volo.Abp.Caching;
 using Volo.Abp.Caching.StackExchangeRedis;
 using Volo.Abp.EntityFrameworkCore;
@@ -56,6 +58,7 @@ typeof(ChatApplicationModule),
     )]
 //[DependsOn(typeof(ChatManagementApplicationModule))]
 [DependsOn(typeof(AbpBackgroundJobsModule))]
+[DependsOn(typeof(AbpBlobStoringFileSystemModule))]
 public class ChatHttpApiHostModule : AbpModule
 {
 
@@ -114,6 +117,17 @@ public class ChatHttpApiHostModule : AbpModule
             //options
             //    .ConventionalControllers
             //    .CreateAsync(typeof(ChatManagementApplicationModule).Assembly);
+        });
+
+        Configure<AbpBlobStoringOptions>(options =>
+        {
+            options.Containers.ConfigureDefault(container =>
+            {
+                container.UseFileSystem(filesystem =>
+                {
+                    filesystem.BasePath = configuration["Blob:FileSystem:BasePath"];
+                });
+            });
         });
 
         Configure<AbpDbContextOptions>(options =>

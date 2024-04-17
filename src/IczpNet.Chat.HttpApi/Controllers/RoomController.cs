@@ -56,5 +56,39 @@ namespace IczpNet.Chat.Controllers
 
             return chatObjectDto;
         }
+
+        /// <summary>
+        /// 群动太图片（合成9宫格）
+        /// </summary>
+        /// <param name="sessionUnitId"></param>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("upload-portrait/{sessionUnitId}")]
+        public async Task<ChatObjectDto> GetAvatarAsync(Guid sessionUnitId, IFormFile file)
+        {
+            //Assert.If(file == null, "No file found!");
+
+            //var blobId = GuidGenerator.Create();
+
+            //var chatObjectDto = await RoomAppService.UpdatePortraitWithTaskAsync(sessionUnitId, $"/file?id={blobId}", $"/file?id={blobId}");
+
+            //var blob = await UploadFileAsync(blobId, file, PortraitsContainer, $"{chatObjectDto.Id}", true);
+
+            await CheckImageAsync(file);
+
+            var bigImgBlobId = GuidGenerator.Create();
+
+            var thumbnailBlobId = GuidGenerator.Create();
+
+            var chatObjectDto = await RoomAppService.UpdatePortraitAsync(
+                sessionUnitId,
+                $"/file?id={thumbnailBlobId}",
+                $"/file?id={bigImgBlobId}");
+
+            await SavePortraitAsync(file, chatObjectDto.Id, thumbnailBlobId, bigImgBlobId);
+
+            return chatObjectDto;
+        }
     }
 }

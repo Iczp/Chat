@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using System;
+using System.Collections.Specialized;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace IczpNet.Chat.Controllers;
 
@@ -36,5 +38,7 @@ public class FileController : ChatController
 
         return ObjectMapper.Map<Blob, BlobDto>(entity);
     }
+
+    
 
 }
