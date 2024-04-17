@@ -82,7 +82,7 @@ public class MessageSenderController : ChatController
     /// </summary>
     /// <param name="image"></param>
     /// <returns></returns>
-    protected static (int width, int height) GetActualDimensions(Image image)
+    protected virtual (int width, int height) GetImageActualDimensions(Image image)
     {
         int width = image.Width;
 
@@ -107,7 +107,7 @@ public class MessageSenderController : ChatController
         return (width, height);
     }
 
-    protected static List<ImageProfileEntry> GetProfile(Image image)
+    protected virtual List<ImageProfileEntry> GetImageProfile(Image image)
     {
         var items = new List<ImageProfileEntry>();
 
@@ -126,9 +126,9 @@ public class MessageSenderController : ChatController
         return items;
     }
 
-    protected string GetProfileJson(Image image, List<ImageProfileEntry> otherEntries = null)
+    protected virtual string GetImageProfileJson(Image image, List<ImageProfileEntry> otherEntries = null)
     {
-        var profileEntries = GetProfile(image);
+        var profileEntries = GetImageProfile(image);
         if (otherEntries != null)
         {
             profileEntries = [.. profileEntries, .. otherEntries];
@@ -206,7 +206,7 @@ public class MessageSenderController : ChatController
 
             await SaveImageAsync(originalBlobId, bytes, $"{prefixName}_original{suffix}", maxSize, false);
 
-            (int width, int height) = GetActualDimensions(image);
+            (int width, int height) = GetImageActualDimensions(image);
 
             imageContent.Width = width;
 
@@ -216,7 +216,7 @@ public class MessageSenderController : ChatController
 
             imageContent.Url = $"/file?id={originalBlobId}";
 
-            imageContent.Profile = GetProfileJson(image);
+            imageContent.Profile = GetImageProfileJson(image);
         }
         else
         {
@@ -227,7 +227,7 @@ public class MessageSenderController : ChatController
 
             using Image img = Image.Load(blob.Bytes);
 
-            (int width, int height) = GetActualDimensions(img);
+            (int width, int height) = GetImageActualDimensions(img);
 
             double p = (double)width / height;
 
@@ -239,7 +239,7 @@ public class MessageSenderController : ChatController
 
             imageContent.Url = $"/file?id={bigImgBlobId}";
 
-            imageContent.Profile = GetProfileJson(img);
+            imageContent.Profile = GetImageProfileJson(img);
         }
 
         var sendResult = await MessageSenderAppService.SendImageAsync(sessionUnitId, new MessageInput<ImageContentInfo>()
@@ -272,7 +272,7 @@ public class MessageSenderController : ChatController
             Time = duration.GetValueOrDefault(),
         };
 
-        if(!duration.HasValue)
+        if (!duration.HasValue)
         {
             var audioInfo = await MediaResolver.GetAudioInfoAsync(soundBlob.Bytes, soundBlob.FileName);
 
@@ -370,7 +370,7 @@ public class MessageSenderController : ChatController
 
             content.ImageHeight = snapshotImg.Height;
 
-            (int width, int height) = GetActualDimensions(snapshotImg);
+            (int width, int height) = GetImageActualDimensions(snapshotImg);
 
             //Snapshot thumbnail Size
             var thumbnailSize = MessageSetting.VideoSetting.SnapshotThumbnailSize;
@@ -410,7 +410,7 @@ public class MessageSenderController : ChatController
     }
 
 
-    protected async Task<Blob> UploadToBlobStoreAsync(string filePath, string fileName)
+    protected virtual async Task<Blob> UploadToBlobStoreAsync(string filePath, string fileName)
     {
         using var file = new FileStream(filePath, FileMode.Open, FileAccess.Read);
 
