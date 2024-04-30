@@ -1,8 +1,7 @@
-﻿namespace IczpNet.Chat.ChatObjects
+﻿namespace IczpNet.Chat.ChatObjects;
+
+public class ChatObjectIdName
 {
-    public class ChatObjectIdName
-    {
-        public long Id { get; set; }
-        public string Name { get; set; }
-    }
+    public long Id { get; set; }
+    public string Name { get; set; }
 }

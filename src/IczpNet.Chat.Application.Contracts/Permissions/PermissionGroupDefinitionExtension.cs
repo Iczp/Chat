@@ -1,49 +1,44 @@
-﻿using IczpNet.Chat.Localization;
-using System;
+﻿using System;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Localization;
 using Volo.Abp.Reflection;
 
-namespace IczpNet.Chat.Permissions
+namespace IczpNet.Chat.Permissions;
+
+public static class PermissionGroupDefinitionExtension
 {
-    public static class PermissionGroupDefinitionExtension
+    public static void AddPermission(this PermissionGroupDefinition group, string[] names, Func<string, LocalizableString> localizableString)
     {
-        public static void AddPermission(this PermissionGroupDefinition group, string[] names)
-        {
-            var permission = group.AddPermission(names[0], L(names[0]));
+        var permission = group.AddPermission(names[0], localizableString(names[0]));
 
-            for (int i = 1; i < names.Length; i++)
-            {
-                permission.AddChild(names[i], L(names[i]));
-            }
-        }
-
-        public static void AddPermission<T>(this PermissionGroupDefinition group)
+        for (int i = 1; i < names.Length; i++)
         {
-            AddPermission(group, typeof(T));
-        }
-
-        public static void AddPermission(this PermissionGroupDefinition group, Type type)
-        {
-            var names = ReflectionHelper.GetPublicConstantsRecursively(type);
-
-            AddPermission(group, names);
-        }
-
-        public static void AddPermissions(this PermissionGroupDefinition group, Type rootPermissionType)
-        {
-            foreach (var nestedType in rootPermissionType.GetNestedTypes())
-            {
-                AddPermission(group, nestedType);
-            }
-        }
-        public static void AddPermissions<T>(this PermissionGroupDefinition group)
-        {
-            AddPermissions(group, typeof(T));
-        }
-        public static LocalizableString L(string name)
-        {
-            return LocalizableString.Create<ChatResource>(name);
+            permission.AddChild(names[i], localizableString(names[i]));
         }
     }
+
+    public static void AddPermission<T>(this PermissionGroupDefinition group, Func<string, LocalizableString> localizableString)
+    {
+        AddPermission(group, typeof(T), localizableString);
+    }
+
+    public static void AddPermission(this PermissionGroupDefinition group, Type type, Func<string, LocalizableString> localizableString)
+    {
+        var names = ReflectionHelper.GetPublicConstantsRecursively(type);
+
+        AddPermission(group, names, localizableString);
+    }
+
+    public static void AddPermissions(this PermissionGroupDefinition group, Type rootPermissionType, Func<string, LocalizableString> localizableString)
+    {
+        foreach (var nestedType in rootPermissionType.GetNestedTypes())
+        {
+            AddPermission(group, nestedType, localizableString);
+        }
+    }
+    public static void AddPermissions<T>(this PermissionGroupDefinition group, Func<string, LocalizableString> localizableString)
+    {
+        AddPermissions(group, typeof(T), localizableString);
+    }
 }
+

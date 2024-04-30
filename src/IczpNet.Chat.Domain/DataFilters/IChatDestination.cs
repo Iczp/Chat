@@ -4,10 +4,10 @@ using System;
 
 namespace IczpNet.Chat.DataFilters;
 
-public interface IChatOwner<TKey> : IOwner<TKey, ChatObject>, IChatOwner
+public interface IChatDestination<TKey> : IDestination<TKey, ChatObject>, IChatDestination
 {
 }
 
-public interface IChatOwner
+public interface IChatDestination
 {
 }

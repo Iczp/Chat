@@ -49,6 +49,7 @@ using IczpNet.Chat.WalletOrders;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.InvitationCodes;
 using IczpNet.Chat.MessageWords;
+using IczpNet.Chat.ClientConfigs;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -147,5 +148,8 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<BlobContent> BlobContent { get; }
 
     DbSet<InvitationCode> InvitationCode { get; }
+
+    DbSet<ClientConfig> ClientConfig { get; }
+    
 
 }

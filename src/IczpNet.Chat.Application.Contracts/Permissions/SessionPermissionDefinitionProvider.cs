@@ -21,7 +21,7 @@ public class SessionPermissionDefinitionProvider : PermissionDefinitionProvider
 
         //sessionGroup.AddPermission<SessionPermissionDefinitionConsts.SessionUnitPermissions>();
 
-        sessionGroup.AddPermissions<SessionPermissionDefinitionConsts>();
+        sessionGroup.AddPermissions<SessionPermissionDefinitionConsts>(x => L($"{x}"));
     }
 
     private static LocalizableString L(string name)

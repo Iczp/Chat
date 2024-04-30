@@ -22,7 +22,7 @@ public class ChatPermissionDefinitionProvider : PermissionDefinitionProvider
 
         //chatGroup.AddPermission<ChatPermissions.MessageSenderPermission>();
 
-        chatGroup.AddPermissions<ChatPermissions>();
+        chatGroup.AddPermissions<ChatPermissions>(x => L($"{x}"));
 
     }
 

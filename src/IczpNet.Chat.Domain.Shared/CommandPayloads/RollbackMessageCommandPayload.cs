@@ -2,12 +2,11 @@
 using IczpNet.Pusher.Commands;
 using System;
 
-namespace IczpNet.Chat.CommandPayloads
+namespace IczpNet.Chat.CommandPayloads;
+
+[Command(CommandConsts.Rollback)]
+[Serializable]
+public class RollbackMessageCommandPayload //: RollbackMessageEto
 {
-    [Command(CommandConsts.Rollback)]
-    [Serializable]
-    public class RollbackMessageCommandPayload //: RollbackMessageEto
-    {
-        public virtual long MessageId { get; set; }
-    }
+    public virtual long MessageId { get; set; }
 }

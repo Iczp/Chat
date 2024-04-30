@@ -2,20 +2,19 @@
 using IczpNet.Chat.Enums;
 using System;
 
-namespace IczpNet.Chat.ChatObjects
+namespace IczpNet.Chat.ChatObjects;
+
+public interface IChatObject : IName, ICode
 {
-    public interface IChatObject : IName, ICode
-    {
-        long Id { get; }
+    long Id { get; }
 
-        long? ParentId { get; }
+    long? ParentId { get; }
 
-        string Portrait { get; }
+    string Portrait { get; }
 
-        string ChatObjectTypeId { get; }
+    string ChatObjectTypeId { get; }
 
-        ChatObjectTypeEnums? ObjectType { get; }
+    ChatObjectTypeEnums? ObjectType { get; }
 
-        Guid? AppUserId { get; }
-    }
+    Guid? AppUserId { get; }
 }

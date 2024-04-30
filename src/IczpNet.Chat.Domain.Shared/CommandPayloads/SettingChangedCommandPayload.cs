@@ -2,12 +2,11 @@
 using IczpNet.Pusher.Commands;
 using System;
 
-namespace IczpNet.Chat.CommandPayloads
+namespace IczpNet.Chat.CommandPayloads;
+
+[Command(CommandConsts.SettingChanged)]
+[Serializable]
+public class SettingChangedCommandPayload
 {
-    [Command(CommandConsts.SettingChanged)]
-    [Serializable]
-    public class SettingChangedCommandPayload
-    {
-        //public virtual string SessionUnitId { get; set; }
-    }
+    //public virtual string SessionUnitId { get; set; }
 }

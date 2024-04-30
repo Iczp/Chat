@@ -9,16 +9,28 @@
 
     "Permission:Chat": "聊天管理",
 
-    "SessionPermissionDefinitionConsts.SessionRolePermission": "会话角色管理",
-    "SessionPermissionDefinitionConsts.SessionRolePermission.Create": "新增",
-    "SessionPermissionDefinitionConsts.SessionRolePermission.Update": "修改",
-    "SessionPermissionDefinitionConsts.SessionRolePermission.Delete": "删除",
-    "SessionPermissionDefinitionConsts.SessionRolePermission.SetAllPermissions": "设置所有权限",
+    "ChatPermissions.ChatObjectPermission": "聊天对象",
+    "ChatPermissions.ChatObjectPermission.GetItem": "查看详情",
+    "ChatPermissions.ChatObjectPermission.GetList": "查看列表",
 
-    "SessionPermissionDefinitionConsts.SessionOrganizationPermission": "会话组织架构",
-    "SessionPermissionDefinitionConsts.SessionOrganizationPermission.Create": "新增",
-    "SessionPermissionDefinitionConsts.SessionOrganizationPermission.Update": "修改",
-    "SessionPermissionDefinitionConsts.SessionOrganizationPermission.Delete": "删除",
+    "ChatPermissions.ChatObjectPermission.Create": "新增",
+    "ChatPermissions.ChatObjectPermission.Update": "修改",
+    "ChatPermissions.ChatObjectPermission.Delete": "删除",
+
+    "ChatPermissions.DeveloperPermission": "开发者",
+    "ChatPermissions.DeveloperPermission.Update": "更新",
+    "ChatPermissions.DeveloperPermission.SetIsEnabled": "设置是否可用",
+
+    "ChatPermissions.ChatObjectCategoryPermission": "聊天对象目录",
+    "ChatPermissions.ChatObjectCategoryPermission.Create": "新增",
+    "ChatPermissions.ChatObjectCategoryPermission.Update": "修改",
+    "ChatPermissions.ChatObjectCategoryPermission.Delete": "删除",
+
+    "ChatPermissions.ChatObjectTypePermission": "聊天对象类型",
+    "ChatPermissions.ChatObjectTypePermission.Create": "新增",
+    "ChatPermissions.ChatObjectTypePermission.Update": "修改",
+    "ChatPermissions.ChatObjectTypePermission.Delete": "删除",
+
 
     "ChatPermissions.SessionPermissionGroupPermission": "会话权限分组管理",
     "ChatPermissions.SessionPermissionGroupPermission.Create": "新增分组",
@@ -88,7 +100,26 @@
     "ChatPermissions.ContactPermission": "通讯录",
     "ChatPermissions.ContactPermission.GetList": "查看列表",
     "ChatPermissions.ContactPermission.GetItem": "查看详情",
-    "ChatPermissions.ContactPermission.Delete": "删除"
+    "ChatPermissions.ContactPermission.Delete": "删除",
+
+
+    "Permission:SessionPermissionDefinitionConsts": "会话权限定义",
+
+    "SessionPermissionDefinitionConsts.SessionRequestPermission": "会话请求",
+    "SessionPermissionDefinitionConsts.SessionRequestPermission.Handle": "处理会话",
+
+    "SessionPermissionDefinitionConsts.ChatObjectPermission": "会话对象",
+
+    "SessionPermissionDefinitionConsts.SessionRolePermission": "会话角色管理",
+    "SessionPermissionDefinitionConsts.SessionRolePermission.Create": "新增",
+    "SessionPermissionDefinitionConsts.SessionRolePermission.Update": "修改",
+    "SessionPermissionDefinitionConsts.SessionRolePermission.Delete": "删除",
+    "SessionPermissionDefinitionConsts.SessionRolePermission.SetAllPermissions": "设置所有权限",
+
+    "SessionPermissionDefinitionConsts.SessionOrganizationPermission": "会话组织架构",
+    "SessionPermissionDefinitionConsts.SessionOrganizationPermission.Create": "新增",
+    "SessionPermissionDefinitionConsts.SessionOrganizationPermission.Update": "修改",
+    "SessionPermissionDefinitionConsts.SessionOrganizationPermission.Delete": "删除"
 
   }
 }

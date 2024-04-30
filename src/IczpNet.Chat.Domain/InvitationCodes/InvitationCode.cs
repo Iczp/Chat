@@ -1,6 +1,7 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.DataFilters;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.ComponentModel.DataAnnotations;
@@ -12,7 +13,7 @@ namespace IczpNet.Chat.InvitationCodes;
 /// 邀请码
 /// </summary>
 [Index(nameof(Code))]
-public class InvitationCode : BaseEntity<Guid>, IIsEnabled
+public class InvitationCode : BaseEntity<Guid>, IIsEnabled, IChatOwner<long?>
 {
     /// <summary>
     /// 标题
