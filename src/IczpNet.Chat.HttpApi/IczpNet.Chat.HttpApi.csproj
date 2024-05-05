@@ -11,6 +11,7 @@
 		<PackageProjectUrl>https://github.com/Iczp/Chat.git</PackageProjectUrl>
 		<Version>0.1.1</Version>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 	</PropertyGroup>
 
 	<ItemGroup>
