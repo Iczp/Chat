@@ -7,7 +7,7 @@ public class ConnectionCreateInput : BaseInput
 {
     public virtual Guid? AppUserId { get; set; }
 
-    public virtual Guid? ChatObjectId { get; set; }
+    //public virtual Guid? ChatObjectId { get; set; }
 
     public virtual string Server { get; set; }
 

@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240507080309_Connection_Reconstruction")]
+    partial class Connection_Reconstruction
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -969,9 +972,6 @@ namespace IczpNet.Chat.Migrations
                         .IsDescending();
 
                     b.HasIndex("ChatObjects");
-
-                    b.HasIndex("CreationTime")
-                        .IsDescending();
 
                     b.HasIndex("DeviceId");
 
@@ -3851,9 +3851,6 @@ namespace IczpNet.Chat.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ActiveTime")
-                        .IsDescending();
-
-                    b.HasIndex("CreationTime")
                         .IsDescending();
 
                     b.ToTable("Chat_ServerHost", (string)null);

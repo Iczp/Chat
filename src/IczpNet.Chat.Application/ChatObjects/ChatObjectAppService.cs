@@ -290,12 +290,24 @@ public class ChatObjectAppService
 
         return await MapToEntityDetailAsync(entity);
     }
+
+    /// <summary>
+    /// 获取服务状态(在线状态)
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
     [HttpGet]
     public async Task<List<ServiceStatusCacheItem>> GetServiceStatusAsync(long id)
     {
         return await ServiceStateManager.GetAsync(id);
     }
 
+    /// <summary>
+    /// <inheritdoc/> 设置服务状态(在线状态)
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="status"></param>
+    /// <returns></returns>
     [HttpPost]
     public async Task<List<ServiceStatusCacheItem>> SetServiceStatusAsync(long id, ServiceStatus status)
     {

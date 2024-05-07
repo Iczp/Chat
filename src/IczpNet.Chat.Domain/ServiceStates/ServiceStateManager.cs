@@ -55,7 +55,7 @@ public class ServiceStateManager : DomainService, IServiceStateManager
 
         if (items == null)
         {
-            items = new List<ServiceStatusCacheItem>() { new ServiceStatusCacheItem(chatObjectId, deviceId, status) };
+            items = [new ServiceStatusCacheItem(chatObjectId, deviceId, status)];
         }
         else
         {

@@ -1,37 +1,71 @@
-﻿using IczpNet.Chat.BaseEntities;
+﻿
+using IczpNet.AbpCommons.DataFilters;
+using IczpNet.Chat.BaseEntities;
+using IczpNet.Chat.ServerHosts;
+using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace IczpNet.Chat.Connections
+namespace IczpNet.Chat.Connections;
+
+[Index(nameof(ChatObjects))]
+[Index(nameof(DeviceId))]
+[Index(nameof(IpAddress))]
+[Index(nameof(ActiveTime), AllDescending = true)]
+[Index(nameof(CreationTime), AllDescending = true)]
+[Index(nameof(CreationTime), AllDescending = false)]
+public class Connection : BaseEntity<string>, IDeviceId
 {
-    public class Connection : BaseEntity<Guid>
+    [Key]
+    [StringLength(64)]
+    public override string Id { get; protected set; }
+
+    public virtual string ServerHostId { get; set; }
+
+    [ForeignKey(nameof(ServerHostId))]
+    public virtual ServerHost ServerHost { get; set; }
+
+    public virtual Guid? AppUserId { get; set; }
+
+    //public virtual Guid? ChatObjectId { get; set; }
+
+    [StringLength(1000)]
+    public virtual string ChatObjects { get; protected set; }
+
+    [StringLength(ChatConsts.DriveIdLength)]
+    public virtual string DeviceId { get; set; }
+
+    [StringLength(36)]
+    public virtual string IpAddress { get; set; }
+
+    [StringLength(300)]
+    public virtual string BrowserInfo { get; set; }
+
+    public virtual DateTime ActiveTime { get; protected set; } = DateTime.Now;
+
+    public virtual IList<ConnectionChatObject> ConnectionChatObjectList { get; protected set; } = [];
+
+    protected Connection() { }
+
+    public Connection(string id) : base(id)
     {
-        //[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        //public virtual long AutoId { get; protected set; }
-        //[Required]
-        public virtual Guid? AppUserId { get; set; }
 
-        public virtual Guid? ChatObjectId { get; set; }
+    }
 
-        [StringLength(200)]
-        public virtual string Server { get; set; }
+    internal void SetActiveTime(DateTime activeTime)
+    {
+        ActiveTime = activeTime;
+    }
 
-        [StringLength(128)]
-        public virtual string DeviceId { get; set; }
+    public void SetConnectionId(string id)
+    {
+        Id = id.ToLower();
+    }
 
-        [StringLength(36)]
-        public virtual string Ip { get; set; }
-
-        [StringLength(300)]
-        public virtual string Agent { get; set; }
-
-        public virtual DateTime ActiveTime { get; private set; } = DateTime.Now;
-
-        protected Connection() { }
-
-        internal void SetActiveTime(DateTime now)
-        {
-            ActiveTime = now;
-        }
+    public void SetChatObjects(List<long> chatObjectIdList)
+    {
+        ChatObjects = chatObjectIdList.JoinAsString(",");
     }
 }

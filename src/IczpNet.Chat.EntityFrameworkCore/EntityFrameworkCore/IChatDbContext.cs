@@ -50,6 +50,7 @@ using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.InvitationCodes;
 using IczpNet.Chat.MessageWords;
 using IczpNet.Chat.ClientConfigs;
+using IczpNet.Chat.ServerHosts;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -111,6 +112,8 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<Developer> Developer { get; }
 
     DbSet<Connection> Connection { get; }
+
+    DbSet<ServerHost> ServerHost { get; }
 
     DbSet<Message> Message { get; }
     DbSet<MessageWord> MessageWord { get; }

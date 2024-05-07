@@ -37,6 +37,7 @@ using IczpNet.Chat.Blobs;
 using IczpNet.Chat.SessionSections.SessionUnitContactTags;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.MessageWords;
+using IczpNet.Chat.Connections;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -72,7 +73,7 @@ public static class ChatDbContextModelCreatingExtensions
         builder.ConfigEntitys<ChatDomainModule>(ChatDbProperties.DbTablePrefix, ChatDbProperties.DbSchema);
 
         ConfigMessageTemplateEntitys(builder);
-        ForEachEntitys(builder);
+        //ForEachEntitys(builder);
         //ConfigKeys(builder);
 
         builder.Entity<DbTable>(b =>
@@ -89,7 +90,7 @@ public static class ChatDbContextModelCreatingExtensions
             //    .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
             b.UseTptMappingStrategy();
         });
-
+        builder.Entity<ConnectionChatObject>(b => { b.HasKey(x => new { x.ChatObjectId, x.ConnectionId }); });
         builder.Entity<ChatObjectEntryValue>(b => { b.HasKey(x => new { x.OwnerId, x.EntryValueId }); });
         builder.Entity<ChatObjectCategoryUnit>(b => { b.HasKey(x => new { x.ChatObjectId, x.CategoryId }); });
         builder.Entity<ArticleMessage>(b => { b.HasKey(x => new { x.MessageId, x.ArticleId }); });
@@ -100,7 +101,7 @@ public static class ChatDbContextModelCreatingExtensions
         builder.Entity<SessionUnitEntryValue>(b => { b.HasKey(x => new { x.SessionUnitId, x.EntryValueId }); });
         builder.Entity<SessionUnitTag>(b => { b.HasKey(x => new { x.SessionUnitId, x.SessionTagId }); });
         builder.Entity<SessionUnitContactTag>(b => { b.HasKey(x => new { x.SessionUnitId, x.TagId }); });
-        
+
         builder.Entity<SessionUnitRole>(b => { b.HasKey(x => new { x.SessionUnitId, x.SessionRoleId }); });
         builder.Entity<SessionUnitOrganization>(b => { b.HasKey(x => new { x.SessionUnitId, x.SessionOrganizationId }); });
         builder.Entity<SessionPermissionRoleGrant>(b => { b.HasKey(x => new { x.DefinitionId, x.RoleId }); });
@@ -134,7 +135,8 @@ public static class ChatDbContextModelCreatingExtensions
             b.HasOne(x => x.Owner).WithOne(x => x.Developer).HasForeignKey<Developer>(x => x.OwnerId).IsRequired(true);
         });
 
-        builder.Entity<HttpResponse>(b => { 
+        builder.Entity<HttpResponse>(b =>
+        {
             b.HasKey(x => new { x.HttpRequestId });
             b.HasOne(x => x.HttpRequest).WithOne(x => x.Response).HasForeignKey<HttpResponse>(x => x.HttpRequestId).IsRequired(true);
         });

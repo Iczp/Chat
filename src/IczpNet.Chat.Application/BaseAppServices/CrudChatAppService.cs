@@ -3,7 +3,6 @@ using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Localization;
-using IczpNet.Chat.SessionSections.SessionRequests.Dtos;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -26,7 +25,7 @@ public abstract class CrudChatAppService<
     TKey,
     TGetListInput>
     :
-    CrudAbpCommonsAppService<
+    CrudChatAppService<
         TEntity,
         TGetOutputDto,
         TGetListOutputDto,

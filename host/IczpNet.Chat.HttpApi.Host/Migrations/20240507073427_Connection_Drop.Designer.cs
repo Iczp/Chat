@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240507073427_Connection_Drop")]
+    partial class Connection_Drop
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -890,137 +893,6 @@ namespace IczpNet.Chat.Migrations
                         .IsDescending();
 
                     b.ToTable("Chat_ClientConfig", (string)null);
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.Connections.Connection", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
-                    b.Property<DateTime>("ActiveTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("AppUserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("BrowserInfo")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
-                    b.Property<string>("ChatObjects")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<string>("DeviceId")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
-                    b.Property<string>("ExtraProperties")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<string>("IpAddress")
-                        .HasMaxLength(36)
-                        .HasColumnType("nvarchar(36)");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<string>("ServerHostId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ActiveTime")
-                        .IsDescending();
-
-                    b.HasIndex("ChatObjects");
-
-                    b.HasIndex("CreationTime")
-                        .IsDescending();
-
-                    b.HasIndex("DeviceId");
-
-                    b.HasIndex("IpAddress");
-
-                    b.HasIndex("ServerHostId");
-
-                    b.ToTable("Chat_Connection", (string)null);
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.Connections.ConnectionChatObject", b =>
-                {
-                    b.Property<long>("ChatObjectId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("ConnectionId")
-                        .HasColumnType("nvarchar(64)");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<string>("ExtraProperties")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.HasKey("ChatObjectId", "ConnectionId");
-
-                    b.HasIndex("ConnectionId");
-
-                    b.ToTable("Chat_ConnectionChatObject", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.ContactTags.ContactTag", b =>
@@ -3793,72 +3665,6 @@ namespace IczpNet.Chat.Migrations
                     b.ToTable("Chat_Scoped", (string)null);
                 });
 
-            modelBuilder.Entity("IczpNet.Chat.ServerHosts.ServerHost", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("ActiveTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<string>("ExtraProperties")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ActiveTime")
-                        .IsDescending();
-
-                    b.HasIndex("CreationTime")
-                        .IsDescending();
-
-                    b.ToTable("Chat_ServerHost", (string)null);
-                });
-
             modelBuilder.Entity("IczpNet.Chat.SessionSections.SessionOrganizations.SessionOrganization", b =>
                 {
                     b.Property<long>("Id")
@@ -6175,34 +5981,6 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("Owner");
                 });
 
-            modelBuilder.Entity("IczpNet.Chat.Connections.Connection", b =>
-                {
-                    b.HasOne("IczpNet.Chat.ServerHosts.ServerHost", "ServerHost")
-                        .WithMany()
-                        .HasForeignKey("ServerHostId");
-
-                    b.Navigation("ServerHost");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.Connections.ConnectionChatObject", b =>
-                {
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "ChatObject")
-                        .WithMany()
-                        .HasForeignKey("ChatObjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("IczpNet.Chat.Connections.Connection", "Connection")
-                        .WithMany("ConnectionChatObjectList")
-                        .HasForeignKey("ConnectionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ChatObject");
-
-                    b.Navigation("Connection");
-                });
-
             modelBuilder.Entity("IczpNet.Chat.ContactTags.ContactTag", b =>
                 {
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
@@ -7293,11 +7071,6 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("RedEnvelopeUnitList");
 
                     b.Navigation("SenderMessageList");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.Connections.Connection", b =>
-                {
-                    b.Navigation("ConnectionChatObjectList");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.ContactTags.ContactTag", b =>

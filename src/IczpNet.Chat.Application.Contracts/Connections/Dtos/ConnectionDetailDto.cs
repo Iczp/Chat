@@ -2,5 +2,5 @@
 
 public class ConnectionDetailDto : ConnectionDto
 {
-
+    public virtual string BrowserInfo { get; set; }
 }
