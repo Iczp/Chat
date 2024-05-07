@@ -23,7 +23,8 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<SessionUnit, SessionUnitCacheItem>();
 
         //ChatObject
-        CreateMap<ChatObject, ChatObjectInfo>();
+        CreateMap<ChatObject, ChatObjectInfo>()
+            .ForMember(x => x.ServiceStatus, opts => opts.MapFrom<ChatObjectInfoServiceStutusResolver>()); ;
 
         //Message
         CreateMap<Message, MessageInfo>().MaxDepth(3);

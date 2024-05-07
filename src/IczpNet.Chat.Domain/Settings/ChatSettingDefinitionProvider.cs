@@ -15,6 +15,16 @@ public class ChatSettingDefinitionProvider : SettingDefinitionProvider
          * Use names from ChatSettings class.
          */
 
+        context.Add(new SettingDefinition(nameof(ChatSettings.GroupName), "www.iczp.net"));
+
+        var smtpHost = context.GetOrNull(nameof(ChatSettings.GroupName));
+
+        if (smtpHost != null)
+        {
+            smtpHost.DefaultValue = "default.iczp.net";
+            smtpHost.DisplayName =L(nameof(ChatSettings.GroupName));
+        }
+
         var fields = typeof(ChatSettings).GetFields().Where(x => x.IsStatic && x.Name != nameof(ChatSettings.GroupName));
 
         foreach (var field in fields)

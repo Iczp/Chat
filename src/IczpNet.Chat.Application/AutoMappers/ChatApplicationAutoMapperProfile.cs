@@ -49,7 +49,7 @@ public class ChatApplicationAutoMapperProfile : Profile
 
         //ChatObject
         CreateMap<ChatObject, ChatObjectDto>()
-            .ForMember(x => x.ServiceStatus, opts => opts.MapFrom<ChatObjectServiceStutusResolver>());
+            .ForMember(x => x.ServiceStatus, opts => opts.MapFrom<ChatObjectDtoServiceStutusResolver>());
         CreateMap<ChatObject, ChatObjectSimpleDto>();
         CreateMap<ChatObject, ChatObjectDetailDto>()
             //.ForMember(x => x.SenderMessageCount, o => o.MapFrom(x => x.SenderMessageList.Count))
