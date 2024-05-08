@@ -115,7 +115,7 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<Connection, ConnectionDto>();
         CreateMap<Connection, ConnectionDetailDto>();
         CreateMap<ConnectionCreateInput, Connection>(MemberList.None).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
-        //CreateMap<ConnectionUpdateInput, Connection>(MemberList.Source).IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<ConnectionUpdateInput, Connection>(MemberList.None).IgnoreAllPropertiesWithAnInaccessibleSetter();
 
         //Word
         CreateMap<Word, WordDto>();

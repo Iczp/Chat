@@ -21,4 +21,6 @@ public interface IConnectionAppService : ICrudChatAppService<ConnectionDetailDto
     /// </summary>
     /// <returns></returns>
     Task<GetOnlineCountOutput> GetOnlineCountAsync();
+
+    Task<ConnectionOptions> GetConfigAsync();
 }

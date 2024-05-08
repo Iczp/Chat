@@ -1,5 +1,4 @@
 ﻿using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Wallets.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -24,14 +23,11 @@ public class WalletAppService
 {
 
     protected IWalletManager WalletManager { get; }
-    protected IChatObjectManager ChatObjectManager { get; }
 
     public WalletAppService(
         IRepository<Wallet, Guid> repository,
-        IChatObjectManager chatObjectManager,
         IWalletManager walletManager) : base(repository)
     {
-        ChatObjectManager = chatObjectManager;
         WalletManager = walletManager;
     }
 
@@ -42,6 +38,11 @@ public class WalletAppService
             ;
     }
 
+    /// <summary>
+    /// 充值
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
     [HttpPost]
     public async Task<WalletDto> RechargeAsync(RechargeInput input)
     {

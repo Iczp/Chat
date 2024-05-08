@@ -25,6 +25,13 @@ public class ConnectionManager : DomainService, IConnectionManager
         ServerHostRepository = serverHostRepository;
     }
 
+
+    public virtual async Task<ConnectionOptions> GetConfigAsync()
+    {
+        await Task.Yield();
+        return Config;
+    }
+
     public virtual async Task<Connection> CreateAsync(Connection connection)
     {
         if (!connection.ServerHostId.IsNullOrWhiteSpace())
@@ -61,7 +68,7 @@ public class ConnectionManager : DomainService, IConnectionManager
             return entity;
         }
         entity.SetActiveTime(Clock.Now);
-        
+
         return await Repository.UpdateAsync(entity, true);
     }
 
@@ -84,4 +91,5 @@ public class ConnectionManager : DomainService, IConnectionManager
 
         return count;
     }
+
 }

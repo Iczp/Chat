@@ -1,7 +1,10 @@
-﻿using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.AbpCommons.Extensions;
+using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Connections;
 using IczpNet.Chat.Connections.Dtos;
+using IczpNet.Chat.Permissions;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
@@ -20,6 +23,14 @@ public class ConnectionAppService
         ConnectionGetListInput>,
     IConnectionAppService
 {
+    protected override string GetPolicyName { get; set; } = ChatPermissions.ConnectionPermission.Default;
+    protected override string GetListPolicyName { get; set; } = ChatPermissions.ConnectionPermission.Default;
+    protected override string CreatePolicyName { get; set; } = ChatPermissions.ConnectionPermission.Create;
+    protected override string UpdatePolicyName { get; set; } = ChatPermissions.ConnectionPermission.Update;
+    protected override string DeletePolicyName { get; set; } = ChatPermissions.ConnectionPermission.Delete;
+    protected virtual string SetActivePolicyName { get; set; } = ChatPermissions.ConnectionPermission.SetActive;
+    protected virtual string GetOnlineCountPolicyName { get; set; } = ChatPermissions.ConnectionPermission.GetOnlineCount;
+
     protected IConnectionManager ConnectionManager { get; }
 
     public ConnectionAppService(
@@ -31,17 +42,15 @@ public class ConnectionAppService
 
     protected override async Task<IQueryable<Connection>> CreateFilteredQueryAsync(ConnectionGetListInput input)
     {
+        var config = await ConnectionManager.GetConfigAsync();
         return (await base.CreateFilteredQueryAsync(input))
-            //.WhereIf(input.SessionUnitId.HasValue, x => x.SessionUnitId == input.SessionUnitId)
-            //.WhereIf(input.Type.HasValue, x => x.Type == input.Type)
-            //.WhereIf(input.MinCount.HasValue, x => x.ConnectionMemberList.Count >= input.MinCount)
-            //.WhereIf(input.MaxCount.HasValue, x => x.ConnectionMemberList.Count < input.MaxCount)
-            //.WhereIf(input.Type.HasValue, x => x.Type == input.Type)
-            //.WhereIf(input.IsForbiddenAll.HasValue, x => x.IsForbiddenAll == input.IsForbiddenAll)
-            //.WhereIf(input.MemberOwnerId.HasValue, x => x.ConnectionMemberList.Any(d => d.SessionUnitId == input.MemberOwnerId))
-            //.WhereIf(input.ForbiddenMemberOwnerId.HasValue, x => x.ConnectionForbiddenMemberList.Any(d => d.SessionUnitId == input.ForbiddenMemberOwnerId && d.ExpireTime.HasValue && d.ExpireTime < DateTime.Now))
-            //.WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Title.Contains(input.Keyword))
-
+            .WhereIf(input.AppUserId.HasValue, x => x.AppUserId == input.AppUserId)
+            .WhereIf(input.StartCreationTime.HasValue, x => x.CreationTime >= input.StartCreationTime)
+            .WhereIf(input.EndCreationTime.HasValue, x => x.CreationTime < input.EndCreationTime)
+            .WhereIf(!input.DeviceId.IsEmpty(), x => x.DeviceId == input.DeviceId)
+            .WhereIf(!input.ServerHostId.IsEmpty(), x => x.ServerHostId == input.ServerHostId)
+            .WhereIf(!input.IpAddress.IsEmpty(), x => x.IpAddress == input.IpAddress)
+            .WhereIf(input.IsOnline == true, x => x.ActiveTime > DateTime.Now.AddSeconds(-config.InactiveSeconds))
             ;
     }
 
@@ -54,15 +63,10 @@ public class ConnectionAppService
     [HttpPost]
     public async Task<string> SetActiveAsync(string id, string ticks)
     {
+        await CheckPolicyAsync(SetActivePolicyName);
         await ConnectionManager.UpdateActiveTimeAsync(id);
         return ticks;
     }
-
-    //[RemoteService(false)]
-    //public override Task DeleteAsync(string id)
-    //{
-    //    return base.DeleteAsync(id);
-    //}
 
     /// <summary>
     /// 获取在线用户数量
@@ -71,8 +75,19 @@ public class ConnectionAppService
     [HttpGet]
     public async Task<GetOnlineCountOutput> GetOnlineCountAsync()
     {
+        await CheckPolicyAsync(GetOnlineCountPolicyName);
         var currentTime = Clock.Now;
         var count = await ConnectionManager.GetOnlineCountAsync(currentTime);
         return new GetOnlineCountOutput { Count = count, CurrentTime = currentTime };
+    }
+
+    /// <summary>
+    /// 获取配置信息
+    /// </summary>
+    /// <returns></returns>
+    [HttpGet]
+    public async Task<ConnectionOptions> GetConfigAsync()
+    {
+        return await ConnectionManager.GetConfigAsync();
     }
 }

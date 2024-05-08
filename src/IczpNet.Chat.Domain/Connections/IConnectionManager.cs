@@ -8,6 +8,12 @@ public interface IConnectionManager
     /// <summary>
     /// Online
     /// </summary>
+    /// <returns></returns>
+    Task<ConnectionOptions> GetConfigAsync();
+
+    /// <summary>
+    /// Online
+    /// </summary>
     /// <param name="connection"></param>
     /// <returns></returns>
     Task<Connection> CreateAsync(Connection connection);
