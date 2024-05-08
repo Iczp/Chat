@@ -58,6 +58,15 @@ public abstract class ChatAppService : ApplicationService
         return await query.ToPagedListAsync<T, TOuputDto>(AsyncExecuter, ObjectMapper, input, queryableAction, entityAction);
     }
 
+    protected virtual async Task<PagedResultDto<T>> GetPagedListAsync<T>(
+        IQueryable<T> query,
+        PagedAndSortedResultRequestDto input,
+        Func<IQueryable<T>, IQueryable<T>> queryableAction = null,
+        Func<List<T>, Task<List<T>>> entityAction = null)
+    {
+        return await query.ToPagedListAsync<T, T>(AsyncExecuter, ObjectMapper, input, queryableAction, entityAction);
+    }
+
     #region CheckPolicyForUserAsync
     protected virtual async Task<bool> IsAnyCurrentUserAsync(IEnumerable<long?> ownerIdList)
     {

@@ -206,23 +206,33 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     /// <param name="input"></param>
     /// <returns></returns>
     [HttpGet]
-    public async Task<PagedResultDto<SessionUnitDisplayName>> GetListDestinationNamesAsync(Guid id, GetListInput input)
+    public async Task<PagedResultDto<SessionUnitDisplayNameDto>> GetListDestinationNamesAsync(Guid id, GetListInput input)
     {
         var entity = await Repository.GetAsync(id);
 
         await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetListForSameSessionPolicyName));
 
         var query = (await Repository.GetQueryableAsync())
-            .Where(x => x.SessionId == entity.SessionId && x.Setting.IsEnabled)
+            .Where(x => x.SessionId == entity.SessionId)
+            .Where(x => x.Setting.IsPublic)
             .Where(SessionUnit.GetActivePredicate())
-            .Select(x => new SessionUnitDisplayName
+            .Select(x => new
+            {
+                x.Id,
+                x.Setting.MemberName,
+                x.Setting.Rename,
+                x.Owner.Name,
+            })
+            .Select(x => new SessionUnitDisplayNameDto
             {
                 Id = x.Id,
-                DisplayName = !string.IsNullOrEmpty(x.Setting.MemberName) ? x.Setting.MemberName : x.Setting.Rename,
+                DisplayName = !string.IsNullOrEmpty(x.MemberName)
+                    ? x.MemberName
+                    : (!string.IsNullOrEmpty(x.Rename) ? x.Rename : x.Name),
             })
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.DisplayName.Contains(input.Keyword));
 
-        return await GetPagedListAsync<SessionUnitDisplayName, SessionUnitDisplayName>(query, input);
+        return await GetPagedListAsync(query, input);
     }
 
     /// <summary>
