@@ -63,8 +63,8 @@ namespace IczpNet.Chat.Controllers
         /// <param name="sessionUnitId"></param>
         /// <param name="file"></param>
         /// <returns></returns>
-        [HttpPost]
-        [Route("upload-portrait/{sessionUnitId}")]
+        [HttpGet]
+        [Route("avatar/{sessionUnitId}")]
         public async Task<ChatObjectDto> GetAvatarAsync(Guid sessionUnitId, IFormFile file)
         {
             //Assert.If(file == null, "No file found!");
