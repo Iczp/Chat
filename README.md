@@ -34,7 +34,13 @@ Update-Database
 
 ### 
 
+## 在线状态
 
+### 在线状态管理 `IServiceStateManager`
+
+1. 群/公众号 解析为 null
+2. 人/Anonymous/ShopWaiter/Customer 解析为 [Online | Offline]
+3. Shopper（自己或是子账号任何一下在线就解析为 [Online ]），都不在线都解析为【Offline】
 
 ## Internal structure 数据结构
 

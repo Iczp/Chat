@@ -49,6 +49,18 @@ public class ServiceStateManager : DomainService, IServiceStateManager
         return status;
     }
 
+    /// <summary>
+    /// 获取包含所有子账号的状态
+    /// </summary>
+    /// <param name="shopKeeperId"></param>
+    /// <returns></returns>
+    public virtual async Task<ServiceStatus?> GetAnyChildrenStatusAsync(long shopKeeperId)
+    {
+        
+
+        return null;
+    }
+
     public virtual async Task<List<ServiceStatusCacheItem>> SetAsync(long chatObjectId, string deviceId, ServiceStatus status)
     {
         var items = await Cache.GetAsync(chatObjectId);

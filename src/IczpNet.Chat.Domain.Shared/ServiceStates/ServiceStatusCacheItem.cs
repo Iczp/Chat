@@ -1,10 +1,10 @@
 ﻿using IczpNet.Chat.Enums;
 using System;
-using System.Collections.Generic;
+using Volo.Abp.Data;
 
 namespace IczpNet.Chat.ServiceStates;
 
-public class ServiceStatusCacheItem
+public class ServiceStatusCacheItem : IHasExtraProperties
 {
     public ServiceStatus? Status { get; set; }
 
@@ -14,17 +14,19 @@ public class ServiceStatusCacheItem
 
     public string DeviceId { get; set; }
 
-    public Dictionary<string, string> Extra { get; set; }
+    public ExtraPropertyDictionary ExtraProperties { get; set; }
+
+    //public Dictionary<string, string> ExtraProperties { get; set; }
 
     public ServiceStatusCacheItem() { }
 
-    public ServiceStatusCacheItem(long chatObjectId, string deviceId, ServiceStatus status, Dictionary<string, string> extra = null)
+    public ServiceStatusCacheItem(long chatObjectId, string deviceId, ServiceStatus status, ExtraPropertyDictionary extra = null)
     {
         ChatObjectId = chatObjectId;
         Status = status;
         DeviceId = deviceId;
         ActiveTime = DateTime.Now;
-        Extra = extra;
+        ExtraProperties = extra;
     }
 
     public override string ToString()

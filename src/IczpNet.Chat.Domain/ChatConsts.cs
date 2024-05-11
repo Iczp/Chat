@@ -6,13 +6,16 @@ namespace IczpNet.Chat;
 
 public static class ChatConsts
 {
-    public static List<ChatObjectTypeEnums> AllowJoinRoomObjectTypes { get; set; } = new List<ChatObjectTypeEnums>() {
+    /// <summary>
+    /// 允许加入群聊的类型
+    /// </summary>
+    public static List<ChatObjectTypeEnums> AllowJoinRoomObjectTypes { get; set; } = [
         ChatObjectTypeEnums.Personal,
         ChatObjectTypeEnums.ShopKeeper,
         ChatObjectTypeEnums.ShopWaiter,
         ChatObjectTypeEnums.Customer,
         ChatObjectTypeEnums.Robot,
-    };
+    ];
 
     public static string GroupAssistant { get; set; } = nameof(GroupAssistant);
 
