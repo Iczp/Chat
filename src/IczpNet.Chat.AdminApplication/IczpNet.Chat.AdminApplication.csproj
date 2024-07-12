@@ -1,0 +1,47 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\common.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <RootNamespace>IczpNet.Chat</RootNamespace>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<Authors>IczpNet</Authors>
+		<RepositoryUrl>https://github.com/Iczp/Chat.git</RepositoryUrl>
+		<PackageProjectUrl>https://github.com/Iczp/Chat.git</PackageProjectUrl>
+		<Version>0.1.1</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Samples\**" />
+    <EmbeddedResource Remove="Samples\**" />
+    <None Remove="Samples\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+		<PackageReference Include="IczpNet.AbpTrees.Application" Version="0.2.4" />
+    <PackageReference Include="Volo.Abp.AutoMapper" Version="7.3.0" />
+    <PackageReference Include="Volo.Abp.Ddd.Application" Version="7.3.0" />
+    <PackageReference Include="Volo.Abp.FluentValidation" Version="7.3.0" />
+    <PackageReference Include="Volo.Abp.Identity.Application" Version="7.3.0" />
+    <ProjectReference Include="..\..\..\IczpNet.AbpCommons\src\IczpNet.AbpCommons.Application\IczpNet.AbpCommons.Application.csproj" />
+    <ProjectReference Include="..\..\..\IczpNet.Pusher\src\IczpNet.Pusher.Application\IczpNet.Pusher.Application.csproj" />
+    <ProjectReference Include="..\IczpNet.Chat.Domain\IczpNet.Chat.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="ConfigureAwait.Fody" Version="3.3.2" />
+    <PackageReference Update="Fody" Version="6.8.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>
