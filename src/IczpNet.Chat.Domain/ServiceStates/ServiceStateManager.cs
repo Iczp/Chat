@@ -56,8 +56,21 @@ public class ServiceStateManager : DomainService, IServiceStateManager
     /// <returns></returns>
     public virtual async Task<ServiceStatus?> GetAnyChildrenStatusAsync(long shopKeeperId)
     {
-        
+        var status = await GetStatusAsync(shopKeeperId);
 
+        if (status != null)
+        {
+            var all = await ChatObjectManager.GetRootChildrenAsync(shopKeeperId);
+            foreach (var child in all)
+            {
+                status = await GetStatusAsync(shopKeeperId);
+                if((int)status > 0)
+                {
+                    break;
+                }
+            }
+        }
+        
         return null;
     }
 
