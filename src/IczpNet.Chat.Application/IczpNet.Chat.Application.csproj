@@ -28,7 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-		<PackageReference Include="IczpNet.AbpCommons.Application" Version="0.1.8" />
+		<PackageReference Include="IczpNet.AbpCommons.Application" Version="0.1.9" />
 		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.6.0" />
 		<PackageReference Include="IczpNet.AbpTrees.Application" Version="0.2.4" />
 		<PackageReference Include="Jieba.NETCore" Version="1.0.8" />
