@@ -19,7 +19,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="IczpNet.AbpCommons.HttpApi.Client" Version="0.8.0" />
+		<PackageReference Include="IczpNet.AbpCommons.HttpApi.Client" Version="0.8.2" />
 		<PackageReference Include="IczpNet.Pusher.HttpApi.Client" Version="8.2.0.1" />
 		<PackageReference Include="Volo.Abp.Http.Client" Version="8.2.0" />
 		<PackageReference Include="Volo.Abp.Identity.HttpApi.Client" Version="8.2.0" />

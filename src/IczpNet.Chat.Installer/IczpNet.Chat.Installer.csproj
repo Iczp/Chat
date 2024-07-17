@@ -20,8 +20,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="IczpNet.AbpCommons.Installer" Version="0.8.0" />
-		<PackageReference Include="IczpNet.AbpTrees.Installer" Version="8.2.0.1" />
+		<PackageReference Include="IczpNet.AbpCommons.Installer" Version="0.8.2" />
+		<PackageReference Include="IczpNet.AbpTrees.Installer" Version="8.2.0.2" />
 		<PackageReference Include="IczpNet.Pusher.Installer" Version="8.2.0.1" />
 		<PackageReference Include="Volo.Abp.VirtualFileSystem" Version="8.2.0" />
 	</ItemGroup>

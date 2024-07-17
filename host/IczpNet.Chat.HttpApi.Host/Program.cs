@@ -60,7 +60,7 @@ public class Program
         //日志的输出模板
         string LogFilePath(LogEventLevel LogEvent) => $@"Logs\{DateTime.Now:yyyy-MM-dd}\{LogEvent}\log.log";
         string SerilogOutputTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level}] [{SourceContext}] [{Method}] {Message}{NewLine}{Exception}{NewLine}" + new string('-', 50) + "{NewLine}";
-        var outputTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level}] [{SourceContext}] [{Method}] {Message}{NewLine}{Exception}{NewLine}";
+        //var outputTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level}] [{SourceContext}] [{Method}] {Message}{NewLine}{Exception}{NewLine}";
 
 
         Log.Logger = new LoggerConfiguration()
