@@ -37,6 +37,7 @@
     <PackageReference Include="Volo.Abp.Ddd.Application" Version="7.3.0" />
     <PackageReference Include="Volo.Abp.FluentValidation" Version="7.3.0" />
     <PackageReference Include="Volo.Abp.Identity.Application" Version="7.3.0" />
+    <ProjectReference Include="..\..\..\IczpNet.Pusher\src\IczpNet.Pusher.Application\IczpNet.Pusher.Application.csproj" />
     <!--<ProjectReference Include="..\..\..\IczpNet.AbpCommons\src\IczpNet.AbpCommons.Application\IczpNet.AbpCommons.Application.csproj" />-->
     <!--<ProjectReference Include="..\..\..\IczpNet.AbpTrees\src\IczpNet.AbpTrees.Application\IczpNet.AbpTrees.Application.csproj" />-->
     <ProjectReference Include="..\IczpNet.Chat.Application.Contracts\IczpNet.Chat.Application.Contracts.csproj" />

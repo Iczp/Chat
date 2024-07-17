@@ -25,7 +25,7 @@ namespace IczpNet.Chat;
 [DependsOn(typeof(AbpTreesApplicationModule))]
 [DependsOn(typeof(AbpIdentityApplicationModule))]
 [DependsOn(typeof(AbpFluentValidationModule))]
-//[DependsOn(typeof(PusherApplicationModule))]
+[DependsOn(typeof(PusherApplicationModule))]
 
 public class ChatApplicationModule : AbpModule
 {
