@@ -3,7 +3,7 @@
   <Import Project="..\..\common.props" />
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>IczpNet.Chat</RootNamespace>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Authors>IczpNet</Authors>
@@ -21,21 +21,21 @@
   </ItemGroup>
 
   <ItemGroup>
-		<PackageReference Include="IczpNet.AbpCommons.Application.Contracts" Version="0.1.9" />
-		<PackageReference Include="IczpNet.AbpTrees.Application.Contracts" Version="0.2.4" />
+		<PackageReference Include="IczpNet.AbpCommons.Application.Contracts" Version="0.8.0" />
+		<PackageReference Include="IczpNet.AbpTrees.Application.Contracts" Version="8.2.0.1" />
+		<PackageReference Include="IczpNet.Pusher.Application.Contracts" Version="8.2.0.1" />
 		<PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
     <PackageReference Include="Volo.Abp.Ddd.Application.Contracts" Version="8.2.0" />
     <PackageReference Include="Volo.Abp.Authorization" Version="8.2.0" />
     <PackageReference Include="Volo.Abp.Identity.Application.Contracts" Version="8.2.0" />
     <!--<ProjectReference Include="..\..\..\IczpNet.AbpCommons\src\IczpNet.AbpCommons.Application.Contracts\IczpNet.AbpCommons.Application.Contracts.csproj" />-->
     <!--<ProjectReference Include="..\..\..\IczpNet.AbpTrees\src\IczpNet.AbpTrees.Application.Contracts\IczpNet.AbpTrees.Application.Contracts.csproj" />-->
-    <ProjectReference Include="..\..\..\IczpNet.Pusher\src\IczpNet.Pusher.Application.Contracts\IczpNet.Pusher.Application.Contracts.csproj" />
     <ProjectReference Include="..\IczpNet.Chat.Domain.Shared\IczpNet.Chat.Domain.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Update="ConfigureAwait.Fody" Version="3.3.2" />
-    <PackageReference Update="Fody" Version="6.8.0">
+    <PackageReference Update="Fody" Version="6.8.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>

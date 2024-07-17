@@ -3,7 +3,7 @@
   <Import Project="..\..\common.props" />
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>IczpNet.Chat</RootNamespace>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Authors>IczpNet</Authors>
@@ -15,21 +15,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-		<PackageReference Include="IczpNet.AbpCommons.Domain" Version="0.1.9" />
-		<PackageReference Include="IczpNet.AbpTrees.Domain" Version="0.2.4" />
+		<PackageReference Include="IczpNet.AbpCommons.Domain" Version="0.8.0" />
+		<PackageReference Include="IczpNet.AbpTrees.Domain" Version="8.2.0.1" />
 		<PackageReference Include="IczpNet.BizCrypts" Version="0.0.1" />
+		<PackageReference Include="IczpNet.Pusher.Domain" Version="8.2.0.1" />
 		<PackageReference Include="Volo.Abp.BackgroundJobs.Abstractions" Version="8.2.0" />
 		<PackageReference Include="Volo.Abp.BlobStoring" Version="8.2.0" />
 		<PackageReference Include="Volo.Abp.BlobStoring.Minio" Version="8.2.0" />
 		<PackageReference Include="Volo.Abp.Castle.Core" Version="8.2.0" />
-		
+		<PackageReference Include="Volo.Abp.AspNetCore" Version="8.2.0" />
     <PackageReference Include="Volo.Abp.Ddd.Domain" Version="8.2.0" />
 		<PackageReference Include="Volo.Abp.EntityFrameworkCore" Version="8.2.0" />
 		<PackageReference Include="Volo.Abp.Imaging.Abstractions" Version="8.2.0" />
     <PackageReference Include="Volo.Abp.PermissionManagement.Domain.Identity" Version="8.2.0" />
     <!--<ProjectReference Include="..\..\..\IczpNet.AbpCommons\src\IczpNet.AbpCommons.Domain\IczpNet.AbpCommons.Domain.csproj" />-->
     <!--<ProjectReference Include="..\..\..\IczpNet.AbpTrees\src\IczpNet.AbpTrees.Domain\IczpNet.AbpTrees.Domain.csproj" />-->
-    <ProjectReference Include="..\..\..\IczpNet.Pusher\src\IczpNet.Pusher.Domain\IczpNet.Pusher.Domain.csproj" />
     <ProjectReference Include="..\IczpNet.Chat.Domain.Shared\IczpNet.Chat.Domain.Shared.csproj" />
   </ItemGroup>
 
@@ -42,7 +42,7 @@
 
   <ItemGroup>
     <PackageReference Update="ConfigureAwait.Fody" Version="3.3.2" />
-    <PackageReference Update="Fody" Version="6.8.0">
+    <PackageReference Update="Fody" Version="6.8.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
