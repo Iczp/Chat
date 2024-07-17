@@ -132,7 +132,10 @@ public class ChatHttpApiHostModule : AbpModule
 
         Configure<AbpDbContextOptions>(options =>
         {
-            options.UseSqlServer();
+            options.UseSqlServer(x =>
+            {
+                x.CommandTimeout(60000);
+            });
         });
 
         Configure<AbpMultiTenancyOptions>(options =>
