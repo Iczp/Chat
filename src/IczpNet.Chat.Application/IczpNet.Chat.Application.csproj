@@ -33,10 +33,10 @@
 		<PackageReference Include="IczpNet.AbpTrees.Application" Version="0.2.4" />
 		<PackageReference Include="Jieba.NETCore" Version="1.0.8" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Volo.Abp.AutoMapper" Version="7.3.0" />
-    <PackageReference Include="Volo.Abp.Ddd.Application" Version="7.3.0" />
-    <PackageReference Include="Volo.Abp.FluentValidation" Version="7.3.0" />
-    <PackageReference Include="Volo.Abp.Identity.Application" Version="7.3.0" />
+    <PackageReference Include="Volo.Abp.AutoMapper" Version="8.2.0" />
+    <PackageReference Include="Volo.Abp.Ddd.Application" Version="8.2.0" />
+    <PackageReference Include="Volo.Abp.FluentValidation" Version="8.2.0" />
+    <PackageReference Include="Volo.Abp.Identity.Application" Version="8.2.0" />
     <ProjectReference Include="..\..\..\IczpNet.Pusher\src\IczpNet.Pusher.Application\IczpNet.Pusher.Application.csproj" />
     <!--<ProjectReference Include="..\..\..\IczpNet.AbpCommons\src\IczpNet.AbpCommons.Application\IczpNet.AbpCommons.Application.csproj" />-->
     <!--<ProjectReference Include="..\..\..\IczpNet.AbpTrees\src\IczpNet.AbpTrees.Application\IczpNet.AbpTrees.Application.csproj" />-->

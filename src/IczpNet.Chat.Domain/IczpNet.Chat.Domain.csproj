@@ -18,15 +18,15 @@
 		<PackageReference Include="IczpNet.AbpCommons.Domain" Version="0.1.9" />
 		<PackageReference Include="IczpNet.AbpTrees.Domain" Version="0.2.4" />
 		<PackageReference Include="IczpNet.BizCrypts" Version="0.0.1" />
-		<PackageReference Include="Volo.Abp.BackgroundJobs.Abstractions" Version="7.3.0" />
-		<PackageReference Include="Volo.Abp.BlobStoring" Version="7.3.0" />
-		<PackageReference Include="Volo.Abp.BlobStoring.Minio" Version="7.3.0" />
-		<PackageReference Include="Volo.Abp.Castle.Core" Version="7.3.0" />
+		<PackageReference Include="Volo.Abp.BackgroundJobs.Abstractions" Version="8.2.0" />
+		<PackageReference Include="Volo.Abp.BlobStoring" Version="8.2.0" />
+		<PackageReference Include="Volo.Abp.BlobStoring.Minio" Version="8.2.0" />
+		<PackageReference Include="Volo.Abp.Castle.Core" Version="8.2.0" />
 		
-    <PackageReference Include="Volo.Abp.Ddd.Domain" Version="7.3.0" />
-		<PackageReference Include="Volo.Abp.EntityFrameworkCore" Version="7.3.0" />
-		<PackageReference Include="Volo.Abp.Imaging.Abstractions" Version="7.3.0" />
-    <PackageReference Include="Volo.Abp.PermissionManagement.Domain.Identity" Version="7.3.0" />
+    <PackageReference Include="Volo.Abp.Ddd.Domain" Version="8.2.0" />
+		<PackageReference Include="Volo.Abp.EntityFrameworkCore" Version="8.2.0" />
+		<PackageReference Include="Volo.Abp.Imaging.Abstractions" Version="8.2.0" />
+    <PackageReference Include="Volo.Abp.PermissionManagement.Domain.Identity" Version="8.2.0" />
     <!--<ProjectReference Include="..\..\..\IczpNet.AbpCommons\src\IczpNet.AbpCommons.Domain\IczpNet.AbpCommons.Domain.csproj" />-->
     <!--<ProjectReference Include="..\..\..\IczpNet.AbpTrees\src\IczpNet.AbpTrees.Domain\IczpNet.AbpTrees.Domain.csproj" />-->
     <ProjectReference Include="..\..\..\IczpNet.Pusher\src\IczpNet.Pusher.Domain\IczpNet.Pusher.Domain.csproj" />
