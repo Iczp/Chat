@@ -14,7 +14,7 @@
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<Copyright>(c) iczp.net</Copyright>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<Description>IczpNet.Chat</Description>
+		<Description>Chat module for abp</Description>
 		<PackageIcon>IczpNet.jpg</PackageIcon>
   </PropertyGroup>
 
