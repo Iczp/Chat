@@ -1,6 +1,5 @@
 ﻿using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.Connections;
 using IczpNet.Chat.Connections.Dtos;
 using IczpNet.Chat.Permissions;
 using Microsoft.AspNetCore.Mvc;
@@ -9,7 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 
-namespace IczpNet.Chat.Services;
+namespace IczpNet.Chat.Connections;
 
 /// <summary>
 /// 在线人数管理

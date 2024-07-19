@@ -13,6 +13,8 @@ public class ConnectionDto : BaseDto<string>
 
     public virtual string IpAddress { get; set; }
 
+    public virtual string ChatObjects { get; set; }
+
     public virtual DateTime ActiveTime { get; set; }
 
 }

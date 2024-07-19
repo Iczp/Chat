@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 
 namespace IczpNet.Chat.Connections;
 
@@ -49,9 +50,10 @@ public class Connection : BaseEntity<string>, IDeviceId
 
     protected Connection() { }
 
-    public Connection(string id) : base(id)
+    public Connection(string id, List<long> chatObjectIdList) : base(id)
     {
-
+        Id = id;
+        SetChatObjects(chatObjectIdList);
     }
 
     internal void SetActiveTime(DateTime activeTime)
@@ -67,5 +69,6 @@ public class Connection : BaseEntity<string>, IDeviceId
     public void SetChatObjects(List<long> chatObjectIdList)
     {
         ChatObjects = chatObjectIdList.JoinAsString(",");
+        ConnectionChatObjectList = chatObjectIdList.Select(x => new ConnectionChatObject(Id, x)).ToList();
     }
 }
