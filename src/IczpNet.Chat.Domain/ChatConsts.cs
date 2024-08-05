@@ -22,4 +22,17 @@ public static class ChatConsts
     public static string PrivateAssistant { get; set; } = nameof(PrivateAssistant);
 
     public const int DriveIdLength = 128;
+
+    public const int TextContentMaxLength = 5000;
+
+    public const int VideoUrlMaxLength = 1000;
+
+    public const int SnapshotUrlMaxLength = 1000;
+
+    public const int SnapshotThumbnailUrlMaxLength = 1000;
+
+    public const int GifUrlMaxLength = 1000;
+    
+
+
 }

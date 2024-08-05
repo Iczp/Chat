@@ -12,7 +12,7 @@ namespace IczpNet.Chat.MessageSections.Templates
         /// 视频地址
         /// </summary>
         [Required(ErrorMessage = "视频地址必填")]
-        [StringLength(500)]
+        [StringLength(ChatConsts.VideoUrlMaxLength)]
         public override string Url { get; set; }
 
         /// <summary>
@@ -33,13 +33,13 @@ namespace IczpNet.Chat.MessageSections.Templates
         /// <summary>
         /// 视频封面
         /// </summary>
-        [StringLength(500)]
+        [StringLength(ChatConsts.SnapshotUrlMaxLength)]
         public virtual string SnapshotUrl { get; set; }
 
         /// <summary>
         /// 封面缩略图
         /// </summary>
-        [StringLength(500)]
+        [StringLength(ChatConsts.SnapshotThumbnailUrlMaxLength)]
         public virtual string SnapshotThumbnailUrl { get; set; }
 
         /// <summary>
@@ -65,7 +65,7 @@ namespace IczpNet.Chat.MessageSections.Templates
         /// <summary>
         /// GifUrl
         /// </summary>
-        [StringLength(500)]
+        [StringLength(ChatConsts.GifUrlMaxLength)]
         public virtual string GifUrl { get; set; }
     }
 }
