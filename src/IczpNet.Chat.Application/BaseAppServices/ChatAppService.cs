@@ -1,4 +1,5 @@
 ﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons.DataFilters;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Localization;
@@ -72,7 +73,7 @@ public abstract class ChatAppService : ApplicationService
     {
         var appUserId = CurrentUser.Id;
 
-        if (appUserId == null || ownerIdList.Where(x => x.HasValue).Any())
+        if (appUserId == null || !ownerIdList.Where(x => x.HasValue).Any())
         {
             return false;
         }
@@ -89,10 +90,14 @@ public abstract class ChatAppService : ApplicationService
 
     protected virtual async Task CheckPolicyForUserAsync(IEnumerable<long?> ownerIdList, Func<Task> func = null)
     {
-        if (await IsAnyCurrentUserAsync(ownerIdList))
-        {
-            return;
-        }
+        //if (await IsAnyCurrentUserAsync(ownerIdList))
+        //{
+        //    return;
+        //}
+
+        var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+
+        Assert.If(!await IsAnyCurrentUserAsync(ownerIdList), $"Fail ownerIds [{ownerIdList.JoinAsString(",")}], current user's chatObjectIdList:[{chatObjectIdList.JoinAsString(",")}]");
 
         await func?.Invoke();
     }
