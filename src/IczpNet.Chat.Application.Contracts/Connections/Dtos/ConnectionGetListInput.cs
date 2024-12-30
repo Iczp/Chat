@@ -21,6 +21,11 @@ public class ConnectionGetListInput : GetListInput
     public virtual Guid? AppUserId { get; set; }
 
     /// <summary>
+    /// Chat Object Id
+    /// </summary>
+    public virtual long? ChatObjectId { get; set; }
+
+    /// <summary>
     /// 设备Id
     /// </summary>
     public virtual string DeviceId { get; set; }

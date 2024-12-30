@@ -13,7 +13,7 @@ public class TextContent : MessageContentEntityBase
 
     public TextContent(Guid id) : base(id) { }
 
-    [StringLength(500)]
+    [StringLength(ChatConsts.TextContentMaxLength)]
     public virtual string Text { get; set; }
 
     public override string GetBody() => FormatString(Text);

@@ -44,6 +44,7 @@ public class ConnectionAppService
         var config = await ConnectionManager.GetConfigAsync();
         return (await base.CreateFilteredQueryAsync(input))
             .WhereIf(input.AppUserId.HasValue, x => x.AppUserId == input.AppUserId)
+            .WhereIf(input.ChatObjectId.HasValue, x => x.ConnectionChatObjectList.Any(d => d.ChatObjectId == input.ChatObjectId))
             .WhereIf(input.StartCreationTime.HasValue, x => x.CreationTime >= input.StartCreationTime)
             .WhereIf(input.EndCreationTime.HasValue, x => x.CreationTime < input.EndCreationTime)
             .WhereIf(!input.DeviceId.IsEmpty(), x => x.DeviceId == input.DeviceId)
