@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Auditing;
+using Volo.Abp.Users;
 
 namespace IczpNet.Chat.BaseAppServices;
 
@@ -90,6 +91,9 @@ public abstract class ChatAppService : AbpCommonsAppService
         //{
         //    return;
         //}
+        var currentUserId = CurrentUser.GetId();
+
+        Assert.If(!CurrentUser.Id.HasValue, $"请先登录");
 
         var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
 

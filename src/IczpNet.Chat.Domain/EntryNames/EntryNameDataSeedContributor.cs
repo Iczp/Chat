@@ -9,57 +9,56 @@ using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
 using Volo.Abp.Guids;
 
-namespace IczpNet.Chat.EntryNames
+namespace IczpNet.Chat.EntryNames;
+
+public class EntryNameDataSeedContributor : IDataSeedContributor, ITransientDependency
 {
-    public class EntryNameDataSeedContributor : IDataSeedContributor, ITransientDependency
+    protected ILogger<EntryNameDataSeedContributor> Logger { get; }
+    protected IConfiguration Configuration { get; }
+    protected ICurrentTenant CurrentTenant { get; }
+
+    protected IRepository<EntryName, Guid> Repository { get; }
+    protected IGuidGenerator GuidGenerator { get; }
+
+    public EntryNameDataSeedContributor(
+        IConfiguration configuration,
+        ICurrentTenant currentTenant,
+        IRepository<EntryName, Guid> repository,
+        ILogger<EntryNameDataSeedContributor> logger,
+        IGuidGenerator guidGenerator)
     {
-        protected ILogger<EntryNameDataSeedContributor> Logger { get; }
-        protected IConfiguration Configuration { get; }
-        protected ICurrentTenant CurrentTenant { get; }
+        Configuration = configuration;
+        CurrentTenant = currentTenant;
+        Repository = repository;
+        Logger = logger;
+        GuidGenerator = guidGenerator;
+    }
 
-        protected IRepository<EntryName, Guid> Repository { get; }
-        protected IGuidGenerator GuidGenerator { get; }
-
-        public EntryNameDataSeedContributor(
-            IConfiguration configuration,
-            ICurrentTenant currentTenant,
-            IRepository<EntryName, Guid> repository,
-            ILogger<EntryNameDataSeedContributor> logger,
-            IGuidGenerator guidGenerator)
+    [UnitOfWork]
+    public virtual async Task SeedAsync(DataSeedContext context)
+    {
+        using (CurrentTenant.Change(context?.TenantId))
         {
-            Configuration = configuration;
-            CurrentTenant = currentTenant;
-            Repository = repository;
-            Logger = logger;
-            GuidGenerator = guidGenerator;
+            await CreateAsync();
         }
+    }
 
-        [UnitOfWork]
-        public virtual async Task SeedAsync(DataSeedContext context)
+    private async Task CreateAsync()
+    {
+        foreach (var name in EntryNameConsts.GetAll())
         {
-            using (CurrentTenant.Change(context?.TenantId))
+            if (await Repository.AnyAsync(x => x.Code == name))
             {
-                await CreateAsync();
+                continue;
             }
-        }
-
-        private async Task CreateAsync()
-        {
-            foreach (var name in EntryNameConsts.GetAll())
+            var entity = await Repository.InsertAsync(new EntryName(GuidGenerator.Create(), name, null)
             {
-                if (await Repository.AnyAsync(x => x.Code == name))
-                {
-                    continue;
-                }
-                var entity = await Repository.InsertAsync(new EntryName(GuidGenerator.Create(), name, null)
-                {
-                    //Name = name,
-                    Code = name,
-                    IsStatic = true,
-                    IsPublic = true,
-                });
-                Logger.LogInformation($"Add {nameof(EntryName)},id={entity.Id},Code ={entity.Name}");
-            }
+                //Name = name,
+                Code = name,
+                IsStatic = true,
+                IsPublic = true,
+            });
+            Logger.LogInformation($"Add {nameof(EntryName)},id={entity.Id},Code ={entity.Name}");
         }
     }
 }

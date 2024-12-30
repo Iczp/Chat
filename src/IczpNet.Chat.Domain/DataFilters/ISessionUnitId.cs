@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace IczpNet.Chat.DataFilters
+namespace IczpNet.Chat.DataFilters;
+
+public interface ISessionUnitId
 {
-    public interface ISessionUnitId
-    {
-        Guid SessionUnitId { get; }
-    }
+    Guid SessionUnitId { get; }
 }

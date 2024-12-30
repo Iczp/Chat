@@ -1,9 +1,8 @@
 ﻿using IczpNet.AbpTrees;
 using System;
 
-namespace IczpNet.Chat.EntryNames
+namespace IczpNet.Chat.EntryNames;
+
+public interface IEntryNameManager : ITreeManager<EntryName, Guid, TreeInfo<Guid>>
 {
-    public interface IEntryNameManager : ITreeManager<EntryName, Guid, TreeInfo<Guid>>
-    {
-    }
 }

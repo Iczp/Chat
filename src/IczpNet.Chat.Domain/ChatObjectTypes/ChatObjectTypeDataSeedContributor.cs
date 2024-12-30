@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.ChatObjectTypes;
+﻿using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.Enums;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -9,57 +9,55 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
-using IczpNet.AbpCommons.Extensions;
 
-namespace IczpNet.Chat.ChatObjectTypes
+namespace IczpNet.Chat.ChatObjectTypes;
+
+public class ChatObjectTypeDataSeedContributor : IDataSeedContributor, ITransientDependency
 {
-    public class ChatObjectTypeDataSeedContributor : IDataSeedContributor, ITransientDependency
+    protected ILogger<ChatObjectTypeDataSeedContributor> Logger { get; }
+    protected IConfiguration Configuration { get; }
+    protected ICurrentTenant CurrentTenant { get; }
+    protected IRepository<ChatObjectType, string> Repository { get; }
+
+    public ChatObjectTypeDataSeedContributor(
+        IConfiguration configuration,
+        ICurrentTenant currentTenant,
+        IRepository<ChatObjectType, string> repository,
+        ILogger<ChatObjectTypeDataSeedContributor> logger)
     {
-        protected ILogger<ChatObjectTypeDataSeedContributor> Logger { get; }
-        protected IConfiguration Configuration { get; }
-        protected ICurrentTenant CurrentTenant { get; }
-        protected IRepository<ChatObjectType, string> Repository { get; }
+        Configuration = configuration;
+        CurrentTenant = currentTenant;
+        Repository = repository;
+        Logger = logger;
+    }
 
-        public ChatObjectTypeDataSeedContributor(
-            IConfiguration configuration,
-            ICurrentTenant currentTenant,
-            IRepository<ChatObjectType, string> repository,
-            ILogger<ChatObjectTypeDataSeedContributor> logger)
+    [UnitOfWork]
+    public virtual async Task SeedAsync(DataSeedContext context)
+    {
+        using (CurrentTenant.Change(context?.TenantId))
         {
-            Configuration = configuration;
-            CurrentTenant = currentTenant;
-            Repository = repository;
-            Logger = logger;
+            await CreateAsync();
         }
+    }
 
-        [UnitOfWork]
-        public virtual async Task SeedAsync(DataSeedContext context)
+    private async Task CreateAsync()
+    {
+        foreach (ChatObjectTypeEnums value in Enum.GetValues(typeof(ChatObjectTypeEnums)))
         {
-            using (CurrentTenant.Change(context?.TenantId))
+            var id = value.ToString();
+            var isAny = await Repository.AnyAsync(x => x.Id.Equals(id));
+            if (isAny)
             {
-                await CreateAsync();
+                Logger.LogInformation($"Already exists:{id}");
+                continue;
             }
-        }
-
-        private async Task CreateAsync()
-        {
-            foreach (ChatObjectTypeEnums value in Enum.GetValues(typeof(ChatObjectTypeEnums)))
+            await Repository.InsertAsync(new ChatObjectType(id)
             {
-                var id = value.ToString();
-                var isAny = await Repository.AnyAsync(x => x.Id.Equals(id));
-                if (isAny)
-                {
-                    Logger.LogInformation($"Already exists:{id}");
-                    continue;
-                }
-                await Repository.InsertAsync(new ChatObjectType(id)
-                {
-                    Name = value.GetDescription(),
-                    ObjectType = value,
-                    IsStatic = true,
-                });
-                Logger.LogInformation($"Add {nameof(ChatObjectType)}:{id}");
-            }
+                Name = value.GetDescription(),
+                ObjectType = value,
+                IsStatic = true,
+            });
+            Logger.LogInformation($"Add {nameof(ChatObjectType)}:{id}");
         }
     }
 }

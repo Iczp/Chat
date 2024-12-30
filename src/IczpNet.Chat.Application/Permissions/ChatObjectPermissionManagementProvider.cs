@@ -2,18 +2,17 @@
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.PermissionManagement;
 
-namespace IczpNet.Chat.Permissions
-{
-    public class ChatObjectPermissionManagementProvider : PermissionManagementProvider
-    {
-        public ChatObjectPermissionManagementProvider(
-            IPermissionGrantRepository permissionGrantRepository,
-            IGuidGenerator guidGenerator,
-            ICurrentTenant currentTenant)
-            : base(permissionGrantRepository, guidGenerator, currentTenant)
-        {
-        }
+namespace IczpNet.Chat.Permissions;
 
-        public override string Name => "ChatObject";
+public class ChatObjectPermissionManagementProvider : PermissionManagementProvider
+{
+    public ChatObjectPermissionManagementProvider(
+        IPermissionGrantRepository permissionGrantRepository,
+        IGuidGenerator guidGenerator,
+        ICurrentTenant currentTenant)
+        : base(permissionGrantRepository, guidGenerator, currentTenant)
+    {
     }
+
+    public override string Name => "ChatObject";
 }

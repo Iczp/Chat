@@ -2,26 +2,25 @@
 using System.Linq;
 using Volo.Abp.Users;
 
-namespace IczpNet.Chat.ChatObjects
+namespace IczpNet.Chat.ChatObjects;
+
+public static class CurrentUserExtensions
 {
-    public static class CurrentUserExtensions
+    public static List<long> GetChatObjectIdList(this ICurrentUser currentUser)
     {
-        public static List<long> GetChatObjectIdList(this ICurrentUser currentUser)
-        {
-            return currentUser.FindClaims(ChatObjectClaims.Id)
-                .Where(x => !string.IsNullOrWhiteSpace(x.Value))
-                .Select(x => long.Parse(x.Value))
-                .ToList();
-        }
+        return currentUser.FindClaims(ChatObjectClaims.Id)
+            .Where(x => !string.IsNullOrWhiteSpace(x.Value))
+            .Select(x => long.Parse(x.Value))
+            .ToList();
+    }
 
-        public static int GetChatObjectCount(this ICurrentUser currentUser)
-        {
-            return int.TryParse(currentUser.FindClaimValue(ChatObjectClaims.Count), out var count) ? count : 0;
-        }
+    public static int GetChatObjectCount(this ICurrentUser currentUser)
+    {
+        return int.TryParse(currentUser.FindClaimValue(ChatObjectClaims.Count), out var count) ? count : 0;
+    }
 
-        public static bool IsIn(this ICurrentUser currentUser, long chatObjectId)
-        {
-            return currentUser.GetChatObjectIdList().Contains(chatObjectId);
-        }
+    public static bool IsIn(this ICurrentUser currentUser, long chatObjectId)
+    {
+        return currentUser.GetChatObjectIdList().Contains(chatObjectId);
     }
 }

@@ -20,162 +20,161 @@ using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.Threading;
 using Volo.Abp.Uow;
 
-namespace IczpNet.Chat.UnitTests
+namespace IczpNet.Chat.UnitTests;
+
+public class SendToRoomUnitTestWorker : AsyncPeriodicBackgroundWorkerBase
 {
-    public class SendToRoomUnitTestWorker : AsyncPeriodicBackgroundWorkerBase
+    private static List<Guid> SessionUnitIdList;
+
+    private static long? RoomId = 6019;
+
+    private static int Index = 0;
+
+    protected IMessageSender MessageSender { get; }
+
+    protected IRoomManager RoomManager { get; }
+
+    protected ISessionUnitManager SessionUnitManager { get; }
+
+    protected ISessionUnitRepository SessionUnitRepository { get; }
+    protected IFollowManager FollowManager { get; }
+    protected IFavoritedRecorderManager FavoriteManager { get; }
+    protected IOpenedRecorderManager OpenedRecorderManager { get; }
+    protected IReadedRecorderManager ReadedRecorderManager { get; }
+
+    public SendToRoomUnitTestWorker(AbpAsyncTimer timer,
+        IServiceScopeFactory serviceScopeFactory,
+        ISessionUnitRepository sessionUnitRepository,
+        IMessageSender messageSender,
+        IRoomManager roomManager,
+        ISessionUnitManager sessionUnitManager,
+        IFollowManager followManager,
+        IFavoritedRecorderManager favoriteManager,
+        IOpenedRecorderManager openedRecorderManager,
+        IReadedRecorderManager readedRecorderManager) : base(timer, serviceScopeFactory)
     {
-        private static List<Guid> SessionUnitIdList;
+        Timer.Period = 500;
+        SessionUnitRepository = sessionUnitRepository;
+        MessageSender = messageSender;
+        RoomManager = roomManager;
+        SessionUnitManager = sessionUnitManager;
+        FollowManager = followManager;
+        FavoriteManager = favoriteManager;
+        OpenedRecorderManager = openedRecorderManager;
+        ReadedRecorderManager = readedRecorderManager;
+    }
 
-        private static long? RoomId = 6019;
+    [UnitOfWork]
+    protected override async Task DoWorkAsync(PeriodicBackgroundWorkerContext workerContext)
+    {
+        await Task.Yield();
 
-        private static int Index = 0;
+        var stopWatch = Stopwatch.StartNew();
 
-        protected IMessageSender MessageSender { get; }
+        Logger.LogInformation($" ------------------- SendToRoomUnitTestWorker Starting ------------------- ");
 
-        protected IRoomManager RoomManager { get; }
+        RoomId ??= (await RoomManager.CreateByAllUsersAsync($"Auto-create:{DateTime.Now}")).Id;
 
-        protected ISessionUnitManager SessionUnitManager { get; }
+        var items = await GetSessionIdListAsync(RoomId.Value);
 
-        protected ISessionUnitRepository SessionUnitRepository { get; }
-        protected IFollowManager FollowManager { get; }
-        protected IFavoritedRecorderManager FavoriteManager { get; }
-        protected IOpenedRecorderManager OpenedRecorderManager { get; }
-        protected IReadedRecorderManager ReadedRecorderManager { get; }
+        var sessionunitId = items[new Random().Next(0, items.Count - 1)];
 
-        public SendToRoomUnitTestWorker(AbpAsyncTimer timer,
-            IServiceScopeFactory serviceScopeFactory,
-            ISessionUnitRepository sessionUnitRepository,
-            IMessageSender messageSender,
-            IRoomManager roomManager,
-            ISessionUnitManager sessionUnitManager,
-            IFollowManager followManager,
-            IFavoritedRecorderManager favoriteManager,
-            IOpenedRecorderManager openedRecorderManager,
-            IReadedRecorderManager readedRecorderManager) : base(timer, serviceScopeFactory)
+        var sessionunit = await SessionUnitRepository.GetAsync(sessionunitId);
+
+        Logger.LogInformation($"Sender sessionunit: id:{sessionunit?.Id},name:{sessionunit?.Owner?.Name}");
+
+        //// Following
+        //await FollowingAsync(items);
+
+        Index++;
+
+        var remindList = new List<Guid>();
+
+        for (int i = 0; i < new Random().Next(1, 10); i++)
         {
-            Timer.Period = 500;
-            SessionUnitRepository = sessionUnitRepository;
-            MessageSender = messageSender;
-            RoomManager = roomManager;
-            SessionUnitManager = sessionUnitManager;
-            FollowManager = followManager;
-            FavoriteManager = favoriteManager;
-            OpenedRecorderManager = openedRecorderManager;
-            ReadedRecorderManager = readedRecorderManager;
+            remindList.TryAdd(items[new Random().Next(0, items.Count - 1)]);
         }
 
-        [UnitOfWork]
-        protected override async Task DoWorkAsync(PeriodicBackgroundWorkerContext workerContext)
+        var text = $"RoomId:{RoomId}, sessionunitId:{sessionunitId}, remindCount:{remindList.Count}";
+
+        if (new Random().Next(3) % 3 == 1)
         {
-            await Task.Yield();
+            text = $"@陈忠培 {text}";
+        }
 
-            var stopWatch = Stopwatch.StartNew();
-
-            Logger.LogInformation($" ------------------- SendToRoomUnitTestWorker Starting ------------------- ");
-
-            RoomId ??= (await RoomManager.CreateByAllUsersAsync($"Auto-create:{DateTime.Now}")).Id;
-
-            var items = await GetSessionIdListAsync(RoomId.Value);
-
-            var sessionunitId = items[new Random().Next(0, items.Count - 1)];
-
-            var sessionunit = await SessionUnitRepository.GetAsync(sessionunitId);
-
-            Logger.LogInformation($"Sender sessionunit: id:{sessionunit?.Id},name:{sessionunit?.Owner?.Name}");
-
-            //// Following
-            //await FollowingAsync(items);
-
-            Index++;
-
-            var remindList = new List<Guid>();
-
-            for (int i = 0; i < new Random().Next(1, 10); i++)
+        var sendResult = await MessageSender.SendTextAsync(sessionunit, new MessageInput<TextContentInfo>()
+        {
+            Content = new TextContentInfo()
             {
-                remindList.TryAdd(items[new Random().Next(0, items.Count - 1)]);
-            }
+                Text = text
+            },
+            RemindList = remindList
+        });
+        Logger.LogInformation($"SendText: {text}");
 
-            var text = $"RoomId:{RoomId}, sessionunitId:{sessionunitId}, remindCount:{remindList.Count}";
+        ////Recorder
+        //for (int i = 0; i < new Random().Next(1, 10); i++)
+        //{
+        //    await SetFavoritedAsync(items, sendResult.Id);
 
-            if (new Random().Next(3) % 3 == 1)
-            {
-                text = $"@陈忠培 {text}";
-            }
+        //    await SetOpenedAsync(items, sendResult.Id);
 
-            var sendResult = await MessageSender.SendTextAsync(sessionunit, new MessageInput<TextContentInfo>()
-            {
-                Content = new TextContentInfo()
-                {
-                    Text = text
-                },
-                RemindList = remindList
-            });
-            Logger.LogInformation($"SendText: {text}");
+        //    await SetReadedAsync(items, sendResult.Id);
+        //}
 
-            ////Recorder
-            //for (int i = 0; i < new Random().Next(1, 10); i++)
-            //{
-            //    await SetFavoritedAsync(items, sendResult.Id);
+        stopWatch.Stop();
 
-            //    await SetOpenedAsync(items, sendResult.Id);
+        Logger.LogInformation($" ------------------- SendToRoomUnitTestWorker stopWatch:{stopWatch.ElapsedMilliseconds} -------------------");
+    }
 
-            //    await SetReadedAsync(items, sendResult.Id);
-            //}
+    private async Task SetReadedAsync(List<Guid> items, long messageId)
+    {
+        var sessionunit = await SessionUnitRepository.GetAsync(items[new Random().Next(0, items.Count - 1)]);
 
-            stopWatch.Stop();
+        var entity = await ReadedRecorderManager.CreateIfNotContainsAsync(sessionunit, messageId, "");
 
-            Logger.LogInformation($" ------------------- SendToRoomUnitTestWorker stopWatch:{stopWatch.ElapsedMilliseconds} -------------------");
-        }
+        Logger.LogInformation($"SetReadedAsync messageId:{entity.MessageId},sessionUnitId:{entity.SessionUnitId}");
+    }
 
-        private async Task SetReadedAsync(List<Guid> items, long messageId)
+    private async Task SetOpenedAsync(List<Guid> items, long messageId)
+    {
+        var sessionunit = await SessionUnitRepository.GetAsync(items[new Random().Next(0, items.Count - 1)]);
+
+        var entity = await OpenedRecorderManager.CreateIfNotContainsAsync(sessionunit, messageId, "");
+
+        Logger.LogInformation($"SetOpenedAsync messageId:{entity.MessageId},sessionUnitId:{entity.SessionUnitId}");
+    }
+
+    private async Task SetFavoritedAsync(List<Guid> items, long messageId)
+    {
+        var sessionunit = await SessionUnitRepository.GetAsync(items[new Random().Next(0, items.Count - 1)]);
+
+        var entity = await FavoriteManager.CreateIfNotContainsAsync(sessionunit, messageId, "");
+
+        Logger.LogInformation($"SetFavoritedAsync messageId:{entity.MessageId},sessionUnitId:{entity.SessionUnitId}");
+    }
+
+    private async Task FollowingAsync(List<Guid> items)
+    {
+        var ownerId = items[new Random().Next(0, items.Count - 1)];
+
+        if (await FollowManager.GetFollowingCountAsync(ownerId) > 10)
         {
-            var sessionunit = await SessionUnitRepository.GetAsync(items[new Random().Next(0, items.Count - 1)]);
-
-            var entity = await ReadedRecorderManager.CreateIfNotContainsAsync(sessionunit, messageId, "");
-
-            Logger.LogInformation($"SetReadedAsync messageId:{entity.MessageId},sessionUnitId:{entity.SessionUnitId}");
+            return;
         }
 
-        private async Task SetOpenedAsync(List<Guid> items, long messageId)
-        {
-            var sessionunit = await SessionUnitRepository.GetAsync(items[new Random().Next(0, items.Count - 1)]);
+        var tagId = items[new Random().Next(0, items.Count - 1)];
 
-            var entity = await OpenedRecorderManager.CreateIfNotContainsAsync(sessionunit, messageId, "");
+        await FollowManager.CreateAsync(ownerId, new List<Guid>() { tagId });
 
-            Logger.LogInformation($"SetOpenedAsync messageId:{entity.MessageId},sessionUnitId:{entity.SessionUnitId}");
-        }
+        Logger.LogInformation($"Following sessionunit: id:{ownerId},tagId:{tagId}");
+    }
 
-        private async Task SetFavoritedAsync(List<Guid> items, long messageId)
-        {
-            var sessionunit = await SessionUnitRepository.GetAsync(items[new Random().Next(0, items.Count - 1)]);
-
-            var entity = await FavoriteManager.CreateIfNotContainsAsync(sessionunit, messageId, "");
-
-            Logger.LogInformation($"SetFavoritedAsync messageId:{entity.MessageId},sessionUnitId:{entity.SessionUnitId}");
-        }
-
-        private async Task FollowingAsync(List<Guid> items)
-        {
-            var ownerId = items[new Random().Next(0, items.Count - 1)];
-
-            if (await FollowManager.GetFollowingCountAsync(ownerId) > 10)
-            {
-                return;
-            }
-
-            var tagId = items[new Random().Next(0, items.Count - 1)];
-
-            await FollowManager.CreateAsync(ownerId, new List<Guid>() { tagId });
-
-            Logger.LogInformation($"Following sessionunit: id:{ownerId},tagId:{tagId}");
-        }
-
-        protected async Task<List<Guid>> GetSessionIdListAsync(long roomId)
-        {
-            return SessionUnitIdList ??= (await SessionUnitRepository.GetQueryableAsync())
-                .Where(x => x.DestinationId == roomId)
-                .Select(x => x.Id)
-                .ToList();
-        }
+    protected async Task<List<Guid>> GetSessionIdListAsync(long roomId)
+    {
+        return SessionUnitIdList ??= (await SessionUnitRepository.GetQueryableAsync())
+            .Where(x => x.DestinationId == roomId)
+            .Select(x => x.Id)
+            .ToList();
     }
 }

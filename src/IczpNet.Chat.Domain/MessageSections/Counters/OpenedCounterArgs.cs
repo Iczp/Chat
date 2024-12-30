@@ -1,6 +1,5 @@
-﻿namespace IczpNet.Chat.MessageSections.Counters
+﻿namespace IczpNet.Chat.MessageSections.Counters;
+
+public class OpenedCounterArgs : MessageCounterArgs
 {
-    public class OpenedCounterArgs : MessageCounterArgs
-    {
-    }
 }
