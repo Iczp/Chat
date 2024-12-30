@@ -1,0 +1,13 @@
+﻿using IczpNet.Invoicing.EntityFrameworkCore;
+using IczpNet.Invoicing.{{pascalCase pluralName}};
+using System;
+using Volo.Abp.EntityFrameworkCore;
+
+namespace IczpNet.Invoicing.Repositories;
+
+/// <inheritdoc />
+public class {{pascalCase name}}Repository(IDbContextProvider<InvoicingDbContext> dbContextProvider) : InvoicingRepository<{{pascalCase name}}, {{pascalCase primaryKey}}>(dbContextProvider), I{{pascalCase name}}Repository
+{
+    
+}
+

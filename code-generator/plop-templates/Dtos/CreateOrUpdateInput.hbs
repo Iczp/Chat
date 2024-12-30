@@ -1,0 +1,16 @@
+using System;
+using Volo.Abp.Application.Dtos;
+
+namespace IczpNet.Invoicing.{{pascalCase pluralName}}.Dtos;
+
+/// <summary>
+/// 新增或修改
+/// </summary>
+[Serializable]
+public class {{pascalCase name}}CreateOrUpdateInput : {{pascalCase name}}CreateInput, IEntityDto<{{pascalCase primaryKey}}?>
+{
+    /// <summary>
+    /// 
+    /// </summary>
+    public {{pascalCase primaryKey}}? Id { get; set; }
+}

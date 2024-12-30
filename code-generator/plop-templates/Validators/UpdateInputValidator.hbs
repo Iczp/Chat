@@ -1,0 +1,17 @@
+using FluentValidation;
+using IczpNet.Invoicing.Localization;
+using IczpNet.Invoicing.{{pascalCase pluralName}}.Dtos;
+using Microsoft.Extensions.Localization;
+
+namespace IczpNet.Invoicing.{{pascalCase pluralName}};
+
+public class {{pascalCase name}}UpdateInputValidator : AbstractValidator<{{pascalCase name}}UpdateInput>
+{
+    public {{pascalCase name}}UpdateInputValidator(IStringLocalizer<InvoicingResource> _localizer)
+    {
+
+        //RuleFor(x => x.Name)
+        //   .NotEmpty()
+        //   .WithMessage(_localizer["Invoicing"]);
+    }
+}
