@@ -18,7 +18,7 @@ namespace IczpNet.Chat.BaseAppServices;
 
 [ApiExplorerSettings(GroupName = ChatRemoteServiceConsts.ModuleName)]
 [Authorize]
-public abstract class ChatAppService : ApplicationService
+public abstract class ChatAppService : AbpCommonsAppService
 {
     protected virtual string GetListPolicyName { get; set; }
     protected virtual string GetPolicyName { get; set; }

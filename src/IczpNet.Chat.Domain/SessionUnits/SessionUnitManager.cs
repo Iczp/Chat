@@ -23,6 +23,7 @@ using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.TextTemplates;
 using IczpNet.Chat.SessionSections.Sessions;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace IczpNet.Chat.SessionUnits;
 
@@ -288,10 +289,13 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
                 (!x.Setting.HistoryLastTime.HasValue || d.CreationTime < x.Setting.HistoryLastTime) &&
                 (!x.Setting.ClearTime.HasValue || d.CreationTime > x.Setting.ClearTime)),
         })
-        .Select(x => x.PublicBadge + x.PrivateBadge)
-        .Where(x => x > 0)
+        .Select(x => new
+        {
+            Badge = x.PublicBadge + x.PrivateBadge
+        })
+        .Where(x => x.Badge > 0)
         .ToList()
-        .Sum();
+        .Sum(x => x.Badge);
 
         return badge;
     }
