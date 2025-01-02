@@ -1,6 +1,5 @@
-﻿namespace IczpNet.Chat.ShopKeepers
+﻿namespace IczpNet.Chat.ShopKeepers;
+
+public interface IShopKeeperManager
 {
-    public interface IShopKeeperManager
-    {
-    }
 }
