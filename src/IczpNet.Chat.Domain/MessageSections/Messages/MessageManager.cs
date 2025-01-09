@@ -26,54 +26,36 @@ using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
-public partial class MessageManager : DomainService, IMessageManager
+public partial class MessageManager(
+    IMessageRepository repository,
+    IChatObjectManager chatObjectManager,
+    IObjectMapper objectMapper,
+    IMessageValidator messageValidator,
+    IChatPusher chatPusher,
+    ISessionUnitManager sessionUnitManager,
+    IUnitOfWorkManager unitOfWorkManager,
+    IFollowManager followManager,
+    IBackgroundJobManager backgroundJobManager,
+    ISessionRepository sessionRepository,
+    ISettingProvider settingProvider,
+    IRepository<MessageReminder> messageReminderRepository,
+    ISessionUnitSettingRepository sessionUnitSettingRepository,
+    ISessionGenerator sessionGenerator) : DomainService, IMessageManager
 {
-    protected IObjectMapper ObjectMapper { get; }
-    protected IChatObjectManager ChatObjectManager { get; }
-    protected IMessageRepository Repository { get; }
-    protected IMessageValidator MessageValidator { get; }
-    protected ISessionUnitManager SessionUnitManager { get; }
-    protected IUnitOfWorkManager UnitOfWorkManager { get; }
-    protected IChatPusher ChatPusher { get; }
-    protected ISessionRepository SessionRepository { get; }
-    protected ISessionUnitSettingRepository SessionUnitSettingRepository { get; }
-    protected IFollowManager FollowManager { get; }
-    protected IBackgroundJobManager BackgroundJobManager { get; }
-    protected ISettingProvider SettingProvider { get; }
-    protected IRepository<MessageReminder> MessageReminderRepository { get; }
-    protected ISessionGenerator SessionGenerator { get; }
-
-    public MessageManager(
-        IMessageRepository repository,
-        IChatObjectManager chatObjectManager,
-        IObjectMapper objectMapper,
-        IMessageValidator messageValidator,
-        IChatPusher chatPusher,
-        ISessionUnitManager sessionUnitManager,
-        IUnitOfWorkManager unitOfWorkManager,
-        IFollowManager followManager,
-        IBackgroundJobManager backgroundJobManager,
-        ISessionRepository sessionRepository,
-        ISettingProvider settingProvider,
-        IRepository<MessageReminder> messageReminderRepository,
-        ISessionUnitSettingRepository sessionUnitSettingRepository,
-        ISessionGenerator sessionGenerator)
-    {
-        Repository = repository;
-        ChatObjectManager = chatObjectManager;
-        ObjectMapper = objectMapper;
-        MessageValidator = messageValidator;
-        ChatPusher = chatPusher;
-        SessionUnitManager = sessionUnitManager;
-        UnitOfWorkManager = unitOfWorkManager;
-        FollowManager = followManager;
-        BackgroundJobManager = backgroundJobManager;
-        SessionRepository = sessionRepository;
-        SettingProvider = settingProvider;
-        MessageReminderRepository = messageReminderRepository;
-        SessionUnitSettingRepository = sessionUnitSettingRepository;
-        SessionGenerator = sessionGenerator;
-    }
+    protected IObjectMapper ObjectMapper { get; } = objectMapper;
+    protected IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
+    protected IMessageRepository Repository { get; } = repository;
+    protected IMessageValidator MessageValidator { get; } = messageValidator;
+    protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
+    protected IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
+    protected IChatPusher ChatPusher { get; } = chatPusher;
+    protected ISessionRepository SessionRepository { get; } = sessionRepository;
+    protected ISessionUnitSettingRepository SessionUnitSettingRepository { get; } = sessionUnitSettingRepository;
+    protected IFollowManager FollowManager { get; } = followManager;
+    protected IBackgroundJobManager BackgroundJobManager { get; } = backgroundJobManager;
+    protected ISettingProvider SettingProvider { get; } = settingProvider;
+    protected IRepository<MessageReminder> MessageReminderRepository { get; } = messageReminderRepository;
+    protected ISessionGenerator SessionGenerator { get; } = sessionGenerator;
 
     protected virtual void TryToSetOwnerId<T, TKey>(T entity, TKey ownerId)
     {
@@ -99,6 +81,7 @@ public partial class MessageManager : DomainService, IMessageManager
         }
         await Task.Yield();
     }
+
     public virtual async Task<Message> CreateMessageAsync(
         SessionUnit senderSessionUnit,
         Func<Message, Task<IContentEntity>> action,

@@ -13,26 +13,28 @@
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<Copyright>(c) iczp.net</Copyright>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Description>Chat module for abp</Description>
+		<PackageReadmeFile>readme.md</PackageReadmeFile>
 		<PackageIcon>IczpNet.jpg</PackageIcon>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\README.md" Link="README.md">
+    <None Include="..\..\readme.md" Link="README.md">
       <PackagePath>\</PackagePath>
       <Pack>True</Pack>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="..\..\IczpNet.jpg">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
   <ItemGroup>
 		<PackageReference Include="IczpNet.AbpCommons.Application.Contracts" Version="0.9.0.3" />
 		<PackageReference Include="IczpNet.AbpTrees.Application.Contracts" Version="9.0.0" />
-		<PackageReference Include="IczpNet.Pusher.Application.Contracts" Version="8.2.0.2" />
+		<PackageReference Include="IczpNet.Pusher.Application.Contracts" Version="9.0.0.1" />
 		<PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
     <PackageReference Include="Volo.Abp.Ddd.Application.Contracts" Version="9.0.2" />
     <PackageReference Include="Volo.Abp.Authorization" Version="9.0.2" />

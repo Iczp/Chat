@@ -12,7 +12,10 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+# COPY . .
 COPY ["NuGet.Config", "."]
+COPY ["IczpNet.jpg", "."]
+COPY ["readme.md", "."]
 COPY ["host/IczpNet.Chat.AuthServer/IczpNet.Chat.AuthServer.csproj", "host/IczpNet.Chat.AuthServer/"]
 COPY ["src/IczpNet.Chat.Application.Contracts/IczpNet.Chat.Application.Contracts.csproj", "src/IczpNet.Chat.Application.Contracts/"]
 COPY ["src/IczpNet.Chat.Domain.Shared/IczpNet.Chat.Domain.Shared.csproj", "src/IczpNet.Chat.Domain.Shared/"]

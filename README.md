@@ -1,7 +1,12 @@
 # IM.Chat
 
-abpvnext v6.0 chat module.
+abpvnext  chat module.
 
+
+## Docker build
+```bash
+docker build -t iczpnet/chat-auth:v0 -f ./host/IczpNet.Chat.AuthServer/Dockerfile .
+```
 
 
 ## Startup
