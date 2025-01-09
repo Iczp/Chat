@@ -1,12 +1,12 @@
-using Localization.Resources.AbpUi;
 using IczpNet.Chat.Localization;
-using Volo.Abp.AspNetCore.Mvc;
-using Volo.Abp.Localization;
-using Volo.Abp.Modularity;
+using Localization.Resources.AbpUi;
 using Microsoft.Extensions.DependencyInjection;
-using IczpNet.AbpCommons;
+using Volo.Abp.AspNetCore.Mvc;
+using Volo.Abp.AspNetCore.SignalR;
 using Volo.Abp.Identity;
 using Volo.Abp.Imaging;
+using Volo.Abp.Localization;
+using Volo.Abp.Modularity;
 
 namespace IczpNet.Chat;
 
@@ -16,6 +16,7 @@ namespace IczpNet.Chat;
 //[DependsOn(typeof(AbpCommonsHttpApiModule))]
 [DependsOn(typeof(AbpIdentityHttpApiModule))]
 [DependsOn(typeof(AbpImagingImageSharpModule))]
+[DependsOn(typeof(AbpAspNetCoreSignalRModule))]
 public class ChatHttpApiModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
