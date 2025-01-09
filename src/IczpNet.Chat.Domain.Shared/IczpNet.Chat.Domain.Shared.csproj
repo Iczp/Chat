@@ -15,7 +15,7 @@
     <Copyright>(c) iczp.net</Copyright>
     <Description>Chat module for abp</Description>
     <PackageIcon>IczpNet.jpg</PackageIcon>
-    <PackageReadmeFile>readme.md</PackageReadmeFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -42,12 +42,10 @@
     <None Include="..\..\IczpNet.jpg" Link="IczpNet.jpg">
       <PackagePath>\</PackagePath>
       <Pack>True</Pack>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="..\..\readme.md">
+    <None Include="..\..\README.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
