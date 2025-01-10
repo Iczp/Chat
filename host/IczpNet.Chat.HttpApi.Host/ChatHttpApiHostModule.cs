@@ -2,10 +2,12 @@ using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.EntityFrameworkCore;
 using IczpNet.Chat.MultiTenancy;
 using IczpNet.Pusher.Options;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
@@ -67,6 +69,9 @@ public class ChatHttpApiHostModule : AbpModule
     {
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
+
+        //SameSiteCookiePolicy
+        context.Services.AddSameSiteCookiePolicy();
 
         if (hostingEnvironment.IsDevelopment())
         {
@@ -240,6 +245,17 @@ public class ChatHttpApiHostModule : AbpModule
         });
 
         context.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddCookie("Cookies", options =>
+            {
+                options.ExpireTimeSpan = TimeSpan.FromDays(365);
+                // add an instance of the patched manager to the options:
+                options.CookieManager = new ChunkingCookieManager();
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SameSite = SameSiteMode.None;
+                //Correlation failed in net.core / asp.net identity / openid connect
+                //https://stackoverflow.com/questions/50262561/correlation-failed-in-net-core-asp-net-identity-openid-connect
+                //options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            })
             .AddJwtBearer(options =>
             {
                 options.Authority = configuration["AuthServer:Authority"];
@@ -266,7 +282,7 @@ public class ChatHttpApiHostModule : AbpModule
                         // If the request is for our hub...
                         var path = context.HttpContext.Request.Path;
                         if (!string.IsNullOrEmpty(accessToken) &&
-                            (path.StartsWithSegments("/signalr-hubs/chat")))
+                            (path.StartsWithSegments("/signalr-hubs/")))
                         {
                             // Read the token out of the query string
                             context.Token = accessToken;
@@ -306,6 +322,8 @@ public class ChatHttpApiHostModule : AbpModule
                     .AllowCredentials();
             });
         });
+
+        
     }
 
     public override void OnApplicationInitialization(ApplicationInitializationContext context)
@@ -331,6 +349,7 @@ public class ChatHttpApiHostModule : AbpModule
         app.UseStaticFiles();
         app.UseRouting();
         app.UseCors();
+        app.UseCookiePolicy();
         app.UseAuthentication();
         if (MultiTenancyConsts.IsEnabled)
         {
