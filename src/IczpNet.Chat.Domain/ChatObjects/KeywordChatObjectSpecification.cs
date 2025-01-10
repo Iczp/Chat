@@ -3,28 +3,27 @@ using System.Linq;
 using System.Linq.Expressions;
 using Volo.Abp.Specifications;
 
-namespace IczpNet.Chat.ChatObjects
+namespace IczpNet.Chat.ChatObjects;
+
+public class KeywordChatObjectSpecification : Specification<ChatObject>
 {
-    public class KeywordChatObjectSpecification : Specification<ChatObject>
+    public virtual string Keyword { get; }
+
+    public KeywordChatObjectSpecification(string keyword)
     {
-        public virtual string Keyword { get; }
-
-        public KeywordChatObjectSpecification(string keyword)
-        {
-            Keyword = keyword;
-        }
+        Keyword = keyword;
+    }
 
 
 
-        public override Expression<Func<ChatObject, bool>> ToExpression()
-        {
-            var expression = PredicateBuilder.New<ChatObject>();
+    public override Expression<Func<ChatObject, bool>> ToExpression()
+    {
+        var expression = PredicateBuilder.New<ChatObject>();
 
-            //Write diffusion
-            expression = expression.Or(x => x.Name.Contains(Keyword));
-            expression = expression.Or(x => x.NameSpellingAbbreviation.IndexOf(Keyword) == 0);
+        //Write diffusion
+        expression = expression.Or(x => x.Name.Contains(Keyword));
+        expression = expression.Or(x => x.NameSpellingAbbreviation.IndexOf(Keyword) == 0);
 
-            return expression;
-        }
+        return expression;
     }
 }

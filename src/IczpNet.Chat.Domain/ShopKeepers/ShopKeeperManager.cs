@@ -1,19 +1,18 @@
 ﻿using IczpNet.Chat.ChatObjects;
 using Volo.Abp.Domain.Services;
 
-namespace IczpNet.Chat.ShopKeepers
+namespace IczpNet.Chat.ShopKeepers;
+
+public class ShopKeeperManager : DomainService, IShopKeeperManager
 {
-    public class ShopKeeperManager : DomainService, IShopKeeperManager
+    protected IChatObjectRepository Repository { get; }
+    protected IChatObjectManager ChatObjectManager { get; }
+
+    public ShopKeeperManager(IChatObjectRepository repository, IChatObjectManager chatObjectManager)
     {
-        protected IChatObjectRepository Repository { get; }
-        protected IChatObjectManager ChatObjectManager { get; }
-
-        public ShopKeeperManager(IChatObjectRepository repository, IChatObjectManager chatObjectManager)
-        {
-            Repository = repository;
-            ChatObjectManager = chatObjectManager;
-        }
-
-        
+        Repository = repository;
+        ChatObjectManager = chatObjectManager;
     }
+
+    
 }

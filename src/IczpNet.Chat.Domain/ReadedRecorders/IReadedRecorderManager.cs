@@ -1,10 +1,9 @@
 ﻿using IczpNet.Chat.Bases;
 using System.Threading.Tasks;
 
-namespace IczpNet.Chat.ReadedRecorders
+namespace IczpNet.Chat.ReadedRecorders;
+
+public interface IReadedRecorderManager : IRecorderManager<ReadedRecorder>
 {
-    public interface IReadedRecorderManager : IRecorderManager<ReadedRecorder>
-    {
-        Task<int> CreateAllAsync(long messageId);
-    }
+    Task<int> CreateAllAsync(long messageId);
 }

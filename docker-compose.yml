@@ -1,25 +1,27 @@
-version: '3.4'
+# version: '3.4'
 
 services:
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server
-    volumes:
-      - dbdata:/var/opt/mssql
+  # sqlserver:
+  #   image: mcr.microsoft.com/mssql/server
+  #   volumes:
+  #     - dbdata:/var/opt/mssql
   
-  identity-server:
+  auth-server:
+    image: iczpnet/chat-auth-server:v0.0.3-beta
     build:
-      context: ../../
-      dockerfile: templates/service/host/IdentityServerHost/Dockerfile
-    depends_on:
-      - sqlserver      
+      # context: ../../
+      dockerfile: host/IczpNet.Chat.AuthServer/Dockerfile
+    # depends_on:
+    #   - sqlserver      
   
   chat:
+    image: iczpnet/chat-api-host:v0.0.3-beta
     build:
-      context: ../../
-      dockerfile: templates/service/host/IczpNet.Chat.Host/Dockerfile
+      # context: ../../
+      dockerfile: host/IczpNet.Chat.HttpApi.Host/Dockerfile
     depends_on:
-      - sqlserver
-      - identity-server
+      # - sqlserver
+      - auth-server
 
-volumes:
-  dbdata:
+# volumes:
+#   dbdata: F:\Dev\Docker\Volumes\ChatDb

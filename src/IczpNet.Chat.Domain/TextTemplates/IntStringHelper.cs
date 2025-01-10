@@ -2,51 +2,50 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace IczpNet.Chat.TextTemplates
+namespace IczpNet.Chat.TextTemplates;
+
+/// <summary>
+/// 十进制转XX进制、XX进制转10进制【互转】
+/// </summary>
+public static class IntStringHelper
 {
-    /// <summary>
-    /// 十进制转XX进制、XX进制转10进制【互转】
-    /// </summary>
-    public static class IntStringHelper
+    public const string StaticCode = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-";
+
+    public static string IntToString(long v, int length = 36, string inText = StaticCode)
     {
-        public const string StaticCode = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-";
+        var arr = inText.Take(length).ToArray();
 
-        public static string IntToString(long v, int length = 36, string inText = StaticCode)
+        string ret = "";
+
+        while (v >= 1)
         {
-            var arr = inText.Take(length).ToArray();
+            var index = Convert.ToInt64(v - v / length * length);
 
-            string ret = "";
+            ret = arr[index] + ret;
 
-            while (v >= 1)
-            {
-                var index = Convert.ToInt64(v - v / length * length);
+            v /= length;
+        }
+        return ret;
+    }
 
-                ret = arr[index] + ret;
+    public static long StringToInt(string v, int length = 36, string inText = StaticCode)
+    {
+        var arr = inText.Select(x => x).Take(length).ToArray();
 
-                v /= length;
-            }
-            return ret;
+        if (!v.All(arr.Contains))
+        {
+            throw new ArgumentException($"'{v}' is not existed:{arr.JoinAsString("")}");
         }
 
-        public static long StringToInt(string v, int length = 36, string inText = StaticCode)
+        long ret = 0;
+
+        int power = v.Length - 1;
+
+        for (int i = 0; i <= power; i++)
         {
-            var arr = inText.Select(x => x).Take(length).ToArray();
-
-            if (!v.All(arr.Contains))
-            {
-                throw new ArgumentException($"'{v}' is not existed:{arr.JoinAsString("")}");
-            }
-
-            long ret = 0;
-
-            int power = v.Length - 1;
-
-            for (int i = 0; i <= power; i++)
-            {
-                //ret += Array.IndexOf(arr, v[power - i]) * Convert.ToInt64(Math.Pow(length, i));
-                ret += arr.FindIndex(x => x == v[power - i]) * Convert.ToInt64(Math.Pow(length, i));
-            }
-            return ret;
+            //ret += Array.IndexOf(arr, v[power - i]) * Convert.ToInt64(Math.Pow(length, i));
+            ret += arr.FindIndex(x => x == v[power - i]) * Convert.ToInt64(Math.Pow(length, i));
         }
+        return ret;
     }
 }

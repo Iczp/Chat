@@ -1,12 +1,11 @@
 ﻿using IczpNet.Chat.Enums;
 using System.Threading.Tasks;
 
-namespace IczpNet.Chat.ChatObjectTypes
-{
-    public interface IChatObjectTypeManager
-    {
-        Task<ChatObjectType> GetAsync(string id);
+namespace IczpNet.Chat.ChatObjectTypes;
 
-        Task<ChatObjectType> GetAsync(ChatObjectTypeEnums chatObjectTypeEnum);
-    }
+public interface IChatObjectTypeManager
+{
+    Task<ChatObjectType> GetAsync(string id);
+
+    Task<ChatObjectType> GetAsync(ChatObjectTypeEnums chatObjectTypeEnum);
 }

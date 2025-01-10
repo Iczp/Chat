@@ -1,8 +1,7 @@
 ﻿using Volo.Abp.Domain.Services;
 
-namespace IczpNet.Chat.Words
+namespace IczpNet.Chat.Words;
+
+public class WordManager : DomainService, IWordManger
 {
-    public class WordManager : DomainService, IWordManger
-    {
-    }
 }

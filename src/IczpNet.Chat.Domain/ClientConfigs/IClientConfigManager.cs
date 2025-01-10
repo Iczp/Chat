@@ -1,6 +1,5 @@
-﻿namespace IczpNet.Chat.ClientConfigs
+﻿namespace IczpNet.Chat.ClientConfigs;
+
+public interface IClientConfigManager
 {
-    public interface IClientConfigManager
-    {
-    }
 }

@@ -12,88 +12,87 @@ using Volo.Abp.Domain.Services;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.ObjectMapping;
 
-namespace IczpNet.Chat.ChatPushers
+namespace IczpNet.Chat.ChatPushers;
+
+public class ChatPusher : DomainService, IChatPusher
 {
-    public class ChatPusher : DomainService, IChatPusher
+    protected IPusherPublisher PusherPublisher { get; }
+    protected ILocalEventBus LocalEventBus { get; }
+    protected ISessionUnitManager SessionUnitManager { get; }
+    protected IObjectMapper ObjectMapper { get; }
+
+    public ChatPusher(
+        IPusherPublisher pusherPublisher,
+        ILocalEventBus localEventBus,
+        ISessionUnitManager sessionUnitManager,
+        IObjectMapper objectMapper)
     {
-        protected IPusherPublisher PusherPublisher { get; }
-        protected ILocalEventBus LocalEventBus { get; }
-        protected ISessionUnitManager SessionUnitManager { get; }
-        protected IObjectMapper ObjectMapper { get; }
+        PusherPublisher = pusherPublisher;
+        LocalEventBus = localEventBus;
+        SessionUnitManager = sessionUnitManager;
+        ObjectMapper = objectMapper;
+    }
+    public async Task<long> ExecuteAsync(ChannelMessagePayload payload)
+    {
+        var ret = await PusherPublisher.PublishAsync(payload);
 
-        public ChatPusher(
-            IPusherPublisher pusherPublisher,
-            ILocalEventBus localEventBus,
-            ISessionUnitManager sessionUnitManager,
-            IObjectMapper objectMapper)
+        Logger.LogInformation($"ChatPusher PublishAsync[{ret}]:{payload}");
+
+        return ret;
+    }
+
+    public async Task<Dictionary<string, long>> ExecuteAsync(object payload, Action<ChannelMessagePayload> action)
+    {
+        var result = new Dictionary<string, long>();
+
+        var channelMessagePayload = new ChannelMessagePayload
         {
-            PusherPublisher = pusherPublisher;
-            LocalEventBus = localEventBus;
-            SessionUnitManager = sessionUnitManager;
-            ObjectMapper = objectMapper;
-        }
-        public async Task<long> ExecuteAsync(ChannelMessagePayload payload)
+            Payload = payload,
+        };
+
+        action?.Invoke(channelMessagePayload);
+
+        foreach (var command in CommandAttribute.GetValues(payload.GetType()))
         {
-            var ret = await PusherPublisher.PublishAsync(payload);
+            channelMessagePayload.Command = command;
 
-            Logger.LogInformation($"ChatPusher PublishAsync[{ret}]:{payload}");
+            var value = await ExecuteAsync(channelMessagePayload);
 
-            return ret;
+            result.TryAdd(command, value);
         }
+        return result;
+    }
 
-        public async Task<Dictionary<string, long>> ExecuteAsync(object payload, Action<ChannelMessagePayload> action)
+
+
+    public async Task<Dictionary<string, long>> ExecuteBySessionIdAsync(Guid sessionId, object commandPayload, List<string> ignoreConnections = null)
+    {
+        await SessionUnitManager.GetOrAddCacheListAsync(sessionId);
+
+        return await ExecuteAsync(commandPayload, x =>
         {
-            var result = new Dictionary<string, long>();
+            x.CacheKey = $"{new SessionUnitCacheKey(sessionId)}";
+            x.IgnoreConnections = ignoreConnections;
+        });
+    }
 
-            var channelMessagePayload = new ChannelMessagePayload
-            {
-                Payload = payload,
-            };
+    // send private message 
 
-            action?.Invoke(channelMessagePayload);
+    public async Task<Dictionary<string, long>> ExecutePrivateAsync(List<SessionUnit> sessionUnitList, object commandPayload, List<string> ignoreConnections = null)
+    {
+        var sessionUnitCacheList = ObjectMapper.Map<List<SessionUnit>, List<SessionUnitCacheItem>>(sessionUnitList);
 
-            foreach (var command in CommandAttribute.GetValues(payload.GetType()))
-            {
-                channelMessagePayload.Command = command;
+        var key = $"{new SessionUnitCacheKey(DateTime.Now.Ticks)}";
 
-                var value = await ExecuteAsync(channelMessagePayload);
-
-                result.TryAdd(command, value);
-            }
-            return result;
-        }
-
-
-
-        public async Task<Dictionary<string, long>> ExecuteBySessionIdAsync(Guid sessionId, object commandPayload, List<string> ignoreConnections = null)
+        await SessionUnitManager.SetCacheListAsync(key, sessionUnitCacheList, new DistributedCacheEntryOptions()
         {
-            await SessionUnitManager.GetOrAddCacheListAsync(sessionId);
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+        });
 
-            return await ExecuteAsync(commandPayload, x =>
-            {
-                x.CacheKey = $"{new SessionUnitCacheKey(sessionId)}";
-                x.IgnoreConnections = ignoreConnections;
-            });
-        }
-
-        // send private message 
-
-        public async Task<Dictionary<string, long>> ExecutePrivateAsync(List<SessionUnit> sessionUnitList, object commandPayload, List<string> ignoreConnections = null)
+        return await ExecuteAsync(commandPayload, x =>
         {
-            var sessionUnitCacheList = ObjectMapper.Map<List<SessionUnit>, List<SessionUnitCacheItem>>(sessionUnitList);
-
-            var key = $"{new SessionUnitCacheKey(DateTime.Now.Ticks)}";
-
-            await SessionUnitManager.SetCacheListAsync(key, sessionUnitCacheList, new DistributedCacheEntryOptions()
-            {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
-            });
-
-            return await ExecuteAsync(commandPayload, x =>
-            {
-                x.CacheKey = key;
-                x.IgnoreConnections = ignoreConnections;
-            });
-        }
+            x.CacheKey = key;
+            x.IgnoreConnections = ignoreConnections;
+        });
     }
 }

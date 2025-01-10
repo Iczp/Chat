@@ -1,10 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<Import Project="..\..\common.props" />
 
 	<PropertyGroup>
 		<GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
-		<TargetFramework>net8.0</TargetFramework>
+		<TargetFramework>net9.0</TargetFramework>
 		<Version>0.1.2</Version>
 		<Nullable>disable</Nullable>
 		<RootNamespace>IczpNet.Chat</RootNamespace>
@@ -20,10 +20,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="IczpNet.AbpCommons.Installer" Version="0.8.2" />
-		<PackageReference Include="IczpNet.AbpTrees.Installer" Version="8.2.0.3" />
-		<PackageReference Include="IczpNet.Pusher.Installer" Version="8.2.0.2" />
-		<PackageReference Include="Volo.Abp.VirtualFileSystem" Version="8.2.0" />
+		<PackageReference Include="IczpNet.AbpCommons.Installer" Version="0.9.0.3" />
+		<PackageReference Include="IczpNet.AbpTrees.Installer" Version="9.0.0" />
+		<PackageReference Include="IczpNet.Pusher.Installer" Version="9.0.0.1" />
+		<PackageReference Include="Volo.Abp.VirtualFileSystem" Version="9.0.2" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -44,7 +44,7 @@
 
 	<ItemGroup>
 	  <PackageReference Update="ConfigureAwait.Fody" Version="3.3.2" />
-	  <PackageReference Update="Fody" Version="6.8.1">
+	  <PackageReference Update="Fody" Version="6.9.1">
 	    <PrivateAssets>all</PrivateAssets>
 	    <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 	  </PackageReference>

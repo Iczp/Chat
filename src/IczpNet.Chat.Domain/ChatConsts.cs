@@ -1,6 +1,5 @@
 ﻿using IczpNet.Chat.Enums;
 using System.Collections.Generic;
-using System.IO;
 
 namespace IczpNet.Chat;
 

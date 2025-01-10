@@ -3,37 +3,36 @@ using FluentValidation.Validators;
 using System;
 using System.Linq;
 
-namespace IczpNet.Chat.Validators
+namespace IczpNet.Chat.Validators;
+
+public class UrlValidator<T> : PropertyValidator<T, string>, IRegularExpressionValidator
 {
-    public class UrlValidator<T> : PropertyValidator<T, string>, IRegularExpressionValidator
+    public readonly static string[] UriSchemes = new[] { Uri.UriSchemeHttp, Uri.UriSchemeHttps };
+    private UriKind UriKind { get; }
+
+    public UrlValidator(UriKind uriKind)
     {
-        public readonly static string[] UriSchemes = new[] { Uri.UriSchemeHttp, Uri.UriSchemeHttps };
-        private UriKind UriKind { get; }
+        UriKind = uriKind;
+    }
 
-        public UrlValidator(UriKind uriKind)
+    public string Expression => throw new NotImplementedException();
+
+    public override string Name => "UrlValidator";
+
+    public override bool IsValid(ValidationContext<T> context, string value)
+    {
+        //if (Uri.TryCreate(value, UriKind, out Uri uriResult))
+        //{
+        //    return UriSchemes.Contains(uriResult.Scheme);
+        //}
+        //return false;
+        try
         {
-            UriKind = uriKind;
+            return Uri.TryCreate(value, UriKind, out Uri uriResult) && UriSchemes.Contains(uriResult?.Scheme);
         }
-
-        public string Expression => throw new NotImplementedException();
-
-        public override string Name => "UrlValidator";
-
-        public override bool IsValid(ValidationContext<T> context, string value)
+        catch (Exception)
         {
-            //if (Uri.TryCreate(value, UriKind, out Uri uriResult))
-            //{
-            //    return UriSchemes.Contains(uriResult.Scheme);
-            //}
-            //return false;
-            try
-            {
-                return Uri.TryCreate(value, UriKind, out Uri uriResult) && UriSchemes.Contains(uriResult?.Scheme);
-            }
-            catch (Exception)
-            {
-                return false;
-            }
+            return false;
         }
     }
 }

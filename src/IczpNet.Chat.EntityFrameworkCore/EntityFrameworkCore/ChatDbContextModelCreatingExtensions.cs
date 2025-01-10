@@ -70,7 +70,7 @@ public static class ChatDbContextModelCreatingExtensions
 
 
 
-        builder.ConfigEntitys<ChatDomainModule>(ChatDbProperties.DbTablePrefix, ChatDbProperties.DbSchema);
+        builder.ConfigEntities<ChatDomainModule>(ChatDbProperties.DbTablePrefix, ChatDbProperties.DbSchema);
 
         ConfigMessageTemplateEntitys(builder);
         //ForEachEntitys(builder);

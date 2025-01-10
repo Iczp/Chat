@@ -6,24 +6,23 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace IczpNet.Chat.ChatObjectEntryValues
+namespace IczpNet.Chat.ChatObjectEntryValues;
+
+[Index(nameof(CreationTime))]
+public class ChatObjectEntryValue : BaseEntity, IChatOwner<long>
 {
-    [Index(nameof(CreationTime))]
-    public class ChatObjectEntryValue : BaseEntity, IChatOwner<long>
+    public virtual long OwnerId { get; set; }
+
+    [ForeignKey(nameof(OwnerId))]
+    public virtual ChatObject Owner { get; set; }
+
+    public virtual Guid EntryValueId { get; set; }
+
+    [ForeignKey(nameof(EntryValueId))]
+    public virtual EntryValue EntryValue { get; set; }
+
+    public override object[] GetKeys()
     {
-        public virtual long OwnerId { get; set; }
-
-        [ForeignKey(nameof(OwnerId))]
-        public virtual ChatObject Owner { get; set; }
-
-        public virtual Guid EntryValueId { get; set; }
-
-        [ForeignKey(nameof(EntryValueId))]
-        public virtual EntryValue EntryValue { get; set; }
-
-        public override object[] GetKeys()
-        {
-            return new object[] { OwnerId, EntryValueId };
-        }
+        return new object[] { OwnerId, EntryValueId };
     }
 }

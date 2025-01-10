@@ -1,12 +1,11 @@
 ﻿using System;
 
-namespace IczpNet.Chat.SessionSections.SessionBoxs
+namespace IczpNet.Chat.SessionSections.SessionBoxs;
+
+public class SessionBox
 {
-    public class SessionBox
-    {
 
-        public virtual Guid SessionId { get; set; }
+    public virtual Guid SessionId { get; set; }
 
-        //public virtual Session Session { get; set; }
-    }
+    //public virtual Session Session { get; set; }
 }

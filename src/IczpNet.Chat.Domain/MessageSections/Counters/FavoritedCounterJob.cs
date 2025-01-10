@@ -5,27 +5,26 @@ using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Uow;
 
-namespace IczpNet.Chat.MessageSections.Counters
+namespace IczpNet.Chat.MessageSections.Counters;
+
+public class FavoritedCounterJob : AsyncBackgroundJob<FavoritedCounterArgs>, ITransientDependency
 {
-    public class FavoritedCounterJob : AsyncBackgroundJob<FavoritedCounterArgs>, ITransientDependency
+    protected IMessageRepository MessageRepository { get; }
+    protected IUnitOfWorkManager UnitOfWorkManager { get; }
+
+    public FavoritedCounterJob(IMessageRepository messageRepository, IUnitOfWorkManager unitOfWorkManager)
     {
-        protected IMessageRepository MessageRepository { get; }
-        protected IUnitOfWorkManager UnitOfWorkManager { get; }
+        MessageRepository = messageRepository;
+        UnitOfWorkManager = unitOfWorkManager;
+    }
 
-        public FavoritedCounterJob(IMessageRepository messageRepository, IUnitOfWorkManager unitOfWorkManager)
-        {
-            MessageRepository = messageRepository;
-            UnitOfWorkManager = unitOfWorkManager;
-        }
+    [UnitOfWork]
+    public override async Task ExecuteAsync(FavoritedCounterArgs args)
+    {
+        using var uow = UnitOfWorkManager.Begin();
 
-        [UnitOfWork]
-        public override async Task ExecuteAsync(FavoritedCounterArgs args)
-        {
-            using var uow = UnitOfWorkManager.Begin();
+        var totalCount = await MessageRepository.IncrementFavoritedCountAsync(args.MessageIdList);
 
-            var totalCount = await MessageRepository.IncrementFavoritedCountAsync(args.MessageIdList);
-
-            Logger.LogInformation($"FavoritedCounterJob Completed totalCount:{totalCount}.");
-        }
+        Logger.LogInformation($"FavoritedCounterJob Completed totalCount:{totalCount}.");
     }
 }

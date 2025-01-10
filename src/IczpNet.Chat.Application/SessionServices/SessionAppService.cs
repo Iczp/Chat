@@ -1,5 +1,4 @@
-﻿using IczpNet.AbpCommons.Extensions;
-using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 using IczpNet.Chat.SessionSections.Sessions;
@@ -10,7 +9,6 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;

@@ -19,7 +19,7 @@ namespace IczpNet.Chat.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("_Abp_DatabaseProvider", EfCoreDatabaseProvider.SqlServer)
-                .HasAnnotation("ProductVersion", "8.0.7")
+                .HasAnnotation("ProductVersion", "9.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -4944,7 +4944,8 @@ namespace IczpNet.Chat.Migrations
                         .HasComment("更新消息总数量时间");
 
                     b.Property<long?>("OwnerId")
-                        .HasColumnType("bigint");
+                        .HasColumnType("bigint")
+                        .HasComment("Owner");
 
                     b.Property<string>("SessionKey")
                         .HasMaxLength(80)
@@ -5065,8 +5066,7 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("int")
                         .HasComment("提醒器数量(@我)");
 
-                    b.Property<Guid?>("SessionId")
-                        .IsRequired()
+                    b.Property<Guid>("SessionId")
                         .HasColumnType("uniqueidentifier")
                         .HasComment("会话Id");
 
@@ -5166,7 +5166,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.Property<Guid?>("InviterId")
                         .HasColumnType("uniqueidentifier")
-                        .HasComment("邀请人Id");
+                        .HasComment("邀请人");
 
                     b.Property<bool>("IsContacts")
                         .HasColumnType("bit")
@@ -5542,8 +5542,7 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("nvarchar(100)")
                         .HasComment("标题");
 
-                    b.Property<Guid?>("WalletId")
-                        .IsRequired()
+                    b.Property<Guid>("WalletId")
                         .HasColumnType("uniqueidentifier")
                         .HasComment("钱包Id");
 

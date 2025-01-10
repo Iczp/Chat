@@ -1,13 +1,12 @@
 ﻿using FluentValidation;
 using IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;
 
-namespace IczpNet.Chat.Validators
+namespace IczpNet.Chat.Validators;
+
+public class SessionOrganizationCreateInputValidator : AbstractValidator<SessionOrganizationCreateInput>
 {
-    public class SessionOrganizationCreateInputValidator : AbstractValidator<SessionOrganizationCreateInput>
+    public SessionOrganizationCreateInputValidator()
     {
-        public SessionOrganizationCreateInputValidator()
-        {
-            RuleFor(x => x.SessionId).NotNull().NotEmpty().WithMessage($"{nameof(SessionOrganizationCreateInput.SessionId)} 不能为空");
-        }
+        RuleFor(x => x.SessionId).NotNull().NotEmpty().WithMessage($"{nameof(SessionOrganizationCreateInput.SessionId)} 不能为空");
     }
 }

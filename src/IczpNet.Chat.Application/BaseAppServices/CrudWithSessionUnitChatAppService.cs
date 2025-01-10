@@ -14,11 +14,20 @@ using Volo.Abp.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using IczpNet.Chat.SessionUnits;
 
-namespace IczpNet.Chat.BaseAppServices
-{
-    [ApiExplorerSettings(GroupName = ChatRemoteServiceConsts.ModuleName)]
-    [Authorize]
-    public abstract class CrudWithSessionUnitChatAppService<
+namespace IczpNet.Chat.BaseAppServices;
+
+[ApiExplorerSettings(GroupName = ChatRemoteServiceConsts.ModuleName)]
+[Authorize]
+public abstract class CrudWithSessionUnitChatAppService<
+    TEntity,
+    TGetOutputDto,
+    TGetListOutputDto,
+    TKey,
+    TGetListInput,
+    TCreateInput,
+    TUpdateInput>
+    :
+    CrudChatAppService<
         TEntity,
         TGetOutputDto,
         TGetListOutputDto,
@@ -26,189 +35,179 @@ namespace IczpNet.Chat.BaseAppServices
         TGetListInput,
         TCreateInput,
         TUpdateInput>
-        :
-        CrudChatAppService<
-            TEntity,
-            TGetOutputDto,
-            TGetListOutputDto,
-            TKey,
-            TGetListInput,
-            TCreateInput,
-            TUpdateInput>
-        where TKey : struct
-        where TEntity : class, IEntity<TKey>, ISessionId
-        where TGetOutputDto : IEntityDto<TKey>
-        where TGetListOutputDto : IEntityDto<TKey>
-        where TGetListInput : ISessionId
-        where TCreateInput : ISessionId
+    where TKey : struct
+    where TEntity : class, IEntity<TKey>, ISessionId
+    where TGetOutputDto : IEntityDto<TKey>
+    where TGetListOutputDto : IEntityDto<TKey>
+    where TGetListInput : ISessionId
+    where TCreateInput : ISessionId
+{
+
+    protected virtual string GetBySessionUnitPolicyName { get; set; }
+    protected virtual string GetListBySessionUnitPolicyName { get; set; }
+    protected virtual string CreateBySessionUnitPolicyName { get; set; }
+    protected virtual string UpdateBySessionUnitPolicyName { get; set; }
+    protected virtual string DeleteBySessionUnitPolicyName { get; set; }
+    protected virtual string DeleteManyBySessionUnitPolicyName { get; set; }
+    protected IRepository<Session, Guid> SessionRepository => LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
+    protected ISessionPermissionChecker SessionPermissionChecker => LazyServiceProvider.LazyGetRequiredService<ISessionPermissionChecker>();
+    //protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
+
+    protected CrudWithSessionUnitChatAppService(IRepository<TEntity, TKey> repository) : base(repository)
     {
+    }
 
-        protected virtual string GetBySessionUnitPolicyName { get; set; }
-        protected virtual string GetListBySessionUnitPolicyName { get; set; }
-        protected virtual string CreateBySessionUnitPolicyName { get; set; }
-        protected virtual string UpdateBySessionUnitPolicyName { get; set; }
-        protected virtual string DeleteBySessionUnitPolicyName { get; set; }
-        protected virtual string DeleteManyBySessionUnitPolicyName { get; set; }
-        protected IRepository<Session, Guid> SessionRepository => LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
-        protected ISessionPermissionChecker SessionPermissionChecker => LazyServiceProvider.LazyGetRequiredService<ISessionPermissionChecker>();
-        //protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
+    protected virtual void TryToSetSessionId<T>(T entity, Guid? sessionId) where T : ISessionId
+    {
+        var propertyInfo = entity.GetType().GetProperty(nameof(ISessionId.SessionId));
 
-        protected CrudWithSessionUnitChatAppService(IRepository<TEntity, TKey> repository) : base(repository)
+        if (entity is ISessionId && propertyInfo != null && propertyInfo.GetSetMethod(true) != null)
         {
+            propertyInfo.SetValue(entity, sessionId);
         }
+    }
 
-        protected virtual void TryToSetSessionId<T>(T entity, Guid? sessionId) where T : ISessionId
-        {
-            var propertyInfo = entity.GetType().GetProperty(nameof(ISessionId.SessionId));
+    protected virtual async Task<SessionUnit> GetAndCheckSessionUnitAsync(Guid sessionUnitId)
+    {
+        var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
 
-            if (entity is ISessionId && propertyInfo != null && propertyInfo.GetSetMethod(true) != null)
-            {
-                propertyInfo.SetValue(entity, sessionId);
-            }
-        }
+        Assert.If(!sessionUnit.Setting.IsEnabled, $"SessionUnit disabled,SessionUnitId:{sessionUnit.Id}");
 
-        protected virtual async Task<SessionUnit> GetAndCheckSessionUnitAsync(Guid sessionUnitId)
-        {
-            var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+        return sessionUnit;
+    }
 
-            Assert.If(!sessionUnit.Setting.IsEnabled, $"SessionUnit disabled,SessionUnitId:{sessionUnit.Id}");
+    protected virtual async Task CheckGetBySessionUnitAsync(SessionUnit sessionUnit, TEntity entity)
+    {
+        Assert.If(sessionUnit.SessionId != entity.SessionId, $"Not in same session");
 
-            return sessionUnit;
-        }
+        await SessionPermissionChecker.CheckAsync(GetBySessionUnitPolicyName, sessionUnit);
+    }
 
-        protected virtual async Task CheckGetBySessionUnitAsync(SessionUnit sessionUnit, TEntity entity)
-        {
-            Assert.If(sessionUnit.SessionId != entity.SessionId, $"Not in same session");
+    [HttpGet]
+    public virtual async Task<TGetOutputDto> GetByAsync(Guid sessionUnitId, TKey id)
+    {
+        //await SessionPermissionChecker.CheckAsync(GetPolicyName, sessionUnitId);
 
-            await SessionPermissionChecker.CheckAsync(GetBySessionUnitPolicyName, sessionUnit);
-        }
+        var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
 
-        [HttpGet]
-        public virtual async Task<TGetOutputDto> GetByAsync(Guid sessionUnitId, TKey id)
-        {
-            //await SessionPermissionChecker.CheckAsync(GetPolicyName, sessionUnitId);
+        var entity = await base.GetEntityByIdAsync(id);
 
-            var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
+        await CheckGetBySessionUnitAsync(sessionUnit, entity);
 
-            var entity = await base.GetEntityByIdAsync(id);
+        return await MapToGetOutputDtoAsync(entity);
+    }
 
-            await CheckGetBySessionUnitAsync(sessionUnit, entity);
+    protected virtual async Task CheckGetListBySessionUnitAsync(SessionUnit sessionUnit, TGetListInput input)
+    {
+        Assert.If(input.SessionId.HasValue && sessionUnit.SessionId != input.SessionId, $"Not in same session");
 
-            return await MapToGetOutputDtoAsync(entity);
-        }
+        await SessionPermissionChecker.CheckAsync(GetListBySessionUnitPolicyName, sessionUnit);
+    }
 
-        protected virtual async Task CheckGetListBySessionUnitAsync(SessionUnit sessionUnit, TGetListInput input)
-        {
-            Assert.If(input.SessionId.HasValue && sessionUnit.SessionId != input.SessionId, $"Not in same session");
+    [HttpGet]
+    public virtual async Task<PagedResultDto<TGetListOutputDto>> GetListByAsync(Guid sessionUnitId, TGetListInput input)
+    {
+        var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
 
-            await SessionPermissionChecker.CheckAsync(GetListBySessionUnitPolicyName, sessionUnit);
-        }
+        await CheckGetListBySessionUnitAsync(sessionUnit, input);
 
-        [HttpGet]
-        public virtual async Task<PagedResultDto<TGetListOutputDto>> GetListByAsync(Guid sessionUnitId, TGetListInput input)
-        {
-            var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
+        TryToSetSessionId(input, sessionUnit.SessionId);
 
-            await CheckGetListBySessionUnitAsync(sessionUnit, input);
+        GetListPolicyName = string.Empty;
 
-            TryToSetSessionId(input, sessionUnit.SessionId);
+        return await base.GetListAsync(input);
+    }
 
-            GetListPolicyName = string.Empty;
+    protected virtual async Task CheckCreateBySessionUnitAsync(SessionUnit sessionUnit, TCreateInput input)
+    {
+        Assert.If(input.SessionId.HasValue && sessionUnit.SessionId != input.SessionId, $"Not in same session");
 
-            return await base.GetListAsync(input);
-        }
+        await SessionPermissionChecker.CheckAsync(CreateBySessionUnitPolicyName, sessionUnit);
+    }
 
-        protected virtual async Task CheckCreateBySessionUnitAsync(SessionUnit sessionUnit, TCreateInput input)
-        {
-            Assert.If(input.SessionId.HasValue && sessionUnit.SessionId != input.SessionId, $"Not in same session");
+    [HttpPost]
+    public virtual async Task<TGetOutputDto> CreateByAsync(Guid sessionUnitId, TCreateInput input)
+    {
+        var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
 
-            await SessionPermissionChecker.CheckAsync(CreateBySessionUnitPolicyName, sessionUnit);
-        }
+        await CheckCreateBySessionUnitAsync(sessionUnit, input);
 
-        [HttpPost]
-        public virtual async Task<TGetOutputDto> CreateByAsync(Guid sessionUnitId, TCreateInput input)
-        {
-            var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
+        TryToSetSessionId(input, sessionUnit.SessionId);
 
-            await CheckCreateBySessionUnitAsync(sessionUnit, input);
+        CreatePolicyName = string.Empty;
 
-            TryToSetSessionId(input, sessionUnit.SessionId);
+        return await base.CreateAsync(input);
+    }
 
-            CreatePolicyName = string.Empty;
+    protected virtual async Task CheckUpdateBySessionUnitAsync(SessionUnit sessionUnit, TKey id, TUpdateInput input)
+    {
+        await SessionPermissionChecker.CheckAsync(UpdateBySessionUnitPolicyName, sessionUnit);
+    }
 
-            return await base.CreateAsync(input);
-        }
+    [HttpPost]
+    public virtual async Task<TGetOutputDto> UpdateByAsync(Guid sessionUnitId, TKey id, TUpdateInput input)
+    {
+        var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
 
-        protected virtual async Task CheckUpdateBySessionUnitAsync(SessionUnit sessionUnit, TKey id, TUpdateInput input)
-        {
-            await SessionPermissionChecker.CheckAsync(UpdateBySessionUnitPolicyName, sessionUnit);
-        }
+        await CheckUpdateBySessionUnitAsync(sessionUnit, id, input);
 
-        [HttpPost]
-        public virtual async Task<TGetOutputDto> UpdateByAsync(Guid sessionUnitId, TKey id, TUpdateInput input)
-        {
-            var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
+        UpdatePolicyName = string.Empty;
 
-            await CheckUpdateBySessionUnitAsync(sessionUnit, id, input);
+        return await base.UpdateAsync(id, input);
+    }
 
-            UpdatePolicyName = string.Empty;
+    protected virtual async Task CheckDeleteBySessionUnitAsync(SessionUnit sessionUnit, TEntity entity)
+    {
+        Assert.If(sessionUnit.SessionId != entity.SessionId, $"Not in same session");
 
-            return await base.UpdateAsync(id, input);
-        }
+        await SessionPermissionChecker.CheckAsync(DeleteBySessionUnitPolicyName, sessionUnit);
+    }
 
-        protected virtual async Task CheckDeleteBySessionUnitAsync(SessionUnit sessionUnit, TEntity entity)
-        {
-            Assert.If(sessionUnit.SessionId != entity.SessionId, $"Not in same session");
+    [HttpPost]
+    public virtual async Task DeleteByAsync(Guid sessionUnitId, TKey id)
+    {
+        var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
 
-            await SessionPermissionChecker.CheckAsync(DeleteBySessionUnitPolicyName, sessionUnit);
-        }
+        var entity = await Repository.GetAsync(id);
 
-        [HttpPost]
-        public virtual async Task DeleteByAsync(Guid sessionUnitId, TKey id)
-        {
-            var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
+        await CheckDeleteBySessionUnitAsync(sessionUnit, entity);
 
-            var entity = await Repository.GetAsync(id);
+        DeletePolicyName = string.Empty;
 
-            await CheckDeleteBySessionUnitAsync(sessionUnit, entity);
+        await base.DeleteAsync(id);
+    }
 
-            DeletePolicyName = string.Empty;
+    protected virtual async Task CheckDeleteManyBySessionUnitAsync(SessionUnit sessionUnit, List<TKey> idList)
+    {
+        await SessionPermissionChecker.CheckAsync(DeleteManyBySessionUnitPolicyName, sessionUnit);
+    }
 
-            await base.DeleteAsync(id);
-        }
+    [HttpPost]
+    public virtual async Task DeleteManyByAsync(Guid sessionUnitId, List<TKey> idList)
+    {
+        var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
 
-        protected virtual async Task CheckDeleteManyBySessionUnitAsync(SessionUnit sessionUnit, List<TKey> idList)
-        {
-            await SessionPermissionChecker.CheckAsync(DeleteManyBySessionUnitPolicyName, sessionUnit);
-        }
+        var predicate = GetPredicateDeleteManyByAsync(sessionUnit);
 
-        [HttpPost]
-        public virtual async Task DeleteManyByAsync(Guid sessionUnitId, List<TKey> idList)
-        {
-            var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
+        var entityIdList = (await Repository.GetQueryableAsync())
+           .Where(x => idList.Contains(x.Id))
+           .WhereIf(predicate != null, predicate)
+           .Select(x => x.Id)
+           .ToList();
 
-            var predicate = GetPredicateDeleteManyByAsync(sessionUnit);
+        var notfindIdList = idList.Except(entityIdList).ToList();
 
-            var entityIdList = (await Repository.GetQueryableAsync())
-               .Where(x => idList.Contains(x.Id))
-               .WhereIf(predicate != null, predicate)
-               .Select(x => x.Id)
-               .ToList();
+        Assert.If(notfindIdList.Any(), $"not find {notfindIdList.Count}:[{notfindIdList.JoinAsString(",")}]");
 
-            var notfindIdList = idList.Except(entityIdList).ToList();
+        await CheckDeleteManyBySessionUnitAsync(sessionUnit, idList);
 
-            Assert.If(notfindIdList.Any(), $"not find {notfindIdList.Count}:[{notfindIdList.JoinAsString(",")}]");
+        DeletePolicyName = string.Empty;
 
-            await CheckDeleteManyBySessionUnitAsync(sessionUnit, idList);
+        await DeleteManyAsync(idList);
+    }
 
-            DeletePolicyName = string.Empty;
-
-            await DeleteManyAsync(idList);
-        }
-
-        protected virtual Expression<Func<TEntity, bool>> GetPredicateDeleteManyByAsync(SessionUnit sessionUnit)
-        {
-            return x => x.SessionId == sessionUnit.SessionId;
-        }
+    protected virtual Expression<Func<TEntity, bool>> GetPredicateDeleteManyByAsync(SessionUnit sessionUnit)
+    {
+        return x => x.SessionId == sessionUnit.SessionId;
     }
 }
