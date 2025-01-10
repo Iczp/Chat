@@ -9,7 +9,7 @@
 		<Authors>IczpNet</Authors>
 		<RepositoryUrl>https://github.com/Iczp/Chat.git</RepositoryUrl>
 		<PackageProjectUrl>https://github.com/Iczp/Chat.git</PackageProjectUrl>
-		<Version>0.1.1</Version>
+		<Version>0.2.1.902</Version>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 	</PropertyGroup>
 
