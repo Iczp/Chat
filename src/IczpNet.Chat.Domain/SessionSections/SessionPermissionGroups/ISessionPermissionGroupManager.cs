@@ -1,9 +1,8 @@
 ﻿using IczpNet.AbpTrees;
 using IczpNet.Chat.SessionSections.SessionPermissionGroups;
 
-namespace IczpNet.Chat.SessionSections.SessionOrganizations
+namespace IczpNet.Chat.SessionSections.SessionOrganizations;
+
+public interface ISessionPermissionGroupManager : ITreeManager<SessionPermissionGroup, long, SessionPermissionGroupInfo>
 {
-    public interface ISessionPermissionGroupManager : ITreeManager<SessionPermissionGroup, long, SessionPermissionGroupInfo>
-    {
-    }
 }

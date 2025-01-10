@@ -1,6 +1,5 @@
-﻿namespace IczpNet.Chat.Robots
+﻿namespace IczpNet.Chat.Robots;
+
+public interface IRobotManager
 {
-    public interface IRobotManager
-    {
-    }
 }

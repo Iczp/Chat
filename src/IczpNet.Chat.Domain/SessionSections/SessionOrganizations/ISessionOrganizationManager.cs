@@ -1,8 +1,7 @@
 ﻿using IczpNet.AbpTrees;
 
-namespace IczpNet.Chat.SessionSections.SessionOrganizations
+namespace IczpNet.Chat.SessionSections.SessionOrganizations;
+
+public interface ISessionOrganizationManager : ITreeManager<SessionOrganization,long, SessionOrganizationInfo>
 {
-    public interface ISessionOrganizationManager : ITreeManager<SessionOrganization,long, SessionOrganizationInfo>
-    {
-    }
 }

@@ -1,6 +1,4 @@
 ﻿using IczpNet.AbpCommons;
-using IczpNet.AbpCommons.DataFilters;
-using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Localization;
 using IczpNet.Chat.SessionUnits;
@@ -10,9 +8,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Volo.Abp.Application.Dtos;
-using Volo.Abp.Application.Services;
 using Volo.Abp.Auditing;
+using Volo.Abp.Users;
 
 namespace IczpNet.Chat.BaseAppServices;
 
@@ -50,23 +47,23 @@ public abstract class ChatAppService : AbpCommonsAppService
         }
     }
 
-    protected virtual async Task<PagedResultDto<TOuputDto>> GetPagedListAsync<T, TOuputDto>(
-        IQueryable<T> query,
-        PagedAndSortedResultRequestDto input,
-        Func<IQueryable<T>, IQueryable<T>> queryableAction = null,
-        Func<List<T>, Task<List<T>>> entityAction = null)
-    {
-        return await query.ToPagedListAsync<T, TOuputDto>(AsyncExecuter, ObjectMapper, input, queryableAction, entityAction);
-    }
+    //protected virtual async Task<PagedResultDto<TOuputDto>> GetPagedListAsync<T, TOuputDto>(
+    //    IQueryable<T> query,
+    //    PagedAndSortedResultRequestDto input,
+    //    Func<IQueryable<T>, IQueryable<T>> queryableAction = null,
+    //    Func<List<T>, Task<List<T>>> entityAction = null)
+    //{
+    //    return await query.ToPagedListAsync<T, TOuputDto>(AsyncExecuter, ObjectMapper, input, queryableAction, entityAction);
+    //}
 
-    protected virtual async Task<PagedResultDto<T>> GetPagedListAsync<T>(
-        IQueryable<T> query,
-        PagedAndSortedResultRequestDto input,
-        Func<IQueryable<T>, IQueryable<T>> queryableAction = null,
-        Func<List<T>, Task<List<T>>> entityAction = null)
-    {
-        return await query.ToPagedListAsync<T, T>(AsyncExecuter, ObjectMapper, input, queryableAction, entityAction);
-    }
+    //protected virtual async Task<PagedResultDto<T>> GetPagedListAsync<T>(
+    //    IQueryable<T> query,
+    //    PagedAndSortedResultRequestDto input,
+    //    Func<IQueryable<T>, IQueryable<T>> queryableAction = null,
+    //    Func<List<T>, Task<List<T>>> entityAction = null)
+    //{
+    //    return await query.ToPagedListAsync<T, T>(AsyncExecuter, ObjectMapper, input, queryableAction, entityAction);
+    //}
 
     #region CheckPolicyForUserAsync
     protected virtual async Task<bool> IsAnyCurrentUserAsync(IEnumerable<long?> ownerIdList)
@@ -94,6 +91,9 @@ public abstract class ChatAppService : AbpCommonsAppService
         //{
         //    return;
         //}
+        var currentUserId = CurrentUser.GetId();
+
+        Assert.If(!CurrentUser.Id.HasValue, $"请先登录");
 
         var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
 

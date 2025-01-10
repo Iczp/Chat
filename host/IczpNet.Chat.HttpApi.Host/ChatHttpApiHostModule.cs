@@ -2,10 +2,12 @@ using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.EntityFrameworkCore;
 using IczpNet.Chat.MultiTenancy;
 using IczpNet.Pusher.Options;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
@@ -15,6 +17,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.AspNetCore.ExceptionHandling;
 using Volo.Abp.AspNetCore.Mvc;
@@ -66,6 +69,9 @@ public class ChatHttpApiHostModule : AbpModule
     {
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
+
+        //SameSiteCookiePolicy
+        context.Services.AddSameSiteCookiePolicy();
 
         if (hostingEnvironment.IsDevelopment())
         {
@@ -239,11 +245,51 @@ public class ChatHttpApiHostModule : AbpModule
         });
 
         context.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddCookie("Cookies", options =>
+            {
+                options.ExpireTimeSpan = TimeSpan.FromDays(365);
+                // add an instance of the patched manager to the options:
+                options.CookieManager = new ChunkingCookieManager();
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SameSite = SameSiteMode.None;
+                //Correlation failed in net.core / asp.net identity / openid connect
+                //https://stackoverflow.com/questions/50262561/correlation-failed-in-net-core-asp-net-identity-openid-connect
+                //options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            })
             .AddJwtBearer(options =>
             {
                 options.Authority = configuration["AuthServer:Authority"];
                 options.RequireHttpsMetadata = Convert.ToBoolean(configuration["AuthServer:RequireHttpsMetadata"]);
                 options.Audience = "Chat";
+
+                // We have to hook the OnMessageReceived event in order to
+                // allow the JWT authentication handler to read the access
+                // token from the query string when a WebSocket or 
+                // Server-Sent Events request comes in.
+
+                // Sending the access token in the query string is required when using WebSockets or ServerSentEvents
+                // due to a limitation in Browser APIs. We restrict it to only calls to the
+                // SignalR hub in this code.
+                // See https://docs.microsoft.com/aspnet/core/signalr/security#access-token-logging
+                // for more information about security considerations when using
+                // the query string to transmit the access token.
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+
+                        // If the request is for our hub...
+                        var path = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accessToken) &&
+                            (path.StartsWithSegments("/signalr-hubs/")))
+                        {
+                            // Read the token out of the query string
+                            context.Token = accessToken;
+                        }
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
         Configure<AbpDistributedCacheOptions>(options =>
@@ -276,6 +322,8 @@ public class ChatHttpApiHostModule : AbpModule
                     .AllowCredentials();
             });
         });
+
+        
     }
 
     public override void OnApplicationInitialization(ApplicationInitializationContext context)
@@ -296,11 +344,12 @@ public class ChatHttpApiHostModule : AbpModule
             app.UseHsts();
         }
 
-        app.UseHttpsRedirection();
+        //app.UseHttpsRedirection();
         app.UseCorrelationId();
         app.UseStaticFiles();
         app.UseRouting();
         app.UseCors();
+        app.UseCookiePolicy();
         app.UseAuthentication();
         if (MultiTenancyConsts.IsEnabled)
         {

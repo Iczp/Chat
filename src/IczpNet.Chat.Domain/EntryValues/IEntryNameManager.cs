@@ -1,6 +1,5 @@
-﻿namespace IczpNet.Chat.EntryValues
+﻿namespace IczpNet.Chat.EntryValues;
+
+public interface IEntryValueManager
 {
-    public interface IEntryValueManager
-    {
-    }
 }

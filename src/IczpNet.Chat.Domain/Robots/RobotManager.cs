@@ -1,19 +1,18 @@
 ﻿using IczpNet.Chat.ChatObjects;
 using Volo.Abp.Domain.Services;
 
-namespace IczpNet.Chat.Robots
+namespace IczpNet.Chat.Robots;
+
+public class RobotManager : DomainService, IRobotManager
 {
-    public class RobotManager : DomainService, IRobotManager
+    protected IChatObjectRepository Repository { get; }
+    protected IChatObjectManager ChatObjectManager { get; }
+
+    public RobotManager(IChatObjectRepository repository, IChatObjectManager chatObjectManager)
     {
-        protected IChatObjectRepository Repository { get; }
-        protected IChatObjectManager ChatObjectManager { get; }
-
-        public RobotManager(IChatObjectRepository repository, IChatObjectManager chatObjectManager)
-        {
-            Repository = repository;
-            ChatObjectManager = chatObjectManager;
-        }
-
-        
+        Repository = repository;
+        ChatObjectManager = chatObjectManager;
     }
+
+    
 }

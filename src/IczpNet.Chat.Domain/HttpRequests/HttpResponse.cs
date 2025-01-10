@@ -2,20 +2,19 @@
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace IczpNet.Chat.HttpRequests
+namespace IczpNet.Chat.HttpRequests;
+
+public class HttpResponse : BaseEntity
 {
-    public class HttpResponse : BaseEntity
+    public virtual Guid HttpRequestId { get; set; }
+
+    [ForeignKey(nameof(HttpRequestId))]
+    public virtual HttpRequest HttpRequest { get; set; }
+
+    public virtual string Content { get; set; }
+
+    public override object[] GetKeys()
     {
-        public virtual Guid HttpRequestId { get; set; }
-
-        [ForeignKey(nameof(HttpRequestId))]
-        public virtual HttpRequest HttpRequest { get; set; }
-
-        public virtual string Content { get; set; }
-
-        public override object[] GetKeys()
-        {
-            return new object[] { HttpRequestId };
-        }
+        return new object[] { HttpRequestId };
     }
 }

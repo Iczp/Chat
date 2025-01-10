@@ -1,29 +1,31 @@
-version: '3.4'
+# version: '3.4'
 
 services:
-  sqlserver:
-    environment:
-      - SA_PASSWORD=yourStrong(!)Password
-      - ACCEPT_EULA=Y
-    ports:
-      - "51599:1433"
+  # sqlserver:
+  #   environment:
+  #     - SA_PASSWORD=yourStrong(!)Password
+  #     - ACCEPT_EULA=Y
+  #   ports:
+  #     - "51599:1433"
 
-  identity-server:
+  auth-server:
     environment:
       - ASPNETCORE_URLS=http://0.0.0.0:80
-      - ConnectionStrings__Default=Server=sqlserver;Database=Chat_Identity;Trusted_Connection=True;User=sa;Password=yourStrong(!)Password;Integrated Security=false
-      - ConnectionStrings__SqlServerCache=Server=sqlserver;Database=Chat_Cache;Trusted_Connection=True;User=sa;Password=yourStrong(!)Password;Integrated Security=false
+      - ConnectionStrings__Default=Server=host.docker.internal;Database=Chat_Main;Initial Catalog=Chat_Main;User ID=sa;Password=123;TrustServerCertificate=True
+      # - ConnectionStrings__SqlServerCache=Server=sqlserver;Database=Chat_Cache;Trusted_Connection=True;User=sa;Password=yourStrong(!)Password;Integrated Security=false
+      - Redis__Configuration=host.docker.internal
     ports:
       - "51600:80"
 
   chat:
     environment:
       - ASPNETCORE_URLS=http://0.0.0.0:80
-      - ConnectionStrings__Default=Server=sqlserver;Database=Chat_ModuleDb;Trusted_Connection=True;User=sa;Password=yourStrong(!)Password;Integrated Security=false
-      - ConnectionStrings__AbpSettingManagement=Server=sqlserver;Database=Chat_Identity;Trusted_Connection=True;User=sa;Password=yourStrong(!)Password;Integrated Security=false
-      - ConnectionStrings__AbpPermissionManagement=Server=sqlserver;Database=Chat_Identity;Trusted_Connection=True;User=sa;Password=yourStrong(!)Password;Integrated Security=false
-      - ConnectionStrings__AbpAuditLogging=Server=sqlserver;Database=Chat_Identity;Trusted_Connection=True;User=sa;Password=yourStrong(!)Password;Integrated Security=false
-      - ConnectionStrings__SqlServerCache=Server=sqlserver;Database=Chat_Cache;Trusted_Connection=True;User=sa;Password=yourStrong(!)Password;Integrated Security=false
-      - AuthServer__Authority=http://identity-server
+      - ConnectionStrings__Default=Server=host.docker.internal;Database=Chat_Module_v3;Initial Catalog=Chat_Main;User ID=sa;Password=123;TrustServerCertificate=True
+      # - ConnectionStrings__AbpSettingManagement=Server=sqlserver;Database=Chat_Identity;Trusted_Connection=True;User=sa;Password=yourStrong(!)Password;Integrated Security=false
+      # - ConnectionStrings__AbpPermissionManagement=Server=sqlserver;Database=Chat_Identity;Trusted_Connection=True;User=sa;Password=yourStrong(!)Password;Integrated Security=false
+      # - ConnectionStrings__AbpAuditLogging=Server=sqlserver;Database=Chat_Identity;Trusted_Connection=True;User=sa;Password=yourStrong(!)Password;Integrated Security=false
+      # - ConnectionStrings__SqlServerCache=Server=sqlserver;Database=Chat_Cache;Trusted_Connection=True;User=sa;Password=yourStrong(!)Password;Integrated Security=false
+      - AuthServer__Authority=http://10.0.5.20:51600
+      - Redis__Configuration=host.docker.internal
     ports:
       - "51601:80"

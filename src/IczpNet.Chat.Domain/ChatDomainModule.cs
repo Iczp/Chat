@@ -12,10 +12,10 @@ using Volo.Abp.AutoMapper;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.Domain;
+using Volo.Abp.Imaging;
 using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement.Identity;
 using Volo.Abp.SimpleStateChecking;
-using Volo.Abp.Imaging;
 
 namespace IczpNet.Chat;
 

@@ -15,326 +15,325 @@ using IczpNet.Chat.ChatObjects;
 using Microsoft.AspNetCore.Authorization;
 using System.ComponentModel.DataAnnotations;
 
-namespace IczpNet.Chat.BaseAppServices
-{
-    [ApiExplorerSettings(GroupName = ChatRemoteServiceConsts.ModuleName)]
-    [Authorize]
-    public abstract class CrudByChatObjectChatAppService<
+namespace IczpNet.Chat.BaseAppServices;
+
+[ApiExplorerSettings(GroupName = ChatRemoteServiceConsts.ModuleName)]
+[Authorize]
+public abstract class CrudByChatObjectChatAppService<
+    TEntity,
+    TGetOutputDto,
+    TGetListOutputDto,
+    TKey,
+    TGetListInput,
+    TCreateInput,
+    TUpdateInput>
+    :
+    CrudChatAppService<
         TEntity,
         TGetOutputDto,
         TGetListOutputDto,
         TKey,
         TGetListInput,
         TCreateInput,
+        TUpdateInput>,
+    ICrudByChatObjectChatAppService<
+        TGetOutputDto,
+        TGetListOutputDto,
+        TKey,
+        TGetListInput,
+        TCreateInput,
         TUpdateInput>
-        :
-        CrudChatAppService<
-            TEntity,
-            TGetOutputDto,
-            TGetListOutputDto,
-            TKey,
-            TGetListInput,
-            TCreateInput,
-            TUpdateInput>,
-        ICrudByChatObjectChatAppService<
-            TGetOutputDto,
-            TGetListOutputDto,
-            TKey,
-            TGetListInput,
-            TCreateInput,
-            TUpdateInput>
-        where TKey : struct
-        where TEntity : class, IEntity<TKey>
-        where TGetOutputDto : IEntityDto<TKey>
-        where TGetListOutputDto : IEntityDto<TKey>
+    where TKey : struct
+    where TEntity : class, IEntity<TKey>
+    where TGetOutputDto : IEntityDto<TKey>
+    where TGetListOutputDto : IEntityDto<TKey>
 
+{
+    protected virtual string DeleteManyPolicyName { get; set; }
+
+    //protected IRepository<Session, Guid> SessionRepository => LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
+    //protected ISessionUnitManager MenuManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
+
+    protected ISessionPermissionChecker SessionPermissionChecker => LazyServiceProvider.LazyGetRequiredService<ISessionPermissionChecker>();
+
+    //protected IChatObjectManager ChatObjectManager => LazyServiceProvider.LazyGetRequiredService<IChatObjectManager>();
+
+    protected CrudByChatObjectChatAppService(IRepository<TEntity, TKey> repository) : base(repository)
     {
-        protected virtual string DeleteManyPolicyName { get; set; }
+    }
 
-        //protected IRepository<Session, Guid> SessionRepository => LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
-        //protected ISessionUnitManager MenuManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
+    protected virtual Task<IQueryable<TEntity>> CreateFilteredQueryAsync(ChatObject owner, TGetListInput input)
+    {
+        return base.CreateFilteredQueryAsync(input);
+    }
 
-        protected ISessionPermissionChecker SessionPermissionChecker => LazyServiceProvider.LazyGetRequiredService<ISessionPermissionChecker>();
+    protected virtual void TryToSetSessionId<T>(T entity, Guid? sessionId) //where T : ISessionId
+    {
+        var propertyInfo = entity.GetType().GetProperty(nameof(ISessionId.SessionId));
 
-        //protected IChatObjectManager ChatObjectManager => LazyServiceProvider.LazyGetRequiredService<IChatObjectManager>();
-
-        protected CrudByChatObjectChatAppService(IRepository<TEntity, TKey> repository) : base(repository)
+        if (entity is ISessionId && propertyInfo != null && propertyInfo.GetSetMethod(true) != null)
         {
+            propertyInfo.SetValue(entity, sessionId);
+        }
+    }
+
+    [RemoteService(false)]
+    public override Task<TGetOutputDto> CreateAsync(TCreateInput input) => base.CreateAsync(input);
+
+    [RemoteService(false)]
+    public override Task<TGetOutputDto> UpdateAsync(TKey id, TUpdateInput input) => base.UpdateAsync(id, input);
+
+    [RemoteService(false)]
+    public override Task<TGetOutputDto> GetAsync(TKey id) => base.GetAsync(id);
+
+    [RemoteService(false)]
+    public override Task<PagedResultDto<TGetListOutputDto>> GetListAsync(TGetListInput input) => base.GetListAsync(input);
+
+    [RemoteService(false)]
+    public override Task DeleteAsync(TKey id) => base.DeleteAsync(id);
+
+    [RemoteService(false)]
+    public override Task DeleteManyAsync(List<TKey> idList) => base.DeleteManyAsync(idList);
+
+    //[Obsolete("CheckPolicyAsync(string policyName, ChatObject owner)", true)]
+    protected override Task CheckPolicyAsync(string policyName)
+    {
+        throw new Exception("CheckPolicyAsync(string policyName, ChatObject owner)");
+    }
+
+    //protected virtual async Task CheckPolicyAsync(string policyName, ChatObject owner)
+    //{
+    //    //await AuthorizationService.CheckAsync(owner, policyName);
+
+    //    await SessionPermissionChecker.CheckLoginAsync(owner);
+
+    //    if (!string.IsNullOrWhiteSpace(policyName))
+    //    {
+    //        await SessionPermissionChecker.CheckAsync(policyName, owner);
+    //    }
+    //}
+
+    protected virtual Task CheckGetPolicyAsync(ChatObject owner, TEntity entity)
+    {
+        return CheckPolicyAsync(GetPolicyName, owner);
+    }
+
+    protected virtual Task CheckGetListPolicyAsync(ChatObject owner, TGetListInput input)
+    {
+        return CheckPolicyAsync(GetListPolicyName, owner);
+    }
+
+    protected virtual Task CheckCreatePolicyAsync(ChatObject owner, TCreateInput input)
+    {
+        return CheckPolicyAsync(CreatePolicyName, owner);
+    }
+
+    protected virtual Task CheckUpdatePolicyAsync(ChatObject owner, TEntity entity, TUpdateInput input)
+    {
+        return CheckPolicyAsync(UpdatePolicyName, owner);
+    }
+
+    protected virtual Task CheckDeletePolicyAsync(ChatObject owner, TEntity entity)
+    {
+        return CheckPolicyAsync(DeletePolicyName, owner);
+    }
+
+    protected virtual Task CheckDeleteManyPolicyAsync(ChatObject owner, List<TKey> idList)
+    {
+        return CheckPolicyAsync(DeleteManyPolicyName, owner);
+    }
+
+    protected virtual async Task<ChatObject> GetAndCheckChatObjectAsync(long ownerId)
+    {
+        var owner = await ChatObjectManager.GetAsync(ownerId);
+
+        Assert.If(!owner.IsEnabled, $"ChatObject disabled,ChatObjectId:{ownerId}");
+
+        return owner;
+    }
+
+    /// <summary>
+    /// 获取一条数据
+    /// </summary>
+    /// <param name="ownerId">聊天对象Id</param>
+    /// <param name="id">主建Id</param>
+    /// <returns></returns>
+    [HttpGet]
+    public virtual async Task<TGetOutputDto> GetAsync([Required] long ownerId, TKey id)
+    {
+        //await SessionPermissionChecker.CheckAsync(GetPolicyName, ownerId);
+
+        var owner = await GetAndCheckChatObjectAsync(ownerId);
+
+        var entity = await base.GetEntityByIdAsync(id);
+
+        await CheckGetPolicyAsync(owner, entity);
+
+        return await MapToGetOutputDtoAsync(entity);
+    }
+
+    /// <summary>
+    /// 获取列表
+    /// </summary>
+    /// <param name="ownerId">聊天对象Id</param>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [HttpGet]
+    public virtual async Task<PagedResultDto<TGetListOutputDto>> GetListAsync([Required] long ownerId, TGetListInput input)
+    {
+        var owner = await GetAndCheckChatObjectAsync(ownerId);
+
+        await CheckGetListPolicyAsync(owner, input);
+
+        var query = await CreateFilteredQueryAsync(owner, input);
+
+        var totalCount = await AsyncExecuter.CountAsync(query);
+
+        var entityDtos = new List<TGetListOutputDto>();
+
+        if (totalCount > 0)
+        {
+            query = ApplySorting(query, input);
+
+            query = ApplyPaging(query, input);
+
+            List<TEntity> entities = await AsyncExecuter.ToListAsync(query);
+
+            entityDtos = await MapToGetListOutputDtosAsync(entities);
         }
 
-        protected virtual Task<IQueryable<TEntity>> CreateFilteredQueryAsync(ChatObject owner, TGetListInput input)
-        {
-            return base.CreateFilteredQueryAsync(input);
-        }
-
-        protected virtual void TryToSetSessionId<T>(T entity, Guid? sessionId) //where T : ISessionId
-        {
-            var propertyInfo = entity.GetType().GetProperty(nameof(ISessionId.SessionId));
-
-            if (entity is ISessionId && propertyInfo != null && propertyInfo.GetSetMethod(true) != null)
-            {
-                propertyInfo.SetValue(entity, sessionId);
-            }
-        }
-
-        [RemoteService(false)]
-        public override Task<TGetOutputDto> CreateAsync(TCreateInput input) => base.CreateAsync(input);
-
-        [RemoteService(false)]
-        public override Task<TGetOutputDto> UpdateAsync(TKey id, TUpdateInput input) => base.UpdateAsync(id, input);
-
-        [RemoteService(false)]
-        public override Task<TGetOutputDto> GetAsync(TKey id) => base.GetAsync(id);
-
-        [RemoteService(false)]
-        public override Task<PagedResultDto<TGetListOutputDto>> GetListAsync(TGetListInput input) => base.GetListAsync(input);
-
-        [RemoteService(false)]
-        public override Task DeleteAsync(TKey id) => base.DeleteAsync(id);
-
-        [RemoteService(false)]
-        public override Task DeleteManyAsync(List<TKey> idList) => base.DeleteManyAsync(idList);
-
-        //[Obsolete("CheckPolicyAsync(string policyName, ChatObject owner)", true)]
-        protected override Task CheckPolicyAsync(string policyName)
-        {
-            throw new Exception("CheckPolicyAsync(string policyName, ChatObject owner)");
-        }
+        return new PagedResultDto<TGetListOutputDto>(
+            totalCount,
+            entityDtos
+        );
+    }
 
-        //protected virtual async Task CheckPolicyAsync(string policyName, ChatObject owner)
-        //{
-        //    //await AuthorizationService.CheckAsync(owner, policyName);
+    /// <summary>
+    /// 新增
+    /// </summary>
+    /// <param name="ownerId">聊天对象Id</param>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [HttpPost]
+    public virtual async Task<TGetOutputDto> CreateAsync([Required] long ownerId, TCreateInput input)
+    {
+        var owner = await GetAndCheckChatObjectAsync(ownerId);
 
-        //    await SessionPermissionChecker.CheckLoginAsync(owner);
+        return await CreateAsync(owner, input);
+    }
 
-        //    if (!string.IsNullOrWhiteSpace(policyName))
-        //    {
-        //        await SessionPermissionChecker.CheckAsync(policyName, owner);
-        //    }
-        //}
-
-        protected virtual Task CheckGetPolicyAsync(ChatObject owner, TEntity entity)
-        {
-            return CheckPolicyAsync(GetPolicyName, owner);
-        }
-
-        protected virtual Task CheckGetListPolicyAsync(ChatObject owner, TGetListInput input)
-        {
-            return CheckPolicyAsync(GetListPolicyName, owner);
-        }
-
-        protected virtual Task CheckCreatePolicyAsync(ChatObject owner, TCreateInput input)
-        {
-            return CheckPolicyAsync(CreatePolicyName, owner);
-        }
-
-        protected virtual Task CheckUpdatePolicyAsync(ChatObject owner, TEntity entity, TUpdateInput input)
-        {
-            return CheckPolicyAsync(UpdatePolicyName, owner);
-        }
 
-        protected virtual Task CheckDeletePolicyAsync(ChatObject owner, TEntity entity)
-        {
-            return CheckPolicyAsync(DeletePolicyName, owner);
-        }
+    protected virtual async Task<TGetOutputDto> CreateAsync(ChatObject owner, TCreateInput input)
+    {
+        await CheckCreatePolicyAsync(owner, input);
 
-        protected virtual Task CheckDeleteManyPolicyAsync(ChatObject owner, List<TKey> idList)
-        {
-            return CheckPolicyAsync(DeleteManyPolicyName, owner);
-        }
+        var entity = await MapToEntityAsync(owner, input);
 
-        protected virtual async Task<ChatObject> GetAndCheckChatObjectAsync(long ownerId)
-        {
-            var owner = await ChatObjectManager.GetAsync(ownerId);
+        await CheckCreateAsync(input);
 
-            Assert.If(!owner.IsEnabled, $"ChatObject disabled,ChatObjectId:{ownerId}");
+        await SetCreateEntityAsync(owner, entity, input);
 
-            return owner;
-        }
+        TryToSetTenantId(entity);
 
-        /// <summary>
-        /// 获取一条数据
-        /// </summary>
-        /// <param name="ownerId">聊天对象Id</param>
-        /// <param name="id">主建Id</param>
-        /// <returns></returns>
-        [HttpGet]
-        public virtual async Task<TGetOutputDto> GetAsync([Required] long ownerId, TKey id)
-        {
-            //await SessionPermissionChecker.CheckAsync(GetPolicyName, ownerId);
+        await Repository.InsertAsync(entity, autoSave: true);
 
-            var owner = await GetAndCheckChatObjectAsync(ownerId);
+        //await base.CreateAsync(input);
 
-            var entity = await base.GetEntityByIdAsync(id);
+        return await MapToGetOutputDtoAsync(entity);
+    }
 
-            await CheckGetPolicyAsync(owner, entity);
+    protected virtual Task<TEntity> MapToEntityAsync(ChatObject owner, TCreateInput input)
+    {
+        return base.MapToEntityAsync(input);
+    }
 
-            return await MapToGetOutputDtoAsync(entity);
-        }
+    protected virtual Task SetCreateEntityAsync(ChatObject owner, TEntity entity, TCreateInput input)
+    {
+        return base.SetCreateEntityAsync(entity, input);
+    }
 
-        /// <summary>
-        /// 获取列表
-        /// </summary>
-        /// <param name="ownerId">聊天对象Id</param>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        [HttpGet]
-        public virtual async Task<PagedResultDto<TGetListOutputDto>> GetListAsync([Required] long ownerId, TGetListInput input)
-        {
-            var owner = await GetAndCheckChatObjectAsync(ownerId);
+    /// <summary>
+    /// 修改
+    /// </summary>
+    /// <param name="ownerId">聊天对象Id</param>
+    /// <param name="id">主建Id</param>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [HttpPost]
+    public virtual async Task<TGetOutputDto> UpdateAsync([Required] long ownerId, TKey id, TUpdateInput input)
+    {
+        var owner = await GetAndCheckChatObjectAsync(ownerId);
 
-            await CheckGetListPolicyAsync(owner, input);
+        var entity = await GetEntityByIdAsync(id);
 
-            var query = await CreateFilteredQueryAsync(owner, input);
+        await CheckUpdatePolicyAsync(owner, entity, input);
 
-            var totalCount = await AsyncExecuter.CountAsync(query);
+        await CheckUpdateAsync(id, entity, input);
 
-            var entityDtos = new List<TGetListOutputDto>();
+        //TODO: Check if input has id different than given id and normalize if it's default value, throw ex otherwise
+        await MapToEntityAsync(owner, input, entity);
 
-            if (totalCount > 0)
-            {
-                query = ApplySorting(query, input);
+        await SetUpdateEntityAsync(entity, input);
 
-                query = ApplyPaging(query, input);
+        await Repository.UpdateAsync(entity, autoSave: true);
 
-                List<TEntity> entities = await AsyncExecuter.ToListAsync(query);
+        return await MapToGetOutputDtoAsync(entity);
 
-                entityDtos = await MapToGetListOutputDtosAsync(entities);
-            }
+    }
 
-            return new PagedResultDto<TGetListOutputDto>(
-                totalCount,
-                entityDtos
-            );
-        }
+    private async Task MapToEntityAsync(ChatObject owner, TUpdateInput input, TEntity entity)
+    {
+        await MapToEntityAsync(input, entity);
+    }
 
-        /// <summary>
-        /// 新增
-        /// </summary>
-        /// <param name="ownerId">聊天对象Id</param>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        [HttpPost]
-        public virtual async Task<TGetOutputDto> CreateAsync([Required] long ownerId, TCreateInput input)
-        {
-            var owner = await GetAndCheckChatObjectAsync(ownerId);
+    /// <summary>
+    /// 删除一条数据
+    /// </summary>
+    /// <param name="ownerId">聊天对象Id</param>
+    /// <param name="id">主建Id</param>
+    /// <returns></returns>
+    [HttpPost]
+    public virtual async Task DeleteByAsync([Required] long ownerId, TKey id)
+    {
+        var owner = await GetAndCheckChatObjectAsync(ownerId);
 
-            return await CreateAsync(owner, input);
-        }
+        var entity = await Repository.GetAsync(id);
 
+        await CheckDeletePolicyAsync(owner, entity);
 
-        protected virtual async Task<TGetOutputDto> CreateAsync(ChatObject owner, TCreateInput input)
-        {
-            await CheckCreatePolicyAsync(owner, input);
-
-            var entity = await MapToEntityAsync(owner, input);
-
-            await CheckCreateAsync(input);
-
-            await SetCreateEntityAsync(owner, entity, input);
-
-            TryToSetTenantId(entity);
-
-            await Repository.InsertAsync(entity, autoSave: true);
-
-            //await base.CreateAsync(input);
-
-            return await MapToGetOutputDtoAsync(entity);
-        }
-
-        protected virtual Task<TEntity> MapToEntityAsync(ChatObject owner, TCreateInput input)
-        {
-            return base.MapToEntityAsync(input);
-        }
-
-        protected virtual Task SetCreateEntityAsync(ChatObject owner, TEntity entity, TCreateInput input)
-        {
-            return base.SetCreateEntityAsync(entity, input);
-        }
-
-        /// <summary>
-        /// 修改
-        /// </summary>
-        /// <param name="ownerId">聊天对象Id</param>
-        /// <param name="id">主建Id</param>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        [HttpPost]
-        public virtual async Task<TGetOutputDto> UpdateAsync([Required] long ownerId, TKey id, TUpdateInput input)
-        {
-            var owner = await GetAndCheckChatObjectAsync(ownerId);
-
-            var entity = await GetEntityByIdAsync(id);
-
-            await CheckUpdatePolicyAsync(owner, entity, input);
-
-            await CheckUpdateAsync(id, entity, input);
-
-            //TODO: Check if input has id different than given id and normalize if it's default value, throw ex otherwise
-            await MapToEntityAsync(owner, input, entity);
-
-            await SetUpdateEntityAsync(entity, input);
-
-            await Repository.UpdateAsync(entity, autoSave: true);
-
-            return await MapToGetOutputDtoAsync(entity);
-
-        }
-
-        private async Task MapToEntityAsync(ChatObject owner, TUpdateInput input, TEntity entity)
-        {
-            await MapToEntityAsync(input, entity);
-        }
-
-        /// <summary>
-        /// 删除一条数据
-        /// </summary>
-        /// <param name="ownerId">聊天对象Id</param>
-        /// <param name="id">主建Id</param>
-        /// <returns></returns>
-        [HttpPost]
-        public virtual async Task DeleteByAsync([Required] long ownerId, TKey id)
-        {
-            var owner = await GetAndCheckChatObjectAsync(ownerId);
-
-            var entity = await Repository.GetAsync(id);
-
-            await CheckDeletePolicyAsync(owner, entity);
-
-            await base.DeleteAsync(id);
-        }
-
-        /// <summary>
-        /// 删除多条数据
-        /// </summary>
-        /// <param name="ownerId">聊天对象Id</param>
-        /// <param name="idList"></param>
-        /// <returns></returns>
-        [HttpPost]
-        public virtual async Task DeleteManyAsync([Required] long ownerId, List<TKey> idList)
-        {
-            var owner = await GetAndCheckChatObjectAsync(ownerId);
-
-            var predicate = GetPredicateDeleteManyAsync(owner);
-
-            var entityIdList = (await Repository.GetQueryableAsync())
-               .Where(x => idList.Contains(x.Id))
-               .WhereIf(predicate != null, predicate)
-               .Select(x => x.Id)
-               .ToList();
-
-            var notfindIdList = idList.Except(entityIdList).ToList();
-
-            Assert.If(notfindIdList.Any(), $"not find {notfindIdList.Count}:[{notfindIdList.JoinAsString(",")}]");
-
-            await CheckDeleteManyPolicyAsync(owner, idList);
-
-            await DeleteManyAsync(idList);
-        }
-
-        protected virtual Expression<Func<TEntity, bool>> GetPredicateDeleteManyAsync(ChatObject owner)
-        {
-            return null;
-        }
+        await base.DeleteAsync(id);
+    }
+
+    /// <summary>
+    /// 删除多条数据
+    /// </summary>
+    /// <param name="ownerId">聊天对象Id</param>
+    /// <param name="idList"></param>
+    /// <returns></returns>
+    [HttpPost]
+    public virtual async Task DeleteManyAsync([Required] long ownerId, List<TKey> idList)
+    {
+        var owner = await GetAndCheckChatObjectAsync(ownerId);
+
+        var predicate = GetPredicateDeleteManyAsync(owner);
+
+        var entityIdList = (await Repository.GetQueryableAsync())
+           .Where(x => idList.Contains(x.Id))
+           .WhereIf(predicate != null, predicate)
+           .Select(x => x.Id)
+           .ToList();
+
+        var notfindIdList = idList.Except(entityIdList).ToList();
+
+        Assert.If(notfindIdList.Any(), $"not find {notfindIdList.Count}:[{notfindIdList.JoinAsString(",")}]");
+
+        await CheckDeleteManyPolicyAsync(owner, idList);
+
+        await DeleteManyAsync(idList);
+    }
+
+    protected virtual Expression<Func<TEntity, bool>> GetPredicateDeleteManyAsync(ChatObject owner)
+    {
+        return null;
     }
 }

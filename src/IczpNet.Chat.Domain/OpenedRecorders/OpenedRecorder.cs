@@ -2,14 +2,13 @@
 using IczpNet.Chat.SessionUnits;
 using System;
 
-namespace IczpNet.Chat.OpenedRecorders
+namespace IczpNet.Chat.OpenedRecorders;
+
+public class OpenedRecorder : BaseRecorder
 {
-    public class OpenedRecorder : BaseRecorder
-    {
-        protected OpenedRecorder() { }
+    protected OpenedRecorder() { }
 
-        public OpenedRecorder(SessionUnit sessionUnit, long messageId, string deviceId) : base(sessionUnit, messageId, deviceId) { }
+    public OpenedRecorder(SessionUnit sessionUnit, long messageId, string deviceId) : base(sessionUnit, messageId, deviceId) { }
 
-        public OpenedRecorder(Guid sessionUnitId, long messageId) : base(sessionUnitId, messageId) { }
-    }
+    public OpenedRecorder(Guid sessionUnitId, long messageId) : base(sessionUnitId, messageId) { }
 }

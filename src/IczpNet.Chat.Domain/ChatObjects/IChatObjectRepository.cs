@@ -1,8 +1,7 @@
 ﻿using Volo.Abp.Domain.Repositories;
 
-namespace IczpNet.Chat.ChatObjects
+namespace IczpNet.Chat.ChatObjects;
+
+public interface IChatObjectRepository : IRepository<ChatObject, long>
 {
-    public interface IChatObjectRepository : IRepository<ChatObject, long>
-    {
-    }
 }

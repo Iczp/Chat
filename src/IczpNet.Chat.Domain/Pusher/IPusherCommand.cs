@@ -1,9 +1,8 @@
 ﻿using System.Threading.Tasks;
 
-namespace IczpNet.Chat.Pusher
+namespace IczpNet.Chat.Pusher;
+
+public interface IPusherCommand
 {
-    public interface IPusherCommand
-    {
-        Task SendToAsync(string message);
-    }
+    Task SendToAsync(string message);
 }

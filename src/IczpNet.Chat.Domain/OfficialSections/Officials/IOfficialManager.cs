@@ -1,16 +1,14 @@
-﻿using IczpNet.Chat.ChatObjects;
-using System.Threading.Tasks;
+﻿using IczpNet.Chat.SessionUnits;
 using System;
-using IczpNet.Chat.SessionUnits;
+using System.Threading.Tasks;
 
-namespace IczpNet.Chat.OfficialSections.Officials
+namespace IczpNet.Chat.OfficialSections.Officials;
+
+public interface IOfficialManager
 {
-    public interface IOfficialManager
-    {
-        Task<SessionUnit> SubscribeAsync(long ownerId, long destinationId);
+    Task<SessionUnit> SubscribeAsync(long ownerId, long destinationId);
 
-        Task<SessionUnit> SubscribeByIdAsync(Guid sessionUnitId);
+    Task<SessionUnit> SubscribeByIdAsync(Guid sessionUnitId);
 
-        Task<SessionUnit> UnsubscribeAsync(Guid sessionUnitId);
-    }
+    Task<SessionUnit> UnsubscribeAsync(Guid sessionUnitId);
 }

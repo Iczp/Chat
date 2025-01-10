@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
-namespace IczpNet.Chat.WalletOrders
+namespace IczpNet.Chat.WalletOrders;
+
+public interface IWalletOrderNoGenerator
 {
-    public interface IWalletOrderNoGenerator
-    {
-        Task<string> MakeAsync();
-    }
+    Task<string> MakeAsync();
 }

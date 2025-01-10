@@ -1,13 +1,12 @@
 ﻿using FluentValidation;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 
-namespace IczpNet.Chat.Validators
+namespace IczpNet.Chat.Validators;
+
+public class SessionRoleCreateInputValidator : AbstractValidator<SessionRoleCreateInput>
 {
-    public class SessionRoleCreateInputValidator : AbstractValidator<SessionRoleCreateInput>
+    public SessionRoleCreateInputValidator()
     {
-        public SessionRoleCreateInputValidator()
-        {
-            RuleFor(x => x.SessionId).NotNull().NotEmpty().WithMessage($"{nameof(SessionRoleCreateInput.SessionId)} 不能为空");
-        }
+        RuleFor(x => x.SessionId).NotNull().NotEmpty().WithMessage($"{nameof(SessionRoleCreateInput.SessionId)} 不能为空");
     }
 }

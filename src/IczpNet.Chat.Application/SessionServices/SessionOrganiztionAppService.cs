@@ -1,7 +1,6 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionOrganizations;
 using IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;
 using IczpNet.Chat.SessionSections.Sessions;
@@ -10,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.SessionServices;

@@ -1,19 +1,19 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
-using IczpNet.Chat.MessageSections;
+using IczpNet.Chat.ServiceStates;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionUnits;
+using IczpNet.Chat.TextTemplates;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Services;
-using IczpNet.Chat.TextTemplates;
-using IczpNet.Chat.ServiceStates;
-using Microsoft.Extensions.Logging;
-using System.Linq;
 
 namespace IczpNet.Chat.CallCenters;
 

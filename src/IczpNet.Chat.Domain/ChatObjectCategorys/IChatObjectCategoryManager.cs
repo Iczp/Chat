@@ -1,9 +1,8 @@
 ﻿using IczpNet.AbpTrees;
 using System;
 
-namespace IczpNet.Chat.ChatObjectCategorys
+namespace IczpNet.Chat.ChatObjectCategorys;
+
+public interface IChatObjectCategoryManager : ITreeManager<ChatObjectCategory, Guid, ChatObjectCategoryInfo>
 {
-    public interface IChatObjectCategoryManager : ITreeManager<ChatObjectCategory, Guid, ChatObjectCategoryInfo>
-    {
-    }
 }

@@ -3,31 +3,31 @@
   <Import Project="..\..\common.props" />
 
   <PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
-		<Version>0.1.2</Version>
-		<Nullable>disable</Nullable>
-		<RootNamespace>IczpNet.Chat</RootNamespace>
-		<Authors>IczpNet</Authors>
-		<RepositoryUrl>https://github.com/Iczp/Chat.git</RepositoryUrl>
-		<PackageProjectUrl>https://github.com/Iczp/Chat.git</PackageProjectUrl>
-		<GenerateDocumentationFile>True</GenerateDocumentationFile>
-		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-		<Copyright>(c) iczp.net</Copyright>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<Description>Chat module for abp</Description>
-		<PackageIcon>IczpNet.jpg</PackageIcon>
+    <TargetFramework>net9.0</TargetFramework>
+    <Version>0.1.2</Version>
+    <Nullable>disable</Nullable>
+    <RootNamespace>IczpNet.Chat</RootNamespace>
+    <Authors>IczpNet</Authors>
+    <RepositoryUrl>https://github.com/Iczp/Chat.git</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/Iczp/Chat.git</PackageProjectUrl>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Copyright>(c) iczp.net</Copyright>
+    <Description>Chat module for abp</Description>
+    <PackageIcon>IczpNet.jpg</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
-		<PackageReference Include="IczpNet.AbpCommons.Domain.Shared" Version="0.8.2" />
-		<PackageReference Include="IczpNet.AbpTrees.Domain.Shared" Version="8.2.0.3" />
-		<PackageReference Include="IczpNet.Pusher.Domain.Shared" Version="8.2.0.2" />
-		<PackageReference Include="Volo.Abp.Identity.Domain.Shared" Version="8.2.0" />
-    <PackageReference Include="Volo.Abp.Validation" Version="8.2.0" />
+    <PackageReference Include="IczpNet.AbpCommons.Domain.Shared" Version="0.9.0.3" />
+    <PackageReference Include="IczpNet.AbpTrees.Domain.Shared" Version="9.0.0" />
+    <PackageReference Include="IczpNet.Pusher.Domain.Shared" Version="9.0.0.1" />
+    <PackageReference Include="Volo.Abp.Identity.Domain.Shared" Version="9.0.2" />
+    <PackageReference Include="Volo.Abp.Validation" Version="9.0.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="8.0.7" />
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -43,15 +43,15 @@
       <PackagePath>\</PackagePath>
       <Pack>True</Pack>
     </None>
-    <None Include="..\..\README.md" Link="README.md">
-      <PackagePath>\</PackagePath>
+    <None Include="..\..\README.md">
       <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Update="ConfigureAwait.Fody" Version="3.3.2" />
-    <PackageReference Update="Fody" Version="6.8.1">
+    <PackageReference Update="Fody" Version="6.9.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
@@ -61,5 +61,4 @@
     <Folder Include="SessionSections\SessionPermissionDefinitions\" />
     <Folder Include="SessionSections\SessionPermissions\Dtos\" />
   </ItemGroup>
-
 </Project>

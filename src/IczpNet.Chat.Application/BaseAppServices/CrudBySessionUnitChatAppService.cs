@@ -15,11 +15,20 @@ using Volo.Abp.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using IczpNet.Chat.SessionUnits;
 
-namespace IczpNet.Chat.BaseAppServices
-{
-    [ApiExplorerSettings(GroupName = ChatRemoteServiceConsts.ModuleName)]
-    [Authorize]
-    public abstract class CrudBySessionUnitChatAppService<
+namespace IczpNet.Chat.BaseAppServices;
+
+[ApiExplorerSettings(GroupName = ChatRemoteServiceConsts.ModuleName)]
+[Authorize]
+public abstract class CrudBySessionUnitChatAppService<
+    TEntity,
+    TGetOutputDto,
+    TGetListOutputDto,
+    TKey,
+    TGetListInput,
+    TCreateInput,
+    TUpdateInput>
+    :
+    CrudChatAppService<
         TEntity,
         TGetOutputDto,
         TGetListOutputDto,
@@ -27,258 +36,248 @@ namespace IczpNet.Chat.BaseAppServices
         TGetListInput,
         TCreateInput,
         TUpdateInput>
-        :
-        CrudChatAppService<
-            TEntity,
-            TGetOutputDto,
-            TGetListOutputDto,
-            TKey,
-            TGetListInput,
-            TCreateInput,
-            TUpdateInput>
-        where TKey : struct
-        where TEntity : class, IEntity<TKey>
-        where TGetOutputDto : IEntityDto<TKey>
-        where TGetListOutputDto : IEntityDto<TKey>
+    where TKey : struct
+    where TEntity : class, IEntity<TKey>
+    where TGetOutputDto : IEntityDto<TKey>
+    where TGetListOutputDto : IEntityDto<TKey>
 
+{
+
+    protected virtual string DeleteManyPolicyName { get; set; }
+    protected IRepository<Session, Guid> SessionRepository => LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
+    protected ISessionPermissionChecker SessionPermissionChecker => LazyServiceProvider.LazyGetRequiredService<ISessionPermissionChecker>();
+    //protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
+
+    protected CrudBySessionUnitChatAppService(IRepository<TEntity, TKey> repository) : base(repository)
     {
+    }
 
-        protected virtual string DeleteManyPolicyName { get; set; }
-        protected IRepository<Session, Guid> SessionRepository => LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
-        protected ISessionPermissionChecker SessionPermissionChecker => LazyServiceProvider.LazyGetRequiredService<ISessionPermissionChecker>();
-        //protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
+    protected virtual Task<IQueryable<TEntity>> CreateFilteredQueryAsync(SessionUnit sessionUnit, TGetListInput input)
+    {
+        return base.CreateFilteredQueryAsync(input);
+    }
 
-        protected CrudBySessionUnitChatAppService(IRepository<TEntity, TKey> repository) : base(repository)
+    protected virtual void TryToSetSessionId<T>(T entity, Guid? sessionId) //where T : ISessionId
+    {
+        var propertyInfo = entity.GetType().GetProperty(nameof(ISessionId.SessionId));
+
+        if (entity is ISessionId && propertyInfo != null && propertyInfo.GetSetMethod(true) != null)
         {
+            propertyInfo.SetValue(entity, sessionId);
+        }
+    }
+
+    [RemoteService(false)]
+    public override Task<TGetOutputDto> CreateAsync(TCreateInput input) => base.CreateAsync(input);
+    [RemoteService(false)]
+    public override Task<TGetOutputDto> UpdateAsync(TKey id, TUpdateInput input) => base.UpdateAsync(id, input);
+
+    [RemoteService(false)]
+    public override Task<TGetOutputDto> GetAsync(TKey id) => base.GetAsync(id);
+
+    [RemoteService(false)]
+    public override Task<PagedResultDto<TGetListOutputDto>> GetListAsync(TGetListInput input) => base.GetListAsync(input);
+
+    [RemoteService(false)]
+    public override Task DeleteAsync(TKey id) => base.DeleteAsync(id);
+
+    [RemoteService(false)]
+    public override Task DeleteManyAsync(List<TKey> idList) => base.DeleteManyAsync(idList);
+
+    //[Obsolete("CheckPolicyAsync(string policyName, SessionUnit sessionUnit)", true)]
+    protected override Task CheckPolicyAsync(string policyName)
+    {
+        throw new Exception("CheckPolicyAsync(string policyName, SessionUnit sessionUnit)");
+    }
+
+    //protected virtual async Task CheckPolicyAsync(string policyName, SessionUnit sessionUnit)
+    //{
+    //    await SessionPermissionChecker.CheckAsync(policyName, sessionUnit);
+    //}
+
+    protected virtual Task CheckGetPolicyAsync(SessionUnit sessionUnit, TEntity entity)
+    {
+        return CheckPolicyAsync(GetPolicyName, sessionUnit);
+    }
+
+    protected virtual Task CheckGetListPolicyAsync(SessionUnit sessionUnit, TGetListInput input)
+    {
+        return CheckPolicyAsync(GetListPolicyName, sessionUnit);
+    }
+
+    protected virtual Task CheckCreatePolicyAsync(SessionUnit sessionUnit, TCreateInput input)
+    {
+        return CheckPolicyAsync(CreatePolicyName, sessionUnit);
+    }
+
+    protected virtual Task CheckUpdatePolicyAsync(SessionUnit sessionUnit, TEntity entity, TUpdateInput input)
+    {
+        return CheckPolicyAsync(UpdatePolicyName, sessionUnit);
+    }
+
+    protected virtual Task CheckDeletePolicyAsync(SessionUnit sessionUnit, TEntity entity)
+    {
+        return CheckPolicyAsync(DeletePolicyName, sessionUnit);
+    }
+
+    protected virtual Task CheckDeleteManyPolicyAsync(SessionUnit sessionUnit, List<TKey> idList)
+    {
+        return CheckPolicyAsync(DeleteManyPolicyName, sessionUnit);
+    }
+
+    protected virtual async Task<SessionUnit> GetAndCheckSessionUnitAsync(Guid sessionUnitId)
+    {
+        var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+
+        Assert.If(!sessionUnit.Setting.IsEnabled, $"SessionUnit disabled,SessionUnitId:{sessionUnit.Id}");
+
+        return sessionUnit;
+    }
+
+
+    [HttpGet]
+    public virtual async Task<TGetOutputDto> GetAsync(Guid sessionUnitId, TKey id)
+    {
+        //await SessionPermissionChecker.CheckAsync(GetPolicyName, sessionUnitId);
+
+        var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
+
+        var entity = await base.GetEntityByIdAsync(id);
+
+        await CheckGetPolicyAsync(sessionUnit, entity);
+
+        return await MapToGetOutputDtoAsync(entity);
+    }
+
+
+    [HttpGet]
+    public virtual async Task<PagedResultDto<TGetListOutputDto>> GetListAsync(Guid sessionUnitId, TGetListInput input)
+    {
+        var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
+
+        await CheckGetListPolicyAsync(sessionUnit, input);
+
+        var query = await CreateFilteredQueryAsync(sessionUnit, input);
+
+        var totalCount = await AsyncExecuter.CountAsync(query);
+
+        var entityDtos = new List<TGetListOutputDto>();
+
+        if (totalCount > 0)
+        {
+            query = ApplySorting(query, input);
+
+            query = ApplyPaging(query, input);
+
+            List<TEntity> entities = await AsyncExecuter.ToListAsync(query);
+
+            entityDtos = await MapToGetListOutputDtosAsync(entities);
         }
 
-        protected virtual Task<IQueryable<TEntity>> CreateFilteredQueryAsync(SessionUnit sessionUnit, TGetListInput input)
-        {
-            return base.CreateFilteredQueryAsync(input);
-        }
+        return new PagedResultDto<TGetListOutputDto>(totalCount, entityDtos);
+    }
 
-        protected virtual void TryToSetSessionId<T>(T entity, Guid? sessionId) //where T : ISessionId
-        {
-            var propertyInfo = entity.GetType().GetProperty(nameof(ISessionId.SessionId));
+    [HttpPost]
+    public virtual async Task<TGetOutputDto> CreateAsync(Guid sessionUnitId, TCreateInput input)
+    {
+        var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
 
-            if (entity is ISessionId && propertyInfo != null && propertyInfo.GetSetMethod(true) != null)
-            {
-                propertyInfo.SetValue(entity, sessionId);
-            }
-        }
+        return await CreateAsync(sessionUnit, input);
+    }
 
-        [RemoteService(false)]
-        public override Task<TGetOutputDto> CreateAsync(TCreateInput input) => base.CreateAsync(input);
-        [RemoteService(false)]
-        public override Task<TGetOutputDto> UpdateAsync(TKey id, TUpdateInput input) => base.UpdateAsync(id, input);
+    protected virtual async Task<TGetOutputDto> CreateAsync(SessionUnit sessionUnit, TCreateInput input)
+    {
+        await CheckCreatePolicyAsync(sessionUnit, input);
 
-        [RemoteService(false)]
-        public override Task<TGetOutputDto> GetAsync(TKey id) => base.GetAsync(id);
+        var entity = await MapToEntityAsync(sessionUnit, input);
 
-        [RemoteService(false)]
-        public override Task<PagedResultDto<TGetListOutputDto>> GetListAsync(TGetListInput input) => base.GetListAsync(input);
+        await CheckCreateAsync(input);
 
-        [RemoteService(false)]
-        public override Task DeleteAsync(TKey id) => base.DeleteAsync(id);
+        await SetCreateEntityAsync(sessionUnit, entity, input);
 
-        [RemoteService(false)]
-        public override Task DeleteManyAsync(List<TKey> idList) => base.DeleteManyAsync(idList);
+        TryToSetTenantId(entity);
 
-        //[Obsolete("CheckPolicyAsync(string policyName, SessionUnit sessionUnit)", true)]
-        protected override Task CheckPolicyAsync(string policyName)
-        {
-            throw new Exception("CheckPolicyAsync(string policyName, SessionUnit sessionUnit)");
-        }
+        await Repository.InsertAsync(entity, autoSave: true);
 
-        //protected virtual async Task CheckPolicyAsync(string policyName, SessionUnit sessionUnit)
-        //{
-        //    await SessionPermissionChecker.CheckAsync(policyName, sessionUnit);
-        //}
+        //await base.CreateAsync(input);
 
-        protected virtual Task CheckGetPolicyAsync(SessionUnit sessionUnit, TEntity entity)
-        {
-            return CheckPolicyAsync(GetPolicyName, sessionUnit);
-        }
+        return await MapToGetOutputDtoAsync(entity);
+    }
 
-        protected virtual Task CheckGetListPolicyAsync(SessionUnit sessionUnit, TGetListInput input)
-        {
-            return CheckPolicyAsync(GetListPolicyName, sessionUnit);
-        }
+    protected virtual Task<TEntity> MapToEntityAsync(SessionUnit sessionUnit, TCreateInput input)
+    {
+        return base.MapToEntityAsync(input);
+    }
 
-        protected virtual Task CheckCreatePolicyAsync(SessionUnit sessionUnit, TCreateInput input)
-        {
-            return CheckPolicyAsync(CreatePolicyName, sessionUnit);
-        }
+    protected virtual Task SetCreateEntityAsync(SessionUnit sessionUnit, TEntity entity, TCreateInput input)
+    {
+        return base.SetCreateEntityAsync(entity, input);
+    }
 
-        protected virtual Task CheckUpdatePolicyAsync(SessionUnit sessionUnit, TEntity entity, TUpdateInput input)
-        {
-            return CheckPolicyAsync(UpdatePolicyName, sessionUnit);
-        }
+    [HttpPost]
+    public virtual async Task<TGetOutputDto> UpdateAsync(Guid sessionUnitId, TKey id, TUpdateInput input)
+    {
+        var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
 
-        protected virtual Task CheckDeletePolicyAsync(SessionUnit sessionUnit, TEntity entity)
-        {
-            return CheckPolicyAsync(DeletePolicyName, sessionUnit);
-        }
+        var entity = await GetEntityByIdAsync(id);
 
-        protected virtual Task CheckDeleteManyPolicyAsync(SessionUnit sessionUnit, List<TKey> idList)
-        {
-            return CheckPolicyAsync(DeleteManyPolicyName, sessionUnit);
-        }
+        await CheckUpdatePolicyAsync(sessionUnit, entity, input);
 
-        protected virtual async Task<SessionUnit> GetAndCheckSessionUnitAsync(Guid sessionUnitId)
-        {
-            var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+        await CheckUpdateAsync(id, entity, input);
 
-            Assert.If(!sessionUnit.Setting.IsEnabled, $"SessionUnit disabled,SessionUnitId:{sessionUnit.Id}");
+        //TODO: Check if input has id different than given id and normalize if it's default value, throw ex otherwise
+        await MapToEntityAsync(sessionUnit, input, entity);
 
-            return sessionUnit;
-        }
+        await SetUpdateEntityAsync(entity, input);
 
+        await Repository.UpdateAsync(entity, autoSave: true);
 
-        [HttpGet]
-        public virtual async Task<TGetOutputDto> GetAsync(Guid sessionUnitId, TKey id)
-        {
-            //await SessionPermissionChecker.CheckAsync(GetPolicyName, sessionUnitId);
+        return await MapToGetOutputDtoAsync(entity);
 
-            var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
+    }
 
-            var entity = await base.GetEntityByIdAsync(id);
+    private async Task MapToEntityAsync(SessionUnit sessionUnit, TUpdateInput input, TEntity entity)
+    {
+        await MapToEntityAsync(input, entity);
+    }
 
-            await CheckGetPolicyAsync(sessionUnit, entity);
+    [HttpPost]
+    public virtual async Task DeleteByAsync(Guid sessionUnitId, TKey id)
+    {
+        var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
 
-            return await MapToGetOutputDtoAsync(entity);
-        }
+        var entity = await Repository.GetAsync(id);
 
+        await CheckDeletePolicyAsync(sessionUnit, entity);
 
-        [HttpGet]
-        public virtual async Task<PagedResultDto<TGetListOutputDto>> GetListAsync(Guid sessionUnitId, TGetListInput input)
-        {
-            var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
+        await base.DeleteAsync(id);
+    }
 
-            await CheckGetListPolicyAsync(sessionUnit, input);
 
-            var query = await CreateFilteredQueryAsync(sessionUnit, input);
+    [HttpPost]
+    public virtual async Task DeleteManyAsync(Guid sessionUnitId, List<TKey> idList)
+    {
+        var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
 
-            var totalCount = await AsyncExecuter.CountAsync(query);
+        var predicate = GetPredicateDeleteManyAsync(sessionUnit);
 
-            var entityDtos = new List<TGetListOutputDto>();
+        var entityIdList = (await Repository.GetQueryableAsync())
+           .Where(x => idList.Contains(x.Id))
+           .WhereIf(predicate != null, predicate)
+           .Select(x => x.Id)
+           .ToList();
 
-            if (totalCount > 0)
-            {
-                query = ApplySorting(query, input);
+        var notfindIdList = idList.Except(entityIdList).ToList();
 
-                query = ApplyPaging(query, input);
+        Assert.If(notfindIdList.Any(), $"not find {notfindIdList.Count}:[{notfindIdList.JoinAsString(",")}]");
 
-                List<TEntity> entities = await AsyncExecuter.ToListAsync(query);
+        await CheckDeleteManyPolicyAsync(sessionUnit, idList);
 
-                entityDtos = await MapToGetListOutputDtosAsync(entities);
-            }
-
-            return new PagedResultDto<TGetListOutputDto>(totalCount, entityDtos);
-        }
-
-        [HttpPost]
-        public virtual async Task<TGetOutputDto> CreateAsync(Guid sessionUnitId, TCreateInput input)
-        {
-            var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
-
-            return await CreateAsync(sessionUnit, input);
-        }
-
-        protected virtual async Task<TGetOutputDto> CreateAsync(SessionUnit sessionUnit, TCreateInput input)
-        {
-            await CheckCreatePolicyAsync(sessionUnit, input);
-
-            var entity = await MapToEntityAsync(sessionUnit, input);
-
-            await CheckCreateAsync(input);
-
-            await SetCreateEntityAsync(sessionUnit, entity, input);
-
-            TryToSetTenantId(entity);
-
-            await Repository.InsertAsync(entity, autoSave: true);
-
-            //await base.CreateAsync(input);
-
-            return await MapToGetOutputDtoAsync(entity);
-        }
-
-        protected virtual Task<TEntity> MapToEntityAsync(SessionUnit sessionUnit, TCreateInput input)
-        {
-            return base.MapToEntityAsync(input);
-        }
-
-        protected virtual Task SetCreateEntityAsync(SessionUnit sessionUnit, TEntity entity, TCreateInput input)
-        {
-            return base.SetCreateEntityAsync(entity, input);
-        }
-
-        [HttpPost]
-        public virtual async Task<TGetOutputDto> UpdateAsync(Guid sessionUnitId, TKey id, TUpdateInput input)
-        {
-            var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
-
-            var entity = await GetEntityByIdAsync(id);
-
-            await CheckUpdatePolicyAsync(sessionUnit, entity, input);
-
-            await CheckUpdateAsync(id, entity, input);
-
-            //TODO: Check if input has id different than given id and normalize if it's default value, throw ex otherwise
-            await MapToEntityAsync(sessionUnit, input, entity);
-
-            await SetUpdateEntityAsync(entity, input);
-
-            await Repository.UpdateAsync(entity, autoSave: true);
-
-            return await MapToGetOutputDtoAsync(entity);
-
-        }
-
-        private async Task MapToEntityAsync(SessionUnit sessionUnit, TUpdateInput input, TEntity entity)
-        {
-            await MapToEntityAsync(input, entity);
-        }
-
-        [HttpPost]
-        public virtual async Task DeleteByAsync(Guid sessionUnitId, TKey id)
-        {
-            var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
-
-            var entity = await Repository.GetAsync(id);
-
-            await CheckDeletePolicyAsync(sessionUnit, entity);
-
-            await base.DeleteAsync(id);
-        }
-
-
-        [HttpPost]
-        public virtual async Task DeleteManyAsync(Guid sessionUnitId, List<TKey> idList)
-        {
-            var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
-
-            var predicate = GetPredicateDeleteManyAsync(sessionUnit);
-
-            var entityIdList = (await Repository.GetQueryableAsync())
-               .Where(x => idList.Contains(x.Id))
-               .WhereIf(predicate != null, predicate)
-               .Select(x => x.Id)
-               .ToList();
-
-            var notfindIdList = idList.Except(entityIdList).ToList();
-
-            Assert.If(notfindIdList.Any(), $"not find {notfindIdList.Count}:[{notfindIdList.JoinAsString(",")}]");
-
-            await CheckDeleteManyPolicyAsync(sessionUnit, idList);
-
-            await DeleteManyAsync(idList);
-        }
-
-        protected virtual Expression<Func<TEntity, bool>> GetPredicateDeleteManyAsync(SessionUnit sessionUnit)
-        {
-            return null;
-        }
+        await DeleteManyAsync(idList);
+    }
+
+    protected virtual Expression<Func<TEntity, bool>> GetPredicateDeleteManyAsync(SessionUnit sessionUnit)
+    {
+        return null;
     }
 }

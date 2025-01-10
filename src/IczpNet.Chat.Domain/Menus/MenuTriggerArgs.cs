@@ -1,9 +1,8 @@
 ﻿using System;
 
-namespace IczpNet.Chat.Menus
+namespace IczpNet.Chat.Menus;
+
+public class MenuTriggerArgs
 {
-    public class MenuTriggerArgs
-    {
-        public virtual Guid MenuId { get; set; }
-    }
+    public virtual Guid MenuId { get; set; }
 }
