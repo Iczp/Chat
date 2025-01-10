@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\common.props" />
 
@@ -34,9 +34,9 @@
 		<PackageReference Include="IczpNet.AbpTrees.Application.Contracts" Version="9.0.0" />
 		<PackageReference Include="IczpNet.Pusher.Application.Contracts" Version="9.0.0.1" />
 		<PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
-    <PackageReference Include="Volo.Abp.Ddd.Application.Contracts" Version="9.0.2" />
-    <PackageReference Include="Volo.Abp.Authorization" Version="9.0.2" />
-    <PackageReference Include="Volo.Abp.Identity.Application.Contracts" Version="9.0.2" />
+    <PackageReference Include="Volo.Abp.Ddd.Application.Contracts" Version="9.0.3" />
+    <PackageReference Include="Volo.Abp.Authorization" Version="9.0.3" />
+    <PackageReference Include="Volo.Abp.Identity.Application.Contracts" Version="9.0.3" />
     <!--<ProjectReference Include="..\..\..\IczpNet.AbpCommons\src\IczpNet.AbpCommons.Application.Contracts\IczpNet.AbpCommons.Application.Contracts.csproj" />-->
     <!--<ProjectReference Include="..\..\..\IczpNet.AbpTrees\src\IczpNet.AbpTrees.Application.Contracts\IczpNet.AbpTrees.Application.Contracts.csproj" />-->
     <ProjectReference Include="..\IczpNet.Chat.Domain.Shared\IczpNet.Chat.Domain.Shared.csproj" />
