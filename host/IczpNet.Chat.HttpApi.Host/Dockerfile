@@ -14,7 +14,7 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["NuGet.Config", "."]
 COPY ["IczpNet.jpg", "."]
-COPY ["readme.md", "."]
+COPY ["README.md", "."]
 COPY ["host/IczpNet.Chat.HttpApi.Host/IczpNet.Chat.HttpApi.Host.csproj", "host/IczpNet.Chat.HttpApi.Host/"]
 COPY ["src/IczpNet.Chat.Application/IczpNet.Chat.Application.csproj", "src/IczpNet.Chat.Application/"]
 COPY ["src/IczpNet.Chat.Application.Contracts/IczpNet.Chat.Application.Contracts.csproj", "src/IczpNet.Chat.Application.Contracts/"]
