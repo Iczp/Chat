@@ -1,10 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\common.props" />
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
-		<Version>0.2.1.902</Version>
+		<Version>0.2.1.903</Version>
 		<Nullable>disable</Nullable>
     <RootNamespace>IczpNet.Chat</RootNamespace>
 		<Authors>IczpNet</Authors>
