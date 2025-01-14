@@ -19,7 +19,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-		<PackageReference Include="IczpNet.AbpCommons.Domain" Version="0.9.0.3" />
+		<PackageReference Include="IczpNet.AbpCommons.Domain" Version="0.9.0.903" />
 		<PackageReference Include="IczpNet.AbpTrees.Domain" Version="9.0.0" />
 		<PackageReference Include="IczpNet.BizCrypts" Version="0.0.1" />
 		<PackageReference Include="IczpNet.Pusher.Domain" Version="9.0.0.1" />
