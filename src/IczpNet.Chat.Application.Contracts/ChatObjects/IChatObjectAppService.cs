@@ -9,49 +9,48 @@ using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 
-namespace IczpNet.Chat.ChatObjects
+namespace IczpNet.Chat.ChatObjects;
+
+/// <summary>
+/// 聊天对象
+/// </summary>
+public interface IChatObjectAppService :
+    ICrudAppService<
+        ChatObjectDto,
+        ChatObjectDto,
+        long,
+        ChatObjectGetListInput,
+        ChatObjectCreateInput,
+        ChatObjectUpdateInput>
+    ,
+    ITreeAppService<
+        ChatObjectDto,
+        ChatObjectDto,
+        long,
+        ChatObjectGetListInput,
+        ChatObjectCreateInput,
+        ChatObjectUpdateInput, ChatObjectInfo>
 {
-    /// <summary>
-    /// 聊天对象
-    /// </summary>
-    public interface IChatObjectAppService :
-        ICrudAppService<
-            ChatObjectDto,
-            ChatObjectDto,
-            long,
-            ChatObjectGetListInput,
-            ChatObjectCreateInput,
-            ChatObjectUpdateInput>
-        ,
-        ITreeAppService<
-            ChatObjectDto,
-            ChatObjectDto,
-            long,
-            ChatObjectGetListInput,
-            ChatObjectCreateInput,
-            ChatObjectUpdateInput, ChatObjectInfo>
-    {
-        Task<PagedResultDto<ChatObjectDto>> GetListByUserIdAsync(Guid userId, GetListInput input);
+    Task<PagedResultDto<ChatObjectDto>> GetListByUserIdAsync(Guid userId, GetListInput input);
 
-        Task<PagedResultDto<ChatObjectDto>> GetListByCurrentUserAsync(GetListInput input);
+    Task<PagedResultDto<ChatObjectDto>> GetListByCurrentUserAsync(GetListInput input);
 
-        Task<ChatObjectDto> GetByCodeAsync(string code);
+    Task<ChatObjectDto> GetByCodeAsync(string code);
 
-        Task<ChatObjectDto> CreateShopKeeperAsync(string name);
+    Task<ChatObjectDto> CreateShopKeeperAsync(string name, string code);
 
-        Task<ChatObjectDto> CreateShopWaiterAsync(long shopKeeperId, string name);
+    Task<ChatObjectDto> CreateShopWaiterAsync(long shopKeeperId, string name, string code);
 
-        Task<ChatObjectDto> UpdateNameAsync(long id, string name);
+    Task<ChatObjectDto> UpdateNameAsync(long id, string name);
 
-        Task<ChatObjectDto> UpdatePortraitAsync(long id, string thumbnail, string portrait);
+    Task<ChatObjectDto> UpdatePortraitAsync(long id, string thumbnail, string portrait);
 
-        Task<ChatObjectDto> SetVerificationMethodAsync(long id, VerificationMethods verificationMethod);
+    Task<ChatObjectDto> SetVerificationMethodAsync(long id, VerificationMethods verificationMethod);
 
-        Task<ChatObjectDetailDto> GetDetailAsync(long id);
+    Task<ChatObjectDetailDto> GetDetailAsync(long id);
 
-        Task<List<ServiceStatusCacheItem>> GetServiceStatusAsync(long id);
+    Task<List<ServiceStatusCacheItem>> GetServiceStatusAsync(long id);
 
-        Task<List<ServiceStatusCacheItem>> SetServiceStatusAsync(long id, ServiceStatus status);
+    Task<List<ServiceStatusCacheItem>> SetServiceStatusAsync(long id, ServiceStatus status);
 
-    }
 }

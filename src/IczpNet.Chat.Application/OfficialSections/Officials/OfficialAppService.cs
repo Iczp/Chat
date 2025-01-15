@@ -50,9 +50,8 @@ public class OfficialAppService : ChatAppService, IOfficialAppService
 
         var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Official);
 
-        var chatObject = new ChatObject(input.Name, chatObjectType, null)
+        var chatObject = new ChatObject(input.Name, input.Code, chatObjectType, null)
         {
-            Code = input.Code,
             //Portrait = input.Portrait,
             Description = input.Description,
         };

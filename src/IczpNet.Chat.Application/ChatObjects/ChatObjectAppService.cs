@@ -158,11 +158,12 @@ public class ChatObjectAppService
     /// 创建聊天对象[掌柜]
     /// </summary>
     /// <param name="name"></param>
+    /// <param name="code"></param>
     /// <returns></returns>
     [HttpPost]
-    public virtual async Task<ChatObjectDto> CreateShopKeeperAsync(string name)
+    public virtual async Task<ChatObjectDto> CreateShopKeeperAsync(string name, string code)
     {
-        var shopKeeper = await ChatObjectManager.CreateShopKeeperAsync(name);
+        var shopKeeper = await ChatObjectManager.CreateShopKeeperAsync(name, code);
 
         return ObjectMapper.Map<ChatObject, ChatObjectDto>(shopKeeper);
     }
@@ -172,11 +173,12 @@ public class ChatObjectAppService
     /// </summary>
     /// <param name="shopKeeperId"></param>
     /// <param name="name"></param>
+    /// <param name="code"></param>
     /// <returns></returns>
     [HttpPost]
-    public virtual async Task<ChatObjectDto> CreateShopWaiterAsync(long shopKeeperId, string name)
+    public virtual async Task<ChatObjectDto> CreateShopWaiterAsync(long shopKeeperId, string name, string code)
     {
-        var shopWaiter = await ChatObjectManager.CreateShopWaiterAsync(shopKeeperId, name);
+        var shopWaiter = await ChatObjectManager.CreateShopWaiterAsync(shopKeeperId, name, code);
 
         return ObjectMapper.Map<ChatObject, ChatObjectDto>(shopWaiter);
     }
@@ -185,11 +187,12 @@ public class ChatObjectAppService
     /// 创建聊天对象[机器人]
     /// </summary>
     /// <param name="name"></param>
+    /// <param name="code"></param>
     /// <returns></returns>
     [HttpPost]
-    public virtual async Task<ChatObjectDto> CreateRobotAsync(string name)
+    public virtual async Task<ChatObjectDto> CreateRobotAsync(string name, string code)
     {
-        var entity = await ChatObjectManager.CreateRobotAsync(name);
+        var entity = await ChatObjectManager.CreateRobotAsync(name, code);
 
         return ObjectMapper.Map<ChatObject, ChatObjectDto>(entity);
     }
@@ -198,11 +201,12 @@ public class ChatObjectAppService
     /// 创建聊天对象[聊天广场]
     /// </summary>
     /// <param name="name"></param>
+    /// <param name="code"></param>
     /// <returns></returns>
     [HttpPost]
-    public virtual async Task<ChatObjectDto> CreateSquareAsync(string name)
+    public virtual async Task<ChatObjectDto> CreateSquareAsync(string name, string code)
     {
-        var entity = await ChatObjectManager.CreateSquareAsync(name);
+        var entity = await ChatObjectManager.CreateSquareAsync(name, code);
 
         return ObjectMapper.Map<ChatObject, ChatObjectDto>(entity);
     }
