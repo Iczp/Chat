@@ -2,10 +2,9 @@
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 
-namespace IczpNet.Chat.Robots
+namespace IczpNet.Chat.Robots;
+
+public interface IRobotAppService
 {
-    public interface IRobotAppService
-    {
-        Task<PagedResultDto<RobotDto>> GetListAsync(RobotGetListInput input);
-    }
+    Task<PagedResultDto<RobotDto>> GetListAsync(RobotGetListInput input);
 }

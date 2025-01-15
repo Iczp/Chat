@@ -19,11 +19,12 @@ using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.OpenedRecorders.Dtos;
 using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.FavoritedRecorders.Dtos;
-using IczpNet.Chat.Cantacts.Dtos;
+using IczpNet.Chat.Contacts.Dtos;
 using IczpNet.Chat.SessionUnits.Dtos;
 using IczpNet.Chat.SessionUnits;
 using System.Linq;
 using Volo.Abp.AutoMapper;
+using IczpNet.Chat.SessionSections.SessionPermissionGroups.Dtos;
 
 namespace IczpNet.Chat.AutoMappers;
 

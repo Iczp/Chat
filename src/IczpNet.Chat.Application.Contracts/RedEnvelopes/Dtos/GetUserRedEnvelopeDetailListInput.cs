@@ -1,19 +1,18 @@
 ﻿using IczpNet.Chat.BaseDtos;
 
-namespace IczpNet.Chat.RedEnvelopes.Dtos
+namespace IczpNet.Chat.RedEnvelopes.Dtos;
+
+/// <summary>
+/// GetUserRedEnvelopeDetailListInput
+/// </summary>
+public class GetUserRedEnvelopeDetailListInput : GetListInput
 {
     /// <summary>
-    /// GetUserRedEnvelopeDetailListInput
+    /// 红包归属UserId
     /// </summary>
-    public class GetUserRedEnvelopeDetailListInput : GetListInput
-    {
-        /// <summary>
-        /// 红包归属UserId
-        /// </summary>
-        public string OwnerUserId { get; set; }
-        ///// <summary>
-        ///// 时间（防止分页时，数据重复或遗落）
-        ///// </summary>
-        //public long? NowTicks { get; set; }
-    }
+    public string OwnerUserId { get; set; }
+    ///// <summary>
+    ///// 时间（防止分页时，数据重复或遗落）
+    ///// </summary>
+    //public long? NowTicks { get; set; }
 }

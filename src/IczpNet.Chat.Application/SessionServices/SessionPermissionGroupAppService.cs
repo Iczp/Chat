@@ -4,6 +4,7 @@ using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionOrganizations;
 using IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;
 using IczpNet.Chat.SessionSections.SessionPermissionGroups;
+using IczpNet.Chat.SessionSections.SessionPermissionGroups.Dtos;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;

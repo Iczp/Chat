@@ -21,6 +21,6 @@ public class ChatObjectCategoryUnit : BaseEntity
 
     public override object[] GetKeys()
     {
-        return new object[] { ChatObjectId, CategoryId };
+        return [ChatObjectId, CategoryId];
     }
 }

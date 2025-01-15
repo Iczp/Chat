@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace IczpNet.Chat.Locations;
+namespace IczpNet.Chat.Locations.Dto;
 
 public class ShareLocationInput
 {

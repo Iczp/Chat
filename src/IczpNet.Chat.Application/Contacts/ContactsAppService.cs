@@ -1,6 +1,5 @@
 ﻿using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.Cantacts.Dtos;
 using IczpNet.Chat.Contacts.Dtos;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Permissions;

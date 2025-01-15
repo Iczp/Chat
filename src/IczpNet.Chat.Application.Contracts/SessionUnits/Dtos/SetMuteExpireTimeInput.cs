@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿namespace IczpNet.Chat.SessionUnits.Dtos;
 
-namespace IczpNet.Chat.SessionUnits.Dtos
+public class SetMuteExpireTimeInput
 {
-    public class SetMuteExpireTimeInput
-    {
-    }
 }

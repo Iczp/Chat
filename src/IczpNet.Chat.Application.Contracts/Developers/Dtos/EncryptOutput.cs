@@ -1,10 +1,9 @@
-﻿namespace IczpNet.Chat.Developers.Dtos
-{
-    /// <summary>
-    /// EncryptOutput
-    /// </summary>
-    public class EncryptOutput : DecryptInput
-    {
+﻿namespace IczpNet.Chat.Developers.Dtos;
 
-    }
+/// <summary>
+/// EncryptOutput
+/// </summary>
+public class EncryptOutput : DecryptInput
+{
+
 }

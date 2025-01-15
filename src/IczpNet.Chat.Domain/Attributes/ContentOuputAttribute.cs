@@ -1,27 +1,26 @@
 ﻿using System;
 using System.Reflection;
 
-namespace IczpNet.Chat.Attributes
+namespace IczpNet.Chat.Attributes;
+
+public class ContentOuputAttribute : Attribute
 {
-    public class ContentOuputAttribute : Attribute
+    public Type OuputType { get; }
+
+    public ContentOuputAttribute(Type outputType)
     {
-        public Type OuputType { get; }
+        OuputType = outputType;
+    }
 
-        public ContentOuputAttribute(Type outputType)
-        {
-            OuputType = outputType;
-        }
+    public static Type GetOuputType<T>()
+    {
+        return GetOuputType(typeof(T));
+    }
 
-        public static Type GetOuputType<T>()
-        {
-            return GetOuputType(typeof(T));
-        }
+    public static Type GetOuputType(Type type)
+    {
+        var nameAttribute = type.GetCustomAttribute<ContentOuputAttribute>();
 
-        public static Type GetOuputType(Type type)
-        {
-            var nameAttribute = type.GetCustomAttribute<ContentOuputAttribute>();
-
-            return nameAttribute.OuputType;
-        }
+        return nameAttribute.OuputType;
     }
 }

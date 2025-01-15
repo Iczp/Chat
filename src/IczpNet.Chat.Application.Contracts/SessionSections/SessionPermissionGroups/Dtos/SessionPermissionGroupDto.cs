@@ -1,7 +1,7 @@
 ﻿using IczpNet.Chat.SessionSections.SessionPermissionGroups;
 using System;
 using Volo.Abp.Application.Dtos;
-namespace IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;
+namespace IczpNet.Chat.SessionSections.SessionPermissionGroups.Dtos;
 
 /// <summary>
 /// SessionPermissionGroup Dto

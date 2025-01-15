@@ -1,21 +1,20 @@
 ﻿using IczpNet.Chat.BaseDtos;
 using System;
 
-namespace IczpNet.Chat.RedEnvelopes.Dtos
+namespace IczpNet.Chat.RedEnvelopes.Dtos;
+
+/// <summary>
+/// GetMyRedEnvelopeDetailListInput
+/// </summary>
+public class GetMyRedEnvelopeDetailListInput : GetListInput
 {
     /// <summary>
-    /// GetMyRedEnvelopeDetailListInput
+    /// 红包归属UserId
     /// </summary>
-    public class GetMyRedEnvelopeDetailListInput : GetListInput
-    {
-        /// <summary>
-        /// 红包归属UserId
-        /// </summary>
-        public Guid OwnerUserId { get; set; }
+    public Guid OwnerUserId { get; set; }
 
-        /// <summary>
-        /// 年
-        /// </summary>
-        public int? Year { get; set; }
-    }
+    /// <summary>
+    /// 年
+    /// </summary>
+    public int? Year { get; set; }
 }

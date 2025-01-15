@@ -1,8 +1,5 @@
-﻿using IczpNet.Chat.Mottos.Dtos;
+﻿namespace IczpNet.Chat.Menus.Dtos;
 
-namespace IczpNet.Chat.Menus.Dtos
+public class MenuDto : MenuSimpleDto
 {
-    public class MenuDto : MenuSimpleDto
-    {
-    }
 }

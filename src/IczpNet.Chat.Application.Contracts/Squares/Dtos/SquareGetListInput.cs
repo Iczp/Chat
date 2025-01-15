@@ -1,8 +1,7 @@
 ﻿using IczpNet.Chat.BaseDtos;
 
-namespace IczpNet.Chat.Squares.Dtos
+namespace IczpNet.Chat.Squares.Dtos;
+
+public class SquareGetListInput : GetListInput
 {
-    public class SquareGetListInput : GetListInput
-    {
-    }
 }

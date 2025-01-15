@@ -1,8 +1,7 @@
 ﻿using IczpNet.Chat.ChatObjects.Dtos;
 
-namespace IczpNet.Chat.ShopWaiters.Dtos
+namespace IczpNet.Chat.ShopWaiters.Dtos;
+
+public class ShopWaiterDto : ChatObjectDto
 {
-    public class ShopWaiterDto : ChatObjectDto
-    {
-    }
 }

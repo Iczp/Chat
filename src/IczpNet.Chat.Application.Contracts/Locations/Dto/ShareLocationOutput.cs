@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using IczpNet.Chat.Locations.Dto;
+using System.Collections.Generic;
 
 namespace IczpNet.Chat.Locations;
 

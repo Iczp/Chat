@@ -1,9 +1,6 @@
-﻿using System;
+﻿namespace IczpNet.Chat.Menus.Dtos;
 
-namespace IczpNet.Chat.Menus.Dtos
+public class MenuDetailDto : MenuDto
 {
-    public class MenuDetailDto : MenuDto
-    {
-        public virtual string Description { get; set; }
-    }
+    public virtual string Description { get; set; }
 }

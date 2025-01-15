@@ -1,7 +1,6 @@
-﻿namespace IczpNet.Chat.ShopKeepers.Dtos
+﻿namespace IczpNet.Chat.ShopKeepers.Dtos;
+
+public class ShopKeeperCreateInput
 {
-    public class ShopKeeperCreateInput
-    {
-        public virtual string Name { get; set; }
-    }
+    public virtual string Name { get; set; }
 }

@@ -1,11 +1,10 @@
-﻿namespace IczpNet.Chat.Enums.Dtos
+﻿namespace IczpNet.Chat.Enums.Dtos;
+
+public class EnumTypeDto
 {
-    public class EnumTypeDto
-    {
-        public string Type { get; set; }
+    public string Type { get; set; }
 
-        public string Description { get; set; }
+    public string Description { get; set; }
 
-        public string[] Names { get; set; }
-    }
+    public string[] Names { get; set; }
 }

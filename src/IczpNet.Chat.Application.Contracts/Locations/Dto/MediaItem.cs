@@ -1,6 +1,6 @@
-﻿namespace IczpNet.Chat.Locations;
+﻿namespace IczpNet.Chat.Locations.Dto;
 
-public class MediaItem 
+public class MediaItem
 {
     /// <summary>
     /// 最近活动时间
