@@ -1,16 +1,15 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.DataFilters;
 
-namespace IczpNet.Chat.MessageSections
+namespace IczpNet.Chat.MessageSections;
+
+public interface IContentEntity : IContent, IIsEnabled, IChatOwner<long?>
 {
-    public interface IContentEntity : IContent, IIsEnabled, IChatOwner<long?>
-    {
-        bool IsVerified { get; }
+    bool IsVerified { get; }
 
-        string GetBody();
+    string GetBody();
 
-        long GetSize();
+    long GetSize();
 
-        void SetOwnerId(long? ownerId);
-    }
+    void SetOwnerId(long? ownerId);
 }
