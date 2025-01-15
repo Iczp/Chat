@@ -12,8 +12,10 @@ namespace IczpNet.Chat.ChatObjectCategorys;
 /// <summary>
 /// 聊天对象目录（分组）
 /// </summary>
-public class ChatObjectCategoryAppService
-    : CrudTreeChatAppService<
+public class ChatObjectCategoryAppService(
+    IRepository<ChatObjectCategory, Guid> repository,
+    IChatObjectCategoryManager treeManager)
+        : CrudTreeChatAppService<
         ChatObjectCategory,
         Guid,
         ChatObjectCategoryDetailDto,
@@ -21,7 +23,7 @@ public class ChatObjectCategoryAppService
         ChatObjectCategoryGetListInput,
         ChatObjectCategoryCreateInput,
         ChatObjectCategoryUpdateInput,
-        ChatObjectCategoryInfo>,
+        ChatObjectCategoryInfo>(repository, treeManager),
     IChatObjectCategoryAppService
 {
 
@@ -30,12 +32,6 @@ public class ChatObjectCategoryAppService
     protected override string CreatePolicyName { get; set; } = ChatPermissions.ChatObjectCategoryPermission.Create;
     protected override string UpdatePolicyName { get; set; } = ChatPermissions.ChatObjectCategoryPermission.Update;
     protected override string DeletePolicyName { get; set; } = ChatPermissions.ChatObjectCategoryPermission.Delete;
-
-    public ChatObjectCategoryAppService(
-        IRepository<ChatObjectCategory, Guid> repository,
-        IChatObjectCategoryManager treeManager) : base(repository, treeManager)
-    {
-    }
 
     protected override async Task<IQueryable<ChatObjectCategory>> CreateFilteredQueryAsync(ChatObjectCategoryGetListInput input)
     {

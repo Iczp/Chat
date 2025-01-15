@@ -821,7 +821,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
     }
 
     /// <inheritdoc/>
-    public async Task<int> IncremenetAsync(SessionUnitIncrementArgs args)
+    public async Task<int> IncremenetAsync(SessionUnitIncrementJobArgs args)
     {
         Logger.LogInformation($"Incremenet args:{args},starting.....................................");
 

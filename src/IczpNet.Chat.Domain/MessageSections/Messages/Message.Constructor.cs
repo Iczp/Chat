@@ -15,20 +15,6 @@ public partial class Message
     public const string Delimiter = "/";
     protected Message() : base() { }
 
-    public Message(IChatObject sender, IChatObject receiver, Session session) : base()
-    {
-        //, IMessageContent messageContent
-        SenderId = sender.Id;
-        SenderType = sender.ObjectType;
-        ReceiverId = receiver.Id;
-        ReceiverType = receiver.ObjectType;
-        Channel = session.Channel;
-        Session = session;
-        SessionKey = session.SessionKey;
-        //SessionUnitCount = session.GetMemberCount();
-        //MessageType = messageType;
-    }
-
     public Message(SessionUnit sessionUnit) : base()
     {
         SenderSessionUnit = sessionUnit;
@@ -85,10 +71,12 @@ public partial class Message
         RollbackTime = now;
     }
 
-    internal void SetPrivateMessage(ChatObject receiver)
+    internal void SetPrivateMessage(Guid receiverSessionUnitId)
     {
-        ReceiverId = receiver.Id;
-        ReceiverType = receiver.ObjectType;
+        //ReceiverSessionUnit = receiverSessionUnit;
+        //ReceiverId = receiverSessionUnit.OwnerId;
+        //ReceiverType = receiverSessionUnit.OwnerObjectType;
+        ReceiverSessionUnitId = receiverSessionUnitId;
         IsPrivate = true;
     }
 
@@ -118,6 +106,6 @@ public partial class Message
 
     public override string ToString()
     {
-        return $"Id={Id},MessageType={MessageType},SenderId={SenderId},ReceiverId={ReceiverId}";
+        return $"Id={Id},MessageType={MessageType},SenderId={SenderId},ReceiverId={ReceiverId},SenderSessionUnitId={SenderSessionUnitId}";
     }
 }

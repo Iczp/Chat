@@ -115,7 +115,12 @@ namespace IczpNet.Chat.SessionUnits
 
         Task<List<Guid>> GetIdListByNameAsync(Guid sessionId, List<string> nameList);
 
-        Task<int> IncremenetAsync(SessionUnitIncrementArgs args);
+        /// <summary>
+        /// 角标自增 +1
+        /// </summary>
+        /// <param name="args"></param>
+        /// <returns>受影响的行数</returns>
+        Task<int> IncremenetAsync(SessionUnitIncrementJobArgs args);
 
         Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime, SessionUnit setterSessionUnit, bool isSendMessage);
 

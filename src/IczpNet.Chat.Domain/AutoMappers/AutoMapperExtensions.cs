@@ -1,9 +1,7 @@
 ﻿using AutoMapper;
-using System;
 using Volo.Abp.Auditing;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Domain.Entities;
-using Volo.Abp.MultiTenancy;
 
 namespace IczpNet.Chat.AutoMappers;
 

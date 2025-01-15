@@ -60,7 +60,7 @@ public class Program
         //日志的输出模板
         string LogFilePath(LogEventLevel LogEvent) => $@"Logs\{DateTime.Now:yyyy-MM-dd}\{LogEvent}\log.log";
         string SerilogOutputTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level}] [{SourceContext}] [{Method}] {Message}{NewLine}{Exception}{NewLine}" + new string('-', 50) + "{NewLine}";
-        //var outputTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level}] [{SourceContext}] [{Method}] {Message}{NewLine}{Exception}{NewLine}";
+        var outputTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level}] [{SourceContext}] [{Method}] {Message}{NewLine}{Exception}{NewLine}";
 
 
         Log.Logger = new LoggerConfiguration()
@@ -69,14 +69,14 @@ public class Program
 #else
             .MinimumLevel.Information()
 #endif
-            .MinimumLevel.Override("Volo.Abp.Auditing", LogEventLevel.Information)
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-            .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
-            .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
-            .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Information)
-            .Enrich.FromLogContext()
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-            .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+            //.MinimumLevel.Override("Volo.Abp.Auditing", LogEventLevel.Information)
+            //.MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+            //.MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+            //.MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
+            //.MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Information)
+            //.Enrich.FromLogContext()
+            //.MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+            //.MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
 
             .Enrich.FromLogContext()
             .WriteTo.Logger(fileLogger => fileLogger.WriteTo.Async(c => c.File($"Logs/log_all_.txt", outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] {Message}{NewLine}{Exception}", rollingInterval: RollingInterval.Day, rollOnFileSizeLimit: true)))

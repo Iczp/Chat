@@ -20,30 +20,22 @@ using Microsoft.CodeAnalysis;
 using Volo.Abp.Http;
 using Blob = IczpNet.Chat.Blobs.Blob;
 using Microsoft.Extensions.Logging;
+using IczpNet.Chat.MessageSections;
 namespace IczpNet.Chat.Controllers;
 
 [Route($"/api/{ChatRemoteServiceConsts.ModuleName}/message-sender")]
-public class MessageSenderController : ChatController
+public class MessageSenderController(
+        ISessionUnitManager sessionUnitManager,
+        IMessageSenderAppService messageSenderAppService,
+        IOptions<MessageOptions> imageSetting,
+        IJsonSerializer jsonSerializer,
+        IMediaResolver mediaResolver) : ChatController
 {
-    protected IMessageSenderAppService MessageSenderAppService { get; set; }
-    protected ISessionUnitManager SessionUnitManager { get; set; }
-    protected MessageOptions MessageSetting { get; set; }
-    protected IMediaResolver MediaResolver { get; set; }
-    protected IJsonSerializer JsonSerializer { get; set; }
-
-    public MessageSenderController(
-            ISessionUnitManager sessionUnitManager,
-            IMessageSenderAppService messageSenderAppService,
-            IOptions<MessageOptions> imageSetting,
-            IJsonSerializer jsonSerializer,
-            IMediaResolver mediaResolver)
-    {
-        SessionUnitManager = sessionUnitManager;
-        MessageSenderAppService = messageSenderAppService;
-        MessageSetting = imageSetting.Value;
-        JsonSerializer = jsonSerializer;
-        MediaResolver = mediaResolver;
-    }
+    protected IMessageSenderAppService MessageSenderAppService { get; set; } = messageSenderAppService;
+    protected ISessionUnitManager SessionUnitManager { get; set; } = sessionUnitManager;
+    protected MessageOptions MessageSetting { get; set; } = imageSetting.Value;
+    protected IMediaResolver MediaResolver { get; set; } = mediaResolver;
+    protected IJsonSerializer JsonSerializer { get; set; } = jsonSerializer;
 
     /// <summary>
     /// 上传并发送(file/sound/image/video)

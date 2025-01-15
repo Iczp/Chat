@@ -17,26 +17,18 @@ namespace IczpNet.Chat.OfficialSections.Officials;
 /// <summary>
 /// 公众号
 /// </summary>
-public class OfficialAppService : ChatAppService, IOfficialAppService
+public class OfficialAppService(IOfficialManager roomManager,
+    IChatObjectCategoryManager chatObjectCategoryManager,
+    IChatObjectTypeManager chatObjectTypeManager,
+    IMessageSender messageSender) : ChatAppService, IOfficialAppService
 {
     public virtual string InvitePolicyName { get; set; }
     public virtual string CreateOfficialPolicyName { get; set; }
-    protected IOfficialManager OfficialManager { get; }
-    protected IChatObjectTypeManager ChatObjectTypeManager { get; }
+    protected IOfficialManager OfficialManager { get; } = roomManager;
+    protected IChatObjectTypeManager ChatObjectTypeManager { get; } = chatObjectTypeManager;
     //protected ISessionUnitManager SessionUnitManager { get; }
-    protected IMessageSender MessageSender { get; }
-    protected IChatObjectCategoryManager ChatObjectCategoryManager { get; }
-
-    public OfficialAppService(IOfficialManager roomManager,
-        IChatObjectCategoryManager chatObjectCategoryManager,
-        IChatObjectTypeManager chatObjectTypeManager,
-        IMessageSender messageSender)
-    {
-        OfficialManager = roomManager;
-        ChatObjectCategoryManager = chatObjectCategoryManager;
-        ChatObjectTypeManager = chatObjectTypeManager;
-        MessageSender = messageSender;
-    }
+    protected IMessageSender MessageSender { get; } = messageSender;
+    protected IChatObjectCategoryManager ChatObjectCategoryManager { get; } = chatObjectCategoryManager;
 
     /// <summary>
     /// 创建公众号

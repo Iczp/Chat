@@ -16,6 +16,11 @@ namespace IczpNet.Chat.MessageSections.Messages
         public virtual MessageInfo QuoteMessage { get; set; }
     }
 
+    public class MessageAnyInfo : MessageInfo<object>
+    {
+
+    }
+
     public class MessageInfo<T> : MessageInfo
     {
         public T Content { get; set; }

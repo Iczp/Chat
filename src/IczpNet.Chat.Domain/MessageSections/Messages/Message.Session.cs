@@ -34,13 +34,19 @@ public partial class Message
     [ForeignKey(nameof(SenderSessionUnitId))]
     public virtual SessionUnit SenderSessionUnit { get; protected set; }
 
+    /// <summary>
+    /// receiver session unit
+    /// </summary>
+    [ForeignKey(nameof(ReceiverSessionUnitId))]
+    public virtual SessionUnit ReceiverSessionUnit { get; protected set; }
+
     [InverseProperty(nameof(SessionSections.Sessions.Session.LastMessage))]
     public virtual IList<Session> SessionList { get; set; }
 
     /// <summary>
     /// last message list
     /// </summary>
-    [InverseProperty(nameof(SessionUnits.SessionUnit.LastMessage))]
+    [InverseProperty(nameof(SessionUnit.LastMessage))]
     public virtual List<SessionUnit> LastMessageSessionUnitList { get; protected set; }
 
     /// <summary>

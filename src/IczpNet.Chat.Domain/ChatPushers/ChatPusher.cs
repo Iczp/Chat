@@ -14,24 +14,17 @@ using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.ChatPushers;
 
-public class ChatPusher : DomainService, IChatPusher
+public class ChatPusher(
+    IPusherPublisher pusherPublisher,
+    ILocalEventBus localEventBus,
+    ISessionUnitManager sessionUnitManager,
+    IObjectMapper objectMapper) : DomainService, IChatPusher
 {
-    protected IPusherPublisher PusherPublisher { get; }
-    protected ILocalEventBus LocalEventBus { get; }
-    protected ISessionUnitManager SessionUnitManager { get; }
-    protected IObjectMapper ObjectMapper { get; }
+    protected IPusherPublisher PusherPublisher { get; } = pusherPublisher;
+    protected ILocalEventBus LocalEventBus { get; } = localEventBus;
+    protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
+    protected IObjectMapper ObjectMapper { get; } = objectMapper;
 
-    public ChatPusher(
-        IPusherPublisher pusherPublisher,
-        ILocalEventBus localEventBus,
-        ISessionUnitManager sessionUnitManager,
-        IObjectMapper objectMapper)
-    {
-        PusherPublisher = pusherPublisher;
-        LocalEventBus = localEventBus;
-        SessionUnitManager = sessionUnitManager;
-        ObjectMapper = objectMapper;
-    }
     public async Task<long> ExecuteAsync(ChannelMessagePayload payload)
     {
         var ret = await PusherPublisher.PublishAsync(payload);
