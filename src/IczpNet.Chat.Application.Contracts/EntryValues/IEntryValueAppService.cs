@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿namespace IczpNet.Chat.EntryValues;
 
-namespace IczpNet.Chat.EntryValues
+public interface IEntryValueAppService
 {
-    public interface IEntryValueAppService
-    {
-    }
 }

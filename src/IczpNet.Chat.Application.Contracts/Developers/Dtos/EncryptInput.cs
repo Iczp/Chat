@@ -1,13 +1,12 @@
-﻿namespace IczpNet.Chat.Developers.Dtos
+﻿namespace IczpNet.Chat.Developers.Dtos;
+
+/// <summary>
+/// EncryptInput
+/// </summary>
+public class EncryptInput : BaseCrypt
 {
     /// <summary>
-    /// EncryptInput
+    /// 明文
     /// </summary>
-    public class EncryptInput : BaseCrypt
-    {
-        /// <summary>
-        /// 明文
-        /// </summary>
-        public string EncryptData { get; set; }
-    }
+    public string EncryptData { get; set; }
 }

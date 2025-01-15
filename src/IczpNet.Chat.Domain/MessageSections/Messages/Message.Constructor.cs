@@ -116,5 +116,8 @@ public partial class Message
     [NotMapped]
     public virtual string SenderDisplayName { get; set; }
 
-
+    public override string ToString()
+    {
+        return $"Id={Id},MessageType={MessageType},SenderId={SenderId},ReceiverId={ReceiverId}";
+    }
 }

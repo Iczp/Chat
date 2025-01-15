@@ -1,8 +1,7 @@
 ﻿using IczpNet.Chat.BaseDtos;
 
-namespace IczpNet.Chat.ShopKeepers.Dtos
+namespace IczpNet.Chat.ShopKeepers.Dtos;
+
+public class ShopKeeperGetListInput : GetListInput
 {
-    public class ShopKeeperGetListInput : GetListInput
-    {
-    }
 }

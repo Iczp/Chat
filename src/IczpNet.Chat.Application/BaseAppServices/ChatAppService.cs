@@ -91,20 +91,21 @@ public abstract class ChatAppService : AbpCommonsAppService
         //{
         //    return;
         //}
-        var currentUserId = CurrentUser.GetId();
 
         Assert.If(!CurrentUser.Id.HasValue, $"请先登录");
 
+        var currentUserId = CurrentUser.GetId();
+
         var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
 
-        Assert.If(!await IsAnyCurrentUserAsync(ownerIdList), $"Fail ownerIds [{ownerIdList.JoinAsString(",")}], current user's chatObjectIdList:[{chatObjectIdList.JoinAsString(",")}]");
+        //Assert.If(!await IsAnyCurrentUserAsync(ownerIdList), $"Fail ownerIds [{ownerIdList.JoinAsString(",")}], current user's chatObjectIdList:[{chatObjectIdList.JoinAsString(",")}]");
 
         await func?.Invoke();
     }
 
     protected virtual Task CheckPolicyForUserAsync(long? ownerId, Func<Task> func = null)
     {
-        return CheckPolicyForUserAsync(new[] { ownerId }, func);
+        return CheckPolicyForUserAsync([ownerId], func);
     }
 
     protected virtual Task CheckPolicyForUserAsync(IEnumerable<long> ownerIdList, Func<Task> func = null)

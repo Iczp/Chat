@@ -42,6 +42,7 @@ using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
 using Volo.Abp.VirtualFileSystem;
+using Volo.Abp.EventBus.Rebus;
 
 namespace IczpNet.Chat;
 [DependsOn(
@@ -62,8 +63,18 @@ typeof(ChatApplicationModule),
 //[DependsOn(typeof(ChatManagementApplicationModule))]
 [DependsOn(typeof(AbpBackgroundJobsModule))]
 [DependsOn(typeof(AbpBlobStoringFileSystemModule))]
+[DependsOn(typeof(AbpEventBusRebusModule))]
 public class ChatHttpApiHostModule : AbpModule
 {
+    public override void PreConfigureServices(ServiceConfigurationContext context)
+    {
+        base.PreConfigureServices(context);
+
+        PreConfigure<AbpRebusEventBusOptions>(options =>
+        {
+            options.InputQueueName = "IczpNet.Chat:eventbus";
+        });
+    }
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
@@ -323,7 +334,7 @@ public class ChatHttpApiHostModule : AbpModule
             });
         });
 
-        
+
     }
 
     public override void OnApplicationInitialization(ApplicationInitializationContext context)

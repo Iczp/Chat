@@ -1,14 +1,13 @@
 ﻿using IczpNet.Chat.BaseDtos;
 using System.ComponentModel;
 
-namespace IczpNet.Chat.ReadedRecorders.Dtos
+namespace IczpNet.Chat.ReadedRecorders.Dtos;
+
+public class GetListByMessageIdInput : GetListInput
 {
-    public class GetListByMessageIdInput : GetListInput
-    {
-        /// <summary>
-        /// 是否已读
-        /// </summary>
-        [DefaultValue(true)]
-        public virtual bool IsReaded { get; set; }
-    }
+    /// <summary>
+    /// 是否已读
+    /// </summary>
+    [DefaultValue(true)]
+    public virtual bool IsReaded { get; set; }
 }

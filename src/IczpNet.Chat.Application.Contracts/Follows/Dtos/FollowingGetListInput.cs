@@ -2,16 +2,15 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace IczpNet.Chat.Follows.Dtos
-{
-    public class FollowingGetListInput : GetListInput
-    {
-        /// <summary>
-        /// 会话单元Id
-        /// </summary>
-        [Required]
-        public virtual Guid SessionUnitId { get; set; }
+namespace IczpNet.Chat.Follows.Dtos;
 
-        //public bool? SessionUnitId { get; set; }
-    }
+public class FollowingGetListInput : GetListInput
+{
+    /// <summary>
+    /// 会话单元Id
+    /// </summary>
+    [Required]
+    public virtual Guid SessionUnitId { get; set; }
+
+    //public bool? SessionUnitId { get; set; }
 }

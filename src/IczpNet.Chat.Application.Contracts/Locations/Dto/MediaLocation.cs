@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace IczpNet.Chat.Locations;
+namespace IczpNet.Chat.Locations.Dto;
 
 /// <summary>
 /// MediaLocation

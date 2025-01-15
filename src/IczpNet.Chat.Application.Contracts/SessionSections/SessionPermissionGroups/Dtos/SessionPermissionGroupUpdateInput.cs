@@ -1,7 +1,7 @@
 ﻿using IczpNet.Chat.BaseDtos;
 using System;
 
-namespace IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;
+namespace IczpNet.Chat.SessionSections.SessionPermissionGroups.Dtos;
 
 /// <summary>
 /// SessionPermissionGroup UpdateInput

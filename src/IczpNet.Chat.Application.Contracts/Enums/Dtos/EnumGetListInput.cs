@@ -1,8 +1,7 @@
 ﻿using IczpNet.Chat.BaseDtos;
 
-namespace IczpNet.Chat.Enums.Dtos
+namespace IczpNet.Chat.Enums.Dtos;
+
+public class EnumGetListInput : GetListInput
 {
-    public class EnumGetListInput : GetListInput
-    {
-    }
 }

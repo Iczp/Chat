@@ -10,9 +10,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace IczpNet.Chat.MessageSections.Messages;
 
 [Index(nameof(Id), AllDescending = true)]
-[Index(nameof(Id), IsDescending = new[] { false }, Name = "IX_Chat_Message_Id_Asc")]
+[Index(nameof(Id), IsDescending = [false], Name = "IX_Chat_Message_Id_Asc")]
 [Index(nameof(CreationTime), AllDescending = true)]
-[Index(nameof(CreationTime), IsDescending = new[] { false }, Name = "IX_Chat_Message_CreationTime_Asc")]
+[Index(nameof(CreationTime), IsDescending = [false], Name = "IX_Chat_Message_CreationTime_Asc")]
 [Index(nameof(SessionUnitCount))]
 [Index(nameof(IsPrivate))]
 [Index(nameof(MessageType))]
@@ -188,4 +188,6 @@ public partial class Message : BaseEntity<long>, ISessionId
 
     [NotMapped]
     public virtual bool IsDisabledForward => this.IsDisabledForward();
+
+
 }

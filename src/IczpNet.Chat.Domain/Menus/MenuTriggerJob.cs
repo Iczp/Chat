@@ -10,21 +10,14 @@ using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.Menus;
 
-public class MenuTriggerJob : AsyncBackgroundJob<MenuTriggerArgs>, ITransientDependency
+public class MenuTriggerJob(
+    IMenuManager menuManager,
+    IUnitOfWorkManager unitOfWorkManager,
+    IRepository<Menu, Guid> repository) : AsyncBackgroundJob<MenuTriggerArgs>, ITransientDependency
 {
-    protected IMenuManager MenuManager { get; }
-    protected IUnitOfWorkManager UnitOfWorkManager { get; }
-    protected IRepository<Menu, Guid> Repository { get; }
-
-    public MenuTriggerJob(
-        IMenuManager menuManager,
-        IUnitOfWorkManager unitOfWorkManager,
-        IRepository<Menu, Guid> repository)
-    {
-        MenuManager = menuManager;
-        UnitOfWorkManager = unitOfWorkManager;
-        Repository = repository;
-    }
+    protected IMenuManager MenuManager { get; } = menuManager;
+    protected IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
+    protected IRepository<Menu, Guid> Repository { get; } = repository;
 
     //[UnitOfWork(true, IsolationLevel.ReadUncommitted)]
     [UnitOfWork]

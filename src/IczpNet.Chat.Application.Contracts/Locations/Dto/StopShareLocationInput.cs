@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace IczpNet.Chat.Locations;
+namespace IczpNet.Chat.Locations.Dto;
 
 
 public class StopShareLocationInput

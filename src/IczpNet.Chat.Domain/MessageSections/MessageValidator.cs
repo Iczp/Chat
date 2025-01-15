@@ -2,13 +2,12 @@
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Services;
 
-namespace IczpNet.Chat.MessageSections
+namespace IczpNet.Chat.MessageSections;
+
+public class MessageValidator : DomainService, IMessageValidator
 {
-    public class MessageValidator : DomainService, IMessageValidator
+    public virtual async Task CheckAsync(Message entity)
     {
-        public virtual async Task CheckAsync(Message entity)
-        {
-            await Task.Yield();
-        }
+        await Task.Yield();
     }
 }

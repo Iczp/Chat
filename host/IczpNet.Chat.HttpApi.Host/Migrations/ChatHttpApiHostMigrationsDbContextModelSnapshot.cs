@@ -1149,7 +1149,8 @@ namespace IczpNet.Chat.Migrations
 
                     b.Property<string>("EncodingAesKey")
                         .HasMaxLength(43)
-                        .HasColumnType("nvarchar(43)");
+                        .HasColumnType("nvarchar(43)")
+                        .HasComment("EncodingAesKey");
 
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
@@ -1157,7 +1158,8 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnName("ExtraProperties");
 
                     b.Property<bool>("IsEnabled")
-                        .HasColumnType("bit");
+                        .HasColumnType("bit")
+                        .HasComment("是否启用开发者");
 
                     b.Property<DateTime?>("LastModificationTime")
                         .HasColumnType("datetime2")
@@ -1169,15 +1171,20 @@ namespace IczpNet.Chat.Migrations
 
                     b.Property<string>("PostUrl")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .HasComment("开发者设置的Url");
 
                     b.Property<string>("Token")
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(50)")
+                        .HasComment("Token");
 
                     b.HasKey("OwnerId");
 
-                    b.ToTable("Chat_Developer", (string)null);
+                    b.ToTable("Chat_Developer", null, t =>
+                        {
+                            t.HasComment("开发者");
+                        });
                 });
 
             modelBuilder.Entity("IczpNet.Chat.EntryNames.EntryName", b =>

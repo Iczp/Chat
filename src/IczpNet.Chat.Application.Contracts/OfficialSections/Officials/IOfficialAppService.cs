@@ -5,18 +5,17 @@ using System;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
 
-namespace IczpNet.Chat.OfficialSections.Officials
+namespace IczpNet.Chat.OfficialSections.Officials;
+
+public interface IOfficialAppService : IApplicationService
 {
-    public interface IOfficialAppService : IApplicationService
-    {
-        Task<ChatObjectDto> CreateAsync(OfficialCreateInput input);
+    Task<ChatObjectDto> CreateAsync(OfficialCreateInput input);
 
-        //Task<ChatObjectDto> UpdateAsync(Guid id, OfficialUpdateInput input);
+    //Task<ChatObjectDto> UpdateAsync(Guid id, OfficialUpdateInput input);
 
-        Task<SessionUnitOwnerDto> SubscribeAsync(long ownerId, long destinationId);
+    Task<SessionUnitOwnerDto> SubscribeAsync(long ownerId, long destinationId);
 
-        Task<SessionUnitOwnerDto> SubscribeByIdAsync(Guid sessionUnitId);
+    Task<SessionUnitOwnerDto> SubscribeByIdAsync(Guid sessionUnitId);
 
-        Task<SessionUnitOwnerDto> UnsubscribeAsync(Guid sessionUnitId);
-    }
+    Task<SessionUnitOwnerDto> UnsubscribeAsync(Guid sessionUnitId);
 }

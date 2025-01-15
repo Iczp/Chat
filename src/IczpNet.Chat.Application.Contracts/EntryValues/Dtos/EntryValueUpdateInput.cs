@@ -1,5 +1,4 @@
 ﻿using IczpNet.Chat.BaseDtos;
-using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.EntryValues.Dtos;
 

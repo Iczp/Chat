@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Extensions.DependencyInjection;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
@@ -28,6 +27,7 @@ using Volo.Abp.Caching.StackExchangeRedis;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.SqlServer;
+using Volo.Abp.EventBus.Rebus;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.FeatureManagement.EntityFrameworkCore;
 using Volo.Abp.Identity;
@@ -81,6 +81,7 @@ namespace IczpNet.Chat;
     typeof(AbpAspNetCoreSerilogModule),
     typeof(AbpSwashbuckleModule)
     )]
+[DependsOn(typeof(AbpEventBusRebusModule))]
 public class ChatAuthServerModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
@@ -94,9 +95,15 @@ public class ChatAuthServerModule : AbpModule
                 options.UseAspNetCore();
             });
         });
+
+        PreConfigure<AbpRebusEventBusOptions>(options =>
+        {
+            options.InputQueueName = "IczpNet.Chat:eventbus";
+        });
     }
 
-   
+
+
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         var hostingEnvironment = context.Services.GetHostingEnvironment();
@@ -147,8 +154,8 @@ public class ChatAuthServerModule : AbpModule
 
         Configure<AbpAuditingOptions>(options =>
         {
-                //options.IsEnabledForGetRequests = true;
-                options.ApplicationName = "AuthServer";
+            //options.IsEnabledForGetRequests = true;
+            options.ApplicationName = "AuthServer";
         });
 
         Configure<AppUrlOptions>(options =>
@@ -192,7 +199,7 @@ public class ChatAuthServerModule : AbpModule
             });
         });
 
-        
+
 
 #if DEBUG
         context.Services.Replace(ServiceDescriptor.Singleton<IEmailSender, NullEmailSender>());

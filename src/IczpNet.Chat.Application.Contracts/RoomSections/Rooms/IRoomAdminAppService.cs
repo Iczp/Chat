@@ -7,32 +7,31 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 
-namespace IczpNet.Chat.RoomSections.Rooms
+namespace IczpNet.Chat.RoomSections.Rooms;
+
+public interface IRoomAdminAppService 
 {
-    public interface IRoomAdminAppService 
-    {
-        Task<ChatObjectDto> CreateAsync(RoomCreateInput input);
+    Task<ChatObjectDto> CreateAsync(RoomCreateInput input);
 
-        Task<ChatObjectDto> CreateByAllUsersAsync(string name);
+    Task<ChatObjectDto> CreateByAllUsersAsync(string name);
 
-        Task<List<SessionUnitSenderInfo>> InviteAsync(InviteInput input);
+    Task<List<SessionUnitSenderInfo>> InviteAsync(InviteInput input);
 
-        Task<PagedResultDto<SessionUnitDto>> GetSameAsync(SameGetListInput input);
+    Task<PagedResultDto<SessionUnitDto>> GetSameAsync(SameGetListInput input);
 
-        Task<int> GetSameCountAsync(long sourceChatObjectId, long targetChatObjectId);
+    Task<int> GetSameCountAsync(long sourceChatObjectId, long targetChatObjectId);
 
-        Task<ChatObjectDto> UpdateNameAsync(Guid sessionUnitId, string name);
+    Task<ChatObjectDto> UpdateNameAsync(Guid sessionUnitId, string name);
 
-        Task<ChatObjectDto> UpdatePortraitAsync(Guid sessionUnitId, string thumbnail, string portrait);
+    Task<ChatObjectDto> UpdatePortraitAsync(Guid sessionUnitId, string thumbnail, string portrait);
 
-        Task TransferCreatorAsync(Guid sessionUnitId, Guid targetSessionUnitId);
+    Task TransferCreatorAsync(Guid sessionUnitId, Guid targetSessionUnitId);
 
-        /// <summary>
-        /// 解散群
-        /// </summary>
-        /// <param name="sessionUnitId"></param>
-        /// <returns></returns>
-        Task DissolveAsync(Guid sessionUnitId);
-        
-    }
+    /// <summary>
+    /// 解散群
+    /// </summary>
+    /// <param name="sessionUnitId"></param>
+    /// <returns></returns>
+    Task DissolveAsync(Guid sessionUnitId);
+    
 }

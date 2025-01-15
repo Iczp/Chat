@@ -1,16 +1,15 @@
 ﻿using IczpNet.AbpTrees;
 using System;
 
-namespace IczpNet.Chat.BaseDtos
+namespace IczpNet.Chat.BaseDtos;
+
+public class BaseTreeWithParentDto<T> : TreeWithParentInfo<T, Guid>
 {
-    public class BaseTreeWithParentDto<T> : TreeWithParentInfo<T, Guid>
-    {
-        public virtual string Code { get; set; }
+    public virtual string Code { get; set; }
 
-        public virtual bool IsStatic { get; set; }
+    public virtual bool IsStatic { get; set; }
 
-        public virtual bool IsActive { get; set; }
+    public virtual bool IsActive { get; set; }
 
-        public virtual double Sorting { get; set; }
-    }
+    public virtual double Sorting { get; set; }
 }

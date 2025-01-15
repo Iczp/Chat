@@ -5,14 +5,13 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 
-namespace IczpNet.Chat.OpenedRecorders
+namespace IczpNet.Chat.OpenedRecorders;
+
+public interface IOpenedRecorderAppService
 {
-    public interface IOpenedRecorderAppService
-    {
-        Task<Dictionary<long, int>> GetCountsAsync(List<long> messageIdList);
+    Task<Dictionary<long, int>> GetCountsAsync(List<long> messageIdList);
 
-        Task<PagedResultDto<SessionUnitDestinationDto>> GetListByMessageIdAsync(GetListByMessageIdInput input);
+    Task<PagedResultDto<SessionUnitDestinationDto>> GetListByMessageIdAsync(GetListByMessageIdInput input);
 
-        Task<OpenedRecorderDto> SetOpenedAsync(OpenedRecorderInput input);
-    }
+    Task<OpenedRecorderDto> SetOpenedAsync(OpenedRecorderInput input);
 }
