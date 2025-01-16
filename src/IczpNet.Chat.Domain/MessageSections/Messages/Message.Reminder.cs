@@ -29,7 +29,7 @@ public partial class Message
     /// 提醒列表
     /// </summary>
     [InverseProperty(nameof(MessageReminder.Message))]
-    public virtual IList<MessageReminder> MessageReminderList { get; protected set; }
+    public virtual IList<MessageReminder> MessageReminderList { get; protected set; } = [];
 
     /// <summary>
     /// 设置提醒所有人 @Everyone

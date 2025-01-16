@@ -20,6 +20,7 @@ using System.Threading.Tasks;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.Json;
 using Volo.Abp.ObjectMapping;
 using Volo.Abp.Settings;
 using Volo.Abp.Uow;
@@ -38,6 +39,7 @@ public partial class MessageManager(
     IBackgroundJobManager backgroundJobManager,
     ISessionRepository sessionRepository,
     ISettingProvider settingProvider,
+    IJsonSerializer jsonSerializer,
     IRepository<MessageReminder> messageReminderRepository,
     ISessionUnitSettingRepository sessionUnitSettingRepository,
     ISessionGenerator sessionGenerator) : DomainService, IMessageManager
@@ -54,6 +56,7 @@ public partial class MessageManager(
     protected IFollowManager FollowManager { get; } = followManager;
     protected IBackgroundJobManager BackgroundJobManager { get; } = backgroundJobManager;
     protected ISettingProvider SettingProvider { get; } = settingProvider;
+    protected IJsonSerializer JsonSerializer { get; } = jsonSerializer;
     protected IRepository<MessageReminder> MessageReminderRepository { get; } = messageReminderRepository;
     protected ISessionGenerator SessionGenerator { get; } = sessionGenerator;
 
@@ -85,7 +88,7 @@ public partial class MessageManager(
     public virtual async Task<Message> CreateMessageAsync(
         SessionUnit senderSessionUnit,
         Func<Message, Task<IContentEntity>> action,
-        SessionUnit receiverSessionUnit = null,
+        Guid? receiverSessionUnitId = null,
         long? quoteMessageId = null,
         List<Guid> remindList = null)
     {
@@ -112,9 +115,9 @@ public partial class MessageManager(
         //senderSessionUnit.Setting.SetLastSendMessage(message);//并发时可能导致锁表
 
         //private message
-        if (receiverSessionUnit != null)
+        if (receiverSessionUnitId.HasValue)
         {
-            message.SetPrivateMessage(receiverSessionUnit.Id);
+            message.SetPrivateMessage(receiverSessionUnitId.Value);
         }
 
         //quote message
@@ -140,19 +143,6 @@ public partial class MessageManager(
         // Message Validator
         await MessageValidator.CheckAsync(message);
 
-        // Args
-        var sessionUnitIncrementArgs = new SessionUnitIncrementJobArgs()
-        {
-            SessionId = senderSessionUnit.SessionId.Value,
-            SenderSessionUnitId = senderSessionUnit.Id
-        };
-
-        //remind List
-        //if (remindList != null)
-        //{
-        sessionUnitIncrementArgs.RemindSessionUnitIdList = await ApplyRemindIdListAsync(senderSessionUnit, message, remindList);
-        //}
-
         //sessionUnitCount
         var sessionUnitCount = message.IsPrivate ? 2 : await SessionUnitManager.GetCountBySessionIdAsync(senderSessionUnit.SessionId.Value);
 
@@ -162,38 +152,40 @@ public partial class MessageManager(
 
         // LastMessage
         await SessionRepository.UpdateLastMessageIdAsync(senderSessionUnit.SessionId.Value, message.Id);
+
         // Last send message
         await SessionUnitSettingRepository.UpdateLastSendMessageAsync(senderSessionUnit.Id, message.Id, message.CreationTime);
+
         ////以下可能导致锁表
         //await SessionUnitRepository.UpdateLastMessageIdAsync(senderSessionUnit.Id, message.Id);
 
-        //senderSessionUnit.LastMessageId = message.Id;
-        // private message
-        if (message.IsPrivate || receiverSessionUnit != null)
-        {
-            sessionUnitIncrementArgs.PrivateBadgeSessionUnitIdList = [receiverSessionUnit.Id];
-        }
-        else
-        {
-            // Following
-            sessionUnitIncrementArgs.FollowingSessionUnitIdList = await FollowManager.GetFollowerIdListAsync(senderSessionUnit.Id);
-        }
-
-        sessionUnitIncrementArgs.LastMessageId = message.Id;
-        sessionUnitIncrementArgs.IsRemindAll = message.IsRemindAll;
-        sessionUnitIncrementArgs.MessageCreationTime = message.CreationTime;
-
         //await CurrentUnitOfWork.SaveChangesAsync();
+
+        var isPrivateMessage = message.IsPrivateMessage();
+        // Args
+        var sessionUnitIncrementJobArgs = new SessionUnitIncrementJobArgs()
+        {
+            SessionId = message.SessionId.Value,
+            SenderSessionUnitId = message.SenderSessionUnitId.Value,
+            RemindSessionUnitIdList = message.MessageReminderList.Select(x => x.SessionUnitId).ToList(),
+            PrivateBadgeSessionUnitIdList = isPrivateMessage ? [message.ReceiverSessionUnitId.Value] : [],
+            FollowingSessionUnitIdList = !isPrivateMessage ? await FollowManager.GetFollowerIdListAsync(message.SenderSessionUnitId.Value) : [],
+            LastMessageId = message.Id,
+            IsRemindAll = message.IsRemindAll,
+            MessageCreationTime = message.CreationTime
+        };
+
+        Logger.LogInformation($"{nameof(SessionUnitIncrementJobArgs)}:{JsonSerializer.Serialize(sessionUnitIncrementJobArgs)}");
 
         if (await ShouldbeBackgroundJobAsync(senderSessionUnit, message))
         {
-            var jobId = await BackgroundJobManager.EnqueueAsync(sessionUnitIncrementArgs);
-
-            Logger.LogInformation($"SessionUnitIncrement backgroupJobId:{jobId},args:{sessionUnitIncrementArgs}");
+            var jobId = await BackgroundJobManager.EnqueueAsync(sessionUnitIncrementJobArgs);
+            Logger.LogInformation($"{nameof(SessionUnitIncrementJobArgs)} backgroupJobId:{jobId}");
         }
         else
         {
-            await SessionUnitManager.IncremenetAsync(sessionUnitIncrementArgs);
+            Logger.LogWarning($"BackgroundJobManager.IsAvailable():False");
+            await SessionUnitManager.IncremenetAsync(sessionUnitIncrementJobArgs);
         }
 
         return message;
@@ -320,8 +312,7 @@ public partial class MessageManager(
 
     public async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContentEntity>(
         SessionUnit senderSessionUnit,
-        MessageInput<TContentInfo> input,
-        SessionUnit receiverSessionUnit = null)
+        MessageInput<TContentInfo> input)
         where TContentInfo : IContentInfo
         where TContentEntity : IContentEntity
     {
@@ -339,13 +330,14 @@ public partial class MessageManager(
         var message = await CreateMessageAsync(senderSessionUnit,
             async (entity) => await Task.FromResult(contentEntity),
             quoteMessageId: input.QuoteMessageId,
-            remindList: input.RemindList);
+            remindList: input.RemindList,
+            receiverSessionUnitId: input.ReceiverSessionUnitId);
 
         //var output = ObjectMapper.Map<Message, MessageInfo<object>>(message);
         var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
         //var output = new MessageInfo<TContentInfo>() { Id = message.Id };
 
-        if (message.IsPrivate && input.ReceiverSessionUnitId.HasValue)
+        if (message.IsPrivateMessage())
         {
             var receiverSessionUnit = await SessionUnitManager.GetAsync(input.ReceiverSessionUnitId.Value);
 

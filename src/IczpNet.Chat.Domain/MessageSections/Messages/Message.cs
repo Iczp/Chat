@@ -198,5 +198,8 @@ public partial class Message : BaseEntity<long>, ISessionId
     [NotMapped]
     public virtual bool IsDisabledForward => this.IsDisabledForward();
 
-
+    /// <summary>
+    /// 是否私有消息
+    /// </summary>
+    public virtual bool IsPrivateMessage() => IsPrivate && ReceiverSessionUnitId.HasValue;
 }
