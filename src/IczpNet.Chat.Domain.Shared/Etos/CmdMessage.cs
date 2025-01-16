@@ -1,9 +1,8 @@
 ﻿using System;
 
-namespace IczpNet.Chat.Etos
+namespace IczpNet.Chat.Etos;
+
+[Serializable]
+public class CmdMessage
 {
-    [Serializable]
-    public class CmdMessage
-    {
-    }
 }

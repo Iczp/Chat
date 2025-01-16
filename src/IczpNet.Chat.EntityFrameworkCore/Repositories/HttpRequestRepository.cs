@@ -3,12 +3,8 @@ using Volo.Abp.EntityFrameworkCore;
 using System;
 using IczpNet.Chat.HttpRequests;
 
-namespace IczpNet.Chat.Repositories
+namespace IczpNet.Chat.Repositories;
+
+public class HttpRequestRepository(IDbContextProvider<ChatDbContext> dbContextProvider) : ChatRepositoryBase<HttpRequest, Guid>(dbContextProvider), IHttpRequestRepository
 {
-    public class HttpRequestRepository : ChatRepositoryBase<HttpRequest, Guid>, IHttpRequestRepository
-    {
-        public HttpRequestRepository(IDbContextProvider<ChatDbContext> dbContextProvider) : base(dbContextProvider)
-        {
-        }
-    }
 }

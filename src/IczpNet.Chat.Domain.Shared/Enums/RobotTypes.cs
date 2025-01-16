@@ -1,10 +1,9 @@
 ﻿using System.ComponentModel;
 
-namespace IczpNet.Chat.Enums
+namespace IczpNet.Chat.Enums;
+
+[Description("机器人类型")]
+public enum RobotTypes
 {
-    [Description("机器人类型")]
-    public enum RobotTypes
-    {
-        Normal = 0,
-    }
+    Normal = 0,
 }

@@ -1,22 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace IczpNet.Chat.Etos
+namespace IczpNet.Chat.Etos;
+
+[Serializable]
+public class SendDataEto
 {
-    [Serializable]
-    public class SendDataEto
+    public List<Guid> TargetIdList { get; set; }
+
+    public object Data { get; set; }
+
+    public SendDataEto() { }
+
+    public SendDataEto(List<Guid> targetIdList, object data)
     {
-        public List<Guid> TargetIdList { get; set; }
-
-        public object Data { get; set; }
-
-        public SendDataEto() { }
-
-        public SendDataEto(List<Guid> targetIdList, object data)
-        {
-            TargetIdList = targetIdList;
-            Data = data;
-        }
-
+        TargetIdList = targetIdList;
+        Data = data;
     }
+
 }

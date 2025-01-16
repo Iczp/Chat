@@ -8,19 +8,37 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.MessageSections.MessageReminders;
 
+/// <summary>
+/// 消息提醒器@我
+/// </summary>
 [Description("消息提醒器@我")]
 public class MessageReminder : BaseEntity
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public virtual Guid SessionUnitId { get; protected set; }
 
+    /// <summary>
+    /// 
+    /// </summary>
     [ForeignKey(nameof(SessionUnitId))]
     public virtual SessionUnit SessionUnit { get; protected set; }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public virtual long MessageId { get; protected set; }
 
+    /// <summary>
+    /// 
+    /// </summary>
     [ForeignKey(nameof(MessageId))]
     public virtual Message Message { get; protected set; }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public virtual ReminderTypes ReminderType { get; protected set; }
 
     protected MessageReminder() { }
@@ -40,6 +58,6 @@ public class MessageReminder : BaseEntity
 
     public override object[] GetKeys()
     {
-        return new object[] { SessionUnitId, MessageId };
+        return [SessionUnitId, MessageId];
     }
 }

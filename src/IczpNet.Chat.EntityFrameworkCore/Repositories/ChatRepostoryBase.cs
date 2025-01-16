@@ -11,15 +11,9 @@ using System;
 
 namespace IczpNet.Chat.Repositories;
 
-public abstract class ChatRepositoryBase<TEntity, TPrimaryKey> : EfCoreRepository<ChatDbContext, TEntity, TPrimaryKey>
+public abstract class ChatRepositoryBase<TEntity, TPrimaryKey>(IDbContextProvider<ChatDbContext> dbContextProvider) : EfCoreRepository<ChatDbContext, TEntity, TPrimaryKey>(dbContextProvider)
         where TEntity : class, IEntity<TPrimaryKey>
 {
-
-    protected ChatRepositoryBase(IDbContextProvider<ChatDbContext> dbContextProvider) : base(dbContextProvider)
-    {
-
-    }
-
     public virtual Task<List<TEntity>> GetManyAsync(IEnumerable<TPrimaryKey> idList, bool includeDetails = false, CancellationToken cancellationToken = default)
     {
         return base.GetListAsync(x => idList.Contains(x.Id), includeDetails, cancellationToken);

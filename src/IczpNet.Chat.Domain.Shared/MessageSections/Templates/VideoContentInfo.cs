@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace IczpNet.Chat.MessageSections.Templates;
+﻿namespace IczpNet.Chat.MessageSections.Templates;
 
 /// <summary>
 /// 视频消息

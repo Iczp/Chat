@@ -1,9 +1,8 @@
 ﻿using System;
 
-namespace IczpNet.Chat.SessionSections
+namespace IczpNet.Chat.SessionSections;
+
+public interface ISessionId
 {
-    public interface ISessionId
-    {
-        Guid? SessionId { get; }
-    }
+    Guid? SessionId { get; }
 }

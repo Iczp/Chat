@@ -5,23 +5,18 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.EntityFrameworkCore;
 
-namespace IczpNet.Chat.Repositories
+namespace IczpNet.Chat.Repositories;
+
+public class SessionPermissionDefinitionRepository(IDbContextProvider<ChatDbContext> dbContextProvider) : ChatRepositoryBase<SessionPermissionDefinition, string>(dbContextProvider), ISessionPermissionDefinitionRepository
 {
-    public class SessionPermissionDefinitionRepository : ChatRepositoryBase<SessionPermissionDefinition, string>, ISessionPermissionDefinitionRepository
+    public virtual async Task<int> BatchUpdateIsEnabledAsync(bool isEnabled)
     {
-        public SessionPermissionDefinitionRepository(IDbContextProvider<ChatDbContext> dbContextProvider) : base(dbContextProvider)
-        {
-        }
+        var context = await GetDbContextAsync();
 
-        public virtual async Task<int> BatchUpdateIsEnabledAsync(bool isEnabled)
-        {
-            var context = await GetDbContextAsync();
-
-            return await context.SessionPermissionDefinition
-               .Where(x => !x.IsDeleted)
-               .ExecuteUpdateAsync(s => s
-                   .SetProperty(b => b.IsEnabled, b => isEnabled)
-               );
-        }
+        return await context.SessionPermissionDefinition
+           .Where(x => !x.IsDeleted)
+           .ExecuteUpdateAsync(s => s
+               .SetProperty(b => b.IsEnabled, b => isEnabled)
+           );
     }
 }

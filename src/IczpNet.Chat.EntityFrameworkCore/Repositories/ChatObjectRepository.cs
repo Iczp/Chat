@@ -2,12 +2,8 @@
 using Volo.Abp.EntityFrameworkCore;
 using IczpNet.Chat.ChatObjects;
 
-namespace IczpNet.Chat.Repositories
+namespace IczpNet.Chat.Repositories;
+
+public class ChatObjectRepository(IDbContextProvider<ChatDbContext> dbContextProvider) : ChatRepositoryBase<ChatObject, long>(dbContextProvider), IChatObjectRepository
 {
-    public class ChatObjectRepository : ChatRepositoryBase<ChatObject, long>, IChatObjectRepository
-    {
-        public ChatObjectRepository(IDbContextProvider<ChatDbContext> dbContextProvider) : base(dbContextProvider)
-        {
-        }
-    }
 }

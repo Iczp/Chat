@@ -5,19 +5,15 @@ using Microsoft.EntityFrameworkCore;
 using IczpNet.Chat.DbTables;
 using System.Linq;
 
-namespace IczpNet.Chat.Repositories
+namespace IczpNet.Chat.Repositories;
+
+public class DbTableRepository(IDbContextProvider<ChatDbContext> dbContextProvider) : ChatRepositoryBase<DbTable>(dbContextProvider), IDbTableRepository
 {
-    public class DbTableRepository : ChatRepositoryBase<DbTable>, IDbTableRepository
+    public override async Task<IQueryable<DbTable>> GetQueryableAsync()
     {
-        public DbTableRepository(IDbContextProvider<ChatDbContext> dbContextProvider) : base(dbContextProvider)
-        {
-        }
+        var context = await GetDbContextAsync();
 
-        public override async Task<IQueryable<DbTable>> GetQueryableAsync()
-        {
-            var context = await GetDbContextAsync();
-
-            var sql = @$"
+        var sql = @$"
 SELECT
         QUOTENAME(SCHEMA_NAME(sOBJ.schema_id)) + '.' + QUOTENAME(sOBJ.name) AS [TableName]
         , SUM(sPTN.Rows) AS [RowCount]
@@ -33,9 +29,8 @@ GROUP BY
         sOBJ.schema_id
         , sOBJ.name
 ";
-            await Task.Yield();
+        await Task.Yield();
 
-            return context.DbTable.FromSqlRaw(sql);
-        }
+        return context.DbTable.FromSqlRaw(sql);
     }
 }
