@@ -25,6 +25,9 @@ public partial class Message
     /// </summary>
     public virtual ReminderTypes? ReminderType { get; protected set; }
 
+    /// <summary>
+    /// 提醒列表
+    /// </summary>
     [InverseProperty(nameof(MessageReminder.Message))]
     public virtual IList<MessageReminder> MessageReminderList { get; protected set; }
 

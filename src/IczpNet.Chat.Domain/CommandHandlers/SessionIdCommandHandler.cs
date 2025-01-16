@@ -23,9 +23,15 @@ public abstract class SessionIdCommandHandler : CommandHandlerBase
 
         Assert.NotNull(commandPayload.CacheKey.IsNullOrWhiteSpace(), "CacheKey is null.");
 
-        Assert.If(!commandPayload.Command.Any(), "Commands is null.");
+        Assert.If(commandPayload.Command.Length == 0, "Commands is null.");
 
         var sessionUnitInfoList = await SessionUnitManager.GetCacheListAsync(commandPayload.CacheKey);
+
+        if (sessionUnitInfoList == null)
+        {
+            Logger.LogWarning($"sessionUnitInfoList is null, commandPayload.CacheKey:{commandPayload.CacheKey}");
+            return;
+        }
 
         Logger.LogInformation($"Target session unit count:{sessionUnitInfoList.Count}");
 

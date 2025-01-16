@@ -1,0 +1,58 @@
+{
+  "appUserId": "360cfedb-e92d-3331-1fad-3a086371e0e4",
+  "scopes": [
+    {
+      "chatObjectId": 13,
+      "sessionUnitId": "e52bacf4-c231-061a-6628-3a0b0cf571fb"
+    },
+    {
+      "chatObjectId": 14,
+      "sessionUnitId": "9207e993-62b6-52e3-6f8c-3a0b0cf571fb"
+    }
+  ],
+  "command": "Chat",
+  "payload": {
+    "content": {
+      "text": "\uD83E\uDD28",
+      "id": "cb4ad1e4-76f6-552a-d6a7-3a177b6fdc8f"
+    },
+    "id": 7255871,
+    "senderName": "林惠娟",
+    "messageType": 0,
+    "reminderType": null,
+    "isPrivate": false,
+    "isRollbacked": false,
+    "isRemindAll": false,
+    "rollbackTime": null,
+    "creationTime": "2025-01-15T09:19:47.5041907+00:00",
+    "senderSessionUnit": {
+      "id": "e52bacf4-c231-061a-6628-3a0b0cf571fb",
+      "ownerId": 13,
+      "ownerObjectType": 1,
+      "displayName": null,
+      "memberName": null,
+      "owner": {
+        "chatObjectTypeId": null,
+        "code": "100963",
+        "description": "1.5.0 后新增。我们添加了多种预设色彩的徽标样式，用作不同场景使用。如果预设值不能满足你的需求，可以设置为具体的色值。",
+        "gender": 0,
+        "thumbnail": "/file?id=c781423a-d4a1-e05f-5647-3a141f832e9f",
+        "portrait": "/file?id=e7545afe-1d87-8628-a612-3a141f832e9f",
+        "appUserId": "360cfedb-e92d-3331-1fad-3a086371e0e4",
+        "isPublic": false,
+        "isEnabled": true,
+        "isDefault": false,
+        "objectType": 1,
+        "serviceStatus": 1,
+        "id": 13,
+        "parentId": null,
+        "name": "林惠娟",
+        "depth": 0,
+        "childrenCount": 0,
+        "fullPath": "13",
+        "fullPathName": "林惠娟"
+      },
+      "tagList": []
+    }
+  }
+}

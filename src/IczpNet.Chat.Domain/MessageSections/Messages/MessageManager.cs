@@ -326,14 +326,13 @@ public partial class MessageManager(
         where TContentEntity : IContentEntity
     {
         var messageContent = ObjectMapper.Map<TContentInfo, TContentEntity>(input.Content);
-        return await SendAsync<TContentInfo, TContentEntity>(senderSessionUnit, input, messageContent, receiverSessionUnit);
+        return await SendAsync<TContentInfo, TContentEntity>(senderSessionUnit, input, messageContent);
     }
 
     public virtual async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContentEntity>(
         SessionUnit senderSessionUnit,
         MessageInput input,
-        TContentEntity contentEntity,
-        SessionUnit receiverSessionUnit = null)
+        TContentEntity contentEntity)
         where TContentInfo : IContentInfo
         where TContentEntity : IContentEntity
     {
@@ -342,12 +341,16 @@ public partial class MessageManager(
             quoteMessageId: input.QuoteMessageId,
             remindList: input.RemindList);
 
-        var output = ObjectMapper.Map<Message, MessageAnyInfo>(message);
-        //var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
+        //var output = ObjectMapper.Map<Message, MessageInfo<object>>(message);
+        var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
         //var output = new MessageInfo<TContentInfo>() { Id = message.Id };
 
-        if (message.IsPrivate)
+        if (message.IsPrivate && input.ReceiverSessionUnitId.HasValue)
         {
+            var receiverSessionUnit = await SessionUnitManager.GetAsync(input.ReceiverSessionUnitId.Value);
+
+            Assert.If(receiverSessionUnit.SessionId != senderSessionUnit.SessionId, $"Fail ReceiverSessionUnitId:{input.ReceiverSessionUnitId}");
+
             await ChatPusher.ExecutePrivateAsync(
             [
                 senderSessionUnit, receiverSessionUnit
@@ -357,7 +360,7 @@ public partial class MessageManager(
         {
             await ChatPusher.ExecuteBySessionIdAsync(message.SessionId.Value, output, input.IgnoreConnections);
         }
-        return output as MessageInfo<TContentInfo>;
+        return output;
     }
 
     public virtual async Task<Dictionary<string, long>> RollbackAsync(Message message)
@@ -405,7 +408,7 @@ public partial class MessageManager(
 
         var messageList = new List<Message>();
 
-        var args = new List<(Guid, MessageAnyInfo)>();
+        var args = new List<(Guid, MessageInfo<object>)>();
 
         foreach (var targetSessionUnitId in targetSessionUnitIdList.Distinct())
         {
@@ -425,7 +428,7 @@ public partial class MessageManager(
             });
             messageList.Add(newMessage);
 
-            var output = ObjectMapper.Map<Message, MessageAnyInfo>(newMessage);
+            var output = ObjectMapper.Map<Message, MessageInfo<object>>(newMessage);
 
             //var output = new MessageInfo<object>() { Id = newMessage.Id };
 
