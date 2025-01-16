@@ -1,4 +1,5 @@
-﻿using IczpNet.AbpTrees;
+﻿using IczpNet.AbpCommons.DataFilters;
+using IczpNet.AbpTrees;
 using IczpNet.Chat.Enums;
 using System;
 using System.Collections.Generic;
@@ -50,19 +51,19 @@ public interface IChatObjectManager : ITreeManager<ChatObject, long, ChatObjectI
 
     Task<List<long>> GetIdListByNameAsync(List<string> nameList); //, List<ChatObjectTypes> objectTypes
 
-    Task<ChatObject> CreateShopKeeperAsync(string name);
+    Task<ChatObject> CreateShopKeeperAsync(string name, string code);
 
-    Task<ChatObject> CreateShopWaiterAsync(long shopKeeperId, string name);
+    Task<ChatObject> CreateShopWaiterAsync(long shopKeeperId, string name, string code);
 
-    Task<ChatObject> CreateRobotAsync(string name);
+    Task<ChatObject> CreateRobotAsync(string name, string code);
 
-    Task<ChatObject> CreateSquareAsync(string name);
+    Task<ChatObject> CreateSquareAsync(string name, string code);
 
-    Task<ChatObject> CreateSubscriptionAsync(string name);
+    Task<ChatObject> CreateSubscriptionAsync(string name, string code);
 
-    Task<ChatObject> CreateOfficialAsync(string name);
+    Task<ChatObject> CreateOfficialAsync(string name, string code);
 
-    Task<ChatObject> CreateAnonymousAsync(string name);
+    Task<ChatObject> CreateAnonymousAsync(string name, string code);
 
     //Task<ChatObjectInfo> GetGroupAssistantAsync();
 

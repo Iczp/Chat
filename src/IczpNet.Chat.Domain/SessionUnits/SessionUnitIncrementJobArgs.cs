@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace IczpNet.Chat.SessionUnits;
 
 [Serializable]
-public class SessionUnitIncrementArgs
+public class SessionUnitIncrementJobArgs
 {
     public Guid SessionId { get; set; }
 

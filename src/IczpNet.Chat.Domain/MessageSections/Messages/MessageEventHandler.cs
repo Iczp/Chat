@@ -5,14 +5,15 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities.Events;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.EventBus;
+using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
-internal class MessageEventHandler(IDeveloperManager developerManager) : DomainService, ILocalEventHandler<EntityCreatedEventData<Message>>, ITransientDependency
+public class MessageEventHandler(IDeveloperManager developerManager) : DomainService, ILocalEventHandler<EntityCreatedEventData<Message>>, ITransientDependency
 {
     protected IDeveloperManager DeveloperManager { get; } = developerManager;
 
-
+    [UnitOfWork]
     public async Task HandleEventAsync(EntityCreatedEventData<Message> eventData)
     {
         await Task.Yield();

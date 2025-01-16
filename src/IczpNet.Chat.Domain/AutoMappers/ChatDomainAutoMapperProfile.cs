@@ -28,6 +28,7 @@ public class ChatApplicationAutoMapperProfile : Profile
 
         //Message
         CreateMap<Message, MessageInfo>().MaxDepth(3);
+        CreateMap<Message, MessageAnyInfo>().MaxDepth(3).ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()));
         CreateMap<Message, MessageInfo<IContentInfo>>().MaxDepth(3).ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()));
         CreateMap<Message, MessageInfo<dynamic>>().MaxDepth(3).ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()));
         

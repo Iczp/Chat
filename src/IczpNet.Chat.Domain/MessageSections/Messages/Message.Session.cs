@@ -12,19 +12,33 @@ namespace IczpNet.Chat.MessageSections.Messages;
 
 public partial class Message
 {
+    /// <summary>
+    /// 找开记录
+    /// </summary>
     [InverseProperty(nameof(OpenedRecorder.Message))]
     public virtual IList<OpenedRecorder> OpenedRecorderList { get; set; }
 
+    /// <summary>
+    /// 已读记录
+    /// </summary>
     [InverseProperty(nameof(ReadedRecorder.Message))]
     public virtual IList<ReadedRecorder> ReadedRecorderList { get; set; }  = new List<ReadedRecorder>();
 
-
+    /// <summary>
+    /// 收藏记录
+    /// </summary>
     [InverseProperty(nameof(FavoritedRecorder.Message))]
     public virtual IList<FavoritedRecorder> FavoriteList { get; set; }
 
+    /// <summary>
+    /// 指定范围消息
+    /// </summary>
     [InverseProperty(nameof(Scoped.Message))]
     public virtual IList<Scoped> ScopedList { get; set; }
 
+    /// <summary>
+    /// 会话
+    /// </summary>
     [ForeignKey(nameof(SessionId))]
     public virtual Session Session { get; protected set; }
 
@@ -34,13 +48,22 @@ public partial class Message
     [ForeignKey(nameof(SenderSessionUnitId))]
     public virtual SessionUnit SenderSessionUnit { get; protected set; }
 
+    /// <summary>
+    /// receiver session unit
+    /// </summary>
+    [ForeignKey(nameof(ReceiverSessionUnitId))]
+    public virtual SessionUnit ReceiverSessionUnit { get; protected set; }
+
+    /// <summary>
+    /// 会话列表
+    /// </summary>
     [InverseProperty(nameof(SessionSections.Sessions.Session.LastMessage))]
     public virtual IList<Session> SessionList { get; set; }
 
     /// <summary>
     /// last message list
     /// </summary>
-    [InverseProperty(nameof(SessionUnits.SessionUnit.LastMessage))]
+    [InverseProperty(nameof(SessionUnit.LastMessage))]
     public virtual List<SessionUnit> LastMessageSessionUnitList { get; protected set; }
 
     /// <summary>
@@ -49,10 +72,24 @@ public partial class Message
     [InverseProperty(nameof(SessionUnitSetting.ReadedMessage))]
     public virtual List<SessionUnitSetting> ReadedMessageSessionUnitList { get; protected set; }
 
+    /// <summary>
+    /// 已读计数器
+    /// </summary>
     public virtual ReadedCounter ReadedCounter { get; protected set; } = new ReadedCounter();
+
+    /// <summary>
+    /// 打开计数器
+    /// </summary>
     public virtual OpenedCounter OpenedCounter { get; protected set; } = new OpenedCounter();
+
+    /// <summary>
+    /// 收藏计数器
+    /// </summary>
     public virtual FavoritedCounter FavoritedCounter { get; protected set; } = new FavoritedCounter();
 
+    /// <summary>
+    /// 设置会话数量
+    /// </summary>
     internal virtual void SetSessionUnitCount(int sessionUnitCount)
     {
         SessionUnitCount = sessionUnitCount;

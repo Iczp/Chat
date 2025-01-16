@@ -7,7 +7,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
-    "IczpNet.Chat.DemoApp": {
+    "IczpNet.Chat.App": {
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {

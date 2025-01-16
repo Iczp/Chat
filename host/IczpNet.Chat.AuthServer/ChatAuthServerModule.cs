@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using OpenIddict.Validation.AspNetCore;
@@ -25,9 +26,9 @@ using Volo.Abp.Autofac;
 using Volo.Abp.Caching;
 using Volo.Abp.Caching.StackExchangeRedis;
 using Volo.Abp.Data;
+using Volo.Abp.Emailing;
 using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.SqlServer;
-using Volo.Abp.EventBus.Rebus;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.FeatureManagement.EntityFrameworkCore;
 using Volo.Abp.Identity;
@@ -81,7 +82,7 @@ namespace IczpNet.Chat;
     typeof(AbpAspNetCoreSerilogModule),
     typeof(AbpSwashbuckleModule)
     )]
-[DependsOn(typeof(AbpEventBusRebusModule))]
+//[DependsOn(typeof(AbpEventBusRebusModule))]
 public class ChatAuthServerModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
@@ -96,10 +97,10 @@ public class ChatAuthServerModule : AbpModule
             });
         });
 
-        PreConfigure<AbpRebusEventBusOptions>(options =>
-        {
-            options.InputQueueName = "IczpNet.Chat:eventbus";
-        });
+        //PreConfigure<AbpRebusEventBusOptions>(options =>
+        //{
+        //    options.InputQueueName = "IczpNet.Chat:eventbus";
+        //});
     }
 
 

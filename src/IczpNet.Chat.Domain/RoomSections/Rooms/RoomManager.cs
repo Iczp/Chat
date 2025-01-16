@@ -21,44 +21,31 @@ using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.RoomSections.Rooms;
 
-public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoomManager
+public class RoomManager(
+    IChatObjectRepository chatObjectRepository,
+    IOptions<RoomOptions> options, ISessionManager sessionManager,
+    ISessionUnitRepository sessionUnitRepository,
+    ISessionUnitManager sessionUnitManager,
+    IChatObjectManager chatObjectManager,
+    IChatObjectTypeManager chatObjectTypeManager,
+    ISessionGenerator sessionGenerator,
+    IUnitOfWorkManager unitOfWorkManager,
+    IMessageSender messageSender,
+    IRoomCodeGenerator roomCodeGenerator,
+    ISessionUnitIdGenerator sessionUnitIdGenerator) : DomainService, IRoomManager// ChatObjectManager, IRoomManager
 {
-    protected RoomOptions Config { get; }
-    protected ISessionManager SessionManager { get; }
-    protected ISessionUnitManager SessionUnitManager { get; }
-    protected ISessionUnitRepository SessionUnitRepository { get; }
-    protected IChatObjectManager ChatObjectManager { get; }
-    protected IChatObjectTypeManager ChatObjectTypeManager { get; }
-    protected ISessionGenerator SessionGenerator { get; }
-    protected IUnitOfWorkManager UnitOfWorkManager { get; }
-    protected IChatObjectRepository ChatObjectRepository { get; }
-    protected IMessageSender MessageSender { get; }
-    protected ISessionUnitIdGenerator SessionUnitIdGenerator { get; }
-
-    public RoomManager(
-        IChatObjectRepository chatObjectRepository,
-        IOptions<RoomOptions> options, ISessionManager sessionManager,
-        ISessionUnitRepository sessionUnitRepository,
-        ISessionUnitManager sessionUnitManager,
-        IChatObjectManager chatObjectManager,
-        IChatObjectTypeManager chatObjectTypeManager,
-        ISessionGenerator sessionGenerator,
-        IUnitOfWorkManager unitOfWorkManager,
-        IMessageSender messageSender,
-        ISessionUnitIdGenerator sessionUnitIdGenerator)
-    {
-        Config = options.Value;
-        SessionManager = sessionManager;
-        SessionUnitRepository = sessionUnitRepository;
-        SessionUnitManager = sessionUnitManager;
-        ChatObjectManager = chatObjectManager;
-        ChatObjectTypeManager = chatObjectTypeManager;
-        SessionGenerator = sessionGenerator;
-        UnitOfWorkManager = unitOfWorkManager;
-        ChatObjectRepository = chatObjectRepository;
-        MessageSender = messageSender;
-        SessionUnitIdGenerator = sessionUnitIdGenerator;
-    }
+    protected RoomOptions Config { get; } = options.Value;
+    protected ISessionManager SessionManager { get; } = sessionManager;
+    protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
+    protected ISessionUnitRepository SessionUnitRepository { get; } = sessionUnitRepository;
+    protected IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
+    protected IChatObjectTypeManager ChatObjectTypeManager { get; } = chatObjectTypeManager;
+    protected ISessionGenerator SessionGenerator { get; } = sessionGenerator;
+    protected IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
+    protected IChatObjectRepository ChatObjectRepository { get; } = chatObjectRepository;
+    protected IMessageSender MessageSender { get; } = messageSender;
+    protected IRoomCodeGenerator RoomCodeGenerator { get; } = roomCodeGenerator;
+    protected ISessionUnitIdGenerator SessionUnitIdGenerator { get; } = sessionUnitIdGenerator;
 
     public virtual Task<bool> IsAllowJoinRoomAsync(ChatObjectTypeEnums objectType)
     {
@@ -100,7 +87,9 @@ public class RoomManager : DomainService, IRoomManager// ChatObjectManager, IRoo
 
         var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Room);
 
-        var room = await ChatObjectManager.CreateAsync(new ChatObject(name, chatObjectType, null), isUnique: false);
+        var code = await RoomCodeGenerator.MakeAsync();
+
+        var room = await ChatObjectManager.CreateAsync(new ChatObject(name, code, chatObjectType, null), isUnique: false);
 
         var session = await SessionGenerator.MakeAsync(room);
 

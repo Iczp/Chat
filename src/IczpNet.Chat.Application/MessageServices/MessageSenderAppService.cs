@@ -14,21 +14,14 @@ namespace IczpNet.Chat.MessageServices;
 /// <summary>
 /// 消息发送器
 /// </summary>
-public class MessageSenderAppService : ChatAppService, IMessageSenderAppService
+public class MessageSenderAppService(
+    IMessageRepository repository,
+    IMessageManager messageManager,
+    IMessageSender messageSender) : ChatAppService, IMessageSenderAppService
 {
-    protected IMessageRepository Repository { get; }
-    protected IMessageSender MessageSender { get; }
-    protected IMessageManager MessageManager { get; }
-
-    public MessageSenderAppService(
-        IMessageRepository repository,
-        IMessageManager messageManager,
-        IMessageSender messageSender) 
-    {
-        Repository = repository;
-        MessageSender = messageSender;
-        MessageManager = messageManager;
-    }
+    protected IMessageRepository Repository { get; } = repository;
+    protected IMessageSender MessageSender { get; } = messageSender;
+    protected IMessageManager MessageManager { get; } = messageManager;
 
     protected virtual async Task<SessionUnit> GetAndCheckSessionUnitAsync(Guid sessionUnitId)
     {

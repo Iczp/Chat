@@ -42,6 +42,7 @@ public class ShopWaiterManager : DomainService, IShopWaiterManager
         var shopWaiter = await ChatObjectManager.CreateAsync(
             new ChatObject(
                 name: name,
+                code: null,
                 chatObjectType: chatObjectType,
                 parentId: shopKeeperId),
             isUnique: false);

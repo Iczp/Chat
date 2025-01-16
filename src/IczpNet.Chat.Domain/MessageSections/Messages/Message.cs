@@ -29,22 +29,31 @@ public partial class Message : BaseEntity<long>, ISessionId
     //[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     //public virtual long Id { get;  }
 
+    /// <summary>
+    /// SessionKey
+    /// </summary>
     //[Comment("")]
     [StringLength(100)]
     //[Required]
     public virtual string SessionKey { get; protected set; }
 
     /// <summary>
-    /// 
+    /// 会话Id
     /// </summary>
     [Comment("会话Id")]
     public virtual Guid? SessionId { get; protected set; }
 
     /// <summary>
-    /// sender session unit
+    /// 发送人会话单元Id
     /// </summary>
-    [Comment("会话单元Id")]
+    [Comment("发送人会话单元Id")]
     public virtual Guid? SenderSessionUnitId { get; protected set; }
+
+    /// <summary>
+    /// 接收人会话单元Id(私有消息)
+    /// </summary>
+    [Comment("接收人会话单元Id(私有消息)")]
+    public virtual Guid? ReceiverSessionUnitId { get; protected set; }
 
     /// <summary>
     /// 

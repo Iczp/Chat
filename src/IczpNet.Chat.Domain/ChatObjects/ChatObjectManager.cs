@@ -39,7 +39,7 @@ public class ChatObjectManager : TreeManager<ChatObject, long, ChatObjectInfo>, 
         }
 
         return (await Repository.GetQueryableAsync())
-            .WhereIf(!keyword.IsNullOrWhiteSpace(), x => x.Name.IndexOf(keyword) == 0 || x.NameSpellingAbbreviation.IndexOf(keyword) == 0)
+            .WhereIf(!keyword.IsNullOrWhiteSpace(), x => x.Name.StartsWith(keyword) || x.NameSpellingAbbreviation.StartsWith(keyword))
             .Select(x => x.Id)
             ;
     }
@@ -90,9 +90,8 @@ public class ChatObjectManager : TreeManager<ChatObject, long, ChatObjectInfo>, 
         {
             var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Robot);
 
-            entity = new ChatObject("群助手", chatObjectType, null)
+            entity = new ChatObject("群助手", nameof(ChatConsts.GroupAssistant), chatObjectType, null)
             {
-                Code = ChatConsts.GroupAssistant,
                 Description = "我是机器人：加群",
             };
             entity.SetIsStatic(true);
@@ -111,9 +110,8 @@ public class ChatObjectManager : TreeManager<ChatObject, long, ChatObjectInfo>, 
         {
             var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Robot);
 
-            entity = new ChatObject("私人助理", chatObjectType, null)
+            entity = new ChatObject("私人助理", nameof(ChatConsts.PrivateAssistant), chatObjectType, null)
             {
-                Code = ChatConsts.PrivateAssistant,
                 Description = "我是机器人,会发送私人消息、推送服务等",
             };
             entity.SetIsStatic(true);
@@ -170,53 +168,53 @@ public class ChatObjectManager : TreeManager<ChatObject, long, ChatObjectInfo>, 
         return await AsyncExecuter.ToListAsync(query);
     }
 
-    public virtual async Task<ChatObject> CreateShopKeeperAsync(string name)
+    public virtual async Task<ChatObject> CreateShopKeeperAsync(string name, string code)
     {
         var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.ShopKeeper);
 
-        var shopKeeper = await base.CreateAsync(new ChatObject(name, chatObjectType, null), isUnique: false);
+        var shopKeeper = await base.CreateAsync(new ChatObject(name, code, chatObjectType, null), isUnique: false);
 
         return shopKeeper;
     }
 
-    public virtual async Task<ChatObject> CreateShopWaiterAsync(long shopKeeperId, string name)
+    public virtual async Task<ChatObject> CreateShopWaiterAsync(long shopKeeperId, string name, string code)
     {
         var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.ShopWaiter);
 
-        var shopWaiter = await base.CreateAsync(new ChatObject(name, chatObjectType, shopKeeperId), isUnique: false);
+        var shopWaiter = await base.CreateAsync(new ChatObject(name, code, chatObjectType, shopKeeperId), isUnique: false);
 
         return shopWaiter;
     }
 
-    public virtual async Task<ChatObject> CreateRobotAsync(string name)
+    public virtual async Task<ChatObject> CreateRobotAsync(string name, string code)
     {
         var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Robot);
 
-        var entity = await base.CreateAsync(new ChatObject(name, chatObjectType, null), isUnique: false);
+        var robot = await base.CreateAsync(new ChatObject(name, code, chatObjectType, null), isUnique: false);
 
-        return entity;
+        return robot;
     }
 
-    public virtual async Task<ChatObject> CreateSquareAsync(string name)
+    public virtual async Task<ChatObject> CreateSquareAsync(string name, string code)
     {
         var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Square);
 
-        var entity = await base.CreateAsync(new ChatObject(name, chatObjectType, null), isUnique: false);
+        var square = await base.CreateAsync(new ChatObject(name, code, chatObjectType, null), isUnique: false);
 
-        return entity;
+        return square;
     }
 
-    public virtual Task<ChatObject> CreateSubscriptionAsync(string name)
+    public virtual Task<ChatObject> CreateSubscriptionAsync(string name, string code)
     {
         throw new NotImplementedException();
     }
 
-    public virtual Task<ChatObject> CreateOfficialAsync(string name)
+    public virtual Task<ChatObject> CreateOfficialAsync(string name, string code)
     {
         throw new NotImplementedException();
     }
 
-    public virtual Task<ChatObject> CreateAnonymousAsync(string name)
+    public virtual Task<ChatObject> CreateAnonymousAsync(string name, string code)
     {
         throw new NotImplementedException();
     }

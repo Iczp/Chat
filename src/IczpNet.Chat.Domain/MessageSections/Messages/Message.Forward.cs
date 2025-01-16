@@ -16,6 +16,9 @@ public partial class Message
     /// </summary>
     public virtual long ForwardDepth { get; protected set; }
 
+    /// <summary>
+    /// 转发层级
+    /// </summary>
     [StringLength(ForwardPathMaxLength)]
     public virtual string ForwardPath { get; protected set; }
 

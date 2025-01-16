@@ -70,7 +70,7 @@ public class UnitTestAppService(
     //}
 
     [HttpPost]
-    public Task<List<int>> GenerateIntAsync(int count, int minValue, int maxValue)
+    public static Task<List<int>> GenerateIntAsync(int count, int minValue, int maxValue)
     {
         var items = new List<int>();
 
@@ -134,7 +134,7 @@ public class UnitTestAppService(
             var ownerId = rand.NextInt64(maxValue);
             var destinationId = rand.NextInt64(maxValue);
             var ret = SessionUnitIdGenerator.Generate(ownerId, destinationId);
-            result.Add(ret, new long[] { ownerId, destinationId });
+            result.Add(ret, [ownerId, destinationId]);
         }
         return Task.FromResult(result);
     }

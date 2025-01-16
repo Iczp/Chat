@@ -114,8 +114,7 @@ public partial class MessageManager(
         //private message
         if (receiverSessionUnit != null)
         {
-            var receiver = await ChatObjectManager.GetAsync(receiverSessionUnit.OwnerId);
-            message.SetPrivateMessage(receiver);
+            message.SetPrivateMessage(receiverSessionUnit.Id);
         }
 
         //quote message
@@ -142,7 +141,7 @@ public partial class MessageManager(
         await MessageValidator.CheckAsync(message);
 
         // Args
-        var sessionUnitIncrementArgs = new SessionUnitIncrementArgs()
+        var sessionUnitIncrementArgs = new SessionUnitIncrementJobArgs()
         {
             SessionId = senderSessionUnit.SessionId.Value,
             SenderSessionUnitId = senderSessionUnit.Id
@@ -172,7 +171,7 @@ public partial class MessageManager(
         // private message
         if (message.IsPrivate || receiverSessionUnit != null)
         {
-            sessionUnitIncrementArgs.PrivateBadgeSessionUnitIdList = new List<Guid>() { receiverSessionUnit.Id };
+            sessionUnitIncrementArgs.PrivateBadgeSessionUnitIdList = [receiverSessionUnit.Id];
         }
         else
         {
@@ -291,6 +290,13 @@ public partial class MessageManager(
         return unitIdList;
     }
 
+    /// <summary>
+    /// 设置提醒
+    /// </summary>
+    /// <param name="senderSessionUnit"></param>
+    /// <param name="message"></param>
+    /// <param name="remindIdList"></param>
+    /// <returns></returns>
     protected virtual async Task<List<Guid>> ApplyRemindIdListAsync(SessionUnit senderSessionUnit, Message message, List<Guid> remindIdList)
     {
         var finalRemindIdList = await ApplyReminderIdListForTextContentAsync(senderSessionUnit, message);
@@ -300,7 +306,7 @@ public partial class MessageManager(
             finalRemindIdList = finalRemindIdList.Concat(remindIdList).Distinct().ToList();
         }
 
-        if (!finalRemindIdList.Any())
+        if (finalRemindIdList.Count == 0)
         {
             return [];
         }
@@ -320,14 +326,13 @@ public partial class MessageManager(
         where TContentEntity : IContentEntity
     {
         var messageContent = ObjectMapper.Map<TContentInfo, TContentEntity>(input.Content);
-        return await SendAsync<TContentInfo, TContentEntity>(senderSessionUnit, input, messageContent, receiverSessionUnit);
+        return await SendAsync<TContentInfo, TContentEntity>(senderSessionUnit, input, messageContent);
     }
 
     public virtual async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContentEntity>(
         SessionUnit senderSessionUnit,
         MessageInput input,
-        TContentEntity contentEntity,
-        SessionUnit receiverSessionUnit = null)
+        TContentEntity contentEntity)
         where TContentInfo : IContentInfo
         where TContentEntity : IContentEntity
     {
@@ -336,16 +341,20 @@ public partial class MessageManager(
             quoteMessageId: input.QuoteMessageId,
             remindList: input.RemindList);
 
+        //var output = ObjectMapper.Map<Message, MessageInfo<object>>(message);
         var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
-
         //var output = new MessageInfo<TContentInfo>() { Id = message.Id };
 
-        if (message.IsPrivate)
+        if (message.IsPrivate && input.ReceiverSessionUnitId.HasValue)
         {
-            await ChatPusher.ExecutePrivateAsync(new List<SessionUnit>()
-            {
+            var receiverSessionUnit = await SessionUnitManager.GetAsync(input.ReceiverSessionUnitId.Value);
+
+            Assert.If(receiverSessionUnit.SessionId != senderSessionUnit.SessionId, $"Fail ReceiverSessionUnitId:{input.ReceiverSessionUnitId}");
+
+            await ChatPusher.ExecutePrivateAsync(
+            [
                 senderSessionUnit, receiverSessionUnit
-            }, output, input.IgnoreConnections);
+            ], output, input.IgnoreConnections);
         }
         else
         {
@@ -419,7 +428,7 @@ public partial class MessageManager(
             });
             messageList.Add(newMessage);
 
-            var output = ObjectMapper.Map<Message, MessageInfo<dynamic>>(newMessage);
+            var output = ObjectMapper.Map<Message, MessageInfo<object>>(newMessage);
 
             //var output = new MessageInfo<object>() { Id = newMessage.Id };
 

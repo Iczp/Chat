@@ -243,12 +243,13 @@ public class ChatObject : BaseTreeEntity<ChatObject, long>, IName, IChatObject, 
 
     protected ChatObject()
     {
-        StateCheckers = new List<ISimpleStateChecker<ChatObject>>();
+        StateCheckers = [];
     }
 
-    public ChatObject(string name, ChatObjectType chatObjectType, long? parentId) : base(name, parentId)
+    public ChatObject(string name,string code, ChatObjectType chatObjectType, long? parentId) : base(name, parentId)
     {
-        StateCheckers = new List<ISimpleStateChecker<ChatObject>>();
+        StateCheckers = [];
+        Code = code;
         ChatObjectType = chatObjectType;
         ObjectType = chatObjectType.ObjectType;
     }
