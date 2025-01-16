@@ -18,8 +18,5 @@ public abstract class CommandHandlerBase : DomainService, ICommandHandler, ITran
     protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
     public CommandHandlerBase() { }
 
-    public virtual async Task HanderAsync(ChannelMessagePayload commandPayload)
-    {
-        await Task.Yield();
-    }
+    public abstract Task HanderAsync(ChannelMessagePayload commandPayload);
 }
