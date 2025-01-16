@@ -1,10 +1,9 @@
 ﻿using System;
 
-namespace IczpNet.Chat.Etos
+namespace IczpNet.Chat.Etos;
+
+[Serializable]
+public class RollbackMessageEto
 {
-    [Serializable]
-    public class RollbackMessageEto
-    {
-        public virtual long MessageId { get; set; }
-    }
+    public virtual long MessageId { get; set; }
 }

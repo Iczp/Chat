@@ -8,12 +8,8 @@ using Volo.Abp.EntityFrameworkCore;
 
 namespace IczpNet.Chat.Repositories;
 
-public class SessionUnitSettingRepository : ChatRepositoryBase<SessionUnitSetting>, ISessionUnitSettingRepository
+public class SessionUnitSettingRepository(IDbContextProvider<ChatDbContext> dbContextProvider) : ChatRepositoryBase<SessionUnitSetting>(dbContextProvider), ISessionUnitSettingRepository
 {
-    public SessionUnitSettingRepository(IDbContextProvider<ChatDbContext> dbContextProvider) : base(dbContextProvider)
-    {
-    }
-
     public async Task<int> UpdateLastSendMessageAsync(Guid senderSessionUnitId, long lastSendMessageId, DateTime lastSendTime)
     {
         var context = await GetDbContextAsync();
