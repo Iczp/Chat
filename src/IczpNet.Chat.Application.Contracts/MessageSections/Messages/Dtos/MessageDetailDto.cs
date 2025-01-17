@@ -1,7 +1,6 @@
-﻿namespace IczpNet.Chat.MessageSections.Messages.Dtos
-{
-    public class MessageDetailDto : MessageDto
-    {
+﻿namespace IczpNet.Chat.MessageSections.Messages.Dtos;
 
-    }
+public class MessageDetailDto : MessageDto
+{
+
 }

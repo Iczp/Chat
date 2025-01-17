@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.MessageReminders;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -12,6 +13,7 @@ public partial class Message
     /// <summary>
     /// @所有人 Remind Everyone 
     /// </summary>
+    [Comment("@所有人 Remind Everyone ")]
     public virtual bool IsRemindAll { get; protected set; }
 
     /// <summary>
@@ -23,13 +25,14 @@ public partial class Message
     /// <summary>
     /// 提醒器类型
     /// </summary>
+    [Comment("提醒器类型")] 
     public virtual ReminderTypes? ReminderType { get; protected set; }
 
     /// <summary>
     /// 提醒列表
     /// </summary>
     [InverseProperty(nameof(MessageReminder.Message))]
-    public virtual IList<MessageReminder> MessageReminderList { get; protected set; }
+    public virtual IList<MessageReminder> MessageReminderList { get; protected set; } = [];
 
     /// <summary>
     /// 设置提醒所有人 @Everyone

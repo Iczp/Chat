@@ -116,14 +116,15 @@ public class OfficialManager : DomainService, IOfficialManager
         var officialSessionUnit = await SessionUnitManager.FindAsync(receiverSessionUnit.DestinationId.Value, receiverSessionUnit.DestinationId.Value);
         await MessageSender.SendCmdAsync(
             senderSessionUnit: officialSessionUnit,
+
             input: new MessageInput<CmdContentInfo>()
             {
+                //ReceiverSessionUnitId = receiverSessionUnit.Id,
                 Content = new CmdContentInfo()
                 {
                     Text = text
                 }
-            },
-            receiverSessionUnit: receiverSessionUnit);
+            });
     }
 
     public Task<SessionUnit> UnsubscribeAsync(Guid sessionUnitId)

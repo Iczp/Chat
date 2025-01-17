@@ -14,22 +14,23 @@ public class MessageSectionApplicationAutoMapperProfile : Profile
 
 
         CreateMap<Message, MessageSimpleDto>();
-        CreateMap<Message, MessageQuoteDto>();
+        CreateMap<Message, MessageQuoteDto>().MapExtraProperties();
         //Message
         CreateMap<Message, MessageDto>()
+            .MapExtraProperties()
             .ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()))
             .MaxDepth(5)
             //.ForMember(x => x.MemberCount, o => o.MapFrom(x => x.GetMemberCount()))
             ;
     
-        CreateMap<Message, MessageOwnerDto>()
+        CreateMap<Message, MessageOwnerDto>().MapExtraProperties()
             .ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()))
             .MaxDepth(5)
             //.ForMember(x => x.MemberCount, o => o.MapFrom(x => x.GetMemberCount()))
             //.AfterMap<MessageOwnerDtoMappingAction>()
             ;
 
-        CreateMap<Message, MessageDetailDto>()
+        CreateMap<Message, MessageDetailDto>().MapExtraProperties()
             //.ForMember(x => x.MemberCount, o => o.MapFrom(x => x.GetMemberCount()))
             ;
 

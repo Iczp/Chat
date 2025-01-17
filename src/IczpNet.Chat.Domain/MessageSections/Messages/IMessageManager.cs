@@ -9,22 +9,20 @@ public interface IMessageManager
 {
     Task<Message> CreateMessageAsync(SessionUnit senderSessionUnit,
         Func<Message, Task<IContentEntity>> action,
-        SessionUnit receiverSessionUnit = null,
+        Guid? receiverSessionUnitId = null,
         long? quoteMessageId = null,
         List<Guid> remindList = null);
 
     Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContentEntity>(
         SessionUnit senderSessionUnit,
-        MessageInput<TContentInfo> input,
-        SessionUnit receiverSessionUnit = null)
+        MessageInput<TContentInfo> input)
         where TContentInfo : IContentInfo
         where TContentEntity : IContentEntity;
 
     Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContentEntity>(
         SessionUnit senderSessionUnit,
         MessageInput input,
-        TContentEntity contentEntity,
-        SessionUnit receiverSessionUnit = null)
+        TContentEntity contentEntity)
         where TContentInfo : IContentInfo
         where TContentEntity : IContentEntity;
 

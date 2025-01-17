@@ -2,38 +2,37 @@
 using System;
 using Volo.Abp.Application.Dtos;
 
-namespace IczpNet.Chat.MessageSections.Messages.Dtos
+namespace IczpNet.Chat.MessageSections.Messages.Dtos;
+
+public class MessageSimpleDto :  IEntityDto<long>
 {
-    public class MessageSimpleDto :  IEntityDto<long>
-    {
-        public virtual long Id { get; set; }
+    public virtual long Id { get; set; }
 
-        public virtual Guid SessionId { get; set; }
+    public virtual Guid SessionId { get; set; }
 
-        public virtual long? SenderId { get; set; }
+    public virtual long? SenderId { get; set; }
 
-        public virtual long? ReceiverId { get; set; }
+    public virtual long? ReceiverId { get; set; }
 
-        public virtual MessageTypes MessageType { get; set; }
+    public virtual MessageTypes MessageType { get; set; }
 
-        public virtual ReminderTypes? ReminderType { get; set; }
+    public virtual ReminderTypes? ReminderType { get; set; }
 
-        public virtual string KeyName { get; set; }
+    public virtual string KeyName { get; set; }
 
-        public virtual string KeyValue { get; set; }
+    public virtual string KeyValue { get; set; }
 
-        public virtual bool IsPrivate { get; set; }
+    public virtual bool IsPrivate { get; set; }
 
-        //public virtual long SessionUnitCount { get; set; }
+    //public virtual long SessionUnitCount { get; set; }
 
-        //public virtual long ReadedCount { get; set; }
+    //public virtual long ReadedCount { get; set; }
 
-        //public virtual long OpenedCount { get; set; }
+    //public virtual long OpenedCount { get; set; }
 
-        //public virtual long FavoritedCount { get; set; }
+    //public virtual long FavoritedCount { get; set; }
 
-        public virtual DateTime? RollbackTime { get; set; }
+    public virtual DateTime? RollbackTime { get; set; }
 
-        public virtual DateTime CreationTime { get; set; }
-    }
+    public virtual DateTime CreationTime { get; set; }
 }

@@ -16,12 +16,12 @@ public partial class Message
 
     public Message(SessionUnit sessionUnit) : base()
     {
-        SenderSessionUnit = sessionUnit;
+        //SenderSessionUnit = sessionUnit;
         SenderId = sessionUnit.OwnerId;
         SenderType = sessionUnit.Owner?.ObjectType;
         ReceiverId = sessionUnit.DestinationId;
         ReceiverType = sessionUnit.DestinationObjectType;
-
+        SenderSessionUnitId = sessionUnit.Id;
         Session = sessionUnit.Session;
         Channel = Session.Channel;
         SessionKey = Session.SessionKey;
@@ -29,17 +29,19 @@ public partial class Message
 
     public virtual void SetQuoteMessage(Message source)
     {
-        QuoteMessage = source;
+        //QuoteMessage = source;
         QuoteDepth = source.QuoteDepth + 1;
         QuotePath = source.QuotePath + Delimiter + source.Id;
+        QuoteMessageId = source.Id;
         Assert.If(QuotePath.Length > QuotePathMaxLength, "Maximum length exceeded in [QuotePath].");
     }
 
     public virtual void SetForwardMessage(Message source)
     {
-        ForwardMessage = source;
+        //ForwardMessage = source;
         ForwardDepth = source.ForwardDepth + 1;
         ForwardPath = source.ForwardPath + Delimiter + source.Id;
+        ForwardMessageId = source.Id;
         Assert.If(ForwardPath.Length > ForwardPathMaxLength, "Maximum length exceeded in [ForwardPath].");
     }
 

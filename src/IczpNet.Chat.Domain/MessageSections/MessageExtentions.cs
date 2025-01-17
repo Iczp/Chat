@@ -27,6 +27,11 @@ public static class MessageExtentions
     /// <returns></returns>
     public static bool IsDisabledForward(this Message message) => DisabledForwardList.Contains(message.MessageType);
 
+    /// <summary>
+    /// 设置消息内容
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="messageContent"></param>
     public static void SetMessageContent(this Message message, IContentEntity messageContent)
     {
         Assert.NotNull(messageContent, $"MessageContent is null. message:{message}");
@@ -54,6 +59,11 @@ public static class MessageExtentions
         ContentTypeAttribute.GetPropertyInfo(message.MessageType).SetValue(message, list, null);
     }
 
+    /// <summary>
+    /// 获取消息内容
+    /// </summary>
+    /// <param name="message"></param>
+    /// <returns></returns>
     public static IList GetMessageContent(this Message message)
     {
         var propertyInfo = ContentTypeAttribute.GetPropertyInfo(message.MessageType);

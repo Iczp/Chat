@@ -20,6 +20,7 @@ using System.Threading.Tasks;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.Json;
 using Volo.Abp.ObjectMapping;
 using Volo.Abp.Settings;
 using Volo.Abp.Uow;
@@ -38,6 +39,7 @@ public partial class MessageManager(
     IBackgroundJobManager backgroundJobManager,
     ISessionRepository sessionRepository,
     ISettingProvider settingProvider,
+    IJsonSerializer jsonSerializer,
     IRepository<MessageReminder> messageReminderRepository,
     ISessionUnitSettingRepository sessionUnitSettingRepository,
     ISessionGenerator sessionGenerator) : DomainService, IMessageManager
@@ -54,6 +56,7 @@ public partial class MessageManager(
     protected IFollowManager FollowManager { get; } = followManager;
     protected IBackgroundJobManager BackgroundJobManager { get; } = backgroundJobManager;
     protected ISettingProvider SettingProvider { get; } = settingProvider;
+    protected IJsonSerializer JsonSerializer { get; } = jsonSerializer;
     protected IRepository<MessageReminder> MessageReminderRepository { get; } = messageReminderRepository;
     protected ISessionGenerator SessionGenerator { get; } = sessionGenerator;
 
@@ -85,7 +88,7 @@ public partial class MessageManager(
     public virtual async Task<Message> CreateMessageAsync(
         SessionUnit senderSessionUnit,
         Func<Message, Task<IContentEntity>> action,
-        SessionUnit receiverSessionUnit = null,
+        Guid? receiverSessionUnitId = null,
         long? quoteMessageId = null,
         List<Guid> remindList = null)
     {
@@ -111,10 +114,10 @@ public partial class MessageManager(
 
         //senderSessionUnit.Setting.SetLastSendMessage(message);//并发时可能导致锁表
 
-        //private message
-        if (receiverSessionUnit != null)
+        // 私有消息
+        if (receiverSessionUnitId.HasValue)
         {
-            message.SetPrivateMessage(receiverSessionUnit.Id);
+            message.SetPrivateMessage(receiverSessionUnitId.Value);
         }
 
         //quote message
@@ -137,21 +140,11 @@ public partial class MessageManager(
 
         message.SetMessageContent(messageContent);
 
+        //设置提醒
+        await ApplyRemindIdListAsync(senderSessionUnit, message, remindList);
+
         // Message Validator
         await MessageValidator.CheckAsync(message);
-
-        // Args
-        var sessionUnitIncrementArgs = new SessionUnitIncrementJobArgs()
-        {
-            SessionId = senderSessionUnit.SessionId.Value,
-            SenderSessionUnitId = senderSessionUnit.Id
-        };
-
-        //remind List
-        //if (remindList != null)
-        //{
-        sessionUnitIncrementArgs.RemindSessionUnitIdList = await ApplyRemindIdListAsync(senderSessionUnit, message, remindList);
-        //}
 
         //sessionUnitCount
         var sessionUnitCount = message.IsPrivate ? 2 : await SessionUnitManager.GetCountBySessionIdAsync(senderSessionUnit.SessionId.Value);
@@ -162,77 +155,130 @@ public partial class MessageManager(
 
         // LastMessage
         await SessionRepository.UpdateLastMessageIdAsync(senderSessionUnit.SessionId.Value, message.Id);
+
         // Last send message
         await SessionUnitSettingRepository.UpdateLastSendMessageAsync(senderSessionUnit.Id, message.Id, message.CreationTime);
+
+        //更新引用次数
+        await UpdateQuoteCountAsync(message.QuotePath);
+
+        //更新转发次数
+        await UpdateForwardCountAsync(message.ForwardPath);
+
         ////以下可能导致锁表
         //await SessionUnitRepository.UpdateLastMessageIdAsync(senderSessionUnit.Id, message.Id);
 
-        //senderSessionUnit.LastMessageId = message.Id;
-        // private message
-        if (message.IsPrivate || receiverSessionUnit != null)
-        {
-            sessionUnitIncrementArgs.PrivateBadgeSessionUnitIdList = [receiverSessionUnit.Id];
-        }
-        else
-        {
-            // Following
-            sessionUnitIncrementArgs.FollowingSessionUnitIdList = await FollowManager.GetFollowerIdListAsync(senderSessionUnit.Id);
-        }
-
-        sessionUnitIncrementArgs.LastMessageId = message.Id;
-        sessionUnitIncrementArgs.IsRemindAll = message.IsRemindAll;
-        sessionUnitIncrementArgs.MessageCreationTime = message.CreationTime;
-
         //await CurrentUnitOfWork.SaveChangesAsync();
 
-        if (await ShouldbeBackgroundJobAsync(senderSessionUnit, message))
-        {
-            var jobId = await BackgroundJobManager.EnqueueAsync(sessionUnitIncrementArgs);
+        //var isPrivateMessage = message.IsPrivateMessage();
+        //// Args
+        //var sessionUnitIncrementJobArgs = new SessionUnitIncrementJobArgs()
+        //{
+        //    SessionId = message.SessionId.Value,
+        //    SenderSessionUnitId = message.SenderSessionUnitId.Value,
+        //    RemindSessionUnitIdList = message.MessageReminderList.Select(x => x.SessionUnitId).ToList(),
+        //    PrivateBadgeSessionUnitIdList = isPrivateMessage ? [message.ReceiverSessionUnitId.Value] : [],
+        //    FollowingSessionUnitIdList = !isPrivateMessage ? await FollowManager.GetFollowerIdListAsync(message.SenderSessionUnitId.Value) : [],
+        //    LastMessageId = message.Id,
+        //    IsRemindAll = message.IsRemindAll,
+        //    MessageCreationTime = message.CreationTime
+        //};
 
-            Logger.LogInformation($"SessionUnitIncrement backgroupJobId:{jobId},args:{sessionUnitIncrementArgs}");
-        }
-        else
-        {
-            await SessionUnitManager.IncremenetAsync(sessionUnitIncrementArgs);
-        }
+        //Logger.LogInformation($"{nameof(SessionUnitIncrementJobArgs)}:{JsonSerializer.Serialize(sessionUnitIncrementJobArgs)}");
+
+        //if (await ShouldbeBackgroundJobAsync(senderSessionUnit, message))
+        //{
+        //    var jobId = await BackgroundJobManager.EnqueueAsync(sessionUnitIncrementJobArgs);
+        //    Logger.LogInformation($"{nameof(SessionUnitIncrementJobArgs)} backgroupJobId:{jobId}");
+        //}
+        //else
+        //{
+        //    Logger.LogWarning($"BackgroundJobManager.IsAvailable():False");
+        //    await SessionUnitManager.IncremenetAsync(sessionUnitIncrementJobArgs);
+        //}
 
         return message;
     }
 
-    protected virtual async Task<bool> ShouldbeBackgroundJobAsync(SessionUnit senderSessionUnit, Message message)
+    /// <summary>
+    /// 更新转发次数
+    /// </summary>
+    /// <param name="forwardPath"></param>
+    /// <returns></returns>
+    protected virtual async Task UpdateForwardCountAsync(string forwardPath)
     {
-        await Task.Yield();
+        var messageIdList = await ResolveMessageIdAsync(forwardPath);
 
-        return BackgroundJobManager.IsAvailable();
-
-        //var useBackgroundJobSenderMinSessionUnitCount = await SettingProvider.GetWalletAsync<int>(ChatSettings.UseBackgroundJobSenderMinSessionUnitCount);
-
-        //return BackgroundJobManager.IsAvailable() && !message.IsPrivate && message.SessionUnitCount > useBackgroundJobSenderMinSessionUnitCount;
-
-        ////return false;
-    }
-
-    protected virtual async Task BatchUpdateSessionUnitAsync(SessionUnit senderSessionUnit, Message message)
-    {
-        Logger.LogInformation($"BatchUpdateSessionUnitAsync");
-
-        await SessionUnitManager.UpdateCachesAsync(senderSessionUnit, message);
-
-        if (await ShouldbeBackgroundJobAsync(senderSessionUnit, message))
+        if (messageIdList.Count != 0)
         {
-            var jobId = await BackgroundJobManager.EnqueueAsync(new UpdateStatsForSessionUnitArgs()
-            {
-                SenderSessionUnitId = senderSessionUnit.Id,
-                MessageId = message.Id,
-            });
-
-            Logger.LogInformation($"JobId:{jobId}");
-
-            return;
+            await Repository.IncrementFavoritedCountAsync(messageIdList);
         }
-        //
-        await SessionUnitManager.BatchUpdateAsync(senderSessionUnit, message);
     }
+
+    /// <summary>
+    /// 更新引用次数
+    /// </summary>
+    /// <param name="quotePath"></param>
+    /// <returns></returns>
+    protected virtual async Task UpdateQuoteCountAsync(string quotePath)
+    {
+        var messageIdList = await ResolveMessageIdAsync(quotePath);
+
+        if (messageIdList.Count != 0)
+        {
+            await Repository.IncrementQuoteCountAsync(messageIdList);
+        }
+    }
+
+    protected virtual Task<List<long>> ResolveMessageIdAsync(string messageIdPath)
+    {
+        var messageIdList = new List<long>();
+
+        if (!messageIdPath.IsNullOrWhiteSpace())
+        {
+            messageIdList = messageIdPath.Split(Message.Delimiter)
+                .Where(x => long.TryParse(x, out _))
+                .Select(long.Parse)
+                .ToList();
+        }
+
+        return Task.FromResult(messageIdList);
+    }
+
+    //protected virtual async Task<bool> ShouldbeBackgroundJobAsync(SessionUnit senderSessionUnit, Message message)
+    //{
+    //    await Task.Yield();
+
+    //    return BackgroundJobManager.IsAvailable();
+
+    //    //var useBackgroundJobSenderMinSessionUnitCount = await SettingProvider.GetWalletAsync<int>(ChatSettings.UseBackgroundJobSenderMinSessionUnitCount);
+
+    //    //return BackgroundJobManager.IsAvailable() && !message.IsPrivate && message.SessionUnitCount > useBackgroundJobSenderMinSessionUnitCount;
+
+    //    ////return false;
+    //}
+
+    //protected virtual async Task BatchUpdateSessionUnitAsync(SessionUnit senderSessionUnit, Message message)
+    //{
+    //    Logger.LogInformation($"BatchUpdateSessionUnitAsync");
+
+    //    await SessionUnitManager.UpdateCachesAsync(senderSessionUnit, message);
+
+    //    if (await ShouldbeBackgroundJobAsync(senderSessionUnit, message))
+    //    {
+    //        var jobId = await BackgroundJobManager.EnqueueAsync(new UpdateStatsForSessionUnitArgs()
+    //        {
+    //            SenderSessionUnitId = senderSessionUnit.Id,
+    //            MessageId = message.Id,
+    //        });
+
+    //        Logger.LogInformation($"JobId:{jobId}");
+
+    //        return;
+    //    }
+    //    //
+    //    await SessionUnitManager.BatchUpdateAsync(senderSessionUnit, message);
+    //}
 
 
     [GeneratedRegex("@([^@ ]+) ?")]
@@ -299,6 +345,12 @@ public partial class MessageManager(
     /// <returns></returns>
     protected virtual async Task<List<Guid>> ApplyRemindIdListAsync(SessionUnit senderSessionUnit, Message message, List<Guid> remindIdList)
     {
+        //私有消息不设置提醒
+        if (message.IsPrivateMessage())
+        {
+            return [];
+        }
+
         var finalRemindIdList = await ApplyReminderIdListForTextContentAsync(senderSessionUnit, message);
 
         if (remindIdList.IsAny())
@@ -320,8 +372,7 @@ public partial class MessageManager(
 
     public async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContentEntity>(
         SessionUnit senderSessionUnit,
-        MessageInput<TContentInfo> input,
-        SessionUnit receiverSessionUnit = null)
+        MessageInput<TContentInfo> input)
         where TContentInfo : IContentInfo
         where TContentEntity : IContentEntity
     {
@@ -339,13 +390,14 @@ public partial class MessageManager(
         var message = await CreateMessageAsync(senderSessionUnit,
             async (entity) => await Task.FromResult(contentEntity),
             quoteMessageId: input.QuoteMessageId,
-            remindList: input.RemindList);
+            remindList: input.RemindList,
+            receiverSessionUnitId: input.ReceiverSessionUnitId);
 
         //var output = ObjectMapper.Map<Message, MessageInfo<object>>(message);
         var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
         //var output = new MessageInfo<TContentInfo>() { Id = message.Id };
 
-        if (message.IsPrivate && input.ReceiverSessionUnitId.HasValue)
+        if (message.IsPrivateMessage())
         {
             var receiverSessionUnit = await SessionUnitManager.GetAsync(input.ReceiverSessionUnitId.Value);
 
