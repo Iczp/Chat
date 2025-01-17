@@ -26,47 +26,47 @@ public partial class Message
 
 
     [ContentType(MessageTypes.Cmd)]
-    public virtual IList<CmdContent> CmdContentList { get; set; } = new List<CmdContent>();
+    public virtual IList<CmdContent> CmdContentList { get; set; } = [];
 
     [ContentType(MessageTypes.Text)]
-    public virtual IList<TextContent> TextContentList { get; set; } = new List<TextContent>();
+    public virtual IList<TextContent> TextContentList { get; set; } = [];
 
     [ContentType(MessageTypes.Html)]
-    public virtual IList<HtmlContent> HtmlContentList { get; set; } = new List<HtmlContent>();
+    public virtual IList<HtmlContent> HtmlContentList { get; set; } = [];
 
     [ContentType(MessageTypes.Article)]
-    public virtual IList<ArticleContent> ArticleContentList { get; set; } = new List<ArticleContent>();
+    public virtual IList<ArticleContent> ArticleContentList { get; set; } = [];
 
     [ContentType(MessageTypes.Link)]
-    public virtual IList<LinkContent> LinkContentList { get; set; } = new List<LinkContent>();
+    public virtual IList<LinkContent> LinkContentList { get; set; } = [];
 
     [ContentType(MessageTypes.Image)]
-    public virtual IList<ImageContent> ImageContentList { get; set; } = new List<ImageContent>();
+    public virtual IList<ImageContent> ImageContentList { get; set; } = [];
 
     [ContentType(MessageTypes.Sound)]
-    public virtual IList<SoundContent> SoundContentList { get; set; } = new List<SoundContent>();
+    public virtual IList<SoundContent> SoundContentList { get; set; } = [];
 
     [ContentType(MessageTypes.Video)]
-    public virtual IList<VideoContent> VideoContentList { get; set; } = new List<VideoContent>();
+    public virtual IList<VideoContent> VideoContentList { get; set; } = [];
 
     [ContentType(MessageTypes.File)]
-    public virtual IList<FileContent> FileContentList { get; set; } = new List<FileContent>();
+    public virtual IList<FileContent> FileContentList { get; set; } = [];
 
     [ContentType(MessageTypes.Location)]
-    public virtual IList<LocationContent> LocationContentList { get; set; } = new List<LocationContent>();
+    public virtual IList<LocationContent> LocationContentList { get; set; } = [];
 
     [ContentType(MessageTypes.Contacts)]
-    public virtual IList<ContactsContent> ContactsContentList { get; set; } = new List<ContactsContent>();
+    public virtual IList<ContactsContent> ContactsContentList { get; set; } = [];
 
     [ContentType(MessageTypes.RedEnvelope)]
-    public virtual IList<RedEnvelopeContent> RedEnvelopeContentList { get; set; } = new List<RedEnvelopeContent>();
+    public virtual IList<RedEnvelopeContent> RedEnvelopeContentList { get; set; } = [];
 
     [ContentType(MessageTypes.History)]
-    public virtual IList<HistoryContent> HistoryContentList { get; set; } = new List<HistoryContent>();
+    public virtual IList<HistoryContent> HistoryContentList { get; set; } = [];
 
     //HistoryMessageList
     [InverseProperty(nameof(HistoryMessage.Message))]
-    public virtual IList<HistoryMessage> HistoryMessageList { get; set; }
+    public virtual IList<HistoryMessage> HistoryMessageList { get; set; } = [];
 
     public virtual dynamic GetContentEntity()
     {

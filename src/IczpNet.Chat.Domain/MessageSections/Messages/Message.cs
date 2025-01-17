@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Volo.Abp.Auditing;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
@@ -28,8 +29,14 @@ namespace IczpNet.Chat.MessageSections.Messages;
 [Index(nameof(SessionId))]
 [Index(nameof(SessionId), nameof(Id), AllDescending = true)]
 [Index(nameof(SessionId), nameof(IsPrivate), nameof(SenderId), nameof(ReceiverId), nameof(IsDeleted), nameof(CreationTime), nameof(ForwardDepth), nameof(QuoteDepth))]
-public partial class Message : BaseEntity<long>, ISessionId
+public partial class Message : BaseEntity<long>, ISessionId, IHasEntityVersion
 {
+    /// <summary>
+    /// 实体版本
+    /// </summary>
+    [Comment("实体版本")]
+    public int EntityVersion { get; protected set; }
+
     //[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     //public virtual long Id { get;  }
 
@@ -39,7 +46,7 @@ public partial class Message : BaseEntity<long>, ISessionId
     //[Comment("")]
     [StringLength(100)]
     //[Required]
-    [Comment("SessionKey")] 
+    [Comment("SessionKey")]
     public virtual string SessionKey { get; protected set; }
 
     /// <summary>
@@ -63,7 +70,7 @@ public partial class Message : BaseEntity<long>, ISessionId
     /// <summary>
     /// 会话单元数量
     /// </summary>
-    [Comment("会话单元数量")] 
+    [Comment("会话单元数量")]
     public virtual int SessionUnitCount { get; protected set; }
 
     /// <summary>
@@ -170,7 +177,7 @@ public partial class Message : BaseEntity<long>, ISessionId
     /// <summary>
     /// 指定范围
     /// </summary>
-    [Comment("指定范围")] 
+    [Comment("指定范围")]
     public virtual bool IsScoped { get; protected set; }
 
     /// <summary>
@@ -203,11 +210,20 @@ public partial class Message : BaseEntity<long>, ISessionId
     //[Comment("创建时间/发送时间(UnixTime)")]
     //public virtual long SendTimestamp { get; protected set; } = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
 
-    [NotMapped]
-    public virtual bool IsDisabledForward => this.IsDisabledForward();
+    /// <summary>
+    /// 是否禁止转发的消息类型
+    /// </summary>
+    /// <returns></returns>
+    public virtual bool IsDisabledForward() => MessageExtentions.DisabledForwardList.Contains(MessageType);
 
     /// <summary>
     /// 是否私有消息
     /// </summary>
     public virtual bool IsPrivateMessage() => IsPrivate && ReceiverSessionUnitId.HasValue;
+
+    /// <summary>
+    /// 是否撤回消息
+    /// </summary>
+    /// <returns></returns>
+    public virtual bool IsRollbackMessage() => IsRollbacked || RollbackTime != null;
 }

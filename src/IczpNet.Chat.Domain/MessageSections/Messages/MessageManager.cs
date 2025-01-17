@@ -11,7 +11,6 @@ using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.Settings;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,12 +40,14 @@ public partial class MessageManager(
     ISettingProvider settingProvider,
     IJsonSerializer jsonSerializer,
     IRepository<MessageReminder> messageReminderRepository,
+    IReadOnlyBasicRepository<Message, long> messageReadOnlyRepository,
     ISessionUnitSettingRepository sessionUnitSettingRepository,
     ISessionGenerator sessionGenerator) : DomainService, IMessageManager
 {
     protected IObjectMapper ObjectMapper { get; } = objectMapper;
     protected IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
     protected IMessageRepository Repository { get; } = repository;
+    public IReadOnlyBasicRepository<Message, long> MessageReadOnlyRepository { get; } = messageReadOnlyRepository;
     protected IMessageValidator MessageValidator { get; } = messageValidator;
     protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
     protected IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
@@ -58,6 +59,7 @@ public partial class MessageManager(
     protected ISettingProvider SettingProvider { get; } = settingProvider;
     protected IJsonSerializer JsonSerializer { get; } = jsonSerializer;
     protected IRepository<MessageReminder> MessageReminderRepository { get; } = messageReminderRepository;
+    
     protected ISessionGenerator SessionGenerator { get; } = sessionGenerator;
 
     protected virtual void TryToSetOwnerId<T, TKey>(T entity, TKey ownerId)
@@ -162,7 +164,7 @@ public partial class MessageManager(
         //更新引用次数
         await UpdateQuoteCountAsync(message.QuotePath);
 
-        //更新转发次数
+        ////更新转发次数
         await UpdateForwardCountAsync(message.ForwardPath);
 
         ////以下可能导致锁表
@@ -211,7 +213,7 @@ public partial class MessageManager(
 
         if (messageIdList.Count != 0)
         {
-            await Repository.IncrementFavoritedCountAsync(messageIdList);
+            await Repository.IncrementForwardCountAsync(messageIdList);
         }
     }
 
@@ -315,7 +317,7 @@ public partial class MessageManager(
                 nameList.Add(value);
             }
         }
-        if (!nameList.Any())
+        if (nameList.Count == 0)
         {
             return unitIdList;
         }
@@ -446,11 +448,11 @@ public partial class MessageManager(
 
         var sourceMessage = await Repository.GetAsync(sourceMessageId);
 
-        Assert.If(sourceMessage.IsRollbacked || sourceMessage.RollbackTime != null, $"message already rollback：{sourceMessageId}", nameof(currentSessionUnit.Setting.IsEnabled));
+        Assert.If(sourceMessage.IsRollbackMessage(), $"message already rollback：{sourceMessageId}", nameof(currentSessionUnit.Setting.IsEnabled));
 
-        Assert.If(sourceMessage.IsDisabledForward, $"MessageType:'{sourceMessage.MessageType}' is disabled forward");
+        Assert.If(sourceMessage.IsDisabledForward(), $"MessageType:'{sourceMessage.MessageType}' is disabled forward");
 
-        Assert.If(sourceMessage.IsPrivate, $"Private messages cannot be forward");
+        Assert.If(sourceMessage.IsPrivateMessage(), $"Private messages cannot be forward");
 
         Assert.If(currentSessionUnit.SessionId != sourceMessage.SessionId, $"The sender and message are not in the same session, messageSessionId:{sourceMessage.SessionId}", nameof(currentSessionUnit.SessionId));
 

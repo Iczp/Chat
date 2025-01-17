@@ -27,6 +27,10 @@ public partial class Message
         SessionKey = Session.SessionKey;
     }
 
+    /// <summary>
+    /// 设置引用消息
+    /// </summary>
+    /// <param name="source"></param>
     public virtual void SetQuoteMessage(Message source)
     {
         //QuoteMessage = source;
@@ -36,6 +40,10 @@ public partial class Message
         Assert.If(QuotePath.Length > QuotePathMaxLength, "Maximum length exceeded in [QuotePath].");
     }
 
+    /// <summary>
+    /// 设置转发消息
+    /// </summary>
+    /// <param name="source"></param>
     public virtual void SetForwardMessage(Message source)
     {
         //ForwardMessage = source;
@@ -45,33 +53,58 @@ public partial class Message
         Assert.If(ForwardPath.Length > ForwardPathMaxLength, "Maximum length exceeded in [ForwardPath].");
     }
 
+    /// <summary>
+    /// 设置键值对
+    /// </summary>
+    /// <param name="keyName"></param>
+    /// <param name="keyValue"></param>
     public virtual void SetKey(string keyName, string keyValue)
     {
         KeyName = keyName;
         KeyValue = keyValue;
     }
 
+    /// <summary>
+    /// 设置内容Json
+    /// </summary>
+    /// <param name="contentJson"></param>
     public virtual void SetContentJson(string contentJson)
     {
         ContentJson = contentJson;
     }
 
+    /// <summary>
+    /// 设置消息类型
+    /// </summary>
+    /// <param name="messageType"></param>
     public virtual void SetMessageType(MessageTypes messageType)
     {
         MessageType = messageType;
     }
 
+    /// <summary>
+    /// 设置大小
+    /// </summary>
+    /// <param name="size"></param>
     public virtual void SetSize(long size)
     {
         Size = size;
     }
 
+    /// <summary>
+    /// 撤回消息
+    /// </summary>
+    /// <param name="now"></param>
     internal void Rollback(DateTime now)
     {
         IsRollbacked = true;
         RollbackTime = now;
     }
 
+    /// <summary>
+    /// 设置私有消息
+    /// </summary>
+    /// <param name="receiverSessionUnitId"></param>
     internal void SetPrivateMessage(Guid receiverSessionUnitId)
     {
         //ReceiverSessionUnit = receiverSessionUnit;

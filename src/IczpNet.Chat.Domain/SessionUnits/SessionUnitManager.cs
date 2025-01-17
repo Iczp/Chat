@@ -1,59 +1,48 @@
-﻿using IczpNet.Chat.Enums;
+﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons.Extensions;
+using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.Enums;
+using IczpNet.Chat.Follows;
+using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.TextTemplates;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Caching;
-using Volo.Abp.Domain.Services;
-using IczpNet.AbpCommons.Extensions;
-using IczpNet.AbpCommons;
-using IczpNet.Chat.Follows;
-using Microsoft.Extensions.Logging;
-using System.Diagnostics;
-using IczpNet.Chat.ChatObjects;
-using System.Linq.Dynamic.Core;
-using IczpNet.Chat.SessionSections.SessionUnits;
-using IczpNet.Chat.MessageSections;
 using Volo.Abp.Domain.Repositories;
-using IczpNet.Chat.MessageSections.Templates;
-using IczpNet.Chat.TextTemplates;
-using IczpNet.Chat.SessionSections.Sessions;
-using JetBrains.Annotations;
-using Microsoft.AspNetCore.Mvc.RazorPages;
+using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.SessionUnits;
 
-public class SessionUnitManager : DomainService, ISessionUnitManager
+public class SessionUnitManager(
+    ISessionUnitRepository repository,
+    IMessageRepository messageRepository,
+    IDistributedCache<List<SessionUnitCacheItem>, string> sessionUnitListCache,
+    IDistributedCache<string, Guid> sessionUnitCountCache,
+    IChatObjectRepository chatObjectRepository,
+    IMessageSender messageSender,
+    ISessionUnitIdGenerator idGenerator) : DomainService, ISessionUnitManager
 {
-    protected ISessionUnitRepository Repository { get; }
-    protected IMessageRepository MessageRepository { get; }
-    protected IDistributedCache<List<SessionUnitCacheItem>, string> UnitListCache { get; }
-    protected IDistributedCache<string, Guid> UnitCountCache { get; }
+    protected ISessionUnitRepository Repository { get; } = repository;
+    protected IMessageRepository MessageRepository { get; } = messageRepository;
+    protected IDistributedCache<List<SessionUnitCacheItem>, string> SessionUnitListCache { get; } = sessionUnitListCache;
+    protected IDistributedCache<string, Guid> SessionUnitCountCache { get; } = sessionUnitCountCache;
     protected IFollowManager FollowManager => LazyServiceProvider.LazyGetRequiredService<IFollowManager>();
-    protected IChatObjectRepository ChatObjectRepository { get; }
-    protected IMessageSender MessageSender { get; }
-    protected ISessionUnitIdGenerator IdGenerator { get; }
-    public SessionUnitManager(
-        ISessionUnitRepository repository,
-        IMessageRepository messageRepository,
-        IDistributedCache<List<SessionUnitCacheItem>, string> unitListCache,
-        IDistributedCache<string, Guid> unitCountCache,
-        IChatObjectRepository chatObjectRepository,
-        IMessageSender messageSender,
-        ISessionUnitIdGenerator idGenerator)
-    {
-        Repository = repository;
-        MessageRepository = messageRepository;
-        UnitListCache = unitListCache;
-        UnitCountCache = unitCountCache;
-        ChatObjectRepository = chatObjectRepository;
-        MessageSender = messageSender;
-        IdGenerator = idGenerator;
-    }
+    protected IChatObjectRepository ChatObjectRepository { get; } = chatObjectRepository;
+    protected IMessageSender MessageSender { get; } = messageSender;
+    protected ISessionUnitIdGenerator IdGenerator { get; } = idGenerator;
 
     protected virtual async Task<SessionUnit> SetEntityAsync(SessionUnit entity, Action<SessionUnit> action = null, bool autoSave = false)
     {
@@ -62,8 +51,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return await Repository.UpdateAsync(entity, autoSave: autoSave);
     }
 
-
-
+    /// <inheritdoc />
     public virtual async Task<Guid?> FindIdAsync(Expression<Func<SessionUnit, bool>> predicate)
     {
         return (await Repository.GetQueryableAsync())
@@ -72,36 +60,44 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
             .FirstOrDefault();
         ;
     }
+
+    /// <inheritdoc />
     public virtual Task<Guid?> FindIdAsync(long ownerId, long destinactionId)
     {
         return FindIdAsync(x => x.OwnerId == ownerId && x.DestinationId == destinactionId);
     }
 
+    /// <inheritdoc />
     public virtual async Task<bool> IsAnyAsync(long ownerId, long destinactionId)
     {
         return await Repository.AnyAsync(x => x.OwnerId == ownerId && x.DestinationId == destinactionId);
     }
 
+    /// <inheritdoc />
     public virtual Task<SessionUnit> FindAsync(long ownerId, long destinactionId)
     {
         return FindAsync(x => x.OwnerId == ownerId && x.DestinationId == destinactionId);
     }
 
+    /// <inheritdoc />
     public virtual Task<SessionUnit> FindAsync(Expression<Func<SessionUnit, bool>> predicate)
     {
         return Repository.FindAsync(predicate);
     }
 
+    /// <inheritdoc />
     public virtual Task<SessionUnit> FindBySessionIdAsync(Guid sessionId, long ownerId)
     {
         return FindAsync(x => x.SessionId == sessionId && x.OwnerId == ownerId);
     }
 
+    /// <inheritdoc />
     public virtual Task<SessionUnit> GetAsync(Guid id)
     {
         return Repository.GetAsync(id);
     }
 
+    /// <inheritdoc />
     public virtual async Task<List<SessionUnit>> GetManyAsync(List<Guid> idList)
     {
         var result = new List<SessionUnit>();
@@ -113,6 +109,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return result;
     }
 
+    /// <inheritdoc />
     public SessionUnit Create(Session session, ChatObject owner, ChatObject destination, Action<SessionUnitSetting> action)
     {
         return session.AddSessionUnit(Generate(
@@ -122,6 +119,8 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
                     destination: destination,
                     action));
     }
+
+    /// <inheritdoc />
     public SessionUnit Generate(Session session, ChatObject owner, ChatObject destination, Action<SessionUnitSetting> action)
     {
         return new SessionUnit(
@@ -132,6 +131,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
                     action);
     }
 
+    /// <inheritdoc />
     public virtual async Task<SessionUnit> CreateIfNotContainsAsync(SessionUnit sessionUnit)
     {
         var entity = await FindAsync(sessionUnit.OwnerId, sessionUnit.DestinationId.Value);
@@ -141,6 +141,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return entity;
     }
 
+    /// <inheritdoc />
     public virtual Task<SessionUnit> CreateIfNotContainsAsync(
             [NotNull]
             Session session,
@@ -153,23 +154,25 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return CreateIfNotContainsAsync(Generate(session, owner, destination, setting));
     }
 
-
-
+    /// <inheritdoc />
     public Task<SessionUnit> SetMemberNameAsync(SessionUnit entity, string memberName)
     {
         return SetEntityAsync(entity, x => x.Setting.SetMemberName(memberName));
     }
 
+    /// <inheritdoc />
     public Task<SessionUnit> SetRenameAsync(SessionUnit entity, string rename)
     {
         return SetEntityAsync(entity, x => x.Setting.SetRename(rename));
     }
 
+    /// <inheritdoc />
     public virtual Task<SessionUnit> SetToppingAsync(SessionUnit entity, bool isTopping)
     {
         return SetEntityAsync(entity, x => x.SetTopping(isTopping));
     }
 
+    /// <inheritdoc />
     public virtual async Task<SessionUnit> SetReadedMessageIdAsync(SessionUnit entity, bool isForce = false, long? messageId = null)
     {
         var isNullOrZero = messageId == null || messageId == 0;
@@ -227,6 +230,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return entity;
     }
 
+    /// <inheritdoc />
     public virtual Task<SessionUnit> SetImmersedAsync(SessionUnit entity, bool isImmersed)
     {
         Assert.If(!entity.Session.IsEnableSetImmersed, "Session is disable to set immersed.");
@@ -234,26 +238,31 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return SetEntityAsync(entity, x => x.Setting.SetImmersed(isImmersed));
     }
 
+    /// <inheritdoc />
     public virtual Task<SessionUnit> SetIsContactsAsync(SessionUnit entity, bool isContacts)
     {
         return SetEntityAsync(entity, x => x.Setting.SetIsContacts(isContacts));
     }
 
+    /// <inheritdoc />
     public virtual Task<SessionUnit> SetIsShowMemberNameAsync(SessionUnit entity, bool isShowMemberName)
     {
         return SetEntityAsync(entity, x => x.Setting.SetIsShowMemberName(isShowMemberName));
     }
 
+    /// <inheritdoc />
     public virtual Task<SessionUnit> RemoveAsync(SessionUnit entity)
     {
         return SetEntityAsync(entity, x => x.Setting.Remove(Clock.Now));
     }
 
+    /// <inheritdoc />
     public virtual Task<SessionUnit> KillAsync(SessionUnit entity)
     {
         return SetEntityAsync(entity, x => x.Setting.Kill(Clock.Now));
     }
 
+    /// <inheritdoc />
     public virtual async Task<SessionUnit> ClearMessageAsync(SessionUnit entity)
     {
         await SetReadedMessageIdAsync(entity, false);
@@ -261,6 +270,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return await SetEntityAsync(entity, x => x.Setting.ClearMessage(Clock.Now));
     }
 
+    /// <inheritdoc />
     public virtual Task<SessionUnit> DeleteMessageAsync(SessionUnit entity, long messageId)
     {
         throw new NotImplementedException();
@@ -300,6 +310,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return badge;
     }
 
+    /// <inheritdoc />
     public virtual async Task<Dictionary<ChatObjectTypeEnums, int>> GetTypeBadgeByOwnerIdAsync(long ownerId, bool? isImmersed = null)
     {
         var ret = (await Repository.GetQueryableAsync())
@@ -316,6 +327,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return ret;
     }
 
+    /// <inheritdoc />
     public virtual async Task<int> GetBadgeByOwnerIdAsync(long ownerId, bool? isImmersed = null)
     {
         return (await Repository.GetQueryableAsync())
@@ -363,6 +375,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         //    .WhereIf(isImmersed.HasValue, x => x.Setting.IsImmersed == isImmersed));
     }
 
+    /// <inheritdoc />
     public virtual async Task<int> GetBadgeByIdAsync(Guid sessionUnitId, bool? isImmersed = null)
     {
 
@@ -384,8 +397,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         //    .WhereIf(isImmersed.HasValue, x => x.Setting.IsImmersed == isImmersed));
     }
 
-
-
+    /// <inheritdoc />
     public virtual async Task<Dictionary<Guid, int>> GetBadgeByIdAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
     {
         var badges = (await Repository.GetQueryableAsync())
@@ -416,6 +428,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return badges;
     }
 
+    /// <inheritdoc />
     public virtual async Task<SessionUnitCounterInfo> GetCounterAsync(Guid sessionUnitId, long minMessageId = 0, bool? isImmersed = null)
     {
         var entity = await Repository.GetAsync(sessionUnitId);
@@ -446,11 +459,13 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         };
     }
 
+    /// <inheritdoc />
     public virtual async Task<Dictionary<Guid, SessionUnitStatModel>> GetStatsAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
     {
         return await GetStatsByEachAsync(sessionUnitIdList, isImmersed);
     }
 
+    /// <inheritdoc />
     protected virtual async Task<Dictionary<Guid, SessionUnitStatModel>> GetStatsByEachAsync(List<Guid> sessionUnitIdList, bool? isImmersed = null)
     {
 
@@ -515,6 +530,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
             ;
     }
 
+    /// <inheritdoc />
     public virtual async Task<Dictionary<Guid, int>> GetReminderCountByIdAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
     {
         var query = (await Repository.GetQueryableAsync())
@@ -553,6 +569,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return reminds;
     }
 
+    /// <inheritdoc />
     public virtual async Task<Dictionary<Guid, int>> GetFollowingCountByIdAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
     {
         var query = (await Repository.GetQueryableAsync())
@@ -581,9 +598,10 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return follows;
     }
 
+    /// <inheritdoc />
     public virtual async Task<int> GetCountBySessionIdAsync(Guid sessionId)
     {
-        var value = await UnitCountCache.GetOrAddAsync(sessionId, async () =>
+        var value = await SessionUnitCountCache.GetOrAddAsync(sessionId, async () =>
         {
             var count = (await Repository.GetQueryableAsync())
                 .Where(x => x.SessionId == sessionId)
@@ -594,6 +612,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return int.Parse(value);
     }
 
+    /// <inheritdoc />
     public virtual async Task<int> GetCountByOwnerIdAsync(long ownerId)
     {
         return (await Repository.GetQueryableAsync())
@@ -602,16 +621,19 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
                 .Count();
     }
 
+    /// <inheritdoc />
     public virtual Task<List<SessionUnitCacheItem>> GetCacheListAsync(string sessionUnitCachKey)
     {
-        return UnitListCache.GetAsync(sessionUnitCachKey);
+        return SessionUnitListCache.GetAsync(sessionUnitCachKey);
     }
 
+    /// <inheritdoc />
     public virtual Task<List<SessionUnitCacheItem>> GetCacheListBySessionIdAsync(Guid sessionId)
     {
-        return UnitListCache.GetAsync($"{new SessionUnitCacheKey(sessionId)}");
+        return SessionUnitListCache.GetAsync($"{new SessionUnitCacheKey(sessionId)}");
     }
 
+    /// <inheritdoc />
     public virtual async Task<SessionUnitCacheItem> GetCacheItemAsync(Guid sessionId, Guid sessionUnitId)
     {
         var items = await GetCacheListBySessionIdAsync(sessionId);
@@ -619,16 +641,19 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return items?.FirstOrDefault(x => x.Id == sessionUnitId);
     }
 
+    /// <inheritdoc />
     public virtual Task<SessionUnitCacheItem> GetCacheItemAsync(SessionUnit sessionUnit)
     {
         return GetCacheItemAsync(sessionUnit.SessionId.Value, sessionUnit.Id);
     }
 
+    /// <inheritdoc />
     public virtual Task<List<SessionUnitCacheItem>> GetOrAddCacheListAsync(Guid sessionId)
     {
-        return UnitListCache.GetOrAddAsync($"{new SessionUnitCacheKey(sessionId)}", () => GetListBySessionIdAsync(sessionId));
+        return SessionUnitListCache.GetOrAddAsync($"{new SessionUnitCacheKey(sessionId)}", () => GetListBySessionIdAsync(sessionId));
     }
 
+    /// <inheritdoc />
     public virtual async Task SetCacheListBySessionIdAsync(Guid sessionId, List<SessionUnitCacheItem> sessionUnitList)
     {
         //var sessionUnitInfoList = await GetListBySessionIdAsync(sessionId);
@@ -636,11 +661,13 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         await SetCacheListAsync($"{new SessionUnitCacheKey(sessionId)}", sessionUnitList);
     }
 
+    /// <inheritdoc />
     public virtual async Task SetCacheListAsync(string cacheKey, List<SessionUnitCacheItem> sessionUnitList, DistributedCacheEntryOptions options = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default)
     {
-        await UnitListCache.SetAsync(cacheKey, sessionUnitList, options, hideErrors, considerUow, token);
+        await SessionUnitListCache.SetAsync(cacheKey, sessionUnitList, options, hideErrors, considerUow, token);
     }
 
+    /// <inheritdoc />
     public virtual async Task<List<SessionUnitCacheItem>> GetListBySessionIdAsync(Guid sessionId)
     {
         var list = (await Repository.GetQueryableAsync())
@@ -665,16 +692,18 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
             })
             .ToList();
 
-        await UnitCountCache.SetAsync(sessionId, list.Where(x => x.IsPublic).Count().ToString());
+        await SessionUnitCountCache.SetAsync(sessionId, list.Where(x => x.IsPublic).Count().ToString());
 
         return list;
     }
 
+    /// <inheritdoc />
     public virtual async Task RemoveCacheListBySessionIdAsync(Guid sessionId)
     {
-        await UnitListCache.RemoveAsync($"{new SessionUnitCacheKey(sessionId)}");
+        await SessionUnitListCache.RemoveAsync($"{new SessionUnitCacheKey(sessionId)}");
     }
 
+    /// <inheritdoc />
     private async Task<IQueryable<SessionUnit>> GetOwnerQueryableAsync(long ownerId, List<ChatObjectTypeEnums> destinationObjectTypeList = null)
     {
         return (await Repository.GetQueryableAsync())
@@ -683,6 +712,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
 
     }
 
+    /// <inheritdoc />
     public virtual async Task<IQueryable<SessionUnit>> GetSameSessionQeuryableAsync(long sourceChatObjectId, long targetChatObjectId, List<ChatObjectTypeEnums> chatObjectTypeList = null)
     {
         var targetSessionIdList = (await GetOwnerQueryableAsync(targetChatObjectId, chatObjectTypeList))
@@ -695,6 +725,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return sourceQuery;
     }
 
+    /// <inheritdoc />
     public virtual async Task<int> GetSameSessionCountAsync(long sourceChatObjectId, long targetChatObjectId, List<ChatObjectTypeEnums> chatObjectTypeList = null)
     {
         var query = await GetSameSessionQeuryableAsync(sourceChatObjectId, targetChatObjectId, chatObjectTypeList);
@@ -702,6 +733,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return await AsyncExecuter.CountAsync(query);
     }
 
+    /// <inheritdoc />
     public virtual async Task<IQueryable<SessionUnit>> GetSameDestinationQeuryableAsync(long sourceChatObjectId, long targetChatObjectId, List<ChatObjectTypeEnums> chatObjectTypeList = null)
     {
         var destinationIdList = (await GetOwnerQueryableAsync(targetChatObjectId, chatObjectTypeList))
@@ -716,6 +748,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return sourceQuery;
     }
 
+    /// <inheritdoc />
     public virtual async Task<int> GetSameDestinationCountAsync(long sourceChatObjectId, long targetChatObjectId, List<ChatObjectTypeEnums> chatObjectTypeList = null)
     {
         var query = await GetSameDestinationQeuryableAsync(sourceChatObjectId, targetChatObjectId, chatObjectTypeList);
@@ -724,6 +757,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
     }
 
 
+    /// <inheritdoc />
     public virtual async Task<int> IncrementFollowingCountAsync(SessionUnit senderSessionUnit, Message message)
     {
         var ownerSessionUnitIdList = await FollowManager.GetFollowerIdListAsync(senderSessionUnit.Id);
@@ -753,6 +787,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         Logger.LogInformation($"UpdateCacheItems stopwatch: {stopwatch.ElapsedMilliseconds}ms.");
     }
 
+    /// <inheritdoc />
     public virtual async Task<int> UpdateCachesAsync(SessionUnit senderSessionUnit, Message message)
     {
         int count = 0;
@@ -786,6 +821,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return count;
     }
 
+    /// <inheritdoc />
     public virtual async Task<int> BatchUpdateAsync(SessionUnit senderSessionUnit, Message message)
     {
         var stopwatch = Stopwatch.StartNew();
@@ -805,7 +841,8 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return result;
     }
 
-    public async Task<List<Guid>> GetIdListByNameAsync(Guid sessionId, List<string> nameList)
+    /// <inheritdoc />
+    public virtual async Task<List<Guid>> GetIdListByNameAsync(Guid sessionId, List<string> nameList)
     {
         var chatObjectIds = (await ChatObjectRepository.GetQueryableAsync())
             .Where(x => nameList.Contains(x.Name))
@@ -821,7 +858,7 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
     }
 
     /// <inheritdoc/>
-    public async Task<int> IncremenetAsync(SessionUnitIncrementJobArgs args)
+    public virtual async Task<int> IncremenetAsync(SessionUnitIncrementJobArgs args)
     {
         Logger.LogInformation($"Incremenet args:{args},starting.....................................");
 
@@ -889,7 +926,8 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return totalCount;
     }
 
-    public async Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime, SessionUnit setterSessionUnit, bool isSendMessage)
+    /// <inheritdoc />
+    public virtual async Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime, SessionUnit setterSessionUnit, bool isSendMessage)
     {
         Assert.If(muterSessionUnit.Setting.IsCreator, $"Creator can't be mute.");
 
@@ -929,7 +967,8 @@ public class SessionUnitManager : DomainService, ISessionUnitManager
         return muteExpireTime;
     }
 
-    public async Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime)
+    /// <inheritdoc />
+    public virtual async Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime)
     {
         var setterSessionUnit = await Repository.FirstOrDefaultAsync(x => x.SessionId == muterSessionUnit.SessionId && x.IsStatic && !x.IsPublic && x.Id != muterSessionUnit.Id);
 
