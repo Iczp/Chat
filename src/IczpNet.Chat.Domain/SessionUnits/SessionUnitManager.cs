@@ -29,16 +29,16 @@ namespace IczpNet.Chat.SessionUnits;
 public class SessionUnitManager(
     ISessionUnitRepository repository,
     IMessageRepository messageRepository,
-    IDistributedCache<List<SessionUnitCacheItem>, string> unitListCache,
-    IDistributedCache<string, Guid> unitCountCache,
+    IDistributedCache<List<SessionUnitCacheItem>, string> sessionUnitListCache,
+    IDistributedCache<string, Guid> sessionUnitCountCache,
     IChatObjectRepository chatObjectRepository,
     IMessageSender messageSender,
     ISessionUnitIdGenerator idGenerator) : DomainService, ISessionUnitManager
 {
     protected ISessionUnitRepository Repository { get; } = repository;
     protected IMessageRepository MessageRepository { get; } = messageRepository;
-    protected IDistributedCache<List<SessionUnitCacheItem>, string> SessionUnitListCache { get; } = unitListCache;
-    protected IDistributedCache<string, Guid> UnitCountCache { get; } = unitCountCache;
+    protected IDistributedCache<List<SessionUnitCacheItem>, string> SessionUnitListCache { get; } = sessionUnitListCache;
+    protected IDistributedCache<string, Guid> SessionUnitCountCache { get; } = sessionUnitCountCache;
     protected IFollowManager FollowManager => LazyServiceProvider.LazyGetRequiredService<IFollowManager>();
     protected IChatObjectRepository ChatObjectRepository { get; } = chatObjectRepository;
     protected IMessageSender MessageSender { get; } = messageSender;
@@ -601,7 +601,7 @@ public class SessionUnitManager(
     /// <inheritdoc />
     public virtual async Task<int> GetCountBySessionIdAsync(Guid sessionId)
     {
-        var value = await UnitCountCache.GetOrAddAsync(sessionId, async () =>
+        var value = await SessionUnitCountCache.GetOrAddAsync(sessionId, async () =>
         {
             var count = (await Repository.GetQueryableAsync())
                 .Where(x => x.SessionId == sessionId)
@@ -692,7 +692,7 @@ public class SessionUnitManager(
             })
             .ToList();
 
-        await UnitCountCache.SetAsync(sessionId, list.Where(x => x.IsPublic).Count().ToString());
+        await SessionUnitCountCache.SetAsync(sessionId, list.Where(x => x.IsPublic).Count().ToString());
 
         return list;
     }

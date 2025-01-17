@@ -210,11 +210,20 @@ public partial class Message : BaseEntity<long>, ISessionId, IHasEntityVersion
     //[Comment("创建时间/发送时间(UnixTime)")]
     //public virtual long SendTimestamp { get; protected set; } = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
 
-    [NotMapped]
-    public virtual bool IsDisabledForward => this.IsDisabledForward();
+    /// <summary>
+    /// 是否禁止转发的消息类型
+    /// </summary>
+    /// <returns></returns>
+    public virtual bool IsDisabledForward() => MessageExtentions.DisabledForwardList.Contains(MessageType);
 
     /// <summary>
     /// 是否私有消息
     /// </summary>
     public virtual bool IsPrivateMessage() => IsPrivate && ReceiverSessionUnitId.HasValue;
+
+    /// <summary>
+    /// 是否撤回消息
+    /// </summary>
+    /// <returns></returns>
+    public virtual bool IsRollbackMessage() => IsRollbacked || RollbackTime != null;
 }

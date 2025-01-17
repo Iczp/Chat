@@ -13,19 +13,12 @@ public static class MessageExtentions
     /// <summary>
     /// 禁止转发的消息类型
     /// </summary>
-    public static List<MessageTypes> DisabledForwardList { get; set; } = new List<MessageTypes>()
-    {
+    public static List<MessageTypes> DisabledForwardList { get; set; } =
+    [
         MessageTypes.Cmd,
         MessageTypes.RedEnvelope,
         MessageTypes.Html,
-    };
-
-    /// <summary>
-    /// 是否禁止转发的消息类型
-    /// </summary>
-    /// <param name="message"></param>
-    /// <returns></returns>
-    public static bool IsDisabledForward(this Message message) => DisabledForwardList.Contains(message.MessageType);
+    ];
 
     /// <summary>
     /// 设置消息内容
