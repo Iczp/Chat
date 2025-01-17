@@ -77,6 +77,7 @@ public partial class MessageManager(
         }
     }
 
+    /// <inheritdoc />
     public virtual async Task CreateSessionUnitByMessageAsync(SessionUnit senderSessionUnit)
     {
         //ShopKeeper
@@ -87,6 +88,7 @@ public partial class MessageManager(
         await Task.Yield();
     }
 
+    /// <inheritdoc />
     public virtual async Task<Message> CreateMessageAsync(
         SessionUnit senderSessionUnit,
         Func<Message, Task<IContentEntity>> action,
@@ -232,6 +234,11 @@ public partial class MessageManager(
         }
     }
 
+    /// <summary>
+    /// 解析消息Id
+    /// </summary>
+    /// <param name="messageIdPath"></param>
+    /// <returns></returns>
     protected virtual Task<List<long>> ResolveMessageIdAsync(string messageIdPath)
     {
         var messageIdList = new List<long>();
@@ -286,7 +293,13 @@ public partial class MessageManager(
     [GeneratedRegex("@([^@ ]+) ?")]
     private static partial Regex RemindNameRegex();
 
-    private async Task<List<Guid>> ApplyReminderIdListForTextContentAsync(SessionUnit senderSessionUnit, Message message)
+    /// <summary>
+    /// 提取提醒人Id列表
+    /// </summary>
+    /// <param name="senderSessionUnit"></param>
+    /// <param name="message"></param>
+    /// <returns></returns>
+    protected virtual async Task<List<Guid>> ApplyReminderIdListForTextContentAsync(SessionUnit senderSessionUnit, Message message)
     {
         var unitIdList = new List<Guid>();
         //@XXX
@@ -372,7 +385,8 @@ public partial class MessageManager(
         return finalRemindIdList;
     }
 
-    public async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContentEntity>(
+    /// <inheritdoc />
+    public virtual async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContentEntity>(
         SessionUnit senderSessionUnit,
         MessageInput<TContentInfo> input)
         where TContentInfo : IContentInfo
@@ -382,6 +396,7 @@ public partial class MessageManager(
         return await SendAsync<TContentInfo, TContentEntity>(senderSessionUnit, input, messageContent);
     }
 
+    /// <inheritdoc />
     public virtual async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContentEntity>(
         SessionUnit senderSessionUnit,
         MessageInput input,
@@ -417,6 +432,7 @@ public partial class MessageManager(
         return output;
     }
 
+    /// <inheritdoc />
     public virtual async Task<Dictionary<string, long>> RollbackAsync(Message message)
     {
         int allowRollbackHours = await SettingProvider.GetAsync<int>(ChatSettings.AllowRollbackHours);
@@ -440,6 +456,7 @@ public partial class MessageManager(
         });
     }
 
+    /// <inheritdoc />
     public virtual async Task<List<Message>> ForwardAsync(Guid sessionUnitId, long sourceMessageId, List<Guid> targetSessionUnitIdList)
     {
         var currentSessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
@@ -498,6 +515,7 @@ public partial class MessageManager(
         return messageList;
     }
 
+    /// <inheritdoc />
     public Task<bool> IsRemindAsync(long messageId, Guid sessionUnitId)
     {
         return MessageReminderRepository.AnyAsync(x => x.MessageId == messageId && x.SessionUnitId == sessionUnitId);
