@@ -8,18 +8,12 @@ using Volo.Abp.Identity;
 
 namespace IczpNet.Chat.hubs;
 
-public class ChatHub : AbpHub
+public class ChatHub(
+    IIdentityUserRepository identityUserRepository,
+    ILookupNormalizer lookupNormalizer) : AbpHub
 {
-    private readonly IIdentityUserRepository _identityUserRepository;
-    private readonly ILookupNormalizer _lookupNormalizer;
-
-    public ChatHub(
-        IIdentityUserRepository identityUserRepository,
-        ILookupNormalizer lookupNormalizer)
-    {
-        _identityUserRepository = identityUserRepository;
-        _lookupNormalizer = lookupNormalizer;
-    }
+    private readonly IIdentityUserRepository _identityUserRepository = identityUserRepository;
+    private readonly ILookupNormalizer _lookupNormalizer = lookupNormalizer;
 
     public override Task OnConnectedAsync()
     {
