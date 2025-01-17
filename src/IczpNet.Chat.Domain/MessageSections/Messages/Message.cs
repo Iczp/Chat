@@ -18,9 +18,13 @@ namespace IczpNet.Chat.MessageSections.Messages;
 [Index(nameof(MessageType))]
 [Index(nameof(IsDeleted))]
 [Index(nameof(ForwardMessageId))]
-[Index(nameof(QuoteMessageId))]
 [Index(nameof(ForwardDepth))]
+[Index(nameof(ForwardPath))]
+[Index(nameof(ForwardCount))]
+[Index(nameof(QuoteMessageId))]
 [Index(nameof(QuoteDepth))]
+[Index(nameof(QuotePath))]
+[Index(nameof(QuoteCount))]
 [Index(nameof(SessionId))]
 [Index(nameof(SessionId), nameof(Id), AllDescending = true)]
 [Index(nameof(SessionId), nameof(IsPrivate), nameof(SenderId), nameof(ReceiverId), nameof(IsDeleted), nameof(CreationTime), nameof(ForwardDepth), nameof(QuoteDepth))]
@@ -35,6 +39,7 @@ public partial class Message : BaseEntity<long>, ISessionId
     //[Comment("")]
     [StringLength(100)]
     //[Required]
+    [Comment("SessionKey")] 
     public virtual string SessionKey { get; protected set; }
 
     /// <summary>
@@ -56,8 +61,9 @@ public partial class Message : BaseEntity<long>, ISessionId
     public virtual Guid? ReceiverSessionUnitId { get; protected set; }
 
     /// <summary>
-    /// 
+    /// 会话单元数量
     /// </summary>
+    [Comment("会话单元数量")] 
     public virtual int SessionUnitCount { get; protected set; }
 
     /// <summary>
@@ -88,6 +94,7 @@ public partial class Message : BaseEntity<long>, ISessionId
 
     [StringLength(100)]
     //[Required]
+    [Comment("提供者")]
     public virtual string Provider { get; protected set; }
 
     /// <summary>
@@ -163,6 +170,7 @@ public partial class Message : BaseEntity<long>, ISessionId
     /// <summary>
     /// 指定范围
     /// </summary>
+    [Comment("指定范围")] 
     public virtual bool IsScoped { get; protected set; }
 
     /// <summary>

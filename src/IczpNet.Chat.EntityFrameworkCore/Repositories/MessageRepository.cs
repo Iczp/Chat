@@ -10,6 +10,7 @@ namespace IczpNet.Chat.Repositories;
 
 public class MessageRepository(IDbContextProvider<ChatDbContext> dbContextProvider) : ChatRepositoryBase<Message, long>(dbContextProvider), IMessageRepository
 {
+    /// <inheritdoc />
     public virtual async Task<int> IncrementReadedCountAsync(List<long> messageIdList)
     {
         var context = await GetDbContextAsync();
@@ -21,6 +22,7 @@ public class MessageRepository(IDbContextProvider<ChatDbContext> dbContextProvid
             );
     }
 
+    /// <inheritdoc />
     public virtual async Task<int> IncrementOpenedCountAsync(List<long> messageIdList)
     {
         var context = await GetDbContextAsync();
@@ -32,6 +34,7 @@ public class MessageRepository(IDbContextProvider<ChatDbContext> dbContextProvid
             );
     }
 
+    /// <inheritdoc />
     public virtual async Task<int> IncrementFavoritedCountAsync(List<long> messageIdList)
     {
         var context = await GetDbContextAsync();
@@ -40,6 +43,30 @@ public class MessageRepository(IDbContextProvider<ChatDbContext> dbContextProvid
             .Where(x => messageIdList.Contains(x.MessageId))
             .ExecuteUpdateAsync(s => s
                 .SetProperty(b => b.Count, b => b.Count + 1)
+            );
+    }
+
+    /// <inheritdoc />
+    public async Task<int> IncrementQuoteCountAsync(List<long> messageIdList)
+    {
+        var context = await GetDbContextAsync();
+
+        return await context.Message
+            .Where(x => messageIdList.Contains(x.Id))
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(b => b.QuoteCount, b => b.QuoteCount + 1)
+            );
+    }
+
+    /// <inheritdoc />
+    public async Task<int> IncrementForwardCountAsync(List<long> messageIdList)
+    {
+        var context = await GetDbContextAsync();
+
+        return await context.Message
+            .Where(x => messageIdList.Contains(x.Id))
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(b => b.ForwardCount, b => b.ForwardCount + 1)
             );
     }
 

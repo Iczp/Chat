@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -96,7 +97,7 @@ public class Program
 
         try
         {
-            Log.Information("Starting Rctea.IM.HttpApi.Host.");
+            Log.Information($"Starting Iczp.Net.HttpApi.Host. HostName:{Dns.GetHostName()}");
             var builder = WebApplication.CreateBuilder(args);
             builder.Host.AddAppSettingsSecretsJson()
                 .UseAutofac()
