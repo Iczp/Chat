@@ -16,7 +16,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.RoomSections.Rooms;
@@ -24,22 +23,15 @@ namespace IczpNet.Chat.RoomSections.Rooms;
 /// <summary>
 /// 群
 /// </summary>
-public class RoomAppService : ChatAppService, IRoomAppService
+public class RoomAppService(IRoomManager roomManager,
+    IChatObjectCategoryManager chatObjectCategoryManager,
+    ISessionPermissionChecker sessionPermissionChecker) : ChatAppService, IRoomAppService
 {
     public virtual string InvitePolicyName { get; set; }
     public virtual string CreateRoomPolicyName { get; set; }
-    protected IRoomManager RoomManager { get; }
-    protected IChatObjectCategoryManager ChatObjectCategoryManager { get; }
-    protected ISessionPermissionChecker SessionPermissionChecker { get; }
-
-    public RoomAppService(IRoomManager roomManager,
-        IChatObjectCategoryManager chatObjectCategoryManager,
-        ISessionPermissionChecker sessionPermissionChecker)
-    {
-        RoomManager = roomManager;
-        ChatObjectCategoryManager = chatObjectCategoryManager;
-        SessionPermissionChecker = sessionPermissionChecker;
-    }
+    protected IRoomManager RoomManager { get; } = roomManager;
+    protected IChatObjectCategoryManager ChatObjectCategoryManager { get; } = chatObjectCategoryManager;
+    protected ISessionPermissionChecker SessionPermissionChecker { get; } = sessionPermissionChecker;
 
     /// <summary>
     /// 创建群
