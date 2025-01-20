@@ -1,4 +1,5 @@
-﻿using IczpNet.AbpCommons;
+﻿using Castle.Core.Internal;
+using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.Enums;
@@ -8,6 +9,7 @@ using IczpNet.Chat.SessionUnits;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
@@ -109,8 +111,10 @@ public class ChatObjectManager : TreeManager<ChatObject, long, ChatObjectInfo>, 
         if (entity == null)
         {
             var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Robot);
+            //ChatConsts.PrivateAssistant.GetDescription()
+            var description = ChatConsts.PrivateAssistant.GetType().GetAttribute<DescriptionAttribute>()?.Description;
 
-            entity = new ChatObject("私人助理", nameof(ChatConsts.PrivateAssistant), chatObjectType, null)
+            entity = new ChatObject(description ?? "私人助理", nameof(ChatConsts.PrivateAssistant), chatObjectType, null)
             {
                 Description = "我是机器人,会发送私人消息、推送服务等",
             };

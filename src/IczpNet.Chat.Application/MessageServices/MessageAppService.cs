@@ -12,6 +12,7 @@ using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -136,7 +137,12 @@ public class MessageAppService : ChatAppService, IMessageAppService
         var dicts = new Dictionary<string, SessionUnit>();
         foreach (var item in result.Items)
         {
-            var key = entity.OwnerId.ToString() + '-' + item.SenderSessionUnit.OwnerId.ToString();
+            if(item.SenderSessionUnit == null)
+            {
+                Logger.LogWarning($"item.SenderSessionUnit is null, MessageId:{item.Id}");
+                continue;
+            }
+            var key = $"{entity.OwnerId}-{item.SenderSessionUnit.OwnerId}";
             if (!dicts.TryGetValue(key, out var friendshipSessionUnit))
             {
                 friendshipSessionUnit = await SessionUnitManager.FindAsync(entity.OwnerId, item.SenderSessionUnit.OwnerId);

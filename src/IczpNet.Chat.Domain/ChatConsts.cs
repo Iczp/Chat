@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.Enums;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace IczpNet.Chat;
 
@@ -16,8 +17,10 @@ public static class ChatConsts
         ChatObjectTypeEnums.Robot,
     ];
 
+    [Description("群助手")]
     public static string GroupAssistant { get; set; } = nameof(GroupAssistant);
 
+    [Description("私人助理")]
     public static string PrivateAssistant { get; set; } = nameof(PrivateAssistant);
 
     public const int DriveIdLength = 128;
