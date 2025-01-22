@@ -18,13 +18,14 @@ public partial class Message
     {
         //SenderSessionUnit = sessionUnit;
         SenderId = sessionUnit.OwnerId;
-        SenderType = sessionUnit.Owner?.ObjectType;
+        SenderType = sessionUnit.OwnerObjectType;
         ReceiverId = sessionUnit.DestinationId;
         ReceiverType = sessionUnit.DestinationObjectType;
+        //Session = sessionUnit.Session
         SenderSessionUnitId = sessionUnit.Id;
-        Session = sessionUnit.Session;
-        Channel = Session.Channel;
-        SessionKey = Session.SessionKey;
+        SessionId = sessionUnit.SessionId;
+        Channel = sessionUnit.Session.Channel;
+        SessionKey = sessionUnit.Session.SessionKey;
     }
 
     /// <summary>

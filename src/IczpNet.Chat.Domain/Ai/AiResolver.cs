@@ -17,9 +17,15 @@ public class AiResolver : DomainService, IAiResolver, ISingletonDependency
 
     public AiResolver()
     {
-        var typeList = typeof(IAiProvider).Assembly.GetExportedTypes()
-                .Where(t => !t.IsAbstract && t.GetInterfaces().Any(x => typeof(IAiProvider).IsAssignableFrom(x)))
-                .ToList();
+        // 1. 获取所有已加载的程序集
+        var typeList = AppDomain.CurrentDomain.GetAssemblies()
+            .SelectMany(x => x.GetExportedTypes())
+            .Where(t => !t.IsAbstract && t.GetInterfaces().Any(x => typeof(IAiProvider).IsAssignableFrom(x)))
+            .ToList();
+
+        //var typeList = typeof(IAiProvider).Assembly.GetExportedTypes()
+        //    .Where(t => !t.IsAbstract && t.GetInterfaces().Any(x => typeof(IAiProvider).IsAssignableFrom(x)))
+        //    .ToList();
 
         //不要在构造器里输出日志，Logger未初始化
         //Logger.LogInformation($"AI provider count:{typeList.Count}.");

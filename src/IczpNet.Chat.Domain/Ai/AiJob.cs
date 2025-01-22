@@ -46,19 +46,19 @@ public class AiJob(
     {
         Logger.LogInformation($"{nameof(AiJob)} is executed:{args}");
 
-        var message = await MessageRepository.GetAsync(args.MessageId);
+        //var message = await MessageRepository.GetAsync(args.MessageId);
 
-        if (message.IsRollbackMessage())
-        {
-            Logger.LogInformation($"Message is rollback:{message}");
-            return;
-        }
+        //if (message.IsRollbackMessage())
+        //{
+        //    Logger.LogInformation($"Message is rollback:{message}");
+        //    return;
+        //}
 
         var aiProvider = GetProvider(args.Provider);
 
         Logger.LogInformation($"AiProvider={aiProvider.GetProviderName()},Model={aiProvider.GetModel()}");
 
-        await aiProvider.HandleAsync(message);
+        await aiProvider.HandleAsync(args.MessageId);
 
     }
 }
