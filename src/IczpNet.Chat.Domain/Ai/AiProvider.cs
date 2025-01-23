@@ -1,7 +1,10 @@
-﻿using IczpNet.Chat.MessageSections;
+﻿using IczpNet.Chat.DataFilters;
+using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Services;
@@ -25,4 +28,28 @@ public abstract class AiProvider : DomainService, IAiProvider
             ? provider.GetRequiredService<IObjectMapper>()
             : (IObjectMapper)provider.GetRequiredService(typeof(IObjectMapper<>).MakeGenericType(ObjectMapperContext)));
     public abstract Task HandleAsync(long messageId);
+
+    protected async Task<MessageInfo<TextContentInfo>> SendTextAsync(SessionUnit replySessionUnit, long quoteMessageId, TextContentInfo content)
+    {
+        var dto = await MessageSender.SendTextAsync(replySessionUnit, new MessageInput<TextContentInfo>()
+        {
+            QuoteMessageId = quoteMessageId,
+            Content = content
+        });
+
+        //var dto = await MessageSender.SendHtmlAsync(replySessionUnit, new MessageInput<HtmlContentInfo>()
+        //{
+        //    QuoteMessageId = messageId,
+        //    Content = new HtmlContentInfo()
+        //    {
+        //        Content = result,
+        //        EditorType = EditorTypes.MarkDown,
+        //        Title = GetModel(),
+        //    }
+        //});
+
+        Logger.LogInformation($"回复消息：{dto}");
+
+        return dto;
+    }
 }
