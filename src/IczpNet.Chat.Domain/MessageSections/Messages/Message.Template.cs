@@ -78,6 +78,11 @@ public partial class Message
         return (IContentEntity)GetContentEntity();
     }
 
+    public virtual T GetTypedContentEntity<T>() where T : class, IContentEntity
+    {
+        return (T)GetContentEntity();
+    }
+
     public virtual object GetContentDto()
     {
         var content = GetContentEntity();

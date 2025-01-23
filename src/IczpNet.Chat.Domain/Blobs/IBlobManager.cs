@@ -9,6 +9,8 @@ public interface IBlobManager
 
     Task<byte[]> GetBytesAsync(string container, string name);
 
+    Task<byte[]> GetBytesAsync(Guid id);
+
     Task<Blob> CreateAsync(Blob blob);
 
     Task<Blob> GetEntityAsync(string container, string name);

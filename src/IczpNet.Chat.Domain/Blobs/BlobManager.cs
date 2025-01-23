@@ -33,6 +33,12 @@ public class BlobManager(
         return _blobContainer.GetAllBytesAsync(name);
     }
 
+    public async Task<byte[]> GetBytesAsync(Guid id)
+    {
+        var blob = await Repository.GetAsync(id);
+        return await GetBytesAsync(blob.Container, blob.Name);
+    }
+
     public async Task<Blob> GetEntityAsync(string container, string name)
     {
         return await Repository.FindAsync(x => x.Container == container && x.Name == name);
@@ -40,11 +46,13 @@ public class BlobManager(
 
     public async Task<Blob> GetAsync(Guid id)
     {
-        return await Repository.GetAsync( id);
+        return await Repository.GetAsync(id);
     }
 
     public async Task<Blob> FindAsync(Guid id)
     {
         return await Repository.FindAsync(id);
     }
+
+
 }
