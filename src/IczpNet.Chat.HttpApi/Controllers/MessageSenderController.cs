@@ -64,6 +64,7 @@ public class MessageSenderController(
                 FileName = file.FileName,
                 Suffix = blob.Suffix,
                 Url = $"/file?id={blob.Id}",
+                BlobId = blob.Id,
             }
         });
         return new JsonResult(sendResult);
@@ -179,6 +180,7 @@ public class MessageSenderController(
 
         var imageContent = new ImageContentInfo()
         {
+            BlobId = thumbnailBlobId,
             ThumbnailUrl = $"/file?id={thumbnailBlobId}",
             ContentType = file.ContentType,
             Suffix = suffix
@@ -199,6 +201,8 @@ public class MessageSenderController(
             await SaveImageAsync(originalBlobId, bytes, $"{prefixName}_original{suffix}", maxSize, false);
 
             (int width, int height) = GetImageActualDimensions(image);
+
+            imageContent.BlobId = originalBlobId;
 
             imageContent.Width = width;
 
@@ -222,6 +226,8 @@ public class MessageSenderController(
             (int width, int height) = GetImageActualDimensions(img);
 
             double p = (double)width / height;
+
+            imageContent.BlobId = bigImgBlobId;
 
             imageContent.Width = p > 1 ? bigImageSize : Convert.ToInt32(bigImageSize * p);
 
@@ -256,6 +262,7 @@ public class MessageSenderController(
 
         var content = new SoundContentInfo()
         {
+            BlobId = soundBlob.Id,
             ContentType = file.ContentType,
             Size = file.Length,
             FileName = Path.GetFileName(file.FileName),
@@ -295,6 +302,7 @@ public class MessageSenderController(
 
         var content = new VideoContentInfo()
         {
+            BlobId = videoBlob.Id,
             ContentType = file.ContentType,
             Size = file.Length,
             FileName = Path.GetFileName(file.FileName),

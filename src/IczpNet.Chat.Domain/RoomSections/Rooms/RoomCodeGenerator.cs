@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.DependencyInjection;
 
 namespace IczpNet.Chat.RoomSections.Rooms;
 
-public class RoomCodeGenerator() : IRoomCodeGenerator
+public class RoomCodeGenerator : IRoomCodeGenerator, ITransientDependency
 {
     public const string StaticCode = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     protected virtual int Length { get; set; } = 8;
