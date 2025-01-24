@@ -3,7 +3,8 @@
   <Import Project="..\..\common.props" />
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+		<!--<TargetFramework>net9.0</TargetFramework>-->
+		<TargetFrameworks>netstandard2.0;netstandard2.1;net9.0</TargetFrameworks>
 		<Version>0.2.1.903</Version>
 		<Nullable>disable</Nullable>
     <RootNamespace>IczpNet.Chat</RootNamespace>
@@ -30,9 +31,9 @@
   </ItemGroup>
 
   <ItemGroup>
-		<PackageReference Include="IczpNet.AbpCommons.Application.Contracts" Version="0.9.0.903" />
-		<PackageReference Include="IczpNet.AbpTrees.Application.Contracts" Version="9.0.0" />
-		<PackageReference Include="IczpNet.Pusher.Application.Contracts" Version="9.0.0.1" />
+		<PackageReference Include="IczpNet.AbpCommons.Application.Contracts" Version="0.9.1.903" />
+		<PackageReference Include="IczpNet.AbpTrees.Application.Contracts" Version="9.0.1.903" />
+		<PackageReference Include="IczpNet.Pusher.Application.Contracts" Version="9.0.1.903" />
 		<PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
     <PackageReference Include="Volo.Abp.Ddd.Application.Contracts" Version="9.0.3" />
     <PackageReference Include="Volo.Abp.Authorization" Version="9.0.3" />
