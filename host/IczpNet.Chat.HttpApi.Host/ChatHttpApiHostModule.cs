@@ -1,5 +1,6 @@
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.EntityFrameworkCore;
+using IczpNet.Chat.Middlewares;
 using IczpNet.Chat.MultiTenancy;
 using IczpNet.Pusher.Options;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -342,6 +343,7 @@ public class ChatHttpApiHostModule : AbpModule
         var env = context.GetEnvironment();
 
         app.ApplicationServices.UseStaticAutoMapper();
+        app.UseUrlAuthorization();
 
         //app.UsePusherSubscriber();
 
