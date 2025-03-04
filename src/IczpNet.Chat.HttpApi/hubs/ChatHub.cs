@@ -2,6 +2,7 @@
 using IczpNet.Chat.Connections;
 using IczpNet.Pusher.DeviceIds;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
@@ -22,8 +23,8 @@ public class ChatHub(
     IWebClientInfoProvider webClientInfoProvider,
     IChatObjectManager chatObjectManager,
     IBackgroundJobManager backgroundJobManager,
-    
-    ILookupNormalizer lookupNormalizer) : AbpHub
+
+    ILookupNormalizer lookupNormalizer) : AbpHub// AbpHub<IChatClient>
 {
     private readonly IIdentityUserRepository _identityUserRepository = identityUserRepository;
     private readonly ILookupNormalizer _lookupNormalizer = lookupNormalizer;
@@ -40,6 +41,17 @@ public class ChatHub(
         Logger.LogInformation($"[BrowserInfo] {WebClientInfoProvider.BrowserInfo}");
         Logger.LogInformation($"[DeviceInfo] {WebClientInfoProvider.DeviceInfo}");
         Logger.LogInformation($"[ClientIpAddress] {WebClientInfoProvider.ClientIpAddress}");
+        var httpContext = Context.GetHttpContext();
+
+        string deviceId = httpContext?.Request.Query["deviceId"];
+        Logger.LogWarning($"DeviceId:{deviceId}");
+
+        if (!CurrentUser.Id.HasValue)
+        {
+            Logger.LogWarning($"User is null");
+            Context.Abort();
+            return;
+        }
 
         var chatObjectIdList = CurrentUser.Id.HasValue
             ? await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value)

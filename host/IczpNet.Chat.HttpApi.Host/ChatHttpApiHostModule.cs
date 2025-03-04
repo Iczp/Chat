@@ -294,8 +294,7 @@ public class ChatHttpApiHostModule : AbpModule
 
                         // If the request is for our hub...
                         var path = context.HttpContext.Request.Path;
-                        if (!string.IsNullOrEmpty(accessToken) &&
-                            (path.StartsWithSegments("/signalr-hubs/")))
+                        if (!string.IsNullOrEmpty(accessToken) && path.Value.StartsWith("/signalr-hubs/"))
                         {
                             // Read the token out of the query string
                             context.Token = accessToken;
@@ -357,7 +356,7 @@ public class ChatHttpApiHostModule : AbpModule
         var env = context.GetEnvironment();
 
         app.ApplicationServices.UseStaticAutoMapper();
-        app.UseUrlAuthorization();
+        //app.UseUrlAuthorization();
 
         //app.UsePusherSubscriber();
 
