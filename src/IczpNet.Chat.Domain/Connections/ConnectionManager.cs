@@ -10,28 +10,24 @@ using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.Connections;
 
-public class ConnectionManager : DomainService, IConnectionManager
+/// <inheritdoc />
+public class ConnectionManager(
+    IRepository<Connection, string> repository,
+    IOptions<ConnectionOptions> options,
+    IRepository<ServerHost, string> serverHostRepository) : DomainService, IConnectionManager
 {
-    protected IRepository<Connection, string> Repository { get; }
-    protected IRepository<ServerHost, string> ServerHostRepository { get; }
-    protected ConnectionOptions Config { get; }
-    public ConnectionManager(
-        IRepository<Connection, string> repository,
-        IOptions<ConnectionOptions> options,
-        IRepository<ServerHost, string> serverHostRepository)
-    {
-        Repository = repository;
-        Config = options.Value;
-        ServerHostRepository = serverHostRepository;
-    }
+    protected IRepository<Connection, string> Repository { get; } = repository;
+    protected IRepository<ServerHost, string> ServerHostRepository { get; } = serverHostRepository;
+    protected ConnectionOptions Config { get; } = options.Value;
 
-
+    /// <inheritdoc />
     public virtual async Task<ConnectionOptions> GetConfigAsync()
     {
         await Task.Yield();
         return Config;
     }
 
+    /// <inheritdoc />
     public virtual async Task<Connection> CreateAsync(Connection connection)
     {
         if (!connection.ServerHostId.IsNullOrWhiteSpace())
@@ -45,16 +41,20 @@ public class ConnectionManager : DomainService, IConnectionManager
         // 
         return entity;
     }
+
+    /// <inheritdoc />
     public Task<int> GetOnlineCountAsync(DateTime currentTime)
     {
         return Repository.CountAsync(x => x.ActiveTime > currentTime.AddSeconds(-Config.InactiveSeconds));
     }
 
+    /// <inheritdoc />
     public Task<Connection> GetAsync(string connectionId)
     {
         return Repository.GetAsync(connectionId);
     }
 
+    /// <inheritdoc />
     [UnitOfWork]
     public virtual async Task<Connection> UpdateActiveTimeAsync(string connectionId)
     {
@@ -72,11 +72,13 @@ public class ConnectionManager : DomainService, IConnectionManager
         return await Repository.UpdateAsync(entity, true);
     }
 
-    public virtual Task DeleteAsync(string connectionId)
+    /// <inheritdoc />
+    public virtual Task RemoveAsync(string connectionId)
     {
         return Repository.DeleteAsync(connectionId);
     }
 
+    /// <inheritdoc />
     public virtual async Task<int> ClearUnactiveAsync()
     {
         Expression<Func<Connection, bool>> predicate = x => x.ActiveTime < Clock.Now.AddSeconds(-Config.InactiveSeconds);

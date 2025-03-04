@@ -11,12 +11,14 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Volo.Abp;
@@ -300,6 +302,18 @@ public class ChatHttpApiHostModule : AbpModule
                         }
                         return Task.CompletedTask;
                     }
+                };
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true, // 确保 ValidateLifetime 为 true
+                    ValidateIssuerSigningKey = true,
+                    //ValidIssuer = configuration["Jwt:Issuer"],
+                    //ValidAudience = configuration["Jwt:Audience"],
+                    //IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"])),
+                    //ClockSkew = TimeSpan.Zero // 移除时钟偏差 (可选，如果服务器时间同步良好)
+
                 };
             });
 
