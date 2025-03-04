@@ -1,14 +1,14 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.SignalR;
 using Volo.Abp.Identity;
-using Volo.Abp.Users;
 
 namespace IczpNet.Chat.hubs;
-
+[Authorize]
 public class ChatHub(
     IIdentityUserRepository identityUserRepository,
     ILookupNormalizer lookupNormalizer) : AbpHub

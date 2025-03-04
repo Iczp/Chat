@@ -6,6 +6,6 @@ public static class UrlToAuthorizationHeaderMiddlewareExtensions
 {
     public static IApplicationBuilder UseUrlAuthorization(this IApplicationBuilder builder, string tokenParameterName = "access_token")
     {
-        return builder.UseMiddleware<TokenToAuthorizationHeaderMiddleware>(tokenParameterName);
+        return builder.UseMiddleware<UrlToAuthorizationHeaderMiddleware>(tokenParameterName);
     }
 }

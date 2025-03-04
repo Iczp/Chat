@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.Middlewares;
-public class TokenToAuthorizationHeaderMiddleware(RequestDelegate next, string tokenParameterName = "access_token")
+public class UrlToAuthorizationHeaderMiddleware(RequestDelegate next, string tokenParameterName = "access_token")
 {
     private readonly RequestDelegate _next = next;
     private readonly string _tokenParameterName = tokenParameterName;  // 用于配置从哪个 URL 参数中获取 Token
