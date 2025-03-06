@@ -283,7 +283,7 @@ public class ChatHttpApiHostModule : AbpModule
                 // Sending the access token in the query string is required when using WebSockets or ServerSentEvents
                 // due to a limitation in Browser APIs. We restrict it to only calls to the
                 // SignalR hub in this code.
-                // See https://docs.microsoft.com/aspnet/core/signalr/security#access-token-logging
+                // See https://learn.microsoft.com/zh-cn/aspnet/core/signalr/authn-and-authz?view=aspnetcore-9.0
                 // for more information about security considerations when using
                 // the query string to transmit the access token.
                 options.Events = new JwtBearerEvents

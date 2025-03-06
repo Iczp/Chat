@@ -1,40 +1,37 @@
 ﻿using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Connections;
-using IczpNet.Pusher.DeviceIds;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Net;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.SignalR;
 using Volo.Abp.AspNetCore.WebClientInfo;
 using Volo.Abp.BackgroundJobs;
-using Volo.Abp.Identity;
+using Volo.Abp.EventBus.Local;
 using Volo.Abp.Uow;
-using Volo.Abp.Users;
 
-namespace IczpNet.Chat.hubs;
+namespace IczpNet.Chat.Hubs;
 [Authorize]
 public class ChatHub(
-    IIdentityUserRepository identityUserRepository,
     IConnectionManager connectionManager,
     IWebClientInfoProvider webClientInfoProvider,
     IChatObjectManager chatObjectManager,
     IBackgroundJobManager backgroundJobManager,
-
-    ILookupNormalizer lookupNormalizer) : AbpHub// AbpHub<IChatClient>
+    ILocalEventBus localEventBus,
+    IConnectionPoolManager connectionPoolManager) : AbpHub// AbpHub<IChatClient>
 {
-    private readonly IIdentityUserRepository _identityUserRepository = identityUserRepository;
-    private readonly ILookupNormalizer _lookupNormalizer = lookupNormalizer;
 
     public IConnectionManager ConnectionManager { get; } = connectionManager;
     public IWebClientInfoProvider WebClientInfoProvider { get; } = webClientInfoProvider;
     public IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
     public IBackgroundJobManager BackgroundJobManager { get; } = backgroundJobManager;
+    public ILocalEventBus LocalEventBus { get; } = localEventBus;
+    public IConnectionPoolManager ConnectionPoolManager { get; } = connectionPoolManager;
 
-    [UnitOfWork]
+    //[UnitOfWork]
     public override async Task OnConnectedAsync()
     {
         Logger.LogInformation($"[OnConnected] ConnectionId:{Context.ConnectionId}.UserName: {CurrentUser.UserName}");
@@ -44,6 +41,9 @@ public class ChatHub(
         var httpContext = Context.GetHttpContext();
 
         string deviceId = httpContext?.Request.Query["deviceId"];
+
+        string queryId = httpContext?.Request.Query["id"];
+
         Logger.LogWarning($"DeviceId:{deviceId}");
 
         if (!CurrentUser.Id.HasValue)
@@ -53,39 +53,75 @@ public class ChatHub(
             return;
         }
 
-        var chatObjectIdList = CurrentUser.Id.HasValue
-            ? await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value)
-            : [];
+        await Groups.AddToGroupAsync(Context.ConnectionId, CurrentUser.Id.ToString());
 
-        await ConnectionManager.CreateAsync(new Connection(Context.ConnectionId, chatObjectIdList)
+        var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+
+        await ConnectionPoolManager.AddAsync(new PoolInfo()
         {
-            AppUserId = CurrentUser.Id,
-            IpAddress = WebClientInfoProvider.ClientIpAddress,
-            //ServerHostId = "host",
-            DeviceId = CurrentUser.GetDeviceId(),
-            BrowserInfo = WebClientInfoProvider.BrowserInfo,
-            DeviceInfo = WebClientInfoProvider.DeviceInfo,
+            QueryId = queryId,
+            ConnectionId = Context.ConnectionId,
+            Host = Dns.GetHostName(),
+            AppUserId = CurrentUser.Id.Value,
+            DeviceId = deviceId,
+            ChatObjectIdList = chatObjectIdList,
+            CreationTime = Clock.Now,
         });
+
+        //await ConnectionManager.CreateAsync(new Connection(Context.ConnectionId, chatObjectIdList)
+        //{
+        //    AppUserId = CurrentUser.Id,
+        //    IpAddress = WebClientInfoProvider.ClientIpAddress,
+        //    //ServerHostId = "host",
+        //    DeviceId = deviceId,
+        //    BrowserInfo = WebClientInfoProvider.BrowserInfo,
+        //    DeviceInfo = WebClientInfoProvider.DeviceInfo,
+        //});
         await base.OnConnectedAsync();
     }
 
-    [UnitOfWork]
+    //[UnitOfWork]
     public override async Task OnDisconnectedAsync(Exception exception)
     {
         var connectionId = Context.ConnectionId;
+
         var userName = CurrentUser.UserName;
+
         Logger.LogInformation($"[OnDisconnected],ConnectionId:{connectionId}.UserName: {userName}");
+
+        if (CurrentUser.Id.HasValue)
+        {
+            await Groups.RemoveFromGroupAsync(connectionId, CurrentUser.Id.Value.ToString());
+        }
+
+        //await LocalEventBus.PublishAsync(new ConnectionRemovedEventData(connectionId), onUnitOfWorkComplete: false);
+
         try
         {
+            ConnectionPoolManager.Remove(connectionId);
+
+            //var onlineCount = await ConnectionPoolManager.CountAsync(Dns.GetHostName());
+
+            //Logger.LogWarning($"[OnDisconnectedAsync] onlineCount: {onlineCount}");
+
             // 注：这里的删除操作可能会被取消，所以需要捕获TaskCanceledException异常
-            await ConnectionManager.RemoveAsync(Context.ConnectionId);
+            //await ConnectionPoolManager.RemoveAsync(connectionId);
+            //await ConnectionManager.RemoveAsync(Context.ConnectionId);
         }
-        catch (TaskCanceledException)
+        catch (TaskCanceledException ex)
         {
-            //Logger.LogWarning(ex, $"TaskCanceledException while deleting connection {connectionId}. UserName: {userName}");
-            Logger.LogWarning($"[{nameof(ConnectionRemoveJob)}] deleting connection {connectionId}. UserName: {userName}");
-            // 使用后台任务删除连接
-            await BackgroundJobManager.EnqueueAsync(new ConnectionRemoveJobArgs(connectionId));
+            Logger.LogWarning(ex, $"TaskCanceledException while deleting connection {connectionId}. UserName: {userName}");
+
+            //if (!BackgroundJobManager.IsAvailable())
+            //{
+            //    Logger.LogWarning($"BackgroundJobManager.IsAvailable(): False");
+            //}
+            //else
+            //{
+            //    Logger.LogWarning($"[{nameof(ConnectionRemoveJob)}] deleting connection {connectionId}. UserName: {userName}");
+            //    // 使用后台任务删除连接
+            //    await BackgroundJobManager.EnqueueAsync(new ConnectionRemoveJobArgs(connectionId), BackgroundJobPriority.High);
+            //}
         }
         catch (Exception ex)
         {
@@ -97,12 +133,11 @@ public class ChatHub(
 
     public async Task SendMessageAsync(string targetUserName, string message)
     {
-
-        var targetUser = await _identityUserRepository.FindByNormalizedUserNameAsync(_lookupNormalizer.NormalizeName(targetUserName));
-
         message = $"{CurrentUser.UserName}: {message}";
 
-        await Clients.All.SendAsync("ReceiveMessage", message);
+        var all = await ConnectionPoolManager.GetAllAsync();
+
+        await Clients.All.SendAsync("ReceivedMessage", new { all });
         //await Clients
         //    .User(targetUser.Id.ToString())
         //    .SendAsync("ReceiveMessage", message);

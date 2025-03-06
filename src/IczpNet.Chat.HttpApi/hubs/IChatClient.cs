@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace IczpNet.Chat.hubs;
+namespace IczpNet.Chat.Hubs;
 
 public interface IChatClient
 {

@@ -14,7 +14,10 @@ using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
-public class MessageCreatedEventHandler(
+/// <summary>
+/// 角标增量事件处理
+/// </summary>
+public class IncremenetBadgeForMessageCreatedEventHandler(
     ISessionUnitManager sessionUnitManager,
     IFollowManager followManager,
     IJsonSerializer jsonSerializer,
