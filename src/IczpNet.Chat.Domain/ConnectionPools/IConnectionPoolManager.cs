@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,8 +14,9 @@ public interface IConnectionPoolManager
     /// 添加连接
     /// </summary>
     /// <param name="connectionPool"></param>
+    /// <param name="token"></param>
     /// <returns></returns>
-    Task<bool> AddAsync(ConnectionPoolCacheItem connectionPool);
+    Task<bool> AddAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default);
 
     /// <summary>
     /// 移除连接
@@ -31,6 +33,7 @@ public interface IConnectionPoolManager
     /// <param name="token"></param>
     /// <returns></returns>
     Task<bool> RemoveAsync(string connectionId, CancellationToken token = default);
+
     /// <summary>
     /// 移除连接
     /// </summary>
@@ -38,53 +41,45 @@ public interface IConnectionPoolManager
     void Remove(string connectionId);
 
     /// <summary>
-    /// 激活连接
+    /// 获取连接数量
     /// </summary>
-    /// <param name="connectionPool"></param>
-    /// <param name="message"></param>
+    /// <param name="host"></param>
+    /// <param name="token"></param>
     /// <returns></returns>
-    Task ActiveAsync(ConnectionPoolCacheItem connectionPool, string message);
-
-    /// <summary>
-    /// 获取连接列表
-    /// </summary>
-    /// <param name="connectionId"></param>
-    /// <returns></returns>
-    Task<List<ConnectionPoolCacheItem>> GetListAsync(string connectionId);
-
-    /// <summary>
-    /// 发送消息给所有连接
-    /// </summary>
-    /// <param name="message"></param>
-    /// <returns></returns>
-    Task SendToAllAsync(string message);
+    Task<int> TotalCountAsync(string host, CancellationToken token = default);
 
     /// <summary>
     /// 获取连接数量
     /// </summary>
-    /// <param name="host"></param>
+    /// <param name="token"></param>
     /// <returns></returns>
-    Task<int> TotalCountAsync(string host);
+    Task<int> TotalCountAsync( CancellationToken token = default);
 
     /// <summary>
     /// 获取所有连接
     /// </summary>
     /// <returns></returns>
-    Task<IEnumerable<ConnectionPoolCacheItem>> GetAllListAsync();
-
-    /// <summary>
-    /// 发送消息给指定连接
-    /// </summary>
-    /// <param name="connectionPool"></param>
-    /// <param name="message"></param>
-    /// <returns></returns>
-    Task<bool> SendMessageAsync(ConnectionPoolCacheItem connectionPool, string message);
+    Task<IEnumerable<ConnectionPoolCacheItem>> GetAllListAsync(CancellationToken token = default);
 
     /// <summary>
     /// 清空所有连接
     /// </summary>
     /// <param name="host"></param>
+    /// <param name="token"></param>
     /// <returns></returns>
-    Task ClearAllAsync(string host);
-    
+    Task ClearAllAsync(string host, CancellationToken token = default);
+
+    /// <summary>
+    /// 创建查询
+    /// </summary>
+    /// <returns></returns>
+    Task<IQueryable<ConnectionPoolCacheItem>> CreateQueryableAsync(CancellationToken token = default);
+
+    /// <summary>
+    /// 获取连接
+    /// </summary>
+    /// <param name="connectionId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<ConnectionPoolCacheItem> GetAsync(string connectionId, CancellationToken token = default);
 }

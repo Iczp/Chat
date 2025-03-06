@@ -1,5 +1,7 @@
 ﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ConnectionPools.Dtos;
+using IczpNet.Chat.Permissions;
+using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,19 +12,28 @@ namespace IczpNet.Chat.ConnectionPools;
 public class ConnectionPoolAppService(
     IConnectionPoolManager connectionPoolManager) : ChatAppService, IConnectionPoolAppService
 {
+
+    protected override string CreatePolicyName { get; set; } = ChatPermissions.ConnectionPoolPermission.Create;
+    protected override string GetListPolicyName { get; set; } = ChatPermissions.ConnectionPoolPermission.GetList;
+    protected override string GetPolicyName { get; set; } = ChatPermissions.ConnectionPoolPermission.GetItem;
+    protected override string DeletePolicyName { get; set; } = ChatPermissions.ConnectionPoolPermission.Delete;
+    protected virtual string ClearAllPolicyName { get; set; } = ChatPermissions.ConnectionPoolPermission.ClearAll;
+
     public IConnectionPoolManager ConnectionPoolManager { get; } = connectionPoolManager;
 
     /// <inheritdoc />
-    public Task<int> GetTotalCountAsync(string host)
+    public async Task<int> GetTotalCountAsync(string host)
     {
-        return ConnectionPoolManager.TotalCountAsync(host);
+        return await ConnectionPoolManager.TotalCountAsync(host);
     }
 
     /// <inheritdoc />
+    //[HttpGet]
     public async Task<PagedResultDto<ConnectionPoolCacheItem>> GetListAsync(ConnectionPoolGetListInput input)
     {
-        var query = (await ConnectionPoolManager.GetAllListAsync())
-            .AsQueryable()
+        await CheckGetListPolicyAsync();
+
+        var query = (await ConnectionPoolManager.CreateQueryableAsync())
             .WhereIf(!string.IsNullOrWhiteSpace(input.Host), x => x.Host == input.Host)
             .WhereIf(!string.IsNullOrWhiteSpace(input.ConnectionId), x => x.ConnectionId == input.ConnectionId)
             .WhereIf(!string.IsNullOrWhiteSpace(input.QueryId), x => x.QueryId == input.QueryId)
@@ -34,15 +45,29 @@ public class ConnectionPoolAppService(
         return await GetPagedListAsync(query, input, q => q.OrderByDescending(x => x.CreationTime));
     }
 
-    /// <inheritdoc />
-    public Task ClearAllAsync(string host)
+    /// <summary>
+    /// 获取连接
+    /// </summary>
+    /// <param name="id">ConnectionId</param>
+    /// <returns></returns>
+    public async Task<ConnectionPoolCacheItem> GetAsync(string id)
     {
-        return ConnectionPoolManager.ClearAllAsync(host);
+        await CheckGetItemPolicyAsync();
+
+        return await ConnectionPoolManager.GetAsync(id);
     }
 
     /// <inheritdoc />
-    public Task RemoveAsync(string connectionId)
+    public async Task ClearAllAsync(string host)
     {
-        return ConnectionPoolManager.RemoveAsync(connectionId);
+        await CheckPolicyAsync(ClearAllPolicyName);
+        await ConnectionPoolManager.ClearAllAsync(host);
+    }
+
+    /// <inheritdoc />
+    public async Task RemoveAsync(string connectionId)
+    {
+        await CheckDeletePolicyAsync();
+        await ConnectionPoolManager.RemoveAsync(connectionId);
     }
 }

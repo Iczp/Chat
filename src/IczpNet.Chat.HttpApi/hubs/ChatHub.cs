@@ -10,9 +10,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.SignalR;
 using Volo.Abp.AspNetCore.WebClientInfo;
-using Volo.Abp.BackgroundJobs;
-using Volo.Abp.EventBus.Local;
-using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.Hubs;
 [Authorize]
@@ -20,16 +17,12 @@ public class ChatHub(
     IConnectionManager connectionManager,
     IWebClientInfoProvider webClientInfoProvider,
     IChatObjectManager chatObjectManager,
-    IBackgroundJobManager backgroundJobManager,
-    ILocalEventBus localEventBus,
     IConnectionPoolManager connectionPoolManager) : AbpHub// AbpHub<IChatClient>
 {
 
     public IConnectionManager ConnectionManager { get; } = connectionManager;
     public IWebClientInfoProvider WebClientInfoProvider { get; } = webClientInfoProvider;
     public IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
-    public IBackgroundJobManager BackgroundJobManager { get; } = backgroundJobManager;
-    public ILocalEventBus LocalEventBus { get; } = localEventBus;
     public IConnectionPoolManager ConnectionPoolManager { get; } = connectionPoolManager;
 
     //[UnitOfWork]
@@ -63,10 +56,13 @@ public class ChatHub(
             QueryId = queryId,
             ConnectionId = Context.ConnectionId,
             Host = Dns.GetHostName(),
+            IpAddress = WebClientInfoProvider.ClientIpAddress,
             AppUserId = CurrentUser.Id.Value,
             DeviceId = deviceId,
-            ChatObjectIdList = chatObjectIdList,
+            BrowserInfo = WebClientInfoProvider.BrowserInfo,
+            DeviceInfo = WebClientInfoProvider.DeviceInfo,
             CreationTime = Clock.Now,
+            ChatObjectIdList = chatObjectIdList,
         });
 
         //await ConnectionManager.CreateAsync(new Connection(Context.ConnectionId, chatObjectIdList)
@@ -95,16 +91,8 @@ public class ChatHub(
             await Groups.RemoveFromGroupAsync(connectionId, CurrentUser.Id.Value.ToString());
         }
 
-        //await LocalEventBus.PublishAsync(new ConnectionRemovedEventData(connectionId), onUnitOfWorkComplete: false);
-
         try
         {
-            //ConnectionPoolManager.Remove(connectionId);
-
-            //var onlineCount = await ConnectionPoolManager.TotalCountAsync(Dns.GetHostName());
-
-            //Logger.LogWarning($"[OnDisconnectedAsync] onlineCount: {onlineCount}");
-
             // 注：这里的删除操作可能会被取消，所以需要捕获TaskCanceledException异常
             await ConnectionPoolManager.RemoveAsync(connectionId, new CancellationTokenSource().Token);
 
@@ -113,17 +101,8 @@ public class ChatHub(
         catch (TaskCanceledException ex)
         {
             Logger.LogWarning(ex, $"TaskCanceledException while deleting connection {connectionId}. UserName: {userName}");
-
-            //if (!BackgroundJobManager.IsAvailable())
-            //{
-            //    Logger.LogWarning($"BackgroundJobManager.IsAvailable(): False");
-            //}
-            //else
-            //{
-            //    Logger.LogWarning($"[{nameof(ConnectionRemoveJob)}] deleting connection {connectionId}. UserName: {userName}");
-            //    // 使用后台任务删除连接
-            //    await BackgroundJobManager.EnqueueAsync(new ConnectionRemoveJobArgs(connectionId), BackgroundJobPriority.High);
-            //}
+            // 使用同步方法删除连接池
+            ConnectionPoolManager.Remove(connectionId);
         }
         catch (Exception ex)
         {

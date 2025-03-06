@@ -20,6 +20,13 @@ public interface IConnectionPoolAppService
     Task<PagedResultDto<ConnectionPoolCacheItem>> GetListAsync(ConnectionPoolGetListInput input);
 
     /// <summary>
+    /// 获取连接
+    /// </summary>
+    /// <param name="connectionId"></param>
+    /// <returns></returns>
+    Task<ConnectionPoolCacheItem> GetAsync(string connectionId);
+
+    /// <summary>
     /// 清空所有连接
     /// </summary>
     /// <param name="host"></param>

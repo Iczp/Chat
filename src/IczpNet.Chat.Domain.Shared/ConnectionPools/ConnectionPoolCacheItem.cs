@@ -35,6 +35,21 @@ public class ConnectionPoolCacheItem
     public string DeviceId { get; set; }
 
     /// <summary>
+    /// IpAddress
+    /// </summary>
+    public virtual string IpAddress { get; set; }
+
+    /// <summary>
+    /// BrowserInfo
+    /// </summary>
+    public virtual string BrowserInfo { get; set; }
+
+    /// <summary>
+    /// DeviceInfo
+    /// </summary>
+    public virtual string DeviceInfo { get; set; }
+
+    /// <summary>
     /// CreationTime
     /// </summary>
     public DateTime? CreationTime { get; set; } = DateTime.Now;
@@ -43,8 +58,6 @@ public class ConnectionPoolCacheItem
     /// ChatObjectIdList
     /// </summary>
     public List<long> ChatObjectIdList { get; set; } = [];
-
-    
 
     public override string ToString()
     {

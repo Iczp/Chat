@@ -21,10 +21,12 @@ public class ConnectionPoolManager(
     /// 连接缓存
     /// </summary>
     public IDistributedCache<List<string>> ConnectionIdsCache { get; } = connectionIdsCache;
+
     /// <summary>
     /// 连接池缓存
     /// </summary>
     protected virtual string ConnectionIdsCacheKey => "ConnectionIds_v0.1";
+
     /// <summary>
     /// 连接池缓存
     /// </summary>
@@ -35,15 +37,19 @@ public class ConnectionPoolManager(
         AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1)
     };
 
-    /// <inheritdoc />
-    public Task ActiveAsync(ConnectionPoolCacheItem connectionPool, string message)
-    {
-        throw new System.NotImplementedException();
-    }
-
     protected async Task<List<string>> GetConnectionIdsAsync(CancellationToken token = default)
     {
         return (await ConnectionIdsCache.GetAsync(ConnectionIdsCacheKey, token: token)) ?? [];
+    }
+
+    protected async Task<List<string>> GetConnectionIdsAsync(string host, CancellationToken token = default)
+    {
+        if (string.IsNullOrWhiteSpace(host))
+        {
+            return await GetConnectionIdsAsync(token);
+        }
+
+        return (await CreateQueryableAsync(token)).Where(x => x.Host == host).Select(x => x.ConnectionId).ToList();
     }
 
     protected async Task SetConnectionIdsAsync(List<string> connectionIdList, CancellationToken token = default)
@@ -52,15 +58,15 @@ public class ConnectionPoolManager(
     }
 
     /// <inheritdoc />
-    public async Task<bool> AddAsync(ConnectionPoolCacheItem connectionPool)
+    public async Task<bool> AddAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default)
     {
-        var connectionList = await GetConnectionIdsAsync();
+        var connectionList = await GetConnectionIdsAsync(token);
 
         connectionList.Add(connectionPool.ConnectionId);
 
-        await SetConnectionIdsAsync(connectionList);
+        await SetConnectionIdsAsync(connectionList, token);
 
-        await ConnectionPoolCache.SetAsync(connectionPool.ConnectionId, connectionPool, DistributedCacheEntryOptions);
+        await ConnectionPoolCache.SetAsync(connectionPool.ConnectionId, connectionPool, DistributedCacheEntryOptions, token: token);
 
         Logger.LogInformation($"Add connection {connectionPool}");
 
@@ -121,22 +127,29 @@ public class ConnectionPoolManager(
     }
 
     /// <inheritdoc />
-    public async Task<int> TotalCountAsync(string host)
+    public async Task<int> TotalCountAsync(string host, CancellationToken token = default)
     {
-        var list = await GetConnectionIdsAsync();
+        var list = await GetConnectionIdsAsync(host, token);
         return list.Count;
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<ConnectionPoolCacheItem>> GetAllListAsync()
+    public async Task<int> TotalCountAsync(CancellationToken token = default)
+    {
+        var list = await GetConnectionIdsAsync(token);
+        return list.Count;
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<ConnectionPoolCacheItem>> GetAllListAsync(CancellationToken token = default)
     {
         var poolList = new List<ConnectionPoolCacheItem>();
 
-        var list = await GetConnectionIdsAsync();
+        var list = await GetConnectionIdsAsync(token);
 
         foreach (var connectionId in list)
         {
-            var pool = await ConnectionPoolCache.GetAsync(connectionId);
+            var pool = await ConnectionPoolCache.GetAsync(connectionId, token: token);
 
             if (pool == null)
             {
@@ -148,35 +161,27 @@ public class ConnectionPoolManager(
     }
 
     /// <inheritdoc />
-    public Task<List<ConnectionPoolCacheItem>> GetListAsync(string connectionId)
+    public async Task ClearAllAsync(string host, CancellationToken token = default)
     {
-        throw new System.NotImplementedException();
-    }
-
-
-
-    /// <inheritdoc />
-    public Task<bool> SendMessageAsync(ConnectionPoolCacheItem connectionPool, string message)
-    {
-        throw new System.NotImplementedException();
-    }
-
-    /// <inheritdoc />
-    public Task SendToAllAsync(string message)
-    {
-        throw new System.NotImplementedException();
-    }
-
-    /// <inheritdoc />
-    public async Task ClearAllAsync(string host)
-    {
-        var list = (await GetAllListAsync()).AsQueryable()
+        var list = (await CreateQueryableAsync(token))
             .WhereIf(!string.IsNullOrWhiteSpace(host), x => x.Host == host)
             .ToList();
 
         foreach (var connectionPool in list)
         {
-            await RemoveAsync(connectionPool.ConnectionId);
+            await RemoveAsync(connectionPool.ConnectionId, token);
         }
+    }
+
+    /// <inheritdoc />
+    public async Task<IQueryable<ConnectionPoolCacheItem>> CreateQueryableAsync(CancellationToken token = default)
+    {
+        return (await GetAllListAsync(token)).AsQueryable();
+    }
+
+    /// <inheritdoc />
+    public async Task<ConnectionPoolCacheItem> GetAsync(string connectionId, CancellationToken token = default)
+    {
+        return await ConnectionPoolCache.GetAsync(connectionId, token: token);
     }
 }

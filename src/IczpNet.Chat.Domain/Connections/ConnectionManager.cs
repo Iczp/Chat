@@ -7,6 +7,7 @@ using Volo.Abp.Domain.Services;
 using Microsoft.Extensions.Logging;
 using IczpNet.Chat.ServerHosts;
 using Volo.Abp.Uow;
+using System.Threading;
 
 namespace IczpNet.Chat.Connections;
 
@@ -28,39 +29,39 @@ public class ConnectionManager(
     }
 
     /// <inheritdoc />
-    public virtual async Task<Connection> CreateAsync(Connection connection)
+    public virtual async Task<Connection> CreateAsync(Connection connection, CancellationToken token = default)
     {
         if (!connection.ServerHostId.IsNullOrWhiteSpace())
         {
-            var serverHost = await ServerHostRepository.FindAsync(connection.ServerHostId);
-            serverHost ??= await ServerHostRepository.InsertAsync(new ServerHost(connection.ServerHostId));
+            var serverHost = await ServerHostRepository.FindAsync(connection.ServerHostId, cancellationToken: token);
+            serverHost ??= await ServerHostRepository.InsertAsync(new ServerHost(connection.ServerHostId), cancellationToken: token);
             connection.ServerHost = serverHost;
         }
 
-        var entity = await Repository.InsertAsync(connection, autoSave: true);
+        var entity = await Repository.InsertAsync(connection, autoSave: true, cancellationToken: token);
         // 
         return entity;
     }
 
     /// <inheritdoc />
-    public Task<int> GetOnlineCountAsync(DateTime currentTime)
+    public Task<int> GetOnlineCountAsync(DateTime currentTime, CancellationToken token = default)
     {
-        return Repository.CountAsync(x => x.ActiveTime > currentTime.AddSeconds(-Config.InactiveSeconds));
+        return Repository.CountAsync(x => x.ActiveTime > currentTime.AddSeconds(-Config.InactiveSeconds), cancellationToken: token);
     }
 
     /// <inheritdoc />
-    public Task<Connection> GetAsync(string connectionId)
+    public Task<Connection> GetAsync(string connectionId, CancellationToken token = default)
     {
-        return Repository.GetAsync(connectionId);
+        return Repository.GetAsync(connectionId, cancellationToken: token);
     }
 
     /// <inheritdoc />
     [UnitOfWork]
-    public virtual async Task<Connection> UpdateActiveTimeAsync(string connectionId)
+    public virtual async Task<Connection> UpdateActiveTimeAsync(string connectionId, CancellationToken token = default)
     {
         //using var uow = UnitOfWorkManager.Begin();
 
-        var entity = await Repository.FindAsync(connectionId);
+        var entity = await Repository.FindAsync(connectionId, cancellationToken: token);
 
         if (entity == null)
         {
@@ -69,27 +70,27 @@ public class ConnectionManager(
         }
         entity.SetActiveTime(Clock.Now);
 
-        return await Repository.UpdateAsync(entity, true);
+        return await Repository.UpdateAsync(entity, true, token);
     }
 
     /// <inheritdoc />
-    public virtual Task RemoveAsync(string connectionId)
+    public virtual Task RemoveAsync(string connectionId, CancellationToken token = default)
     {
-        return Repository.DeleteAsync(connectionId);
+        return Repository.DeleteAsync(connectionId, cancellationToken: token);
     }
 
     /// <inheritdoc />
-    public virtual async Task<int> ClearUnactiveAsync()
+    public virtual async Task<int> ClearUnactiveAsync(CancellationToken token = default)
     {
         Expression<Func<Connection, bool>> predicate = x => x.ActiveTime < Clock.Now.AddSeconds(-Config.InactiveSeconds);
 
-        var count = await Repository.CountAsync(predicate);
+        var count = await Repository.CountAsync(predicate, cancellationToken: token);
 
         if (count == 0)
         {
             return 0;
         }
-        await Repository.DeleteAsync(predicate);
+        await Repository.DeleteAsync(predicate, cancellationToken: token);
 
         return count;
     }
