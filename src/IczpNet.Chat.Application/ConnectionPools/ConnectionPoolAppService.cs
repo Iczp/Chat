@@ -19,7 +19,7 @@ public class ConnectionPoolAppService(
     }
 
     /// <inheritdoc />
-    public async Task<PagedResultDto<PoolInfo>> GetListAsync(ConnectionPoolGetListInput input)
+    public async Task<PagedResultDto<ConnectionPoolCacheItem>> GetListAsync(ConnectionPoolGetListInput input)
     {
         var query = (await ConnectionPoolManager.GetAllAsync())
             .AsQueryable()

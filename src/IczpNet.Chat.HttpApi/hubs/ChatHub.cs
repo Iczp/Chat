@@ -58,7 +58,7 @@ public class ChatHub(
 
         var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
 
-        await ConnectionPoolManager.AddAsync(new PoolInfo()
+        await ConnectionPoolManager.AddAsync(new ConnectionPoolCacheItem()
         {
             QueryId = queryId,
             ConnectionId = Context.ConnectionId,

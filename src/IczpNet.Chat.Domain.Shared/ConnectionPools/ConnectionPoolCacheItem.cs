@@ -7,7 +7,7 @@ namespace IczpNet.Chat.ConnectionPools;
 /// 连接池信息
 /// </summary>
 [Serializable]
-public class PoolInfo
+public class ConnectionPoolCacheItem
 {
     /// <summary>
     /// 

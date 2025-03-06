@@ -14,7 +14,7 @@ public interface IConnectionPoolManager
     /// </summary>
     /// <param name="poolInfo"></param>
     /// <returns></returns>
-    Task<bool> AddAsync(PoolInfo poolInfo);
+    Task<bool> AddAsync(ConnectionPoolCacheItem poolInfo);
 
     /// <summary>
     /// 移除连接
@@ -22,7 +22,7 @@ public interface IConnectionPoolManager
     /// <param name="poolInfo"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<bool> RemoveAsync(PoolInfo poolInfo, CancellationToken token = default);
+    Task<bool> RemoveAsync(ConnectionPoolCacheItem poolInfo, CancellationToken token = default);
 
     /// <summary>
     /// 移除连接
@@ -43,14 +43,14 @@ public interface IConnectionPoolManager
     /// <param name="poolInfo"></param>
     /// <param name="message"></param>
     /// <returns></returns>
-    Task ActiveAsync(PoolInfo poolInfo, string message);
+    Task ActiveAsync(ConnectionPoolCacheItem poolInfo, string message);
 
     /// <summary>
     /// 获取连接列表
     /// </summary>
     /// <param name="connectionId"></param>
     /// <returns></returns>
-    Task<List<PoolInfo>> GetListAsync(string connectionId);
+    Task<List<ConnectionPoolCacheItem>> GetListAsync(string connectionId);
 
     /// <summary>
     /// 发送消息给所有连接
@@ -70,7 +70,7 @@ public interface IConnectionPoolManager
     /// 获取所有连接
     /// </summary>
     /// <returns></returns>
-    Task<IEnumerable<PoolInfo>> GetAllAsync();
+    Task<IEnumerable<ConnectionPoolCacheItem>> GetAllAsync();
 
     /// <summary>
     /// 发送消息给指定连接
@@ -78,7 +78,7 @@ public interface IConnectionPoolManager
     /// <param name="poolInfo"></param>
     /// <param name="message"></param>
     /// <returns></returns>
-    Task<bool> SendMessageAsync(PoolInfo poolInfo, string message);
+    Task<bool> SendMessageAsync(ConnectionPoolCacheItem poolInfo, string message);
 
     /// <summary>
     /// 清空所有连接

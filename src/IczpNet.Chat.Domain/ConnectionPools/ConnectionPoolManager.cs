@@ -12,7 +12,7 @@ namespace IczpNet.Chat.ConnectionPools;
 
 /// <inheritdoc />
 public class ConnectionPoolManager(
-    IDistributedCache<PoolInfo, string> poolsCache,
+    IDistributedCache<ConnectionPoolCacheItem, string> poolsCache,
     IDistributedCache<List<string>> connectionCache
     ) : DomainService, IConnectionPoolManager
 {
@@ -28,7 +28,7 @@ public class ConnectionPoolManager(
     /// <summary>
     /// 连接池缓存
     /// </summary>
-    public IDistributedCache<PoolInfo, string> PoolsCache { get; } = poolsCache;
+    public IDistributedCache<ConnectionPoolCacheItem, string> PoolsCache { get; } = poolsCache;
 
     protected virtual DistributedCacheEntryOptions DistributedCacheEntryOptions { get; } = new DistributedCacheEntryOptions()
     {
@@ -36,7 +36,7 @@ public class ConnectionPoolManager(
     };
 
     /// <inheritdoc />
-    public Task ActiveAsync(PoolInfo poolInfo, string message)
+    public Task ActiveAsync(ConnectionPoolCacheItem connectionPool, string message)
     {
         throw new System.NotImplementedException();
     }
@@ -52,17 +52,17 @@ public class ConnectionPoolManager(
     }
 
     /// <inheritdoc />
-    public async Task<bool> AddAsync(PoolInfo poolInfo)
+    public async Task<bool> AddAsync(ConnectionPoolCacheItem connectionPool)
     {
         var connectionList = await GetConnectionIdsAsync();
 
-        connectionList.Add(poolInfo.ConnectionId);
+        connectionList.Add(connectionPool.ConnectionId);
 
         await SetConnectionIdsAsync(connectionList);
 
-        await PoolsCache.SetAsync(poolInfo.ConnectionId, poolInfo, DistributedCacheEntryOptions);
+        await PoolsCache.SetAsync(connectionPool.ConnectionId, connectionPool, DistributedCacheEntryOptions);
 
-        Logger.LogInformation($"Add connection {poolInfo}");
+        Logger.LogInformation($"Add connection {connectionPool}");
 
         Logger.LogInformation($"Online totalCount {connectionList.Count}");
 
@@ -70,9 +70,9 @@ public class ConnectionPoolManager(
     }
 
     /// <inheritdoc />
-    public async Task<bool> RemoveAsync(PoolInfo poolInfo, CancellationToken token = default)
+    public async Task<bool> RemoveAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default)
     {
-        return await RemoveAsync(poolInfo.ConnectionId, token: token);
+        return await RemoveAsync(connectionPool.ConnectionId, token: token);
     }
 
     /// <inheritdoc />
@@ -128,9 +128,9 @@ public class ConnectionPoolManager(
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<PoolInfo>> GetAllAsync()
+    public async Task<IEnumerable<ConnectionPoolCacheItem>> GetAllAsync()
     {
-        var poolList = new List<PoolInfo>();
+        var poolList = new List<ConnectionPoolCacheItem>();
 
         var list = await GetConnectionIdsAsync();
 
@@ -148,7 +148,7 @@ public class ConnectionPoolManager(
     }
 
     /// <inheritdoc />
-    public Task<List<PoolInfo>> GetListAsync(string connectionId)
+    public Task<List<ConnectionPoolCacheItem>> GetListAsync(string connectionId)
     {
         throw new System.NotImplementedException();
     }
@@ -156,7 +156,7 @@ public class ConnectionPoolManager(
 
 
     /// <inheritdoc />
-    public Task<bool> SendMessageAsync(PoolInfo poolInfo, string message)
+    public Task<bool> SendMessageAsync(ConnectionPoolCacheItem connectionPool, string message)
     {
         throw new System.NotImplementedException();
     }
@@ -174,9 +174,9 @@ public class ConnectionPoolManager(
             .WhereIf(!string.IsNullOrWhiteSpace(host), x => x.Host == host)
             .ToList();
 
-        foreach (var poolInfo in list)
+        foreach (var connectionPool in list)
         {
-            await RemoveAsync(poolInfo.ConnectionId);
+            await RemoveAsync(connectionPool.ConnectionId);
         }
     }
 }

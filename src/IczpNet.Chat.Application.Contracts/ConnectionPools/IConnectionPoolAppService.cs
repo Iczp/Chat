@@ -17,7 +17,7 @@ public interface IConnectionPoolAppService
     /// 获取在线人数列表
     /// </summary>
     /// <returns></returns>
-    Task<PagedResultDto<PoolInfo>> GetListAsync(ConnectionPoolGetListInput input);
+    Task<PagedResultDto<ConnectionPoolCacheItem>> GetListAsync(ConnectionPoolGetListInput input);
 
     /// <summary>
     /// 清空所有连接
