@@ -12,17 +12,17 @@ public interface IConnectionPoolManager
     /// <summary>
     /// 添加连接
     /// </summary>
-    /// <param name="poolInfo"></param>
+    /// <param name="connectionPool"></param>
     /// <returns></returns>
-    Task<bool> AddAsync(ConnectionPoolCacheItem poolInfo);
+    Task<bool> AddAsync(ConnectionPoolCacheItem connectionPool);
 
     /// <summary>
     /// 移除连接
     /// </summary>
-    /// <param name="poolInfo"></param>
+    /// <param name="connectionPool"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<bool> RemoveAsync(ConnectionPoolCacheItem poolInfo, CancellationToken token = default);
+    Task<bool> RemoveAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default);
 
     /// <summary>
     /// 移除连接
@@ -40,10 +40,10 @@ public interface IConnectionPoolManager
     /// <summary>
     /// 激活连接
     /// </summary>
-    /// <param name="poolInfo"></param>
+    /// <param name="connectionPool"></param>
     /// <param name="message"></param>
     /// <returns></returns>
-    Task ActiveAsync(ConnectionPoolCacheItem poolInfo, string message);
+    Task ActiveAsync(ConnectionPoolCacheItem connectionPool, string message);
 
     /// <summary>
     /// 获取连接列表
@@ -64,21 +64,21 @@ public interface IConnectionPoolManager
     /// </summary>
     /// <param name="host"></param>
     /// <returns></returns>
-    Task<int> CountAsync(string host);
+    Task<int> TotalCountAsync(string host);
 
     /// <summary>
     /// 获取所有连接
     /// </summary>
     /// <returns></returns>
-    Task<IEnumerable<ConnectionPoolCacheItem>> GetAllAsync();
+    Task<IEnumerable<ConnectionPoolCacheItem>> GetAllListAsync();
 
     /// <summary>
     /// 发送消息给指定连接
     /// </summary>
-    /// <param name="poolInfo"></param>
+    /// <param name="connectionPool"></param>
     /// <param name="message"></param>
     /// <returns></returns>
-    Task<bool> SendMessageAsync(ConnectionPoolCacheItem poolInfo, string message);
+    Task<bool> SendMessageAsync(ConnectionPoolCacheItem connectionPool, string message);
 
     /// <summary>
     /// 清空所有连接

@@ -45,7 +45,7 @@ public class SendForMessageCreatedEventHandler(
             .Select(x => x.OwnerId)
             .ToList();
 
-        var onlineList = (await ConnectionPoolManager.GetAllAsync())
+        var onlineList = (await ConnectionPoolManager.GetAllListAsync())
             .Where(x => x.ChatObjectIdList.Any(d => chatObjectIdList.Contains(d)))
             .ToList();
 

@@ -12,23 +12,23 @@ namespace IczpNet.Chat.ConnectionPools;
 
 /// <inheritdoc />
 public class ConnectionPoolManager(
-    IDistributedCache<ConnectionPoolCacheItem, string> poolsCache,
-    IDistributedCache<List<string>> connectionCache
+    IDistributedCache<ConnectionPoolCacheItem, string> connectionPoolCache,
+    IDistributedCache<List<string>> connectionIdsCache
     ) : DomainService, IConnectionPoolManager
 {
 
     /// <summary>
     /// 连接缓存
     /// </summary>
-    public IDistributedCache<List<string>> ConnectionCache { get; } = connectionCache;
+    public IDistributedCache<List<string>> ConnectionIdsCache { get; } = connectionIdsCache;
     /// <summary>
     /// 连接池缓存
     /// </summary>
-    protected virtual string ConnectionCacheKey => "ConnectionPools_v0.1";
+    protected virtual string ConnectionIdsCacheKey => "ConnectionIds_v0.1";
     /// <summary>
     /// 连接池缓存
     /// </summary>
-    public IDistributedCache<ConnectionPoolCacheItem, string> PoolsCache { get; } = poolsCache;
+    public IDistributedCache<ConnectionPoolCacheItem, string> ConnectionPoolCache { get; } = connectionPoolCache;
 
     protected virtual DistributedCacheEntryOptions DistributedCacheEntryOptions { get; } = new DistributedCacheEntryOptions()
     {
@@ -43,12 +43,12 @@ public class ConnectionPoolManager(
 
     protected async Task<List<string>> GetConnectionIdsAsync(CancellationToken token = default)
     {
-        return (await ConnectionCache.GetAsync(ConnectionCacheKey, token: token)) ?? [];
+        return (await ConnectionIdsCache.GetAsync(ConnectionIdsCacheKey, token: token)) ?? [];
     }
 
     protected async Task SetConnectionIdsAsync(List<string> connectionIdList, CancellationToken token = default)
     {
-        await ConnectionCache.SetAsync(ConnectionCacheKey, connectionIdList, DistributedCacheEntryOptions, token: token);
+        await ConnectionIdsCache.SetAsync(ConnectionIdsCacheKey, connectionIdList, DistributedCacheEntryOptions, token: token);
     }
 
     /// <inheritdoc />
@@ -60,7 +60,7 @@ public class ConnectionPoolManager(
 
         await SetConnectionIdsAsync(connectionList);
 
-        await PoolsCache.SetAsync(connectionPool.ConnectionId, connectionPool, DistributedCacheEntryOptions);
+        await ConnectionPoolCache.SetAsync(connectionPool.ConnectionId, connectionPool, DistributedCacheEntryOptions);
 
         Logger.LogInformation($"Add connection {connectionPool}");
 
@@ -89,7 +89,7 @@ public class ConnectionPoolManager(
 
         await SetConnectionIdsAsync(connectionList, token: token);
 
-        await PoolsCache.RemoveAsync(connectionId, token: token);
+        await ConnectionPoolCache.RemoveAsync(connectionId, token: token);
 
         Logger.LogInformation($"Remove connection {connectionId}");
 
@@ -97,12 +97,12 @@ public class ConnectionPoolManager(
 
         return true;
     }
-
+    /// <inheritdoc />
     public void Remove(string connectionId)
     {
         //var token = new System.Threading.CancellationToken();
 
-        var connectionIdList = ConnectionCache.Get(ConnectionCacheKey);
+        var connectionIdList = ConnectionIdsCache.Get(ConnectionIdsCacheKey);
 
         Logger.LogInformation($"Online totalCount before delete: {connectionIdList.Count}");
 
@@ -111,9 +111,9 @@ public class ConnectionPoolManager(
             Logger.LogInformation($"删除失败： {connectionId}");
         }
 
-        ConnectionCache.Set(ConnectionCacheKey, connectionIdList, DistributedCacheEntryOptions);
+        ConnectionIdsCache.Set(ConnectionIdsCacheKey, connectionIdList, DistributedCacheEntryOptions);
 
-        PoolsCache.Remove(connectionId);
+        ConnectionPoolCache.Remove(connectionId);
 
         Logger.LogInformation($"Remove connection {connectionId}");
 
@@ -121,14 +121,14 @@ public class ConnectionPoolManager(
     }
 
     /// <inheritdoc />
-    public async Task<int> CountAsync(string host)
+    public async Task<int> TotalCountAsync(string host)
     {
         var list = await GetConnectionIdsAsync();
         return list.Count;
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<ConnectionPoolCacheItem>> GetAllAsync()
+    public async Task<IEnumerable<ConnectionPoolCacheItem>> GetAllListAsync()
     {
         var poolList = new List<ConnectionPoolCacheItem>();
 
@@ -136,7 +136,7 @@ public class ConnectionPoolManager(
 
         foreach (var connectionId in list)
         {
-            var pool = await PoolsCache.GetAsync(connectionId);
+            var pool = await ConnectionPoolCache.GetAsync(connectionId);
 
             if (pool == null)
             {
@@ -170,7 +170,7 @@ public class ConnectionPoolManager(
     /// <inheritdoc />
     public async Task ClearAllAsync(string host)
     {
-        var list = (await GetAllAsync()).AsQueryable()
+        var list = (await GetAllListAsync()).AsQueryable()
             .WhereIf(!string.IsNullOrWhiteSpace(host), x => x.Host == host)
             .ToList();
 

@@ -15,13 +15,13 @@ public class ConnectionPoolAppService(
     /// <inheritdoc />
     public Task<int> GetTotalCountAsync(string host)
     {
-        return ConnectionPoolManager.CountAsync(host);
+        return ConnectionPoolManager.TotalCountAsync(host);
     }
 
     /// <inheritdoc />
     public async Task<PagedResultDto<ConnectionPoolCacheItem>> GetListAsync(ConnectionPoolGetListInput input)
     {
-        var query = (await ConnectionPoolManager.GetAllAsync())
+        var query = (await ConnectionPoolManager.GetAllListAsync())
             .AsQueryable()
             .WhereIf(!string.IsNullOrWhiteSpace(input.Host), x => x.Host == input.Host)
             .WhereIf(!string.IsNullOrWhiteSpace(input.ConnectionId), x => x.ConnectionId == input.ConnectionId)

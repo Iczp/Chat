@@ -101,7 +101,7 @@ public class ChatHub(
         {
             //ConnectionPoolManager.Remove(connectionId);
 
-            //var onlineCount = await ConnectionPoolManager.CountAsync(Dns.GetHostName());
+            //var onlineCount = await ConnectionPoolManager.TotalCountAsync(Dns.GetHostName());
 
             //Logger.LogWarning($"[OnDisconnectedAsync] onlineCount: {onlineCount}");
 
@@ -137,7 +137,7 @@ public class ChatHub(
     {
         message = $"{CurrentUser.UserName}: {message}";
 
-        var all = await ConnectionPoolManager.GetAllAsync();
+        var all = await ConnectionPoolManager.GetAllListAsync();
 
         await Clients.All.SendAsync("ReceivedMessage", new { all });
         //await Clients
