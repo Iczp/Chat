@@ -1,11 +1,11 @@
 ﻿using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Connections;
+using IczpNet.Chat.Hosting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.SignalR;
@@ -17,12 +17,14 @@ public class ChatHub(
     IConnectionManager connectionManager,
     IWebClientInfoProvider webClientInfoProvider,
     IChatObjectManager chatObjectManager,
+    ICurrentHosted currentHosted,
     IConnectionPoolManager connectionPoolManager) : AbpHub// AbpHub<IChatClient>
 {
 
     public IConnectionManager ConnectionManager { get; } = connectionManager;
     public IWebClientInfoProvider WebClientInfoProvider { get; } = webClientInfoProvider;
     public IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
+    public ICurrentHosted CurrentHosted { get; } = currentHosted;
     public IConnectionPoolManager ConnectionPoolManager { get; } = connectionPoolManager;
 
     //[UnitOfWork]
@@ -55,7 +57,7 @@ public class ChatHub(
         {
             QueryId = queryId,
             ConnectionId = Context.ConnectionId,
-            Host = Dns.GetHostName(),
+            Host = CurrentHosted.Name,
             IpAddress = WebClientInfoProvider.ClientIpAddress,
             AppUserId = CurrentUser.Id.Value,
             DeviceId = deviceId,

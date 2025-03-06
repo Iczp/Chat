@@ -103,6 +103,7 @@ public class ConnectionPoolManager(
 
         return true;
     }
+
     /// <inheritdoc />
     public void Remove(string connectionId)
     {
