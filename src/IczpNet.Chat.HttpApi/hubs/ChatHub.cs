@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.SignalR;
 using Volo.Abp.AspNetCore.WebClientInfo;
@@ -98,14 +99,15 @@ public class ChatHub(
 
         try
         {
-            ConnectionPoolManager.Remove(connectionId);
+            //ConnectionPoolManager.Remove(connectionId);
 
             //var onlineCount = await ConnectionPoolManager.CountAsync(Dns.GetHostName());
 
             //Logger.LogWarning($"[OnDisconnectedAsync] onlineCount: {onlineCount}");
 
             // 注：这里的删除操作可能会被取消，所以需要捕获TaskCanceledException异常
-            //await ConnectionPoolManager.RemoveAsync(connectionId);
+            await ConnectionPoolManager.RemoveAsync(connectionId, new CancellationTokenSource().Token);
+
             //await ConnectionManager.RemoveAsync(Context.ConnectionId);
         }
         catch (TaskCanceledException ex)

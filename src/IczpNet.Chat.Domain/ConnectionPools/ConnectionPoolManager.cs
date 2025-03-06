@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Services;
@@ -40,14 +41,14 @@ public class ConnectionPoolManager(
         throw new System.NotImplementedException();
     }
 
-    protected async Task<List<string>> GetConnectionIdsAsync()
+    protected async Task<List<string>> GetConnectionIdsAsync(CancellationToken token = default)
     {
-        return (await ConnectionCache.GetAsync(ConnectionCacheKey)) ?? [];
+        return (await ConnectionCache.GetAsync(ConnectionCacheKey, token: token)) ?? [];
     }
 
-    protected async Task SetConnectionIdsAsync(List<string> connectionIdList)
+    protected async Task SetConnectionIdsAsync(List<string> connectionIdList, CancellationToken token = default)
     {
-        await ConnectionCache.SetAsync(ConnectionCacheKey, connectionIdList, DistributedCacheEntryOptions);
+        await ConnectionCache.SetAsync(ConnectionCacheKey, connectionIdList, DistributedCacheEntryOptions, token: token);
     }
 
     /// <inheritdoc />
@@ -69,17 +70,15 @@ public class ConnectionPoolManager(
     }
 
     /// <inheritdoc />
-    public async Task<bool> RemoveAsync(PoolInfo poolInfo)
+    public async Task<bool> RemoveAsync(PoolInfo poolInfo, CancellationToken token = default)
     {
-        return await RemoveAsync(poolInfo.ConnectionId);
+        return await RemoveAsync(poolInfo.ConnectionId, token: token);
     }
 
     /// <inheritdoc />
-    public async Task<bool> RemoveAsync(string connectionId)
+    public async Task<bool> RemoveAsync(string connectionId, CancellationToken token = default)
     {
-        //var cancellationToken = new System.Threading.CancellationToken();
-
-        var connectionList = await GetConnectionIdsAsync();
+        var connectionList = await GetConnectionIdsAsync(token: token);
 
         Logger.LogInformation($"Online totalCount before delete: {connectionList.Count}");
 
@@ -88,9 +87,9 @@ public class ConnectionPoolManager(
             Logger.LogInformation($"删除失败： {connectionId}");
         }
 
-        await SetConnectionIdsAsync(connectionList);
+        await SetConnectionIdsAsync(connectionList, token: token);
 
-        await PoolsCache.RemoveAsync(connectionId);
+        await PoolsCache.RemoveAsync(connectionId, token: token);
 
         Logger.LogInformation($"Remove connection {connectionId}");
 
@@ -101,7 +100,7 @@ public class ConnectionPoolManager(
 
     public void Remove(string connectionId)
     {
-        //var cancellationToken = new System.Threading.CancellationToken();
+        //var token = new System.Threading.CancellationToken();
 
         var connectionIdList = ConnectionCache.Get(ConnectionCacheKey);
 

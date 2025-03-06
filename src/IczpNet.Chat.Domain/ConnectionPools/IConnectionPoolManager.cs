@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.ConnectionPools;
@@ -19,15 +20,17 @@ public interface IConnectionPoolManager
     /// 移除连接
     /// </summary>
     /// <param name="poolInfo"></param>
+    /// <param name="token"></param>
     /// <returns></returns>
-    Task<bool> RemoveAsync(PoolInfo poolInfo);
+    Task<bool> RemoveAsync(PoolInfo poolInfo, CancellationToken token = default);
 
     /// <summary>
     /// 移除连接
     /// </summary>
     /// <param name="connectionId"></param>
+    /// <param name="token"></param>
     /// <returns></returns>
-    Task<bool> RemoveAsync(string connectionId);
+    Task<bool> RemoveAsync(string connectionId, CancellationToken token = default);
     /// <summary>
     /// 移除连接
     /// </summary>
