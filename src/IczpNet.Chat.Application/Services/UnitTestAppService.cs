@@ -47,7 +47,7 @@ public class UnitTestAppService(
 
     //    if (TotalCount == 0)
     //    {
-    //        TotalCount = await ChatObjectRepository.TotalCountAsync(x => x.ObjectType == ChatObjectTypeEnums.Personal);
+    //        TotalCount = await ChatObjectRepository.CountAsync(x => x.ObjectType == ChatObjectTypeEnums.Personal);
     //    }
     //    ChatObjectIdList ??= (await ChatObjectRepository.GetQueryableAsync())
     //        .Where(x => x.ObjectType == ChatObjectTypeEnums.Personal)
