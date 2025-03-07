@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.SignalR;
@@ -54,6 +55,8 @@ public class ChatHub(
 
         var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
 
+        Logger.LogWarning($"chatObjectIdList:[{chatObjectIdList.JoinAsString(",")}]");
+
         await ConnectionPoolManager.AddAsync(new ConnectionPoolCacheItem()
         {
             QueryId = queryId,
@@ -80,7 +83,7 @@ public class ChatHub(
                 DeviceId = deviceId,
                 BrowserInfo = WebClientInfoProvider.BrowserInfo,
                 DeviceInfo = WebClientInfoProvider.DeviceInfo,
-            }, cancellationToken);
+            });
             Logger.LogWarning($"[OnConnectedAsync] ConnectionManager.CreateAsync [End]");
         }
         catch (Exception ex)
@@ -112,7 +115,7 @@ public class ChatHub(
             // 注：这里的删除操作可能会被取消，所以需要捕获TaskCanceledException异常
             await ConnectionPoolManager.RemoveAsync(connectionId, cancellationToken);
 
-            //await ConnectionManager.RemoveAsync(Context.ConnectionId, cancellationToken);
+            await ConnectionManager.RemoveAsync(Context.ConnectionId, cancellationToken);
         }
         catch (TaskCanceledException ex)
         {
