@@ -1,8 +1,10 @@
-﻿using System;
+﻿using IczpNet.Pusher.Models;
+using System;
+using System.Threading.Tasks;
 
 namespace IczpNet.Chat.Hubs;
 
 public interface IChatClient
 {
-   void FetchNewMessage(string sessionUnitId);
+    Task ReceivedMessage(ChannelMessagePayload channelMessagePayload);
 }

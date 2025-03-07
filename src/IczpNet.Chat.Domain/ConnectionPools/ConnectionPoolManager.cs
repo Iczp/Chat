@@ -172,6 +172,7 @@ public class ConnectionPoolManager(
         {
             await RemoveAsync(connectionPool.ConnectionId, token);
         }
+        Logger.LogInformation($"ClearAll:{host}");
     }
 
     /// <inheritdoc />

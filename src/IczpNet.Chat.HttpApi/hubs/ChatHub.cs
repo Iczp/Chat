@@ -2,6 +2,7 @@
 using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Connections;
 using IczpNet.Chat.Hosting;
+using IczpNet.Pusher.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
@@ -18,7 +19,7 @@ public class ChatHub(
     IWebClientInfoProvider webClientInfoProvider,
     IChatObjectManager chatObjectManager,
     ICurrentHosted currentHosted,
-    IConnectionPoolManager connectionPoolManager) : AbpHub// AbpHub<IChatClient>
+    IConnectionPoolManager connectionPoolManager) : AbpHub<IChatClient>
 {
 
     public IConnectionManager ConnectionManager { get; } = connectionManager;
@@ -66,16 +67,27 @@ public class ChatHub(
             CreationTime = Clock.Now,
             ChatObjectIdList = chatObjectIdList,
         });
+        try
+        {
 
-        //await ConnectionManager.CreateAsync(new Connection(Context.ConnectionId, chatObjectIdList)
-        //{
-        //    AppUserId = CurrentUser.Id,
-        //    IpAddress = WebClientInfoProvider.ClientIpAddress,
-        //    //ServerHostId = "host",
-        //    DeviceId = deviceId,
-        //    BrowserInfo = WebClientInfoProvider.BrowserInfo,
-        //    DeviceInfo = WebClientInfoProvider.DeviceInfo,
-        //});
+            Logger.LogWarning($"[OnConnectedAsync] ConnectionManager.CreateAsync");
+            var cancellationToken = new CancellationTokenSource().Token;
+            await ConnectionManager.CreateAsync(new Connection(Context.ConnectionId, chatObjectIdList)
+            {
+                AppUserId = CurrentUser.Id,
+                IpAddress = WebClientInfoProvider.ClientIpAddress,
+                ServerHostId = CurrentHosted.Name,
+                DeviceId = deviceId,
+                BrowserInfo = WebClientInfoProvider.BrowserInfo,
+                DeviceInfo = WebClientInfoProvider.DeviceInfo,
+            }, cancellationToken);
+            Logger.LogWarning($"[OnConnectedAsync] ConnectionManager.CreateAsync [End]");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "[OnConnectedAsync]: 写入数据库失败");
+        }
+
         await base.OnConnectedAsync();
     }
 
@@ -95,10 +107,12 @@ public class ChatHub(
 
         try
         {
+            var cancellationToken = new CancellationTokenSource().Token;
+            
             // 注：这里的删除操作可能会被取消，所以需要捕获TaskCanceledException异常
-            await ConnectionPoolManager.RemoveAsync(connectionId, new CancellationTokenSource().Token);
+            await ConnectionPoolManager.RemoveAsync(connectionId, cancellationToken);
 
-            //await ConnectionManager.RemoveAsync(Context.ConnectionId);
+            //await ConnectionManager.RemoveAsync(Context.ConnectionId, cancellationToken);
         }
         catch (TaskCanceledException ex)
         {
@@ -120,7 +134,11 @@ public class ChatHub(
 
         var all = await ConnectionPoolManager.GetAllListAsync();
 
-        await Clients.All.SendAsync("ReceivedMessage", new { all });
+        await Clients.All.ReceivedMessage(new ChannelMessagePayload()
+        {
+            Command = "NewMessage",
+            Payload = all,
+        });
         //await Clients
         //    .User(targetUser.Id.ToString())
         //    .SendAsync("ReceiveMessage", message);

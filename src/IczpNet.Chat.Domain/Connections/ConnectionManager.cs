@@ -15,9 +15,11 @@ namespace IczpNet.Chat.Connections;
 public class ConnectionManager(
     IRepository<Connection, string> repository,
     IOptions<ConnectionOptions> options,
+    IUnitOfWorkManager unitOfWorkManager,
     IRepository<ServerHost, string> serverHostRepository) : DomainService, IConnectionManager
 {
     protected IRepository<Connection, string> Repository { get; } = repository;
+    public IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
     protected IRepository<ServerHost, string> ServerHostRepository { get; } = serverHostRepository;
     protected ConnectionOptions Config { get; } = options.Value;
 
@@ -38,7 +40,8 @@ public class ConnectionManager(
             connection.ServerHost = serverHost;
         }
 
-        var entity = await Repository.InsertAsync(connection, autoSave: true, cancellationToken: token);
+        var entity = await Repository.InsertAsync(connection, autoSave: false, cancellationToken: token);
+        await UnitOfWorkManager.Current.SaveChangesAsync(token);
         // 
         return entity;
     }
