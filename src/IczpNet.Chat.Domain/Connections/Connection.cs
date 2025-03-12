@@ -45,7 +45,7 @@ public class Connection : BaseEntity<string>, IDeviceId
     public virtual string ChatObjects { get; protected set; }
 
     /// <summary>
-    /// ClientId/QueryId
+    /// ClientId/ClientId
     /// </summary>
     [StringLength(64)]
     public virtual string ClientId { get; set; }

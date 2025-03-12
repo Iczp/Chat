@@ -15,9 +15,9 @@ public class ConnectionPoolCacheItem
     public string ConnectionId { get; set; }
 
     /// <summary>
-    /// hubs/ChatHub?id={QueryId}
+    /// hubs/ChatHub?id={ClientId}
     /// </summary>
-    public string QueryId { get; set; }
+    public string ClientId { get; set; }
 
     /// <summary>
     /// Dns.GetHostName()

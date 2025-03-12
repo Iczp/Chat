@@ -24,7 +24,7 @@ public class OnConnectedDistributedEventHandler(
             AppUserId = eventData.AppUserId,
             IpAddress = eventData.IpAddress,
             ServerHostId = eventData.Host,
-            ClientId = eventData.QueryId,
+            ClientId = eventData.ClientId,
             DeviceId = eventData.DeviceId,
             BrowserInfo = eventData.BrowserInfo,
             DeviceInfo = eventData.DeviceInfo,

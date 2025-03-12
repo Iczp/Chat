@@ -36,7 +36,7 @@ public class ConnectionPoolAppService(
         var query = (await ConnectionPoolManager.CreateQueryableAsync())
             .WhereIf(!string.IsNullOrWhiteSpace(input.Host), x => x.Host == input.Host)
             .WhereIf(!string.IsNullOrWhiteSpace(input.ConnectionId), x => x.ConnectionId == input.ConnectionId)
-            .WhereIf(!string.IsNullOrWhiteSpace(input.QueryId), x => x.QueryId == input.QueryId)
+            .WhereIf(!string.IsNullOrWhiteSpace(input.ClientId), x => x.ClientId == input.ClientId)
             .WhereIf(input.AppUserId.HasValue, x => x.AppUserId == input.AppUserId)
             .WhereIf(input.ChatObjectId.HasValue, x => x.ChatObjectIdList.Contains(input.ChatObjectId.Value))
             ;

@@ -12,9 +12,9 @@ public class ConnectionPoolGetListInput : GetListInput
 
 
     /// <summary>
-    /// hubs/ChatHub?id={QueryId}
+    /// hubs/ChatHub?id={ClientId}
     /// </summary>
-    public string QueryId { get; set; }
+    public string ClientId { get; set; }
 
     /// <summary>
     /// Host

@@ -45,7 +45,7 @@ public class ChatHub(
 
         string deviceId = httpContext?.Request.Query["deviceId"];
 
-        string queryId = httpContext?.Request.Query["id"];
+        string clientId = httpContext?.Request.Query["id"];
 
         Logger.LogWarning($"DeviceId:{deviceId}");
 
@@ -64,7 +64,7 @@ public class ChatHub(
 
         var connectedEto = new OnConnectedEto()
         {
-            QueryId = queryId,
+            ClientId = clientId,
             ConnectionId = Context.ConnectionId,
             Host = CurrentHosted.Name,
             IpAddress = WebClientInfoProvider.ClientIpAddress,
@@ -92,7 +92,7 @@ public class ChatHub(
             //    AppUserId = CurrentUser.Id,
             //    IpAddress = WebClientInfoProvider.ClientIpAddress,
             //    ServerHostId = CurrentHosted.Name,
-            //    ClientId = queryId,
+            //    ClientId = clientId,
             //    DeviceId = deviceId,
             //    BrowserInfo = WebClientInfoProvider.BrowserInfo,
             //    DeviceInfo = WebClientInfoProvider.DeviceInfo,
