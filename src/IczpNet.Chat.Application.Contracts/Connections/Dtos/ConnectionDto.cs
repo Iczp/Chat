@@ -5,6 +5,11 @@ namespace IczpNet.Chat.Connections.Dtos;
 
 public class ConnectionDto : BaseDto<string>
 {
+    /// <summary>
+    /// ClientId
+    /// </summary>
+    public virtual string ClientId { get; set; }
+
     public virtual string ServerHostId { get; set; }
 
     public virtual Guid? AppUserId { get; set; }

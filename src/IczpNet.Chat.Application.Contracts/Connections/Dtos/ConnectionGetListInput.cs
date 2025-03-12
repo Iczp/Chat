@@ -31,6 +31,11 @@ public class ConnectionGetListInput : GetListInput
     public virtual string DeviceId { get; set; }
 
     /// <summary>
+    /// ClientId
+    /// </summary>
+    public virtual string ClientId { get; set; }
+
+    /// <summary>
     /// Ip地址
     /// </summary>
     public virtual string IpAddress { get; set; }
