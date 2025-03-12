@@ -26,13 +26,13 @@ public class Connection : BaseEntity<string>, IDeviceId
     /// <summary>
     /// ServerHostId
     /// </summary>
-    public virtual string ServerHostId { get; set; }
+    public virtual string ServerHostId { get;  set; }
 
     /// <summary>
     /// 
     /// </summary>
     [ForeignKey(nameof(ServerHostId))]
-    public virtual ServerHost ServerHost { get; set; }
+    public virtual ServerHost ServerHost { get; protected set; }
 
     /// <summary>
     /// AppUserId
@@ -40,7 +40,9 @@ public class Connection : BaseEntity<string>, IDeviceId
     public virtual Guid? AppUserId { get; set; }
 
     //public virtual Guid? ChatObjectId { get; set; }
-
+    /// <summary>
+    /// 
+    /// </summary>
     [StringLength(1000)]
     public virtual string ChatObjects { get; protected set; }
 
@@ -95,11 +97,6 @@ public class Connection : BaseEntity<string>, IDeviceId
     internal void SetActiveTime(DateTime activeTime)
     {
         ActiveTime = activeTime;
-    }
-
-    public void SetConnectionId(string id)
-    {
-        Id = id.ToLower();
     }
 
     public void SetChatObjects(List<long> chatObjectIdList)

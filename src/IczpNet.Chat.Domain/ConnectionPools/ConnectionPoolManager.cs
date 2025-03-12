@@ -34,7 +34,7 @@ public class ConnectionPoolManager(
 
     protected virtual DistributedCacheEntryOptions DistributedCacheEntryOptions { get; } = new DistributedCacheEntryOptions()
     {
-        AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1)
+        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30)
     };
 
     protected async Task<List<string>> GetConnectionIdsAsync(CancellationToken token = default)

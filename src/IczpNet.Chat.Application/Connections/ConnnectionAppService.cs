@@ -13,13 +13,15 @@ namespace IczpNet.Chat.Connections;
 /// <summary>
 /// 在线人数管理
 /// </summary>
-public class ConnectionAppService
-    : CrudChatAppService<
+public class ConnectionAppService(
+    IRepository<Connection, string> repository,
+    IConnectionManager connectionManager)
+        : CrudChatAppService<
         Connection,
         ConnectionDetailDto,
         ConnectionDto,
         string,
-        ConnectionGetListInput>,
+        ConnectionGetListInput>(repository),
     IConnectionAppService
 {
     protected override string GetPolicyName { get; set; } = ChatPermissions.ConnectionPermission.Default;
@@ -30,14 +32,7 @@ public class ConnectionAppService
     protected virtual string SetActivePolicyName { get; set; } = ChatPermissions.ConnectionPermission.SetActive;
     protected virtual string GetOnlineCountPolicyName { get; set; } = ChatPermissions.ConnectionPermission.GetOnlineCount;
 
-    protected IConnectionManager ConnectionManager { get; }
-
-    public ConnectionAppService(
-        IRepository<Connection, string> repository,
-        IConnectionManager connectionManager) : base(repository)
-    {
-        ConnectionManager = connectionManager;
-    }
+    protected IConnectionManager ConnectionManager { get; } = connectionManager;
 
     protected override async Task<IQueryable<Connection>> CreateFilteredQueryAsync(ConnectionGetListInput input)
     {
