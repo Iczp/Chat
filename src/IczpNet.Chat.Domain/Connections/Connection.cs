@@ -45,6 +45,12 @@ public class Connection : BaseEntity<string>, IDeviceId
     public virtual string ChatObjects { get; protected set; }
 
     /// <summary>
+    /// ClientId/QueryId
+    /// </summary>
+    [StringLength(64)]
+    public virtual string ClientId { get; set; }
+
+    /// <summary>
     /// DeviceId
     /// </summary>
     [StringLength(ChatConsts.DriveIdLength)]
