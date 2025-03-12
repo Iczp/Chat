@@ -2,6 +2,7 @@
 using IczpNet.Chat.ConnectionPools.Dtos;
 using IczpNet.Chat.Permissions;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -75,5 +76,17 @@ public class ConnectionPoolAppService(
     public async Task<int> UpdateConnectionIdsAsync()
     {
         return await ConnectionPoolManager.UpdateConnectionIdsAsync();
+    }
+
+    /// <inheritdoc />
+    public async Task<List<string>> GetConnectionIdsByUserIdAsync(Guid userId)
+    {
+        return await ConnectionPoolManager.GetConnectionIdsByUserIdAsync(userId);
+    }
+
+    /// <inheritdoc />
+    public async Task<int> GetCountByUserIdAsync(Guid userId)
+    {
+        return (await ConnectionPoolManager.GetConnectionIdsByUserIdAsync(userId)).Count;
     }
 }

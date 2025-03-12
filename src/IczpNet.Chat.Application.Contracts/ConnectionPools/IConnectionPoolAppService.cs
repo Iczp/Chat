@@ -1,4 +1,6 @@
 ﻿using IczpNet.Chat.ConnectionPools.Dtos;
+using System.Collections.Generic;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
@@ -46,5 +48,20 @@ public interface IConnectionPoolAppService
     /// </summary>
     /// <returns></returns>
     Task<int> UpdateConnectionIdsAsync();
+
+
+    /// <summary>
+    /// 获取用户连接
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <returns></returns>
+    Task<List<string>> GetConnectionIdsByUserIdAsync(Guid userId);
+
+    /// <summary>
+    /// 获取用户连接
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <returns></returns>
+    Task<int> GetCountByUserIdAsync(Guid userId);
 
 }

@@ -13,8 +13,13 @@ public class ConnectionOptions
     public int TimerPeriodSeconds { get; set; } = 10;
 
     /// <summary>
-    /// 
+    /// 缓存Key
     /// </summary>
     public string ConnectionIdsCacheKey { get; set; } = $"{nameof(ConnectionIdsCacheKey)}_v0.1";
+
+    /// <summary>
+    /// 缓存过期时间(秒)
+    /// </summary>
+    public int ConnectionCacheExpirationSeconds { get; set; } = 86400;
 
 }

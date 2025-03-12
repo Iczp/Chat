@@ -14,7 +14,6 @@ using Volo.Abp.AspNetCore.SignalR;
 using Volo.Abp.AspNetCore.WebClientInfo;
 using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.Uow;
-using Connection = IczpNet.Chat.Connections.Connection;
 
 namespace IczpNet.Chat.Hubs;
 [Authorize]

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -89,4 +90,20 @@ public interface IConnectionPoolManager
     /// <param name="token"></param>
     /// <returns></returns>
     Task<int> UpdateConnectionIdsAsync(CancellationToken token = default);
+
+    /// <summary>
+    /// 获取用户连接
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<IEnumerable<ConnectionPoolCacheItem>> GetListByUserIdAsync(Guid userId, CancellationToken token = default);
+
+    /// <summary>
+    /// 获取用户连接
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<List<string>> GetConnectionIdsByUserIdAsync(Guid userId, CancellationToken token = default);
 }
