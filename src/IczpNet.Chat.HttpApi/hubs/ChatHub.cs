@@ -83,14 +83,16 @@ public class ChatHub(
             // 发布事件
             await DistributedEventBus.PublishAsync(connectedEto, onUnitOfWorkComplete: false);
 
-            Logger.LogWarning($"[OnConnectedAsync] ConnectionManager.CreateAsync");
+            //Logger.LogWarning($"[OnConnectedAsync] ConnectionManager.CreateAsync");
 
             //var cancellationToken = new CancellationTokenSource().Token;
+
             //await ConnectionManager.CreateAsync(new Connection(Context.ConnectionId, chatObjectIdList)
             //{
             //    AppUserId = CurrentUser.Id,
             //    IpAddress = WebClientInfoProvider.ClientIpAddress,
             //    ServerHostId = CurrentHosted.Name,
+            //    ClientId = queryId,
             //    DeviceId = deviceId,
             //    BrowserInfo = WebClientInfoProvider.BrowserInfo,
             //    DeviceInfo = WebClientInfoProvider.DeviceInfo,
