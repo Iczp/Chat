@@ -31,17 +31,22 @@ public class ConnectionManager(
     }
 
     /// <inheritdoc />
+    //[UnitOfWork]
     public virtual async Task<Connection> CreateAsync(Connection connection, CancellationToken token = default)
     {
+        //using var uow = UnitOfWorkManager.Begin();
+
         if (!connection.ServerHostId.IsNullOrWhiteSpace())
         {
             var serverHost = await ServerHostRepository.FindAsync(connection.ServerHostId, cancellationToken: token);
-            serverHost ??= await ServerHostRepository.InsertAsync(new ServerHost(connection.ServerHostId), cancellationToken: token);
-            connection.ServerHost = serverHost;
+            serverHost ??= await ServerHostRepository.InsertAsync(new ServerHost(connection.ServerHostId), autoSave: true, cancellationToken: token);
+            //connection.ServerHost = serverHost;
+            Logger.LogInformation($"Insert ServerHost:{serverHost.Id}");
         }
 
-        var entity = await Repository.InsertAsync(connection, autoSave: false, cancellationToken: token);
-        await UnitOfWorkManager.Current.SaveChangesAsync(token);
+        var entity = await Repository.InsertAsync(connection, autoSave: true, cancellationToken: token);
+
+        //await UnitOfWorkManager.Current.SaveChangesAsync(token);
         // 
         return entity;
     }
@@ -79,7 +84,7 @@ public class ConnectionManager(
     /// <inheritdoc />
     public virtual Task RemoveAsync(string connectionId, CancellationToken token = default)
     {
-        return Repository.DeleteAsync(connectionId, cancellationToken: token);
+        return Repository.DeleteAsync(connectionId, autoSave: true, cancellationToken: token);
     }
 
     /// <inheritdoc />

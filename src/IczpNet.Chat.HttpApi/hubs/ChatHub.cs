@@ -12,6 +12,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.SignalR;
 using Volo.Abp.AspNetCore.WebClientInfo;
+using Volo.Abp.EventBus.Distributed;
+using Volo.Abp.Uow;
+using Connection = IczpNet.Chat.Connections.Connection;
 
 namespace IczpNet.Chat.Hubs;
 [Authorize]
@@ -20,6 +23,7 @@ public class ChatHub(
     IWebClientInfoProvider webClientInfoProvider,
     IChatObjectManager chatObjectManager,
     ICurrentHosted currentHosted,
+    IDistributedEventBus distributedEventBus,
     IConnectionPoolManager connectionPoolManager) : AbpHub<IChatClient>
 {
 
@@ -27,9 +31,10 @@ public class ChatHub(
     public IWebClientInfoProvider WebClientInfoProvider { get; } = webClientInfoProvider;
     public IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
     public ICurrentHosted CurrentHosted { get; } = currentHosted;
+    public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
     public IConnectionPoolManager ConnectionPoolManager { get; } = connectionPoolManager;
 
-    //[UnitOfWork]
+    [UnitOfWork]
     public override async Task OnConnectedAsync()
     {
         Logger.LogInformation($"[OnConnected] ConnectionId:{Context.ConnectionId}.UserName: {CurrentUser.UserName}");
@@ -57,7 +62,7 @@ public class ChatHub(
 
         Logger.LogWarning($"chatObjectIdList:[{chatObjectIdList.JoinAsString(",")}]");
 
-        await ConnectionPoolManager.AddAsync(new ConnectionPoolCacheItem()
+        var connectedEto = new OnConnectedEto()
         {
             QueryId = queryId,
             ConnectionId = Context.ConnectionId,
@@ -69,22 +74,32 @@ public class ChatHub(
             DeviceInfo = WebClientInfoProvider.DeviceInfo,
             CreationTime = Clock.Now,
             ChatObjectIdList = chatObjectIdList,
-        });
+        };
+
         try
         {
+            await ConnectionPoolManager.AddAsync(connectedEto);
+
+            // 发布事件
+            await DistributedEventBus.PublishAsync(connectedEto, onUnitOfWorkComplete: false);
 
             Logger.LogWarning($"[OnConnectedAsync] ConnectionManager.CreateAsync");
-            var cancellationToken = new CancellationTokenSource().Token;
-            await ConnectionManager.CreateAsync(new Connection(Context.ConnectionId, chatObjectIdList)
-            {
-                AppUserId = CurrentUser.Id,
-                IpAddress = WebClientInfoProvider.ClientIpAddress,
-                ServerHostId = CurrentHosted.Name,
-                DeviceId = deviceId,
-                BrowserInfo = WebClientInfoProvider.BrowserInfo,
-                DeviceInfo = WebClientInfoProvider.DeviceInfo,
-            });
-            Logger.LogWarning($"[OnConnectedAsync] ConnectionManager.CreateAsync [End]");
+
+            //var cancellationToken = new CancellationTokenSource().Token;
+            //await ConnectionManager.CreateAsync(new Connection(Context.ConnectionId, chatObjectIdList)
+            //{
+            //    AppUserId = CurrentUser.Id,
+            //    IpAddress = WebClientInfoProvider.ClientIpAddress,
+            //    ServerHostId = CurrentHosted.Name,
+            //    DeviceId = deviceId,
+            //    BrowserInfo = WebClientInfoProvider.BrowserInfo,
+            //    DeviceInfo = WebClientInfoProvider.DeviceInfo,
+            //});
+            //Logger.LogWarning($"[OnConnectedAsync] ConnectionManager.CreateAsync [End]");
+        }
+        catch (TaskCanceledException ex)
+        {
+            Logger.LogWarning(ex, $"[OnConnectedAsync] TaskCanceledException 任务取消");
         }
         catch (Exception ex)
         {
@@ -101,6 +116,8 @@ public class ChatHub(
 
         var userName = CurrentUser.UserName;
 
+        Logger.LogInformation(exception, $"[OnDisconnected],Exception:{exception?.Message}");
+
         Logger.LogInformation($"[OnDisconnected],ConnectionId:{connectionId}.UserName: {userName}");
 
         if (CurrentUser.Id.HasValue)
@@ -111,11 +128,13 @@ public class ChatHub(
         try
         {
             var cancellationToken = new CancellationTokenSource().Token;
-            
+
             // 注：这里的删除操作可能会被取消，所以需要捕获TaskCanceledException异常
             await ConnectionPoolManager.RemoveAsync(connectionId, cancellationToken);
+            // 发布事件
+            await DistributedEventBus.PublishAsync(new OnDisconnectedEto(connectionId), onUnitOfWorkComplete: false);
 
-            await ConnectionManager.RemoveAsync(Context.ConnectionId, cancellationToken);
+            //await ConnectionManager.RemoveAsync(Context.ConnectionId, new CancellationTokenSource().Token);
         }
         catch (TaskCanceledException ex)
         {
