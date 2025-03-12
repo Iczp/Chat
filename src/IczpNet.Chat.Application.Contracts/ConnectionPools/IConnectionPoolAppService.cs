@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.ConnectionPools.Dtos;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 
@@ -39,5 +40,11 @@ public interface IConnectionPoolAppService
     /// <param name="connectionId"></param>
     /// <returns></returns>
     Task RemoveAsync(string connectionId);
+
+    /// <summary>
+    /// 更新连接数量
+    /// </summary>
+    /// <returns></returns>
+    Task<int> UpdateConnectionIdsAsync();
 
 }

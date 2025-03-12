@@ -1,5 +1,7 @@
-﻿using Microsoft.Extensions.Caching.Distributed;
+﻿using IczpNet.Chat.Connections;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,19 +15,22 @@ namespace IczpNet.Chat.ConnectionPools;
 /// <inheritdoc />
 public class ConnectionPoolManager(
     IDistributedCache<ConnectionPoolCacheItem, string> connectionPoolCache,
-    IDistributedCache<List<string>> connectionIdsCache
+    IDistributedCache<List<string>> connectionIdsCache,
+    IOptions<ConnectionOptions> options
     ) : DomainService, IConnectionPoolManager
 {
 
     /// <summary>
     /// 连接缓存
     /// </summary>
-    public IDistributedCache<List<string>> ConnectionIdsCache { get; } = connectionIdsCache;
+    protected IDistributedCache<List<string>> ConnectionIdsCache { get; } = connectionIdsCache;
+    protected IOptions<ConnectionOptions> Options { get; } = options;
+    protected ConnectionOptions Config => Options.Value;
 
     /// <summary>
-    /// 连接池缓存
+    /// 连接池缓存Key
     /// </summary>
-    protected virtual string ConnectionIdsCacheKey => "ConnectionIds_v0.1";
+    protected virtual string ConnectionIdsCacheKey => Config.ConnectionIdsCacheKey;
 
     /// <summary>
     /// 连接池缓存
@@ -34,7 +39,7 @@ public class ConnectionPoolManager(
 
     protected virtual DistributedCacheEntryOptions DistributedCacheEntryOptions { get; } = new DistributedCacheEntryOptions()
     {
-        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30)
+        AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1)
     };
 
     protected async Task<List<string>> GetConnectionIdsAsync(CancellationToken token = default)
@@ -84,22 +89,22 @@ public class ConnectionPoolManager(
     /// <inheritdoc />
     public async Task<bool> RemoveAsync(string connectionId, CancellationToken token = default)
     {
-        var connectionList = await GetConnectionIdsAsync(token: token);
+        var connectionIdList = await GetConnectionIdsAsync(token: token);
 
-        Logger.LogInformation($"Online totalCount before delete: {connectionList.Count}");
+        Logger.LogInformation($"Online totalCount before delete: {connectionIdList.Count}");
 
-        if (!connectionList.Remove(connectionId))
+        if (!connectionIdList.Remove(connectionId))
         {
             Logger.LogInformation($"删除失败： {connectionId}");
         }
 
-        await SetConnectionIdsAsync(connectionList, token: token);
+        await SetConnectionIdsAsync(connectionIdList, token: token);
 
         await ConnectionPoolCache.RemoveAsync(connectionId, token: token);
 
         Logger.LogInformation($"Remove connection {connectionId}");
 
-        Logger.LogInformation($"Online totalCount {connectionList.Count}");
+        Logger.LogInformation($"Online totalCount {connectionIdList.Count}");
 
         return true;
     }
@@ -128,14 +133,14 @@ public class ConnectionPoolManager(
     }
 
     /// <inheritdoc />
-    public async Task<int> TotalCountAsync(string host, CancellationToken token = default)
+    public async Task<int> GetTotalCountAsync(string host, CancellationToken token = default)
     {
         var list = await GetConnectionIdsAsync(host, token);
         return list.Count;
     }
 
     /// <inheritdoc />
-    public async Task<int> TotalCountAsync(CancellationToken token = default)
+    public async Task<int> GetTotalCountAsync(CancellationToken token = default)
     {
         var list = await GetConnectionIdsAsync(token);
         return list.Count;
@@ -172,7 +177,7 @@ public class ConnectionPoolManager(
         {
             await RemoveAsync(connectionPool.ConnectionId, token);
         }
-        Logger.LogInformation($"ClearAll:{host}");
+        Logger.LogInformation($"ClearAllAsync host:{host}");
     }
 
     /// <inheritdoc />
@@ -185,5 +190,15 @@ public class ConnectionPoolManager(
     public async Task<ConnectionPoolCacheItem> GetAsync(string connectionId, CancellationToken token = default)
     {
         return await ConnectionPoolCache.GetAsync(connectionId, token: token);
+    }
+
+    /// <inheritdoc />
+    public async Task<int> UpdateConnectionIdsAsync(CancellationToken token = default)
+    {
+        var connectionIdList = (await CreateQueryableAsync(token)).Select(x => x.ConnectionId).ToList();
+
+        await SetConnectionIdsAsync(connectionIdList, token);
+
+        return connectionIdList.Count;
     }
 }

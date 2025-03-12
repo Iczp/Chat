@@ -24,7 +24,7 @@ public class ConnectionPoolAppService(
     /// <inheritdoc />
     public async Task<int> GetTotalCountAsync(string host)
     {
-        return await ConnectionPoolManager.TotalCountAsync(host);
+        return await ConnectionPoolManager.GetTotalCountAsync(host);
     }
 
     /// <inheritdoc />
@@ -69,5 +69,11 @@ public class ConnectionPoolAppService(
     {
         await CheckDeletePolicyAsync();
         await ConnectionPoolManager.RemoveAsync(connectionId);
+    }
+
+    /// <inheritdoc />
+    public async Task<int> UpdateConnectionIdsAsync()
+    {
+        return await ConnectionPoolManager.UpdateConnectionIdsAsync();
     }
 }

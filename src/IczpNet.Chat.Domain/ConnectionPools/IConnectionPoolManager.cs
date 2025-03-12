@@ -46,14 +46,14 @@ public interface IConnectionPoolManager
     /// <param name="host"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<int> TotalCountAsync(string host, CancellationToken token = default);
+    Task<int> GetTotalCountAsync(string host, CancellationToken token = default);
 
     /// <summary>
     /// 获取连接数量
     /// </summary>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<int> TotalCountAsync( CancellationToken token = default);
+    Task<int> GetTotalCountAsync(CancellationToken token = default);
 
     /// <summary>
     /// 获取所有连接
@@ -82,4 +82,11 @@ public interface IConnectionPoolManager
     /// <param name="token"></param>
     /// <returns></returns>
     Task<ConnectionPoolCacheItem> GetAsync(string connectionId, CancellationToken token = default);
+
+    /// <summary>
+    /// 更新连接数量
+    /// </summary>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<int> UpdateConnectionIdsAsync(CancellationToken token = default);
 }
