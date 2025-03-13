@@ -9,19 +9,13 @@ using System.Reflection;
 namespace IczpNet.Chat.Attributes;
 
 [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
-public sealed class ContentTypeAttribute : Attribute
+public sealed class ContentTypeAttribute(MessageTypes messageType) : Attribute
 {
     public static ConcurrentDictionary<MessageTypes, PropertyInfo> MessageTypeDictionary => GenerateDictionary();
 
     private static ConcurrentDictionary<MessageTypes, PropertyInfo> _messageTypeDictionary;
 
-    public MessageTypes MessageType { get; }
-
-    public ContentTypeAttribute(MessageTypes messageType)
-    {
-        MessageType = messageType;
-    }
-
+    public MessageTypes MessageType { get; } = messageType;
 
     public static ConcurrentDictionary<MessageTypes, PropertyInfo> GenerateDictionary()
     {

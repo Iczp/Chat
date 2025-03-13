@@ -91,4 +91,13 @@ public abstract class MessageContentEntityBase : BaseEntity<Guid>, IContentEntit
     {
         OwnerId = ownerId;
     }
+
+    /// <summary>
+    /// 设置Id
+    /// </summary>
+    /// <param name="guid"></param>
+    public virtual void SetId(Guid guid)
+    {
+        Id = guid;
+    }
 }

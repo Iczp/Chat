@@ -59,7 +59,7 @@ public partial class MessageManager(
     protected ISettingProvider SettingProvider { get; } = settingProvider;
     protected IJsonSerializer JsonSerializer { get; } = jsonSerializer;
     protected IRepository<MessageReminder> MessageReminderRepository { get; } = messageReminderRepository;
-    
+
     protected ISessionGenerator SessionGenerator { get; } = sessionGenerator;
 
     protected virtual void TryToSetOwnerId<T, TKey>(T entity, TKey ownerId)
@@ -137,12 +137,21 @@ public partial class MessageManager(
         // message content
         var messageContent = await action(message);
 
+        Assert.NotNull(messageContent, $"Message content is null");
+
         //TryToSetOwnerId(messageContent, senderSessionUnit.SessionUnitId);
         messageContent.SetOwnerId(senderSessionUnit.OwnerId);
 
-        Assert.NotNull(messageContent, $"Message content is null");
+        messageContent.SetId(GuidGenerator.Create());
 
         message.SetMessageContent(messageContent);
+
+        var contentJson = JsonSerializer.Serialize(new List<object>()
+        {
+            message.GetContentDto()
+        });
+
+        message.SetContentJson(contentJson);
 
         //设置提醒
         await ApplyRemindIdListAsync(senderSessionUnit, message, remindList);
