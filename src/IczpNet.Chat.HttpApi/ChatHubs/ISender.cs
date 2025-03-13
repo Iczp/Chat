@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace IczpNet.Chat.Hubs;
+namespace IczpNet.Chat.ChatHubs;
 
 public interface ISender
 {

@@ -2,7 +2,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace IczpNet.Chat.Hubs;
+namespace IczpNet.Chat.ChatHubs;
 
 public interface IChatClient
 {

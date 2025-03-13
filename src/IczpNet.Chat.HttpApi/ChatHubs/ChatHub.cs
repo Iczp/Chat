@@ -15,7 +15,8 @@ using Volo.Abp.AspNetCore.WebClientInfo;
 using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.Uow;
 
-namespace IczpNet.Chat.Hubs;
+namespace IczpNet.Chat.ChatHubs;
+
 [Authorize]
 public class ChatHub(
     IConnectionManager connectionManager,
@@ -106,6 +107,12 @@ public class ChatHub(
         {
             Logger.LogError(ex, "[OnConnectedAsync]: 写入数据库失败");
         }
+
+        await Clients.User(CurrentUser.Id.Value.ToString()).ReceivedMessage(new PushPayload()
+        {
+            Command = "welcome",
+            Payload = $"用户登录在设备登录({deviceId})",
+        });
 
         await base.OnConnectedAsync();
     }

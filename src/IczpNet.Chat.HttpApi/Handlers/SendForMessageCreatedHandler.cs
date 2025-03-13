@@ -1,5 +1,5 @@
 ﻿using IczpNet.Chat.ConnectionPools;
-using IczpNet.Chat.Hubs;
+using IczpNet.Chat.ChatHubs;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Pusher.Models;

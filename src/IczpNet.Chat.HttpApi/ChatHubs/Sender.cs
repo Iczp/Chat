@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Services;
 
-namespace IczpNet.Chat.Hubs;
+namespace IczpNet.Chat.ChatHubs;
 
 public class Sender(IHubContext<ChatHub, IChatClient> hubContext) : DomainService, ISender
 {
