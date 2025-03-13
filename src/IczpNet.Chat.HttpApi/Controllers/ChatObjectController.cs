@@ -10,14 +10,9 @@ namespace IczpNet.Chat.Controllers;
 [Area(ChatRemoteServiceConsts.ModuleName)]
 [RemoteService(Name = ChatRemoteServiceConsts.RemoteServiceName)]
 [Route($"/api/{ChatRemoteServiceConsts.ModuleName}/chat-object")]
-public class ChatObjectController : ChatController
+public class ChatObjectController(IChatObjectAppService chatObjectAppService) : ChatController
 {
-    protected IChatObjectAppService ChatObjectAppService { get; }
-
-    public ChatObjectController(IChatObjectAppService chatObjectAppService)
-    {
-        ChatObjectAppService = chatObjectAppService;
-    }
+    protected IChatObjectAppService ChatObjectAppService { get; } = chatObjectAppService;
 
     /// <summary>
     /// 上传头像

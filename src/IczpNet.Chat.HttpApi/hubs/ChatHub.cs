@@ -157,7 +157,7 @@ public class ChatHub(
 
         var all = await ConnectionPoolManager.GetAllListAsync();
 
-        await Clients.All.ReceivedMessage(new ChannelMessagePayload()
+        await Clients.All.ReceivedMessage(new PushPayload()
         {
             Command = "NewMessage",
             Payload = all,

@@ -16,12 +16,12 @@ using Volo.Abp.Json;
 namespace IczpNet.Chat.Handlers;
 
 public class SendForMessageCreatedEventHandler(
-    IHubContext<ChatHub> hubContext,
+    IHubContext<ChatHub, IChatClient> hubContext,
     IConnectionPoolManager connectionPoolManager,
     IJsonSerializer jsonSerializer,
     ISessionUnitManager sessionUnitManager) : DomainService, ILocalEventHandler<EntityCreatedEventData<Message>>, ITransientDependency
 {
-    public IHubContext<ChatHub> HubContext { get; } = hubContext;
+    public IHubContext<ChatHub, IChatClient> HubContext { get; } = hubContext;
     public IConnectionPoolManager ConnectionPoolManager { get; } = connectionPoolManager;
     public IJsonSerializer JsonSerializer { get; } = jsonSerializer;
     public ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
@@ -71,7 +71,7 @@ public class SendForMessageCreatedEventHandler(
                     SessionUnitId = sessionUnitInfoList.Find(x => x.OwnerId == chatObjectId).Id
                 }).ToList();
 
-            var payload = JsonSerializer.Serialize(new PushPayload()
+            var payload = new PushPayload()
             {
                 AppUserId = poolInfo.AppUserId,
                 Scopes = units,//sessionUnitCaches.Select(x=>x as object).ToList(),
@@ -83,13 +83,13 @@ public class SendForMessageCreatedEventHandler(
                     MessageId = message.Id,
                     SessionUnitIdList = units,
                 },
-            });
+            };
 
             //await PoolsManager.SendMessageAsync(poolInfo, payload);
 
-            Logger.LogInformation($"Send [ReceivedMessage]:{onlineList.Count}");
+            Logger.LogInformation($"Send [ReceivedMessage]:{onlineList.Count},payload={JsonSerializer.Serialize(payload)}");
 
-            await HubContext.Clients.Client(poolInfo.ConnectionId).SendAsync("ReceivedMessage", payload);
+            await HubContext.Clients.Client(poolInfo.ConnectionId).ReceivedMessage(payload);
         }
     }
 }

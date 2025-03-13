@@ -6,5 +6,5 @@ namespace IczpNet.Chat.Hubs;
 
 public interface IChatClient
 {
-    Task ReceivedMessage(ChannelMessagePayload channelMessagePayload);
+    Task ReceivedMessage(PushPayload  pushPayload);
 }
