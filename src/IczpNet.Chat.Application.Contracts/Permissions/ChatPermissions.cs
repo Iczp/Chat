@@ -224,5 +224,9 @@ public class ChatPermissions
         public const string Create = Default + "." + nameof(Create);
         public const string Delete = Default + "." + nameof(Delete);
         public const string ClearAll = Default + "." + nameof(ClearAll);
+        public const string UpdateConnectionIds = Default + "." + nameof(UpdateConnectionIds);
+        public const string GetConnectionIdsByUserId = Default + "." + nameof(GetConnectionIdsByUserId);
+        public const string UpdateUserConnectionIds = Default + "." + nameof(UpdateUserConnectionIds);
+        public const string GetCountByUserId = Default + "." + nameof(GetCountByUserId);
     }
 }

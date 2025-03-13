@@ -106,4 +106,12 @@ public interface IConnectionPoolManager
     /// <param name="token"></param>
     /// <returns></returns>
     Task<List<string>> GetConnectionIdsByUserIdAsync(Guid userId, CancellationToken token = default);
+
+    /// <summary>
+    /// 更新连接数量
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<int> UpdateUserConnectionIdsAsync(Guid userId, CancellationToken token = default);
 }

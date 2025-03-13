@@ -64,4 +64,10 @@ public interface IConnectionPoolAppService
     /// <returns></returns>
     Task<int> GetCountByUserIdAsync(Guid userId);
 
+    /// <summary>
+    /// 更新用户连接数量
+    /// </summary>
+    /// <returns></returns>
+    Task<int> UpdateUserConnectionIdsAsync(Guid userId);
+
 }
