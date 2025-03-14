@@ -11,6 +11,7 @@ using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.Settings;
+using IczpNet.Pusher.ShortIds;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,6 +29,7 @@ namespace IczpNet.Chat.MessageSections.Messages;
 
 public partial class MessageManager(
     IMessageRepository repository,
+    IShortIdGenerator shortIdGenerator,
     IChatObjectManager chatObjectManager,
     IObjectMapper objectMapper,
     IMessageValidator messageValidator,
@@ -47,6 +49,7 @@ public partial class MessageManager(
     protected IObjectMapper ObjectMapper { get; } = objectMapper;
     protected IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
     protected IMessageRepository Repository { get; } = repository;
+    public IShortIdGenerator ShortIdGenerator { get; } = shortIdGenerator;
     public IReadOnlyBasicRepository<Message, long> MessageReadOnlyRepository { get; } = messageReadOnlyRepository;
     protected IMessageValidator MessageValidator { get; } = messageValidator;
     protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
@@ -115,6 +118,7 @@ public partial class MessageManager(
         {
             CreationTime = Clock.Now
         };
+        message.SetShortId(shortId: ShortIdGenerator.Create());
 
         //senderSessionUnit.Setting.SetLastSendMessage(message);//并发时可能导致锁表
 
@@ -146,10 +150,7 @@ public partial class MessageManager(
 
         message.SetMessageContent(messageContent);
 
-        var contentJson = JsonSerializer.Serialize(new List<object>()
-        {
-            message.GetContentDto()
-        });
+        var contentJson = JsonSerializer.Serialize(message.GetContentDto());
 
         message.SetContentJson(contentJson);
 
