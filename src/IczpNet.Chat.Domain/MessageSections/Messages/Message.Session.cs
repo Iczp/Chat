@@ -13,11 +13,6 @@ namespace IczpNet.Chat.MessageSections.Messages;
 public partial class Message
 {
     /// <summary>
-    /// 
-    /// </summary>
-    public virtual string SessionUnitIdListCahceKey => $"{nameof(SessionUnitIdListCahceKey)}_{(IsPrivateMessage() ? ShortId : SessionId)}";
-
-    /// <summary>
     /// 找开记录
     /// </summary>
     [InverseProperty(nameof(OpenedRecorder.Message))]
@@ -27,7 +22,7 @@ public partial class Message
     /// 已读记录
     /// </summary>
     [InverseProperty(nameof(ReadedRecorder.Message))]
-    public virtual IList<ReadedRecorder> ReadedRecorderList { get; set; } = new List<ReadedRecorder>();
+    public virtual IList<ReadedRecorder> ReadedRecorderList { get; set; } = [];
 
     /// <summary>
     /// 收藏记录

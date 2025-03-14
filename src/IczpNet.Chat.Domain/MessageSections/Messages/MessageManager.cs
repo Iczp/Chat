@@ -112,7 +112,7 @@ public partial class MessageManager(
         await CreateSessionUnitByMessageAsync(senderSessionUnit);
 
         //cache
-        await SessionUnitManager.GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);
+        //await SessionUnitManager.GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);
 
         var message = new Message(senderSessionUnit)
         {
@@ -419,6 +419,8 @@ public partial class MessageManager(
             quoteMessageId: input.QuoteMessageId,
             remindList: input.RemindList,
             receiverSessionUnitId: input.ReceiverSessionUnitId);
+
+        await SessionUnitManager.GetOrAddByMessageAsync(message);
 
         //var output = ObjectMapper.Map<Message, MessageInfo<object>>(message);
         var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);

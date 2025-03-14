@@ -298,6 +298,13 @@ public interface ISessionUnitManager
     /// <summary>
     /// 获取缓存
     /// </summary>
+    /// <param name="sessionUnitList"></param>
+    /// <returns></returns>
+    Task<List<SessionUnitCacheItem>> GetOrAddCacheListAsync(List<SessionUnit> sessionUnitList);
+
+    /// <summary>
+    /// 获取缓存
+    /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
     Task<List<SessionUnitCacheItem>> GetCacheListBySessionIdAsync(Guid sessionId);
@@ -324,6 +331,13 @@ public interface ISessionUnitManager
     /// <param name="sessionUnitList"></param>
     /// <returns></returns>
     Task SetCacheListBySessionIdAsync(Guid sessionId, List<SessionUnitCacheItem> sessionUnitList);
+
+    /// <summary>
+    /// 设置缓存
+    /// </summary>
+    /// <param name="message"></param>
+    /// <returns></returns>
+    Task<List<SessionUnitCacheItem>> GetOrAddByMessageAsync(Message message);
 
     /// <summary>
     /// 设置缓存

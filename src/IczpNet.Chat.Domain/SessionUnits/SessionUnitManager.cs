@@ -654,11 +654,44 @@ public class SessionUnitManager(
     }
 
     /// <inheritdoc />
+    public virtual Task<List<SessionUnitCacheItem>> GetOrAddCacheListAsync(List<SessionUnit> sessionUnitList)
+    {
+        return SessionUnitListCache.GetOrAddAsync($"{new SessionUnitCacheKey(sessionUnitList.Select(x => x.Id))}", () =>
+        {
+            return Task.FromResult(ToCacheItem(sessionUnitList.AsQueryable()));
+        });
+    }
+
+    /// <inheritdoc />
     public virtual async Task SetCacheListBySessionIdAsync(Guid sessionId, List<SessionUnitCacheItem> sessionUnitList)
     {
-        //var sessionUnitInfoList = await GetListBySessionIdAsync(sessionId);
-
         await SetCacheListAsync($"{new SessionUnitCacheKey(sessionId)}", sessionUnitList);
+    }
+
+    /// <inheritdoc />
+    public virtual async Task<List<SessionUnitCacheItem>> GetOrAddByMessageAsync(Message message)
+    {
+        var cacheKey = message.IsPrivateMessage()
+          ? new SessionUnitCacheKey([message.SenderSessionUnitId.Value, message.ReceiverSessionUnitId.Value])
+          : new SessionUnitCacheKey(message.SessionId.Value);
+
+        return await SessionUnitListCache.GetOrAddAsync($"{cacheKey}", async () =>
+        {
+            if (message.IsPrivateMessage())
+            {
+                var sessionUnitList = new List<SessionUnit>() { message.SenderSessionUnit };
+
+                if (message.ReceiverSessionUnit == null && message.ReceiverSessionUnitId.HasValue)
+                {
+                    sessionUnitList.Add(await Repository.GetAsync(message.ReceiverSessionUnitId.Value));
+                }
+                return ToCacheItem(sessionUnitList.AsQueryable());
+            }
+            return await GetListBySessionIdAsync(message.SessionId.Value);
+        }, () => new DistributedCacheEntryOptions()
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1)
+        });
     }
 
     /// <inheritdoc />
@@ -667,30 +700,33 @@ public class SessionUnitManager(
         await SessionUnitListCache.SetAsync(cacheKey, sessionUnitList, options, hideErrors, considerUow, token);
     }
 
+    private static List<SessionUnitCacheItem> ToCacheItem(IQueryable<SessionUnit> qurey)
+    {
+        return qurey.Select(x => new SessionUnitCacheItem()
+        {
+            Id = x.Id,
+            SessionId = x.SessionId,
+            OwnerId = x.OwnerId,
+            DestinationId = x.DestinationId,
+            //DestinationObjectType = x.DestinationObjectType,
+            IsPublic = x.Setting.IsPublic,
+            ReadedMessageId = x.Setting.ReadedMessageId,
+            PublicBadge = x.PublicBadge,
+            PrivateBadge = x.PrivateBadge,
+            RemindAllCount = x.RemindAllCount,
+            RemindMeCount = x.RemindMeCount,
+            FollowingCount = x.FollowingCount,
+            LastMessageId = x.LastMessageId,
+            Ticks = x.Ticks,
+        }).ToList();
+    }
     /// <inheritdoc />
     public virtual async Task<List<SessionUnitCacheItem>> GetListBySessionIdAsync(Guid sessionId)
     {
-        var list = (await Repository.GetQueryableAsync())
-            .Where(SessionUnit.GetActivePredicate(Clock.Now))
-            .Where(x => x.SessionId == sessionId)
-            .Select(x => new SessionUnitCacheItem()
-            {
-                Id = x.Id,
-                SessionId = x.SessionId,
-                OwnerId = x.OwnerId,
-                DestinationId = x.DestinationId,
-                //DestinationObjectType = x.DestinationObjectType,
-                IsPublic = x.Setting.IsPublic,
-                ReadedMessageId = x.Setting.ReadedMessageId,
-                PublicBadge = x.PublicBadge,
-                PrivateBadge = x.PrivateBadge,
-                RemindAllCount = x.RemindAllCount,
-                RemindMeCount = x.RemindMeCount,
-                FollowingCount = x.FollowingCount,
-                LastMessageId = x.LastMessageId,
-                Ticks = x.Ticks,
-            })
-            .ToList();
+        var list = ToCacheItem((await Repository.GetQueryableAsync())
+                .Where(SessionUnit.GetActivePredicate(Clock.Now))
+                .Where(x => x.SessionId == sessionId)
+            );
 
         await SessionUnitCountCache.SetAsync(sessionId, list.Where(x => x.IsPublic).Count().ToString());
 
