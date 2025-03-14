@@ -6,6 +6,7 @@ using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
+using IczpNet.Chat.Hosting;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionSections.Sessions;
@@ -20,6 +21,7 @@ using System.Threading.Tasks;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.Json;
 using Volo.Abp.ObjectMapping;
 using Volo.Abp.Settings;
@@ -34,6 +36,8 @@ public partial class MessageManager(
     IObjectMapper objectMapper,
     IMessageValidator messageValidator,
     IChatPusher chatPusher,
+    IDistributedEventBus distributedEventBus,
+    ICurrentHosted currentHosted,
     ISessionUnitManager sessionUnitManager,
     IUnitOfWorkManager unitOfWorkManager,
     IFollowManager followManager,
@@ -55,6 +59,8 @@ public partial class MessageManager(
     protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
     protected IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
     protected IChatPusher ChatPusher { get; } = chatPusher;
+    public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
+    public ICurrentHosted CurrentHosted { get; } = currentHosted;
     protected ISessionRepository SessionRepository { get; } = sessionRepository;
     protected ISessionUnitSettingRepository SessionUnitSettingRepository { get; } = sessionUnitSettingRepository;
     protected IFollowManager FollowManager { get; } = followManager;
@@ -420,7 +426,16 @@ public partial class MessageManager(
             remindList: input.RemindList,
             receiverSessionUnitId: input.ReceiverSessionUnitId);
 
+        var cacheKey = await SessionUnitManager.GetCacheKeyByMessageAsync(message);
+
         await SessionUnitManager.GetOrAddByMessageAsync(message);
+
+        await DistributedEventBus.PublishAsync(new MessageCreatedEto()
+        {
+            CacheKey = cacheKey,
+            MessageId = message.Id,
+            HostName = CurrentHosted.Name,
+        });
 
         //var output = ObjectMapper.Map<Message, MessageInfo<object>>(message);
         var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);

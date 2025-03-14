@@ -12,7 +12,21 @@ public class MessageCreatedEto
     public virtual long MessageId { get; set; }
 
     /// <summary>
-    /// SessionCacheKey
+    /// CacheKey
     /// </summary>
-    public virtual string SessionCacheKey { get; set; }
+    public virtual string CacheKey { get; set; }
+
+    /// <summary>
+    /// HostName
+    /// </summary>
+    public virtual string HostName { get; set; }
+
+    /// <summary>
+    /// ToString()
+    /// </summary>
+    /// <returns></returns>
+    public override string ToString()
+    {
+        return $"{nameof(MessageId)}={MessageId},{nameof(HostName)}={HostName}";
+    }
 }

@@ -44,6 +44,11 @@ public class SessionUnitManager(
     protected IMessageSender MessageSender { get; } = messageSender;
     protected ISessionUnitIdGenerator IdGenerator { get; } = idGenerator;
 
+    protected static DistributedCacheEntryOptions DistributedCacheEntryOptions => new()
+    {
+        AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1)
+    };
+
     protected virtual async Task<SessionUnit> SetEntityAsync(SessionUnit entity, Action<SessionUnit> action = null, bool autoSave = false)
     {
         action?.Invoke(entity);
@@ -668,12 +673,18 @@ public class SessionUnitManager(
         await SetCacheListAsync($"{new SessionUnitCacheKey(sessionId)}", sessionUnitList);
     }
 
-    /// <inheritdoc />
-    public virtual async Task<List<SessionUnitCacheItem>> GetOrAddByMessageAsync(Message message)
+    public virtual Task<string> GetCacheKeyByMessageAsync(Message message)
     {
         var cacheKey = message.IsPrivateMessage()
           ? new SessionUnitCacheKey([message.SenderSessionUnitId.Value, message.ReceiverSessionUnitId.Value])
           : new SessionUnitCacheKey(message.SessionId.Value);
+
+        return Task.FromResult($"{cacheKey}");
+    }
+    /// <inheritdoc />
+    public virtual async Task<List<SessionUnitCacheItem>> GetOrAddByMessageAsync(Message message)
+    {
+        var cacheKey = await GetCacheKeyByMessageAsync(message);
 
         return await SessionUnitListCache.GetOrAddAsync($"{cacheKey}", async () =>
         {
@@ -688,10 +699,7 @@ public class SessionUnitManager(
                 return ToCacheItem(sessionUnitList.AsQueryable());
             }
             return await GetListBySessionIdAsync(message.SessionId.Value);
-        }, () => new DistributedCacheEntryOptions()
-        {
-            AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1)
-        });
+        }, () => DistributedCacheEntryOptions);
     }
 
     /// <inheritdoc />

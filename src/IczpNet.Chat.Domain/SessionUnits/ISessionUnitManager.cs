@@ -333,6 +333,13 @@ public interface ISessionUnitManager
     Task SetCacheListBySessionIdAsync(Guid sessionId, List<SessionUnitCacheItem> sessionUnitList);
 
     /// <summary>
+    /// 获取缓存Key(消息)
+    /// </summary>
+    /// <param name="message"></param>
+    /// <returns></returns>
+    Task<string> GetCacheKeyByMessageAsync(Message message);
+
+    /// <summary>
     /// 设置缓存
     /// </summary>
     /// <param name="message"></param>
