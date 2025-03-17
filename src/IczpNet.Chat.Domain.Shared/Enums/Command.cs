@@ -37,4 +37,10 @@ public enum Command
     /// </summary>
     [Description("删除消息")]
     Deleted = 4,
+
+    /// <summary>
+    /// 更新角标
+    /// </summary>
+    [Description("更新角标")]
+    UpdateBadge = 5,
 }

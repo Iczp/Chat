@@ -33,7 +33,6 @@ namespace IczpNet.Chat.MessageSections.Messages;
 public partial class MessageManager(
     IMessageRepository repository,
     IShortIdGenerator shortIdGenerator,
-    IChatObjectManager chatObjectManager,
     IObjectMapper objectMapper,
     IMessageValidator messageValidator,
     IChatPusher chatPusher,
@@ -41,21 +40,16 @@ public partial class MessageManager(
     ICurrentHosted currentHosted,
     ISessionUnitManager sessionUnitManager,
     IUnitOfWorkManager unitOfWorkManager,
-    IFollowManager followManager,
-    IBackgroundJobManager backgroundJobManager,
     ISessionRepository sessionRepository,
     ISettingProvider settingProvider,
     IJsonSerializer jsonSerializer,
     IRepository<MessageReminder> messageReminderRepository,
-    IReadOnlyBasicRepository<Message, long> messageReadOnlyRepository,
     ISessionUnitSettingRepository sessionUnitSettingRepository,
     ISessionGenerator sessionGenerator) : DomainService, IMessageManager
 {
     protected IObjectMapper ObjectMapper { get; } = objectMapper;
-    protected IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
     protected IMessageRepository Repository { get; } = repository;
     public IShortIdGenerator ShortIdGenerator { get; } = shortIdGenerator;
-    public IReadOnlyBasicRepository<Message, long> MessageReadOnlyRepository { get; } = messageReadOnlyRepository;
     protected IMessageValidator MessageValidator { get; } = messageValidator;
     protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
     protected IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
@@ -64,28 +58,11 @@ public partial class MessageManager(
     public ICurrentHosted CurrentHosted { get; } = currentHosted;
     protected ISessionRepository SessionRepository { get; } = sessionRepository;
     protected ISessionUnitSettingRepository SessionUnitSettingRepository { get; } = sessionUnitSettingRepository;
-    protected IFollowManager FollowManager { get; } = followManager;
-    protected IBackgroundJobManager BackgroundJobManager { get; } = backgroundJobManager;
     protected ISettingProvider SettingProvider { get; } = settingProvider;
     protected IJsonSerializer JsonSerializer { get; } = jsonSerializer;
     protected IRepository<MessageReminder> MessageReminderRepository { get; } = messageReminderRepository;
 
     protected ISessionGenerator SessionGenerator { get; } = sessionGenerator;
-
-    protected virtual void TryToSetOwnerId<T, TKey>(T entity, TKey ownerId)
-    {
-        if (entity is IChatOwner<TKey>)
-        {
-            var propertyInfo = entity.GetType().GetProperty(nameof(IChatOwner<TKey>.OwnerId));
-
-            if (propertyInfo == null || propertyInfo.GetSetMethod(true) == null)
-            {
-                return;
-            }
-
-            propertyInfo.SetValue(entity, ownerId);
-        }
-    }
 
     /// <inheritdoc />
     public virtual async Task CreateSessionUnitByMessageAsync(SessionUnit senderSessionUnit)

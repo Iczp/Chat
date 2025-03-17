@@ -32,6 +32,6 @@ public class MessageChangedDistributedEto : IMessageChangedDistributedEto
     /// <returns></returns>
     public override string ToString()
     {
-        return $"{nameof(Command)}={Command},{nameof(MessageId)}={MessageId},{nameof(HostName)}={HostName}";
+        return $"[{nameof(MessageChangedDistributedEto)}]:{nameof(Command)}={Command},{nameof(MessageId)}={MessageId},{nameof(HostName)}={HostName}";
     }
 }
