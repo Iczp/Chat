@@ -6,6 +6,8 @@ namespace IczpNet.Chat.MessageSections;
 
 public interface IContentEntity : IContent, IIsEnabled, IChatOwner<long?>
 {
+    Guid Id { get; }
+
     bool IsVerified { get; }
 
     string GetBody();

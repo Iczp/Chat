@@ -153,8 +153,10 @@ public partial class MessageManager(
         //TryToSetOwnerId(messageContent, senderSessionUnit.SessionUnitId);
         messageContent.SetOwnerId(senderSessionUnit.OwnerId);
 
-        messageContent.SetId(GuidGenerator.Create());
-
+        if(messageContent.Id == Guid.Empty)
+        {
+            messageContent.SetId(GuidGenerator.Create());
+        }
         message.SetMessageContent(messageContent);
 
         var contentJson = JsonSerializer.Serialize(message.GetContentDto());
@@ -447,9 +449,6 @@ public partial class MessageManager(
             quoteMessageId: input.QuoteMessageId,
             remindList: input.RemindList,
             receiverSessionUnitId: input.ReceiverSessionUnitId);
-
-
-        //await PublishMessageDistributedEventAsync(message, Command.Created, onUnitOfWorkComplete: false);
 
         //var output = ObjectMapper.Map<Message, MessageInfo<object>>(message);
         var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);

@@ -29,7 +29,7 @@ public class MessageChangedDistributedEventHandler : DomainService, IDistributed
         Logger.LogInformation($"{nameof(MessageChangedDistributedEventHandler)} received eventData[{nameof(MessageChangedDistributedEto)}]:{eventData}");
 
         var cacheKey = eventData.CacheKey;
-        var payload = eventData.CacheKey;
+        //var payload = eventData.CacheKey;
         var command = eventData.Command;
         var ignoreConnections = new HashSet<string>();
 
@@ -78,7 +78,7 @@ public class MessageChangedDistributedEventHandler : DomainService, IDistributed
                 Scopes = units,//sessionUnitCaches.Select(x=>x as object).ToList(),
                 //Caches = sessionUnitCaches,
                 Command = command,
-                Payload = payload,
+                Payload = eventData,
             };
 
             Logger.LogInformation($"Send [{nameof(IChatClient.ReceivedMessage)}]:{connectionPools.Count},commandPayload={JsonSerializer.Serialize(commandPayload)}");
