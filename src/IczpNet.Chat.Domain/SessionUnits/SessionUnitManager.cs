@@ -1,4 +1,5 @@
 ﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons.DataFilters;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
@@ -710,23 +711,27 @@ public class SessionUnitManager(
 
     private static List<SessionUnitCacheItem> ToCacheItem(IQueryable<SessionUnit> qurey)
     {
-        return qurey.Select(x => new SessionUnitCacheItem()
+        return [.. qurey.Select(x => new SessionUnitCacheItem()
         {
             Id = x.Id,
+            //AppUserId = x.AppUserId,
             SessionId = x.SessionId,
             OwnerId = x.OwnerId,
             DestinationId = x.DestinationId,
             //DestinationObjectType = x.DestinationObjectType,
             IsPublic = x.Setting.IsPublic,
-            ReadedMessageId = x.Setting.ReadedMessageId,
-            PublicBadge = x.PublicBadge,
-            PrivateBadge = x.PrivateBadge,
-            RemindAllCount = x.RemindAllCount,
-            RemindMeCount = x.RemindMeCount,
-            FollowingCount = x.FollowingCount,
-            LastMessageId = x.LastMessageId,
-            Ticks = x.Ticks,
-        }).ToList();
+            IsStatic = x.Setting.IsStatic,
+            IsVisible = x.Setting.IsVisible,
+            IsEnabled = x.Setting.IsEnabled,
+            //ReadedMessageId = x.Setting.ReadedMessageId,
+            //PublicBadge = x.PublicBadge,
+            //PrivateBadge = x.PrivateBadge,
+            //RemindAllCount = x.RemindAllCount,
+            //RemindMeCount = x.RemindMeCount,
+            //FollowingCount = x.FollowingCount,
+            //LastMessageId = x.LastMessageId,
+            //Ticks = x.Ticks,
+        })];
     }
     /// <inheritdoc />
     public virtual async Task<List<SessionUnitCacheItem>> GetListBySessionIdAsync(Guid sessionId)
@@ -806,7 +811,7 @@ public class SessionUnitManager(
     {
         var ownerSessionUnitIdList = await FollowManager.GetFollowerIdListAsync(senderSessionUnit.Id);
 
-        if (ownerSessionUnitIdList.Any())
+        if (ownerSessionUnitIdList.Count != 0)
         {
             ownerSessionUnitIdList.Remove(senderSessionUnit.Id);
 
@@ -815,55 +820,55 @@ public class SessionUnitManager(
         return 0;
     }
 
-    protected virtual async Task UpdateCacheItemsAsync(SessionUnit senderSessionUnit, Func<List<SessionUnitCacheItem>, bool> action)
-    {
-        var stopwatch = Stopwatch.StartNew();
+    //protected virtual async Task UpdateCacheItemsAsync(SessionUnit senderSessionUnit, Func<List<SessionUnitCacheItem>, bool> action)
+    //{
+    //    var stopwatch = Stopwatch.StartNew();
 
-        var sessionUnitList = await GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);
+    //    var sessionUnitList = await GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);
 
-        if (action.Invoke(sessionUnitList))
-        {
-            await SetCacheListBySessionIdAsync(senderSessionUnit.SessionId.Value, sessionUnitList);
-        }
+    //    if (action.Invoke(sessionUnitList))
+    //    {
+    //        await SetCacheListBySessionIdAsync(senderSessionUnit.SessionId.Value, sessionUnitList);
+    //    }
 
-        stopwatch.Stop();
+    //    stopwatch.Stop();
 
-        Logger.LogInformation($"UpdateCacheItems stopwatch: {stopwatch.ElapsedMilliseconds}ms.");
-    }
+    //    Logger.LogInformation($"UpdateCacheItems stopwatch: {stopwatch.ElapsedMilliseconds}ms.");
+    //}
 
-    /// <inheritdoc />
-    public virtual async Task<int> UpdateCachesAsync(SessionUnit senderSessionUnit, Message message)
-    {
-        int count = 0;
+    ///// <inheritdoc />
+    //public virtual async Task<int> UpdateCachesAsync(SessionUnit senderSessionUnit, Message message)
+    //{
+    //    int count = 0;
 
-        await UpdateCacheItemsAsync(senderSessionUnit, items =>
-        {
-            var self = items.FirstOrDefault(x => x.Id == senderSessionUnit.Id);
+    //    await UpdateCacheItemsAsync(senderSessionUnit, items =>
+    //    {
+    //        var self = items.FirstOrDefault(x => x.Id == senderSessionUnit.Id);
 
-            if (self != null)
-            {
-                self.LastMessageId = message.Id;
-            }
+    //        if (self != null)
+    //        {
+    //            self.LastMessageId = message.Id;
+    //        }
 
-            var others = items.Where(x => x.Id != senderSessionUnit.Id).ToList();
+    //        var others = items.Where(x => x.Id != senderSessionUnit.Id).ToList();
 
-            foreach (var item in others)
-            {
-                //item.RemindMeCount++;
-                //item.FollowingCount++;
-                item.PublicBadge++;
-                item.RemindAllCount++;
-                item.LastMessageId = message.Id;
-            }
-            count = others.Count;
+    //        foreach (var item in others)
+    //        {
+    //            //item.RemindMeCount++;
+    //            //item.FollowingCount++;
+    //            item.PublicBadge++;
+    //            item.RemindAllCount++;
+    //            item.LastMessageId = message.Id;
+    //        }
+    //        count = others.Count;
 
-            return true;
-        });
+    //        return true;
+    //    });
 
-        Logger.LogInformation($"BatchUpdateCacheAsync:{count}");
+    //    Logger.LogInformation($"BatchUpdateCacheAsync:{count}");
 
-        return count;
-    }
+    //    return count;
+    //}
 
     /// <inheritdoc />
     public virtual async Task<int> BatchUpdateAsync(SessionUnit senderSessionUnit, Message message)

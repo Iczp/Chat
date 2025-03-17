@@ -61,9 +61,12 @@ public class ChatApplicationAutoMapperProfile : Profile
 
         CreateMap<SessionUnit, SessionUnitSenderInfo>();
 
+        CreateMap<SessionUnit, SessionUnitCacheItem>();
+
         CreateMap<SessionTag, SessionTagInfo>();
 
         CreateMap<SessionOrganization, SessionOrganizationInfo>();
+
 
     }
 }

@@ -89,22 +89,7 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     /// </summary>
     public virtual ChatObjectTypeEnums? OwnerObjectType { get; protected set; }
 
-    /// <summary>
-    /// 备注名称
-    /// </summary>
-    public virtual string Rename => Setting.Rename;
-
-    public virtual string DisplayName => Setting.MemberName;
-
-    public virtual string MemberName => Setting.MemberName;
-
-    public virtual bool IsPublic => Setting.IsPublic;
-
-    public virtual bool IsStatic => Setting.IsStatic;
-
-    public virtual bool IsCreator => Setting.IsCreator;
-
-    public virtual long? ReadedMessageId => Setting.ReadedMessageId;
+    
 
     ///// <summary>
     ///// 已读的消息
@@ -248,6 +233,27 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     /// </summary>
     [NotMapped]
     public virtual bool IsWaiter => IsWaiterOfDestination() && IsWaiterOfOwner();
+
+    /// <summary>
+    /// 备注名称
+    /// </summary>
+    public virtual string Rename => Setting.Rename;
+
+    public virtual string DisplayName => Setting.MemberName;
+
+    public virtual string MemberName => Setting.MemberName;
+
+    public virtual bool IsPublic => Setting.IsPublic;
+
+    public virtual bool IsStatic => Setting.IsStatic;
+
+    public virtual bool IsCreator => Setting.IsCreator;
+
+    public virtual bool IsVisible => Setting.IsVisible;
+
+    public virtual bool IsEnabled => Setting.IsEnabled;
+
+    public virtual long? ReadedMessageId => Setting.ReadedMessageId;
 
     protected SessionUnit() { }
 

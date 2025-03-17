@@ -30,6 +30,6 @@ public class OnConnectedDistributedEventHandler(
             DeviceInfo = eventData.DeviceInfo,
         });
 
-        Logger.LogInformation($"处理事件：{eventData}");
+        Logger.LogInformation($"{nameof(OnConnectedDistributedEventHandler)} 处理事件：{eventData}");
     }
 }

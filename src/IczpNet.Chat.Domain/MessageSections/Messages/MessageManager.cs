@@ -13,6 +13,7 @@ using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.Settings;
 using IczpNet.Pusher.ShortIds;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -167,11 +168,13 @@ public partial class MessageManager(
         await MessageValidator.CheckAsync(message);
 
         //sessionUnitCount
-        var sessionUnitCount = message.IsPrivate ? 2 : await SessionUnitManager.GetCountBySessionIdAsync(senderSessionUnit.SessionId.Value);
+        var sessionUnitCount = message.IsPrivateMessage() ? 2 : await SessionUnitManager.GetCountBySessionIdAsync(senderSessionUnit.SessionId.Value);
 
         message.SetSessionUnitCount(sessionUnitCount);
 
         await Repository.InsertAsync(message, autoSave: true);
+
+        await PublishMessageDistributedEventAsync(message, message.ForwardMessageId.HasValue ? Command.Forward : Command.Created);
 
         // LastMessage
         await SessionRepository.UpdateLastMessageIdAsync(senderSessionUnit.SessionId.Value, message.Id);
@@ -412,6 +415,25 @@ public partial class MessageManager(
         return await SendAsync<TContentInfo, TContentEntity>(senderSessionUnit, input, messageContent);
     }
 
+    protected virtual async Task PublishMessageDistributedEventAsync(Message message, Command command, bool onUnitOfWorkComplete = true, bool useOutbox = true)
+    {
+        var cacheKey = await SessionUnitManager.GetCacheKeyByMessageAsync(message);
+
+        var eventData = new MessageChangedDistributedEto()
+        {
+            Command = command.ToString(),
+            CacheKey = cacheKey,
+            MessageId = message.Id,
+            HostName = CurrentHosted.Name,
+        };
+
+        await SessionUnitManager.GetOrAddByMessageAsync(message);
+
+        await DistributedEventBus.PublishAsync(eventData, onUnitOfWorkComplete, useOutbox);
+
+        Logger.LogInformation($"PublishMessageDistributedEventAsync(onUnitOfWorkComplete:{onUnitOfWorkComplete},useOutbox:{useOutbox})[{nameof(MessageChangedDistributedEto)}]:{eventData}");
+    }
+
     /// <inheritdoc />
     public virtual async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContentEntity>(
         SessionUnit senderSessionUnit,
@@ -426,16 +448,8 @@ public partial class MessageManager(
             remindList: input.RemindList,
             receiverSessionUnitId: input.ReceiverSessionUnitId);
 
-        var cacheKey = await SessionUnitManager.GetCacheKeyByMessageAsync(message);
 
-        await SessionUnitManager.GetOrAddByMessageAsync(message);
-
-        await DistributedEventBus.PublishAsync(new MessageCreatedEto()
-        {
-            CacheKey = cacheKey,
-            MessageId = message.Id,
-            HostName = CurrentHosted.Name,
-        });
+        //await PublishMessageDistributedEventAsync(message, Command.Created, onUnitOfWorkComplete: false);
 
         //var output = ObjectMapper.Map<Message, MessageInfo<object>>(message);
         var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
@@ -473,6 +487,8 @@ public partial class MessageManager(
         Assert.If(nowTime > message.CreationTime.AddHours(allowRollbackHours), $"超过{allowRollbackHours}小时的消息不能被撤回！");
 
         message.Rollback(nowTime);
+
+        await PublishMessageDistributedEventAsync(message, Command.Rollback);
 
         //await Repository.UpdateAsync(message, true);
         await UnitOfWorkManager.Current.SaveChangesAsync();
@@ -525,6 +541,8 @@ public partial class MessageManager(
                 return messageContent;
             });
             messageList.Add(newMessage);
+
+            //await PublishMessageDistributedEventAsync(newMessage, Command.Forward);
 
             var output = ObjectMapper.Map<Message, MessageInfo<object>>(newMessage);
 

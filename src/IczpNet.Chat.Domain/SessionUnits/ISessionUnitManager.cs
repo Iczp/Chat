@@ -416,13 +416,13 @@ public interface ISessionUnitManager
     /// <returns></returns>
     Task<int> IncrementFollowingCountAsync(SessionUnit senderSessionUnit, Message message);
 
-    /// <summary>
-    /// 更新缓存
-    /// </summary>
-    /// <param name="senderSessionUnit"></param>
-    /// <param name="message"></param>
-    /// <returns></returns>
-    Task<int> UpdateCachesAsync(SessionUnit senderSessionUnit, Message message);
+    ///// <summary>
+    ///// 更新缓存
+    ///// </summary>
+    ///// <param name="senderSessionUnit"></param>
+    ///// <param name="message"></param>
+    ///// <returns></returns>
+    //Task<int> UpdateCachesAsync(SessionUnit senderSessionUnit, Message message);
 
     /// <summary>
     /// 批量更新

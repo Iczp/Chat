@@ -9,7 +9,7 @@ public class SessionUnitCacheItem
 
     public virtual Guid? SessionId { get; set; }
 
-    public virtual Guid? AppUserId { get; set; }
+    //public virtual Guid? AppUserId { get; set; }
 
     //public virtual ChatObjectTypeEnums? DestinationObjectType { get; set; }
 
@@ -17,22 +17,28 @@ public class SessionUnitCacheItem
 
     public virtual long? DestinationId { get; set; }
 
+    public virtual bool IsStatic { get; set; } 
+
     public virtual bool IsPublic { get; set; }
 
-    public virtual long? ReadedMessageId { get; set; }
+    public virtual bool IsVisible { get; set; }
 
-    public virtual long? LastMessageId { get; set; }
+    public virtual bool IsEnabled { get; set; }
 
-    public virtual int PublicBadge { get; set; }
+    //public virtual long? ReadedMessageId { get; set; }
 
-    public virtual int PrivateBadge { get; set; }
+    //public virtual long? LastMessageId { get; set; }
 
-    public virtual int RemindAllCount { get; set; }
+    //public virtual int PublicBadge { get; set; }
 
-    public virtual int RemindMeCount { get; set; }
+    //public virtual int PrivateBadge { get; set; }
 
-    public virtual int FollowingCount { get; set; }
+    //public virtual int RemindAllCount { get; set; }
 
-    public virtual double Ticks { get; set; }
+    //public virtual int RemindMeCount { get; set; }
+
+    //public virtual int FollowingCount { get; set; }
+
+    //public virtual double Ticks { get; set; }
 
 }

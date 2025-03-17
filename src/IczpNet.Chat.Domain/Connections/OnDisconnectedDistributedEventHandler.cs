@@ -18,10 +18,10 @@ public class OnDisconnectedDistributedEventHandler(
     {
         //await ConnectionPoolManager.AddAsync(eventData);
 
-        Logger.LogWarning($"处理事件[{nameof(OnDisconnectedEto)}] Strat：{eventData.ConnectionId}");
+        Logger.LogWarning($"{nameof(OnDisconnectedDistributedEventHandler)} 处理事件[{nameof(OnDisconnectedEto)}] Strat：{eventData.ConnectionId}");
 
         await ConnectionManager.RemoveAsync(eventData.ConnectionId);
 
-        Logger.LogWarning($"处理事件[{nameof(OnDisconnectedEto)}] End：{eventData.ConnectionId}");
+        Logger.LogWarning($"{nameof(OnDisconnectedDistributedEventHandler)} 处理事件[{nameof(OnDisconnectedEto)}] End：{eventData.ConnectionId}");
     }
 }

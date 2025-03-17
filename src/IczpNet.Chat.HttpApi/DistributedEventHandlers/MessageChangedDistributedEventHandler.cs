@@ -9,40 +9,31 @@ using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.Json;
 
 namespace IczpNet.Chat.DistributedEventHandlers;
 
-public class MessageCreatedDistributedEventHandler(
-    //IMessageRepository messageRepository,
-    //IUnitOfWorkManager unitOfWorkManager,
-    ISessionUnitManager sessionUnitManager,
-    IConnectionPoolManager connectionPoolManager,
-    ICurrentHosted currentHosted,
-    IJsonSerializer jsonSerializer,
-    IHubContext<ChatHub, IChatClient> hubContext) : DomainService, IDistributedEventHandler<MessageCreatedEto>
+public class MessageChangedDistributedEventHandler : DomainService, IDistributedEventHandler<MessageChangedDistributedEto>, ITransientDependency
 {
-    //public IMessageRepository MessageRepository { get; } = messageRepository;
-    //public IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
-    public ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
-    public IConnectionPoolManager ConnectionPoolManager { get; } = connectionPoolManager;
-    public ICurrentHosted CurrentHosted { get; } = currentHosted;
-    public IJsonSerializer JsonSerializer { get; } = jsonSerializer;
-    public IHubContext<ChatHub, IChatClient> HubContext { get; } = hubContext;
+    public ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
+    public IConnectionPoolManager ConnectionPoolManager => LazyServiceProvider.LazyGetRequiredService<IConnectionPoolManager>();
+    public ICurrentHosted CurrentHosted => LazyServiceProvider.LazyGetRequiredService<ICurrentHosted>();
+    public IJsonSerializer JsonSerializer => LazyServiceProvider.LazyGetRequiredService<IJsonSerializer>();
+    public IHubContext<ChatHub, IChatClient> HubContext => LazyServiceProvider.LazyGetRequiredService<IHubContext<ChatHub, IChatClient>>();
 
-    public async Task HandleEventAsync(MessageCreatedEto eventData)
+    public async Task HandleEventAsync(MessageChangedDistributedEto eventData)
     {
-        Logger.LogInformation($"[{nameof(MessageCreatedDistributedEventHandler)}] eventData:{eventData}");
+        Logger.LogInformation($"{nameof(MessageChangedDistributedEventHandler)} received eventData[{nameof(MessageChangedDistributedEto)}]:{eventData}");
 
-        //using var uow = UnitOfWorkManager.Begin();
+        var cacheKey = eventData.CacheKey;
+        var payload = eventData.CacheKey;
+        var command = eventData.Command;
+        var ignoreConnections = new HashSet<string>();
 
-        //var message = await MessageRepository.GetAsync(eventData.MessageId);
-
-        var ignoreConnections = new List<string>();
-
-        var sessionUnitInfoList = await SessionUnitManager.GetCacheListAsync(eventData.CacheKey);
+        var sessionUnitInfoList = await SessionUnitManager.GetCacheListAsync(cacheKey);
 
         if (sessionUnitInfoList == null)
         {
@@ -50,7 +41,7 @@ public class MessageCreatedDistributedEventHandler(
             return;
         }
 
-        Logger.LogInformation($"Target session unit count:{sessionUnitInfoList.Count}");
+        Logger.LogInformation($"sessionUnitInfoList.count:{sessionUnitInfoList.Count}");
 
         var chatObjectIdList = sessionUnitInfoList
             .Where(x => x != null)
@@ -81,18 +72,18 @@ public class MessageCreatedDistributedEventHandler(
                     SessionUnitId = sessionUnitInfoList.Find(x => x.OwnerId == chatObjectId).Id
                 }).ToList();
 
-            var payload = new PushPayload()
+            var commandPayload = new PushPayload()
             {
                 AppUserId = item.AppUserId,
                 Scopes = units,//sessionUnitCaches.Select(x=>x as object).ToList(),
                 //Caches = sessionUnitCaches,
-                Command = "NewMessage",
-                Payload = eventData,
+                Command = command,
+                Payload = payload,
             };
 
-            Logger.LogInformation($"Send [{nameof(IChatClient.ReceivedMessage)}]:{connectionPools.Count},payload={JsonSerializer.Serialize(payload)}");
+            Logger.LogInformation($"Send [{nameof(IChatClient.ReceivedMessage)}]:{connectionPools.Count},commandPayload={JsonSerializer.Serialize(commandPayload)}");
 
-            await HubContext.Clients.Client(item.ConnectionId).ReceivedMessage(payload);
+            await HubContext.Clients.Client(item.ConnectionId).ReceivedMessage(commandPayload);
         }
     }
 }

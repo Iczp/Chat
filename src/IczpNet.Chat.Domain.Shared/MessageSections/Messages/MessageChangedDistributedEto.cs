@@ -1,11 +1,16 @@
-﻿using System;
+﻿using IczpNet.Chat.Enums;
+using System;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
-
 [Serializable]
-public class MessageCreatedEto
+public class MessageChangedDistributedEto : IMessageChangedDistributedEto
 {
+    /// <summary>
+    /// Command
+    /// </summary>
+    public virtual string Command { get; set; }
+
     /// <summary>
     /// MessageId
     /// </summary>
@@ -27,6 +32,6 @@ public class MessageCreatedEto
     /// <returns></returns>
     public override string ToString()
     {
-        return $"{nameof(MessageId)}={MessageId},{nameof(HostName)}={HostName}";
+        return $"{nameof(Command)}={Command},{nameof(MessageId)}={MessageId},{nameof(HostName)}={HostName}";
     }
 }
