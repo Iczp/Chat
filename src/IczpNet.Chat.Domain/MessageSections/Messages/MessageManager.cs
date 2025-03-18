@@ -1,11 +1,8 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
-using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatPushers;
 using IczpNet.Chat.CommandPayloads;
-using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
-using IczpNet.Chat.Follows;
 using IczpNet.Chat.Hosting;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Templates;
@@ -19,7 +16,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.EventBus.Distributed;
@@ -151,14 +147,13 @@ public partial class MessageManager(
 
         message.SetSessionUnitCount(sessionUnitCount);
 
+        // Save
         await Repository.InsertAsync(message, autoSave: true);
 
-        await PublishMessageDistributedEventAsync(message, message.ForwardMessageId.HasValue ? Command.Forward : Command.Created);
-
-        // LastMessage
+        // update Session LastMessage
         await SessionRepository.UpdateLastMessageIdAsync(senderSessionUnit.SessionId.Value, message.Id);
 
-        // Last send message
+        // update SessionUnitSetting LastSendMessageId
         await SessionUnitSettingRepository.UpdateLastSendMessageAsync(senderSessionUnit.Id, message.Id, message.CreationTime);
 
         //更新引用次数
@@ -166,6 +161,9 @@ public partial class MessageManager(
 
         ////更新转发次数
         await UpdateForwardCountAsync(message.ForwardPath);
+
+        // 发出事件
+        await PublishMessageDistributedEventAsync(message, message.ForwardMessageId.HasValue ? Command.Forward : Command.Created);
 
         ////以下可能导致锁表
         //await SessionUnitRepository.UpdateLastMessageIdAsync(senderSessionUnit.Id, message.Id);

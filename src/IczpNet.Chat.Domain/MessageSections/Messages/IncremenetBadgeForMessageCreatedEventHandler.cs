@@ -1,10 +1,7 @@
 ﻿using IczpNet.Chat.Developers;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.SessionUnits;
-using IczpNet.Chat.Settings;
-using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Logging;
-using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.BackgroundJobs;
@@ -13,7 +10,6 @@ using Volo.Abp.Domain.Entities.Events;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.EventBus;
 using Volo.Abp.Json;
-using Volo.Abp.Settings;
 using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.MessageSections.Messages;
@@ -22,17 +18,17 @@ namespace IczpNet.Chat.MessageSections.Messages;
 /// 角标增量事件处理
 /// </summary>
 public class IncremenetBadgeForMessageCreatedEventHandler(
+    IIncremenetBadge incremenetBadge,
     ISessionUnitManager sessionUnitManager,
     IFollowManager followManager,
     IJsonSerializer jsonSerializer,
-    ISettingProvider settingProvider,
     IBackgroundJobManager backgroundJobManager,
     IDeveloperManager developerManager) : DomainService, ILocalEventHandler<EntityCreatedEventData<Message>>, ITransientDependency
 {
+    public IIncremenetBadge IncremenetBadge { get; } = incremenetBadge;
     protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
     protected IFollowManager FollowManager { get; } = followManager;
     protected IJsonSerializer JsonSerializer { get; } = jsonSerializer;
-    public ISettingProvider SettingProvider { get; } = settingProvider;
     public IBackgroundJobManager BackgroundJobManager { get; } = backgroundJobManager;
     protected IDeveloperManager DeveloperManager { get; } = developerManager;
 
@@ -59,7 +55,7 @@ public class IncremenetBadgeForMessageCreatedEventHandler(
 
         Logger.LogInformation($"{nameof(SessionUnitIncrementJobArgs)}:{JsonSerializer.Serialize(sessionUnitIncrementJobArgs)}");
 
-        if (await ShouldbeBackgroundJobAsync(message))
+        if (await IncremenetBadge.ShouldbeBackgroundJobAsync(message))
         {
             var jobId = await BackgroundJobManager.EnqueueAsync(sessionUnitIncrementJobArgs);
             Logger.LogInformation($"{nameof(SessionUnitIncrementJobArgs)} backgroupJobId:{jobId}");
@@ -69,21 +65,5 @@ public class IncremenetBadgeForMessageCreatedEventHandler(
             Logger.LogWarning($"BackgroundJobManager.IsAvailable():False");
             await SessionUnitManager.IncremenetAsync(sessionUnitIncrementJobArgs);
         }
-    }
-
-    protected virtual async Task<bool> ShouldbeBackgroundJobAsync(Message message)
-    {
-        //return true;
-        await Task.Yield();
-
-        //return BackgroundJobManager.IsAvailable();
-
-        var useBackgroundJobSenderMinSessionUnitCount = await SettingProvider.GetAsync(ChatSettings.UseBackgroundJobSenderMinSessionUnitCount, 500);
-
-        var shouldbeBackgroundJob = BackgroundJobManager.IsAvailable() && !message.IsPrivateMessage() && message.SessionUnitCount > useBackgroundJobSenderMinSessionUnitCount;
-
-        Logger.LogWarning($"ShouldbeBackgroundJobAsync: shouldbeBackgroundJob={shouldbeBackgroundJob},useBackgroundJobSenderMinSessionUnitCount={useBackgroundJobSenderMinSessionUnitCount}");
-
-        return shouldbeBackgroundJob;
     }
 }
