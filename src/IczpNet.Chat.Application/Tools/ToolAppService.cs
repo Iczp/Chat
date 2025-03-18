@@ -135,7 +135,7 @@ public class ToolAppService : ChatAppService
                 DisplayName = x.DisplayName.Localize(StringLocalizerFactory),
                 ParentName = x.Parent?.Name,
                 AllowedProviders = x.Providers,
-                GrantedProviders = new List<ProviderInfoDto>()
+                GrantedProviders = []
             }).ToList();
 
             var multipleGrantInfo = await PermissionManager.GetAsync(neededCheckPermissions.Select(x => x.Name).ToArray(), providerName, providerKey);
@@ -219,6 +219,8 @@ public class ToolAppService : ChatAppService
         return Task.FromResult(new DateTimeOffset(dateTime ?? Clock.Now).ToUnixTimeSeconds());
     }
 
+
+
     /// <summary>
     /// ToUnixTimeMilliseconds
     /// </summary>
@@ -228,5 +230,12 @@ public class ToolAppService : ChatAppService
     public virtual Task<long> ToUnixTimeMilliseconds(DateTime? dateTime)
     {
         return Task.FromResult(new DateTimeOffset(dateTime ?? Clock.Now).ToUnixTimeMilliseconds());
+    }
+
+    [HttpGet]
+    public virtual async Task<string> GetServerTime()
+    {
+        await Task.Yield();
+        return Clock.Now.ToString();
     }
 }

@@ -157,20 +157,4 @@ public class ChatHub(
         }
         await base.OnDisconnectedAsync(exception);
     }
-
-    public async Task SendMessageAsync(string targetUserName, string message)
-    {
-        message = $"{CurrentUser.UserName}: {message}";
-
-        var all = await ConnectionPoolManager.GetAllListAsync();
-
-        await Clients.All.ReceivedMessage(new PushPayload()
-        {
-            Command = "NewMessage",
-            Payload = all,
-        });
-        //await Clients
-        //    .User(targetUser.Id.ToString())
-        //    .SendAsync("ReceiveMessage", message);
-    }
 }

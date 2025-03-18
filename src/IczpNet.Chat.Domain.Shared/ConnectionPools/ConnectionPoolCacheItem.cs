@@ -52,7 +52,7 @@ public class ConnectionPoolCacheItem
     /// <summary>
     /// CreationTime
     /// </summary>
-    public DateTime? CreationTime { get; set; } = DateTime.Now;
+    public DateTime? CreationTime { get; set; } = DateTime.UtcNow;
 
     /// <summary>
     /// ChatObjectIdList
