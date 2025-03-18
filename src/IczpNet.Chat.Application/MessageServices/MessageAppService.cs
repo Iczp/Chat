@@ -27,33 +27,22 @@ namespace IczpNet.Chat.MessageServices;
 /// <summary>
 /// 消息管理器
 /// </summary>
-public class MessageAppService : ChatAppService, IMessageAppService
+public class MessageAppService(
+    IMessageRepository repository,
+    IReadedRecorderManager readedRecorderManager,
+    IOpenedRecorderManager openedRecorderManager,
+    IFavoritedRecorderManager favoriteManager,
+    IFollowManager followManager,
+    ISessionUnitRepository sessionUnitRepository,
+    IMessageManager messageManager) : ChatAppService, IMessageAppService
 {
-    protected IMessageRepository Repository { get; }
-    protected IReadedRecorderManager ReadedRecorderManager { get; }
-    protected IOpenedRecorderManager OpenedRecorderManager { get; }
-    protected IFavoritedRecorderManager FavoritedRecorderManager { get; }
-    protected IFollowManager FollowManager { get; }
-    protected ISessionUnitRepository SessionUnitRepository { get; }
-    protected IMessageManager MessageManager { get; }
-
-    public MessageAppService(
-        IMessageRepository repository,
-        IReadedRecorderManager readedRecorderManager,
-        IOpenedRecorderManager openedRecorderManager,
-        IFavoritedRecorderManager favoriteManager,
-        IFollowManager followManager,
-        ISessionUnitRepository sessionUnitRepository,
-        IMessageManager messageManager)
-    {
-        Repository = repository;
-        ReadedRecorderManager = readedRecorderManager;
-        OpenedRecorderManager = openedRecorderManager;
-        FavoritedRecorderManager = favoriteManager;
-        FollowManager = followManager;
-        SessionUnitRepository = sessionUnitRepository;
-        MessageManager = messageManager;
-    }
+    protected IMessageRepository Repository { get; } = repository;
+    protected IReadedRecorderManager ReadedRecorderManager { get; } = readedRecorderManager;
+    protected IOpenedRecorderManager OpenedRecorderManager { get; } = openedRecorderManager;
+    protected IFavoritedRecorderManager FavoritedRecorderManager { get; } = favoriteManager;
+    protected IFollowManager FollowManager { get; } = followManager;
+    protected ISessionUnitRepository SessionUnitRepository { get; } = sessionUnitRepository;
+    protected IMessageManager MessageManager { get; } = messageManager;
 
     /// <summary>
     /// 获取禁止转发的消息类型
