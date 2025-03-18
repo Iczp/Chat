@@ -23,7 +23,7 @@ public partial class Message
         //Session = sessionUnit.Session
         SenderSessionUnitId = sessionUnit.Id;
         SessionId = sessionUnit.SessionId;
-        Channel = sessionUnit.Session.Channel;
+        //Channel = sessionUnit.Session.Channel;
         SessionKey = sessionUnit.Session.SessionKey;
     }
 

@@ -25,6 +25,13 @@ public interface ISessionUnitManager
     /// <summary>
     /// 获取会话单元
     /// </summary>
+    /// <param name="sessionUnitId"></param>
+    /// <returns></returns>
+    Task<SessionUnitCacheItem> GetByCacheAsync(Guid sessionUnitId);
+
+    /// <summary>
+    /// 获取会话单元
+    /// </summary>
     /// <param name="idList"></param>
     /// <returns></returns>
     Task<List<SessionUnit>> GetManyAsync(List<Guid> idList);

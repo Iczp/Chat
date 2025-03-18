@@ -24,6 +24,7 @@ using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.SessionUnits;
 
@@ -31,18 +32,22 @@ public class SessionUnitManager(
     ISessionUnitRepository repository,
     IMessageRepository messageRepository,
     IDistributedCache<List<SessionUnitCacheItem>, string> sessionUnitListCache,
+    IDistributedCache<SessionUnitCacheItem, Guid> sessionUnitItemCache,
     IDistributedCache<string, Guid> sessionUnitCountCache,
     IChatObjectRepository chatObjectRepository,
     IMessageSender messageSender,
+    IObjectMapper objectMapper,
     ISessionUnitIdGenerator idGenerator) : DomainService, ISessionUnitManager
 {
     protected ISessionUnitRepository Repository { get; } = repository;
     protected IMessageRepository MessageRepository { get; } = messageRepository;
     protected IDistributedCache<List<SessionUnitCacheItem>, string> SessionUnitListCache { get; } = sessionUnitListCache;
+    public IDistributedCache<SessionUnitCacheItem, Guid> SessionUnitItemCache { get; } = sessionUnitItemCache;
     protected IDistributedCache<string, Guid> SessionUnitCountCache { get; } = sessionUnitCountCache;
     protected IFollowManager FollowManager => LazyServiceProvider.LazyGetRequiredService<IFollowManager>();
     protected IChatObjectRepository ChatObjectRepository { get; } = chatObjectRepository;
     protected IMessageSender MessageSender { get; } = messageSender;
+    protected IObjectMapper ObjectMapper { get; } = objectMapper;
     protected ISessionUnitIdGenerator IdGenerator { get; } = idGenerator;
 
     protected static DistributedCacheEntryOptions DistributedCacheEntryOptions => new()
@@ -101,6 +106,16 @@ public class SessionUnitManager(
     public virtual Task<SessionUnit> GetAsync(Guid id)
     {
         return Repository.GetAsync(id);
+    }
+
+    /// <inheritdoc />
+    public virtual Task<SessionUnitCacheItem> GetByCacheAsync(Guid id)
+    {
+        return SessionUnitItemCache.GetOrAddAsync(id, async () =>
+        {
+            var sessionUnit = await GetAsync(id);
+            return ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(sessionUnit);
+        }, () => DistributedCacheEntryOptions);
     }
 
     /// <inheritdoc />
@@ -717,8 +732,9 @@ public class SessionUnitManager(
             //AppUserId = x.AppUserId,
             SessionId = x.SessionId,
             OwnerId = x.OwnerId,
+            OwnerObjectType = x.OwnerObjectType,
             DestinationId = x.DestinationId,
-            //DestinationObjectType = x.DestinationObjectType,
+            DestinationObjectType = x.DestinationObjectType,
             IsPublic = x.Setting.IsPublic,
             IsStatic = x.Setting.IsStatic,
             IsVisible = x.Setting.IsVisible,

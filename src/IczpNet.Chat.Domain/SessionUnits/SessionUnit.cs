@@ -49,7 +49,7 @@ namespace IczpNet.Chat.SessionUnits;
 
 [Index(nameof(Sorting), nameof(LastMessageId), nameof(IsDeleted), AllDescending = true)]
 [Index(nameof(Sorting), nameof(LastMessageId), nameof(IsDeleted), IsDescending = [true, false, true], Name = "IX_Chat_SessionUnit_Sorting_Desc_LastMessageId_Asc")]
-public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, ISessionId, IHasSimpleStateCheckers<SessionUnit>, IMaterializationInterceptor
+public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, ISessionId, IHasSimpleStateCheckers<SessionUnit>, IMaterializationInterceptor, ISessionUnit
 {
 
     public List<ISimpleStateChecker<SessionUnit>> StateCheckers => [];
@@ -88,8 +88,6 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     /// 所有者对象类型
     /// </summary>
     public virtual ChatObjectTypeEnums? OwnerObjectType { get; protected set; }
-
-    
 
     ///// <summary>
     ///// 已读的消息
