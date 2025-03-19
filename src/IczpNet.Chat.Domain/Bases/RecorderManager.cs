@@ -11,17 +11,18 @@ using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.Settings;
 
 namespace IczpNet.Chat.Bases;
 
 public abstract class RecorderManager<TEntity>(IRepository<TEntity> repository) : DomainService, IRecorderManager<TEntity> where TEntity : class, IEntity, IMessageId, ISessionUnitId
 {
     protected IRepository<TEntity> Repository { get; } = repository;
-    protected IMessageRepository MessageRepository => LazyServiceProvider.LazyGetService<IMessageRepository>();
-    protected ISessionUnitRepository SessionUnitRepository => LazyServiceProvider.LazyGetService<ISessionUnitRepository>();
+    protected virtual IReadOnlyRepository<Message, long> MessageRepository => LazyServiceProvider.LazyGetService<IReadOnlyRepository<Message, long>>();
+    protected virtual IReadOnlyRepository<SessionUnit, Guid> SessionUnitRepository => LazyServiceProvider.LazyGetService<IReadOnlyRepository<SessionUnit, Guid>>();
     protected IBackgroundJobManager BackgroundJobManager => LazyServiceProvider.LazyGetService<IBackgroundJobManager>();
     protected IDeviceIdResolver DeviceIdResolver => LazyServiceProvider.LazyGetService<IDeviceIdResolver>();
-
+    protected ISettingProvider SettingProvider => LazyServiceProvider.LazyGetService<ISettingProvider>();
     protected abstract TEntity CreateEntity(SessionUnit sessionUnit, Message message, string deviceId);
     protected abstract TEntity CreateEntity(Guid sessionUnitId, long messageId);
     protected abstract Task ChangeMessageIfNotContainsAsync(SessionUnit sessionUnit, Message message);
@@ -57,11 +58,10 @@ public abstract class RecorderManager<TEntity>(IRepository<TEntity> repository) 
 
     public virtual async Task<List<long>> GetRecorderMessageIdListAsync(Guid sessionUnitId, List<long> messageIdList)
     {
-        return (await Repository.GetQueryableAsync())
+        return [.. (await Repository.GetQueryableAsync())
             .Where(x => x.SessionUnitId == sessionUnitId)
             .Where(x => messageIdList.Contains(x.MessageId))
-            .Select(x => x.MessageId)
-            .ToList();
+            .Select(x => x.MessageId)];
     }
 
     /// <inheritdoc/>
@@ -96,8 +96,6 @@ public abstract class RecorderManager<TEntity>(IRepository<TEntity> repository) 
         return query.Where(x => !readedSessionUnitIdList.Contains(x.Id));
     }
 
-
-
     public virtual async Task<TEntity> CreateIfNotContainsAsync(SessionUnit sessionUnit, long messageId, string deviceId)
     {
         var message = await MessageRepository.GetAsync(messageId);
@@ -123,9 +121,9 @@ public abstract class RecorderManager<TEntity>(IRepository<TEntity> repository) 
             .ToList()
             ;
 
-        if (!dbMessageList.Any())
+        if (dbMessageList.Count == 0)
         {
-            return new List<TEntity>();
+            return [];
         }
 
         var dbMessageIdList = dbMessageList.Select(x => x.Id).ToList();
@@ -140,7 +138,7 @@ public abstract class RecorderManager<TEntity>(IRepository<TEntity> repository) 
 
         if (!newMessageIdList.Any())
         {
-            return new List<TEntity>();
+            return [];
         }
 
         var changeMessages = dbMessageList.Where(x => newMessageIdList.Contains(x.Id)).ToList();
