@@ -7,60 +7,69 @@ using Volo.Abp.Domain.Services;
 using Microsoft.Extensions.Logging;
 using IczpNet.Chat.ServerHosts;
 using Volo.Abp.Uow;
+using System.Threading;
 
 namespace IczpNet.Chat.Connections;
 
-public class ConnectionManager : DomainService, IConnectionManager
+/// <inheritdoc />
+public class ConnectionManager(
+    IRepository<Connection, string> repository,
+    IOptions<ConnectionOptions> options,
+    IUnitOfWorkManager unitOfWorkManager,
+    IRepository<ServerHost, string> serverHostRepository) : DomainService, IConnectionManager
 {
-    protected IRepository<Connection, string> Repository { get; }
-    protected IRepository<ServerHost, string> ServerHostRepository { get; }
-    protected ConnectionOptions Config { get; }
-    public ConnectionManager(
-        IRepository<Connection, string> repository,
-        IOptions<ConnectionOptions> options,
-        IRepository<ServerHost, string> serverHostRepository)
-    {
-        Repository = repository;
-        Config = options.Value;
-        ServerHostRepository = serverHostRepository;
-    }
+    protected IRepository<Connection, string> Repository { get; } = repository;
+    public IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
+    protected IRepository<ServerHost, string> ServerHostRepository { get; } = serverHostRepository;
+    protected ConnectionOptions Config { get; } = options.Value;
 
-
+    /// <inheritdoc />
     public virtual async Task<ConnectionOptions> GetConfigAsync()
     {
         await Task.Yield();
         return Config;
     }
 
-    public virtual async Task<Connection> CreateAsync(Connection connection)
-    {
-        if (!connection.ServerHostId.IsNullOrWhiteSpace())
-        {
-            var serverHost = await ServerHostRepository.FindAsync(connection.ServerHostId);
-            serverHost ??= await ServerHostRepository.InsertAsync(new ServerHost(connection.ServerHostId));
-            connection.ServerHost = serverHost;
-        }
-
-        var entity = await Repository.InsertAsync(connection, autoSave: true);
-        // 
-        return entity;
-    }
-    public Task<int> GetOnlineCountAsync(DateTime currentTime)
-    {
-        return Repository.CountAsync(x => x.ActiveTime > currentTime.AddSeconds(-Config.InactiveSeconds));
-    }
-
-    public Task<Connection> GetAsync(string connectionId)
-    {
-        return Repository.GetAsync(connectionId);
-    }
-
-    [UnitOfWork]
-    public virtual async Task<Connection> UpdateActiveTimeAsync(string connectionId)
+    /// <inheritdoc />
+    //[UnitOfWork]
+    public virtual async Task<Connection> CreateAsync(Connection connection, CancellationToken token = default)
     {
         //using var uow = UnitOfWorkManager.Begin();
 
-        var entity = await Repository.FindAsync(connectionId);
+        if (!connection.ServerHostId.IsNullOrWhiteSpace())
+        {
+            var serverHost = await ServerHostRepository.FindAsync(connection.ServerHostId, cancellationToken: token);
+            serverHost ??= await ServerHostRepository.InsertAsync(new ServerHost(connection.ServerHostId), autoSave: true, cancellationToken: token);
+            //connection.ServerHost = serverHost;
+            Logger.LogInformation($"Insert ServerHost:{serverHost.Id}");
+        }
+
+        var entity = await Repository.InsertAsync(connection, autoSave: true, cancellationToken: token);
+
+        //await UnitOfWorkManager.Current.SaveChangesAsync(token);
+        // 
+        return entity;
+    }
+
+    /// <inheritdoc />
+    public Task<int> GetOnlineCountAsync(DateTime currentTime, CancellationToken token = default)
+    {
+        return Repository.CountAsync(x => x.ActiveTime > currentTime.AddSeconds(-Config.InactiveSeconds), cancellationToken: token);
+    }
+
+    /// <inheritdoc />
+    public Task<Connection> GetAsync(string connectionId, CancellationToken token = default)
+    {
+        return Repository.GetAsync(connectionId, cancellationToken: token);
+    }
+
+    /// <inheritdoc />
+    [UnitOfWork]
+    public virtual async Task<Connection> UpdateActiveTimeAsync(string connectionId, CancellationToken token = default)
+    {
+        //using var uow = UnitOfWorkManager.Begin();
+
+        var entity = await Repository.FindAsync(connectionId, cancellationToken: token);
 
         if (entity == null)
         {
@@ -69,25 +78,27 @@ public class ConnectionManager : DomainService, IConnectionManager
         }
         entity.SetActiveTime(Clock.Now);
 
-        return await Repository.UpdateAsync(entity, true);
+        return await Repository.UpdateAsync(entity, true, token);
     }
 
-    public virtual Task DeleteAsync(string connectionId)
+    /// <inheritdoc />
+    public virtual Task RemoveAsync(string connectionId, CancellationToken token = default)
     {
-        return Repository.DeleteAsync(connectionId);
+        return Repository.DeleteAsync(connectionId, autoSave: true, cancellationToken: token);
     }
 
-    public virtual async Task<int> ClearUnactiveAsync()
+    /// <inheritdoc />
+    public virtual async Task<int> ClearUnactiveAsync(CancellationToken token = default)
     {
         Expression<Func<Connection, bool>> predicate = x => x.ActiveTime < Clock.Now.AddSeconds(-Config.InactiveSeconds);
 
-        var count = await Repository.CountAsync(predicate);
+        var count = await Repository.CountAsync(predicate, cancellationToken: token);
 
         if (count == 0)
         {
             return 0;
         }
-        await Repository.DeleteAsync(predicate);
+        await Repository.DeleteAsync(predicate, cancellationToken: token);
 
         return count;
     }

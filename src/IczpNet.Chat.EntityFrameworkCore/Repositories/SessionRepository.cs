@@ -18,7 +18,7 @@ public class SessionRepository(IDbContextProvider<ChatDbContext> dbContextProvid
             .Where(x => x.Id == sessionId)
             .Where(x => x.LastMessageId == null || x.LastMessageId.Value < lastMessageId)
             .ExecuteUpdateAsync(s => s
-                .SetProperty(b => b.LastModificationTime, b => DateTime.Now)
+                .SetProperty(b => b.LastModificationTime, b => Clock.Now)
                 .SetProperty(b => b.LastMessageId, b => lastMessageId)
             );
     }

@@ -1,10 +1,9 @@
-﻿namespace IczpNet.Chat.ChatObjects.Dtos
+﻿namespace IczpNet.Chat.ChatObjects.Dtos;
+
+public class ChatObjectDto : ChatObjectSimpleDto, IChatObject
 {
-    public class ChatObjectDto : ChatObjectSimpleDto, IChatObject
-    {
 
-        //public MottoSimpleDto Motto { get; set; }
+    //public MottoSimpleDto Motto { get; set; }
 
-        //public string NameSpellingAbbreviation { get; set; }
-    }
+    //public string NameSpellingAbbreviation { get; set; }
 }

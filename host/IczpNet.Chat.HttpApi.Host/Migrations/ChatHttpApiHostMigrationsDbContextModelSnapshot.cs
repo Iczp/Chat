@@ -932,6 +932,10 @@ namespace IczpNet.Chat.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<string>("ClientId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -958,6 +962,10 @@ namespace IczpNet.Chat.Migrations
                     b.Property<string>("DeviceId")
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("DeviceInfo")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
 
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
@@ -2251,6 +2259,11 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("int")
                         .HasComment("会话单元数量");
 
+                    b.Property<string>("ShortId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("ShortId");
+
                     b.Property<long>("Size")
                         .HasColumnType("bigint")
                         .HasComment("消息大小kb");
@@ -2298,6 +2311,8 @@ namespace IczpNet.Chat.Migrations
                     b.HasIndex("SessionId");
 
                     b.HasIndex("SessionUnitCount");
+
+                    b.HasIndex("ShortId");
 
                     b.HasIndex("SessionId", "Id")
                         .IsDescending();

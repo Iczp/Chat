@@ -1,15 +1,14 @@
 ﻿using System;
 
-namespace IczpNet.Chat.SessionUnits
+namespace IczpNet.Chat.SessionUnits;
+
+public interface ISessionUnitIdGenerator
 {
-    public interface ISessionUnitIdGenerator
-    {
-        Guid Create(long ownerId, long destinationId);
+    Guid Create(long ownerId, long destinationId);
 
-        string Generate(long ownerId, long destinationId);
+    string Generate(long ownerId, long destinationId);
 
-        long[] Resolving(string sessionUnitId);
+    long[] Resolving(string sessionUnitId);
 
-        bool IsVerified(string sessionUnitId);
-    }
+    bool IsVerified(string sessionUnitId);
 }

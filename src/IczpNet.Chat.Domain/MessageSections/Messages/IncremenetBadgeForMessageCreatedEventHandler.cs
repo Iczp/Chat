@@ -14,13 +14,18 @@ using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
-public class MessageCreatedEventHandler(
+/// <summary>
+/// 角标增量事件处理
+/// </summary>
+public class IncremenetBadgeForMessageCreatedEventHandler(
+    IIncremenetBadge incremenetBadge,
     ISessionUnitManager sessionUnitManager,
     IFollowManager followManager,
     IJsonSerializer jsonSerializer,
     IBackgroundJobManager backgroundJobManager,
     IDeveloperManager developerManager) : DomainService, ILocalEventHandler<EntityCreatedEventData<Message>>, ITransientDependency
 {
+    public IIncremenetBadge IncremenetBadge { get; } = incremenetBadge;
     protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
     protected IFollowManager FollowManager { get; } = followManager;
     protected IJsonSerializer JsonSerializer { get; } = jsonSerializer;
@@ -50,7 +55,7 @@ public class MessageCreatedEventHandler(
 
         Logger.LogInformation($"{nameof(SessionUnitIncrementJobArgs)}:{JsonSerializer.Serialize(sessionUnitIncrementJobArgs)}");
 
-        if (await ShouldbeBackgroundJobAsync(message))
+        if (await IncremenetBadge.ShouldbeBackgroundJobAsync(message))
         {
             var jobId = await BackgroundJobManager.EnqueueAsync(sessionUnitIncrementJobArgs);
             Logger.LogInformation($"{nameof(SessionUnitIncrementJobArgs)} backgroupJobId:{jobId}");
@@ -60,18 +65,5 @@ public class MessageCreatedEventHandler(
             Logger.LogWarning($"BackgroundJobManager.IsAvailable():False");
             await SessionUnitManager.IncremenetAsync(sessionUnitIncrementJobArgs);
         }
-    }
-
-    protected virtual async Task<bool> ShouldbeBackgroundJobAsync(Message message)
-    {
-        await Task.Yield();
-
-        return BackgroundJobManager.IsAvailable();
-
-        //var useBackgroundJobSenderMinSessionUnitCount = await SettingProvider.GetWalletAsync<int>(ChatSettings.UseBackgroundJobSenderMinSessionUnitCount);
-
-        //return BackgroundJobManager.IsAvailable() && !message.IsPrivate && message.SessionUnitCount > useBackgroundJobSenderMinSessionUnitCount;
-
-        ////return false;
     }
 }

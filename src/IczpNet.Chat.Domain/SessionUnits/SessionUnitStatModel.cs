@@ -1,20 +1,19 @@
 ﻿using System;
 
-namespace IczpNet.Chat.SessionUnits
+namespace IczpNet.Chat.SessionUnits;
+
+public class SessionUnitStatModel
 {
-    public class SessionUnitStatModel
-    {
-        public Guid Id { get; set; }
+    public Guid Id { get; set; }
 
-        public int PublicBadge { get; set; }
+    public int PublicBadge { get; set; }
 
-        public int PrivateBadge { get; set; }
+    public int PrivateBadge { get; set; }
 
-        public int FollowingCount { get; set; }
+    public int FollowingCount { get; set; }
 
-        public int RemindAllCount { get; set; }
+    public int RemindAllCount { get; set; }
 
-        public int RemindMeCount { get; set; }
+    public int RemindMeCount { get; set; }
 
-    }
 }

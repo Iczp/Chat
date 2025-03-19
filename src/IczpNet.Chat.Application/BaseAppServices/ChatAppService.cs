@@ -115,6 +115,33 @@ public abstract class ChatAppService : AbpCommonsAppService
     #endregion
 
     #region  CheckPolicyAsync
+
+
+    protected virtual async Task CheckGetListPolicyAsync()
+    {
+        await CheckPolicyAsync(GetListPolicyName);
+    }
+
+    protected virtual async Task CheckGetItemPolicyAsync()
+    {
+        await CheckPolicyAsync(GetPolicyName);
+    }
+
+    protected virtual async Task CheckCreatePolicyAsync()
+    {
+        await CheckPolicyAsync(CreatePolicyName);
+    }
+
+    protected virtual async Task CheckUpdatePolicyAsync()
+    {
+        await CheckPolicyAsync(UpdatePolicyName);
+    }
+
+    protected virtual async Task CheckDeletePolicyAsync()
+    {
+        await CheckPolicyAsync(DeletePolicyName);
+    }
+
     protected virtual async Task CheckPolicyAsync(string policyName, long ownerId)
     {
 

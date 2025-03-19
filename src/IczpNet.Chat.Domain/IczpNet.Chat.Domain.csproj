@@ -62,6 +62,7 @@
     <Folder Include="GotRecorders\" />
     <Folder Include="Personals\" />
     <Folder Include="RedPackets\" />
+    <Folder Include="ShortIds\" />
   </ItemGroup>
 
 </Project>

@@ -1,47 +1,54 @@
-﻿using IczpNet.AbpCommons;
-using IczpNet.Chat.Enums;
+﻿using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
 namespace IczpNet.Chat.Attributes;
 
 [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
-public sealed class ContentTypeAttribute : Attribute
+public sealed class ContentTypeAttribute(MessageTypes messageType) : Attribute
 {
-    public static ConcurrentDictionary<MessageTypes, PropertyInfo> MessageTypeDictionary => GenerateDictionary();
+    // 使用 Lazy<T> 确保 _messageTypeDictionary 只初始化一次
+    private static readonly Lazy<ConcurrentDictionary<MessageTypes, PropertyInfo>> _lazyMessageTypeDictionary
+        = new(() => GenerateDictionary());
 
-    private static ConcurrentDictionary<MessageTypes, PropertyInfo> _messageTypeDictionary;
+    public static ConcurrentDictionary<MessageTypes, PropertyInfo> MessageTypeDictionary => _lazyMessageTypeDictionary.Value;
 
-    public MessageTypes MessageType { get; }
+    public MessageTypes MessageType { get; } = messageType;
 
-    public ContentTypeAttribute(MessageTypes messageType)
+    private static ConcurrentDictionary<MessageTypes, PropertyInfo> GenerateDictionary()
     {
-        MessageType = messageType;
-    }
+        var dictionary = new ConcurrentDictionary<MessageTypes, PropertyInfo>();
 
+        var props = typeof(Message).GetProperties()
+            .Where(x => x.GetCustomAttributes<ContentTypeAttribute>(true).Any());
 
-    public static ConcurrentDictionary<MessageTypes, PropertyInfo> GenerateDictionary()
-    {
-        if (_messageTypeDictionary == null)
+        foreach (var prop in props)
         {
-            _messageTypeDictionary = new ConcurrentDictionary<MessageTypes, PropertyInfo>();
-            var props = typeof(Message).GetProperties().Where(x => x.GetCustomAttributes<ContentTypeAttribute>(true).Any());
-            foreach (var prop in props)
+            var attr = prop.GetCustomAttribute<ContentTypeAttribute>();
+            if (attr == null)
             {
-                var attr = prop.GetCustomAttribute<ContentTypeAttribute>();
-                Assert.If(!_messageTypeDictionary.TryAdd(attr.MessageType, prop), $"Item already exists. Key:'{attr.MessageType}',value:'{prop.Name}'");
+                continue; // 避免 null 访问问题
+            }
+
+            if (!dictionary.TryAdd(attr.MessageType, prop))
+            {
+                throw new InvalidOperationException($"Item already exists. Key:'{attr.MessageType}', value:'{prop.Name}'");
             }
         }
-        return _messageTypeDictionary;
+
+        return dictionary;
     }
 
     public static PropertyInfo GetPropertyInfo(MessageTypes messageType)
     {
-        Assert.If(!MessageTypeDictionary.TryGetValue(messageType, out PropertyInfo propertyInfo), $"The given key '{messageType}' was not present in the dictionary.");
+        if (!MessageTypeDictionary.TryGetValue(messageType, out PropertyInfo propertyInfo))
+        {
+            throw new KeyNotFoundException($"The given key '{messageType}' was not present in the dictionary.");
+        }
         return propertyInfo;
     }
-    
 }

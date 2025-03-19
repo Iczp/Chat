@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits;
 
@@ -18,6 +20,16 @@ public class SessionUnitCacheKey
     {
         Type = "Temporary";
         Value = temporary.ToString();
+    }
+
+    public SessionUnitCacheKey(IEnumerable<Guid> sessionUnitIdList)
+    {
+        if (sessionUnitIdList.Count() != 2)
+        {
+            throw new ArgumentException($"{nameof(sessionUnitIdList)}.Count must be 2");
+        }
+        Type = "SessionUintIdList";
+        Value = sessionUnitIdList.OrderBy(x => x).JoinAsString("-");
     }
 
     public override string ToString()

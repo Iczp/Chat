@@ -38,6 +38,7 @@ using IczpNet.Chat.SessionSections.SessionUnitContactTags;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.MessageWords;
 using IczpNet.Chat.Connections;
+using IczpNet.Chat.SessionUnitSettings;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 

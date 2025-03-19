@@ -3,44 +3,42 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
 namespace IczpNet.Chat.Attributes;
 
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
-public sealed class MessageTemplateAttribute : Attribute
+public sealed class MessageTemplateAttribute(MessageTypes messageType) : Attribute
 {
-    public static ConcurrentDictionary<Type, MessageTypes> MessageTemplateDictionary => GenerateDictionary();
+    private static readonly Lazy<ConcurrentDictionary<Type, MessageTypes>> _lazyMessageTemplateDictionary
+        = new(() => GenerateDictionary());
 
-    private static ConcurrentDictionary<Type, MessageTypes> _messageTemplateDictionary;
+    public static ConcurrentDictionary<Type, MessageTypes> MessageTemplateDictionary => _lazyMessageTemplateDictionary.Value;
 
-    public MessageTypes MessageType { get; }
+    public MessageTypes MessageType { get; } = messageType;
 
-    public MessageTemplateAttribute(MessageTypes messageType)
+    private static ConcurrentDictionary<Type, MessageTypes> GenerateDictionary()
     {
-        MessageType = messageType;
-    }
+        var dictionary = new ConcurrentDictionary<Type, MessageTypes>();
 
-    public static ConcurrentDictionary<Type, MessageTypes> GenerateDictionary()
-    {
-        if (_messageTemplateDictionary == null)
+        var entityTypes = typeof(IContentEntity).Assembly.GetExportedTypes()
+            .Where(t => !t.IsAbstract && typeof(IContentEntity).IsAssignableFrom(t));
+
+        foreach (var entityType in entityTypes)
         {
-            _messageTemplateDictionary = new ConcurrentDictionary<Type, MessageTypes>();
-
-            var entityTypes = typeof(IContentEntity).Assembly.GetExportedTypes()
-                .Where(t => !t.IsAbstract && t.GetInterfaces().Any(x => typeof(IContentEntity).IsAssignableFrom(x)));
-
-            foreach (var entityType in entityTypes)
+            var attribute = entityType.GetCustomAttribute<MessageTemplateAttribute>();
+            if (attribute != null)
             {
-                var attribute = entityType.GetCustomAttribute<MessageTemplateAttribute>();
-                if (attribute != null)
+                if (!dictionary.TryAdd(entityType, attribute.MessageType))
                 {
-                    Assert.If(!_messageTemplateDictionary.TryAdd(entityType, attribute.MessageType), $"Item already exists. Key:'{entityType}',value:'{attribute.MessageType}'");
+                    throw new InvalidOperationException($"Item already exists. Key:'{entityType}', value:'{attribute.MessageType}'");
                 }
             }
         }
-        return _messageTemplateDictionary;
+
+        return dictionary;
     }
 
     public static MessageTypes GetMessageType<T>()
@@ -50,12 +48,11 @@ public sealed class MessageTemplateAttribute : Attribute
 
     public static MessageTypes GetMessageType(Type type)
     {
-        var nameAttribute = type.GetCustomAttribute<MessageTemplateAttribute>();
+        if (!MessageTemplateDictionary.TryGetValue(type, out MessageTypes messageType))
+        {
+            throw new KeyNotFoundException($"The given type '{type}' does not have a MessageTemplateAttribute.");
+        }
 
-        Assert.NotNull(nameAttribute, $"Non-existent MessageTemplateAttribute of type:'{type}'.");
-
-        return nameAttribute.MessageType;
-
-        //return MessageTemplateDictionary[type];
+        return messageType;
     }
 }

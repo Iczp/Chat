@@ -6,7 +6,7 @@ namespace IczpNet.Chat.CommandPayloads;
 
 [Command(CommandConsts.Rollback)]
 [Serializable]
-public class RollbackMessageCommandPayload //: RollbackMessageEto
+public class RollbackMessageCommandPayload //: MessageRollbackEto
 {
     public virtual long MessageId { get; set; }
 }

@@ -49,7 +49,7 @@ public class MessageSenderController(
     [Route("send-upload-file/{sessionUnitId}")]
     public async Task<IActionResult> SendUploadFileAsync(Guid sessionUnitId, IFormFile file, long quoteMessageId, List<Guid> remindList)
     {
-        var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+        var sessionUnit = await SessionUnitManager.GetByCacheAsync(sessionUnitId);
 
         var blob = await UploadFileAsync(GuidGenerator.Create(), file, ChatFilesContainer, $"{sessionUnit.SessionId}/{sessionUnitId}", false);
 
@@ -167,7 +167,7 @@ public class MessageSenderController(
             return entity;
         }
 
-        var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+        var sessionUnit = await SessionUnitManager.GetByCacheAsync(sessionUnitId);
 
         var prefixName = $"{sessionUnit.SessionId}/{sessionUnitId}/images/{GuidGenerator.Create()}";
 
@@ -254,7 +254,7 @@ public class MessageSenderController(
     [Route("send-upload-sound/{sessionUnitId}")]
     public async Task<IActionResult> SendUploadSoundAsync(Guid sessionUnitId, IFormFile file, long quoteMessageId, List<Guid> remindList, [FromForm] int? duration)
     {
-        var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+        var sessionUnit = await SessionUnitManager.GetByCacheAsync(sessionUnitId);
 
         var prefixName = $"{sessionUnit.SessionId}/{sessionUnitId}/Sound/";
 
@@ -294,7 +294,7 @@ public class MessageSenderController(
     [Route("send-upload-video/{sessionUnitId}")]
     public async Task<IActionResult> SendUploadVideoAsync(Guid sessionUnitId, IFormFile file, long quoteMessageId, List<Guid> remindList, bool isOriginal)
     {
-        var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+        var sessionUnit = await SessionUnitManager.GetByCacheAsync(sessionUnitId);
 
         var prefixName = $"{sessionUnit.SessionId}/{sessionUnitId}/Video/";
 

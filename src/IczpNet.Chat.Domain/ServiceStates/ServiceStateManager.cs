@@ -2,7 +2,6 @@
 using IczpNet.Chat.Enums;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
-using NUglify;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,22 +11,16 @@ using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.ServiceStates;
 
-public class ServiceStateManager : DomainService, IServiceStateManager
+public class ServiceStateManager(
+    IChatObjectManager chatObjectManager,
+    IDistributedCache<List<ServiceStatusCacheItem>, long> cache) : DomainService, IServiceStateManager
 {
-    protected IChatObjectManager ChatObjectManager { get; }
-    protected IDistributedCache<List<ServiceStatusCacheItem>, long> Cache { get; }
+    protected IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
+    protected IDistributedCache<List<ServiceStatusCacheItem>, long> Cache { get; } = cache;
     protected virtual DistributedCacheEntryOptions DistributedCacheEntryOptions { get; set; } = new()
     {
         AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1),
     };
-
-    public ServiceStateManager(
-        IChatObjectManager chatObjectManager,
-        IDistributedCache<List<ServiceStatusCacheItem>, long> cache)
-    {
-        ChatObjectManager = chatObjectManager;
-        Cache = cache;
-    }
 
     public virtual async Task<List<ServiceStatusCacheItem>> GetAsync(long chatObjectId)
     {

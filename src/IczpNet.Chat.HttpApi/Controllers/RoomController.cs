@@ -11,14 +11,9 @@ namespace IczpNet.Chat.Controllers;
 [Area(ChatRemoteServiceConsts.ModuleName)]
 [RemoteService(Name = ChatRemoteServiceConsts.RemoteServiceName)]
 [Route($"/api/{ChatRemoteServiceConsts.ModuleName}/room")]
-public class RoomController : ChatController
+public class RoomController(IRoomAppService roomAppService) : ChatController
 {
-    protected IRoomAppService RoomAppService { get; }
-
-    public RoomController(IRoomAppService roomAppService)
-    {
-        RoomAppService = roomAppService;
-    }
+    protected IRoomAppService RoomAppService { get; } = roomAppService;
 
     /// <summary>
     /// 上传群头像

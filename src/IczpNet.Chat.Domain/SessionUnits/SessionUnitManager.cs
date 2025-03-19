@@ -8,6 +8,7 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnitSettings;
 using IczpNet.Chat.TextTemplates;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Caching.Distributed;
@@ -23,26 +24,41 @@ using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.SessionUnits;
 
 public class SessionUnitManager(
     ISessionUnitRepository repository,
-    IMessageRepository messageRepository,
+    IReadOnlyRepository<SessionUnit, Guid> sessionUnitReadOnlyRepository,
+    IReadOnlyRepository<Message, long> messageReadOnlyRepository,
     IDistributedCache<List<SessionUnitCacheItem>, string> sessionUnitListCache,
+    IDistributedCache<SessionUnitCacheItem, Guid> sessionUnitItemCache,
     IDistributedCache<string, Guid> sessionUnitCountCache,
     IChatObjectRepository chatObjectRepository,
     IMessageSender messageSender,
+    IObjectMapper objectMapper,
     ISessionUnitIdGenerator idGenerator) : DomainService, ISessionUnitManager
 {
     protected ISessionUnitRepository Repository { get; } = repository;
-    protected IMessageRepository MessageRepository { get; } = messageRepository;
+    /// <summary>
+    /// SessionUnit 更新频繁，使用 ReadOnlyRepository 防止意外更新到数据库，引起并发冲突 --2025.03.19
+    /// </summary>
+    public IReadOnlyRepository<SessionUnit, Guid> SessionUnitReadOnlyRepository { get; } = sessionUnitReadOnlyRepository;
+    protected IReadOnlyRepository<Message, long> MessageReadOnlyRepository { get; } = messageReadOnlyRepository;
     protected IDistributedCache<List<SessionUnitCacheItem>, string> SessionUnitListCache { get; } = sessionUnitListCache;
+    public IDistributedCache<SessionUnitCacheItem, Guid> SessionUnitItemCache { get; } = sessionUnitItemCache;
     protected IDistributedCache<string, Guid> SessionUnitCountCache { get; } = sessionUnitCountCache;
     protected IFollowManager FollowManager => LazyServiceProvider.LazyGetRequiredService<IFollowManager>();
     protected IChatObjectRepository ChatObjectRepository { get; } = chatObjectRepository;
     protected IMessageSender MessageSender { get; } = messageSender;
+    protected IObjectMapper ObjectMapper { get; } = objectMapper;
     protected ISessionUnitIdGenerator IdGenerator { get; } = idGenerator;
+
+    protected static DistributedCacheEntryOptions DistributedCacheEntryOptions => new()
+    {
+        AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1)
+    };
 
     protected virtual async Task<SessionUnit> SetEntityAsync(SessionUnit entity, Action<SessionUnit> action = null, bool autoSave = false)
     {
@@ -54,7 +70,7 @@ public class SessionUnitManager(
     /// <inheritdoc />
     public virtual async Task<Guid?> FindIdAsync(Expression<Func<SessionUnit, bool>> predicate)
     {
-        return (await Repository.GetQueryableAsync())
+        return (await SessionUnitReadOnlyRepository.GetQueryableAsync())
             .Where(predicate)
             .Select(x => (Guid?)x.Id)
             .FirstOrDefault();
@@ -70,7 +86,7 @@ public class SessionUnitManager(
     /// <inheritdoc />
     public virtual async Task<bool> IsAnyAsync(long ownerId, long destinactionId)
     {
-        return await Repository.AnyAsync(x => x.OwnerId == ownerId && x.DestinationId == destinactionId);
+        return await SessionUnitReadOnlyRepository.AnyAsync(x => x.OwnerId == ownerId && x.DestinationId == destinactionId);
     }
 
     /// <inheritdoc />
@@ -92,9 +108,19 @@ public class SessionUnitManager(
     }
 
     /// <inheritdoc />
-    public virtual Task<SessionUnit> GetAsync(Guid id)
+    public virtual Task<SessionUnit> GetAsync(Guid id, bool isReadOnly = true)
     {
-        return Repository.GetAsync(id);
+        return isReadOnly ? SessionUnitReadOnlyRepository.GetAsync(id) : Repository.GetAsync(id);
+    }
+
+    /// <inheritdoc />
+    public virtual Task<SessionUnitCacheItem> GetByCacheAsync(Guid id)
+    {
+        return SessionUnitItemCache.GetOrAddAsync(id, async () =>
+        {
+            var sessionUnit = await GetAsync(id);
+            return ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(sessionUnit);
+        }, () => DistributedCacheEntryOptions);
     }
 
     /// <inheritdoc />
@@ -181,7 +207,7 @@ public class SessionUnitManager(
 
         if (!isNullOrZero)
         {
-            var message = await MessageRepository.GetAsync(lastMessageId);
+            var message = await MessageReadOnlyRepository.GetAsync(lastMessageId);
 
             Assert.If(entity.SessionId != message.SessionId, $"Not in same session,messageId:{messageId}");
         }
@@ -278,7 +304,7 @@ public class SessionUnitManager(
 
     protected virtual async Task<int> GetBadgeAsync(Func<IQueryable<SessionUnit>, IQueryable<SessionUnit>> queryAction)
     {
-        var query = queryAction.Invoke(await Repository.GetQueryableAsync());
+        var query = queryAction.Invoke(await SessionUnitReadOnlyRepository.GetQueryableAsync());
 
         var badge = query.Select(x => new
         {
@@ -313,7 +339,7 @@ public class SessionUnitManager(
     /// <inheritdoc />
     public virtual async Task<Dictionary<ChatObjectTypeEnums, int>> GetTypeBadgeByOwnerIdAsync(long ownerId, bool? isImmersed = null)
     {
-        var ret = (await Repository.GetQueryableAsync())
+        var ret = (await SessionUnitReadOnlyRepository.GetQueryableAsync())
             .Where(x => x.OwnerId == ownerId)
             .Where(x => x.DestinationObjectType.HasValue)
             .WhereIf(isImmersed.HasValue, x => x.Setting.IsImmersed == isImmersed)
@@ -330,7 +356,7 @@ public class SessionUnitManager(
     /// <inheritdoc />
     public virtual async Task<int> GetBadgeByOwnerIdAsync(long ownerId, bool? isImmersed = null)
     {
-        return (await Repository.GetQueryableAsync())
+        return (await SessionUnitReadOnlyRepository.GetQueryableAsync())
             .Where(x => x.OwnerId == ownerId)
             .WhereIf(isImmersed.HasValue, x => x.Setting.IsImmersed == isImmersed)
             .Sum(x => x.PublicBadge);
@@ -351,7 +377,7 @@ public class SessionUnitManager(
 
         //return (await Repository.GetQueryableAsync())
         //        .Where(x => x.SessionUnitId == ownerId)
-        //        .Join(await MessageRepository.GetQueryableAsync(), x => x.SessionId, x => x.SessionId, (unit, message) => new
+        //        .Join(await MessageReadOnlyRepository.GetQueryableAsync(), x => x.SessionId, x => x.SessionId, (unit, message) => new
         //        {
         //            unit.Setting,
         //            Message = message,
@@ -379,11 +405,11 @@ public class SessionUnitManager(
     public virtual async Task<int> GetBadgeByIdAsync(Guid sessionUnitId, bool? isImmersed = null)
     {
 
-        var entity = await Repository.GetAsync(sessionUnitId);
+        var entity = await SessionUnitReadOnlyRepository.GetAsync(sessionUnitId);
 
         var setting = entity.Setting;
 
-        var query = (await MessageRepository.GetQueryableAsync())
+        var query = (await MessageReadOnlyRepository.GetQueryableAsync())
         .Where(x => x.SessionId == entity.SessionId)
         .WhereIf(setting.ReadedMessageId.HasValue, x => x.Id > setting.ReadedMessageId)
         .WhereIf(setting.HistoryFristTime.HasValue, x => x.CreationTime >= setting.HistoryFristTime)
@@ -400,7 +426,7 @@ public class SessionUnitManager(
     /// <inheritdoc />
     public virtual async Task<Dictionary<Guid, int>> GetBadgeByIdAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
     {
-        var badges = (await Repository.GetQueryableAsync())
+        var badges = (await SessionUnitReadOnlyRepository.GetQueryableAsync())
             .Where(x => sessionUnitIdList.Contains(x.Id))
             .WhereIf(isImmersed.HasValue, x => x.Setting.IsImmersed == isImmersed)
             .Select(x => new
@@ -431,13 +457,13 @@ public class SessionUnitManager(
     /// <inheritdoc />
     public virtual async Task<SessionUnitCounterInfo> GetCounterAsync(Guid sessionUnitId, long minMessageId = 0, bool? isImmersed = null)
     {
-        var entity = await Repository.GetAsync(sessionUnitId);
+        var entity = await SessionUnitReadOnlyRepository.GetAsync(sessionUnitId);
 
         var setting = entity.Setting;
 
         var readedMessageId = minMessageId == 0 ? setting.ReadedMessageId : minMessageId;
 
-        var query = (await MessageRepository.GetQueryableAsync())
+        var query = (await MessageReadOnlyRepository.GetQueryableAsync())
         .Where(x => x.SessionId == entity.SessionId)
         .Where(x => x.Id > readedMessageId.GetValueOrDefault())
         .WhereIf(setting.HistoryFristTime.HasValue, x => x.CreationTime >= setting.HistoryFristTime)
@@ -472,11 +498,11 @@ public class SessionUnitManager(
         var dics = new Dictionary<Guid, SessionUnitStatModel>();
         foreach (var id in sessionUnitIdList.Distinct())
         {
-            var entity = await Repository.GetAsync(id);
+            var entity = await SessionUnitReadOnlyRepository.GetAsync(id);
 
             var setting = entity.Setting;
 
-            var query = (await MessageRepository.GetQueryableAsync())
+            var query = (await MessageReadOnlyRepository.GetQueryableAsync())
             .Where(x => x.SessionId == entity.SessionId)
             .Where(x => x.Id > setting.ReadedMessageId)
             .WhereIf(setting.HistoryFristTime.HasValue, x => x.CreationTime >= setting.HistoryFristTime)
@@ -500,7 +526,7 @@ public class SessionUnitManager(
 
     protected virtual async Task<Dictionary<Guid, SessionUnitStatModel>> GetStatsByLinqAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
     {
-        return (await Repository.GetQueryableAsync())
+        return (await SessionUnitReadOnlyRepository.GetQueryableAsync())
             .Where(x => sessionUnitIdList.Contains(x.Id))
             .WhereIf(isImmersed.HasValue, x => x.Setting.IsImmersed == isImmersed)
             .Select(x => new
@@ -572,7 +598,7 @@ public class SessionUnitManager(
     /// <inheritdoc />
     public virtual async Task<Dictionary<Guid, int>> GetFollowingCountByIdAsync(List<Guid> sessionUnitIdList, long minMessageId = 0, bool? isImmersed = null)
     {
-        var query = (await Repository.GetQueryableAsync())
+        var query = (await SessionUnitReadOnlyRepository.GetQueryableAsync())
             .Where(x => sessionUnitIdList.Contains(x.Id))
             .WhereIf(isImmersed.HasValue, x => x.Setting.IsImmersed == isImmersed);
 
@@ -603,7 +629,7 @@ public class SessionUnitManager(
     {
         var value = await SessionUnitCountCache.GetOrAddAsync(sessionId, async () =>
         {
-            var count = (await Repository.GetQueryableAsync())
+            var count = (await SessionUnitReadOnlyRepository.GetQueryableAsync())
                 .Where(x => x.SessionId == sessionId)
                 .Where(SessionUnit.GetActivePredicate(Clock.Now))
                 .Count();
@@ -615,7 +641,7 @@ public class SessionUnitManager(
     /// <inheritdoc />
     public virtual async Task<int> GetCountByOwnerIdAsync(long ownerId)
     {
-        return (await Repository.GetQueryableAsync())
+        return (await SessionUnitReadOnlyRepository.GetQueryableAsync())
                 .Where(x => x.OwnerId == ownerId)
                 .Where(SessionUnit.GetActivePredicate(Clock.Now))
                 .Count();
@@ -654,11 +680,47 @@ public class SessionUnitManager(
     }
 
     /// <inheritdoc />
+    public virtual Task<List<SessionUnitCacheItem>> GetOrAddCacheListAsync(List<SessionUnit> sessionUnitList)
+    {
+        return SessionUnitListCache.GetOrAddAsync($"{new SessionUnitCacheKey(sessionUnitList.Select(x => x.Id))}", () =>
+        {
+            return Task.FromResult(ToCacheItem(sessionUnitList.AsQueryable()));
+        });
+    }
+
+    /// <inheritdoc />
     public virtual async Task SetCacheListBySessionIdAsync(Guid sessionId, List<SessionUnitCacheItem> sessionUnitList)
     {
-        //var sessionUnitInfoList = await GetListBySessionIdAsync(sessionId);
-
         await SetCacheListAsync($"{new SessionUnitCacheKey(sessionId)}", sessionUnitList);
+    }
+
+    public virtual Task<string> GetCacheKeyByMessageAsync(Message message)
+    {
+        var cacheKey = message.IsPrivateMessage()
+          ? new SessionUnitCacheKey([message.SenderSessionUnitId.Value, message.ReceiverSessionUnitId.Value])
+          : new SessionUnitCacheKey(message.SessionId.Value);
+
+        return Task.FromResult($"{cacheKey}");
+    }
+    /// <inheritdoc />
+    public virtual async Task<List<SessionUnitCacheItem>> GetOrAddByMessageAsync(Message message)
+    {
+        var cacheKey = await GetCacheKeyByMessageAsync(message);
+
+        return await SessionUnitListCache.GetOrAddAsync($"{cacheKey}", async () =>
+        {
+            if (message.IsPrivateMessage())
+            {
+                var sessionUnitList = new List<SessionUnit>() { message.SenderSessionUnit };
+
+                if (message.ReceiverSessionUnit == null && message.ReceiverSessionUnitId.HasValue)
+                {
+                    sessionUnitList.Add(await SessionUnitReadOnlyRepository.GetAsync(message.ReceiverSessionUnitId.Value));
+                }
+                return ToCacheItem(sessionUnitList.AsQueryable());
+            }
+            return await GetListBySessionIdAsync(message.SessionId.Value);
+        }, () => DistributedCacheEntryOptions);
     }
 
     /// <inheritdoc />
@@ -667,30 +729,38 @@ public class SessionUnitManager(
         await SessionUnitListCache.SetAsync(cacheKey, sessionUnitList, options, hideErrors, considerUow, token);
     }
 
+    private static List<SessionUnitCacheItem> ToCacheItem(IQueryable<SessionUnit> qurey)
+    {
+        return [.. qurey.Select(x => new SessionUnitCacheItem()
+        {
+            Id = x.Id,
+            //AppUserId = x.AppUserId,
+            SessionId = x.SessionId,
+            OwnerId = x.OwnerId,
+            OwnerObjectType = x.OwnerObjectType,
+            DestinationId = x.DestinationId,
+            DestinationObjectType = x.DestinationObjectType,
+            IsPublic = x.Setting.IsPublic,
+            IsStatic = x.Setting.IsStatic,
+            IsVisible = x.Setting.IsVisible,
+            IsEnabled = x.Setting.IsEnabled,
+            //ReadedMessageId = x.Setting.ReadedMessageId,
+            //PublicBadge = x.PublicBadge,
+            //PrivateBadge = x.PrivateBadge,
+            //RemindAllCount = x.RemindAllCount,
+            //RemindMeCount = x.RemindMeCount,
+            //FollowingCount = x.FollowingCount,
+            //LastMessageId = x.LastMessageId,
+            //Ticks = x.Ticks,
+        })];
+    }
     /// <inheritdoc />
     public virtual async Task<List<SessionUnitCacheItem>> GetListBySessionIdAsync(Guid sessionId)
     {
-        var list = (await Repository.GetQueryableAsync())
-            .Where(SessionUnit.GetActivePredicate(Clock.Now))
-            .Where(x => x.SessionId == sessionId)
-            .Select(x => new SessionUnitCacheItem()
-            {
-                Id = x.Id,
-                SessionId = x.SessionId,
-                OwnerId = x.OwnerId,
-                DestinationId = x.DestinationId,
-                //DestinationObjectType = x.DestinationObjectType,
-                IsPublic = x.Setting.IsPublic,
-                ReadedMessageId = x.Setting.ReadedMessageId,
-                PublicBadge = x.PublicBadge,
-                PrivateBadge = x.PrivateBadge,
-                RemindAllCount = x.RemindAllCount,
-                RemindMeCount = x.RemindMeCount,
-                FollowingCount = x.FollowingCount,
-                LastMessageId = x.LastMessageId,
-                Ticks = x.Ticks,
-            })
-            .ToList();
+        var list = ToCacheItem((await SessionUnitReadOnlyRepository.GetQueryableAsync())
+                .Where(SessionUnit.GetActivePredicate(Clock.Now))
+                .Where(x => x.SessionId == sessionId)
+            );
 
         await SessionUnitCountCache.SetAsync(sessionId, list.Where(x => x.IsPublic).Count().ToString());
 
@@ -706,7 +776,7 @@ public class SessionUnitManager(
     /// <inheritdoc />
     private async Task<IQueryable<SessionUnit>> GetOwnerQueryableAsync(long ownerId, List<ChatObjectTypeEnums> destinationObjectTypeList = null)
     {
-        return (await Repository.GetQueryableAsync())
+        return (await SessionUnitReadOnlyRepository.GetQueryableAsync())
               .Where(x => x.OwnerId.Equals(ownerId) && !x.Setting.IsKilled && x.Setting.IsEnabled)
               .WhereIf(destinationObjectTypeList.IsAny(), x => destinationObjectTypeList.Contains(x.DestinationObjectType.Value));
 
@@ -762,7 +832,7 @@ public class SessionUnitManager(
     {
         var ownerSessionUnitIdList = await FollowManager.GetFollowerIdListAsync(senderSessionUnit.Id);
 
-        if (ownerSessionUnitIdList.Any())
+        if (ownerSessionUnitIdList.Count != 0)
         {
             ownerSessionUnitIdList.Remove(senderSessionUnit.Id);
 
@@ -771,55 +841,55 @@ public class SessionUnitManager(
         return 0;
     }
 
-    protected virtual async Task UpdateCacheItemsAsync(SessionUnit senderSessionUnit, Func<List<SessionUnitCacheItem>, bool> action)
-    {
-        var stopwatch = Stopwatch.StartNew();
+    //protected virtual async Task UpdateCacheItemsAsync(SessionUnit senderSessionUnit, Func<List<SessionUnitCacheItem>, bool> action)
+    //{
+    //    var stopwatch = Stopwatch.StartNew();
 
-        var sessionUnitList = await GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);
+    //    var sessionUnitList = await GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);
 
-        if (action.Invoke(sessionUnitList))
-        {
-            await SetCacheListBySessionIdAsync(senderSessionUnit.SessionId.Value, sessionUnitList);
-        }
+    //    if (action.Invoke(sessionUnitList))
+    //    {
+    //        await SetCacheListBySessionIdAsync(senderSessionUnit.SessionId.Value, sessionUnitList);
+    //    }
 
-        stopwatch.Stop();
+    //    stopwatch.Stop();
 
-        Logger.LogInformation($"UpdateCacheItems stopwatch: {stopwatch.ElapsedMilliseconds}ms.");
-    }
+    //    Logger.LogInformation($"UpdateCacheItems stopwatch: {stopwatch.ElapsedMilliseconds}ms.");
+    //}
 
-    /// <inheritdoc />
-    public virtual async Task<int> UpdateCachesAsync(SessionUnit senderSessionUnit, Message message)
-    {
-        int count = 0;
+    ///// <inheritdoc />
+    //public virtual async Task<int> UpdateCachesAsync(SessionUnit senderSessionUnit, Message message)
+    //{
+    //    int count = 0;
 
-        await UpdateCacheItemsAsync(senderSessionUnit, items =>
-        {
-            var self = items.FirstOrDefault(x => x.Id == senderSessionUnit.Id);
+    //    await UpdateCacheItemsAsync(senderSessionUnit, items =>
+    //    {
+    //        var self = items.FirstOrDefault(x => x.Id == senderSessionUnit.Id);
 
-            if (self != null)
-            {
-                self.LastMessageId = message.Id;
-            }
+    //        if (self != null)
+    //        {
+    //            self.LastMessageId = message.Id;
+    //        }
 
-            var others = items.Where(x => x.Id != senderSessionUnit.Id).ToList();
+    //        var others = items.Where(x => x.Id != senderSessionUnit.Id).ToList();
 
-            foreach (var item in others)
-            {
-                //item.RemindMeCount++;
-                //item.FollowingCount++;
-                item.PublicBadge++;
-                item.RemindAllCount++;
-                item.LastMessageId = message.Id;
-            }
-            count = others.Count;
+    //        foreach (var item in others)
+    //        {
+    //            //item.RemindMeCount++;
+    //            //item.FollowingCount++;
+    //            item.PublicBadge++;
+    //            item.RemindAllCount++;
+    //            item.LastMessageId = message.Id;
+    //        }
+    //        count = others.Count;
 
-            return true;
-        });
+    //        return true;
+    //    });
 
-        Logger.LogInformation($"BatchUpdateCacheAsync:{count}");
+    //    Logger.LogInformation($"BatchUpdateCacheAsync:{count}");
 
-        return count;
-    }
+    //    return count;
+    //}
 
     /// <inheritdoc />
     public virtual async Task<int> BatchUpdateAsync(SessionUnit senderSessionUnit, Message message)
@@ -849,7 +919,7 @@ public class SessionUnitManager(
             .Select(x => x.Id)
             ;
 
-        return (await Repository.GetQueryableAsync())
+        return (await SessionUnitReadOnlyRepository.GetQueryableAsync())
             .Where(x => x.SessionId == sessionId)
             .Where(x => nameList.Contains(x.Setting.MemberName) || chatObjectIds.Contains(x.OwnerId))
             .Where(SessionUnit.GetActivePredicate(null))
@@ -970,7 +1040,7 @@ public class SessionUnitManager(
     /// <inheritdoc />
     public virtual async Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime)
     {
-        var setterSessionUnit = await Repository.FirstOrDefaultAsync(x => x.SessionId == muterSessionUnit.SessionId && x.IsStatic && !x.IsPublic && x.Id != muterSessionUnit.Id);
+        var setterSessionUnit = await SessionUnitReadOnlyRepository.FirstOrDefaultAsync(x => x.SessionId == muterSessionUnit.SessionId && x.IsStatic && !x.IsPublic && x.Id != muterSessionUnit.Id);
 
         return await SetMuteExpireTimeAsync(muterSessionUnit, muteExpireTime, setterSessionUnit, setterSessionUnit != null);
     }

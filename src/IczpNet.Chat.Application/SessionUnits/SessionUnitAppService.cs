@@ -11,6 +11,7 @@ using IczpNet.Chat.Permissions;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
+using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -28,7 +29,14 @@ namespace IczpNet.Chat.SessionUnits;
 /// <summary>
 /// 会话单元
 /// </summary>
-public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
+public class SessionUnitAppService(
+    IMessageRepository messageRepository,
+    ISessionUnitRepository repository,
+    IReadedRecorderManager readedRecorderManager,
+    IOpenedRecorderManager openedRecorderManager,
+    IFavoritedRecorderManager favoriteManager,
+    ISessionUnitSettingRepository sessionUnitSettingRepository,
+    IFollowManager followManager) : ChatAppService, ISessionUnitAppService
 {
     protected override string GetListPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.MessageBus;
     protected override string GetPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.MessageBus;
@@ -39,28 +47,13 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     protected virtual string FindPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.Find;
     protected virtual string GetCounterPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.GetCounter;
 
-    protected ISessionUnitRepository Repository { get; }
-    protected IMessageRepository MessageRepository { get; }
-    protected IReadedRecorderManager ReadedRecorderManager { get; }
-    protected IOpenedRecorderManager OpenedRecorderManager { get; }
-    protected IFavoritedRecorderManager FavoritedRecorderManager { get; }
-    protected IFollowManager FollowManager { get; }
-
-    public SessionUnitAppService(
-        IMessageRepository messageRepository,
-        ISessionUnitRepository repository,
-        IReadedRecorderManager readedRecorderManager,
-        IOpenedRecorderManager openedRecorderManager,
-        IFavoritedRecorderManager favoriteManager,
-        IFollowManager followManager)
-    {
-        MessageRepository = messageRepository;
-        Repository = repository;
-        ReadedRecorderManager = readedRecorderManager;
-        OpenedRecorderManager = openedRecorderManager;
-        FavoritedRecorderManager = favoriteManager;
-        FollowManager = followManager;
-    }
+    protected ISessionUnitRepository Repository { get; } = repository;
+    protected IMessageRepository MessageRepository { get; } = messageRepository;
+    protected IReadedRecorderManager ReadedRecorderManager { get; } = readedRecorderManager;
+    protected IOpenedRecorderManager OpenedRecorderManager { get; } = openedRecorderManager;
+    protected IFavoritedRecorderManager FavoritedRecorderManager { get; } = favoriteManager;
+    public ISessionUnitSettingRepository SessionUnitSettingRepository { get; } = sessionUnitSettingRepository;
+    protected IFollowManager FollowManager { get; } = followManager;
 
     /// <inheritdoc/>
     protected override Task CheckPolicyAsync(string policyName)
@@ -74,7 +67,9 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
     {
         var entity = await Repository.GetAsync(id);
 
-        Assert.If(checkIsKilled && entity.Setting.IsKilled, "已经删除的会话单元!");
+        var setting = await SessionUnitSettingRepository.GetAsync(x => x.SessionUnitId == id);
+
+        Assert.If(checkIsKilled && (setting?.IsKilled ?? false), "已经删除的会话单元!");
 
         return entity;
     }
@@ -248,6 +243,21 @@ public class SessionUnitAppService : ChatAppService, ISessionUnitAppService
         await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetPolicyName));
 
         return await MapToDtoAsync(entity);
+    }
+
+    /// <summary>
+    /// 获取一个会话单元(缓存)
+    /// </summary>
+    /// <param name="id">会话单元Id</param>
+    /// <returns></returns>
+    [HttpGet]
+    public virtual async Task<SessionUnitCacheItem> GetByCacheAsync(Guid id)
+    {
+        //var entity = await GetEntityAsync(id);
+
+        //await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetPolicyName));
+
+        return await SessionUnitManager.GetByCacheAsync(id);
     }
 
     /// <summary>

@@ -10,6 +10,7 @@ using Volo.Abp.Auditing;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
+[Index(nameof(ShortId))]
 [Index(nameof(Id), AllDescending = true)]
 [Index(nameof(Id), IsDescending = [false], Name = "IX_Chat_Message_Id_Asc")]
 [Index(nameof(CreationTime), AllDescending = true)]
@@ -41,11 +42,16 @@ public partial class Message : BaseEntity<long>, ISessionId, IHasEntityVersion
     //public virtual long Id { get;  }
 
     /// <summary>
+    /// 短Id
+    /// </summary>
+    [StringLength(64)]
+    [Comment(nameof(ShortId))]
+    public virtual string ShortId { get; protected set; }
+
+    /// <summary>
     /// SessionKey
     /// </summary>
-    //[Comment("")]
     [StringLength(100)]
-    //[Required]
     [Comment("SessionKey")]
     public virtual string SessionKey { get; protected set; }
 

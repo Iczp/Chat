@@ -46,7 +46,7 @@ public class AiJob(
     {
         Logger.LogInformation($"{nameof(AiJob)} is executed:{args}");
 
-        //var message = await MessageRepository.GetAsync(args.MessageId);
+        //var message = await MessageReadOnlyRepository.GetAsync(args.MessageId);
 
         //if (message.IsRollbackMessage())
         //{

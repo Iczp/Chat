@@ -3,6 +3,7 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.Extensions.Caching.Distributed;
 using System;
 using System.Collections.Generic;
@@ -19,8 +20,16 @@ public interface ISessionUnitManager
     /// 获取会话单元
     /// </summary>
     /// <param name="sessionUnitId"></param>
+    /// <param name="isReadOnly"></param>
     /// <returns></returns>
-    Task<SessionUnit> GetAsync(Guid sessionUnitId);
+    Task<SessionUnit> GetAsync(Guid sessionUnitId, bool isReadOnly = true);
+
+    /// <summary>
+    /// 获取会话单元
+    /// </summary>
+    /// <param name="sessionUnitId"></param>
+    /// <returns></returns>
+    Task<SessionUnitCacheItem> GetByCacheAsync(Guid sessionUnitId);
 
     /// <summary>
     /// 获取会话单元
@@ -298,6 +307,13 @@ public interface ISessionUnitManager
     /// <summary>
     /// 获取缓存
     /// </summary>
+    /// <param name="sessionUnitList"></param>
+    /// <returns></returns>
+    Task<List<SessionUnitCacheItem>> GetOrAddCacheListAsync(List<SessionUnit> sessionUnitList);
+
+    /// <summary>
+    /// 获取缓存
+    /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
     Task<List<SessionUnitCacheItem>> GetCacheListBySessionIdAsync(Guid sessionId);
@@ -324,6 +340,20 @@ public interface ISessionUnitManager
     /// <param name="sessionUnitList"></param>
     /// <returns></returns>
     Task SetCacheListBySessionIdAsync(Guid sessionId, List<SessionUnitCacheItem> sessionUnitList);
+
+    /// <summary>
+    /// 获取缓存Key(消息)
+    /// </summary>
+    /// <param name="message"></param>
+    /// <returns></returns>
+    Task<string> GetCacheKeyByMessageAsync(Message message);
+
+    /// <summary>
+    /// 设置缓存
+    /// </summary>
+    /// <param name="message"></param>
+    /// <returns></returns>
+    Task<List<SessionUnitCacheItem>> GetOrAddByMessageAsync(Message message);
 
     /// <summary>
     /// 设置缓存
@@ -395,13 +425,13 @@ public interface ISessionUnitManager
     /// <returns></returns>
     Task<int> IncrementFollowingCountAsync(SessionUnit senderSessionUnit, Message message);
 
-    /// <summary>
-    /// 更新缓存
-    /// </summary>
-    /// <param name="senderSessionUnit"></param>
-    /// <param name="message"></param>
-    /// <returns></returns>
-    Task<int> UpdateCachesAsync(SessionUnit senderSessionUnit, Message message);
+    ///// <summary>
+    ///// 更新缓存
+    ///// </summary>
+    ///// <param name="senderSessionUnit"></param>
+    ///// <param name="message"></param>
+    ///// <returns></returns>
+    //Task<int> UpdateCachesAsync(SessionUnit senderSessionUnit, Message message);
 
     /// <summary>
     /// 批量更新

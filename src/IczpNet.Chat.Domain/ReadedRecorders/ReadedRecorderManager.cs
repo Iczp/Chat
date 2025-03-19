@@ -47,7 +47,7 @@ public class ReadedRecorderManager : RecorderManager<ReadedRecorder>, IReadedRec
 
         await Task.Yield();
 
-        //await MessageRepository.IncrementReadedCountAsync(new List<long>() { message.Id });
+        //await MessageReadOnlyRepository.IncrementReadedCountAsync(new List<long>() { message.Id });
 
 
     }
@@ -61,7 +61,7 @@ public class ReadedRecorderManager : RecorderManager<ReadedRecorder>, IReadedRec
         //}
         //await Task.Yield();
 
-        //await MessageRepository.IncrementReadedCountAsync(changeMessages.Select(x => x.Id).ToList());
+        //await MessageReadOnlyRepository.IncrementReadedCountAsync(changeMessages.Select(x => x.Id).ToList());
 
         await BackgroundJobManager.EnqueueAsync(new ReadedCounterArgs()
         {

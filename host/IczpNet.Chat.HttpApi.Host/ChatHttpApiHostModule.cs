@@ -1,5 +1,6 @@
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.EntityFrameworkCore;
+using IczpNet.Chat.Middlewares;
 using IczpNet.Chat.MultiTenancy;
 using IczpNet.Pusher.Options;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -10,12 +11,14 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Volo.Abp;
@@ -280,7 +283,7 @@ public class ChatHttpApiHostModule : AbpModule
                 // Sending the access token in the query string is required when using WebSockets or ServerSentEvents
                 // due to a limitation in Browser APIs. We restrict it to only calls to the
                 // SignalR hub in this code.
-                // See https://docs.microsoft.com/aspnet/core/signalr/security#access-token-logging
+                // See https://learn.microsoft.com/zh-cn/aspnet/core/signalr/authn-and-authz?view=aspnetcore-9.0
                 // for more information about security considerations when using
                 // the query string to transmit the access token.
                 options.Events = new JwtBearerEvents
@@ -291,14 +294,25 @@ public class ChatHttpApiHostModule : AbpModule
 
                         // If the request is for our hub...
                         var path = context.HttpContext.Request.Path;
-                        if (!string.IsNullOrEmpty(accessToken) &&
-                            (path.StartsWithSegments("/signalr-hubs/")))
+                        if (!string.IsNullOrEmpty(accessToken) && path.Value.StartsWith("/signalr-hubs/"))
                         {
                             // Read the token out of the query string
                             context.Token = accessToken;
                         }
                         return Task.CompletedTask;
                     }
+                };
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true, // 确保 ValidateLifetime 为 true
+                    ValidateIssuerSigningKey = true,
+                    //ValidIssuer = configuration["Jwt:Issuer"],
+                    //ValidAudience = configuration["Jwt:Audience"],
+                    //IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"])),
+                    //ClockSkew = TimeSpan.Zero // 移除时钟偏差 (可选，如果服务器时间同步良好)
+
                 };
             });
 
@@ -342,6 +356,7 @@ public class ChatHttpApiHostModule : AbpModule
         var env = context.GetEnvironment();
 
         app.ApplicationServices.UseStaticAutoMapper();
+        //app.UseUrlAuthorization();
 
         //app.UsePusherSubscriber();
 

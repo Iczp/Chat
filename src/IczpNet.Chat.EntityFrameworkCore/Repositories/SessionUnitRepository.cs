@@ -53,6 +53,7 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
         return BatchUpdateLastMessageIdByEf7Async(sessionId, lastMessageId);
     }
 
+    [Obsolete("使用 BatchUpdateLastMessageIdAsync")]
     protected virtual async Task<int> BatchUpdateLastMessageIdBySqlAsync(Guid sessionId, long lastMessageId, List<Guid> sessionUnitIdList = null)
     {
         var context = await GetDbContextAsync();
@@ -87,7 +88,7 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
             .WhereIf(sessionUnitIdList.IsAny(), x => sessionUnitIdList.Contains(x.Id))
             .ExecuteUpdateAsync(s => s
                 .SetProperty(b => b.LastMessageId, b => lastMessageId)
-            //.SetProperty(b => b.LastModificationTime, b => DateTime.Now)
+            //.SetProperty(b => b.LastModificationTime, b => Clock.Now)
             );
     }
 
@@ -98,14 +99,14 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
              .Where(x => x.Id == senderSessionUnitId)
              .Where(x => x.LastMessageId == null || x.LastMessageId < lastMessageId)
              .ExecuteUpdateAsync(s => s
-                 .SetProperty(b => b.LastModificationTime, b => DateTime.Now)
+                 .SetProperty(b => b.LastModificationTime, b => Clock.Now)
                  .SetProperty(b => b.LastMessageId, b => lastMessageId)
              );
     }
 
     public virtual async Task<int> UpdateLastMessageIdAsync(Guid senderSessionUnitId, long lastMessageId)
     {
-        var query = await GetQueryableAsync(DateTime.Now, null);
+        var query = await GetQueryableAsync(Clock.Now, null);
 
         return await UpdateSenderLastMessageIdAsync(query, senderSessionUnitId, lastMessageId);
     }
@@ -118,7 +119,7 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
 
         query = query.Where(x => x.Id != senderSessionUnitId);
 
-        var ticks = DateTime.Now.Ticks;
+        var ticks = Clock.Now.Ticks;
 
         if (isRemindAll)
         {
@@ -147,12 +148,12 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
 
         query = query.Where(x => x.Id != senderSessionUnitId);
 
-        var ticks = DateTime.Now.Ticks;
+        var ticks = Clock.Now.Ticks;
 
         return await query
             .Where(x => destinationSessionUnitIdList.Contains(x.Id))
             .ExecuteUpdateAsync(s => s
-                .SetProperty(b => b.LastModificationTime, b => DateTime.Now)
+                .SetProperty(b => b.LastModificationTime, b => Clock.Now)
                 .SetProperty(b => b.PublicBadge, b => b.PublicBadge + 1)
                 .SetProperty(b => b.PrivateBadge, b => b.PrivateBadge + 1)
                 .SetProperty(b => b.LastMessageId, b => lastMessageId)
@@ -185,7 +186,7 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
 
     //public virtual async Task<int> BatchUpdateNameAsync(long chatObjectId, string name, string nameSpelling, string nameSpellingAbbreviation)
     //{
-    //    var query = await GetQueryableAsync(DateTime.Now);
+    //    var query = await GetQueryableAsync(Clock.Now);
 
     //    var a = await query
     //         .Where(x => x.SessionUnitId == chatObjectId)
@@ -204,7 +205,7 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
 
     public async Task<int> BatchUpdateAppUserIdAsync(long chatObjectId, Guid appUserId)
     {
-        var query = await GetQueryableAsync(DateTime.Now, sessionId: null);
+        var query = await GetQueryableAsync(Clock.Now, sessionId: null);
 
         return await query
             .Where(x => x.OwnerId == chatObjectId)
@@ -212,6 +213,4 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
                  .SetProperty(b => b.AppUserId, b => appUserId)
              );
     }
-
-
 }

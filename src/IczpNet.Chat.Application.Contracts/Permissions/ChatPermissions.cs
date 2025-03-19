@@ -214,4 +214,19 @@ public class ChatPermissions
         public const string Update = Default + "." + nameof(Update);
         public const string Delete = Default + "." + nameof(Delete);
     }
+
+
+    public class ConnectionPoolPermission
+    {
+        public const string Default = GroupName + "." + nameof(ConnectionPoolPermission);
+        public const string GetItem = Default + "." + nameof(GetItem);
+        public const string GetList = Default + "." + nameof(GetList);
+        public const string Create = Default + "." + nameof(Create);
+        public const string Delete = Default + "." + nameof(Delete);
+        public const string ClearAll = Default + "." + nameof(ClearAll);
+        public const string UpdateConnectionIds = Default + "." + nameof(UpdateConnectionIds);
+        public const string GetConnectionIdsByUserId = Default + "." + nameof(GetConnectionIdsByUserId);
+        public const string UpdateUserConnectionIds = Default + "." + nameof(UpdateUserConnectionIds);
+        public const string GetCountByUserId = Default + "." + nameof(GetCountByUserId);
+    }
 }

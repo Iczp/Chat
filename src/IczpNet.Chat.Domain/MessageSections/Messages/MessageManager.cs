@@ -1,24 +1,25 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
-using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatPushers;
 using IczpNet.Chat.CommandPayloads;
-using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
-using IczpNet.Chat.Follows;
+using IczpNet.Chat.Hosting;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionUnits;
+using IczpNet.Chat.SessionUnitSettings;
 using IczpNet.Chat.Settings;
+using IczpNet.Pusher.ShortIds;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.Json;
 using Volo.Abp.ObjectMapping;
 using Volo.Abp.Settings;
@@ -28,60 +29,43 @@ namespace IczpNet.Chat.MessageSections.Messages;
 
 public partial class MessageManager(
     IMessageRepository repository,
-    IChatObjectManager chatObjectManager,
+    IShortIdGenerator shortIdGenerator,
     IObjectMapper objectMapper,
     IMessageValidator messageValidator,
     IChatPusher chatPusher,
+    IDistributedEventBus distributedEventBus,
+    ICurrentHosted currentHosted,
     ISessionUnitManager sessionUnitManager,
     IUnitOfWorkManager unitOfWorkManager,
-    IFollowManager followManager,
-    IBackgroundJobManager backgroundJobManager,
     ISessionRepository sessionRepository,
     ISettingProvider settingProvider,
     IJsonSerializer jsonSerializer,
     IRepository<MessageReminder> messageReminderRepository,
-    IReadOnlyBasicRepository<Message, long> messageReadOnlyRepository,
     ISessionUnitSettingRepository sessionUnitSettingRepository,
     ISessionGenerator sessionGenerator) : DomainService, IMessageManager
 {
     protected IObjectMapper ObjectMapper { get; } = objectMapper;
-    protected IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
     protected IMessageRepository Repository { get; } = repository;
-    public IReadOnlyBasicRepository<Message, long> MessageReadOnlyRepository { get; } = messageReadOnlyRepository;
+    public IShortIdGenerator ShortIdGenerator { get; } = shortIdGenerator;
     protected IMessageValidator MessageValidator { get; } = messageValidator;
     protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
     protected IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
     protected IChatPusher ChatPusher { get; } = chatPusher;
+    public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
+    public ICurrentHosted CurrentHosted { get; } = currentHosted;
     protected ISessionRepository SessionRepository { get; } = sessionRepository;
     protected ISessionUnitSettingRepository SessionUnitSettingRepository { get; } = sessionUnitSettingRepository;
-    protected IFollowManager FollowManager { get; } = followManager;
-    protected IBackgroundJobManager BackgroundJobManager { get; } = backgroundJobManager;
     protected ISettingProvider SettingProvider { get; } = settingProvider;
     protected IJsonSerializer JsonSerializer { get; } = jsonSerializer;
     protected IRepository<MessageReminder> MessageReminderRepository { get; } = messageReminderRepository;
-    
+
     protected ISessionGenerator SessionGenerator { get; } = sessionGenerator;
-
-    protected virtual void TryToSetOwnerId<T, TKey>(T entity, TKey ownerId)
-    {
-        if (entity is IChatOwner<TKey>)
-        {
-            var propertyInfo = entity.GetType().GetProperty(nameof(IChatOwner<TKey>.OwnerId));
-
-            if (propertyInfo == null || propertyInfo.GetSetMethod(true) == null)
-            {
-                return;
-            }
-
-            propertyInfo.SetValue(entity, ownerId);
-        }
-    }
 
     /// <inheritdoc />
     public virtual async Task CreateSessionUnitByMessageAsync(SessionUnit senderSessionUnit)
     {
         //ShopKeeper
-        if (senderSessionUnit.Destination?.ObjectType == ChatObjectTypeEnums.ShopKeeper)
+        if (senderSessionUnit.DestinationObjectType == ChatObjectTypeEnums.ShopKeeper)
         {
             await SessionGenerator.AddShopWaitersIfNotContains(senderSessionUnit.Session, senderSessionUnit.Owner, senderSessionUnit.DestinationId.Value);
         }
@@ -109,12 +93,13 @@ public partial class MessageManager(
         await CreateSessionUnitByMessageAsync(senderSessionUnit);
 
         //cache
-        await SessionUnitManager.GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);
+        //await SessionUnitManager.GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);
 
         var message = new Message(senderSessionUnit)
         {
             CreationTime = Clock.Now
         };
+        message.SetShortId(shortId: ShortIdGenerator.Create());
 
         //senderSessionUnit.Setting.SetLastSendMessage(message);//并发时可能导致锁表
 
@@ -137,12 +122,20 @@ public partial class MessageManager(
         // message content
         var messageContent = await action(message);
 
+        Assert.NotNull(messageContent, $"Message content is null");
+
         //TryToSetOwnerId(messageContent, senderSessionUnit.SessionUnitId);
         messageContent.SetOwnerId(senderSessionUnit.OwnerId);
 
-        Assert.NotNull(messageContent, $"Message content is null");
-
+        if(messageContent.Id == Guid.Empty)
+        {
+            messageContent.SetId(GuidGenerator.Create());
+        }
         message.SetMessageContent(messageContent);
+
+        var contentJson = JsonSerializer.Serialize(message.GetContentDto());
+
+        message.SetContentJson(contentJson);
 
         //设置提醒
         await ApplyRemindIdListAsync(senderSessionUnit, message, remindList);
@@ -151,16 +144,17 @@ public partial class MessageManager(
         await MessageValidator.CheckAsync(message);
 
         //sessionUnitCount
-        var sessionUnitCount = message.IsPrivate ? 2 : await SessionUnitManager.GetCountBySessionIdAsync(senderSessionUnit.SessionId.Value);
+        var sessionUnitCount = message.IsPrivateMessage() ? 2 : await SessionUnitManager.GetCountBySessionIdAsync(senderSessionUnit.SessionId.Value);
 
         message.SetSessionUnitCount(sessionUnitCount);
 
+        // Save
         await Repository.InsertAsync(message, autoSave: true);
 
-        // LastMessage
+        // update Session LastMessage
         await SessionRepository.UpdateLastMessageIdAsync(senderSessionUnit.SessionId.Value, message.Id);
 
-        // Last send message
+        // update SessionUnitSetting LastSendMessageId
         await SessionUnitSettingRepository.UpdateLastSendMessageAsync(senderSessionUnit.Id, message.Id, message.CreationTime);
 
         //更新引用次数
@@ -168,6 +162,9 @@ public partial class MessageManager(
 
         ////更新转发次数
         await UpdateForwardCountAsync(message.ForwardPath);
+
+        // 发出事件
+        await PublishMessageDistributedEventAsync(message, message.ForwardMessageId.HasValue ? Command.Forward : Command.Created);
 
         ////以下可能导致锁表
         //await SessionUnitRepository.UpdateLastMessageIdAsync(senderSessionUnit.Id, message.Id);
@@ -396,6 +393,25 @@ public partial class MessageManager(
         return await SendAsync<TContentInfo, TContentEntity>(senderSessionUnit, input, messageContent);
     }
 
+    protected virtual async Task PublishMessageDistributedEventAsync(Message message, Command command, bool onUnitOfWorkComplete = true, bool useOutbox = true)
+    {
+        var cacheKey = await SessionUnitManager.GetCacheKeyByMessageAsync(message);
+
+        var eventData = new MessageChangedDistributedEto()
+        {
+            Command = command.ToString(),
+            CacheKey = cacheKey,
+            MessageId = message.Id,
+            HostName = CurrentHosted.Name,
+        };
+
+        await SessionUnitManager.GetOrAddByMessageAsync(message);
+
+        await DistributedEventBus.PublishAsync(eventData, onUnitOfWorkComplete, useOutbox);
+
+        Logger.LogInformation($"PublishMessageDistributedEventAsync(onUnitOfWorkComplete:{onUnitOfWorkComplete},useOutbox:{useOutbox})[{nameof(MessageChangedDistributedEto)}]:{eventData}");
+    }
+
     /// <inheritdoc />
     public virtual async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContentEntity>(
         SessionUnit senderSessionUnit,
@@ -446,6 +462,8 @@ public partial class MessageManager(
         Assert.If(nowTime > message.CreationTime.AddHours(allowRollbackHours), $"超过{allowRollbackHours}小时的消息不能被撤回！");
 
         message.Rollback(nowTime);
+
+        await PublishMessageDistributedEventAsync(message, Command.Rollback);
 
         //await Repository.UpdateAsync(message, true);
         await UnitOfWorkManager.Current.SaveChangesAsync();
@@ -498,6 +516,8 @@ public partial class MessageManager(
                 return messageContent;
             });
             messageList.Add(newMessage);
+
+            //await PublishMessageDistributedEventAsync(newMessage, Command.Forward);
 
             var output = ObjectMapper.Map<Message, MessageInfo<object>>(newMessage);
 

@@ -1,6 +1,5 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.Enums;
-using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionUnits;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -24,8 +23,17 @@ public partial class Message
         //Session = sessionUnit.Session
         SenderSessionUnitId = sessionUnit.Id;
         SessionId = sessionUnit.SessionId;
-        Channel = sessionUnit.Session.Channel;
+        //Channel = sessionUnit.Session.Channel;
         SessionKey = sessionUnit.Session.SessionKey;
+    }
+
+    /// <summary>
+    /// 设置短Id
+    /// </summary>
+    /// <param name="shortId"></param>
+    public virtual void SetShortId(string shortId)
+    {
+        ShortId = shortId;
     }
 
     /// <summary>

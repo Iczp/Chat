@@ -5,6 +5,7 @@ using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.Scopeds;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionUnits;
+using IczpNet.Chat.SessionUnitSettings;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -22,7 +23,7 @@ public partial class Message
     /// 已读记录
     /// </summary>
     [InverseProperty(nameof(ReadedRecorder.Message))]
-    public virtual IList<ReadedRecorder> ReadedRecorderList { get; set; }  = new List<ReadedRecorder>();
+    public virtual IList<ReadedRecorder> ReadedRecorderList { get; set; } = [];
 
     /// <summary>
     /// 收藏记录
