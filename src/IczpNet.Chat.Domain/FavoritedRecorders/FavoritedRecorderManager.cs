@@ -13,13 +13,12 @@ using Volo.Abp.Settings;
 
 namespace IczpNet.Chat.FavoritedRecorders;
 
-public class FavoritedRecorderManager : RecorderManager<FavoritedRecorder>, IFavoritedRecorderManager
+public class FavoritedRecorderManager(
+    IRepository<FavoritedRecorder> repository,
+    ISettingProvider settingProvider) : RecorderManager<FavoritedRecorder>(repository), IFavoritedRecorderManager
 {
-    protected ISettingProvider SettingProvider { get; }
-    public FavoritedRecorderManager(IRepository<FavoritedRecorder> repository, ISettingProvider settingProvider) : base(repository)
-    {
-        SettingProvider = settingProvider;
-    }
+    protected ISettingProvider SettingProvider { get; } = settingProvider;
+
     protected override FavoritedRecorder CreateEntity(SessionUnit sessionUnit, Message message, string deviceId)
     {
         return new FavoritedRecorder(sessionUnit, message, deviceId);

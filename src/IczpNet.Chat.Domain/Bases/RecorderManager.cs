@@ -14,17 +14,13 @@ using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.Bases;
 
-public abstract class RecorderManager<TEntity> : DomainService, IRecorderManager<TEntity> where TEntity : class, IEntity, IMessageId, ISessionUnitId
+public abstract class RecorderManager<TEntity>(IRepository<TEntity> repository) : DomainService, IRecorderManager<TEntity> where TEntity : class, IEntity, IMessageId, ISessionUnitId
 {
-    protected IRepository<TEntity> Repository { get; }
+    protected IRepository<TEntity> Repository { get; } = repository;
     protected IMessageRepository MessageRepository => LazyServiceProvider.LazyGetService<IMessageRepository>();
     protected ISessionUnitRepository SessionUnitRepository => LazyServiceProvider.LazyGetService<ISessionUnitRepository>();
     protected IBackgroundJobManager BackgroundJobManager => LazyServiceProvider.LazyGetService<IBackgroundJobManager>();
     protected IDeviceIdResolver DeviceIdResolver => LazyServiceProvider.LazyGetService<IDeviceIdResolver>();
-    public RecorderManager(IRepository<TEntity> repository)
-    {
-        Repository = repository;
-    }
 
     protected abstract TEntity CreateEntity(SessionUnit sessionUnit, Message message, string deviceId);
     protected abstract TEntity CreateEntity(Guid sessionUnitId, long messageId);

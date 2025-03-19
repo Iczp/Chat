@@ -10,13 +10,8 @@ using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.ReadedRecorders;
 
-public class ReadedRecorderManager : RecorderManager<ReadedRecorder>, IReadedRecorderManager
+public class ReadedRecorderManager(IRepository<ReadedRecorder> repository) : RecorderManager<ReadedRecorder>(repository), IReadedRecorderManager
 {
-    public ReadedRecorderManager(IRepository<ReadedRecorder> repository) : base(repository)
-    {
-
-    }
-
     public virtual async Task<int> CreateAllAsync(long messageId)
     {
         var sessionUnitIdList = await QuerySessionUnitIdListAsync(messageId);

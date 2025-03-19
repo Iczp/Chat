@@ -8,54 +8,36 @@ using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Settings;
-using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.Follows;
 
-public class FollowManager : DomainService, IFollowManager
+public class FollowManager(ISessionUnitManager sessionUnitManager,
+    IRepository<Follow> repository,
+    ISettingProvider settingProvider) : DomainService, IFollowManager
 {
-    protected ISessionUnitManager SessionUnitManager { get; }
-
-    protected IUnitOfWorkManager UnitOfWorkManager { get; }
-
-    protected IRepository<Follow> Repository { get; }
-
-    protected ISettingProvider SettingProvider { get; }
-
-    public FollowManager(ISessionUnitManager sessionUnitManager,
-        IUnitOfWorkManager unitOfWorkManager,
-        IRepository<Follow> repository,
-        ISettingProvider settingProvider)
-    {
-        SessionUnitManager = sessionUnitManager;
-        UnitOfWorkManager = unitOfWorkManager;
-        Repository = repository;
-        SettingProvider = settingProvider;
-    }
+    protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
+    protected IRepository<Follow> Repository { get; } = repository;
+    protected ISettingProvider SettingProvider { get; } = settingProvider;
 
     public async Task<List<Follow>> GetFollowersAsync(Guid destinationSessionUnitId)
     {
-        return (await Repository.GetQueryableAsync())
-            .Where(x => x.DestinationId == destinationSessionUnitId)
-            .ToList();
+        return [.. (await Repository.GetQueryableAsync()).Where(x => x.DestinationId == destinationSessionUnitId)];
     }
 
     public async Task<List<Guid>> GetFollowerIdListAsync(Guid destinationSessionUnitId)
     {
-        return (await Repository.GetQueryableAsync())
+        return [.. (await Repository.GetQueryableAsync())
            .Where(x => x.DestinationId == destinationSessionUnitId)
            .Where(x => x.SessionUnitId != destinationSessionUnitId)
-           .Select(x => x.SessionUnitId)
-           .ToList();
+           .Select(x => x.SessionUnitId)];
     }
 
     public async Task<List<Guid>> GetFollowingIdListAsync(Guid sessionUnitId)
     {
-        return (await Repository.GetQueryableAsync())
+        return [.. (await Repository.GetQueryableAsync())
           .Where(x => x.SessionUnitId == sessionUnitId)
           .Where(x => x.DestinationId != sessionUnitId)
-          .Select(x => x.DestinationId)
-          .ToList();
+          .Select(x => x.DestinationId)];
     }
 
     public async Task<int> GetFollowingCountAsync(Guid ownerId)
@@ -97,7 +79,7 @@ public class FollowManager : DomainService, IFollowManager
             .Select(x => new Follow(owner, x))
             .ToList();
 
-        if (newList.Any())
+        if (newList.Count != 0)
         {
             await Repository.InsertManyAsync(newList, autoSave: true);
         }
