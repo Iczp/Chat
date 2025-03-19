@@ -20,8 +20,9 @@ public interface ISessionUnitManager
     /// 获取会话单元
     /// </summary>
     /// <param name="sessionUnitId"></param>
+    /// <param name="isReadOnly"></param>
     /// <returns></returns>
-    Task<SessionUnit> GetAsync(Guid sessionUnitId);
+    Task<SessionUnit> GetAsync(Guid sessionUnitId, bool isReadOnly = true);
 
     /// <summary>
     /// 获取会话单元

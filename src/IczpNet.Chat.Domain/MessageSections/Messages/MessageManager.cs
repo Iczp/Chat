@@ -65,7 +65,7 @@ public partial class MessageManager(
     public virtual async Task CreateSessionUnitByMessageAsync(SessionUnit senderSessionUnit)
     {
         //ShopKeeper
-        if (senderSessionUnit.Destination?.ObjectType == ChatObjectTypeEnums.ShopKeeper)
+        if (senderSessionUnit.DestinationObjectType == ChatObjectTypeEnums.ShopKeeper)
         {
             await SessionGenerator.AddShopWaitersIfNotContains(senderSessionUnit.Session, senderSessionUnit.Owner, senderSessionUnit.DestinationId.Value);
         }

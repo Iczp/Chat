@@ -74,7 +74,7 @@ public class FavoritedRecorderManager : RecorderManager<FavoritedRecorder>, IFav
         message.FavoritedCounter.Count++;
 
         await Task.Yield();
-        //await MessageRepository.IncrementFavoritedCountAsync(new List<long>() { message.Id });
+        //await MessageReadOnlyRepository.IncrementFavoritedCountAsync(new List<long>() { message.Id });
     }
 
     protected override async Task ChangeMessagesIfNotContainsAsync(SessionUnit sessionUnit, List<Message> changeMessages)
@@ -86,7 +86,7 @@ public class FavoritedRecorderManager : RecorderManager<FavoritedRecorder>, IFav
         //}
         //await Task.Yield();
 
-        //await MessageRepository.IncrementFavoritedCountAsync(changeMessages.Select(x => x.Id).ToList());
+        //await MessageReadOnlyRepository.IncrementFavoritedCountAsync(changeMessages.Select(x => x.Id).ToList());
 
         await BackgroundJobManager.EnqueueAsync(new FavoritedCounterArgs()
         {

@@ -35,7 +35,7 @@ public class OpenedRecorderManager : RecorderManager<OpenedRecorder>, IOpenedRec
 
         await Task.Yield();
 
-        //await MessageRepository.IncrementOpenedCountAsync(new List<long>() { message.Id});
+        //await MessageReadOnlyRepository.IncrementOpenedCountAsync(new List<long>() { message.Id});
     }
 
     protected override async Task ChangeMessagesIfNotContainsAsync(SessionUnit sessionUnit, List<Message> changeMessages)
@@ -48,7 +48,7 @@ public class OpenedRecorderManager : RecorderManager<OpenedRecorder>, IOpenedRec
         //}
         //await Task.Yield();
 
-        //await MessageRepository.IncrementOpenedCountAsync(changeMessages.Select(x => x.Id).ToList());
+        //await MessageReadOnlyRepository.IncrementOpenedCountAsync(changeMessages.Select(x => x.Id).ToList());
 
         await BackgroundJobManager.EnqueueAsync(new OpenedCounterArgs()
         {
