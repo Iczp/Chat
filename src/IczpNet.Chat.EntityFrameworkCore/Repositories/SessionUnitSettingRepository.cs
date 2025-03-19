@@ -1,5 +1,5 @@
 ﻿using IczpNet.Chat.EntityFrameworkCore;
-using IczpNet.Chat.SessionUnits;
+using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;

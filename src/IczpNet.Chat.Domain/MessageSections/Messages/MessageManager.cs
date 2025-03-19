@@ -8,6 +8,7 @@ using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionUnits;
+using IczpNet.Chat.SessionUnitSettings;
 using IczpNet.Chat.Settings;
 using IczpNet.Pusher.ShortIds;
 using Microsoft.Extensions.Logging;

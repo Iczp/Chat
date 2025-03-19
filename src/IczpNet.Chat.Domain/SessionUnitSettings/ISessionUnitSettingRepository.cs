@@ -2,7 +2,7 @@
 using System;
 using Volo.Abp.Domain.Repositories;
 
-namespace IczpNet.Chat.SessionUnits;
+namespace IczpNet.Chat.SessionUnitSettings;
 
 public interface ISessionUnitSettingRepository : IRepository<SessionUnitSetting>
 {

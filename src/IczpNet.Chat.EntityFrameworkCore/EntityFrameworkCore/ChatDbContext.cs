@@ -53,6 +53,7 @@ using IczpNet.Chat.InvitationCodes;
 using IczpNet.Chat.MessageWords;
 using IczpNet.Chat.ClientConfigs;
 using IczpNet.Chat.ServerHosts;
+using IczpNet.Chat.SessionUnitSettings;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 

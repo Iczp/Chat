@@ -3,6 +3,7 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.Extensions.Caching.Distributed;
 using System;
 using System.Collections.Generic;

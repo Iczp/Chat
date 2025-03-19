@@ -33,6 +33,7 @@ using IczpNet.Chat.SessionSections.SessionUnitContactTags;
 using IczpNet.Chat.ContactTags;
 using IczpNet.Chat.SessionSections;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnitSettings;
 
 namespace IczpNet.Chat.SessionUnits;
 

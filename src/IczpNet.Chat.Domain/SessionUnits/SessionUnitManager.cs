@@ -9,6 +9,7 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnitSettings;
 using IczpNet.Chat.TextTemplates;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Caching.Distributed;

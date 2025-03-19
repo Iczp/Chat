@@ -5,6 +5,7 @@ using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.Scopeds;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionUnits;
+using IczpNet.Chat.SessionUnitSettings;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
