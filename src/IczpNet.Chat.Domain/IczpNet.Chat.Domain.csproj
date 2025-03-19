@@ -58,7 +58,6 @@
 
   <ItemGroup>
     <Folder Include="Commands\" />
-    <Folder Include="FavoritedRecorders\" />
     <Folder Include="GotRecorders\" />
     <Folder Include="Personals\" />
     <Folder Include="RedPackets\" />
