@@ -1,7 +1,7 @@
 ﻿using IczpNet.Chat.BaseInfos;
 using System;
 
-namespace IczpNet.Chat.ChatObjectCategorys;
+namespace IczpNet.Chat.ChatObjectCategories;
 
 public class ChatObjectCategoryInfo : BaseTreeInfo<Guid>
 {

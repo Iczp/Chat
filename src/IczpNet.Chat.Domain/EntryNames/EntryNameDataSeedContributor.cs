@@ -11,28 +11,19 @@ using Volo.Abp.Guids;
 
 namespace IczpNet.Chat.EntryNames;
 
-public class EntryNameDataSeedContributor : IDataSeedContributor, ITransientDependency
+public class EntryNameDataSeedContributor(
+    IConfiguration configuration,
+    ICurrentTenant currentTenant,
+    IRepository<EntryName, Guid> repository,
+    ILogger<EntryNameDataSeedContributor> logger,
+    IGuidGenerator guidGenerator) : IDataSeedContributor, ITransientDependency
 {
-    protected ILogger<EntryNameDataSeedContributor> Logger { get; }
-    protected IConfiguration Configuration { get; }
-    protected ICurrentTenant CurrentTenant { get; }
+    protected ILogger<EntryNameDataSeedContributor> Logger { get; } = logger;
+    protected IConfiguration Configuration { get; } = configuration;
+    protected ICurrentTenant CurrentTenant { get; } = currentTenant;
 
-    protected IRepository<EntryName, Guid> Repository { get; }
-    protected IGuidGenerator GuidGenerator { get; }
-
-    public EntryNameDataSeedContributor(
-        IConfiguration configuration,
-        ICurrentTenant currentTenant,
-        IRepository<EntryName, Guid> repository,
-        ILogger<EntryNameDataSeedContributor> logger,
-        IGuidGenerator guidGenerator)
-    {
-        Configuration = configuration;
-        CurrentTenant = currentTenant;
-        Repository = repository;
-        Logger = logger;
-        GuidGenerator = guidGenerator;
-    }
+    protected IRepository<EntryName, Guid> Repository { get; } = repository;
+    protected IGuidGenerator GuidGenerator { get; } = guidGenerator;
 
     [UnitOfWork]
     public virtual async Task SeedAsync(DataSeedContext context)

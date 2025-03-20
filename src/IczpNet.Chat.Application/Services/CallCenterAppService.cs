@@ -12,14 +12,9 @@ namespace IczpNet.Chat.Services;
 /// <summary>
 /// 呼叫中心
 /// </summary>
-public class CallCenterAppService : ChatAppService, ICallCenterAppService
+public class CallCenterAppService(ICallCenterManager callCenterManager) : ChatAppService, ICallCenterAppService
 {
-    protected ICallCenterManager CallCenterManager { get; }
-
-    public CallCenterAppService(ICallCenterManager callCenterManager)
-    {
-        CallCenterManager = callCenterManager;
-    }
+    protected ICallCenterManager CallCenterManager { get; } = callCenterManager;
 
     /// <summary>
     /// 转接

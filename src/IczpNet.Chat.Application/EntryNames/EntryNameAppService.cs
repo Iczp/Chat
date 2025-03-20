@@ -11,15 +11,17 @@ namespace IczpNet.Chat.EntryNames;
 /// <summary>
 /// 条目（属性）
 /// </summary>
-public class EntryNameAppService
-    : CrudTreeChatAppService<
+public class EntryNameAppService(
+    IRepository<EntryName, Guid> repository,
+    IEntryNameManager entryNameManager)
+        : CrudTreeChatAppService<
         EntryName,
         Guid,
         EntryNameDetailDto,
         EntryNameDto,
         EntryNameGetListInput,
         EntryNameCreateInput,
-        EntryNameUpdateInput>,
+        EntryNameUpdateInput>(repository, entryNameManager),
     IEntryNameAppService
 {
     protected override string GetPolicyName { get; set; } = ChatPermissions.EntryNamePermission.Default;
@@ -27,12 +29,6 @@ public class EntryNameAppService
     protected override string CreatePolicyName { get; set; } = ChatPermissions.EntryNamePermission.Create;
     protected override string UpdatePolicyName { get; set; } = ChatPermissions.EntryNamePermission.Update;
     protected override string DeletePolicyName { get; set; } = ChatPermissions.EntryNamePermission.Delete;
-
-    public EntryNameAppService(
-        IRepository<EntryName, Guid> repository,
-        IEntryNameManager entryNameManager) : base(repository, entryNameManager)
-    {
-    }
 
     protected override async Task<IQueryable<EntryName>> CreateFilteredQueryAsync(EntryNameGetListInput input)
     {

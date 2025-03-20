@@ -1,7 +1,7 @@
 ﻿using IczpNet.Chat.BaseDtos;
 using System;
 
-namespace IczpNet.Chat.ChatObjectCategorys.Dtos;
+namespace IczpNet.Chat.ChatObjectCategories.Dtos;
 
 /// <summary>
 /// ChatObjectCategory UpdateInput

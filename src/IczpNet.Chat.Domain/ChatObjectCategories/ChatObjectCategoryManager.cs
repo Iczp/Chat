@@ -2,7 +2,7 @@
 using System;
 using Volo.Abp.Domain.Repositories;
 
-namespace IczpNet.Chat.ChatObjectCategorys;
+namespace IczpNet.Chat.ChatObjectCategories;
 
 public class ChatObjectCategoryManager : TreeManager<ChatObjectCategory, Guid, ChatObjectCategoryInfo>, IChatObjectCategoryManager  
 {

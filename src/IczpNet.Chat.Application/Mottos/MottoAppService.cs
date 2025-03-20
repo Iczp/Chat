@@ -1,7 +1,6 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.Mottos;
 using IczpNet.Chat.Mottos.Dtos;
 using System;
 using System.Linq;
@@ -9,27 +8,22 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 
-namespace IczpNet.Chat.MottoServices;
+namespace IczpNet.Chat.Mottos;
 
 /// <summary>
 /// 个性签名
 /// </summary>
-public class MottoAppService
-    : CrudByChatObjectChatAppService<
+public class MottoAppService(IRepository<Motto, Guid> repository)
+        : CrudByChatObjectChatAppService<
         Motto,
         MottoDetailDto,
         MottoDto,
         Guid,
         MottoGetListInput,
         MottoCreateInput,
-        MottoUpdateInput>,
+        MottoUpdateInput>(repository),
     IMottoAppService
 {
-    public MottoAppService(IRepository<Motto, Guid> repository) : base(repository)
-    {
-
-    }
-
     protected override async Task<IQueryable<Motto>> CreateFilteredQueryAsync(ChatObject chatObject, MottoGetListInput input)
     {
         return (await base.CreateFilteredQueryAsync(chatObject, input))

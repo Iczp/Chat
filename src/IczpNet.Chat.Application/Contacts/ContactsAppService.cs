@@ -16,18 +16,14 @@ namespace IczpNet.Chat.Contacts;
 /// <summary>
 /// 通讯录
 /// </summary>
-public class ContactsAppService : ChatAppService, IContactsAppService
+public class ContactsAppService(
+    ISessionUnitRepository repository) : ChatAppService, IContactsAppService
 {
     protected override string GetListPolicyName { get; set; } = ChatPermissions.ContactPermission.GetList;
     protected override string GetPolicyName { get; set; } = ChatPermissions.ContactPermission.GetItem;
     protected override string DeletePolicyName { get; set; } = ChatPermissions.ContactPermission.Delete;
 
-    protected ISessionUnitRepository Repository { get; }
-    public ContactsAppService(
-        ISessionUnitRepository repository)
-    {
-        Repository = repository;
-    }
+    protected ISessionUnitRepository Repository { get; } = repository;
 
     /// <inheritdoc/>
     protected virtual async Task<IQueryable<SessionUnit>> CreateQueryAsync(ContactsGetListInput input)

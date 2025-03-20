@@ -1,5 +1,5 @@
 ﻿using IczpNet.Chat.BaseEntities;
-using IczpNet.Chat.ChatObjectCategorys;
+using IczpNet.Chat.ChatObjectCategories;
 using IczpNet.Chat.ChatObjects;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;

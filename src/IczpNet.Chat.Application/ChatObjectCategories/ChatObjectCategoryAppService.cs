@@ -1,13 +1,13 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.ChatObjectCategorys.Dtos;
+using IczpNet.Chat.ChatObjectCategories.Dtos;
 using IczpNet.Chat.Permissions;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 
-namespace IczpNet.Chat.ChatObjectCategorys;
+namespace IczpNet.Chat.ChatObjectCategories;
 
 /// <summary>
 /// 聊天对象目录（分组）

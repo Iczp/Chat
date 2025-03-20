@@ -3,7 +3,7 @@ using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.BaseDtos;
-using IczpNet.Chat.ChatObjectCategorys;
+using IczpNet.Chat.ChatObjectCategories;
 using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Permissions;

@@ -1,31 +1,24 @@
 ﻿using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.Mottos;
 using IczpNet.Chat.Mottos.Dtos;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
-using IczpNet.Chat.ChatObjects;
 using Volo.Abp;
 
-namespace IczpNet.Chat.MottoServices;
+namespace IczpNet.Chat.Mottos;
 
-public class MottoAdminAppService
-    : CrudChatAppService<
+public class MottoAdminAppService(IRepository<Motto, Guid> repository)
+        : CrudChatAppService<
         Motto,
         MottoDetailDto,
         MottoDto,
         Guid,
         MottoAdminGetListInput,
         MottoAdminCreateInput,
-        MottoUpdateInput>,
+        MottoUpdateInput>(repository),
     IMottoAdminAppService
 {
-    public MottoAdminAppService(IRepository<Motto, Guid> repository) : base(repository)
-    {
-
-    }
-
     protected override async Task<IQueryable<Motto>> CreateFilteredQueryAsync(MottoAdminGetListInput input)
     {
         return (await ReadOnlyRepository.GetQueryableAsync())

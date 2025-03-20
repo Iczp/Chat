@@ -8,19 +8,14 @@ using System.Threading.Tasks;
 
 namespace IczpNet.Chat.Robots;
 
-public class RobotManagementAppService : ChatManagementAppService, IRobotManagementAppService
+public class RobotManagementAppService(
+    IChatObjectRepository repository) : ChatManagementAppService, IRobotManagementAppService
 {
 
     protected override string CreatePolicyName { get; set; } = ChatPermissions.RobotManagementPermission.Create;
     protected override string UpdatePolicyName { get; set; } = ChatPermissions.RobotManagementPermission.Update;
 
-    protected IChatObjectRepository Repository { get; }
-
-    public RobotManagementAppService(
-        IChatObjectRepository repository)
-    {
-        Repository = repository;
-    }
+    protected IChatObjectRepository Repository { get; } = repository;
 
     [HttpPost]
     [Authorize(ChatPermissions.RobotManagementPermission.Create)]

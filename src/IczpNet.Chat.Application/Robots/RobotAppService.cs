@@ -1,6 +1,6 @@
 ﻿using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.ChatObjectCategorys;
+using IczpNet.Chat.ChatObjectCategories;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Robots.Dtos;
 using Microsoft.AspNetCore.Mvc;
@@ -16,16 +16,10 @@ namespace IczpNet.Chat.Robots;
 /// <summary>
 /// 机器人
 /// </summary>
-public class RobotAppService : ChatAppService, IRobotAppService
+public class RobotAppService(IChatObjectRepository repository, IChatObjectCategoryManager chatObjectCategoryManager) : ChatAppService, IRobotAppService
 {
-    protected IChatObjectRepository Repository { get; }
-    protected IChatObjectCategoryManager ChatObjectCategoryManager { get; }
-    public RobotAppService(IChatObjectRepository repository, IChatObjectCategoryManager chatObjectCategoryManager)
-    {
-        Repository = repository;
-        ChatObjectCategoryManager = chatObjectCategoryManager;
-    }
-
+    protected IChatObjectRepository Repository { get; } = repository;
+    protected IChatObjectCategoryManager ChatObjectCategoryManager { get; } = chatObjectCategoryManager;
 
     protected virtual Task<IQueryable<ChatObject>> CreateFilteredQueryAsync(PagedAndSortedResultRequestDto input)
     {

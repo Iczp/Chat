@@ -7,16 +7,10 @@ using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.MessageSections.Counters;
 
-public class ReadedCounterJob : AsyncBackgroundJob<ReadedCounterArgs>, ITransientDependency
+public class ReadedCounterJob(IMessageRepository messageRepository, IUnitOfWorkManager unitOfWorkManager) : AsyncBackgroundJob<ReadedCounterArgs>, ITransientDependency
 {
-    protected IMessageRepository MessageRepository { get; }
-    protected IUnitOfWorkManager UnitOfWorkManager { get; }
-
-    public ReadedCounterJob(IMessageRepository messageRepository, IUnitOfWorkManager unitOfWorkManager)
-    {
-        MessageRepository = messageRepository;
-        UnitOfWorkManager = unitOfWorkManager;
-    }
+    protected IMessageRepository MessageRepository { get; } = messageRepository;
+    protected IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
 
     [UnitOfWork]
     public override async Task ExecuteAsync(ReadedCounterArgs args)
