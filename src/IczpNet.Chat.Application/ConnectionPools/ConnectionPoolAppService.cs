@@ -1,7 +1,6 @@
 ﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ConnectionPools.Dtos;
 using IczpNet.Chat.Permissions;
-using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +9,10 @@ using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.ConnectionPools;
 
+/// <summary>
+/// 连接池
+/// </summary>
+/// <param name="connectionPoolManager"></param>
 public class ConnectionPoolAppService(
     IConnectionPoolManager connectionPoolManager) : ChatAppService, IConnectionPoolAppService
 {
@@ -64,42 +67,64 @@ public class ConnectionPoolAppService(
         return await ConnectionPoolManager.GetAsync(id);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// 清空所有连接
+    /// </summary>
+    /// <param name="host"></param>
+    /// <returns></returns>
     public async Task ClearAllAsync(string host)
     {
         await CheckPolicyAsync(ClearAllPolicyName);
         await ConnectionPoolManager.ClearAllAsync(host);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// 移除连接
+    /// </summary>
+    /// <param name="connectionId"></param>
+    /// <returns></returns>
     public async Task RemoveAsync(string connectionId)
     {
         await CheckDeletePolicyAsync();
         await ConnectionPoolManager.RemoveAsync(connectionId);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// 更新连接数量
+    /// </summary>
+    /// <returns></returns>
     public async Task<int> UpdateConnectionIdsAsync()
     {
         await CheckPolicyAsync(UpdateConnectionIdsPolicyName);
         return await ConnectionPoolManager.UpdateConnectionIdsAsync();
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// 获取用户连接
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <returns></returns>
     public async Task<List<string>> GetConnectionIdsByUserIdAsync(Guid userId)
     {
         await CheckPolicyAsync(GetConnectionIdsByUserIdPolicyName);
         return await ConnectionPoolManager.GetConnectionIdsByUserIdAsync(userId);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// 获取用户连接
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <returns></returns>
     public async Task<int> GetCountByUserIdAsync(Guid userId)
     {
         await CheckPolicyAsync(GetCountByUserIdPolicyName);
         return (await ConnectionPoolManager.GetConnectionIdsByUserIdAsync(userId)).Count;
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// 更新用户连接数量
+    /// </summary>
+    /// <returns></returns>
     public async Task<int> UpdateUserConnectionIdsAsync(Guid userId)
     {
         await CheckPolicyAsync(UpdateUserConnectionIdsPolicyName);

@@ -282,7 +282,7 @@ public class SessionUnitSettingAppService(
     {
         var setterSessionUnit = await GetEntityAsync(setterSessionUnitId);
 
-        await CheckPolicyAsync(SessionPermissionDefinitionConsts.SessionUnitPermissions.SetMuteExpireTime, setterSessionUnit);
+        await CheckPolicyAsync(SetMuteExpireTimePolicyName, setterSessionUnit);
 
         var muterSessionUnit = await GetEntityAsync(muterSessionUnitId);
 
