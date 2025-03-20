@@ -1,7 +1,6 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Permissions;
-using IczpNet.Chat.SessionSections.SessionOrganizations;
 using IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;
 using IczpNet.Chat.SessionSections.SessionPermissionGroups;
 using IczpNet.Chat.SessionSections.SessionPermissionGroups.Dtos;
