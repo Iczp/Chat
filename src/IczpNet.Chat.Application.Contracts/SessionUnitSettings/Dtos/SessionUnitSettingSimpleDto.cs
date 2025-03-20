@@ -1,7 +1,7 @@
 ﻿using IczpNet.Chat.Enums;
 using System;
 
-namespace IczpNet.Chat.SessionUnits.Dtos;
+namespace IczpNet.Chat.SessionUnitSettings.Dtos;
 
 public class SessionUnitSettingSimpleDto
 {

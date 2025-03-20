@@ -2,6 +2,7 @@
 using IczpNet.Chat.AutoMappers;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
+using IczpNet.Chat.SessionUnitSettings.Dtos;
 
 namespace IczpNet.Chat.SessionUnitSettings;
 

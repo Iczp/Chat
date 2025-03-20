@@ -1,4 +1,4 @@
-﻿namespace IczpNet.Chat.SessionUnits.Dtos;
+﻿namespace IczpNet.Chat.SessionUnitSettings.Dtos;
 
 public class SessionUnitSettingDto : SessionUnitSettingSimpleDto
 {

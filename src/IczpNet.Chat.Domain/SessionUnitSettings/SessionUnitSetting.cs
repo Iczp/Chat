@@ -314,7 +314,7 @@ public class SessionUnitSetting : BaseEntity, IHasCreationTime, IHasModification
 
     public override object[] GetKeys()
     {
-        return new object[] { SessionUnitId };
+        return [SessionUnitId];
     }
 
     internal virtual void SetRename(string rename)

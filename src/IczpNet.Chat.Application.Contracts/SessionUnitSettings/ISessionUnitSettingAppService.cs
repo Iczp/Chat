@@ -3,9 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace IczpNet.Chat.SessionUnits;
+namespace IczpNet.Chat.SessionUnitSettings;
 
-public interface ISettingAppService
+public interface ISessionUnitSettingAppService
 {
     /// <summary>
     /// 设置会话内名称
