@@ -4,12 +4,7 @@ using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.EntryValues;
 
-public class EntryValueManager : DomainService, IEntryValueManager
+public class EntryValueManager(IRepository<EntryValue, Guid> repository) : DomainService, IEntryValueManager
 {
-    protected IRepository<EntryValue, Guid> Repository { get; set; }
-
-    public EntryValueManager(IRepository<EntryValue, Guid> repository)
-    {
-        Repository = repository;
-    }
+    protected IRepository<EntryValue, Guid> Repository { get; set; } = repository;
 }

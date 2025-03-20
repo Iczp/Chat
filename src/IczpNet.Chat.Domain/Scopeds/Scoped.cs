@@ -24,6 +24,6 @@ public class Scoped : BaseEntity
 
     public override object[] GetKeys()
     {
-        return new object[] { SessionUnitId, MessageId };
+        return [SessionUnitId, MessageId];
     }
 }

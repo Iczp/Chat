@@ -12,15 +12,15 @@ namespace IczpNet.Chat.EntryValues;
 /// <summary>
 /// 条目值
 /// </summary>
-public class EntryValueAppService
-    : CrudChatAppService<
+public class EntryValueAppService(IRepository<EntryValue, Guid> repository)
+        : CrudChatAppService<
         EntryValue,
         EntryValueDetailDto,
         EntryValueDto,
         Guid,
         EntryValueGetListInput,
         EntryValueCreateInput,
-        EntryValueUpdateInput>,
+        EntryValueUpdateInput>(repository),
     IEntryValueAppService
 {
     protected override string GetPolicyName { get; set; } = ChatPermissions.EntryValuePermission.Default;
@@ -28,10 +28,6 @@ public class EntryValueAppService
     protected override string CreatePolicyName { get; set; } = ChatPermissions.EntryValuePermission.Create;
     protected override string UpdatePolicyName { get; set; } = ChatPermissions.EntryValuePermission.Update;
     protected override string DeletePolicyName { get; set; } = ChatPermissions.EntryValuePermission.Delete;
-
-    public EntryValueAppService(IRepository<EntryValue, Guid> repository) : base(repository)
-    {
-    }
 
     protected override async Task<IQueryable<EntryValue>> CreateFilteredQueryAsync(EntryValueGetListInput input)
     {

@@ -2,6 +2,6 @@
 
 namespace IczpNet.Chat.SessionSections.SessionOrganizations;
 
-public interface ISessionOrganizationManager : ITreeManager<SessionOrganization,long, SessionOrganizationInfo>
+public interface ISessionOrganizationManager : ITreeManager<SessionOrganization, long, SessionOrganizationInfo>
 {
 }

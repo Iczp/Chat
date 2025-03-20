@@ -1,6 +1,6 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.BaseEntities;
-using IczpNet.Chat.ChatObjectCategorys;
+using IczpNet.Chat.ChatObjectCategories;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using System.Collections.Generic;

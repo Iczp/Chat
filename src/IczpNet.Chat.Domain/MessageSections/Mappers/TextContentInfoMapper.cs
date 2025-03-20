@@ -6,14 +6,9 @@ using Microsoft.Extensions.Logging;
 
 namespace IczpNet.Chat.MessageSections.Mappers;
 
-public class TextContentInfoMapper : DomainService, IObjectMapper<TextContentInfo, TextContent>, ITransientDependency
+public class TextContentInfoMapper(ITextFilter textFilter) : DomainService, IObjectMapper<TextContentInfo, TextContent>, ITransientDependency
 {
-    protected ITextFilter TextFilter { get; }
-
-    public TextContentInfoMapper(ITextFilter textFilter)
-    {
-        TextFilter = textFilter;
-    }
+    protected ITextFilter TextFilter { get; } = textFilter;
 
     public TextContent Map(TextContentInfo source)
     {

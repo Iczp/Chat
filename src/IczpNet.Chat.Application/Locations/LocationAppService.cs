@@ -3,7 +3,6 @@ using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Locations.Dto;
 using IczpNet.Chat.MessageSections;
-using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.TextTemplates;
@@ -25,7 +24,11 @@ namespace IczpNet.Chat.Locations;
 /// 共享位置
 /// </summary>
 ////[AbpAuthorize]
-public class LocationAppService : ChatAppService, ILocationAppService
+public class LocationAppService(
+    IMessageSender messageSender,
+    IDistributedCache<UserLocationCacheItem, Guid> userLocationCache,
+    IDistributedCache<List<SessionLocationCacheItem>, Guid> sessionCache,
+    ISessionUnitRepository sessionUnitRepository) : ChatAppService, ILocationAppService
 {
 
     /// <summary>
@@ -36,26 +39,14 @@ public class LocationAppService : ChatAppService, ILocationAppService
     /// <summary>
     /// Guid:appUserId
     /// </summary>
-    protected IDistributedCache<UserLocationCacheItem, Guid> UserLocationCache { get; }
+    protected IDistributedCache<UserLocationCacheItem, Guid> UserLocationCache { get; } = userLocationCache;
 
     /// <summary>
     /// Guid:sessionId
     /// </summary>
-    protected IDistributedCache<List<SessionLocationCacheItem>, Guid> SessionCache { get; }
-    protected IMessageSender MessageSender { get; }
-    protected ISessionUnitRepository SessionUnitRepository { get; }
-
-    public LocationAppService(
-        IMessageSender messageSender,
-        IDistributedCache<UserLocationCacheItem, Guid> userLocationCache,
-        IDistributedCache<List<SessionLocationCacheItem>, Guid> sessionCache,
-        ISessionUnitRepository sessionUnitRepository)
-    {
-        MessageSender = messageSender;
-        UserLocationCache = userLocationCache;
-        SessionCache = sessionCache;
-        SessionUnitRepository = sessionUnitRepository;
-    }
+    protected IDistributedCache<List<SessionLocationCacheItem>, Guid> SessionCache { get; } = sessionCache;
+    protected IMessageSender MessageSender { get; } = messageSender;
+    protected ISessionUnitRepository SessionUnitRepository { get; } = sessionUnitRepository;
 
     /// <summary>
     /// 共享位置

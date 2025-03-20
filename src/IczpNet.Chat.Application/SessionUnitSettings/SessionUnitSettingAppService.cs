@@ -3,6 +3,7 @@ using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ContactTags;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionUnitContactTags;
+using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -12,12 +13,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 
-namespace IczpNet.Chat.SessionUnits;
+namespace IczpNet.Chat.SessionUnitSettings;
 
 /// <summary>
 /// 聊天设置
 /// </summary>
-public class SettingAppService : ChatAppService, ISettingAppService
+public class SessionUnitSettingAppService(
+    ISessionUnitRepository repository,
+    IRepository<ContactTag, Guid> contactTagRepository) : ChatAppService, ISessionUnitSettingAppService
 {
     protected virtual string SetRenamePolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.SetRename;
     protected virtual string SetMemberNamePolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.SetMemberName;
@@ -26,7 +29,7 @@ public class SettingAppService : ChatAppService, ISettingAppService
     protected virtual string SetImmersedPolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.SetImmersed;
     protected virtual string SetIsContactsPolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.SetIsContacts;
     protected virtual string SetIsShowMemberNamePolicyName { get; set; } //= ChatPermissions.SessionUnitSettingPermissions.SetIsShowMemberName;
-    
+
 
     protected virtual string RemoveSessionPolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.RemoveSession;
     protected virtual string ClearMessagePolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.ClearMessage;
@@ -34,17 +37,8 @@ public class SettingAppService : ChatAppService, ISettingAppService
     protected virtual string SetContactTagsPolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.SetContactTags;
     protected virtual string KillPolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.Kill;
     protected virtual string SetMuteExpireTimePolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.SetMuteExpireTime;
-    protected ISessionUnitRepository Repository { get; }
-    protected IRepository<ContactTag, Guid> ContactTagRepository { get; }
-
-
-    public SettingAppService(
-        ISessionUnitRepository repository,
-        IRepository<ContactTag, Guid> contactTagRepository)
-    {
-        Repository = repository;
-        ContactTagRepository = contactTagRepository;
-    }
+    protected ISessionUnitRepository Repository { get; } = repository;
+    protected IRepository<ContactTag, Guid> ContactTagRepository { get; } = contactTagRepository;
 
     /// <inheritdoc/>
     protected virtual async Task<SessionUnit> GetEntityAsync([Required] Guid id, bool checkIsKilled = true)

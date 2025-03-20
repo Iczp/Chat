@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace IczpNet.Chat.ChatObjectCategorys;
+namespace IczpNet.Chat.ChatObjectCategories;
 
 public class ChatObjectCategory : BaseTreeEntity<ChatObjectCategory, Guid>
 {

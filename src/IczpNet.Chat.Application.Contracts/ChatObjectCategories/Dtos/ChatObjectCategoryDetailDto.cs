@@ -1,4 +1,4 @@
-﻿namespace IczpNet.Chat.ChatObjectCategorys.Dtos;
+﻿namespace IczpNet.Chat.ChatObjectCategories.Dtos;
 
 /// <summary>
 /// ChatObjectCategory DetailDto

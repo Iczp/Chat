@@ -1,5 +1,5 @@
 using IczpNet.Chat.Articles;
-using IczpNet.Chat.ChatObjectCategorys;
+using IczpNet.Chat.ChatObjectCategories;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.Connections;
@@ -54,6 +54,7 @@ using IczpNet.Chat.MessageWords;
 using IczpNet.Chat.ClientConfigs;
 using IczpNet.Chat.ServerHosts;
 using IczpNet.Chat.SessionUnitSettings;
+using IczpNet.Chat.SessionSections.SessionPermissionUnitGrants;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 

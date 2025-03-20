@@ -7,9 +7,9 @@ using Volo.Abp;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions.Dtos;
 using System.Collections.Generic;
-using IczpNet.Chat.SessionSections.SessionOrganizations;
 using Microsoft.AspNetCore.Mvc;
 using IczpNet.Chat.Permissions;
+using IczpNet.Chat.SessionSections.SessionPermissionGroups;
 
 namespace IczpNet.Chat.SessionServices;
 

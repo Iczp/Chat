@@ -4,10 +4,7 @@ using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.EntryNames;
 
-public class EntryNameManager : TreeManager<EntryName, Guid, TreeInfo<Guid>>, IEntryNameManager
+public class EntryNameManager(
+    IRepository<EntryName, Guid> repository) : TreeManager<EntryName, Guid, TreeInfo<Guid>>(repository), IEntryNameManager
 {
-    public EntryNameManager(
-        IRepository<EntryName, Guid> repository) : base(repository)
-    {
-    }
 }

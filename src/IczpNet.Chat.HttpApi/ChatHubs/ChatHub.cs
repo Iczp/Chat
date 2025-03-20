@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.SignalR;
@@ -156,5 +157,16 @@ public class ChatHub(
             // 处理其他异常
         }
         await base.OnDisconnectedAsync(exception);
+    }
+
+    public async Task SendMessageAsync(string targetUserName, string message)
+    {
+        var all = await ConnectionPoolManager.GetAllListAsync();
+
+        await Clients.All.ReceivedMessage(new PushPayload()
+        {
+            Command = message,
+            Payload = all.ToList(),
+        });
     }
 }

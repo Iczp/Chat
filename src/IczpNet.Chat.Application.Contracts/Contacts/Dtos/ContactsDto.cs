@@ -1,6 +1,6 @@
 ﻿using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.ContactTags.Dtos;
-using IczpNet.Chat.SessionUnits.Dtos;
+using IczpNet.Chat.SessionUnitSettings.Dtos;
 using System;
 using System.Collections.Generic;
 

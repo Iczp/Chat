@@ -4,7 +4,6 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
-using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
 using IczpNet.Chat.SessionSections.SessionRequests;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.Sessions;
@@ -34,6 +33,7 @@ using IczpNet.Chat.ContactTags;
 using IczpNet.Chat.SessionSections;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
+using IczpNet.Chat.SessionSections.SessionPermissionUnitGrants;
 
 namespace IczpNet.Chat.SessionUnits;
 

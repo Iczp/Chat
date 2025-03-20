@@ -10,13 +10,8 @@ using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.OpenedRecorders;
 
-public class OpenedRecorderManager : RecorderManager<OpenedRecorder>, IOpenedRecorderManager
+public class OpenedRecorderManager(IRepository<OpenedRecorder> repository) : RecorderManager<OpenedRecorder>(repository), IOpenedRecorderManager
 {
-    public OpenedRecorderManager(IRepository<OpenedRecorder> repository) : base(repository)
-    {
-
-    }
-
     protected override OpenedRecorder CreateEntity(SessionUnit entity, Message message, string deviceId)
     {
         return new OpenedRecorder(entity, message.Id, deviceId);

@@ -1,5 +1,4 @@
-﻿using IczpNet.Chat.Articles;
-using IczpNet.Chat.Articles.Dtos;
+﻿using IczpNet.Chat.Articles.Dtos;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.MessageSections.Messages;
@@ -9,20 +8,23 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 
-namespace IczpNet.Chat.Services;
+namespace IczpNet.Chat.Articles;
 
 /// <summary>
 /// 文章
 /// </summary>
-public class ArticleAppService
-    : CrudChatAppService<
+public class ArticleAppService(
+    IRepository<Article, Guid> repository,
+    //IChatObjectManager chatObjectManager,
+    IMessageManager messageManager)
+        : CrudChatAppService<
         Article,
         ArticleDetailDto,
         ArticleDto,
         Guid,
         ArticleGetListInput,
         ArticleCreateInput,
-        ArticleUpdateInput>,
+        ArticleUpdateInput>(repository),
     IArticleAppService
 {
 
@@ -30,16 +32,7 @@ public class ArticleAppService
 
     //protected IChatObjectManager ChatObjectManager { get; }
 
-    protected IMessageManager MessageManager { get; }
-
-    public ArticleAppService(
-        IRepository<Article, Guid> repository,
-        //IChatObjectManager chatObjectManager,
-        IMessageManager messageManager) : base(repository)
-    {
-        //ChatObjectManager = chatObjectManager;
-        MessageManager = messageManager;
-    }
+    protected IMessageManager MessageManager { get; } = messageManager;
 
     protected override async Task<IQueryable<Article>> CreateFilteredQueryAsync(ArticleGetListInput input)
     {

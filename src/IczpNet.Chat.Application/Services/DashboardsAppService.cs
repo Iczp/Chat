@@ -36,65 +36,42 @@ namespace IczpNet.Chat.Services;
 /// <summary>
 /// 仪表板
 /// </summary>
-public class DashboardsAppService : ChatAppService, IDashboardsAppService
+public class DashboardsAppService(
+    IChatObjectRepository chatObjectRepository,
+    IMessageRepository messageRepository,
+    ISessionRepository sessionRepository,
+    ISessionUnitRepository sessionUnitRepository,
+    IRepository<ReadedRecorder> readedRecorderRepository,
+    IRepository<OpenedRecorder> openedRecorderRepository,
+    IRepository<Follow> followRepository,
+    IRepository<SessionRequest, Guid> sessionRequestRepository,
+    IRepository<SessionOrganization, long> sessionOrganizationRepository,
+    IRepository<SessionRole, Guid> sessionRoleRepository,
+    IRepository<SessionTag, Guid> sessionTagRepository,
+    IRepository<SessionUnitTag> sessionUnitTagRepository,
+    IRepository<SessionUnitRole> sessionUnitRoleRepository,
+    IRepository<SessionUnitOrganization> sessionUnitOrganizationRepository,
+    IRepository<MessageReminder> messageReminderRepository,
+    IRepository<FavoritedRecorder> favoriteRepository,
+    IDbTableRepository dbTableRepository) : ChatAppService, IDashboardsAppService
 {
-    protected IChatObjectRepository ChatObjectRepository { get; }
-    protected ISessionRepository SessionRepository { get; }
-    protected ISessionUnitRepository SessionUnitRepository { get; }
-    protected IMessageRepository MessageRepository { get; }
-    protected IRepository<ReadedRecorder> ReadedRecorderRepository { get; }
-    protected IRepository<OpenedRecorder> OpenedRecorderRepository { get; }
-    protected IRepository<Follow> FollowRepository { get; }
-    protected IRepository<SessionRequest, Guid> SessionRequestRepository { get; }
-    protected IRepository<SessionOrganization, long> SessionOrganizationRepository { get; }
-    protected IRepository<SessionRole, Guid> SessionRoleRepository { get; }
-    protected IRepository<SessionTag, Guid> SessionTagRepository { get; }
-    protected IRepository<SessionUnitTag> SessionUnitTagRepository { get; }
-    protected IRepository<SessionUnitRole> SessionUnitRoleRepository { get; }
-    protected IRepository<SessionUnitOrganization> SessionUnitOrganizationRepository { get; }
-    protected IRepository<MessageReminder> MessageReminderRepository { get; }
-    protected IRepository<FavoritedRecorder> FavoriteRepository { get; }
-    protected IDbTableRepository DbTableRepository { get; }
-
-
-
-    public DashboardsAppService(
-        IChatObjectRepository chatObjectRepository,
-        IMessageRepository messageRepository,
-        ISessionRepository sessionRepository,
-        ISessionUnitRepository sessionUnitRepository,
-        IRepository<ReadedRecorder> readedRecorderRepository,
-        IRepository<OpenedRecorder> openedRecorderRepository,
-        IRepository<Follow> followRepository,
-        IRepository<SessionRequest, Guid> sessionRequestRepository,
-        IRepository<SessionOrganization, long> sessionOrganizationRepository,
-        IRepository<SessionRole, Guid> sessionRoleRepository,
-        IRepository<SessionTag, Guid> sessionTagRepository,
-        IRepository<SessionUnitTag> sessionUnitTagRepository,
-        IRepository<SessionUnitRole> sessionUnitRoleRepository,
-        IRepository<SessionUnitOrganization> sessionUnitOrganizationRepository,
-        IRepository<MessageReminder> messageReminderRepository,
-        IRepository<FavoritedRecorder> favoriteRepository,
-        IDbTableRepository dbTableRepository)
-    {
-        ChatObjectRepository = chatObjectRepository;
-        MessageRepository = messageRepository;
-        SessionRepository = sessionRepository;
-        SessionUnitRepository = sessionUnitRepository;
-        ReadedRecorderRepository = readedRecorderRepository;
-        OpenedRecorderRepository = openedRecorderRepository;
-        FollowRepository = followRepository;
-        SessionRequestRepository = sessionRequestRepository;
-        SessionOrganizationRepository = sessionOrganizationRepository;
-        SessionRoleRepository = sessionRoleRepository;
-        SessionTagRepository = sessionTagRepository;
-        SessionUnitTagRepository = sessionUnitTagRepository;
-        SessionUnitRoleRepository = sessionUnitRoleRepository;
-        SessionUnitOrganizationRepository = sessionUnitOrganizationRepository;
-        MessageReminderRepository = messageReminderRepository;
-        FavoriteRepository = favoriteRepository;
-        DbTableRepository = dbTableRepository;
-    }
+    protected IChatObjectRepository ChatObjectRepository { get; } = chatObjectRepository;
+    protected ISessionRepository SessionRepository { get; } = sessionRepository;
+    protected ISessionUnitRepository SessionUnitRepository { get; } = sessionUnitRepository;
+    protected IMessageRepository MessageRepository { get; } = messageRepository;
+    protected IRepository<ReadedRecorder> ReadedRecorderRepository { get; } = readedRecorderRepository;
+    protected IRepository<OpenedRecorder> OpenedRecorderRepository { get; } = openedRecorderRepository;
+    protected IRepository<Follow> FollowRepository { get; } = followRepository;
+    protected IRepository<SessionRequest, Guid> SessionRequestRepository { get; } = sessionRequestRepository;
+    protected IRepository<SessionOrganization, long> SessionOrganizationRepository { get; } = sessionOrganizationRepository;
+    protected IRepository<SessionRole, Guid> SessionRoleRepository { get; } = sessionRoleRepository;
+    protected IRepository<SessionTag, Guid> SessionTagRepository { get; } = sessionTagRepository;
+    protected IRepository<SessionUnitTag> SessionUnitTagRepository { get; } = sessionUnitTagRepository;
+    protected IRepository<SessionUnitRole> SessionUnitRoleRepository { get; } = sessionUnitRoleRepository;
+    protected IRepository<SessionUnitOrganization> SessionUnitOrganizationRepository { get; } = sessionUnitOrganizationRepository;
+    protected IRepository<MessageReminder> MessageReminderRepository { get; } = messageReminderRepository;
+    protected IRepository<FavoritedRecorder> FavoriteRepository { get; } = favoriteRepository;
+    protected IDbTableRepository DbTableRepository { get; } = dbTableRepository;
 
     /// <summary>
     /// 获取各表的数据数量

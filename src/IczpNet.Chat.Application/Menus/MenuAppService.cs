@@ -15,8 +15,12 @@ namespace IczpNet.Chat.Menus;
 /// <summary>
 /// 会话菜单（公众号菜单等）
 /// </summary>
-public class MenuAppService
-    : CrudTreeChatAppService<
+public class MenuAppService(
+    IRepository<Menu, Guid> repository,
+    IMenuManager menuManager,
+    ISessionPermissionChecker sessionPermissionChecker,
+    IChatObjectRepository chatObjectRepository)
+        : CrudTreeChatAppService<
         Menu,
         Guid,
         MenuDto,
@@ -24,24 +28,12 @@ public class MenuAppService
         MenuGetListInput,
         MenuCreateInput,
         MenuUpdateInput,
-        MenuInfo>,
+        MenuInfo>(repository, menuManager),
     IMenuAppService
 {
-    protected ISessionPermissionChecker SessionPermissionChecker { get; }
-    protected IChatObjectRepository ChatObjectRepository { get; }
-    protected new IMenuManager TreeManager { get; }
-
-    public MenuAppService(
-        IRepository<Menu, Guid> repository,
-        IMenuManager menuManager,
-        ISessionPermissionChecker sessionPermissionChecker,
-        IChatObjectRepository chatObjectRepository) : base(repository, menuManager)
-    {
-
-        SessionPermissionChecker = sessionPermissionChecker;
-        ChatObjectRepository = chatObjectRepository;
-        TreeManager = menuManager;
-    }
+    protected ISessionPermissionChecker SessionPermissionChecker { get; } = sessionPermissionChecker;
+    protected IChatObjectRepository ChatObjectRepository { get; } = chatObjectRepository;
+    protected new IMenuManager TreeManager { get; } = menuManager;
 
     protected override async Task<IQueryable<Menu>> CreateFilteredQueryAsync(MenuGetListInput input)
     {

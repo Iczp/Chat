@@ -1,6 +1,6 @@
 ﻿using System;
 using Volo.Abp.Application.Dtos;
-namespace IczpNet.Chat.ChatObjectCategorys.Dtos;
+namespace IczpNet.Chat.ChatObjectCategories.Dtos;
 
 /// <summary>
 /// ChatObjectCategory Dto

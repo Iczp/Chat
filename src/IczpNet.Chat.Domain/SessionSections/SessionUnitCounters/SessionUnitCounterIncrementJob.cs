@@ -4,29 +4,28 @@ using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Uow;
 
-namespace IczpNet.Chat.SessionSections.SessionUnitCounters
+namespace IczpNet.Chat.SessionSections.SessionUnitCounters;
+
+public class SessionUnitCounterIncrementJob : AsyncBackgroundJob<SessionUnitCounterArgs>, ITransientDependency
 {
-    public class SessionUnitCounterIncrementJob : AsyncBackgroundJob<SessionUnitCounterArgs>, ITransientDependency
+    protected IUnitOfWorkManager UnitOfWorkManager { get; }
+    protected ISessionUnitCounterManager SessionUnitCounterManager { get; }
+
+    public SessionUnitCounterIncrementJob(
+        IUnitOfWorkManager unitOfWorkManager,
+        ISessionUnitCounterManager sessionUnitCounterManager)
     {
-        protected IUnitOfWorkManager UnitOfWorkManager { get; }
-        protected ISessionUnitCounterManager SessionUnitCounterManager { get; }
+        UnitOfWorkManager = unitOfWorkManager;
+        SessionUnitCounterManager = sessionUnitCounterManager;
+    }
 
-        public SessionUnitCounterIncrementJob(
-            IUnitOfWorkManager unitOfWorkManager,
-            ISessionUnitCounterManager sessionUnitCounterManager)
-        {
-            UnitOfWorkManager = unitOfWorkManager;
-            SessionUnitCounterManager = sessionUnitCounterManager;
-        }
+    [UnitOfWork]
+    public override async Task ExecuteAsync(SessionUnitCounterArgs args)
+    {
+        using var uow = UnitOfWorkManager.Begin();
 
-        [UnitOfWork]
-        public override async Task ExecuteAsync(SessionUnitCounterArgs args)
-        {
-            using var uow = UnitOfWorkManager.Begin();
+        var totalCount = await SessionUnitCounterManager.IncremenetAsync(args);
 
-            var totalCount = await SessionUnitCounterManager.IncremenetAsync(args);
-
-            Logger.LogInformation($"SessionUnitCounterIncrementJob Completed totalCount:{totalCount}.");
-        }
+        Logger.LogInformation($"SessionUnitCounterIncrementJob Completed totalCount:{totalCount}.");
     }
 }

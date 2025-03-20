@@ -1,5 +1,4 @@
 ﻿using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.InvitationCodes;
 using IczpNet.Chat.InvitationCodes.Dtos;
 using IczpNet.Pusher.ShortIds;
 using System;
@@ -7,27 +6,23 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 
-namespace IczpNet.Chat.InvitationCodeServices;
+namespace IczpNet.Chat.InvitationCodes;
 
 /// <summary>
 /// 邀请码
 /// </summary>
-public class InvitationCodeAppService
-    : CrudChatAppService<
+public class InvitationCodeAppService(IRepository<InvitationCode, Guid> repository, IShortIdGenerator shortIdGenerator)
+        : CrudChatAppService<
         InvitationCode,
         InvitationCodeDetailDto,
         InvitationCodeDto,
         Guid,
         InvitationCodeGetListInput,
         InvitationCodeCreateInput,
-        InvitationCodeUpdateInput>,
+        InvitationCodeUpdateInput>(repository),
     IInvitationCodeAppService
 {
-    protected IShortIdGenerator ShortIdGenerator { get; }
-    public InvitationCodeAppService(IRepository<InvitationCode, Guid> repository, IShortIdGenerator shortIdGenerator) : base(repository)
-    {
-        ShortIdGenerator = shortIdGenerator;
-    }
+    protected IShortIdGenerator ShortIdGenerator { get; } = shortIdGenerator;
 
     protected override async Task<IQueryable<InvitationCode>> CreateFilteredQueryAsync(InvitationCodeGetListInput input)
     {

@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
+using IczpNet.Chat.SessionUnitSettings.Dtos;
 using System;
 
 namespace IczpNet.Chat.SessionUnits.Dtos;

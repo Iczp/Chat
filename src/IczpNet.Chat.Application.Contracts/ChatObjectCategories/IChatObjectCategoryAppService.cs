@@ -1,8 +1,8 @@
 ﻿using IczpNet.AbpTrees;
-using IczpNet.Chat.ChatObjectCategorys.Dtos;
+using IczpNet.Chat.ChatObjectCategories.Dtos;
 using System;
 
-namespace IczpNet.Chat.ChatObjectCategorys;
+namespace IczpNet.Chat.ChatObjectCategories;
 
 /// <summary>
 /// 聊天对象目录（分组）

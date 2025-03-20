@@ -1,5 +1,4 @@
 ﻿using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.ChatObjectTypes.Dtos;
 using System;
 using System.Linq;
@@ -8,20 +7,21 @@ using Volo.Abp.Domain.Repositories;
 using IczpNet.AbpCommons;
 using IczpNet.Chat.Permissions;
 
-namespace IczpNet.Chat.ChatObjectTypeServices;
+namespace IczpNet.Chat.ChatObjectTypes;
 
 /// <summary>
 /// 聊天对象类型
 /// </summary>
-public class ChatObjectTypeAppService
-    : CrudChatAppService<
+public class ChatObjectTypeAppService(
+    IRepository<ChatObjectType, string> repository)
+        : CrudChatAppService<
         ChatObjectType,
         ChatObjectTypeDetailDto,
         ChatObjectTypeDto,
         string,
         ChatObjectTypeGetListInput,
         ChatObjectTypeCreateInput,
-        ChatObjectTypeUpdateInput>,
+        ChatObjectTypeUpdateInput>(repository),
     IChatObjectTypeAppService
 {
 
@@ -30,11 +30,6 @@ public class ChatObjectTypeAppService
     protected override string CreatePolicyName { get; set; } = ChatPermissions.ChatObjectTypePermission.Create;
     protected override string UpdatePolicyName { get; set; } = ChatPermissions.ChatObjectTypePermission.Update;
     protected override string DeletePolicyName { get; set; } = ChatPermissions.ChatObjectTypePermission.Delete;
-
-    public ChatObjectTypeAppService(
-        IRepository<ChatObjectType, string> repository) : base(repository)
-    {
-    }
 
     protected override async Task<IQueryable<ChatObjectType>> CreateFilteredQueryAsync(ChatObjectTypeGetListInput input)
     {

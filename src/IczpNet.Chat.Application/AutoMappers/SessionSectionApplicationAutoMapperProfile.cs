@@ -26,6 +26,8 @@ using System.Linq;
 using Volo.Abp.AutoMapper;
 using IczpNet.Chat.SessionSections.SessionPermissionGroups.Dtos;
 using IczpNet.Chat.SessionUnitSettings;
+using IczpNet.Chat.SessionUnitSettings.Dtos;
+using IczpNet.Chat.SessionSections.SessionPermissionUnitGrants;
 
 namespace IczpNet.Chat.AutoMappers;
 
