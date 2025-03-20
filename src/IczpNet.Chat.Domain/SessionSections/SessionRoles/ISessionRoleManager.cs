@@ -2,10 +2,9 @@
 using System;
 using System.Threading.Tasks;
 
-namespace IczpNet.Chat.SessionSections.SessionRoles
+namespace IczpNet.Chat.SessionSections.SessionRoles;
+
+public interface ISessionRoleManager
 {
-    public interface ISessionRoleManager
-    {
-        Task<SessionRole> SetAllPermissionsAsync(Guid id, PermissionGrantValue permissionGrantValue);
-    }
+    Task<SessionRole> SetAllPermissionsAsync(Guid id, PermissionGrantValue permissionGrantValue);
 }
