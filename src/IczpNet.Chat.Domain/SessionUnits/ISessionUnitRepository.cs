@@ -2,6 +2,7 @@
 using System;
 using Volo.Abp.Domain.Repositories;
 using System.Collections.Generic;
+using IczpNet.Chat.SessionSections.SessionUnits;
 
 namespace IczpNet.Chat.SessionUnits;
 
@@ -23,5 +24,13 @@ public interface ISessionUnitRepository : IRepository<SessionUnit, Guid>
     //Task<int> BatchUpdateNameAsync(long chatObjectId, string name, string nameSpelling, string nameSpellingAbbreviation);
 
     Task<int> BatchUpdateAppUserIdAsync(long chatObjectId, Guid appUserId);
+
+    /// <summary>
+    /// 更新记数器
+    /// </summary>
+    /// <param name="info"></param>
+    /// <returns></returns>
+    Task<int> UpdateCountersync(SessionUnitCounterInfo info);
+
 
 }

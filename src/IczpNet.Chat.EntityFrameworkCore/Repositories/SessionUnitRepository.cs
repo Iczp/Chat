@@ -1,5 +1,7 @@
-﻿using IczpNet.AbpCommons.Extensions;
+﻿using IczpNet.AbpCommons.DataFilters;
+using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.EntityFrameworkCore;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -203,7 +205,7 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
     //    return a + b;
     //}
 
-    public async Task<int> BatchUpdateAppUserIdAsync(long chatObjectId, Guid appUserId)
+    public virtual async Task<int> BatchUpdateAppUserIdAsync(long chatObjectId, Guid appUserId)
     {
         var query = await GetQueryableAsync(Clock.Now, sessionId: null);
 
@@ -211,6 +213,37 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
             .Where(x => x.OwnerId == chatObjectId)
             .ExecuteUpdateAsync(s => s
                  .SetProperty(b => b.AppUserId, b => appUserId)
+             );
+    }
+
+
+    /// <inheritdoc />
+    public virtual async Task<int> UpdateCountersync(SessionUnitCounterInfo info)
+    {
+        var context = await GetDbContextAsync();
+
+        //更新已读消息
+        var count = await context.SessionUnitSetting
+            .Where(x => x.SessionUnitId == info.Id)
+            .Where(x => x.ReadedMessageId < info.ReadedMessageId)
+            .ExecuteUpdateAsync(s => s
+                 .SetProperty(b => b.ReadedMessageId, b => info.ReadedMessageId)
+             );
+
+        if (count == 0)
+        {
+            return 0;
+        }
+
+        //更新角标
+        return await context.SessionUnit
+            .Where(x => x.Id == info.Id)
+            .ExecuteUpdateAsync(s => s
+                 .SetProperty(b => b.PublicBadge, b => info.PublicBadge)
+                 .SetProperty(b => b.PrivateBadge, b => info.PrivateBadge)
+                 .SetProperty(b => b.FollowingCount, b => info.FollowingCount)
+                 .SetProperty(b => b.RemindMeCount, b => info.RemindMeCount)
+                 .SetProperty(b => b.RemindAllCount, b => info.RemindAllCount)
              );
     }
 }

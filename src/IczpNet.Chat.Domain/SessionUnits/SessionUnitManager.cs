@@ -228,7 +228,9 @@ public class SessionUnitManager(
             counter = await GetCounterAsync(entity.Id, lastMessageId);
         }
 
-        await SetEntityAsync(entity, x => x.UpdateCounter(counter));
+        //await SetEntityAsync(entity, x => x.UpdateCounter(counter));
+        // 更新记数器
+        await Repository.UpdateCountersync(counter);
 
         //await UpdateCacheItemsAsync(muterSessionUnit, items =>
         //{
