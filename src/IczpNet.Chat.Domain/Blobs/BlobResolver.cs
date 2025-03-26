@@ -1,15 +1,13 @@
-﻿using IczpNet.Pusher.ShortIds;
-using System;
+﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.Blobs;
 
-public class BlobResolver(IShortIdGenerator shortIdGenerator) : DomainService, IBlobResolver
+public class BlobResolver : DomainService, IBlobResolver
 {
     protected string DateDirectoryName => Clock.Now.ToString("yyyy/MM/dd");
-
-    public IShortIdGenerator ShortIdGenerator { get; } = shortIdGenerator;
 
     public virtual async Task<string> GetDirectoryNameAsync(string container, string folder, Guid blobId, Guid sessionId, Guid sessionUnitId)
     {
@@ -27,7 +25,8 @@ public class BlobResolver(IShortIdGenerator shortIdGenerator) : DomainService, I
     public virtual async Task<string> GenerateFileNameAsync(string suffix)
     {
         await Task.Yield();
-        var fileName = Clock.Now.ToString("yyyyMMddhhmmss") + "_" + ShortIdGenerator.Create() + suffix;
+        var randomFileName = Path.GetRandomFileName().Replace(".", "");
+        var fileName = Clock.Now.ToString("yyyyMMddhhmmss") + "_" + randomFileName + suffix;
         return fileName.ToLower();
     }
 }
