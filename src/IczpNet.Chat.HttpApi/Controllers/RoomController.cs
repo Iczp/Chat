@@ -39,10 +39,11 @@ public class RoomController(IRoomAppService roomAppService) : ChatController
 
         var thumbnailBlobId = GuidGenerator.Create();
 
-        var chatObjectDto = await RoomAppService.UpdatePortraitAsync(
-            sessionUnitId,
-            $"/file?id={thumbnailBlobId}",
-            $"/file?id={bigImgBlobId}");
+        var thumbnailUrl = await BlobResolver.GetFileUrlAsync(thumbnailBlobId);
+
+        var portraitUrl = await BlobResolver.GetFileUrlAsync(bigImgBlobId);
+
+        var chatObjectDto = await RoomAppService.UpdatePortraitAsync(sessionUnitId, thumbnailUrl, portraitUrl);
 
         await SavePortraitAsync(file, chatObjectDto.Id, thumbnailBlobId, bigImgBlobId);
 

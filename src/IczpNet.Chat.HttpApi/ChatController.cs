@@ -23,6 +23,7 @@ public abstract class ChatController : AbpControllerBase
 {
     protected IShortIdGenerator ShortIdGenerator => LazyServiceProvider.LazyGetRequiredService<IShortIdGenerator>();
     protected IBlobManager BlobManager => LazyServiceProvider.LazyGetRequiredService<IBlobManager>();
+    protected IBlobResolver BlobResolver => LazyServiceProvider.LazyGetRequiredService<IBlobResolver>();
     protected IImageResizer ImageResizer => LazyServiceProvider.LazyGetRequiredService<IImageResizer>();
     protected IImageCompressor ImageCompressor => LazyServiceProvider.LazyGetRequiredService<IImageCompressor>();
     protected ISettingProvider SettingProvider => LazyServiceProvider.LazyGetRequiredService<ISettingProvider>();
@@ -97,18 +98,16 @@ public abstract class ChatController : AbpControllerBase
             MimeType = file.ContentType,
             FileName = file.FileName,
             //Name = $"{folder}/{fileName}" ,
-            Name = Path.Combine(folder, fileName).Replace(@"\","/"),
+            Name = Path.Combine(folder, fileName).Replace(@"\", "/"),
             Suffix = Path.GetExtension(file.FileName),
             Bytes = bytes
         });
         return entity;
     }
 
-    protected virtual async Task<string> GenerateFileNameAsync(string suffix)
+    protected virtual Task<string> GenerateFileNameAsync(string suffix)
     {
-        await Task.Yield();
-        var fileName = Clock.Now.ToString("yyyyMMddhhmmss") + "_" + ShortIdGenerator.Create() + suffix;
-        return fileName.ToLower();
+        return BlobResolver.GenerateFileNameAsync(suffix);
     }
 
     /// <summary>
