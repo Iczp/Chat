@@ -36,6 +36,11 @@ public abstract class ChatController : AbpControllerBase
         LocalizationResource = typeof(ChatResource);
     }
 
+    /// <summary>
+    /// 日期文件夹名称
+    /// </summary>
+    protected string DateDirectoryName => Clock.Now.ToString("yyyy/MM/dd");
+
     protected virtual async Task CheckImageAsync(IFormFile file)
     {
         await Task.Yield();
@@ -91,7 +96,8 @@ public abstract class ChatController : AbpControllerBase
             FileSize = bytes.Length,
             MimeType = file.ContentType,
             FileName = file.FileName,
-            Name = $"{folder}/{fileName}",
+            //Name = $"{folder}/{fileName}" ,
+            Name = Path.Combine(folder, fileName).Replace(@"\","/"),
             Suffix = Path.GetExtension(file.FileName),
             Bytes = bytes
         });
@@ -101,7 +107,8 @@ public abstract class ChatController : AbpControllerBase
     protected virtual async Task<string> GenerateFileNameAsync(string suffix)
     {
         await Task.Yield();
-        return Clock.Now.ToString("yyyyMMdd") + ShortIdGenerator.Create() + suffix;
+        var fileName = Clock.Now.ToString("yyyyMMddhhmmss") + "_" + ShortIdGenerator.Create() + suffix;
+        return fileName.ToLower();
     }
 
     /// <summary>
