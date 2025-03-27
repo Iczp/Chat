@@ -3,6 +3,7 @@ using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Connections;
 using IczpNet.Chat.Hosting;
 using IczpNet.Pusher.Models;
+using IczpNet.Pusher.Tickets.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
@@ -129,6 +130,13 @@ public class ChatHub(
             var onDisconnectedEto = connection?.As<OnDisconnectedEto>() ?? new OnDisconnectedEto(connectionId);
             // 发布事件
             await DistributedEventBus.PublishAsync(onDisconnectedEto, onUnitOfWorkComplete: false);
+
+            await Clients.Caller.ReceivedMessage(new PushPayload()
+            {
+                AppUserId = CurrentUser.Id,
+                Command = "Goodbye",
+                Payload = onDisconnectedEto,
+            });
 
             //await ConnectionManager.RemoveAsync(Context.ConnectionId, new CancellationTokenSource().Token);
         }

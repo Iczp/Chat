@@ -25,8 +25,6 @@ public class OnDisconnectedLocalEventHandler(
     {
         Logger.LogInformation($"{nameof(OnDisconnectedLocalEventHandler)} received eventData[{nameof(OnDisconnectedEto)}]:{eventData}");
 
-       
-
         var commandPayload = new PushPayload()
         {
             AppUserId = eventData.UserId,
