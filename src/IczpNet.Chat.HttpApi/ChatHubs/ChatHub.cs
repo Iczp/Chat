@@ -138,10 +138,13 @@ public class ChatHub(
         {
             var cancellationToken = new CancellationTokenSource().Token;
 
+            var connection = await ConnectionPoolManager.GetAsync(connectionId, cancellationToken);
+
             // 注：这里的删除操作可能会被取消，所以需要捕获TaskCanceledException异常
             await ConnectionPoolManager.RemoveAsync(connectionId, cancellationToken);
+
             // 发布事件
-            await DistributedEventBus.PublishAsync(new OnDisconnectedEto(connectionId), onUnitOfWorkComplete: false);
+            await DistributedEventBus.PublishAsync(connection.As<OnDisconnectedEto>(), onUnitOfWorkComplete: false);
 
             //await ConnectionManager.RemoveAsync(Context.ConnectionId, new CancellationTokenSource().Token);
         }
