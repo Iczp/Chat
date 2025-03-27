@@ -82,6 +82,7 @@ public class ChatHub(
 
             await Clients.Caller.ReceivedMessage(new PushPayload()
             {
+                AppUserId = CurrentUser.Id,
                 Command = "Welcome",
                 Payload = connectedEto,
             });
