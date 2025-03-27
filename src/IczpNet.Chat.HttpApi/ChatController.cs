@@ -42,6 +42,16 @@ public abstract class ChatController : AbpControllerBase
     /// </summary>
     protected string DateDirectoryName => Clock.Now.ToString("yyyy/MM/dd");
 
+    /// <summary>
+    /// 获取目录名称
+    /// </summary>
+    /// <param name="blobId"></param>
+    /// <returns></returns>
+    protected virtual Task<string> GetFileUrlAsync(Guid blobId)
+    {
+        return BlobResolver.GetFileUrlAsync(blobId);
+    }
+
     protected virtual async Task CheckImageAsync(IFormFile file)
     {
         await Task.Yield();

@@ -9,10 +9,11 @@ public class BlobResolver : DomainService, IBlobResolver
 {
     protected string DateDirectoryName => Clock.Now.ToString("yyyy/MM/dd");
 
-    public virtual async Task<string> GetDirectoryNameAsync(string container, string folder, Guid blobId, Guid sessionId, Guid sessionUnitId)
+
+    public async Task<string> GetDirectoryNameAsync(BlobContext context)
     {
         await Task.Yield();
-        var directoryName = $"{DateDirectoryName}/{folder}/{sessionId}/{sessionUnitId}";
+        var directoryName = $"{DateDirectoryName}/{context.Folder}/{context.SessionUnitId}/{context.SessionUnitId}";
         return directoryName;
     }
 

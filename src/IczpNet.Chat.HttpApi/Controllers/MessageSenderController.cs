@@ -21,6 +21,8 @@ using Volo.Abp.Http;
 using Blob = IczpNet.Chat.Blobs.Blob;
 using Microsoft.Extensions.Logging;
 using IczpNet.Chat.MessageSections;
+using IczpNet.Chat.Blobs;
+using IczpNet.Chat.SessionSections.SessionUnits;
 namespace IczpNet.Chat.Controllers;
 
 [Route($"/api/{ChatRemoteServiceConsts.ModuleName}/message-sender")]
@@ -36,6 +38,30 @@ public class MessageSenderController(
     protected MessageOptions MessageSetting { get; set; } = imageSetting.Value;
     protected IMediaResolver MediaResolver { get; set; } = mediaResolver;
     protected IJsonSerializer JsonSerializer { get; set; } = jsonSerializer;
+
+    /// <summary>
+    /// 获取目录名称
+    /// </summary>
+    /// <param name="blobId"></param>
+    /// <param name="folder"></param>
+    /// <param name="sessionUnit"></param>
+    /// <param name="file"></param>
+    /// <returns></returns>
+    protected virtual async Task<string> GetDirectoryNameAsync(Guid blobId, string folder, ISessionUnit sessionUnit, IFormFile file)
+    {
+        var directoryName = await BlobResolver.GetDirectoryNameAsync(new BlobContext()
+        {
+            BlobId = blobId,
+            Container = ChatFilesContainer,
+            Folder = folder,
+            SessionId = sessionUnit.SessionId.Value,
+            SessionUnitId = sessionUnit.Id,
+            FileSize = file.Length,
+            MimeType = file.ContentType,
+            FileName = file.FileName,
+        });
+        return directoryName;
+    }
 
     /// <summary>
     /// 上传并发送(file/sound/image/video)
@@ -55,7 +81,9 @@ public class MessageSenderController(
 
         //var directoryName = $"{DateDirectoryName}/files/{sessionUnit.SessionId}/{sessionUnitId}";
 
-        var directoryName = await BlobResolver.GetDirectoryNameAsync(ChatFilesContainer, "files", blobId, sessionUnit.SessionId.Value, sessionUnitId);
+        //var directoryName = await BlobResolver.GetDirectoryNameAsync(ChatFilesContainer, "files", blobId, sessionUnit.SessionId.Value, sessionUnitId);
+
+        var directoryName = await GetDirectoryNameAsync(blobId, "files", sessionUnit, file);
 
         var blob = await UploadFileAsync(blobId, file, ChatFilesContainer, directoryName, false);
 
@@ -70,7 +98,7 @@ public class MessageSenderController(
                 FileName = file.FileName,
                 Suffix = blob.Suffix,
                 //Url = $"/file?id={blob.Id}",
-                Url = await BlobResolver.GetFileUrlAsync(blob.Id),
+                Url = await GetFileUrlAsync(blob.Id),
                 BlobId = blob.Id,
             }
         });
@@ -137,6 +165,15 @@ public class MessageSenderController(
         return json;
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="sessionUnitId"></param>
+    /// <param name="file">文件</param>
+    /// <param name="quoteMessageId">引用消息</param>
+    /// <param name="remindList">提醒器(sessionUnitId)</param>
+    /// <param name="isOriginal">是否使用原始图片</param>
+    /// <returns></returns>
     [HttpPost]
     [Route("send-upload-image/{sessionUnitId}")]
     public async Task<IActionResult> SendUploadImageAsync(Guid sessionUnitId, IFormFile file, long quoteMessageId, List<Guid> remindList, bool isOriginal)
@@ -176,13 +213,11 @@ public class MessageSenderController(
 
         var sessionUnit = await SessionUnitManager.GetByCacheAsync(sessionUnitId);
 
-        //var directoryName = $"{DateDirectoryName}/images/{sessionUnit.SessionId}/{sessionUnitId}";
-
         var filename = $"{Clock.Now:yyyyMMddhhmmss}_{ShortIdGenerator.Create()}".ToLower();
         //thumbnail
         var thumbnailBlobId = GuidGenerator.Create();
 
-        var directoryName = await BlobResolver.GetDirectoryNameAsync(ChatFilesContainer, "images", thumbnailBlobId, sessionUnit.SessionId.Value, sessionUnitId);
+        var directoryName = await GetDirectoryNameAsync(thumbnailBlobId, "images", sessionUnit, file);
 
         var thumbnailImageSize = MessageSetting.ImageSetting.ThumbnailSize;
 
@@ -191,7 +226,7 @@ public class MessageSenderController(
         var imageContent = new ImageContentInfo()
         {
             BlobId = thumbnailBlobId,
-            ThumbnailUrl = await BlobResolver.GetFileUrlAsync(thumbnailBlobId),
+            ThumbnailUrl = await GetFileUrlAsync(thumbnailBlobId),
             ContentType = file.ContentType,
             Suffix = suffix
         };
@@ -220,7 +255,7 @@ public class MessageSenderController(
 
             imageContent.Size = bytes.Length;
 
-            imageContent.Url = await BlobResolver.GetFileUrlAsync(originalBlobId);
+            imageContent.Url = await GetFileUrlAsync(originalBlobId);
 
             imageContent.Profile = GetImageProfileJson(image);
         }
@@ -245,7 +280,7 @@ public class MessageSenderController(
 
             imageContent.Size = blob.Bytes.Length;
 
-            imageContent.Url = await BlobResolver.GetFileUrlAsync(bigImgBlobId);
+            imageContent.Url = await GetFileUrlAsync(bigImgBlobId);
 
             imageContent.Profile = GetImageProfileJson(img);
         }
@@ -266,10 +301,9 @@ public class MessageSenderController(
     {
         var sessionUnit = await SessionUnitManager.GetByCacheAsync(sessionUnitId);
 
-        //var directoryName = $"{DateDirectoryName}/audios/{sessionUnit.SessionId}/{sessionUnitId}";
         var blobId = GuidGenerator.Create();
 
-        var directoryName = await BlobResolver.GetDirectoryNameAsync(ChatFilesContainer, "audios", blobId, sessionUnit.SessionId.Value, sessionUnitId);
+        var directoryName = await GetDirectoryNameAsync(blobId, "audios", sessionUnit, file);
 
         var soundBlob = await UploadFileAsync(blobId, file, ChatFilesContainer, directoryName, false);
 
@@ -280,8 +314,7 @@ public class MessageSenderController(
             Size = file.Length,
             FileName = Path.GetFileName(file.FileName),
             Suffix = Path.GetExtension(file.FileName),
-            //Url = $"/file?id={soundBlob.Id}",
-            Url = await BlobResolver.GetFileUrlAsync(soundBlob.Id),
+            Url = await GetFileUrlAsync(soundBlob.Id),
             Time = duration.GetValueOrDefault(),
         };
 
@@ -310,11 +343,9 @@ public class MessageSenderController(
     {
         var sessionUnit = await SessionUnitManager.GetByCacheAsync(sessionUnitId);
 
-        //var directoryName = $"{DateDirectoryName}/videos/{sessionUnit.SessionId}/{sessionUnitId}";
-
         var blobId = GuidGenerator.Create();
 
-        var directoryName = await BlobResolver.GetDirectoryNameAsync(ChatFilesContainer, "videos", blobId, sessionUnit.SessionId.Value, sessionUnitId);
+        var directoryName = await GetDirectoryNameAsync(blobId, "videos", sessionUnit, file);
 
         var videoBlob = await UploadFileAsync(blobId, file, ChatFilesContainer, directoryName, false);
 
@@ -326,7 +357,7 @@ public class MessageSenderController(
             FileName = Path.GetFileName(file.FileName),
             Suffix = Path.GetExtension(file.FileName),
             //Url = $"/file?id={videoBlob.Id}"
-            Url = await BlobResolver.GetFileUrlAsync(videoBlob.Id)
+            Url = await GetFileUrlAsync(videoBlob.Id)
         };
 
         if (MessageSetting.VideoSetting.IsGenerateSnapshot)
@@ -381,9 +412,7 @@ public class MessageSenderController(
             //Snapshot
             var snapBlob = await UploadToBlobStoreAsync(mediaInfo.ImageSnapshotPath, $"{videoFileName}.snapshot{suffix}");
 
-            //content.SnapshotUrl = $"/file?id={snapBlob.Id}";
-
-            content.SnapshotUrl = await BlobResolver.GetFileUrlAsync(snapBlob.Id);
+            content.SnapshotUrl = await GetFileUrlAsync(snapBlob.Id);
 
             // Actual width | height
             using Image snapshotImg = Image.Load(snapBlob.Bytes);
@@ -427,15 +456,14 @@ public class MessageSenderController(
                 Bytes = thumbnailResizedBytes
             });
 
-            //content.SnapshotThumbnailUrl = $"/file?id={snapshotThumbnailBlob.Id}";
-            content.SnapshotThumbnailUrl = await BlobResolver.GetFileUrlAsync(snapshotThumbnailBlob.Id);
+            content.SnapshotThumbnailUrl = await GetFileUrlAsync(snapshotThumbnailBlob.Id);
         }
         //GifSnapshot
         if (!string.IsNullOrWhiteSpace(mediaInfo.GifSnapshotPath))
         {
             var gifBlob = await UploadToBlobStoreAsync(mediaInfo.GifSnapshotPath, $"{videoFileName}.snapshot.gif");
-            //content.GifUrl = $"/file?id={gifBlob.Id}";
-            content.GifUrl = await BlobResolver.GetFileUrlAsync(gifBlob.Id);
+
+            content.GifUrl = await GetFileUrlAsync(gifBlob.Id);
         }
 
     }

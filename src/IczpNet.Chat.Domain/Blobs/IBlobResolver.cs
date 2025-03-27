@@ -15,13 +15,10 @@ public interface IBlobResolver
     /// <summary>
     /// 获取目录名称
     /// </summary>
-    /// <param name="container"></param>
-    /// <param name="folder"></param>
-    /// <param name="blobId"></param>
-    /// <param name="sessionId"></param>
-    /// <param name="sessionUnitId"></param>
+    /// <param name="context"></param>
     /// <returns></returns>
-    Task<string> GetDirectoryNameAsync(string container, string folder, Guid blobId, Guid sessionId, Guid sessionUnitId);
+    Task<string> GetDirectoryNameAsync(BlobContext context);
+    
 
     /// <summary>
     /// 获取文件Url
