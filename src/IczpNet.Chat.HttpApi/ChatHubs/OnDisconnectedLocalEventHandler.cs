@@ -29,7 +29,7 @@ public class OnDisconnectedLocalEventHandler(
 
         var commandPayload = new PushPayload()
         {
-            AppUserId = eventData.AppUserId,
+            AppUserId = eventData.UserId,
             Scopes = [],
             Command = "OnConnected",
             Payload = eventData,

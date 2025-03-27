@@ -113,7 +113,7 @@ public class ConnectionPoolManager(
 
         await ConnectionPoolCache.SetAsync(connectionPool.ConnectionId, connectionPool, DistributedCacheEntryOptions, token: token);
 
-        await AddUserConnetionIdsAsync(connectionPool.AppUserId, connectionPool.ConnectionId, token);
+        await AddUserConnetionIdsAsync(connectionPool.UserId, connectionPool.ConnectionId, token);
 
         Logger.LogInformation($"Add connection {connectionPool}");
 
@@ -135,7 +135,7 @@ public class ConnectionPoolManager(
 
         if (connectionPool != null)
         {
-            await RemoveUserConnetionIdsAsync(connectionPool.AppUserId, connectionId, token);
+            await RemoveUserConnetionIdsAsync(connectionPool.UserId, connectionId, token);
         }
 
         var connectionIdList = await GetConnectionIdsAsync(token: token);
@@ -256,7 +256,7 @@ public class ConnectionPoolManager(
     /// <inheritdoc />
     public async Task<IEnumerable<ConnectionPoolCacheItem>> GetListByUserIdAsync(Guid userId, CancellationToken token = default)
     {
-        return [.. (await CreateQueryableAsync(token)).Where(x => x.AppUserId == userId)];
+        return [.. (await CreateQueryableAsync(token)).Where(x => x.UserId == userId)];
     }
 
     /// <inheritdoc />
@@ -269,7 +269,7 @@ public class ConnectionPoolManager(
     public async Task<int> UpdateUserConnectionIdsAsync(Guid userId, CancellationToken token = default)
     {
         var userConnectionIds = (await CreateQueryableAsync(token))
-            .Where(x => x.AppUserId == userId)
+            .Where(x => x.UserId == userId)
             .Select(x => x.ConnectionId)
             .ToList();
 

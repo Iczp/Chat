@@ -736,7 +736,7 @@ public class SessionUnitManager(
         return [.. qurey.Select(x => new SessionUnitCacheItem()
         {
             Id = x.Id,
-            //AppUserId = x.AppUserId,
+            //UserId = x.UserId,
             SessionId = x.SessionId,
             OwnerId = x.OwnerId,
             OwnerObjectType = x.OwnerObjectType,

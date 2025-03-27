@@ -24,7 +24,7 @@ public class ConnectionPoolGetListInput : GetListInput
     /// <summary>
     /// 用户Id
     /// </summary>
-    public Guid? AppUserId { get; set; }
+    public Guid? UserId { get; set; }
 
     /// <summary>
     /// 聊天对象Id

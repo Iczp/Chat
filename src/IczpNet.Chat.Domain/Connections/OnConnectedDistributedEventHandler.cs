@@ -25,7 +25,7 @@ public class OnConnectedDistributedEventHandler(
 
         await ConnectionManager.CreateAsync(new Connection(eventData.ConnectionId, eventData.ChatObjectIdList)
         {
-            AppUserId = eventData.AppUserId,
+            AppUserId = eventData.UserId,
             IpAddress = eventData.IpAddress,
             ServerHostId = eventData.Host,
             ClientId = eventData.ClientId,

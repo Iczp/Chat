@@ -13,7 +13,7 @@ public interface ISessionUnit
     /// </summary>
     Guid? SessionId { get;}
 
-    //Guid? AppUserId { get;}
+    //Guid? UserId { get;}
 
     long OwnerId { get;}
 
