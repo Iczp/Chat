@@ -27,7 +27,7 @@ public class ConnectionPoolCacheItem
     /// <summary>
     /// UserId
     /// </summary>
-    public virtual Guid UserId { get; set; }
+    public virtual Guid? UserId { get; set; }
 
     /// <summary>
     /// UserName

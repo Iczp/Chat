@@ -71,7 +71,7 @@ public class ChatHub(
                 ConnectionId = Context.ConnectionId,
                 Host = CurrentHosted.Name,
                 IpAddress = WebClientInfoProvider.ClientIpAddress,
-                UserId = CurrentUser.Id.Value,
+                UserId = CurrentUser.Id,
                 UserName = CurrentUser.UserName,
                 DeviceId = deviceId,
                 BrowserInfo = WebClientInfoProvider.BrowserInfo,
