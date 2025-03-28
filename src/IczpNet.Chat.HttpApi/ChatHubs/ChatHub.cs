@@ -1,9 +1,9 @@
-﻿using IczpNet.Chat.ChatObjects;
+﻿using IczpNet.AbpCommons.Extensions;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Connections;
 using IczpNet.Chat.Hosting;
 using IczpNet.Pusher.Models;
-using IczpNet.Pusher.Tickets.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.SignalR;
 using Volo.Abp.AspNetCore.WebClientInfo;
 using Volo.Abp.EventBus.Distributed;
+using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.ChatHubs;
@@ -25,6 +26,7 @@ public class ChatHub(
     IWebClientInfoProvider webClientInfoProvider,
     IChatObjectManager chatObjectManager,
     ICurrentHosted currentHosted,
+    IObjectMapper objectMapper,
     IDistributedEventBus distributedEventBus,
     IConnectionPoolManager connectionPoolManager) : AbpHub<IChatClient>
 {
@@ -33,6 +35,7 @@ public class ChatHub(
     public IWebClientInfoProvider WebClientInfoProvider { get; } = webClientInfoProvider;
     public IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
     public ICurrentHosted CurrentHosted { get; } = currentHosted;
+    public IObjectMapper ObjectMapper { get; } = objectMapper;
     public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
     public IConnectionPoolManager ConnectionPoolManager { get; } = connectionPoolManager;
 
@@ -122,12 +125,13 @@ public class ChatHub(
         {
             var cancellationToken = new CancellationTokenSource().Token;
 
-            var connection = await ConnectionPoolManager.GetAsync(connectionId, cancellationToken);
-
             // 注：这里的删除操作可能会被取消，所以需要捕获TaskCanceledException异常
             await ConnectionPoolManager.RemoveAsync(connectionId, cancellationToken);
 
-            var onDisconnectedEto = connection?.As<OnDisconnectedEto>() ?? new OnDisconnectedEto(connectionId);
+            var connection = await ConnectionPoolManager.GetAsync(connectionId, cancellationToken);
+
+            var onDisconnectedEto = connection?.MapTo<OnDisconnectedEto>() ?? new OnDisconnectedEto(connectionId);
+
             // 发布事件
             await DistributedEventBus.PublishAsync(onDisconnectedEto, onUnitOfWorkComplete: false);
 
@@ -142,13 +146,13 @@ public class ChatHub(
         }
         catch (TaskCanceledException ex)
         {
-            Logger.LogWarning(ex, $"TaskCanceledException while deleting connection {connectionId}. UserName: {userName}");
+            Logger.LogWarning(ex, $"[OnDisconnectedAsync] TaskCanceledException while deleting connection {connectionId}. UserName: {userName}");
             // 使用同步方法删除连接池
             ConnectionPoolManager.Remove(connectionId);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, $"Error while deleting connection {connectionId}. UserName: {userName}");
+            Logger.LogError(ex, $"[OnDisconnectedAsync] Error while deleting connection {connectionId}. UserName: {userName}");
             // 处理其他异常
         }
         await base.OnDisconnectedAsync(exception);

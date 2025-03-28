@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
@@ -65,8 +66,13 @@ public class ChatApplicationAutoMapperProfile : Profile
 
         CreateMap<SessionTag, SessionTagInfo>();
 
-        CreateMap<SessionOrganization, SessionOrganizationInfo>();
 
+        //ConnectionPool
+        CreateMap<ConnectionPoolCacheItem, OnDisconnectedEto>().ReverseMap();
+
+        CreateMap<ConnectionPoolCacheItem, OnConnectedEto>().ReverseMap();
+
+        CreateMap<OnDisconnectedEto, OnConnectedEto>().ReverseMap();
 
     }
 }
