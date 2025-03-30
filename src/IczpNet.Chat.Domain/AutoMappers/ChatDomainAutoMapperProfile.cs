@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using IczpNet.AbpTrees;
+using IczpNet.Chat.AutoMappers.Resolvers;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.MessageSections;
@@ -29,9 +30,21 @@ public class ChatApplicationAutoMapperProfile : Profile
 
         //Message
         CreateMap<Message, MessageInfo>().MaxDepth(3);
-        CreateMap<Message, MessageAnyInfo>().MaxDepth(3).ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()));
-        CreateMap<Message, MessageInfo<IContentInfo>>().MaxDepth(3).ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()));
-        CreateMap<Message, MessageInfo<dynamic>>().MaxDepth(3).ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()));
+        CreateMap<Message, MessageAnyInfo>()
+            .MaxDepth(3)
+            .ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()))
+            .ForMember(x => x.SenderSessionUnit, o => o.MapFrom<SenderSessionUnitResolver<MessageAnyInfo>>())
+            ;
+        CreateMap<Message, MessageInfo<IContentInfo>>()
+            .MaxDepth(3)
+            .ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()))
+            .ForMember(x => x.SenderSessionUnit, o => o.MapFrom<SenderSessionUnitResolver<MessageInfo<IContentInfo>>>())
+            ;
+        CreateMap<Message, MessageInfo<dynamic>>()
+            .MaxDepth(3)
+            .ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()))
+            .ForMember(x => x.SenderSessionUnit, o => o.MapFrom<SenderSessionUnitResolver<MessageInfo<dynamic>>>())
+            ; 
         
         CreateMap<Message, MessageWithQuoteInfo>().MaxDepth(3);
         CreateMap(typeof(Message), typeof(MessageInfo<>)).MaxDepth(3);
