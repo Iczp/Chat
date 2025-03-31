@@ -133,10 +133,9 @@ public class SessionUnitSettingAppService(
     /// 设置为静默模式（免打扰）
     /// </summary>
     /// <param name="sessionUnitId">会话单元Id</param>
-    /// <param name="isImmersed"></param>
+    /// <param name="isImmersed">免打扰</param>
     /// <returns></returns>
     [HttpPost]
-    [Obsolete]
     public async Task<SessionUnitOwnerDto> SetImmersedAsync([Required] Guid sessionUnitId, bool isImmersed)
     {
         var entity = await GetAndCheckPolicyAsync(SetImmersedPolicyName, sessionUnitId);
@@ -149,8 +148,8 @@ public class SessionUnitSettingAppService(
     /// <summary>
     /// 保存到通讯录
     /// </summary>
-    /// <param name="sessionUnitId"></param>
-    /// <param name="isContacts"></param>
+    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <param name="isContacts">是否保存到通讯录</param>
     [HttpPost]
     public async Task<SessionUnitOwnerDto> SetIsContactsAsync([Required] Guid sessionUnitId, bool isContacts)
     {
@@ -164,8 +163,8 @@ public class SessionUnitSettingAppService(
     /// <summary>
     /// 是否显示成员名称
     /// </summary>
-    /// <param name="sessionUnitId"></param>
-    /// <param name="isShowMemberName"></param>
+    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <param name="isShowMemberName">是否显示成员名称</param>
     [HttpPost]
     public async Task<SessionUnitOwnerDto> SetIsShowMemberNameAsync([Required] Guid sessionUnitId, bool isShowMemberName)
     {
@@ -175,8 +174,6 @@ public class SessionUnitSettingAppService(
 
         return await MapToDtoAsync(entity);
     }
-
-
 
     /// <summary>
     /// 移除会话
@@ -244,7 +241,6 @@ public class SessionUnitSettingAppService(
     /// <param name="sessionUnitId">会话单元Id</param>
     /// <param name="messageId">消息Id</param>
     /// <returns></returns>
-    /// <exception cref="NotImplementedException"></exception>
     [HttpPost]
     public virtual async Task DeleteMessageAsync([Required] Guid sessionUnitId, long messageId)
     {
