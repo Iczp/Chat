@@ -25,6 +25,7 @@ using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.ObjectMapping;
+using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.SessionUnits;
 
@@ -38,6 +39,7 @@ public class SessionUnitManager(
     IChatObjectRepository chatObjectRepository,
     IMessageSender messageSender,
     IObjectMapper objectMapper,
+    IUnitOfWorkManager unitOfWorkManager,
     ISessionUnitIdGenerator idGenerator) : DomainService, ISessionUnitManager
 {
     protected ISessionUnitRepository Repository { get; } = repository;
@@ -53,6 +55,7 @@ public class SessionUnitManager(
     protected IChatObjectRepository ChatObjectRepository { get; } = chatObjectRepository;
     protected IMessageSender MessageSender { get; } = messageSender;
     protected IObjectMapper ObjectMapper { get; } = objectMapper;
+    public IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
     protected ISessionUnitIdGenerator IdGenerator { get; } = idGenerator;
 
     protected static DistributedCacheEntryOptions DistributedCacheEntryOptions => new()
@@ -230,7 +233,7 @@ public class SessionUnitManager(
 
         //await SetEntityAsync(entity, x => x.UpdateCounter(counter));
         // 更新记数器
-        await Repository.UpdateCountersync(counter);
+        return await Repository.UpdateCountersync(counter);
 
         //await UpdateCacheItemsAsync(muterSessionUnit, items =>
         //{
@@ -255,7 +258,14 @@ public class SessionUnitManager(
         //    return true;
         //});
 
-        return entity;
+        //await UnitOfWorkManager.Current.SaveChangesAsync();
+
+        //(await Repository.GetDbContextAsync()).ChangeTracker.Clear();
+
+        ////更新后 重新获取实体
+        //return await Repository.GetAsync(entity.Id);
+
+        //return entity;
     }
 
     /// <inheritdoc />

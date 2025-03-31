@@ -5,11 +5,13 @@ using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
+using System.Security.Cryptography.Xml;
 using System.Threading.Tasks;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -218,9 +220,11 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
 
 
     /// <inheritdoc />
-    public virtual async Task<int> UpdateCountersync(SessionUnitCounterInfo info)
+    public virtual async Task<SessionUnit> UpdateCountersync(SessionUnitCounterInfo info)
     {
         var context = await GetDbContextAsync();
+
+        Logger.LogInformation($"{nameof(UpdateCountersync)} {nameof(SessionUnitCounterInfo)}:{info}");
 
         //更新已读消息
         var count = await context.SessionUnitSetting
@@ -230,13 +234,9 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
                  .SetProperty(b => b.ReadedMessageId, b => info.ReadedMessageId)
              );
 
-        if (count == 0)
-        {
-            return 0;
-        }
-
         //更新角标
-        return await context.SessionUnit
+        //return 
+        await context.SessionUnit
             .Where(x => x.Id == info.Id)
             .ExecuteUpdateAsync(s => s
                  .SetProperty(b => b.PublicBadge, b => info.PublicBadge)
@@ -245,5 +245,18 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
                  .SetProperty(b => b.RemindMeCount, b => info.RemindMeCount)
                  .SetProperty(b => b.RemindAllCount, b => info.RemindAllCount)
              );
+
+        // 确保更新已经提交
+        //await context.SaveChangesAsync();
+
+        // 清除缓存
+        //context.ChangeTracker.Clear();
+
+        // 重新查询最新数据
+        var entity = await context.SessionUnit.AsNoTracking().Where(x => x.Id == info.Id).FirstOrDefaultAsync();
+
+        Logger.LogInformation($"{nameof(UpdateCountersync)} after update:{nameof(entity.LastMessageId)}={entity.LastMessageId}, {nameof(entity.PublicBadge)}={entity.PublicBadge}");
+
+        return entity;
     }
 }

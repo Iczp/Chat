@@ -122,9 +122,9 @@ public class SessionUnitSettingAppService(
     {
         var entity = await GetAndCheckPolicyAsync(SetReadedPolicyName, sessionUnitId);
 
-        await SessionUnitManager.SetReadedMessageIdAsync(entity, isForce, messageId);
+        var sessionUnit = await SessionUnitManager.SetReadedMessageIdAsync(entity, isForce, messageId);
 
-        return await MapToDtoAsync(entity);
+        return await MapToDtoAsync(sessionUnit);
     }
 
     /// <summary>
@@ -138,9 +138,9 @@ public class SessionUnitSettingAppService(
     {
         var entity = await GetAndCheckPolicyAsync(SetImmersedPolicyName, sessionUnitId);
 
-        await SessionUnitManager.SetImmersedAsync(entity, isImmersed);
+        var sessionUnit = await SessionUnitManager.SetImmersedAsync(entity, isImmersed);
 
-        return await MapToDtoAsync(entity);
+        return await MapToDtoAsync(sessionUnit);
     }
 
     /// <summary>
@@ -153,9 +153,9 @@ public class SessionUnitSettingAppService(
     {
         var entity = await GetAndCheckPolicyAsync(SetIsContactsPolicyName, sessionUnitId);
 
-        await SessionUnitManager.SetIsContactsAsync(entity, isContacts);
+        var sessionUnit = await SessionUnitManager.SetIsContactsAsync(entity, isContacts);
 
-        return await MapToDtoAsync(entity);
+        return await MapToDtoAsync(sessionUnit);
     }
 
     /// <summary>
@@ -168,9 +168,9 @@ public class SessionUnitSettingAppService(
     {
         var entity = await GetAndCheckPolicyAsync(SetIsShowMemberNamePolicyName, sessionUnitId);
 
-        await SessionUnitManager.SetIsShowMemberNameAsync(entity, isShowMemberName);
+        var sessionUnit = await SessionUnitManager.SetIsShowMemberNameAsync(entity, isShowMemberName);
 
-        return await MapToDtoAsync(entity);
+        return await MapToDtoAsync(sessionUnit);
     }
 
 
@@ -185,9 +185,9 @@ public class SessionUnitSettingAppService(
     {
         var entity = await GetAndCheckPolicyAsync(RemoveSessionPolicyName, sessionUnitId);
 
-        await SessionUnitManager.RemoveAsync(entity);
+        var sessionUnit = await SessionUnitManager.RemoveAsync(entity);
 
-        return await MapToDtoAsync(entity);
+        return await MapToDtoAsync(sessionUnit);
     }
 
     /// <summary>
@@ -200,9 +200,9 @@ public class SessionUnitSettingAppService(
     {
         var entity = await GetAndCheckPolicyAsync(RemoveSessionPolicyName, sessionUnitId);
 
-        await SessionUnitManager.RemoveAsync(entity);
+        var sessionUnit = await SessionUnitManager.RemoveAsync(entity);
 
-        return await MapToDtoAsync(entity);
+        return await MapToDtoAsync(sessionUnit);
     }
 
     /// <summary>
@@ -215,9 +215,9 @@ public class SessionUnitSettingAppService(
     {
         var entity = await GetAndCheckPolicyAsync(KillPolicyName, sessionUnitId);
 
-        await SessionUnitManager.KillAsync(entity);
+        var sessionUnit = await SessionUnitManager.KillAsync(entity);
 
-        return await MapToDtoAsync(entity);
+        return await MapToDtoAsync(sessionUnit);
     }
 
     /// <summary>
@@ -230,9 +230,9 @@ public class SessionUnitSettingAppService(
     {
         var entity = await GetAndCheckPolicyAsync(ClearMessagePolicyName, sessionUnitId);
 
-        await SessionUnitManager.ClearMessageAsync(entity);
+        var sessionUnit = await SessionUnitManager.ClearMessageAsync(entity);
 
-        return await MapToDtoAsync(entity);
+        return await MapToDtoAsync(sessionUnit);
     }
 
     /// <summary>

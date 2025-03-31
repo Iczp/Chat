@@ -30,7 +30,7 @@ public interface ISessionUnitRepository : IRepository<SessionUnit, Guid>
     /// </summary>
     /// <param name="info"></param>
     /// <returns></returns>
-    Task<int> UpdateCountersync(SessionUnitCounterInfo info);
+    Task<SessionUnit> UpdateCountersync(SessionUnitCounterInfo info);
 
 
 }
