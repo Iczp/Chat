@@ -127,6 +127,7 @@ public interface ISessionUnitManager
     /// <param name="entity"></param>
     /// <param name="memberName"></param>
     /// <returns></returns>
+    [Obsolete($"Move to {nameof(ISessionUnitSettingManager)}")] 
     Task<SessionUnit> SetMemberNameAsync(SessionUnit entity, string memberName);
 
     /// <summary>
@@ -135,6 +136,7 @@ public interface ISessionUnitManager
     /// <param name="entity"></param>
     /// <param name="rename"></param>
     /// <returns></returns>
+    [Obsolete($"Move to {nameof(ISessionUnitSettingManager)}")] 
     Task<SessionUnit> SetRenameAsync(SessionUnit entity, string rename);
 
     /// <summary>
@@ -155,11 +157,21 @@ public interface ISessionUnitManager
     Task<SessionUnit> SetReadedMessageIdAsync(SessionUnit entity, bool isForce = false, long? messageId = null);
 
     /// <summary>
+    /// 设置已读的消息Id
+    /// </summary>
+    /// <param name="sessionUnitId"></param>
+    /// <param name="isForce"></param>
+    /// <param name="messageId"></param>
+    /// <returns></returns>
+    Task<SessionUnit> SetReadedMessageIdAsync(Guid sessionUnitId, bool isForce = false, long? messageId = null);
+
+    /// <summary>
     /// 设置是否为沉浸式
     /// </summary>
     /// <param name="entity"></param>
     /// <param name="isImmersed"></param>
     /// <returns></returns>
+    [Obsolete($"Move to {nameof(ISessionUnitSettingManager)}")] 
     Task<SessionUnit> SetImmersedAsync(SessionUnit entity, bool isImmersed);
 
     /// <summary>
@@ -168,6 +180,7 @@ public interface ISessionUnitManager
     /// <param name="entity"></param>
     /// <param name="isContacts"></param>
     /// <returns></returns>
+    [Obsolete($"Move to {nameof(ISessionUnitSettingManager)}")] 
     Task<SessionUnit> SetIsContactsAsync(SessionUnit entity, bool isContacts);
 
     /// <summary>
@@ -176,6 +189,7 @@ public interface ISessionUnitManager
     /// <param name="entity"></param>
     /// <param name="isShowMemberName"></param>
     /// <returns></returns>
+    [Obsolete($"Move to {nameof(ISessionUnitSettingManager)}")] 
     Task<SessionUnit> SetIsShowMemberNameAsync(SessionUnit entity, bool isShowMemberName);
 
     /// <summary>
@@ -183,6 +197,7 @@ public interface ISessionUnitManager
     /// </summary>
     /// <param name="entity"></param>
     /// <returns></returns>
+    [Obsolete($"Move to {nameof(ISessionUnitSettingManager)}")] 
     Task<SessionUnit> RemoveAsync(SessionUnit entity);
 
     /// <summary>
@@ -190,6 +205,7 @@ public interface ISessionUnitManager
     /// </summary>
     /// <param name="entity"></param>
     /// <returns></returns>
+    [Obsolete($"Move to {nameof(ISessionUnitSettingManager)}")] 
     Task<SessionUnit> KillAsync(SessionUnit entity);
 
     /// <summary>
@@ -197,6 +213,7 @@ public interface ISessionUnitManager
     /// </summary>
     /// <param name="entity"></param>
     /// <returns></returns>
+    [Obsolete($"Move to {nameof(ISessionUnitSettingManager)}")] 
     Task<SessionUnit> ClearMessageAsync(SessionUnit entity);
 
     /// <summary>
@@ -205,6 +222,7 @@ public interface ISessionUnitManager
     /// <param name="entity"></param>
     /// <param name="messageId"></param>
     /// <returns></returns>
+    [Obsolete($"Move to {nameof(ISessionUnitSettingManager)}")] 
     Task<SessionUnit> DeleteMessageAsync(SessionUnit entity, long messageId);
 
     /// <summary>
@@ -464,6 +482,7 @@ public interface ISessionUnitManager
     /// <param name="setterSessionUnit"></param>
     /// <param name="isSendMessage"></param>
     /// <returns></returns>
+    [Obsolete($"Move to {nameof(ISessionUnitSettingManager.SetMuteExpireTimeAsync)}")]
     Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime, SessionUnit setterSessionUnit, bool isSendMessage);
 
     /// <summary>
@@ -472,6 +491,7 @@ public interface ISessionUnitManager
     /// <param name="muterSessionUnit"></param>
     /// <param name="muteExpireTime"></param>
     /// <returns></returns>
+    [Obsolete($"Move to {nameof(ISessionUnitSettingManager.SetMuteExpireTimeAsync)}")]
     Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime);
 
 }

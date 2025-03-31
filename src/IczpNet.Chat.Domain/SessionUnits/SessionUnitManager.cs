@@ -200,6 +200,12 @@ public class SessionUnitManager(
     {
         return SetEntityAsync(entity, x => x.SetTopping(isTopping));
     }
+    /// <inheritdoc />
+    public virtual async Task<SessionUnit> SetReadedMessageIdAsync(Guid sessionUnitId, bool isForce = false, long? messageId = null)
+    {
+        var entity = await GetAsync(sessionUnitId);
+        return await SetReadedMessageIdAsync(entity, isForce, messageId);
+    }
 
     /// <inheritdoc />
     public virtual async Task<SessionUnit> SetReadedMessageIdAsync(SessionUnit entity, bool isForce = false, long? messageId = null)
@@ -234,38 +240,6 @@ public class SessionUnitManager(
         //await SetEntityAsync(entity, x => x.UpdateCounter(counter));
         // 更新记数器
         return await Repository.UpdateCountersync(counter);
-
-        //await UpdateCacheItemsAsync(muterSessionUnit, items =>
-        //{
-        //    var item = items.FirstOrDefault(x => x.Id != muterSessionUnit.Id);
-
-        //    if (item == null)
-        //    {
-        //        return false;
-        //    }
-
-        //    if (isForce || readedMessageId > item.ReadedMessageId.GetValueOrDefault())
-        //    {
-        //        item.ReadedMessageId = readedMessageId;
-        //    }
-
-        //    item.PublicBadge = 0;
-        //    item.PrivateBadge = 0;
-        //    item.RemindAllCount = 0;
-        //    item.FollowingCount = 0;
-        //    //item.ReadedMessageId = messageId;
-
-        //    return true;
-        //});
-
-        //await UnitOfWorkManager.Current.SaveChangesAsync();
-
-        //(await Repository.GetDbContextAsync()).ChangeTracker.Clear();
-
-        ////更新后 重新获取实体
-        //return await Repository.GetAsync(entity.Id);
-
-        //return entity;
     }
 
     /// <inheritdoc />
@@ -1009,6 +983,7 @@ public class SessionUnitManager(
     }
 
     /// <inheritdoc />
+    [Obsolete($"Move to {nameof(ISessionUnitSettingManager.SetMuteExpireTimeAsync)}")]
     public virtual async Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime, SessionUnit setterSessionUnit, bool isSendMessage)
     {
         Assert.If(muterSessionUnit.Setting.IsCreator, $"Creator can't be mute.");
@@ -1050,6 +1025,7 @@ public class SessionUnitManager(
     }
 
     /// <inheritdoc />
+    [Obsolete($"Move to {nameof(ISessionUnitSettingManager.SetMuteExpireTimeAsync)}")]
     public virtual async Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime)
     {
         var setterSessionUnit = await SessionUnitReadOnlyRepository.FirstOrDefaultAsync(x => x.SessionId == muterSessionUnit.SessionId && x.IsStatic && !x.IsPublic && x.Id != muterSessionUnit.Id);

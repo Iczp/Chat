@@ -19,6 +19,7 @@ namespace IczpNet.Chat.SessionUnitSettings;
 /// 聊天设置
 /// </summary>
 public class SessionUnitSettingAppService(
+    ISessionUnitSettingManager sessionUnitSettingManager,
     ISessionUnitRepository repository,
     IRepository<ContactTag, Guid> contactTagRepository) : ChatAppService, ISessionUnitSettingAppService
 {
@@ -37,6 +38,7 @@ public class SessionUnitSettingAppService(
     protected virtual string SetContactTagsPolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.SetContactTags;
     protected virtual string KillPolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.Kill;
     protected virtual string SetMuteExpireTimePolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.SetMuteExpireTime;
+    public ISessionUnitSettingManager SessionUnitSettingManager { get; } = sessionUnitSettingManager;
     protected ISessionUnitRepository Repository { get; } = repository;
     protected IRepository<ContactTag, Guid> ContactTagRepository { get; } = contactTagRepository;
 
@@ -73,7 +75,7 @@ public class SessionUnitSettingAppService(
     {
         var entity = await GetAndCheckPolicyAsync(SetMemberNamePolicyName, sessionUnitId);
 
-        await SessionUnitManager.SetMemberNameAsync(entity, memberName);
+        await SessionUnitSettingManager.SetMemberNameAsync(sessionUnitId, memberName);
 
         return await MapToDtoAsync(entity);
     }
@@ -89,7 +91,7 @@ public class SessionUnitSettingAppService(
     {
         var entity = await GetAndCheckPolicyAsync(SetRenamePolicyName, sessionUnitId);
 
-        await SessionUnitManager.SetRenameAsync(entity, rename);
+        await SessionUnitSettingManager.SetRenameAsync(sessionUnitId, rename);
 
         return await MapToDtoAsync(entity);
     }
@@ -134,13 +136,14 @@ public class SessionUnitSettingAppService(
     /// <param name="isImmersed"></param>
     /// <returns></returns>
     [HttpPost]
+    [Obsolete]
     public async Task<SessionUnitOwnerDto> SetImmersedAsync([Required] Guid sessionUnitId, bool isImmersed)
     {
         var entity = await GetAndCheckPolicyAsync(SetImmersedPolicyName, sessionUnitId);
 
-        var sessionUnit = await SessionUnitManager.SetImmersedAsync(entity, isImmersed);
+        var sessionUnit = await SessionUnitSettingManager.SetImmersedAsync(sessionUnitId, isImmersed);
 
-        return await MapToDtoAsync(sessionUnit);
+        return await MapToDtoAsync(entity);
     }
 
     /// <summary>
@@ -153,9 +156,9 @@ public class SessionUnitSettingAppService(
     {
         var entity = await GetAndCheckPolicyAsync(SetIsContactsPolicyName, sessionUnitId);
 
-        var sessionUnit = await SessionUnitManager.SetIsContactsAsync(entity, isContacts);
+        var sessionUnit = await SessionUnitSettingManager.SetIsContactsAsync(sessionUnitId, isContacts);
 
-        return await MapToDtoAsync(sessionUnit);
+        return await MapToDtoAsync(entity);
     }
 
     /// <summary>
@@ -168,9 +171,9 @@ public class SessionUnitSettingAppService(
     {
         var entity = await GetAndCheckPolicyAsync(SetIsShowMemberNamePolicyName, sessionUnitId);
 
-        var sessionUnit = await SessionUnitManager.SetIsShowMemberNameAsync(entity, isShowMemberName);
+        var sessionUnit = await SessionUnitSettingManager.SetIsShowMemberNameAsync(sessionUnitId, isShowMemberName);
 
-        return await MapToDtoAsync(sessionUnit);
+        return await MapToDtoAsync(entity);
     }
 
 
@@ -185,9 +188,9 @@ public class SessionUnitSettingAppService(
     {
         var entity = await GetAndCheckPolicyAsync(RemoveSessionPolicyName, sessionUnitId);
 
-        var sessionUnit = await SessionUnitManager.RemoveAsync(entity);
+        var sessionUnit = await SessionUnitSettingManager.RemoveAsync(sessionUnitId);
 
-        return await MapToDtoAsync(sessionUnit);
+        return await MapToDtoAsync(entity);
     }
 
     /// <summary>
@@ -200,9 +203,9 @@ public class SessionUnitSettingAppService(
     {
         var entity = await GetAndCheckPolicyAsync(RemoveSessionPolicyName, sessionUnitId);
 
-        var sessionUnit = await SessionUnitManager.RemoveAsync(entity);
+        var sessionUnit = await SessionUnitSettingManager.RemoveAsync(sessionUnitId);
 
-        return await MapToDtoAsync(sessionUnit);
+        return await MapToDtoAsync(entity);
     }
 
     /// <summary>
@@ -215,9 +218,9 @@ public class SessionUnitSettingAppService(
     {
         var entity = await GetAndCheckPolicyAsync(KillPolicyName, sessionUnitId);
 
-        var sessionUnit = await SessionUnitManager.KillAsync(entity);
+        var sessionUnit = await SessionUnitSettingManager.KillAsync(sessionUnitId);
 
-        return await MapToDtoAsync(sessionUnit);
+        return await MapToDtoAsync(entity);
     }
 
     /// <summary>
@@ -230,9 +233,9 @@ public class SessionUnitSettingAppService(
     {
         var entity = await GetAndCheckPolicyAsync(ClearMessagePolicyName, sessionUnitId);
 
-        var sessionUnit = await SessionUnitManager.ClearMessageAsync(entity);
+        var sessionUnit = await SessionUnitSettingManager.ClearMessageAsync(sessionUnitId);
 
-        return await MapToDtoAsync(sessionUnit);
+        return await MapToDtoAsync(entity);
     }
 
     /// <summary>
@@ -284,10 +287,10 @@ public class SessionUnitSettingAppService(
 
         await CheckPolicyAsync(SetMuteExpireTimePolicyName, setterSessionUnit);
 
-        var muterSessionUnit = await GetEntityAsync(muterSessionUnitId);
+        //var muterSessionUnit = await GetEntityAsync(muterSessionUnitId);
 
         DateTime? muteExpireTime = seconds == 0 ? null : Clock.Now.AddSeconds(seconds);
 
-        return await SessionUnitManager.SetMuteExpireTimeAsync(muterSessionUnit, muteExpireTime, setterSessionUnit, true);
+        return await SessionUnitSettingManager.SetMuteExpireTimeAsync(muterSessionUnitId, muteExpireTime, setterSessionUnit, true);
     }
 }
