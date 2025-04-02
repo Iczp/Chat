@@ -1,7 +1,6 @@
 ﻿using IczpNet.Chat.ConnectionPools.Dtos;
 using System.Collections.Generic;
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 
@@ -21,7 +20,18 @@ public interface IConnectionPoolAppService
     /// </summary>
     /// <returns></returns>
     Task<PagedResultDto<ConnectionPoolCacheItem>> GetListAsync(ConnectionPoolGetListInput input);
+    /// <summary>
+    /// 获取在线人数列表(聊天对象)
+    /// </summary>
+    /// <param name="chatObjectIdList"></param>
+    /// <returns></returns>
+    Task<PagedResultDto<ConnectionPoolCacheItem>> GetListByChatObjectAsync(List<long> chatObjectIdList);
 
+    /// <summary>
+    /// 获取在线人数列表(当前用户)
+    /// </summary>
+    /// <returns></returns>
+    Task<PagedResultDto<ConnectionPoolCacheItem>> GetListByCurrentUserAsync();
     /// <summary>
     /// 获取连接
     /// </summary>

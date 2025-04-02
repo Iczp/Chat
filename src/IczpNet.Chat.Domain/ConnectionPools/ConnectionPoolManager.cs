@@ -59,7 +59,7 @@ public class ConnectionPoolManager(
             return await GetConnectionIdsAsync(token);
         }
 
-        return (await CreateQueryableAsync(token)).Where(x => x.Host == host).Select(x => x.ConnectionId).ToList();
+        return [.. (await CreateQueryableAsync(token)).Where(x => x.Host == host).Select(x => x.ConnectionId)];
     }
 
     protected async Task SetConnectionIdsAsync(List<string> connectionIdList, CancellationToken token = default)
@@ -123,6 +123,24 @@ public class ConnectionPoolManager(
         Logger.LogInformation($"Online totalCount {connectionList.Count}");
 
         return true;
+    }
+
+    /// <summary>
+    /// 更新活动时间 activeTime
+    /// </summary>
+    /// <param name="connectionId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    public async Task UpdateActiveTimeAsync(string connectionId, CancellationToken token = default)
+    {
+        var connectionPool = await ConnectionPoolCache.GetAsync(connectionId, token: token);
+        if (connectionPool == null)
+        {
+            Logger.LogWarning($"{nameof(UpdateActiveTimeAsync)} Fail: Not found, connectionId:{connectionId}");
+            return;
+        }
+        connectionPool.ActiveTime = Clock.Now;
+        await ConnectionPoolCache.SetAsync(connectionPool.ConnectionId, connectionPool, DistributedCacheEntryOptions, token: token);
     }
 
     /// <inheritdoc />
@@ -278,5 +296,13 @@ public class ConnectionPoolManager(
 
         return userConnectionIds.Count;
     }
+
+    public async Task<List<ConnectionPoolCacheItem>> GetListByChatObjectIdAsync(List<long> chatObjectIdList, CancellationToken token = default)
+    {
+        return (await GetAllListAsync(token))
+            .Where(x => x.ChatObjectIdList.Any(d => chatObjectIdList.Contains(d)))
+            .ToList();
+    }
+
 
 }

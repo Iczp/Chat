@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.BaseDtos;
 using System;
+using System.Collections.Generic;
 
 namespace IczpNet.Chat.ConnectionPools.Dtos;
 
@@ -30,4 +31,29 @@ public class ConnectionPoolGetListInput : GetListInput
     /// 聊天对象Id
     /// </summary>
     public long? ChatObjectId { get; set; }
+
+    /// <summary>
+    /// 聊天对象Id
+    /// </summary>
+    public List<long> ChatObjectIdList { get; set; }
+
+    /// <summary>
+    /// 起始活跃时间
+    /// </summary>
+    public virtual DateTime? StartActiveTime { get; set; }
+
+    /// <summary>
+    /// 终始活跃时间
+    /// </summary>
+    public virtual DateTime? EndActiveTime { get; set; }
+
+    /// <summary>
+    /// 起始创建时间
+    /// </summary>
+    public virtual DateTime? StartCreationTime { get; set; }
+
+    /// <summary>
+    /// 终始创建时间
+    /// </summary>
+    public virtual DateTime? EndCreationTime { get; set; }
 }

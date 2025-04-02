@@ -30,11 +30,14 @@ using Volo.Abp.Uow;
 namespace IczpNet.Chat.SessionUnits;
 
 public class SessionUnitManager(
+    IChatObjectManager chatObjectManager,
     ISessionUnitRepository repository,
     IReadOnlyRepository<SessionUnit, Guid> sessionUnitReadOnlyRepository,
     IReadOnlyRepository<Message, long> messageReadOnlyRepository,
     IDistributedCache<List<SessionUnitCacheItem>, string> sessionUnitListCache,
     IDistributedCache<SessionUnitCacheItem, Guid> sessionUnitItemCache,
+    IDistributedCache<List<SessionUnitCacheItem>, long> friendsCache,
+    IDistributedCache<List<SessionUnitCacheItem>, Guid> userFriendsCache,
     IDistributedCache<string, Guid> sessionUnitCountCache,
     IChatObjectRepository chatObjectRepository,
     IMessageSender messageSender,
@@ -42,6 +45,7 @@ public class SessionUnitManager(
     IUnitOfWorkManager unitOfWorkManager,
     ISessionUnitIdGenerator idGenerator) : DomainService, ISessionUnitManager
 {
+    public IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
     protected ISessionUnitRepository Repository { get; } = repository;
     /// <summary>
     /// SessionUnit 更新频繁，使用 ReadOnlyRepository 防止意外更新到数据库，引起并发冲突 --2025.03.19
@@ -50,6 +54,8 @@ public class SessionUnitManager(
     protected IReadOnlyRepository<Message, long> MessageReadOnlyRepository { get; } = messageReadOnlyRepository;
     protected IDistributedCache<List<SessionUnitCacheItem>, string> SessionUnitListCache { get; } = sessionUnitListCache;
     public IDistributedCache<SessionUnitCacheItem, Guid> SessionUnitItemCache { get; } = sessionUnitItemCache;
+    public IDistributedCache<List<SessionUnitCacheItem>, long> FriendsCache { get; } = friendsCache;
+    public IDistributedCache<List<SessionUnitCacheItem>, Guid> UserFriendsCache { get; } = userFriendsCache;
     protected IDistributedCache<string, Guid> SessionUnitCountCache { get; } = sessionUnitCountCache;
     protected IFollowManager FollowManager => LazyServiceProvider.LazyGetRequiredService<IFollowManager>();
     protected IChatObjectRepository ChatObjectRepository { get; } = chatObjectRepository;
@@ -752,6 +758,26 @@ public class SessionUnitManager(
 
         return list;
     }
+    /// <inheritdoc />
+    public virtual async Task<List<SessionUnitCacheItem>> GetListByUserIdAsync(Guid userId)
+    {
+        var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(userId);
+        var list = ToCacheItem((await SessionUnitReadOnlyRepository.GetQueryableAsync())
+                .Where(SessionUnit.GetActivePredicate(Clock.Now))
+                .Where(x => chatObjectIdList.Contains(x.OwnerId))
+            );
+        return list;
+    }
+
+    /// <inheritdoc />
+    public virtual async Task<List<SessionUnitCacheItem>> GetListByOwnerIdAsync(long ownerId)
+    {
+        var list = ToCacheItem((await SessionUnitReadOnlyRepository.GetQueryableAsync())
+                .Where(SessionUnit.GetActivePredicate(Clock.Now))
+                .Where(x => x.OwnerId == ownerId)
+            );
+        return list;
+    }
 
     /// <inheritdoc />
     public virtual async Task RemoveCacheListBySessionIdAsync(Guid sessionId)
@@ -1031,5 +1057,17 @@ public class SessionUnitManager(
         var setterSessionUnit = await SessionUnitReadOnlyRepository.FirstOrDefaultAsync(x => x.SessionId == muterSessionUnit.SessionId && x.IsStatic && !x.IsPublic && x.Id != muterSessionUnit.Id);
 
         return await SetMuteExpireTimeAsync(muterSessionUnit, muteExpireTime, setterSessionUnit, setterSessionUnit != null);
+    }
+
+    /// <inheritdoc />
+    public virtual Task<List<SessionUnitCacheItem>> GetUserFriendsAsync(Guid userId)
+    {
+        return UserFriendsCache.GetOrAddAsync(userId, () => GetListByUserIdAsync(userId));
+    }
+
+    /// <inheritdoc />
+    public virtual Task<List<SessionUnitCacheItem>> GetFriendsAsync(long chatObjectId)
+    {
+        return FriendsCache.GetOrAddAsync(chatObjectId, () => GetListByOwnerIdAsync(chatObjectId));
     }
 }

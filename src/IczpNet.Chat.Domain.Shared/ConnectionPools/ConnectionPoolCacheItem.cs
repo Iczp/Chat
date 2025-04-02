@@ -55,9 +55,14 @@ public class ConnectionPoolCacheItem
     public virtual string DeviceInfo { get; set; }
 
     /// <summary>
+    /// ActiveTime
+    /// </summary>
+    public virtual DateTime? ActiveTime { get; set; }
+
+    /// <summary>
     /// CreationTime
     /// </summary>
-    public virtual DateTime? CreationTime { get; set; } = DateTime.UtcNow;
+    public virtual DateTime CreationTime { get; set; }
 
     /// <summary>
     /// ChatObjectIdList

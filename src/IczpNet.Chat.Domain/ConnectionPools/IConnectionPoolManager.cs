@@ -20,6 +20,14 @@ public interface IConnectionPoolManager
     Task<bool> AddAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default);
 
     /// <summary>
+    /// 设置活跃时间
+    /// </summary>
+    /// <param name="connectionId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task UpdateActiveTimeAsync(string connectionId, CancellationToken token = default);
+
+    /// <summary>
     /// 移除连接
     /// </summary>
     /// <param name="connectionPool"></param>
@@ -84,6 +92,8 @@ public interface IConnectionPoolManager
     /// <returns></returns>
     Task<ConnectionPoolCacheItem> GetAsync(string connectionId, CancellationToken token = default);
 
+
+
     /// <summary>
     /// 更新连接数量
     /// </summary>
@@ -114,4 +124,14 @@ public interface IConnectionPoolManager
     /// <param name="token"></param>
     /// <returns></returns>
     Task<int> UpdateUserConnectionIdsAsync(Guid userId, CancellationToken token = default);
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="chatObjectIdList"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<List<ConnectionPoolCacheItem>> GetListByChatObjectIdAsync(List<long> chatObjectIdList, CancellationToken token = default);
+
+
 }

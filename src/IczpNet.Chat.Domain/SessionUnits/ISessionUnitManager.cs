@@ -393,6 +393,20 @@ public interface ISessionUnitManager
     Task<List<SessionUnitCacheItem>> GetListBySessionIdAsync(Guid sessionId);
 
     /// <summary>
+    /// 获取好友列表
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <returns></returns>
+    Task<List<SessionUnitCacheItem>> GetListByUserIdAsync(Guid userId);
+
+    /// <summary>
+    /// 获取好友列表(ChatObject)
+    /// </summary>
+    /// <param name="ownerId">chatObjectId</param>
+    /// <returns></returns>
+    Task<List<SessionUnitCacheItem>> GetListByOwnerIdAsync(long ownerId);
+
+    /// <summary>
     /// 移除缓存
     /// </summary>
     /// <param name="sessionId"></param>
@@ -494,4 +508,17 @@ public interface ISessionUnitManager
     [Obsolete($"Move to {nameof(ISessionUnitSettingManager.SetMuteExpireTimeAsync)}")]
     Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime);
 
+    /// <summary>
+    /// 获取我的朋友(用户)
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <returns></returns>
+    Task<List<SessionUnitCacheItem>> GetUserFriendsAsync(Guid userId);
+
+    /// <summary>
+    /// 获取我的朋友(ChatObject)
+    /// </summary>
+    /// <param name="chatObjectId"></param>
+    /// <returns></returns>
+    Task<List<SessionUnitCacheItem>> GetFriendsAsync(long chatObjectId);
 }

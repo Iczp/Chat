@@ -168,4 +168,11 @@ public class ChatHub(
             Payload = all.ToList(),
         });
     }
+
+    public async Task<long> Heartbeat(long ticks)
+    {
+        Logger.LogInformation($"Heartbeat:{ticks}");
+        await ConnectionPoolManager.UpdateActiveTimeAsync(Context.ConnectionId);
+        return ticks;
+    }
 }
