@@ -238,4 +238,11 @@ public class ToolAppService : ChatAppService
         await Task.Yield();
         return Clock.Now.ToString();
     }
+
+    public virtual async Task<List<TimeZoneInfo>> GetSystemTimeZonesAsync()
+    {
+        await Task.Yield();
+        var timeZones = TimeZoneInfo.GetSystemTimeZones();
+        return [.. timeZones];
+    }
 }

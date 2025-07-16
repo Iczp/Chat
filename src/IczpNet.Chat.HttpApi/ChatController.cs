@@ -23,6 +23,7 @@ public abstract class ChatController : AbpControllerBase
 {
     protected IShortIdGenerator ShortIdGenerator => LazyServiceProvider.LazyGetRequiredService<IShortIdGenerator>();
     protected IBlobManager BlobManager => LazyServiceProvider.LazyGetRequiredService<IBlobManager>();
+    protected IBlobResolver BlobResolver => LazyServiceProvider.LazyGetRequiredService<IBlobResolver>();
     protected IImageResizer ImageResizer => LazyServiceProvider.LazyGetRequiredService<IImageResizer>();
     protected IImageCompressor ImageCompressor => LazyServiceProvider.LazyGetRequiredService<IImageCompressor>();
     protected ISettingProvider SettingProvider => LazyServiceProvider.LazyGetRequiredService<ISettingProvider>();
@@ -34,6 +35,21 @@ public abstract class ChatController : AbpControllerBase
     protected ChatController()
     {
         LocalizationResource = typeof(ChatResource);
+    }
+
+    /// <summary>
+    /// 日期文件夹名称
+    /// </summary>
+    protected string DateDirectoryName => Clock.Now.ToString("yyyy/MM/dd");
+
+    /// <summary>
+    /// 获取目录名称
+    /// </summary>
+    /// <param name="blobId"></param>
+    /// <returns></returns>
+    protected virtual Task<string> GetFileUrlAsync(Guid blobId)
+    {
+        return BlobResolver.GetFileUrlAsync(blobId);
     }
 
     protected virtual async Task CheckImageAsync(IFormFile file)
@@ -91,17 +107,17 @@ public abstract class ChatController : AbpControllerBase
             FileSize = bytes.Length,
             MimeType = file.ContentType,
             FileName = file.FileName,
-            Name = $"{folder}/{fileName}",
+            //Name = $"{folder}/{fileName}" ,
+            Name = Path.Combine(folder, fileName).Replace(@"\", "/"),
             Suffix = Path.GetExtension(file.FileName),
             Bytes = bytes
         });
         return entity;
     }
 
-    protected virtual async Task<string> GenerateFileNameAsync(string suffix)
+    protected virtual Task<string> GenerateFileNameAsync(string suffix)
     {
-        await Task.Yield();
-        return Clock.Now.ToString("yyyyMMdd") + ShortIdGenerator.Create() + suffix;
+        return BlobResolver.GenerateFileNameAsync(suffix);
     }
 
     /// <summary>

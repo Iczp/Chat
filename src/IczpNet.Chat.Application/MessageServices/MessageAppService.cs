@@ -89,7 +89,7 @@ public class MessageAppService(
             .WhereIf(settting.HistoryFristTime.HasValue, x => x.CreationTime >= settting.HistoryFristTime)
             .WhereIf(settting.HistoryLastTime.HasValue, x => x.CreationTime < settting.HistoryFristTime)
             .WhereIf(settting.ClearTime.HasValue, x => x.CreationTime > settting.ClearTime)
-            .WhereIf(input.MessageType.HasValue, x => x.MessageType == input.MessageType)
+            .WhereIf(input.MessageTypes.IsAny(), x => input.MessageTypes.Contains(x.MessageType))
             .WhereIf(input.IsFollowed.HasValue, x => followingIdList.Contains(x.SenderSessionUnitId.Value))
             .WhereIf(input.IsRemind == true, x => x.IsRemindAll || x.MessageReminderList.Any(x => x.SessionUnitId == sessionUnitId))
             .WhereIf(input.SenderId.HasValue, x => x.SenderId == input.SenderId)
@@ -126,7 +126,7 @@ public class MessageAppService(
         var dicts = new Dictionary<string, SessionUnit>();
         foreach (var item in result.Items)
         {
-            if(item.SenderSessionUnit == null)
+            if (item.SenderSessionUnit == null)
             {
                 Logger.LogWarning($"item.SenderSessionUnit is null, MessageId:{item.Id}");
                 continue;
@@ -144,6 +144,56 @@ public class MessageAppService(
         }
         return result;
     }
+
+    /// <summary>
+    /// 获取消息列表
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [HttpGet]
+    [UnitOfWork(true, IsolationLevel.ReadUncommitted)]
+    public async Task<PagedResultDto<MessageByDateDto>> GetListByDateAsync(MessageGetListByDateInput input)
+    {
+        var sessionUnitId = input.SessionUnitId;
+
+        var entity = await GetAndCheckPolicyAsync(GetListPolicyName, sessionUnitId);
+
+        //Assert.NotNull(entity.Session, "session is null");
+
+        var settting = entity.Setting;
+
+        var followingIdList = await FollowManager.GetFollowingIdListAsync(sessionUnitId);
+
+        var query = (await Repository.GetQueryableAsync())
+            .Where(x => x.SessionId == entity.SessionId)
+            //.Where(x => !x.IsPrivate || (x.IsPrivate && (x.SenderId == entity.OwnerId || x.ReceiverId == entity.OwnerId)))
+            .WhereIf(settting.HistoryFristTime.HasValue, x => x.CreationTime >= settting.HistoryFristTime)
+            .WhereIf(settting.HistoryLastTime.HasValue, x => x.CreationTime < settting.HistoryFristTime)
+            .WhereIf(settting.ClearTime.HasValue, x => x.CreationTime > settting.ClearTime)
+            .WhereIf(input.MessageTypes.IsAny(), x => input.MessageTypes.Contains(x.MessageType))
+            .WhereIf(input.IsFollowed.HasValue, x => followingIdList.Contains(x.SenderSessionUnitId.Value))
+            .WhereIf(input.IsRemind == true, x => x.IsRemindAll || x.MessageReminderList.Any(x => x.SessionUnitId == sessionUnitId))
+            .WhereIf(input.SenderId.HasValue, x => x.SenderId == input.SenderId)
+            .WhereIf(input.ForwardDepth.HasValue, x => x.ForwardDepth == input.ForwardDepth.Value)
+            .WhereIf(input.QuoteDepth.HasValue, x => x.QuoteDepth == input.QuoteDepth.Value)
+            .WhereIf(input.MinMessageId.HasValue, x => x.Id > input.MinMessageId)
+            .WhereIf(input.MaxMessageId.HasValue, x => x.Id < input.MaxMessageId)
+            .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TextContentList.Any(d => d.Text.Contains(input.Keyword)))
+            ;
+
+        var q = query.GroupBy(x => x.CreationTime.Date).Select(x => new MessageByDateDto
+        {
+            Date = x.Key,
+            Count = x.Count(),
+            MessageIdList = input.TakeCount.HasValue ? x.Select(d => d.Id).Take(input.TakeCount.Value).ToList() : null,
+        }).ToList().AsQueryable();
+
+        var result = await GetPagedListAsync(q, input, q => q.OrderByDescending(x => x.Date));
+
+        return result;
+    }
+
+
     /// <summary>
     /// 获取一条消息
     /// </summary>

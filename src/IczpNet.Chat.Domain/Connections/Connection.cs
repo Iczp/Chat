@@ -35,7 +35,7 @@ public class Connection : BaseEntity<string>, IDeviceId
     public virtual ServerHost ServerHost { get; protected set; }
 
     /// <summary>
-    /// AppUserId
+    /// UserId
     /// </summary>
     public virtual Guid? AppUserId { get; set; }
 

@@ -11,15 +11,20 @@ using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.SessionServices;
 
-public class SessionRoleBySessionUnitAppService
-    : CrudBySessionUnitChatAppService<
+/// <summary>
+/// 会话角色
+/// </summary>
+/// <param name="repository"></param>
+public class SessionRoleBySessionUnitAppService(
+    IRepository<SessionRole, Guid> repository)
+        : CrudBySessionUnitChatAppService<
         SessionRole,
         SessionRoleDetailDto,
         SessionRoleDto,
         Guid,
         SessionRoleGetListBySessionUnitInput,
         SessionRoleCreateBySessionUnitInput,
-        SessionRoleUpdateInput>,
+        SessionRoleUpdateInput>(repository),
     ISessionRoleBySessionUnitAppService
 {
     //protected override string GetPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Default;
@@ -29,12 +34,6 @@ public class SessionRoleBySessionUnitAppService
     //protected override string DeletePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Delete;
     //protected override string DeleteManyPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Delete;
     protected ISessionRoleManager SessionRoleManager { get; }
-
-    public SessionRoleBySessionUnitAppService(
-        IRepository<SessionRole, Guid> repository)
-        : base(repository)
-    {
-    }
 
     protected override async Task<IQueryable<SessionRole>> CreateFilteredQueryAsync(SessionUnit sessionUnit, SessionRoleGetListBySessionUnitInput input)
     {

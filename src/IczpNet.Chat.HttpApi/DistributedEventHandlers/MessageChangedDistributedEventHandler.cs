@@ -74,7 +74,7 @@ public class MessageChangedDistributedEventHandler : DomainService, IDistributed
 
             var commandPayload = new PushPayload()
             {
-                AppUserId = item.AppUserId,
+                AppUserId = item.UserId,
                 Scopes = units,//sessionUnitCaches.Select(x=>x as object).ToList(),
                 //Caches = sessionUnitCaches,
                 Command = command,

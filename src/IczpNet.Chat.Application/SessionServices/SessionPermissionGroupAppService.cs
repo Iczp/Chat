@@ -11,6 +11,9 @@ using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.SessionServices;
 
+/// <summary>
+/// 会话权限组
+/// </summary>
 public class SessionPermissionGroupAppService
     : CrudTreeChatAppService<
         SessionPermissionGroup,

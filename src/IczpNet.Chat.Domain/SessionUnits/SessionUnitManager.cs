@@ -25,21 +25,27 @@ using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.ObjectMapping;
+using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.SessionUnits;
 
 public class SessionUnitManager(
+    IChatObjectManager chatObjectManager,
     ISessionUnitRepository repository,
     IReadOnlyRepository<SessionUnit, Guid> sessionUnitReadOnlyRepository,
     IReadOnlyRepository<Message, long> messageReadOnlyRepository,
     IDistributedCache<List<SessionUnitCacheItem>, string> sessionUnitListCache,
     IDistributedCache<SessionUnitCacheItem, Guid> sessionUnitItemCache,
+    IDistributedCache<List<SessionUnitCacheItem>, long> friendsCache,
+    IDistributedCache<List<SessionUnitCacheItem>, Guid> userFriendsCache,
     IDistributedCache<string, Guid> sessionUnitCountCache,
     IChatObjectRepository chatObjectRepository,
     IMessageSender messageSender,
     IObjectMapper objectMapper,
+    IUnitOfWorkManager unitOfWorkManager,
     ISessionUnitIdGenerator idGenerator) : DomainService, ISessionUnitManager
 {
+    public IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
     protected ISessionUnitRepository Repository { get; } = repository;
     /// <summary>
     /// SessionUnit 更新频繁，使用 ReadOnlyRepository 防止意外更新到数据库，引起并发冲突 --2025.03.19
@@ -48,11 +54,14 @@ public class SessionUnitManager(
     protected IReadOnlyRepository<Message, long> MessageReadOnlyRepository { get; } = messageReadOnlyRepository;
     protected IDistributedCache<List<SessionUnitCacheItem>, string> SessionUnitListCache { get; } = sessionUnitListCache;
     public IDistributedCache<SessionUnitCacheItem, Guid> SessionUnitItemCache { get; } = sessionUnitItemCache;
+    public IDistributedCache<List<SessionUnitCacheItem>, long> FriendsCache { get; } = friendsCache;
+    public IDistributedCache<List<SessionUnitCacheItem>, Guid> UserFriendsCache { get; } = userFriendsCache;
     protected IDistributedCache<string, Guid> SessionUnitCountCache { get; } = sessionUnitCountCache;
     protected IFollowManager FollowManager => LazyServiceProvider.LazyGetRequiredService<IFollowManager>();
     protected IChatObjectRepository ChatObjectRepository { get; } = chatObjectRepository;
     protected IMessageSender MessageSender { get; } = messageSender;
     protected IObjectMapper ObjectMapper { get; } = objectMapper;
+    public IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
     protected ISessionUnitIdGenerator IdGenerator { get; } = idGenerator;
 
     protected static DistributedCacheEntryOptions DistributedCacheEntryOptions => new()
@@ -197,6 +206,12 @@ public class SessionUnitManager(
     {
         return SetEntityAsync(entity, x => x.SetTopping(isTopping));
     }
+    /// <inheritdoc />
+    public virtual async Task<SessionUnit> SetReadedMessageIdAsync(Guid sessionUnitId, bool isForce = false, long? messageId = null)
+    {
+        var entity = await GetAsync(sessionUnitId);
+        return await SetReadedMessageIdAsync(entity, isForce, messageId);
+    }
 
     /// <inheritdoc />
     public virtual async Task<SessionUnit> SetReadedMessageIdAsync(SessionUnit entity, bool isForce = false, long? messageId = null)
@@ -228,32 +243,9 @@ public class SessionUnitManager(
             counter = await GetCounterAsync(entity.Id, lastMessageId);
         }
 
-        await SetEntityAsync(entity, x => x.UpdateCounter(counter));
-
-        //await UpdateCacheItemsAsync(muterSessionUnit, items =>
-        //{
-        //    var item = items.FirstOrDefault(x => x.Id != muterSessionUnit.Id);
-
-        //    if (item == null)
-        //    {
-        //        return false;
-        //    }
-
-        //    if (isForce || readedMessageId > item.ReadedMessageId.GetValueOrDefault())
-        //    {
-        //        item.ReadedMessageId = readedMessageId;
-        //    }
-
-        //    item.PublicBadge = 0;
-        //    item.PrivateBadge = 0;
-        //    item.RemindAllCount = 0;
-        //    item.FollowingCount = 0;
-        //    //item.ReadedMessageId = messageId;
-
-        //    return true;
-        //});
-
-        return entity;
+        //await SetEntityAsync(entity, x => x.UpdateCounter(counter));
+        // 更新记数器
+        return await Repository.UpdateCountersync(counter);
     }
 
     /// <inheritdoc />
@@ -734,7 +726,7 @@ public class SessionUnitManager(
         return [.. qurey.Select(x => new SessionUnitCacheItem()
         {
             Id = x.Id,
-            //AppUserId = x.AppUserId,
+            //UserId = x.UserId,
             SessionId = x.SessionId,
             OwnerId = x.OwnerId,
             OwnerObjectType = x.OwnerObjectType,
@@ -764,6 +756,26 @@ public class SessionUnitManager(
 
         await SessionUnitCountCache.SetAsync(sessionId, list.Where(x => x.IsPublic).Count().ToString());
 
+        return list;
+    }
+    /// <inheritdoc />
+    public virtual async Task<List<SessionUnitCacheItem>> GetListByUserIdAsync(Guid userId)
+    {
+        var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(userId);
+        var list = ToCacheItem((await SessionUnitReadOnlyRepository.GetQueryableAsync())
+                .Where(SessionUnit.GetActivePredicate(Clock.Now))
+                .Where(x => chatObjectIdList.Contains(x.OwnerId))
+            );
+        return list;
+    }
+
+    /// <inheritdoc />
+    public virtual async Task<List<SessionUnitCacheItem>> GetListByOwnerIdAsync(long ownerId)
+    {
+        var list = ToCacheItem((await SessionUnitReadOnlyRepository.GetQueryableAsync())
+                .Where(SessionUnit.GetActivePredicate(Clock.Now))
+                .Where(x => x.OwnerId == ownerId)
+            );
         return list;
     }
 
@@ -997,6 +1009,7 @@ public class SessionUnitManager(
     }
 
     /// <inheritdoc />
+    [Obsolete($"Move to {nameof(ISessionUnitSettingManager.SetMuteExpireTimeAsync)}")]
     public virtual async Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime, SessionUnit setterSessionUnit, bool isSendMessage)
     {
         Assert.If(muterSessionUnit.Setting.IsCreator, $"Creator can't be mute.");
@@ -1038,10 +1051,23 @@ public class SessionUnitManager(
     }
 
     /// <inheritdoc />
+    [Obsolete($"Move to {nameof(ISessionUnitSettingManager.SetMuteExpireTimeAsync)}")]
     public virtual async Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime)
     {
         var setterSessionUnit = await SessionUnitReadOnlyRepository.FirstOrDefaultAsync(x => x.SessionId == muterSessionUnit.SessionId && x.IsStatic && !x.IsPublic && x.Id != muterSessionUnit.Id);
 
         return await SetMuteExpireTimeAsync(muterSessionUnit, muteExpireTime, setterSessionUnit, setterSessionUnit != null);
+    }
+
+    /// <inheritdoc />
+    public virtual Task<List<SessionUnitCacheItem>> GetUserFriendsAsync(Guid userId)
+    {
+        return UserFriendsCache.GetOrAddAsync(userId, () => GetListByUserIdAsync(userId));
+    }
+
+    /// <inheritdoc />
+    public virtual Task<List<SessionUnitCacheItem>> GetFriendsAsync(long chatObjectId)
+    {
+        return FriendsCache.GetOrAddAsync(chatObjectId, () => GetListByOwnerIdAsync(chatObjectId));
     }
 }

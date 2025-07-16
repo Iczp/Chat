@@ -23,7 +23,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 
     public class MessageInfo<T> : MessageInfo
     {
-        public T Content { get; set; }
+        public virtual T Content { get; set; }
     }
 
     [Command(CommandConsts.Chat)]

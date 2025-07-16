@@ -5,7 +5,7 @@ namespace IczpNet.Chat.WalletOrders.Dtos;
 
 public class WalletOrderGetListInput : GetListInput
 {
-    //public virtual Guid? AppUserId { get; set; }
+    //public virtual Guid? UserId { get; set; }
 
     public virtual long? OwnerId { get; set; }
 

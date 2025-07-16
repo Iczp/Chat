@@ -13,7 +13,7 @@ public class SessionUnitCacheItem : ISessionUnit
     /// </summary>
     public virtual Guid? SessionId { get; set; }
 
-    //public virtual Guid? AppUserId { get; set; }
+    //public virtual Guid? UserId { get; set; }
 
     /// <summary>
     /// OwnerId

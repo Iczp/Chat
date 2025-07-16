@@ -1,5 +1,4 @@
-﻿using IczpNet.AbpCommons.DataFilters;
-using IczpNet.AbpTrees;
+﻿using IczpNet.AbpTrees;
 using IczpNet.Chat.Enums;
 using System;
 using System.Collections.Generic;
@@ -50,6 +49,8 @@ public interface IChatObjectManager : ITreeManager<ChatObject, long, ChatObjectI
     //Task<List<ChatObject>> GetManyAsync(List<Guid> chatObjectIdList);
 
     Task<List<long>> GetIdListByNameAsync(List<string> nameList); //, List<ChatObjectTypes> objectTypes
+
+    Task<ChatObject> CreatePersonalAsync(string name, string code, Action<ChatObject> action = null);
 
     Task<ChatObject> CreateShopKeeperAsync(string name, string code);
 

@@ -221,6 +221,8 @@ public class ChatPermissions
         public const string Default = GroupName + "." + nameof(ConnectionPoolPermission);
         public const string GetItem = Default + "." + nameof(GetItem);
         public const string GetList = Default + "." + nameof(GetList);
+        public const string GetListByChatObject = Default + "." + nameof(GetListByChatObject);
+        public const string GetListByCurrentUser = Default + "." + nameof(GetListByCurrentUser);
         public const string Create = Default + "." + nameof(Create);
         public const string Delete = Default + "." + nameof(Delete);
         public const string ClearAll = Default + "." + nameof(ClearAll);

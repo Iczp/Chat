@@ -59,7 +59,7 @@ public class ConnectionPoolManager(
             return await GetConnectionIdsAsync(token);
         }
 
-        return (await CreateQueryableAsync(token)).Where(x => x.Host == host).Select(x => x.ConnectionId).ToList();
+        return [.. (await CreateQueryableAsync(token)).Where(x => x.Host == host).Select(x => x.ConnectionId)];
     }
 
     protected async Task SetConnectionIdsAsync(List<string> connectionIdList, CancellationToken token = default)
@@ -67,7 +67,7 @@ public class ConnectionPoolManager(
         await ConnectionIdsCache.SetAsync(ConnectionIdsCacheKey, connectionIdList, DistributedCacheEntryOptions, token: token);
     }
 
-    protected virtual Task SetUserContionIdsAsync(Guid userId,List<string> connectionIds, CancellationToken token = default)
+    protected virtual Task SetUserContionIdsAsync(Guid userId, List<string> connectionIds, CancellationToken token = default)
     {
         return UserConnectionIdsCache.SetAsync(userId, connectionIds, DistributedCacheEntryOptions, token: token);
     }
@@ -113,13 +113,34 @@ public class ConnectionPoolManager(
 
         await ConnectionPoolCache.SetAsync(connectionPool.ConnectionId, connectionPool, DistributedCacheEntryOptions, token: token);
 
-        await AddUserConnetionIdsAsync(connectionPool.AppUserId, connectionPool.ConnectionId, token);
+        if (connectionPool.UserId.HasValue)
+        {
+            await AddUserConnetionIdsAsync(connectionPool.UserId.Value, connectionPool.ConnectionId, token);
+        }
 
         Logger.LogInformation($"Add connection {connectionPool}");
 
         Logger.LogInformation($"Online totalCount {connectionList.Count}");
 
         return true;
+    }
+
+    /// <summary>
+    /// 更新活动时间 activeTime
+    /// </summary>
+    /// <param name="connectionId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    public async Task UpdateActiveTimeAsync(string connectionId, CancellationToken token = default)
+    {
+        var connectionPool = await ConnectionPoolCache.GetAsync(connectionId, token: token);
+        if (connectionPool == null)
+        {
+            Logger.LogWarning($"{nameof(UpdateActiveTimeAsync)} Fail: Not found, connectionId:{connectionId}");
+            return;
+        }
+        connectionPool.ActiveTime = Clock.Now;
+        await ConnectionPoolCache.SetAsync(connectionPool.ConnectionId, connectionPool, DistributedCacheEntryOptions, token: token);
     }
 
     /// <inheritdoc />
@@ -133,9 +154,9 @@ public class ConnectionPoolManager(
     {
         var connectionPool = await ConnectionPoolCache.GetAsync(connectionId, token: token);
 
-        if (connectionPool != null)
+        if (connectionPool != null && connectionPool.UserId.HasValue)
         {
-            await RemoveUserConnetionIdsAsync(connectionPool.AppUserId, connectionId, token);
+            await RemoveUserConnetionIdsAsync(connectionPool.UserId.Value, connectionId, token);
         }
 
         var connectionIdList = await GetConnectionIdsAsync(token: token);
@@ -150,8 +171,6 @@ public class ConnectionPoolManager(
         await SetConnectionIdsAsync(connectionIdList, token: token);
 
         await ConnectionPoolCache.RemoveAsync(connectionId, token: token);
-
-
 
         Logger.LogInformation($"Remove connection {connectionId}");
 
@@ -256,7 +275,7 @@ public class ConnectionPoolManager(
     /// <inheritdoc />
     public async Task<IEnumerable<ConnectionPoolCacheItem>> GetListByUserIdAsync(Guid userId, CancellationToken token = default)
     {
-        return [.. (await CreateQueryableAsync(token)).Where(x => x.AppUserId == userId)];
+        return [.. (await CreateQueryableAsync(token)).Where(x => x.UserId == userId)];
     }
 
     /// <inheritdoc />
@@ -269,7 +288,7 @@ public class ConnectionPoolManager(
     public async Task<int> UpdateUserConnectionIdsAsync(Guid userId, CancellationToken token = default)
     {
         var userConnectionIds = (await CreateQueryableAsync(token))
-            .Where(x => x.AppUserId == userId)
+            .Where(x => x.UserId == userId)
             .Select(x => x.ConnectionId)
             .ToList();
 
@@ -277,5 +296,13 @@ public class ConnectionPoolManager(
 
         return userConnectionIds.Count;
     }
+
+    public async Task<List<ConnectionPoolCacheItem>> GetListByChatObjectIdAsync(List<long> chatObjectIdList, CancellationToken token = default)
+    {
+        return (await GetAllListAsync(token))
+            .Where(x => x.ChatObjectIdList.Any(d => chatObjectIdList.Contains(d)))
+            .ToList();
+    }
+
 
 }

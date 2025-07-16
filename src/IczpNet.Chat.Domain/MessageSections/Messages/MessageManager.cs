@@ -7,6 +7,7 @@ using IczpNet.Chat.Hosting;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
 using IczpNet.Chat.Settings;
@@ -127,7 +128,7 @@ public partial class MessageManager(
         //TryToSetOwnerId(messageContent, senderSessionUnit.SessionUnitId);
         messageContent.SetOwnerId(senderSessionUnit.OwnerId);
 
-        if(messageContent.Id == Guid.Empty)
+        if (messageContent.Id == Guid.Empty)
         {
             messageContent.SetId(GuidGenerator.Create());
         }
@@ -150,6 +151,9 @@ public partial class MessageManager(
 
         // Save
         await Repository.InsertAsync(message, autoSave: true);
+
+        //// 重新获取一下，填充导航属性
+        //message = await Repository.GetAsync(message.Id);
 
         // update Session LastMessage
         await SessionRepository.UpdateLastMessageIdAsync(senderSessionUnit.SessionId.Value, message.Id);
@@ -429,6 +433,7 @@ public partial class MessageManager(
         //var output = ObjectMapper.Map<Message, MessageInfo<object>>(message);
         var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
         //var output = new MessageInfo<TContentInfo>() { Id = message.Id };
+        output.SenderSessionUnit ??= ObjectMapper.Map<SessionUnit, SessionUnitSenderInfo>(senderSessionUnit);
 
         if (message.IsPrivateMessage())
         {

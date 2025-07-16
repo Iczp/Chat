@@ -26,7 +26,7 @@ public abstract class CrudBySessionUnitChatAppService<
     TKey,
     TGetListInput,
     TCreateInput,
-    TUpdateInput>
+    TUpdateInput>(IRepository<TEntity, TKey> repository)
     :
     CrudChatAppService<
         TEntity,
@@ -35,7 +35,7 @@ public abstract class CrudBySessionUnitChatAppService<
         TKey,
         TGetListInput,
         TCreateInput,
-        TUpdateInput>
+        TUpdateInput>(repository)
     where TKey : struct
     where TEntity : class, IEntity<TKey>
     where TGetOutputDto : IEntityDto<TKey>
@@ -46,11 +46,6 @@ public abstract class CrudBySessionUnitChatAppService<
     protected virtual string DeleteManyPolicyName { get; set; }
     protected IRepository<Session, Guid> SessionRepository => LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
     protected ISessionPermissionChecker SessionPermissionChecker => LazyServiceProvider.LazyGetRequiredService<ISessionPermissionChecker>();
-    //protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
-
-    protected CrudBySessionUnitChatAppService(IRepository<TEntity, TKey> repository) : base(repository)
-    {
-    }
 
     protected virtual Task<IQueryable<TEntity>> CreateFilteredQueryAsync(SessionUnit sessionUnit, TGetListInput input)
     {

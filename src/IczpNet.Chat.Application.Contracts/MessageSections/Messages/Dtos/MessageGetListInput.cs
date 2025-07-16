@@ -1,6 +1,7 @@
 ﻿using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.Enums;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.MessageSections.Messages.Dtos;
@@ -26,7 +27,7 @@ public class MessageGetListInput : GetListInput
     /// <summary>
     /// 消息类型
     /// </summary>
-    public virtual MessageTypes? MessageType { get; set; }
+    public virtual List<MessageTypes> MessageTypes { get; set; }
 
     /// <summary>
     /// 是否特别关注

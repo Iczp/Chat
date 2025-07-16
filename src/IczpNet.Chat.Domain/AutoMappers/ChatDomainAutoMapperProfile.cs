@@ -1,11 +1,11 @@
 ﻿using AutoMapper;
 using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.RedEnvelopes;
-using IczpNet.Chat.SessionSections.SessionOrganizations;
 using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits;
@@ -28,9 +28,21 @@ public class ChatApplicationAutoMapperProfile : Profile
 
         //Message
         CreateMap<Message, MessageInfo>().MaxDepth(3);
-        CreateMap<Message, MessageAnyInfo>().MaxDepth(3).ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()));
-        CreateMap<Message, MessageInfo<IContentInfo>>().MaxDepth(3).ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()));
-        CreateMap<Message, MessageInfo<dynamic>>().MaxDepth(3).ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()));
+        CreateMap<Message, MessageAnyInfo>()
+            .MaxDepth(3)
+            .ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()))
+            //.ForMember(x => x.SenderSessionUnit, o => o.MapFrom<SenderSessionUnitResolver<MessageAnyInfo>>())
+            ;
+        CreateMap<Message, MessageInfo<IContentInfo>>()
+            .MaxDepth(3)
+            .ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()))
+            //.ForMember(x => x.SenderSessionUnit, o => o.MapFrom<SenderSessionUnitResolver<MessageInfo<IContentInfo>>>())
+            ;
+        CreateMap<Message, MessageInfo<dynamic>>()
+            .MaxDepth(3)
+            .ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()))
+            //.ForMember(x => x.SenderSessionUnit, o => o.MapFrom<SenderSessionUnitResolver<MessageInfo<dynamic>>>())
+            ; 
         
         CreateMap<Message, MessageWithQuoteInfo>().MaxDepth(3);
         CreateMap(typeof(Message), typeof(MessageInfo<>)).MaxDepth(3);
@@ -65,8 +77,13 @@ public class ChatApplicationAutoMapperProfile : Profile
 
         CreateMap<SessionTag, SessionTagInfo>();
 
-        CreateMap<SessionOrganization, SessionOrganizationInfo>();
 
+        //ConnectionPool
+        CreateMap<ConnectionPoolCacheItem, OnDisconnectedEto>().ReverseMap();
+
+        CreateMap<ConnectionPoolCacheItem, OnConnectedEto>().ReverseMap();
+
+        CreateMap<OnDisconnectedEto, OnConnectedEto>().ReverseMap();
 
     }
 }

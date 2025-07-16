@@ -12,27 +12,32 @@ public class ConnectionPoolCacheItem
     /// <summary>
     /// 
     /// </summary>
-    public string ConnectionId { get; set; }
+    public virtual string ConnectionId { get; set; }
 
     /// <summary>
     /// hubs/ChatHub?id={ClientId}
     /// </summary>
-    public string ClientId { get; set; }
+    public virtual string ClientId { get; set; }
 
     /// <summary>
     /// Dns.GetHostName()
     /// </summary>
-    public string Host { get; set; }
+    public virtual string Host { get; set; }
 
     /// <summary>
-    /// AppUserId
+    /// UserId
     /// </summary>
-    public Guid AppUserId { get; set; }
+    public virtual Guid? UserId { get; set; }
+
+    /// <summary>
+    /// UserName
+    /// </summary>
+    public virtual string UserName { get; set; }
 
     /// <summary>
     /// DeviceId
     /// </summary>
-    public string DeviceId { get; set; }
+    public virtual string DeviceId { get; set; }
 
     /// <summary>
     /// IpAddress
@@ -50,17 +55,22 @@ public class ConnectionPoolCacheItem
     public virtual string DeviceInfo { get; set; }
 
     /// <summary>
+    /// ActiveTime
+    /// </summary>
+    public virtual DateTime? ActiveTime { get; set; }
+
+    /// <summary>
     /// CreationTime
     /// </summary>
-    public DateTime? CreationTime { get; set; } = DateTime.UtcNow;
+    public virtual DateTime CreationTime { get; set; }
 
     /// <summary>
     /// ChatObjectIdList
     /// </summary>
-    public List<long> ChatObjectIdList { get; set; } = [];
+    public virtual List<long> ChatObjectIdList { get; set; } = [];
 
     public override string ToString()
     {
-        return $"{nameof(ConnectionId)}={ConnectionId},{nameof(AppUserId)}={AppUserId},{nameof(DeviceId)}={DeviceId},{nameof(ChatObjectIdList)}=[{ChatObjectIdList.JoinAsString(",")}]";
+        return $"{nameof(ConnectionId)}={ConnectionId},{nameof(UserId)}={UserId},{nameof(UserName)}={UserName},{nameof(DeviceId)}={DeviceId},{nameof(ChatObjectIdList)}=[{ChatObjectIdList.JoinAsString(",")}]";
     }
 }

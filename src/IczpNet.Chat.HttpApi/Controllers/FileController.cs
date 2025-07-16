@@ -3,6 +3,7 @@ using IczpNet.Chat.Blobs.Dtos;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 
@@ -20,7 +21,7 @@ public class FileController : ChatController
 
         if (blob == null)
         {
-            return NotFound();
+            return BadRequest(new { message = "blob is null" });
         }
         try
         {
@@ -28,8 +29,9 @@ public class FileController : ChatController
             //PhysicalFile
             return File(bytes, blob.MimeType, blob.FileName, enableRangeProcessing: true);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Logger.LogError(ex, $"Blob.ID={blob.Id},Container={blob.Container},Name={blob.Name},MimeType={blob.MimeType},FileName={blob.FileName}");
             return NotFound();
         }
     }
