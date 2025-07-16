@@ -40,7 +40,7 @@ public class ConnectionPoolAppService(
         return await ConnectionPoolManager.GetTotalCountAsync(host);
     }
 
-    protected virtual async Task<PagedResultDto<ConnectionPoolCacheItem>> FeatchListAsync(ConnectionPoolGetListInput input)
+    protected virtual async Task<PagedResultDto<ConnectionPoolCacheItem>> FetchListAsync(ConnectionPoolGetListInput input)
     {
 
         var query = (await ConnectionPoolManager.CreateQueryableAsync())
@@ -69,7 +69,7 @@ public class ConnectionPoolAppService(
     public async Task<PagedResultDto<ConnectionPoolCacheItem>> GetListAsync(ConnectionPoolGetListInput input)
     {
         await CheckGetListPolicyAsync();
-        return await FeatchListAsync(input);
+        return await FetchListAsync(input);
     }
 
     /// <summary>
@@ -79,7 +79,7 @@ public class ConnectionPoolAppService(
     public async Task<PagedResultDto<ConnectionPoolCacheItem>> GetListByChatObjectAsync(List<long> chatObjectIdList)
     {
         await CheckPolicyAsync(GetListByChatObjectPolicyName);
-        return await FeatchListAsync(new ConnectionPoolGetListInput()
+        return await FetchListAsync(new ConnectionPoolGetListInput()
         {
             ChatObjectIdList = chatObjectIdList
         });
@@ -91,7 +91,7 @@ public class ConnectionPoolAppService(
     public async Task<PagedResultDto<ConnectionPoolCacheItem>> GetListByCurrentUserAsync()
     {
         await CheckPolicyAsync(GetListByCurrentUserPolicyName);
-        return await FeatchListAsync(new ConnectionPoolGetListInput()
+        return await FetchListAsync(new ConnectionPoolGetListInput()
         {
             UserId = CurrentUser.Id
         });

@@ -271,6 +271,15 @@ public class ChatObject : BaseTreeEntity<ChatObject, long>, IName, IChatObject, 
         Thumbnail = thumbnail;
         Portrait = portrait;
     }
+    public void SetPortrait(string portrait)
+    {
+        Portrait = portrait;
+    }
+    public void SetThumbnail(string thumbnail)
+    {
+        Thumbnail = thumbnail;
+    }
+
 
     public void SetMotto(Motto motto)
     {
@@ -288,7 +297,7 @@ public class ChatObject : BaseTreeEntity<ChatObject, long>, IName, IChatObject, 
         IsStatic = v;
     }
 
-    internal void BingAppUserId(Guid appUserId)
+    public void SetAppUserId(Guid appUserId)
     {
         AppUserId = appUserId;
     }

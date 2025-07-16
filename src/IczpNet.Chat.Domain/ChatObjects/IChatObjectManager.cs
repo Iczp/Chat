@@ -50,6 +50,8 @@ public interface IChatObjectManager : ITreeManager<ChatObject, long, ChatObjectI
 
     Task<List<long>> GetIdListByNameAsync(List<string> nameList); //, List<ChatObjectTypes> objectTypes
 
+    Task<ChatObject> CreatePersonalAsync(string name, string code, Action<ChatObject> action = null);
+
     Task<ChatObject> CreateShopKeeperAsync(string name, string code);
 
     Task<ChatObject> CreateShopWaiterAsync(long shopKeeperId, string name, string code);

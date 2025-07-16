@@ -172,6 +172,27 @@ public class ChatObjectManager : TreeManager<ChatObject, long, ChatObjectInfo>, 
         return await AsyncExecuter.ToListAsync(query);
     }
 
+    public virtual async Task<ChatObject> CreatePersonalAsync(string name, string code, Action<ChatObject> action = null)
+    {
+        var entity = await FindByCodeAsync(code);
+
+        if (entity == null)
+        {
+            var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Personal);
+
+            var chatObject = new ChatObject(name, code, chatObjectType, null);
+
+            action?.Invoke(chatObject);
+
+            entity = await base.CreateAsync(chatObject, isUnique: true);
+        }
+        else
+        {
+            //action?.Invoke(entity);
+        }
+        return entity;
+    }
+
     public virtual async Task<ChatObject> CreateShopKeeperAsync(string name, string code)
     {
         var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.ShopKeeper);
@@ -279,7 +300,7 @@ public class ChatObjectManager : TreeManager<ChatObject, long, ChatObjectInfo>, 
     {
         var entity = await Repository.GetAsync(id);
 
-        entity.BingAppUserId(appUserId);
+        entity.SetAppUserId(appUserId);
 
         var count = await SessionUnitRepository.BatchUpdateAppUserIdAsync(entity.Id, appUserId);
 
