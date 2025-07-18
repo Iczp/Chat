@@ -92,6 +92,8 @@ public class SessionUnitAppService(
             .WhereIf(input.IsCreator.HasValue, x => x.Setting.IsCreator == input.IsCreator)
             .WhereIf(input.MinMessageId.HasValue, x => x.LastMessageId >= input.MinMessageId)
             .WhereIf(input.MaxMessageId.HasValue, x => x.LastMessageId < input.MaxMessageId)
+            .WhereIf(input.MinTicks.HasValue, x => x.Ticks >= input.MinTicks)
+            .WhereIf(input.MaxTicks.HasValue, x => x.Ticks < input.MaxTicks)
             .WhereIf(input.IsTopping == true, x => x.Sorting > 0)
             .WhereIf(input.IsTopping == false, x => x.Sorting == 0)
             .WhereIf(input.IsContacts.HasValue, x => x.Setting.IsContacts == input.IsContacts)

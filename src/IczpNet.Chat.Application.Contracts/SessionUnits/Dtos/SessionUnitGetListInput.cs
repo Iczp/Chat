@@ -62,6 +62,16 @@ public class SessionUnitGetListInput : GetListInput
     public virtual long? MaxMessageId { get; set; }
 
     /// <summary>
+    /// 最小时间戳
+    /// </summary>
+    public virtual long? MinTicks { get; set; }
+
+    /// <summary>
+    /// 最大时间戳
+    /// </summary>
+    public virtual long? MaxTicks { get; set; }
+
+    /// <summary>
     /// 是否有角标（新消息）
     /// </summary>
     [DefaultValue(null)]
