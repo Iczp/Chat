@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250729014533_Add_DeletedRecorder")]
+    partial class Add_DeletedRecorder
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1946,33 +1949,6 @@ namespace IczpNet.Chat.Migrations
                         .IsDescending(false, false, true);
 
                     b.ToTable("Chat_Menu", (string)null);
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.MessageSections.Counters.DeletedCounter", b =>
-                {
-                    b.Property<long>("MessageId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("Count")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.HasKey("MessageId");
-
-                    b.ToTable("Chat_DeletedCounter", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Counters.FavoritedCounter", b =>
@@ -6510,7 +6486,7 @@ namespace IczpNet.Chat.Migrations
                         .HasForeignKey("DestinationId");
 
                     b.HasOne("IczpNet.Chat.MessageSections.Messages.Message", "Message")
-                        .WithMany("DeletedList")
+                        .WithMany()
                         .HasForeignKey("MessageId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -6642,17 +6618,6 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("Owner");
 
                     b.Navigation("Parent");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.MessageSections.Counters.DeletedCounter", b =>
-                {
-                    b.HasOne("IczpNet.Chat.MessageSections.Messages.Message", "Message")
-                        .WithOne("DeletedCounter")
-                        .HasForeignKey("IczpNet.Chat.MessageSections.Counters.DeletedCounter", "MessageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Message");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Counters.FavoritedCounter", b =>
@@ -7673,10 +7638,6 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Messages.Message", b =>
                 {
-                    b.Navigation("DeletedCounter");
-
-                    b.Navigation("DeletedList");
-
                     b.Navigation("FavoriteList");
 
                     b.Navigation("FavoritedCounter");

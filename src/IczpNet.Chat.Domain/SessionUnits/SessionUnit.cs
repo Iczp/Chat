@@ -1,39 +1,40 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.ContactTags;
 using IczpNet.Chat.DataFilters;
+using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.FavoritedRecorders;
+using IczpNet.Chat.Follows;
+using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.OpenedRecorders;
+using IczpNet.Chat.ReadedRecorders;
+using IczpNet.Chat.SessionSections;
+using IczpNet.Chat.SessionSections.SessionPermissionUnitGrants;
 using IczpNet.Chat.SessionSections.SessionRequests;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionTags;
+using IczpNet.Chat.SessionSections.SessionUnitContactTags;
+using IczpNet.Chat.SessionSections.SessionUnitCounters;
+using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
 using IczpNet.Chat.SessionSections.SessionUnitOrganizations;
 using IczpNet.Chat.SessionSections.SessionUnitRoles;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnitTags;
+using IczpNet.Chat.SessionUnitSettings;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
-using IczpNet.Chat.MessageSections.MessageReminders;
-using Volo.Abp.SimpleStateChecking;
-using Microsoft.EntityFrameworkCore.Diagnostics;
-using IczpNet.Chat.Follows;
-using IczpNet.Chat.OpenedRecorders;
 using System.Linq.Expressions;
-using IczpNet.Chat.FavoritedRecorders;
-using IczpNet.Chat.ReadedRecorders;
-using IczpNet.Chat.SessionSections.SessionUnitCounters;
-using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
-using IczpNet.Chat.SessionSections.SessionUnitContactTags;
-using IczpNet.Chat.ContactTags;
-using IczpNet.Chat.SessionSections;
-using IczpNet.Chat.SessionSections.SessionUnits;
-using IczpNet.Chat.SessionUnitSettings;
-using IczpNet.Chat.SessionSections.SessionPermissionUnitGrants;
+using Volo.Abp.SimpleStateChecking;
 
 namespace IczpNet.Chat.SessionUnits;
 
@@ -199,6 +200,9 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
 
     [InverseProperty(nameof(ReadedRecorder.SessionUnit))]
     public virtual IList<ReadedRecorder> ReadedRecorderList { get; protected set; }
+
+    [InverseProperty(nameof(DeletedRecorder.SessionUnit))]
+    public virtual IList<DeletedRecorder> DeletedRecorderList { get; protected set; }
 
     [InverseProperty(nameof(Follow.Owner))]
     public virtual IList<Follow> FollowList { get; protected set; }

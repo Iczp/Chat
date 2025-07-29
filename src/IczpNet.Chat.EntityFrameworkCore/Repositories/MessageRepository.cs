@@ -47,6 +47,18 @@ public class MessageRepository(IDbContextProvider<ChatDbContext> dbContextProvid
     }
 
     /// <inheritdoc />
+    public async Task<int> IncrementDeletedCountAsync(List<long> messageIdList)
+    {
+        var context = await GetDbContextAsync();
+
+        return await context.DeletedCounter
+            .Where(x => messageIdList.Contains(x.MessageId))
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(b => b.Count, b => b.Count + 1)
+            );
+    }
+
+    /// <inheritdoc />
     public async Task<int> IncrementQuoteCountAsync(List<long> messageIdList)
     {
         var context = await GetDbContextAsync();
@@ -69,6 +81,8 @@ public class MessageRepository(IDbContextProvider<ChatDbContext> dbContextProvid
                 .SetProperty(b => b.ForwardCount, b => b.ForwardCount + 1)
             );
     }
+
+
 
     //public virtual async Task<int> IncrementRecorderAsync(List<long> messageIdList)
     //{

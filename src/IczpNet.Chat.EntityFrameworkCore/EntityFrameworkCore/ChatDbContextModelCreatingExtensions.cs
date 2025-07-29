@@ -1,22 +1,38 @@
 ﻿using IczpNet.AbpCommons.EntityFrameworkCore;
 using IczpNet.Chat.Articles;
 using IczpNet.Chat.Attributes;
+using IczpNet.Chat.Blobs;
 using IczpNet.Chat.ChatObjectCategoryUnits;
+using IczpNet.Chat.ChatObjectEntryValues;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.Connections;
+using IczpNet.Chat.DbTables;
+using IczpNet.Chat.DeletedRecorders;
+using IczpNet.Chat.Developers;
 using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
+using IczpNet.Chat.HttpRequests;
 using IczpNet.Chat.MessageSections;
+using IczpNet.Chat.MessageSections.Counters;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.MessageWords;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.RedEnvelopes;
+using IczpNet.Chat.Scopeds;
 using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
+using IczpNet.Chat.SessionSections.SessionPermissionUnitGrants;
+using IczpNet.Chat.SessionSections.SessionUnitContactTags;
+using IczpNet.Chat.SessionSections.SessionUnitCounters;
+using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
 using IczpNet.Chat.SessionSections.SessionUnitOrganizations;
 using IczpNet.Chat.SessionSections.SessionUnitRoles;
 using IczpNet.Chat.SessionSections.SessionUnitTags;
-using IczpNet.Chat.Scopeds;
+using IczpNet.Chat.SessionUnits;
+using IczpNet.Chat.SessionUnitSettings;
+using IczpNet.Chat.TextContentWords;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
@@ -25,21 +41,6 @@ using System.Linq;
 using System.Reflection;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities;
-using IczpNet.Chat.TextContentWords;
-using IczpNet.Chat.MessageSections.Counters;
-using IczpNet.Chat.SessionSections.SessionUnitCounters;
-using IczpNet.Chat.Developers;
-using IczpNet.Chat.HttpRequests;
-using IczpNet.Chat.ChatObjectEntryValues;
-using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
-using IczpNet.Chat.DbTables;
-using IczpNet.Chat.Blobs;
-using IczpNet.Chat.SessionSections.SessionUnitContactTags;
-using IczpNet.Chat.SessionUnits;
-using IczpNet.Chat.MessageWords;
-using IczpNet.Chat.Connections;
-using IczpNet.Chat.SessionUnitSettings;
-using IczpNet.Chat.SessionSections.SessionPermissionUnitGrants;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -110,10 +111,14 @@ public static class ChatDbContextModelCreatingExtensions
         builder.Entity<SessionPermissionUnitGrant>(b => { b.HasKey(x => new { x.DefinitionId, x.SessionUnitId }); });
 
         builder.Entity<Follow>(b => { b.HasKey(x => new { x.SessionUnitId, x.DestinationId }); });
+
         builder.Entity<MessageReminder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
+
         builder.Entity<FavoritedRecorder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
         builder.Entity<OpenedRecorder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
         builder.Entity<ReadedRecorder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
+        builder.Entity<DeletedRecorder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
+
         builder.Entity<Scoped>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
 
         builder.Entity<TextContentWord>(b => { b.HasKey(x => new { x.TextContentId, x.WordId }); });
@@ -121,6 +126,8 @@ public static class ChatDbContextModelCreatingExtensions
         builder.Entity<ReadedCounter>(b => { b.HasKey(x => new { x.MessageId }); });
         builder.Entity<OpenedCounter>(b => { b.HasKey(x => new { x.MessageId }); });
         builder.Entity<FavoritedCounter>(b => { b.HasKey(x => new { x.MessageId }); });
+        builder.Entity<DeletedCounter>(b => { b.HasKey(x => new { x.MessageId }); });
+
 
         builder.Entity<SessionUnitCounter>(b => { b.HasKey(x => new { x.SessionUnitId }); });
         builder.Entity<SessionUnitSetting>(b => { b.HasKey(x => new { x.SessionUnitId }); });
@@ -176,6 +183,7 @@ public static class ChatDbContextModelCreatingExtensions
                 b.HasOne(x => x.ReadedCounter).WithOne(x => x.Message).HasForeignKey<ReadedCounter>(x => x.MessageId).IsRequired(true);
                 b.HasOne(x => x.OpenedCounter).WithOne(x => x.Message).HasForeignKey<OpenedCounter>(x => x.MessageId).IsRequired(true);
                 b.HasOne(x => x.FavoritedCounter).WithOne(x => x.Message).HasForeignKey<FavoritedCounter>(x => x.MessageId).IsRequired(true);
+                b.HasOne(x => x.DeletedCounter).WithOne(x => x.Message).HasForeignKey<DeletedCounter>(x => x.MessageId).IsRequired(true);
             });
 
     }

@@ -67,12 +67,12 @@ public abstract class RecorderManager<TEntity>(IRepository<TEntity> repository) 
     /// <inheritdoc/>
     public virtual async Task<IQueryable<SessionUnit>> QueryRecordedAsync(long messageId)
     {
-        var readedSessionUnitIdList = (await Repository.GetQueryableAsync())
+        var recordedSessionUnitIdList = (await Repository.GetQueryableAsync())
             .Where(x => x.MessageId == messageId)
             .Select(x => x.SessionUnitId);
 
         return (await SessionUnitRepository.GetQueryableAsync())
-            .Where(x => readedSessionUnitIdList.Contains(x.Id));
+            .Where(x => recordedSessionUnitIdList.Contains(x.Id));
     }
 
     /// <inheritdoc/>
@@ -80,7 +80,7 @@ public abstract class RecorderManager<TEntity>(IRepository<TEntity> repository) 
     {
         var message = await MessageRepository.GetAsync(messageId);
 
-        var readedSessionUnitIdList = (await Repository.GetQueryableAsync())
+        var recordedSessionUnitIdList = (await Repository.GetQueryableAsync())
             .Where(x => x.MessageId == messageId)
             .Select(x => x.SessionUnitId);
 
@@ -93,7 +93,7 @@ public abstract class RecorderManager<TEntity>(IRepository<TEntity> repository) 
             return query.Where(x => x.Id == message.SenderSessionUnitId || (x.OwnerId == message.ReceiverId && x.DestinationId == message.SenderId));
         }
 
-        return query.Where(x => !readedSessionUnitIdList.Contains(x.Id));
+        return query.Where(x => !recordedSessionUnitIdList.Contains(x.Id));
     }
 
     public virtual async Task<TEntity> CreateIfNotContainsAsync(SessionUnit sessionUnit, long messageId, string deviceId)
