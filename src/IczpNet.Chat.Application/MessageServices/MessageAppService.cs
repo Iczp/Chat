@@ -98,6 +98,8 @@ public class MessageAppService(
             .WhereIf(input.MinMessageId.HasValue, x => x.Id > input.MinMessageId)
             .WhereIf(input.MaxMessageId.HasValue, x => x.Id < input.MaxMessageId)
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TextContentList.Any(d => d.Text.Contains(input.Keyword)))
+            //排除已删除的消息
+            .Where(x => !x.DeletedList.Any(d => d.SessionUnitId == sessionUnitId && d.MessageId == x.Id)) 
             ;
 
         var result = await GetPagedListAsync<Message, MessageOwnerDto>(query, input,
