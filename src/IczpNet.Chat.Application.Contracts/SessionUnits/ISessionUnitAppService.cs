@@ -33,7 +33,7 @@ public interface ISessionUnitAppService
 
     Task<PagedResultDto<SessionUnitOwnerDto>> GetManyAsync(List<Guid> idList);
 
-    Task<SessionUnitOwnerDetailDto> GetDetailAsync(Guid id);
+    Task<SessionUnitDetailDto> GetDetailAsync(Guid id);
 
     Task<SessionUnitDestinationDto> GetDestinationAsync(Guid id, Guid destinationId);
 

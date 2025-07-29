@@ -166,7 +166,7 @@ public class SessionUnitAppService(
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordOwnerSessionUnitSpecification(input.Keyword, await ChatObjectManager.SearchKeywordByCacheAsync(input.Keyword)))
             ;
 
-        return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query, input, q => q.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId));
+        return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query, input, q => q.OrderByDescending(x => x.CreationTime));
     }
 
     /// <summary>
@@ -289,13 +289,13 @@ public class SessionUnitAppService(
     /// <param name="id">会话单元Id</param>
     /// <returns></returns>
     [HttpGet]
-    public virtual async Task<SessionUnitOwnerDetailDto> GetDetailAsync(Guid id)
+    public virtual async Task<SessionUnitDetailDto> GetDetailAsync(Guid id)
     {
         var entity = await GetEntityAsync(id);
 
         await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetDetailPolicyName));
 
-        var result = ObjectMapper.Map<SessionUnit, SessionUnitOwnerDetailDto>(entity);
+        var result = ObjectMapper.Map<SessionUnit, SessionUnitDetailDto>(entity);
 
         result.SessionUnitCount = await SessionUnitManager.GetCountBySessionIdAsync(entity.SessionId.Value);
 
