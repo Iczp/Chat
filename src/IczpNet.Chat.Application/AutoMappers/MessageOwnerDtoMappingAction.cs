@@ -37,7 +37,7 @@ namespace IczpNet.Chat.AutoMappers
             //destination.KeyValue = "55555555555555555555555";
             //var id = source.Id;
 
-            //source.IsReaded = ReadedRecorderManager.IsAnyAsync(id, e.Id).GetAwaiter().GetResult();
+            //source.IsDeleted = ReadedRecorderManager.IsAnyAsync(id, e.Id).GetAwaiter().GetResult();
             //source.IsOpened = OpenedRecorderManager.IsAnyAsync(id, e.Id);
             //source.IsFavorited = FavoritedRecorderManager.IsAnyAsync(id, e.Id);
         }

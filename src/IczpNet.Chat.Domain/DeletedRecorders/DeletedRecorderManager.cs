@@ -25,6 +25,7 @@ public class DeletedRecorderManager(IRepository<DeletedRecorder> repository) : R
     protected override async Task ChangeMessageIfNotContainsAsync(SessionUnit sessionUnit, Message message)
     {
         //message.DeletedCount++;
+        message.DeletedCounter ??= new DeletedCounter();
 
         message.DeletedCounter.Count++;
 

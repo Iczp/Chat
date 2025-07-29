@@ -48,7 +48,7 @@ public class DeletedRecorderAppService(
     [HttpGet]
     public async Task<PagedResultDto<SessionUnitDestinationDto>> GetListByMessageIdAsync(GetListByMessageIdInput input)
     {
-        var query = input.IsReaded
+        var query = input.IsDeleted
             ? await DeletedRecorderManager.QueryRecordedAsync(input.MessageId)
             : await DeletedRecorderManager.QueryUnrecordedAsync(input.MessageId);
 

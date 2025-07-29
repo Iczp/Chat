@@ -109,6 +109,10 @@ public abstract class RecorderManager<TEntity>(IRepository<TEntity> repository) 
             await ChangeMessageIfNotContainsAsync(sessionUnit, message);
             return await Repository.InsertAsync(CreateEntity(sessionUnit, message, deviceId), autoSave: true);
         }
+        else
+        {
+            //recorder.DeviceId = deviceId;
+        }
 
         return recorder;
     }

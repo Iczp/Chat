@@ -15,5 +15,5 @@ public class GetListByMessageIdInput : GetListInput
     /// 是否已读
     /// </summary>
     [DefaultValue(true)]
-    public virtual bool IsReaded { get; set; }
+    public virtual bool IsDeleted { get; set; }
 }
