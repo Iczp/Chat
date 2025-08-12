@@ -245,22 +245,31 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     /// <summary>
     /// 备注名称
     /// </summary>
+    [NotMapped] 
     public virtual string Rename => Setting.Rename;
 
+    [NotMapped]
     public virtual string DisplayName => Setting.MemberName;
 
+    [NotMapped]
     public virtual string MemberName => Setting.MemberName;
 
+    [NotMapped]
     public virtual bool IsPublic => Setting.IsPublic;
 
+    [NotMapped]
     public virtual bool IsStatic => Setting.IsStatic;
 
+    [NotMapped]
     public virtual bool IsCreator => Setting.IsCreator;
 
+    [NotMapped]
     public virtual bool IsVisible => Setting.IsVisible;
 
+    [NotMapped]
     public virtual bool IsEnabled => Setting.IsEnabled;
 
+    [NotMapped]
     public virtual long? ReadedMessageId => Setting.ReadedMessageId;
 
     protected SessionUnit() { }

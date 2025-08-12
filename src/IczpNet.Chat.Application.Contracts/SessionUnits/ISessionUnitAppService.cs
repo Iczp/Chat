@@ -16,6 +16,7 @@ public interface ISessionUnitAppService
     Task<PagedResultDto<SessionUnitOwnerDto>> GetListAsync(SessionUnitGetListInput input);
 
     Task<PagedResultDto<SessionUnitDestinationDto>> GetListDestinationAsync(Guid id, SessionUnitGetListDestinationInput input);
+    Task<PagedResultDto<SessionUnitDestinationDto>> GetMembersAsync(Guid id, SessionUnitGetListDestinationInput input);
 
     Task<List<long>> GetListDestinationOwnerIdListAsync(Guid id);
 
@@ -36,6 +37,8 @@ public interface ISessionUnitAppService
     Task<SessionUnitDetailDto> GetDetailAsync(Guid id);
 
     Task<SessionUnitDestinationDto> GetDestinationAsync(Guid id, Guid destinationId);
+
+    
 
     Task<BadgeDto> GetBadgeByIdAsync(Guid id, bool? isImmersed = null);
 

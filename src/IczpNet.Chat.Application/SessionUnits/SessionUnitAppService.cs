@@ -143,7 +143,19 @@ public class SessionUnitAppService(
     /// <param name="input"></param>
     /// <returns></returns>
     [HttpGet]
+    [Obsolete($"替代方法: {nameof(GetMembersAsync)}")]
     public async Task<PagedResultDto<SessionUnitDestinationDto>> GetListDestinationAsync(Guid id, SessionUnitGetListDestinationInput input)
+    {
+        return await GetMembersAsync(id, input);
+    }
+    /// <summary>
+    /// 获取成员列表（好友、群、群成员、机器人等）
+    /// </summary>
+    /// <param name="id">会话单元Id</param>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [HttpGet]
+    public async Task<PagedResultDto<SessionUnitDestinationDto>> GetMembersAsync(Guid id, SessionUnitGetListDestinationInput input)
     {
         var entity = await Repository.GetAsync(id);
 
@@ -162,6 +174,8 @@ public class SessionUnitAppService(
             .WhereIf(!input.RoleId.IsEmpty(), x => x.SessionUnitRoleList.Any(x => x.SessionRoleId == input.RoleId))
             .WhereIf(!input.JoinWay.IsEmpty(), x => x.Setting.JoinWay == input.JoinWay)
             .WhereIf(!input.InviterId.IsEmpty(), x => x.Setting.InviterId == input.InviterId)
+            //排除自已
+            .WhereIf(entity.DestinationObjectType != ChatObjectTypeEnums.Room, x => x.Id != id)
             //.WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Owner.Title.Contains(input.Keyword))
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordOwnerSessionUnitSpecification(input.Keyword, await ChatObjectManager.SearchKeywordByCacheAsync(input.Keyword)))
             ;
@@ -301,6 +315,8 @@ public class SessionUnitAppService(
 
         return result;
     }
+
+
 
     /// <summary>
     /// 获取一个会话单元（目标）
