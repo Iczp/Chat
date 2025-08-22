@@ -62,4 +62,30 @@ public class ContactsAppService(
                 return entities;
             });
     }
+
+    /// <summary>
+    /// 通讯录索引列表
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [HttpGet]
+    public async Task<PagedResultDto<ContactsIndexDto>> GetIndexsAsync(ContactsGetListInput input)
+    {
+
+        await CheckPolicyForUserAsync(input.OwnerId, () => CheckPolicyAsync(GetListPolicyName));
+
+        var query = await CreateQueryAsync(input);
+
+        var q = query.GroupBy(x => x.Destination.NameSpelling.Substring(0, 1),
+            (index, list) => new ContactsIndexDto()
+            {
+                Index = index,
+                Count = list.Count()
+            })
+            .OrderBy(x => x.Index)
+            .ToList()
+            .AsQueryable();
+
+        return await GetPagedListAsync(q, input);
+    }
 }

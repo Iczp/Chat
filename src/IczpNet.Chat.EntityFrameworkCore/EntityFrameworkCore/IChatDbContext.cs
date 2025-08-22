@@ -1,58 +1,59 @@
 ﻿using IczpNet.Chat.Articles;
+using IczpNet.Chat.Blobs;
 using IczpNet.Chat.ChatObjectCategories;
+using IczpNet.Chat.ChatObjectEntryValues;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjectTypes;
+using IczpNet.Chat.ClientConfigs;
 using IczpNet.Chat.Connections;
+using IczpNet.Chat.ContactTags;
+using IczpNet.Chat.DeletedRecorders;
+using IczpNet.Chat.Developers;
+using IczpNet.Chat.EntryNames;
+using IczpNet.Chat.EntryValues;
 using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
+using IczpNet.Chat.HttpRequests;
+using IczpNet.Chat.InvitationCodes;
+using IczpNet.Chat.Menus;
+using IczpNet.Chat.MessageSections.Counters;
 using IczpNet.Chat.MessageSections.MessageContents;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.MessageWords;
 using IczpNet.Chat.Mottos;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.RedEnvelopes;
+using IczpNet.Chat.Scopeds;
+using IczpNet.Chat.ServerHosts;
 using IczpNet.Chat.SessionSections.SessionOrganizations;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionPermissionGroups;
 using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
+using IczpNet.Chat.SessionSections.SessionPermissionUnitGrants;
 using IczpNet.Chat.SessionSections.SessionRequests;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionTags;
+using IczpNet.Chat.SessionSections.SessionUnitContactTags;
+using IczpNet.Chat.SessionSections.SessionUnitCounters;
+using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
 using IczpNet.Chat.SessionSections.SessionUnitOrganizations;
 using IczpNet.Chat.SessionSections.SessionUnitRoles;
 using IczpNet.Chat.SessionSections.SessionUnitTags;
-using IczpNet.Chat.Scopeds;
+using IczpNet.Chat.SessionUnits;
+using IczpNet.Chat.SessionUnitSettings;
+using IczpNet.Chat.TextContentWords;
+using IczpNet.Chat.WalletBusinesses;
+using IczpNet.Chat.WalletOrders;
+using IczpNet.Chat.WalletRecorders;
 using IczpNet.Chat.Wallets;
+using IczpNet.Chat.Words;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
-using IczpNet.Chat.TextContentWords;
-using IczpNet.Chat.Words;
-using IczpNet.Chat.SessionSections.SessionUnitCounters;
-using IczpNet.Chat.MessageSections.Counters;
-using IczpNet.Chat.Menus;
-using IczpNet.Chat.Developers;
-using IczpNet.Chat.HttpRequests;
-using IczpNet.Chat.EntryNames;
-using IczpNet.Chat.EntryValues;
-using IczpNet.Chat.ChatObjectEntryValues;
-using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
-using IczpNet.Chat.Blobs;
-using IczpNet.Chat.SessionSections.SessionUnitContactTags;
-using IczpNet.Chat.ContactTags;
-using IczpNet.Chat.WalletBusinesses;
-using IczpNet.Chat.WalletRecorders;
-using IczpNet.Chat.WalletOrders;
-using IczpNet.Chat.SessionUnits;
-using IczpNet.Chat.InvitationCodes;
-using IczpNet.Chat.MessageWords;
-using IczpNet.Chat.ClientConfigs;
-using IczpNet.Chat.ServerHosts;
-using IczpNet.Chat.SessionUnitSettings;
-using IczpNet.Chat.SessionSections.SessionPermissionUnitGrants;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -101,9 +102,12 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<OpenedRecorder> OpenedRecorder { get; }
     DbSet<ReadedRecorder> ReadedRecorder { get; }
     DbSet<FavoritedRecorder> FavoritedRecorder { get; }
+    DbSet<DeletedRecorder> DeletedRecorder { get; }
+
     DbSet<OpenedCounter> OpenedCounter { get; }
     DbSet<ReadedCounter> ReadedCounter { get; }
     DbSet<FavoritedCounter> FavoritedCounter { get; }
+    DbSet<DeletedCounter> DeletedCounter { get; }
 
     DbSet<MessageReminder> MessageReminder { get; }
 

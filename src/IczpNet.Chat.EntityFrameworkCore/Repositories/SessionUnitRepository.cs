@@ -123,7 +123,7 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
 
         query = query.Where(x => x.Id != senderSessionUnitId);
 
-        var ticks = Clock.Now.Ticks;
+        var ticks = messageCreationTime.Ticks;
 
         if (isRemindAll)
         {
@@ -152,7 +152,7 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
 
         query = query.Where(x => x.Id != senderSessionUnitId);
 
-        var ticks = Clock.Now.Ticks;
+        var ticks = messageCreationTime.Ticks;
 
         return await query
             .Where(x => destinationSessionUnitIdList.Contains(x.Id))

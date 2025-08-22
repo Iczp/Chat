@@ -55,7 +55,7 @@ public class ReadedRecorderAppService : ChatAppService, IReadedRecorderAppServic
     }
 
     /// <summary>
-    /// 设置为【忌讳】
+    /// 设置为【已读】
     /// </summary>
     /// <param name="input"></param>
     /// <returns></returns>

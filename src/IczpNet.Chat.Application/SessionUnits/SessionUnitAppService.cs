@@ -92,6 +92,8 @@ public class SessionUnitAppService(
             .WhereIf(input.IsCreator.HasValue, x => x.Setting.IsCreator == input.IsCreator)
             .WhereIf(input.MinMessageId.HasValue, x => x.LastMessageId >= input.MinMessageId)
             .WhereIf(input.MaxMessageId.HasValue, x => x.LastMessageId < input.MaxMessageId)
+            .WhereIf(input.MinTicks.HasValue, x => x.Ticks >= input.MinTicks)
+            .WhereIf(input.MaxTicks.HasValue, x => x.Ticks < input.MaxTicks)
             .WhereIf(input.IsTopping == true, x => x.Sorting > 0)
             .WhereIf(input.IsTopping == false, x => x.Sorting == 0)
             .WhereIf(input.IsContacts.HasValue, x => x.Setting.IsContacts == input.IsContacts)
@@ -141,7 +143,19 @@ public class SessionUnitAppService(
     /// <param name="input"></param>
     /// <returns></returns>
     [HttpGet]
+    [Obsolete($"替代方法: {nameof(GetMembersAsync)}")]
     public async Task<PagedResultDto<SessionUnitDestinationDto>> GetListDestinationAsync(Guid id, SessionUnitGetListDestinationInput input)
+    {
+        return await GetMembersAsync(id, input);
+    }
+    /// <summary>
+    /// 获取成员列表（好友、群、群成员、机器人等）
+    /// </summary>
+    /// <param name="id">会话单元Id</param>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [HttpGet]
+    public async Task<PagedResultDto<SessionUnitDestinationDto>> GetMembersAsync(Guid id, SessionUnitGetListDestinationInput input)
     {
         var entity = await Repository.GetAsync(id);
 
@@ -160,11 +174,13 @@ public class SessionUnitAppService(
             .WhereIf(!input.RoleId.IsEmpty(), x => x.SessionUnitRoleList.Any(x => x.SessionRoleId == input.RoleId))
             .WhereIf(!input.JoinWay.IsEmpty(), x => x.Setting.JoinWay == input.JoinWay)
             .WhereIf(!input.InviterId.IsEmpty(), x => x.Setting.InviterId == input.InviterId)
+            //排除自已
+            .WhereIf(entity.DestinationObjectType != ChatObjectTypeEnums.Room, x => x.Id != id)
             //.WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Owner.Title.Contains(input.Keyword))
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordOwnerSessionUnitSpecification(input.Keyword, await ChatObjectManager.SearchKeywordByCacheAsync(input.Keyword)))
             ;
 
-        return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query, input, q => q.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId));
+        return await GetPagedListAsync<SessionUnit, SessionUnitDestinationDto>(query, input, q => q.OrderByDescending(x => x.CreationTime));
     }
 
     /// <summary>
@@ -287,18 +303,20 @@ public class SessionUnitAppService(
     /// <param name="id">会话单元Id</param>
     /// <returns></returns>
     [HttpGet]
-    public virtual async Task<SessionUnitOwnerDetailDto> GetDetailAsync(Guid id)
+    public virtual async Task<SessionUnitDetailDto> GetDetailAsync(Guid id)
     {
         var entity = await GetEntityAsync(id);
 
         await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetDetailPolicyName));
 
-        var result = ObjectMapper.Map<SessionUnit, SessionUnitOwnerDetailDto>(entity);
+        var result = ObjectMapper.Map<SessionUnit, SessionUnitDetailDto>(entity);
 
         result.SessionUnitCount = await SessionUnitManager.GetCountBySessionIdAsync(entity.SessionId.Value);
 
         return result;
     }
+
+
 
     /// <summary>
     /// 获取一个会话单元（目标）

@@ -1,30 +1,17 @@
-﻿using IczpNet.Chat.ChatObjects.Dtos;
-using IczpNet.Chat.ContactTags.Dtos;
-using IczpNet.Chat.SessionUnitSettings.Dtos;
-using System;
-using System.Collections.Generic;
+﻿namespace IczpNet.Chat.Contacts.Dtos;
 
-namespace IczpNet.Chat.Contacts.Dtos;
-
-public class ContactsDto
+public class ContactsIndexDto
 {
     /// <summary>
-    /// 会话单元Id
+    /// Index
     /// </summary>
-    public virtual Guid Id { get; set; }
+    public virtual string Index { get; set; }
 
     /// <summary>
-    /// 显示名称
+    /// Count
     /// </summary>
-    public virtual string DisplayName { get; set; }
+    public virtual int Count { get; set; }
 
-    /// <summary>
-    /// 聊天对象
-    /// </summary>
-    public virtual ChatObjectDto Destination { get; set; }
-
-    public virtual SessionUnitSettingDto Setting { get; set; }
-
-    public virtual List<ContactTagSimpleDto> ContactTags { get; set; }
+   
 
 }

@@ -62,6 +62,6 @@ public abstract class BaseRecorder : BaseEntity, IDeviceId, IMessageId, ISession
 
     public override object[] GetKeys()
     {
-        return new object[] { SessionUnitId, MessageId };
+        return [SessionUnitId, MessageId];
     }
 }

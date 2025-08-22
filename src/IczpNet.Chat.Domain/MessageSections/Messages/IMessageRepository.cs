@@ -41,6 +41,14 @@ public interface IMessageRepository : IRepository<Message, long>
     /// <returns></returns>
     Task<int> IncrementForwardCountAsync(List<long> messageIdList);
 
+    /// <summary>
+    /// 删除次数 +1
+    /// </summary>
+    /// <param name="messageIdList"></param>
+    /// <returns></returns>
+    Task<int> IncrementDeletedCountAsync(List<long> messageIdList);
+    
+
     //Task<int> IncrementRecorderAsync(List<long> messageIdList);
 
 }

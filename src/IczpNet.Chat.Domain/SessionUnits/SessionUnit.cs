@@ -1,39 +1,40 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.ContactTags;
 using IczpNet.Chat.DataFilters;
+using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.FavoritedRecorders;
+using IczpNet.Chat.Follows;
+using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.OpenedRecorders;
+using IczpNet.Chat.ReadedRecorders;
+using IczpNet.Chat.SessionSections;
+using IczpNet.Chat.SessionSections.SessionPermissionUnitGrants;
 using IczpNet.Chat.SessionSections.SessionRequests;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionTags;
+using IczpNet.Chat.SessionSections.SessionUnitContactTags;
+using IczpNet.Chat.SessionSections.SessionUnitCounters;
+using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
 using IczpNet.Chat.SessionSections.SessionUnitOrganizations;
 using IczpNet.Chat.SessionSections.SessionUnitRoles;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionSections.SessionUnitTags;
+using IczpNet.Chat.SessionUnitSettings;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
-using IczpNet.Chat.MessageSections.MessageReminders;
-using Volo.Abp.SimpleStateChecking;
-using Microsoft.EntityFrameworkCore.Diagnostics;
-using IczpNet.Chat.Follows;
-using IczpNet.Chat.OpenedRecorders;
 using System.Linq.Expressions;
-using IczpNet.Chat.FavoritedRecorders;
-using IczpNet.Chat.ReadedRecorders;
-using IczpNet.Chat.SessionSections.SessionUnitCounters;
-using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
-using IczpNet.Chat.SessionSections.SessionUnitContactTags;
-using IczpNet.Chat.ContactTags;
-using IczpNet.Chat.SessionSections;
-using IczpNet.Chat.SessionSections.SessionUnits;
-using IczpNet.Chat.SessionUnitSettings;
-using IczpNet.Chat.SessionSections.SessionPermissionUnitGrants;
+using Volo.Abp.SimpleStateChecking;
 
 namespace IczpNet.Chat.SessionUnits;
 
@@ -48,8 +49,13 @@ namespace IczpNet.Chat.SessionUnits;
 [Index(nameof(IsDeleted))]
 [Index(nameof(CreationTime), AllDescending = true)]
 
+//LastMessageId
 [Index(nameof(Sorting), nameof(LastMessageId), nameof(IsDeleted), AllDescending = true)]
-[Index(nameof(Sorting), nameof(LastMessageId), nameof(IsDeleted), IsDescending = [true, false, true], Name = "IX_Chat_SessionUnit_Sorting_Desc_LastMessageId_Asc")]
+[Index(nameof(Sorting), nameof(LastMessageId), nameof(IsDeleted), IsDescending = [true, false, true], Name = $"IX_Chat_SessionUnit_${nameof(Sorting)}_Desc_${nameof(LastMessageId)}_Asc")]
+
+//Ticks
+[Index(nameof(Sorting), nameof(Ticks), nameof(IsDeleted), AllDescending = true)]
+[Index(nameof(Sorting), nameof(Ticks), nameof(IsDeleted), IsDescending = [true, false, true], Name = $"IX_Chat_SessionUnit_${nameof(Sorting)}_Desc_{nameof(Ticks)}_Asc")]
 public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, ISessionId, IHasSimpleStateCheckers<SessionUnit>, IMaterializationInterceptor, ISessionUnit
 {
 
@@ -195,6 +201,9 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     [InverseProperty(nameof(ReadedRecorder.SessionUnit))]
     public virtual IList<ReadedRecorder> ReadedRecorderList { get; protected set; }
 
+    [InverseProperty(nameof(DeletedRecorder.SessionUnit))]
+    public virtual IList<DeletedRecorder> DeletedRecorderList { get; protected set; }
+
     [InverseProperty(nameof(Follow.Owner))]
     public virtual IList<Follow> FollowList { get; protected set; }
 
@@ -236,22 +245,31 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     /// <summary>
     /// 备注名称
     /// </summary>
+    [NotMapped] 
     public virtual string Rename => Setting.Rename;
 
+    [NotMapped]
     public virtual string DisplayName => Setting.MemberName;
 
+    [NotMapped]
     public virtual string MemberName => Setting.MemberName;
 
+    [NotMapped]
     public virtual bool IsPublic => Setting.IsPublic;
 
+    [NotMapped]
     public virtual bool IsStatic => Setting.IsStatic;
 
+    [NotMapped]
     public virtual bool IsCreator => Setting.IsCreator;
 
+    [NotMapped]
     public virtual bool IsVisible => Setting.IsVisible;
 
+    [NotMapped]
     public virtual bool IsEnabled => Setting.IsEnabled;
 
+    [NotMapped]
     public virtual long? ReadedMessageId => Setting.ReadedMessageId;
 
     protected SessionUnit() { }
@@ -334,6 +352,11 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     internal virtual void SetTopping(bool isTopping)
     {
         Sorting = isTopping ? DateTime.Now.Ticks : 0;
+    }
+
+    internal virtual void SetTicks(double? ticks)
+    {
+        Ticks = ticks ?? 0;
     }
 
     private List<SessionTag> GetTagList()

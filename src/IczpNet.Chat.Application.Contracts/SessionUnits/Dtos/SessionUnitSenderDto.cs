@@ -1,13 +1,14 @@
 ﻿using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings.Dtos;
 using System;
+using Volo.Abp.Auditing;
 
 namespace IczpNet.Chat.SessionUnits.Dtos;
 
 /// <summary>
 /// 发送人会话单元
 /// </summary>
-public class SessionUnitSenderDto : SessionUnitSenderInfo
+public class SessionUnitSenderDto : SessionUnitSenderInfo, IHasModificationTime
 {
     /// <summary>
     /// 是否好友
@@ -34,4 +35,8 @@ public class SessionUnitSenderDto : SessionUnitSenderInfo
     /// </summary>
     public virtual DateTime CreationTime { get; set; }
 
+    /// <summary>
+    /// 最后修改时间
+    /// </summary>
+    public DateTime? LastModificationTime { get; set; }
 }

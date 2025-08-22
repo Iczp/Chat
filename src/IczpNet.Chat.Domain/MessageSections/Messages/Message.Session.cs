@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.FavoritedRecorders;
+﻿using IczpNet.Chat.DeletedRecorders;
+using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.MessageSections.Counters;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
@@ -30,6 +31,12 @@ public partial class Message
     /// </summary>
     [InverseProperty(nameof(FavoritedRecorder.Message))]
     public virtual IList<FavoritedRecorder> FavoriteList { get; set; }
+
+    /// <summary>
+    /// 删除记录
+    /// </summary>
+    [InverseProperty(nameof(DeletedRecorder.Message))]
+    public virtual IList<DeletedRecorder> DeletedList { get; set; }
 
     /// <summary>
     /// 指定范围消息
@@ -76,17 +83,22 @@ public partial class Message
     /// <summary>
     /// 已读计数器
     /// </summary>
-    public virtual ReadedCounter ReadedCounter { get; protected set; } = new ReadedCounter();
+    public virtual ReadedCounter ReadedCounter { get; set; } = new ReadedCounter();
 
     /// <summary>
     /// 打开计数器
     /// </summary>
-    public virtual OpenedCounter OpenedCounter { get; protected set; } = new OpenedCounter();
+    public virtual OpenedCounter OpenedCounter { get; set; } = new OpenedCounter();
 
     /// <summary>
     /// 收藏计数器
     /// </summary>
-    public virtual FavoritedCounter FavoritedCounter { get; protected set; } = new FavoritedCounter();
+    public virtual FavoritedCounter FavoritedCounter { get; set; } = new FavoritedCounter();
+
+    /// <summary>
+    /// 删除记录器
+    /// </summary>
+    public virtual DeletedCounter DeletedCounter { get; set; } = new DeletedCounter();
 
     /// <summary>
     /// 设置会话数量

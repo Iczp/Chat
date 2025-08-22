@@ -5,7 +5,9 @@ namespace IczpNet.Chat.SessionSections.SessionUnits;
 
 public interface ISessionUnit
 {
-
+    /// <summary>
+    /// 
+    /// </summary>
     Guid Id { get;}
 
     /// <summary>
@@ -15,6 +17,9 @@ public interface ISessionUnit
 
     //Guid? UserId { get;}
 
+    /// <summary>
+    /// 
+    /// </summary>
     long OwnerId { get;}
 
     /// <summary>
@@ -22,6 +27,9 @@ public interface ISessionUnit
     /// </summary>
     ChatObjectTypeEnums? OwnerObjectType { get;}
 
+    /// <summary>
+    /// 
+    /// </summary>
     long? DestinationId { get;}
 
     /// <summary>

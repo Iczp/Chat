@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.ChatHubs;
 using IczpNet.Chat.ConnectionPools;
+using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Hosting;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionUnits;
@@ -33,7 +34,13 @@ public class MessageChangedDistributedEventHandler : DomainService, IDistributed
         var command = eventData.Command;
         var ignoreConnections = new HashSet<string>();
 
+        //await SessionUnitManager.GetOrAddByMessageAsync(message);
+
         var sessionUnitInfoList = await SessionUnitManager.GetCacheListAsync(cacheKey);
+
+        Logger.LogInformation($"{nameof(MessageChangedDistributedEventHandler)}-Command-{command}-MessageId-{eventData.MessageId}");
+
+        Logger.LogInformation($"{nameof(MessageChangedDistributedEventHandler)}-CurrentHost={CurrentHosted.Name},eventData.HostName={eventData.HostName}");
 
         if (sessionUnitInfoList == null)
         {
@@ -50,7 +57,8 @@ public class MessageChangedDistributedEventHandler : DomainService, IDistributed
             .ToList();
 
         var connectionPools = (await ConnectionPoolManager.GetAllListAsync())
-            .Where(x => x.Host == CurrentHosted.Name)
+            //由后台作业发时,后台作业的HostName与SignalR的HostName 可能不一样,所以先行注释------2025.08.21(Iczp.Net)
+            //.Where(x => x.Host == CurrentHosted.Name)
             .Where(x => x.ChatObjectIdList.Any(d => chatObjectIdList.Contains(d)))
             .ToList();
 

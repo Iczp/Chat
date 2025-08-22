@@ -53,4 +53,14 @@ public class MessageGetListInput : GetListInput
     /// 最大消息Id
     /// </summary>
     public virtual long? MaxMessageId { get; set; }
+
+    /// <summary>
+    /// 起始时间(包含)
+    /// </summary>
+    public virtual DateTime? StartTime { get; set; }
+
+    /// <summary>
+    /// 结束时间(不包含)
+    /// </summary>
+    public virtual DateTime? EndTime { get; set; }
 }

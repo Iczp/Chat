@@ -1,33 +1,35 @@
 ﻿using AutoMapper;
+using IczpNet.Chat.Contacts.Dtos;
+using IczpNet.Chat.DeletedRecorders;
+using IczpNet.Chat.DeletedRecorders.Dtos;
+using IczpNet.Chat.FavoritedRecorders;
+using IczpNet.Chat.FavoritedRecorders.Dtos;
+using IczpNet.Chat.OpenedRecorders;
+using IczpNet.Chat.OpenedRecorders.Dtos;
+using IczpNet.Chat.SessionSections.SessionOrganizations;
+using IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;
+using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
+using IczpNet.Chat.SessionSections.SessionPermissionDefinitions.Dtos;
+using IczpNet.Chat.SessionSections.SessionPermissionGroups;
+using IczpNet.Chat.SessionSections.SessionPermissionGroups.Dtos;
+using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
+using IczpNet.Chat.SessionSections.SessionPermissions;
+using IczpNet.Chat.SessionSections.SessionPermissions.Dtos;
+using IczpNet.Chat.SessionSections.SessionPermissionUnitGrants;
+using IczpNet.Chat.SessionSections.SessionRequests;
+using IczpNet.Chat.SessionSections.SessionRequests.Dtos;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.Sessions.Dtos;
 using IczpNet.Chat.SessionSections.SessionTags;
-using IczpNet.Chat.SessionSections.SessionOrganizations;
-using IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;
 using IczpNet.Chat.SessionSections.SessionTags.Dtos;
-using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
-using IczpNet.Chat.SessionSections.SessionPermissionDefinitions.Dtos;
-using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
-using IczpNet.Chat.SessionSections.SessionPermissions;
-using IczpNet.Chat.SessionSections.SessionPermissions.Dtos;
-using IczpNet.Chat.SessionSections.SessionRequests.Dtos;
-using IczpNet.Chat.SessionSections.SessionRequests;
-using IczpNet.Chat.SessionSections.SessionPermissionGroups;
-using IczpNet.Chat.OpenedRecorders;
-using IczpNet.Chat.OpenedRecorders.Dtos;
-using IczpNet.Chat.FavoritedRecorders;
-using IczpNet.Chat.FavoritedRecorders.Dtos;
-using IczpNet.Chat.Contacts.Dtos;
-using IczpNet.Chat.SessionUnits.Dtos;
 using IczpNet.Chat.SessionUnits;
-using System.Linq;
-using Volo.Abp.AutoMapper;
-using IczpNet.Chat.SessionSections.SessionPermissionGroups.Dtos;
+using IczpNet.Chat.SessionUnits.Dtos;
 using IczpNet.Chat.SessionUnitSettings;
 using IczpNet.Chat.SessionUnitSettings.Dtos;
-using IczpNet.Chat.SessionSections.SessionPermissionUnitGrants;
+using System.Linq;
+using Volo.Abp.AutoMapper;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -49,6 +51,7 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
         CreateMap<SessionUnit, ContactsDto>();
         CreateMap<SessionUnit, SessionUnitOwnerDto>();//.AfterMap<SessionUnitOwnerDtoMappingAction>();
         CreateMap<SessionUnit, SessionUnitOwnerDetailDto>().Ignore(x => x.SessionUnitCount);
+        CreateMap<SessionUnit, SessionUnitDetailDto>().Ignore(x => x.SessionUnitCount);
         CreateMap<SessionUnit, SessionUnitDestinationDetailDto>();
         CreateMap<SessionUnit, SessionUnitDestinationDto>();
         CreateMap<SessionUnit, SessionUnitWithDestinationDto>();
@@ -124,5 +127,8 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
 
         //FavoritedRecorder
         CreateMap<FavoritedRecorder, FavoritedRecorderDto>();
+
+        //DeletedRecorder
+        CreateMap<DeletedRecorder, DeletedRecorderDto>();
     }
 }

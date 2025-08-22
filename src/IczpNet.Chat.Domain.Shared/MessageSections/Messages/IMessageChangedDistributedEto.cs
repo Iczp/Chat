@@ -17,7 +17,12 @@ public interface IMessageChangedDistributedEto
     string CacheKey { get; set; }
 
     /// <summary>
-    /// HostName
+    /// Emiter's HostName
     /// </summary>
     string HostName { get; set; }
+
+    /// <summary>
+    /// 消息
+    /// </summary>
+    MessageInfo Message {  get; set; }
 }

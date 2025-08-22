@@ -89,6 +89,10 @@ public class MessageAppService(
             .WhereIf(settting.HistoryFristTime.HasValue, x => x.CreationTime >= settting.HistoryFristTime)
             .WhereIf(settting.HistoryLastTime.HasValue, x => x.CreationTime < settting.HistoryFristTime)
             .WhereIf(settting.ClearTime.HasValue, x => x.CreationTime > settting.ClearTime)
+
+            .WhereIf(input.StartTime.HasValue, x => x.CreationTime >= input.StartTime)
+            .WhereIf(input.EndTime.HasValue, x => x.CreationTime < input.EndTime)
+
             .WhereIf(input.MessageTypes.IsAny(), x => input.MessageTypes.Contains(x.MessageType))
             .WhereIf(input.IsFollowed.HasValue, x => followingIdList.Contains(x.SenderSessionUnitId.Value))
             .WhereIf(input.IsRemind == true, x => x.IsRemindAll || x.MessageReminderList.Any(x => x.SessionUnitId == sessionUnitId))
@@ -98,6 +102,8 @@ public class MessageAppService(
             .WhereIf(input.MinMessageId.HasValue, x => x.Id > input.MinMessageId)
             .WhereIf(input.MaxMessageId.HasValue, x => x.Id < input.MaxMessageId)
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TextContentList.Any(d => d.Text.Contains(input.Keyword)))
+            //排除已删除的消息
+            .Where(x => !x.DeletedList.Any(d => d.SessionUnitId == sessionUnitId && d.MessageId == x.Id))
             ;
 
         var result = await GetPagedListAsync<Message, MessageOwnerDto>(query, input,
@@ -160,16 +166,20 @@ public class MessageAppService(
 
         //Assert.NotNull(entity.Session, "session is null");
 
-        var settting = entity.Setting;
+        var setting = entity.Setting;
 
         var followingIdList = await FollowManager.GetFollowingIdListAsync(sessionUnitId);
 
         var query = (await Repository.GetQueryableAsync())
             .Where(x => x.SessionId == entity.SessionId)
             //.Where(x => !x.IsPrivate || (x.IsPrivate && (x.SenderId == entity.OwnerId || x.ReceiverId == entity.OwnerId)))
-            .WhereIf(settting.HistoryFristTime.HasValue, x => x.CreationTime >= settting.HistoryFristTime)
-            .WhereIf(settting.HistoryLastTime.HasValue, x => x.CreationTime < settting.HistoryFristTime)
-            .WhereIf(settting.ClearTime.HasValue, x => x.CreationTime > settting.ClearTime)
+            .WhereIf(setting.HistoryFristTime.HasValue, x => x.CreationTime >= setting.HistoryFristTime)
+            .WhereIf(setting.HistoryLastTime.HasValue, x => x.CreationTime < setting.HistoryFristTime)
+            .WhereIf(setting.ClearTime.HasValue, x => x.CreationTime > setting.ClearTime)
+
+            .WhereIf(input.StartTime.HasValue, x => x.CreationTime >= input.StartTime)
+            .WhereIf(input.EndTime.HasValue, x => x.CreationTime < input.EndTime)
+
             .WhereIf(input.MessageTypes.IsAny(), x => input.MessageTypes.Contains(x.MessageType))
             .WhereIf(input.IsFollowed.HasValue, x => followingIdList.Contains(x.SenderSessionUnitId.Value))
             .WhereIf(input.IsRemind == true, x => x.IsRemindAll || x.MessageReminderList.Any(x => x.SessionUnitId == sessionUnitId))
@@ -179,6 +189,8 @@ public class MessageAppService(
             .WhereIf(input.MinMessageId.HasValue, x => x.Id > input.MinMessageId)
             .WhereIf(input.MaxMessageId.HasValue, x => x.Id < input.MaxMessageId)
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TextContentList.Any(d => d.Text.Contains(input.Keyword)))
+            //排除已删除的消息
+            .Where(x => !x.DeletedList.Any(d => d.SessionUnitId == sessionUnitId && d.MessageId == x.Id))
             ;
 
         var q = query.GroupBy(x => x.CreationTime.Date).Select(x => new MessageByDateDto

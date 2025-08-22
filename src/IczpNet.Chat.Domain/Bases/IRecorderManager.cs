@@ -39,14 +39,14 @@ public interface IRecorderManager<TEntity>
     Task<List<long>> GetRecorderMessageIdListAsync(Guid sessionUnitId, List<long> messageIdList);
 
     /// <summary>
-    /// 查询已读
+    /// 查询已记录
     /// </summary>
     /// <param name="messageId"></param>
     /// <returns></returns>
     Task<IQueryable<SessionUnit>> QueryRecordedAsync(long messageId);
 
     /// <summary>
-    /// 查询未读
+    /// 查询未记录
     /// </summary>
     /// <param name="messageId"></param>
     /// <returns></returns>
