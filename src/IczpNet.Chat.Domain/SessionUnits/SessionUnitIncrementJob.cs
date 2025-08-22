@@ -18,12 +18,16 @@ public class SessionUnitIncrementJob(
     IUnitOfWorkManager unitOfWorkManager,
     ISessionUnitManager sessionUnitManager,
     IChatPusher chatPusher,
+    IMessageManager messageManager,
+    IMessageRepository messageRepository,
     IDistributedEventBus distributedEventBus,
     ICurrentHosted currentHosted) : AsyncBackgroundJob<SessionUnitIncrementJobArgs>, ITransientDependency
 {
     protected IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
     protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
     protected IChatPusher ChatPusher { get; } = chatPusher;
+    public IMessageManager MessageManager { get; } = messageManager;
+    public IMessageRepository MessageRepository { get; } = messageRepository;
     public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
     public ICurrentHosted CurrentHosted { get; } = currentHosted;
 
@@ -36,11 +40,17 @@ public class SessionUnitIncrementJob(
 
         Logger.LogInformation($"SessionUnitIncrementJob Completed totalCount:{totalCount}.");
 
+        var message = await MessageRepository.GetAsync(args.LastMessageId);
+
+        await SessionUnitManager.GetOrAddByMessageAsync(message);
+
+        var cacheKey = await SessionUnitManager.GetCacheKeyByMessageAsync(message);
+
         var eventData = new MessageChangedDistributedEto()
         {
             Command = Command.UpdateBadge.ToString(),
             MessageId = args.LastMessageId,
-            CacheKey = $"{new SessionUnitCacheKey(args.SessionId)}",
+            CacheKey = cacheKey,//$"{new SessionUnitCacheKey(args.SessionId)}",
             HostName = CurrentHosted.Name
         };
         await DistributedEventBus.PublishAsync(eventData);

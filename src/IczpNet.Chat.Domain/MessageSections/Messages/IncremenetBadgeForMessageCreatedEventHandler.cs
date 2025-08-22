@@ -58,11 +58,11 @@ public class IncremenetBadgeForMessageCreatedEventHandler(
         if (await IncremenetBadge.ShouldbeBackgroundJobAsync(message))
         {
             var jobId = await BackgroundJobManager.EnqueueAsync(sessionUnitIncrementJobArgs);
-            Logger.LogInformation($"{nameof(SessionUnitIncrementJobArgs)} backgroupJobId:{jobId}");
+            Logger.LogInformation($"{nameof(SessionUnitIncrementJobArgs)} backgroupJobId:{jobId},messageId={message.Id}");
         }
         else
         {
-            Logger.LogWarning($"BackgroundJobManager.IsAvailable():False");
+            Logger.LogWarning($"BackgroundJobManager.IsAvailable():False, messageId={message.Id}");
             await SessionUnitManager.IncremenetAsync(sessionUnitIncrementJobArgs);
         }
     }

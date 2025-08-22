@@ -22,9 +22,14 @@ public class MessageChangedDistributedEto : IMessageChangedDistributedEto
     public virtual string CacheKey { get; set; }
 
     /// <summary>
-    /// HostName
+    /// Emiter's HostName
     /// </summary>
     public virtual string HostName { get; set; }
+
+    /// <summary>
+    /// 消息
+    /// </summary>
+    public virtual MessageInfo Message { get; set; }
 
     /// <summary>
     /// ToString()
