@@ -7,6 +7,7 @@ using IczpNet.Chat.ChatObjectEntryValues;
 using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.Developers;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.Mottos;
 using IczpNet.Chat.RedEnvelopes;
@@ -223,6 +224,20 @@ public class ChatObject : BaseTreeEntity<ChatObject, long>, IName, IChatObject, 
     #region Favorite 
     //[InverseProperty(nameof(FavoritedRecorder.Owner))]
     //public virtual IList<FavoritedRecorder> FavoriteList { get; set; }
+    #endregion
+
+    #region Follow
+    /// <summary>
+    /// 我关注的人（我发起的关注）
+    /// </summary>
+    [InverseProperty(nameof(Follow.Owner))]
+    public virtual IList<Follow> FollowingList { get; protected set; }
+
+    /// <summary>
+    /// 关注我的人（我是被关注者）
+    /// </summary>
+    [InverseProperty(nameof(Follow.Destination))]
+    public virtual IList<Follow> FollowerList { get; protected set; }
     #endregion
 
     #region ChatObjectEntryValue 
