@@ -1,6 +1,8 @@
 ﻿using IczpNet.AbpCommons;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.Settings;
+using Pipelines.Sockets.Unofficial.Buffers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -97,5 +99,18 @@ public class FollowManager(ISessionUnitManager sessionUnitManager,
         await DeleteAsync(owner.Id, idList);
     }
 
+    public async Task<int> GetFollowingCountAsync(long chatObjectId)
+    {
+        return await Repository.CountAsync(x => x.OwnerSessionUnit.Owner.Id == chatObjectId);
+    }
 
+    public async Task<int> GetFollowerCountAsync(Guid sessionUnitId)
+    {
+        return await Repository.CountAsync(x => x.DestinationId == sessionUnitId);
+    }
+
+    public async Task<int> GetFollowerCountAsync(long chatObjectId)
+    {
+        return await Repository.CountAsync(x => x.OwnerSessionUnit.Owner.Id == chatObjectId);
+    }
 }

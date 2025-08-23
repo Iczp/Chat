@@ -65,7 +65,7 @@ public class FollowAppService : ChatAppService, IFollowAppService
     {
         var query = (await Repository.GetQueryableAsync())
             .Where(x => x.DestinationId == input.SessionUnitId)
-            .Select(x => x.Owner)
+            .Select(x => x.OwnerSessionUnit)
             //.WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordDestinationSessionUnitSpecification(input.Keyword).ToExpression())
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordDestinationSessionUnitSpecification(input.Keyword, await ChatObjectManager.QueryByKeywordAsync(input.Keyword)))
             ;

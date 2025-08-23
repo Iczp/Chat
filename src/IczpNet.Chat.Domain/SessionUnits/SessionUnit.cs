@@ -204,8 +204,8 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     [InverseProperty(nameof(DeletedRecorder.SessionUnit))]
     public virtual IList<DeletedRecorder> DeletedRecorderList { get; protected set; }
 
-    [InverseProperty(nameof(Follow.Owner))]
-    public virtual IList<Follow> FollowList { get; protected set; }
+    [InverseProperty(nameof(Follow.OwnerSessionUnit))]
+    public virtual IList<Follow> FollowingList { get; protected set; }
 
     [InverseProperty(nameof(FavoritedRecorder.SessionUnit))]
     public virtual IList<FavoritedRecorder> FavoriteList { get; protected set; }
