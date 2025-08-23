@@ -13,12 +13,12 @@ public class Follow : BaseEntity
     /// <summary>
     /// Owner SessionUnitId
     /// </summary>
-    public virtual Guid SessionUnitId { get; protected set; }
+    public virtual Guid OwnerSessionUnitId { get; protected set; }
 
     /// <summary>
     /// SessionUnit
     /// </summary>
-    [ForeignKey(nameof(SessionUnitId))]
+    [ForeignKey(nameof(OwnerSessionUnitId))]
     public virtual SessionUnit OwnerSessionUnit { get; protected set; }
 
     /// <summary>
@@ -31,7 +31,7 @@ public class Follow : BaseEntity
 
     public override object[] GetKeys()
     {
-        return [SessionUnitId, DestinationId];
+        return [OwnerSessionUnitId, DestinationId];
     }
 
     protected Follow() { }

@@ -16,21 +16,14 @@ namespace IczpNet.Chat.Follows;
 /// <summary>
 /// 关注
 /// </summary>
-public class FollowAppService : ChatAppService, IFollowAppService
+public class FollowAppService(
+    IFollowManager followManager,
+    ISessionUnitRepository sessionUnitRepository,
+    IRepository<Follow> repository) : ChatAppService, IFollowAppService
 {
-    protected IFollowManager FollowManager { get; set; }
-    protected ISessionUnitRepository SessionUnitRepository { get; set; }
-    protected IRepository<Follow> Repository { get; set; }
-
-    public FollowAppService(
-        IFollowManager followManager,
-        ISessionUnitRepository sessionUnitRepository,
-        IRepository<Follow> repository)
-    {
-        FollowManager = followManager;
-        SessionUnitRepository = sessionUnitRepository;
-        Repository = repository;
-    }
+    protected IFollowManager FollowManager { get; set; } = followManager;
+    protected ISessionUnitRepository SessionUnitRepository { get; set; } = sessionUnitRepository;
+    protected IRepository<Follow> Repository { get; set; } = repository;
 
     /// <summary>
     /// 我关注的
@@ -40,10 +33,10 @@ public class FollowAppService : ChatAppService, IFollowAppService
     [HttpGet]
     public async Task<PagedResultDto<SessionUnitDestinationDto>> GetListFollowingAsync(FollowingGetListInput input)
     {
-        var ownerownerSessionUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
+        var ownerSessionUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
 
         var ownerSessionUnitIdList = (await Repository.GetQueryableAsync())
-            .Where(x => x.SessionUnitId == ownerownerSessionUnit.Id)
+            .Where(x => x.OwnerSessionUnitId == ownerSessionUnit.Id)
             .Select(x => x.DestinationId)
             ;
 
