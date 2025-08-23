@@ -6,6 +6,8 @@ using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.ChatObjectCategories;
 using IczpNet.Chat.ChatObjects.Dtos;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.FavoritedRecorders;
+using IczpNet.Chat.Follows;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.ServiceStates;
 using IczpNet.Chat.SessionSections.SessionPermissions;
@@ -26,8 +28,16 @@ namespace IczpNet.Chat.ChatObjects;
 /// <summary>
 /// 聊天对象
 /// </summary>
-public class ChatObjectAppService
-    : CrudTreeChatAppService<
+public class ChatObjectAppService(
+    IChatObjectRepository repository,
+    IChatObjectManager chatObjectManager,
+    IChatObjectCategoryManager chatObjectCategoryManager,
+    ISessionPermissionChecker sessionPermissionChecker,
+    IServiceStateManager serviceStateManager,
+    IFavoritedRecorderManager favoritedRecorderManager,
+    IFollowManager followManager,
+    IDeviceIdResolver deviceIdResolver)
+        : CrudTreeChatAppService<
         ChatObject,
         long,
         ChatObjectDto,
@@ -35,7 +45,7 @@ public class ChatObjectAppService
         ChatObjectGetListInput,
         ChatObjectCreateInput,
         ChatObjectUpdateInput,
-        ChatObjectInfo>,
+        ChatObjectInfo>(repository, chatObjectManager),
     IChatObjectAppService
 {
     protected override string GetPolicyName { get; set; } = ChatPermissions.ChatObjectPermission.GetItem;
@@ -44,25 +54,12 @@ public class ChatObjectAppService
     protected override string UpdatePolicyName { get; set; } = ChatPermissions.ChatObjectPermission.Update;
     protected override string DeletePolicyName { get; set; } = ChatPermissions.ChatObjectPermission.Delete;
     //protected IChatObjectManager ChatObjectManager { get; }
-    protected IChatObjectCategoryManager ChatObjectCategoryManager { get; }
-    protected ISessionPermissionChecker SessionPermissionChecker { get; }
-    protected IServiceStateManager ServiceStateManager { get; }
-    protected IDeviceIdResolver DeviceIdResolver { get; }
-
-    public ChatObjectAppService(
-        IChatObjectRepository repository,
-        IChatObjectManager chatObjectManager,
-        IChatObjectCategoryManager chatObjectCategoryManager,
-        ISessionPermissionChecker sessionPermissionChecker,
-        IServiceStateManager serviceStateManager,
-        IDeviceIdResolver deviceIdResolver) : base(repository, chatObjectManager)
-    {
-        ChatObjectCategoryManager = chatObjectCategoryManager;
-        //ChatObjectManager = chatObjectManager;
-        SessionPermissionChecker = sessionPermissionChecker;
-        ServiceStateManager = serviceStateManager;
-        DeviceIdResolver = deviceIdResolver;
-    }
+    protected IChatObjectCategoryManager ChatObjectCategoryManager { get; } = chatObjectCategoryManager;
+    protected ISessionPermissionChecker SessionPermissionChecker { get; } = sessionPermissionChecker;
+    protected IServiceStateManager ServiceStateManager { get; } = serviceStateManager;
+    protected IFavoritedRecorderManager FavoritedRecorderManager { get; } = favoritedRecorderManager;
+    protected IFollowManager FollowManager { get; } = followManager;
+    protected IDeviceIdResolver DeviceIdResolver { get; } = deviceIdResolver;
 
     protected override async Task<IQueryable<ChatObject>> CreateFilteredQueryAsync(ChatObjectGetListInput input)
     {
@@ -323,5 +320,18 @@ public class ChatObjectAppService
         }
 
         return await ServiceStateManager.SetAsync(id, deviceId, status);
+    }
+
+    public async Task<ChatObjectProfileDto> GetProfileAsync(long id)
+    {
+
+        return new ChatObjectProfileDto()
+        {
+            Owner = await GetAsync(id),
+            FavoritedCount = await FavoritedRecorderManager.GetCountByOwnerIdAsync(id),
+            FllowingCount = await FollowManager.GetFollowingCountAsync(id),
+            FllowerCount = await FollowManager.GetFollowerCountAsync(id),
+        };
+        //return GetProfileInternalAsync(id);
     }
 }
