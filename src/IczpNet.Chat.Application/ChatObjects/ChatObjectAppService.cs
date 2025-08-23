@@ -329,8 +329,8 @@ public class ChatObjectAppService(
         {
             Owner = await GetAsync(id),
             FavoritedCount = await FavoritedRecorderManager.GetCountByOwnerIdAsync(id),
-            FllowingCount = await FollowManager.GetFollowingCountAsync(id),
-            FllowerCount = await FollowManager.GetFollowerCountAsync(id),
+            FollowingCount = await FollowManager.GetFollowingCountAsync(id),
+            FollowerCount = await FollowManager.GetFollowerCountAsync(id),
         };
         //return GetProfileInternalAsync(id);
     }

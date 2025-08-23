@@ -15,11 +15,11 @@ public class ChatObjectProfileDto
     /// <summary>
     /// 我的关注数量
     /// </summary>
-    public virtual int? FllowingCount { get; set; }
+    public virtual int? FollowingCount { get; set; }
 
     /// <summary>
     /// 我的粉丝数量
     /// </summary>
-    public virtual int? FllowerCount { get; set; }
+    public virtual int? FollowerCount { get; set; }
 
 }
