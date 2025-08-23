@@ -37,7 +37,7 @@ public class FollowAppService(
 
         var ownerSessionUnitIdList = (await Repository.GetQueryableAsync())
             .Where(x => x.OwnerSessionUnitId == ownerSessionUnit.Id)
-            .Select(x => x.DestinationId)
+            .Select(x => x.DestinationSessionUnitId)
             ;
 
         var query = (await SessionUnitRepository.GetQueryableAsync())
@@ -57,7 +57,7 @@ public class FollowAppService(
     public async Task<PagedResultDto<SessionUnitDestinationDto>> GetListFollowerAsync(FollowerGetListInput input)
     {
         var query = (await Repository.GetQueryableAsync())
-            .Where(x => x.DestinationId == input.SessionUnitId)
+            .Where(x => x.DestinationSessionUnitId == input.SessionUnitId)
             .Select(x => x.OwnerSessionUnit)
             //.WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordDestinationSessionUnitSpecification(input.Keyword).ToExpression())
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordDestinationSessionUnitSpecification(input.Keyword, await ChatObjectManager.QueryByKeywordAsync(input.Keyword)))

@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.BaseEntities;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.SessionUnits;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -10,6 +11,18 @@ namespace IczpNet.Chat.Follows;
 /// </summary>
 public class Follow : BaseEntity
 {
+
+    ///// <summary>
+    ///// ChatObjectId
+    ///// </summary>
+    //public virtual int? OwnerId { get; protected set; }
+
+    ///// <summary>
+    ///// ChatObject
+    ///// </summary>
+    //[ForeignKey(nameof(OwnerId))]
+    //public virtual ChatObject Owner { get; protected set; }
+
     /// <summary>
     /// Owner SessionUnitId
     /// </summary>
@@ -24,14 +37,14 @@ public class Follow : BaseEntity
     /// <summary>
     /// Destination SessionUnitId
     /// </summary>
-    public virtual Guid DestinationId { get; protected set; }
+    public virtual Guid DestinationSessionUnitId { get; protected set; }
 
     //[ForeignKey(nameof(DestinationId))]
     //public virtual SessionUnit Destination { get; set; }
 
     public override object[] GetKeys()
     {
-        return [OwnerSessionUnitId, DestinationId];
+        return [OwnerSessionUnitId, DestinationSessionUnitId];
     }
 
     protected Follow() { }
@@ -39,6 +52,6 @@ public class Follow : BaseEntity
     public Follow(SessionUnit ownerSessionUnit, Guid destinationId)
     {
         OwnerSessionUnit = ownerSessionUnit; 
-        DestinationId = destinationId;
+        DestinationSessionUnitId = destinationId;
     }
 }

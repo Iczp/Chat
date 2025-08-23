@@ -110,7 +110,7 @@ public static class ChatDbContextModelCreatingExtensions
         builder.Entity<SessionPermissionRoleGrant>(b => { b.HasKey(x => new { x.DefinitionId, x.RoleId }); });
         builder.Entity<SessionPermissionUnitGrant>(b => { b.HasKey(x => new { x.DefinitionId, x.SessionUnitId }); });
 
-        builder.Entity<Follow>(b => { b.HasKey(x => new { x.OwnerSessionUnitId, x.DestinationId }); });
+        builder.Entity<Follow>(b => { b.HasKey(x => new { x.OwnerSessionUnitId, x.DestinationSessionUnitId }); });
 
         builder.Entity<MessageReminder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
 
