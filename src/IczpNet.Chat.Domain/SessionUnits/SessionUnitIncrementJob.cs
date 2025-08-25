@@ -46,7 +46,7 @@ public class SessionUnitIncrementJob(
 
         var cacheKey = await SessionUnitManager.GetCacheKeyByMessageAsync(message);
 
-        var eventData = new MessageChangedDistributedEto()
+        var eventData = new SendToClientDistributedEto()
         {
             Command = Command.UpdateBadge.ToString(),
             MessageId = args.LastMessageId,

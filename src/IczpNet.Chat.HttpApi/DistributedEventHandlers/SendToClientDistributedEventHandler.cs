@@ -16,7 +16,7 @@ using Volo.Abp.Json;
 
 namespace IczpNet.Chat.DistributedEventHandlers;
 
-public class SendToClientDistributedEventHandler : DomainService, IDistributedEventHandler<MessageChangedDistributedEto>, ITransientDependency
+public class SendToClientDistributedEventHandler : DomainService, IDistributedEventHandler<SendToClientDistributedEto>, ITransientDependency
 {
     public ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
     public IConnectionPoolManager ConnectionPoolManager => LazyServiceProvider.LazyGetRequiredService<IConnectionPoolManager>();
@@ -24,9 +24,9 @@ public class SendToClientDistributedEventHandler : DomainService, IDistributedEv
     public IJsonSerializer JsonSerializer => LazyServiceProvider.LazyGetRequiredService<IJsonSerializer>();
     public IHubContext<ChatHub, IChatClient> HubContext => LazyServiceProvider.LazyGetRequiredService<IHubContext<ChatHub, IChatClient>>();
 
-    public async Task HandleEventAsync(MessageChangedDistributedEto eventData)
+    public async Task HandleEventAsync(SendToClientDistributedEto eventData)
     {
-        Logger.LogInformation($"{nameof(SendToClientDistributedEventHandler)} received eventData[{nameof(MessageChangedDistributedEto)}]:{eventData}");
+        Logger.LogInformation($"{nameof(SendToClientDistributedEventHandler)} received eventData[{nameof(SendToClientDistributedEto)}]:{eventData}");
 
         var cacheKey = eventData.CacheKey;
         //var payload = eventData.CacheKey;

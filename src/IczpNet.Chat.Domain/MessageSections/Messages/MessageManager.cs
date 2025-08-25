@@ -401,7 +401,7 @@ public partial class MessageManager(
     {
         var cacheKey = await SessionUnitManager.GetCacheKeyByMessageAsync(message);
 
-        var eventData = new MessageChangedDistributedEto()
+        var eventData = new SendToClientDistributedEto()
         {
             Command = command.ToString(),
             CacheKey = cacheKey,
@@ -413,7 +413,7 @@ public partial class MessageManager(
 
         await DistributedEventBus.PublishAsync(eventData, onUnitOfWorkComplete, useOutbox);
 
-        Logger.LogInformation($"PublishMessageDistributedEventAsync(onUnitOfWorkComplete:{onUnitOfWorkComplete},useOutbox:{useOutbox})[{nameof(MessageChangedDistributedEto)}]:{eventData}");
+        Logger.LogInformation($"PublishMessageDistributedEventAsync(onUnitOfWorkComplete:{onUnitOfWorkComplete},useOutbox:{useOutbox})[{nameof(SendToClientDistributedEto)}]:{eventData}");
     }
 
     /// <inheritdoc />
