@@ -45,9 +45,19 @@ public class MessageInfo
     public virtual MessageTypes MessageType { get; set; }
 
     /// <summary>
+    /// 消息类型
+    /// </summary>
+    public virtual string MessageTypeDescription { get; set; }
+
+    /// <summary>
     /// 提醒类型
     /// </summary>
     public virtual ReminderTypes? ReminderType { get; set; }
+
+    /// <summary>
+    /// 提醒类型
+    /// </summary>
+    public virtual string ReminderTypeDescription { get; set; }
 
     /// <summary>
     /// 是否私有消息

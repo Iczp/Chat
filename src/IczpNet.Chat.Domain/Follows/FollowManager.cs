@@ -111,6 +111,6 @@ public class FollowManager(ISessionUnitManager sessionUnitManager,
 
     public async Task<int> GetFollowerCountAsync(long chatObjectId)
     {
-        return await Repository.CountAsync(x => x.OwnerSessionUnit.Owner.Id == chatObjectId);
+        return await Repository.CountAsync(x => x.DestinationSessionUnit.Owner.Id == chatObjectId);
     }
 }
