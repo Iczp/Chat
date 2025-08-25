@@ -1,6 +1,6 @@
 ﻿namespace IczpNet.Chat.MessageSections.Messages;
 
-public interface IMessageChangedDistributedEto
+public interface ISendToClientDistributedEto
 {
     /// <summary>
     /// Command

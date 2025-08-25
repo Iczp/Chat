@@ -4,7 +4,7 @@ using System;
 namespace IczpNet.Chat.MessageSections.Messages;
 
 [Serializable]
-public class SendToClientDistributedEto : IMessageChangedDistributedEto
+public class SendToClientDistributedEto : ISendToClientDistributedEto
 {
     /// <summary>
     /// Command
