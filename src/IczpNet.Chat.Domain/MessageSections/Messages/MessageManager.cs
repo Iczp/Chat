@@ -167,8 +167,8 @@ public partial class MessageManager(
         ////更新转发次数
         await UpdateForwardCountAsync(message.ForwardPath);
 
-        // 发出事件
-        await PublishMessageDistributedEventAsync(message, message.ForwardMessageId.HasValue ? Command.Forward : Command.Created);
+        // 发出事件 (移动到本地事伯 MessageCreated)
+        //await PublishMessageDistributedEventAsync(message, message.ForwardMessageId.HasValue ? Command.Forward : Command.Created);
 
         ////以下可能导致锁表
         //await SessionUnitRepository.UpdateLastMessageIdAsync(senderSessionUnit.Id, message.Id);
@@ -397,16 +397,21 @@ public partial class MessageManager(
         return await SendAsync<TContentInfo, TContentEntity>(senderSessionUnit, input, messageContent);
     }
 
+    [Obsolete($"(移动到本地事伯 MessageCreated:${nameof(PublishToClientForMessageCreatedEventHandler)})")]
     protected virtual async Task PublishMessageDistributedEventAsync(Message message, Command command, bool onUnitOfWorkComplete = true, bool useOutbox = true)
     {
         var cacheKey = await SessionUnitManager.GetCacheKeyByMessageAsync(message);
+
+        // 重新获取，防止导航属性没有加载完全
+        var dbMessage = await Repository.GetAsync(message.Id);
 
         var eventData = new SendToClientDistributedEto()
         {
             Command = command.ToString(),
             CacheKey = cacheKey,
-            MessageId = message.Id,
             HostName = CurrentHosted.Name,
+            MessageId = message.Id,
+            Message = ObjectMapper.Map<Message, MessageInfo<object>>(dbMessage)
         };
 
         await SessionUnitManager.GetOrAddByMessageAsync(message);
@@ -468,7 +473,8 @@ public partial class MessageManager(
 
         message.Rollback(nowTime);
 
-        await PublishMessageDistributedEventAsync(message, Command.Rollback);
+        //(移动到本地事伯 MessageCreated)
+        //await PublishMessageDistributedEventAsync(message, Command.Rollback);
 
         //await Repository.UpdateAsync(message, true);
         await UnitOfWorkManager.Current.SaveChangesAsync();

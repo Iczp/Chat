@@ -29,7 +29,7 @@ public class SendToClientDistributedEto : ISendToClientDistributedEto
     /// <summary>
     /// 消息
     /// </summary>
-    public virtual MessageInfo Message { get; set; }
+    public virtual MessageInfo<object> Message { get; set; }
 
     /// <summary>
     /// ToString()

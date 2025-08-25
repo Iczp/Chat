@@ -15,6 +15,7 @@ public partial class Message
 
     public Message(SessionUnit sessionUnit) : base()
     {
+        //直接给导航属性赋值,可能导致意外更新实体: SenderSessionUnit
         //SenderSessionUnit = sessionUnit;
         SenderId = sessionUnit.OwnerId;
         SenderType = sessionUnit.OwnerObjectType;

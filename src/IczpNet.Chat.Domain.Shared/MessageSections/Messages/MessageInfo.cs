@@ -35,6 +35,16 @@ public class MessageInfo
     public virtual long Id { get; set; }
 
     /// <summary>
+    /// 
+    /// </summary>
+    public virtual long? ForwardMessageId { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public virtual long? QuoteMessageId { get; set; }
+
+    /// <summary>
     /// 发送人
     /// </summary>
     public virtual string SenderName { get; set; }

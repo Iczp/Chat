@@ -24,5 +24,5 @@ public interface ISendToClientDistributedEto
     /// <summary>
     /// 消息
     /// </summary>
-    MessageInfo Message {  get; set; }
+    MessageInfo<object> Message {  get; set; }
 }
