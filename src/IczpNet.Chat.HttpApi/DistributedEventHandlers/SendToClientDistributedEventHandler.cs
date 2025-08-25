@@ -1,6 +1,5 @@
 ﻿using IczpNet.Chat.ChatHubs;
 using IczpNet.Chat.ConnectionPools;
-using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Hosting;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionUnits;
@@ -17,7 +16,7 @@ using Volo.Abp.Json;
 
 namespace IczpNet.Chat.DistributedEventHandlers;
 
-public class MessageChangedDistributedEventHandler : DomainService, IDistributedEventHandler<MessageChangedDistributedEto>, ITransientDependency
+public class SendToClientDistributedEventHandler : DomainService, IDistributedEventHandler<SendToClientDistributedEto>, ITransientDependency
 {
     public ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
     public IConnectionPoolManager ConnectionPoolManager => LazyServiceProvider.LazyGetRequiredService<IConnectionPoolManager>();
@@ -25,9 +24,9 @@ public class MessageChangedDistributedEventHandler : DomainService, IDistributed
     public IJsonSerializer JsonSerializer => LazyServiceProvider.LazyGetRequiredService<IJsonSerializer>();
     public IHubContext<ChatHub, IChatClient> HubContext => LazyServiceProvider.LazyGetRequiredService<IHubContext<ChatHub, IChatClient>>();
 
-    public async Task HandleEventAsync(MessageChangedDistributedEto eventData)
+    public async Task HandleEventAsync(SendToClientDistributedEto eventData)
     {
-        Logger.LogInformation($"{nameof(MessageChangedDistributedEventHandler)} received eventData[{nameof(MessageChangedDistributedEto)}]:{eventData}");
+        Logger.LogInformation($"{nameof(SendToClientDistributedEventHandler)} received eventData[{nameof(SendToClientDistributedEto)}]:{eventData}");
 
         var cacheKey = eventData.CacheKey;
         //var payload = eventData.CacheKey;
@@ -38,9 +37,9 @@ public class MessageChangedDistributedEventHandler : DomainService, IDistributed
 
         var sessionUnitInfoList = await SessionUnitManager.GetCacheListAsync(cacheKey);
 
-        Logger.LogInformation($"{nameof(MessageChangedDistributedEventHandler)}-Command-{command}-MessageId-{eventData.MessageId}");
+        Logger.LogInformation($"{nameof(SendToClientDistributedEventHandler)}-Command-{command}-MessageId-{eventData.MessageId}");
 
-        Logger.LogInformation($"{nameof(MessageChangedDistributedEventHandler)}-CurrentHost={CurrentHosted.Name},eventData.HostName={eventData.HostName}");
+        Logger.LogInformation($"{nameof(SendToClientDistributedEventHandler)}-CurrentHost={CurrentHosted.Name},eventData.HostName={eventData.HostName}");
 
         if (sessionUnitInfoList == null)
         {

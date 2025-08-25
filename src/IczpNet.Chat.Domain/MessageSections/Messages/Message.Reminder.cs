@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.Enums;
+﻿using IczpNet.AbpCommons.Extensions;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -27,6 +28,12 @@ public partial class Message
     /// </summary>
     [Comment("提醒器类型")] 
     public virtual ReminderTypes? ReminderType { get; protected set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    [NotMapped]
+    public virtual string ReminderTypeDescription => ReminderType?.GetDescription();
 
     /// <summary>
     /// 提醒列表

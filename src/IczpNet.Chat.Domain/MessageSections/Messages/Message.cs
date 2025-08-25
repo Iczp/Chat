@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.BaseEntities;
+﻿using IczpNet.AbpCommons.Extensions;
+using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.SessionSections;
@@ -123,6 +124,12 @@ public partial class Message : BaseEntity<long>, ISessionId, IHasEntityVersion
     public virtual ChatObjectTypeEnums? SenderType { get; protected set; }
 
     /// <summary>
+    /// 
+    /// </summary>
+    [NotMapped] 
+    public virtual string SenderTypeDescription => SenderType?.GetDescription();
+
+    /// <summary>
     /// 接收者
     /// </summary>
     [Comment("接收者")]
@@ -135,6 +142,12 @@ public partial class Message : BaseEntity<long>, ISessionId, IHasEntityVersion
     public virtual ChatObjectTypeEnums? ReceiverType { get; protected set; }
 
     /// <summary>
+    /// 
+    /// </summary>
+    [NotMapped]
+    public virtual string ReceiverTypeDescription => ReceiverType?.GetDescription();
+
+    /// <summary>
     /// 消息通道
     /// </summary>
     [Required]
@@ -142,10 +155,22 @@ public partial class Message : BaseEntity<long>, ISessionId, IHasEntityVersion
     public virtual Channels Channel { get; protected set; }
 
     /// <summary>
+    /// 
+    /// </summary>
+    [NotMapped]
+    public virtual string ChannelDescription => Channel.GetDescription();
+
+    /// <summary>
     /// 消息类型
     /// </summary>
     [Comment("消息类型")]
     public virtual MessageTypes MessageType { get; protected set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    [NotMapped]
+    public virtual string MessageTypeDescription => MessageType.GetDescription();
 
     /// <summary>
     /// ContentJson

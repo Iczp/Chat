@@ -16,6 +16,12 @@ public interface IFollowManager
 
     Task<int> GetFollowingCountAsync(Guid sessionUnitId);
 
+    Task<int> GetFollowingCountAsync(long chatObjectId);
+
+    Task<int> GetFollowerCountAsync(Guid sessionUnitId);
+
+    Task<int> GetFollowerCountAsync(long chatObjectId);
+
     Task<bool> CreateAsync(Guid sessionUnitId, List<Guid> idList);
 
     Task<bool> CreateAsync(SessionUnit owner, List<Guid> idList);

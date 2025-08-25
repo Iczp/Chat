@@ -7,6 +7,7 @@ using IczpNet.Chat.ChatObjectEntryValues;
 using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.Developers;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.Mottos;
 using IczpNet.Chat.RedEnvelopes;
@@ -59,6 +60,31 @@ public class ChatObject : BaseTreeEntity<ChatObject, long>, IName, IChatObject, 
     public override string Name { get; protected set; }
 
     /// <summary>
+    /// 
+    /// </summary>
+    [NotMapped]
+    public virtual string DisplayName => GetDisplayName();
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
+    protected virtual string GetDisplayName()
+    {
+        switch (ObjectType)
+        {
+            case ChatObjectTypeEnums.ShopWaiter:
+                {
+                    return $"{FullPathName.Replace("/", ":")}";
+                }
+            default:
+                {
+                    return Name;
+                }
+        }
+    }
+
+    /// <summary>
     /// 拼音
     /// </summary>
     [MaxLength(300)]
@@ -82,6 +108,12 @@ public class ChatObject : BaseTreeEntity<ChatObject, long>, IName, IChatObject, 
     public virtual Genders Gender { get; set; }
 
     /// <summary>
+    /// 
+    /// </summary>
+    [NotMapped]
+    public virtual string GenderDescription => Gender.GetDescription();
+
+    /// <summary>
     /// 头像(略图)
     /// </summary>
     [MaxLength(1000)]
@@ -92,8 +124,6 @@ public class ChatObject : BaseTreeEntity<ChatObject, long>, IName, IChatObject, 
     /// </summary>
     [MaxLength(1000)]
     public virtual string Portrait { get; protected set; }
-
-
 
     /// <summary>
     /// 用户ID
@@ -106,9 +136,21 @@ public class ChatObject : BaseTreeEntity<ChatObject, long>, IName, IChatObject, 
     public virtual ChatObjectTypeEnums? ObjectType { get; protected set; }
 
     /// <summary>
+    /// 
+    /// </summary>
+    [NotMapped]
+    public virtual string ObjectTypeDescription => ObjectType?.GetDescription();
+
+    /// <summary>
     /// 验证方式
     /// </summary>
     public virtual VerificationMethods VerificationMethod { get; protected set; }
+
+    /// <summary>
+    /// 验证方式
+    /// </summary>
+    [NotMapped]
+    public virtual string VerificationMethodDescription => VerificationMethod.GetDescription();
 
     /// <summary>
     /// 说明
@@ -146,6 +188,12 @@ public class ChatObject : BaseTreeEntity<ChatObject, long>, IName, IChatObject, 
     /// </summary>
     [NotMapped]
     public virtual ServiceStatus? ServiceStatus => null;
+
+    /// <summary>
+    /// 
+    /// </summary>
+    [NotMapped]
+    public virtual string ServiceStatusDescription => ServiceStatus?.GetDescription();
 
     /// <summary>
     /// 是否开发者
@@ -225,6 +273,20 @@ public class ChatObject : BaseTreeEntity<ChatObject, long>, IName, IChatObject, 
     //public virtual IList<FavoritedRecorder> FavoriteList { get; set; }
     #endregion
 
+    #region Follow
+    /// <summary>
+    /// 我关注的人（我发起的关注）
+    /// </summary>
+    [InverseProperty(nameof(Follow.Owner))]
+    public virtual IList<Follow> FollowingList { get; protected set; }
+
+    /// <summary>
+    /// 关注我的人（我是被关注者）
+    /// </summary>
+    [InverseProperty(nameof(Follow.Destination))]
+    public virtual IList<Follow> FollowerList { get; protected set; }
+    #endregion
+
     #region ChatObjectEntryValue 
     [InverseProperty(nameof(ChatObjectEntryValue.Owner))]
     public virtual IList<ChatObjectEntryValue> Entries { get; set; } = new List<ChatObjectEntryValue>();
@@ -246,7 +308,7 @@ public class ChatObject : BaseTreeEntity<ChatObject, long>, IName, IChatObject, 
         StateCheckers = [];
     }
 
-    public ChatObject(string name,string code, ChatObjectType chatObjectType, long? parentId) : base(name, parentId)
+    public ChatObject(string name, string code, ChatObjectType chatObjectType, long? parentId) : base(name, parentId)
     {
         StateCheckers = [];
         Code = code;

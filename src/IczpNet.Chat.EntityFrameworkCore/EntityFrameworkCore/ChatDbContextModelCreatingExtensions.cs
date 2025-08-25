@@ -110,7 +110,35 @@ public static class ChatDbContextModelCreatingExtensions
         builder.Entity<SessionPermissionRoleGrant>(b => { b.HasKey(x => new { x.DefinitionId, x.RoleId }); });
         builder.Entity<SessionPermissionUnitGrant>(b => { b.HasKey(x => new { x.DefinitionId, x.SessionUnitId }); });
 
-        builder.Entity<Follow>(b => { b.HasKey(x => new { x.SessionUnitId, x.DestinationId }); });
+        builder.Entity<Follow>(entity =>
+        {
+            entity.HasKey(x => new { x.OwnerSessionUnitId, x.DestinationSessionUnitId });
+
+            // OwnerSessionUnit 关系
+            entity.HasOne(e => e.OwnerSessionUnit)
+                .WithMany(su => su.FollowingList)
+                .HasForeignKey(e => e.OwnerSessionUnitId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // DestinationSessionUnit 关系
+            entity.HasOne(e => e.DestinationSessionUnit)
+                .WithMany(su => su.FollowerList)
+                .HasForeignKey(e => e.DestinationSessionUnitId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ChatObject 关系（可选）
+            entity.HasOne(e => e.Owner)
+                .WithMany(su => su.FollowingList)
+                .HasForeignKey(e => e.OwnerId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Destination)
+                .WithMany(su => su.FollowerList)
+                .HasForeignKey(e => e.DestinationId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
 
         builder.Entity<MessageReminder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
 

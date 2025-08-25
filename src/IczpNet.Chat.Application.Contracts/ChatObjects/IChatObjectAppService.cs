@@ -49,6 +49,8 @@ public interface IChatObjectAppService :
 
     Task<ChatObjectDetailDto> GetDetailAsync(long id);
 
+    Task<ChatObjectProfileDto> GetProfileAsync(long id);
+
     Task<List<ServiceStatusCacheItem>> GetServiceStatusAsync(long id);
 
     Task<List<ServiceStatusCacheItem>> SetServiceStatusAsync(long id, ServiceStatus status);

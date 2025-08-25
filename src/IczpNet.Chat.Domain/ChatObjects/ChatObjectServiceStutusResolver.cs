@@ -1,9 +1,7 @@
 ﻿using AutoMapper;
-
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.ServiceStates;
 using System;
-using System.Linq;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Services;
 
@@ -20,12 +18,12 @@ public class ChatObjectServiceStutusResolver<TOut> : DomainService, IValueResolv
 
         if (source.ObjectType.IsIn(ChatObjectTypeEnums.Personal, ChatObjectTypeEnums.Anonymous, ChatObjectTypeEnums.Customer, ChatObjectTypeEnums.ShopWaiter))
         {
-            return statues ?? ServiceStatus.Offline;
+            return statues;
         }
 
         if (source.ObjectType.IsIn(ChatObjectTypeEnums.ShopKeeper))
         {
-            if(statues!=null && (int)statues > 0)
+            if (statues != null && (int)statues > 0)
             {
                 return statues;
             }

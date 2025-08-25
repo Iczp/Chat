@@ -4,7 +4,7 @@ using System;
 namespace IczpNet.Chat.MessageSections.Messages;
 
 [Serializable]
-public class MessageChangedDistributedEto : IMessageChangedDistributedEto
+public class SendToClientDistributedEto : ISendToClientDistributedEto
 {
     /// <summary>
     /// Command
@@ -29,7 +29,7 @@ public class MessageChangedDistributedEto : IMessageChangedDistributedEto
     /// <summary>
     /// 消息
     /// </summary>
-    public virtual MessageInfo Message { get; set; }
+    public virtual MessageInfo<object> Message { get; set; }
 
     /// <summary>
     /// ToString()
@@ -37,6 +37,6 @@ public class MessageChangedDistributedEto : IMessageChangedDistributedEto
     /// <returns></returns>
     public override string ToString()
     {
-        return $"[{nameof(MessageChangedDistributedEto)}]:{nameof(Command)}={Command},{nameof(MessageId)}={MessageId},{nameof(HostName)}={HostName}";
+        return $"[{nameof(SendToClientDistributedEto)}]:{nameof(Command)}={Command},{nameof(MessageId)}={MessageId},{nameof(HostName)}={HostName}";
     }
 }

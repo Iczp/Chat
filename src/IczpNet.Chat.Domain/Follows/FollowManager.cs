@@ -1,6 +1,8 @@
 ﻿using IczpNet.AbpCommons;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.Settings;
+using Pipelines.Sockets.Unofficial.Buffers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,28 +23,28 @@ public class FollowManager(ISessionUnitManager sessionUnitManager,
 
     public async Task<List<Follow>> GetFollowersAsync(Guid destinationSessionUnitId)
     {
-        return [.. (await Repository.GetQueryableAsync()).Where(x => x.DestinationId == destinationSessionUnitId)];
+        return [.. (await Repository.GetQueryableAsync()).Where(x => x.DestinationSessionUnitId == destinationSessionUnitId)];
     }
 
     public async Task<List<Guid>> GetFollowerIdListAsync(Guid destinationSessionUnitId)
     {
         return [.. (await Repository.GetQueryableAsync())
-           .Where(x => x.DestinationId == destinationSessionUnitId)
-           .Where(x => x.SessionUnitId != destinationSessionUnitId)
-           .Select(x => x.SessionUnitId)];
+           .Where(x => x.DestinationSessionUnitId == destinationSessionUnitId)
+           .Where(x => x.OwnerSessionUnitId != destinationSessionUnitId)
+           .Select(x => x.OwnerSessionUnitId)];
     }
 
     public async Task<List<Guid>> GetFollowingIdListAsync(Guid sessionUnitId)
     {
         return [.. (await Repository.GetQueryableAsync())
-          .Where(x => x.SessionUnitId == sessionUnitId)
-          .Where(x => x.DestinationId != sessionUnitId)
-          .Select(x => x.DestinationId)];
+          .Where(x => x.OwnerSessionUnitId == sessionUnitId)
+          .Where(x => x.DestinationSessionUnitId != sessionUnitId)
+          .Select(x => x.DestinationSessionUnitId)];
     }
 
     public async Task<int> GetFollowingCountAsync(Guid ownerId)
     {
-        return await Repository.CountAsync(x => x.SessionUnitId == ownerId);
+        return await Repository.CountAsync(x => x.OwnerSessionUnitId == ownerId);
     }
 
     public async Task<bool> CreateAsync(Guid sessionUnitId, List<Guid> idList)
@@ -70,8 +72,8 @@ public class FollowManager(ISessionUnitManager sessionUnitManager,
         }
 
         var followedIdList = (await Repository.GetQueryableAsync())
-             .Where(x => x.SessionUnitId == owner.Id)
-             .Select(x => x.DestinationId)
+             .Where(x => x.OwnerSessionUnitId == owner.Id)
+             .Select(x => x.DestinationSessionUnitId)
              .ToList();
 
         var newList = idList.Except(followedIdList)
@@ -89,7 +91,7 @@ public class FollowManager(ISessionUnitManager sessionUnitManager,
 
     public async Task DeleteAsync(Guid sessionUnitId, List<Guid> idList)
     {
-        await Repository.DeleteAsync(x => x.SessionUnitId == sessionUnitId && idList.Contains(x.DestinationId));
+        await Repository.DeleteAsync(x => x.OwnerSessionUnitId == sessionUnitId && idList.Contains(x.DestinationSessionUnitId));
     }
 
     public async Task DeleteAsync(SessionUnit owner, List<Guid> idList)
@@ -97,5 +99,18 @@ public class FollowManager(ISessionUnitManager sessionUnitManager,
         await DeleteAsync(owner.Id, idList);
     }
 
+    public async Task<int> GetFollowingCountAsync(long chatObjectId)
+    {
+        return await Repository.CountAsync(x => x.OwnerSessionUnit.Owner.Id == chatObjectId);
+    }
 
+    public async Task<int> GetFollowerCountAsync(Guid sessionUnitId)
+    {
+        return await Repository.CountAsync(x => x.DestinationSessionUnitId == sessionUnitId);
+    }
+
+    public async Task<int> GetFollowerCountAsync(long chatObjectId)
+    {
+        return await Repository.CountAsync(x => x.DestinationSessionUnit.Owner.Id == chatObjectId);
+    }
 }

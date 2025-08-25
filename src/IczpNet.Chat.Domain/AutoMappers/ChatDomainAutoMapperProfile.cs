@@ -42,8 +42,14 @@ public class ChatApplicationAutoMapperProfile : Profile
             .MaxDepth(3)
             .ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()))
             //.ForMember(x => x.SenderSessionUnit, o => o.MapFrom<SenderSessionUnitResolver<MessageInfo<dynamic>>>())
-            ; 
-        
+            ;
+
+        CreateMap<Message, MessageInfo<object>>()
+            .MaxDepth(3)
+            .ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()))
+            //.ForMember(x => x.SenderSessionUnit, o => o.MapFrom<SenderSessionUnitResolver<MessageInfo<dynamic>>>())
+            ;
+
         CreateMap<Message, MessageWithQuoteInfo>().MaxDepth(3);
         CreateMap(typeof(Message), typeof(MessageInfo<>)).MaxDepth(3);
         CreateMap(typeof(Message), typeof(MessageWithQuoteInfo<>)).MaxDepth(3);

@@ -507,7 +507,7 @@ public class SessionUnitManager(
                 Id = entity.Id,
                 PublicBadge = query.Count(),
                 PrivateBadge = query.Where(x => x.IsPrivate).Count(),
-                FollowingCount = query.Where(x => entity.FollowList.Select(d => d.DestinationId).Contains(x.SenderSessionUnitId.Value)).Count(),
+                FollowingCount = query.Where(x => entity.FollowingList.Select(d => d.DestinationSessionUnitId).Contains(x.SenderSessionUnitId.Value)).Count(),
                 RemindAllCount = query.Where(x => x.IsRemindAll && !x.IsRollbacked).Count(),
                 RemindMeCount = query.Where(x => x.MessageReminderList.Any(g => g.SessionUnitId == entity.Id)).Count(),
             });
@@ -525,7 +525,7 @@ public class SessionUnitManager(
             {
                 x.Id,
                 x.OwnerId,
-                x.FollowList,
+                x.FollowingList,
                 Messages = x.Session.MessageList.Where(d =>
                     d.Id > minMessageId &&
                     d.SenderId != x.OwnerId &&
@@ -539,7 +539,7 @@ public class SessionUnitManager(
                 Id = x.Id,
                 PublicBadge = x.Messages.Count(d => !d.IsPrivate),
                 PrivateBadge = x.Messages.Count(d => d.IsPrivate && d.ReceiverId == x.OwnerId),
-                FollowingCount = x.Messages.Count(d => x.FollowList.Any(d => d.DestinationId == x.Id)),
+                FollowingCount = x.Messages.Count(d => x.FollowingList.Any(d => d.DestinationSessionUnitId == x.Id)),
                 RemindAllCount = x.Messages.Count(d => d.IsRemindAll && !d.IsRollbacked),
                 RemindMeCount = x.Messages.Count(d => d.MessageReminderList.Any(g => g.SessionUnitId == x.Id))
             })
@@ -598,7 +598,7 @@ public class SessionUnitManager(
         {
             x.Id,
             FollowingCount = x.Session.MessageList
-                .Where(d => x.FollowList.Any(d => d.DestinationId == x.Id))
+                .Where(d => x.FollowingList.Any(d => d.DestinationSessionUnitId == x.Id))
                 .Where(d => d.Id > minMessageId)
                 .Where(d =>
                     d.SenderId != x.OwnerId &&

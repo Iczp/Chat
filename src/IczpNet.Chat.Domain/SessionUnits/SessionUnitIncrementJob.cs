@@ -21,6 +21,7 @@ public class SessionUnitIncrementJob(
     IMessageManager messageManager,
     IMessageRepository messageRepository,
     IDistributedEventBus distributedEventBus,
+    IObjectMapper objectMapper,
     ICurrentHosted currentHosted) : AsyncBackgroundJob<SessionUnitIncrementJobArgs>, ITransientDependency
 {
     protected IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
@@ -29,6 +30,7 @@ public class SessionUnitIncrementJob(
     public IMessageManager MessageManager { get; } = messageManager;
     public IMessageRepository MessageRepository { get; } = messageRepository;
     public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
+    public IObjectMapper ObjectMapper { get; } = objectMapper;
     public ICurrentHosted CurrentHosted { get; } = currentHosted;
 
     [UnitOfWork]
@@ -46,12 +48,13 @@ public class SessionUnitIncrementJob(
 
         var cacheKey = await SessionUnitManager.GetCacheKeyByMessageAsync(message);
 
-        var eventData = new MessageChangedDistributedEto()
+        var eventData = new SendToClientDistributedEto()
         {
             Command = Command.UpdateBadge.ToString(),
-            MessageId = args.LastMessageId,
             CacheKey = cacheKey,//$"{new SessionUnitCacheKey(args.SessionId)}",
-            HostName = CurrentHosted.Name
+            HostName = CurrentHosted.Name,
+            MessageId = args.LastMessageId,
+            Message = ObjectMapper.Map<Message, MessageInfo<object>>(message),
         };
         await DistributedEventBus.PublishAsync(eventData);
 

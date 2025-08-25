@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250823094603_Follow-Extends")]
+    partial class FollowExtends
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1590,8 +1593,6 @@ namespace IczpNet.Chat.Migrations
                     b.HasKey("OwnerSessionUnitId", "DestinationSessionUnitId");
 
                     b.HasIndex("DestinationId");
-
-                    b.HasIndex("DestinationSessionUnitId");
 
                     b.HasIndex("OwnerId");
 
@@ -6617,30 +6618,20 @@ namespace IczpNet.Chat.Migrations
             modelBuilder.Entity("IczpNet.Chat.Follows.Follow", b =>
                 {
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Destination")
-                        .WithMany("FollowerList")
-                        .HasForeignKey("DestinationId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("IczpNet.Chat.SessionUnits.SessionUnit", "DestinationSessionUnit")
-                        .WithMany("FollowerList")
-                        .HasForeignKey("DestinationSessionUnitId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .WithMany()
+                        .HasForeignKey("DestinationId");
 
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
-                        .WithMany("FollowingList")
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .WithMany()
+                        .HasForeignKey("OwnerId");
 
                     b.HasOne("IczpNet.Chat.SessionUnits.SessionUnit", "OwnerSessionUnit")
                         .WithMany("FollowingList")
                         .HasForeignKey("OwnerSessionUnitId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Destination");
-
-                    b.Navigation("DestinationSessionUnit");
 
                     b.Navigation("Owner");
 
@@ -7657,10 +7648,6 @@ namespace IczpNet.Chat.Migrations
 
                     b.Navigation("Entries");
 
-                    b.Navigation("FollowerList");
-
-                    b.Navigation("FollowingList");
-
                     b.Navigation("MottoList");
 
                     b.Navigation("OwnerSessionList");
@@ -7814,8 +7801,6 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("Entries");
 
                     b.Navigation("FavoriteList");
-
-                    b.Navigation("FollowerList");
 
                     b.Navigation("FollowingList");
 

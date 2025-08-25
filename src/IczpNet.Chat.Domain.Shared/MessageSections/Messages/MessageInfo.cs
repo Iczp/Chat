@@ -35,6 +35,16 @@ public class MessageInfo
     public virtual long Id { get; set; }
 
     /// <summary>
+    /// 
+    /// </summary>
+    public virtual long? ForwardMessageId { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public virtual long? QuoteMessageId { get; set; }
+
+    /// <summary>
     /// 发送人
     /// </summary>
     public virtual string SenderName { get; set; }
@@ -45,9 +55,19 @@ public class MessageInfo
     public virtual MessageTypes MessageType { get; set; }
 
     /// <summary>
+    /// 消息类型
+    /// </summary>
+    public virtual string MessageTypeDescription { get; set; }
+
+    /// <summary>
     /// 提醒类型
     /// </summary>
     public virtual ReminderTypes? ReminderType { get; set; }
+
+    /// <summary>
+    /// 提醒类型
+    /// </summary>
+    public virtual string ReminderTypeDescription { get; set; }
 
     /// <summary>
     /// 是否私有消息
