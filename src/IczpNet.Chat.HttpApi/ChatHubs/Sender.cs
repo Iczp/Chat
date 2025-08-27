@@ -1,4 +1,4 @@
-﻿using IczpNet.Pusher.Models;
+﻿using IczpNet.Chat.CommandPayloads;
 using Microsoft.AspNetCore.SignalR;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Services;
@@ -11,7 +11,7 @@ public class Sender(IHubContext<ChatHub, IChatClient> hubContext) : DomainServic
 
     public async Task SendAsync(string method, object payload)
     {
-        await HubContext.Clients.All.ReceivedMessage(new PushPayload()
+        await HubContext.Clients.All.ReceivedMessage(new CommandPayload()
         {
             Command = method,
             Payload = payload

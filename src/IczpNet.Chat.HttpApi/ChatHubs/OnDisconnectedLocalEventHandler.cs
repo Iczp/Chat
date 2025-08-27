@@ -1,5 +1,5 @@
-﻿using IczpNet.Chat.ConnectionPools;
-using IczpNet.Pusher.Models;
+﻿using IczpNet.Chat.CommandPayloads;
+using IczpNet.Chat.ConnectionPools;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using Volo.Abp.EventBus;
@@ -12,7 +12,7 @@ public class OnDisconnectedLocalEventHandler : ChatHubService, ILocalEventHandle
     {
         Logger.LogInformation($"{nameof(OnDisconnectedLocalEventHandler)} received eventData[{nameof(OnDisconnectedEto)}]:{eventData}");
 
-        var commandPayload = new PushPayload()
+        var commandPayload = new CommandPayload()
         {
             AppUserId = eventData.UserId,
             Scopes = [],

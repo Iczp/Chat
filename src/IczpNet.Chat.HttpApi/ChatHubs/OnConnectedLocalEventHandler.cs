@@ -1,5 +1,5 @@
-﻿using IczpNet.Chat.ConnectionPools;
-using IczpNet.Pusher.Models;
+﻿using IczpNet.Chat.CommandPayloads;
+using IczpNet.Chat.ConnectionPools;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using Volo.Abp.EventBus;
@@ -14,7 +14,7 @@ public class OnConnectedLocalEventHandler : ChatHubService, ILocalEventHandler<O
 
         var totalCount = await ConnectionPoolManager.GetTotalCountAsync();
 
-        var commandPayload = new PushPayload()
+        var commandPayload = new CommandPayload()
         {
             AppUserId = eventData.UserId,
             Scopes = [],

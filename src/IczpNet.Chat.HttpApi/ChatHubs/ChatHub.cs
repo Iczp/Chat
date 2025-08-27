@@ -1,5 +1,6 @@
 ﻿using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Connections;
 using IczpNet.Chat.Hosting;
@@ -84,7 +85,7 @@ public class ChatHub(
 
             await ConnectionPoolManager.AddAsync(connectedEto);
 
-            await Clients.Caller.ReceivedMessage(new PushPayload()
+            await Clients.Caller.ReceivedMessage(new CommandPayload()
             {
                 AppUserId = CurrentUser.Id,
                 Command = "Welcome",
@@ -135,7 +136,7 @@ public class ChatHub(
             // 发布事件
             await DistributedEventBus.PublishAsync(onDisconnectedEto, onUnitOfWorkComplete: false);
 
-            await Clients.Caller.ReceivedMessage(new PushPayload()
+            await Clients.Caller.ReceivedMessage(new CommandPayload()
             {
                 AppUserId = CurrentUser.Id,
                 Command = "Goodbye",
@@ -162,7 +163,7 @@ public class ChatHub(
     {
         var all = await ConnectionPoolManager.GetAllListAsync();
 
-        await Clients.All.ReceivedMessage(new PushPayload()
+        await Clients.All.ReceivedMessage(new CommandPayload()
         {
             Command = message,
             Payload = all.ToList(),

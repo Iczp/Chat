@@ -1,11 +1,11 @@
-﻿using IczpNet.Pusher.Models;
+﻿using IczpNet.Chat.CommandPayloads;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.ChatHubs;
 
 public interface IChatClient
 {
-    Task ReceivedMessage(PushPayload  pushPayload);
+    Task ReceivedMessage(CommandPayload pushPayload);
 
     //Task StopAsync(string connectionId);
 }

@@ -1,4 +1,5 @@
 ﻿using DeviceDetectorNET;
+using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Hosting;
 using IczpNet.Chat.SessionUnits;
@@ -51,7 +52,7 @@ public abstract class ChatHubService : DomainService
     /// <param name="userId"></param>
     /// <param name="commandPayload"></param>
     /// <returns></returns>
-    protected virtual async Task SendToFriendsAsync(Guid userId, PushPayload commandPayload)
+    protected virtual async Task SendToFriendsAsync(Guid userId, CommandPayload commandPayload)
     {
         var firendsConnectionIds = await GetFriendsConnectionIdsAsync(userId);
 
