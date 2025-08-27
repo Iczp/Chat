@@ -3,7 +3,6 @@ using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Hosting;
 using IczpNet.Chat.SessionUnits;
-using IczpNet.Pusher.Models;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using System;
