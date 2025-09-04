@@ -15,25 +15,16 @@ using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.ChatObjects;
 
-public class PortraitService : DomainService, IPortraitService
+public class PortraitService(IChatObjectManager chatObjectManager,
+    IReadOnlyRepository<SessionUnit, Guid> sessionUintRepository,
+    IBlobManager blobManager,
+    IOptions<MessageOptions> imageSetting) : DomainService, IPortraitService
 {
-    protected IChatObjectManager ChatObjectManager { get; }
-    protected IReadOnlyRepository<SessionUnit, Guid> SessionUintRepository { get; }
-    protected IBlobManager BlobManager { get; }
+    protected IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
+    protected IReadOnlyRepository<SessionUnit, Guid> SessionUintRepository { get; } = sessionUintRepository;
+    protected IBlobManager BlobManager { get; } = blobManager;
 
-    protected MessageOptions MessageSetting { get; set; }
-
-    public PortraitService(IChatObjectManager chatObjectManager,
-        IReadOnlyRepository<SessionUnit, Guid> sessionUintRepository,
-        IBlobManager blobManager,
-        IOptions<MessageOptions> imageSetting)
-    {
-        ChatObjectManager = chatObjectManager;
-        SessionUintRepository = sessionUintRepository;
-        BlobManager = blobManager;
-        MessageSetting = imageSetting.Value;
-    }
-
+    protected MessageOptions MessageSetting { get; set; } = imageSetting.Value;
 
     public async Task<byte[]> GetPortraitAsync(long chatObjectId, bool isThumbnail)
     {
