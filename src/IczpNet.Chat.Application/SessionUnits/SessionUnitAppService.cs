@@ -99,8 +99,21 @@ public class SessionUnitAppService(
             .WhereIf(input.IsContacts.HasValue, x => x.Setting.IsContacts == input.IsContacts)
             .WhereIf(input.IsImmersed.HasValue, x => x.Setting.IsImmersed == input.IsImmersed)
             .WhereIf(input.IsBadge.HasValue, x => x.PublicBadge > 0)
-            .WhereIf(input.IsRemind.HasValue, x => x.RemindAllCount > 0 || x.RemindMeCount > 0)
-            .WhereIf(input.IsFollowing.HasValue, x => x.FollowingCount > 0)
+
+            //@我
+            .WhereIf(input.IsRemind == true, x => (x.RemindAllCount + x.RemindMeCount) > 0)
+            .WhereIf(input.IsRemind == false, x => (x.RemindAllCount + x.RemindMeCount) == 0)
+
+
+            //我关注的
+            //.WhereIf(input.IsFollowing.HasValue, x => x.FollowingCount > 0)
+            .WhereIf(input.IsFollowing == true, x => x.FollowingList.Count > 0)
+            .WhereIf(input.IsFollowing == false, x => x.FollowingList.Count == 0)
+
+            //关注我的
+            .WhereIf(input.IsFollower == true, x => x.FollowerList.Count > 0)
+            .WhereIf(input.IsFollower == false, x => x.FollowerList.Count == 0)
+
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordDestinationSessionUnitSpecification(input.Keyword, await ChatObjectManager.SearchKeywordByCacheAsync(input.Keyword)))
             ;
     }

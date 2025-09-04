@@ -142,7 +142,7 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     public virtual int RemindMeCount { get; protected set; }
 
     /// <summary>
-    /// 特别关注数量
+    /// 特别关注消息数量 FollowingMessageCount
     /// </summary>
     [Comment("特别关注数量")]
     public virtual int FollowingCount { get; protected set; }
