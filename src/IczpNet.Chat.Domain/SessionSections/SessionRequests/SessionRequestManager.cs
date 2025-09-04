@@ -263,6 +263,7 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
                     {
                         Content = new CmdContentInfo()
                         {
+                            Cmd = MessageKeyNames.AddFriendSuccess,
                             Text = $"添加好友成功",
                         }
                     });
