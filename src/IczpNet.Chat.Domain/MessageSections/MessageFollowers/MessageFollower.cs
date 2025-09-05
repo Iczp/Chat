@@ -39,6 +39,14 @@ public class MessageFollower : BaseEntity
     [ForeignKey(nameof(SessionUnitId))]
     public virtual SessionUnit SessionUnit { get; set; }
 
+    public MessageFollower() { }
+    public MessageFollower(long messageId, Guid sessionUnitId)
+    {
+        MessageId = messageId;
+        SessionUnitId = sessionUnitId;
+    }
+
+
     public override object[] GetKeys()
     {
         return [MessageId, SessionUnitId];

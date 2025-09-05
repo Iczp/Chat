@@ -3,6 +3,7 @@ using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.ChatPushers;
 using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.Follows;
 using IczpNet.Chat.Hosting;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Templates;
@@ -43,6 +44,7 @@ public partial class MessageManager(
     IJsonSerializer jsonSerializer,
     IRepository<MessageReminder> messageReminderRepository,
     ISessionUnitSettingRepository sessionUnitSettingRepository,
+    IFollowManager followManager,
     ISessionGenerator sessionGenerator) : DomainService, IMessageManager
 {
     protected IObjectMapper ObjectMapper { get; } = objectMapper;
@@ -56,6 +58,7 @@ public partial class MessageManager(
     public ICurrentHosted CurrentHosted { get; } = currentHosted;
     protected ISessionRepository SessionRepository { get; } = sessionRepository;
     protected ISessionUnitSettingRepository SessionUnitSettingRepository { get; } = sessionUnitSettingRepository;
+    public IFollowManager FollowManager { get; } = followManager;
     protected ISettingProvider SettingProvider { get; } = settingProvider;
     protected IJsonSerializer JsonSerializer { get; } = jsonSerializer;
     protected IRepository<MessageReminder> MessageReminderRepository { get; } = messageReminderRepository;
@@ -140,6 +143,9 @@ public partial class MessageManager(
 
         //设置提醒
         await ApplyRemindIdListAsync(senderSessionUnit, message, remindList);
+
+        //设置关注者
+        await ApplyMessageFollowersAsync(senderSessionUnit, message);
 
         // Message Validator
         await MessageValidator.CheckAsync(message);
@@ -384,6 +390,20 @@ public partial class MessageManager(
         //await SessionUnitRepository.IncrementRemindMeCountAsync(message.CreationTime, finalRemindIdList);
 
         return finalRemindIdList;
+    }
+
+
+    /// <summary>
+    /// 设置关注
+    /// </summary>
+    /// <param name="senderSessionUnit"></param>
+    /// <param name="message"></param>
+    /// <returns></returns>
+    protected virtual async Task<List<Guid>> ApplyMessageFollowersAsync(SessionUnit senderSessionUnit, Message message)
+    {
+        var followerIdList = await FollowManager.GetFollowerIdListAsync(senderSessionUnit.Id);
+        message.SetFollowerIds(followerIdList);
+        return followerIdList;
     }
 
     /// <inheritdoc />
