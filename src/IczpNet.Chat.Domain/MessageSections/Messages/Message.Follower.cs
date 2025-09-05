@@ -14,6 +14,12 @@ public partial class Message
 {
 
     /// <summary>
+    /// 是否我关注的
+    /// </summary>
+    [NotMapped]
+    public virtual bool? IsFollowing { get; set; }
+
+    /// <summary>
     /// 发送人会话单元Id
     /// </summary>
     [Comment("发送人会话单元Id")]
@@ -61,5 +67,34 @@ public partial class Message
         {
             SenderFollowerIds = SenderFollowerIds.Substring(0, maxLength.Value);
         }
+    }
+
+    //public virtual List<Guid> GetFollowerIds()
+    //{
+    //    return SenderFollowerIds.Split(",")
+    //        .Where(x => Guid.TryParse(x, out _))
+    //        .Select(x => Guid.Parse(x)).ToList();
+
+    //}
+    public virtual List<Guid> GetFollowerIds()
+    {
+        if (string.IsNullOrEmpty(SenderFollowerIds))
+        {
+            return [];
+        }
+
+        var followerIdStrings = SenderFollowerIds.Split(",");
+
+        var validGuids = new List<Guid>();
+
+        foreach (var idString in followerIdStrings)
+        {
+            if (Guid.TryParse(idString, out var guid))
+            {
+                validGuids.Add(guid);
+            }
+        }
+
+        return validGuids;
     }
 }

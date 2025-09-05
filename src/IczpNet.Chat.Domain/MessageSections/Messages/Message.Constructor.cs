@@ -135,9 +135,6 @@ public partial class Message
     [NotMapped]
     public virtual bool? IsFavorited { get; set; }
 
-    [NotMapped]
-    public virtual bool? IsFollowing { get; set; }
-
     /// <summary>
     /// 朋友关系Id
     /// </summary>
