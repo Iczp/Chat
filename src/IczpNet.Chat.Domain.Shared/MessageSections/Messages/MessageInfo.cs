@@ -85,6 +85,16 @@ public class MessageInfo
     public virtual bool IsRemindAll { get; set; }
 
     /// <summary>
+    /// 是否@我
+    /// </summary>
+    public virtual bool? IsRemindMe { get; set; }
+
+    /// <summary>
+    /// 是否关注
+    /// </summary>
+    public virtual bool? IsFollowing { get; set; }
+
+    /// <summary>
     /// 撤回消息时间
     /// </summary>
     public virtual DateTime? RollbackTime { get; set; }
