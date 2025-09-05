@@ -19,6 +19,7 @@ using IczpNet.Chat.InvitationCodes;
 using IczpNet.Chat.Menus;
 using IczpNet.Chat.MessageSections.Counters;
 using IczpNet.Chat.MessageSections.MessageContents;
+using IczpNet.Chat.MessageSections.MessageFollowers;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
@@ -118,6 +119,8 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     public DbSet<DeletedCounter> DeletedCounter { get; set; }
 
     public DbSet<MessageReminder> MessageReminder { get; set; }
+
+    public DbSet<MessageFollower> MessageFollower { get; set; }
 
     public DbSet<Scoped> Scoped { get; set; }
 

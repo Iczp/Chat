@@ -7,6 +7,7 @@ using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
+using IczpNet.Chat.MessageSections.MessageFollowers;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.OpenedRecorders;
@@ -215,6 +216,13 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     /// </summary>
     [InverseProperty(nameof(Follow.DestinationSessionUnit))]
     public virtual IList<Follow> FollowerList { get; protected set; }
+
+    /// <summary>
+    /// 关注的消息列表
+    /// </summary>
+    [InverseProperty(nameof(MessageFollower.SessionUnit))]
+    public virtual IList<MessageFollower> MessageFollowerList { get; protected set; } = [];
+
 
     [InverseProperty(nameof(FavoritedRecorder.SessionUnit))]
     public virtual IList<FavoritedRecorder> FavoriteList { get; protected set; }
