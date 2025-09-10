@@ -14,6 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.SignalR;
 using Volo.Abp.AspNetCore.WebClientInfo;
+using Volo.Abp.Clients;
 using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
@@ -26,6 +27,7 @@ public class ChatHub(
     IWebClientInfoProvider webClientInfoProvider,
     IChatObjectManager chatObjectManager,
     ICurrentHosted currentHosted,
+    ICurrentClient currentClient,
     IObjectMapper objectMapper,
     IDistributedEventBus distributedEventBus,
     IConnectionPoolManager connectionPoolManager) : AbpHub<IChatClient>
@@ -35,6 +37,7 @@ public class ChatHub(
     public IWebClientInfoProvider WebClientInfoProvider { get; } = webClientInfoProvider;
     public IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
     public ICurrentHosted CurrentHosted { get; } = currentHosted;
+    public ICurrentClient CurrentClient { get; } = currentClient;
     public IObjectMapper ObjectMapper { get; } = objectMapper;
     public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
     public IConnectionPoolManager ConnectionPoolManager { get; } = connectionPoolManager;
@@ -48,7 +51,7 @@ public class ChatHub(
 
             string deviceId = httpContext?.Request.Query["deviceId"];
 
-            string clientId = httpContext?.Request.Query["id"];
+            string queryId = httpContext?.Request.Query["id"];
 
             Logger.LogWarning($"DeviceId:{deviceId}");
 
@@ -67,7 +70,8 @@ public class ChatHub(
 
             var connectedEto = new OnConnectedEto()
             {
-                ClientId = clientId,
+                QueryId = queryId,
+                ClientId = CurrentClient.Id,
                 ConnectionId = Context.ConnectionId,
                 Host = CurrentHosted.Name,
                 IpAddress = WebClientInfoProvider.ClientIpAddress,

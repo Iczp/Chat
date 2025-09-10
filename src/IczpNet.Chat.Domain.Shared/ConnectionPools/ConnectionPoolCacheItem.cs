@@ -17,6 +17,11 @@ public class ConnectionPoolCacheItem
     /// <summary>
     /// hubs/ChatHub?id={ClientId}
     /// </summary>
+    public virtual string QueryId { get; set; }
+
+    /// <summary>
+    /// Jwt ClientId
+    /// </summary>
     public virtual string ClientId { get; set; }
 
     /// <summary>
@@ -63,6 +68,11 @@ public class ConnectionPoolCacheItem
     /// CreationTime
     /// </summary>
     public virtual DateTime CreationTime { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public virtual Object Extra{ get; set; }
 
     /// <summary>
     /// ChatObjectIdList

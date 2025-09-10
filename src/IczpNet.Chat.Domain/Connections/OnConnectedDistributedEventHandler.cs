@@ -35,7 +35,7 @@ public class OnConnectedDistributedEventHandler(
         });
         eventData.DeviceInfo += "/*******";
         //发布本地事件
-        await LocalEventBus.PublishAsync(eventData);
+        //await LocalEventBus.PublishAsync(eventData);
 
         Logger.LogInformation($"{nameof(OnConnectedDistributedEventHandler)} 处理事件：{eventData}");
     }
