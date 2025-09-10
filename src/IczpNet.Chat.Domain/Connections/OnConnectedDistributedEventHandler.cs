@@ -1,5 +1,4 @@
 ﻿using IczpNet.Chat.ConnectionPools;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using Volo.Abp.DependencyInjection;
