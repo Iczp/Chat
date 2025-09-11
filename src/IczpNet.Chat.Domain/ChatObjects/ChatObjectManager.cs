@@ -18,7 +18,7 @@ using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.ChatObjects;
 
-public class ChatObjectManager : TreeManager<ChatObject, long, ChatObjectInfo>, IChatObjectManager
+public class ChatObjectManager(IChatObjectRepository repository) : TreeManager<ChatObject, long, ChatObjectInfo>(repository), IChatObjectManager
 {
 
     protected IChatObjectTypeManager ChatObjectTypeManager => LazyServiceProvider.LazyGetRequiredService<IChatObjectTypeManager>();
@@ -27,11 +27,6 @@ public class ChatObjectManager : TreeManager<ChatObject, long, ChatObjectInfo>, 
     protected IDistributedCache<List<long>, Guid> UserChatObjectCache => LazyServiceProvider.LazyGetRequiredService<IDistributedCache<List<long>, Guid>>();
     protected IDistributedCache<List<long>, string> SearchCache => LazyServiceProvider.LazyGetRequiredService<IDistributedCache<List<long>, string>>();
     protected ISessionUnitRepository SessionUnitRepository => LazyServiceProvider.LazyGetRequiredService<ISessionUnitRepository>();
-
-    public ChatObjectManager(IChatObjectRepository repository) : base(repository)
-    {
-
-    }
 
     public virtual async Task<IQueryable<long>> QueryByKeywordAsync(string keyword)
     {
@@ -127,6 +122,51 @@ public class ChatObjectManager : TreeManager<ChatObject, long, ChatObjectInfo>, 
         return entity;
     }
 
+    public virtual async Task<ChatObject> GetOrAddNewsAsync()
+    {
+        var entity = await FindByCodeAsync(ChatConsts.News);
+
+        if (entity == null)
+        {
+            var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Subscription);
+            //ChatConsts.PrivateAssistant.GetDescription()
+            var description = ChatConsts.PrivateAssistant.GetType().GetAttribute<DescriptionAttribute>()?.Description;
+
+            entity = new ChatObject(description ?? "新闻", nameof(ChatConsts.News), chatObjectType, null)
+            {
+                Description = "推送新闻服务等",
+            };
+            entity.SetIsStatic(true);
+
+            await CreateAsync(entity);
+
+            Logger.LogDebug($"Cteate chatObject by code:{entity.Code}");
+        }
+        return entity;
+    }
+    public virtual async Task<ChatObject> GetOrAddNotifyAsync()
+    {
+        var entity = await FindByCodeAsync(ChatConsts.Notify);
+
+        if (entity == null)
+        {
+            var chatObjectType = await ChatObjectTypeManager.GetAsync(ChatObjectTypeEnums.Official);
+            //ChatConsts.PrivateAssistant.GetDescription()
+            var description = ChatConsts.PrivateAssistant.GetType().GetAttribute<DescriptionAttribute>()?.Description;
+
+            entity = new ChatObject(description ?? "通知", nameof(ChatConsts.Notify), chatObjectType, null)
+            {
+                Description = "推送通知服务等",
+            };
+            entity.SetIsStatic(true);
+
+            await CreateAsync(entity);
+
+            Logger.LogDebug($"Cteate chatObject by code:{entity.Code}");
+        }
+        return entity;
+    }
+
     public override async Task<ChatObject> UpdateAsync(ChatObject entity, long? newParentId, bool isUnique = true)
     {
         Assert.If(entity.ObjectType == ChatObjectTypeEnums.ShopWaiter && !newParentId.HasValue, "[ShopWaiter] ParentId is null");
@@ -144,15 +184,19 @@ public class ChatObjectManager : TreeManager<ChatObject, long, ChatObjectInfo>, 
         return await Repository.GetListAsync(x => x.AppUserId == userId);
     }
 
-    public virtual Task<List<long>> GetIdListByUserIdAsync(Guid userId)
+    public virtual async Task<List<long>> GetIdListByUserIdAsync(Guid userId)
     {
-        return UserChatObjectCache.GetOrAddAsync(userId, async () =>
-        {
-            return (await Repository.GetQueryableAsync())
+        return (await Repository.GetQueryableAsync())
             .Where(x => x.AppUserId == userId)
             .Select(x => x.Id)
             .ToList();
-        });
+        //return await UserChatObjectCache.GetOrAddAsync(userId, async () =>
+        //{
+        //    return (await Repository.GetQueryableAsync())
+        //    .Where(x => x.AppUserId == userId)
+        //    .Select(x => x.Id)
+        //    .ToList();
+        //});
     }
 
     public virtual async Task<List<long>> GetIdListByNameAsync(List<string> nameList)
