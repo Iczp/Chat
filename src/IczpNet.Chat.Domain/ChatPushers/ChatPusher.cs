@@ -27,11 +27,19 @@ public class ChatPusher(
 
     public async Task<long> ExecuteAsync(ChannelMessagePayload payload)
     {
-        var ret = await PusherPublisher.PublishAsync(payload);
+        try
+        {
+            var ret = await PusherPublisher.PublishAsync(payload);
 
-        Logger.LogInformation($"ChatPusher PublishAsync[{ret}]:{payload}");
+            Logger.LogInformation($"ChatPusher PublishAsync[{ret}]:{payload}");
 
-        return ret;
+            return ret;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, $"执行推送出错: {nameof(ChatPusher)},error: {ex.Message}");
+            return 0;
+        }
     }
 
     public async Task<Dictionary<string, long>> ExecuteAsync(object payload, Action<ChannelMessagePayload> action)

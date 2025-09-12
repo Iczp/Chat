@@ -1139,8 +1139,8 @@ public class SessionUnitManager(
                 Content = new CmdContentInfo()
                 {
                     Cmd = MessageKeyNames.CreatedUser,
-                    Text = new TextTemplate("欢迎 {name} 加入")
-                            .WithData("name", userChatObject.Name)
+                    Text = new TextTemplate("欢迎 {userSessionUnit} 加入")
+                            .WithData("userSessionUnit", new SessionUnitTextTemplate(userSessionUnit))
                             .ToString(),
                 }
             });
