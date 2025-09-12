@@ -144,8 +144,6 @@ public class SessionGenerator : DomainService, ISessionGenerator
             await Task.Yield();
         });
 
-
-
         ResolveShopWaiterId(sender, receiver, async (shopKeeperId) =>
         {
             var shopKeeper = await ChatObjectManager.GetAsync(shopKeeperId);

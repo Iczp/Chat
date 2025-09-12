@@ -15,6 +15,7 @@ using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Users;
 
 namespace IczpNet.Chat.ChatObjects;
 
@@ -351,5 +352,19 @@ public class ChatObjectManager(IChatObjectRepository repository) : TreeManager<C
         Logger.LogInformation($"SessionUnitRepository.BatchUpdateAppUserIdAsync:{count}");
 
         return await base.UpdateAsync(entity, entity.ParentId, isUnique: false);
+    }
+
+    public async Task<ChatObject> GenerateByUserCreatedAsync(UserEto userInfo)
+    {
+        var name = userInfo.Surname ?? userInfo.Name ?? userInfo.UserName;
+
+        var userChatObject = await CreatePersonalAsync(name: name, code: userInfo.UserName, x =>
+        {
+            x.Description = $"";
+            //绑定用户
+            x.SetAppUserId(userInfo.Id);
+        });
+
+        return userChatObject;
     }
 }

@@ -1,4 +1,6 @@
-﻿using IczpNet.AbpCommons;
+﻿using AutoMapper.Execution;
+using IczpNet.AbpCommons;
+using IczpNet.AbpCommons.DataFilters;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
@@ -26,6 +28,7 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
+using Volo.Abp.Users;
 
 namespace IczpNet.Chat.SessionUnits;
 
@@ -43,6 +46,8 @@ public class SessionUnitManager(
     IMessageSender messageSender,
     IObjectMapper objectMapper,
     IUnitOfWorkManager unitOfWorkManager,
+    ISessionGenerator sessionGenerator,
+    ISessionManager sessionManager,
     ISessionUnitIdGenerator idGenerator) : DomainService, ISessionUnitManager
 {
     public IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
@@ -62,6 +67,8 @@ public class SessionUnitManager(
     protected IMessageSender MessageSender { get; } = messageSender;
     protected IObjectMapper ObjectMapper { get; } = objectMapper;
     public IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
+    public ISessionGenerator SessionGenerator { get; } = sessionGenerator;
+    public ISessionManager SessionManager { get; } = sessionManager;
     protected ISessionUnitIdGenerator IdGenerator { get; } = idGenerator;
 
     protected static DistributedCacheEntryOptions DistributedCacheEntryOptions => new()
@@ -156,6 +163,12 @@ public class SessionUnitManager(
     }
 
     /// <inheritdoc />
+    public virtual async Task<SessionUnit> CreateAsync(SessionUnit sessionUnit)
+    {
+        return await Repository.InsertAsync(sessionUnit, autoSave: true);
+    }
+
+    /// <inheritdoc />
     public SessionUnit Generate(Session session, ChatObject owner, ChatObject destination, Action<SessionUnitSetting> action)
     {
         return new SessionUnit(
@@ -175,6 +188,8 @@ public class SessionUnitManager(
 
         return entity;
     }
+
+
 
     /// <inheritdoc />
     public virtual Task<SessionUnit> CreateIfNotContainsAsync(
@@ -1069,5 +1084,110 @@ public class SessionUnitManager(
     public virtual Task<List<SessionUnitCacheItem>> GetFriendsAsync(long chatObjectId)
     {
         return FriendsCache.GetOrAddAsync(chatObjectId, () => GetListByOwnerIdAsync(chatObjectId));
+    }
+
+    public virtual async Task<List<SessionUnit>> GenerateDefaultSessionByChatObjectAsync(ChatObject userChatObject)
+    {
+        var a = await GenerateNotifySessionAsync(userChatObject);
+        var b = await GenerateNewsSessionAsync(userChatObject);
+        return [.. a, .. b];
+    }
+
+    protected virtual async Task<List<SessionUnit>> GenerateNotifySessionAsync(ChatObject userChatObject)
+    {
+        var notifyChatObject = await ChatObjectManager.GetOrAddNotifyAsync();
+
+        //创建会话
+        var session = await SessionGenerator.MakeAsync(notifyChatObject, userChatObject);
+
+        session.SetOwner(notifyChatObject);
+        //创建通知单元
+        var notifySessionUnit = await CreateIfNotContainsAsync(
+               session: session,
+               owner: notifyChatObject,
+               destination: userChatObject,
+               x =>
+               {
+                   x.IsPublic = true;
+                   x.IsStatic = true;
+                   x.SetIsCreator(true);
+                   x.JoinWay = JoinWays.Creator;
+                   x.IsInputEnabled = true;
+               });
+
+        var isAny = await IsAnyAsync(userChatObject.Id, notifyChatObject.Id);
+
+        //创建用户单元
+        var userSessionUnit = await CreateIfNotContainsAsync(
+                session: session,
+                owner: userChatObject,
+                destination: notifyChatObject,
+                x =>
+                {
+                    x.IsStatic = true;
+                    x.IsPublic = true;
+                    x.JoinWay = JoinWays.AutoJoin;
+                    x.InviterId = notifySessionUnit?.Id;
+                    x.IsInputEnabled = false;
+                });
+
+        if (!isAny)
+        {
+            //第一次 才发送通知
+            await MessageSender.SendCmdAsync(notifySessionUnit, new MessageInput<CmdContentInfo>()
+            {
+                Content = new CmdContentInfo()
+                {
+                    Cmd = MessageKeyNames.CreatedUser,
+                    Text = new TextTemplate("欢迎 {name} 加入")
+                            .WithData("name", userChatObject.Name)
+                            .ToString(),
+                }
+            });
+        }
+
+        return [notifySessionUnit, userSessionUnit];
+    }
+
+    protected virtual async Task<List<SessionUnit>> GenerateNewsSessionAsync(ChatObject userChatObject)
+    {
+        var newsChatObject = await ChatObjectManager.GetOrAddNewsAsync();
+
+        //创建新闻单元
+        var newsSessionUnit = await FindAsync(newsChatObject.Id, newsChatObject.Id);
+
+        if (newsSessionUnit == null)
+        {
+            //创建会话
+            var session = await SessionGenerator.MakeAsync(newsChatObject, newsChatObject);
+            newsSessionUnit = Generate(
+                   session: session,
+                   owner: newsChatObject,
+                   destination: newsChatObject,
+                   x =>
+                   {
+                       x.IsPublic = true;
+                       x.IsStatic = true;
+                       x.SetIsCreator(true);
+                       x.JoinWay = JoinWays.Creator;
+                       x.IsInputEnabled = true;
+                   });
+        }
+
+        //创建用户单元
+        var userSessionUnit = Generate(
+                session: newsSessionUnit.Session,
+                owner: userChatObject,
+                destination: newsChatObject,
+                x =>
+                {
+                    x.IsStatic = true;
+                    x.IsPublic = true;
+                    x.JoinWay = JoinWays.AutoJoin;
+                    x.InviterId = newsSessionUnit?.Id;
+                    x.IsInputEnabled = false;
+                });
+
+        return [newsSessionUnit, userSessionUnit];
     }
 }

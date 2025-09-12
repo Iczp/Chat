@@ -23,7 +23,8 @@ namespace IczpNet.Chat.RoomSections.Rooms;
 
 public class RoomManager(
     IChatObjectRepository chatObjectRepository,
-    IOptions<RoomOptions> options, ISessionManager sessionManager,
+    IOptions<RoomOptions> options,
+    ISessionManager sessionManager,
     ISessionUnitRepository sessionUnitRepository,
     ISessionUnitManager sessionUnitManager,
     IChatObjectManager chatObjectManager,

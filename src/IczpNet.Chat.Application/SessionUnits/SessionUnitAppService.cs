@@ -612,4 +612,19 @@ public class SessionUnitAppService(
 
         return await SessionUnitManager.GetCounterAsync(input.SessionUnitId, input.MinMessageId, input.IsImmersed);
     }
+
+    /// <summary>
+    /// 根据创建用户创建相应的会话(通知\新闻\机器人等)
+    /// </summary>
+    /// <param name="chatObjectId"></param>
+    /// <returns></returns>
+    [HttpPost]
+    public async Task<int> GenerateDefaultSessionAsync(long chatObjectId)
+    {
+        var userChatObject = await ChatObjectManager.GetAsync(chatObjectId);
+
+        var sessionUnitList = await SessionUnitManager.GenerateDefaultSessionByChatObjectAsync(userChatObject);
+
+        return sessionUnitList.Count;
+    }
 }

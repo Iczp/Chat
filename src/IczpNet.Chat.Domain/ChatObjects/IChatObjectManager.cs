@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.Users;
 
 namespace IczpNet.Chat.ChatObjects;
 
@@ -33,6 +34,10 @@ public interface IChatObjectManager : ITreeManager<ChatObject, long, ChatObjectI
     /// </summary>
     /// <returns></returns>
     Task<ChatObject> GetOrAddPrivateAssistantAsync();
+
+    Task<ChatObject> GetOrAddNewsAsync();
+
+    Task<ChatObject> GetOrAddNotifyAsync();
 
     Task<List<ChatObject>> GetAllListAsync(ChatObjectTypeEnums objectType);
 
@@ -71,4 +76,6 @@ public interface IChatObjectManager : ITreeManager<ChatObject, long, ChatObjectI
     Task<bool> IsSomeRootAsync(params long[] idList);
 
     Task<ChatObject> BingAppUserIdAsync(long id, Guid appUserId);
+
+    Task<ChatObject> GenerateByUserCreatedAsync(UserEto userInfo);
 }

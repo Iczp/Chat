@@ -17,6 +17,11 @@ public static class MessageKeyNames
     /// 
     /// </summary>
     public static string JoinRoom { get; set; } = nameof(JoinRoom);
+
+    /// <summary>
+    /// 加入
+    /// </summary>
+    public static string CreatedUser { get; set; } = nameof(CreatedUser);
     /// <summary>
     /// CreateConditionRoom  创建条件群
     /// </summary>
