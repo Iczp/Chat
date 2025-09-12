@@ -70,12 +70,12 @@ public class SessionGenerator : DomainService, ISessionGenerator
 
         var receiverId = receiver.Id;
 
-        if (IsObjectType(receiver.ObjectType.Value, ChatObjectTypeEnums.Room, ChatObjectTypeEnums.Square, ChatObjectTypeEnums.Official))
+        if (IsObjectType(receiver.ObjectType.Value, ChatObjectTypeEnums.Room, ChatObjectTypeEnums.Square, ChatObjectTypeEnums.Subscription))
         {
             return receiverId.ToString();
         }
 
-        if (IsObjectType(sender.ObjectType.Value, ChatObjectTypeEnums.Room, ChatObjectTypeEnums.Square, ChatObjectTypeEnums.Official))
+        if (IsObjectType(sender.ObjectType.Value, ChatObjectTypeEnums.Room, ChatObjectTypeEnums.Square, ChatObjectTypeEnums.Subscription))
         {
             return senderId.ToString();
         }
