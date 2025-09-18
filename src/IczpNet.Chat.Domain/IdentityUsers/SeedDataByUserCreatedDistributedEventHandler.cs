@@ -13,6 +13,14 @@ using Volo.Abp.Users;
 
 namespace IczpNet.Chat.IdentityUsers;
 
+/// <summary>
+/// 创建用户时,创建聊天对象
+/// </summary>
+/// <param name="sessionUnitManager"></param>
+/// <param name="abpDistributedLock"></param>
+/// <param name="jsonSerializer"></param>
+/// <param name="unitOfWorkManager"></param>
+/// <param name="chatObjectManager"></param>
 public class SeedDataByUserCreatedDistributedEventHandler(
     ISessionUnitManager sessionUnitManager,
     IAbpDistributedLock abpDistributedLock,
@@ -57,7 +65,7 @@ public class SeedDataByUserCreatedDistributedEventHandler(
 
         //...
         //create chat object
-       var userChatObject =  await ChatObjectManager.GenerateByUserCreatedAsync(userInfo);
+       var userChatObject =  await ChatObjectManager.GenerateByUserAsync(userInfo);
 
         //create session unit
         await SessionUnitManager.GenerateDefaultSessionByChatObjectAsync(userChatObject);

@@ -77,5 +77,5 @@ public interface IChatObjectManager : ITreeManager<ChatObject, long, ChatObjectI
 
     Task<ChatObject> BingAppUserIdAsync(long id, Guid appUserId);
 
-    Task<ChatObject> GenerateByUserCreatedAsync(UserEto userInfo);
+    Task<ChatObject> GenerateByUserAsync(UserEto userInfo);
 }

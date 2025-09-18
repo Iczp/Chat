@@ -21,6 +21,8 @@ using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Domain.Entities;
+using Volo.Abp.Identity;
 using Volo.Abp.Users;
 
 namespace IczpNet.Chat.ChatObjects;
@@ -36,6 +38,7 @@ public class ChatObjectAppService(
     IServiceStateManager serviceStateManager,
     IFavoritedRecorderManager favoritedRecorderManager,
     IFollowManager followManager,
+    IdentityUserManager identityUserManager,
     IDeviceIdResolver deviceIdResolver)
         : CrudTreeChatAppService<
         ChatObject,
@@ -59,6 +62,7 @@ public class ChatObjectAppService(
     protected IServiceStateManager ServiceStateManager { get; } = serviceStateManager;
     protected IFavoritedRecorderManager FavoritedRecorderManager { get; } = favoritedRecorderManager;
     protected IFollowManager FollowManager { get; } = followManager;
+    public IdentityUserManager IdentityUserManager { get; } = identityUserManager;
     protected IDeviceIdResolver DeviceIdResolver { get; } = deviceIdResolver;
 
     protected override async Task<IQueryable<ChatObject>> CreateFilteredQueryAsync(ChatObjectGetListInput input)
@@ -285,7 +289,7 @@ public class ChatObjectAppService(
     /// <param name="id">主建Id</param>
     /// <returns></returns>
     [HttpGet]
-    public async Task<ChatObjectDetailDto> GetDetailAsync(long id)
+    public virtual async Task<ChatObjectDetailDto> GetDetailAsync(long id)
     {
         var entity = await ChatObjectManager.GetAsync(id);
 
@@ -298,7 +302,7 @@ public class ChatObjectAppService(
     /// <param name="id"></param>
     /// <returns></returns>
     [HttpGet]
-    public async Task<List<ServiceStatusCacheItem>> GetServiceStatusAsync(long id)
+    public virtual async Task<List<ServiceStatusCacheItem>> GetServiceStatusAsync(long id)
     {
         return await ServiceStateManager.GetAsync(id);
     }
@@ -310,7 +314,7 @@ public class ChatObjectAppService(
     /// <param name="status"></param>
     /// <returns></returns>
     [HttpPost]
-    public async Task<List<ServiceStatusCacheItem>> SetServiceStatusAsync(long id, ServiceStatus status)
+    public virtual async Task<List<ServiceStatusCacheItem>> SetServiceStatusAsync(long id, ServiceStatus status)
     {
         var deviceId = await DeviceIdResolver.GetDeviceIdAsync();
 
@@ -322,7 +326,7 @@ public class ChatObjectAppService(
         return await ServiceStateManager.SetAsync(id, deviceId, status);
     }
 
-    public async Task<ChatObjectProfileDto> GetProfileAsync(long id)
+    public virtual async Task<ChatObjectProfileDto> GetProfileAsync(long id)
     {
 
         return new ChatObjectProfileDto()
@@ -333,5 +337,22 @@ public class ChatObjectAppService(
             FollowerCount = await FollowManager.GetFollowerCountAsync(id),
         };
         //return GetProfileInternalAsync(id);
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <returns></returns>
+    /// <exception cref="UserFriendlyException"></exception>
+    public virtual async Task<ChatObjectDto> GenerateByUserAsync(Guid userId)
+    {
+        var user = await IdentityUserManager.FindByIdAsync(userId.ToString()) ?? throw new UserFriendlyException($"用户不存在", "404", $"userId={userId}");
+
+        var userDto = ObjectMapper.Map<IdentityUser, UserEto>(user);
+
+        var chatObject = await ChatObjectManager.GenerateByUserAsync(userDto);
+
+        return await MapToGetOutputDtoAsync(chatObject);
     }
 }

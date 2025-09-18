@@ -354,7 +354,7 @@ public class ChatObjectManager(IChatObjectRepository repository) : TreeManager<C
         return await base.UpdateAsync(entity, entity.ParentId, isUnique: false);
     }
 
-    public async Task<ChatObject> GenerateByUserCreatedAsync(UserEto userInfo)
+    public async Task<ChatObject> GenerateByUserAsync(UserEto userInfo)
     {
         var name = userInfo.Surname ?? userInfo.Name ?? userInfo.UserName;
 

@@ -1088,6 +1088,13 @@ public class SessionUnitManager(
 
     public virtual async Task<List<SessionUnit>> GenerateDefaultSessionByChatObjectAsync(ChatObject userChatObject)
     {
+        var codeList = new List<string>() { ChatConsts.PrivateAssistant, ChatConsts.Notify, ChatConsts.News, ChatConsts.GroupAssistant };
+
+        if (codeList.Contains(userChatObject.Code))
+        {
+            Logger.LogWarning($"{nameof(GenerateDefaultSessionByChatObjectAsync)}:不需要创建默认会话");
+            return [];
+        }
         var a = await GenerateNotifySessionAsync(userChatObject);
         var b = await GenerateNewsSessionAsync(userChatObject);
         return [.. a, .. b];
