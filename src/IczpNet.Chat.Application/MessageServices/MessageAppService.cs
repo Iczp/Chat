@@ -85,7 +85,8 @@ public class MessageAppService(
 
         var query = (await Repository.GetQueryableAsync())
             .Where(x => x.SessionId == entity.SessionId)
-            //.Where(x => !x.IsPrivate || (x.IsPrivate && (x.SenderId == entity.OwnerId || x.ReceiverId == entity.OwnerId)))
+            .Where(x => !x.IsPrivate || (x.IsPrivate && (x.SenderId == entity.OwnerId || x.ReceiverId == entity.OwnerId)))
+            .Where(x => !x.IsPrivate || (x.IsPrivate && (x.SenderSessionUnitId == entity.Id || x.ReceiverSessionUnitId == entity.Id)))
             .WhereIf(settting.HistoryFristTime.HasValue, x => x.CreationTime >= settting.HistoryFristTime)
             .WhereIf(settting.HistoryLastTime.HasValue, x => x.CreationTime < settting.HistoryFristTime)
             .WhereIf(settting.ClearTime.HasValue, x => x.CreationTime > settting.ClearTime)

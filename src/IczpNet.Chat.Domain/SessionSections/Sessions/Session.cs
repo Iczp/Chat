@@ -17,6 +17,7 @@ namespace IczpNet.Chat.SessionSections.Sessions;
 
 [Index(nameof(LastMessageId), AllDescending = true)]
 [Index(nameof(SessionKey))]
+[Index(nameof(CreationTime), AllDescending = true)]
 [Index(nameof(MessageTotalCount), AllDescending = true)]
 [Index(nameof(MessageTotalCountUpdateTime), AllDescending = true)]
 public class Session : BaseEntity<Guid>, IChatOwner<long?>, IIsEnabled

@@ -28,9 +28,12 @@ namespace IczpNet.Chat.MessageSections.Messages;
 [Index(nameof(QuoteDepth))]
 [Index(nameof(QuotePath))]
 [Index(nameof(QuoteCount))]
+[Index(nameof(SenderSessionUnitId))]
+[Index(nameof(ReceiverSessionUnitId))]
 [Index(nameof(SessionId))]
 [Index(nameof(SessionId), nameof(Id), AllDescending = true)]
 [Index(nameof(SessionId), nameof(IsPrivate), nameof(SenderId), nameof(ReceiverId), nameof(IsDeleted), nameof(CreationTime), nameof(ForwardDepth), nameof(QuoteDepth))]
+[Index(nameof(SessionId), nameof(IsPrivate), nameof(SenderSessionUnitId), nameof(ReceiverSessionUnitId), nameof(IsDeleted), nameof(CreationTime), nameof(ForwardDepth), nameof(QuoteDepth))]
 public partial class Message : BaseEntity<long>, ISessionId, IHasEntityVersion
 {
     /// <summary>
