@@ -718,15 +718,16 @@ public class SessionUnitManager(
         {
             if (message.IsPrivateMessage() && message.SenderSessionUnitId.HasValue && message.ReceiverSessionUnitId.HasValue)
             {
-                var sessionUnitList = new List<SessionUnit>() { message.SenderSessionUnit ?? await SessionUnitReadOnlyRepository.GetAsync(message.SenderSessionUnitId.Value) };
+                var senderSessionUnit = message.SenderSessionUnit ?? await SessionUnitReadOnlyRepository.FindAsync(message.SenderSessionUnitId.Value);
 
-                if (message.ReceiverSessionUnit == null && message.ReceiverSessionUnitId.HasValue)
-                {
-                    sessionUnitList.Add(await SessionUnitReadOnlyRepository.GetAsync(message.ReceiverSessionUnitId.Value));
-                }
-                return ToCacheItem(sessionUnitList.AsQueryable());
+                var receiverSessionUnit = message.ReceiverSessionUnit ?? await SessionUnitReadOnlyRepository.FindAsync(message.ReceiverSessionUnitId.Value);
+
+                var sessionUnitList = new List<SessionUnit>() { senderSessionUnit, receiverSessionUnit };
+
+                return ToCacheItem(sessionUnitList.Where(x => x != null).AsQueryable());
             }
             return await GetListBySessionIdAsync(message.SessionId.Value);
+
         }, () => DistributedCacheEntryOptions);
     }
 

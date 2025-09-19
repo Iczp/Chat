@@ -28,6 +28,11 @@ public class MessageSimpleDto : ExtensibleEntityDto, IEntityDto<long>
     public virtual long? ReceiverId { get; set; }
 
     /// <summary>
+    /// 
+    /// </summary>
+    public virtual Guid? ReceiverSessionUnitId { get; set; }
+
+    /// <summary>
     ///  消息类型
     /// </summary>
     public virtual MessageTypes MessageType { get; set; }
