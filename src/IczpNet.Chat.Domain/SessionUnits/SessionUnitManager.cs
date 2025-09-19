@@ -716,9 +716,9 @@ public class SessionUnitManager(
 
         return await SessionUnitListCache.GetOrAddAsync($"{cacheKey}", async () =>
         {
-            if (message.IsPrivateMessage())
+            if (message.IsPrivateMessage() && message.SenderSessionUnitId.HasValue && message.ReceiverSessionUnitId.HasValue)
             {
-                var sessionUnitList = new List<SessionUnit>() { message.SenderSessionUnit };
+                var sessionUnitList = new List<SessionUnit>() { message.SenderSessionUnit ?? await SessionUnitReadOnlyRepository.GetAsync(message.SenderSessionUnitId.Value) };
 
                 if (message.ReceiverSessionUnit == null && message.ReceiverSessionUnitId.HasValue)
                 {
