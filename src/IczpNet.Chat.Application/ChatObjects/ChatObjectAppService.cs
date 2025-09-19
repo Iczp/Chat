@@ -21,7 +21,6 @@ using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
-using Volo.Abp.Domain.Entities;
 using Volo.Abp.Identity;
 using Volo.Abp.Users;
 
@@ -340,7 +339,7 @@ public class ChatObjectAppService(
     }
 
     /// <summary>
-    /// 
+    /// 创建用户会话
     /// </summary>
     /// <param name="userId"></param>
     /// <returns></returns>
@@ -354,5 +353,15 @@ public class ChatObjectAppService(
         var chatObject = await ChatObjectManager.GenerateByUserAsync(userDto);
 
         return await MapToGetOutputDtoAsync(chatObject);
+    }
+
+    /// <summary>
+    /// 创建当前用户会话
+    /// </summary>
+    /// <returns></returns>
+    public Task<ChatObjectDto> GenerateByCurrentUserAsync()
+    {
+        var currentUserId = CurrentUser.GetId();
+        return GenerateByUserAsync(currentUserId);
     }
 }

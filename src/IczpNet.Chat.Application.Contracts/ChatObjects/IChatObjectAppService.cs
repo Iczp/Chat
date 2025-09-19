@@ -57,4 +57,6 @@ public interface IChatObjectAppService :
 
     Task<ChatObjectDto> GenerateByUserAsync(Guid userId);
 
+    Task<ChatObjectDto> GenerateByCurrentUserAsync();
+
 }
