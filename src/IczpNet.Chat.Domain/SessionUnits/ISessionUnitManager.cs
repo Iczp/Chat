@@ -245,6 +245,14 @@ public interface ISessionUnitManager
     /// <summary>
     /// 获取聊天对象角标
     /// </summary>
+    /// <param name="ownerIdList"></param>
+    /// <param name="isImmersed"></param>
+    /// <returns></returns>
+    Task<Dictionary<long, int>> GetBadgeByOwnerIdListAsync(List<long> ownerIdList, bool? isImmersed = null);
+
+    /// <summary>
+    /// 获取聊天对象角标
+    /// </summary>
     /// <param name="sessionUnitId"></param>
     /// <param name="isImmersed"></param>
     /// <returns></returns>

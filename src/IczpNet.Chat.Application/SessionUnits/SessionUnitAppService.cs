@@ -511,12 +511,22 @@ public class SessionUnitAppService(
 
         await CheckPolicyForUserAsync(chatObjectIdList, () => CheckPolicyAsync(GetBadgePolicyName));
 
-        var result = new List<BadgeDto>();
+        var dic = await SessionUnitManager.GetBadgeByOwnerIdListAsync(chatObjectIdList, isImmersed);
 
-        foreach (var chatObjectId in chatObjectIdList)
+        var result = dic.Select(x => new BadgeDto()
         {
-            result.Add(await GetBadgeByOwnerIdAsync(chatObjectId, isImmersed));
-        }
+            AppUserId = userId,
+            ChatObjectId = x.Key,
+            Badge = x.Value,
+
+        }).ToList();
+
+        //var result = new List<BadgeDto>();
+
+        //foreach (var chatObjectId in chatObjectIdList)
+        //{
+        //    result.Add(await GetBadgeByOwnerIdAsync(chatObjectId, isImmersed));
+        //}
         return result;
     }
 

@@ -360,6 +360,19 @@ public class SessionUnitManager(
         return ret;
     }
 
+    public virtual async Task<Dictionary<long, int>> GetBadgeByOwnerIdListAsync(List<long> ownerIdList, bool? isImmersed = null)
+    {
+        return (await SessionUnitReadOnlyRepository.GetQueryableAsync())
+            .Where(x => ownerIdList.Contains(x.OwnerId))
+            //.Where(x => x.PublicBadge > 0)
+            //.Where(x => x.PrivateBadge > 0)
+            .WhereIf(isImmersed.HasValue, x => x.Setting.IsImmersed == isImmersed)
+            .GroupBy(x => x.OwnerId)
+            .ToDictionary(x => x.Key, x => x.Sum(d => d.PublicBadge))
+            ;
+        ;
+    }
+
     /// <inheritdoc />
     public virtual async Task<int> GetBadgeByOwnerIdAsync(long ownerId, bool? isImmersed = null)
     {
