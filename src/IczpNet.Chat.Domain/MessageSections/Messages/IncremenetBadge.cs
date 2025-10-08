@@ -25,7 +25,7 @@ public class IncremenetBadge(
         //return true;
         await Task.Yield();
 
-        return BackgroundJobManager.IsAvailable();
+        //return BackgroundJobManager.IsAvailable();
 
         var useBackgroundJobSenderMinSessionUnitCount = await SettingProvider.GetAsync(ChatSettings.UseBackgroundJobSenderMinSessionUnitCount, 500);
 

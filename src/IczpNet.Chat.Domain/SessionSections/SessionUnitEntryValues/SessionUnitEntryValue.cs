@@ -25,6 +25,6 @@ public class SessionUnitEntryValue : BaseEntity
 
     public override object[] GetKeys()
     {
-        return new object[] { SessionUnitId, EntryValueId };
+        return [SessionUnitId, EntryValueId];
     }
 }
