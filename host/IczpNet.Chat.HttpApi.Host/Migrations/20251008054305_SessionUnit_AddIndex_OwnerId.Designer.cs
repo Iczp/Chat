@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251008054305_SessionUnit_AddIndex_OwnerId")]
+    partial class SessionUnit_AddIndex_OwnerId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -5553,17 +5556,17 @@ namespace IczpNet.Chat.Migrations
                     b.HasIndex("OwnerId", "PublicBadge", "PrivateBadge")
                         .IsDescending();
 
-                    b.HasIndex("OwnerId", "Sorting", "LastMessageId", "IsDeleted")
+                    b.HasIndex("Sorting", "LastMessageId", "IsDeleted")
                         .IsDescending();
 
-                    b.HasIndex("OwnerId", "Sorting", "Ticks", "IsDeleted")
+                    b.HasIndex("Sorting", "Ticks", "IsDeleted")
                         .IsDescending();
 
-                    b.HasIndex(new[] { "OwnerId", "Sorting", "LastMessageId", "IsDeleted" }, "IX_Chat_SessionUnit_$OwnerId_$Sorting_Desc_$LastMessageId_Asc")
-                        .IsDescending(true, true, false, true);
+                    b.HasIndex(new[] { "Sorting", "LastMessageId", "IsDeleted" }, "IX_Chat_SessionUnit_$Sorting_Desc_$LastMessageId_Asc")
+                        .IsDescending(true, false, true);
 
-                    b.HasIndex(new[] { "OwnerId", "Sorting", "Ticks", "IsDeleted" }, "IX_Chat_SessionUnit_$OwnerId_$Sorting_Desc_Ticks_Asc")
-                        .IsDescending(true, true, false, true);
+                    b.HasIndex(new[] { "Sorting", "Ticks", "IsDeleted" }, "IX_Chat_SessionUnit_$Sorting_Desc_Ticks_Asc")
+                        .IsDescending(true, false, true);
 
                     b.ToTable("Chat_SessionUnit", (string)null);
                 });

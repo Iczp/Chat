@@ -50,13 +50,18 @@ namespace IczpNet.Chat.SessionUnits;
 [Index(nameof(IsDeleted))]
 [Index(nameof(CreationTime), AllDescending = true)]
 
+//OwnerId
+[Index(nameof(OwnerId), AllDescending = true)]
+
+[Index(nameof(OwnerId), nameof(PublicBadge), nameof(PrivateBadge), AllDescending = true)]
+
 //LastMessageId
-[Index(nameof(Sorting), nameof(LastMessageId), nameof(IsDeleted), AllDescending = true)]
-[Index(nameof(Sorting), nameof(LastMessageId), nameof(IsDeleted), IsDescending = [true, false, true], Name = $"IX_Chat_SessionUnit_${nameof(Sorting)}_Desc_${nameof(LastMessageId)}_Asc")]
+[Index(nameof(OwnerId), nameof(Sorting), nameof(LastMessageId), nameof(IsDeleted), AllDescending = true)]
+[Index(nameof(OwnerId), nameof(Sorting), nameof(LastMessageId), nameof(IsDeleted), IsDescending = [true, true, false, true], Name = $"IX_Chat_SessionUnit_${nameof(OwnerId)}_${nameof(Sorting)}_Desc_${nameof(LastMessageId)}_Asc")]
 
 //Ticks
-[Index(nameof(Sorting), nameof(Ticks), nameof(IsDeleted), AllDescending = true)]
-[Index(nameof(Sorting), nameof(Ticks), nameof(IsDeleted), IsDescending = [true, false, true], Name = $"IX_Chat_SessionUnit_${nameof(Sorting)}_Desc_{nameof(Ticks)}_Asc")]
+[Index(nameof(OwnerId), nameof(Sorting), nameof(Ticks), nameof(IsDeleted), AllDescending = true)]
+[Index(nameof(OwnerId), nameof(Sorting), nameof(Ticks), nameof(IsDeleted), IsDescending = [true, true, false, true], Name = $"IX_Chat_SessionUnit_${nameof(OwnerId)}_${nameof(Sorting)}_Desc_{nameof(Ticks)}_Asc")]
 public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, ISessionId, IHasSimpleStateCheckers<SessionUnit>, IMaterializationInterceptor, ISessionUnit
 {
 
