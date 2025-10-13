@@ -98,7 +98,7 @@ public abstract class ChatAppService : AbpCommonsAppService
 
         var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
 
-        //Assert.If(!await IsAnyCurrentUserAsync(ownerIdList), $"Fail ownerIds [{ownerIdList.JoinAsString(",")}], current user's chatObjectIdList:[{chatObjectIdList.JoinAsString(",")}]");
+        Assert.If(!await IsAnyCurrentUserAsync(ownerIdList), $"Fail ownerIds [{ownerIdList.JoinAsString(",")}], current user's chatObjectIdList:[{chatObjectIdList.JoinAsString(",")}]");
 
         await func?.Invoke();
     }
