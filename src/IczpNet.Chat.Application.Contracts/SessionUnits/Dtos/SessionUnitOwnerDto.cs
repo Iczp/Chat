@@ -12,6 +12,7 @@ public class SessionUnitOwnerDto : SessionUnitDto
     public virtual SessionUnitSettingDto Setting { get; set; }
 
     public virtual MessageDto LastMessage { get; set; }
+    //public virtual MessageSimpleDto LastMessage { get; set; }
 
     public virtual long? LastMessageId { get; set; }
 

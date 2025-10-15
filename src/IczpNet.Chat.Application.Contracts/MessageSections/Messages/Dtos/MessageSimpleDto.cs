@@ -22,6 +22,11 @@ public class MessageSimpleDto : ExtensibleEntityDto, IEntityDto<long>
     public virtual long? SenderId { get; set; }
 
     /// <summary>
+    /// 发送人
+    /// </summary>
+    public virtual string SenderName { get; set; }
+
+    /// <summary>
     /// 
     /// </summary>
 

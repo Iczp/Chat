@@ -15,11 +15,6 @@ public class MessageDto : MessageSimpleDto, IEntityDto<long>
 
     //public virtual long? ReceiverId { get; set; }
 
-    /// <summary>
-    /// 发送人
-    /// </summary>
-    public virtual string SenderName { get; set; }
-
     //public virtual string KeyName { get; set; }
 
     //public virtual string KeyValue { get; set; }
