@@ -136,6 +136,24 @@ public class SessionUnitAppService(
             input,
             x => x.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId));
     }
+    /// <summary>
+    /// 会话单元列表（消息总线） - Fast
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [HttpGet]
+    [UnitOfWork(true, IsolationLevel.ReadCommitted)]
+    public virtual async Task<PagedResultDto<SessionUnitDto>> GetListFastAsync(SessionUnitGetListInput input)
+    {
+        await CheckPolicyForUserAsync(input.OwnerId, () => CheckPolicyAsync(GetListPolicyName));
+
+        var query = await CreateQueryAsync(input);
+
+        return await GetPagedListAsync<SessionUnit, SessionUnitDto>(
+            query,
+            input,
+            x => x.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId));
+    }
 
     /// <summary>
     /// 消息统计

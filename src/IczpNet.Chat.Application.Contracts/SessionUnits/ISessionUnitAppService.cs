@@ -15,6 +15,8 @@ public interface ISessionUnitAppService
 
     Task<PagedResultDto<SessionUnitOwnerDto>> GetListAsync(SessionUnitGetListInput input);
 
+    Task<PagedResultDto<SessionUnitDto>> GetListFastAsync(SessionUnitGetListInput input);
+
     Task<PagedResultDto<SessionUnitDestinationDto>> GetListDestinationAsync(Guid id, SessionUnitGetListDestinationInput input);
     Task<PagedResultDto<SessionUnitDestinationDto>> GetMembersAsync(Guid id, SessionUnitGetListDestinationInput input);
 
