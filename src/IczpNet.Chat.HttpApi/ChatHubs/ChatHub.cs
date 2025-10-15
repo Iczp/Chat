@@ -3,6 +3,7 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Connections;
+using IczpNet.Chat.Devices;
 using IczpNet.Chat.Hosting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -49,18 +50,20 @@ public class ChatHub(
         {
             var httpContext = Context.GetHttpContext();
 
-            string deviceId = httpContext?.Request.Query["deviceId"];
-
-            string queryId = httpContext?.Request.Query["id"];
-
-            Logger.LogWarning($"DeviceId:{deviceId}");
-
             if (!CurrentUser.Id.HasValue)
             {
                 Logger.LogWarning($"User is null");
                 Context.Abort();
                 return;
             }
+
+            var deviceId = CurrentUser.GetDeviceId() ?? httpContext?.Request.Query["deviceId"];
+
+            var deviceType = CurrentUser.GetDeviceType() ?? httpContext?.Request.Query["deviceType"];
+
+            var queryId = httpContext?.Request.Query["id"];
+
+            Logger.LogWarning($"DeviceId:{deviceId}");
 
             await Groups.AddToGroupAsync(Context.ConnectionId, CurrentUser.Id.ToString());
 
@@ -78,6 +81,7 @@ public class ChatHub(
                 UserId = CurrentUser.Id,
                 UserName = CurrentUser.UserName,
                 DeviceId = deviceId,
+                DeviceType = deviceType,
                 BrowserInfo = WebClientInfoProvider.BrowserInfo,
                 DeviceInfo = WebClientInfoProvider.DeviceInfo,
                 CreationTime = Clock.Now,

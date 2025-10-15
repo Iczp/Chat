@@ -13,3 +13,30 @@
     id?:string;
 ```
 
+
+
+登录添加 deviceType
+
+```ts
+
+type DeviceType 'pc' | 'phone' | 'web' | 'html5plus'
+```
+
+
+
+
+
+### 扫码登录 
+
+qr-login
+
+
+
+### 设备信息
+
+device
+
+
+
+
+

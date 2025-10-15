@@ -9,6 +9,7 @@ using IczpNet.Chat.Connections;
 using IczpNet.Chat.ContactTags;
 using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Developers;
+using IczpNet.Chat.Devices;
 using IczpNet.Chat.EntryNames;
 using IczpNet.Chat.EntryValues;
 using IczpNet.Chat.FavoritedRecorders;
@@ -161,6 +162,10 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<InvitationCode> InvitationCode { get; }
 
     DbSet<ClientConfig> ClientConfig { get; }
+
+    DbSet<Device> Device { get; }
+
+    DbSet<UserDevice> UserDevice { get; }
 
 
 }

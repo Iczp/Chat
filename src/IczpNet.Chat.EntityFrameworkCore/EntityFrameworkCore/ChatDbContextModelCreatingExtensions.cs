@@ -9,6 +9,7 @@ using IczpNet.Chat.Connections;
 using IczpNet.Chat.DbTables;
 using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Developers;
+using IczpNet.Chat.Devices;
 using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.HttpRequests;
@@ -215,6 +216,8 @@ public static class ChatDbContextModelCreatingExtensions
                 b.HasOne(x => x.FavoritedCounter).WithOne(x => x.Message).HasForeignKey<FavoritedCounter>(x => x.MessageId).IsRequired(true);
                 b.HasOne(x => x.DeletedCounter).WithOne(x => x.Message).HasForeignKey<DeletedCounter>(x => x.MessageId).IsRequired(true);
             });
+
+        builder.Entity<UserDevice>(b => { b.HasKey(x => new { x.UserId, x.DeviceId }); });
 
     }
 

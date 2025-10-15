@@ -99,4 +99,9 @@ public class MessageSimpleDto : ExtensibleEntityDto, IEntityDto<long>
     //public virtual long OpenedCount { get; set; }
 
     //public virtual long FavoritedCount { get; set; }
+
+    /// <summary>
+    /// 消息内容
+    /// </summary>
+    public virtual object Content { get; set; }
 }

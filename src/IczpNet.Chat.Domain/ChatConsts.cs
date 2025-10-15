@@ -31,6 +31,8 @@ public static class ChatConsts
 
     public const int DriveIdLength = 128;
 
+    public const int DriveTypeLength = 64;
+
     public const int TextContentMaxLength = 5000;
 
     public const int VideoUrlMaxLength = 1000;

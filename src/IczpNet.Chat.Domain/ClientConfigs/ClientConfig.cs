@@ -30,7 +30,7 @@ public class ClientConfig : BaseEntity<Guid>, IChatOwner<long?>, IDeviceId, IApp
     /// IOS | MAC | Win32 | Android | Linux
     /// </summary>
     [StringLength(64)]
-    [Comment("DeviceId")]
+    [Comment("Platform")]
     public virtual string Platform { get; set; }
 
     [StringLength(64)]

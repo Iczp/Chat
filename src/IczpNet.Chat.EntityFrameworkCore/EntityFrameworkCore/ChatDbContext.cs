@@ -10,6 +10,7 @@ using IczpNet.Chat.ContactTags;
 using IczpNet.Chat.DbTables;
 using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Developers;
+using IczpNet.Chat.Devices;
 using IczpNet.Chat.EntryNames;
 using IczpNet.Chat.EntryValues;
 using IczpNet.Chat.FavoritedRecorders;
@@ -178,6 +179,10 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
     public DbSet<InvitationCode> InvitationCode { get; set; }
 
     public DbSet<ClientConfig> ClientConfig { get; set; }
+
+    public DbSet<Device> Device { get; set; }
+
+    public DbSet<UserDevice> UserDevice { get; set; }
 
     public ChatDbContext(DbContextOptions<ChatDbContext> options)
         : base(options)

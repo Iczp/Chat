@@ -45,6 +45,11 @@ public class ConnectionPoolCacheItem
     public virtual string DeviceId { get; set; }
 
     /// <summary>
+    /// DeviceType
+    /// </summary>
+    public virtual string DeviceType { get; set; }
+
+    /// <summary>
     /// IpAddress
     /// </summary>
     public virtual string IpAddress { get; set; }
