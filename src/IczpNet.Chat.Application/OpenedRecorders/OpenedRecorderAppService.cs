@@ -1,8 +1,8 @@
 ﻿using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.Devices;
 using IczpNet.Chat.OpenedRecorders.Dtos;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
-using IczpNet.Pusher.DeviceIds;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -19,7 +19,7 @@ namespace IczpNet.Chat.OpenedRecorders;
 public class OpenedRecorderAppService(
     IOpenedRecorderManager openedRecorderManager,
     IRepository<OpenedRecorder> repository,
-    IDeviceIdResolver deviceIdResolver) : ChatAppService, IOpenedRecorderAppService
+    IDeviceResolver deviceResolver) : ChatAppService, IOpenedRecorderAppService
 {
     protected virtual string SetReadedPolicyName { get; set; }
 
@@ -27,7 +27,7 @@ public class OpenedRecorderAppService(
 
     protected IOpenedRecorderManager OpenedRecorderManager { get; } = openedRecorderManager;
 
-    protected IDeviceIdResolver DeviceIdResolver { get; } = deviceIdResolver;
+    protected IDeviceResolver DeviceIdResolver { get; } = deviceResolver;
 
     /// <summary>
     /// 获取消息【已打开】的数量

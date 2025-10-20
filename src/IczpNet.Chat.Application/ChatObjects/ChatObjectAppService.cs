@@ -5,13 +5,13 @@ using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.ChatObjectCategories;
 using IczpNet.Chat.ChatObjects.Dtos;
+using IczpNet.Chat.Devices;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.ServiceStates;
 using IczpNet.Chat.SessionSections.SessionPermissions;
-using IczpNet.Pusher.DeviceIds;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -21,6 +21,7 @@ using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Identity;
 using Volo.Abp.Users;
 
 namespace IczpNet.Chat.ChatObjects;
@@ -36,7 +37,8 @@ public class ChatObjectAppService(
     IServiceStateManager serviceStateManager,
     IFavoritedRecorderManager favoritedRecorderManager,
     IFollowManager followManager,
-    IDeviceIdResolver deviceIdResolver)
+    IdentityUserManager identityUserManager,
+    IDeviceResolver deviceResolver)
         : CrudTreeChatAppService<
         ChatObject,
         long,
@@ -59,7 +61,8 @@ public class ChatObjectAppService(
     protected IServiceStateManager ServiceStateManager { get; } = serviceStateManager;
     protected IFavoritedRecorderManager FavoritedRecorderManager { get; } = favoritedRecorderManager;
     protected IFollowManager FollowManager { get; } = followManager;
-    protected IDeviceIdResolver DeviceIdResolver { get; } = deviceIdResolver;
+    public IdentityUserManager IdentityUserManager { get; } = identityUserManager;
+    protected IDeviceResolver DeviceIdResolver { get; } = deviceResolver;
 
     protected override async Task<IQueryable<ChatObject>> CreateFilteredQueryAsync(ChatObjectGetListInput input)
     {
@@ -285,7 +288,7 @@ public class ChatObjectAppService(
     /// <param name="id">主建Id</param>
     /// <returns></returns>
     [HttpGet]
-    public async Task<ChatObjectDetailDto> GetDetailAsync(long id)
+    public virtual async Task<ChatObjectDetailDto> GetDetailAsync(long id)
     {
         var entity = await ChatObjectManager.GetAsync(id);
 
@@ -298,7 +301,7 @@ public class ChatObjectAppService(
     /// <param name="id"></param>
     /// <returns></returns>
     [HttpGet]
-    public async Task<List<ServiceStatusCacheItem>> GetServiceStatusAsync(long id)
+    public virtual async Task<List<ServiceStatusCacheItem>> GetServiceStatusAsync(long id)
     {
         return await ServiceStateManager.GetAsync(id);
     }
@@ -310,7 +313,7 @@ public class ChatObjectAppService(
     /// <param name="status"></param>
     /// <returns></returns>
     [HttpPost]
-    public async Task<List<ServiceStatusCacheItem>> SetServiceStatusAsync(long id, ServiceStatus status)
+    public virtual async Task<List<ServiceStatusCacheItem>> SetServiceStatusAsync(long id, ServiceStatus status)
     {
         var deviceId = await DeviceIdResolver.GetDeviceIdAsync();
 
@@ -322,7 +325,7 @@ public class ChatObjectAppService(
         return await ServiceStateManager.SetAsync(id, deviceId, status);
     }
 
-    public async Task<ChatObjectProfileDto> GetProfileAsync(long id)
+    public virtual async Task<ChatObjectProfileDto> GetProfileAsync(long id)
     {
 
         return new ChatObjectProfileDto()
@@ -333,5 +336,32 @@ public class ChatObjectAppService(
             FollowerCount = await FollowManager.GetFollowerCountAsync(id),
         };
         //return GetProfileInternalAsync(id);
+    }
+
+    /// <summary>
+    /// 创建用户会话
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <returns></returns>
+    /// <exception cref="UserFriendlyException"></exception>
+    public virtual async Task<ChatObjectDto> GenerateByUserAsync(Guid userId)
+    {
+        var user = await IdentityUserManager.FindByIdAsync(userId.ToString()) ?? throw new UserFriendlyException($"用户不存在", "404", $"userId={userId}");
+
+        var userDto = ObjectMapper.Map<IdentityUser, UserEto>(user);
+
+        var chatObject = await ChatObjectManager.GenerateByUserAsync(userDto);
+
+        return await MapToGetOutputDtoAsync(chatObject);
+    }
+
+    /// <summary>
+    /// 创建当前用户会话
+    /// </summary>
+    /// <returns></returns>
+    public Task<ChatObjectDto> GenerateByCurrentUserAsync()
+    {
+        var currentUserId = CurrentUser.GetId();
+        return GenerateByUserAsync(currentUserId);
     }
 }

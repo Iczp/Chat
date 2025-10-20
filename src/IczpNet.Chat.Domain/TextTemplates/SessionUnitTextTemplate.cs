@@ -33,7 +33,7 @@ public class SessionUnitTextTemplate : TextTemplate
 
     public SessionUnitTextTemplate(SessionUnit sessionUnit)
     {
-        SessionUnitIds = new List<Guid>() { sessionUnit.Id };
+        SessionUnitIds = [sessionUnit.Id];
         ChatObjectName = !sessionUnit.Setting.MemberName.IsNullOrWhiteSpace() ? sessionUnit.Setting.MemberName : sessionUnit.Owner?.Name;
         SetData();
     }

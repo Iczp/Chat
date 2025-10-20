@@ -1,8 +1,8 @@
 ﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.DeletedRecorders.Dtos;
+using IczpNet.Chat.Devices;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
-using IczpNet.Pusher.DeviceIds;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -19,7 +19,7 @@ namespace IczpNet.Chat.DeletedRecorders;
 public class DeletedRecorderAppService(
     IDeletedRecorderManager openedRecorderManager,
     IRepository<DeletedRecorder> repository,
-    IDeviceIdResolver deviceIdResolver) : ChatAppService, IDeletedRecorderAppService
+    IDeviceResolver deviceResolver) : ChatAppService, IDeletedRecorderAppService
 {
     protected virtual string SetReadedPolicyName { get; set; }
 
@@ -27,7 +27,7 @@ public class DeletedRecorderAppService(
 
     protected IDeletedRecorderManager DeletedRecorderManager { get; } = openedRecorderManager;
 
-    protected IDeviceIdResolver DeviceIdResolver { get; } = deviceIdResolver;
+    protected IDeviceResolver DeviceResolver { get; } = deviceResolver;
 
     /// <summary>
     /// 获取消息【已删除】的数量

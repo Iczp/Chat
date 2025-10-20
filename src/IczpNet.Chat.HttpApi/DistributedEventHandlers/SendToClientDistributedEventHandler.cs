@@ -1,9 +1,10 @@
 ﻿using IczpNet.Chat.ChatHubs;
+using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Hosting;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionUnits;
-using IczpNet.Pusher.Models;
+
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
@@ -13,6 +14,7 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.Json;
+
 
 namespace IczpNet.Chat.DistributedEventHandlers;
 
@@ -73,13 +75,13 @@ public class SendToClientDistributedEventHandler : DomainService, IDistributedEv
 
             var units = item.ChatObjectIdList
                 .Where(chatObjectIdList.Contains)
-                .Select(chatObjectId => new ScopeUnit
+                .Select(chatObjectId => new CommandPayload.ScopeUnit
                 {
                     ChatObjectId = chatObjectId,
                     SessionUnitId = sessionUnitInfoList.Find(x => x.OwnerId == chatObjectId).Id
                 }).ToList();
 
-            var commandPayload = new PushPayload()
+            var commandPayload = new CommandPayload()
             {
                 AppUserId = item.UserId,
                 Scopes = units,//sessionUnitCaches.Select(x=>x as object).ToList(),

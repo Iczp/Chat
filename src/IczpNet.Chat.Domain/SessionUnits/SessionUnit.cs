@@ -7,6 +7,7 @@ using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
+using IczpNet.Chat.MessageSections.MessageFollowers;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.OpenedRecorders;
@@ -49,13 +50,18 @@ namespace IczpNet.Chat.SessionUnits;
 [Index(nameof(IsDeleted))]
 [Index(nameof(CreationTime), AllDescending = true)]
 
+//OwnerId
+[Index(nameof(OwnerId), AllDescending = true)]
+
+[Index(nameof(OwnerId), nameof(PublicBadge), nameof(PrivateBadge), AllDescending = true)]
+
 //LastMessageId
-[Index(nameof(Sorting), nameof(LastMessageId), nameof(IsDeleted), AllDescending = true)]
-[Index(nameof(Sorting), nameof(LastMessageId), nameof(IsDeleted), IsDescending = [true, false, true], Name = $"IX_Chat_SessionUnit_${nameof(Sorting)}_Desc_${nameof(LastMessageId)}_Asc")]
+[Index(nameof(OwnerId), nameof(Sorting), nameof(LastMessageId), nameof(IsDeleted), AllDescending = true)]
+[Index(nameof(OwnerId), nameof(Sorting), nameof(LastMessageId), nameof(IsDeleted), IsDescending = [true, true, false, true], Name = $"IX_Chat_SessionUnit_${nameof(OwnerId)}_${nameof(Sorting)}_Desc_${nameof(LastMessageId)}_Asc")]
 
 //Ticks
-[Index(nameof(Sorting), nameof(Ticks), nameof(IsDeleted), AllDescending = true)]
-[Index(nameof(Sorting), nameof(Ticks), nameof(IsDeleted), IsDescending = [true, false, true], Name = $"IX_Chat_SessionUnit_${nameof(Sorting)}_Desc_{nameof(Ticks)}_Asc")]
+[Index(nameof(OwnerId), nameof(Sorting), nameof(Ticks), nameof(IsDeleted), AllDescending = true)]
+[Index(nameof(OwnerId), nameof(Sorting), nameof(Ticks), nameof(IsDeleted), IsDescending = [true, true, false, true], Name = $"IX_Chat_SessionUnit_${nameof(OwnerId)}_${nameof(Sorting)}_Desc_{nameof(Ticks)}_Asc")]
 public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, ISessionId, IHasSimpleStateCheckers<SessionUnit>, IMaterializationInterceptor, ISessionUnit
 {
 
@@ -142,7 +148,7 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     public virtual int RemindMeCount { get; protected set; }
 
     /// <summary>
-    /// 特别关注数量
+    /// 特别关注消息数量 FollowingMessageCount
     /// </summary>
     [Comment("特别关注数量")]
     public virtual int FollowingCount { get; protected set; }
@@ -215,6 +221,13 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     /// </summary>
     [InverseProperty(nameof(Follow.DestinationSessionUnit))]
     public virtual IList<Follow> FollowerList { get; protected set; }
+
+    /// <summary>
+    /// 关注的消息列表
+    /// </summary>
+    [InverseProperty(nameof(MessageFollower.SessionUnit))]
+    public virtual IList<MessageFollower> MessageFollowerList { get; protected set; } = [];
+
 
     [InverseProperty(nameof(FavoritedRecorder.SessionUnit))]
     public virtual IList<FavoritedRecorder> FavoriteList { get; protected set; }

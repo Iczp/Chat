@@ -81,7 +81,7 @@ public class RoomAppService(IRoomManager roomManager,
     [HttpGet]
     public async Task<PagedResultDto<SessionUnitDto>> GetSameAsync(SameGetListInput input)
     {
-        var query = await SessionUnitManager.GetSameSessionQeuryableAsync(input.SourceChatObjectId, input.TargetChatObjectId, new List<ChatObjectTypeEnums>() { ChatObjectTypeEnums.Room });
+        var query = await SessionUnitManager.GetSameSessionQeuryableAsync(input.SourceChatObjectId, input.TargetChatObjectId, [ChatObjectTypeEnums.Room]);
 
         return await GetPagedListAsync<SessionUnit, SessionUnitDto>(query, input);
     }

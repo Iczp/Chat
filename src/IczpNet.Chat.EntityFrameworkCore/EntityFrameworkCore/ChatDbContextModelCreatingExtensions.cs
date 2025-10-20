@@ -9,11 +9,13 @@ using IczpNet.Chat.Connections;
 using IczpNet.Chat.DbTables;
 using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Developers;
+using IczpNet.Chat.Devices;
 using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.HttpRequests;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Counters;
+using IczpNet.Chat.MessageSections.MessageFollowers;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
@@ -141,6 +143,7 @@ public static class ChatDbContextModelCreatingExtensions
         });
 
         builder.Entity<MessageReminder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
+        builder.Entity<MessageFollower>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
 
         builder.Entity<FavoritedRecorder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
         builder.Entity<OpenedRecorder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
@@ -213,6 +216,8 @@ public static class ChatDbContextModelCreatingExtensions
                 b.HasOne(x => x.FavoritedCounter).WithOne(x => x.Message).HasForeignKey<FavoritedCounter>(x => x.MessageId).IsRequired(true);
                 b.HasOne(x => x.DeletedCounter).WithOne(x => x.Message).HasForeignKey<DeletedCounter>(x => x.MessageId).IsRequired(true);
             });
+
+        builder.Entity<UserDevice>(b => { b.HasKey(x => new { x.UserId, x.DeviceId }); });
 
     }
 

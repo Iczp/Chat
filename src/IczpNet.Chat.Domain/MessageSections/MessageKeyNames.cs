@@ -17,6 +17,11 @@ public static class MessageKeyNames
     /// 
     /// </summary>
     public static string JoinRoom { get; set; } = nameof(JoinRoom);
+
+    /// <summary>
+    /// 加入
+    /// </summary>
+    public static string CreatedUser { get; set; } = nameof(CreatedUser);
     /// <summary>
     /// CreateConditionRoom  创建条件群
     /// </summary>
@@ -90,4 +95,12 @@ public static class MessageKeyNames
     /// 客服转接
     /// </summary>
     public static string Transfer { get; set; } = nameof(Transfer);
+    /// <summary>
+    /// 转让群主
+    /// </summary>
+    public static string TransferCreator { get; set; } = nameof(TransferCreator);
+    /// <summary>
+    /// 添加好友
+    /// </summary>
+    public static string AddFriendSuccess { get; set; } = nameof(AddFriendSuccess);
 }

@@ -20,6 +20,7 @@ public class ClientConfig : BaseEntity<Guid>, IChatOwner<long?>, IDeviceId, IApp
     [ForeignKey(nameof(OwnerId))]
     public virtual ChatObject Owner { get; set; }
 
+    [Comment("DeviceId")]
     [StringLength(ChatConsts.DriveIdLength)]
     public virtual string DeviceId { get; set; }
 
@@ -29,6 +30,7 @@ public class ClientConfig : BaseEntity<Guid>, IChatOwner<long?>, IDeviceId, IApp
     /// IOS | MAC | Win32 | Android | Linux
     /// </summary>
     [StringLength(64)]
+    [Comment("Platform")]
     public virtual string Platform { get; set; }
 
     [StringLength(64)]

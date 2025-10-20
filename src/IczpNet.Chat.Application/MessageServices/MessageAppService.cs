@@ -86,6 +86,7 @@ public class MessageAppService(
         var query = (await Repository.GetQueryableAsync())
             .Where(x => x.SessionId == entity.SessionId)
             //.Where(x => !x.IsPrivate || (x.IsPrivate && (x.SenderId == entity.OwnerId || x.ReceiverId == entity.OwnerId)))
+            .Where(x => !x.IsPrivate || x.SenderSessionUnitId == entity.Id || x.ReceiverSessionUnitId == entity.Id)
             .WhereIf(settting.HistoryFristTime.HasValue, x => x.CreationTime >= settting.HistoryFristTime)
             .WhereIf(settting.HistoryLastTime.HasValue, x => x.CreationTime < settting.HistoryFristTime)
             .WhereIf(settting.ClearTime.HasValue, x => x.CreationTime > settting.ClearTime)
@@ -94,7 +95,10 @@ public class MessageAppService(
             .WhereIf(input.EndTime.HasValue, x => x.CreationTime < input.EndTime)
 
             .WhereIf(input.MessageTypes.IsAny(), x => input.MessageTypes.Contains(x.MessageType))
-            .WhereIf(input.IsFollowed.HasValue, x => followingIdList.Contains(x.SenderSessionUnitId.Value))
+
+            //.WhereIf(input.IsFollowed.HasValue, x => followingIdList.Contains(x.SenderSessionUnitId.Value))
+            .WhereIf(input.IsFollowed.HasValue, x => x.MessageFollowerList.Any(d => d.SessionUnitId == sessionUnitId))
+
             .WhereIf(input.IsRemind == true, x => x.IsRemindAll || x.MessageReminderList.Any(x => x.SessionUnitId == sessionUnitId))
             .WhereIf(input.SenderId.HasValue, x => x.SenderId == input.SenderId)
             .WhereIf(input.ForwardDepth.HasValue, x => x.ForwardDepth == input.ForwardDepth.Value)

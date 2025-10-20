@@ -1,5 +1,5 @@
 ﻿using IczpNet.Chat.ChatHubs;
-using IczpNet.Pusher.Models;
+using IczpNet.Chat.CommandPayloads;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using System;
@@ -22,7 +22,7 @@ public class SignalRController(IHubContext<ChatHub, IChatClient> hubContext) : C
     [Route("send-message")]
     public async Task SendMessageAsync(string message)
     {
-        await HubContext.Clients.All.ReceivedMessage(new PushPayload()
+        await HubContext.Clients.All.ReceivedMessage(new CommandPayload()
         {
             Command = "SendMessage",
             Payload = message
@@ -33,7 +33,7 @@ public class SignalRController(IHubContext<ChatHub, IChatClient> hubContext) : C
     [Route("sendTo-connectionId")]
     public async Task SendToConnectionIdAsync(string connectionId, string message)
     {
-        await HubContext.Clients.Clients(connectionId).ReceivedMessage(new PushPayload()
+        await HubContext.Clients.Clients(connectionId).ReceivedMessage(new CommandPayload()
         {
             Command = "SendMessage",
             Payload = message
@@ -44,7 +44,7 @@ public class SignalRController(IHubContext<ChatHub, IChatClient> hubContext) : C
     [Route("sendTo-userId")]
     public async Task SendToUserIdAsync(Guid userId, string message)
     {
-        await HubContext.Clients.User(userId.ToString()).ReceivedMessage(new PushPayload()
+        await HubContext.Clients.User(userId.ToString()).ReceivedMessage(new CommandPayload()
         {
             Command = "SendMessage",
             Payload = message
@@ -55,7 +55,7 @@ public class SignalRController(IHubContext<ChatHub, IChatClient> hubContext) : C
     [Route("sendTo-group")]
     public async Task SendToGroupAsync(string group, string message)
     {
-        await HubContext.Clients.Group(group).ReceivedMessage(new PushPayload()
+        await HubContext.Clients.Group(group).ReceivedMessage(new CommandPayload()
         {
             Command = "SendMessage",
             Payload = message

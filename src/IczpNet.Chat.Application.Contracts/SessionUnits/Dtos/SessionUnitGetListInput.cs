@@ -43,13 +43,33 @@ public class SessionUnitGetListInput : GetListInput
     /// </summary>
     public virtual bool? IsImmersed { get; set; }
 
-
-
     //public virtual bool IsOrderByBadge { get; set; }
     /// <summary>
     /// 是否被移除会话
     /// </summary>
     public virtual bool? IsKilled { get; set; }
+
+    /// <summary>
+    /// 是否有角标（新消息）
+    /// </summary>
+    [DefaultValue(null)]
+    public virtual bool? IsBadge { get; set; }
+
+    /// <summary>
+    /// 是否有提醒
+    /// </summary>
+    [DefaultValue(null)]
+    public virtual bool? IsRemind { get; set; }
+
+    /// <summary>
+    /// 是否我关注的
+    /// </summary>
+    public virtual bool? IsFollowing { get; set; }
+
+    /// <summary>
+    /// 是否关注我的
+    /// </summary>
+    public virtual bool? IsFollower { get; set; }
 
     /// <summary>
     /// 最小消息Id
@@ -70,24 +90,6 @@ public class SessionUnitGetListInput : GetListInput
     /// 最大时间戳
     /// </summary>
     public virtual long? MaxTicks { get; set; }
-
-    /// <summary>
-    /// 是否有角标（新消息）
-    /// </summary>
-    [DefaultValue(null)]
-    public virtual bool? IsBadge { get; set; }
-
-    /// <summary>
-    /// 是否有提醒
-    /// </summary>
-    [DefaultValue(null)]
-    public virtual bool? IsRemind { get; set; }
-
-    /// <summary>
-    /// 是否有关注的人
-    /// </summary>
-    public virtual bool? IsFollowing { get; set; }
-
 
     //public virtual JoinWays? JoinWay { get; set; }
 

@@ -24,8 +24,23 @@ public class MessageSimpleDto : ExtensibleEntityDto, IEntityDto<long>
     /// <summary>
     /// 
     /// </summary>
+    public virtual Guid? SenderSessionUnitId { get; set; }
+
+    /// <summary>
+    /// 发送人
+    /// </summary>
+    public virtual string SenderName { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
 
     public virtual long? ReceiverId { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public virtual Guid? ReceiverSessionUnitId { get; set; }
 
     /// <summary>
     ///  消息类型
@@ -84,4 +99,9 @@ public class MessageSimpleDto : ExtensibleEntityDto, IEntityDto<long>
     //public virtual long OpenedCount { get; set; }
 
     //public virtual long FavoritedCount { get; set; }
+
+    /// <summary>
+    /// 消息内容
+    /// </summary>
+    public virtual object Content { get; set; }
 }

@@ -99,8 +99,21 @@ public class SessionUnitAppService(
             .WhereIf(input.IsContacts.HasValue, x => x.Setting.IsContacts == input.IsContacts)
             .WhereIf(input.IsImmersed.HasValue, x => x.Setting.IsImmersed == input.IsImmersed)
             .WhereIf(input.IsBadge.HasValue, x => x.PublicBadge > 0)
-            .WhereIf(input.IsRemind.HasValue, x => x.RemindAllCount > 0 || x.RemindMeCount > 0)
-            .WhereIf(input.IsFollowing.HasValue, x => x.FollowingCount > 0)
+
+            //@我
+            .WhereIf(input.IsRemind == true, x => (x.RemindAllCount + x.RemindMeCount) > 0)
+            .WhereIf(input.IsRemind == false, x => (x.RemindAllCount + x.RemindMeCount) == 0)
+
+
+            //我关注的
+            //.WhereIf(input.IsFollowing.HasValue, x => x.FollowingCount > 0)
+            .WhereIf(input.IsFollowing == true, x => x.FollowingList.Count > 0)
+            .WhereIf(input.IsFollowing == false, x => x.FollowingList.Count == 0)
+
+            //关注我的
+            .WhereIf(input.IsFollower == true, x => x.FollowerList.Count > 0)
+            .WhereIf(input.IsFollower == false, x => x.FollowerList.Count == 0)
+
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordDestinationSessionUnitSpecification(input.Keyword, await ChatObjectManager.SearchKeywordByCacheAsync(input.Keyword)))
             ;
     }
@@ -119,6 +132,24 @@ public class SessionUnitAppService(
         var query = await CreateQueryAsync(input);
 
         return await GetPagedListAsync<SessionUnit, SessionUnitOwnerDto>(
+            query,
+            input,
+            x => x.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId));
+    }
+    /// <summary>
+    /// 会话单元列表（消息总线） - Fast
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [HttpGet]
+    [UnitOfWork(true, IsolationLevel.ReadCommitted)]
+    public virtual async Task<PagedResultDto<SessionUnitDto>> GetListFastAsync(SessionUnitGetListInput input)
+    {
+        await CheckPolicyForUserAsync(input.OwnerId, () => CheckPolicyAsync(GetListPolicyName));
+
+        var query = await CreateQueryAsync(input);
+
+        return await GetPagedListAsync<SessionUnit, SessionUnitDto>(
             query,
             input,
             x => x.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId));
@@ -498,12 +529,22 @@ public class SessionUnitAppService(
 
         await CheckPolicyForUserAsync(chatObjectIdList, () => CheckPolicyAsync(GetBadgePolicyName));
 
-        var result = new List<BadgeDto>();
+        var dic = await SessionUnitManager.GetBadgeByOwnerIdListAsync(chatObjectIdList, isImmersed);
 
-        foreach (var chatObjectId in chatObjectIdList)
+        var result = dic.Select(x => new BadgeDto()
         {
-            result.Add(await GetBadgeByOwnerIdAsync(chatObjectId, isImmersed));
-        }
+            AppUserId = userId,
+            ChatObjectId = x.Key,
+            Badge = x.Value,
+
+        }).ToList();
+
+        //var result = new List<BadgeDto>();
+
+        //foreach (var chatObjectId in chatObjectIdList)
+        //{
+        //    result.Add(await GetBadgeByOwnerIdAsync(chatObjectId, isImmersed));
+        //}
         return result;
     }
 
@@ -598,5 +639,20 @@ public class SessionUnitAppService(
         await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetCounterPolicyName));
 
         return await SessionUnitManager.GetCounterAsync(input.SessionUnitId, input.MinMessageId, input.IsImmersed);
+    }
+
+    /// <summary>
+    /// 根据创建用户创建相应的会话(通知\新闻\机器人等)
+    /// </summary>
+    /// <param name="chatObjectId"></param>
+    /// <returns></returns>
+    [HttpPost]
+    public async Task<int> GenerateDefaultSessionAsync(long chatObjectId)
+    {
+        var userChatObject = await ChatObjectManager.GetAsync(chatObjectId);
+
+        var sessionUnitList = await SessionUnitManager.GenerateDefaultSessionByChatObjectAsync(userChatObject);
+
+        return sessionUnitList.Count;
     }
 }

@@ -55,4 +55,8 @@ public interface IChatObjectAppService :
 
     Task<List<ServiceStatusCacheItem>> SetServiceStatusAsync(long id, ServiceStatus status);
 
+    Task<ChatObjectDto> GenerateByUserAsync(Guid userId);
+
+    Task<ChatObjectDto> GenerateByCurrentUserAsync();
+
 }

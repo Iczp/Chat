@@ -21,7 +21,7 @@ public class OnDisconnectedDistributedEventHandler(
     {
         //await ConnectionPoolManager.AddAsync(eventData);
         //发布本地事件
-        await LocalEventBus.PublishAsync(eventData);
+        //await LocalEventBus.PublishAsync(eventData);
 
         Logger.LogWarning($"{nameof(OnDisconnectedDistributedEventHandler)} 处理事件[{nameof(OnDisconnectedEto)}] Strat：{eventData.ConnectionId}");
 

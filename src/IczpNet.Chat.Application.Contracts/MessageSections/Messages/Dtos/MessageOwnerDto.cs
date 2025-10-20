@@ -40,6 +40,11 @@ public class MessageOwnerDto : MessageQuoteDto, IEntityDto<long>
     public virtual bool IsRemindAll { get; set; }
 
     /// <summary>
+    /// 是否@我
+    /// </summary>
+    public virtual bool? IsRemindMe { get; set; }
+
+    /// <summary>
     /// 是否已打开
     /// </summary>
     public virtual bool? IsOpened { get; set; }
@@ -58,11 +63,6 @@ public class MessageOwnerDto : MessageQuoteDto, IEntityDto<long>
     /// 是否收藏
     /// </summary>
     public virtual bool? IsFavorited { get; set; }
-
-    /// <summary>
-    /// 是否@我
-    /// </summary>
-    public virtual bool? IsRemindMe { get; set; }
 
     /// <summary>
     /// 成员数量

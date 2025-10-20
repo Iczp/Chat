@@ -856,7 +856,8 @@ namespace IczpNet.Chat.Migrations
 
                     b.Property<string>("DeviceId")
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .HasComment("DeviceId");
 
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
@@ -886,7 +887,8 @@ namespace IczpNet.Chat.Migrations
 
                     b.Property<string>("Platform")
                         .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("Platform");
 
                     b.Property<string>("Title")
                         .HasMaxLength(64)
@@ -1249,6 +1251,432 @@ namespace IczpNet.Chat.Migrations
                     b.ToTable("Chat_Developer", null, t =>
                         {
                             t.HasComment("开发者");
+                        });
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.Devices.Device", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("App")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("当前运行的客户端");
+
+                    b.Property<string>("AppId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("manifest.json 中应用appid");
+
+                    b.Property<string>("AppLanguage")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("应用设置的语言");
+
+                    b.Property<string>("AppName")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("manifest.json 中应用名称");
+
+                    b.Property<string>("AppPlatform")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("App 平台（可选）");
+
+                    b.Property<string>("AppVersion")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("manifest.json 中应用版本名称");
+
+                    b.Property<string>("AppVersionCode")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("manifest.json 中应用版本号");
+
+                    b.Property<string>("AppWgtVersion")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("应用资源（wgt）的版本名称");
+
+                    b.Property<bool?>("BluetoothEnabled")
+                        .HasColumnType("bit")
+                        .HasComment("蓝牙开关状态（可选）");
+
+                    b.Property<string>("Brand")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("手机品牌");
+
+                    b.Property<string>("BrowserName")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("浏览器名称");
+
+                    b.Property<string>("BrowserVersion")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("浏览器版本/webview 版本");
+
+                    b.Property<string>("CacheLocation")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("缓存的位置信息（可选）");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<string>("DeviceBrand")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("设备品牌");
+
+                    b.Property<string>("DeviceId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)")
+                        .HasComment("设备 ID");
+
+                    b.Property<string>("DeviceModel")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("设备型号");
+
+                    b.Property<int?>("DeviceOrientation")
+                        .HasColumnType("int")
+                        .HasComment("设备方向");
+
+                    b.Property<double?>("DevicePixelRatio")
+                        .HasColumnType("float")
+                        .HasComment("设备像素比");
+
+                    b.Property<string>("DeviceType")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("设备类型");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<double?>("FontSizeSetting")
+                        .HasColumnType("float")
+                        .HasComment("用户字体大小设置");
+
+                    b.Property<string>("Host")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("宿主平台");
+
+                    b.Property<string>("HostFontSizeSetting")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("宿主字体大小设置");
+
+                    b.Property<string>("HostLanguage")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("宿主语言");
+
+                    b.Property<string>("HostName")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("宿主名称");
+
+                    b.Property<string>("HostPackageName")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("宿主包名");
+
+                    b.Property<string>("HostSDKVersion")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("宿主基础库版本");
+
+                    b.Property<string>("HostTheme")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("宿主主题");
+
+                    b.Property<string>("HostVersion")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("宿主版本");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("bit")
+                        .HasComment("是否可用");
+
+                    b.Property<string>("Language")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("程序设置的语言");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<bool?>("LocationEnabled")
+                        .HasColumnType("bit")
+                        .HasComment("定位开关状态（可选）");
+
+                    b.Property<string>("Model")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("手机型号");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)")
+                        .HasComment("显示名称");
+
+                    b.Property<int?>("NavigationBarHeight")
+                        .HasColumnType("int")
+                        .HasComment("导航栏高度（可选）");
+
+                    b.Property<string>("OsLanguage")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("操作系统语言");
+
+                    b.Property<string>("OsName")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("操作系统名称");
+
+                    b.Property<string>("OsTheme")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("操作系统主题");
+
+                    b.Property<string>("OsVersion")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("操作系统版本");
+
+                    b.Property<double>("PixelRatio")
+                        .HasColumnType("float")
+                        .HasComment("设备像素比");
+
+                    b.Property<string>("Platform")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("客户端平台");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)")
+                        .HasComment("备注");
+
+                    b.Property<string>("RomName")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("ROM 名称（Android 部分机型可能为空）");
+
+                    b.Property<string>("RomVersion")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("ROM 版本号（Android 部分机型可能为空）");
+
+                    b.Property<string>("SDKVersion")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("客户端基础库版本");
+
+                    b.Property<string>("SafeArea")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasComment("屏幕高度");
+
+                    b.Property<string>("SafeAreaInsets")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("安全区域插入位置（可选）");
+
+                    b.Property<int>("ScreenHeight")
+                        .HasColumnType("int")
+                        .HasComment("屏幕高度");
+
+                    b.Property<int>("ScreenWidth")
+                        .HasColumnType("int")
+                        .HasComment("屏幕宽度");
+
+                    b.Property<int?>("StatusBarHeight")
+                        .HasColumnType("int")
+                        .HasComment("状态栏高度（可选）");
+
+                    b.Property<string>("Storage")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("设备磁盘容量（可选）");
+
+                    b.Property<string>("SwanNativeVersion")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("宿主平台版本号（可选）");
+
+                    b.Property<string>("System")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("操作系统信息");
+
+                    b.Property<string>("Theme")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("系统主题（仅微信小程序支持，可选）");
+
+                    b.Property<int?>("TitleBarHeight")
+                        .HasMaxLength(64)
+                        .HasColumnType("int")
+                        .HasComment("标题栏高度（可选）");
+
+                    b.Property<string>("Ua")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("用户标识（小程序为空）");
+
+                    b.Property<string>("UniCompileVersion")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("uni 编译器版本号");
+
+                    b.Property<string>("UniPlatform")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("uni 运行平台（app/mp-weixin/web）");
+
+                    b.Property<string>("UniRuntimeVersion")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("uni 运行时版本");
+
+                    b.Property<string>("Version")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("引擎版本号");
+
+                    b.Property<bool?>("WifiEnabled")
+                        .HasColumnType("bit")
+                        .HasComment(" Wi-Fi 开关状态（可选）");
+
+                    b.Property<int>("WindowBottom")
+                        .HasColumnType("int")
+                        .HasComment("可用窗口底部位置");
+
+                    b.Property<int>("WindowHeight")
+                        .HasColumnType("int")
+                        .HasComment("可用窗口高度");
+
+                    b.Property<int>("WindowTop")
+                        .HasColumnType("int")
+                        .HasComment("可用窗口顶部位置");
+
+                    b.Property<int>("WindowWidth")
+                        .HasColumnType("int")
+                        .HasComment("可用窗口宽度");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeviceId");
+
+                    b.HasIndex("DeviceType");
+
+                    b.ToTable("Chat_Device", null, t =>
+                        {
+                            t.HasComment("设备");
+                        });
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.Devices.UserDevice", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasComment("Abp User Id");
+
+                    b.Property<Guid>("DeviceId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasComment(" Device Id");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<string>("RawDeviceId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)")
+                        .HasComment("Raw DeviceId");
+
+                    b.Property<string>("RawDeviceType")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("Raw DeviceType");
+
+                    b.HasKey("UserId", "DeviceId");
+
+                    b.HasIndex("DeviceId");
+
+                    b.HasIndex("RawDeviceType");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Chat_UserDevice", null, t =>
+                        {
+                            t.HasComment("用户设备");
                         });
                 });
 
@@ -2135,6 +2563,55 @@ namespace IczpNet.Chat.Migrations
                     b.ToTable("Chat_MessageContent", (string)null);
                 });
 
+            modelBuilder.Entity("IczpNet.Chat.MessageSections.MessageFollowers.MessageFollower", b =>
+                {
+                    b.Property<Guid>("SessionUnitId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long>("MessageId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.HasKey("SessionUnitId", "MessageId");
+
+                    b.HasIndex("MessageId");
+
+                    b.ToTable("Chat_MessageFollower", null, t =>
+                        {
+                            t.HasComment("消息关注者");
+                        });
+                });
+
             modelBuilder.Entity("IczpNet.Chat.MessageSections.MessageReminders.MessageReminder", b =>
                 {
                     b.Property<Guid>("SessionUnitId")
@@ -2229,6 +2706,10 @@ namespace IczpNet.Chat.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("ExtraProperties");
+
+                    b.Property<int>("FollowerCount")
+                        .HasColumnType("int")
+                        .HasComment("关注数量");
 
                     b.Property<long>("ForwardCount")
                         .HasColumnType("bigint")
@@ -2336,6 +2817,11 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("datetime2")
                         .HasComment("撤回消息时间");
 
+                    b.Property<string>("SenderFollowerIds")
+                        .HasMaxLength(5000)
+                        .HasColumnType("nvarchar(max)")
+                        .HasComment("发送人的关注者(粉丝)");
+
                     b.Property<long?>("SenderId")
                         .HasColumnType("bigint")
                         .HasComment("发送者");
@@ -2420,6 +2906,8 @@ namespace IczpNet.Chat.Migrations
                         .IsDescending();
 
                     b.HasIndex("SessionId", "IsPrivate", "SenderId", "ReceiverId", "IsDeleted", "CreationTime", "ForwardDepth", "QuoteDepth");
+
+                    b.HasIndex("SessionId", "IsPrivate", "SenderSessionUnitId", "ReceiverSessionUnitId", "IsDeleted", "CreationTime", "ForwardDepth", "QuoteDepth");
 
                     b.HasIndex(new[] { "CreationTime" }, "IX_Chat_Message_CreationTime_Asc");
 
@@ -5120,6 +5608,9 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreationTime")
+                        .IsDescending();
+
                     b.HasIndex("LastMessageId")
                         .IsDescending();
 
@@ -5322,6 +5813,9 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("InviterId");
 
+                    b.HasIndex("IsImmersed")
+                        .IsDescending();
+
                     b.HasIndex("KillerId");
 
                     b.HasIndex("LastSendMessageId")
@@ -5332,7 +5826,8 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("MuteExpireTime");
 
-                    b.HasIndex("ReadedMessageId");
+                    b.HasIndex("ReadedMessageId")
+                        .IsDescending();
 
                     b.HasIndex("SessionId");
 
@@ -5464,7 +5959,8 @@ namespace IczpNet.Chat.Migrations
                     b.HasIndex("LastMessageId")
                         .IsDescending();
 
-                    b.HasIndex("OwnerId");
+                    b.HasIndex("OwnerId")
+                        .IsDescending();
 
                     b.HasIndex("OwnerObjectType")
                         .IsDescending();
@@ -5480,17 +5976,20 @@ namespace IczpNet.Chat.Migrations
                     b.HasIndex("Sorting", "Ticks")
                         .IsDescending();
 
-                    b.HasIndex("Sorting", "LastMessageId", "IsDeleted")
+                    b.HasIndex("OwnerId", "PublicBadge", "PrivateBadge")
                         .IsDescending();
 
-                    b.HasIndex("Sorting", "Ticks", "IsDeleted")
+                    b.HasIndex("OwnerId", "Sorting", "LastMessageId", "IsDeleted")
                         .IsDescending();
 
-                    b.HasIndex(new[] { "Sorting", "LastMessageId", "IsDeleted" }, "IX_Chat_SessionUnit_$Sorting_Desc_$LastMessageId_Asc")
-                        .IsDescending(true, false, true);
+                    b.HasIndex("OwnerId", "Sorting", "Ticks", "IsDeleted")
+                        .IsDescending();
 
-                    b.HasIndex(new[] { "Sorting", "Ticks", "IsDeleted" }, "IX_Chat_SessionUnit_$Sorting_Desc_Ticks_Asc")
-                        .IsDescending(true, false, true);
+                    b.HasIndex(new[] { "OwnerId", "Sorting", "LastMessageId", "IsDeleted" }, "IX_Chat_SessionUnit_$OwnerId_$Sorting_Desc_$LastMessageId_Asc")
+                        .IsDescending(true, true, false, true);
+
+                    b.HasIndex(new[] { "OwnerId", "Sorting", "Ticks", "IsDeleted" }, "IX_Chat_SessionUnit_$OwnerId_$Sorting_Desc_Ticks_Asc")
+                        .IsDescending(true, true, false, true);
 
                     b.ToTable("Chat_SessionUnit", (string)null);
                 });
@@ -6563,6 +7062,17 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("Owner");
                 });
 
+            modelBuilder.Entity("IczpNet.Chat.Devices.UserDevice", b =>
+                {
+                    b.HasOne("IczpNet.Chat.Devices.Device", "Device")
+                        .WithMany("UserDeviceList")
+                        .HasForeignKey("DeviceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Device");
+                });
+
             modelBuilder.Entity("IczpNet.Chat.EntryNames.EntryName", b =>
                 {
                     b.HasOne("IczpNet.Chat.EntryNames.EntryName", "Parent")
@@ -6726,6 +7236,25 @@ namespace IczpNet.Chat.Migrations
                         .IsRequired();
 
                     b.Navigation("Message");
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.MessageSections.MessageFollowers.MessageFollower", b =>
+                {
+                    b.HasOne("IczpNet.Chat.MessageSections.Messages.Message", "Message")
+                        .WithMany("MessageFollowerList")
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("IczpNet.Chat.SessionUnits.SessionUnit", "SessionUnit")
+                        .WithMany("MessageFollowerList")
+                        .HasForeignKey("SessionUnitId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Message");
+
+                    b.Navigation("SessionUnit");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.MessageSections.MessageReminders.MessageReminder", b =>
@@ -7686,6 +8215,11 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("SessionUnitContactTagList");
                 });
 
+            modelBuilder.Entity("IczpNet.Chat.Devices.Device", b =>
+                {
+                    b.Navigation("UserDeviceList");
+                });
+
             modelBuilder.Entity("IczpNet.Chat.EntryNames.EntryName", b =>
                 {
                     b.Navigation("Childs");
@@ -7730,6 +8264,8 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("HistoryMessageList");
 
                     b.Navigation("LastMessageSessionUnitList");
+
+                    b.Navigation("MessageFollowerList");
 
                     b.Navigation("MessageReminderList");
 
@@ -7826,6 +8362,8 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("InviterList");
 
                     b.Navigation("KillerList");
+
+                    b.Navigation("MessageFollowerList");
 
                     b.Navigation("MessageList");
 

@@ -23,7 +23,15 @@ public static class ChatConsts
     [Description("私人助理")]
     public static string PrivateAssistant { get; set; } = nameof(PrivateAssistant);
 
+    [Description("服务通知")]
+    public static string Notify { get; set; } = nameof(Notify);
+
+    [Description("新闻")]
+    public static string News { get; set; } = nameof(News);
+
     public const int DriveIdLength = 128;
+
+    public const int DriveTypeLength = 64;
 
     public const int TextContentMaxLength = 5000;
 

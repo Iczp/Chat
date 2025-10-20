@@ -1,5 +1,6 @@
 ﻿using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.ConnectionPools.Dtos;
 using IczpNet.Chat.Permissions;
 using System;
@@ -7,14 +8,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.EventBus.Distributed;
 
 namespace IczpNet.Chat.ConnectionPools;
 
 /// <summary>
 /// 连接池
 /// </summary>
+/// <param name="distributedEventBus"></param>
 /// <param name="connectionPoolManager"></param>
 public class ConnectionPoolAppService(
+    IDistributedEventBus distributedEventBus,
     IConnectionPoolManager connectionPoolManager) : ChatAppService, IConnectionPoolAppService
 {
 
@@ -29,7 +33,7 @@ public class ConnectionPoolAppService(
     protected virtual string GetConnectionIdsByUserIdPolicyName { get; set; } = ChatPermissions.ConnectionPoolPermission.GetConnectionIdsByUserId;
     protected virtual string UpdateUserConnectionIdsPolicyName { get; set; } = ChatPermissions.ConnectionPoolPermission.UpdateUserConnectionIds;
     protected virtual string GetCountByUserIdPolicyName { get; set; } = ChatPermissions.ConnectionPoolPermission.GetCountByUserId;
-
+    public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
 
     public IConnectionPoolManager ConnectionPoolManager { get; } = connectionPoolManager;
 
@@ -88,13 +92,11 @@ public class ConnectionPoolAppService(
     /// 获取在线人数列表(当前用户)
     /// </summary>
     /// <returns></returns>
-    public async Task<PagedResultDto<ConnectionPoolCacheItem>> GetListByCurrentUserAsync()
+    public async Task<PagedResultDto<ConnectionPoolCacheItem>> GetListByCurrentUserAsync(ConnectionPoolGetListInput input)
     {
         await CheckPolicyAsync(GetListByCurrentUserPolicyName);
-        return await FetchListAsync(new ConnectionPoolGetListInput()
-        {
-            UserId = CurrentUser.Id
-        });
+        input.UserId = CurrentUser.Id;
+        return await FetchListAsync(input);
     }
 
     /// <summary>
@@ -173,5 +175,16 @@ public class ConnectionPoolAppService(
         return await ConnectionPoolManager.UpdateUserConnectionIdsAsync(userId);
     }
 
-
+    /// <summary>
+    /// 强制断开连接
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    public async Task AbortAsync(AbortInput input)
+    {
+        await DistributedEventBus.PublishAsync(new AbortEto()
+        {
+            ConnectionIdList = input.ConnectionIdList,
+        });
+    }
 }

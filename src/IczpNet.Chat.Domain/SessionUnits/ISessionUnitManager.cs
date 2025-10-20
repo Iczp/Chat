@@ -11,6 +11,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Volo.Abp.Users;
 
 namespace IczpNet.Chat.SessionUnits;
 
@@ -240,6 +241,14 @@ public interface ISessionUnitManager
     /// <param name="isImmersed"></param>
     /// <returns></returns>
     Task<int> GetBadgeByOwnerIdAsync(long ownerId, bool? isImmersed = null);
+
+    /// <summary>
+    /// 获取聊天对象角标
+    /// </summary>
+    /// <param name="ownerIdList"></param>
+    /// <param name="isImmersed"></param>
+    /// <returns></returns>
+    Task<Dictionary<long, int>> GetBadgeByOwnerIdListAsync(List<long> ownerIdList, bool? isImmersed = null);
 
     /// <summary>
     /// 获取聊天对象角标
@@ -521,4 +530,11 @@ public interface ISessionUnitManager
     /// <param name="chatObjectId"></param>
     /// <returns></returns>
     Task<List<SessionUnitCacheItem>> GetFriendsAsync(long chatObjectId);
+
+    /// <summary>
+    /// 根据创建用户创建相应的会话(通知\新闻\机器人等)
+    /// </summary>
+    /// <param name="chatObject"></param>
+    /// <returns></returns>
+    Task<List<SessionUnit>> GenerateDefaultSessionByChatObjectAsync(ChatObject chatObject);
 }

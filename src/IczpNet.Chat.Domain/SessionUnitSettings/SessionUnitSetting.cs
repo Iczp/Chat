@@ -18,6 +18,13 @@ namespace IczpNet.Chat.SessionUnitSettings;
 [Index(nameof(MuteExpireTime))]
 [Index(nameof(LastSendMessageId), AllDescending = true)]
 [Index(nameof(LastSendTime), AllDescending = true)]
+
+//IsImmersed
+[Index(nameof(IsImmersed), AllDescending = true)]
+
+//ReadedMessageId
+[Index(nameof(ReadedMessageId), AllDescending = true)]
+
 [Comment("会话设置")]
 public class SessionUnitSetting : BaseEntity, IHasCreationTime, IHasModificationTime, IIsStatic, IIsPublic//, ISoftDelete
 {

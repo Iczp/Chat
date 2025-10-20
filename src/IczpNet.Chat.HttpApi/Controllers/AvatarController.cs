@@ -11,17 +11,12 @@ using Volo.Abp.Caching;
 namespace IczpNet.Chat.Controllers;
 
 //[Route($"avatar")]
-public class AvatarController : ChatController
+public class AvatarController(
+    IPortraitService portraitService,
+    IDistributedCache<byte[], string> cache) : ChatController
 {
-    protected IPortraitService PortraitService { get; }
-    protected IDistributedCache<byte[], string> Cache { get; }
-
-    public AvatarController(IPortraitService portraitService,
-        IDistributedCache<byte[], string> cache)
-    {
-        PortraitService = portraitService;
-        Cache = cache;
-    }
+    protected IPortraitService PortraitService { get; } = portraitService;
+    protected IDistributedCache<byte[], string> Cache { get; } = cache;
 
     protected virtual async Task<byte[]> GetPortraitByCacheAsync(long chatObjectId, bool hd, bool cache = true)
     {

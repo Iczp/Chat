@@ -23,7 +23,8 @@ namespace IczpNet.Chat.RoomSections.Rooms;
 
 public class RoomManager(
     IChatObjectRepository chatObjectRepository,
-    IOptions<RoomOptions> options, ISessionManager sessionManager,
+    IOptions<RoomOptions> options,
+    ISessionManager sessionManager,
     ISessionUnitRepository sessionUnitRepository,
     ISessionUnitManager sessionUnitManager,
     IChatObjectManager chatObjectManager,
@@ -166,6 +167,7 @@ public class RoomManager(
         await SendRoomMessageAsync(roomSessionUnit, new CmdContentInfo()
         {
             //Text = $"{roomOwner?.Name} 创建群聊'{room.Name}',{vtext}等 {_memberIdList.Count} 人加入群聊。",
+            Cmd = MessageKeyNames.JoinRoom,
             Text = new TextTemplate("{creatorText} {membersJoinText}等 {count} 人加入群聊")
                         .WithData("creatorText", creatorText)
                         .WithData("membersJoinText", membersJoinText)
@@ -384,7 +386,7 @@ public class RoomManager(
 
         await SendRoomMessageAsync(sessionUnit.Destination, x => new CmdContentInfo()
         {
-            //Cmd = Message
+            Cmd = MessageKeyNames.UpdateRoomName,
             Text = new TextTemplate("{operator} 更新群名称:'{name}'")
                     .WithData("operator", new SessionUnitTextTemplate(sessionUnit))
                     .WithData("name", new SessionUnitTextTemplate(x.Id, entity.Name))
@@ -404,6 +406,7 @@ public class RoomManager(
 
         await SendRoomMessageAsync(sessionUnit.Destination, x => new CmdContentInfo()
         {
+            Cmd = MessageKeyNames.UpdatePortrait,
             Text = new TextTemplate("{operator} 更新群头像:'{room}'")
                     .WithData("operator", new SessionUnitTextTemplate(sessionUnit))
                     .WithData("room", new SessionUnitTextTemplate(x.Id, entity.Name))
@@ -431,7 +434,7 @@ public class RoomManager(
         if (isSendMessageToRoom)
         {
             await SendRoomMessageAsync(sessionUnit.Destination, new CmdContentInfo()
-            {
+            {   Cmd = MessageKeyNames.TransferCreator,
                 Text = new TextTemplate("{operator} 转让群,{targetObject} 成为群主")
                     .WithData("operator", new SessionUnitTextTemplate(sessionUnit))
                     .WithData("targetObject", new SessionUnitTextTemplate(targetSessionUnit))

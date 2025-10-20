@@ -51,12 +51,6 @@ public partial class Message
     public virtual Session Session { get; protected set; }
 
     /// <summary>
-    /// sender session unit
-    /// </summary>
-    [ForeignKey(nameof(SenderSessionUnitId))]
-    public virtual SessionUnit SenderSessionUnit { get; protected set; }
-
-    /// <summary>
     /// receiver session unit
     /// </summary>
     [ForeignKey(nameof(ReceiverSessionUnitId))]

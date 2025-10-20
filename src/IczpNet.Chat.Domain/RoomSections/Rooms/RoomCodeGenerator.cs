@@ -1,15 +1,16 @@
-﻿using System;
-using System.Linq;
+﻿using IczpNet.Pusher.ShortIds;
+using System;
 using System.Threading.Tasks;
 using Volo.Abp.DependencyInjection;
 
 namespace IczpNet.Chat.RoomSections.Rooms;
 
-public class RoomCodeGenerator : IRoomCodeGenerator, ITransientDependency
+public class RoomCodeGenerator(IShortIdGenerator shortIdGenerator) : IRoomCodeGenerator, ITransientDependency
 {
     public const string StaticCode = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    protected virtual int Length { get; set; } = 8;
-    protected virtual string Prefix { get; set; } = "G_";
+    public static int Length { get; set; } = 12;
+    public static string Prefix { get; set; } = "G_";
+    public IShortIdGenerator ShortIdGenerator { get; } = shortIdGenerator;
 
     public string Make()
     {
@@ -22,10 +23,13 @@ public class RoomCodeGenerator : IRoomCodeGenerator, ITransientDependency
         return Make();
     }
 
-    protected static string GenerateCode(int length)
+    protected virtual string GenerateCode(int length)
     {
-        var random = new Random();
-        return new string(Enumerable.Repeat(StaticCode, length)
-            .Select(s => s[random.Next(s.Length)]).ToArray());
+        var shortId = ShortIdGenerator.Create() + ShortIdGenerator.Create();
+
+        return shortId.Substring(0, Math.Min(length, shortId.Length));
+        //var random = new Random();
+        //return new string(Enumerable.Repeat(StaticCode, length)
+        //    .Select(s => s[random.Next(s.Length)]).ToArray());
     }
 }

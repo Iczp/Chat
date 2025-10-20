@@ -15,6 +15,8 @@ public interface ISessionUnitAppService
 
     Task<PagedResultDto<SessionUnitOwnerDto>> GetListAsync(SessionUnitGetListInput input);
 
+    Task<PagedResultDto<SessionUnitDto>> GetListFastAsync(SessionUnitGetListInput input);
+
     Task<PagedResultDto<SessionUnitDestinationDto>> GetListDestinationAsync(Guid id, SessionUnitGetListDestinationInput input);
     Task<PagedResultDto<SessionUnitDestinationDto>> GetMembersAsync(Guid id, SessionUnitGetListDestinationInput input);
 
@@ -38,8 +40,6 @@ public interface ISessionUnitAppService
 
     Task<SessionUnitDestinationDto> GetDestinationAsync(Guid id, Guid destinationId);
 
-    
-
     Task<BadgeDto> GetBadgeByIdAsync(Guid id, bool? isImmersed = null);
 
     Task<Dictionary<ChatObjectTypeEnums, int>> GetTypedBadgeByOwnerIdAsync([Required] long ownerId, bool? isImmersed = null);
@@ -55,4 +55,11 @@ public interface ISessionUnitAppService
     Task<SessionUnitCacheItem> GetCacheAsync([Required] Guid sessionUnitId);
 
     Task<SessionUnitCounterInfo> GetCounterAsync(SessionUnitGetCounterInput input);
+
+    /// <summary>
+    /// 根据创建用户创建相应的会话(通知\新闻\机器人等)
+    /// </summary>
+    /// <param name="chatObjectId"></param>
+    /// <returns></returns>
+    Task<int> GenerateDefaultSessionAsync(long chatObjectId);
 }

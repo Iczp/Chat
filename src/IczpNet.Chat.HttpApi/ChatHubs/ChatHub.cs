@@ -1,19 +1,24 @@
 ﻿using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Connections;
+using IczpNet.Chat.Devices;
 using IczpNet.Chat.Hosting;
-using IczpNet.Pusher.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using Polly;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.SignalR;
 using Volo.Abp.AspNetCore.WebClientInfo;
+using Volo.Abp.Clients;
 using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
@@ -26,17 +31,30 @@ public class ChatHub(
     IWebClientInfoProvider webClientInfoProvider,
     IChatObjectManager chatObjectManager,
     ICurrentHosted currentHosted,
+    ICurrentClient currentClient,
     IObjectMapper objectMapper,
     IDistributedEventBus distributedEventBus,
+    ICallerContextManager hubCallerContextManager,
     IConnectionPoolManager connectionPoolManager) : AbpHub<IChatClient>
 {
+
+    /// <summary>
+    /// ConnectionId HubCallerContext
+    /// </summary>
+    private static readonly ConcurrentDictionary<string, HubCallerContext> ConnectionIdToContextMap = new();
+    /// <summary>
+    ///  DeviceId HubCallerContext[]
+    /// </summary>
+    private static readonly ConcurrentDictionary<string, List<HubCallerContext>> DeviceIdToContextMap = new();
 
     public IConnectionManager ConnectionManager { get; } = connectionManager;
     public IWebClientInfoProvider WebClientInfoProvider { get; } = webClientInfoProvider;
     public IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
     public ICurrentHosted CurrentHosted { get; } = currentHosted;
+    public ICurrentClient CurrentClient { get; } = currentClient;
     public IObjectMapper ObjectMapper { get; } = objectMapper;
     public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
+    public ICallerContextManager HubCallerContextManager { get; } = hubCallerContextManager;
     public IConnectionPoolManager ConnectionPoolManager { get; } = connectionPoolManager;
 
     [UnitOfWork]
@@ -46,18 +64,20 @@ public class ChatHub(
         {
             var httpContext = Context.GetHttpContext();
 
-            string deviceId = httpContext?.Request.Query["deviceId"];
-
-            string clientId = httpContext?.Request.Query["id"];
-
-            Logger.LogWarning($"DeviceId:{deviceId}");
-
             if (!CurrentUser.Id.HasValue)
             {
                 Logger.LogWarning($"User is null");
                 Context.Abort();
                 return;
             }
+
+            var deviceId = CurrentUser.GetDeviceId() ?? httpContext?.Request.Query["deviceId"];
+
+            var deviceType = CurrentUser.GetDeviceType() ?? httpContext?.Request.Query["deviceType"];
+
+            var queryId = httpContext?.Request.Query["id"];
+
+            Logger.LogWarning($"DeviceId:{deviceId}");
 
             await Groups.AddToGroupAsync(Context.ConnectionId, CurrentUser.Id.ToString());
 
@@ -67,13 +87,15 @@ public class ChatHub(
 
             var connectedEto = new OnConnectedEto()
             {
-                ClientId = clientId,
+                QueryId = queryId,
+                ClientId = CurrentClient.Id,
                 ConnectionId = Context.ConnectionId,
                 Host = CurrentHosted.Name,
                 IpAddress = WebClientInfoProvider.ClientIpAddress,
                 UserId = CurrentUser.Id,
                 UserName = CurrentUser.UserName,
                 DeviceId = deviceId,
+                DeviceType = deviceType,
                 BrowserInfo = WebClientInfoProvider.BrowserInfo,
                 DeviceInfo = WebClientInfoProvider.DeviceInfo,
                 CreationTime = Clock.Now,
@@ -84,12 +106,14 @@ public class ChatHub(
 
             await ConnectionPoolManager.AddAsync(connectedEto);
 
-            await Clients.Caller.ReceivedMessage(new PushPayload()
-            {
-                AppUserId = CurrentUser.Id,
-                Command = "Welcome",
-                Payload = connectedEto,
-            });
+            await HubCallerContextManager.AddAsync(Context, connectedEto);
+
+            //await Clients.User(CurrentUser.Id?.ToString()).ReceivedMessage(new CommandPayload()
+            //{
+            //    AppUserId = CurrentUser.Id,
+            //    Command = "Welcome",
+            //    Payload = connectedEto,
+            //});
 
             // 发布事件
             await DistributedEventBus.PublishAsync(connectedEto, onUnitOfWorkComplete: false);
@@ -126,21 +150,25 @@ public class ChatHub(
             var cancellationToken = new CancellationTokenSource().Token;
 
             // 注：这里的删除操作可能会被取消，所以需要捕获TaskCanceledException异常
-            await ConnectionPoolManager.RemoveAsync(connectionId, cancellationToken);
+            await HubCallerContextManager.RemoveAsync(connectionId);
 
+            //删除前获取连接
             var connection = await ConnectionPoolManager.GetAsync(connectionId, cancellationToken);
+
+            //删除连接
+            await ConnectionPoolManager.RemoveAsync(connectionId, cancellationToken);
 
             var onDisconnectedEto = connection?.MapTo<OnDisconnectedEto>() ?? new OnDisconnectedEto(connectionId);
 
             // 发布事件
             await DistributedEventBus.PublishAsync(onDisconnectedEto, onUnitOfWorkComplete: false);
 
-            await Clients.Caller.ReceivedMessage(new PushPayload()
-            {
-                AppUserId = CurrentUser.Id,
-                Command = "Goodbye",
-                Payload = onDisconnectedEto,
-            });
+            //await Clients.User(CurrentUser.Id?.ToString()).ReceivedMessage(new CommandPayload()
+            //{
+            //    AppUserId = CurrentUser.Id,
+            //    Command = "Goodbye",
+            //    Payload = onDisconnectedEto,
+            //});
 
             //await ConnectionManager.RemoveAsync(Context.ConnectionId, new CancellationTokenSource().Token);
         }
@@ -162,7 +190,7 @@ public class ChatHub(
     {
         var all = await ConnectionPoolManager.GetAllListAsync();
 
-        await Clients.All.ReceivedMessage(new PushPayload()
+        await Clients.All.ReceivedMessage(new CommandPayload()
         {
             Command = message,
             Payload = all.ToList(),
