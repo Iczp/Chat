@@ -27,8 +27,7 @@ public class SeedDataByUserCreatedDistributedEventHandler(
     IJsonSerializer jsonSerializer,
     IUnitOfWorkManager unitOfWorkManager,
     IChatObjectManager chatObjectManager) : DomainService,
-    IDistributedEventHandler<EntityCreatedEto<UserEto>>,
-
+    IDistributedEventHandler<EntityCreatedEto<UserEto>>, 
     ITransientDependency
 {
     public ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;

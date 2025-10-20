@@ -6,9 +6,12 @@ using IczpNet.Chat.Connections;
 using IczpNet.Chat.Devices;
 using IczpNet.Chat.Hosting;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using Polly;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -31,8 +34,18 @@ public class ChatHub(
     ICurrentClient currentClient,
     IObjectMapper objectMapper,
     IDistributedEventBus distributedEventBus,
+    ICallerContextManager hubCallerContextManager,
     IConnectionPoolManager connectionPoolManager) : AbpHub<IChatClient>
 {
+
+    /// <summary>
+    /// ConnectionId HubCallerContext
+    /// </summary>
+    private static readonly ConcurrentDictionary<string, HubCallerContext> ConnectionIdToContextMap = new();
+    /// <summary>
+    ///  DeviceId HubCallerContext[]
+    /// </summary>
+    private static readonly ConcurrentDictionary<string, List<HubCallerContext>> DeviceIdToContextMap = new();
 
     public IConnectionManager ConnectionManager { get; } = connectionManager;
     public IWebClientInfoProvider WebClientInfoProvider { get; } = webClientInfoProvider;
@@ -41,6 +54,7 @@ public class ChatHub(
     public ICurrentClient CurrentClient { get; } = currentClient;
     public IObjectMapper ObjectMapper { get; } = objectMapper;
     public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
+    public ICallerContextManager HubCallerContextManager { get; } = hubCallerContextManager;
     public IConnectionPoolManager ConnectionPoolManager { get; } = connectionPoolManager;
 
     [UnitOfWork]
@@ -92,12 +106,14 @@ public class ChatHub(
 
             await ConnectionPoolManager.AddAsync(connectedEto);
 
-            await Clients.Caller.ReceivedMessage(new CommandPayload()
-            {
-                AppUserId = CurrentUser.Id,
-                Command = "Welcome",
-                Payload = connectedEto,
-            });
+            await HubCallerContextManager.AddAsync(Context, connectedEto);
+
+            //await Clients.User(CurrentUser.Id?.ToString()).ReceivedMessage(new CommandPayload()
+            //{
+            //    AppUserId = CurrentUser.Id,
+            //    Command = "Welcome",
+            //    Payload = connectedEto,
+            //});
 
             // 发布事件
             await DistributedEventBus.PublishAsync(connectedEto, onUnitOfWorkComplete: false);
@@ -134,21 +150,25 @@ public class ChatHub(
             var cancellationToken = new CancellationTokenSource().Token;
 
             // 注：这里的删除操作可能会被取消，所以需要捕获TaskCanceledException异常
-            await ConnectionPoolManager.RemoveAsync(connectionId, cancellationToken);
+            await HubCallerContextManager.RemoveAsync(connectionId);
 
+            //删除前获取连接
             var connection = await ConnectionPoolManager.GetAsync(connectionId, cancellationToken);
+
+            //删除连接
+            await ConnectionPoolManager.RemoveAsync(connectionId, cancellationToken);
 
             var onDisconnectedEto = connection?.MapTo<OnDisconnectedEto>() ?? new OnDisconnectedEto(connectionId);
 
             // 发布事件
             await DistributedEventBus.PublishAsync(onDisconnectedEto, onUnitOfWorkComplete: false);
 
-            await Clients.Caller.ReceivedMessage(new CommandPayload()
-            {
-                AppUserId = CurrentUser.Id,
-                Command = "Goodbye",
-                Payload = onDisconnectedEto,
-            });
+            //await Clients.User(CurrentUser.Id?.ToString()).ReceivedMessage(new CommandPayload()
+            //{
+            //    AppUserId = CurrentUser.Id,
+            //    Command = "Goodbye",
+            //    Payload = onDisconnectedEto,
+            //});
 
             //await ConnectionManager.RemoveAsync(Context.ConnectionId, new CancellationTokenSource().Token);
         }

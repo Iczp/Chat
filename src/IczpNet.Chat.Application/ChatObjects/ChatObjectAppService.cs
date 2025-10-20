@@ -5,13 +5,13 @@ using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.ChatObjectCategories;
 using IczpNet.Chat.ChatObjects.Dtos;
+using IczpNet.Chat.Devices;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.ServiceStates;
 using IczpNet.Chat.SessionSections.SessionPermissions;
-using IczpNet.Pusher.DeviceIds;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -38,7 +38,7 @@ public class ChatObjectAppService(
     IFavoritedRecorderManager favoritedRecorderManager,
     IFollowManager followManager,
     IdentityUserManager identityUserManager,
-    IDeviceIdResolver deviceIdResolver)
+    IDeviceResolver deviceResolver)
         : CrudTreeChatAppService<
         ChatObject,
         long,
@@ -62,7 +62,7 @@ public class ChatObjectAppService(
     protected IFavoritedRecorderManager FavoritedRecorderManager { get; } = favoritedRecorderManager;
     protected IFollowManager FollowManager { get; } = followManager;
     public IdentityUserManager IdentityUserManager { get; } = identityUserManager;
-    protected IDeviceIdResolver DeviceIdResolver { get; } = deviceIdResolver;
+    protected IDeviceResolver DeviceIdResolver { get; } = deviceResolver;
 
     protected override async Task<IQueryable<ChatObject>> CreateFilteredQueryAsync(ChatObjectGetListInput input)
     {

@@ -7,5 +7,7 @@ public interface IChatClient
 {
     Task ReceivedMessage(CommandPayload pushPayload);
 
+    Task KickMessage(CommandPayload messagePayload);
+
     //Task StopAsync(string connectionId);
 }

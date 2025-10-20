@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
+using IczpNet.Chat.BaseDtos;
 
 namespace IczpNet.Chat.ConnectionPools;
 
@@ -31,7 +32,7 @@ public interface IConnectionPoolAppService
     /// 获取在线人数列表(当前用户)
     /// </summary>
     /// <returns></returns>
-    Task<PagedResultDto<ConnectionPoolCacheItem>> GetListByCurrentUserAsync();
+    Task<PagedResultDto<ConnectionPoolCacheItem>> GetListByCurrentUserAsync(ConnectionPoolGetListInput input);
     /// <summary>
     /// 获取连接
     /// </summary>
@@ -79,5 +80,12 @@ public interface IConnectionPoolAppService
     /// </summary>
     /// <returns></returns>
     Task<int> UpdateUserConnectionIdsAsync(Guid userId);
+
+    /// <summary>
+    /// 强制断开连接
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    Task AbortAsync(AbortInput input);
 
 }

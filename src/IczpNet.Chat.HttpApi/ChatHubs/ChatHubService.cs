@@ -27,7 +27,7 @@ public abstract class ChatHubService : DomainService
     /// </summary>
     /// <param name="userId"></param>
     /// <returns></returns>
-    protected virtual async Task<List<string>> GetFriendsConnectionIdsAsync(Guid userId)
+    protected virtual async Task<List<ConnectionPoolCacheItem>> GetFriendsConnectionIdsAsync(Guid userId)
     {
         var sessionUnitList = await SessionUnitManager.GetUserFriendsAsync(userId);
 
@@ -38,11 +38,28 @@ public abstract class ChatHubService : DomainService
         var firendsConnectionIds = (await ConnectionPoolManager.GetAllListAsync())
             .Where(x => x.Host == CurrentHosted.Name)
             .Where(x => x.ChatObjectIdList.Any(d => chatObjectIdList.Contains(d)))
-            .Select(x => x.ConnectionId)
+            //.Select(x => x.ConnectionId)
             .ToList();
-            ;
+        ;
 
         return firendsConnectionIds;
+    }
+
+    /// <summary>
+    /// 我的朋友
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <returns></returns>
+    protected virtual async Task<List<string>> GetUserConnectionIdsAsync(Guid userId)
+    {
+        var userConnectionIds = (await ConnectionPoolManager.GetAllListAsync())
+        .Where(x => x.Host == CurrentHosted.Name)
+        .Where(x => x.UserId == userId)
+        .Select(x => x.ConnectionId)
+        .ToList();
+        ;
+
+        return userConnectionIds;
     }
 
     /// <summary>
@@ -53,10 +70,33 @@ public abstract class ChatHubService : DomainService
     /// <returns></returns>
     protected virtual async Task SendToFriendsAsync(Guid userId, CommandPayload commandPayload)
     {
-        var firendsConnectionIds = await GetFriendsConnectionIdsAsync(userId);
+        var firendsConnectionList = await GetFriendsConnectionIdsAsync(userId);
+
+        var firendsConnectionIds = firendsConnectionList.Select(x => x.ConnectionId).ToList();
 
         Logger.LogInformation($"Send [{nameof(IChatClient.ReceivedMessage)}] FriendsCount:{firendsConnectionIds.Count},commandPayload={JsonSerializer.Serialize(commandPayload)}");
 
-        await HubContext.Clients.Clients(firendsConnectionIds).ReceivedMessage(commandPayload);
+        foreach( var firendsConnection in firendsConnectionList)
+        {
+            //修改为当前用户
+            commandPayload.AppUserId = firendsConnection.UserId;
+
+            await HubContext.Clients.Client(firendsConnection.ClientId).ReceivedMessage(commandPayload);
+        }
+    }
+
+    /// <summary>
+    /// 发送给用户
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <param name="commandPayload"></param>
+    /// <returns></returns>
+    protected virtual async Task SendToUserAsync(Guid userId, CommandPayload commandPayload)
+    {
+        var userConnectionIds = await GetUserConnectionIdsAsync(userId);
+
+        Logger.LogInformation($"Send [{nameof(IChatClient.ReceivedMessage)}] FriendsCount:{userConnectionIds.Count},commandPayload={JsonSerializer.Serialize(commandPayload)}");
+
+        await HubContext.Clients.Clients(userConnectionIds).ReceivedMessage(commandPayload);
     }
 }

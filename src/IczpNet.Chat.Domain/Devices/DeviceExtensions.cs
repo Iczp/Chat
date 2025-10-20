@@ -29,4 +29,6 @@ public static class DeviceExtensions
     {
         return currentUser.FindClaimValue(DeviceTypeClaim);
     }
+
+
 }
