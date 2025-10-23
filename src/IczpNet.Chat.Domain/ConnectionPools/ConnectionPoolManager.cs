@@ -1,10 +1,8 @@
 ﻿using IczpNet.Chat.Connections;
-using Microsoft.AspNetCore.Connections;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;

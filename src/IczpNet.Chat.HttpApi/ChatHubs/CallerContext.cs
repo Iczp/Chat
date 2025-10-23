@@ -7,14 +7,14 @@ public class CallerContext
 {
     public HubCallerContext Context { get;  set; }
 
-    public OnConnectedEto Connect { get; set; }
+    public ConnectedEto Connect { get; set; }
 
     public CallerContext()
     {
 
     }
 
-    public CallerContext(HubCallerContext context, OnConnectedEto connect)
+    public CallerContext(HubCallerContext context, ConnectedEto connect)
     {
         Context = context;
         Connect = connect;

@@ -85,7 +85,7 @@ public class ChatHub(
 
             Logger.LogWarning($"chatObjectIdList:[{chatObjectIdList.JoinAsString(",")}]");
 
-            var connectedEto = new OnConnectedEto()
+            var connectedEto = new ConnectedEto()
             {
                 QueryId = queryId,
                 ClientId = CurrentClient.Id,
@@ -158,7 +158,7 @@ public class ChatHub(
             //删除连接
             await ConnectionPoolManager.RemoveAsync(connectionId, cancellationToken);
 
-            var onDisconnectedEto = connection?.MapTo<OnDisconnectedEto>() ?? new OnDisconnectedEto(connectionId);
+            var onDisconnectedEto = connection?.MapTo<DisconnectedEto>() ?? new DisconnectedEto(connectionId);
 
             // 发布事件
             await DistributedEventBus.PublishAsync(onDisconnectedEto, onUnitOfWorkComplete: false);
