@@ -1,6 +1,5 @@
 ﻿using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.ConnectionPools.Dtos;
 using IczpNet.Chat.Permissions;
 using System;
@@ -8,17 +7,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
-using Volo.Abp.EventBus.Distributed;
 
 namespace IczpNet.Chat.ConnectionPools;
 
 /// <summary>
 /// 连接池
 /// </summary>
-/// <param name="distributedEventBus"></param>
+/// <param name="abortService"></param>
 /// <param name="connectionPoolManager"></param>
 public class ConnectionPoolAppService(
-    IDistributedEventBus distributedEventBus,
+    IAbortService abortService,
     IConnectionPoolManager connectionPoolManager) : ChatAppService, IConnectionPoolAppService
 {
 
@@ -33,8 +31,7 @@ public class ConnectionPoolAppService(
     protected virtual string GetConnectionIdsByUserIdPolicyName { get; set; } = ChatPermissions.ConnectionPoolPermission.GetConnectionIdsByUserId;
     protected virtual string UpdateUserConnectionIdsPolicyName { get; set; } = ChatPermissions.ConnectionPoolPermission.UpdateUserConnectionIds;
     protected virtual string GetCountByUserIdPolicyName { get; set; } = ChatPermissions.ConnectionPoolPermission.GetCountByUserId;
-    public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
-
+    public IAbortService AbortService { get; } = abortService;
     public IConnectionPoolManager ConnectionPoolManager { get; } = connectionPoolManager;
 
 
@@ -44,7 +41,7 @@ public class ConnectionPoolAppService(
         return await ConnectionPoolManager.GetTotalCountAsync(host);
     }
 
-    protected virtual async Task<PagedResultDto<ConnectionPoolCacheItem>> FetchListAsync(ConnectionPoolGetListInput input)
+    protected virtual async Task<PagedResultDto<ConnectionPoolDto>> FetchListAsync(ConnectionPoolGetListInput input)
     {
 
         var query = (await ConnectionPoolManager.CreateQueryableAsync())
@@ -62,7 +59,7 @@ public class ConnectionPoolAppService(
             .WhereIf(input.EndCreationTime.HasValue, x => x.CreationTime < input.EndCreationTime)
             ;
 
-        return await GetPagedListAsync(query, input, q => q.OrderByDescending(x => x.CreationTime));
+        return await GetPagedListAsync<ConnectionPoolCacheItem, ConnectionPoolDto>(query, input, q => q.OrderByDescending(x => x.CreationTime));
     }
 
     /// <summary>
@@ -70,7 +67,7 @@ public class ConnectionPoolAppService(
     /// </summary>
     /// <param name="input"></param>
     /// <returns></returns>
-    public async Task<PagedResultDto<ConnectionPoolCacheItem>> GetListAsync(ConnectionPoolGetListInput input)
+    public async Task<PagedResultDto<ConnectionPoolDto>> GetListAsync(ConnectionPoolGetListInput input)
     {
         await CheckGetListPolicyAsync();
         return await FetchListAsync(input);
@@ -80,7 +77,7 @@ public class ConnectionPoolAppService(
     /// 获取在线人数列表
     /// </summary>
     /// <returns></returns>
-    public async Task<PagedResultDto<ConnectionPoolCacheItem>> GetListByChatObjectAsync(List<long> chatObjectIdList)
+    public async Task<PagedResultDto<ConnectionPoolDto>> GetListByChatObjectAsync(List<long> chatObjectIdList)
     {
         await CheckPolicyAsync(GetListByChatObjectPolicyName);
         return await FetchListAsync(new ConnectionPoolGetListInput()
@@ -92,7 +89,7 @@ public class ConnectionPoolAppService(
     /// 获取在线人数列表(当前用户)
     /// </summary>
     /// <returns></returns>
-    public async Task<PagedResultDto<ConnectionPoolCacheItem>> GetListByCurrentUserAsync(ConnectionPoolGetListInput input)
+    public async Task<PagedResultDto<ConnectionPoolDto>> GetListByCurrentUserAsync(ConnectionPoolGetListInput input)
     {
         await CheckPolicyAsync(GetListByCurrentUserPolicyName);
         input.UserId = CurrentUser.Id;
@@ -104,11 +101,13 @@ public class ConnectionPoolAppService(
     /// </summary>
     /// <param name="id">ConnectionId</param>
     /// <returns></returns>
-    public async Task<ConnectionPoolCacheItem> GetAsync(string id)
+    public async Task<ConnectionPoolDto> GetAsync(string id)
     {
         await CheckGetItemPolicyAsync();
 
-        return await ConnectionPoolManager.GetAsync(id);
+        var item = await ConnectionPoolManager.GetAsync(id);
+
+        return ObjectMapper.Map<ConnectionPoolCacheItem, ConnectionPoolDto>(item);
     }
 
     /// <summary>
@@ -182,9 +181,6 @@ public class ConnectionPoolAppService(
     /// <returns></returns>
     public async Task AbortAsync(AbortInput input)
     {
-        await DistributedEventBus.PublishAsync(new AbortEto()
-        {
-            ConnectionIdList = input.ConnectionIdList,
-        });
+        await AbortService.AbortAsync(input.ConnectionIdList, input.Reason);
     }
 }

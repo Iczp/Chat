@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.Enums;
+﻿using IczpNet.Chat.Commands;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.Hosting;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits;
@@ -49,7 +50,7 @@ public class PublishToClientForMessageCreatedEventHandler(
     {
         var cacheKey = await SessionUnitManager.GetCacheKeyByMessageAsync(message);
 
-        var command = message.ForwardMessageId.HasValue ? Command.Forward : Command.Created;
+        var command = message.ForwardMessageId.HasValue ? CommandConsts.MessageForwarded : CommandConsts.MessageCreated;
 
         // 重新获取，防止导航属性没有加载完全 --- (无效果)
         //var dbMessage = await MessageRepository.GetAsync(message.Id);

@@ -24,7 +24,7 @@ public class SignalRController(IHubContext<ChatHub, IChatClient> hubContext) : C
     {
         await HubContext.Clients.All.ReceivedMessage(new CommandPayload()
         {
-            Command = "SendMessage",
+            Command = "test",
             Payload = message
         });
     }
@@ -35,7 +35,7 @@ public class SignalRController(IHubContext<ChatHub, IChatClient> hubContext) : C
     {
         await HubContext.Clients.Clients(connectionId).ReceivedMessage(new CommandPayload()
         {
-            Command = "SendMessage",
+            Command = "test",
             Payload = message
         });
     }
@@ -46,7 +46,7 @@ public class SignalRController(IHubContext<ChatHub, IChatClient> hubContext) : C
     {
         await HubContext.Clients.User(userId.ToString()).ReceivedMessage(new CommandPayload()
         {
-            Command = "SendMessage",
+            Command = "test",
             Payload = message
         });
     }
@@ -57,7 +57,7 @@ public class SignalRController(IHubContext<ChatHub, IChatClient> hubContext) : C
     {
         await HubContext.Clients.Group(group).ReceivedMessage(new CommandPayload()
         {
-            Command = "SendMessage",
+            Command = "test",
             Payload = message
         });
     }
