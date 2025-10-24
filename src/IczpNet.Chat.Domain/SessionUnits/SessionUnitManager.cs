@@ -1,6 +1,4 @@
-﻿using AutoMapper.Execution;
-using IczpNet.AbpCommons;
-using IczpNet.AbpCommons.DataFilters;
+﻿using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
@@ -28,7 +26,6 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
-using Volo.Abp.Users;
 
 namespace IczpNet.Chat.SessionUnits;
 
@@ -39,8 +36,6 @@ public class SessionUnitManager(
     IReadOnlyRepository<Message, long> messageReadOnlyRepository,
     IDistributedCache<List<SessionUnitCacheItem>, string> sessionUnitListCache,
     IDistributedCache<SessionUnitCacheItem, Guid> sessionUnitItemCache,
-    IDistributedCache<List<SessionUnitCacheItem>, long> friendsCache,
-    IDistributedCache<List<SessionUnitCacheItem>, Guid> userFriendsCache,
     IDistributedCache<string, Guid> sessionUnitCountCache,
     IChatObjectRepository chatObjectRepository,
     IMessageSender messageSender,
@@ -59,8 +54,6 @@ public class SessionUnitManager(
     protected IReadOnlyRepository<Message, long> MessageReadOnlyRepository { get; } = messageReadOnlyRepository;
     protected IDistributedCache<List<SessionUnitCacheItem>, string> SessionUnitListCache { get; } = sessionUnitListCache;
     public IDistributedCache<SessionUnitCacheItem, Guid> SessionUnitItemCache { get; } = sessionUnitItemCache;
-    public IDistributedCache<List<SessionUnitCacheItem>, long> FriendsCache { get; } = friendsCache;
-    public IDistributedCache<List<SessionUnitCacheItem>, Guid> UserFriendsCache { get; } = userFriendsCache;
     protected IDistributedCache<string, Guid> SessionUnitCountCache { get; } = sessionUnitCountCache;
     protected IFollowManager FollowManager => LazyServiceProvider.LazyGetRequiredService<IFollowManager>();
     protected IChatObjectRepository ChatObjectRepository { get; } = chatObjectRepository;
@@ -1086,18 +1079,6 @@ public class SessionUnitManager(
         var setterSessionUnit = await SessionUnitReadOnlyRepository.FirstOrDefaultAsync(x => x.SessionId == muterSessionUnit.SessionId && x.IsStatic && !x.IsPublic && x.Id != muterSessionUnit.Id);
 
         return await SetMuteExpireTimeAsync(muterSessionUnit, muteExpireTime, setterSessionUnit, setterSessionUnit != null);
-    }
-
-    /// <inheritdoc />
-    public virtual Task<List<SessionUnitCacheItem>> GetUserFriendsAsync(Guid userId)
-    {
-        return UserFriendsCache.GetOrAddAsync(userId, () => GetListByUserIdAsync(userId));
-    }
-
-    /// <inheritdoc />
-    public virtual Task<List<SessionUnitCacheItem>> GetFriendsAsync(long chatObjectId)
-    {
-        return FriendsCache.GetOrAddAsync(chatObjectId, () => GetListByOwnerIdAsync(chatObjectId));
     }
 
     public virtual async Task<List<SessionUnit>> GenerateDefaultSessionByChatObjectAsync(ChatObject userChatObject)

@@ -19,6 +19,7 @@ public abstract class ChatHubService : DomainService
     public IHubContext<ChatHub, IChatClient> HubContext => LazyServiceProvider.LazyGetRequiredService<IHubContext<ChatHub, IChatClient>>();
     public IConnectionPoolManager ConnectionPoolManager => LazyServiceProvider.LazyGetRequiredService<IConnectionPoolManager>();
     public ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
+    public IFriendManager FriendManager => LazyServiceProvider.LazyGetRequiredService<IFriendManager>();
     public ICurrentHosted CurrentHosted => LazyServiceProvider.LazyGetRequiredService<ICurrentHosted>();
     public IJsonSerializer JsonSerializer => LazyServiceProvider.LazyGetRequiredService<IJsonSerializer>();
 
@@ -29,7 +30,7 @@ public abstract class ChatHubService : DomainService
     /// <returns></returns>
     protected virtual async Task<List<ConnectionPoolCacheItem>> GetFriendsConnectionIdsAsync(Guid userId)
     {
-        var sessionUnitList = await SessionUnitManager.GetUserFriendsAsync(userId);
+        var sessionUnitList = await FriendManager.GetFriendsAsync(userId);
 
         var chatObjectIdList = sessionUnitList.Select(x => x.OwnerId);
 

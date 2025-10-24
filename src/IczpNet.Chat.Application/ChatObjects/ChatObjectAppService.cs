@@ -62,7 +62,7 @@ public class ChatObjectAppService(
     protected IFavoritedRecorderManager FavoritedRecorderManager { get; } = favoritedRecorderManager;
     protected IFollowManager FollowManager { get; } = followManager;
     public IdentityUserManager IdentityUserManager { get; } = identityUserManager;
-    protected IDeviceResolver DeviceIdResolver { get; } = deviceResolver;
+    protected IDeviceResolver DeviceResolver { get; } = deviceResolver;
 
     protected override async Task<IQueryable<ChatObject>> CreateFilteredQueryAsync(ChatObjectGetListInput input)
     {
@@ -315,7 +315,7 @@ public class ChatObjectAppService(
     [HttpPost]
     public virtual async Task<List<ServiceStatusCacheItem>> SetServiceStatusAsync(long id, ServiceStatus status)
     {
-        var deviceId = await DeviceIdResolver.GetDeviceIdAsync();
+        var deviceId = await DeviceResolver.GetDeviceIdAsync();
 
         if (deviceId == null)
         {

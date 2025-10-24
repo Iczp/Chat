@@ -518,20 +518,6 @@ public interface ISessionUnitManager
     Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime);
 
     /// <summary>
-    /// 获取我的朋友(用户)
-    /// </summary>
-    /// <param name="userId"></param>
-    /// <returns></returns>
-    Task<List<SessionUnitCacheItem>> GetUserFriendsAsync(Guid userId);
-
-    /// <summary>
-    /// 获取我的朋友(ChatObject)
-    /// </summary>
-    /// <param name="chatObjectId"></param>
-    /// <returns></returns>
-    Task<List<SessionUnitCacheItem>> GetFriendsAsync(long chatObjectId);
-
-    /// <summary>
     /// 根据创建用户创建相应的会话(通知\新闻\机器人等)
     /// </summary>
     /// <param name="chatObject"></param>
