@@ -6,10 +6,8 @@ using IczpNet.Chat.Connections;
 using IczpNet.Chat.Devices;
 using IczpNet.Chat.Hosting;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using Polly;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -22,6 +20,7 @@ using Volo.Abp.Clients;
 using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
+
 
 namespace IczpNet.Chat.ChatHubs;
 
@@ -200,7 +199,12 @@ public class ChatHub(
     public async Task<long> Heartbeat(long ticks)
     {
         Logger.LogInformation($"Heartbeat:{ticks}");
-        await ConnectionPoolManager.UpdateActiveTimeAsync(Context.ConnectionId);
+        var connection = await ConnectionPoolManager.UpdateActiveTimeAsync(Context.ConnectionId);
+        if (connection != null)
+        {
+            var activedEto = ObjectMapper.Map<ConnectionPoolCacheItem, ActivedEto>(connection);
+            await DistributedEventBus.PublishAsync(activedEto, onUnitOfWorkComplete: false);
+        }
         return ticks;
     }
 }

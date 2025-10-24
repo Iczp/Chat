@@ -8,7 +8,7 @@ namespace IczpNet.Chat.Friends;
 /// <summary>
 /// 好友管理
 /// </summary>
-public interface IFriendManager
+public interface IFriendsManager
 {
     /// <summary>
     /// 获取我的朋友(用户)
@@ -23,4 +23,11 @@ public interface IFriendManager
     /// <param name="chatObjectId">聊天对象Id</param>
     /// <returns></returns>
     Task<List<SessionUnitCacheItem>> GetFriendsAsync(long chatObjectId);
+
+    /// <summary>
+    /// 好友在线状态列表
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <returns></returns>
+    Task<List<FriendStatus>> GetListOnlineAsync(Guid userId);
 }

@@ -38,6 +38,7 @@ using IczpNet.Chat.Blobs;
 using IczpNet.Chat.Blobs.Dtos;
 using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.ConnectionPools.Dtos;
+using IczpNet.Chat.Friends;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -179,7 +180,9 @@ public class ChatApplicationAutoMapperProfile : Profile
 
 
         // ConnectionPoolCacheItem
-        CreateMap<ConnectionPoolCacheItem, ConnectionPoolDto>();
+        CreateMap<ConnectionPoolCacheItem, ConnectionPoolDto>().ReverseMap();
 
+        // FriendStatus
+        CreateMap<FriendStatus, FriendStatusDto>().ReverseMap();
     }
 }

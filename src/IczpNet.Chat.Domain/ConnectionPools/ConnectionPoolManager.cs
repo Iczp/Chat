@@ -131,16 +131,21 @@ public class ConnectionPoolManager(
     /// <param name="connectionId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    public async Task UpdateActiveTimeAsync(string connectionId, CancellationToken token = default)
+    public async Task<ConnectionPoolCacheItem> UpdateActiveTimeAsync(string connectionId, CancellationToken token = default)
     {
         var connectionPool = await ConnectionPoolCache.GetAsync(connectionId, token: token);
-        if (connectionPool == null)
+        if (connectionPool != null)
+        {
+            connectionPool.ActiveTime = Clock.Now;
+            await ConnectionPoolCache.SetAsync(connectionPool.ConnectionId, connectionPool, DistributedCacheEntryOptions, token: token);
+            return connectionPool;
+        }
+        else
         {
             Logger.LogWarning($"{nameof(UpdateActiveTimeAsync)} Fail: Not found, connectionId:{connectionId}");
-            return;
+            await RemoveAsync(connectionId, token);
+            return null;
         }
-        connectionPool.ActiveTime = Clock.Now;
-        await ConnectionPoolCache.SetAsync(connectionPool.ConnectionId, connectionPool, DistributedCacheEntryOptions, token: token);
     }
 
     /// <inheritdoc />

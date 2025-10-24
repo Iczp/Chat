@@ -86,10 +86,12 @@ public class ChatApplicationAutoMapperProfile : Profile
 
         //ConnectionPool
         CreateMap<ConnectionPoolCacheItem, DisconnectedEto>().ReverseMap();
-
         CreateMap<ConnectionPoolCacheItem, ConnectedEto>().ReverseMap();
+        CreateMap<ConnectionPoolCacheItem, ActivedEto>().ReverseMap();
 
         CreateMap<DisconnectedEto, ConnectedEto>().ReverseMap();
+        CreateMap<DisconnectedEto, ActivedEto>().ReverseMap();
+        CreateMap<ConnectedEto, ActivedEto>().ReverseMap();
 
     }
 }
