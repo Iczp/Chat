@@ -5,12 +5,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Caching;
-using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.SetLists;
 
 public class ListSet<TListItem, TKey>(
-    IDistributedCache<IEnumerable<TListItem>, TKey> distributedCache) :  IListSet<TListItem, TKey>, ITransientDependency where TListItem : class
+    IDistributedCache<IEnumerable<TListItem>, TKey> distributedCache) : DomainService, IListSet<TListItem, TKey> where TListItem : class
 {
     public IDistributedCache<IEnumerable<TListItem>, TKey> DistributedCache { get; } = distributedCache;
 
@@ -31,7 +31,7 @@ public class ListSet<TListItem, TKey>(
 
         list = list.Except(items).Distinct();
 
-        await DistributedCache.SetAsync(key, list,  optionsFactory?.Invoke(), hideErrors, considerUow, token);
+        await DistributedCache.SetAsync(key, list, optionsFactory?.Invoke(), hideErrors, considerUow, token);
 
         return list.AsEnumerable();
     }
