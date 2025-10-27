@@ -54,4 +54,13 @@ public class DistributedCacheListSet<TListItem, TKey>(
     {
         return DistributedCache.RemoveAsync(key, hideErrors, considerUow, token);
     }
+
+    public async Task<IEnumerable<TListItem>> ReplaceAsync(TKey key, IEnumerable<TListItem> items, Func<DistributedCacheEntryOptions> optionsFactory = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default)
+    {
+        var list = items.Distinct();
+
+        await DistributedCache.SetAsync(key, list, optionsFactory?.Invoke(), hideErrors, considerUow, token);
+
+        return list.AsEnumerable();
+    }
 }
