@@ -45,7 +45,7 @@ namespace IczpNet.Chat;
 
         context.Services.AddHttpClient(HttpRequest.ClientName);
 
-        context.Services.AddTransient(typeof(IListSet<,>), typeof(ListSet<,>));
+        context.Services.AddTransient(typeof(IDistributedCacheListSet<,>), typeof(DistributedCacheListSet<,>));
 
         Configure<AbpAutoMapperOptions>(options =>
         {
