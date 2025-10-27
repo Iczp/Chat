@@ -83,7 +83,9 @@ public abstract class ChatHubService : DomainService
             //修改为当前用户
             commandPayload.AppUserId = firendsConnection.UserId;
 
-            await HubContext.Clients.Client(firendsConnection.ClientId).ReceivedMessage(commandPayload);
+            await HubContext.Clients.Client(firendsConnection.ConnectionId).ReceivedMessage(commandPayload);
+
+            //await HubContext.Clients.All.ReceivedMessage(commandPayload);
         }
     }
 
