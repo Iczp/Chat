@@ -16,8 +16,8 @@ namespace IczpNet.Chat.ConnectionPools;
 /// <inheritdoc />
 public class ConnectionPoolManager(
     IDistributedCache<ConnectionPoolCacheItem, string> connectionPoolCache,
-    IListSet<string, Guid> userConnectionIdListSetCache,
-    IListSet<string, string> connectIdListSetCache,
+    IDistributedCacheListSet<string, Guid> userConnectionIdListSetCache,
+    IDistributedCacheListSet<string, string> connectIdListSetCache,
     IOptions<ConnectionOptions> options
     ) : DomainService, IConnectionPoolManager
 {
@@ -25,11 +25,11 @@ public class ConnectionPoolManager(
     /// <summary>
     /// 连接缓存
     /// </summary>
-    public IListSet<string, string> ConnectIdListSetCache { get; } = connectIdListSetCache;
+    public IDistributedCacheListSet<string, string> ConnectIdListSetCache { get; } = connectIdListSetCache;
     /// <summary>
     /// 用户连接缓存
     /// </summary>
-    public IListSet<string, Guid> UserConnectionIdListSetCache { get; } = userConnectionIdListSetCache;
+    public IDistributedCacheListSet<string, Guid> UserConnectionIdListSetCache { get; } = userConnectionIdListSetCache;
 
     protected IOptions<ConnectionOptions> Options { get; } = options;
     protected ConnectionOptions Config => Options.Value;
@@ -37,7 +37,7 @@ public class ConnectionPoolManager(
     /// <summary>
     /// 连接池缓存Key
     /// </summary>
-    protected virtual string ConnectionIdListSetCacheKey => Config.ConnectionIdsCacheKey + ":ListSet";
+    protected virtual string ConnectionIdListSetCacheKey => Config.ConnectionIdsCacheKey + ":DistributedCacheListSet";
 
     /// <summary>
     /// 连接池缓存
@@ -102,7 +102,7 @@ public class ConnectionPoolManager(
 
         var connectionList = await ConnectIdListSetCache.AddAsync(ConnectionIdListSetCacheKey, [connectionPool.ConnectionId], token: token);
 
-        Logger.LogInformation($"Add connection from ListSet : {connectionList.JoinAsString(",")}");
+        Logger.LogInformation($"Add connection from DistributedCacheListSet : {connectionList.JoinAsString(",")}");
 
         //await SetConnectionIdsAsync(connectionList, token);
 
@@ -156,7 +156,7 @@ public class ConnectionPoolManager(
 
         var connectionIdList = await ConnectIdListSetCache.RemoveAsync(ConnectionIdListSetCacheKey, [connectionPool.ConnectionId], token: token);
 
-        Logger.LogInformation($"Remove connection from ListSet : {connectionIdList.JoinAsString(",")}");
+        Logger.LogInformation($"Remove connection from DistributedCacheListSet : {connectionIdList.JoinAsString(",")}");
 
         if (connectionPool != null && connectionPool.UserId.HasValue)
         {

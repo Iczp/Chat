@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace IczpNet.Chat.SetLists;
 
-public interface IListSet<TListItem, TKey>
+public interface IDistributedCacheListSet<TListItem, TKey>
 {
     Task<IEnumerable<TListItem>> AddAsync(TKey key, IEnumerable<TListItem> items, Func<DistributedCacheEntryOptions>? optionsFactory = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default);
 

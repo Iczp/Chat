@@ -9,8 +9,8 @@ using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.SetLists;
 
-public class ListSet<TListItem, TKey>(
-    IDistributedCache<IEnumerable<TListItem>, TKey> distributedCache) : DomainService, IListSet<TListItem, TKey> where TListItem : class
+public class DistributedCacheListSet<TListItem, TKey>(
+    IDistributedCache<IEnumerable<TListItem>, TKey> distributedCache) : DomainService, IDistributedCacheListSet<TListItem, TKey> where TListItem : class
 {
     public IDistributedCache<IEnumerable<TListItem>, TKey> DistributedCache { get; } = distributedCache;
 
