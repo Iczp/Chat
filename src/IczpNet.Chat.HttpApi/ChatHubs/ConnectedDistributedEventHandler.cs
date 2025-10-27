@@ -8,9 +8,11 @@ using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.ChatHubs;
 
-public class ConnectedDistributedEventHandler : ChatHubService, IDistributedEventHandler<ConnectedEto>//, ILocalEventHandler<OnConnectedEto>
+public class ConnectedDistributedEventHandler(IUnitOfWorkManager unitOfWorkManager) : ChatHubService, IDistributedEventHandler<ConnectedEto>//, ILocalEventHandler<OnConnectedEto>
 {
-    [UnitOfWork]
+    public IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
+
+    //[UnitOfWork]
     public async Task HandleEventAsync(ConnectedEto eventData)
     {
         Logger.LogInformation($"{nameof(ConnectedDistributedEventHandler)} received eventData[{nameof(ConnectedEto)}]:{eventData}");
@@ -26,6 +28,9 @@ public class ConnectedDistributedEventHandler : ChatHubService, IDistributedEven
         //};
 
         //Logger.LogInformation($"Send [{nameof(IChatClient.ReceivedMessage)}]:{totalCount},commandPayload={JsonSerializer.Serialize(commandPayload)}");
+
+        // 分布式事件要开启工作单元
+        using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
 
         // 发送到其他客户端
         await SendToUserAsync(eventData.UserId.Value, new CommandPayload()
@@ -44,5 +49,7 @@ public class ConnectedDistributedEventHandler : ChatHubService, IDistributedEven
             Command = CommandConsts.FriendOnline,
             Payload = eventData,
         });
+
+        await uow.CompleteAsync();
     }
 }

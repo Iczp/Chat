@@ -151,16 +151,18 @@ public class ChatHub(
             // 注：这里的删除操作可能会被取消，所以需要捕获TaskCanceledException异常
             await HubCallerContextManager.RemoveAsync(connectionId);
 
-            //删除前获取连接
+            // 删除前获取连接
             var connection = await ConnectionPoolManager.GetAsync(connectionId, cancellationToken);
 
-            //删除连接
+            var disconnectedEto = connection != null
+                ? ObjectMapper.Map<ConnectionPoolCacheItem, DisconnectedEto>(connection)
+                : new DisconnectedEto(connectionId);
+
+            // 删除连接
             await ConnectionPoolManager.RemoveAsync(connectionId, cancellationToken);
 
-            var onDisconnectedEto = connection?.MapTo<DisconnectedEto>() ?? new DisconnectedEto(connectionId);
-
             // 发布事件
-            await DistributedEventBus.PublishAsync(onDisconnectedEto, onUnitOfWorkComplete: false);
+            await DistributedEventBus.PublishAsync(disconnectedEto, onUnitOfWorkComplete: false);
 
             //await Clients.User(CurrentUser.Id?.ToString()).ReceivedMessage(new CommandPayload()
             //{

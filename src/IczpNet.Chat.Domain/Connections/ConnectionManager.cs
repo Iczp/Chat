@@ -44,7 +44,9 @@ public class ConnectionManager(
             Logger.LogInformation($"Insert ServerHost:{serverHost.Id}");
         }
 
-        var entity = await Repository.FindAsync(connection.Id) ?? await Repository.InsertAsync(connection, autoSave: true, cancellationToken: token);
+        var entity = await Repository.FindAsync(connection.Id, cancellationToken: token);
+
+        entity ??= await Repository.InsertAsync(connection, autoSave: true, cancellationToken: token);
 
         //await UnitOfWorkManager.Current.SaveChangesAsync(token);
         // 

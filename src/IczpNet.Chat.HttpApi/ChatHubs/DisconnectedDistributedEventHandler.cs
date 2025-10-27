@@ -8,9 +8,11 @@ using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.ChatHubs;
 
-public class DisconnectedDistributedEventHandler : ChatHubService, IDistributedEventHandler<DisconnectedEto>//, ILocalEventHandler<OnDisconnectedEto>
+public class DisconnectedDistributedEventHandler(IUnitOfWorkManager unitOfWorkManager) : ChatHubService, IDistributedEventHandler<DisconnectedEto>//, ILocalEventHandler<OnDisconnectedEto>
 {
-    [UnitOfWork]
+    public IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
+
+    //[UnitOfWork]
     public async Task HandleEventAsync(DisconnectedEto eventData)
     {
         Logger.LogInformation($"{nameof(DisconnectedDistributedEventHandler)} received eventData[{nameof(DisconnectedEto)}]:{eventData}");
@@ -24,6 +26,16 @@ public class DisconnectedDistributedEventHandler : ChatHubService, IDistributedE
         //};
 
         //Logger.LogInformation($"Send [{nameof(IChatClient.ReceivedMessage)}],commandPayload={JsonSerializer.Serialize(commandPayload)}");
+
+
+        if (!eventData.UserId.HasValue)
+        {
+            Logger.LogWarning($"{nameof(DisconnectedDistributedEventHandler)}],userId is null, eventData={JsonSerializer.Serialize(eventData)}");
+            return;
+        }
+
+        // 分布式事件要开启工作单元
+        using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
 
         // 发送到用户其他客户端
         await SendToUserAsync(eventData.UserId.Value, new CommandPayload()
@@ -40,5 +52,8 @@ public class DisconnectedDistributedEventHandler : ChatHubService, IDistributedE
             Command = CommandConsts.FriendOffline,
             Payload = eventData,
         });
+
+        // 提交工作单元
+        await uow.CompleteAsync();
     }
 }
