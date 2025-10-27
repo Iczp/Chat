@@ -25,7 +25,7 @@ public interface IConnectionPoolManager
     /// <param name="connectionId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task UpdateActiveTimeAsync(string connectionId, CancellationToken token = default);
+    Task<ConnectionPoolCacheItem> UpdateActiveTimeAsync(string connectionId, CancellationToken token = default);
 
     /// <summary>
     /// 移除连接

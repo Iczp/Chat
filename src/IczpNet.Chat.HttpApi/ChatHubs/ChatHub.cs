@@ -6,10 +6,8 @@ using IczpNet.Chat.Connections;
 using IczpNet.Chat.Devices;
 using IczpNet.Chat.Hosting;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using Polly;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -22,6 +20,7 @@ using Volo.Abp.Clients;
 using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
+
 
 namespace IczpNet.Chat.ChatHubs;
 
@@ -85,7 +84,7 @@ public class ChatHub(
 
             Logger.LogWarning($"chatObjectIdList:[{chatObjectIdList.JoinAsString(",")}]");
 
-            var connectedEto = new OnConnectedEto()
+            var connectedEto = new ConnectedEto()
             {
                 QueryId = queryId,
                 ClientId = CurrentClient.Id,
@@ -152,16 +151,18 @@ public class ChatHub(
             // 注：这里的删除操作可能会被取消，所以需要捕获TaskCanceledException异常
             await HubCallerContextManager.RemoveAsync(connectionId);
 
-            //删除前获取连接
+            // 删除前获取连接
             var connection = await ConnectionPoolManager.GetAsync(connectionId, cancellationToken);
 
-            //删除连接
+            var disconnectedEto = connection != null
+                ? ObjectMapper.Map<ConnectionPoolCacheItem, DisconnectedEto>(connection)
+                : new DisconnectedEto(connectionId);
+
+            // 删除连接
             await ConnectionPoolManager.RemoveAsync(connectionId, cancellationToken);
 
-            var onDisconnectedEto = connection?.MapTo<OnDisconnectedEto>() ?? new OnDisconnectedEto(connectionId);
-
             // 发布事件
-            await DistributedEventBus.PublishAsync(onDisconnectedEto, onUnitOfWorkComplete: false);
+            await DistributedEventBus.PublishAsync(disconnectedEto, onUnitOfWorkComplete: false);
 
             //await Clients.User(CurrentUser.Id?.ToString()).ReceivedMessage(new CommandPayload()
             //{
@@ -200,7 +201,12 @@ public class ChatHub(
     public async Task<long> Heartbeat(long ticks)
     {
         Logger.LogInformation($"Heartbeat:{ticks}");
-        await ConnectionPoolManager.UpdateActiveTimeAsync(Context.ConnectionId);
+        var connection = await ConnectionPoolManager.UpdateActiveTimeAsync(Context.ConnectionId);
+        if (connection != null)
+        {
+            var activedEto = ObjectMapper.Map<ConnectionPoolCacheItem, ActivedEto>(connection);
+            await DistributedEventBus.PublishAsync(activedEto, onUnitOfWorkComplete: false);
+        }
         return ticks;
     }
 }

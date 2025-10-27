@@ -36,6 +36,9 @@ using IczpNet.Chat.InvitationCodes;
 using IczpNet.Chat.InvitationCodes.Dtos;
 using IczpNet.Chat.Blobs;
 using IczpNet.Chat.Blobs.Dtos;
+using IczpNet.Chat.ConnectionPools;
+using IczpNet.Chat.ConnectionPools.Dtos;
+using IczpNet.Chat.Friends;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -168,12 +171,18 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<ContactTagCreateInput, ContactTag>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         CreateMap<ContactTagUpdateInput, ContactTag>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
 
-        //Blob
+        // Blob
         CreateMap<Blob, BlobDto>();
         CreateMap<Blob, BlobSimpleDto>();
         CreateMap<Blob, BlobDetailDto>();
         CreateMap<BlobCreateInput, Blob>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         CreateMap<BlobUpdateInput, Blob>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
 
+
+        // ConnectionPoolCacheItem
+        CreateMap<ConnectionPoolCacheItem, ConnectionPoolDto>().ReverseMap();
+
+        // FriendStatus
+        CreateMap<FriendStatus, FriendStatusDto>().ReverseMap();
     }
 }

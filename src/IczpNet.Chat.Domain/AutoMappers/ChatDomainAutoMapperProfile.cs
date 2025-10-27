@@ -85,11 +85,13 @@ public class ChatApplicationAutoMapperProfile : Profile
 
 
         //ConnectionPool
-        CreateMap<ConnectionPoolCacheItem, OnDisconnectedEto>().ReverseMap();
+        CreateMap<ConnectionPoolCacheItem, DisconnectedEto>().ReverseMap();
+        CreateMap<ConnectionPoolCacheItem, ConnectedEto>().ReverseMap();
+        CreateMap<ConnectionPoolCacheItem, ActivedEto>().ReverseMap();
 
-        CreateMap<ConnectionPoolCacheItem, OnConnectedEto>().ReverseMap();
-
-        CreateMap<OnDisconnectedEto, OnConnectedEto>().ReverseMap();
+        CreateMap<DisconnectedEto, ConnectedEto>().ReverseMap();
+        CreateMap<DisconnectedEto, ActivedEto>().ReverseMap();
+        CreateMap<ConnectedEto, ActivedEto>().ReverseMap();
 
     }
 }

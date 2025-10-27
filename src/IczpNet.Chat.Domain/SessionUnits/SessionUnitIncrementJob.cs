@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.ChatPushers;
 using IczpNet.Chat.CommandPayloads;
+using IczpNet.Chat.Commands;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Hosting;
 using IczpNet.Chat.MessageSections.Messages;
@@ -50,7 +51,7 @@ public class SessionUnitIncrementJob(
 
         var eventData = new SendToClientDistributedEto()
         {
-            Command = Command.UpdateBadge.ToString(),
+            Command = CommandConsts.MessageUpdatedBadge,
             CacheKey = cacheKey,//$"{new SessionUnitCacheKey(args.SessionId)}",
             HostName = CurrentHosted.Name,
             MessageId = args.LastMessageId,

@@ -24,7 +24,7 @@ public class CallerContextManager : ChatHubService, ICallerContextManager
         return Task.FromResult(caller);
     }
 
-    public virtual Task<CallerContext> AddAsync(HubCallerContext context, OnConnectedEto connectedEto)
+    public virtual Task<CallerContext> AddAsync(HubCallerContext context, ConnectedEto connectedEto)
     {
         return AddAsync(new CallerContext(context, connectedEto));
     }
@@ -36,19 +36,20 @@ public class CallerContextManager : ChatHubService, ICallerContextManager
         return Task.FromResult(result);
     }
 
-    public async Task AbortAsync(string connectionId)
+    public async Task AbortAsync(string connectionId, string reason)
     {
         if (ConnectionIdToContextMap.TryGetValue(connectionId, out var callerContext))
         {
             Logger.LogWarning($"主动踢出 {connectionId}");
+
             await HubContext.Clients.Client(connectionId).ReceivedMessage(new CommandPayload()
             {
                 AppUserId = callerContext.Connect.UserId,
                 Scopes = [],
-                Command = "Kick",
+                Command = "kicked",
                 Payload = new
                 {
-                   Message = "主动踢出"
+                    Reason = reason
                 }
             });
             callerContext.Context.Abort();

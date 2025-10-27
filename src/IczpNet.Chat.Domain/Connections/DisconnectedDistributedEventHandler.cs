@@ -9,24 +9,24 @@ using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.Connections;
 
-public class OnDisconnectedDistributedEventHandler(
+public class DisconnectedDistributedEventHandler(
     ILocalEventBus localEventBus,
-    IConnectionManager connectionManager) : DomainService, IDistributedEventHandler<OnDisconnectedEto>, ITransientDependency
+    IConnectionManager connectionManager) : DomainService, IDistributedEventHandler<DisconnectedEto>, ITransientDependency
 {
     public ILocalEventBus LocalEventBus { get; } = localEventBus;
     public IConnectionManager ConnectionManager { get; } = connectionManager;
 
     [UnitOfWork]
-    public async Task HandleEventAsync(OnDisconnectedEto eventData)
+    public async Task HandleEventAsync(DisconnectedEto eventData)
     {
         //await ConnectionPoolManager.AddAsync(eventData);
         //发布本地事件
         //await LocalEventBus.PublishAsync(eventData);
 
-        Logger.LogWarning($"{nameof(OnDisconnectedDistributedEventHandler)} 处理事件[{nameof(OnDisconnectedEto)}] Strat：{eventData.ConnectionId}");
+        Logger.LogWarning($"{nameof(DisconnectedDistributedEventHandler)} 处理事件[{nameof(DisconnectedEto)}] Strat：{eventData.ConnectionId}");
 
         await ConnectionManager.RemoveAsync(eventData.ConnectionId);
 
-        Logger.LogWarning($"{nameof(OnDisconnectedDistributedEventHandler)} 处理事件[{nameof(OnDisconnectedEto)}] End：{eventData.ConnectionId}");
+        Logger.LogWarning($"{nameof(DisconnectedDistributedEventHandler)} 处理事件[{nameof(DisconnectedEto)}] End：{eventData.ConnectionId}");
     }
 }

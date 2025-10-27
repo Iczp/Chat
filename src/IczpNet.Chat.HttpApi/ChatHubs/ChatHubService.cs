@@ -1,6 +1,7 @@
 ﻿using DeviceDetectorNET;
 using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.ConnectionPools;
+using IczpNet.Chat.Friends;
 using IczpNet.Chat.Hosting;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.AspNetCore.SignalR;
@@ -19,6 +20,7 @@ public abstract class ChatHubService : DomainService
     public IHubContext<ChatHub, IChatClient> HubContext => LazyServiceProvider.LazyGetRequiredService<IHubContext<ChatHub, IChatClient>>();
     public IConnectionPoolManager ConnectionPoolManager => LazyServiceProvider.LazyGetRequiredService<IConnectionPoolManager>();
     public ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
+    public IFriendsManager FriendManager => LazyServiceProvider.LazyGetRequiredService<IFriendsManager>();
     public ICurrentHosted CurrentHosted => LazyServiceProvider.LazyGetRequiredService<ICurrentHosted>();
     public IJsonSerializer JsonSerializer => LazyServiceProvider.LazyGetRequiredService<IJsonSerializer>();
 
@@ -29,20 +31,20 @@ public abstract class ChatHubService : DomainService
     /// <returns></returns>
     protected virtual async Task<List<ConnectionPoolCacheItem>> GetFriendsConnectionIdsAsync(Guid userId)
     {
-        var sessionUnitList = await SessionUnitManager.GetUserFriendsAsync(userId);
+        var sessionUnitList = await FriendManager.GetFriendsAsync(userId);
 
-        var chatObjectIdList = sessionUnitList.Select(x => x.OwnerId);
+        // 注意朋友是： DestinationId 不是 OwnerId
+        var friendChatObjectIdList = sessionUnitList.Select(x => x.DestinationId);
 
         // 我的朋友 
-
-        var firendsConnectionIds = (await ConnectionPoolManager.GetAllListAsync())
+        var firendConnectionIdList = (await ConnectionPoolManager.GetAllListAsync())
             .Where(x => x.Host == CurrentHosted.Name)
-            .Where(x => x.ChatObjectIdList.Any(d => chatObjectIdList.Contains(d)))
+            .Where(x => x.ChatObjectIdList.Any(d => friendChatObjectIdList.Contains(d)))
             //.Select(x => x.ConnectionId)
             .ToList();
         ;
 
-        return firendsConnectionIds;
+        return firendConnectionIdList;
     }
 
     /// <summary>
@@ -70,18 +72,20 @@ public abstract class ChatHubService : DomainService
     /// <returns></returns>
     protected virtual async Task SendToFriendsAsync(Guid userId, CommandPayload commandPayload)
     {
-        var firendsConnectionList = await GetFriendsConnectionIdsAsync(userId);
+        var firendConnectionList = await GetFriendsConnectionIdsAsync(userId);
 
-        var firendsConnectionIds = firendsConnectionList.Select(x => x.ConnectionId).ToList();
+        var firendConnectionIdList = firendConnectionList.Select(x => x.ConnectionId).ToList();
 
-        Logger.LogInformation($"Send [{nameof(IChatClient.ReceivedMessage)}] FriendsCount:{firendsConnectionIds.Count},commandPayload={JsonSerializer.Serialize(commandPayload)}");
+        Logger.LogInformation($"Send [{nameof(IChatClient.ReceivedMessage)}] FriendsCount:{firendConnectionIdList.Count},commandPayload={JsonSerializer.Serialize(commandPayload)}");
 
-        foreach( var firendsConnection in firendsConnectionList)
+        foreach( var firendsConnection in firendConnectionList)
         {
             //修改为当前用户
             commandPayload.AppUserId = firendsConnection.UserId;
 
-            await HubContext.Clients.Client(firendsConnection.ClientId).ReceivedMessage(commandPayload);
+            await HubContext.Clients.Client(firendsConnection.ConnectionId).ReceivedMessage(commandPayload);
+
+            //await HubContext.Clients.All.ReceivedMessage(commandPayload);
         }
     }
 

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
-using IczpNet.Chat.BaseDtos;
 
 namespace IczpNet.Chat.ConnectionPools;
 
@@ -20,25 +19,25 @@ public interface IConnectionPoolAppService
     /// 获取在线人数列表
     /// </summary>
     /// <returns></returns>
-    Task<PagedResultDto<ConnectionPoolCacheItem>> GetListAsync(ConnectionPoolGetListInput input);
+    Task<PagedResultDto<ConnectionPoolDto>> GetListAsync(ConnectionPoolGetListInput input);
     /// <summary>
     /// 获取在线人数列表(聊天对象)
     /// </summary>
     /// <param name="chatObjectIdList"></param>
     /// <returns></returns>
-    Task<PagedResultDto<ConnectionPoolCacheItem>> GetListByChatObjectAsync(List<long> chatObjectIdList);
+    Task<PagedResultDto<ConnectionPoolDto>> GetListByChatObjectAsync(List<long> chatObjectIdList);
 
     /// <summary>
     /// 获取在线人数列表(当前用户)
     /// </summary>
     /// <returns></returns>
-    Task<PagedResultDto<ConnectionPoolCacheItem>> GetListByCurrentUserAsync(ConnectionPoolGetListInput input);
+    Task<PagedResultDto<ConnectionPoolDto>> GetListByCurrentUserAsync(ConnectionPoolGetListInput input);
     /// <summary>
     /// 获取连接
     /// </summary>
     /// <param name="connectionId"></param>
     /// <returns></returns>
-    Task<ConnectionPoolCacheItem> GetAsync(string connectionId);
+    Task<ConnectionPoolDto> GetAsync(string connectionId);
 
     /// <summary>
     /// 清空所有连接

@@ -9,9 +9,9 @@ public interface ICallerContextManager
 {
     Task<CallerContext> AddAsync(CallerContext caller);
 
-    Task<CallerContext> AddAsync(HubCallerContext context, OnConnectedEto connectedEto);
+    Task<CallerContext> AddAsync(HubCallerContext context, ConnectedEto connectedEto);
 
     Task<bool> RemoveAsync(string connectionId);
 
-    Task AbortAsync(string connectionId);
+    Task AbortAsync(string connectionId, string reason);
 }
