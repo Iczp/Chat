@@ -43,11 +43,11 @@ public interface IConnectionPoolManager
     /// <returns></returns>
     Task<bool> RemoveAsync(string connectionId, CancellationToken token = default);
 
-    /// <summary>
-    /// 移除连接
-    /// </summary>
-    /// <param name="connectionId"></param>
-    void Remove(string connectionId);
+    ///// <summary>
+    ///// 移除连接
+    ///// </summary>
+    ///// <param name="connectionId"></param>
+    //void Remove(string connectionId);
 
     /// <summary>
     /// 获取连接数量

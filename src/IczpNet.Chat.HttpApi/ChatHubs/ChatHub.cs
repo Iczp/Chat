@@ -177,7 +177,7 @@ public class ChatHub(
         {
             Logger.LogWarning(ex, $"[OnDisconnectedAsync] TaskCanceledException while deleting connection {connectionId}. UserName: {userName}");
             // 使用同步方法删除连接池
-            ConnectionPoolManager.Remove(connectionId);
+            await ConnectionPoolManager.RemoveAsync(connectionId);
         }
         catch (Exception ex)
         {
