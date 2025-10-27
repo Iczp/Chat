@@ -4,11 +4,13 @@ using IczpNet.Chat.ConnectionPools;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using Volo.Abp.EventBus.Distributed;
+using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.ChatHubs;
 
 public class DisconnectedDistributedEventHandler : ChatHubService, IDistributedEventHandler<DisconnectedEto>//, ILocalEventHandler<OnDisconnectedEto>
 {
+    [UnitOfWork]
     public async Task HandleEventAsync(DisconnectedEto eventData)
     {
         Logger.LogInformation($"{nameof(DisconnectedDistributedEventHandler)} received eventData[{nameof(DisconnectedEto)}]:{eventData}");

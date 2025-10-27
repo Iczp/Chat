@@ -4,11 +4,13 @@ using IczpNet.Chat.ConnectionPools;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using Volo.Abp.EventBus.Distributed;
+using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.ChatHubs;
 
 public class ConnectedDistributedEventHandler : ChatHubService, IDistributedEventHandler<ConnectedEto>//, ILocalEventHandler<OnConnectedEto>
 {
+    [UnitOfWork]
     public async Task HandleEventAsync(ConnectedEto eventData)
     {
         Logger.LogInformation($"{nameof(ConnectedDistributedEventHandler)} received eventData[{nameof(ConnectedEto)}]:{eventData}");
@@ -37,7 +39,7 @@ public class ConnectedDistributedEventHandler : ChatHubService, IDistributedEven
         // 发送到我的朋友 
         await SendToFriendsAsync(eventData.UserId.Value, new CommandPayload()
         {
-            AppUserId = eventData.UserId,
+            //AppUserId = eventData.UserId,
             Scopes = [],
             Command = CommandConsts.FriendOnline,
             Payload = eventData,
