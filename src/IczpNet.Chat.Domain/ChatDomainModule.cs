@@ -1,8 +1,10 @@
+using DeviceDetectorNET.Parser.Device;
 using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.HttpRequests;
 using IczpNet.Chat.SessionUnits;
+using IczpNet.Chat.SetLists;
 using IczpNet.Pusher;
 using IczpNet.Pusher.ShortIds;
 using Microsoft.Extensions.DependencyInjection;
@@ -42,6 +44,8 @@ namespace IczpNet.Chat;
         context.Services.AddAutoMapperObjectMapper<ChatDomainModule>();
 
         context.Services.AddHttpClient(HttpRequest.ClientName);
+
+        context.Services.AddTransient(typeof(IDistributedCacheListSet<,>), typeof(DistributedCacheListSet<,>));
 
         Configure<AbpAutoMapperOptions>(options =>
         {
