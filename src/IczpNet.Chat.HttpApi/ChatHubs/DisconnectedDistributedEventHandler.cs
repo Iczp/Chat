@@ -17,17 +17,6 @@ public class DisconnectedDistributedEventHandler(IUnitOfWorkManager unitOfWorkMa
     {
         Logger.LogInformation($"{nameof(DisconnectedDistributedEventHandler)} received eventData[{nameof(DisconnectedEto)}]:{eventData}");
 
-        //var commandPayload = new CommandPayload()
-        //{
-        //    AppUserId = eventData.UserId,
-        //    Scopes = [],
-        //    Command = "disconnected",
-        //    Payload = eventData,
-        //};
-
-        //Logger.LogInformation($"Send [{nameof(IChatClient.ReceivedMessage)}],commandPayload={JsonSerializer.Serialize(commandPayload)}");
-
-
         if (!eventData.UserId.HasValue)
         {
             Logger.LogWarning($"{nameof(DisconnectedDistributedEventHandler)}],userId is null, eventData={JsonSerializer.Serialize(eventData)}");
@@ -47,11 +36,7 @@ public class DisconnectedDistributedEventHandler(IUnitOfWorkManager unitOfWorkMa
         });
 
         // 发送到用户的朋友 
-        await SendToFriendsAsync(eventData.UserId.Value, new CommandPayload()
-        {
-            Command = CommandConsts.FriendOffline,
-            Payload = eventData,
-        });
+        await SendToFriendsAsync(eventData.UserId.Value , CommandConsts.FriendOffline, eventData);
 
         // 提交工作单元
         await uow.CompleteAsync();

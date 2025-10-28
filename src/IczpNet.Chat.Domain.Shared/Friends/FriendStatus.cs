@@ -17,5 +17,5 @@ public class FriendStatus : IHasExtraProperties
 
     public List<string> DeviceTypes { get; set; } = [];
 
-    public ExtraPropertyDictionary ExtraProperties { get; set; }
+    public ExtraPropertyDictionary ExtraProperties { get; set; } = new ExtraPropertyDictionary();
 }
