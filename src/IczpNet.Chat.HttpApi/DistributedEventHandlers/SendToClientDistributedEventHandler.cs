@@ -57,7 +57,7 @@ public class SendToClientDistributedEventHandler : DomainService, IDistributedEv
             .Select(x => x.OwnerId)
             .ToList();
 
-        var connectionPools = (await ConnectionPoolManager.GetAllListAsync())
+        var connectionPools = (await ConnectionPoolManager.CreateQueryableAsync())
             //由后台作业发时,后台作业的HostName与SignalR的HostName 可能不一样,所以先行注释------2025.08.21(Iczp.Net)
             //.Where(x => x.Host == CurrentHosted.Name)
             .Where(x => x.ChatObjectIdList.Any(d => chatObjectIdList.Contains(d)))

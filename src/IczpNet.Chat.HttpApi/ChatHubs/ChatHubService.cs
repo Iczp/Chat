@@ -37,7 +37,7 @@ public abstract class ChatHubService : DomainService
         var friendChatObjectIdList = sessionUnitList.Select(x => x.DestinationId);
 
         // 我的朋友 
-        var firendConnectionIdList = (await ConnectionPoolManager.GetAllListAsync())
+        var firendConnectionIdList = (await ConnectionPoolManager.CreateQueryableAsync())
             .Where(x => x.Host == CurrentHosted.Name)
             .Where(x => x.ChatObjectIdList.Any(d => friendChatObjectIdList.Contains(d)))
             //.Select(x => x.ConnectionId)
@@ -54,7 +54,7 @@ public abstract class ChatHubService : DomainService
     /// <returns></returns>
     protected virtual async Task<List<string>> GetUserConnectionIdsAsync(Guid userId)
     {
-        var userConnectionIds = (await ConnectionPoolManager.GetAllListAsync())
+        var userConnectionIds = (await ConnectionPoolManager.CreateQueryableAsync())
         .Where(x => x.Host == CurrentHosted.Name)
         .Where(x => x.UserId == userId)
         .Select(x => x.ConnectionId)

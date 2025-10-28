@@ -68,7 +68,7 @@ public interface IConnectionPoolManager
     /// 获取所有连接
     /// </summary>
     /// <returns></returns>
-    Task<IEnumerable<ConnectionPoolCacheItem>> GetAllListAsync(CancellationToken token = default);
+    Task<IQueryable<ConnectionPoolCacheItem>> GetAllListAsync(CancellationToken token = default);
 
     /// <summary>
     /// 清空所有连接
