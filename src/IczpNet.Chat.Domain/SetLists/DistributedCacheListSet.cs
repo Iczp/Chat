@@ -14,40 +14,42 @@ public class DistributedCacheListSet<TListItem, TKey>(
 {
     public IDistributedCache<IEnumerable<TListItem>, TKey> DistributedCache { get; } = distributedCache;
 
-    public async Task<IEnumerable<TListItem>> AddAsync(TKey key, IEnumerable<TListItem> items, Func<DistributedCacheEntryOptions> optionsFactory = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default)
+    public async Task<long> AddAsync(TKey key, IEnumerable<TListItem> items, Func<DistributedCacheEntryOptions> optionsFactory = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default)
     {
-        var list = await GetAllInternalAsync(key, optionsFactory, hideErrors, considerUow, token);
+        var list = await CreateQueryableInternalAsync(key, optionsFactory, hideErrors, considerUow, token);
+
+        var addedCount = items.Except(list).Count();
 
         list = list.Union(items).Distinct();
 
         await DistributedCache.SetAsync(key, list, optionsFactory?.Invoke(), hideErrors, considerUow, token);
 
-        return list.AsEnumerable();
+        return addedCount;
     }
 
-    public async Task<IEnumerable<TListItem>> RemoveAsync(TKey key, IEnumerable<TListItem> items, Func<DistributedCacheEntryOptions> optionsFactory = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default)
+    public async Task<long> RemoveAsync(TKey key, IEnumerable<TListItem> items, Func<DistributedCacheEntryOptions> optionsFactory = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default)
     {
-        var list = await GetAllInternalAsync(key, optionsFactory, hideErrors, considerUow, token);
+        var list = await CreateQueryableInternalAsync(key, optionsFactory, hideErrors, considerUow, token);
 
         list = list.Except(items).Distinct();
 
         await DistributedCache.SetAsync(key, list, optionsFactory?.Invoke(), hideErrors, considerUow, token);
 
-        return list.AsEnumerable();
+        return items.Count();
     }
 
-    internal async Task<IEnumerable<TListItem>> GetAllInternalAsync(TKey key, Func<DistributedCacheEntryOptions> optionsFactory = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default)
+    internal async Task<IQueryable<TListItem>> CreateQueryableInternalAsync(TKey key, Func<DistributedCacheEntryOptions> optionsFactory = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default)
     {
         var list = await DistributedCache.GetOrAddAsync(key, () =>
         {
             return Task.FromResult(new List<TListItem>().AsEnumerable());
         }, optionsFactory, hideErrors, considerUow, token);
-        return list.AsEnumerable();
+        return list.AsQueryable();
     }
 
-    public Task<IEnumerable<TListItem>> GetAllAsync(TKey key, Func<DistributedCacheEntryOptions> optionsFactory = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default)
+    public Task<IQueryable<TListItem>> CreateQueryableAsync(TKey key, Func<DistributedCacheEntryOptions> optionsFactory = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default)
     {
-        return GetAllInternalAsync(key, optionsFactory, hideErrors, considerUow, token);
+        return CreateQueryableInternalAsync(key, optionsFactory, hideErrors, considerUow, token);
     }
 
     public Task DeleteAsync(TKey key, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default)

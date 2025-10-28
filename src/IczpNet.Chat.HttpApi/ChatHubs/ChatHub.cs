@@ -189,7 +189,7 @@ public class ChatHub(
 
     public async Task SendMessageAsync(string targetUserName, string message)
     {
-        var all = await ConnectionPoolManager.GetAllListAsync();
+        var all = await ConnectionPoolManager.CreateQueryableAsync();
 
         await Clients.All.ReceivedMessage(new CommandPayload()
         {
