@@ -11,7 +11,22 @@ public interface IDistributedCacheListSet<TListItem, TKey>
 {
     Task<long> AddAsync(TKey key, IEnumerable<TListItem> items, Func<DistributedCacheEntryOptions> optionsFactory = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default);
 
-    Task<long>  RemoveAsync(TKey key, IEnumerable<TListItem> items, Func<DistributedCacheEntryOptions> optionsFactory = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default);
+    Task<KeyValuePair<TKey, long>[]> AddManyAsync(IEnumerable<KeyValuePair<TKey, TListItem>> keyValues, Func<DistributedCacheEntryOptions> optionsFactory = null, bool? hideErrors = null, bool considerUow = false,
+    CancellationToken token = default);
+
+    Task<long> RemoveAsync(TKey key, IEnumerable<TListItem> items, Func<DistributedCacheEntryOptions> optionsFactory = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default);
+
+    Task<KeyValuePair<TKey, long>[]> RemoveManyAsync(IEnumerable<KeyValuePair<TKey, TListItem>> keyValues, Func<DistributedCacheEntryOptions> optionsFactory = null, bool? hideErrors = null, bool considerUow = false,
+    CancellationToken token = default);
+
+    Task<IEnumerable<TListItem>> GetAsync(TKey key, Func<DistributedCacheEntryOptions> optionsFactory = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default);
+
+    Task<KeyValuePair<TKey, IEnumerable<TListItem>>[]> GetManyAsync(IEnumerable<TKey> keys, Func<DistributedCacheEntryOptions> optionsFactory = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default);
+
+    Task<bool> RefreshAsync(TKey key, Func<DistributedCacheEntryOptions> optionsFactory, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default);
+
+    Task<KeyValuePair<TKey, bool>[]> RefreshManyAsync(IEnumerable<TKey> keys, Func<DistributedCacheEntryOptions> optionsFactory, bool? hideErrors = null, bool considerUow = false,
+    CancellationToken token = default);
 
     Task<IEnumerable<TListItem>> ReplaceAsync(TKey key, IEnumerable<TListItem> items, Func<DistributedCacheEntryOptions> optionsFactory = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default);
 

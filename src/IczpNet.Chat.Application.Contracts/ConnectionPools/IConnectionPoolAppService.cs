@@ -28,10 +28,25 @@ public interface IConnectionPoolAppService
     Task<PagedResultDto<ConnectionPoolDto>> GetListByChatObjectAsync(List<long> chatObjectIdList);
 
     /// <summary>
+    ///  
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    Task<PagedResultDto<ConnectionPoolDto>> GetListByUserAsync(ConnectionPoolGetListInput input);
+
+    /// <summary>
     /// 获取在线人数列表(当前用户)
     /// </summary>
     /// <returns></returns>
     Task<PagedResultDto<ConnectionPoolDto>> GetListByCurrentUserAsync(ConnectionPoolGetListInput input);
+
+    /// <summary>
+    ///  
+    /// </summary>
+    /// <param name="chatObjectId"></param>
+    /// <returns></returns>
+    Task<List<string>> GetDeviceTypesAsync(long chatObjectId);
+
     /// <summary>
     /// 获取连接
     /// </summary>
@@ -58,7 +73,6 @@ public interface IConnectionPoolAppService
     /// </summary>
     /// <returns></returns>
     Task<int> UpdateConnectionIdsAsync();
-
 
     /// <summary>
     /// 获取用户连接
