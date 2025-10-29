@@ -65,4 +65,34 @@ public class DistributedCacheListSet<TListItem, TKey>(
 
         return list.AsEnumerable();
     }
+
+    public Task<KeyValuePair<TKey, long>[]> AddManyAsync(IEnumerable<KeyValuePair<TKey, TListItem>> keyValues, Func<DistributedCacheEntryOptions> optionsFactory = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<KeyValuePair<TKey, long>[]> RemoveManyAsync(IEnumerable<KeyValuePair<TKey, TListItem>> keyValues, Func<DistributedCacheEntryOptions> optionsFactory = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<IEnumerable<TListItem>> GetAsync(TKey key, Func<DistributedCacheEntryOptions> optionsFactory = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<KeyValuePair<TKey, IEnumerable<TListItem>>[]> GetManyAsync(IEnumerable<TKey> keys, Func<DistributedCacheEntryOptions> optionsFactory = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<bool> RefreshAsync(TKey key, Func<DistributedCacheEntryOptions> optionsFactory, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<KeyValuePair<TKey, bool>[]> RefreshManyAsync(IEnumerable<TKey> keys, Func<DistributedCacheEntryOptions> optionsFactory, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default)
+    {
+        throw new NotImplementedException();
+    }
 }
