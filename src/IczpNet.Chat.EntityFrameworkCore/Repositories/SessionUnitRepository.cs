@@ -1,5 +1,4 @@
-﻿using IczpNet.AbpCommons.DataFilters;
-using IczpNet.AbpCommons.Extensions;
+﻿using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.EntityFrameworkCore;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits;
@@ -11,7 +10,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
-using System.Security.Cryptography.Xml;
 using System.Threading.Tasks;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -96,15 +94,16 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
             );
     }
 
-    protected virtual async Task<int> UpdateSenderLastMessageIdAsync(IQueryable<SessionUnit> query, Guid senderSessionUnitId, long lastMessageId)
+    protected virtual async Task<int> UpdateSenderLastMessageIdAsync(IQueryable<SessionUnit> query, Guid senderSessionUnitId, long lastMessageId, long? ticks)
     {
-        //
+        var newTicks = ticks ?? Clock.Now.Ticks;
         return await query
              .Where(x => x.Id == senderSessionUnitId)
              .Where(x => x.LastMessageId == null || x.LastMessageId < lastMessageId)
              .ExecuteUpdateAsync(s => s
                  .SetProperty(b => b.LastModificationTime, b => Clock.Now)
                  .SetProperty(b => b.LastMessageId, b => lastMessageId)
+                 .SetProperty(b => b.Ticks, b => newTicks)
              );
     }
 
@@ -112,18 +111,30 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
     {
         var query = await GetQueryableAsync(Clock.Now, null);
 
-        return await UpdateSenderLastMessageIdAsync(query, senderSessionUnitId, lastMessageId);
+        return await UpdateSenderLastMessageIdAsync(query, senderSessionUnitId, lastMessageId, Clock.Now.Ticks);
+    }
+
+    public virtual async Task<int> UpdateTicksAsync(Guid senderSessionUnitId, long ticks)
+    {
+        var query = await GetQueryableAsync(Clock.Now, null);
+
+        return await query
+            .Where(x => x.Id == senderSessionUnitId)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(b => b.LastModificationTime, b => Clock.Now)
+                .SetProperty(b => b.Ticks, b => ticks)
+            );
     }
 
     public virtual async Task<int> IncrementPublicBadgeAndRemindAllCountAndUpdateLastMessageIdAsync(Guid sessionId, long lastMessageId, DateTime messageCreationTime, Guid senderSessionUnitId, bool isRemindAll)
     {
         var query = (await GetQueryableAsync(messageCreationTime, sessionId));
 
-        await UpdateSenderLastMessageIdAsync(query, senderSessionUnitId, lastMessageId);
+        var ticks = messageCreationTime.Ticks;
+
+        await UpdateSenderLastMessageIdAsync(query, senderSessionUnitId, lastMessageId, ticks);
 
         query = query.Where(x => x.Id != senderSessionUnitId);
-
-        var ticks = messageCreationTime.Ticks;
 
         if (isRemindAll)
         {
@@ -148,11 +159,11 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
     {
         var query = await GetQueryableAsync(messageCreationTime, sessionId);
 
-        await UpdateSenderLastMessageIdAsync(query, senderSessionUnitId, lastMessageId);
+        var ticks = messageCreationTime.Ticks;
+
+        await UpdateSenderLastMessageIdAsync(query, senderSessionUnitId, lastMessageId, ticks);
 
         query = query.Where(x => x.Id != senderSessionUnitId);
-
-        var ticks = messageCreationTime.Ticks;
 
         return await query
             .Where(x => destinationSessionUnitIdList.Contains(x.Id))
@@ -259,4 +270,6 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
 
         return entity;
     }
+
+
 }

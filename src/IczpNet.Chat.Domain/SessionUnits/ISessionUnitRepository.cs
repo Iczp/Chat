@@ -13,6 +13,8 @@ public interface ISessionUnitRepository : IRepository<SessionUnit, Guid>
 
     Task<int> UpdateLastMessageIdAsync(Guid senderSessionUnitId, long lastMessageId);
 
+    Task<int> UpdateTicksAsync(Guid senderSessionUnitId, long ticks);
+
     Task<int> IncrementPublicBadgeAndRemindAllCountAndUpdateLastMessageIdAsync(Guid sessionId, long lastMessageId, DateTime messageCreationTime, Guid senderSessionUnitId, bool isRemindAll);
 
     Task<int> IncrementPrivateBadgeAndUpdateLastMessageIdAsync(Guid sessionId, long lastMessageId, DateTime messageCreationTime, Guid senderSessionUnitId, List<Guid> destinationSessionUnitIdList);
