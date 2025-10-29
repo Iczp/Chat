@@ -41,7 +41,7 @@ public class ConnectionPoolAppService(
         return await ConnectionPoolManager.GetTotalCountAsync(host);
     }
 
-    protected virtual async Task<PagedResultDto<ConnectionPoolDto>> FetchListAsync(ConnectionPoolGetListInput input)
+    protected virtual async Task<PagedResultDto<ConnectionPoolDto>> FetchPagedListAsync(ConnectionPoolGetListInput input)
     {
 
         var query = (await ConnectionPoolManager.CreateQueryableAsync())
@@ -70,7 +70,7 @@ public class ConnectionPoolAppService(
     public async Task<PagedResultDto<ConnectionPoolDto>> GetListAsync(ConnectionPoolGetListInput input)
     {
         await CheckGetListPolicyAsync();
-        return await FetchListAsync(input);
+        return await FetchPagedListAsync(input);
     }
 
     /// <summary>
@@ -80,11 +80,40 @@ public class ConnectionPoolAppService(
     public async Task<PagedResultDto<ConnectionPoolDto>> GetListByChatObjectAsync(List<long> chatObjectIdList)
     {
         await CheckPolicyAsync(GetListByChatObjectPolicyName);
-        return await FetchListAsync(new ConnectionPoolGetListInput()
+        return await FetchPagedListAsync(new ConnectionPoolGetListInput()
         {
             ChatObjectIdList = chatObjectIdList
         });
     }
+
+    /// <summary>
+    /// 获取在线人数列表(用户)
+    /// </summary>
+    /// <returns></returns>
+    public async Task<PagedResultDto<ConnectionPoolDto>> GetListByUserAsync(ConnectionPoolGetListInput input)
+    {
+        await CheckPolicyAsync(GetListByCurrentUserPolicyName);
+
+        var userConnList = await ConnectionPoolManager.GetListByUserIdAsync(input.UserId.Value);
+
+        var query = (userConnList.AsQueryable())
+           .WhereIf(!string.IsNullOrWhiteSpace(input.Host), x => x.Host == input.Host)
+           .WhereIf(!string.IsNullOrWhiteSpace(input.ConnectionId), x => x.ConnectionId == input.ConnectionId)
+           .WhereIf(!string.IsNullOrWhiteSpace(input.ClientId), x => x.ClientId == input.ClientId)
+           .WhereIf(input.UserId.HasValue, x => x.UserId == input.UserId)
+           .WhereIf(input.ChatObjectId.HasValue, x => x.ChatObjectIdList.Contains(input.ChatObjectId.Value))
+           .WhereIf(input.ChatObjectIdList.IsAny(), x => x.ChatObjectIdList.Any(d => input.ChatObjectIdList.Contains(d)))
+           //ActiveTime
+           .WhereIf(input.StartActiveTime.HasValue, x => x.ActiveTime >= input.StartActiveTime)
+           .WhereIf(input.EndActiveTime.HasValue, x => x.ActiveTime < input.EndActiveTime)
+           //CreationTime
+           .WhereIf(input.StartCreationTime.HasValue, x => x.CreationTime >= input.StartCreationTime)
+           .WhereIf(input.EndCreationTime.HasValue, x => x.CreationTime < input.EndCreationTime)
+           ;
+
+        return await GetPagedListAsync<ConnectionPoolCacheItem, ConnectionPoolDto>(query, input, q => q.OrderByDescending(x => x.CreationTime));
+    }
+
     /// <summary>
     /// 获取在线人数列表(当前用户)
     /// </summary>
@@ -93,7 +122,7 @@ public class ConnectionPoolAppService(
     {
         await CheckPolicyAsync(GetListByCurrentUserPolicyName);
         input.UserId = CurrentUser.Id;
-        return await FetchListAsync(input);
+        return await FetchPagedListAsync(input);
     }
 
     /// <summary>
@@ -108,6 +137,18 @@ public class ConnectionPoolAppService(
         var item = await ConnectionPoolManager.GetAsync(id);
 
         return ObjectMapper.Map<ConnectionPoolCacheItem, ConnectionPoolDto>(item);
+    }
+
+    /// <summary>
+    /// 获取设备类型列表
+    /// </summary>
+    /// <param name="chatObjectId"></param>
+    /// <returns></returns>
+    public async Task<List<string>> GetDeviceTypesAsync(long chatObjectId)
+    {
+        //await CheckGetItemPolicyAsync();
+
+        return (await ConnectionPoolManager.GetDeviceTypesAsync(chatObjectId)).ToList();
     }
 
     /// <summary>

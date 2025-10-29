@@ -55,14 +55,23 @@ public interface IConnectionPoolManager
     /// <param name="host"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<int> GetTotalCountAsync(string host, CancellationToken token = default);
+    Task<int> GetTotalCountAsync(string host = null, CancellationToken token = default);
 
     /// <summary>
-    /// 获取连接数量
+    /// 是否在线（用户）
     /// </summary>
+    /// <param name="userId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<int> GetTotalCountAsync(CancellationToken token = default);
+    Task<bool> IsOnlineAsync(Guid userId, CancellationToken token = default);
+
+    /// <summary>
+    /// 是否在线（聊天对象）
+    /// </summary>
+    /// <param name="chatObjectId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<bool> IsOnlineAsync(long chatObjectId, CancellationToken token = default);
 
     /// <summary>
     /// 获取所有连接
@@ -134,4 +143,11 @@ public interface IConnectionPoolManager
     Task<List<ConnectionPoolCacheItem>> GetListByChatObjectIdAsync(List<long> chatObjectIdList, CancellationToken token = default);
 
 
+    /// <summary>
+    /// 获取设备类型
+    /// </summary>
+    /// <param name="chatObjectId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<IEnumerable<string>> GetDeviceTypesAsync(long chatObjectId, CancellationToken token = default);
 }
