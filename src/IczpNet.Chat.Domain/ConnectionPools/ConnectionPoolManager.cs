@@ -183,25 +183,7 @@ public class ConnectionPoolManager(
     /// <inheritdoc />
     public async Task<IQueryable<ConnectionPoolCacheItem>> GetAllListAsync(CancellationToken token = default)
     {
-        var connectionIdList = await ConnectIdListSetCache.CreateQueryableAsync(ConnectionIdListSetCacheKey, token: token);
-
-        var list = await ConnectionPoolCache.GetManyAsync(connectionIdList, token: token);
-
-        return list.Where(x => x.Value != null).Select(x => x.Value).AsQueryable();
-
-        //var poolList = new List<ConnectionPoolCacheItem>();
-
-        //foreach (var connectionId in connectionIdList)
-        //{
-        //    var pool = await ConnectionPoolCache.GetAsync(connectionId, token: token);
-
-        //    if (pool == null)
-        //    {
-        //        continue;
-        //    }
-        //    poolList.Add(pool);
-        //}
-        //return poolList.AsQueryable();
+        return await CreateQueryableAsync(token);
     }
 
     /// <inheritdoc />
@@ -228,7 +210,11 @@ public class ConnectionPoolManager(
     /// <inheritdoc />
     public async Task<IQueryable<ConnectionPoolCacheItem>> CreateQueryableAsync(CancellationToken token = default)
     {
-        return await GetAllListAsync(token);
+        var connectionIdList = await ConnectIdListSetCache.CreateQueryableAsync(ConnectionIdListSetCacheKey, token: token);
+
+        var list = await ConnectionPoolCache.GetManyAsync(connectionIdList, token: token);
+
+        return list.Where(x => x.Value != null).Select(x => x.Value).AsQueryable();
     }
 
     /// <inheritdoc />
@@ -248,7 +234,7 @@ public class ConnectionPoolManager(
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<ConnectionPoolCacheItem>> GetListByUserIdAsync(Guid userId, CancellationToken token = default)
+    public async Task<IEnumerable<ConnectionPoolCacheItem>> GetListByUserAsync(Guid userId, CancellationToken token = default)
     {
         var userConnectionIds = await UserConnectionIdListSetCache.GetAsync(userId, token: token);
 
@@ -262,7 +248,7 @@ public class ConnectionPoolManager(
     }
 
     /// <inheritdoc />
-    public async Task<List<string>> GetConnectionIdsByUserIdAsync(Guid userId, CancellationToken token = default)
+    public async Task<List<string>> GetConnectionIdsByUserAsync(Guid userId, CancellationToken token = default)
     {
         return (await UserConnectionIdListSetCache.CreateQueryableAsync(userId, token: token)).ToList();
     }
@@ -280,9 +266,9 @@ public class ConnectionPoolManager(
         return userConnectionIds.Count;
     }
 
-    public async Task<List<ConnectionPoolCacheItem>> GetListByChatObjectIdAsync(List<long> chatObjectIdList, CancellationToken token = default)
+    public async Task<List<ConnectionPoolCacheItem>> GetListByChatObjectAsync(List<long> chatObjectIdList, CancellationToken token = default)
     {
-        return (await GetAllListAsync(token))
+        return (await CreateQueryableAsync(token))
             .Where(x => x.ChatObjectIdList.Any(d => chatObjectIdList.Contains(d)))
             .ToList();
     }

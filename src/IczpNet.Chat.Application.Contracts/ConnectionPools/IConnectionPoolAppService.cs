@@ -20,6 +20,7 @@ public interface IConnectionPoolAppService
     /// </summary>
     /// <returns></returns>
     Task<PagedResultDto<ConnectionPoolDto>> GetListAsync(ConnectionPoolGetListInput input);
+
     /// <summary>
     /// 获取在线人数列表(聊天对象)
     /// </summary>
@@ -79,14 +80,14 @@ public interface IConnectionPoolAppService
     /// </summary>
     /// <param name="userId"></param>
     /// <returns></returns>
-    Task<List<string>> GetConnectionIdsByUserIdAsync(Guid userId);
+    Task<List<string>> GetConnectionIdsByUserAsync(Guid userId);
 
     /// <summary>
     /// 获取用户连接
     /// </summary>
     /// <param name="userId"></param>
     /// <returns></returns>
-    Task<int> GetCountByUserIdAsync(Guid userId);
+    Task<int> GetCountByUserAsync(Guid userId);
 
     /// <summary>
     /// 更新用户连接数量

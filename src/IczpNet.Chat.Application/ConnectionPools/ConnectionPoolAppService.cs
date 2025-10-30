@@ -41,10 +41,9 @@ public class ConnectionPoolAppService(
         return await ConnectionPoolManager.GetTotalCountAsync(host);
     }
 
-    protected virtual async Task<PagedResultDto<ConnectionPoolDto>> FetchPagedListAsync(ConnectionPoolGetListInput input)
+    protected virtual async Task<PagedResultDto<ConnectionPoolDto>> QueryPagedListAsync(IQueryable<ConnectionPoolCacheItem>  connectionPools,ConnectionPoolGetListInput input)
     {
-
-        var query = (await ConnectionPoolManager.CreateQueryableAsync())
+        var query = connectionPools
             .WhereIf(!string.IsNullOrWhiteSpace(input.Host), x => x.Host == input.Host)
             .WhereIf(!string.IsNullOrWhiteSpace(input.ConnectionId), x => x.ConnectionId == input.ConnectionId)
             .WhereIf(!string.IsNullOrWhiteSpace(input.ClientId), x => x.ClientId == input.ClientId)
@@ -60,6 +59,12 @@ public class ConnectionPoolAppService(
             ;
 
         return await GetPagedListAsync<ConnectionPoolCacheItem, ConnectionPoolDto>(query, input, q => q.OrderByDescending(x => x.CreationTime));
+    }
+
+    protected virtual async Task<PagedResultDto<ConnectionPoolDto>> FetchPagedListAsync(ConnectionPoolGetListInput input)
+    {
+        var queryable = (await ConnectionPoolManager.CreateQueryableAsync());
+        return await QueryPagedListAsync(queryable, input);
     }
 
     /// <summary>
@@ -94,24 +99,11 @@ public class ConnectionPoolAppService(
     {
         await CheckPolicyAsync(GetListByCurrentUserPolicyName);
 
-        var userConnList = await ConnectionPoolManager.GetListByUserIdAsync(input.UserId.Value);
+        var userConnList = await ConnectionPoolManager.GetListByUserAsync(input.UserId.Value);
 
-        var query = (userConnList.AsQueryable())
-           .WhereIf(!string.IsNullOrWhiteSpace(input.Host), x => x.Host == input.Host)
-           .WhereIf(!string.IsNullOrWhiteSpace(input.ConnectionId), x => x.ConnectionId == input.ConnectionId)
-           .WhereIf(!string.IsNullOrWhiteSpace(input.ClientId), x => x.ClientId == input.ClientId)
-           .WhereIf(input.UserId.HasValue, x => x.UserId == input.UserId)
-           .WhereIf(input.ChatObjectId.HasValue, x => x.ChatObjectIdList.Contains(input.ChatObjectId.Value))
-           .WhereIf(input.ChatObjectIdList.IsAny(), x => x.ChatObjectIdList.Any(d => input.ChatObjectIdList.Contains(d)))
-           //ActiveTime
-           .WhereIf(input.StartActiveTime.HasValue, x => x.ActiveTime >= input.StartActiveTime)
-           .WhereIf(input.EndActiveTime.HasValue, x => x.ActiveTime < input.EndActiveTime)
-           //CreationTime
-           .WhereIf(input.StartCreationTime.HasValue, x => x.CreationTime >= input.StartCreationTime)
-           .WhereIf(input.EndCreationTime.HasValue, x => x.CreationTime < input.EndCreationTime)
-           ;
+        var queryable = (userConnList.AsQueryable());
 
-        return await GetPagedListAsync<ConnectionPoolCacheItem, ConnectionPoolDto>(query, input, q => q.OrderByDescending(x => x.CreationTime));
+        return await QueryPagedListAsync(queryable, input);
     }
 
     /// <summary>
@@ -188,10 +180,10 @@ public class ConnectionPoolAppService(
     /// </summary>
     /// <param name="userId"></param>
     /// <returns></returns>
-    public async Task<List<string>> GetConnectionIdsByUserIdAsync(Guid userId)
+    public async Task<List<string>> GetConnectionIdsByUserAsync(Guid userId)
     {
         await CheckPolicyAsync(GetConnectionIdsByUserIdPolicyName);
-        return await ConnectionPoolManager.GetConnectionIdsByUserIdAsync(userId);
+        return await ConnectionPoolManager.GetConnectionIdsByUserAsync(userId);
     }
 
     /// <summary>
@@ -199,10 +191,10 @@ public class ConnectionPoolAppService(
     /// </summary>
     /// <param name="userId"></param>
     /// <returns></returns>
-    public async Task<int> GetCountByUserIdAsync(Guid userId)
+    public async Task<int> GetCountByUserAsync(Guid userId)
     {
         await CheckPolicyAsync(GetCountByUserIdPolicyName);
-        return (await ConnectionPoolManager.GetConnectionIdsByUserIdAsync(userId)).Count;
+        return (await ConnectionPoolManager.GetConnectionIdsByUserAsync(userId)).Count;
     }
 
     /// <summary>

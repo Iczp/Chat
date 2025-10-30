@@ -116,7 +116,7 @@ public interface IConnectionPoolManager
     /// <param name="userId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<IEnumerable<ConnectionPoolCacheItem>> GetListByUserIdAsync(Guid userId, CancellationToken token = default);
+    Task<IEnumerable<ConnectionPoolCacheItem>> GetListByUserAsync(Guid userId, CancellationToken token = default);
 
     /// <summary>
     /// 获取用户连接
@@ -124,7 +124,7 @@ public interface IConnectionPoolManager
     /// <param name="userId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<List<string>> GetConnectionIdsByUserIdAsync(Guid userId, CancellationToken token = default);
+    Task<List<string>> GetConnectionIdsByUserAsync(Guid userId, CancellationToken token = default);
 
     /// <summary>
     /// 更新连接数量
@@ -140,7 +140,7 @@ public interface IConnectionPoolManager
     /// <param name="chatObjectIdList"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<List<ConnectionPoolCacheItem>> GetListByChatObjectIdAsync(List<long> chatObjectIdList, CancellationToken token = default);
+    Task<List<ConnectionPoolCacheItem>> GetListByChatObjectAsync(List<long> chatObjectIdList, CancellationToken token = default);
 
 
     /// <summary>
