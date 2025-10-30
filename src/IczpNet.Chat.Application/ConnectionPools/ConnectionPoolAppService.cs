@@ -2,11 +2,13 @@
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ConnectionPools.Dtos;
 using IczpNet.Chat.Permissions;
+using Minio.DataModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.ConnectionPools;
 
@@ -136,11 +138,12 @@ public class ConnectionPoolAppService(
     /// </summary>
     /// <param name="chatObjectId"></param>
     /// <returns></returns>
-    public async Task<List<string>> GetListByChatObjectAsync(long chatObjectId)
+    public async Task<List<ConnectionPoolDto>> GetListByChatObjectAsync(long chatObjectId)
     {
         //await CheckGetItemPolicyAsync();
+        var list = (await ConnectionPoolManager.GetListByChatObjectAsync(chatObjectId)).ToList();
 
-        return (await ConnectionPoolManager.GetListByChatObjectAsync(chatObjectId)).ToList();
+        return ObjectMapper.Map<List<ConnectionPoolCacheItem>, List<ConnectionPoolDto>>(list);
     }
 
     /// <summary>
