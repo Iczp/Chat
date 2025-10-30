@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.Connections;
+﻿using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.Connections;
 using IczpNet.Chat.SetLists;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
@@ -10,15 +11,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Services;
+using static Volo.Abp.Identity.Settings.IdentitySettingNames;
 
 namespace IczpNet.Chat.ConnectionPools;
 
 /// <inheritdoc />
 public class ConnectionPoolManager(
     IDistributedCache<ConnectionPoolCacheItem, string> connectionPoolCache,
-    IDistributedCacheListSet<string, DeviceTypeCacheKey> deviceTypeListSetCache,
-    IDistributedCacheListSet<string, Guid> userConnectionIdListSetCache,
-    IDistributedCacheListSet<string, string> connectIdListSetCache,
+    IDistributedCacheListSet<string, IndexCacheKey> indexListSetCache,
+    IDistributedCacheListSet<string, string> allConnectIdListSetCache,
     IOptions<ConnectionOptions> options
     ) : DomainService, IConnectionPoolManager
 {
@@ -26,11 +27,8 @@ public class ConnectionPoolManager(
     /// <summary>
     /// 连接缓存
     /// </summary>
-    public IDistributedCacheListSet<string, string> ConnectIdListSetCache { get; } = connectIdListSetCache;
-    /// <summary>
-    /// 用户连接缓存
-    /// </summary>
-    public IDistributedCacheListSet<string, Guid> UserConnectionIdListSetCache { get; } = userConnectionIdListSetCache;
+    public IDistributedCacheListSet<string, string> AllConnectIdListSetCache { get; } = allConnectIdListSetCache;
+
 
     protected IOptions<ConnectionOptions> Options { get; } = options;
     protected ConnectionOptions Config => Options.Value;
@@ -46,72 +44,60 @@ public class ConnectionPoolManager(
     public IDistributedCache<ConnectionPoolCacheItem, string> ConnectionPoolCache { get; } = connectionPoolCache;
 
     /// <summary>
-    /// 聊天对象设备类型缓存
+    /// 索引缓存
     /// </summary>
-    public IDistributedCacheListSet<string, DeviceTypeCacheKey> DeviceTypeListSetCache { get; } = deviceTypeListSetCache;
+    public IDistributedCacheListSet<string, IndexCacheKey> IndexListSetCache { get; } = indexListSetCache;
 
     protected virtual DistributedCacheEntryOptions DistributedCacheEntryOptions => new()
     {
         AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(Config.ConnectionCacheExpirationSeconds)
     };
 
-    protected virtual async Task<KeyValuePair<DeviceTypeCacheKey, long>[]> AddDeviceTypeAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default)
+    protected virtual IEnumerable<KeyValuePair<IndexCacheKey, string>> GetKeyValues(ConnectionPoolCacheItem connectionPool, CancellationToken token = default)
     {
-        var keyValues = connectionPool.ChatObjectIdList.Select(chatObjectId => new KeyValuePair<DeviceTypeCacheKey, string>(new DeviceTypeCacheKey(chatObjectId), connectionPool.DeviceType));
+        // ChatObjectId 索引
+        var keyValues = connectionPool.ChatObjectIdList.Select(chatObjectId => new KeyValuePair<IndexCacheKey, string>(new IndexCacheKey(chatObjectId: chatObjectId), connectionPool.ConnectionId));
 
-        var addedResult = await DeviceTypeListSetCache.AddManyAsync(keyValues, () => DistributedCacheEntryOptions, token: token);
+        if (connectionPool.UserId.HasValue)
+        {
+            // UserId 索引
+            keyValues = keyValues.Append(new KeyValuePair<IndexCacheKey, string>(new IndexCacheKey(userId: connectionPool.UserId.Value), connectionPool.ConnectionId));
+        }
+        return keyValues;
+    }
+    protected virtual async Task<KeyValuePair<IndexCacheKey, long>[]> AddIndexAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default)
+    {
+        var keyValues = GetKeyValues(connectionPool, token);
+
+        var addedResult = await IndexListSetCache.AddManyAsync(keyValues, () => DistributedCacheEntryOptions, token: token);
 
         return addedResult;
     }
 
-    protected virtual async Task<KeyValuePair<DeviceTypeCacheKey, long>[]> RemoveDeviceTypeAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default)
+    protected virtual async Task<KeyValuePair<IndexCacheKey, long>[]> RemoveIndexAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default)
     {
-        var keyValues = connectionPool.ChatObjectIdList.Select(chatObjectId => new KeyValuePair<DeviceTypeCacheKey, string>(new DeviceTypeCacheKey(chatObjectId), connectionPool.DeviceType));
+        var keyValues = GetKeyValues(connectionPool, token);
 
-        var removed = await DeviceTypeListSetCache.RemoveManyAsync(keyValues, () => DistributedCacheEntryOptions, token: token);
+        var removed = await IndexListSetCache.RemoveManyAsync(keyValues, () => DistributedCacheEntryOptions, token: token);
 
         return removed;
     }
 
     protected virtual async Task<List<string>> GetConnectionIdListAsync(CancellationToken token = default)
     {
-        return (await ConnectIdListSetCache.CreateQueryableAsync(ConnectionIdListSetCacheKey, token: token)).ToList();
+        return (await AllConnectIdListSetCache.CreateQueryableAsync(ConnectionIdListSetCacheKey, token: token)).ToList();
     }
 
-
-    protected virtual async Task<long> AddUserConnetionIdListAsync(Guid userId, string connetionId, CancellationToken token = default)
-    {
-        var addedCount = (await UserConnectionIdListSetCache.AddAsync(userId, [connetionId], token: token));
-
-        Logger.LogInformation($"AddUserConnetionIdListAsync:UserId={userId}, connetionId={connetionId}, removedCount.addedCount={addedCount}");
-
-        return addedCount;
-    }
-
-    protected virtual async Task<long> RemoveUserConnetionIdListAsync(Guid userId, string connetionId, CancellationToken token = default)
-    {
-        var removedCount = await UserConnectionIdListSetCache.RemoveAsync(userId, [connetionId], token: token);
-
-        Logger.LogInformation($"RemoveUserConnetionIdListAsync:UserId={userId}, connetionId={connetionId}, removedCount={removedCount}");
-
-        return removedCount;
-    }
     /// <inheritdoc />
-    public async Task<bool> AddAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default)
+    public async Task<bool> ConnectedAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default)
     {
-        var addedCount = await ConnectIdListSetCache.AddAsync(ConnectionIdListSetCacheKey, [connectionPool.ConnectionId], token: token);
+        var addedCount = await AllConnectIdListSetCache.AddAsync(ConnectionIdListSetCacheKey, [connectionPool.ConnectionId], token: token);
 
         Logger.LogInformation($"Add connection from DistributedCacheListSet addedCount: {addedCount}");
 
         await ConnectionPoolCache.SetAsync(connectionPool.ConnectionId, connectionPool, DistributedCacheEntryOptions, token: token);
 
-        if (connectionPool.UserId.HasValue)
-        {
-            var addedUserCount = await AddUserConnetionIdListAsync(connectionPool.UserId.Value, connectionPool.ConnectionId, token);
-            Logger.LogInformation($"AddUserConnetionIdListAsync UserId={connectionPool.UserId.Value}, addedUserCount={addedUserCount}");
-        }
-
-        await AddDeviceTypeAsync(connectionPool, token);
+        await AddIndexAsync(connectionPool, token);
 
         Logger.LogInformation($"Add connection {connectionPool}");
 
@@ -136,37 +122,33 @@ public class ConnectionPoolManager(
         else
         {
             Logger.LogWarning($"{nameof(UpdateActiveTimeAsync)} Fail: Not found, item:{connectionId}");
-            await RemoveAsync(connectionId, token);
+            await DisconnectedAsync(connectionId, token);
             return null;
         }
     }
 
-    /// <inheritdoc />
-    public async Task<bool> RemoveAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default)
+    protected virtual async Task<bool> DisconnectedInternalAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default)
     {
-        return await RemoveAsync(connectionPool.ConnectionId, token: token);
+        return await DisconnectedAsync(connectionPool.ConnectionId, token: token);
     }
 
     /// <inheritdoc />
-    public async Task<bool> RemoveAsync(string connectionId, CancellationToken token = default)
+    public async Task<bool> DisconnectedAsync(string connectionId, CancellationToken token = default)
     {
-        var connectionPool = await ConnectionPoolCache.GetAsync(connectionId, token: token);
-
-        var removedCount = await ConnectIdListSetCache.RemoveAsync(ConnectionIdListSetCacheKey, [connectionPool.ConnectionId], token: token);
+        var removedCount = await AllConnectIdListSetCache.RemoveAsync(ConnectionIdListSetCacheKey, [connectionId], token: token);
 
         Logger.LogInformation($"Remove connection from DistributedCacheListSet removedCount={removedCount}");
 
-        if (connectionPool != null && connectionPool.UserId.HasValue)
+        var connectionPool = await ConnectionPoolCache.GetAsync(connectionId, token: token);
+
+        if (connectionPool != null)
         {
-            var removedUserCount = await RemoveUserConnetionIdListAsync(connectionPool.UserId.Value, connectionId, token);
-            Logger.LogInformation($"RemoveUserConnetionIdListAsync userId={connectionPool.UserId}, removedUserCount={removedUserCount}");
+            await RemoveIndexAsync(connectionPool, token);
         }
 
         await ConnectionPoolCache.RemoveAsync(connectionId, token: token);
 
         Logger.LogInformation($"Remove connection {connectionId}");
-
-        await RemoveDeviceTypeAsync(connectionPool, token);
 
         return true;
     }
@@ -189,7 +171,7 @@ public class ConnectionPoolManager(
     /// <inheritdoc />
     public async Task ClearAllAsync(string host, CancellationToken token = default)
     {
-        await ConnectIdListSetCache.DeleteAsync(ConnectionIdListSetCacheKey, token: token);
+        await AllConnectIdListSetCache.DeleteAsync(ConnectionIdListSetCacheKey, token: token);
 
         var connectionIdListByHost = (await CreateQueryableAsync(token))
             .WhereIf(!string.IsNullOrWhiteSpace(host), x => x.Host == host)
@@ -197,12 +179,7 @@ public class ConnectionPoolManager(
 
         foreach (var connectionPool in connectionIdListByHost)
         {
-            await RemoveAsync(connectionPool, token);
-
-            if (connectionPool.UserId.HasValue)
-            {
-                await RemoveUserConnetionIdListAsync(connectionPool.UserId.Value, connectionPool.ConnectionId, token);
-            }
+            await DisconnectedInternalAsync(connectionPool, token);
         }
         Logger.LogInformation($"ClearAllAsync host:{host}");
     }
@@ -210,7 +187,7 @@ public class ConnectionPoolManager(
     /// <inheritdoc />
     public async Task<IQueryable<ConnectionPoolCacheItem>> CreateQueryableAsync(CancellationToken token = default)
     {
-        var connectionIdList = await ConnectIdListSetCache.CreateQueryableAsync(ConnectionIdListSetCacheKey, token: token);
+        var connectionIdList = await AllConnectIdListSetCache.CreateQueryableAsync(ConnectionIdListSetCacheKey, token: token);
 
         var list = await ConnectionPoolCache.GetManyAsync(connectionIdList, token: token);
 
@@ -228,7 +205,7 @@ public class ConnectionPoolManager(
     {
         var connectionIdList = (await CreateQueryableAsync(token)).Select(x => x.ConnectionId).ToList();
 
-        await ConnectIdListSetCache.ReplaceAsync(ConnectionIdListSetCacheKey, connectionIdList, () => DistributedCacheEntryOptions, token: token);
+        await AllConnectIdListSetCache.ReplaceAsync(ConnectionIdListSetCacheKey, connectionIdList, () => DistributedCacheEntryOptions, token: token);
 
         return connectionIdList.Count;
     }
@@ -236,11 +213,11 @@ public class ConnectionPoolManager(
     /// <inheritdoc />
     public async Task<IEnumerable<ConnectionPoolCacheItem>> GetListByUserAsync(Guid userId, CancellationToken token = default)
     {
-        var userConnectionIds = await UserConnectionIdListSetCache.GetAsync(userId, token: token);
+        var userConnectionIds = await IndexListSetCache.GetAsync(new IndexCacheKey(userId: userId), token: token);
 
         if (userConnectionIds == null || !userConnectionIds.Any())
         {
-            return Array.Empty<ConnectionPoolCacheItem>();
+            return [];
         }
         var list = await ConnectionPoolCache.GetManyAsync(userConnectionIds, token: token);
 
@@ -250,7 +227,7 @@ public class ConnectionPoolManager(
     /// <inheritdoc />
     public async Task<List<string>> GetConnectionIdsByUserAsync(Guid userId, CancellationToken token = default)
     {
-        return (await UserConnectionIdListSetCache.CreateQueryableAsync(userId, token: token)).ToList();
+        return (await IndexListSetCache.CreateQueryableAsync(new IndexCacheKey(userId: userId), token: token)).ToList();
     }
 
     /// <inheritdoc />
@@ -261,38 +238,40 @@ public class ConnectionPoolManager(
             .Select(x => x.ConnectionId)
             .ToList();
 
-        await UserConnectionIdListSetCache.ReplaceAsync(userId, userConnectionIds, () => DistributedCacheEntryOptions, token: token);
+        await IndexListSetCache.ReplaceAsync(new IndexCacheKey(userId: userId), userConnectionIds, () => DistributedCacheEntryOptions, token: token);
 
         return userConnectionIds.Count;
     }
 
-    public async Task<List<ConnectionPoolCacheItem>> GetListByChatObjectAsync(List<long> chatObjectIdList, CancellationToken token = default)
+    public async Task<IEnumerable<ConnectionPoolCacheItem>> GetListByChatObjectAsync(List<long> chatObjectIdList, CancellationToken token = default)
     {
-        return (await CreateQueryableAsync(token))
-            .Where(x => x.ChatObjectIdList.Any(d => chatObjectIdList.Contains(d)))
-            .ToList();
+        var keyList = chatObjectIdList.Select(x => new IndexCacheKey(chatObjectId: x)).ToList();
+
+        var connKeyValues = await IndexListSetCache.GetManyAsync(keyList, token: token);
+
+        var res = await ConnectionPoolCache.GetManyAsync(connKeyValues.SelectMany(x => x.Value), token: token);
+
+        return res.Select(x => x.Value);
+    }
+
+    public async Task<IEnumerable<ConnectionPoolCacheItem>> GetListByChatObjectAsync(long chatObjectId, CancellationToken token = default)
+    {
+        return await GetListByChatObjectAsync(chatObjectId, token);
     }
 
     public async Task<bool> IsOnlineAsync(Guid userId, CancellationToken token = default)
     {
-        var userConnectIdList = await UserConnectionIdListSetCache.GetAsync(userId, token: token);
+        var connIdList = await IndexListSetCache.GetAsync(new IndexCacheKey(userId: userId), token: token);
 
-        return userConnectIdList != null && userConnectIdList.Any();
+        return connIdList != null && connIdList.Any();
     }
 
     public async Task<bool> IsOnlineAsync(long chatObjectId, CancellationToken token = default)
     {
-        var deviceTypes = await GetDeviceTypesAsync(chatObjectId, token: token);
+        var connIdList = await IndexListSetCache.GetAsync(new IndexCacheKey(chatObjectId: chatObjectId), token: token);
 
-        return deviceTypes != null && deviceTypes.Any();
+        return connIdList != null && connIdList.Any();
     }
 
-    public async Task<IEnumerable<string>> GetDeviceTypesAsync(long chatObjectId, CancellationToken token = default)
-    {
-        var deviceTypeKey = new DeviceTypeCacheKey(chatObjectId);
 
-        var deviceTypes = await DeviceTypeListSetCache.GetAsync(deviceTypeKey, token: token);
-
-        return deviceTypes;
-    }
 }

@@ -46,7 +46,7 @@ public interface IConnectionPoolAppService
     /// </summary>
     /// <param name="chatObjectId"></param>
     /// <returns></returns>
-    Task<List<string>> GetDeviceTypesAsync(long chatObjectId);
+    Task<List<string>> GetListByChatObjectAsync(long chatObjectId);
 
     /// <summary>
     /// 获取连接

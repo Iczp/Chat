@@ -2,20 +2,20 @@
 
 namespace IczpNet.Chat.ConnectionPools;
 
-public class DeviceTypeCacheKey
+public class IndexCacheKey
 {
     public long? ChatObjectId { get; set; }
 
     public Guid? UserId { get; set; }
 
 
-    public DeviceTypeCacheKey(long? chatObjectId)
+    public IndexCacheKey(long? chatObjectId)
     {
         ChatObjectId = chatObjectId;
 
     }
 
-    public DeviceTypeCacheKey(Guid? userId)
+    public IndexCacheKey(Guid? userId)
     {
         UserId = userId;
     }
@@ -24,12 +24,12 @@ public class DeviceTypeCacheKey
     {
         if (UserId.HasValue)
         {
-            return $"{nameof(DeviceTypeCacheKey)}:{UserId}";
+            return $"{nameof(IndexCacheKey)}:{UserId}";
         }
         else if (ChatObjectId.HasValue)
         {
-            return $"{nameof(DeviceTypeCacheKey)}:{ChatObjectId}";
+            return $"{nameof(IndexCacheKey)}:{ChatObjectId}";
         }
-        return $"{nameof(DeviceTypeCacheKey)}-{UserId}-{ChatObjectId}";
+        return $"{nameof(IndexCacheKey)}-{UserId}-{ChatObjectId}";
     }
 }

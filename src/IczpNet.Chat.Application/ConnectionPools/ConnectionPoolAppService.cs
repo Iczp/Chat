@@ -136,11 +136,11 @@ public class ConnectionPoolAppService(
     /// </summary>
     /// <param name="chatObjectId"></param>
     /// <returns></returns>
-    public async Task<List<string>> GetDeviceTypesAsync(long chatObjectId)
+    public async Task<List<string>> GetListByChatObjectAsync(long chatObjectId)
     {
         //await CheckGetItemPolicyAsync();
 
-        return (await ConnectionPoolManager.GetDeviceTypesAsync(chatObjectId)).ToList();
+        return (await ConnectionPoolManager.GetListByChatObjectAsync(chatObjectId)).ToList();
     }
 
     /// <summary>
@@ -162,7 +162,7 @@ public class ConnectionPoolAppService(
     public async Task RemoveAsync(string connectionId)
     {
         await CheckDeletePolicyAsync();
-        await ConnectionPoolManager.RemoveAsync(connectionId);
+        await ConnectionPoolManager.DisconnectedAsync(connectionId);
     }
 
     /// <summary>
