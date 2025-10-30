@@ -127,13 +127,12 @@ public interface IConnectionPoolManager
     Task<int> UpdateUserConnectionIdsAsync(Guid userId, CancellationToken token = default);
 
     /// <summary>
-    /// 
+    /// 更新连接数量
     /// </summary>
-    /// <param name="chatObjectIdList"></param>
+    /// <param name="chatObjectId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<IEnumerable<ConnectionPoolCacheItem>> GetListByChatObjectAsync(List<long> chatObjectIdList, CancellationToken token = default);
-
+    Task<int> UpdateChatObjectConnectionIdsAsync(long chatObjectId, CancellationToken token = default);
 
     /// <summary>
     /// 获取设备类型

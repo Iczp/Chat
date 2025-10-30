@@ -46,7 +46,7 @@ public interface IConnectionPoolAppService
     /// </summary>
     /// <param name="chatObjectId"></param>
     /// <returns></returns>
-    Task<List<ConnectionPoolDto>> GetListByChatObjectAsync(long chatObjectId);
+    Task<PagedResultDto<ConnectionPoolDto>> GetListByChatObjectAsync(long chatObjectId);
 
     /// <summary>
     /// 获取连接
@@ -94,6 +94,13 @@ public interface IConnectionPoolAppService
     /// </summary>
     /// <returns></returns>
     Task<int> UpdateUserConnectionIdsAsync(Guid userId);
+
+    /// <summary>
+    /// 更新聊天对象连接数量
+    /// </summary>
+    /// <param name="chatObjectId"></param>
+    /// <returns></returns>
+    Task<int> UpdateChatObjectConnectionIdsAsync(long chatObjectId);
 
     /// <summary>
     /// 强制断开连接
