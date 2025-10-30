@@ -81,6 +81,13 @@ public class ConnectionPoolManager(
         return removed;
     }
 
+    protected virtual async Task DeleteIndexAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default)
+    {
+        var keys = GetKeyValues(connectionPool, token).Select(x => x.Key);
+        await IndexListSetCache.DeleteManyAsync(keys, token: token);
+    }
+
+
     protected virtual async Task<List<string>> GetConnectionIdListAsync(CancellationToken token = default)
     {
         return (await AllConnectIdListSetCache.CreateQueryableAsync(ConnectionIdListSetCacheKey, token: token)).ToList();
@@ -118,7 +125,7 @@ public class ConnectionPoolManager(
         if (connectionPool != null)
         {
             // 刷新索引缓存
-            var indexKeys = GetKeyValues(connectionPool, token).Select(x=>x.Key);
+            var indexKeys = GetKeyValues(connectionPool, token).Select(x => x.Key);
 
             await IndexListSetCache.RefreshManyAsync(indexKeys, () => DistributedCacheEntryOptions, token: token);
 
@@ -187,10 +194,21 @@ public class ConnectionPoolManager(
             .WhereIf(!string.IsNullOrWhiteSpace(host), x => x.Host == host)
             .ToList();
 
-        foreach (var connectionPool in connectionIdListByHost)
-        {
-            await DisconnectedInternalAsync(connectionPool, token);
-        }
+        //foreach (var connectionPool in connectionIdListByHost)
+        //{
+        //    if (!string.IsNullOrWhiteSpace(host))
+        //    {
+        //        await DisconnectedInternalAsync(connectionPool, token);
+        //    }
+        //    else
+        //    {
+        //        await DeleteIndexAsync(connectionPool, token);
+        //    }
+        //}
+
+        var keys = connectionIdListByHost.Select(x => GetKeyValues(x, token).Select(d => d.Key)).SelectMany(x => x).Distinct().ToList();
+
+        await IndexListSetCache.DeleteManyAsync(keys, token: token);
 
         Logger.LogInformation($"ClearAllAsync host:{host}");
 

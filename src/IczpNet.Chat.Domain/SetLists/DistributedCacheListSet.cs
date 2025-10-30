@@ -209,5 +209,10 @@ namespace IczpNet.Chat.SetLists
             var list = await DistributedCache.GetOrAddAsync(key, () => Task.FromResult<IEnumerable<TListItem>>(Enumerable.Empty<TListItem>()), optionsFactory, hideErrors, considerUow, token).ConfigureAwait(false);
             return (list ?? Enumerable.Empty<TListItem>()).AsQueryable();
         }
+
+        public Task DeleteManyAsync(IEnumerable<TKey> keys, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default)
+        {
+            return DistributedCache.RemoveManyAsync(keys, hideErrors, considerUow, token);
+        }
     }
 }

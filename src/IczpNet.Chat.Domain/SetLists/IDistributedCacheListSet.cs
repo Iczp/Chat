@@ -32,6 +32,8 @@ public interface IDistributedCacheListSet<TListItem, TKey>
 
     Task DeleteAsync(TKey key, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default);
 
+    Task DeleteManyAsync(IEnumerable<TKey> keys, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default);
+
     Task<IQueryable<TListItem>> CreateQueryableAsync(TKey key, Func<DistributedCacheEntryOptions> optionsFactory = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default);
 
 }
