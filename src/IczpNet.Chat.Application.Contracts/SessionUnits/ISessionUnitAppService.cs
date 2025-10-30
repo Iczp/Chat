@@ -69,5 +69,5 @@ public interface ISessionUnitAppService
     /// <param name="senderSessionUnitId"></param>
     /// <param name="ticks"></param>
     /// <returns></returns>
-    Task<int> UpdateTicksAsync(Guid senderSessionUnitId, long ticks);
+    Task<long> UpdateTicksAsync(Guid senderSessionUnitId, long? ticks);
 }

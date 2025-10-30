@@ -114,7 +114,7 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
         return await UpdateSenderLastMessageIdAsync(query, senderSessionUnitId, lastMessageId, Clock.Now.Ticks);
     }
 
-    public virtual async Task<int> UpdateTicksAsync(Guid senderSessionUnitId, long ticks)
+    public virtual async Task<int> UpdateTicksAsync(Guid senderSessionUnitId, long? ticks)
     {
         var query = await GetQueryableAsync(Clock.Now, null);
 
@@ -122,7 +122,7 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
             .Where(x => x.Id == senderSessionUnitId)
             .ExecuteUpdateAsync(s => s
                 .SetProperty(b => b.LastModificationTime, b => Clock.Now)
-                .SetProperty(b => b.Ticks, b => ticks)
+                .SetProperty(b => b.Ticks, b => ticks ?? Clock.Now.Ticks)
             );
     }
 
