@@ -1,5 +1,4 @@
-﻿using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.Connections;
+﻿using IczpNet.Chat.Connections;
 using IczpNet.Chat.SetLists;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
@@ -11,7 +10,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Services;
-using static Volo.Abp.Identity.Settings.IdentitySettingNames;
 
 namespace IczpNet.Chat.ConnectionPools;
 
@@ -112,17 +110,31 @@ public class ConnectionPoolManager(
     /// <returns></returns>
     public async Task<ConnectionPoolCacheItem> UpdateActiveTimeAsync(string connectionId, CancellationToken token = default)
     {
+        // 刷新连接ID列表缓存
+        await AllConnectIdListSetCache.RefreshAsync(ConnectionIdListSetCacheKey, () => DistributedCacheEntryOptions, token: token);
+
         var connectionPool = await ConnectionPoolCache.GetAsync(connectionId, token: token);
+
         if (connectionPool != null)
         {
+            // 刷新索引缓存
+            var indexKeys = GetKeyValues(connectionPool, token).Select(x=>x.Key);
+
+            await IndexListSetCache.RefreshManyAsync(indexKeys, () => DistributedCacheEntryOptions, token: token);
+
+            // 更新活动时间
             connectionPool.ActiveTime = Clock.Now;
+
             await ConnectionPoolCache.SetAsync(connectionPool.ConnectionId, connectionPool, DistributedCacheEntryOptions, token: token);
+
             return connectionPool;
         }
         else
         {
             Logger.LogWarning($"{nameof(UpdateActiveTimeAsync)} Fail: Not found, item:{connectionId}");
+
             await DisconnectedAsync(connectionId, token);
+
             return null;
         }
     }

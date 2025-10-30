@@ -24,12 +24,12 @@ public class IndexCacheKey
     {
         if (UserId.HasValue)
         {
-            return $"{nameof(IndexCacheKey)}:{UserId}";
+            return $"{nameof(IndexCacheKey)}-{nameof(UserId)}:{UserId}";
         }
         else if (ChatObjectId.HasValue)
         {
-            return $"{nameof(IndexCacheKey)}:{ChatObjectId}";
+            return $"{nameof(IndexCacheKey)}-{nameof(ChatObjectId)}:{ChatObjectId}";
         }
-        return $"{nameof(IndexCacheKey)}-{UserId}-{ChatObjectId}";
+        return $"{nameof(IndexCacheKey)}-UC:{UserId}-{ChatObjectId}";
     }
 }
