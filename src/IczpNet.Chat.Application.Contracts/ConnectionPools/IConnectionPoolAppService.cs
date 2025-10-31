@@ -22,13 +22,6 @@ public interface IConnectionPoolAppService
     Task<PagedResultDto<ConnectionPoolDto>> GetListAsync(ConnectionPoolGetListInput input);
 
     /// <summary>
-    /// 获取在线人数列表(聊天对象)
-    /// </summary>
-    /// <param name="chatObjectIdList"></param>
-    /// <returns></returns>
-    Task<PagedResultDto<ConnectionPoolDto>> GetListByChatObjectAsync(List<long> chatObjectIdList);
-
-    /// <summary>
     ///  
     /// </summary>
     /// <param name="input"></param>
@@ -42,7 +35,7 @@ public interface IConnectionPoolAppService
     Task<PagedResultDto<ConnectionPoolDto>> GetListByCurrentUserAsync(ConnectionPoolGetListInput input);
 
     /// <summary>
-    ///  
+    ///  获取在线人数列表(聊天对象)
     /// </summary>
     /// <param name="chatObjectId"></param>
     /// <returns></returns>
@@ -59,8 +52,9 @@ public interface IConnectionPoolAppService
     /// 清空所有连接
     /// </summary>
     /// <param name="host"></param>
+    /// <param name="reason"></param>
     /// <returns></returns>
-    Task ClearAllAsync(string host);
+    Task ClearAllAsync(string host, string reason);
 
     /// <summary>
     /// 移除连接
@@ -76,18 +70,18 @@ public interface IConnectionPoolAppService
     Task<int> UpdateConnectionIdsAsync();
 
     /// <summary>
-    /// 获取用户连接
-    /// </summary>
-    /// <param name="userId"></param>
-    /// <returns></returns>
-    Task<List<string>> GetConnectionIdsByUserAsync(Guid userId);
-
-    /// <summary>
-    /// 获取用户连接
+    /// 获取连接数量(用户)
     /// </summary>
     /// <param name="userId"></param>
     /// <returns></returns>
     Task<int> GetCountByUserAsync(Guid userId);
+
+    /// <summary>
+    /// 获取连接数量(聊天对象)
+    /// </summary>
+    /// <param name="chatObjectId"></param>
+    /// <returns></returns>
+    Task<int> GetCountByChatObjectAsync(long chatObjectId);
 
     /// <summary>
     /// 更新用户连接数量
