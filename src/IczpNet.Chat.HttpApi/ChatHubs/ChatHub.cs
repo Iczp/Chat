@@ -158,20 +158,11 @@ public class ChatHub(
                 ? ObjectMapper.Map<ConnectionPoolCacheItem, DisconnectedEto>(connection)
                 : new DisconnectedEto(connectionId);
 
-            // 删除连接
-            await ConnectionPoolManager.DisconnectedAsync(connectionId, cancellationToken);
-
-            // 发布事件
+            // 发布事件(先发布事件，再删除)
             await DistributedEventBus.PublishAsync(disconnectedEto, onUnitOfWorkComplete: false);
 
-            //await Clients.User(CurrentUser.Id?.ToString()).ReceivedMessage(new CommandPayload()
-            //{
-            //    AppUserId = CurrentUser.Id,
-            //    Command = "Goodbye",
-            //    Payload = onDisconnectedEto,
-            //});
-
-            //await ConnectionManager.RemoveAsync(Context.ConnectionId, new CancellationTokenSource().Token);
+            // 删除连接
+            await ConnectionPoolManager.DisconnectedAsync(connectionId, cancellationToken);
         }
         catch (TaskCanceledException ex)
         {

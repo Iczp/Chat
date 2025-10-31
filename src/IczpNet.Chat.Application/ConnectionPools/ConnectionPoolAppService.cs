@@ -177,7 +177,7 @@ public class ConnectionPoolAppService(
     public async Task<int> UpdateConnectionIdsAsync()
     {
         await CheckPolicyAsync(UpdateConnectionIdsPolicyName);
-        return await ConnectionPoolManager.UpdateConnectionIdsAsync();
+        return await ConnectionPoolManager.UpdateAllConnectionIdsAsync();
     }
 
     /// <summary>
@@ -206,20 +206,20 @@ public class ConnectionPoolAppService(
     /// 更新用户连接数量
     /// </summary>
     /// <returns></returns>
-    public async Task<int> UpdateUserConnectionIdsAsync(Guid userId)
+    public async Task<int> UpdateUserAsync(Guid userId)
     {
         await CheckPolicyAsync(UpdateUserConnectionIdsPolicyName);
-        return await ConnectionPoolManager.UpdateUserConnectionIdsAsync(userId);
+        return await ConnectionPoolManager.UpdateUserIndexAsync(userId);
     }
 
     /// <summary>
     /// 更新聊天对象连接数量
     /// </summary>
     /// <returns></returns>
-    public async Task<int> UpdateChatObjectConnectionIdsAsync(long chatObjectId)
+    public async Task<int> UpdateChatObjectAsync(long chatObjectId)
     {
         await CheckPolicyAsync(UpdateUserConnectionIdsPolicyName);
-        return await ConnectionPoolManager.UpdateChatObjectConnectionIdsAsync(chatObjectId);
+        return await ConnectionPoolManager.UpdateChatObjectIndexAsync(chatObjectId);
     }
 
     /// <summary>

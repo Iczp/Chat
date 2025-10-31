@@ -100,7 +100,7 @@ public interface IConnectionPoolManager
     /// </summary>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<int> UpdateConnectionIdsAsync(CancellationToken token = default);
+    Task<int> UpdateAllConnectionIdsAsync(CancellationToken token = default);
 
     /// <summary>
     /// 获取用户连接
@@ -124,7 +124,7 @@ public interface IConnectionPoolManager
     /// <param name="userId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<int> UpdateUserConnectionIdsAsync(Guid userId, CancellationToken token = default);
+    Task<int> UpdateUserIndexAsync(Guid userId, CancellationToken token = default);
 
     /// <summary>
     /// 更新连接数量
@@ -132,7 +132,7 @@ public interface IConnectionPoolManager
     /// <param name="chatObjectId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<int> UpdateChatObjectConnectionIdsAsync(long chatObjectId, CancellationToken token = default);
+    Task<int> UpdateChatObjectIndexAsync(long chatObjectId, CancellationToken token = default);
 
     /// <summary>
     /// 获取设备类型

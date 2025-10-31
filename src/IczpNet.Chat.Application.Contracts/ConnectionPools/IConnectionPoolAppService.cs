@@ -93,14 +93,14 @@ public interface IConnectionPoolAppService
     /// 更新用户连接数量
     /// </summary>
     /// <returns></returns>
-    Task<int> UpdateUserConnectionIdsAsync(Guid userId);
+    Task<int> UpdateUserAsync(Guid userId);
 
     /// <summary>
     /// 更新聊天对象连接数量
     /// </summary>
     /// <param name="chatObjectId"></param>
     /// <returns></returns>
-    Task<int> UpdateChatObjectConnectionIdsAsync(long chatObjectId);
+    Task<int> UpdateChatObjectAsync(long chatObjectId);
 
     /// <summary>
     /// 强制断开连接
