@@ -117,8 +117,8 @@ public class ConnectionPoolManager(
     /// <returns></returns>
     public async Task<ConnectionPoolCacheItem> UpdateActiveTimeAsync(string connectionId, CancellationToken token = default)
     {
-        // 刷新连接ID列表缓存
-        await AllConnectIdListSetCache.RefreshAsync(ConnectionIdListSetCacheKey, () => DistributedCacheEntryOptions, token: token);
+        //// 刷新连接ID列表缓存
+        //await AllConnectIdListSetCache.RefreshAsync(ConnectionIdListSetCacheKey, () => DistributedCacheEntryOptions, token: token);
 
         var connectionPool = await ConnectionPoolCache.GetAsync(connectionId, token: token);
 
@@ -190,29 +190,29 @@ public class ConnectionPoolManager(
     /// <inheritdoc />
     public async Task ClearAllAsync(string host, CancellationToken token = default)
     {
+        Logger.LogInformation($"ClearAllAsync Start:{host},time:{Clock.Now}");
+
         var connectionIdListByHost = (await CreateQueryableAsync(token))
             .WhereIf(!string.IsNullOrWhiteSpace(host), x => x.Host == host)
             .ToList();
-
-        //foreach (var connectionPool in connectionIdListByHost)
-        //{
-        //    if (!string.IsNullOrWhiteSpace(host))
-        //    {
-        //        await DisconnectedInternalAsync(connectionPool, token);
-        //    }
-        //    else
-        //    {
-        //        await DeleteIndexAsync(connectionPool, token);
-        //    }
-        //}
 
         var keys = connectionIdListByHost.Select(x => GetKeyValues(x, token).Select(d => d.Key)).SelectMany(x => x).Distinct().ToList();
 
         await IndexListSetCache.DeleteManyAsync(keys, token: token);
 
-        Logger.LogInformation($"ClearAllAsync host:{host}");
+        Logger.LogInformation($"ClearAllAsync [{host}] {nameof(IndexListSetCache)} delete keys[{keys.Count}]:{keys.JoinAsString(",")}");
 
         await AllConnectIdListSetCache.DeleteAsync(ConnectionIdListSetCacheKey, token: token);
+
+        Logger.LogInformation($"ClearAllAsync [{host}] {nameof(AllConnectIdListSetCache)} delete key:{ConnectionIdListSetCacheKey}");
+
+        var connIdList = connectionIdListByHost.Select(x => x.ConnectionId).ToList();
+
+        await ConnectionPoolCache.RemoveManyAsync(connIdList, token: token);
+
+        Logger.LogInformation($"ClearAllAsync [{host}] {nameof(ConnectionPoolCache)} delete  keys[{connIdList.Count}]:{connIdList.JoinAsString(",")}");
+
+        Logger.LogInformation($"ClearAllAsync End:{host},time:{Clock.Now}");
     }
 
     /// <inheritdoc />
