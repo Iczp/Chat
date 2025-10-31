@@ -196,6 +196,12 @@ public class ChatObject : BaseTreeEntity<ChatObject, long>, IName, IChatObject, 
     public virtual string ServiceStatusDescription => ServiceStatus?.GetDescription();
 
     /// <summary>
+    /// 登录设备类型列表
+    /// </summary>
+    [NotMapped]
+    public virtual List<string> DeviceTypes => null;
+
+    /// <summary>
     /// 是否开发者
     /// </summary>
     public virtual bool IsDeveloper { get; protected set; } = false;

@@ -1,6 +1,7 @@
 ﻿using IczpNet.AbpTrees;
 using IczpNet.Chat.Enums;
 using System;
+using System.Collections.Generic;
 
 namespace IczpNet.Chat.ChatObjects;
 
@@ -80,4 +81,9 @@ public class ChatObjectInfo : TreeInfo<long>, IChatObject
     /// 
     /// </summary>
     public virtual string ServiceStatusDescription { get; set; }
+
+    /// <summary>
+    /// 登录设备类型
+    /// </summary>
+    public virtual List<string> DeviceTypes { get; set; }
 }

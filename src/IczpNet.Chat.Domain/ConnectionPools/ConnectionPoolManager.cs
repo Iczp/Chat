@@ -251,7 +251,7 @@ public class ConnectionPoolManager(
     /// <inheritdoc />
     public virtual async Task<int> UpdateIndexByUserAsync(Guid userId, CancellationToken token = default)
     {
-       return  await UpdateIndexInternalAsync(nameof(IndexCacheKey.UserId), userId, token: token);
+        return await UpdateIndexInternalAsync(nameof(IndexCacheKey.UserId), userId, token: token);
     }
 
     /// <inheritdoc />
@@ -292,7 +292,7 @@ public class ConnectionPoolManager(
 
         await IndexListSetCache.ReplaceAsync(deviceTypeKey, newDeviceTypeList, () => DistributedCacheEntryOptions, token: token);
 
-       return newConnIdList.Count;
+        return newConnIdList.Count;
     }
 
 
@@ -310,7 +310,7 @@ public class ConnectionPoolManager(
 
     public virtual async Task<IEnumerable<ConnectionPoolCacheItem>> GetListByChatObjectAsync(long chatObjectId, CancellationToken token = default)
     {
-        return  await GetListByIndexInternalAsync(nameof(IndexCacheKey.ChatObjectId), chatObjectId, token);
+        return await GetListByIndexInternalAsync(nameof(IndexCacheKey.ChatObjectId), chatObjectId, token);
     }
 
     public virtual async Task<IEnumerable<ConnectionPoolCacheItem>> GetListByUserAsync(Guid userId, CancellationToken token = default)
@@ -334,21 +334,21 @@ public class ConnectionPoolManager(
 
     public virtual async Task<List<string>> GetDeviceTypesAsync(long chatObjectId, CancellationToken token = default)
     {
-        return (List<string>)await IndexListSetCache.GetAsync(new IndexCacheKey(chatObjectId: chatObjectId, IndexCacheValueType.DeviceType), token: token);
+        return [.. await IndexListSetCache.GetAsync(new IndexCacheKey(chatObjectId: chatObjectId, IndexCacheValueType.DeviceType), token: token)];
     }
 
     public virtual async Task<List<string>> GetDeviceTypesAsync(Guid userId, CancellationToken token = default)
     {
-        return (List<string>)await IndexListSetCache.GetAsync(new IndexCacheKey(userId: userId, IndexCacheValueType.DeviceType), token: token);
+        return [.. (await IndexListSetCache.GetAsync(new IndexCacheKey(userId: userId, IndexCacheValueType.DeviceType), token: token))];
     }
 
     public async Task<int> GetCountByUserAsync(Guid userId, CancellationToken token = default)
     {
-        return (await GetDeviceTypesAsync(userId)).Count;
+        return (await GetDeviceTypesAsync(userId, token)).Count;
     }
 
     public async Task<int> GetCountByChatObjectAsync(long chatObjectId, CancellationToken token = default)
     {
-        return (await GetDeviceTypesAsync(chatObjectId)).Count;
+        return (await GetDeviceTypesAsync(chatObjectId, token)).Count;
     }
 }
