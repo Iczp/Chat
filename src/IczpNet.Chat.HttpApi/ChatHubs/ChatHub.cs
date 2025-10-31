@@ -103,9 +103,9 @@ public class ChatHub(
 
             Logger.LogInformation($"[OnConnectedAsync] connectedEto= {connectedEto}");
 
-            await ConnectionPoolManager.AddAsync(connectedEto);
+            await ConnectionPoolManager.ConnectedAsync(connectedEto);
 
-            await HubCallerContextManager.AddAsync(Context, connectedEto);
+            await HubCallerContextManager.ConnectedAsync(Context, connectedEto);
 
             //await Clients.User(CurrentUser.Id?.ToString()).ReceivedMessage(new CommandPayload()
             //{
@@ -149,7 +149,7 @@ public class ChatHub(
             var cancellationToken = new CancellationTokenSource().Token;
 
             // 注：这里的删除操作可能会被取消，所以需要捕获TaskCanceledException异常
-            await HubCallerContextManager.RemoveAsync(connectionId);
+            await HubCallerContextManager.DisconnectedAsyncAsync(connectionId);
 
             // 删除前获取连接
             var connection = await ConnectionPoolManager.GetAsync(connectionId, cancellationToken);
@@ -159,7 +159,7 @@ public class ChatHub(
                 : new DisconnectedEto(connectionId);
 
             // 删除连接
-            await ConnectionPoolManager.RemoveAsync(connectionId, cancellationToken);
+            await ConnectionPoolManager.DisconnectedAsync(connectionId, cancellationToken);
 
             // 发布事件
             await DistributedEventBus.PublishAsync(disconnectedEto, onUnitOfWorkComplete: false);
@@ -177,7 +177,7 @@ public class ChatHub(
         {
             Logger.LogWarning(ex, $"[OnDisconnectedAsync] TaskCanceledException while deleting connection {connectionId}. UserName: {userName}");
             // 使用同步方法删除连接池
-            await ConnectionPoolManager.RemoveAsync(connectionId);
+            await ConnectionPoolManager.DisconnectedAsync(connectionId);
         }
         catch (Exception ex)
         {

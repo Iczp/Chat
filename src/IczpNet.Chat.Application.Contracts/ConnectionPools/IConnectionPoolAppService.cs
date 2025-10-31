@@ -20,6 +20,7 @@ public interface IConnectionPoolAppService
     /// </summary>
     /// <returns></returns>
     Task<PagedResultDto<ConnectionPoolDto>> GetListAsync(ConnectionPoolGetListInput input);
+
     /// <summary>
     /// 获取在线人数列表(聊天对象)
     /// </summary>
@@ -28,10 +29,25 @@ public interface IConnectionPoolAppService
     Task<PagedResultDto<ConnectionPoolDto>> GetListByChatObjectAsync(List<long> chatObjectIdList);
 
     /// <summary>
+    ///  
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    Task<PagedResultDto<ConnectionPoolDto>> GetListByUserAsync(ConnectionPoolGetListInput input);
+
+    /// <summary>
     /// 获取在线人数列表(当前用户)
     /// </summary>
     /// <returns></returns>
     Task<PagedResultDto<ConnectionPoolDto>> GetListByCurrentUserAsync(ConnectionPoolGetListInput input);
+
+    /// <summary>
+    ///  
+    /// </summary>
+    /// <param name="chatObjectId"></param>
+    /// <returns></returns>
+    Task<PagedResultDto<ConnectionPoolDto>> GetListByChatObjectAsync(long chatObjectId);
+
     /// <summary>
     /// 获取连接
     /// </summary>
@@ -59,26 +75,32 @@ public interface IConnectionPoolAppService
     /// <returns></returns>
     Task<int> UpdateConnectionIdsAsync();
 
+    /// <summary>
+    /// 获取用户连接
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <returns></returns>
+    Task<List<string>> GetConnectionIdsByUserAsync(Guid userId);
 
     /// <summary>
     /// 获取用户连接
     /// </summary>
     /// <param name="userId"></param>
     /// <returns></returns>
-    Task<List<string>> GetConnectionIdsByUserIdAsync(Guid userId);
-
-    /// <summary>
-    /// 获取用户连接
-    /// </summary>
-    /// <param name="userId"></param>
-    /// <returns></returns>
-    Task<int> GetCountByUserIdAsync(Guid userId);
+    Task<int> GetCountByUserAsync(Guid userId);
 
     /// <summary>
     /// 更新用户连接数量
     /// </summary>
     /// <returns></returns>
     Task<int> UpdateUserConnectionIdsAsync(Guid userId);
+
+    /// <summary>
+    /// 更新聊天对象连接数量
+    /// </summary>
+    /// <param name="chatObjectId"></param>
+    /// <returns></returns>
+    Task<int> UpdateChatObjectConnectionIdsAsync(long chatObjectId);
 
     /// <summary>
     /// 强制断开连接

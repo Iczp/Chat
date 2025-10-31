@@ -17,7 +17,7 @@ public interface IConnectionPoolManager
     /// <param name="connectionPool"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<bool> AddAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default);
+    Task<bool> ConnectedAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default);
 
     /// <summary>
     /// 设置活跃时间
@@ -30,18 +30,10 @@ public interface IConnectionPoolManager
     /// <summary>
     /// 移除连接
     /// </summary>
-    /// <param name="connectionPool"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<bool> RemoveAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default);
-
-    /// <summary>
-    /// 移除连接
-    /// </summary>
     /// <param name="connectionId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<bool> RemoveAsync(string connectionId, CancellationToken token = default);
+    Task<bool> DisconnectedAsync(string connectionId, CancellationToken token = default);
 
     ///// <summary>
     ///// 移除连接
@@ -55,14 +47,23 @@ public interface IConnectionPoolManager
     /// <param name="host"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<int> GetTotalCountAsync(string host, CancellationToken token = default);
+    Task<int> GetTotalCountAsync(string host = null, CancellationToken token = default);
 
     /// <summary>
-    /// 获取连接数量
+    /// 是否在线（用户）
     /// </summary>
+    /// <param name="userId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<int> GetTotalCountAsync(CancellationToken token = default);
+    Task<bool> IsOnlineAsync(Guid userId, CancellationToken token = default);
+
+    /// <summary>
+    /// 是否在线（聊天对象）
+    /// </summary>
+    /// <param name="chatObjectId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<bool> IsOnlineAsync(long chatObjectId, CancellationToken token = default);
 
     /// <summary>
     /// 获取所有连接
@@ -107,7 +108,7 @@ public interface IConnectionPoolManager
     /// <param name="userId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<IEnumerable<ConnectionPoolCacheItem>> GetListByUserIdAsync(Guid userId, CancellationToken token = default);
+    Task<IEnumerable<ConnectionPoolCacheItem>> GetListByUserAsync(Guid userId, CancellationToken token = default);
 
     /// <summary>
     /// 获取用户连接
@@ -115,7 +116,7 @@ public interface IConnectionPoolManager
     /// <param name="userId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<List<string>> GetConnectionIdsByUserIdAsync(Guid userId, CancellationToken token = default);
+    Task<List<string>> GetConnectionIdsByUserAsync(Guid userId, CancellationToken token = default);
 
     /// <summary>
     /// 更新连接数量
@@ -126,12 +127,18 @@ public interface IConnectionPoolManager
     Task<int> UpdateUserConnectionIdsAsync(Guid userId, CancellationToken token = default);
 
     /// <summary>
-    /// 
+    /// 更新连接数量
     /// </summary>
-    /// <param name="chatObjectIdList"></param>
+    /// <param name="chatObjectId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<List<ConnectionPoolCacheItem>> GetListByChatObjectIdAsync(List<long> chatObjectIdList, CancellationToken token = default);
+    Task<int> UpdateChatObjectConnectionIdsAsync(long chatObjectId, CancellationToken token = default);
 
-
+    /// <summary>
+    /// 获取设备类型
+    /// </summary>
+    /// <param name="chatObjectId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<IEnumerable<ConnectionPoolCacheItem>> GetListByChatObjectAsync(long chatObjectId, CancellationToken token = default);
 }

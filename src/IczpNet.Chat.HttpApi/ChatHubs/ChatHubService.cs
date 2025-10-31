@@ -68,20 +68,32 @@ public abstract class ChatHubService : DomainService
     /// 发送给朋友
     /// </summary>
     /// <param name="userId"></param>
-    /// <param name="commandPayload"></param>
+    /// <param name="command"></param>
+    /// <param name="connectionPool"></param>
     /// <returns></returns>
-    protected virtual async Task SendToFriendsAsync(Guid userId, CommandPayload commandPayload)
+    protected virtual async Task SendToFriendsAsync(Guid userId, string command, ConnectionPoolCacheItem connectionPool)
     {
         var firendConnectionList = await GetFriendsConnectionIdsAsync(userId);
 
         var firendConnectionIdList = firendConnectionList.Select(x => x.ConnectionId).ToList();
 
-        Logger.LogInformation($"Send [{nameof(IChatClient.ReceivedMessage)}] FriendsCount:{firendConnectionIdList.Count},commandPayload={JsonSerializer.Serialize(commandPayload)}");
+        Logger.LogInformation($"Send [{nameof(IChatClient.ReceivedMessage)}] FriendsCount:{firendConnectionIdList.Count},command={command}");
 
-        foreach( var firendsConnection in firendConnectionList)
+        foreach (var firendsConnection in firendConnectionList)
         {
-            //修改为当前用户
-            commandPayload.AppUserId = firendsConnection.UserId;
+            var commandPayload = new CommandPayload
+            {
+                AppUserId = firendsConnection.UserId,
+                Scopes = [],
+                Command = command,
+                Payload = new FriendStatus()
+                {
+                    UserId = connectionPool.UserId,
+                    ChatObjectIdList = connectionPool.ChatObjectIdList,
+                    DeviceTypes = [connectionPool.DeviceType],
+                    LastActiveTime = connectionPool.ActiveTime ?? connectionPool.CreationTime,
+                },
+            };
 
             await HubContext.Clients.Client(firendsConnection.ConnectionId).ReceivedMessage(commandPayload);
 

@@ -655,4 +655,17 @@ public class SessionUnitAppService(
 
         return sessionUnitList.Count;
     }
+
+    /// <summary>
+    /// 更新会话单元Ticks
+    /// </summary>
+    /// <param name="senderSessionUnitId"></param>
+    /// <param name="ticks"></param>
+    /// <returns></returns>
+
+    [HttpPost]
+    public async Task<long> UpdateTicksAsync(Guid senderSessionUnitId, long? ticks)
+    {
+       return  await Repository.UpdateTicksAsync(senderSessionUnitId, ticks);
+    }
 }

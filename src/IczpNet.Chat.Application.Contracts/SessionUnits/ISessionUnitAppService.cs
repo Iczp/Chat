@@ -62,4 +62,12 @@ public interface ISessionUnitAppService
     /// <param name="chatObjectId"></param>
     /// <returns></returns>
     Task<int> GenerateDefaultSessionAsync(long chatObjectId);
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="senderSessionUnitId"></param>
+    /// <param name="ticks"></param>
+    /// <returns></returns>
+    Task<long> UpdateTicksAsync(Guid senderSessionUnitId, long? ticks);
 }

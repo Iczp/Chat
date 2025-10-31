@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.ServiceStates;
 using System;
@@ -10,6 +11,9 @@ namespace IczpNet.Chat.ChatObjects;
 public class ChatObjectServiceStutusResolver<TOut> : DomainService, IValueResolver<ChatObject, TOut, ServiceStatus?>, ITransientDependency
 {
     public IServiceStateManager ServiceStateManager { get; set; }
+
+    public IConnectionPoolManager ConnectionPoolManager { get; set; }
+
     public ChatObjectServiceStutusResolver() { }
 
     public ServiceStatus? Resolve(ChatObject source, TOut destination, ServiceStatus? destMember, ResolutionContext context)
@@ -18,7 +22,13 @@ public class ChatObjectServiceStutusResolver<TOut> : DomainService, IValueResolv
 
         if (source.ObjectType.IsIn(ChatObjectTypeEnums.Personal, ChatObjectTypeEnums.Anonymous, ChatObjectTypeEnums.Customer, ChatObjectTypeEnums.ShopWaiter))
         {
-            return statues;
+            var isOnliine = ConnectionPoolManager.IsOnlineAsync(source.Id).Result;
+
+            if (isOnliine)
+            {
+                return ServiceStatus.Online;
+            }
+            return ServiceStatus.Offline;
         }
 
         if (source.ObjectType.IsIn(ChatObjectTypeEnums.ShopKeeper))

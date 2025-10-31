@@ -15,7 +15,7 @@ public class CallerContextManager : ChatHubService, ICallerContextManager
     /// </summary>
     private static readonly ConcurrentDictionary<string, CallerContext> ConnectionIdToContextMap = new();
 
-    public virtual Task<CallerContext> AddAsync(CallerContext caller)
+    public virtual Task<CallerContext> ConnectedAsync(CallerContext caller)
     {
         var connectionId = caller.Context.ConnectionId;
 
@@ -24,12 +24,12 @@ public class CallerContextManager : ChatHubService, ICallerContextManager
         return Task.FromResult(caller);
     }
 
-    public virtual Task<CallerContext> AddAsync(HubCallerContext context, ConnectedEto connectedEto)
+    public virtual Task<CallerContext> ConnectedAsync(HubCallerContext context, ConnectedEto connectedEto)
     {
-        return AddAsync(new CallerContext(context, connectedEto));
+        return ConnectedAsync(new CallerContext(context, connectedEto));
     }
 
-    public virtual Task<bool> RemoveAsync(string connectionId)
+    public virtual Task<bool> DisconnectedAsyncAsync(string connectionId)
     {
         var result = ConnectionIdToContextMap.TryRemove(connectionId, out _);
 

@@ -17,18 +17,6 @@ public class ConnectedDistributedEventHandler(IUnitOfWorkManager unitOfWorkManag
     {
         Logger.LogInformation($"{nameof(ConnectedDistributedEventHandler)} received eventData[{nameof(ConnectedEto)}]:{eventData}");
 
-        //var totalCount = await ConnectionPoolManager.GetTotalCountAsync();
-
-        //var commandPayload = new CommandPayload()
-        //{
-        //    AppUserId = eventData.UserId,
-        //    Scopes = [],
-        //    Command = "connected",
-        //    Payload = eventData,
-        //};
-
-        //Logger.LogInformation($"Send [{nameof(IChatClient.ReceivedMessage)}]:{totalCount},commandPayload={JsonSerializer.Serialize(commandPayload)}");
-
         // 分布式事件要开启工作单元
         using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
 
@@ -42,13 +30,7 @@ public class ConnectedDistributedEventHandler(IUnitOfWorkManager unitOfWorkManag
         });
 
         // 发送到我的朋友 
-        await SendToFriendsAsync(eventData.UserId.Value, new CommandPayload()
-        {
-            //AppUserId = eventData.UserId,
-            Scopes = [],
-            Command = CommandConsts.FriendOnline,
-            Payload = eventData,
-        });
+        await SendToFriendsAsync(eventData.UserId.Value, CommandConsts.FriendOnline, eventData);
 
         await uow.CompleteAsync();
     }
