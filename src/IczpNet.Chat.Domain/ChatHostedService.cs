@@ -18,14 +18,14 @@ public class ChatHostedService(IConnectionPoolManager connectionPoolManager,
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         Logger.LogWarning($"App Start,HostName:{CurrentHosted.Name}");
-        await ConnectionPoolManager.ClearAllAsync(CurrentHosted.Name, cancellationToken);
+        await ConnectionPoolManager.ClearAllAsync(CurrentHosted.Name, "App Start", cancellationToken);
         await Task.CompletedTask;
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
         Logger.LogWarning($"App Stop,HostName:{CurrentHosted.Name}");
-        await ConnectionPoolManager.ClearAllAsync(CurrentHosted.Name, cancellationToken);
+        await ConnectionPoolManager.ClearAllAsync(CurrentHosted.Name, "App Stop", cancellationToken);
         await Task.CompletedTask;
     }
 }

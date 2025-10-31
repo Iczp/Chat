@@ -11,15 +11,16 @@ using Volo.Abp.Uow;
 namespace IczpNet.Chat.Connections;
 
 public class ConnectedDistributedEventHandler(
-
+    IUnitOfWorkManager unitOfWorkManager,
     ILocalEventBus localEventBus,
     IConnectionManager connectionManager) : DomainService, IDistributedEventHandler<ConnectedEto>, ITransientDependency
 {
+    public IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
     public ILocalEventBus LocalEventBus { get; } = localEventBus;
     public IConnectionManager ConnectionManager { get; } = connectionManager;
     public ICurrentHosted CurrentHosted => LazyServiceProvider.LazyGetRequiredService<ICurrentHosted>();
 
-    [UnitOfWork]
+    //[UnitOfWork]
     public async Task HandleEventAsync(ConnectedEto eventData)
     {
         //await ConnectionPoolManager.AddAsync(eventData);
@@ -29,6 +30,9 @@ public class ConnectedDistributedEventHandler(
             Logger.LogInformation($"{nameof(ConnectedDistributedEventHandler)} 不在同一主机，不处理，CurrentHosted.Name={CurrentHosted.Name}");
             return;
         }
+
+        // 分布式事件要开启工作单元
+        using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
 
         await ConnectionManager.CreateAsync(new Connection(eventData.ConnectionId, eventData.ChatObjectIdList)
         {
@@ -42,6 +46,8 @@ public class ConnectedDistributedEventHandler(
         });
 
         Logger.LogInformation($"{nameof(ConnectedDistributedEventHandler)} 处理事件：{eventData}");
+
+        await uow.CompleteAsync();
 
     }
 }
