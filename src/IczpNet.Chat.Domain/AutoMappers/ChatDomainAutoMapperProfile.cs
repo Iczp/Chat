@@ -24,7 +24,8 @@ public class ChatApplicationAutoMapperProfile : Profile
 
         //ChatObject
         CreateMap<ChatObject, ChatObjectInfo>()
-            .ForMember(x => x.ServiceStatus, opts => opts.MapFrom<ChatObjectInfoServiceStutusResolver>()); ;
+            //.ForMember(x => x.ServiceStatus, opts => opts.MapFrom<ChatObjectInfoServiceStutusResolver>())
+            .ForMember(x => x.DeviceTypes, opts => opts.MapFrom<ChatObjectInfoServiceStutusResolver>());
 
         //Message
         CreateMap<Message, MessageInfo>().MaxDepth(3);
