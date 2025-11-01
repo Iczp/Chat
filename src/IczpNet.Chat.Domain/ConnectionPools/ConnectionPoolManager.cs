@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.Connections;
+﻿using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.Connections;
 using IczpNet.Chat.SetLists;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
@@ -34,7 +35,7 @@ public class ConnectionPoolManager(
     /// <summary>
     /// 连接池缓存Key
     /// </summary>
-    protected virtual string ConnectionIdListSetCacheKey => Config.ConnectionIdsCacheKey + ":DistributedCacheListSet";
+    protected virtual string ConnectionIdListSetCacheKey => Config.AllConnectionsCacheKey;
 
     /// <summary>
     /// 连接池缓存
@@ -296,7 +297,7 @@ public class ConnectionPoolManager(
     }
 
 
-    protected virtual async Task<IEnumerable<ConnectionPoolCacheItem>> GetListByIndexInternalAsync(string propertyName, dynamic value, CancellationToken token = default)
+    protected virtual async Task<IEnumerable<ConnectionPoolCacheItem>> GetListBySingleIndexInternalAsync(string propertyName, dynamic value, CancellationToken token = default)
     {
         var key = new IndexCacheKey(propertyName, value, IndexCacheValueType.ConnectionId);
 
@@ -306,16 +307,36 @@ public class ConnectionPoolManager(
 
         return res.Select(x => x.Value);
     }
+    public virtual async Task<IEnumerable<ConnectionPoolCacheItem>> GetListByManyIndexInternalAsync(string propertyName, IEnumerable<dynamic> values, CancellationToken token = default)
+    {
+        var keyValues = values.Select(x => new IndexCacheKey(propertyName, x, IndexCacheValueType.ConnectionId));
+
+        var connIdList = (await IndexListSetCache.GetManyAsync(keyValues, token: token)).SelectMany(x => x.Value);
+
+        var res = await ConnectionPoolCache.GetManyAsync(connIdList, token: token);
+
+        return res.Select(x => x.Value);
+    }
 
 
     public virtual async Task<IEnumerable<ConnectionPoolCacheItem>> GetListByChatObjectAsync(long chatObjectId, CancellationToken token = default)
     {
-        return await GetListByIndexInternalAsync(nameof(IndexCacheKey.ChatObjectId), chatObjectId, token);
+        return await GetListBySingleIndexInternalAsync(nameof(IndexCacheKey.ChatObjectId), chatObjectId, token);
+    }
+
+    public virtual async Task<IEnumerable<ConnectionPoolCacheItem>> GetListByChatObjectAsync(IEnumerable<long> chatObjectIdList, CancellationToken token = default)
+    {
+        return await GetListBySingleIndexInternalAsync(nameof(IndexCacheKey.ChatObjectId), chatObjectIdList, token);
     }
 
     public virtual async Task<IEnumerable<ConnectionPoolCacheItem>> GetListByUserAsync(Guid userId, CancellationToken token = default)
     {
-        return await GetListByIndexInternalAsync(nameof(IndexCacheKey.UserId), userId, token);
+        return await GetListBySingleIndexInternalAsync(nameof(IndexCacheKey.UserId), userId, token);
+    }
+
+    public virtual async Task<IEnumerable<ConnectionPoolCacheItem>> GetListByUserAsync(IEnumerable<Guid> userIdList, CancellationToken token = default)
+    {
+        return await GetListBySingleIndexInternalAsync(nameof(IndexCacheKey.UserId), userIdList, token);
     }
 
     public virtual async Task<bool> IsOnlineAsync(Guid userId, CancellationToken token = default)
