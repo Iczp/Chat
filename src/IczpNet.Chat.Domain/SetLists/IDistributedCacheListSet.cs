@@ -7,7 +7,11 @@ using System.Threading.Tasks;
 
 namespace IczpNet.Chat.SetLists;
 
-public interface IDistributedCacheListSet<TListItem, TKey>
+public interface IDistributedCacheListSet
+{
+
+}
+public interface IDistributedCacheListSet<TListItem, TKey> : IDistributedCacheListSet
 {
     Task<long> AddAsync(TKey key, IEnumerable<TListItem> items, Func<DistributedCacheEntryOptions> optionsFactory = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default);
 

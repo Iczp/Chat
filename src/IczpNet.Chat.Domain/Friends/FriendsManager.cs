@@ -44,11 +44,10 @@ public class FriendsManager(
         var friendList = await GetFriendsAsync(userId);
 
         // 注意朋友是： DestinationId 不是 OwnerId
-        var firendChatObjectIds = friendList.Select(x => x.DestinationId).Distinct().ToList();
+        var firendChatObjectIds = friendList.Select(x => x.DestinationId.Value).Distinct().ToList();
 
-        var onlineList = (await ConnectionPoolManager.CreateQueryableAsync())
+        var onlineList = (await ConnectionPoolManager.GetListByChatObjectAsync(firendChatObjectIds))
             .Where(x => x.UserId != userId)
-            .Where(x => x.ChatObjectIdList.Any(d => firendChatObjectIds.Contains(d)))
             .ToList();
 
         var list = onlineList.GroupBy(x => x.ChatObjectIdList.JoinAsString(","))

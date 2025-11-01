@@ -112,12 +112,28 @@ public interface IConnectionPoolManager
     Task<IEnumerable<ConnectionPoolCacheItem>> GetListByChatObjectAsync(long chatObjectId, CancellationToken token = default);
 
     /// <summary>
+    /// 获取聊天对象连接
+    /// </summary>
+    /// <param name="chatObjectIdList"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<IEnumerable<ConnectionPoolCacheItem>> GetListByChatObjectAsync(IEnumerable<long> chatObjectIdList, CancellationToken token = default);
+
+    /// <summary>
     /// 获取 用户 连接
     /// </summary>
     /// <param name="userId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
     Task<IEnumerable<ConnectionPoolCacheItem>> GetListByUserAsync(Guid userId, CancellationToken token = default);
+
+    /// <summary>
+    /// 获取 用户 连接
+    /// </summary>
+    /// <param name="userIdList"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<IEnumerable<ConnectionPoolCacheItem>> GetListByUserAsync(IEnumerable<Guid> userIdList, CancellationToken token = default);
 
     /// <summary>
     /// 是否在线（用户）
