@@ -1,6 +1,6 @@
 ﻿using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Connections;
-using IczpNet.Chat.SetLists;
+using IczpNet.Chat.ListSets;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

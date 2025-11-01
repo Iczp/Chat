@@ -1,7 +1,4 @@
-﻿using IczpNet.Chat.SetLists;
-using Microsoft.Extensions.Caching.Distributed;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Caching.Distributed;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +7,7 @@ using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Services;
 
-namespace IczpNet.Chat.SetLists
+namespace IczpNet.Chat.ListSets
 {
     /// <summary>
     /// 基于 IDistributedCache《IEnumerable《TListItem》, TKey》 的实现（非 Redis 原子），
@@ -49,7 +46,7 @@ namespace IczpNet.Chat.SetLists
             // group preserving first seen order
             var groups = keyValues
                 .GroupBy(kv => kv.Key)
-                .Select(g => new { Key = g.Key, Items = g.Select(kv => kv.Value).ToArray() })
+                .Select(g => new { g.Key, Items = g.Select(kv => kv.Value).ToArray() })
                 .ToArray();
 
             var results = new KeyValuePair<TKey, long>[groups.Length];
@@ -86,7 +83,7 @@ namespace IczpNet.Chat.SetLists
 
             var groups = keyValues
                 .GroupBy(kv => kv.Key)
-                .Select(g => new { Key = g.Key, Items = g.Select(kv => kv.Value).ToArray() })
+                .Select(g => new { g.Key, Items = g.Select(kv => kv.Value).ToArray() })
                 .ToArray();
 
             var results = new KeyValuePair<TKey, long>[groups.Length];
@@ -206,7 +203,7 @@ namespace IczpNet.Chat.SetLists
 
         internal async Task<IQueryable<TListItem>> CreateQueryableInternalAsync(TKey key, Func<DistributedCacheEntryOptions> optionsFactory = null, bool? hideErrors = null, bool considerUow = false, CancellationToken token = default)
         {
-            var list = await DistributedCache.GetOrAddAsync(key, () => Task.FromResult<IEnumerable<TListItem>>(Enumerable.Empty<TListItem>()), optionsFactory, hideErrors, considerUow, token).ConfigureAwait(false);
+            var list = await DistributedCache.GetOrAddAsync(key, () => Task.FromResult(Enumerable.Empty<TListItem>()), optionsFactory, hideErrors, considerUow, token).ConfigureAwait(false);
             return (list ?? Enumerable.Empty<TListItem>()).AsQueryable();
         }
 
