@@ -34,7 +34,7 @@ public class ConnectionPoolManager(
     /// <summary>
     /// 连接池缓存Key
     /// </summary>
-    protected virtual string ConnectionIdListSetCacheKey => Config.ConnectionIdsCacheKey + ":DistributedCacheListSet";
+    protected virtual string ConnectionIdListSetCacheKey => Config.ConnectionIdsCacheKey;
 
     /// <summary>
     /// 连接池缓存
