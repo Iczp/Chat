@@ -61,7 +61,7 @@ public class ChatObjectManager(IChatObjectRepository repository) : TreeManager<C
     {
         Assert.If(await Repository.AnyAsync(x => x.Name == inputEntity.Name), $"Already exists Name:{inputEntity.Name}");
 
-        Assert.If(!inputEntity.Code.IsNullOrEmpty() && await Repository.AnyAsync(x => x.Code == inputEntity.Code), $"Already exists Code:{inputEntity.Code}");
+        Assert.If(!inputEntity.Code.IsNullOrEmpty() && await Repository.AnyAsync(x => x.Code == inputEntity.Code), $"Already exists CodeConnectionId:{inputEntity.Code}");
     }
 
     protected override async Task CheckExistsByUpdateAsync(ChatObject inputEntity)

@@ -10,7 +10,7 @@ namespace IczpNet.Chat.Controllers;
 
 [Area(ChatRemoteServiceConsts.ModuleName)]
 [RemoteService(Name = ChatRemoteServiceConsts.RemoteServiceName)]
-[Route($"/api/{ChatRemoteServiceConsts.ModuleName}/signalR")]
+[Route($"/api/{ChatRemoteServiceConsts.ModuleName}/signalr")]
 public class SignalRController(IHubContext<ChatHub, IChatClient> hubContext) : ChatController
 {
     protected IHubContext<ChatHub, IChatClient> HubContext { get; } = hubContext;

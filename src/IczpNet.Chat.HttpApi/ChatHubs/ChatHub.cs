@@ -137,7 +137,7 @@ public class ChatHub(
 
         Logger.LogInformation(exception, $"[OnDisconnected],Exception:{exception?.Message}");
 
-        Logger.LogInformation($"[OnDisconnected],ConnectionId:{connectionId}.UserName: {userName}");
+        Logger.LogInformation($"[OnDisconnected],UserId:{connectionId}.UserName: {userName}");
 
         if (CurrentUser.Id.HasValue)
         {
