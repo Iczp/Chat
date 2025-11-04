@@ -49,7 +49,7 @@ public class EntryNameDataSeedContributor(
                 IsStatic = true,
                 IsPublic = true,
             });
-            Logger.LogInformation($"Add {nameof(EntryName)},id={entity.Id},Code ={entity.Name}");
+            Logger.LogInformation($"Add {nameof(EntryName)},id={entity.Id},CodeConnectionId ={entity.Name}");
         }
     }
 }

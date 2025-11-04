@@ -2,7 +2,7 @@
 
 namespace IczpNet.Chat.ConnectionPools;
 
-public class IndexCacheKey
+public class IndexCacheKey: IIndexCacheKey
 {
     public long? ChatObjectId { get; set; }
 
