@@ -101,6 +101,8 @@ public class QrLoginManager(IOptions<QrLoginOption> options,
     {
         var genarateInfo = await GetGenerateInfoAsync(qrText);
 
+        Assert.If(genarateInfo.ScanUserId.HasValue && genarateInfo.ScanUserId != CurrentUser.Id, "已经失效：其他用户已经扫码", "E106");
+
         genarateInfo.ScanUserId = CurrentUser.GetId();
 
         // 回写
