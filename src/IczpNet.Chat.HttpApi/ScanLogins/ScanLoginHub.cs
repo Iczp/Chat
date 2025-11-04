@@ -70,7 +70,7 @@ public class ScanLoginHub(
 
         await Clients.Caller.ReceivedMessage(new LoginCommandPayload()
         {
-            Command = "Welcome",
+            Command = ScanLoginCommandConsts.Welcome,
             Payload = connectionPool,
         });
 

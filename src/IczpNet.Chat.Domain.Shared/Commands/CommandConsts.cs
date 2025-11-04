@@ -15,6 +15,11 @@ public class CommandConsts
 
 
     /// <summary>
+    /// 欢迎 default：welcome
+    /// </summary>
+    public static string Welcome { get; set; } = nameof(Welcome).ToLower();
+
+    /// <summary>
     /// 新消息 default: created@message
     /// </summary>
     public static string MessageCreated { get; set; } = "created@message";
@@ -58,5 +63,10 @@ public class CommandConsts
     /// 好友下线了 default: offline@friend
     /// </summary>
     public static string FriendOffline { get; set; } = "offline@friend";
-    
+
+    /// <summary>
+    /// 踢出 default: kicked
+    /// </summary>
+    public static string Kicked { get; set; } = nameof(Kicked).ToLower();
+
 }

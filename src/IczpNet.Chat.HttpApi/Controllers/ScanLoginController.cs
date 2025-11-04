@@ -46,7 +46,7 @@ public class ScanLoginController(IHubContext<ScanLoginHub, IScanLoginClient> hub
 
         await HubContext.Clients.Clients([res.ConnectionId]).ReceivedMessage(new LoginCommandPayload()
         {
-            Command = "scanned",
+            Command = ScanLoginCommandConsts.Scanned,
             Payload = res
         });
         return res;
@@ -66,14 +66,14 @@ public class ScanLoginController(IHubContext<ScanLoginHub, IScanLoginClient> hub
 
         await HubContext.Clients.Clients([res.ConnectionId]).ReceivedMessage(new LoginCommandPayload()
         {
-            Command = "granted",
+            Command = ScanLoginCommandConsts.Granted,
             Payload = res
         });
         return res;
     }
 
     /// <summary>
-    /// 授权登录
+    /// 拒绝授权
     /// </summary>
     /// <param name="scanText"></param>
     /// <param name="reason"></param>
@@ -87,7 +87,7 @@ public class ScanLoginController(IHubContext<ScanLoginHub, IScanLoginClient> hub
 
         await HubContext.Clients.Clients([res.ConnectionId]).ReceivedMessage(new LoginCommandPayload()
         {
-            Command = "rejected",
+            Command = ScanLoginCommandConsts.Rejected,
             Payload = res
         });
         return res;

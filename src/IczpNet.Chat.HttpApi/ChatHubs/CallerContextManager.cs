@@ -46,7 +46,7 @@ public class CallerContextManager : ChatHubService, ICallerContextManager
             {
                 AppUserId = callerContext.Connect.UserId,
                 Scopes = [],
-                Command = "kicked",
+                Command = CommandConsts.Kicked,
                 Payload = new
                 {
                     Reason = reason
