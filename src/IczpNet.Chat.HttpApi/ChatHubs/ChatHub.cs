@@ -1,11 +1,11 @@
-﻿using IczpNet.AbpCommons.Extensions;
-using IczpNet.Chat.ChatObjects;
+﻿using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Connections;
 using IczpNet.Chat.Devices;
 using IczpNet.Chat.Hosting;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using System;
@@ -56,13 +56,51 @@ public class ChatHub(
     public ICallerContextManager HubCallerContextManager { get; } = hubCallerContextManager;
     public IConnectionPoolManager ConnectionPoolManager { get; } = connectionPoolManager;
 
+
+    protected async Task<ConnectedEto> BuildInfoAsync()
+    {
+        var httpContext = Context.GetHttpContext();
+
+        var appId = CurrentUser.GetAppId() ?? httpContext?.Request.Query["appId"];
+
+        var deviceId = CurrentUser.GetDeviceId() ?? httpContext?.Request.Query["deviceId"];
+
+        var deviceType = CurrentUser.GetDeviceType() ?? httpContext?.Request.Query["deviceType"];
+
+        var queryId = httpContext?.Request.Query["id"];
+
+        Logger.LogWarning($"DeviceId:{deviceId}");
+
+        var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+
+        Logger.LogWarning($"chatObjectIdList:[{chatObjectIdList.JoinAsString(",")}]");
+
+        var connectedEto = new ConnectedEto()
+        {
+            AppId = appId,
+            QueryId = queryId,
+            ClientId = CurrentClient.Id,
+            ConnectionId = Context.ConnectionId,
+            Host = CurrentHosted.Name,
+            IpAddress = WebClientInfoProvider.ClientIpAddress,
+            UserId = CurrentUser.Id,
+            UserName = CurrentUser.UserName,
+            DeviceId = deviceId,
+            DeviceType = deviceType,
+            BrowserInfo = WebClientInfoProvider.BrowserInfo,
+            DeviceInfo = WebClientInfoProvider.DeviceInfo,
+            CreationTime = Clock.Now,
+            ChatObjectIdList = chatObjectIdList,
+        };
+
+        return connectedEto;
+
+    }
     [UnitOfWork]
     public override async Task OnConnectedAsync()
     {
         try
         {
-            var httpContext = Context.GetHttpContext();
-
             if (!CurrentUser.Id.HasValue)
             {
                 Logger.LogWarning($"User is null");
@@ -70,49 +108,22 @@ public class ChatHub(
                 return;
             }
 
-            var deviceId = CurrentUser.GetDeviceId() ?? httpContext?.Request.Query["deviceId"];
-
-            var deviceType = CurrentUser.GetDeviceType() ?? httpContext?.Request.Query["deviceType"];
-
-            var queryId = httpContext?.Request.Query["id"];
-
-            Logger.LogWarning($"DeviceId:{deviceId}");
-
-            await Groups.AddToGroupAsync(Context.ConnectionId, CurrentUser.Id.ToString());
-
-            var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
-
-            Logger.LogWarning($"chatObjectIdList:[{chatObjectIdList.JoinAsString(",")}]");
-
-            var connectedEto = new ConnectedEto()
-            {
-                QueryId = queryId,
-                ClientId = CurrentClient.Id,
-                ConnectionId = Context.ConnectionId,
-                Host = CurrentHosted.Name,
-                IpAddress = WebClientInfoProvider.ClientIpAddress,
-                UserId = CurrentUser.Id,
-                UserName = CurrentUser.UserName,
-                DeviceId = deviceId,
-                DeviceType = deviceType,
-                BrowserInfo = WebClientInfoProvider.BrowserInfo,
-                DeviceInfo = WebClientInfoProvider.DeviceInfo,
-                CreationTime = Clock.Now,
-                ChatObjectIdList = chatObjectIdList,
-            };
+            var connectedEto = await BuildInfoAsync();
 
             Logger.LogInformation($"[OnConnectedAsync] connectedEto= {connectedEto}");
+
+            await Groups.AddToGroupAsync(Context.ConnectionId, CurrentUser.Id.ToString());
 
             await ConnectionPoolManager.ConnectedAsync(connectedEto);
 
             await HubCallerContextManager.ConnectedAsync(Context, connectedEto);
 
-            //await Clients.User(CurrentUser.Id?.ToString()).ReceivedMessage(new CommandPayload()
-            //{
-            //    AppUserId = CurrentUser.Id,
-            //    Command = "Welcome",
-            //    Payload = connectedEto,
-            //});
+            await Clients.Caller.ReceivedMessage(new CommandPayload()
+            {
+                AppUserId = CurrentUser.Id,
+                Command = "Welcome",
+                Payload = connectedEto,
+            });
 
             // 发布事件
             await DistributedEventBus.PublishAsync(connectedEto, onUnitOfWorkComplete: false);

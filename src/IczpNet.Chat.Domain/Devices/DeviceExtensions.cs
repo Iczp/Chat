@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Volo.Abp.Users;
+﻿using Volo.Abp.Users;
 
 namespace IczpNet.Chat.Devices;
 
@@ -8,7 +6,20 @@ public static class DeviceExtensions
 {
     public const string DeviceIdClaim = "device_id";
 
+    public const string AppIdClaim = "app_id";
+
     public const string DeviceTypeClaim = "device_type";
+
+
+    /// <summary>
+    /// Get DeviceId by ICurrentUser
+    /// </summary>
+    /// <param name="currentUser"></param>
+    /// <returns></returns>
+    public static string GetAppId(this ICurrentUser currentUser)
+    {
+        return currentUser.FindClaimValue(AppIdClaim);
+    }
 
     /// <summary>
     /// Get DeviceId by ICurrentUser
