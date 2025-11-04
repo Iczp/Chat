@@ -1,4 +1,4 @@
-﻿namespace IczpNet.Chat.QrLogins;
+﻿namespace IczpNet.Chat.ScanLogins;
 
 public class LoginCommandPayload
 {

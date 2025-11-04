@@ -1,6 +1,6 @@
 ﻿using IczpNet.Chat.ConnectionPools;
 
-namespace IczpNet.Chat.QrLogins;
+namespace IczpNet.Chat.ScanLogins;
 
 public interface IScanLoginConnectionPoolManager : IConnectionPoolManagerBase<ConnectionPool>
 {

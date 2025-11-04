@@ -1,9 +1,9 @@
 ﻿using IczpNet.Chat.CommandPayloads;
 using System.Threading.Tasks;
 
-namespace IczpNet.Chat.QrLogins;
+namespace IczpNet.Chat.ScanLogins;
 
-public interface IQrLoginClient
+public interface IScanLoginClient
 {
     Task ReceivedMessage(LoginCommandPayload pushPayload);
 }

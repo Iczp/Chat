@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace IczpNet.Chat.QrLogins;
+namespace IczpNet.Chat.ScanLogins;
 
 public class CodeConnectionId(string connectionId)
 {

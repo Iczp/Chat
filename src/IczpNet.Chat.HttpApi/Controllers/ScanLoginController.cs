@@ -1,5 +1,4 @@
-﻿using IczpNet.AbpCommons.Dtos;
-using IczpNet.Chat.QrLogins;
+﻿using IczpNet.Chat.ScanLogins;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -11,12 +10,12 @@ namespace IczpNet.Chat.Controllers;
 
 [Area(ChatRemoteServiceConsts.ModuleName)]
 [RemoteService(Name = ChatRemoteServiceConsts.RemoteServiceName)]
-[Route($"/api/{ChatRemoteServiceConsts.ModuleName}/qr-login")]
-public class QrLoginController(IHubContext<QrLoginHub, IQrLoginClient> hubContext,
-    IQrLoginManager qrLoginManager) : ChatController
+[Route($"/api/{ChatRemoteServiceConsts.ModuleName}/scan-login")]
+public class ScanLoginController(IHubContext<ScanLoginHub, IScanLoginClient> hubContext,
+    IScanLoginManager scanLoginManager) : ChatController
 {
-    protected IHubContext<QrLoginHub, IQrLoginClient> HubContext { get; } = hubContext;
-    public IQrLoginManager QrLoginManager { get; } = qrLoginManager;
+    protected IHubContext<ScanLoginHub, IScanLoginClient> HubContext { get; } = hubContext;
+    public IScanLoginManager ScanLoginManager { get; } = scanLoginManager;
 
     [HttpPost]
     [Route("send")]
@@ -30,20 +29,20 @@ public class QrLoginController(IHubContext<QrLoginHub, IQrLoginClient> hubContex
     [Route("generate")]
     public async Task<GenerateInfo> GenerateAsync([Required] string connectionId)
     {
-        return await QrLoginManager.GenerateAsync(connectionId);
+        return await ScanLoginManager.GenerateAsync(connectionId);
     }
 
     /// <summary>
     /// 扫码结果
     /// </summary>
-    /// <param name="qrText"></param>
+    /// <param name="scanText"></param>
     /// <returns></returns>
     [HttpGet]
     [Route("scan")]
     [Authorize]
-    public async Task<GenerateInfo> ScanAsync([Required] string qrText)
+    public async Task<GenerateInfo> ScanAsync([Required] string scanText)
     {
-        var res = await QrLoginManager.ScanAsync(qrText);
+        var res = await ScanLoginManager.ScanAsync(scanText);
 
         await HubContext.Clients.Clients([res.ConnectionId]).ReceivedMessage(new LoginCommandPayload()
         {
@@ -56,14 +55,14 @@ public class QrLoginController(IHubContext<QrLoginHub, IQrLoginClient> hubContex
     /// <summary>
     /// 授权登录
     /// </summary>
-    /// <param name="qrText"></param>
+    /// <param name="scanText"></param>
     /// <returns></returns>
     [HttpGet]
     [Route("grant")]
     [Authorize]
-    public async Task<GrantedInfo> GrantAsync([Required] string qrText)
+    public async Task<GrantedInfo> GrantAsync([Required] string scanText)
     {
-        var res = await QrLoginManager.GrantAsync(qrText);
+        var res = await ScanLoginManager.GrantAsync(scanText);
 
         await HubContext.Clients.Clients([res.ConnectionId]).ReceivedMessage(new LoginCommandPayload()
         {
@@ -76,14 +75,15 @@ public class QrLoginController(IHubContext<QrLoginHub, IQrLoginClient> hubContex
     /// <summary>
     /// 授权登录
     /// </summary>
-    /// <param name="qrText"></param>
+    /// <param name="scanText"></param>
+    /// <param name="reason"></param>
     /// <returns></returns>
     [HttpGet]
     [Route("reject")]
     [Authorize]
-    public async Task<RejectInfo> RejectAsync([Required] string qrText)
+    public async Task<RejectInfo> RejectAsync([Required] string scanText, string reason)
     {
-        var res = await QrLoginManager.RejectAsync(qrText);
+        var res = await ScanLoginManager.RejectAsync(scanText, reason);
 
         await HubContext.Clients.Clients([res.ConnectionId]).ReceivedMessage(new LoginCommandPayload()
         {

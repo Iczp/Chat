@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace IczpNet.Chat.QrLogins;
+namespace IczpNet.Chat.ScanLogins;
 
 public class LoginActionEto
 {
@@ -14,5 +14,5 @@ public class LoginActionEto
 
     public string CliendId { get; set; }
 
-    public string QrLoginCode { get; set; }
+    public string LoginCode { get; set; }
 }

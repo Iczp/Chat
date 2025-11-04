@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace IczpNet.Chat.QrLogins;
+namespace IczpNet.Chat.ScanLogins;
 
 public class GrantedInfo()
 {
@@ -8,7 +8,7 @@ public class GrantedInfo()
 
     public Guid UserId { get; set; } 
 
-    public Guid QrLoginCode { get; set; }
+    public Guid LoginCode { get; set; }
 
     public DateTime ExpiredTime { get; set; }
 }

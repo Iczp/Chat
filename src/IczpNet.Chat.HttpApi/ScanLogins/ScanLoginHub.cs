@@ -11,14 +11,14 @@ using Volo.Abp.AspNetCore.SignalR;
 using Volo.Abp.AspNetCore.WebClientInfo;
 using Volo.Abp.Clients;
 
-namespace IczpNet.Chat.QrLogins;
+namespace IczpNet.Chat.ScanLogins;
 
 [Authorize]
-public class QrLoginHub(
+public class ScanLoginHub(
     IWebClientInfoProvider webClientInfoProvider,
     ICurrentHosted currentHosted,
     ICurrentClient currentClient,
-    IScanLoginConnectionPoolManager scanLoginConnectionPoolManager) : AbpHub<IQrLoginClient>
+    IScanLoginConnectionPoolManager scanLoginConnectionPoolManager) : AbpHub<IScanLoginClient>
 {
     public ICurrentClient CurrentClient { get; } = currentClient;
     public IWebClientInfoProvider WebClientInfoProvider { get; } = webClientInfoProvider;

@@ -1,4 +1,5 @@
 ﻿using IczpNet.AbpCommons;
+using IczpNet.Chat.ScanLogins;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -11,12 +12,12 @@ using Volo.Abp.Domain.Services;
 using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.Users;
 
-namespace IczpNet.Chat.QrLogins;
+namespace IczpNet.Chat.ScanLogins;
 
-public class QrLoginManager(IOptions<QrLoginOption> options,
+public class ScanLoginManager(IOptions<ScanLoginOption> options,
     IDistributedEventBus distributedEventBus,
     ICurrentUser currentUser,
-    ICurrentClient currentClient) : DomainService, IQrLoginManager
+    ICurrentClient currentClient) : DomainService, IScanLoginManager
 {
     public IDistributedCache<GenerateInfo, string> DistributedCache { get; set; }
 
@@ -24,12 +25,12 @@ public class QrLoginManager(IOptions<QrLoginOption> options,
 
     public IDistributedCache<GrantedInfo, Guid> GrantedDistributedCache { get; set; }
 
-    public IOptions<QrLoginOption> Options { get; } = options;
+    public IOptions<ScanLoginOption> Options { get; } = options;
     public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
     public ICurrentUser CurrentUser { get; } = currentUser;
     public ICurrentClient CurrentClient { get; } = currentClient;
 
-    protected QrLoginOption Config => Options.Value;
+    protected ScanLoginOption Config => Options.Value;
 
     protected virtual DistributedCacheEntryOptions DistributedCacheEntryOptions => new()
     {
@@ -38,13 +39,13 @@ public class QrLoginManager(IOptions<QrLoginOption> options,
 
     public async Task<GenerateInfo> GenerateAsync(string connectionId)
     {
-        var builder = new StringTemplateBuilder(Config.QrText);
+        var builder = new StringTemplateBuilder(Config.ScanTextTemplate);
 
         var res = await DistributedCache.GetAsync(connectionId);
 
-        if ((res != null))
+        if (res != null)
         {
-            builder.Parse(res.QrText);
+            builder.Parse(res.ScanText);
 
             if (builder.TryGet("code", out var strCode))
             {
@@ -64,7 +65,7 @@ public class QrLoginManager(IOptions<QrLoginOption> options,
         {
             ConnectionId = connectionId,
             ExpiredTime = Clock.Now.AddSeconds(Config.ExpiredSeconds),
-            QrText = builder.ToString()
+            ScanText = builder.ToString()
         };
 
         await DistributedCache.SetAsync(connectionId, result, DistributedCacheEntryOptions);
@@ -74,13 +75,13 @@ public class QrLoginManager(IOptions<QrLoginOption> options,
         return result;
     }
 
-    protected async Task<GenerateInfo> GetGenerateInfoAsync(string qrText)
+    protected async Task<GenerateInfo> GetGenerateInfoAsync(string scanText)
     {
         Assert.If(!CurrentUser.Id.HasValue, "请登录后操作", "E100");
 
-        var builder = new StringTemplateBuilder(Config.QrText);
+        var builder = new StringTemplateBuilder(Config.ScanTextTemplate);
 
-        Assert.If(!builder.TryToValues(qrText, out _), "无法识别", "E101");
+        Assert.If(!builder.TryToValues(scanText, out _), "无法识别", "E101");
 
         Assert.If(!builder.TryGet("code", out string reqCode), "无法识别[code]", "E102");
 
@@ -97,9 +98,9 @@ public class QrLoginManager(IOptions<QrLoginOption> options,
         return genarateInfo;
     }
 
-    public async Task<GenerateInfo> ScanAsync(string qrText)
+    public async Task<GenerateInfo> ScanAsync(string scanText)
     {
-        var genarateInfo = await GetGenerateInfoAsync(qrText);
+        var genarateInfo = await GetGenerateInfoAsync(scanText);
 
         Assert.If(genarateInfo.ScanUserId.HasValue && genarateInfo.ScanUserId != CurrentUser.Id, "已经失效：其他用户已经扫码", "E106");
 
@@ -122,9 +123,9 @@ public class QrLoginManager(IOptions<QrLoginOption> options,
     }
 
 
-    public async Task<GrantedInfo> GrantAsync(string qrText)
+    public async Task<GrantedInfo> GrantAsync(string scanText)
     {
-        var genarateInfo = await GetGenerateInfoAsync(qrText);
+        var genarateInfo = await GetGenerateInfoAsync(scanText);
 
         Assert.If(!genarateInfo.ScanUserId.HasValue, "请先扫码", "E301");
 
@@ -134,12 +135,12 @@ public class QrLoginManager(IOptions<QrLoginOption> options,
         var grantedInfo = new GrantedInfo()
         {
             ConnectionId = genarateInfo.ConnectionId,
-            QrLoginCode = Guid.NewGuid(),
+            LoginCode = Guid.NewGuid(),
             UserId = CurrentUser.Id.Value,
             ExpiredTime = Clock.Now.AddSeconds(Config.ExpiredSeconds),
         };
 
-        await GrantedDistributedCache.SetAsync(grantedInfo.QrLoginCode, grantedInfo);
+        await GrantedDistributedCache.SetAsync(grantedInfo.LoginCode, grantedInfo);
 
         //授权成功后删除
         await DistributedCache.RemoveAsync(genarateInfo.ConnectionId);
@@ -147,9 +148,9 @@ public class QrLoginManager(IOptions<QrLoginOption> options,
         return grantedInfo;
     }
 
-    public async Task<RejectInfo> RejectAsync(string qrText)
+    public async Task<RejectInfo> RejectAsync(string scanText, string reason)
     {
-        var genarateInfo = await GetGenerateInfoAsync(qrText);
+        var genarateInfo = await GetGenerateInfoAsync(scanText);
 
         Assert.If(!genarateInfo.ScanUserId.HasValue, "请先扫码", "E401");
 
@@ -157,18 +158,19 @@ public class QrLoginManager(IOptions<QrLoginOption> options,
 
         return new RejectInfo()
         {
-            ConnectionId = genarateInfo.ConnectionId
+            ConnectionId = genarateInfo.ConnectionId,
+            Reason = reason,
         };
     }
 
-    public async Task<GrantedInfo> GetGrantedInfoAsync(Guid qrLoginCode)
+    public async Task<GrantedInfo> GetGrantedInfoAsync(Guid loginCode)
     {
-        var grantedInfo = await GrantedDistributedCache.GetAsync(qrLoginCode);
+        var grantedInfo = await GrantedDistributedCache.GetAsync(loginCode);
         return grantedInfo;
     }
 
-    public async Task DeleteGrantedInfoAsync(Guid qrLoginCode)
+    public async Task DeleteGrantedInfoAsync(Guid loginCode)
     {
-        await GrantedDistributedCache.RemoveAsync(qrLoginCode);
+        await GrantedDistributedCache.RemoveAsync(loginCode);
     }
 }

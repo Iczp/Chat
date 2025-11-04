@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace IczpNet.Chat.QrLogins;
+namespace IczpNet.Chat.ScanLogins;
 
 public class StringTemplateBuilder(string template)
 {

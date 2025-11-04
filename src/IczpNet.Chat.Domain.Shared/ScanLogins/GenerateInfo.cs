@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace IczpNet.Chat.QrLogins;
+namespace IczpNet.Chat.ScanLogins;
 
 public class GenerateInfo
 {
@@ -8,7 +8,7 @@ public class GenerateInfo
 
     public DateTime? ExpiredTime { get; set; }
 
-    public string QrText { get; set; }
+    public string ScanText { get; set; }
 
     public Guid? ScanUserId { get; set; }
 }

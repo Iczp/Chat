@@ -3,14 +3,14 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 using System;
 
-namespace IczpNet.Chat.QrLogins;
+namespace IczpNet.Chat.ScanLogins;
 
 public class ScanLoginConnectionPoolManager : ConnectionPoolManagerBase<ConnectionPool, IndexCacheKey>, IScanLoginConnectionPoolManager
 {
 
-    public IOptions<QrLoginOption> Options { get; set; }
+    public IOptions<ScanLoginOption> Options { get; set; }
 
-    protected QrLoginOption Config => Options.Value;
+    protected ScanLoginOption Config => Options.Value;
 
     protected override string ConnectionIdListSetCacheKey => nameof(ScanLoginConnectionPoolManager);
 
