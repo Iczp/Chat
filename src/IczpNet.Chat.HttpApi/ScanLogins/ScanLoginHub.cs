@@ -18,9 +18,11 @@ public class ScanLoginHub(
     IWebClientInfoProvider webClientInfoProvider,
     ICurrentHosted currentHosted,
     ICurrentClient currentClient,
+    IScanLoginManager scanLoginManager,
     IScanLoginConnectionPoolManager scanLoginConnectionPoolManager) : AbpHub<IScanLoginClient>
 {
     public ICurrentClient CurrentClient { get; } = currentClient;
+    public IScanLoginManager ScanLoginManager { get; } = scanLoginManager;
     public IWebClientInfoProvider WebClientInfoProvider { get; } = webClientInfoProvider;
     public ICurrentHosted CurrentHosted { get; } = currentHosted;
     public IScanLoginConnectionPoolManager ScanLoginConnectionPoolManager { get; } = scanLoginConnectionPoolManager;
@@ -67,6 +69,8 @@ public class ScanLoginHub(
         var connectionPool = await BuildInfoAsync();
 
         await ScanLoginConnectionPoolManager.ConnectedAsync(connectionPool);
+
+        //var generateInfo = await Generate();
 
         await Clients.Caller.ReceivedMessage(new LoginCommandPayload()
         {
@@ -121,5 +125,10 @@ public class ScanLoginHub(
             // 可以发布事件
         }
         return ticks;
+    }
+
+    public async Task<GenerateInfo> Generate()
+    {
+        return await ScanLoginManager.GenerateAsync(Context.ConnectionId);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.CommandPayloads;
+using IczpNet.Chat.Commands;
 using IczpNet.Chat.ConnectionPools;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;

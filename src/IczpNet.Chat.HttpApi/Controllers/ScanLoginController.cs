@@ -92,4 +92,25 @@ public class ScanLoginController(IHubContext<ScanLoginHub, IScanLoginClient> hub
         });
         return res;
     }
+
+    /// <summary>
+    /// 拒绝授权
+    /// </summary>
+    /// <param name="connectionId"></param>
+    /// <param name="reason"></param>
+    /// <returns></returns>
+    [HttpGet]
+    [Route("cancel")]
+    [Authorize]
+    public async Task<CancelInfo> CancelAsync([Required] string connectionId, string reason)
+    {
+        var res = await ScanLoginManager.CancelAsync(connectionId, reason);
+
+        await HubContext.Clients.Clients([res.ConnectionId]).ReceivedMessage(new LoginCommandPayload()
+        {
+            Command = ScanLoginCommandConsts.Cancelled,
+            Payload = res
+        });
+        return res;
+    }
 }
