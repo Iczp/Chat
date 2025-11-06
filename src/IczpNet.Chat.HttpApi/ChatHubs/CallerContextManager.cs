@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.CommandPayloads;
+using IczpNet.Chat.Commands;
 using IczpNet.Chat.ConnectionPools;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
@@ -46,7 +47,7 @@ public class CallerContextManager : ChatHubService, ICallerContextManager
             {
                 AppUserId = callerContext.Connect.UserId,
                 Scopes = [],
-                Command = "kicked",
+                Command = CommandConsts.Kicked,
                 Payload = new
                 {
                     Reason = reason

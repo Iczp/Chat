@@ -1,5 +1,4 @@
-﻿using IczpNet.Chat.ScanLogins;
-using System;
+﻿using System;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.ScanLogins;
@@ -14,7 +13,11 @@ public interface IScanLoginManager
 
     Task<RejectInfo> RejectAsync(string scanText, string reason);
 
-    Task<GrantedInfo> GetGrantedInfoAsync(Guid loginCode);
+    Task<CancelInfo> CancelAsync(string connectionId, string reason);
 
-    Task DeleteGrantedInfoAsync(Guid loginCode);
+    Task<GrantedInfo> GetGrantedInfoAsync(Guid scanToken);
+
+    Task RemoveAsync(string connectionId);
+
+    Task DeleteGrantedInfoAsync(Guid scanToken);
 }

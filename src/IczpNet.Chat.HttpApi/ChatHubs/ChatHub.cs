@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.CommandPayloads;
+using IczpNet.Chat.Commands;
 using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Connections;
 using IczpNet.Chat.Devices;
@@ -121,7 +122,7 @@ public class ChatHub(
             await Clients.Caller.ReceivedMessage(new CommandPayload()
             {
                 AppUserId = CurrentUser.Id,
-                Command = "Welcome",
+                Command = CommandConsts.Welcome,
                 Payload = connectedEto,
             });
 
