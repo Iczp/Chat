@@ -15,9 +15,9 @@ public interface IScanLoginManager
 
     Task<CancelInfo> CancelAsync(string connectionId, string reason);
 
-    Task<GrantedInfo> GetGrantedInfoAsync(Guid loginCode);
+    Task<GrantedInfo> GetGrantedInfoAsync(Guid scanToken);
 
     Task RemoveAsync(string connectionId);
 
-    Task DeleteGrantedInfoAsync(Guid loginCode);
+    Task DeleteGrantedInfoAsync(Guid scanToken);
 }

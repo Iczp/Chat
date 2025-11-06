@@ -56,11 +56,11 @@ public class ScanLoginManager(IOptions<ScanLoginOption> options,
             if (Guid.TryParse(strCode, out Guid cacheCode))
             {
                 await CodeDistributedCache.RemoveAsync(cacheCode);
-                Logger.LogInformation($"删除缓存{cacheCode}");
+                Logger.LogInformation($"删除缓存 Code:{cacheCode}");
             }
             else
             {
-                Logger.LogWarning($"无效编码:{cacheCode}");
+                Logger.LogWarning($"无效编码 Code:{cacheCode}");
             }
         }
         await GenerateDistributedCache.RemoveAsync(connectionId);
@@ -124,17 +124,14 @@ public class ScanLoginManager(IOptions<ScanLoginOption> options,
 
         genarateInfo.ScanUserId = CurrentUser.GetId();
 
+        genarateInfo.ScanUserName = CurrentUser.UserName;
+
+        genarateInfo.ScanTime = Clock.Now;
+
+        genarateInfo.ScanClientId = CurrentClient.Id;
+
         // 回写
         await GenerateDistributedCache.SetAsync(genarateInfo.ConnectionId, genarateInfo, DistributedCacheEntryOptions);
-
-        await DistributedEventBus.PublishAsync(new LoginActionEto()
-        {
-            Action = "scan-success",
-            Description = "扫码成功",
-            UserName = CurrentUser.Name,
-            UserId = CurrentUser.Id,
-            CliendId = CurrentClient.Id,
-        });
 
         return genarateInfo;
     }
@@ -152,15 +149,16 @@ public class ScanLoginManager(IOptions<ScanLoginOption> options,
         var grantedInfo = new GrantedInfo()
         {
             ConnectionId = genarateInfo.ConnectionId,
-            LoginCode = Guid.NewGuid(),
+            ScanToken = Guid.NewGuid(),
             UserId = CurrentUser.Id.Value,
+            UserName = CurrentUser.Name,
             ExpiredTime = Clock.Now.AddSeconds(Config.ExpiredSeconds),
         };
 
-        await GrantedDistributedCache.SetAsync(grantedInfo.LoginCode, grantedInfo);
+        await GrantedDistributedCache.SetAsync(grantedInfo.ScanToken, grantedInfo);
 
         //授权成功后删除
-        await GenerateDistributedCache.RemoveAsync(genarateInfo.ConnectionId);
+        await RemoveAsync(genarateInfo.ConnectionId);
 
         return grantedInfo;
     }
@@ -191,14 +189,14 @@ public class ScanLoginManager(IOptions<ScanLoginOption> options,
         };
     }
 
-    public virtual async Task<GrantedInfo> GetGrantedInfoAsync(Guid loginCode)
+    public virtual async Task<GrantedInfo> GetGrantedInfoAsync(Guid scanToken)
     {
-        var grantedInfo = await GrantedDistributedCache.GetAsync(loginCode);
+        var grantedInfo = await GrantedDistributedCache.GetAsync(scanToken);
         return grantedInfo;
     }
 
-    public virtual async Task DeleteGrantedInfoAsync(Guid loginCode)
+    public virtual async Task DeleteGrantedInfoAsync(Guid scanToken)
     {
-        await GrantedDistributedCache.RemoveAsync(loginCode);
+        await GrantedDistributedCache.RemoveAsync(scanToken);
     }
 }
