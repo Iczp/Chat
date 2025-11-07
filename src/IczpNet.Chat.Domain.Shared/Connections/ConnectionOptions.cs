@@ -20,6 +20,6 @@ public class ConnectionOptions
     /// <summary>
     /// 缓存过期时间(秒)
     /// </summary>
-    public int ConnectionCacheExpirationSeconds { get; set; } = 86400 * 30;
+    public int ConnectionCacheExpirationSeconds { get; set; } = 60 * 5;
 
 }

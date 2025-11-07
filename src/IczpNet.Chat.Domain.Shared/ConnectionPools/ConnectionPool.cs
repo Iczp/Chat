@@ -15,6 +15,11 @@ public class ConnectionPool: IConnectionPool
     public virtual string AppId { get; set; }
 
     /// <summary>
+    ///  AppName
+    /// </summary>
+    public virtual string AppName { get; set; }
+
+    /// <summary>
     /// hubs/ChatHub?id={ClientId}
     /// </summary>
     public virtual string QueryId { get; set; }
@@ -23,6 +28,11 @@ public class ConnectionPool: IConnectionPool
     /// Jwt ClientId
     /// </summary>
     public virtual string ClientId { get; set; }
+
+    /// <summary>
+    /// Jwt ClientName
+    /// </summary>
+    public virtual string ClientName { get; set; }
 
     /// <summary>
     /// Dns.GetHostName()
@@ -78,6 +88,7 @@ public class ConnectionPool: IConnectionPool
     /// 
     /// </summary>
     public virtual Object Extra { get; set; }
+    
 
     public override string ToString()
     {

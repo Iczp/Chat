@@ -5,7 +5,7 @@ namespace IczpNet.Chat.ScanLogins;
 
 public interface IScanLoginManager
 {
-    Task<GenerateInfo> GenerateAsync(string connectionId);
+    Task<GenerateInfo> GenerateAsync(string connectionId, string state);
 
     Task<GenerateInfo> ScanAsync(string scanText);
 

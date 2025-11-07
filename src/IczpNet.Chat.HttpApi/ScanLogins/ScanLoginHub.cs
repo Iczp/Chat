@@ -10,12 +10,14 @@ using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.SignalR;
 using Volo.Abp.AspNetCore.WebClientInfo;
 using Volo.Abp.Clients;
+using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.ScanLogins;
 
 [Authorize]
 public class ScanLoginHub(
     IWebClientInfoProvider webClientInfoProvider,
+    IObjectMapper objectMapper,
     ICurrentHosted currentHosted,
     ICurrentClient currentClient,
     IScanLoginManager scanLoginManager,
@@ -24,6 +26,7 @@ public class ScanLoginHub(
     public ICurrentClient CurrentClient { get; } = currentClient;
     public IScanLoginManager ScanLoginManager { get; } = scanLoginManager;
     public IWebClientInfoProvider WebClientInfoProvider { get; } = webClientInfoProvider;
+    public IObjectMapper ObjectMapper { get; } = objectMapper;
     public ICurrentHosted CurrentHosted { get; } = currentHosted;
     public IScanLoginConnectionPoolManager ScanLoginConnectionPoolManager { get; } = scanLoginConnectionPoolManager;
 
@@ -46,8 +49,10 @@ public class ScanLoginHub(
         var connectedEto = new ConnectionPool()
         {
             AppId = appId,
+            AppName = "Web",
             QueryId = queryId,
             ClientId = CurrentClient.Id,
+            ClientName = "",
             ConnectionId = Context.ConnectionId,
             Host = CurrentHosted.Name,
             IpAddress = WebClientInfoProvider.ClientIpAddress,
@@ -127,8 +132,9 @@ public class ScanLoginHub(
         return ticks;
     }
 
-    public async Task<GenerateInfo> Generate()
+    public async Task<GeneratedDto> Generate(string state)
     {
-        return await ScanLoginManager.GenerateAsync(Context.ConnectionId);
+        var info = await ScanLoginManager.GenerateAsync(Context.ConnectionId, state);
+        return ObjectMapper.Map<GenerateInfo, GeneratedDto>(info);
     }
 }
