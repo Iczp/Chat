@@ -12,9 +12,11 @@ namespace IczpNet.Chat.Controllers;
 [RemoteService(Name = ChatRemoteServiceConsts.RemoteServiceName)]
 [Route($"/api/{ChatRemoteServiceConsts.ModuleName}/scan-login")]
 public class ScanLoginController(IHubContext<ScanLoginHub, IScanLoginClient> hubContext,
+    IScanLoginConnectionPoolManager scanLoginConnectionPoolManager,
     IScanLoginManager scanLoginManager) : ChatController
 {
     protected IHubContext<ScanLoginHub, IScanLoginClient> HubContext { get; } = hubContext;
+    public IScanLoginConnectionPoolManager ScanLoginConnectionPoolManager { get; } = scanLoginConnectionPoolManager;
     public IScanLoginManager ScanLoginManager { get; } = scanLoginManager;
 
     [HttpPost]
@@ -52,7 +54,11 @@ public class ScanLoginController(IHubContext<ScanLoginHub, IScanLoginClient> hub
             Payload = info
         });
 
-        return ObjectMapper.Map<GenerateInfo, ScannedDto>(info);
+        var output = ObjectMapper.Map<GenerateInfo, ScannedDto>(info);
+
+        output.ConnectionPool = await ScanLoginConnectionPoolManager.GetAsync(info.ConnectionId);
+
+        return output;
 
     }
 

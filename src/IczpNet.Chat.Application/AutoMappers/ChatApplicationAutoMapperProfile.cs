@@ -40,6 +40,7 @@ using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.ConnectionPools.Dtos;
 using IczpNet.Chat.Friends;
 using IczpNet.Chat.ScanLogins;
+using Volo.Abp.AutoMapper;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -189,7 +190,7 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<FriendStatus, FriendStatusDto>().ReverseMap();
 
         // Scan Login
-        CreateMap<GenerateInfo, ScannedDto>().ReverseMap();
+        CreateMap<GenerateInfo, ScannedDto>().Ignore(x => x.ConnectionPool);
         CreateMap<GenerateInfo, GeneratedDto>().ReverseMap();
     }
 }
