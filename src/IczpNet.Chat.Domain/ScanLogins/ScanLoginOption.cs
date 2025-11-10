@@ -16,9 +16,9 @@ public class ScanLoginOption
     public string ParamKey { get; set; } = "code";
 
     /// <summary>
-    /// 
+    /// 过期时间（秒） 默认：90
     /// </summary>
-    public int ExpiredSeconds { get; set; } = 60;
+    public int ExpiredSeconds { get; set; } = 90;
 
     /// <summary>
     /// 
