@@ -10,6 +10,11 @@ public class ConnectionPool: IConnectionPool
     public virtual string ConnectionId { get; set; }
 
     /// <summary>
+    /// 推送客户端Id
+    /// </summary>
+    public virtual string PushClientId { get; set; }
+
+    /// <summary>
     /// AppId
     /// </summary>
     public virtual string AppId { get; set; }
@@ -92,6 +97,6 @@ public class ConnectionPool: IConnectionPool
 
     public override string ToString()
     {
-        return $"{nameof(AppId)}={AppId},{nameof(ClientId)}={ClientId},{nameof(ConnectionId)}={ConnectionId},{nameof(UserId)}={UserId},{nameof(UserName)}={UserName},{nameof(DeviceId)}={DeviceId}";
+        return $"{nameof(AppId)}={AppId},{nameof(ClientId)}={ClientId},{nameof(ConnectionId)}={ConnectionId},{nameof(UserId)}={UserId},{nameof(UserName)}={UserName},{nameof(DeviceId)}={DeviceId},{nameof(PushClientId)}={PushClientId}";
     }
 }

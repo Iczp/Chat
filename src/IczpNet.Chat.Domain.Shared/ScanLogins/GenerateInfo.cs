@@ -19,4 +19,9 @@ public class GenerateInfo
     public DateTime? ScanTime { get; set; }
 
     public string State { get; set; }
+
+    public override string ToString()
+    {
+        return $"{nameof(ConnectionId)}={ConnectionId},{nameof(State)}={State}";
+    }
 }

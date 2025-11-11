@@ -6,7 +6,6 @@ using IczpNet.Chat.Connections;
 using IczpNet.Chat.Devices;
 using IczpNet.Chat.Hosting;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using System;
@@ -62,6 +61,8 @@ public class ChatHub(
     {
         var httpContext = Context.GetHttpContext();
 
+        var pushClientId = httpContext?.Request.Query["pushClientId"];
+
         var appId = CurrentUser.GetAppId() ?? httpContext?.Request.Query["appId"];
 
         var deviceId = CurrentUser.GetDeviceId() ?? httpContext?.Request.Query["deviceId"];
@@ -78,10 +79,11 @@ public class ChatHub(
 
         var connectedEto = new ConnectedEto()
         {
+            ConnectionId = Context.ConnectionId,
+            PushClientId = pushClientId,
             AppId = appId,
             QueryId = queryId,
             ClientId = CurrentClient.Id,
-            ConnectionId = Context.ConnectionId,
             Host = CurrentHosted.Name,
             IpAddress = WebClientInfoProvider.ClientIpAddress,
             UserId = CurrentUser.Id,

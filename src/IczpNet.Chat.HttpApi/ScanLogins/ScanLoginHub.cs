@@ -40,6 +40,8 @@ public class ScanLoginHub(
 
         var deviceId = CurrentUser.GetDeviceId() ?? httpContext?.Request.Query["deviceId"];
 
+        var pushClientId = httpContext?.Request.Query["pushClientId"];
+
         var deviceType = CurrentUser.GetDeviceType() ?? httpContext?.Request.Query["deviceType"];
 
         var queryId = httpContext?.Request.Query["id"];
@@ -48,12 +50,13 @@ public class ScanLoginHub(
 
         var connectedEto = new ConnectionPool()
         {
+            ConnectionId = Context.ConnectionId,
+            PushClientId = pushClientId,
             AppId = appId,
             AppName = "Web",
             QueryId = queryId,
             ClientId = CurrentClient.Id,
             ClientName = "",
-            ConnectionId = Context.ConnectionId,
             Host = CurrentHosted.Name,
             IpAddress = WebClientInfoProvider.ClientIpAddress,
             UserId = CurrentUser.Id,
@@ -103,6 +106,7 @@ public class ScanLoginHub(
         catch (TaskCanceledException ex)
         {
             Logger.LogWarning(ex, $"[OnDisconnectedAsync] TaskCanceledException while deleting connection {connectionId}.");
+
             // 使用同步方法删除连接池
             await ScanLoginConnectionPoolManager.DisconnectedAsync(connectionId);
         }
@@ -135,6 +139,9 @@ public class ScanLoginHub(
     public async Task<GeneratedDto> Generate(string state)
     {
         var info = await ScanLoginManager.GenerateAsync(Context.ConnectionId, state);
+
+        Logger.LogInformation($"Generate:{info}");
+
         return ObjectMapper.Map<GenerateInfo, GeneratedDto>(info);
     }
 }

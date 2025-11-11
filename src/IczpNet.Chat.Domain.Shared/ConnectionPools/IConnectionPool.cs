@@ -10,6 +10,11 @@ public interface IConnectionPool
     string ConnectionId { get; set; }
 
     /// <summary>
+    ///  PushClientId
+    /// </summary>
+    string PushClientId { get; set; }
+
+    /// <summary>
     /// hubs/ChatHub?id={ClientId}
     /// </summary>
     string QueryId { get; set; }
