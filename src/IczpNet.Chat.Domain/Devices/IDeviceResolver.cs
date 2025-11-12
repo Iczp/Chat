@@ -12,7 +12,7 @@ public interface IDeviceResolver
 
     string GetDeviceTypeKey();
 
-    string GetHeader(string key);
+    string GetParameter(string key);
 
     Task<string>  GetDeviceIdAsync();
 

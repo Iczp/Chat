@@ -1,75 +1,27 @@
 ﻿using IczpNet.Chat.ConnectionPools;
-using IczpNet.Chat.Devices;
-using IczpNet.Chat.Hosting;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Volo.Abp.AspNetCore.SignalR;
-using Volo.Abp.AspNetCore.WebClientInfo;
-using Volo.Abp.Clients;
 using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.ScanLogins;
 
 [Authorize]
 public class ScanLoginHub(
-    IWebClientInfoProvider webClientInfoProvider,
     IObjectMapper objectMapper,
-    ICurrentHosted currentHosted,
-    ICurrentClient currentClient,
     IScanLoginManager scanLoginManager,
-    IScanLoginConnectionPoolManager scanLoginConnectionPoolManager) : AbpHub<IScanLoginClient>
+    IScanLoginConnectionPoolManager scanLoginConnectionPoolManager) : HubBase<IScanLoginClient, ConnectionPool>
 {
-    public ICurrentClient CurrentClient { get; } = currentClient;
     public IScanLoginManager ScanLoginManager { get; } = scanLoginManager;
-    public IWebClientInfoProvider WebClientInfoProvider { get; } = webClientInfoProvider;
     public IObjectMapper ObjectMapper { get; } = objectMapper;
-    public ICurrentHosted CurrentHosted { get; } = currentHosted;
     public IScanLoginConnectionPoolManager ScanLoginConnectionPoolManager { get; } = scanLoginConnectionPoolManager;
 
-    protected async Task<ConnectionPool> BuildInfoAsync()
+    protected override async Task<ConnectionPool> BuildInfoAsync()
     {
-        await Task.Yield();
-
-        var httpContext = Context.GetHttpContext();
-
-        var appId = CurrentUser.GetAppId() ?? httpContext?.Request.Query["appId"];
-
-        var deviceId = CurrentUser.GetDeviceId() ?? httpContext?.Request.Query["deviceId"];
-
-        var pushClientId = httpContext?.Request.Query["pushClientId"];
-
-        var deviceType = CurrentUser.GetDeviceType() ?? httpContext?.Request.Query["deviceType"];
-
-        var queryId = httpContext?.Request.Query["id"];
-
-        Logger.LogWarning($"DeviceId:{deviceId}");
-
-        var connectedEto = new ConnectionPool()
-        {
-            ConnectionId = Context.ConnectionId,
-            PushClientId = pushClientId,
-            AppId = appId,
-            AppName = "Web",
-            QueryId = queryId,
-            ClientId = CurrentClient.Id,
-            ClientName = "",
-            Host = CurrentHosted.Name,
-            IpAddress = WebClientInfoProvider.ClientIpAddress,
-            UserId = CurrentUser.Id,
-            UserName = CurrentUser.UserName,
-            DeviceId = deviceId,
-            DeviceType = deviceType,
-            BrowserInfo = WebClientInfoProvider.BrowserInfo,
-            DeviceInfo = WebClientInfoProvider.DeviceInfo,
-            CreationTime = Clock.Now,
-        };
-
+        var connectedEto = await base.BuildInfoAsync();
         return connectedEto;
-
     }
 
     public override async Task OnConnectedAsync()
