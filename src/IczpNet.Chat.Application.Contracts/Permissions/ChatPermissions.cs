@@ -231,4 +231,15 @@ public class ChatPermissions
         public const string UpdateUserConnectionIds = Default + "." + nameof(UpdateUserConnectionIds);
         public const string GetCountByUserId = Default + "." + nameof(GetCountByUserId);
     }
+
+
+    public class ScanCodePermission
+    {
+        public const string Default = GroupName + "." + nameof(ScanCodePermission);
+        public const string GetItem = Default + "." + nameof(GetItem);
+        public const string GetList = Default + "." + nameof(GetList);
+        public const string Create = Default + "." + nameof(Create);
+        public const string Update = Default + "." + nameof(Update);
+        public const string Delete = Default + "." + nameof(Delete);
+    }
 }

@@ -50,5 +50,7 @@ public class IdentitySecurityLogEventHandler : DomainService, ITransientDependen
         Logger.LogInformation($"收到 LocalEventHandler 事件:${eventData}");
 
         Console.WriteLine($"用户 {eventData.UserName} {eventData.Action}");
+
+        await Task.Yield();
     }
 }
