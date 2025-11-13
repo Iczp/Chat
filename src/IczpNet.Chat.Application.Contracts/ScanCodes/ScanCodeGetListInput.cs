@@ -18,5 +18,5 @@ public class ScanCodeGetListInput : GetListInput
     /// Action
     /// </summary>
 
-    public virtual string Action { get; set; }
+    public virtual string ActionType { get; set; }
 }
