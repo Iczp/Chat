@@ -1,5 +1,4 @@
-﻿using AutoMapper.Internal.Mappers;
-using IczpNet.Chat.ConnectionPools;
+﻿using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Devices;
 using IczpNet.Chat.Hosting;
 using Microsoft.AspNetCore.SignalR;
@@ -17,6 +16,8 @@ public abstract class HubBase<T, TConnPool> : AbpHub<T> where T : class
     protected ICurrentClient CurrentClient => LazyServiceProvider.LazyGetService<ICurrentClient>()!;
     protected IWebClientInfoProvider WebClientInfoProvider => LazyServiceProvider.LazyGetService<IWebClientInfoProvider>()!;
     protected ICurrentHosted CurrentHosted => LazyServiceProvider.LazyGetService<ICurrentHosted>()!;
+
+    protected IClientApp ClientApp => LazyServiceProvider.LazyGetService<IClientApp>()!;
 
     protected virtual async Task<TConnPool> BuildInfoAsync()
     {
@@ -41,10 +42,10 @@ public abstract class HubBase<T, TConnPool> : AbpHub<T> where T : class
             ConnectionId = Context.ConnectionId,
             PushClientId = pushClientId,
             AppId = appId,
-            AppName = "Web",
+            AppName = await ClientApp.GetAppNameAsync(appId),
             QueryId = queryId,
             ClientId = CurrentClient.Id,
-            ClientName = "",
+            ClientName = await ClientApp.GetClientNameAsync(CurrentClient.Id),
             Host = CurrentHosted.Name,
             IpAddress = WebClientInfoProvider.ClientIpAddress,
             UserId = CurrentUser.Id,
