@@ -33,6 +33,6 @@ public class ScanLoginScanCodeHandler(
         //await Task.Delay(300); // 模拟耗时操作
         await Task.Yield();
 
-        return ScanHandlerResult.Ok("scan-login", "识别成功");
+        return ScanHandlerResult.Ok("scan-login", "识别成功", Config.ScanTextTemplate);
     }
 }

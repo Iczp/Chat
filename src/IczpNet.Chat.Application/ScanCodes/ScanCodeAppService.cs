@@ -24,8 +24,8 @@ public class ScanCodeAppService(
     protected override async Task<IQueryable<ScanCode>> CreateFilteredQueryAsync(ScanCodeGetListInput input)
     {
         return (await base.CreateFilteredQueryAsync(input))
-            .WhereIf(string.IsNullOrWhiteSpace(input.Action), x => x.ScanHandlerList.Any(d => d.Action == input.Action))
-            .WhereIf(string.IsNullOrWhiteSpace(input.HandlerFullName), x => x.ScanHandlerList.Any(d => d.HandlerFullName == input.HandlerFullName))
+            .WhereIf(!string.IsNullOrWhiteSpace(input.Action), x => x.ScanHandlerList.Any(d => d.Action == input.Action))
+            .WhereIf(!string.IsNullOrWhiteSpace(input.HandlerFullName), x => x.ScanHandlerList.Any(d => d.HandlerFullName == input.HandlerFullName))
             .WhereIf(input.Success.HasValue, x => x.ScanHandlerList.Any(d => d.Success == input.Success))
         ;
     }
