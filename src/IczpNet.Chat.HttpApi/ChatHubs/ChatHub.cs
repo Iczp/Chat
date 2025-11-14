@@ -3,10 +3,7 @@ using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.Commands;
 using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Connections;
-using IczpNet.Chat.Devices;
-using IczpNet.Chat.Hosting;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using System;
@@ -15,9 +12,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Volo.Abp.AspNetCore.SignalR;
-using Volo.Abp.AspNetCore.WebClientInfo;
-using Volo.Abp.Clients;
 using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
@@ -28,14 +22,11 @@ namespace IczpNet.Chat.ChatHubs;
 [Authorize]
 public class ChatHub(
     IConnectionManager connectionManager,
-    IWebClientInfoProvider webClientInfoProvider,
     IChatObjectManager chatObjectManager,
-    ICurrentHosted currentHosted,
-    ICurrentClient currentClient,
     IObjectMapper objectMapper,
     IDistributedEventBus distributedEventBus,
     ICallerContextManager hubCallerContextManager,
-    IConnectionPoolManager connectionPoolManager) : AbpHub<IChatClient>
+    IConnectionPoolManager connectionPoolManager) : HubBase<IChatClient, ConnectedEto>
 {
 
     /// <summary>
@@ -48,51 +39,22 @@ public class ChatHub(
     private static readonly ConcurrentDictionary<string, List<HubCallerContext>> DeviceIdToContextMap = new();
 
     public IConnectionManager ConnectionManager { get; } = connectionManager;
-    public IWebClientInfoProvider WebClientInfoProvider { get; } = webClientInfoProvider;
     public IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
-    public ICurrentHosted CurrentHosted { get; } = currentHosted;
-    public ICurrentClient CurrentClient { get; } = currentClient;
     public IObjectMapper ObjectMapper { get; } = objectMapper;
     public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
     public ICallerContextManager HubCallerContextManager { get; } = hubCallerContextManager;
     public IConnectionPoolManager ConnectionPoolManager { get; } = connectionPoolManager;
 
 
-    protected async Task<ConnectedEto> BuildInfoAsync()
+    protected override async Task<ConnectedEto> BuildInfoAsync()
     {
-        var httpContext = Context.GetHttpContext();
-
-        var appId = CurrentUser.GetAppId() ?? httpContext?.Request.Query["appId"];
-
-        var deviceId = CurrentUser.GetDeviceId() ?? httpContext?.Request.Query["deviceId"];
-
-        var deviceType = CurrentUser.GetDeviceType() ?? httpContext?.Request.Query["deviceType"];
-
-        var queryId = httpContext?.Request.Query["id"];
-
-        Logger.LogWarning($"DeviceId:{deviceId}");
+        var connectedEto = await base.BuildInfoAsync();
 
         var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
 
         Logger.LogWarning($"chatObjectIdList:[{chatObjectIdList.JoinAsString(",")}]");
 
-        var connectedEto = new ConnectedEto()
-        {
-            AppId = appId,
-            QueryId = queryId,
-            ClientId = CurrentClient.Id,
-            ConnectionId = Context.ConnectionId,
-            Host = CurrentHosted.Name,
-            IpAddress = WebClientInfoProvider.ClientIpAddress,
-            UserId = CurrentUser.Id,
-            UserName = CurrentUser.UserName,
-            DeviceId = deviceId,
-            DeviceType = deviceType,
-            BrowserInfo = WebClientInfoProvider.BrowserInfo,
-            DeviceInfo = WebClientInfoProvider.DeviceInfo,
-            CreationTime = Clock.Now,
-            ChatObjectIdList = chatObjectIdList,
-        };
+        connectedEto.ChatObjectIdList = chatObjectIdList;
 
         return connectedEto;
 
@@ -204,7 +166,9 @@ public class ChatHub(
     public async Task<long> Heartbeat(long ticks)
     {
         Logger.LogInformation($"Heartbeat:{ticks}");
+
         var connection = await ConnectionPoolManager.UpdateActiveTimeAsync(Context.ConnectionId);
+
         if (connection != null)
         {
             var activedEto = ObjectMapper.Map<ConnectionPoolCacheItem, ActivedEto>(connection);

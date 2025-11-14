@@ -10,9 +10,19 @@ public class ConnectionPool: IConnectionPool
     public virtual string ConnectionId { get; set; }
 
     /// <summary>
+    /// 推送客户端Id
+    /// </summary>
+    public virtual string PushClientId { get; set; }
+
+    /// <summary>
     /// AppId
     /// </summary>
     public virtual string AppId { get; set; }
+
+    /// <summary>
+    ///  AppName
+    /// </summary>
+    public virtual string AppName { get; set; }
 
     /// <summary>
     /// hubs/ChatHub?id={ClientId}
@@ -23,6 +33,11 @@ public class ConnectionPool: IConnectionPool
     /// Jwt ClientId
     /// </summary>
     public virtual string ClientId { get; set; }
+
+    /// <summary>
+    /// Jwt ClientName
+    /// </summary>
+    public virtual string ClientName { get; set; }
 
     /// <summary>
     /// Dns.GetHostName()
@@ -78,9 +93,10 @@ public class ConnectionPool: IConnectionPool
     /// 
     /// </summary>
     public virtual Object Extra { get; set; }
+    
 
     public override string ToString()
     {
-        return $"{nameof(AppId)}={AppId},{nameof(ClientId)}={ClientId},{nameof(ConnectionId)}={ConnectionId},{nameof(UserId)}={UserId},{nameof(UserName)}={UserName},{nameof(DeviceId)}={DeviceId}";
+        return $"{nameof(AppId)}={AppId},{nameof(ClientId)}={ClientId},{nameof(ConnectionId)}={ConnectionId},{nameof(UserId)}={UserId},{nameof(UserName)}={UserName},{nameof(DeviceId)}={DeviceId},{nameof(PushClientId)}={PushClientId}";
     }
 }

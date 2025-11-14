@@ -14,6 +14,14 @@ public class GenerateInfo
 
     public string ScanUserName { get; set; }
 
-    public DateTime? ScanTime { get; set; }
     public string ScanClientId { get; set; }
+
+    public DateTime? ScanTime { get; set; }
+
+    public string State { get; set; }
+
+    public override string ToString()
+    {
+        return $"{nameof(ConnectionId)}={ConnectionId},{nameof(State)}={State}";
+    }
 }

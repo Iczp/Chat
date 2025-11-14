@@ -1,67 +1,27 @@
 ﻿using IczpNet.Chat.ConnectionPools;
-using IczpNet.Chat.Devices;
-using IczpNet.Chat.Hosting;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Volo.Abp.AspNetCore.SignalR;
-using Volo.Abp.AspNetCore.WebClientInfo;
-using Volo.Abp.Clients;
+using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.ScanLogins;
 
 [Authorize]
 public class ScanLoginHub(
-    IWebClientInfoProvider webClientInfoProvider,
-    ICurrentHosted currentHosted,
-    ICurrentClient currentClient,
+    IObjectMapper objectMapper,
     IScanLoginManager scanLoginManager,
-    IScanLoginConnectionPoolManager scanLoginConnectionPoolManager) : AbpHub<IScanLoginClient>
+    IScanLoginConnectionPoolManager scanLoginConnectionPoolManager) : HubBase<IScanLoginClient, ConnectionPool>
 {
-    public ICurrentClient CurrentClient { get; } = currentClient;
     public IScanLoginManager ScanLoginManager { get; } = scanLoginManager;
-    public IWebClientInfoProvider WebClientInfoProvider { get; } = webClientInfoProvider;
-    public ICurrentHosted CurrentHosted { get; } = currentHosted;
+    public IObjectMapper ObjectMapper { get; } = objectMapper;
     public IScanLoginConnectionPoolManager ScanLoginConnectionPoolManager { get; } = scanLoginConnectionPoolManager;
 
-    protected async Task<ConnectionPool> BuildInfoAsync()
+    protected override async Task<ConnectionPool> BuildInfoAsync()
     {
-        await Task.Yield();
-
-        var httpContext = Context.GetHttpContext();
-
-        var appId = CurrentUser.GetAppId() ?? httpContext?.Request.Query["appId"];
-
-        var deviceId = CurrentUser.GetDeviceId() ?? httpContext?.Request.Query["deviceId"];
-
-        var deviceType = CurrentUser.GetDeviceType() ?? httpContext?.Request.Query["deviceType"];
-
-        var queryId = httpContext?.Request.Query["id"];
-
-        Logger.LogWarning($"DeviceId:{deviceId}");
-
-        var connectedEto = new ConnectionPool()
-        {
-            AppId = appId,
-            QueryId = queryId,
-            ClientId = CurrentClient.Id,
-            ConnectionId = Context.ConnectionId,
-            Host = CurrentHosted.Name,
-            IpAddress = WebClientInfoProvider.ClientIpAddress,
-            UserId = CurrentUser.Id,
-            UserName = CurrentUser.UserName,
-            DeviceId = deviceId,
-            DeviceType = deviceType,
-            BrowserInfo = WebClientInfoProvider.BrowserInfo,
-            DeviceInfo = WebClientInfoProvider.DeviceInfo,
-            CreationTime = Clock.Now,
-        };
-
+        var connectedEto = await base.BuildInfoAsync();
         return connectedEto;
-
     }
 
     public override async Task OnConnectedAsync()
@@ -98,6 +58,7 @@ public class ScanLoginHub(
         catch (TaskCanceledException ex)
         {
             Logger.LogWarning(ex, $"[OnDisconnectedAsync] TaskCanceledException while deleting connection {connectionId}.");
+
             // 使用同步方法删除连接池
             await ScanLoginConnectionPoolManager.DisconnectedAsync(connectionId);
         }
@@ -127,8 +88,12 @@ public class ScanLoginHub(
         return ticks;
     }
 
-    public async Task<GenerateInfo> Generate()
+    public async Task<GeneratedDto> Generate(string state)
     {
-        return await ScanLoginManager.GenerateAsync(Context.ConnectionId);
+        var info = await ScanLoginManager.GenerateAsync(Context.ConnectionId, state);
+
+        Logger.LogInformation($"Generate:{info}");
+
+        return ObjectMapper.Map<GenerateInfo, GeneratedDto>(info);
     }
 }

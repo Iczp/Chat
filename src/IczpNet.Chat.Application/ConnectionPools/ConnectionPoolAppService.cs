@@ -46,13 +46,13 @@ public class ConnectionPoolAppService(
 
     protected virtual async Task<PagedResultDto<ConnectionPoolDto>> QueryPagedListAsync(IQueryable<ConnectionPoolCacheItem> connectionPools, ConnectionPoolGetListInput input)
     {
-        var query = connectionPools
+        var query = connectionPools.Where(x => x != null)
             .WhereIf(!string.IsNullOrWhiteSpace(input.Host), x => x.Host == input.Host)
             .WhereIf(!string.IsNullOrWhiteSpace(input.ConnectionId), x => x.ConnectionId == input.ConnectionId)
             .WhereIf(!string.IsNullOrWhiteSpace(input.ClientId), x => x.ClientId == input.ClientId)
             .WhereIf(input.UserId.HasValue, x => x.UserId == input.UserId)
-            .WhereIf(input.ChatObjectId.HasValue, x => x.ChatObjectIdList.Contains(input.ChatObjectId.Value))
-            .WhereIf(input.ChatObjectIdList.IsAny(), x => x.ChatObjectIdList.Any(d => input.ChatObjectIdList.Contains(d)))
+            .WhereIf(input.ChatObjectId.HasValue, x => x.ChatObjectIdList != null && x.ChatObjectIdList.Contains(input.ChatObjectId.Value))
+            .WhereIf(input.ChatObjectIdList.IsAny(), x => x.ChatObjectIdList != null && x.ChatObjectIdList.Any(d => input.ChatObjectIdList.Contains(d)))
             //ActiveTime
             .WhereIf(input.StartActiveTime.HasValue, x => x.ActiveTime >= input.StartActiveTime)
             .WhereIf(input.EndActiveTime.HasValue, x => x.ActiveTime < input.EndActiveTime)

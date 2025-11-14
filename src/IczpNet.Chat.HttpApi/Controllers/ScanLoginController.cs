@@ -12,9 +12,11 @@ namespace IczpNet.Chat.Controllers;
 [RemoteService(Name = ChatRemoteServiceConsts.RemoteServiceName)]
 [Route($"/api/{ChatRemoteServiceConsts.ModuleName}/scan-login")]
 public class ScanLoginController(IHubContext<ScanLoginHub, IScanLoginClient> hubContext,
+    IScanLoginConnectionPoolManager scanLoginConnectionPoolManager,
     IScanLoginManager scanLoginManager) : ChatController
 {
     protected IHubContext<ScanLoginHub, IScanLoginClient> HubContext { get; } = hubContext;
+    public IScanLoginConnectionPoolManager ScanLoginConnectionPoolManager { get; } = scanLoginConnectionPoolManager;
     public IScanLoginManager ScanLoginManager { get; } = scanLoginManager;
 
     [HttpPost]
@@ -27,9 +29,11 @@ public class ScanLoginController(IHubContext<ScanLoginHub, IScanLoginClient> hub
 
     [HttpGet]
     [Route("generate")]
-    public async Task<GenerateInfo> GenerateAsync([Required] string connectionId)
+    public async Task<GeneratedDto> GenerateAsync([Required] string connectionId, string state)
     {
-        return await ScanLoginManager.GenerateAsync(connectionId);
+        var info = await ScanLoginManager.GenerateAsync(connectionId, state);
+
+        return ObjectMapper.Map<GenerateInfo, GeneratedDto>(info);
     }
 
     /// <summary>
@@ -40,16 +44,22 @@ public class ScanLoginController(IHubContext<ScanLoginHub, IScanLoginClient> hub
     [HttpGet]
     [Route("scan")]
     [Authorize]
-    public async Task<GenerateInfo> ScanAsync([Required] string scanText)
+    public async Task<ScannedDto> ScanAsync([Required] string scanText)
     {
-        var res = await ScanLoginManager.ScanAsync(scanText);
+        var info = await ScanLoginManager.ScanAsync(scanText);
 
-        await HubContext.Clients.Clients([res.ConnectionId]).ReceivedMessage(new LoginCommandPayload()
+        await HubContext.Clients.Clients([info.ConnectionId]).ReceivedMessage(new LoginCommandPayload()
         {
             Command = ScanLoginCommandConsts.Scanned,
-            Payload = res
+            Payload = info
         });
-        return res;
+
+        var output = ObjectMapper.Map<GenerateInfo, ScannedDto>(info);
+
+        output.ConnectionPool = await ScanLoginConnectionPoolManager.GetAsync(info.ConnectionId);
+
+        return output;
+
     }
 
     /// <summary>
@@ -60,7 +70,7 @@ public class ScanLoginController(IHubContext<ScanLoginHub, IScanLoginClient> hub
     [HttpGet]
     [Route("grant")]
     [Authorize]
-    public async Task<GrantedInfo> GrantAsync([Required] string scanText)
+    public async Task GrantAsync([Required] string scanText)
     {
         var res = await ScanLoginManager.GrantAsync(scanText);
 
@@ -69,7 +79,6 @@ public class ScanLoginController(IHubContext<ScanLoginHub, IScanLoginClient> hub
             Command = ScanLoginCommandConsts.Granted,
             Payload = res
         });
-        return res;
     }
 
     /// <summary>
@@ -81,7 +90,7 @@ public class ScanLoginController(IHubContext<ScanLoginHub, IScanLoginClient> hub
     [HttpGet]
     [Route("reject")]
     [Authorize]
-    public async Task<RejectInfo> RejectAsync([Required] string scanText, string reason)
+    public async Task RejectAsync([Required] string scanText, string reason)
     {
         var res = await ScanLoginManager.RejectAsync(scanText, reason);
 
@@ -90,7 +99,6 @@ public class ScanLoginController(IHubContext<ScanLoginHub, IScanLoginClient> hub
             Command = ScanLoginCommandConsts.Rejected,
             Payload = res
         });
-        return res;
     }
 
     /// <summary>
@@ -102,7 +110,7 @@ public class ScanLoginController(IHubContext<ScanLoginHub, IScanLoginClient> hub
     [HttpGet]
     [Route("cancel")]
     [Authorize]
-    public async Task<CancelInfo> CancelAsync([Required] string connectionId, string reason)
+    public async Task CancelAsync([Required] string connectionId, string reason)
     {
         var res = await ScanLoginManager.CancelAsync(connectionId, reason);
 
@@ -111,6 +119,5 @@ public class ScanLoginController(IHubContext<ScanLoginHub, IScanLoginClient> hub
             Command = ScanLoginCommandConsts.Cancelled,
             Payload = res
         });
-        return res;
     }
 }

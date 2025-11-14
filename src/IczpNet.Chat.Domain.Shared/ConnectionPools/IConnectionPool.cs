@@ -10,6 +10,21 @@ public interface IConnectionPool
     string ConnectionId { get; set; }
 
     /// <summary>
+    /// 
+    /// </summary>
+    string AppId { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    string AppName { get; set; }
+
+    /// <summary>
+    ///  PushClientId
+    /// </summary>
+    string PushClientId { get; set; }
+
+    /// <summary>
     /// hubs/ChatHub?id={ClientId}
     /// </summary>
     string QueryId { get; set; }
@@ -18,6 +33,11 @@ public interface IConnectionPool
     /// Jwt ClientId
     /// </summary>
     string ClientId { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    string ClientName { get; set; }
 
     /// <summary>
     /// Dns.GetHostName()

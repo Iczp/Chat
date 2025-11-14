@@ -1,44 +1,47 @@
 ﻿using AutoMapper;
 using IczpNet.Chat.Articles;
 using IczpNet.Chat.Articles.Dtos;
-using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.ChatObjects.Dtos;
-using IczpNet.Chat.Connections;
-using IczpNet.Chat.Connections.Dtos;
-using IczpNet.Chat.ChatObjectCategories;
-using IczpNet.Chat.ChatObjectCategories.Dtos;
-using IczpNet.Chat.ChatObjectTypes;
-using IczpNet.Chat.ChatObjectTypes.Dtos;
-using IczpNet.Chat.Mottos.Dtos;
-using IczpNet.Chat.Mottos;
-using IczpNet.Chat.Squares.Dtos;
-using IczpNet.Chat.Robots.Dtos;
-using IczpNet.Chat.ShopKeepers.Dtos;
-using IczpNet.Chat.ShopWaiters.Dtos;
-using IczpNet.Chat.Words;
-using IczpNet.Chat.Words.Dtos;
-using IczpNet.Chat.Menus.Dtos;
-using IczpNet.Chat.Menus;
-using IczpNet.Chat.Developers;
-using IczpNet.Chat.Developers.Dtos;
-using IczpNet.Chat.Dashboards.Dtos;
-using IczpNet.Chat.DbTables;
-using IczpNet.Chat.EntryNames;
-using IczpNet.Chat.EntryNames.Dtos;
-using IczpNet.Chat.ChatObjectEntryValues;
-using IczpNet.Chat.EntryValues;
-using IczpNet.Chat.EntryValues.Dtos;
-using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
-using IczpNet.Chat.Entries.Dtos;
-using IczpNet.Chat.ContactTags.Dtos;
-using IczpNet.Chat.ContactTags;
-using IczpNet.Chat.InvitationCodes;
-using IczpNet.Chat.InvitationCodes.Dtos;
 using IczpNet.Chat.Blobs;
 using IczpNet.Chat.Blobs.Dtos;
+using IczpNet.Chat.ChatObjectCategories;
+using IczpNet.Chat.ChatObjectCategories.Dtos;
+using IczpNet.Chat.ChatObjectEntryValues;
+using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.ChatObjects.Dtos;
+using IczpNet.Chat.ChatObjectTypes;
+using IczpNet.Chat.ChatObjectTypes.Dtos;
 using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.ConnectionPools.Dtos;
+using IczpNet.Chat.Connections;
+using IczpNet.Chat.Connections.Dtos;
+using IczpNet.Chat.ContactTags;
+using IczpNet.Chat.ContactTags.Dtos;
+using IczpNet.Chat.Dashboards.Dtos;
+using IczpNet.Chat.DbTables;
+using IczpNet.Chat.Developers;
+using IczpNet.Chat.Developers.Dtos;
+using IczpNet.Chat.Entries.Dtos;
+using IczpNet.Chat.EntryNames;
+using IczpNet.Chat.EntryNames.Dtos;
+using IczpNet.Chat.EntryValues;
+using IczpNet.Chat.EntryValues.Dtos;
 using IczpNet.Chat.Friends;
+using IczpNet.Chat.InvitationCodes;
+using IczpNet.Chat.InvitationCodes.Dtos;
+using IczpNet.Chat.Menus;
+using IczpNet.Chat.Menus.Dtos;
+using IczpNet.Chat.Mottos;
+using IczpNet.Chat.Mottos.Dtos;
+using IczpNet.Chat.Robots.Dtos;
+using IczpNet.Chat.ScanCodes;
+using IczpNet.Chat.ScanLogins;
+using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
+using IczpNet.Chat.ShopKeepers.Dtos;
+using IczpNet.Chat.ShopWaiters.Dtos;
+using IczpNet.Chat.Squares.Dtos;
+using IczpNet.Chat.Words;
+using IczpNet.Chat.Words.Dtos;
+using Volo.Abp.AutoMapper;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -68,7 +71,7 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<ChatObject, SquareDto>();
         CreateMap<ChatObject, RobotDto>();
         CreateMap<ChatObject, ShopKeeperDto>()
-            .IncludeBase<ChatObject, ChatObjectDto>(); 
+            .IncludeBase<ChatObject, ChatObjectDto>();
         CreateMap<ChatObject, ShopWaiterDto>()
             .IncludeBase<ChatObject, ChatObjectDto>();
 
@@ -186,5 +189,16 @@ public class ChatApplicationAutoMapperProfile : Profile
 
         // FriendStatus
         CreateMap<FriendStatus, FriendStatusDto>().ReverseMap();
+
+        // Scan Login
+        CreateMap<GenerateInfo, ScannedDto>().Ignore(x => x.ConnectionPool);
+        CreateMap<GenerateInfo, GeneratedDto>().ReverseMap();
+
+        // ScanCode
+        CreateMap<ScanCode, ScanCodeDto>();
+        CreateMap<ScanCode, ScanCodeDetailDto>();
+        CreateMap<ScanCode, ScanCodeResultDto>();
+        CreateMap<ScanHandler, ScanHandlerDto>();
+        CreateMap<ScanHandler, ScanHandlerResultDto>();
     }
 }

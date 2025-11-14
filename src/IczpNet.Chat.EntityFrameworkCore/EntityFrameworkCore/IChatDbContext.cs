@@ -28,6 +28,7 @@ using IczpNet.Chat.Mottos;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.RedEnvelopes;
+using IczpNet.Chat.ScanCodes;
 using IczpNet.Chat.Scopeds;
 using IczpNet.Chat.ServerHosts;
 using IczpNet.Chat.SessionSections.SessionOrganizations;
@@ -166,6 +167,10 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<Device> Device { get; }
 
     DbSet<UserDevice> UserDevice { get; }
+
+    DbSet<ScanCode> ScanCode { get;  }
+
+    DbSet<ScanHandler> ScanHandler { get;  }
 
 
 }

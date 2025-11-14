@@ -20,25 +20,42 @@ public class DeviceResolver(
         return HttpContextAccessor.HttpContext;
     }
 
-    public virtual string GetHeader(string key)
+    /// <summary>
+    ///  headers | Request.Query
+    /// </summary>
+    /// <param name="key"></param>
+    /// <returns></returns>
+    public virtual string GetParameter(string key)
     {
         var httpContext = GetHttpContext();
         if (httpContext != null)
         {
-            var headers = httpContext.Request.Headers;
+            return null;
+        }
+
+        var headers = httpContext?.Request.Headers;
+
+        if (string.IsNullOrEmpty(headers[key]))
+        {
             return headers[key];
         }
+
+        if (string.IsNullOrEmpty(httpContext?.Request.Query[key]))
+        {
+            return httpContext?.Request.Query[key];
+        }
+
         return null;
     }
 
     public virtual string GetDeviceId()
     {
-        return GetHeader(Config.RequestDeviceIdKey);
+        return GetParameter(Config.RequestDeviceIdKey);
     }
 
     public virtual string GetDeviceType()
     {
-        return GetHeader(Config.RequestDeviceTypeKey);
+        return GetParameter(Config.RequestDeviceTypeKey);
     }
 
     public virtual async Task<string> GetDeviceIdAsync()

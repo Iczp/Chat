@@ -29,6 +29,7 @@ using IczpNet.Chat.Mottos;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.RedEnvelopes;
+using IczpNet.Chat.ScanCodes;
 using IczpNet.Chat.Scopeds;
 using IczpNet.Chat.ServerHosts;
 using IczpNet.Chat.SessionSections.SessionOrganizations;
@@ -62,7 +63,7 @@ using Volo.Abp.Identity.EntityFrameworkCore;
 namespace IczpNet.Chat.EntityFrameworkCore;
 
 [ConnectionStringName(ChatDbProperties.ConnectionStringName)]
-public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
+public class ChatDbContext(DbContextOptions<ChatDbContext> options) : AbpDbContext<ChatDbContext>(options), IChatDbContext
 {
     /* Add DbSet for each Aggregate Root here. Example:
      * public DbSet<Question> Questions { get; set; }
@@ -184,11 +185,10 @@ public class ChatDbContext : AbpDbContext<ChatDbContext>, IChatDbContext
 
     public DbSet<UserDevice> UserDevice { get; set; }
 
-    public ChatDbContext(DbContextOptions<ChatDbContext> options)
-        : base(options)
-    {
 
-    }
+    public DbSet<ScanCode> ScanCode { get; set; }
+
+    public DbSet<ScanHandler> ScanHandler { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

@@ -66,7 +66,7 @@ public class ScanLoginManager(IOptions<ScanLoginOption> options,
         await GenerateDistributedCache.RemoveAsync(connectionId);
     }
 
-    public virtual async Task<GenerateInfo> GenerateAsync(string connectionId)
+    public virtual async Task<GenerateInfo> GenerateAsync(string connectionId, string state)
     {
         await RemoveAsync(connectionId);
 
@@ -80,12 +80,13 @@ public class ScanLoginManager(IOptions<ScanLoginOption> options,
         {
             ConnectionId = connectionId,
             ExpiredTime = Clock.Now.AddSeconds(Config.ExpiredSeconds),
-            ScanText = builder.ToString()
+            ScanText = builder.ToString(),
+            State = state,
         };
 
         await GenerateDistributedCache.SetAsync(connectionId, result, DistributedCacheEntryOptions);
 
-        await CodeDistributedCache.SetAsync(code, new CodeConnectionId(connectionId));
+        await CodeDistributedCache.SetAsync(code, new CodeConnectionId(connectionId), DistributedCacheEntryOptions);
 
         return result;
     }
