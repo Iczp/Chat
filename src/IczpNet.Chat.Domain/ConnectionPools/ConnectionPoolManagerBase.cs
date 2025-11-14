@@ -101,13 +101,13 @@ public abstract class ConnectionPoolManagerBase<TCacheItem, TIndexCacheKey>() : 
     {
         var addedCount = await AllConnectIdListSetCache.AddAsync(ConnectionIdListSetCacheKey, [connectionPool.ConnectionId], token: token);
 
-        Logger.LogInformation($"Add connection from DistributedCacheListSet addedCount: {addedCount}");
+        Logger.LogInformation($"{this.GetType().FullName}.Add connection from DistributedCacheListSet addedCount: {addedCount}");
 
         await ConnectionPoolCache.SetAsync(connectionPool.ConnectionId, connectionPool, DistributedCacheEntryOptions, token: token);
 
         await AddIndexAsync(connectionPool, token);
 
-        Logger.LogInformation($"Add connection {connectionPool}");
+        Logger.LogInformation($"{this.GetType().FullName}.Add connection {connectionPool}");
 
         return addedCount > 0;
     }
@@ -182,7 +182,7 @@ public abstract class ConnectionPoolManagerBase<TCacheItem, TIndexCacheKey>() : 
     /// <inheritdoc />
     public virtual async Task ClearAllAsync(string host, string reason, CancellationToken token = default)
     {
-        Logger.LogInformation($"ClearAllAsync[{reason}] Start:{host},time:{Clock.Now}");
+        Logger.LogInformation($"{this.GetType().FullName}.ClearAllAsync[{reason}] Start:{host},time:{Clock.Now}");
 
         var connectionIdListByHost = (await CreateQueryableAsync(token))
             .WhereIf(!string.IsNullOrWhiteSpace(host), x => x.Host == host)
@@ -192,19 +192,19 @@ public abstract class ConnectionPoolManagerBase<TCacheItem, TIndexCacheKey>() : 
 
         await IndexListSetCache.DeleteManyAsync(keys, token: token);
 
-        Logger.LogInformation($"ClearAllAsync[{reason}] [{host}] {nameof(IndexListSetCache)} delete keyValues[{keys.Count}]:{keys.JoinAsString(",")}");
+        Logger.LogInformation($"{this.GetType().FullName}.ClearAllAsync[{reason}] [{host}] {nameof(IndexListSetCache)} delete keyValues[{keys.Count}]:{keys.JoinAsString(",")}");
 
         await AllConnectIdListSetCache.DeleteAsync(ConnectionIdListSetCacheKey, token: token);
 
-        Logger.LogInformation($"ClearAllAsync[{reason}] [{host}] {nameof(AllConnectIdListSetCache)} delete key:{ConnectionIdListSetCacheKey}");
+        Logger.LogInformation($"{this.GetType().FullName}.ClearAllAsync[{reason}] [{host}] {nameof(AllConnectIdListSetCache)} delete key:{ConnectionIdListSetCacheKey}");
 
         var connIdList = connectionIdListByHost.Select(x => x.ConnectionId).ToList();
 
         await ConnectionPoolCache.RemoveManyAsync(connIdList, token: token);
 
-        Logger.LogInformation($"ClearAllAsync[{reason}] [{host}] {nameof(ConnectionPoolCache)} delete  keyValues[{connIdList.Count}]:{connIdList.JoinAsString(",")}");
+        Logger.LogInformation($"{this.GetType().FullName}.ClearAllAsync[{reason}] [{host}] {nameof(ConnectionPoolCache)} delete  keyValues[{connIdList.Count}]:{connIdList.JoinAsString(",")}");
 
-        Logger.LogInformation($"ClearAllAsync[{reason}] End:{host},time:{Clock.Now}");
+        Logger.LogInformation($"{this.GetType().FullName}.ClearAllAsync[{reason}] End:{host},time:{Clock.Now}");
     }
 
     /// <inheritdoc />
@@ -239,7 +239,7 @@ public abstract class ConnectionPoolManagerBase<TCacheItem, TIndexCacheKey>() : 
 
     public virtual async Task StartAsync(CancellationToken cancellationToken)
     {
-        Logger.LogWarning($"App Start,HostName:{CurrentHosted.Name}");
+        Logger.LogWarning($"{this.GetType().FullName} App Start,HostName:{CurrentHosted.Name}");
 
         await ClearAllAsync(CurrentHosted.Name, "App Start", cancellationToken);
 
@@ -251,7 +251,7 @@ public abstract class ConnectionPoolManagerBase<TCacheItem, TIndexCacheKey>() : 
 
     public virtual async Task StopAsync(CancellationToken cancellationToken)
     {
-        Logger.LogWarning($"App Stop,HostName:{CurrentHosted.Name}");
+        Logger.LogWarning($"{this.GetType().FullName} App Stop,HostName:{CurrentHosted.Name}");
 
         await ClearAllAsync(CurrentHosted.Name, "App Stop", cancellationToken);
 
