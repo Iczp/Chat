@@ -226,11 +226,13 @@ public abstract class ConnectionPoolManagerBase<TCacheItem, TIndexCacheKey>() : 
     /// <inheritdoc />
     public virtual async Task<int> UpdateAllConnectionIdsAsync(CancellationToken token = default)
     {
+        Logger.LogWarning($"修复总连接数索引(异常中断) {this.GetType().FullName}.{nameof(UpdateAllConnectionIdsAsync)} Start");
+
         var connectionIdList = (await CreateQueryableAsync(token)).Select(x => x.ConnectionId).ToList();
 
         await AllConnectIdListSetCache.ReplaceAsync(ConnectionIdListSetCacheKey, connectionIdList, () => DistributedCacheEntryOptions, token: token);
 
-        Logger.LogWarning($"修复总连接数索引(异常中断) {nameof(UpdateAllConnectionIdsAsync)} : {connectionIdList.Count}");
+        Logger.LogWarning($"修复总连接数索引(异常中断) {this.GetType().FullName}.{nameof(UpdateAllConnectionIdsAsync)} End : {connectionIdList.Count}");
 
         return connectionIdList.Count;
     }
