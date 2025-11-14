@@ -230,20 +230,29 @@ public abstract class ConnectionPoolManagerBase<TCacheItem, TIndexCacheKey>() : 
 
         await AllConnectIdListSetCache.ReplaceAsync(ConnectionIdListSetCacheKey, connectionIdList, () => DistributedCacheEntryOptions, token: token);
 
+        Logger.LogWarning($"修复总连接数索引(异常中断) {nameof(UpdateAllConnectionIdsAsync)} : {connectionIdList.Count}");
+
         return connectionIdList.Count;
     }
 
     public virtual async Task StartAsync(CancellationToken cancellationToken)
     {
         Logger.LogWarning($"App Start,HostName:{CurrentHosted.Name}");
+
         await ClearAllAsync(CurrentHosted.Name, "App Start", cancellationToken);
+
+        // 修复总连接数索引(异常中断)
+        await UpdateAllConnectionIdsAsync(cancellationToken);
+
         await Task.CompletedTask;
     }
 
     public virtual async Task StopAsync(CancellationToken cancellationToken)
     {
         Logger.LogWarning($"App Stop,HostName:{CurrentHosted.Name}");
+
         await ClearAllAsync(CurrentHosted.Name, "App Stop", cancellationToken);
+
         await Task.CompletedTask;
     }
 }
