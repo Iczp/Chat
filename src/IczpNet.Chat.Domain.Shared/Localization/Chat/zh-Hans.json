@@ -119,7 +119,8 @@
     "SessionPermissionDefinitionConsts.SessionOrganizationPermission": "会话组织架构",
     "SessionPermissionDefinitionConsts.SessionOrganizationPermission.Create": "新增",
     "SessionPermissionDefinitionConsts.SessionOrganizationPermission.Update": "修改",
-    "SessionPermissionDefinitionConsts.SessionOrganizationPermission.Delete": "删除"
+    "SessionPermissionDefinitionConsts.SessionOrganizationPermission.Delete": "删除",
 
+    "code-generator-localization": "Do not modify or delete this line of comments"
   }
 }
