@@ -293,8 +293,8 @@ module.exports = function (plop) {
         CreateMap<{{pascalCase name}}, {{pascalCase name}}Dto>();
         CreateMap<{{pascalCase name}}, {{pascalCase name}}SampleDto>();
         CreateMap<{{pascalCase name}}, {{pascalCase name}}DetailDto>();
-        CreateMap<{{pascalCase name}}CreateInput, {{pascalCase name}}>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
-        CreateMap<{{pascalCase name}}UpdateInput, {{pascalCase name}}>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<{{pascalCase name}}CreateInput, {{pascalCase name}}>(MemberList.None).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<{{pascalCase name}}UpdateInput, {{pascalCase name}}>(MemberList.None).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         \r\n
         /*---------code-generator-mapper: Do not modify or delete this line of comments--------*/`,
         });

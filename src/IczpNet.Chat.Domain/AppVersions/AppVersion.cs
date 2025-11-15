@@ -103,12 +103,12 @@ public class AppVersion : BaseEntity<Guid>, IIsEnabled, IIsPublic
     /// <summary>
     /// 
     /// </summary>
-    public virtual IList<AppVersionDevice> VersionDeviceList { get; set; } = [];
+    public virtual IList<AppVersionDevice> VersionDeviceList { get; protected set; } = [];
 
     /// <summary>
     /// 
     /// </summary>
-    public virtual IList<AppVersionDeviceGroup> AppVersionDeviceGroupList { get; set; } = [];
+    public virtual IList<AppVersionDeviceGroup> AppVersionDeviceGroupList { get; protected set; } = [];
 
 
 }

@@ -205,32 +205,47 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<ScanHandler, ScanHandlerDto>();
         CreateMap<ScanHandler, ScanHandlerResultDto>();
 
-        
+
         //AppVersion
         CreateMap<AppVersion, AppVersionDto>();
         CreateMap<AppVersion, AppVersionSampleDto>();
         CreateMap<AppVersion, AppVersionDetailDto>();
-        CreateMap<AppVersionCreateInput, AppVersion>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
-        CreateMap<AppVersionUpdateInput, AppVersion>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
-        
+        CreateMap<AppVersionCreateInput, AppVersion>(MemberList.None)
+            .IgnoreAuditedObjectProperties()
+            .IgnoreAllSourcePropertiesWithAnInaccessibleSetter()
+            .IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<AppVersionUpdateInput, AppVersion>(MemberList.None)
+            .IgnoreAuditedObjectProperties()
+            .IgnoreAllSourcePropertiesWithAnInaccessibleSetter()
+            .IgnoreAllPropertiesWithAnInaccessibleSetter();
 
-        
+
         //DeviceGroup
         CreateMap<DeviceGroup, DeviceGroupDto>();
         CreateMap<DeviceGroup, DeviceGroupSampleDto>();
         CreateMap<DeviceGroup, DeviceGroupDetailDto>();
-        CreateMap<DeviceGroupCreateInput, DeviceGroup>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
-        CreateMap<DeviceGroupUpdateInput, DeviceGroup>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
-        
+        CreateMap<DeviceGroupCreateInput, DeviceGroup>(MemberList.None)
+            .IgnoreAuditedObjectProperties()
+            .IgnoreAllSourcePropertiesWithAnInaccessibleSetter()
+            .IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<DeviceGroupUpdateInput, DeviceGroup>(MemberList.None)
+            .IgnoreAuditedObjectProperties()
+            .IgnoreAllSourcePropertiesWithAnInaccessibleSetter()
+            .IgnoreAllPropertiesWithAnInaccessibleSetter();
 
-        
         //Device
         CreateMap<Device, DeviceDto>();
         CreateMap<Device, DeviceSampleDto>();
         CreateMap<Device, DeviceDetailDto>();
-        CreateMap<DeviceCreateInput, Device>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
-        CreateMap<DeviceUpdateInput, Device>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
-        
+        CreateMap<DeviceCreateInput, Device>(MemberList.None)
+            .IgnoreAuditedObjectProperties()
+            .IgnoreAllSourcePropertiesWithAnInaccessibleSetter()
+            .IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<DeviceUpdateInput, Device>(MemberList.None)
+            .IgnoreAuditedObjectProperties()
+            .IgnoreAllSourcePropertiesWithAnInaccessibleSetter()
+            .IgnoreAllPropertiesWithAnInaccessibleSetter();
+
 
         /*---------code-generator-mapper: Do not modify or delete this line of comments--------*/
     }

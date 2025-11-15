@@ -376,7 +376,6 @@ public class Device : BaseEntity<Guid>, IDeviceId, IIsEnabled
     /// <summary>
     /// 标题栏高度（可选）
     /// </summary>
-    [StringLength(64)]
     [Comment("标题栏高度（可选）")]
     public virtual int? TitleBarHeight { get; set; }
 
@@ -502,12 +501,11 @@ public class Device : BaseEntity<Guid>, IDeviceId, IIsEnabled
     /// <summary>
     /// UserDeviceList
     /// </summary>
-    public virtual IList<UserDevice> UserDeviceList { get; set; }
+    public virtual IList<UserDevice> UserDeviceList { get; protected set; } = [];
 
     /// <summary>
     /// DeviceGroupMapList
     /// </summary>
-    public virtual IList<DeviceGroupMap> DeviceGroupMapList { get; set; } = [];
-
+    public virtual IList<DeviceGroupMap> DeviceGroupMapList { get; protected set; } = [];
 
 }
