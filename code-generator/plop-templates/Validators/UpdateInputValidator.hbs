@@ -1,17 +1,17 @@
 using FluentValidation;
-using IczpNet.Invoicing.Localization;
-using IczpNet.Invoicing.{{pascalCase pluralName}}.Dtos;
+using {{namespace}}.Localization;
+using {{namespace}}.{{pascalCase pluralName}};
 using Microsoft.Extensions.Localization;
 
-namespace IczpNet.Invoicing.{{pascalCase pluralName}};
+namespace {{namespace}}.{{pascalCase pluralName}};
 
 public class {{pascalCase name}}UpdateInputValidator : AbstractValidator<{{pascalCase name}}UpdateInput>
 {
-    public {{pascalCase name}}UpdateInputValidator(IStringLocalizer<InvoicingResource> _localizer)
+    public {{pascalCase name}}UpdateInputValidator(IStringLocalizer<{{pascalCase project}}Resource> _localizer)
     {
 
         //RuleFor(x => x.Name)
         //   .NotEmpty()
-        //   .WithMessage(_localizer["Invoicing"]);
+        //   .WithMessage(_localizer["{{pascalCase project}}"]);
     }
 }

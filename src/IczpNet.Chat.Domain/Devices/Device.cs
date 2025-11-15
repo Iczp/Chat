@@ -1,9 +1,12 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.BaseEntities;
+using IczpNet.Chat.DeviceGroupMaps;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 
 namespace IczpNet.Chat.Devices;
 
@@ -375,7 +378,6 @@ public class Device : BaseEntity<Guid>, IDeviceId, IIsEnabled
     /// <summary>
     /// 标题栏高度（可选）
     /// </summary>
-    [StringLength(64)]
     [Comment("标题栏高度（可选）")]
     public virtual int? TitleBarHeight { get; set; }
 
@@ -501,7 +503,35 @@ public class Device : BaseEntity<Guid>, IDeviceId, IIsEnabled
     /// <summary>
     /// UserDeviceList
     /// </summary>
-    public virtual IList<UserDevice> UserDeviceList { get; set; }
+    public virtual IList<UserDevice> UserDeviceList { get; protected set; } = [];
 
+    /// <summary>
+    /// DeviceGroupMapList
+    /// </summary>
+    public virtual IList<DeviceGroupMap> DeviceGroupMapList { get; protected set; } = [];
 
+    /// <summary>
+    /// 
+    /// </summary>
+    [NotMapped]
+    public virtual IList<string> Groups => DeviceGroupMapList.Where(x => !x.DeviceGroup.IsDeleted).Select(x => x.DeviceGroup.Name).ToList();
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="groupIdList"></param>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
+    public int SetGroups(List<Guid> groupIdList)
+    {
+        DeviceGroupMapList.Clear();
+        DeviceGroupMapList = groupIdList.Select(x => new DeviceGroupMap()
+        {
+            DeviceId = Id,
+            DeviceGroupId = x
+
+        }).ToList();
+
+        return groupIdList.Count;
+    }
 }

@@ -1,35 +1,28 @@
 {
-  "name": "invoicing-client",
+  "name": "chat-code-generator",
   "version": "1.0.1",
-  "description": "Invoicing client application generator using Plop.",
-  "main": "src/client/index.ts",
+  "description": "chat application generator using Plop.",
   "scripts": {
     "plop": "ts-node plopfile.ts",
     "plop-ts": "cross-env NODE_OPTIONS='--import tsx' plop --plopfile=plopfile.ts",
     "plop-tsx": "cross-env NODE_OPTIONS='--loader tsx' plop --plopfile=plopfile.ts",
-    "openapi-ts": "openapi-ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "repository": {
     "type": "git",
-    "url": "https://github.com/iczp/invoicing.git"
+    "url": "https://github.com/iczp/app-updater.git"
   },
   "author": "zhongpei <1000@intry.cn>",
   "email": "1000@intry.cn",
   "website": "https://iczp.net",
   "license": "ISC",
   "devDependencies": {
-    "@hey-api/openapi-ts": "^0.57.1",
     "cross-env": "^7.0.3",
     "plop": "^4.0.1",
     "pluralize": "^8.0.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
-  },
-  "dependencies": {
-    "@hey-api/client-axios": "^0.2.11",
-    "axios": "^1.7.8"
   }
 }
