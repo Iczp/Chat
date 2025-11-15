@@ -1,4 +1,4 @@
-using IczpNet.Pusher.Commands;
+using IczpNet.Chat.DeviceGroups;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -433,6 +433,6 @@ public class DeviceDto : DeviceSampleDto
     /// <summary>
     /// 
     /// </summary>
-    public virtual List<string> Groups { get; set; }
+    public virtual List<DeviceGroupSampleDto> Groups { get; set; }
 
 }

@@ -1,6 +1,7 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.DeviceGroupMaps;
+using IczpNet.Chat.DeviceGroups;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -514,7 +515,7 @@ public class Device : BaseEntity<Guid>, IDeviceId, IIsEnabled
     /// 
     /// </summary>
     [NotMapped]
-    public virtual IList<string> Groups => DeviceGroupMapList.Where(x => !x.DeviceGroup.IsDeleted).Select(x => x.DeviceGroup.Name).ToList();
+    public virtual IList<DeviceGroup> Groups => DeviceGroupMapList.Where(x => !x.DeviceGroup.IsDeleted).Select(x => x.DeviceGroup).ToList();
 
     /// <summary>
     /// 
