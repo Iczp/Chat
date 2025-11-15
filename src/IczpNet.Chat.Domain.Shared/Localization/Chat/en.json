@@ -1,7 +1,9 @@
 {
   "culture": "en",
   "texts": {
-    "MyAccount":  "My account",
-    "SamplePageMessage": "A sample page for the Chat module"
+    "MyAccount": "My account",
+    "SamplePageMessage": "A sample page for the Chat module",
+
+    "code-generator-localization": "Do not modify or delete this line of comments"
   }
 }

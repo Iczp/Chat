@@ -242,4 +242,6 @@ public class ChatPermissions
         public const string Update = Default + "." + nameof(Update);
         public const string Delete = Default + "." + nameof(Delete);
     }
+
+    /*---------code-generator-permissions: Do not modify or delete this line of comments--------*/
 }
