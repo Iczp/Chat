@@ -42,6 +42,7 @@ using IczpNet.Chat.Squares.Dtos;
 using IczpNet.Chat.Words;
 using IczpNet.Chat.Words.Dtos;
 using Volo.Abp.AutoMapper;
+using IczpNet.Chat.AppVersions;
 /*---------code-generator-namespace: Do not modify or delete this line of comments--------*/
 
 namespace IczpNet.Chat.AutoMappers;
@@ -201,6 +202,15 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<ScanCode, ScanCodeResultDto>();
         CreateMap<ScanHandler, ScanHandlerDto>();
         CreateMap<ScanHandler, ScanHandlerResultDto>();
+
+        
+        //AppVersion
+        CreateMap<AppVersion, AppVersionDto>();
+        CreateMap<AppVersion, AppVersionSampleDto>();
+        CreateMap<AppVersion, AppVersionDetailDto>();
+        CreateMap<AppVersionCreateInput, AppVersion>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<AppVersionUpdateInput, AppVersion>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        
 
         /*---------code-generator-mapper: Do not modify or delete this line of comments--------*/
     }
