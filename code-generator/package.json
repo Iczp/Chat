@@ -1,7 +1,7 @@
 {
-  "name": "app-updater-client",
+  "name": "chat-code-generator",
   "version": "1.0.1",
-  "description": "app-updater client application generator using Plop.",
+  "description": "chat application generator using Plop.",
   "scripts": {
     "plop": "ts-node plopfile.ts",
     "plop-ts": "cross-env NODE_OPTIONS='--import tsx' plop --plopfile=plopfile.ts",
