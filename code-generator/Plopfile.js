@@ -5,7 +5,7 @@ const pluralize = require('pluralize');
 const fs = require('fs');
 const path = require('path');
 
-const project = `Invoicing`;
+const project = `AppUpdater`;
 const namespace = `IczpNet.${project}`;
 const srcPrefix = `../src/${namespace}`;
 const localizationDir = `${srcPrefix}.Domain.Shared/Localization/${project}/`;
@@ -50,69 +50,75 @@ module.exports = function (plop) {
     'CreateOrUpdateInput',
     'CreateInputValidator',
     'UpdateInputValidator',
-    'Localization',
+    // 'Localization',
   ];
   const modifies = ['AutoMapperProfile', 'Permissions'];
-  plop.setGenerator('Repository', {
-    description: 'Generate a new Repository',
-    prompts: [
-      {
-        type: 'input',
-        name: 'name',
-        message: 'What is the name of entity?',
-        default: 'Order',
-        validate: (value, prompts) => {
-          console.log(`input name: ${value}`);
-          if (!value) {
-            return 'Please enter a name for your CRUD services.';
-          }
-          prompts.pluralName = plop.getHelper('pascalCase')(pluralize(value));
-          return true;
-        },
-      },
-      {
-        type: 'list',
-        name: 'primaryKey',
-        message: 'What is the type of primary key?',
-        default: 'Guid',
-        choices: ['Guid', 'String', 'Long', 'Int'],
-      },
-    ],
-    actions: (args) => {
-      const actions = [];
-      args = { ...args, namespace, project };
-      console.info('args', args);
-      // IRepository
-      actions.push({
-        type: 'add',
-        path: `${srcPrefix}.Domain/{{pascalCase pluralName}}/I{{pascalCase name}}Repository.cs`,
-        templateFile: 'plop-templates/IRepository.hbs',
-      });
-      // Repository
+  // plop.setGenerator('Repository', {
+  //   description: 'Generate a new Repository',
+  //   prompts: [
+  //     {
+  //       type: 'input',
+  //       name: 'name',
+  //       message: 'What is the name of entity?',
+  //       default: 'Order',
+  //       validate: (value, prompts) => {
+  //         console.log(`input name: ${value}`);
+  //         if (!value) {
+  //           return 'Please enter a name for your CRUD services.';
+  //         }
+  //         prompts.pluralName = plop.getHelper('pascalCase')(pluralize(value));
+  //         return true;
+  //       },
+  //     },
+  //     {
+  //       type: 'list',
+  //       name: 'primaryKey',
+  //       message: 'What is the type of primary key?',
+  //       default: 'Guid',
+  //       choices: ['Guid', 'String', 'Long', 'Int'],
+  //     },
+  //   ],
+  //   actions: (args) => {
+  //     const actions = [];
+  //     args = { ...args, namespace, project };
+  //     console.info('args', args);
+  //     // IRepository
+  //     actions.push({
+  //       type: 'add',
+  //       path: `${srcPrefix}.Domain/{{pascalCase pluralName}}/I{{pascalCase name}}Repository.cs`,
+  //       templateFile: 'plop-templates/IRepository.hbs',
+  //     });
+  //     // Repository
 
-      actions.push({
-        type: 'add',
-        path: `${srcPrefix}.EntityFrameworkCore/Repositories/{{pascalCase name}}Repository.cs`,
-        templateFile: 'plop-templates/Repository.hbs',
-      });
+  //     actions.push({
+  //       type: 'add',
+  //       path: `${srcPrefix}.EntityFrameworkCore/{{pascalCase pluralName}}/{{pascalCase name}}Repository.cs`,
+  //       templateFile: 'plop-templates/Repository.hbs',
+  //     });
 
-      // 跳过已存在的文件
-      for (const item of actions.filter((x) => x.type == 'add')) {
-        const filePath = path
-          .join(__dirname, item.path)
-          .replace('{{pascalCase pluralName}}', args.pluralName)
-          .replace('{{pascalCase name}}', args.name);
-        item.isExists = fs.existsSync(filePath);
-        console.warn(item.isExists, `File ${filePath} `);
-        item.isExists &&
-          console.error(
-            `Exists file: '${filePath}' already exists, skipping creation.`,
-          );
-      }
+  //     // 跳过已存在的文件
+  //     for (const item of actions.filter((x) => x.type == 'add')) {
+  //       const filePath = path
+  //         .join(__dirname, item.path)
+  //         .replace('{{pascalCase pluralName}}', args.pluralName)
+  //         .replace('{{pascalCase name}}', args.name);
+  //       item.isExists = fs.existsSync(filePath);
+  //       console.warn(item.isExists, `File ${filePath} `);
+  //       item.isExists &&
+  //         console.error(
+  //           `Exists file: '${filePath}' already exists, skipping creation.`,
+  //         );
+  //     }
 
-      return ['Start', ...actions.filter((x) => !x.isExists), 'End'];
-    },
-  });
+  //     return [
+  //       'Start',
+  //       ...actions
+  //         .map((x) => ({ ...x, data: { ...x.data, ...args } }))
+  //         .filter((x) => !x.isExists),
+  //       'End',
+  //     ];
+  //   },
+  // });
   // Define a generator for a new Net9 component
   plop.setGenerator('CRUD', {
     description: 'Generate a new CRUD services',
@@ -121,7 +127,7 @@ module.exports = function (plop) {
         type: 'input',
         name: 'name',
         message: 'What is the name of entity?',
-        default: 'Order',
+        default: 'AppClient',
         validate: (value, prompts) => {
           console.log(`input name: ${value}`);
           if (!value) {
@@ -181,7 +187,7 @@ module.exports = function (plop) {
       args.isRepository &&
         actions.push({
           type: 'add',
-          path: `${srcPrefix}.EntityFrameworkCore/Repositories/{{pascalCase name}}Repository.cs`,
+          path: `${srcPrefix}.EntityFrameworkCore/{{pascalCase pluralName}}/{{pascalCase name}}Repository.cs`,
           templateFile: 'plop-templates/Repository.hbs',
         });
       // Manager
@@ -216,49 +222,49 @@ module.exports = function (plop) {
       args.isGetListInput &&
         actions.push({
           type: 'add',
-          path: `${srcPrefix}.Application.Contracts/{{pascalCase pluralName}}/Dtos/{{pascalCase name}}GetListInput.cs`,
+          path: `${srcPrefix}.Application.Contracts/{{pascalCase pluralName}}/{{pascalCase name}}GetListInput.cs`,
           templateFile: 'plop-templates/Dtos/GetListInput.hbs',
         });
       // Dto
       args.isDto &&
         actions.push({
           type: 'add',
-          path: `${srcPrefix}.Application.Contracts/{{pascalCase pluralName}}/Dtos/{{pascalCase name}}Dto.cs`,
+          path: `${srcPrefix}.Application.Contracts/{{pascalCase pluralName}}/{{pascalCase name}}Dto.cs`,
           templateFile: 'plop-templates/Dtos/Dto.hbs',
         });
       // CreateInput
       args.isCreateInput &&
         actions.push({
           type: 'add',
-          path: `${srcPrefix}.Application.Contracts/{{pascalCase pluralName}}/Dtos/{{pascalCase name}}CreateInput.cs`,
+          path: `${srcPrefix}.Application.Contracts/{{pascalCase pluralName}}/{{pascalCase name}}CreateInput.cs`,
           templateFile: 'plop-templates/Dtos/CreateInput.hbs',
         });
       // UpdateInput
       args.isUpdateInput &&
         actions.push({
           type: 'add',
-          path: `${srcPrefix}.Application.Contracts/{{pascalCase pluralName}}/Dtos/{{pascalCase name}}UpdateInput.cs`,
+          path: `${srcPrefix}.Application.Contracts/{{pascalCase pluralName}}/{{pascalCase name}}UpdateInput.cs`,
           templateFile: 'plop-templates/Dtos/UpdateInput.hbs',
         });
       // SampleDto
       args.isSampleDto &&
         actions.push({
           type: 'add',
-          path: `${srcPrefix}.Application.Contracts/{{pascalCase pluralName}}/Dtos/{{pascalCase name}}SampleDto.cs`,
+          path: `${srcPrefix}.Application.Contracts/{{pascalCase pluralName}}/{{pascalCase name}}SampleDto.cs`,
           templateFile: 'plop-templates/Dtos/SampleDto.hbs',
         });
       // DetailDto
       args.isDetailDto &&
         actions.push({
           type: 'add',
-          path: `${srcPrefix}.Application.Contracts/{{pascalCase pluralName}}/Dtos/{{pascalCase name}}DetailDto.cs`,
+          path: `${srcPrefix}.Application.Contracts/{{pascalCase pluralName}}/{{pascalCase name}}DetailDto.cs`,
           templateFile: 'plop-templates/Dtos/DetailDto.hbs',
         });
       // CreateOrUpdateInput
       args.isCreateOrUpdateInput &&
         actions.push({
           type: 'add',
-          path: `${srcPrefix}.Application.Contracts/{{pascalCase pluralName}}/Dtos/{{pascalCase name}}CreateOrUpdateInput.cs`,
+          path: `${srcPrefix}.Application.Contracts/{{pascalCase pluralName}}/{{pascalCase name}}CreateOrUpdateInput.cs`,
           templateFile: 'plop-templates/Dtos/CreateOrUpdateInput.hbs',
         });
       // CreateInputValidator
@@ -281,15 +287,6 @@ module.exports = function (plop) {
           type: 'modify',
           path: `${srcPrefix}.Application/Mappers/${project}ApplicationAutoMapperProfile.cs`,
           pattern:
-            /\/\*---------code-generator-namespace: Do not modify or delete this line of comments--------\*\//g,
-          template: `using ${namespace}.{{pascalCase pluralName}};\r\nusing ${namespace}.{{pascalCase pluralName}}.Dtos;\r\n/*---------code-generator-namespace: Do not modify or delete this line of comments--------*/`,
-        });
-      // AutoMapperProfile
-      args.isAutoMapperProfile &&
-        actions.push({
-          type: 'modify',
-          path: `${srcPrefix}.Application/Mappers/${project}ApplicationAutoMapperProfile.cs`,
-          pattern:
             /\/\*---------code-generator-mapper: Do not modify or delete this line of comments--------\*\//g,
           template: `
         //{{pascalCase name}}
@@ -300,6 +297,16 @@ module.exports = function (plop) {
         CreateMap<{{pascalCase name}}UpdateInput, {{pascalCase name}}>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         \r\n
         /*---------code-generator-mapper: Do not modify or delete this line of comments--------*/`,
+        });
+      // AutoMapperProfile
+      args.isAutoMapperProfile &&
+        actions.push({
+          type: 'modify',
+          path: `${srcPrefix}.Application/Mappers/${project}ApplicationAutoMapperProfile.cs`,
+          pattern:
+            /\/\*---------code-generator-namespace: Do not modify or delete this line of comments--------\*\//g,
+          template: `using {{namespace}}.{{pascalCase pluralName}};
+/*---------code-generator-namespace: Do not modify or delete this line of comments--------*/`,
         });
       // Permissions
       args.isPermissions &&
@@ -372,7 +379,7 @@ module.exports = function (plop) {
         "${keyName}": "{{pascalCase name}}",
         "${keyName}.GetItem": "${getValue('GetItem')}",
         "${keyName}.GetList": "${getValue('Update')}",
-        "${keyName}..Update": "${getValue('GetItem')}",
+        "${keyName}.Update": "${getValue('GetItem')}",
         "${keyName}.Create": "${getValue('Create')}",
         "${keyName}.Delete": "${getValue('Delete')}",
         "${keyName}.SetIsEnabled": "${getValue('SetIsEnabled')}",
@@ -384,7 +391,9 @@ module.exports = function (plop) {
 
       args.isLocalization && applyLocalization();
 
-      return actions.filter((x) => !x.isExists);
+      return actions
+        .map((x) => ({ ...x, data: { ...x.data, ...args } }))
+        .filter((x) => !x.isExists);
     },
     after: function (answers, config, plop) {
       // 在所有动作执行完毕后调用此函数
