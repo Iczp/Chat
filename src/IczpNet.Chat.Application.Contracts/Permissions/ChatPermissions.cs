@@ -259,5 +259,21 @@ public class ChatPermissions
     }
     
 
+    
+    /// <summary>
+    /// DeviceGroup
+    /// </summary>
+    public class DeviceGroupPermissions
+    {
+        public const string Default = GroupName + $".{nameof(DeviceGroupPermissions)}";
+        public const string GetItem = Default + ".GetItem";
+        public const string GetList = Default + ".GetList";
+        public const string Update = Default + ".Update";
+        public const string Create = Default + ".Create";
+        public const string Delete = Default + ".Delete";
+        public const string SetIsEnabled = Default + ".SetIsEnabled";
+    }
+    
+
     /*---------code-generator-permissions: Do not modify or delete this line of comments--------*/
 }
