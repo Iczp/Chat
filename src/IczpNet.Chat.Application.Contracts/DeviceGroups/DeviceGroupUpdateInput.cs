@@ -5,10 +5,7 @@ namespace IczpNet.Chat.DeviceGroups;
 /// 修改 
 ///</summary>
 [Serializable]
-public class DeviceGroupUpdateInput
+public class DeviceGroupUpdateInput : DeviceGroupCreateInput
 {
-    ///<summary>
-    /// 名称 
-    ///</summary>
-    public virtual string Name { get; set; }
+
 }

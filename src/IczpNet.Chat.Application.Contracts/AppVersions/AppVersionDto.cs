@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 namespace IczpNet.Chat.AppVersions;
 
 ///<summary>
@@ -12,5 +13,10 @@ public class AppVersionDto : AppVersionSampleDto
     ///// 说明 
     /////</summary>
     //public virtual string Description { get; set; } 
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public virtual List<string> Groups { get; set; }
 
 }

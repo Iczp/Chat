@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 
 namespace IczpNet.Chat.Devices;
 
@@ -508,4 +510,28 @@ public class Device : BaseEntity<Guid>, IDeviceId, IIsEnabled
     /// </summary>
     public virtual IList<DeviceGroupMap> DeviceGroupMapList { get; protected set; } = [];
 
+    /// <summary>
+    /// 
+    /// </summary>
+    [NotMapped]
+    public virtual IList<string> Groups => DeviceGroupMapList.Where(x => !x.DeviceGroup.IsDeleted).Select(x => x.DeviceGroup.Name).ToList();
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="groupIdList"></param>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
+    public int SetGroups(List<Guid> groupIdList)
+    {
+        DeviceGroupMapList.Clear();
+        DeviceGroupMapList = groupIdList.Select(x => new DeviceGroupMap()
+        {
+            DeviceId = Id,
+            DeviceGroupId = x
+
+        }).ToList();
+
+        return groupIdList.Count;
+    }
 }

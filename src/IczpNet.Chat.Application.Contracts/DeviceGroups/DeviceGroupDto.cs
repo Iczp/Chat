@@ -13,4 +13,9 @@ public class DeviceGroupDto : DeviceGroupSampleDto
     ///</summary>
     public virtual string Description { get; set; }
 
+    /// <summary>
+    /// 设备数量
+    /// </summary>
+    public virtual int DeviceCount { get; set; }
+
 }

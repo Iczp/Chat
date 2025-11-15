@@ -9,6 +9,12 @@ namespace IczpNet.Chat.Devices;
 [Serializable]
 public class DeviceGetListInput : GetListInput
 {
+
+    /// <summary>
+    /// 设备分组
+    /// </summary>
+    public virtual Guid? DeviceGroupId { get; set; }
+
     /// <summary>
     /// 设备 ID
     /// </summary>
@@ -26,4 +32,9 @@ public class DeviceGetListInput : GetListInput
     /// </summary>
     [MaxLength(64)]
     public virtual string AppId { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public virtual bool? IsEnabled { get; set; } = true;
 }

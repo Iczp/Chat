@@ -1,6 +1,7 @@
 ﻿using IczpNet.AbpCommons.EntityFrameworkCore;
-using IczpNet.Chat.AppVersionDevices;
 using IczpNet.Chat.AppVersionDeviceGroups;
+using IczpNet.Chat.AppVersionDevices;
+using IczpNet.Chat.AppVersions;
 using IczpNet.Chat.Articles;
 using IczpNet.Chat.Attributes;
 using IczpNet.Chat.Blobs;
@@ -228,6 +229,11 @@ public static class ChatDbContextModelCreatingExtensions
 
         builder.Entity<AppVersionDeviceGroup>(b => { b.HasKey(x => new { x.AppVersionId, x.DeviceGroupId }); });
 
+        builder.Entity<AppVersion>(b =>
+        {
+            b.HasIndex(x => new { x.AppId, x.Platform, x.VersionCode }).IsDescending([false, false, true]).IsUnique();
+            b.HasIndex(x => x.VersionCode).IsDescending(true);
+        });
     }
 
     public static void ForEachEntitys(this ModelBuilder builder)

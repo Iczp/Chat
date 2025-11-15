@@ -1,10 +1,13 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
-using IczpNet.Chat.AppVersionDevices;
 using IczpNet.Chat.AppVersionDeviceGroups;
+using IczpNet.Chat.AppVersionDevices;
 using IczpNet.Chat.BaseEntities;
+using IczpNet.Chat.DeviceGroupMaps;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 
 namespace IczpNet.Chat.AppVersions;
 
@@ -110,5 +113,27 @@ public class AppVersion : BaseEntity<Guid>, IIsEnabled, IIsPublic
     /// </summary>
     public virtual IList<AppVersionDeviceGroup> AppVersionDeviceGroupList { get; protected set; } = [];
 
+    /// <summary>
+    /// 
+    /// </summary>
+    [NotMapped]
+    public virtual IList<string> Groups => AppVersionDeviceGroupList.Where(x => !x.DeviceGroup.IsDeleted).Select(x => x.DeviceGroup.Name).ToList();
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="groupIdList"></param>
+    /// <returns></returns>
+    public virtual int SetGroups(List<Guid> groupIdList)
+    {
+        AppVersionDeviceGroupList.Clear();
+        AppVersionDeviceGroupList = groupIdList.Select(x => new AppVersionDeviceGroup()
+        {
+            AppVersionId = Id,
+            DeviceGroupId = x
+
+        }).ToList();
+
+        return groupIdList.Count;
+    }
 }

@@ -256,6 +256,7 @@ public class ChatPermissions
         public const string Create = Default + ".Create";
         public const string Delete = Default + ".Delete";
         public const string SetIsEnabled = Default + ".SetIsEnabled";
+        public const string SetGroups = Default + ".SetGroups";
     }
     
 
@@ -272,6 +273,7 @@ public class ChatPermissions
         public const string Create = Default + ".Create";
         public const string Delete = Default + ".Delete";
         public const string SetIsEnabled = Default + ".SetIsEnabled";
+        public const string SetDevices = Default + ".SetDevices";
     }
     
 
@@ -288,6 +290,7 @@ public class ChatPermissions
         public const string Create = Default + ".Create";
         public const string Delete = Default + ".Delete";
         public const string SetIsEnabled = Default + ".SetIsEnabled";
+        public const string SetGroups = Default + ".SetGroups";
     }
     
 

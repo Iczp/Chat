@@ -1,5 +1,6 @@
 using IczpNet.Pusher.Commands;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 namespace IczpNet.Chat.Devices;
 
@@ -428,5 +429,10 @@ public class DeviceDto : DeviceSampleDto
     /// </summary>
     [MaxLength(256)]
     public virtual string Remarks { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public virtual List<string> Groups { get; set; }
 
 }

@@ -49,7 +49,7 @@ public class AppVersionGetListInput : GetListInput
     public virtual bool? IsPublic { get; set; }
 
     /// <summary>
-    /// 
+    /// 是否启用的
     /// </summary>
-    public virtual bool? IsEnabled { get; set; }
+    public virtual bool? IsEnabled { get; set; } = true;
 }
