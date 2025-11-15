@@ -9,9 +9,9 @@ namespace IczpNet.Chat.DeviceGroups;
 [Serializable]
 public class DeviceGroupSampleDto : BaseDto<Guid>
 {
-    ///// <summary>
-    ///// 名称
-    ///// </summary>
-    //public virtual string Name { get; set; }
+    /// <summary>
+    /// 名称
+    /// </summary>
+    public virtual string Name { get; set; }
 
 }
