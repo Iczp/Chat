@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 namespace {{namespace}}.{{pascalCase pluralName}};
 
 /// <inheritdoc />
-public class {{pascalCase name}}AppService(I{{pascalCase name}}Repository repository) : CrudAppServiceBase<{{pascalCase name}}, {{pascalCase name}}DetailDto, {{pascalCase name}}Dto, {{pascalCase primaryKey}}, {{pascalCase name}}GetListInput, {{pascalCase name}}CreateInput, {{pascalCase name}}UpdateInput>(repository), I{{pascalCase name}}AppService
+public class {{pascalCase name}}AppService(I{{pascalCase name}}Repository repository) : Crud{{project}}AppService<{{pascalCase name}}, {{pascalCase name}}DetailDto, {{pascalCase name}}Dto, {{pascalCase primaryKey}}, {{pascalCase name}}GetListInput, {{pascalCase name}}CreateInput, {{pascalCase name}}UpdateInput>(repository), I{{pascalCase name}}AppService
 {
-    protected override string? GetPolicyName { get; set; } = {{pascalCase project}}Permissions.{{pascalCase name}}Permissions.GetItem;
-    protected override string? GetListPolicyName { get; set; } = {{pascalCase project}}Permissions.{{pascalCase name}}Permissions.GetList;
-    protected override string? CreatePolicyName { get; set; } = {{pascalCase project}}Permissions.{{pascalCase name}}Permissions.Create;
-    protected override string? UpdatePolicyName { get; set; } = {{pascalCase project}}Permissions.{{pascalCase name}}Permissions.Update;
-    protected override string? DeletePolicyName { get; set; } = {{pascalCase project}}Permissions.{{pascalCase name}}Permissions.Delete;
-    protected override string? SetIsEnabledPolicyName { get; set; } = {{pascalCase project}}Permissions.{{pascalCase name}}Permissions.SetIsEnabled;
+    protected override string GetPolicyName { get; set; } = {{pascalCase project}}Permissions.{{pascalCase name}}Permissions.GetItem;
+    protected override string GetListPolicyName { get; set; } = {{pascalCase project}}Permissions.{{pascalCase name}}Permissions.GetList;
+    protected override string CreatePolicyName { get; set; } = {{pascalCase project}}Permissions.{{pascalCase name}}Permissions.Create;
+    protected override string UpdatePolicyName { get; set; } = {{pascalCase project}}Permissions.{{pascalCase name}}Permissions.Update;
+    protected override string DeletePolicyName { get; set; } = {{pascalCase project}}Permissions.{{pascalCase name}}Permissions.Delete;
+    protected virtual string SetIsEnabledPolicyName { get; set; } = {{pascalCase project}}Permissions.{{pascalCase name}}Permissions.SetIsEnabled;
 
     /// <inheritdoc />
     protected override async Task<IQueryable<{{pascalCase name}}>> CreateFilteredQueryAsync({{pascalCase name}}GetListInput input)
