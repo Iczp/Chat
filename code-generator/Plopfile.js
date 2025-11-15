@@ -5,7 +5,7 @@ const pluralize = require('pluralize');
 const fs = require('fs');
 const path = require('path');
 
-const project = `AppUpdater`;
+const project = `Chat`;
 const namespace = `IczpNet.${project}`;
 const srcPrefix = `../src/${namespace}`;
 const localizationDir = `${srcPrefix}.Domain.Shared/Localization/${project}/`;
@@ -285,7 +285,7 @@ module.exports = function (plop) {
       args.isAutoMapperProfile &&
         actions.push({
           type: 'modify',
-          path: `${srcPrefix}.Application/Mappers/${project}ApplicationAutoMapperProfile.cs`,
+          path: `${srcPrefix}.Application/AutoMappers/${project}ApplicationAutoMapperProfile.cs`,
           pattern:
             /\/\*---------code-generator-mapper: Do not modify or delete this line of comments--------\*\//g,
           template: `
@@ -302,7 +302,7 @@ module.exports = function (plop) {
       args.isAutoMapperProfile &&
         actions.push({
           type: 'modify',
-          path: `${srcPrefix}.Application/Mappers/${project}ApplicationAutoMapperProfile.cs`,
+          path: `${srcPrefix}.Application/AutoMappers/${project}ApplicationAutoMapperProfile.cs`,
           pattern:
             /\/\*---------code-generator-namespace: Do not modify or delete this line of comments--------\*\//g,
           template: `using {{namespace}}.{{pascalCase pluralName}};
