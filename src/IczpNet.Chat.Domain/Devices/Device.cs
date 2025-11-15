@@ -1,5 +1,6 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.BaseEntities;
+using IczpNet.Chat.DeviceGroupMaps;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -502,6 +503,11 @@ public class Device : BaseEntity<Guid>, IDeviceId, IIsEnabled
     /// UserDeviceList
     /// </summary>
     public virtual IList<UserDevice> UserDeviceList { get; set; }
+
+    /// <summary>
+    /// DeviceGroupMapList
+    /// </summary>
+    public virtual IList<DeviceGroupMap> DeviceGroupMapList { get; set; } = [];
 
 
 }

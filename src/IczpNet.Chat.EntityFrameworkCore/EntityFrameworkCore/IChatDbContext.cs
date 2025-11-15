@@ -1,4 +1,7 @@
-﻿using IczpNet.Chat.Articles;
+﻿using IczpNet.Chat.AppVersionDevices;
+using IczpNet.Chat.AppVersionDeviceGroups;
+using IczpNet.Chat.AppVersions;
+using IczpNet.Chat.Articles;
 using IczpNet.Chat.Blobs;
 using IczpNet.Chat.ChatObjectCategories;
 using IczpNet.Chat.ChatObjectEntryValues;
@@ -9,6 +12,8 @@ using IczpNet.Chat.Connections;
 using IczpNet.Chat.ContactTags;
 using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Developers;
+using IczpNet.Chat.DeviceGroupMaps;
+using IczpNet.Chat.DeviceGroups;
 using IczpNet.Chat.Devices;
 using IczpNet.Chat.EntryNames;
 using IczpNet.Chat.EntryValues;
@@ -164,13 +169,23 @@ public interface IChatDbContext : IEfCoreDbContext
 
     DbSet<ClientConfig> ClientConfig { get; }
 
-    DbSet<Device> Device { get; }
+    DbSet<Device> Device { get; set; }
+
+    DbSet<DeviceGroup> DeviceGroup { get; }
+
+    DbSet<DeviceGroupMap> DeviceGroupMap { get; }
 
     DbSet<UserDevice> UserDevice { get; }
 
-    DbSet<ScanCode> ScanCode { get;  }
+    DbSet<AppVersion> AppVersion { get; }
 
-    DbSet<ScanHandler> ScanHandler { get;  }
+    DbSet<AppVersionDevice> AppVersionDevice { get; }
+
+    DbSet<AppVersionDeviceGroup> AppVersionDeviceGroup { get; }
+
+    DbSet<ScanCode> ScanCode { get; }
+
+    DbSet<ScanHandler> ScanHandler { get; }
 
 
 }

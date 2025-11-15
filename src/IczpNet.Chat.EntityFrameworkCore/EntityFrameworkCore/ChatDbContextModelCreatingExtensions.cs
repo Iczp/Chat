@@ -1,4 +1,6 @@
 ﻿using IczpNet.AbpCommons.EntityFrameworkCore;
+using IczpNet.Chat.AppVersionDevices;
+using IczpNet.Chat.AppVersionDeviceGroups;
 using IczpNet.Chat.Articles;
 using IczpNet.Chat.Attributes;
 using IczpNet.Chat.Blobs;
@@ -9,6 +11,7 @@ using IczpNet.Chat.Connections;
 using IczpNet.Chat.DbTables;
 using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Developers;
+using IczpNet.Chat.DeviceGroupMaps;
 using IczpNet.Chat.Devices;
 using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
@@ -218,6 +221,12 @@ public static class ChatDbContextModelCreatingExtensions
             });
 
         builder.Entity<UserDevice>(b => { b.HasKey(x => new { x.UserId, x.DeviceId }); });
+
+        builder.Entity<DeviceGroupMap>(b => { b.HasKey(x => new { x.DeviceGroupId, x.DeviceId }); });
+
+        builder.Entity<AppVersionDevice>(b => { b.HasKey(x => new { x.AppVersionId, x.DeviceId }); });
+
+        builder.Entity<AppVersionDeviceGroup>(b => { b.HasKey(x => new { x.AppVersionId, x.DeviceGroupId }); });
 
     }
 
