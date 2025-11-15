@@ -44,6 +44,7 @@ using IczpNet.Chat.Words.Dtos;
 using Volo.Abp.AutoMapper;
 using IczpNet.Chat.AppVersions;
 using IczpNet.Chat.DeviceGroups;
+using IczpNet.Chat.Devices;
 /*---------code-generator-namespace: Do not modify or delete this line of comments--------*/
 
 namespace IczpNet.Chat.AutoMappers;
@@ -220,6 +221,15 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<DeviceGroup, DeviceGroupDetailDto>();
         CreateMap<DeviceGroupCreateInput, DeviceGroup>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         CreateMap<DeviceGroupUpdateInput, DeviceGroup>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        
+
+        
+        //Device
+        CreateMap<Device, DeviceDto>();
+        CreateMap<Device, DeviceSampleDto>();
+        CreateMap<Device, DeviceDetailDto>();
+        CreateMap<DeviceCreateInput, Device>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<DeviceUpdateInput, Device>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         
 
         /*---------code-generator-mapper: Do not modify or delete this line of comments--------*/
