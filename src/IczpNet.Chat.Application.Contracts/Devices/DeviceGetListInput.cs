@@ -17,6 +17,11 @@ public class DeviceGetListInput : GetListInput
     public virtual Guid? DeviceGroupId { get; set; }
 
     /// <summary>
+    /// 用户Id
+    /// </summary>
+    public virtual Guid? UserId { get; set; }
+
+    /// <summary>
     /// 设备 ID
     /// </summary>
     [MaxLength(128)]

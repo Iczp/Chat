@@ -19,6 +19,7 @@ public class DeviceCreateInput
     /// 设备 ID
     /// </summary>
     [MaxLength(128)]
+    [Required]
     public virtual string DeviceId { get; set; }
 
     /// <summary>
