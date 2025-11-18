@@ -31,6 +31,7 @@ public class Device : BaseEntity<Guid>, IDeviceId, IIsEnabled
     /// </summary>
     [Comment("设备 ID")]
     [StringLength(128)]
+    [Required]
     public virtual string DeviceId { get; set; }
 
     /// <summary>

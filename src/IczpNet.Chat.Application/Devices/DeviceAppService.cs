@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.Devices;
@@ -33,6 +34,7 @@ public class DeviceAppService(
         return (await base.CreateFilteredQueryAsync(input))
             //.WhereIf(!string.IsNullOrWhiteSpace(input.Keyword), x => x.Name.Contains(input.Keyword))
             .WhereIf(input.IsEnabled.HasValue, x => x.IsEnabled == input.IsEnabled)
+            .WhereIf(input.UserId.HasValue, x => x.UserDeviceList.Any(d => d.UserId == input.UserId))
             .WhereIf(input.DeviceGroupId.HasValue, x => x.DeviceGroupMapList.Any(d => d.DeviceGroupId == input.DeviceGroupId))
             .WhereIf(!string.IsNullOrEmpty(input.DeviceId), x => x.DeviceId == input.DeviceId)
             .WhereIf(!string.IsNullOrEmpty(input.Platform), x => x.Platform == input.Platform)
@@ -81,5 +83,16 @@ public class DeviceAppService(
         //upadte
         UpdatePolicyName = string.Empty;
         return await base.UpdateAsync(entity.Id, input);
+    }
+
+    public Task<PagedResultDto<DeviceDto>> GetListByCurrentUserAsync()
+    {
+        Assert.If(CurrentUser.Id.HasValue, "未登录");
+
+        return GetListAsync(new DeviceGetListInput()
+        {
+            UserId = CurrentUser.Id,
+            MaxResultCount = 999
+        });
     }
 }

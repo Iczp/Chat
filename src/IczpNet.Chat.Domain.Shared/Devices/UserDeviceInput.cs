@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.Devices;
 public class UserDeviceInput
@@ -6,6 +7,7 @@ public class UserDeviceInput
     /// <summary>
     /// 
     /// </summary>
+    [Required]
     public string RawDeviceId { get; set; }
 
     /// <summary>
