@@ -85,15 +85,13 @@ public class DeviceAppService(
         return await base.UpdateAsync(entity.Id, input);
     }
 
-    public Task<PagedResultDto<DeviceDto>> GetListByCurrentUserAsync(Guid userId)
+    public Task<PagedResultDto<DeviceDto>> GetListByCurrentUserAsync()
     {
         Assert.If(CurrentUser.Id.HasValue, "未登录");
 
-        Assert.If(CurrentUser.Id!=userId, "只能查看当前用户");
-
         return GetListAsync(new DeviceGetListInput()
         {
-            UserId = userId,
+            UserId = CurrentUser.Id,
             MaxResultCount = 999
         });
     }
