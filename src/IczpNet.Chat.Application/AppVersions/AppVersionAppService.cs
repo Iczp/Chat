@@ -74,6 +74,17 @@ public class AppVersionAppService(
         Assert.If(missingIds.Count != 0, $"以下 GroupId 不存在: {string.Join(", ", missingIds)}");
     }
 
+    protected override async Task<AppVersion> MapToEntityAsync(AppVersionCreateInput createInput)
+    {
+        await CheckExistAsync(createInput.DeviceGroupIdList);
+
+        var entity = await base.MapToEntityAsync(createInput);
+
+        entity.SetGroups(createInput.DeviceGroupIdList);
+
+        return entity;
+    }
+
     /// <summary>
     /// 最新版
     /// </summary>
@@ -84,6 +95,7 @@ public class AppVersionAppService(
         var query = await Repository.GetQueryableAsync();
 
         var latest = await query
+            .Where(x => x.IsEnabled)
             .WhereIf(!string.IsNullOrWhiteSpace(input.AppId), x => x.AppId == input.AppId)
             .WhereIf(!string.IsNullOrWhiteSpace(input.Platform), x => x.Platform == input.Platform)
             .WhereIf(input.VersionCode >= 0, x => x.VersionCode > input.VersionCode)

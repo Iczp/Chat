@@ -28,40 +28,51 @@ public class DeviceResolver(
     public virtual string GetParameter(string key)
     {
         var httpContext = GetHttpContext();
-        if (httpContext != null)
+
+        if (httpContext == null)
         {
             return null;
         }
 
         var headers = httpContext?.Request.Headers;
 
-        if (string.IsNullOrEmpty(headers[key]))
+        if (!string.IsNullOrEmpty(headers[key]))
         {
             return headers[key];
         }
 
-        if (string.IsNullOrEmpty(httpContext?.Request.Query[key]))
+        if (!string.IsNullOrEmpty(httpContext?.Request.Query[key]))
         {
             return httpContext?.Request.Query[key];
         }
 
         return null;
     }
+    public virtual string GetDeviceIdKey()
+    {
+        return Config.RequestDeviceIdKey;
+    }
 
     public virtual string GetDeviceId()
     {
         return GetParameter(Config.RequestDeviceIdKey);
     }
-
-    public virtual string GetDeviceType()
-    {
-        return GetParameter(Config.RequestDeviceTypeKey);
-    }
-
     public virtual async Task<string> GetDeviceIdAsync()
     {
         await Task.Yield();
         return GetDeviceId();
+    }
+
+
+
+    public virtual string GetDeviceTypeKey()
+    {
+        return Config.RequestDeviceTypeKey;
+    }
+
+    public virtual string GetDeviceType()
+    {
+        return GetParameter(Config.RequestDeviceTypeKey);
     }
 
     public virtual async Task<string> GetDeviceTypeAsync()
@@ -70,20 +81,45 @@ public class DeviceResolver(
         return GetDeviceType();
     }
 
+    public virtual string GetAppIdKey()
+    {
+        return Config.RequestAppIdKey;
+    }
+
+    public virtual string GetAppId()
+    {
+        return GetParameter(Config.RequestAppIdKey);
+    }
+
+    public virtual async Task<string> GetAppIdAsync()
+    {
+        await Task.Yield();
+        return GetAppId();
+    }
+
+    public virtual string GetAppVersionKey()
+    {
+        return Config.RequestAppVersionKey;
+    }
+
+    public virtual string GetAppVersion()
+    {
+        return GetParameter(Config.RequestAppVersionKey);
+    }
+
+    public virtual async Task<string> GetAppVersionAsync()
+    {
+        await Task.Yield();
+        return GetAppVersion();
+    }
+
     public virtual async Task<bool> IsEqualsAsync(string inputDeviceId)
     {
         await Task.Yield();
         return GetDeviceId().Equals(inputDeviceId);
     }
 
-    public virtual string GetDeviceIdKey()
-    {
-        return Config.RequestDeviceIdKey;
-    }
 
-    public virtual string GetDeviceTypeKey()
-    {
-        return Config.RequestDeviceTypeKey;
-    }
+
 
 }

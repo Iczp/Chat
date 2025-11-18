@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251117080415_Device_Fix_DeviceOrientation")]
+    partial class Device_Fix_DeviceOrientation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1601,8 +1604,9 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("nvarchar(64)")
                         .HasComment("manifest.json 中应用版本名称");
 
-                    b.Property<long>("AppVersionCode")
-                        .HasColumnType("bigint")
+                    b.Property<string>("AppVersionCode")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
                         .HasComment("manifest.json 中应用版本号");
 
                     b.Property<string>("AppWgtVersion")
@@ -1938,11 +1942,6 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasComment(" Device Id");
 
-                    b.Property<string>("AppId")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)")
-                        .HasComment("AppId");
-
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -1980,11 +1979,6 @@ namespace IczpNet.Chat.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)")
                         .HasComment("Raw DeviceType");
-
-                    b.Property<string>("UserName")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)")
-                        .HasComment("UserName");
 
                     b.HasKey("UserId", "DeviceId");
 

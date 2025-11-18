@@ -8,15 +8,30 @@ public interface IDeviceResolver
 
     string GetDeviceIdKey();
 
-    string GetDeviceType();
+    Task<string>  GetDeviceIdAsync();
 
     string GetDeviceTypeKey();
 
-    string GetParameter(string key);
-
-    Task<string>  GetDeviceIdAsync();
+    string GetDeviceType();
 
     Task<string> GetDeviceTypeAsync();
+
+    string GetAppId();
+
+    string GetAppIdKey();
+
+    Task<string> GetAppIdAsync();
+
+    string GetAppVersion();
+
+    string GetAppVersionKey();
+
+    Task<string> GetAppVersionAsync();
+
+
+   
+
+    string GetParameter(string key);
 
     Task<bool> IsEqualsAsync(string inputDeviceId);
 

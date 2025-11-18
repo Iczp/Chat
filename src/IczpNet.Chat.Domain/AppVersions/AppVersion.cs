@@ -3,6 +3,7 @@ using IczpNet.Chat.AppVersionDeviceGroups;
 using IczpNet.Chat.AppVersionDevices;
 using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.DeviceGroupMaps;
+using IczpNet.Chat.DeviceGroups;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -117,7 +118,7 @@ public class AppVersion : BaseEntity<Guid>, IIsEnabled, IIsPublic
     /// 
     /// </summary>
     [NotMapped]
-    public virtual IList<string> Groups => AppVersionDeviceGroupList.Where(x => !x.DeviceGroup.IsDeleted).Select(x => x.DeviceGroup.Name).ToList();
+    public virtual IList<DeviceGroup> Groups => AppVersionDeviceGroupList.Where(x => !x.DeviceGroup.IsDeleted).Select(x => x.DeviceGroup).ToList();
 
     /// <summary>
     /// 

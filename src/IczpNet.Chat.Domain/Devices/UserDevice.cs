@@ -22,6 +22,13 @@ public class UserDevice : BaseEntity
     public virtual Guid UserId { get; set; }
 
     /// <summary>
+    /// UserName
+    /// </summary>
+    [Comment("UserName")]
+    [StringLength(64)]
+    public string UserName { get; set; }
+
+    /// <summary>
     /// Raw DeviceId
     /// </summary>
     [Comment("Raw DeviceId")]
@@ -45,7 +52,14 @@ public class UserDevice : BaseEntity
     /// Device
     /// </summary>
     [ForeignKey(nameof(DeviceId))]
-    public virtual Device Device { get; set; }
+    public virtual Device Device { get; protected set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    [Comment("AppId")]
+    [StringLength(64)]
+    public string AppId { get;  set; }
 
     public UserDevice()
     {

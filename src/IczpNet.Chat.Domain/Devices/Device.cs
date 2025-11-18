@@ -1,6 +1,7 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.DeviceGroupMaps;
+using IczpNet.Chat.DeviceGroups;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -85,8 +86,8 @@ public class Device : BaseEntity<Guid>, IDeviceId, IIsEnabled
     /// manifest.json 中应用版本号
     /// </summary>
     [Comment("manifest.json 中应用版本号")]
-    [StringLength(64)]
-    public virtual string AppVersionCode { get; set; }
+    //[StringLength(64)]
+    public virtual long AppVersionCode { get; set; }
 
     /// <summary>
     /// 应用资源（wgt）的版本名称（仅 App 支持，可选）
@@ -146,8 +147,12 @@ public class Device : BaseEntity<Guid>, IDeviceId, IIsEnabled
     /// 竖屏: Portrait, 横屏:Landscape
     /// </summary>
     [Comment("设备方向")]
-    public virtual int? DeviceOrientation { get; set; }
+    [StringLength(64)]
+    public virtual string DeviceOrientation { get; set; }
 
+    /// <summary>
+    /// 用户字体大小设置
+    /// </summary>
     [Comment("用户字体大小设置")]
     public virtual double? FontSizeSetting { get; set; }
 
@@ -311,7 +316,7 @@ public class Device : BaseEntity<Guid>, IDeviceId, IIsEnabled
     /// <summary>
     /// 用户标识（小程序为空）
     /// </summary>
-    [StringLength(64)]
+    [StringLength(512)]
     [Comment("用户标识（小程序为空）")]
     public virtual string Ua { get; set; }
 
@@ -514,7 +519,7 @@ public class Device : BaseEntity<Guid>, IDeviceId, IIsEnabled
     /// 
     /// </summary>
     [NotMapped]
-    public virtual IList<string> Groups => DeviceGroupMapList.Where(x => !x.DeviceGroup.IsDeleted).Select(x => x.DeviceGroup.Name).ToList();
+    public virtual IList<DeviceGroup> Groups => DeviceGroupMapList.Where(x => !x.DeviceGroup.IsDeleted).Select(x => x.DeviceGroup).ToList();
 
     /// <summary>
     /// 

@@ -1,3 +1,4 @@
+using IczpNet.Chat.DeviceGroups;
 using System;
 using System.Collections.Generic;
 namespace IczpNet.Chat.AppVersions;
@@ -17,6 +18,6 @@ public class AppVersionDto : AppVersionSampleDto
     /// <summary>
     /// 
     /// </summary>
-    public virtual List<string> Groups { get; set; }
+    public virtual List<DeviceGroupSampleDto> Groups { get; set; }
 
 }

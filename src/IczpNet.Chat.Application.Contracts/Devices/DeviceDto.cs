@@ -1,4 +1,4 @@
-using IczpNet.Pusher.Commands;
+using IczpNet.Chat.DeviceGroups;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -69,7 +69,7 @@ public class DeviceDto : DeviceSampleDto
     /// manifest.json 中应用版本号
     /// </summary>
     [MaxLength(64)]
-    public virtual string AppVersionCode { get; set; }
+    public virtual long AppVersionCode { get; set; }
 
     /// <summary>
     /// 应用资源（wgt）的版本名称（仅 App 支持，可选）
@@ -120,8 +120,11 @@ public class DeviceDto : DeviceSampleDto
     /// <summary>
     /// 竖屏: Portrait, 横屏:Landscape
     /// </summary>
-    public virtual int? DeviceOrientation { get; set; }
+    public virtual string DeviceOrientation { get; set; }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public virtual double? FontSizeSetting { get; set; }
 
     /// <summary>
@@ -433,6 +436,6 @@ public class DeviceDto : DeviceSampleDto
     /// <summary>
     /// 
     /// </summary>
-    public virtual List<string> Groups { get; set; }
+    public virtual List<DeviceGroupSampleDto> Groups { get; set; }
 
 }
