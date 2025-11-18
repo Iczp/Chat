@@ -87,7 +87,7 @@ public class DeviceAppService(
 
     public Task<PagedResultDto<DeviceDto>> GetListByCurrentUserAsync()
     {
-        Assert.If(CurrentUser.Id.HasValue, "未登录");
+        Assert.If(!CurrentUser.Id.HasValue, "未登录");
 
         return GetListAsync(new DeviceGetListInput()
         {
