@@ -237,6 +237,10 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<Device, DeviceDto>();
         CreateMap<Device, DeviceSampleDto>();
         CreateMap<Device, DeviceDetailDto>();
+
+        CreateMap<DeviceCreateOrUpdateInput, DeviceCreateInput>();
+        CreateMap<DeviceCreateOrUpdateInput, DeviceUpdateInput>();
+
         CreateMap<DeviceCreateInput, Device>(MemberList.None)
             .IgnoreAuditedObjectProperties()
             .IgnoreAllSourcePropertiesWithAnInaccessibleSetter()

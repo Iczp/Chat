@@ -61,6 +61,5 @@
   <ItemGroup>
     <Folder Include="SessionSections\SessionPermissionDefinitions\" />
     <Folder Include="SessionSections\SessionPermissions\Dtos\" />
-    <Folder Include="Devices\" />
   </ItemGroup>
 </Project>

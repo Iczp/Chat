@@ -7,4 +7,6 @@ namespace IczpNet.Chat.Devices;
 public interface IDeviceAppService : ICrudChatAppService<DeviceDetailDto, DeviceDto, Guid, DeviceGetListInput, DeviceCreateInput, DeviceUpdateInput>
 {
     Task<int> SetGroupsAsync(Guid id, List<Guid> groupIdList);
+
+    Task<DeviceDetailDto> RegisterAsync(DeviceCreateOrUpdateInput input);
 }

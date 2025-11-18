@@ -2,6 +2,8 @@
 
 public class DeviceOptions
 {
+
+
     /// <summary>
     /// default: App-Device-Id
     /// </summary>
@@ -11,4 +13,14 @@ public class DeviceOptions
     /// default: App-Device-Type
     /// </summary>
     public string RequestDeviceTypeKey { get; set; } = "App-Device-Type";
+
+    /// <summary>
+    /// default: App-Id
+    /// </summary>
+    public string RequestAppIdKey { get; internal set; } = "App-Id";
+
+    /// <summary>
+    /// default: App-Version
+    /// </summary>
+    public string RequestAppVersionKey { get; internal set; } = "App-Version";
 }

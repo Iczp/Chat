@@ -7,7 +7,7 @@ namespace IczpNet.Chat.Devices;
 /// 新增或修改
 /// </summary>
 [Serializable]
-public class DeviceCreateOrUpdateInput : DeviceCreateInput, IEntityDto<Guid?>
+public class DeviceCreateOrUpdateInput : DeviceUpdateInput, IEntityDto<Guid?>
 {
     /// <summary>
     /// 

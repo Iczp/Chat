@@ -1,5 +1,6 @@
 using IczpNet.Chat.BaseDtos;
 using System;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 namespace IczpNet.Chat.Devices;
 
@@ -36,5 +37,6 @@ public class DeviceGetListInput : GetListInput
     /// <summary>
     /// 
     /// </summary>
-    public virtual bool? IsEnabled { get; set; } = true;
+    //[DefaultValue(true)]
+    public virtual bool? IsEnabled { get; set; }
 }

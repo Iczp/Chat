@@ -2,11 +2,13 @@
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.DeviceGroups;
 using IczpNet.Chat.Permissions;
+using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
+using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.Devices;
 
@@ -38,6 +40,16 @@ public class DeviceAppService(
             ;
     }
 
+    protected async Task CheckExistAsync(List<Guid> groupIdList)
+    {
+        var existIds = (await DeviceGroupRepository.GetQueryableAsync()).Where(x => groupIdList.Contains(x.Id)).Select(x => x.Id).ToList();
+
+        // 差集：找出数据库中不存在的 ID
+        var missingIds = groupIdList.Except(existIds).ToList();
+
+        Assert.If(missingIds.Count != 0, $"以下 GroupId 不存在: {string.Join(", ", missingIds)}");
+    }
+
     public async Task<int> SetGroupsAsync(Guid id, List<Guid> groupIdList)
     {
         await CheckPolicyAsync(SetSetGroupsPolicyName);
@@ -48,14 +60,26 @@ public class DeviceAppService(
 
         return entity.SetGroups(groupIdList);
     }
-
-    protected async Task CheckExistAsync(List<Guid> groupIdList)
+    /// <summary>
+    /// 注册设备
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    //[AllowAnonymous]
+    public async Task<DeviceDetailDto> RegisterAsync(DeviceCreateOrUpdateInput input)
     {
-        var existIds = (await DeviceGroupRepository.GetQueryableAsync()).Where(x => groupIdList.Contains(x.Id)).Select(x => x.Id).ToList();
 
-        // 差集：找出数据库中不存在的 ID
-        var missingIds = groupIdList.Except(existIds).ToList();
+        var entity = await Repository.FindAsync(x => x.DeviceId == input.DeviceId);
 
-        Assert.If(missingIds.Count != 0, $"以下 GroupId 不存在: {string.Join(", ", missingIds)}");
+        if (entity == null)
+        {
+            // create
+            CreatePolicyName = string.Empty;
+            return await base.CreateAsync(input);
+        }
+
+        //upadte
+        UpdatePolicyName = string.Empty;
+        return await base.UpdateAsync(entity.Id, input);
     }
 }
