@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -71,11 +72,33 @@ public interface IConnectionPoolManagerBase<TCacheItem> where TCacheItem : IConn
     Task<TCacheItem> GetAsync(string connectionId, CancellationToken token = default);
 
     /// <summary>
+    /// 获取连接
+    /// </summary>
+    /// <param name="connectionIdList"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<KeyValuePair<string, TCacheItem>[]> GetManyAsync(IEnumerable<string> connectionIdList, CancellationToken token = default);
+
+    /// <summary>
     /// 更新连接数量
     /// </summary>
     /// <param name="token"></param>
     /// <returns></returns>
     Task<int> UpdateAllConnectionIdsAsync(CancellationToken token = default);
 
-   
+    /// <summary>
+    /// 获取连接
+    /// </summary>
+    /// <param name="deviceId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<TCacheItem> GetByDeviceIdAsync(string deviceId, CancellationToken token = default);
+
+    /// <summary>
+    /// 获取连接
+    /// </summary>
+    /// <param name="deviceIdList"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<KeyValuePair<DeviceIdCacheKey, TCacheItem>[]> GetManyByDeviceIdAsync(IEnumerable<string> deviceIdList, CancellationToken token = default);
 }
