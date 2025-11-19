@@ -36,7 +36,21 @@ public abstract class ConnectionPoolManagerBase<TCacheItem, TIndexCacheKey>() : 
     /// </summary>
     public IDistributedCache<TCacheItem, string> ConnectionPoolCache { get; set; }
 
-    public ICurrentHosted CurrentHosted { get; set; } 
+    /// <summary>
+    /// 设备索引
+    /// </summary>
+    public IDistributedCache<TCacheItem, DeviceIdCacheKey> DeviceIdCache { get; set; }
+
+    protected virtual DeviceIdCacheKey BuildDeviceIdCacheKey(string devideId)
+    {
+        return new DeviceIdCacheKey()
+        {
+            Type = this.GetType().FullName,
+            DeviceId = devideId,
+        };
+    }
+
+    public ICurrentHosted CurrentHosted { get; set; }
 
     /// <summary>
     /// 索引缓存
@@ -84,7 +98,7 @@ public abstract class ConnectionPoolManagerBase<TCacheItem, TIndexCacheKey>() : 
 
         if (!keyValues.Any())
         {
-            return ;
+            return;
         }
 
         await IndexListSetCache.DeleteManyAsync(keyValues, token: token);
@@ -104,6 +118,11 @@ public abstract class ConnectionPoolManagerBase<TCacheItem, TIndexCacheKey>() : 
         Logger.LogInformation($"{this.GetType().FullName}.Add connection from DistributedCacheListSet addedCount: {addedCount}");
 
         await ConnectionPoolCache.SetAsync(connectionPool.ConnectionId, connectionPool, DistributedCacheEntryOptions, token: token);
+
+        if (!string.IsNullOrWhiteSpace(connectionPool.DeviceId))
+        {
+            await DeviceIdCache.SetAsync(BuildDeviceIdCacheKey(connectionPool.DeviceId), connectionPool, DistributedCacheEntryOptions, token: token);
+        }
 
         await AddIndexAsync(connectionPool, token);
 
@@ -137,6 +156,8 @@ public abstract class ConnectionPoolManagerBase<TCacheItem, TIndexCacheKey>() : 
 
             await ConnectionPoolCache.SetAsync(connectionPool.ConnectionId, connectionPool, DistributedCacheEntryOptions, token: token);
 
+            await DeviceIdCache.SetAsync(BuildDeviceIdCacheKey(connectionPool.DeviceId), connectionPool, DistributedCacheEntryOptions, token: token);
+
             return connectionPool;
         }
         else
@@ -161,6 +182,11 @@ public abstract class ConnectionPoolManagerBase<TCacheItem, TIndexCacheKey>() : 
         if (connectionPool != null)
         {
             await RemoveIndexAsync(connectionPool, token);
+
+            if (!string.IsNullOrEmpty(connectionPool.DeviceId))
+            {
+                await DeviceIdCache.RemoveAsync(BuildDeviceIdCacheKey(connectionPool.DeviceId), token: token);
+            }
         }
 
         await ConnectionPoolCache.RemoveAsync(connectionId, token: token);
@@ -198,6 +224,15 @@ public abstract class ConnectionPoolManagerBase<TCacheItem, TIndexCacheKey>() : 
 
         Logger.LogInformation($"{this.GetType().FullName}.ClearAllAsync[{reason}] [{host}] {nameof(AllConnectIdListSetCache)} delete key:{ConnectionIdListSetCacheKey}");
 
+        //remove deivceId list
+        var deivceIdList = connectionIdListByHost.Where(x => !string.IsNullOrWhiteSpace(x.DeviceId)).Distinct().Select(x => BuildDeviceIdCacheKey(x.DeviceId)).ToList();
+
+        if (deivceIdList.Count > 0)
+        {
+            await DeviceIdCache.RemoveManyAsync(deivceIdList, token: token);
+        }
+
+        // remove conn list
         var connIdList = connectionIdListByHost.Select(x => x.ConnectionId).ToList();
 
         await ConnectionPoolCache.RemoveManyAsync(connIdList, token: token);
