@@ -45,12 +45,14 @@ public abstract class ConnectionPoolManagerBase<TCacheItem, TIndexCacheKey>() : 
     {
         return new DeviceIdCacheKey()
         {
-            Type = this.GetType().FullName,
+            Type = TypeFullName,
             DeviceId = devideId,
         };
     }
 
     public ICurrentHosted CurrentHosted { get; set; }
+
+    protected virtual string TypeFullName => GetType().FullName;
 
     /// <summary>
     /// 索引缓存
@@ -115,7 +117,7 @@ public abstract class ConnectionPoolManagerBase<TCacheItem, TIndexCacheKey>() : 
     {
         var addedCount = await AllConnectIdListSetCache.AddAsync(ConnectionIdListSetCacheKey, [connectionPool.ConnectionId], token: token);
 
-        Logger.LogInformation($"{this.GetType().FullName}.Add connection from DistributedCacheListSet addedCount: {addedCount}");
+        Logger.LogInformation($"{TypeFullName}.Add connection from DistributedCacheListSet addedCount: {addedCount}");
 
         await ConnectionPoolCache.SetAsync(connectionPool.ConnectionId, connectionPool, DistributedCacheEntryOptions, token: token);
 
@@ -126,7 +128,7 @@ public abstract class ConnectionPoolManagerBase<TCacheItem, TIndexCacheKey>() : 
 
         await AddIndexAsync(connectionPool, token);
 
-        Logger.LogInformation($"{this.GetType().FullName}.Add connection {connectionPool}");
+        Logger.LogInformation($"{TypeFullName}.Add connection {connectionPool}");
 
         return addedCount > 0;
     }
@@ -208,7 +210,7 @@ public abstract class ConnectionPoolManagerBase<TCacheItem, TIndexCacheKey>() : 
     /// <inheritdoc />
     public virtual async Task ClearAllAsync(string host, string reason, CancellationToken token = default)
     {
-        Logger.LogInformation($"{this.GetType().FullName}.ClearAllAsync[{reason}] Start:{host},time:{Clock.Now}");
+        Logger.LogInformation($"{TypeFullName}.ClearAllAsync[{reason}] Start:{host},time:{Clock.Now}");
 
         var connectionIdListByHost = (await CreateQueryableAsync(token))
             .WhereIf(!string.IsNullOrWhiteSpace(host), x => x.Host == host)
@@ -218,13 +220,13 @@ public abstract class ConnectionPoolManagerBase<TCacheItem, TIndexCacheKey>() : 
 
         await IndexListSetCache.DeleteManyAsync(keys, token: token);
 
-        Logger.LogInformation($"{this.GetType().FullName}.ClearAllAsync[{reason}] [{host}] {nameof(IndexListSetCache)} delete keyValues[{keys.Count}]:{keys.JoinAsString(",")}");
+        Logger.LogInformation($"{TypeFullName}.ClearAllAsync[{reason}] [{host}] {nameof(IndexListSetCache)} delete keyValues[{keys.Count}]:{keys.JoinAsString(",")}");
 
         await AllConnectIdListSetCache.DeleteAsync(ConnectionIdListSetCacheKey, token: token);
 
-        Logger.LogInformation($"{this.GetType().FullName}.ClearAllAsync[{reason}] [{host}] {nameof(AllConnectIdListSetCache)} delete key:{ConnectionIdListSetCacheKey}");
+        Logger.LogInformation($"{TypeFullName}.ClearAllAsync[{reason}] [{host}] {nameof(AllConnectIdListSetCache)} delete key:{ConnectionIdListSetCacheKey}");
 
-        //remove deivceId list
+        //remove deviceId list
         var deivceIdList = connectionIdListByHost.Where(x => !string.IsNullOrWhiteSpace(x.DeviceId)).Distinct().Select(x => BuildDeviceIdCacheKey(x.DeviceId)).ToList();
 
         if (deivceIdList.Count > 0)
@@ -237,9 +239,9 @@ public abstract class ConnectionPoolManagerBase<TCacheItem, TIndexCacheKey>() : 
 
         await ConnectionPoolCache.RemoveManyAsync(connIdList, token: token);
 
-        Logger.LogInformation($"{this.GetType().FullName}.ClearAllAsync[{reason}] [{host}] {nameof(ConnectionPoolCache)} delete  keyValues[{connIdList.Count}]:{connIdList.JoinAsString(",")}");
+        Logger.LogInformation($"{TypeFullName}.ClearAllAsync[{reason}] [{host}] {nameof(ConnectionPoolCache)} delete  keyValues[{connIdList.Count}]:{connIdList.JoinAsString(",")}");
 
-        Logger.LogInformation($"{this.GetType().FullName}.ClearAllAsync[{reason}] End:{host},time:{Clock.Now}");
+        Logger.LogInformation($"{TypeFullName}.ClearAllAsync[{reason}] End:{host},time:{Clock.Now}");
     }
 
     /// <inheritdoc />
@@ -258,23 +260,32 @@ public abstract class ConnectionPoolManagerBase<TCacheItem, TIndexCacheKey>() : 
         return await ConnectionPoolCache.GetAsync(connectionId, token: token);
     }
 
+    public virtual async Task<KeyValuePair<string, TCacheItem>[]> GetManyAsync(IEnumerable<string> connectionIdList, CancellationToken token = default)
+    {
+        var keys = connectionIdList.ToList();
+
+        var values = await ConnectionPoolCache.GetManyAsync(keys, token: token);
+
+        return values;
+    }
+
     /// <inheritdoc />
     public virtual async Task<int> UpdateAllConnectionIdsAsync(CancellationToken token = default)
     {
-        Logger.LogWarning($"修复总连接数索引(异常中断) {this.GetType().FullName}.{nameof(UpdateAllConnectionIdsAsync)} Start");
+        Logger.LogWarning($"修复总连接数索引(异常中断) {TypeFullName}.{nameof(UpdateAllConnectionIdsAsync)} Start");
 
         var connectionIdList = (await CreateQueryableAsync(token)).Select(x => x.ConnectionId).ToList();
 
         await AllConnectIdListSetCache.ReplaceAsync(ConnectionIdListSetCacheKey, connectionIdList, () => DistributedCacheEntryOptions, token: token);
 
-        Logger.LogWarning($"修复总连接数索引(异常中断) {this.GetType().FullName}.{nameof(UpdateAllConnectionIdsAsync)} End : {connectionIdList.Count}");
+        Logger.LogWarning($"修复总连接数索引(异常中断) {TypeFullName}.{nameof(UpdateAllConnectionIdsAsync)} End : {connectionIdList.Count}");
 
         return connectionIdList.Count;
     }
 
     public virtual async Task StartAsync(CancellationToken cancellationToken)
     {
-        Logger.LogWarning($"{this.GetType().FullName} App Start,HostName:{CurrentHosted.Name}");
+        Logger.LogWarning($"{TypeFullName} App Start,HostName:{CurrentHosted.Name}");
 
         await ClearAllAsync(CurrentHosted.Name, "App Start", cancellationToken);
 
@@ -286,10 +297,24 @@ public abstract class ConnectionPoolManagerBase<TCacheItem, TIndexCacheKey>() : 
 
     public virtual async Task StopAsync(CancellationToken cancellationToken)
     {
-        Logger.LogWarning($"{this.GetType().FullName} App Stop,HostName:{CurrentHosted.Name}");
+        Logger.LogWarning($"{TypeFullName} App Stop,HostName:{CurrentHosted.Name}");
 
         await ClearAllAsync(CurrentHosted.Name, "App Stop", cancellationToken);
 
         await Task.CompletedTask;
+    }
+
+    public async Task<TCacheItem> GetByDeviceIdAsync(string deviceId, CancellationToken token = default)
+    {
+        return await DeviceIdCache.GetAsync(BuildDeviceIdCacheKey(deviceId), token: token);
+    }
+
+    public async Task<KeyValuePair<DeviceIdCacheKey, TCacheItem>[]> GetManyByDeviceIdAsync(IEnumerable<string> deviceIdList, CancellationToken token = default)
+    {
+        var keys = deviceIdList.Select(BuildDeviceIdCacheKey).ToList();
+
+        var values = await DeviceIdCache.GetManyAsync(keys, token: token);
+
+        return values;
     }
 }
