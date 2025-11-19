@@ -12,4 +12,6 @@ public interface IDeviceAppService : ICrudChatAppService<DeviceDetailDto, Device
     Task<DeviceDetailDto> RegisterAsync(DeviceCreateOrUpdateInput input);
 
     Task<PagedResultDto<DeviceDto>> GetListByCurrentUserAsync();
+
+    Task<DeviceDetailDto> GetByDeviceIdAsync(string deivceId);
 }

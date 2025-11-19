@@ -85,6 +85,10 @@ public class DeviceAppService(
         return await base.UpdateAsync(entity.Id, input);
     }
 
+    /// <summary>
+    /// 当前用户登录设备
+    /// </summary>
+    /// <returns></returns>
     public Task<PagedResultDto<DeviceDto>> GetListByCurrentUserAsync()
     {
         Assert.If(!CurrentUser.Id.HasValue, "未登录");
@@ -94,5 +98,17 @@ public class DeviceAppService(
             UserId = CurrentUser.Id,
             MaxResultCount = 999
         });
+    }
+
+    /// <summary>
+    /// 获取设备信息
+    /// </summary>
+    /// <param name="deivceId"></param>
+    /// <returns></returns>
+    public async Task<DeviceDetailDto> GetByDeviceIdAsync(string deivceId)
+    {
+        var entity = await Repository.GetAsync(x => x.DeviceId == deivceId);
+
+        return await MapToGetOutputDtoAsync(await Repository.GetAsync(x => x.DeviceId == deivceId));
     }
 }
