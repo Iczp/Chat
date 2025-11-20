@@ -83,7 +83,7 @@ public class MessageAppService(
 
         var sessionUnitId = input.SessionUnitId;
 
-        var deleteIdList = await DeletedRecorderManager.GetDeletedMessageIdListAsync(sessionUnitId);
+        var deletedIdList = await DeletedRecorderManager.GetDeletedMessageIdListAsync(sessionUnitId);
 
         var entity = await GetAndCheckPolicyAsync(GetListPolicyName, sessionUnitId);
 
@@ -119,7 +119,7 @@ public class MessageAppService(
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TextContentList.Any(d => d.Text.Contains(input.Keyword)))
             //排除已删除的消息
             //.Where(x => !x.DeletedList.Any(d => d.SessionUnitId == sessionUnitId && d.MessageId == x.Id))
-            .WhereIf(deleteIdList.Count != 0, x => !deleteIdList.Contains(x.Id))
+            .WhereIf(deletedIdList.Count != 0, x => !deletedIdList.Contains(x.Id))
             ;
 
         var result = await GetPagedListAsync<Message, MessageOwnerDto>(query, input,
