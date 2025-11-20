@@ -571,4 +571,16 @@ public partial class MessageManager(
     {
         return MessageReminderRepository.AnyAsync(x => x.MessageId == messageId && x.SessionUnitId == sessionUnitId);
     }
+
+    public async Task<List<long>> GetRemindMessageIdListAsync(Guid sessionUnitId, List<long> messageIdList)
+    {
+        if (messageIdList == null || messageIdList.Count == 0)
+        {
+            return [];
+        }
+        return (await MessageReminderRepository.GetQueryableAsync())
+            .Where(x => messageIdList.Contains(x.MessageId) && x.SessionUnitId == sessionUnitId)
+            .Select(x => x.MessageId)
+            .ToList();
+    }
 }

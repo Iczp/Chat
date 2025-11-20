@@ -1,7 +1,6 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Enums.Dtos;
 using IczpNet.Chat.FavoritedRecorders;
@@ -126,21 +125,37 @@ public class MessageAppService(
             x => x.OrderByDescending(x => x.Id),
             async entities =>
             {
+                // 一次性获取
+                var messageIdList = entities.Select(x => x.Id).ToList();
+                var readMessageIdList = await ReadedRecorderManager.GetRecorderMessageIdListAsync(sessionUnitId, messageIdList);
+                var openedMessageIdList = await OpenedRecorderManager.GetRecorderMessageIdListAsync(sessionUnitId, messageIdList);
+                var favoritedMessageIdList = await FavoritedRecorderManager.GetRecorderMessageIdListAsync(sessionUnitId, messageIdList);
+                var remindMessageIdList = await MessageManager.GetRemindMessageIdListAsync(sessionUnitId, messageIdList);
+
                 foreach (var e in entities)
                 {
-                    //if (e.SenderId.HasValue && entity.OwnerId != e.SenderId)
-                    //{
-                    //    var friendshipSessionUnit = await SessionUnitManager.FindAsync(entity.OwnerId, e.SenderId.Value);
-                    //    e.SenderDisplayName = friendshipSessionUnit?.Setting.Rename;
-                    //    e.FriendshipSessionUnitId = friendshipSessionUnit?.Id;
-                    //}
-                    e.IsReaded = await ReadedRecorderManager.IsAnyAsync(sessionUnitId, e.Id);
-                    e.IsOpened = await OpenedRecorderManager.IsAnyAsync(sessionUnitId, e.Id);
-                    e.IsFavorited = await FavoritedRecorderManager.IsAnyAsync(sessionUnitId, e.Id);
+                    e.IsReaded = readMessageIdList.Contains(e.Id);
+                    e.IsOpened = openedMessageIdList.Contains(e.Id);
+                    e.IsFavorited = favoritedMessageIdList.Contains(e.Id);
                     e.IsFollowing = e.SenderSessionUnitId.HasValue && followingIdList.Contains(e.SenderSessionUnitId.Value);
-                    e.IsRemindMe = await MessageManager.IsRemindAsync(e.Id, sessionUnitId);
+                    e.IsRemindMe = remindMessageIdList.Contains(e.Id);
                 }
-                //await Task.Yield();
+
+                //foreach (var e in entities)
+                //{
+                //    //if (e.SenderId.HasValue && entity.OwnerId != e.SenderId)
+                //    //{
+                //    //    var friendshipSessionUnit = await SessionUnitManager.FindAsync(entity.OwnerId, e.SenderId.Value);
+                //    //    e.SenderDisplayName = friendshipSessionUnit?.Setting.Rename;
+                //    //    e.FriendshipSessionUnitId = friendshipSessionUnit?.Id;
+                //    //}
+                //    e.IsReaded = await ReadedRecorderManager.IsAnyAsync(sessionUnitId, e.Id);
+                //    e.IsOpened = await OpenedRecorderManager.IsAnyAsync(sessionUnitId, e.Id);
+                //    e.IsFavorited = await FavoritedRecorderManager.IsAnyAsync(sessionUnitId, e.Id);
+                //    e.IsFollowing = e.SenderSessionUnitId.HasValue && followingIdList.Contains(e.SenderSessionUnitId.Value);
+                //    e.IsRemindMe = await MessageManager.IsRemindAsync(e.Id, sessionUnitId);
+                //}
+
                 return entities;
             });
 
@@ -178,6 +193,8 @@ public class MessageAppService(
     {
         var sessionUnitId = input.SessionUnitId;
 
+        var deletedIdList = await DeletedRecorderManager.GetDeletedMessageIdListAsync(sessionUnitId);
+
         var entity = await GetAndCheckPolicyAsync(GetListPolicyName, sessionUnitId);
 
         //Assert.NotNull(entity.Session, "session is null");
@@ -206,7 +223,8 @@ public class MessageAppService(
             .WhereIf(input.MaxMessageId.HasValue, x => x.Id < input.MaxMessageId)
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TextContentList.Any(d => d.Text.Contains(input.Keyword)))
             //排除已删除的消息
-            .Where(x => !x.DeletedList.Any(d => d.SessionUnitId == sessionUnitId && d.MessageId == x.Id))
+            //.Where(x => !x.DeletedList.Any(d => d.SessionUnitId == sessionUnitId && d.MessageId == x.Id))
+            .WhereIf(deletedIdList.Count != 0, x => !deletedIdList.Contains(x.Id))
             ;
 
         var q = query.GroupBy(x => x.CreationTime.Date).Select(x => new MessageByDateDto

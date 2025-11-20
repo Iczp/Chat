@@ -75,4 +75,12 @@ public interface IMessageManager
     /// <param name="sessionUnitId"></param>
     /// <returns></returns>
     Task<bool> IsRemindAsync(long messageId, Guid sessionUnitId);
+
+    /// <summary>
+    /// 提醒 @我 的消息Id
+    /// </summary>
+    /// <param name="sessionUnitId"></param>
+    /// <param name="messageIdList"></param>
+    /// <returns></returns>
+    Task<List<long>> GetRemindMessageIdListAsync(Guid sessionUnitId, List<long> messageIdList);
 }

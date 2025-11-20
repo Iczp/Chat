@@ -3,7 +3,7 @@ using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.MessageSections.Messages.Dtos;
 
-public class MessageQuoteDto : MessageDto, IEntityDto<long>
+public class MessageQuoteFastDto : MessageDto, IEntityDto<long>
 {
     /// <summary>
     /// 发送人显示名称

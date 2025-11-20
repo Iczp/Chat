@@ -58,6 +58,10 @@ public abstract class RecorderManager<TEntity>(IRepository<TEntity> repository) 
 
     public virtual async Task<List<long>> GetRecorderMessageIdListAsync(Guid sessionUnitId, List<long> messageIdList)
     {
+        if (messageIdList == null || messageIdList.Count == 0)
+        {
+            return [];
+        }
         return [.. (await Repository.GetQueryableAsync())
             .Where(x => x.SessionUnitId == sessionUnitId)
             .Where(x => messageIdList.Contains(x.MessageId))
