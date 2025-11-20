@@ -92,11 +92,19 @@ public class MessageAppService(
 
         var followingIdList = await FollowManager.GetFollowingIdListAsync(sessionUnitId);
 
-        var query = (await Repository.GetQueryableAsync())
+        var baseQuery = (await Repository.GetQueryableAsync())
             .Where(x => x.SessionId == entity.SessionId)
             //.Where(x => !x.IsPrivate || (x.IsPrivate && (x.SenderId == entity.OwnerId || x.ReceiverId == entity.OwnerId)))
             // OR 条件，是性能杀手。➡ SQL Server 不能很好利用索引，会扫描大量数据。
             //.Where(x => !x.IsPrivate || x.SenderSessionUnitId == entity.Id || x.ReceiverSessionUnitId == entity.Id)
+            ;
+        //var q1 = baseQuery.Where(x => !x.IsPrivate);
+        //var q2 = baseQuery.Where(x => x.IsPrivate && x.SenderSessionUnitId == sessionUnitId);
+        //var q3 = baseQuery.Where(x => x.IsPrivate && x.ReceiverSessionUnitId == sessionUnitId);
+
+        //// 合并（去重，用 Distinct）  --- Distinct（完全重新扫描）
+        //var query = q1.Union(q2).Union(q3).Distinct()
+        var query = baseQuery
             .WhereIf(settting.HistoryFristTime.HasValue, x => x.CreationTime >= settting.HistoryFristTime)
             .WhereIf(settting.HistoryLastTime.HasValue, x => x.CreationTime < settting.HistoryFristTime)
             .WhereIf(settting.ClearTime.HasValue, x => x.CreationTime > settting.ClearTime)
@@ -118,14 +126,13 @@ public class MessageAppService(
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TextContentList.Any(d => d.Text.Contains(input.Keyword)))
             //排除已删除的消息
             //.Where(x => !x.DeletedList.Any(d => d.SessionUnitId == sessionUnitId && d.MessageId == x.Id))
-            .WhereIf(deletedIdList.Count != 0, x => !deletedIdList.Contains(x.Id))
-            ;
+            .WhereIf(deletedIdList.Count != 0, x => !deletedIdList.Contains(x.Id));
 
         var result = await GetPagedListAsync<Message, MessageOwnerDto>(query, input,
             x => x.OrderByDescending(x => x.Id),
             async entities =>
             {
-                // 一次性获取
+                // 一次性获取(实时查询)
                 var messageIdList = entities.Select(x => x.Id).ToList();
                 var readMessageIdList = await ReadedRecorderManager.GetRecorderMessageIdListAsync(sessionUnitId, messageIdList);
                 var openedMessageIdList = await OpenedRecorderManager.GetRecorderMessageIdListAsync(sessionUnitId, messageIdList);
