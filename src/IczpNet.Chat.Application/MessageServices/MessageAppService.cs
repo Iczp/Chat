@@ -1,6 +1,8 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.DataFilters;
+using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Enums.Dtos;
 using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
@@ -17,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
@@ -28,6 +31,7 @@ namespace IczpNet.Chat.MessageServices;
 /// 消息管理器
 /// </summary>
 public class MessageAppService(
+    IDeletedRecorderManager deletedRecorderManager,
     IMessageRepository repository,
     IReadedRecorderManager readedRecorderManager,
     IOpenedRecorderManager openedRecorderManager,
@@ -36,6 +40,7 @@ public class MessageAppService(
     ISessionUnitRepository sessionUnitRepository,
     IMessageManager messageManager) : ChatAppService, IMessageAppService
 {
+    public IDeletedRecorderManager DeletedRecorderManager { get; } = deletedRecorderManager;
     protected IMessageRepository Repository { get; } = repository;
     protected IReadedRecorderManager ReadedRecorderManager { get; } = readedRecorderManager;
     protected IOpenedRecorderManager OpenedRecorderManager { get; } = openedRecorderManager;
@@ -64,6 +69,8 @@ public class MessageAppService(
         return Task.FromResult(result);
     }
 
+
+
     /// <summary>
     /// 获取消息列表
     /// </summary>
@@ -73,7 +80,10 @@ public class MessageAppService(
     [UnitOfWork(true, IsolationLevel.ReadUncommitted)]
     public async Task<PagedResultDto<MessageOwnerDto>> GetListAsync(MessageGetListInput input)
     {
+
         var sessionUnitId = input.SessionUnitId;
+
+        var deleteIdList = await DeletedRecorderManager.GetDeletedMessageIdListAsync(sessionUnitId);
 
         var entity = await GetAndCheckPolicyAsync(GetListPolicyName, sessionUnitId);
 
@@ -86,7 +96,8 @@ public class MessageAppService(
         var query = (await Repository.GetQueryableAsync())
             .Where(x => x.SessionId == entity.SessionId)
             //.Where(x => !x.IsPrivate || (x.IsPrivate && (x.SenderId == entity.OwnerId || x.ReceiverId == entity.OwnerId)))
-            .Where(x => !x.IsPrivate || x.SenderSessionUnitId == entity.Id || x.ReceiverSessionUnitId == entity.Id)
+            // OR 条件，是性能杀手。➡ SQL Server 不能很好利用索引，会扫描大量数据。
+            //.Where(x => !x.IsPrivate || x.SenderSessionUnitId == entity.Id || x.ReceiverSessionUnitId == entity.Id)
             .WhereIf(settting.HistoryFristTime.HasValue, x => x.CreationTime >= settting.HistoryFristTime)
             .WhereIf(settting.HistoryLastTime.HasValue, x => x.CreationTime < settting.HistoryFristTime)
             .WhereIf(settting.ClearTime.HasValue, x => x.CreationTime > settting.ClearTime)
@@ -107,7 +118,8 @@ public class MessageAppService(
             .WhereIf(input.MaxMessageId.HasValue, x => x.Id < input.MaxMessageId)
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TextContentList.Any(d => d.Text.Contains(input.Keyword)))
             //排除已删除的消息
-            .Where(x => !x.DeletedList.Any(d => d.SessionUnitId == sessionUnitId && d.MessageId == x.Id))
+            //.Where(x => !x.DeletedList.Any(d => d.SessionUnitId == sessionUnitId && d.MessageId == x.Id))
+            .WhereIf(deleteIdList.Count != 0, x => !deleteIdList.Contains(x.Id))
             ;
 
         var result = await GetPagedListAsync<Message, MessageOwnerDto>(query, input,

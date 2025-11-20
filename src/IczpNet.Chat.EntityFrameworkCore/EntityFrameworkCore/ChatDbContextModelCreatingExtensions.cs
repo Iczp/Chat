@@ -152,7 +152,13 @@ public static class ChatDbContextModelCreatingExtensions
         builder.Entity<FavoritedRecorder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
         builder.Entity<OpenedRecorder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
         builder.Entity<ReadedRecorder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
-        builder.Entity<DeletedRecorder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
+        builder.Entity<DeletedRecorder>(b =>
+        {
+
+            b.HasKey(x => new { x.SessionUnitId, x.MessageId });
+            //ChatGPT 优化 2025.11.20
+            b.HasIndex(x => new { x.MessageId, x.SessionUnitId }).HasDatabaseName("IX_Chat_DeletedRecorder_MessageUnit");
+        });
 
         builder.Entity<Scoped>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
 
@@ -219,6 +225,22 @@ public static class ChatDbContextModelCreatingExtensions
                 b.HasOne(x => x.OpenedCounter).WithOne(x => x.Message).HasForeignKey<OpenedCounter>(x => x.MessageId).IsRequired(true);
                 b.HasOne(x => x.FavoritedCounter).WithOne(x => x.Message).HasForeignKey<FavoritedCounter>(x => x.MessageId).IsRequired(true);
                 b.HasOne(x => x.DeletedCounter).WithOne(x => x.Message).HasForeignKey<DeletedCounter>(x => x.MessageId).IsRequired(true);
+
+                //ChatGPT 优化 2025.11.20
+                b.HasIndex(x => new { x.SessionId, x.IsDeleted, x.IsPrivate }).HasDatabaseName("IX_ChatMessage_CountQuery").IncludeProperties(x => new { x.Id, x.SenderSessionUnitId, x.ReceiverSessionUnitId });
+
+                // 优化 GetList COUNT 的关键索引
+                b.HasIndex(x => new
+                {
+                    x.SessionId,
+                    x.IsDeleted,
+                    x.IsPrivate,
+                    x.SenderSessionUnitId,
+                    x.ReceiverSessionUnitId
+                })
+                .HasDatabaseName("IX_Message_Session_Count")
+                .IncludeProperties(x => new { x.Id });
+
             });
 
         builder.Entity<UserDevice>(b => { b.HasKey(x => new { x.UserId, x.DeviceId }); });

@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251120024445_Message_AddIndex_CountQuery")]
+    partial class Message_AddIndex_CountQuery
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3218,6 +3221,8 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("SenderSessionUnitId");
 
+                    b.HasIndex("SessionId");
+
                     b.HasIndex("SessionUnitCount");
 
                     b.HasIndex("ShortId");
@@ -3225,21 +3230,14 @@ namespace IczpNet.Chat.Migrations
                     b.HasIndex("SessionId", "Id")
                         .IsDescending();
 
-                    b.HasIndex("SessionId", "IsDeleted");
-
                     b.HasIndex("SessionId", "IsDeleted", "IsPrivate")
                         .HasDatabaseName("IX_ChatMessage_CountQuery");
 
                     SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("SessionId", "IsDeleted", "IsPrivate"), new[] { "Id", "SenderSessionUnitId", "ReceiverSessionUnitId" });
 
-                    b.HasIndex("SessionId", "IsDeleted", "IsPrivate", "SenderSessionUnitId", "ReceiverSessionUnitId")
-                        .HasDatabaseName("IX_Message_Session_Count");
+                    b.HasIndex("SessionId", "IsPrivate", "SenderId", "ReceiverId", "IsDeleted", "CreationTime", "ForwardDepth", "QuoteDepth");
 
-                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("SessionId", "IsDeleted", "IsPrivate", "SenderSessionUnitId", "ReceiverSessionUnitId"), new[] { "Id" });
-
-                    b.HasIndex("SessionId", "IsDeleted", "IsPrivate", "SenderId", "ReceiverId", "CreationTime", "ForwardDepth", "QuoteDepth");
-
-                    b.HasIndex("SessionId", "IsDeleted", "IsPrivate", "SenderSessionUnitId", "ReceiverSessionUnitId", "CreationTime", "ForwardDepth", "QuoteDepth");
+                    b.HasIndex("SessionId", "IsPrivate", "SenderSessionUnitId", "ReceiverSessionUnitId", "IsDeleted", "CreationTime", "ForwardDepth", "QuoteDepth");
 
                     b.HasIndex(new[] { "CreationTime" }, "IX_Chat_Message_CreationTime_Asc");
 
