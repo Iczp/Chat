@@ -36,6 +36,7 @@ using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
 using IczpNet.Chat.SessionSections.SessionUnitOrganizations;
 using IczpNet.Chat.SessionSections.SessionUnitRoles;
 using IczpNet.Chat.SessionSections.SessionUnitTags;
+using IczpNet.Chat.SessionUnitMessages;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
 using IczpNet.Chat.TextContentWords;
@@ -199,6 +200,8 @@ public static class ChatDbContextModelCreatingExtensions
             b.HasOne(x => x.Blob).WithOne(x => x.Content).HasForeignKey<BlobContent>(x => x.BlobId).IsRequired(true);
         });
 
+
+
         builder.Entity<Message>(b =>
             {
                 var _prefix = $"{ChatDbProperties.DbTablePrefix}_{nameof(Message)}_MapTo";
@@ -242,6 +245,29 @@ public static class ChatDbContextModelCreatingExtensions
                 .IncludeProperties(x => new { x.Id });
 
             });
+
+        builder.Entity<SessionUnitMessage>(b =>
+        {
+            b.HasKey(x => new { x.SessionUnitId, x.MessageId });
+
+            // 非常关键的联合索引（用于查询消息列表）
+            b.HasIndex(x => new { x.SessionUnitId, x.MessageId });
+
+            // FK
+            b.HasOne(x => x.SessionUnit).WithMany().HasForeignKey(x => x.SessionUnitId).OnDelete(DeleteBehavior.Cascade);
+
+            b.HasOne(x => x.Message).WithMany().HasForeignKey(x => x.MessageId).OnDelete(DeleteBehavior.Cascade);
+
+            // 用于已读查询
+            b.HasIndex(x => new { x.SessionUnitId, x.IsRead });
+
+            // 单独用于 MessageId 查询
+            b.HasIndex(x => x.MessageId);
+
+            // 可选：SessionUnit 常用字段
+            b.HasIndex(x => new { x.SessionUnitId, x.IsOpened });
+
+        });
 
         builder.Entity<UserDevice>(b => { b.HasKey(x => new { x.UserId, x.DeviceId }); });
 

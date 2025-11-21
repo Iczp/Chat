@@ -1,5 +1,5 @@
-﻿using IczpNet.Chat.AppVersionDevices;
-using IczpNet.Chat.AppVersionDeviceGroups;
+﻿using IczpNet.Chat.AppVersionDeviceGroups;
+using IczpNet.Chat.AppVersionDevices;
 using IczpNet.Chat.AppVersions;
 using IczpNet.Chat.Articles;
 using IczpNet.Chat.Blobs;
@@ -51,6 +51,7 @@ using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
 using IczpNet.Chat.SessionSections.SessionUnitOrganizations;
 using IczpNet.Chat.SessionSections.SessionUnitRoles;
 using IczpNet.Chat.SessionSections.SessionUnitTags;
+using IczpNet.Chat.SessionUnitMessages;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
 using IczpNet.Chat.TextContentWords;
@@ -89,6 +90,9 @@ public interface IChatDbContext : IEfCoreDbContext
 
     DbSet<Session> Session { get; }
     DbSet<SessionUnit> SessionUnit { get; }
+
+    DbSet<SessionUnitMessage> SessionUnitMessage { get; }
+
     DbSet<SessionUnitEntryValue> SessionUnitEntryValue { get; }
     DbSet<SessionUnitSetting> SessionUnitSetting { get; }
     DbSet<SessionUnitCounter> SessionUnitCounter { get; }
