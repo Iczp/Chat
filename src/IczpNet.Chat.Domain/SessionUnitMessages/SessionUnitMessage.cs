@@ -7,7 +7,7 @@ using Volo.Abp;
 
 namespace IczpNet.Chat.SessionUnitMessages;
 
-public class SessionUnitMessage : BaseEntity, ISoftDelete
+public class SessionUnitMessage : BaseEntity<long>, ISoftDelete
 {
 
     /// <summary>
@@ -57,10 +57,10 @@ public class SessionUnitMessage : BaseEntity, ISoftDelete
     /// </summary>
     public virtual bool IsRemindMe { get; set; }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    public virtual bool IsDeleted { get; set; }
+    ///// <summary>
+    ///// 
+    ///// </summary>
+    //public virtual bool IsDeleted { get; set; }
 
     public override object[] GetKeys()
     {

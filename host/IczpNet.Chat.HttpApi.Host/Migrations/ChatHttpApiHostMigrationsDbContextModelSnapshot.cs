@@ -2975,6 +2975,9 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasKey("SessionUnitId", "MessageId");
 
+                    b.HasIndex("CreationTime")
+                        .IsDescending();
+
                     b.HasIndex("MessageId");
 
                     b.ToTable("Chat_MessageReminder", (string)null);
@@ -6135,11 +6138,11 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.SessionUnitMessages.SessionUnitMessage", b =>
                 {
-                    b.Property<Guid>("SessionUnitId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<long>("MessageId")
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -6155,6 +6158,14 @@ namespace IczpNet.Chat.Migrations
                     b.Property<Guid?>("CreatorId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DeletionTime");
 
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
@@ -6190,15 +6201,28 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("LastModifierId");
 
-                    b.HasKey("SessionUnitId", "MessageId");
+                    b.Property<long>("MessageId")
+                        .HasColumnType("bigint");
 
-                    b.HasIndex("MessageId");
+                    b.Property<Guid>("SessionUnitId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.HasIndex("SessionUnitId", "IsOpened");
+                    b.HasKey("Id");
 
-                    b.HasIndex("SessionUnitId", "IsRead");
+                    b.HasIndex("CreationTime")
+                        .IsDescending();
 
-                    b.HasIndex("SessionUnitId", "MessageId");
+                    b.HasIndex("MessageId")
+                        .IsDescending();
+
+                    b.HasIndex("SessionUnitId", "MessageId")
+                        .IsUnique();
+
+                    b.HasIndex("IsDeleted", "SessionUnitId", "IsOpened");
+
+                    b.HasIndex("IsDeleted", "SessionUnitId", "IsRead");
+
+                    b.HasIndex("IsDeleted", "SessionUnitId", "MessageId");
 
                     b.ToTable("Chat_SessionUnitMessage", (string)null);
                 });

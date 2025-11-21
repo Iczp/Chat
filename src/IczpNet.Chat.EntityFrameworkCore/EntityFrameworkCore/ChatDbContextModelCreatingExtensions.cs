@@ -48,6 +48,7 @@ using System.Linq;
 using System.Reflection;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities;
+using Volo.Abp.EntityFrameworkCore.Modeling;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -147,7 +148,11 @@ public static class ChatDbContextModelCreatingExtensions
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        builder.Entity<MessageReminder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
+        builder.Entity<MessageReminder>(b =>
+        {
+            b.HasKey(x => new { x.SessionUnitId, x.MessageId });
+            b.HasIndex(x => x.CreationTime).IsDescending([true]);
+        });
         builder.Entity<MessageFollower>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
 
         builder.Entity<FavoritedRecorder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
@@ -248,24 +253,37 @@ public static class ChatDbContextModelCreatingExtensions
 
         builder.Entity<SessionUnitMessage>(b =>
         {
-            b.HasKey(x => new { x.SessionUnitId, x.MessageId });
+            // 主键，自增 Id
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Id).ValueGeneratedOnAdd();
 
-            // 非常关键的联合索引（用于查询消息列表）
-            b.HasIndex(x => new { x.SessionUnitId, x.MessageId });
+            // 唯一约束：一个 SessionUnit 对同一 message 只能有一条记录
+            b.HasIndex(x => new { x.SessionUnitId, x.MessageId }).IsUnique();
 
-            // FK
-            b.HasOne(x => x.SessionUnit).WithMany().HasForeignKey(x => x.SessionUnitId).OnDelete(DeleteBehavior.Cascade);
+            b.HasIndex(x => new { x.IsDeleted, x.SessionUnitId, x.MessageId });
 
-            b.HasOne(x => x.Message).WithMany().HasForeignKey(x => x.MessageId).OnDelete(DeleteBehavior.Cascade);
+            // MessageId 单字段查询（比如通过消息找所有 SessionUnitMessage）
+            b.HasIndex(x => x.MessageId).IsDescending(true);
 
-            // 用于已读查询
-            b.HasIndex(x => new { x.SessionUnitId, x.IsRead });
+            // 已读查询
+            b.HasIndex(x => new { x.IsDeleted, x.SessionUnitId, x.IsRead });
 
-            // 单独用于 MessageId 查询
-            b.HasIndex(x => x.MessageId);
+            // 是否打开
+            b.HasIndex(x => new { x.IsDeleted, x.SessionUnitId, x.IsOpened });
 
-            // 可选：SessionUnit 常用字段
-            b.HasIndex(x => new { x.SessionUnitId, x.IsOpened });
+            // 创建时间排序（用于按时间分页）
+            b.HasIndex(x => x.CreationTime).IsDescending(true);
+
+            // 外键
+            b.HasOne(x => x.SessionUnit)
+                .WithMany()
+                .HasForeignKey(x => x.SessionUnitId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            b.HasOne(x => x.Message)
+                .WithMany()
+                .HasForeignKey(x => x.MessageId)
+                .OnDelete(DeleteBehavior.Cascade);
 
         });
 
