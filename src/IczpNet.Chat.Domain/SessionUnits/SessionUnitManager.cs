@@ -667,6 +667,13 @@ public class SessionUnitManager(
     }
 
     /// <inheritdoc />
+    public virtual async Task<List<SessionUnitCacheItem>> GetCacheListAsync(Message message)
+    {
+        var cacheKey = await GetCacheKeyByMessageAsync(message);
+        return await GetCacheListAsync(cacheKey);
+    }
+
+    /// <inheritdoc />
     public virtual Task<List<SessionUnitCacheItem>> GetCacheListBySessionIdAsync(Guid sessionId)
     {
         return SessionUnitListCache.GetAsync($"{new SessionUnitCacheKey(sessionId)}");
@@ -759,7 +766,7 @@ public class SessionUnitManager(
             IsVisible = x.Setting.IsVisible,
             IsEnabled = x.Setting.IsEnabled,
             //ReadedMessageId = x.Setting.ReadedMessageId,
-            //PublicBadge = x.PublicBadge,
+            PublicBadge = x.PublicBadge,
             //PrivateBadge = x.PrivateBadge,
             //RemindAllCount = x.RemindAllCount,
             //RemindMeCount = x.RemindMeCount,

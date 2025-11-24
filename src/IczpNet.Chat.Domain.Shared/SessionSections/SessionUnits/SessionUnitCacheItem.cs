@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.Enums;
+﻿using IczpNet.Chat.DistributedExs;
+using IczpNet.Chat.Enums;
 using System;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits;
@@ -59,7 +60,8 @@ public class SessionUnitCacheItem : ISessionUnit
 
     //public virtual long? LastMessageId { get; set; }
 
-    //public virtual int PublicBadge { get; set; }
+    //[Increment]
+    public virtual int PublicBadge { get; set; }
 
     //public virtual int PrivateBadge { get; set; }
 

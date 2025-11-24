@@ -325,6 +325,13 @@ public interface ISessionUnitManager
     Task<List<SessionUnitCacheItem>> GetCacheListAsync(string cacheKey);
 
     /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="message"></param>
+    /// <returns></returns>
+    Task<List<SessionUnitCacheItem>> GetCacheListAsync(Message message);
+
+    /// <summary>
     /// 获取缓存
     /// </summary>
     /// <param name="sessionId"></param>
