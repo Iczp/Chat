@@ -260,16 +260,17 @@ public static class ChatDbContextModelCreatingExtensions
             // 唯一约束：一个 SessionUnit 对同一 message 只能有一条记录
             b.HasIndex(x => new { x.SessionUnitId, x.MessageId }).IsUnique();
 
-            b.HasIndex(x => new { x.IsDeleted, x.SessionUnitId, x.MessageId });
-
             // MessageId 单字段查询（比如通过消息找所有 SessionUnitMessage）
             b.HasIndex(x => x.MessageId).IsDescending(true);
 
             // 已读查询
-            b.HasIndex(x => new { x.IsDeleted, x.SessionUnitId, x.IsRead });
+            b.HasIndex(x => new { x.SessionUnitId, x.IsRead });
 
-            // 是否打开
-            b.HasIndex(x => new { x.IsDeleted, x.SessionUnitId, x.IsOpened });
+            // 是否关注
+            b.HasIndex(x => new { x.SessionUnitId, x.IsFollowing });
+
+            // 是否收藏
+            b.HasIndex(x => new { x.SessionUnitId, x.IsFavorited });
 
             // 创建时间排序（用于按时间分页）
             b.HasIndex(x => x.CreationTime).IsDescending(true);

@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251121061357_SessionUnitMessage_Fix_Index")]
+    partial class SessionUnitMessage_Fix_Index
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -6204,12 +6207,6 @@ namespace IczpNet.Chat.Migrations
                     b.Property<long>("MessageId")
                         .HasColumnType("bigint");
 
-                    b.Property<long?>("OwnerId")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid?>("SessionId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid>("SessionUnitId")
                         .HasColumnType("uniqueidentifier");
 
@@ -6220,10 +6217,6 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("MessageId")
                         .IsDescending();
-
-                    b.HasIndex("OwnerId");
-
-                    b.HasIndex("SessionId");
 
                     b.HasIndex("SessionUnitId", "IsFavorited");
 
@@ -8548,14 +8541,6 @@ namespace IczpNet.Chat.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
-                        .WithMany()
-                        .HasForeignKey("OwnerId");
-
-                    b.HasOne("IczpNet.Chat.SessionSections.Sessions.Session", "Session")
-                        .WithMany()
-                        .HasForeignKey("SessionId");
-
                     b.HasOne("IczpNet.Chat.SessionUnits.SessionUnit", "SessionUnit")
                         .WithMany()
                         .HasForeignKey("SessionUnitId")
@@ -8563,10 +8548,6 @@ namespace IczpNet.Chat.Migrations
                         .IsRequired();
 
                     b.Navigation("Message");
-
-                    b.Navigation("Owner");
-
-                    b.Navigation("Session");
 
                     b.Navigation("SessionUnit");
                 });

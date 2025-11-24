@@ -13,7 +13,11 @@ namespace IczpNet.Chat.MessageSections.Messages;
 /// <summary>
 /// SessionUnitMessage 处理
 /// </summary>
-public class InsertSessionUnitMessageForMessageCreatedEventHandler(ISessionUnitMessageRepository sessionUnitMessageRepository) : DomainService, ILocalEventHandler<EntityCreatedEventData<Message>>, ITransientDependency
+public class InsertSessionUnitMessageForMessageCreatedEventHandler(ISessionUnitMessageRepository sessionUnitMessageRepository) : 
+    DomainService,
+    // 先暂时不启用 SessionUnitMessage
+    //ILocalEventHandler<EntityCreatedEventData<Message>>, 
+    ITransientDependency
 {
 
     public ISessionUnitMessageRepository SessionUnitMessageRepository { get; } = sessionUnitMessageRepository;

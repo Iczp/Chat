@@ -1,5 +1,7 @@
 ﻿using IczpNet.Chat.BaseEntities;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionUnits;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -9,6 +11,28 @@ namespace IczpNet.Chat.SessionUnitMessages;
 
 public class SessionUnitMessage : BaseEntity<long>, ISoftDelete
 {
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public virtual long? OwnerId { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    [ForeignKey(nameof(OwnerId))]
+    public virtual ChatObject Owner { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public virtual Guid? SessionId { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    [ForeignKey(nameof(SessionId))]
+    public virtual Session Session { get; set; }
 
     /// <summary>
     /// 
