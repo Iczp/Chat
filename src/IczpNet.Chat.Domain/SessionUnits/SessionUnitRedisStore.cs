@@ -24,7 +24,7 @@ public class SessionUnitRedisStore(
     public ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
     public IOptions<AbpDistributedCacheOptions> Options { get; } = options;
 
-    private readonly TimeSpan _cacheExpire = TimeSpan.FromDays(7);
+    private readonly TimeSpan? _cacheExpire = TimeSpan.FromDays(7);
 
 
 
@@ -132,11 +132,11 @@ public class SessionUnitRedisStore(
                 zsetAddTasks.Add(batch.SortedSetAddAsync(lastMsgKey, idStr, u.LastMessageId.Value));
             }
 
-            // set expire on each unit hash
+            // set _cacheExpire on each unit hash
             _ = batch.KeyExpireAsync(hashKey, _cacheExpire);
         }
 
-        // set expire on set and sorted set
+        // set _cacheExpire on set and sorted set
         _ = batch.KeyExpireAsync(sessionUnitIdSetKey, _cacheExpire);
         _ = batch.KeyExpireAsync(lastMsgKey, _cacheExpire);
 
@@ -180,13 +180,10 @@ public class SessionUnitRedisStore(
 
     #region Get by OwnerId / DestinationId
 
-    public async Task<List<SessionUnitStoreItem>> GetListByOwnerIdAsync(
-    long ownerId,
-    Func<long, Task<List<SessionUnit>>> getFromDb,
-    TimeSpan? expire = null)
+    public async Task<List<SessionUnitStoreItem>> GetListByOwnerIdAsync(long ownerId, IEnumerable<SessionUnitCacheItem> units)
     {
-        var dbList = await getFromDb(ownerId); // DB 查询
-        var unitIds = dbList.Select(x => x.Id).ToList();
+
+        var unitIds = units.Select(x => x.Id).ToList();
 
         string ownerKey = OwnerSetKey(ownerId);
 
@@ -201,9 +198,9 @@ public class SessionUnitRedisStore(
         var batch = Database.CreateBatch();
         var hashTasks = new Dictionary<Guid, Task<HashEntry[]>>();
 
-        foreach (var id in unitIds)
+        foreach (var unit in units)
         {
-            hashTasks[id] = batch.HashGetAllAsync($"Session:Unit:{id}");
+            hashTasks[unit.Id] = batch.HashGetAllAsync(UnitKey(unit.SessionId.Value, unit.Id));
         }
         batch.Execute();
 
@@ -211,19 +208,19 @@ public class SessionUnitRedisStore(
 
         var result = new List<SessionUnitStoreItem>();
 
-        foreach (var su in dbList)
+        foreach (var su in units)
         {
             var id = su.Id;
             var redisFields = hashTasks[id].Result;
 
-            var setTopTick = su.Sorting;
+            var sorting = su.Sorting;
             long lastMessageId = su.LastMessageId ?? 0;
 
             // 如果 Redis 有，则覆盖 DB 值
             if (redisFields != null && redisFields.Length > 0)
             {
-                setTopTick = TryGetDouble(redisFields, nameof(SessionUnitStoreItem.SetTopTick), setTopTick);
-                lastMessageId = TryGetLong(redisFields, nameof(SessionUnitStoreItem.LastMessageId), lastMessageId);
+                sorting = TryGetDouble(redisFields, nameof(F_Sorting), sorting);
+                lastMessageId = TryGetLong(redisFields, nameof(F_LastMessageId), lastMessageId);
             }
 
             // 如果 ZSET 有排序值，则也覆盖 lastMessageId
@@ -233,7 +230,7 @@ public class SessionUnitRedisStore(
                 var redisTick = redisScore / 1_000_000_000_000;
                 var redisMsgId = redisScore % 1_000_000_000_000;
 
-                if (redisTick > 0) setTopTick = redisTick;
+                if (redisTick > 0) sorting = redisTick;
                 if (redisMsgId > 0) lastMessageId = redisMsgId;
             }
 
@@ -242,7 +239,7 @@ public class SessionUnitRedisStore(
                 SessionUnitId = id,
                 OwnerId = ownerId,
                 LastMessageId = lastMessageId,
-                SetTopTick = setTopTick,
+                Sorting = sorting,
                 LastUpdateTime = DateTime.UtcNow.Ticks
             };
 
@@ -252,32 +249,32 @@ public class SessionUnitRedisStore(
             // 回写 Redis（同步 DB 初始值）
             var entry = new[]
             {
-            new HashEntry("SetTopTick", setTopTick),
-            new HashEntry("LastMessageId", lastMessageId),
-            new HashEntry("OwnerId", ownerId),
+            new HashEntry(F_Sorting, sorting),
+            new HashEntry(F_LastMessageId, lastMessageId),
+            new HashEntry(F_OwnerId, ownerId),
             new HashEntry("LastUpdateTime", item.LastUpdateTime),
         };
 
             await Database.HashSetAsync($"Session:Unit:{id}", entry);
 
             // 排序 key
-            double score2 = setTopTick * 1_000_000_000_000 + lastMessageId;
+            double score2 = sorting * 1_000_000_000_000 + lastMessageId;
             await Database.SortedSetAddAsync(ownerKey, id.ToString(), score2);
         }
 
         // 排序：先置顶 tick，再 lastmsg
         result = result
-            .OrderByDescending(x => x.SetTopTick)
+            .OrderByDescending(x => x.Sorting)
             .ThenByDescending(x => x.LastMessageId)
             .ToList();
 
         // 设置过期
-        if (expire != null)
+        if (_cacheExpire != null)
         {
-            await Database.KeyExpireAsync(ownerKey, expire);
-            foreach (var id in unitIds)
+            await Database.KeyExpireAsync(ownerKey, _cacheExpire);
+            foreach (var unit in units)
             {
-                await Database.KeyExpireAsync($"Session:Unit:{id}", expire);
+                await Database.KeyExpireAsync(UnitKey(unit.SessionId.Value, unit.Id), _cacheExpire);
             }
         }
 
@@ -495,7 +492,7 @@ public class SessionUnitRedisStore(
             // update ticks
             hashSetTasks.Add(batch.HashSetAsync(key, F_Ticks, (double)DateTime.UtcNow.Ticks));
 
-            // schedule expire per unit
+            // schedule _cacheExpire per unit
             expireTasks.Add(batch.KeyExpireAsync(key, expire ?? _cacheExpire));
 
             //owner
@@ -506,7 +503,7 @@ public class SessionUnitRedisStore(
             zsetTasks.Add(batch.SortedSetAddAsync(ownerKey, idStr, score));
         }
 
-        // ensure zset has expire set too
+        // ensure zset has _cacheExpire set too
         expireTasks.Add(batch.KeyExpireAsync(lastMsgKey, expire ?? _cacheExpire));
 
         batch.Execute();
@@ -524,7 +521,7 @@ public class SessionUnitRedisStore(
     public async Task AddUnitIdToSessionAsync(Guid sessionId, Guid unitId)
     {
         await Database.SetAddAsync(SessionUnitIdSetKey(sessionId), unitId.ToString());
-        // set expire on id set
+        // set _cacheExpire on id set
         await Database.KeyExpireAsync(SessionUnitIdSetKey(sessionId), _cacheExpire);
     }
 
@@ -598,9 +595,9 @@ public class SessionUnitRedisStore(
         }
         else
         {
-            // set expire for unit id set
+            // set _cacheExpire for unit id set
             tasks.Add(Database.KeyExpireAsync(SessionUnitIdSetKey(sessionId), e));
-            // set expire for sorted set
+            // set _cacheExpire for sorted set
             tasks.Add(Database.KeyExpireAsync(LastMessageSetKey(sessionId), e));
         }
 
