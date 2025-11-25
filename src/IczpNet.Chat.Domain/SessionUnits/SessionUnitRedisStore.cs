@@ -3,6 +3,7 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Extensions.Options;
+using Pipelines.Sockets.Unofficial.Buffers;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
@@ -28,12 +29,13 @@ public class SessionUnitRedisStore(
 
 
 
-    private string UnitKey(Guid sessionId, Guid unitId) => $"{Options.Value.KeyPrefix}Session:{sessionId}:Unit:{unitId}";
+    private string UnitKey(Guid sessionId, Guid unitId) => $"{Options.Value.KeyPrefix}SessionUnits:SessionId-{sessionId}:UnitId-{unitId}";
 
-    private string SessionUnitIdSetKey(Guid sessionId) => $"{Options.Value.KeyPrefix}Session:UnitIds:{sessionId}";
+    private string SessionUnitIdSetKey(Guid sessionId) => $"{Options.Value.KeyPrefix}SessionUnitIds:SessionId-{sessionId}";
 
-    private string LastMessageSetKey(Guid sessionId) => $"{Options.Value.KeyPrefix}Session:{sessionId}:LastMessageId";
+    private string LastMessageSetKey(Guid sessionId) => $"{Options.Value.KeyPrefix}SessionUnits-LastMessage:SessionId-{sessionId}";
 
+    private string OwnerSetKey(long ownerId) => $"{Options.Value.KeyPrefix}SessionUnits-Owner:OwnerId-{ownerId}";
 
 
     #region Helpers for field names
@@ -56,6 +58,7 @@ public class SessionUnitRedisStore(
     private static readonly string F_RemindMeCount = nameof(SessionUnitCacheItem.RemindMeCount);
     private static readonly string F_FollowingCount = nameof(SessionUnitCacheItem.FollowingCount);
     private static readonly string F_Ticks = nameof(SessionUnitCacheItem.Ticks);
+    private static readonly string F_Sorting = nameof(SessionUnitCacheItem.Sorting);
 
     #endregion
 
@@ -115,6 +118,7 @@ public class SessionUnitRedisStore(
                 new HashEntry(F_RemindMeCount, u.RemindMeCount),
                 new HashEntry(F_FollowingCount, u.FollowingCount),
                 new HashEntry(F_Ticks, u.Ticks),
+                new HashEntry(F_Sorting, u.Sorting),
             };
 
             // 去除 Null 值，避免 Redis 存储 Null 导致的问题
@@ -174,7 +178,138 @@ public class SessionUnitRedisStore(
 
     #endregion
 
+    #region Get by OwnerId / DestinationId
+
+    public async Task<List<SessionUnitStoreItem>> GetListByOwnerIdAsync(
+    long ownerId,
+    Func<long, Task<List<SessionUnit>>> getFromDb,
+    TimeSpan? expire = null)
+    {
+        var dbList = await getFromDb(ownerId); // DB 查询
+        var unitIds = dbList.Select(x => x.Id).ToList();
+
+        string ownerKey = OwnerSetKey(ownerId);
+
+        // Redis ZSet 取全部
+        var redisZset = await Database.SortedSetRangeByScoreWithScoresAsync(ownerKey);
+
+        var redisMap = redisZset.ToDictionary(
+            x => Guid.Parse(x.Element),
+            x => x.Score
+        );
+
+        var batch = Database.CreateBatch();
+        var hashTasks = new Dictionary<Guid, Task<HashEntry[]>>();
+
+        foreach (var id in unitIds)
+        {
+            hashTasks[id] = batch.HashGetAllAsync($"Session:Unit:{id}");
+        }
+        batch.Execute();
+
+        await Task.WhenAll(hashTasks.Values);
+
+        var result = new List<SessionUnitStoreItem>();
+
+        foreach (var su in dbList)
+        {
+            var id = su.Id;
+            var redisFields = hashTasks[id].Result;
+
+            var setTopTick = su.Sorting;
+            long lastMessageId = su.LastMessageId ?? 0;
+
+            // 如果 Redis 有，则覆盖 DB 值
+            if (redisFields != null && redisFields.Length > 0)
+            {
+                setTopTick = TryGetDouble(redisFields, nameof(SessionUnitStoreItem.SetTopTick), setTopTick);
+                lastMessageId = TryGetLong(redisFields, nameof(SessionUnitStoreItem.LastMessageId), lastMessageId);
+            }
+
+            // 如果 ZSET 有排序值，则也覆盖 lastMessageId
+            if (redisMap.TryGetValue(id, out var score))
+            {
+                var redisScore = (long)score;
+                var redisTick = redisScore / 1_000_000_000_000;
+                var redisMsgId = redisScore % 1_000_000_000_000;
+
+                if (redisTick > 0) setTopTick = redisTick;
+                if (redisMsgId > 0) lastMessageId = redisMsgId;
+            }
+
+            var item = new SessionUnitStoreItem
+            {
+                SessionUnitId = id,
+                OwnerId = ownerId,
+                LastMessageId = lastMessageId,
+                SetTopTick = setTopTick,
+                LastUpdateTime = DateTime.UtcNow.Ticks
+            };
+
+            // 返回结果
+            result.Add(item);
+
+            // 回写 Redis（同步 DB 初始值）
+            var entry = new[]
+            {
+            new HashEntry("SetTopTick", setTopTick),
+            new HashEntry("LastMessageId", lastMessageId),
+            new HashEntry("OwnerId", ownerId),
+            new HashEntry("LastUpdateTime", item.LastUpdateTime),
+        };
+
+            await Database.HashSetAsync($"Session:Unit:{id}", entry);
+
+            // 排序 key
+            double score2 = setTopTick * 1_000_000_000_000 + lastMessageId;
+            await Database.SortedSetAddAsync(ownerKey, id.ToString(), score2);
+        }
+
+        // 排序：先置顶 tick，再 lastmsg
+        result = result
+            .OrderByDescending(x => x.SetTopTick)
+            .ThenByDescending(x => x.LastMessageId)
+            .ToList();
+
+        // 设置过期
+        if (expire != null)
+        {
+            await Database.KeyExpireAsync(ownerKey, expire);
+            foreach (var id in unitIds)
+            {
+                await Database.KeyExpireAsync($"Session:Unit:{id}", expire);
+            }
+        }
+
+        return result;
+    }
+
+
+    private static long TryGetLong(HashEntry[] entries, string field, long defaultValue)
+    {
+        var e = Array.Find(entries, x => x.Name == field);
+
+        if (e.Equals(default) || e.Value.IsNull)
+        {
+            return defaultValue;
+        }
+        return (long)e.Value;
+    }
+    private static double TryGetDouble(HashEntry[] entries, string field, double defaultValue)
+    {
+        var e = Array.Find(entries, x => x.Name == field);
+
+        if (e.Equals(default) || e.Value.IsNull)
+        {
+            return defaultValue;
+        }
+        return (double)e.Value;
+    }
+
+    #endregion
+
     #region Get / GetMany / GetListBySessionId
+
 
     /// <summary>
     /// Batch read many unit hashes and map to SessionUnitCacheItem
@@ -262,6 +397,7 @@ public class SessionUnitRedisStore(
             else if (name == F_RemindMeCount && e.Value.HasValue) item.RemindMeCount = (int)e.Value;
             else if (name == F_FollowingCount && e.Value.HasValue) item.FollowingCount = (int)e.Value;
             else if (name == F_Ticks && e.Value.HasValue) item.Ticks = (double)e.Value;
+            else if (name == F_Sorting && e.Value.HasValue) item.Sorting = (double)e.Value;
         }
 
         return item;
@@ -361,6 +497,13 @@ public class SessionUnitRedisStore(
 
             // schedule expire per unit
             expireTasks.Add(batch.KeyExpireAsync(key, expire ?? _cacheExpire));
+
+            //owner
+            var ownerKey = OwnerSetKey(unit.OwnerId);
+            // 计算排序 score
+            double score = unit.Sorting * 1_000_000_000_000d + lastMessageId;
+            // 更新 ZSet
+            zsetTasks.Add(batch.SortedSetAddAsync(ownerKey, idStr, score));
         }
 
         // ensure zset has expire set too

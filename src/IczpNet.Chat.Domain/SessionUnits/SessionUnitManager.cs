@@ -773,6 +773,7 @@ public class SessionUnitManager(
             FollowingCount = x.FollowingCount,
             LastMessageId = x.LastMessageId,
             Ticks = x.Ticks,
+            Sorting = x.Sorting,
         })];
     }
     /// <inheritdoc />

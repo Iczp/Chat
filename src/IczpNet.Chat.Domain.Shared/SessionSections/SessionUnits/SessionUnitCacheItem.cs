@@ -72,4 +72,6 @@ public class SessionUnitCacheItem : ISessionUnit
 
     public virtual double Ticks { get; set; }
 
+    public virtual double Sorting { get; set; }
+
 }
