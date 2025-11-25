@@ -180,7 +180,7 @@ public class SessionUnitRedisStore(
 
     #region Get by OwnerId / DestinationId
 
-    public async Task<List<SessionUnitStoreItem>> GetListByOwnerIdAsync(long ownerId, IEnumerable<SessionUnitCacheItem> units)
+    public async Task<List<SessionUnitCacheItem>> GetListByOwnerIdAsync(long ownerId, IEnumerable<SessionUnitCacheItem> units)
     {
 
         var unitIds = units.Select(x => x.Id).ToList();
@@ -206,7 +206,7 @@ public class SessionUnitRedisStore(
 
         await Task.WhenAll(hashTasks.Values);
 
-        var result = new List<SessionUnitStoreItem>();
+        var result = new List<SessionUnitCacheItem>();
 
         foreach (var su in units)
         {
@@ -234,13 +234,13 @@ public class SessionUnitRedisStore(
                 if (redisMsgId > 0) lastMessageId = redisMsgId;
             }
 
-            var item = new SessionUnitStoreItem
+            var item = new SessionUnitCacheItem
             {
-                SessionUnitId = id,
+                Id = id,
                 OwnerId = ownerId,
                 LastMessageId = lastMessageId,
                 Sorting = sorting,
-                LastUpdateTime = DateTime.UtcNow.Ticks
+
             };
 
             // ·µ»Ø½á¹û
@@ -252,7 +252,6 @@ public class SessionUnitRedisStore(
             new HashEntry(F_Sorting, sorting),
             new HashEntry(F_LastMessageId, lastMessageId),
             new HashEntry(F_OwnerId, ownerId),
-            new HashEntry("LastUpdateTime", item.LastUpdateTime),
         };
 
             await Database.HashSetAsync($"Session:Unit:{id}", entry);
