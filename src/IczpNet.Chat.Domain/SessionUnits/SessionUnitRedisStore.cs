@@ -1,9 +1,7 @@
-
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Extensions.Options;
-using Pipelines.Sockets.Unofficial.Buffers;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
@@ -26,20 +24,16 @@ public class SessionUnitRedisStore(
 
     private readonly TimeSpan? _cacheExpire = TimeSpan.FromDays(7);
 
-
-
-
+    // key builders
     private string UnitKey(Guid sessionId, Guid unitId) => $"{Options.Value.KeyPrefix}SessionUnits:SessionId-{sessionId}:UnitId-{unitId}";
-
     private string SessionUnitIdSetKey(Guid sessionId) => $"{Options.Value.KeyPrefix}SessionUnitIds:SessionId-{sessionId}";
-
     private string LastMessageSetKey(Guid sessionId) => $"{Options.Value.KeyPrefix}SessionUnits-LastMessage:SessionId-{sessionId}";
-
     private string OwnerSetKey(long ownerId) => $"{Options.Value.KeyPrefix}SessionUnits-Owner:OwnerId-{ownerId}";
 
+    // composite score multiplier (sorting * MULT + lastMessageId)
+    private const double OWNER_SCORE_MULT = 1_000_000_000_000d; // 1e12
 
-    #region Helpers for field names
-
+    #region Field names
     private static readonly string F_Id = nameof(SessionUnitCacheItem.Id);
     private static readonly string F_SessionId = nameof(SessionUnitCacheItem.SessionId);
     private static readonly string F_OwnerId = nameof(SessionUnitCacheItem.OwnerId);
@@ -59,23 +53,114 @@ public class SessionUnitRedisStore(
     private static readonly string F_FollowingCount = nameof(SessionUnitCacheItem.FollowingCount);
     private static readonly string F_Ticks = nameof(SessionUnitCacheItem.Ticks);
     private static readonly string F_Sorting = nameof(SessionUnitCacheItem.Sorting);
+    #endregion
+
+    #region Safe helpers (avoid null values)
+    private static RedisValue Safe(object? value)
+    {
+        if (value == null)
+            return RedisValue.EmptyString;
+
+        // handle Nullable<T> (long?, int?, double?, Guid?, bool?, etc)
+        var type = value.GetType();
+        if (Nullable.GetUnderlyingType(type) != null)
+        {
+            // extract actual value in nullable
+            value = Convert.ChangeType(value, Nullable.GetUnderlyingType(type)!);
+            if (value == null)
+                return RedisValue.EmptyString;
+            type = value.GetType();
+        }
+
+        return value switch
+        {
+            string s => s,
+            Guid g => g.ToString(),
+            bool b => b ? "1" : "0",
+            int i => i,
+            long l => l,
+            double d => d,
+            float f => (double)f,
+            DateTime dt => new DateTimeOffset(dt).ToUnixTimeMilliseconds(),
+            DateTimeOffset dto => dto.ToUnixTimeMilliseconds(),
+            _ => value.ToString() ?? RedisValue.EmptyString
+        };
+    }
+
+    private static long TryGetLong(HashEntry[] entries, string field, long defaultValue)
+    {
+        var e = Array.Find(entries, x => (string)x.Name == field);
+        if (e.Equals(default) || e.Value.IsNull) return defaultValue;
+        if (long.TryParse(e.Value.ToString(), out var v)) return v;
+        try { return (long)e.Value; } catch { return defaultValue; }
+    }
+
+    private static int TryGetInt(HashEntry[] entries, string field, int defaultValue)
+    {
+        var e = Array.Find(entries, x => (string)x.Name == field);
+        if (e.Equals(default) || e.Value.IsNull) return defaultValue;
+        if (int.TryParse(e.Value.ToString(), out var v)) return v;
+        try { return (int)e.Value; } catch { return defaultValue; }
+    }
+
+    private static double TryGetDouble(HashEntry[] entries, string field, double defaultValue)
+    {
+        var e = Array.Find(entries, x => (string)x.Name == field);
+        if (e.Equals(default) || e.Value.IsNull) return defaultValue;
+        if (double.TryParse(e.Value.ToString(), out var v)) return v;
+        try { return (double)e.Value; } catch { return defaultValue; }
+    }
+
+    private static bool TryGetBool(HashEntry[] entries, string field, bool defaultValue)
+    {
+        var e = Array.Find(entries, x => (string)x.Name == field);
+        if (e.Equals(default) || e.Value.IsNull) return defaultValue;
+        if (int.TryParse(e.Value.ToString(), out var iv)) return iv == 1;
+        if (bool.TryParse(e.Value.ToString(), out var bv)) return bv;
+        try { return (int)e.Value == 1; } catch { return defaultValue; }
+    }
+
+    private static Guid? TryGetGuid(HashEntry[] entries, string field)
+    {
+        var e = Array.Find(entries, x => (string)x.Name == field);
+        if (e.Equals(default) || e.Value.IsNull) return null;
+        if (Guid.TryParse(e.Value.ToString(), out var g)) return g;
+        return null;
+    }
 
     #endregion
 
-    #region Initialization (from DB -> Redis)
+    #region Initialize / Ensure helpers
 
-    /// <summary>
-    /// Initialize a session's Redis cache from the provided sessionUnit list (from DB).
-    /// This method will populate:
-    ///  - Session:UnitIds:{sessionId} (SET of unit ids)
-    ///  - Session:Unit:{sessionId}:{unitId} (HASH per unit)
-    ///  - Session:LastMessageId:{sessionId} (ZSET members for lastMessageId)
-    /// TTL will be applied from configuration (default 7 days).
-    /// </summary>
+    private static HashEntry[] MapToHashEntries(SessionUnitCacheItem unit)
+    {
+        var entries = new HashEntry[]
+            {
+                new HashEntry(F_Id, Safe(unit.Id.ToString())),
+                new HashEntry(F_SessionId, Safe(unit.SessionId)),
+                new HashEntry(F_OwnerId, Safe(unit.OwnerId)),
+                new HashEntry(F_OwnerObjectType, Safe(unit.OwnerObjectType?.ToString())),
+                new HashEntry(F_DestinationId, Safe(unit.DestinationId)),
+                new HashEntry(F_DestinationObjectType, Safe(unit.DestinationObjectType?.ToString())),
+                new HashEntry(F_IsStatic, Safe(unit.IsStatic ? 1 : 0)),
+                new HashEntry(F_IsPublic, Safe(unit.IsPublic ? 1 : 0)),
+                new HashEntry(F_IsVisible, Safe(unit.IsVisible ? 1 : 0)),
+                new HashEntry(F_IsEnabled, Safe(unit.IsEnabled ? 1 : 0)),
+                new HashEntry(F_ReadedMessageId, Safe(unit.ReadedMessageId)),
+                new HashEntry(F_LastMessageId, Safe(unit.LastMessageId)),
+                new HashEntry(F_PublicBadge, Safe(unit.PublicBadge)),
+                new HashEntry(F_PrivateBadge, Safe(unit.PrivateBadge)),
+                new HashEntry(F_RemindAllCount, Safe(unit.RemindAllCount)),
+                new HashEntry(F_RemindMeCount, Safe(unit.RemindMeCount)),
+                new HashEntry(F_FollowingCount, Safe(unit.FollowingCount)),
+                new HashEntry(F_Ticks, Safe(unit.Ticks)),
+                new HashEntry(F_Sorting, Safe(unit.Sorting)),
+            };
+        return entries;
+    }
     public async Task InitializeSessionCacheAsync(Guid sessionId, IEnumerable<SessionUnitCacheItem> units)
     {
         ArgumentNullException.ThrowIfNull(units);
-
         var unitList = units.ToList();
         if (unitList.Count == 0) return;
 
@@ -84,59 +169,32 @@ public class SessionUnitRedisStore(
 
         var batch = Database.CreateBatch();
 
-        // delete existing set to avoid stale members
+        // clear existing set to avoid stale members
         _ = batch.KeyDeleteAsync(sessionUnitIdSetKey);
 
-        var hashTasks = new List<Task>();
         var setAddTasks = new List<Task<bool>>();
+        var hashTasks = new List<Task>();
         var zsetAddTasks = new List<Task<bool>>();
 
-        foreach (var u in unitList)
+        foreach (var unit in unitList)
         {
-            var idStr = u.Id.ToString();
+            var idStr = unit.Id.ToString();
             setAddTasks.Add(batch.SetAddAsync(sessionUnitIdSetKey, idStr));
 
-            var hashKey = UnitKey(sessionId, u.Id);
+            var hashKey = UnitKey(unit.SessionId ?? Guid.Empty, unit.Id);
 
-            var entries = new HashEntry[]
+            var entries = MapToHashEntries(unit);
+
+            hashTasks.Add(batch.HashSetAsync(hashKey, entries));
+
+            if (unit.LastMessageId.HasValue)
             {
-                new HashEntry(F_Id, u.Id.ToString()),
-                new HashEntry(F_SessionId, u.SessionId.HasValue ? u.SessionId.ToString() : RedisValue.Null),
-                new HashEntry(F_OwnerId, u.OwnerId),
-                new HashEntry(F_OwnerObjectType, u.OwnerObjectType?.ToString() ?? RedisValue.Null),
-                new HashEntry(F_DestinationId, u.DestinationId.HasValue ? u.DestinationId.ToString() : RedisValue.Null),
-                new HashEntry(F_DestinationObjectType, u.DestinationObjectType?.ToString() ?? RedisValue.Null),
-                new HashEntry(F_IsStatic, u.IsStatic ? 1 : 0),
-                new HashEntry(F_IsPublic, u.IsPublic ? 1 : 0),
-                new HashEntry(F_IsVisible, u.IsVisible ? 1 : 0),
-                new HashEntry(F_IsEnabled, u.IsEnabled ? 1 : 0),
-                new HashEntry(F_ReadedMessageId, u.ReadedMessageId ?? RedisValue.Null),
-                new HashEntry(F_LastMessageId, u.LastMessageId ?? RedisValue.Null),
-                new HashEntry(F_PublicBadge, u.PublicBadge),
-                new HashEntry(F_PrivateBadge, u.PrivateBadge),
-                new HashEntry(F_RemindAllCount, u.RemindAllCount),
-                new HashEntry(F_RemindMeCount, u.RemindMeCount),
-                new HashEntry(F_FollowingCount, u.FollowingCount),
-                new HashEntry(F_Ticks, u.Ticks),
-                new HashEntry(F_Sorting, u.Sorting),
-            };
-
-            // 去除 Null 值，避免 Redis 存储 Null 导致的问题
-            var safeEntries = entries.Select(x => new HashEntry(x.Name, x.Value.IsNull ? RedisValue.EmptyString : x.Value)).ToArray();
-
-            hashTasks.Add(batch.HashSetAsync(hashKey, safeEntries));
-
-            // zset for last message ordering; if LastMessageId null, skip adding
-            if (u.LastMessageId.HasValue)
-            {
-                zsetAddTasks.Add(batch.SortedSetAddAsync(lastMsgKey, idStr, u.LastMessageId.Value));
+                zsetAddTasks.Add(batch.SortedSetAddAsync(lastMsgKey, idStr, unit.LastMessageId.Value));
             }
 
-            // set _cacheExpire on each unit hash
             _ = batch.KeyExpireAsync(hashKey, _cacheExpire);
         }
 
-        // set _cacheExpire on set and sorted set
         _ = batch.KeyExpireAsync(sessionUnitIdSetKey, _cacheExpire);
         _ = batch.KeyExpireAsync(lastMsgKey, _cacheExpire);
 
@@ -147,169 +205,142 @@ public class SessionUnitRedisStore(
         if (zsetAddTasks.Count > 0) await Task.WhenAll(zsetAddTasks);
     }
 
-    /// <summary>
-    /// Convenience overload: fetch units from a supplier function (e.g. DB call) and initialize
-    /// </summary>
     public async Task InitializeSessionCacheAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchFromDb)
     {
-
         ArgumentNullException.ThrowIfNull(fetchFromDb);
-        var units = (await fetchFromDb(sessionId))?.ToList() ?? [];
+        var units = (await fetchFromDb(sessionId))?.ToList() ?? new List<SessionUnitCacheItem>();
         await InitializeSessionCacheAsync(sessionId, units);
-
     }
 
-    #endregion
-
-    #region Ensure initialization helpers
-
-    /// <summary>
-    /// Ensure the session unit set exists; if not, call the provided initializer to load from DB.
-    /// </summary>
     public async Task EnsureSessionInitializedAsync(Guid sessionId, Message message)
     {
         var sessionUnitIdSetKey = SessionUnitIdSetKey(sessionId);
-
         if (!await Database.KeyExistsAsync(sessionUnitIdSetKey))
         {
-            await InitializeSessionCacheAsync(sessionId, async (sessionId) => await SessionUnitManager.GetCacheListAsync(message));
+            await InitializeSessionCacheAsync(sessionId, async (sid) => await SessionUnitManager.GetCacheListAsync(message));
         }
     }
 
     #endregion
 
-    #region Get by OwnerId / DestinationId
+    #region GetListByOwnerIdAsync (DB initial values + Redis merge)
 
+    /// <summary>
+    /// Get list of SessionUnitCacheItem by ownerId. Units argument is the DB-supplied initial list (may be from DB).
+    /// Redis values take precedence when present. After merging, Redis is backfilled with merged values and owner zset updated.
+    /// </summary>
     public async Task<List<SessionUnitCacheItem>> GetListByOwnerIdAsync(long ownerId, IEnumerable<SessionUnitCacheItem> units)
     {
-
-        var unitIds = units.Select(x => x.Id).ToList();
+        var unitList = units?.ToList() ?? new List<SessionUnitCacheItem>();
+        if (unitList.Count == 0) return new List<SessionUnitCacheItem>();
 
         string ownerKey = OwnerSetKey(ownerId);
 
-        // Redis ZSet 取全部
+        // read owner zset (may be empty)
         var redisZset = await Database.SortedSetRangeByScoreWithScoresAsync(ownerKey);
+        var redisMap = redisZset.ToDictionary(x => Guid.Parse(x.Element), x => x.Score);
 
-        var redisMap = redisZset.ToDictionary(
-            x => Guid.Parse(x.Element),
-            x => x.Score
-        );
-
+        // batch read unit hashes
         var batch = Database.CreateBatch();
         var hashTasks = new Dictionary<Guid, Task<HashEntry[]>>();
 
-        foreach (var unit in units)
+        foreach (var unit in unitList)
         {
+            // ensure we have a valid session id in the DB item; if missing skip
+            if (!unit.SessionId.HasValue) continue;
             hashTasks[unit.Id] = batch.HashGetAllAsync(UnitKey(unit.SessionId.Value, unit.Id));
         }
-        batch.Execute();
 
+        batch.Execute();
         await Task.WhenAll(hashTasks.Values);
 
-        var result = new List<SessionUnitCacheItem>();
+        var result = new List<SessionUnitCacheItem>(unitList.Count);
+        var ownerZsetUpdateTasks = new List<Task<bool>>();
+        var hashSetBackfillTasks = new List<Task>();
 
-        foreach (var su in units)
+        foreach (var unit in unitList)
         {
-            var id = su.Id;
-            var redisFields = hashTasks[id].Result;
+            if (!unit.SessionId.HasValue) continue;
+            var id = unit.Id;
+            var entries = hashTasks.ContainsKey(id) ? hashTasks[id].Result : Array.Empty<HashEntry>();
 
-            var sorting = su.Sorting;
-            long lastMessageId = su.LastMessageId ?? 0;
+            // defaults from DB
+            double sorting = unit.Sorting;
+            long lastMessageId = unit.LastMessageId ?? 0;
 
-            // 如果 Redis 有，则覆盖 DB 值
-            if (redisFields != null && redisFields.Length > 0)
+            // override from redis hash if present
+            if (entries != null && entries.Length > 0)
             {
-                sorting = TryGetDouble(redisFields, nameof(F_Sorting), sorting);
-                lastMessageId = TryGetLong(redisFields, nameof(F_LastMessageId), lastMessageId);
+                sorting = TryGetDouble(entries, F_Sorting, sorting);
+                lastMessageId = TryGetLong(entries, F_LastMessageId, lastMessageId);
             }
 
-            // 如果 ZSET 有排序值，则也覆盖 lastMessageId
+            // override from owner zset score if present
             if (redisMap.TryGetValue(id, out var score))
             {
-                var redisScore = (long)score;
-                var redisTick = redisScore / 1_000_000_000_000;
-                var redisMsgId = redisScore % 1_000_000_000_000;
-
-                if (redisTick > 0) sorting = redisTick;
-                if (redisMsgId > 0) lastMessageId = redisMsgId;
+                // score = sorting * MULT + lastMessageId
+                var sortingFromScore = Math.Floor(score / OWNER_SCORE_MULT);
+                var lastFromScore = (long)(score % OWNER_SCORE_MULT);
+                if (sortingFromScore > 0) sorting = sortingFromScore;
+                if (lastFromScore > 0) lastMessageId = lastFromScore;
             }
 
             var item = new SessionUnitCacheItem
             {
                 Id = id,
+                SessionId = unit.SessionId,
                 OwnerId = ownerId,
-                LastMessageId = lastMessageId,
+                OwnerObjectType = unit.OwnerObjectType,
+                DestinationId = unit.DestinationId,
+                DestinationObjectType = unit.DestinationObjectType,
+                IsStatic = unit.IsStatic,
+                IsPublic = unit.IsPublic,
+                IsVisible = unit.IsVisible,
+                IsEnabled = unit.IsEnabled,
+                ReadedMessageId = unit.ReadedMessageId,
+                PublicBadge = unit.PublicBadge,
+                PrivateBadge = unit.PrivateBadge,
+                RemindAllCount = unit.RemindAllCount,
+                RemindMeCount = unit.RemindMeCount,
+                FollowingCount = unit.FollowingCount,
+                Ticks = unit.Ticks,
                 Sorting = sorting,
-
+                LastMessageId = lastMessageId,
             };
 
-            // 返回结果
             result.Add(item);
 
-            // 回写 Redis（同步 DB 初始值）
-            var entry = new[]
-            {
-            new HashEntry(F_Sorting, sorting),
-            new HashEntry(F_LastMessageId, lastMessageId),
-            new HashEntry(F_OwnerId, ownerId),
-        };
+            // backfill merged values to Redis (hash + owner zset)
+            var unitKey = UnitKey(item.SessionId!.Value, id);
+            var hashEntries = MapToHashEntries(unit);
 
-            await Database.HashSetAsync($"Session:Unit:{id}", entry);
+            hashSetBackfillTasks.Add(Database.HashSetAsync(unitKey, hashEntries));
 
-            // 排序 key
-            double score2 = sorting * 1_000_000_000_000 + lastMessageId;
-            await Database.SortedSetAddAsync(ownerKey, id.ToString(), score2);
+            double composite = item.Sorting * OWNER_SCORE_MULT + item.LastMessageId ?? 0;
+            ownerZsetUpdateTasks.Add(Database.SortedSetAddAsync(ownerKey, id.ToString(), composite));
+
+            // ensure expire
+            _ = Database.KeyExpireAsync(unitKey, _cacheExpire);
         }
 
-        // 排序：先置顶 tick，再 lastmsg
-        result = result
-            .OrderByDescending(x => x.Sorting)
-            .ThenByDescending(x => x.LastMessageId)
-            .ToList();
+        if (hashSetBackfillTasks.Count > 0) await Task.WhenAll(hashSetBackfillTasks);
+        if (ownerZsetUpdateTasks.Count > 0) await Task.WhenAll(ownerZsetUpdateTasks);
 
-        // 设置过期
-        if (_cacheExpire != null)
+        // final sort for return
+        result = result.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId).ToList();
+
+        if (_cacheExpire.HasValue)
         {
             await Database.KeyExpireAsync(ownerKey, _cacheExpire);
-            foreach (var unit in units)
-            {
-                await Database.KeyExpireAsync(UnitKey(unit.SessionId.Value, unit.Id), _cacheExpire);
-            }
         }
 
         return result;
     }
 
-
-    private static long TryGetLong(HashEntry[] entries, string field, long defaultValue)
-    {
-        var e = Array.Find(entries, x => x.Name == field);
-
-        if (e.Equals(default) || e.Value.IsNull)
-        {
-            return defaultValue;
-        }
-        return (long)e.Value;
-    }
-    private static double TryGetDouble(HashEntry[] entries, string field, double defaultValue)
-    {
-        var e = Array.Find(entries, x => x.Name == field);
-
-        if (e.Equals(default) || e.Value.IsNull)
-        {
-            return defaultValue;
-        }
-        return (double)e.Value;
-    }
-
     #endregion
 
-    #region Get / GetMany / GetListBySessionId
+    #region Map / GetMany
 
-
-    /// <summary>
-    /// Batch read many unit hashes and map to SessionUnitCacheItem
-    /// </summary>
     public async Task<IDictionary<Guid, SessionUnitCacheItem>> GetManyAsync(Guid sessionId, List<Guid> unitIds)
     {
         var batch = Database.CreateBatch();
@@ -333,25 +364,9 @@ public class SessionUnitRedisStore(
         return dict;
     }
 
-    /// <summary>
-    /// Get list of all session units under a sessionId (reads the Session:UnitIds:{sessionId} set)
-    /// and returns full mapped SessionUnitCacheItem objects.
-    /// </summary>
-    public async Task<IList<SessionUnitCacheItem>> GetListBySessionIdAsync(Guid sessionId)
-    {
-        var setKey = SessionUnitIdSetKey(sessionId);
-        var members = await Database.SetMembersAsync(setKey);
-        var idList = members.Select(x => Guid.Parse(x.ToString())).ToList();
-        if (idList.Count == 0) return [];
-
-        var dict = await GetManyAsync(sessionId, idList);
-        return dict.Values.ToList();
-    }
-
     private static SessionUnitCacheItem MapHashEntriesToCacheItem(HashEntry[] entries)
     {
         var item = new SessionUnitCacheItem();
-
         if (entries == null || entries.Length == 0) return item;
 
         foreach (var e in entries)
@@ -361,17 +376,11 @@ public class SessionUnitRedisStore(
 
             if (name == F_Id && e.Value.HasValue)
             {
-                if (Guid.TryParse(e.Value.ToString(), out var gid))
-                {
-                    item.Id = gid;
-                }
-                else
-                {
-                    item.Id = Guid.Empty;
-                }
+                if (Guid.TryParse(e.Value.ToString(), out var gid)) item.Id = gid;
+                else item.Id = Guid.Empty;
             }
             else if (name == F_SessionId && e.Value.HasValue) item.SessionId = Guid.TryParse(e.Value.ToString(), out var ss) ? ss : (Guid?)null;
-            else if (name == F_OwnerId && e.Value.HasValue) item.OwnerId = (long)e.Value;
+            else if (name == F_OwnerId && e.Value.HasValue) item.OwnerId = TryGetLong(entries, F_OwnerId, 0);
             else if (name == F_OwnerObjectType && e.Value.HasValue)
             {
                 if (Enum.TryParse(typeof(ChatObjectTypeEnums), e.Value.ToString(), out var o)) item.OwnerObjectType = (ChatObjectTypeEnums?)o;
@@ -385,15 +394,15 @@ public class SessionUnitRedisStore(
             else if (name == F_IsPublic && e.Value.HasValue) item.IsPublic = (int)e.Value == 1;
             else if (name == F_IsVisible && e.Value.HasValue) item.IsVisible = (int)e.Value == 1;
             else if (name == F_IsEnabled && e.Value.HasValue) item.IsEnabled = (int)e.Value == 1;
-            else if (name == F_ReadedMessageId && e.Value.HasValue) item.ReadedMessageId = (long)e.Value;
-            else if (name == F_LastMessageId && e.Value.HasValue) item.LastMessageId = (long)e.Value;
-            else if (name == F_PublicBadge && e.Value.HasValue) item.PublicBadge = (int)e.Value;
-            else if (name == F_PrivateBadge && e.Value.HasValue) item.PrivateBadge = (int)e.Value;
-            else if (name == F_RemindAllCount && e.Value.HasValue) item.RemindAllCount = (int)e.Value;
-            else if (name == F_RemindMeCount && e.Value.HasValue) item.RemindMeCount = (int)e.Value;
-            else if (name == F_FollowingCount && e.Value.HasValue) item.FollowingCount = (int)e.Value;
-            else if (name == F_Ticks && e.Value.HasValue) item.Ticks = (double)e.Value;
-            else if (name == F_Sorting && e.Value.HasValue) item.Sorting = (double)e.Value;
+            else if (name == F_ReadedMessageId && e.Value.HasValue) item.ReadedMessageId = TryGetLong(entries, F_ReadedMessageId, 0);
+            else if (name == F_LastMessageId && e.Value.HasValue) item.LastMessageId = TryGetLong(entries, F_LastMessageId, 0);
+            else if (name == F_PublicBadge && e.Value.HasValue) item.PublicBadge = TryGetInt(entries, F_PublicBadge, 0);
+            else if (name == F_PrivateBadge && e.Value.HasValue) item.PrivateBadge = TryGetInt(entries, F_PrivateBadge, 0);
+            else if (name == F_RemindAllCount && e.Value.HasValue) item.RemindAllCount = TryGetInt(entries, F_RemindAllCount, 0);
+            else if (name == F_RemindMeCount && e.Value.HasValue) item.RemindMeCount = TryGetInt(entries, F_RemindMeCount, 0);
+            else if (name == F_FollowingCount && e.Value.HasValue) item.FollowingCount = TryGetInt(entries, F_FollowingCount, 0);
+            else if (name == F_Ticks && e.Value.HasValue) item.Ticks = TryGetDouble(entries, F_Ticks, 0);
+            else if (name == F_Sorting && e.Value.HasValue) item.Sorting = TryGetDouble(entries, F_Sorting, 0);
         }
 
         return item;
@@ -401,30 +410,13 @@ public class SessionUnitRedisStore(
 
     #endregion
 
-    #region BatchIncrementBadgeAndSetLastMessageAsync
+    #region BatchIncrementBadgeAndSetLastMessageAsync (updates owner zset score)
 
-    /// <summary>
-    /// Update badges / counts and last message id for all session units related to a message.
-    /// Rules:
-    /// - If message.IsPrivateMessage() => PrivateBadge += 1 for non-senders
-    /// - Else => PublicBadge += 1 for non-senders
-    /// - If message.IsRemindAll() => RemindAllCount += 1 for non-senders
-    /// - For remember lists (remindMeList, followingIncrementList) increase respective counters
-    /// - Always update LastMessageId in hash + sorted set
-    /// - Update Ticks to current UTC ticks
-    /// - Do NOT modify ReadedMessageId here
-    /// - Optionally set TTL for keys
-    /// </summary>
     public async Task BatchIncrementBadgeAndSetLastMessageAsync(
         Message message,
-        //IEnumerable<Guid>? followingIncrementList = null,
-        //IEnumerable<Guid>? remindMeList = null,
         TimeSpan? expire = null)
     {
         ArgumentNullException.ThrowIfNull(message);
-
-        var followingIncrementList = new List<Guid>();
-        var remindMeList = new List<Guid>();
 
         var sessionId = message.SessionId!.Value;
         var lastMessageId = message.Id;
@@ -432,18 +424,15 @@ public class SessionUnitRedisStore(
         var isPrivate = message.IsPrivateMessage();
         var isRemindAll = message.IsRemindAll;
 
-        // load session units - use manager to get cached snapshot if possible
         var sessionUnitList = await SessionUnitManager.GetCacheListAsync(message);
         if (sessionUnitList == null || sessionUnitList.Count == 0) return;
-
-        var followingSet = followingIncrementList != null ? new HashSet<Guid>(followingIncrementList) : null;
-        var remindMeSet = remindMeList != null ? new HashSet<Guid>(remindMeList) : null;
 
         var batch = Database.CreateBatch();
 
         var hashSetTasks = new List<Task<bool>>();
         var hashIncTasks = new List<Task<long>>();
-        var zsetTasks = new List<Task<bool>>();
+        var zsetGlobalTasks = new List<Task<bool>>();
+        var zsetOwnerTasks = new List<Task<bool>>();
         var expireTasks = new List<Task<bool>>();
 
         foreach (var unit in sessionUnitList)
@@ -453,81 +442,59 @@ public class SessionUnitRedisStore(
             var idStr = id.ToString();
             var isSender = id == message.SenderSessionUnitId;
 
-            // increase badges according to rules (only non-senders)
             if (!isSender)
             {
-                if (isPrivate)
-                {
-                    hashIncTasks.Add(batch.HashIncrementAsync(key, F_PrivateBadge, 1));
-                }
-                else
-                {
-                    hashIncTasks.Add(batch.HashIncrementAsync(key, F_PublicBadge, 1));
-                }
+                if (isPrivate) hashIncTasks.Add(batch.HashIncrementAsync(key, F_PrivateBadge, 1));
+                else hashIncTasks.Add(batch.HashIncrementAsync(key, F_PublicBadge, 1));
 
-                if (isRemindAll)
-                {
-                    hashIncTasks.Add(batch.HashIncrementAsync(key, F_RemindAllCount, 1));
-                }
-
-                if (remindMeSet != null && remindMeSet.Contains(id))
-                {
-                    hashIncTasks.Add(batch.HashIncrementAsync(key, F_RemindMeCount, 1));
-                }
+                if (isRemindAll) hashIncTasks.Add(batch.HashIncrementAsync(key, F_RemindAllCount, 1));
             }
 
-            // Following count (can include sender too depending on business logic)
-            if (followingSet != null && followingSet.Contains(id))
-            {
-                hashIncTasks.Add(batch.HashIncrementAsync(key, F_FollowingCount, 1));
-            }
-
-            // update LastMessageId field in hash
+            // update lastMessageId in hash
             hashSetTasks.Add(batch.HashSetAsync(key, F_LastMessageId, lastMessageId));
-
-            // update SortedSet score (last message id)
-            zsetTasks.Add(batch.SortedSetAddAsync(lastMsgKey, idStr, lastMessageId));
-
             // update ticks
             hashSetTasks.Add(batch.HashSetAsync(key, F_Ticks, (double)DateTime.UtcNow.Ticks));
+            // update global last-message sorted set
+            zsetGlobalTasks.Add(batch.SortedSetAddAsync(lastMsgKey, idStr, lastMessageId));
 
-            // schedule _cacheExpire per unit
-            expireTasks.Add(batch.KeyExpireAsync(key, expire ?? _cacheExpire));
-
-            //owner
+            // owner-specific zset update (compute composite score from Sorting & lastMessageId)
             var ownerKey = OwnerSetKey(unit.OwnerId);
-            // 计算排序 score
-            double score = unit.Sorting * 1_000_000_000_000d + lastMessageId;
-            // 更新 ZSet
-            zsetTasks.Add(batch.SortedSetAddAsync(ownerKey, idStr, score));
-        }
 
-        // ensure zset has _cacheExpire set too
-        expireTasks.Add(batch.KeyExpireAsync(lastMsgKey, expire ?? _cacheExpire));
+            // read current sorting from hash (deferred read not allowed inside pipeline easily) - we will read from unit.Sorting (cached snapshot) and redis hash will be handled by GetListByOwnerId flow
+            double sorting = unit.Sorting;
+
+            var score = sorting * OWNER_SCORE_MULT + lastMessageId;
+            zsetOwnerTasks.Add(batch.SortedSetAddAsync(ownerKey, idStr, score));
+
+            // expire tasks
+            expireTasks.Add(batch.KeyExpireAsync(key, expire ?? _cacheExpire));
+            // ensure owner zset expire and global zset expire
+            expireTasks.Add(batch.KeyExpireAsync(ownerKey, expire ?? _cacheExpire));
+            expireTasks.Add(batch.KeyExpireAsync(lastMsgKey, expire ?? _cacheExpire));
+        }
 
         batch.Execute();
 
         if (hashSetTasks.Count > 0) await Task.WhenAll(hashSetTasks);
         if (hashIncTasks.Count > 0) await Task.WhenAll(hashIncTasks);
-        if (zsetTasks.Count > 0) await Task.WhenAll(zsetTasks);
+        if (zsetGlobalTasks.Count > 0) await Task.WhenAll(zsetGlobalTasks);
+        if (zsetOwnerTasks.Count > 0) await Task.WhenAll(zsetOwnerTasks);
         if (expireTasks.Count > 0) await Task.WhenAll(expireTasks);
     }
 
     #endregion
 
-    #region Remove / Set / Misc operations
+    #region Remove / Set / Misc
 
     public async Task AddUnitIdToSessionAsync(Guid sessionId, Guid unitId)
     {
         await Database.SetAddAsync(SessionUnitIdSetKey(sessionId), unitId.ToString());
-        // set _cacheExpire on id set
         await Database.KeyExpireAsync(SessionUnitIdSetKey(sessionId), _cacheExpire);
     }
 
     public async Task RemoveUnitIdFromSessionAsync(Guid sessionId, Guid unitId)
     {
         await Database.SetRemoveAsync(SessionUnitIdSetKey(sessionId), unitId.ToString());
-        // optionally delete the unit hash as well
         await Database.KeyDeleteAsync(UnitKey(sessionId, unitId));
     }
 
@@ -543,7 +510,6 @@ public class SessionUnitRedisStore(
         {
             delTasks.Add(batch.KeyDeleteAsync(UnitKey(sessionId, id)));
             zremoveTasks.Add(batch.SortedSetRemoveAsync(zkey, id.ToString()));
-            // also remove from set
             _ = batch.SetRemoveAsync(SessionUnitIdSetKey(sessionId), id.ToString());
         }
 
@@ -565,15 +531,11 @@ public class SessionUnitRedisStore(
         var setKey = SessionUnitIdSetKey(sessionId);
         var lastKey = LastMessageSetKey(sessionId);
 
-        // delete zset and set; unit hashes should be deleted by caller if needed (or can be iterated)
         var r1 = await Database.KeyDeleteAsync(setKey);
         var r2 = await Database.KeyDeleteAsync(lastKey);
         return r1 && r2;
     }
 
-    /// <summary>
-    /// Update ReadedMessageId for a single unit (explicitly called by business logic)
-    /// </summary>
     public async Task UpdateReadedMessageIdAsync(Guid sessionId, Guid unitId, long readedMessageId, TimeSpan? expire = null)
     {
         var key = UnitKey(sessionId, unitId);
@@ -581,9 +543,6 @@ public class SessionUnitRedisStore(
         if (expire.HasValue) await Database.KeyExpireAsync(key, expire.Value);
     }
 
-    /// <summary>
-    /// Set TTL for a specific unit (and optionally the session sorted set)
-    /// </summary>
     public async Task<bool> SetExpireAsync(Guid sessionId, Guid? unitId = null, TimeSpan? expire = null)
     {
         var e = expire ?? _cacheExpire;
@@ -594,9 +553,7 @@ public class SessionUnitRedisStore(
         }
         else
         {
-            // set _cacheExpire for unit id set
             tasks.Add(Database.KeyExpireAsync(SessionUnitIdSetKey(sessionId), e));
-            // set _cacheExpire for sorted set
             tasks.Add(Database.KeyExpireAsync(LastMessageSetKey(sessionId), e));
         }
 
@@ -606,17 +563,3 @@ public class SessionUnitRedisStore(
 
     #endregion
 }
-
-//// Minimal ISessionUnit interface placeholder in case it is not in the compilation unit.
-//// If your project already defines ISessionUnit elsewhere, remove or adjust this definition.
-//public interface ISessionUnit
-//{
-//    Guid Id { get; set; }
-//}
-
-//// Placeholder enum in case ChatObjectTypeEnums is not defined in the compilation unit.
-//// Remove or adjust as necessary if already defined in your project.
-//public enum ChatObjectTypeEnums
-//{
-//    Unknown = 0
-//}
