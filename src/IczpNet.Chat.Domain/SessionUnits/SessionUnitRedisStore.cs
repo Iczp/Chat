@@ -25,34 +25,38 @@ public class SessionUnitRedisStore(
     private readonly TimeSpan? _cacheExpire = TimeSpan.FromDays(7);
 
     // key builders
-    private string UnitKey(Guid sessionId, Guid unitId) => $"{Options.Value.KeyPrefix}SessionUnits:Units:SessionId-{sessionId}:UnitId-{unitId}";
-    private string SessionUnitIdSetKey(Guid sessionId) => $"{Options.Value.KeyPrefix}SessionUnits:Ids:SessionId-{sessionId}";
-    private string LastMessageSetKey(Guid sessionId) => $"{Options.Value.KeyPrefix}SessionUnits:LastMessages:SessionId-{sessionId}";
-    private string OwnerSetKey(long ownerId) => $"{Options.Value.KeyPrefix}SessionUnits:Owners:OwnerId-{ownerId}";
+    private string UnitKey(Guid sessionId, Guid unitId)
+        => $"{Options.Value.KeyPrefix}SessionUnits:Units:SessionId-{sessionId}:UnitId-{unitId}";
+    private string SessionUnitIdSetKey(Guid sessionId)
+        => $"{Options.Value.KeyPrefix}SessionUnits:Ids:SessionId-{sessionId}";
+    private string LastMessageSetKey(Guid sessionId)
+        => $"{Options.Value.KeyPrefix}SessionUnits:LastMessages:SessionId-{sessionId}";
+    private string OwnerSetKey(long ownerId)
+        => $"{Options.Value.KeyPrefix}SessionUnits:Owners:OwnerId-{ownerId}";
 
     // composite score multiplier (sorting * MULT + lastMessageId)
     private const double OWNER_SCORE_MULT = 1_000_000_000_000d; // 1e12
 
     #region Field names
-    private static readonly string F_Id = nameof(SessionUnitCacheItem.Id);
-    private static readonly string F_SessionId = nameof(SessionUnitCacheItem.SessionId);
-    private static readonly string F_OwnerId = nameof(SessionUnitCacheItem.OwnerId);
-    private static readonly string F_OwnerObjectType = nameof(SessionUnitCacheItem.OwnerObjectType);
-    private static readonly string F_DestinationId = nameof(SessionUnitCacheItem.DestinationId);
-    private static readonly string F_DestinationObjectType = nameof(SessionUnitCacheItem.DestinationObjectType);
-    private static readonly string F_IsStatic = nameof(SessionUnitCacheItem.IsStatic);
-    private static readonly string F_IsPublic = nameof(SessionUnitCacheItem.IsPublic);
-    private static readonly string F_IsVisible = nameof(SessionUnitCacheItem.IsVisible);
-    private static readonly string F_IsEnabled = nameof(SessionUnitCacheItem.IsEnabled);
-    private static readonly string F_ReadedMessageId = nameof(SessionUnitCacheItem.ReadedMessageId);
-    private static readonly string F_LastMessageId = nameof(SessionUnitCacheItem.LastMessageId);
-    private static readonly string F_PublicBadge = nameof(SessionUnitCacheItem.PublicBadge);
-    private static readonly string F_PrivateBadge = nameof(SessionUnitCacheItem.PrivateBadge);
-    private static readonly string F_RemindAllCount = nameof(SessionUnitCacheItem.RemindAllCount);
-    private static readonly string F_RemindMeCount = nameof(SessionUnitCacheItem.RemindMeCount);
-    private static readonly string F_FollowingCount = nameof(SessionUnitCacheItem.FollowingCount);
-    private static readonly string F_Ticks = nameof(SessionUnitCacheItem.Ticks);
-    private static readonly string F_Sorting = nameof(SessionUnitCacheItem.Sorting);
+    private static string F_Id => nameof(SessionUnitCacheItem.Id);
+    private static string F_SessionId => nameof(SessionUnitCacheItem.SessionId);
+    private static string F_OwnerId => nameof(SessionUnitCacheItem.OwnerId);
+    private static string F_OwnerObjectType => nameof(SessionUnitCacheItem.OwnerObjectType);
+    private static string F_DestinationId => nameof(SessionUnitCacheItem.DestinationId);
+    private static string F_DestinationObjectType => nameof(SessionUnitCacheItem.DestinationObjectType);
+    private static string F_IsStatic => nameof(SessionUnitCacheItem.IsStatic);
+    private static string F_IsPublic = nameof(SessionUnitCacheItem.IsPublic);
+    private static string F_IsVisible => nameof(SessionUnitCacheItem.IsVisible);
+    private static string F_IsEnabled => nameof(SessionUnitCacheItem.IsEnabled);
+    private static string F_ReadedMessageId => nameof(SessionUnitCacheItem.ReadedMessageId);
+    private static string F_LastMessageId => nameof(SessionUnitCacheItem.LastMessageId);
+    private static string F_PublicBadge => nameof(SessionUnitCacheItem.PublicBadge);
+    private static string F_PrivateBadge => nameof(SessionUnitCacheItem.PrivateBadge);
+    private static string F_RemindAllCount => nameof(SessionUnitCacheItem.RemindAllCount);
+    private static string F_RemindMeCount => nameof(SessionUnitCacheItem.RemindMeCount);
+    private static string F_FollowingCount => nameof(SessionUnitCacheItem.FollowingCount);
+    private static string F_Ticks => nameof(SessionUnitCacheItem.Ticks);
+    private static string F_Sorting => nameof(SessionUnitCacheItem.Sorting);
     #endregion
 
     #region Safe helpers (avoid null values)
@@ -181,18 +185,18 @@ public class SessionUnitRedisStore(
             var idStr = unit.Id.ToString();
             setAddTasks.Add(batch.SetAddAsync(sessionUnitIdSetKey, idStr));
 
-            var hashKey = UnitKey(unit.SessionId ?? Guid.Empty, unit.Id);
+            var unitKey = UnitKey(unit.SessionId ?? Guid.Empty, unit.Id);
 
             var entries = MapToHashEntries(unit);
 
-            hashTasks.Add(batch.HashSetAsync(hashKey, entries));
+            hashTasks.Add(batch.HashSetAsync(unitKey, entries));
 
             if (unit.LastMessageId.HasValue)
             {
                 zsetAddTasks.Add(batch.SortedSetAddAsync(lastMsgKey, idStr, unit.LastMessageId.Value));
             }
 
-            _ = batch.KeyExpireAsync(hashKey, _cacheExpire);
+            _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
         }
 
         _ = batch.KeyExpireAsync(sessionUnitIdSetKey, _cacheExpire);
@@ -225,14 +229,43 @@ public class SessionUnitRedisStore(
 
     #region GetListByOwnerIdAsync (DB initial values + Redis merge)
 
+    public async Task<IEnumerable<SessionUnitCacheItem>> SetListByOwnerIdAsync(long ownerId, IEnumerable<SessionUnitCacheItem> units)
+    {
+        var batch = Database.CreateBatch();
+
+        var hashTasks = new List<Task>();
+
+        var cachedUnits = await GetManyAsync(units.ToList());
+
+        var unCachedUnits = units.ExceptBy(cachedUnits.Keys, x => x.Id).ToList();
+
+        foreach (var unit in unCachedUnits)
+        {
+            var idStr = unit.Id.ToString();
+
+            var unitKey = UnitKey(unit.SessionId ?? Guid.Empty, unit.Id);
+
+            var entries = MapToHashEntries(unit);
+
+            hashTasks.Add(batch.HashSetAsync(unitKey, entries));
+
+            _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
+        }
+
+        if (hashTasks.Count > 0) await Task.WhenAll(hashTasks);
+
+        var list = unCachedUnits.Union(unCachedUnits);
+
+        return list;
+    }
     /// <summary>
     /// Get list of SessionUnitCacheItem by ownerId. Units argument is the DB-supplied initial list (may be from DB).
     /// Redis values take precedence when present. After merging, Redis is backfilled with merged values and owner zset updated.
     /// </summary>
     public async Task<List<SessionUnitCacheItem>> GetListByOwnerIdAsync(long ownerId, IEnumerable<SessionUnitCacheItem> units)
     {
-        var unitList = units?.ToList() ?? new List<SessionUnitCacheItem>();
-        if (unitList.Count == 0) return new List<SessionUnitCacheItem>();
+        var unitList = units?.ToList() ?? [];
+        if (unitList.Count == 0) return [];
 
         string ownerKey = OwnerSetKey(ownerId);
 
@@ -262,7 +295,7 @@ public class SessionUnitRedisStore(
         {
             if (!unit.SessionId.HasValue) continue;
             var id = unit.Id;
-            var entries = hashTasks.ContainsKey(id) ? hashTasks[id].Result : Array.Empty<HashEntry>();
+            var entries = hashTasks.ContainsKey(id) ? hashTasks[id].Result : [];
 
             // defaults from DB
             double sorting = unit.Sorting;
@@ -341,27 +374,60 @@ public class SessionUnitRedisStore(
 
     #region Map / GetMany
 
-    public async Task<IDictionary<Guid, SessionUnitCacheItem>> GetManyAsync(Guid sessionId, List<Guid> unitIds)
+    public async Task<IDictionary<Guid, SessionUnitCacheItem>> GetManyAsync(List<SessionUnitCacheItem> units)
     {
         var batch = Database.CreateBatch();
-        var tasks = new Task<HashEntry[]>[unitIds.Count];
 
-        for (int i = 0; i < unitIds.Count; i++)
+        var tasks = new Task<HashEntry[]>[units.Count];
+
+        for (int i = 0; i < units.Count; i++)
         {
-            tasks[i] = batch.HashGetAllAsync(UnitKey(sessionId, unitIds[i]));
+            var unit = units[i];
+            if (unit == null || !unit.SessionId.HasValue) continue;
+            tasks[i] = batch.HashGetAllAsync(UnitKey(unit.SessionId.Value, unit.Id));
         }
 
         batch.Execute();
+
         await Task.WhenAll(tasks);
 
-        var dict = new Dictionary<Guid, SessionUnitCacheItem>(unitIds.Count);
-        for (int i = 0; i < unitIds.Count; i++)
+        var dict = new Dictionary<Guid, SessionUnitCacheItem>(units.Count);
+
+        for (int i = 0; i < units.Count; i++)
         {
             var entries = tasks[i].Result;
-            dict[unitIds[i]] = MapHashEntriesToCacheItem(entries);
+            var unit = units[i];
+            if (unit == null || !unit.SessionId.HasValue) continue;
+            dict[unit.Id] = MapHashEntriesToCacheItem(entries);
         }
 
         return dict;
+    }
+
+    public async Task<IDictionary<Guid, SessionUnitCacheItem>> GetManyAsync(Guid sessionId, List<Guid> unitIds)
+    {
+        var units = unitIds.Select(x => new SessionUnitCacheItem() { Id = x, SessionId = sessionId }).ToList();
+
+        return await GetManyAsync(units);
+        //var batch = Database.CreateBatch();
+        //var tasks = new Task<HashEntry[]>[unitIds.Count];
+
+        //for (int i = 0; i < unitIds.Count; i++)
+        //{
+        //    tasks[i] = batch.HashGetAllAsync(UnitKey(sessionId, unitIds[i]));
+        //}
+
+        //batch.Execute();
+        //await Task.WhenAll(tasks);
+
+        //var dict = new Dictionary<Guid, SessionUnitCacheItem>(unitIds.Count);
+        //for (int i = 0; i < unitIds.Count; i++)
+        //{
+        //    var entries = tasks[i].Result;
+        //    dict[unitIds[i]] = MapHashEntriesToCacheItem(entries);
+        //}
+
+        //return dict;
     }
 
     private static SessionUnitCacheItem MapHashEntriesToCacheItem(HashEntry[] entries)
