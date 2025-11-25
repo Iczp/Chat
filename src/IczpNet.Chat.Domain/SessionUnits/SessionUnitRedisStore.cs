@@ -25,10 +25,10 @@ public class SessionUnitRedisStore(
     private readonly TimeSpan? _cacheExpire = TimeSpan.FromDays(7);
 
     // key builders
-    private string UnitKey(Guid sessionId, Guid unitId) => $"{Options.Value.KeyPrefix}SessionUnits:SessionId-{sessionId}:UnitId-{unitId}";
-    private string SessionUnitIdSetKey(Guid sessionId) => $"{Options.Value.KeyPrefix}SessionUnitIds:SessionId-{sessionId}";
-    private string LastMessageSetKey(Guid sessionId) => $"{Options.Value.KeyPrefix}SessionUnits-LastMessage:SessionId-{sessionId}";
-    private string OwnerSetKey(long ownerId) => $"{Options.Value.KeyPrefix}SessionUnits-Owner:OwnerId-{ownerId}";
+    private string UnitKey(Guid sessionId, Guid unitId) => $"{Options.Value.KeyPrefix}SessionUnits:Units:SessionId-{sessionId}:UnitId-{unitId}";
+    private string SessionUnitIdSetKey(Guid sessionId) => $"{Options.Value.KeyPrefix}SessionUnits:Ids:SessionId-{sessionId}";
+    private string LastMessageSetKey(Guid sessionId) => $"{Options.Value.KeyPrefix}SessionUnits:LastMessages:SessionId-{sessionId}";
+    private string OwnerSetKey(long ownerId) => $"{Options.Value.KeyPrefix}SessionUnits:Owners:OwnerId-{ownerId}";
 
     // composite score multiplier (sorting * MULT + lastMessageId)
     private const double OWNER_SCORE_MULT = 1_000_000_000_000d; // 1e12
