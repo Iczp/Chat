@@ -239,6 +239,8 @@ public class SessionUnitRedisStore(
 
         var unCachedUnits = units.ExceptBy(cachedUnits.Keys, x => x.Id).ToList();
 
+        var zsetOwnerTasks = new List<Task<bool>>();
+
         foreach (var unit in unCachedUnits)
         {
             var idStr = unit.Id.ToString();
@@ -250,7 +252,16 @@ public class SessionUnitRedisStore(
             hashTasks.Add(batch.HashSetAsync(unitKey, entries));
 
             _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
+
+            // score
+            var score = GetScore(unit.Sorting, unit.LastMessageId??0);
+
+            var ownerKey = OwnerSetKey(unit.OwnerId);
+
+            zsetOwnerTasks.Add(batch.SortedSetAddAsync(ownerKey, idStr, score));
         }
+
+        if (zsetOwnerTasks.Count > 0) await Task.WhenAll(zsetOwnerTasks);
 
         if (hashTasks.Count > 0) await Task.WhenAll(hashTasks);
 
@@ -478,6 +489,15 @@ public class SessionUnitRedisStore(
 
     #region BatchIncrementBadgeAndSetLastMessageAsync (updates owner zset score)
 
+    private static double GetScore(SessionUnitCacheItem unit, long lastMessageId)
+    {
+        return GetScore(unit.Sorting, lastMessageId);
+    }
+    private static double GetScore(double sorting, long lastMessageId)
+    {
+        return sorting * OWNER_SCORE_MULT + lastMessageId;
+    }
+
     public async Task BatchIncrementBadgeAndSetLastMessageAsync(
         Message message,
         TimeSpan? expire = null)
@@ -527,9 +547,8 @@ public class SessionUnitRedisStore(
             var ownerKey = OwnerSetKey(unit.OwnerId);
 
             // read current sorting from hash (deferred read not allowed inside pipeline easily) - we will read from unit.Sorting (cached snapshot) and redis hash will be handled by GetListByOwnerId flow
-            double sorting = unit.Sorting;
 
-            var score = sorting * OWNER_SCORE_MULT + lastMessageId;
+            var score = GetScore(unit.Sorting, lastMessageId);
             zsetOwnerTasks.Add(batch.SortedSetAddAsync(ownerKey, idStr, score));
 
             // expire tasks
