@@ -765,14 +765,14 @@ public class SessionUnitManager(
             IsStatic = x.Setting.IsStatic,
             IsVisible = x.Setting.IsVisible,
             IsEnabled = x.Setting.IsEnabled,
-            //ReadedMessageId = x.Setting.ReadedMessageId,
+            ReadedMessageId = x.Setting.ReadedMessageId,
             PublicBadge = x.PublicBadge,
-            //PrivateBadge = x.PrivateBadge,
-            //RemindAllCount = x.RemindAllCount,
-            //RemindMeCount = x.RemindMeCount,
-            //FollowingCount = x.FollowingCount,
-            //LastMessageId = x.LastMessageId,
-            //Ticks = x.Ticks,
+            PrivateBadge = x.PrivateBadge,
+            RemindAllCount = x.RemindAllCount,
+            RemindMeCount = x.RemindMeCount,
+            FollowingCount = x.FollowingCount,
+            LastMessageId = x.LastMessageId,
+            Ticks = x.Ticks,
         })];
     }
     /// <inheritdoc />

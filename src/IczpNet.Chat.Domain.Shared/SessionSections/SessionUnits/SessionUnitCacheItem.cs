@@ -1,5 +1,4 @@
-﻿using IczpNet.Chat.DistributedExs;
-using IczpNet.Chat.Enums;
+﻿using IczpNet.Chat.Enums;
 using System;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits;
@@ -7,14 +6,15 @@ namespace IczpNet.Chat.SessionSections.SessionUnits;
 [Serializable]
 public class SessionUnitCacheItem : ISessionUnit
 {
+    /// <summary>
+    /// SessionUnitId
+    /// </summary>
     public virtual Guid Id { get; set; }
 
     /// <summary>
     /// 会话Id
     /// </summary>
     public virtual Guid? SessionId { get; set; }
-
-    //public virtual Guid? UserId { get; set; }
 
     /// <summary>
     /// OwnerId
@@ -56,21 +56,20 @@ public class SessionUnitCacheItem : ISessionUnit
     /// </summary>
     public virtual bool IsEnabled { get; set; }
 
-    //public virtual long? ReadedMessageId { get; set; }
+    public virtual long? ReadedMessageId { get; set; }
 
-    //public virtual long? LastMessageId { get; set; }
+    public virtual long? LastMessageId { get; set; }
 
-    //[Increment]
     public virtual int PublicBadge { get; set; }
 
-    //public virtual int PrivateBadge { get; set; }
+    public virtual int PrivateBadge { get; set; }
 
-    //public virtual int RemindAllCount { get; set; }
+    public virtual int RemindAllCount { get; set; }
 
-    //public virtual int RemindMeCount { get; set; }
+    public virtual int RemindMeCount { get; set; }
 
-    //public virtual int FollowingCount { get; set; }
+    public virtual int FollowingCount { get; set; }
 
-    //public virtual double Ticks { get; set; }
+    public virtual double Ticks { get; set; }
 
 }
