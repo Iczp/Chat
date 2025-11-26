@@ -46,7 +46,7 @@ public class SessionUnitCacheAppService(
 
         var unitIds = list.Select(x => x.Id).ToList();
 
-        var settingMap = await SessionUnitSettingManager.GetCacheManyAsync(unitIds);
+        var settingMap = await SessionUnitSettingManager.GetManyByCacheAsync(unitIds);
 
         var destIdList = list.Where(x => x.DestinationId.HasValue).Select(x => x.DestinationId.Value).Distinct().ToList();
 

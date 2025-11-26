@@ -152,7 +152,7 @@ public class SessionUnitSettingManager(
         return await SessionUnitSettingRepository.GetListAsync(x => unitIdList.Contains(x.SessionUnitId));
     }
 
-    public virtual async Task<IDictionary<Guid, SessionUnitSettingCacheItem>> GetCacheManyAsync(List<Guid> unitIdList)
+    public virtual async Task<IDictionary<Guid, SessionUnitSettingCacheItem>> GetManyByCacheAsync(List<Guid> unitIdList)
     {
         var list = await SessionUnitSettingCache.GetOrAddManyAsync(unitIdList, async (unitIdList) =>
         {
