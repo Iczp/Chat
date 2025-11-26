@@ -8,12 +8,23 @@ namespace IczpNet.Chat.SessionUnits;
 
 public interface ISessionUnitRedisStore
 {
+    Task SetListBySessionAsync(Guid sessionId, IEnumerable<SessionUnitCacheItem> units);
 
-    Task SetBySessionAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchFromDb);
+    Task SetListBySessionAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
 
-    Task SetBySessionAsync(Guid sessionId, Message message);
+    Task SetListBySessionIfNotExistsAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
+
+    Task<IEnumerable<SessionUnitCacheItem>> SetListByOwnerAsync(long ownerId, IEnumerable<SessionUnitCacheItem> units);
+
+    Task SetListByOwnerAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
+
+    Task SetListByOwnerIfNotExistsAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
+
+
+    Task<List<SessionUnitCacheItem>> GetListByOwnerIdAsync(long ownerId, IEnumerable<SessionUnitCacheItem> units);
 
     Task BatchIncrementBadgeAndSetLastMessageAsync(Message message, TimeSpan? expire = null);
+
     //Task<long?> GetBadgeAsync(Guid sessionId, Guid sessionUnitId);
     //Task<bool> SetBadgeAsync(Guid sessionId, Guid sessionUnitId, long badge);
     //Task<long?> GetLastMessageIdAsync(Guid sessionId, Guid sessionUnitId);

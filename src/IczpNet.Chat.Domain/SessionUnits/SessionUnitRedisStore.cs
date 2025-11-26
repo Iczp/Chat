@@ -6,6 +6,7 @@ using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive;
 using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Services;
@@ -24,16 +25,19 @@ public class SessionUnitRedisStore(
 
     private readonly TimeSpan? _cacheExpire = TimeSpan.FromDays(7);
 
-    protected string Prefix =>$"{Options.Value.KeyPrefix}SessionUnits:" ;
+    protected string Prefix => $"{Options.Value.KeyPrefix}SessionUnits:";
     // key builders
     private string UnitKey(Guid sessionId, Guid unitId)
         => $"{Prefix}Units:UnitId-{unitId}";
     private string SessionSetKey(Guid sessionId)
-        => $"{Prefix}Ids:SessionId-{sessionId}";
+        => $"{Prefix}Sessions:SessionId-{sessionId}";
     private string LastMessageSetKey(Guid sessionId)
         => $"{Prefix}LastMessages:SessionId-{sessionId}";
-    private string OwnerSetKey(long ownerId)
-        => $"{Prefix}Owners:OwnerId-{ownerId}";
+    private string OwnerSortedSetKey(long ownerId)
+        => $"{Prefix}SortedOwners:OwnerId-{ownerId}";
+
+    private string OwnerExistsSetKey(long ownerId)
+        => $"{Prefix}ExistsOwners:OwnerId-{ownerId}";
 
     // composite score multiplier (sorting * MULT + lastMessageId)
     private const double OWNER_SCORE_MULT = 1_000_000_000_000d; // 1e12
@@ -163,7 +167,7 @@ public class SessionUnitRedisStore(
             };
         return entries;
     }
-    public async Task SetBySessionAsync(Guid sessionId, IEnumerable<SessionUnitCacheItem> units)
+    public async Task SetListBySessionAsync(Guid sessionId, IEnumerable<SessionUnitCacheItem> units)
     {
         ArgumentNullException.ThrowIfNull(units);
         var unitList = units.ToList();
@@ -210,19 +214,20 @@ public class SessionUnitRedisStore(
         if (zsetAddTasks.Count > 0) await Task.WhenAll(zsetAddTasks);
     }
 
-    public async Task SetBySessionAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchFromDb)
+    public async Task SetListBySessionAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
     {
-        ArgumentNullException.ThrowIfNull(fetchFromDb);
-        var units = (await fetchFromDb(sessionId))?.ToList() ?? [];
-        await SetBySessionAsync(sessionId, units);
+        ArgumentNullException.ThrowIfNull(fetchTask);
+        var units = (await fetchTask(sessionId))?.ToList() ?? [];
+        await SetListBySessionAsync(sessionId, units);
     }
 
-    public async Task SetBySessionAsync(Guid sessionId, Message message)
+    public async Task SetListBySessionIfNotExistsAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
     {
         var sessionSetKey = SessionSetKey(sessionId);
+
         if (!await Database.KeyExistsAsync(sessionSetKey))
         {
-            await SetBySessionAsync(sessionId, async (sid) => await SessionUnitManager.GetCacheListAsync(message));
+            await SetListBySessionAsync(sessionId, fetchTask);
         }
     }
 
@@ -230,15 +235,34 @@ public class SessionUnitRedisStore(
 
     #region GetListByOwnerIdAsync (DB initial values + Redis merge)
 
-    public async Task<IEnumerable<SessionUnitCacheItem>> SetListByOwnerIdAsync(long ownerId, IEnumerable<SessionUnitCacheItem> units)
+
+    public async Task<IEnumerable<SessionUnitCacheItem>> SetListByOwnerAsync(long ownerId, IEnumerable<SessionUnitCacheItem> units)
     {
+        var unitList = units?.Where(x => x != null && x.OwnerId == ownerId).ToList() ?? [];
+
         var batch = Database.CreateBatch();
 
-        var hashTasks = new List<Task>();
+        var ownerExistsKey = OwnerExistsSetKey(ownerId);
 
-        var cachedUnits = await GetManyAsync(units.ToList());
+        // clear existing set to avoid stale members
+        _ = batch.KeyDeleteAsync(ownerExistsKey);
 
-        var unCachedUnits = units.ExceptBy(cachedUnits.Keys, x => x.Id).ToList();
+        var hashTasks = new List<Task>
+        {
+            batch.SetAddAsync(ownerExistsKey, true)
+        };
+        //foreach (var unit in unitList)
+        //{
+        //    hashTasks.Add(batch.SetAddAsync(ownerExistsKey, unit.Id.ToString()));
+        //}
+        _ = batch.KeyExpireAsync(ownerExistsKey, _cacheExpire);
+
+        // owner zset key
+        var ownerSortedKey = OwnerSortedSetKey(ownerId);
+
+        var cachedUnits = await GetManyAsync(unitList);
+
+        var unCachedUnits = unitList.ExceptBy(cachedUnits.Keys, x => x.Id).ToList();
 
         var zsetOwnerTasks = new List<Task<bool>>();
 
@@ -255,11 +279,9 @@ public class SessionUnitRedisStore(
             _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
 
             // score
-            var score = GetScore(unit.Sorting, unit.LastMessageId??0);
+            var score = GetScore(unit.Sorting, unit.LastMessageId ?? 0);
 
-            var ownerKey = OwnerSetKey(unit.OwnerId);
-
-            zsetOwnerTasks.Add(batch.SortedSetAddAsync(ownerKey, idStr, score));
+            zsetOwnerTasks.Add(batch.SortedSetAddAsync(ownerSortedKey, idStr, score));
         }
 
         if (zsetOwnerTasks.Count > 0) await Task.WhenAll(zsetOwnerTasks);
@@ -270,6 +292,22 @@ public class SessionUnitRedisStore(
 
         return list;
     }
+
+    public async Task SetListByOwnerAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
+    {
+        ArgumentNullException.ThrowIfNull(fetchTask);
+        var units = (await fetchTask(ownerId))?.ToList() ?? [];
+        await SetListByOwnerAsync(ownerId, units);
+    }
+
+    public async Task SetListByOwnerIfNotExistsAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
+    {
+        var ownerExistsKey = OwnerExistsSetKey(ownerId);
+        if (!await Database.KeyExistsAsync(ownerExistsKey))
+        {
+            await SetListByOwnerAsync(ownerId, fetchTask);
+        }
+    }
     /// <summary>
     /// Get list of SessionUnitCacheItem by ownerId. Units argument is the DB-supplied initial list (may be from DB).
     /// Redis values take precedence when present. After merging, Redis is backfilled with merged values and owner zset updated.
@@ -279,10 +317,10 @@ public class SessionUnitRedisStore(
         var unitList = units?.ToList() ?? [];
         if (unitList.Count == 0) return [];
 
-        string ownerKey = OwnerSetKey(ownerId);
+        string ownerSortedKey = OwnerSortedSetKey(ownerId);
 
         // read owner zset (may be empty)
-        var redisZset = await Database.SortedSetRangeByScoreWithScoresAsync(ownerKey);
+        var redisZset = await Database.SortedSetRangeByScoreWithScoresAsync(ownerSortedKey);
         var redisMap = redisZset.ToDictionary(x => Guid.Parse(x.Element), x => x.Score);
 
         // batch read unit hashes
@@ -362,7 +400,7 @@ public class SessionUnitRedisStore(
             hashSetBackfillTasks.Add(Database.HashSetAsync(unitKey, hashEntries));
 
             double composite = item.Sorting * OWNER_SCORE_MULT + item.LastMessageId ?? 0;
-            ownerZsetUpdateTasks.Add(Database.SortedSetAddAsync(ownerKey, id.ToString(), composite));
+            ownerZsetUpdateTasks.Add(Database.SortedSetAddAsync(ownerSortedKey, id.ToString(), composite));
 
             // ensure expire
             _ = Database.KeyExpireAsync(unitKey, _cacheExpire);
@@ -376,7 +414,7 @@ public class SessionUnitRedisStore(
 
         if (_cacheExpire.HasValue)
         {
-            await Database.KeyExpireAsync(ownerKey, _cacheExpire);
+            await Database.KeyExpireAsync(ownerSortedKey, _cacheExpire);
         }
 
         return result;
@@ -496,7 +534,7 @@ public class SessionUnitRedisStore(
     }
     private static double GetScore(double sorting, long lastMessageId)
     {
-        return sorting  + lastMessageId / OWNER_SCORE_MULT;
+        return sorting + lastMessageId / OWNER_SCORE_MULT;
     }
 
     public async Task BatchIncrementBadgeAndSetLastMessageAsync(
@@ -545,17 +583,17 @@ public class SessionUnitRedisStore(
             zsetGlobalTasks.Add(batch.SortedSetAddAsync(lastMsgKey, idStr, lastMessageId));
 
             // owner-specific zset update (compute composite score from Sorting & lastMessageId)
-            var ownerKey = OwnerSetKey(unit.OwnerId);
+            var ownerSortedKey = OwnerSortedSetKey(unit.OwnerId);
 
             // read current sorting from hash (deferred read not allowed inside pipeline easily) - we will read from unit.Sorting (cached snapshot) and redis hash will be handled by GetListByOwnerId flow
 
             var score = GetScore(unit.Sorting, lastMessageId);
-            zsetOwnerTasks.Add(batch.SortedSetAddAsync(ownerKey, idStr, score));
+            zsetOwnerTasks.Add(batch.SortedSetAddAsync(ownerSortedKey, idStr, score));
 
             // expire tasks
             expireTasks.Add(batch.KeyExpireAsync(key, expire ?? _cacheExpire));
             // ensure owner zset expire and global zset expire
-            expireTasks.Add(batch.KeyExpireAsync(ownerKey, expire ?? _cacheExpire));
+            expireTasks.Add(batch.KeyExpireAsync(ownerSortedKey, expire ?? _cacheExpire));
             expireTasks.Add(batch.KeyExpireAsync(lastMsgKey, expire ?? _cacheExpire));
         }
 
