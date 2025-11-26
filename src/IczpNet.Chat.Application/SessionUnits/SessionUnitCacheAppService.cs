@@ -1,5 +1,9 @@
 ﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Permissions;
+using IczpNet.Chat.SessionSections.SessionUnits;
+using System.Linq;
+using System.Threading.Tasks;
+using Volo.Abp.Application.Dtos;
 
 
 namespace IczpNet.Chat.SessionUnits;
@@ -20,7 +24,16 @@ public class SessionUnitCacheAppService(
     protected virtual string FindPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.Find;
     protected virtual string GetCounterPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.GetCounter;
 
+    public async Task<PagedResultDto<SessionUnitCacheItem>> GetListAsync(SessionUnitCacheItemGetListInput input)
+    {
+        var list = await SessionUnitCacheManager.GetOrSetListByOwnerAsync(
+            input.OwnerId,
+            async (ownerId) => 
+                await SessionUnitManager.GetListByOwnerIdAsync(ownerId));
 
+        var query = list.AsQueryable();
 
+        return await GetPagedListAsync(query, input);
 
+    }
 }

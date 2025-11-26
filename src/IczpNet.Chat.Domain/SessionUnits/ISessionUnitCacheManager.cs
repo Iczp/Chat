@@ -16,14 +16,18 @@ public interface ISessionUnitCacheManager
 
     Task<IEnumerable<SessionUnitCacheItem>> SetListByOwnerAsync(long ownerId, IEnumerable<SessionUnitCacheItem> units);
 
-    Task SetListByOwnerAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
+    Task<IEnumerable<SessionUnitCacheItem>> SetListByOwnerAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
 
-    Task SetListByOwnerIfNotExistsAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
+    Task<IEnumerable<SessionUnitCacheItem>> SetListByOwnerIfNotExistsAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
 
+    Task<IEnumerable<SessionUnitCacheItem>> GetOrSetListByOwnerAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
+
+    Task<IEnumerable<SessionUnitCacheItem>> GetListByOwnerIdAsync(long ownerId);
 
     Task<List<SessionUnitCacheItem>> GetListByOwnerIdAsync(long ownerId, IEnumerable<SessionUnitCacheItem> units);
 
     Task BatchIncrementBadgeAndSetLastMessageAsync(Message message, TimeSpan? expire = null);
+    
 
     //Task<long?> GetBadgeAsync(Guid sessionId, Guid sessionUnitId);
     //Task<bool> SetBadgeAsync(Guid sessionId, Guid sessionUnitId, long badge);
