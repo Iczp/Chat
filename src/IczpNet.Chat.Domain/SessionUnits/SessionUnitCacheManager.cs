@@ -13,10 +13,10 @@ using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.SessionUnits;
 
-public class SessionUnitRedisStore(
+public class SessionUnitCacheManager(
     ISessionUnitManager sessionUnitManager,
     IOptions<AbpDistributedCacheOptions> options,
-    IConnectionMultiplexer connection) : DomainService, ISessionUnitRedisStore
+    IConnectionMultiplexer connection) : DomainService, ISessionUnitCacheManager
 {
     protected readonly IDatabase Database = connection.GetDatabase();
 

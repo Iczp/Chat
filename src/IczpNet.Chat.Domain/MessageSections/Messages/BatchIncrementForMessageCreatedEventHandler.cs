@@ -15,14 +15,14 @@ namespace IczpNet.Chat.MessageSections.Messages;
 /// </summary>
 public class BatchIncrementForMessageCreatedEventHandler(
     ISessionUnitManager sessionUnitManager,
-    ISessionUnitRedisStore redisStore) :
+    ISessionUnitCacheManager sessionUnitCacheManager) :
     DomainService,
     // 先暂时不启用 SessionUnitMessage
     ILocalEventHandler<EntityCreatedEventData<Message>>,
     ITransientDependency
 {
     public ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
-    public ISessionUnitRedisStore RedisStore { get; } = redisStore;
+    public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
 
     [UnitOfWork]
     public async Task HandleEventAsync(EntityCreatedEventData<Message> eventData)
@@ -35,9 +35,9 @@ public class BatchIncrementForMessageCreatedEventHandler(
 
         var stopwatch = Stopwatch.StartNew();
 
-        await RedisStore.SetListBySessionIfNotExistsAsync(sessionId.Value, async (sessionId) => await SessionUnitManager.GetCacheListBySessionIdAsync(sessionId));
+        await SessionUnitCacheManager.SetListBySessionIfNotExistsAsync(sessionId.Value, async (sessionId) => await SessionUnitManager.GetCacheListBySessionIdAsync(sessionId));
 
-        await RedisStore.BatchIncrementBadgeAndSetLastMessageAsync(message);
+        await SessionUnitCacheManager.BatchIncrementBadgeAndSetLastMessageAsync(message);
 
         Logger.LogInformation($"{nameof(BatchIncrementForMessageCreatedEventHandler)}  watch={stopwatch.ElapsedMilliseconds}ms");
 

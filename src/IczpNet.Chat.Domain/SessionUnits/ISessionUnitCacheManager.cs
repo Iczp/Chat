@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace IczpNet.Chat.SessionUnits;
 
-public interface ISessionUnitRedisStore
+public interface ISessionUnitCacheManager
 {
     Task SetListBySessionAsync(Guid sessionId, IEnumerable<SessionUnitCacheItem> units);
 
