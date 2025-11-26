@@ -9,9 +9,9 @@ namespace IczpNet.Chat.SessionUnits;
 public interface ISessionUnitRedisStore
 {
 
-    Task InitializeSessionCacheAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchFromDb);
+    Task SetBySessionAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchFromDb);
 
-    Task EnsureSessionInitializedAsync(Guid sessionId, Message message);
+    Task SetBySessionAsync(Guid sessionId, Message message);
 
     Task BatchIncrementBadgeAndSetLastMessageAsync(Message message, TimeSpan? expire = null);
     //Task<long?> GetBadgeAsync(Guid sessionId, Guid sessionUnitId);

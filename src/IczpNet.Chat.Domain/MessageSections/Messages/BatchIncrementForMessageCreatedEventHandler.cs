@@ -31,7 +31,7 @@ public class BatchIncrementForMessageCreatedEventHandler(
 
         var stopwatch = Stopwatch.StartNew();
 
-        await RedisStore.EnsureSessionInitializedAsync(message.SessionId.Value, message);
+        await RedisStore.SetBySessionAsync(message.SessionId.Value, message);
 
         await RedisStore.BatchIncrementBadgeAndSetLastMessageAsync(message);
 

@@ -24,15 +24,16 @@ public class SessionUnitRedisStore(
 
     private readonly TimeSpan? _cacheExpire = TimeSpan.FromDays(7);
 
+    protected string Prefix =>$"{Options.Value.KeyPrefix}SessionUnits:" ;
     // key builders
     private string UnitKey(Guid sessionId, Guid unitId)
-        => $"{Options.Value.KeyPrefix}SessionUnits:Units:SessionId-{sessionId}:UnitId-{unitId}";
-    private string SessionUnitIdSetKey(Guid sessionId)
-        => $"{Options.Value.KeyPrefix}SessionUnits:Ids:SessionId-{sessionId}";
+        => $"{Prefix}Units:UnitId-{unitId}";
+    private string SessionSetKey(Guid sessionId)
+        => $"{Prefix}Ids:SessionId-{sessionId}";
     private string LastMessageSetKey(Guid sessionId)
-        => $"{Options.Value.KeyPrefix}SessionUnits:LastMessages:SessionId-{sessionId}";
+        => $"{Prefix}LastMessages:SessionId-{sessionId}";
     private string OwnerSetKey(long ownerId)
-        => $"{Options.Value.KeyPrefix}SessionUnits:Owners:OwnerId-{ownerId}";
+        => $"{Prefix}Owners:OwnerId-{ownerId}";
 
     // composite score multiplier (sorting * MULT + lastMessageId)
     private const double OWNER_SCORE_MULT = 1_000_000_000_000d; // 1e12
@@ -45,7 +46,7 @@ public class SessionUnitRedisStore(
     private static string F_DestinationId => nameof(SessionUnitCacheItem.DestinationId);
     private static string F_DestinationObjectType => nameof(SessionUnitCacheItem.DestinationObjectType);
     private static string F_IsStatic => nameof(SessionUnitCacheItem.IsStatic);
-    private static string F_IsPublic = nameof(SessionUnitCacheItem.IsPublic);
+    private static string F_IsPublic => nameof(SessionUnitCacheItem.IsPublic);
     private static string F_IsVisible => nameof(SessionUnitCacheItem.IsVisible);
     private static string F_IsEnabled => nameof(SessionUnitCacheItem.IsEnabled);
     private static string F_ReadedMessageId => nameof(SessionUnitCacheItem.ReadedMessageId);
@@ -162,19 +163,19 @@ public class SessionUnitRedisStore(
             };
         return entries;
     }
-    public async Task InitializeSessionCacheAsync(Guid sessionId, IEnumerable<SessionUnitCacheItem> units)
+    public async Task SetBySessionAsync(Guid sessionId, IEnumerable<SessionUnitCacheItem> units)
     {
         ArgumentNullException.ThrowIfNull(units);
         var unitList = units.ToList();
         if (unitList.Count == 0) return;
 
-        var sessionUnitIdSetKey = SessionUnitIdSetKey(sessionId);
+        var sessionSetKey = SessionSetKey(sessionId);
         var lastMsgKey = LastMessageSetKey(sessionId);
 
         var batch = Database.CreateBatch();
 
         // clear existing set to avoid stale members
-        _ = batch.KeyDeleteAsync(sessionUnitIdSetKey);
+        _ = batch.KeyDeleteAsync(sessionSetKey);
 
         var setAddTasks = new List<Task<bool>>();
         var hashTasks = new List<Task>();
@@ -183,7 +184,7 @@ public class SessionUnitRedisStore(
         foreach (var unit in unitList)
         {
             var idStr = unit.Id.ToString();
-            setAddTasks.Add(batch.SetAddAsync(sessionUnitIdSetKey, idStr));
+            setAddTasks.Add(batch.SetAddAsync(sessionSetKey, idStr));
 
             var unitKey = UnitKey(unit.SessionId ?? Guid.Empty, unit.Id);
 
@@ -199,7 +200,7 @@ public class SessionUnitRedisStore(
             _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
         }
 
-        _ = batch.KeyExpireAsync(sessionUnitIdSetKey, _cacheExpire);
+        _ = batch.KeyExpireAsync(sessionSetKey, _cacheExpire);
         _ = batch.KeyExpireAsync(lastMsgKey, _cacheExpire);
 
         batch.Execute();
@@ -209,19 +210,19 @@ public class SessionUnitRedisStore(
         if (zsetAddTasks.Count > 0) await Task.WhenAll(zsetAddTasks);
     }
 
-    public async Task InitializeSessionCacheAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchFromDb)
+    public async Task SetBySessionAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchFromDb)
     {
         ArgumentNullException.ThrowIfNull(fetchFromDb);
-        var units = (await fetchFromDb(sessionId))?.ToList() ?? new List<SessionUnitCacheItem>();
-        await InitializeSessionCacheAsync(sessionId, units);
+        var units = (await fetchFromDb(sessionId))?.ToList() ?? [];
+        await SetBySessionAsync(sessionId, units);
     }
 
-    public async Task EnsureSessionInitializedAsync(Guid sessionId, Message message)
+    public async Task SetBySessionAsync(Guid sessionId, Message message)
     {
-        var sessionUnitIdSetKey = SessionUnitIdSetKey(sessionId);
-        if (!await Database.KeyExistsAsync(sessionUnitIdSetKey))
+        var sessionSetKey = SessionSetKey(sessionId);
+        if (!await Database.KeyExistsAsync(sessionSetKey))
         {
-            await InitializeSessionCacheAsync(sessionId, async (sid) => await SessionUnitManager.GetCacheListAsync(message));
+            await SetBySessionAsync(sessionId, async (sid) => await SessionUnitManager.GetCacheListAsync(message));
         }
     }
 
@@ -495,7 +496,7 @@ public class SessionUnitRedisStore(
     }
     private static double GetScore(double sorting, long lastMessageId)
     {
-        return sorting * OWNER_SCORE_MULT + lastMessageId;
+        return sorting  + lastMessageId / OWNER_SCORE_MULT;
     }
 
     public async Task BatchIncrementBadgeAndSetLastMessageAsync(
@@ -573,13 +574,13 @@ public class SessionUnitRedisStore(
 
     public async Task AddUnitIdToSessionAsync(Guid sessionId, Guid unitId)
     {
-        await Database.SetAddAsync(SessionUnitIdSetKey(sessionId), unitId.ToString());
-        await Database.KeyExpireAsync(SessionUnitIdSetKey(sessionId), _cacheExpire);
+        await Database.SetAddAsync(SessionSetKey(sessionId), unitId.ToString());
+        await Database.KeyExpireAsync(SessionSetKey(sessionId), _cacheExpire);
     }
 
     public async Task RemoveUnitIdFromSessionAsync(Guid sessionId, Guid unitId)
     {
-        await Database.SetRemoveAsync(SessionUnitIdSetKey(sessionId), unitId.ToString());
+        await Database.SetRemoveAsync(SessionSetKey(sessionId), unitId.ToString());
         await Database.KeyDeleteAsync(UnitKey(sessionId, unitId));
     }
 
@@ -595,7 +596,7 @@ public class SessionUnitRedisStore(
         {
             delTasks.Add(batch.KeyDeleteAsync(UnitKey(sessionId, id)));
             zremoveTasks.Add(batch.SortedSetRemoveAsync(zkey, id.ToString()));
-            _ = batch.SetRemoveAsync(SessionUnitIdSetKey(sessionId), id.ToString());
+            _ = batch.SetRemoveAsync(SessionSetKey(sessionId), id.ToString());
         }
 
         batch.Execute();
@@ -613,10 +614,10 @@ public class SessionUnitRedisStore(
 
     public async Task<bool> RemoveAllAsync(Guid sessionId)
     {
-        var setKey = SessionUnitIdSetKey(sessionId);
+        var sessionSetKey = SessionSetKey(sessionId);
         var lastKey = LastMessageSetKey(sessionId);
 
-        var r1 = await Database.KeyDeleteAsync(setKey);
+        var r1 = await Database.KeyDeleteAsync(sessionSetKey);
         var r2 = await Database.KeyDeleteAsync(lastKey);
         return r1 && r2;
     }
@@ -638,7 +639,7 @@ public class SessionUnitRedisStore(
         }
         else
         {
-            tasks.Add(Database.KeyExpireAsync(SessionUnitIdSetKey(sessionId), e));
+            tasks.Add(Database.KeyExpireAsync(SessionSetKey(sessionId), e));
             tasks.Add(Database.KeyExpireAsync(LastMessageSetKey(sessionId), e));
         }
 
