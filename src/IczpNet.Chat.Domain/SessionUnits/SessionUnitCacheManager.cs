@@ -2,7 +2,6 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Extensions.Options;
-using Minio.Helper;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
@@ -35,10 +34,10 @@ public class SessionUnitCacheManager(
     private string LastMessageSetKey(Guid sessionId)
         => $"{Prefix}LastMessages:SessionId-{sessionId}";
     private string OwnerSortedSetKey(long ownerId)
-        => $"{Prefix}SortedOwners:OwnerId-{ownerId}";
+        => $"{Prefix}Owners:Sorted:OwnerId-{ownerId}";
 
     private string OwnerExistsSetKey(long ownerId)
-        => $"{Prefix}ExistsOwners:OwnerId-{ownerId}";
+        => $"{Prefix}Owners:Exists:OwnerId-{ownerId}";
 
     // composite score multiplier (sorting * MULT + lastMessageId)
     private const double OWNER_SCORE_MULT = 1_000_000_000_000d; // 1e12
@@ -175,7 +174,7 @@ public class SessionUnitCacheManager(
         if (unitList.Count == 0) return;
 
         var sessionSetKey = SessionSetKey(sessionId);
-        var lastMsgKey = LastMessageSetKey(sessionId);
+        //var lastMsgKey = LastMessageSetKey(sessionId);
 
         var batch = Database.CreateBatch();
 
@@ -197,16 +196,16 @@ public class SessionUnitCacheManager(
 
             hashTasks.Add(batch.HashSetAsync(unitKey, entries));
 
-            if (unit.LastMessageId.HasValue)
-            {
-                zsetAddTasks.Add(batch.SortedSetAddAsync(lastMsgKey, idStr, unit.LastMessageId.Value));
-            }
+            //if (unit.LastMessageId.HasValue)
+            //{
+            //    zsetAddTasks.Add(batch.SortedSetAddAsync(lastMsgKey, idStr, unit.LastMessageId.Value));
+            //}
 
             _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
         }
 
         _ = batch.KeyExpireAsync(sessionSetKey, _cacheExpire);
-        _ = batch.KeyExpireAsync(lastMsgKey, _cacheExpire);
+        //_ = batch.KeyExpireAsync(lastMsgKey, _cacheExpire);
 
         batch.Execute();
 
@@ -287,7 +286,6 @@ public class SessionUnitCacheManager(
             var score = GetScore(unit.Sorting, unit.LastMessageId ?? 0);
 
             zsetOwnerTasks.Add(batch.SortedSetAddAsync(ownerSortedKey, idStr, score));
-
         }
 
         if (_cacheExpire.HasValue)
@@ -554,7 +552,7 @@ public class SessionUnitCacheManager(
 
         var sessionId = message.SessionId!.Value;
         var lastMessageId = message.Id;
-        var lastMsgKey = LastMessageSetKey(sessionId);
+        //var lastMsgKey = LastMessageSetKey(sessionId);
         var isPrivate = message.IsPrivateMessage();
         var isRemindAll = message.IsRemindAll;
 
@@ -589,7 +587,7 @@ public class SessionUnitCacheManager(
             // update ticks
             hashSetTasks.Add(batch.HashSetAsync(key, F_Ticks, (double)DateTime.UtcNow.Ticks));
             // update global last-message sorted set
-            zsetGlobalTasks.Add(batch.SortedSetAddAsync(lastMsgKey, idStr, lastMessageId));
+            //zsetGlobalTasks.Add(batch.SortedSetAddAsync(lastMsgKey, idStr, lastMessageId));
 
             // owner-specific zset update (compute composite score from Sorting & lastMessageId)
             var ownerSortedKey = OwnerSortedSetKey(unit.OwnerId);
@@ -603,7 +601,7 @@ public class SessionUnitCacheManager(
             expireTasks.Add(batch.KeyExpireAsync(key, expire ?? _cacheExpire));
             // ensure owner zset expire and global zset expire
             expireTasks.Add(batch.KeyExpireAsync(ownerSortedKey, expire ?? _cacheExpire));
-            expireTasks.Add(batch.KeyExpireAsync(lastMsgKey, expire ?? _cacheExpire));
+            //expireTasks.Add(batch.KeyExpireAsync(lastMsgKey, expire ?? _cacheExpire));
         }
 
         batch.Execute();
@@ -634,7 +632,7 @@ public class SessionUnitCacheManager(
     public async Task<bool> RemoveManyAsync(Guid sessionId, IEnumerable<Guid> unitIds)
     {
         var batch = Database.CreateBatch();
-        var zkey = LastMessageSetKey(sessionId);
+        //var zkey = LastMessageSetKey(sessionId);
 
         var delTasks = new List<Task<bool>>();
         var zremoveTasks = new List<Task<bool>>();
@@ -642,7 +640,7 @@ public class SessionUnitCacheManager(
         foreach (var id in unitIds)
         {
             delTasks.Add(batch.KeyDeleteAsync(UnitKey(id)));
-            zremoveTasks.Add(batch.SortedSetRemoveAsync(zkey, id.ToString()));
+            //zremoveTasks.Add(batch.SortedSetRemoveAsync(zkey, id.ToString()));
             _ = batch.SetRemoveAsync(SessionSetKey(sessionId), id.ToString());
         }
 
@@ -662,11 +660,11 @@ public class SessionUnitCacheManager(
     public async Task<bool> RemoveAllAsync(Guid sessionId)
     {
         var sessionSetKey = SessionSetKey(sessionId);
-        var lastKey = LastMessageSetKey(sessionId);
+        //var lastKey = LastMessageSetKey(sessionId);
 
         var r1 = await Database.KeyDeleteAsync(sessionSetKey);
-        var r2 = await Database.KeyDeleteAsync(lastKey);
-        return r1 && r2;
+        //var r2 = await Database.KeyDeleteAsync(lastKey);
+        return r1;//&& r2;
     }
 
     public async Task UpdateReadedMessageIdAsync(Guid sessionId, Guid unitId, long readedMessageId, TimeSpan? expire = null)
@@ -687,7 +685,7 @@ public class SessionUnitCacheManager(
         else
         {
             tasks.Add(Database.KeyExpireAsync(SessionSetKey(sessionId), e));
-            tasks.Add(Database.KeyExpireAsync(LastMessageSetKey(sessionId), e));
+            //tasks.Add(Database.KeyExpireAsync(LastMessageSetKey(sessionId), e));
         }
 
         var results = await Task.WhenAll(tasks);

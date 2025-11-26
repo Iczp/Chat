@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.SessionUnits;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.SessionUnitSettings;
@@ -12,7 +13,7 @@ public interface ISessionUnitSettingManager
     /// <param name="sessionUnitId"></param>
     /// <param name="memberName"></param>
     /// <returns></returns>
-    Task<SessionUnitSetting> SetMemberNameAsync(Guid  sessionUnitId, string memberName);
+    Task<SessionUnitSetting> SetMemberNameAsync(Guid sessionUnitId, string memberName);
 
     /// <summary>
     /// 设置重命名
@@ -92,4 +93,11 @@ public interface ISessionUnitSettingManager
     /// <param name="isSendMessage"></param>
     /// <returns></returns>
     Task<DateTime?> SetMuteExpireTimeAsync(Guid muterSessionUnitId, DateTime? muteExpireTime, SessionUnit setterSessionUnit, bool isSendMessage);
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="unitIdList"></param>
+    /// <returns></returns>
+    Task<IDictionary<Guid, SessionUnitSettingCacheItem>> GetCacheManyAsync(List<Guid> unitIdList);
 }

@@ -1,4 +1,5 @@
-﻿using Castle.Core.Internal;
+﻿using AutoMapper.Internal.Mappers;
+using Castle.Core.Internal;
 using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjectTypes;
@@ -366,5 +367,17 @@ public class ChatObjectManager(IChatObjectRepository repository) : TreeManager<C
         });
 
         return userChatObject;
+    }
+
+    public override async Task<List<ChatObjectInfo>> GetManyByCacheAsync(List<long> idList)
+    {
+        var kvs = await ItemCache.GetOrAddManyAsync(idList, async ids =>
+          {
+              var list = await Repository.GetListAsync(x => ids.Contains(x.Id));
+              var items = ObjectMapper.Map<List<ChatObject>, List<ChatObjectInfo>>(list);
+              return items.Select(x => new KeyValuePair<long, ChatObjectInfo>(x.Id, x)).ToList();
+          });
+        return kvs.Select(x => x.Value).ToList();
+
     }
 }

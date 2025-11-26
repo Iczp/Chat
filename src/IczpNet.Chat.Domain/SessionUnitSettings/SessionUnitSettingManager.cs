@@ -1,4 +1,5 @@
-﻿using IczpNet.AbpCommons;
+﻿
+using IczpNet.AbpCommons;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Templates;
@@ -7,16 +8,24 @@ using IczpNet.Chat.TextTemplates;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.Caching;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.ObjectMapping;
+
 
 namespace IczpNet.Chat.SessionUnitSettings;
 
 public class SessionUnitSettingManager(
+    IDistributedCache<SessionUnitSettingCacheItem, Guid> sessionUnitSettingCache,
+    IObjectMapper objectMapper,
     IMessageSender messageSender,
     ISessionUnitManager sessionUnitManager,
     ISessionUnitSettingRepository sessionUnitSettingRepository) : DomainService, ISessionUnitSettingManager
 {
+    public IDistributedCache<SessionUnitSettingCacheItem, Guid> SessionUnitSettingCache { get; } = sessionUnitSettingCache;
+    public IObjectMapper ObjectMapper { get; } = objectMapper;
     public IMessageSender MessageSender { get; } = messageSender;
     public ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
     public ISessionUnitSettingRepository SessionUnitSettingRepository { get; } = sessionUnitSettingRepository;
@@ -30,6 +39,7 @@ public class SessionUnitSettingManager(
     {
         var sessionUnitSetting = await GetAsync(sessionUnitId);
         action?.Invoke(sessionUnitSetting);
+        await SessionUnitSettingCache.RemoveAsync(sessionUnitId);
         return await SessionUnitSettingRepository.UpdateAsync(sessionUnitSetting, autoSave);
     }
 
@@ -135,5 +145,24 @@ public class SessionUnitSettingManager(
         });
 
         return muteExpireTime;
+    }
+
+    public virtual async Task<List<SessionUnitSetting>> GetManyAsync(List<Guid> unitIdList)
+    {
+        return await SessionUnitSettingRepository.GetListAsync(x => unitIdList.Contains(x.SessionUnitId));
+    }
+
+    public virtual async Task<IDictionary<Guid, SessionUnitSettingCacheItem>> GetCacheManyAsync(List<Guid> unitIdList)
+    {
+        var list = await SessionUnitSettingCache.GetOrAddManyAsync(unitIdList, async (unitIdList) =>
+        {
+            var list = (await GetManyAsync(unitIdList.ToList()));
+
+            var items = ObjectMapper.Map<List<SessionUnitSetting>, List<SessionUnitSettingCacheItem>>(list);
+
+            return items.Select(x => new KeyValuePair<Guid, SessionUnitSettingCacheItem>(x.SessionUnitId, x)).ToList();
+
+        });
+        return list.ToDictionary(x => x.Key, x => x.Value);
     }
 }

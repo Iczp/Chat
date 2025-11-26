@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.SessionSections.SessionUnits;
+﻿using IczpNet.Chat.SessionUnits.Dtos;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 
@@ -6,7 +6,8 @@ namespace IczpNet.Chat.SessionUnits;
 
 public interface ISessionUnitCacheAppService
 {
-    Task<PagedResultDto<SessionUnitCacheItem>> GetListAsync(SessionUnitCacheItemGetListInput input);
+    Task<PagedResultDto<SessionUnitCacheDto>> GetListAsync(SessionUnitCacheItemGetListInput input);
 
-   
+
+
 }
