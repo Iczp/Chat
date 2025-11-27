@@ -122,23 +122,7 @@ public interface ISessionUnitManager
     /// <returns></returns>
     Task<Guid?> FindIdAsync(Expression<Func<SessionUnit, bool>> predicate);
 
-    /// <summary>
-    /// 设置成员名称
-    /// </summary>
-    /// <param name="entity"></param>
-    /// <param name="memberName"></param>
-    /// <returns></returns>
-    [Obsolete($"Move to {nameof(ISessionUnitSettingManager)}")] 
-    Task<SessionUnit> SetMemberNameAsync(SessionUnit entity, string memberName);
-
-    /// <summary>
-    /// 设置重命名
-    /// </summary>
-    /// <param name="entity"></param>
-    /// <param name="rename"></param>
-    /// <returns></returns>
-    [Obsolete($"Move to {nameof(ISessionUnitSettingManager)}")] 
-    Task<SessionUnit> SetRenameAsync(SessionUnit entity, string rename);
+    
 
     /// <summary>
     /// 设置置顶
@@ -165,66 +149,6 @@ public interface ISessionUnitManager
     /// <param name="messageId"></param>
     /// <returns></returns>
     Task<SessionUnit> SetReadedMessageIdAsync(Guid sessionUnitId, bool isForce = false, long? messageId = null);
-
-    /// <summary>
-    /// 设置是否为沉浸式
-    /// </summary>
-    /// <param name="entity"></param>
-    /// <param name="isImmersed"></param>
-    /// <returns></returns>
-    [Obsolete($"Move to {nameof(ISessionUnitSettingManager)}")] 
-    Task<SessionUnit> SetImmersedAsync(SessionUnit entity, bool isImmersed);
-
-    /// <summary>
-    /// 设置是否为联系人
-    /// </summary>
-    /// <param name="entity"></param>
-    /// <param name="isContacts"></param>
-    /// <returns></returns>
-    [Obsolete($"Move to {nameof(ISessionUnitSettingManager)}")] 
-    Task<SessionUnit> SetIsContactsAsync(SessionUnit entity, bool isContacts);
-
-    /// <summary>
-    /// 设置是否显示成员名称
-    /// </summary>
-    /// <param name="entity"></param>
-    /// <param name="isShowMemberName"></param>
-    /// <returns></returns>
-    [Obsolete($"Move to {nameof(ISessionUnitSettingManager)}")] 
-    Task<SessionUnit> SetIsShowMemberNameAsync(SessionUnit entity, bool isShowMemberName);
-
-    /// <summary>
-    /// 移除会话
-    /// </summary>
-    /// <param name="entity"></param>
-    /// <returns></returns>
-    [Obsolete($"Move to {nameof(ISessionUnitSettingManager)}")] 
-    Task<SessionUnit> RemoveAsync(SessionUnit entity);
-
-    /// <summary>
-    /// 删除会话
-    /// </summary>
-    /// <param name="entity"></param>
-    /// <returns></returns>
-    [Obsolete($"Move to {nameof(ISessionUnitSettingManager)}")] 
-    Task<SessionUnit> KillAsync(SessionUnit entity);
-
-    /// <summary>
-    /// 清空消息
-    /// </summary>
-    /// <param name="entity"></param>
-    /// <returns></returns>
-    [Obsolete($"Move to {nameof(ISessionUnitSettingManager)}")] 
-    Task<SessionUnit> ClearMessageAsync(SessionUnit entity);
-
-    /// <summary>
-    /// 删除消息
-    /// </summary>
-    /// <param name="entity"></param>
-    /// <param name="messageId"></param>
-    /// <returns></returns>
-    [Obsolete($"Move to {nameof(ISessionUnitSettingManager)}")] 
-    Task<SessionUnit> DeleteMessageAsync(SessionUnit entity, long messageId);
 
     /// <summary>
     /// 获取聊天对象角标

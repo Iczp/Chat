@@ -27,7 +27,7 @@ public class SessionUnitCacheManager(
     private readonly TimeSpan? _cacheExpire = TimeSpan.FromDays(7);
 
     protected string Prefix => $"{Options.Value.KeyPrefix}SessionUnits:";
-    // key builders
+    // unitKey builders
     private string UnitKey(Guid unitId)
         => $"{Prefix}Units:UnitId-{unitId}";
     private string SessionSetKey(Guid sessionId)
@@ -260,7 +260,7 @@ public class SessionUnitCacheManager(
         //}
         _ = batch.KeyExpireAsync(ownerExistsKey, _cacheExpire);
 
-        // owner zset key
+        // owner zset unitKey
         var ownerSortedKey = OwnerSortedSetKey(ownerId);
 
         var unitMap = await GetManyAsync(unitList.Select(x => x.Id));
@@ -571,22 +571,22 @@ public class SessionUnitCacheManager(
         foreach (var unit in sessionUnitList)
         {
             var id = unit.Id;
-            var key = UnitKey(id);
+            var unitKey = UnitKey(id);
             var idStr = id.ToString();
             var isSender = id == message.SenderSessionUnitId;
 
             if (!isSender)
             {
-                if (isPrivate) hashIncTasks.Add(batch.HashIncrementAsync(key, F_PrivateBadge, 1));
-                else hashIncTasks.Add(batch.HashIncrementAsync(key, F_PublicBadge, 1));
+                if (isPrivate) hashIncTasks.Add(batch.HashIncrementAsync(unitKey, F_PrivateBadge, 1));
+                else hashIncTasks.Add(batch.HashIncrementAsync(unitKey, F_PublicBadge, 1));
 
-                if (isRemindAll) hashIncTasks.Add(batch.HashIncrementAsync(key, F_RemindAllCount, 1));
+                if (isRemindAll) hashIncTasks.Add(batch.HashIncrementAsync(unitKey, F_RemindAllCount, 1));
             }
 
             // update lastMessageId in hash
-            hashSetTasks.Add(batch.HashSetAsync(key, F_LastMessageId, lastMessageId));
+            hashSetTasks.Add(batch.HashSetAsync(unitKey, F_LastMessageId, lastMessageId));
             // update ticks
-            hashSetTasks.Add(batch.HashSetAsync(key, F_Ticks, (double)DateTime.UtcNow.Ticks));
+            hashSetTasks.Add(batch.HashSetAsync(unitKey, F_Ticks, (double)DateTime.UtcNow.Ticks));
             // update global last-message sorted set
             //zsetGlobalTasks.Add(batch.SortedSetAddAsync(lastMsgKey, idStr, lastMessageId));
 
@@ -599,7 +599,7 @@ public class SessionUnitCacheManager(
             zsetOwnerTasks.Add(batch.SortedSetAddAsync(ownerSortedKey, idStr, score));
 
             // expire tasks
-            expireTasks.Add(batch.KeyExpireAsync(key, expire ?? _cacheExpire));
+            expireTasks.Add(batch.KeyExpireAsync(unitKey, expire ?? _cacheExpire));
             // ensure owner zset expire and global zset expire
             expireTasks.Add(batch.KeyExpireAsync(ownerSortedKey, expire ?? _cacheExpire));
             //expireTasks.Add(batch.KeyExpireAsync(lastMsgKey, expire ?? _cacheExpire));
@@ -691,6 +691,31 @@ public class SessionUnitCacheManager(
 
         var results = await Task.WhenAll(tasks);
         return results.All(x => x);
+    }
+
+    public async Task UpdateCountersync(SessionUnitCounterInfo counter)
+    {
+        var unitKey = UnitKey(counter.Id);
+
+        var batch = Database.CreateBatch();
+
+        var setTasks = new List<Task<bool>>
+        {
+            batch.HashSetAsync(unitKey, F_PublicBadge, counter.PublicBadge),
+            batch.HashSetAsync(unitKey, F_PrivateBadge, counter.PrivateBadge),
+            batch.HashSetAsync(unitKey, F_RemindAllCount, counter.RemindAllCount),
+            batch.HashSetAsync(unitKey, F_RemindMeCount, counter.RemindMeCount),
+            batch.HashSetAsync(unitKey, F_FollowingCount, counter.FollowingCount)
+        };
+
+        if (_cacheExpire.HasValue)
+        {
+            setTasks.Add(Database.KeyExpireAsync(unitKey, _cacheExpire));
+        }
+
+        batch.Execute();
+
+        await Task.WhenAll(setTasks);
     }
 
     #endregion

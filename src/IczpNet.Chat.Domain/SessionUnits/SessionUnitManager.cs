@@ -30,6 +30,7 @@ using Volo.Abp.Uow;
 namespace IczpNet.Chat.SessionUnits;
 
 public class SessionUnitManager(
+    ISessionUnitCacheManager sessionUnitCacheManager,
     IChatObjectManager chatObjectManager,
     ISessionUnitRepository repository,
     IReadOnlyRepository<SessionUnit, Guid> sessionUnitReadOnlyRepository,
@@ -45,6 +46,7 @@ public class SessionUnitManager(
     ISessionManager sessionManager,
     ISessionUnitIdGenerator idGenerator) : DomainService, ISessionUnitManager
 {
+    public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
     public IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
     protected ISessionUnitRepository Repository { get; } = repository;
     /// <summary>
@@ -198,18 +200,6 @@ public class SessionUnitManager(
     }
 
     /// <inheritdoc />
-    public Task<SessionUnit> SetMemberNameAsync(SessionUnit entity, string memberName)
-    {
-        return SetEntityAsync(entity, x => x.Setting.SetMemberName(memberName));
-    }
-
-    /// <inheritdoc />
-    public Task<SessionUnit> SetRenameAsync(SessionUnit entity, string rename)
-    {
-        return SetEntityAsync(entity, x => x.Setting.SetRename(rename));
-    }
-
-    /// <inheritdoc />
     public virtual Task<SessionUnit> SetToppingAsync(SessionUnit entity, bool isTopping)
     {
         return SetEntityAsync(entity, x => x.SetTopping(isTopping));
@@ -250,56 +240,13 @@ public class SessionUnitManager(
         {
             counter = await GetCounterAsync(entity.Id, lastMessageId);
         }
-
+        // 更新Setting
+        await SetEntityAsync(entity, x => x.UpdateCounter(counter));
+        // 更新缓存
+        await SessionUnitCacheManager.UpdateCountersync(counter);
         //await SetEntityAsync(entity, x => x.UpdateCounter(counter));
         // 更新记数器
         return await Repository.UpdateCountersync(counter);
-    }
-
-    /// <inheritdoc />
-    public virtual Task<SessionUnit> SetImmersedAsync(SessionUnit entity, bool isImmersed)
-    {
-        Assert.If(!entity.Session.IsEnableSetImmersed, "Session is disable to set immersed.");
-
-        return SetEntityAsync(entity, x => x.Setting.SetImmersed(isImmersed));
-    }
-
-    /// <inheritdoc />
-    public virtual Task<SessionUnit> SetIsContactsAsync(SessionUnit entity, bool isContacts)
-    {
-        return SetEntityAsync(entity, x => x.Setting.SetIsContacts(isContacts));
-    }
-
-    /// <inheritdoc />
-    public virtual Task<SessionUnit> SetIsShowMemberNameAsync(SessionUnit entity, bool isShowMemberName)
-    {
-        return SetEntityAsync(entity, x => x.Setting.SetIsShowMemberName(isShowMemberName));
-    }
-
-    /// <inheritdoc />
-    public virtual Task<SessionUnit> RemoveAsync(SessionUnit entity)
-    {
-        return SetEntityAsync(entity, x => x.Setting.Remove(Clock.Now));
-    }
-
-    /// <inheritdoc />
-    public virtual Task<SessionUnit> KillAsync(SessionUnit entity)
-    {
-        return SetEntityAsync(entity, x => x.Setting.Kill(Clock.Now));
-    }
-
-    /// <inheritdoc />
-    public virtual async Task<SessionUnit> ClearMessageAsync(SessionUnit entity)
-    {
-        await SetReadedMessageIdAsync(entity, false);
-
-        return await SetEntityAsync(entity, x => x.Setting.ClearMessage(Clock.Now));
-    }
-
-    /// <inheritdoc />
-    public virtual Task<SessionUnit> DeleteMessageAsync(SessionUnit entity, long messageId)
-    {
-        throw new NotImplementedException();
     }
 
     protected virtual async Task<int> GetBadgeAsync(Func<IQueryable<SessionUnit>, IQueryable<SessionUnit>> queryAction)

@@ -38,9 +38,17 @@ public class SessionUnitSettingManager(
     protected async Task<SessionUnitSetting> SetEntityAsync(Guid sessionUnitId, Action<SessionUnitSetting> action, bool autoSave = true)
     {
         var sessionUnitSetting = await GetAsync(sessionUnitId);
+
         action?.Invoke(sessionUnitSetting);
-        await SessionUnitSettingCache.RemoveAsync(sessionUnitId);
-        return await SessionUnitSettingRepository.UpdateAsync(sessionUnitSetting, autoSave);
+        
+        var sessionUnitSettingCacheItem = ObjectMapper.Map<SessionUnitSetting, SessionUnitSettingCacheItem>(sessionUnitSetting);
+
+        // Update Cache
+        var entity = await SessionUnitSettingRepository.UpdateAsync(sessionUnitSetting, autoSave);
+
+        await SessionUnitSettingCache.SetAsync(sessionUnitId, sessionUnitSettingCacheItem);
+
+        return entity;
     }
 
     /// <inheritdoc />
