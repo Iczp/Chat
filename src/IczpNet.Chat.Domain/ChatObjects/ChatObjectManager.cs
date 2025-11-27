@@ -7,6 +7,7 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionUnits;
+using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -371,11 +372,23 @@ public class ChatObjectManager(IChatObjectRepository repository) : TreeManager<C
 
     public override async Task<List<ChatObjectInfo>> GetManyByCacheAsync(List<long> idList)
     {
-        var kvs = await ItemCache.GetOrAddManyAsync(idList, async ids =>
+        var kvs = await ItemCache.GetOrAddManyAsync(idList, async keys =>
           {
-              var list = await Repository.GetListAsync(x => ids.Contains(x.Id));
-              var items = ObjectMapper.Map<List<ChatObject>, List<ChatObjectInfo>>(list);
-              return items.Select(x => new KeyValuePair<long, ChatObjectInfo>(x.Id, x)).ToList();
+              var entities = await Repository.GetListAsync(x => keys.Contains(x.Id));
+
+              var dict = entities.ToDictionary(
+                  x => x.Id,
+                  x => ObjectMapper.Map<ChatObject, ChatObjectInfo>(x));
+
+              var result = new List<KeyValuePair<long, ChatObjectInfo>>();
+
+              foreach (var id in keys)
+              {
+                  dict.TryGetValue(id, out var cacheItem);
+                  result.Add(new KeyValuePair<long, ChatObjectInfo>(id, cacheItem));
+              }
+
+              return result;
           });
         return kvs.Select(x => x.Value).ToList();
 

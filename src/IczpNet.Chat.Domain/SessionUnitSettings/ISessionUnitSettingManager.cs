@@ -99,5 +99,5 @@ public interface ISessionUnitSettingManager
     /// </summary>
     /// <param name="unitIdList"></param>
     /// <returns></returns>
-    Task<IDictionary<Guid, SessionUnitSettingCacheItem>> GetManyByCacheAsync(List<Guid> unitIdList);
+    Task<KeyValuePair<Guid, SessionUnitSettingCacheItem>[]> GetManyCacheAsync(List<Guid> unitIdList);
 }

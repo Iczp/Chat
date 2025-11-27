@@ -152,17 +152,32 @@ public class SessionUnitSettingManager(
         return await SessionUnitSettingRepository.GetListAsync(x => unitIdList.Contains(x.SessionUnitId));
     }
 
-    public virtual async Task<IDictionary<Guid, SessionUnitSettingCacheItem>> GetManyByCacheAsync(List<Guid> unitIdList)
+    public virtual async Task<KeyValuePair<Guid, SessionUnitSettingCacheItem>[]> GetManyCacheAsync(List<Guid> unitIdList)
     {
-        var list = await SessionUnitSettingCache.GetOrAddManyAsync(unitIdList, async (unitIdList) =>
-        {
-            var list = (await GetManyAsync(unitIdList.ToList()));
+        return await SessionUnitSettingCache.GetOrAddManyAsync(
+            unitIdList,
+            async (keys) =>
+            {
+                // 查询所有存在的数据
+                var entities = await GetManyAsync(keys.ToList());
 
-            var items = ObjectMapper.Map<List<SessionUnitSetting>, List<SessionUnitSettingCacheItem>>(list);
+                // 生成字典方便查找
+                var dict = entities.ToDictionary(
+                    x => x.SessionUnitId,
+                    x => ObjectMapper.Map<SessionUnitSetting, SessionUnitSettingCacheItem>(x)
+                );
 
-            return items.Select(x => new KeyValuePair<Guid, SessionUnitSettingCacheItem>(x.SessionUnitId, x)).ToList();
+                // ⚠️ 必须给每一个 key 返回一个 KeyValuePair
+                // ⚠️ 顺序必须与 keys 完全一致
+                var result = new List<KeyValuePair<Guid, SessionUnitSettingCacheItem>>();
 
-        });
-        return list.ToDictionary(x => x.Key, x => x.Value);
+                foreach (var id in keys)
+                {
+                    dict.TryGetValue(id, out var cacheItem);
+                    result.Add(new KeyValuePair<Guid, SessionUnitSettingCacheItem>(id, cacheItem));
+                }
+
+                return result;
+            });
     }
 }

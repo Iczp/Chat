@@ -44,9 +44,9 @@ public class SessionUnitCacheAppService(
 
         var list = ObjectMapper.Map<List<SessionUnitCacheItem>, List<SessionUnitCacheDto>>(cacheList.ToList());
 
-        var unitIds = list.Select(x => x.Id).ToList();
+        var unitIds = list.Select(x => x.Id).Distinct().ToList();
 
-        var settingMap = await SessionUnitSettingManager.GetManyByCacheAsync(unitIds);
+        var settingMap = (await SessionUnitSettingManager.GetManyCacheAsync(unitIds)).ToDictionary(x => x.Key, x => x.Value);
 
         var destIdList = list.Where(x => x.DestinationId.HasValue).Select(x => x.DestinationId.Value).Distinct().ToList();
 
