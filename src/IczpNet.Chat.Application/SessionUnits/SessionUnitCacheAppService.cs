@@ -1,14 +1,16 @@
-﻿using IczpNet.AbpCommons.DataFilters;
-using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
 using IczpNet.Chat.SessionUnitSettings;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Users;
 
 
 namespace IczpNet.Chat.SessionUnits;
@@ -33,74 +35,217 @@ public class SessionUnitCacheAppService(
     protected virtual string FindPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.Find;
     protected virtual string GetCounterPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.GetCounter;
 
+    protected virtual Task<bool> ShouldLoadAllAsync(SessionUnitCacheItemGetListInput input)
+    {
+        // 排序字段中是否包含 Settings.* 或 Destination.*
+        var sortingFields = input.Sorting?
+            .Trim()
+            .Split(",")
+            .Select(x => x.Trim().Split(" ")[0]) ?? [];
+
+        var needLoadBySorting = sortingFields.Any(f =>
+               f.StartsWith($"{nameof(SessionUnitCacheDto.Settings)}.")
+            || f.StartsWith($"{nameof(SessionUnitCacheDto.Destination)}.")
+        );
+
+        return Task.FromResult(
+               !string.IsNullOrWhiteSpace(input.Keyword)  // 🔥搜索 Keyword 时一定需要全量加载
+            || needLoadBySorting
+        );
+    }
+
+    protected virtual async Task<IEnumerable<SessionUnitCacheItem>> GetAllListAsync(long ownerId)
+    {
+        return await SessionUnitCacheManager.GetOrSetListByOwnerAsync(
+           ownerId,
+           async (ownerId) =>
+               await SessionUnitManager.GetListByOwnerIdAsync(ownerId));
+    }
+
+    public static SessionUnitCacheDto MapToDto(SessionUnitCacheItem item)
+    {
+        return new SessionUnitCacheDto
+        {
+            Id = item.Id,
+            SessionId = item.SessionId,
+            OwnerId = item.OwnerId,
+            OwnerObjectType = item.OwnerObjectType,
+            DestinationId = item.DestinationId,
+            DestinationObjectType = item.DestinationObjectType,
+            IsStatic = item.IsStatic,
+            IsPublic = item.IsPublic,
+            IsVisible = item.IsVisible,
+            IsEnabled = item.IsEnabled,
+            ReadedMessageId = item.ReadedMessageId,
+            LastMessageId = item.LastMessageId,
+            PublicBadge = item.PublicBadge,
+            PrivateBadge = item.PrivateBadge,
+            RemindAllCount = item.RemindAllCount,
+            RemindMeCount = item.RemindMeCount,
+            FollowingCount = item.FollowingCount,
+            Ticks = item.Ticks,
+            Sorting = item.Sorting,
+        };
+    }
+
+    protected virtual async Task<IQueryable<SessionUnitCacheDto>> CreateQueryableAsync(SessionUnitCacheItemGetListInput input)
+    {
+        var allList = await GetAllListAsync(input.OwnerId);
+
+        var result = allList
+            .Select(ObjectMapper.Map<SessionUnitCacheItem, SessionUnitCacheDto>)
+            //.Select(MapToDto)
+            .ToList()
+            .AsQueryable();
+
+        var shouldLoadAll = await ShouldLoadAllAsync(input);
+
+        if (shouldLoadAll)
+        {
+            var allUnitIds = result.Select(x => x.Id).Distinct().ToList();
+            var settingMap = (await SessionUnitSettingManager.GetManyCacheAsync(allUnitIds))
+                .ToDictionary(x => x.Key, x => x.Value);
+
+            var allDestIds = result
+                .Where(x => x.DestinationId.HasValue)
+                .Select(x => x.DestinationId.Value)
+                .Distinct()
+                .ToList();
+
+            var allDestList = await ChatObjectManager.GetManyByCacheAsync(allDestIds);
+
+            var destMap = allDestList.ToDictionary(x => x.Id, x => x);
+
+            // 🤩 提前填充
+            foreach (var item in result)
+            {
+                item.Settings = settingMap.GetValueOrDefault(item.Id);
+                item.Destination = item.DestinationId.HasValue
+                    ? destMap.GetValueOrDefault(item.DestinationId.Value)
+                    : null;
+                item.SearchText = string.Join(" ",
+                    item.Destination?.Name ?? "",
+                    item.Settings?.MemberName ?? "",
+                    item.Settings?.Rename ?? ""
+                ).Replace("  ", " ").ToLower();
+            }
+        }
+        return result;
+    }
+
+
     public async Task<PagedResultDto<SessionUnitCacheDto>> GetListAsync(SessionUnitCacheItemGetListInput input)
     {
+        var queryable = await CreateQueryableAsync(input);
 
-        //var followingList = await FollowManager.GetFollowingIdListAsync(input.OwnerId);
-        var cacheList = await SessionUnitCacheManager.GetOrSetListByOwnerAsync(
-            input.OwnerId,
-            async (ownerId) =>
-                await SessionUnitManager.GetListByOwnerIdAsync(ownerId));
-
-        var list = ObjectMapper.Map<List<SessionUnitCacheItem>, List<SessionUnitCacheDto>>(cacheList.ToList());
-
-        var unitIds = list.Select(x => x.Id).Distinct().ToList();
-
-        var settingMap = (await SessionUnitSettingManager.GetManyCacheAsync(unitIds)).ToDictionary(x => x.Key, x => x.Value);
-
-        var destIdList = list.Where(x => x.DestinationId.HasValue).Select(x => x.DestinationId.Value).Distinct().ToList();
-
-        var destList = await ChatObjectManager.GetManyByCacheAsync(destIdList);
-
-        var destMap = destList.ToDictionary(x => x.Id, x => x);
-
-        foreach (var item in list)
-        {
-            item.Destination = item.DestinationId.HasValue ? destMap[item.DestinationId.Value] : null;
-            item.Settings = settingMap[item.Id] ?? null;
-        }
-
-        var query = list.AsQueryable()
+        var baseQuery = queryable
             .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
             .WhereIf(input.DestinationObjectType.HasValue, x => x.DestinationObjectType == input.DestinationObjectType)
-            //.WhereIf(input.IsKilled.HasValue, x => x.Setting.IsKilled == input.IsKilled)
-            //.WhereIf(input.IsCreator.HasValue, x => x.Setting.IsCreator == input.IsCreator)
             .WhereIf(input.MinMessageId.HasValue, x => x.LastMessageId >= input.MinMessageId)
             .WhereIf(input.MaxMessageId.HasValue, x => x.LastMessageId < input.MaxMessageId)
             .WhereIf(input.MinTicks.HasValue, x => x.Ticks >= input.MinTicks)
             .WhereIf(input.MaxTicks.HasValue, x => x.Ticks < input.MaxTicks)
-            //.WhereIf(input.IsTopping == true, x => x.Sorting > 0)
-            //.WhereIf(input.IsTopping == false, x => x.Sorting == 0)
-            //.WhereIf(input.IsContacts.HasValue, x => x.Setting.IsContacts == input.IsContacts)
-            //.WhereIf(input.IsImmersed.HasValue, x => x.Setting.IsImmersed == input.IsImmersed)
             .WhereIf(input.IsBadge.HasValue, x => x.PublicBadge > 0)
-
-            //@我
+            //@我、@所有人
             .WhereIf(input.IsRemind == true, x => (x.RemindAllCount + x.RemindMeCount) > 0)
             .WhereIf(input.IsRemind == false, x => (x.RemindAllCount + x.RemindMeCount) == 0)
-
-
-            //我关注的
-            //.WhereIf(input.IsFollowing.HasValue, x => x.FollowingCount > 0)
-            //.WhereIf(input.IsFollowing == true, x => x.FollowingList.Count > 0)
-            //.WhereIf(input.IsFollowing == false, x => x.FollowingList.Count == 0)
-
-            //关注我的
-            //.WhereIf(input.IsFollower == true, x => x.FollowerList.Count > 0)
-            //.WhereIf(input.IsFollower == false, x => x.FollowerList.Count == 0)
+            //搜索
+            .WhereIf(!string.IsNullOrWhiteSpace(input.Keyword), x => x.SearchText.Contains(input.Keyword.ToLower()))
             ;
 
-        var pagedList = await GetPagedListAsync(query, input);
+        var pagedList = await GetPagedListAsync(baseQuery, input);
 
+        // 分页后再按需加载 Settings & Destination
+        return await FillDataAsync(pagedList);
+    }
 
+    private async Task<PagedResultDto<SessionUnitCacheDto>> FillDataAsync(PagedResultDto<SessionUnitCacheDto> pagedList)
+    {
+        // fill Settings
+        var nullSettingsItems = pagedList.Items
+            .Where(x => x.Settings == null)
+            .ToList();
 
-        //foreach (var item in pagedList.Items)
-        //{
-        //    item.Settings = settingMap[item.Id] ?? null;
-        //    item.Destination = item.Item.DestinationId.HasValue ? destMap[item.Item.DestinationId.Value] ?? null : null;
-        //}
+        if (nullSettingsItems.Count != 0)
+        {
+            var unitIds = nullSettingsItems.Select(x => x.Id).Distinct().ToList();
+            var settingMap = (await SessionUnitSettingManager.GetManyCacheAsync(unitIds))
+                .ToDictionary(x => x.Key, x => x.Value);
+
+            foreach (var item in nullSettingsItems)
+            {
+                item.Settings = settingMap.GetValueOrDefault(item.Id);
+            }
+        }
+        // fill Destination
+        var nullDestItems = pagedList.Items
+            .Where(x => x.DestinationId.HasValue && x.Destination == null)
+            .ToList();
+
+        if (nullDestItems.Count != 0)
+        {
+            var destIds = nullDestItems.Select(x => x.DestinationId.Value).Distinct().ToList();
+            var destMap = (await ChatObjectManager.GetManyByCacheAsync(destIds))
+                .ToDictionary(x => x.Id, x => x);
+
+            foreach (var item in nullDestItems)
+            {
+                item.Destination = destMap.GetValueOrDefault(item.DestinationId.Value);
+            }
+        }
 
         return pagedList;
+    }
 
+    /// <summary>
+    /// 聊天对象角标总数
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    public async Task<long> GetBadgeAsync(long ownerId)
+    {
+        var allList = await GetAllListAsync(ownerId);
+
+        var hasBadgeList = allList.Where(x => x.PublicBadge > 0 || x.PrivateBadge > 0).ToList();
+
+        return allList.Sum(x => x.PublicBadge + x.PrivateBadge);
+    }
+
+    /// <summary>
+    /// 用户聊天对象角标列表
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <param name="isImmersed"></param>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
+    public async Task<List<BadgeDto>> GetBadgeByUserIdAsync([Required] Guid userId, bool? isImmersed = null)
+    {
+        var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(userId);
+
+        await CheckPolicyForUserAsync(chatObjectIdList, () => CheckPolicyAsync(GetBadgePolicyName));
+
+        var result = new List<BadgeDto>();
+
+        foreach (var chatObjectId in chatObjectIdList)
+        {
+            result.Add(new BadgeDto()
+            {
+                AppUserId = userId,
+                ChatObjectId = chatObjectId,
+                Badge = (int)await GetBadgeAsync(chatObjectId)
+            });
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// 登录用户聊天对象角标列表
+    /// </summary>
+    /// <param name="isImmersed"></param>
+    /// <returns></returns>
+    public Task<List<BadgeDto>> GetBadgeByCurrentUserAsync(bool? isImmersed = null)
+    {
+        return GetBadgeByUserIdAsync(CurrentUser.GetId(), isImmersed);
     }
 }

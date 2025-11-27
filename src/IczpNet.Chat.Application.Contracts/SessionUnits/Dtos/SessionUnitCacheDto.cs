@@ -1,11 +1,14 @@
 ﻿using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
+using System.Text.Json.Serialization;
 
 namespace IczpNet.Chat.SessionUnits.Dtos;
 
-public class SessionUnitCacheDto: SessionUnitCacheItem
+public class SessionUnitCacheDto : SessionUnitCacheItem
 {
+    [JsonIgnore]
+    public virtual string SearchText { get; set; }
 
     public virtual SessionUnitSettingCacheItem Settings { get; set; }
 

@@ -1,3 +1,4 @@
+using AutoMapper.Internal;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.SessionUnits;
@@ -264,9 +265,9 @@ public class SessionUnitCacheManager(
 
         var unitMap = await GetManyAsync(unitList.Select(x => x.Id));
 
-        var cachedUnits = unitMap.Where(x => x.Value != null).ToDictionary();
+        var cachedUnits = unitMap.Where(x => x.Value != null).Select(x => x.Value).ToList();
 
-        var unCachedUnits = unitList.ExceptBy(cachedUnits.Keys, x => x.Id).ToList();
+        var unCachedUnits = unitList.ExceptBy(cachedUnits.Select(x => x.Id), x => x.Id).ToList();
 
         var zsetOwnerTasks = new List<Task<bool>>();
 
@@ -300,7 +301,7 @@ public class SessionUnitCacheManager(
 
         if (boolHashTasks.Count > 0) await Task.WhenAll(boolHashTasks);
 
-        var list = unCachedUnits.Concat(unCachedUnits);
+        var list = cachedUnits.Concat(unCachedUnits);
 
         return list;
     }

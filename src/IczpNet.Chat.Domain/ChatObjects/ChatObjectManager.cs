@@ -189,17 +189,17 @@ public class ChatObjectManager(IChatObjectRepository repository) : TreeManager<C
 
     public virtual async Task<List<long>> GetIdListByUserIdAsync(Guid userId)
     {
-        return (await Repository.GetQueryableAsync())
-            .Where(x => x.AppUserId == userId)
-            .Select(x => x.Id)
-            .ToList();
-        //return await UserChatObjectCache.GetOrAddAsync(userId, async () =>
-        //{
-        //    return (await Repository.GetQueryableAsync())
+        //return (await Repository.GetQueryableAsync())
         //    .Where(x => x.AppUserId == userId)
         //    .Select(x => x.Id)
         //    .ToList();
-        //});
+        return await UserChatObjectCache.GetOrAddAsync(userId, async () =>
+        {
+            return (await Repository.GetQueryableAsync())
+            .Where(x => x.AppUserId == userId)
+            .Select(x => x.Id)
+            .ToList();
+        });
     }
 
     public virtual async Task<List<long>> GetIdListByNameAsync(List<string> nameList)
@@ -352,6 +352,9 @@ public class ChatObjectManager(IChatObjectRepository repository) : TreeManager<C
         var count = await SessionUnitRepository.BatchUpdateAppUserIdAsync(entity.Id, appUserId);
 
         Logger.LogInformation($"SessionUnitRepository.BatchUpdateAppUserIdAsync:{count}");
+
+        // Clear Cache
+        await UserChatObjectCache.RemoveAsync(appUserId);
 
         return await base.UpdateAsync(entity, entity.ParentId, isUnique: false);
     }
