@@ -66,11 +66,11 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
         CreateMap<SessionUnit, SessionUnitCacheItem>();
 
         CreateMap<SessionUnitCacheItem, SessionUnitCacheDto>(MemberList.None)
-            //.Ignore(x => x.Settings)
+            //.Ignore(x => x.Setting)
             //.Ignore(x => x.Destination)
             ;
         CreateMap<SessionUnitCacheDto, SessionUnitCacheDto>()
-            .ForMember(x => x.Settings, opt => opt.MapFrom(y => y.Settings))
+            .ForMember(x => x.Setting, opt => opt.MapFrom(y => y.Setting))
             .ForMember(x => x.Destination, opt => opt.MapFrom(y => y.Destination))
             .PreserveReferences()
             .MaxDepth(3);

@@ -12,6 +12,7 @@ using IczpNet.Chat.SessionUnitSettings;
 using IczpNet.Chat.TextTemplates;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -60,7 +61,12 @@ public class SessionUnitManager(
     protected IFollowManager FollowManager => LazyServiceProvider.LazyGetRequiredService<IFollowManager>();
     protected IChatObjectRepository ChatObjectRepository { get; } = chatObjectRepository;
     protected IMessageSender MessageSender { get; } = messageSender;
-    protected IObjectMapper ObjectMapper { get; } = objectMapper;
+    //protected IObjectMapper ObjectMapper { get; } = objectMapper;
+    protected Type? ObjectMapperContext { get; set; }
+    protected IObjectMapper ObjectMapper => LazyServiceProvider.LazyGetService<IObjectMapper>(provider =>
+        ObjectMapperContext == null
+            ? provider.GetRequiredService<IObjectMapper>()
+            : (IObjectMapper)provider.GetRequiredService(typeof(IObjectMapper<>).MakeGenericType(ObjectMapperContext)));
     public IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
     public ISessionGenerator SessionGenerator { get; } = sessionGenerator;
     public ISessionManager SessionManager { get; } = sessionManager;
@@ -651,7 +657,7 @@ public class SessionUnitManager(
     {
         return SessionUnitListCache.GetOrAddAsync($"{new SessionUnitCacheKey(sessionUnitList.Select(x => x.Id))}", () =>
         {
-            return Task.FromResult(ToCacheItem(sessionUnitList.AsQueryable()));
+            return Task.FromResult(ToCacheItem(sessionUnitList.AsQueryable()).ToList());
         });
     }
 
@@ -684,7 +690,7 @@ public class SessionUnitManager(
 
                 var sessionUnitList = new List<SessionUnit>() { senderSessionUnit, receiverSessionUnit };
 
-                return ToCacheItem(sessionUnitList.Where(x => x != null).AsQueryable());
+                return ToCacheItem(sessionUnitList.Where(x => x != null).AsQueryable()).ToList();
             }
             return await GetListBySessionIdAsync(message.SessionId.Value);
 
@@ -697,7 +703,12 @@ public class SessionUnitManager(
         await SessionUnitListCache.SetAsync(cacheKey, sessionUnitList, options, hideErrors, considerUow, token);
     }
 
-    private static List<SessionUnitCacheItem> ToCacheItem(IQueryable<SessionUnit> qurey)
+    private IEnumerable<SessionUnitCacheItem> ToCacheItem(IQueryable<SessionUnit> qurey)
+    {
+        return qurey.Select(ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>);
+    }
+
+    private static List<SessionUnitCacheItem> ToCacheItemV1(IQueryable<SessionUnit> qurey)
     {
         return [.. qurey.Select(x => new SessionUnitCacheItem()
         {
@@ -729,7 +740,7 @@ public class SessionUnitManager(
         var list = ToCacheItem((await SessionUnitReadOnlyRepository.GetQueryableAsync())
                 .Where(SessionUnit.GetActivePredicate(Clock.Now))
                 .Where(x => x.SessionId == sessionId)
-            );
+            ).ToList();
 
         await SessionUnitCountCache.SetAsync(sessionId, list.Where(x => x.IsPublic).Count().ToString());
 
@@ -742,7 +753,7 @@ public class SessionUnitManager(
         var list = ToCacheItem((await SessionUnitReadOnlyRepository.GetQueryableAsync())
                 .Where(SessionUnit.GetActivePredicate(Clock.Now))
                 .Where(x => chatObjectIdList.Contains(x.OwnerId))
-            );
+            ).ToList();
         return list;
     }
 
@@ -752,7 +763,7 @@ public class SessionUnitManager(
         var list = ToCacheItem((await SessionUnitReadOnlyRepository.GetQueryableAsync())
                 .Where(SessionUnit.GetActivePredicate(Clock.Now))
                 .Where(x => x.OwnerId == ownerId)
-            );
+            ).ToList();
         return list;
     }
 

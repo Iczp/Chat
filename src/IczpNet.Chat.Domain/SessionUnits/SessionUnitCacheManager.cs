@@ -1,7 +1,9 @@
 using AutoMapper.Internal;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.RedisMapping;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using System;
@@ -15,13 +17,12 @@ using Volo.Abp.Domain.Services;
 namespace IczpNet.Chat.SessionUnits;
 
 public class SessionUnitCacheManager(
-    ISessionUnitManager sessionUnitManager,
     IOptions<AbpDistributedCacheOptions> options,
     IConnectionMultiplexer connection) : DomainService, ISessionUnitCacheManager
 {
     protected readonly IDatabase Database = connection.GetDatabase();
 
-    public ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
+    public ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
     public IOptions<AbpDistributedCacheOptions> Options { get; } = options;
 
     private readonly TimeSpan? _cacheExpire = TimeSpan.FromDays(7);
@@ -143,6 +144,11 @@ public class SessionUnitCacheManager(
     #region Initialize / Ensure helpers
 
     private static HashEntry[] MapToHashEntries(SessionUnitCacheItem unit)
+    {
+
+        return RedisMapper.ToHashEntries(unit);
+    }
+    private static HashEntry[] MapToHashEntriesV1(SessionUnitCacheItem unit)
     {
         var entries = new HashEntry[]
             {
@@ -342,120 +348,6 @@ public class SessionUnitCacheManager(
             .OrderByDescending(x => x.Sorting)
             .ThenByDescending(x => x.LastMessageId);
     }
-    /// <summary>
-    /// Get unitMap of SessionUnitCacheItem by ownerId. Units argument is the DB-supplied initial unitMap (may be from DB).
-    /// Redis values take precedence when present. After merging, Redis is backfilled with merged values and owner zset updated.
-    /// </summary>
-    public async Task<List<SessionUnitCacheItem>> GetListByOwnerIdAsync(long ownerId, IEnumerable<SessionUnitCacheItem> units)
-    {
-        var unitList = units?.ToList() ?? [];
-        if (unitList.Count == 0) return [];
-
-        string ownerSortedKey = OwnerSortedSetKey(ownerId);
-
-        // read owner zset (may be empty)
-        var redisZset = await Database.SortedSetRangeByScoreWithScoresAsync(
-            key: ownerSortedKey,
-            order: Order.Descending
-            );
-        var redisMap = redisZset.ToDictionary(x => Guid.Parse(x.Element), x => x.Score);
-
-        // batch read unitId hashes
-        var batch = Database.CreateBatch();
-        var hashTasks = new Dictionary<Guid, Task<HashEntry[]>>();
-
-        foreach (var unit in unitList)
-        {
-            // ensure we have a valid session id in the DB item; if missing skip
-            if (!unit.SessionId.HasValue) continue;
-            hashTasks[unit.Id] = batch.HashGetAllAsync(UnitKey(unit.Id));
-        }
-
-        batch.Execute();
-        await Task.WhenAll(hashTasks.Values);
-
-        var result = new List<SessionUnitCacheItem>(unitList.Count);
-        var ownerZsetUpdateTasks = new List<Task<bool>>();
-        var hashSetBackfillTasks = new List<Task>();
-
-        foreach (var unit in unitList)
-        {
-            if (!unit.SessionId.HasValue) continue;
-            var id = unit.Id;
-            var entries = hashTasks.ContainsKey(id) ? hashTasks[id].Result : [];
-
-            // defaults from DB
-            double sorting = unit.Sorting;
-            long lastMessageId = unit.LastMessageId ?? 0;
-
-            // override from redis hash if present
-            if (entries != null && entries.Length > 0)
-            {
-                sorting = TryGetDouble(entries, F_Sorting, sorting);
-                lastMessageId = TryGetLong(entries, F_LastMessageId, lastMessageId);
-            }
-
-            // override from owner zset score if present
-            if (redisMap.TryGetValue(id, out var score))
-            {
-                // score = sorting * MULT + lastMessageId
-                var sortingFromScore = Math.Floor(score / OWNER_SCORE_MULT);
-                var lastFromScore = (long)(score % OWNER_SCORE_MULT);
-                if (sortingFromScore > 0) sorting = sortingFromScore;
-                if (lastFromScore > 0) lastMessageId = lastFromScore;
-            }
-
-            var item = new SessionUnitCacheItem
-            {
-                Id = id,
-                SessionId = unit.SessionId,
-                OwnerId = ownerId,
-                OwnerObjectType = unit.OwnerObjectType,
-                DestinationId = unit.DestinationId,
-                DestinationObjectType = unit.DestinationObjectType,
-                IsStatic = unit.IsStatic,
-                IsPublic = unit.IsPublic,
-                IsVisible = unit.IsVisible,
-                IsEnabled = unit.IsEnabled,
-                ReadedMessageId = unit.ReadedMessageId,
-                PublicBadge = unit.PublicBadge,
-                PrivateBadge = unit.PrivateBadge,
-                RemindAllCount = unit.RemindAllCount,
-                RemindMeCount = unit.RemindMeCount,
-                FollowingCount = unit.FollowingCount,
-                Ticks = unit.Ticks,
-                Sorting = sorting,
-                LastMessageId = lastMessageId,
-            };
-
-            result.Add(item);
-
-            // backfill merged values to Redis (hash + owner zset)
-            var unitKey = UnitKey(id);
-            var hashEntries = MapToHashEntries(unit);
-
-            hashSetBackfillTasks.Add(Database.HashSetAsync(unitKey, hashEntries));
-
-            double composite = item.Sorting * OWNER_SCORE_MULT + item.LastMessageId ?? 0;
-            ownerZsetUpdateTasks.Add(Database.SortedSetAddAsync(ownerSortedKey, id.ToString(), composite));
-
-            // ensure expire
-            _ = Database.KeyExpireAsync(unitKey, _cacheExpire);
-        }
-
-        if (hashSetBackfillTasks.Count > 0) await Task.WhenAll(hashSetBackfillTasks);
-        if (ownerZsetUpdateTasks.Count > 0) await Task.WhenAll(ownerZsetUpdateTasks);
-
-        // final sort for return
-        result = result.OrderByDescending(x => x.Sorting).ThenByDescending(x => x.LastMessageId).ToList();
-
-        if (_cacheExpire.HasValue)
-        {
-            await Database.KeyExpireAsync(ownerSortedKey, _cacheExpire);
-        }
-
-        return result;
-    }
 
     #endregion
 
@@ -485,7 +377,8 @@ public class SessionUnitCacheManager(
 
             var entries = tasks[i].Result;
             var unitId = unitIdList[i];
-            dict[unitId] = MapHashEntriesToCacheItem(entries);
+            //dict[unitId] = MapHashEntriesToCacheItem(entries);
+            dict[unitId] = RedisMapper.ToObject<SessionUnitCacheItem>(entries);
         }
 
         return dict;
@@ -716,6 +609,29 @@ public class SessionUnitCacheManager(
         batch.Execute();
 
         await Task.WhenAll(setTasks);
+    }
+
+    public async Task<SessionUnitCacheItem> UnitTestAsync()
+    {
+        var item = new SessionUnitCacheItem
+        {
+            PublicBadge = 5,
+            Setting = new SessionUnitSettingCacheItem
+            {
+                HistoryLastTime = DateTime.UtcNow,
+                JoinWay = JoinWays.Invitation,
+            },
+        };
+
+        var entries = RedisMapper.ToHashEntries(item); // or ToHashEntries_V2 is provided as robust flatten (see file)
+
+        var key = "IM:Mappers:unit-test";
+        await Database.HashSetAsync(key, entries);
+
+        var entries2 = await Database.HashGetAllAsync(key);
+        var item2 = RedisMapper.ToObject<SessionUnitCacheItem>(entries2);
+
+        return item2;
     }
 
     #endregion

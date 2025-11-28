@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.Enums;
+using IczpNet.Chat.SessionUnitSettings;
 using System;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits;
@@ -74,4 +75,5 @@ public class SessionUnitCacheItem : ISessionUnit
 
     public virtual double Sorting { get; set; }
 
+    public virtual SessionUnitSettingCacheItem Setting { get; set; }
 }

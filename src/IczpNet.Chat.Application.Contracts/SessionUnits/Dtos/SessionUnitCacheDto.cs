@@ -10,7 +10,7 @@ public class SessionUnitCacheDto : SessionUnitCacheItem
     [JsonIgnore]
     public virtual string SearchText { get; set; }
 
-    public virtual SessionUnitSettingCacheItem Settings { get; set; }
+    public virtual SessionUnitSettingCacheItem Setting { get; set; }
 
     public virtual ChatObjectInfo Destination { get; set; }
 }

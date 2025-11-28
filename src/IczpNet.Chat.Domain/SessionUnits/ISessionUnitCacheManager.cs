@@ -24,12 +24,12 @@ public interface ISessionUnitCacheManager
 
     Task<IEnumerable<SessionUnitCacheItem>> GetListByOwnerIdAsync(long ownerId);
 
-    Task<List<SessionUnitCacheItem>> GetListByOwnerIdAsync(long ownerId, IEnumerable<SessionUnitCacheItem> units);
-
     Task BatchIncrementBadgeAndSetLastMessageAsync(Message message, TimeSpan? expire = null);
 
     Task UpdateCountersync(SessionUnitCounterInfo counter);
 
+
+    Task<SessionUnitCacheItem> UnitTestAsync();
 
     //Task<long?> GetBadgeAsync(Guid sessionId, Guid sessionUnitId);
     //Task<bool> SetBadgeAsync(Guid sessionId, Guid sessionUnitId, long badge);

@@ -4,6 +4,7 @@ using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
 using IczpNet.Chat.SessionUnitSettings;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -37,14 +38,14 @@ public class SessionUnitCacheAppService(
 
     protected virtual Task<bool> ShouldLoadAllAsync(SessionUnitCacheItemGetListInput input)
     {
-        // 排序字段中是否包含 Settings.* 或 Destination.*
+        // 排序字段中是否包含 Setting.* 或 Destination.*
         var sortingFields = input.Sorting?
             .Trim()
             .Split(",")
             .Select(x => x.Trim().Split(" ")[0]) ?? [];
 
         var needLoadBySorting = sortingFields.Any(f =>
-               f.StartsWith($"{nameof(SessionUnitCacheDto.Settings)}.")
+               f.StartsWith($"{nameof(SessionUnitCacheDto.Setting)}.")
             || f.StartsWith($"{nameof(SessionUnitCacheDto.Destination)}.")
         );
 
@@ -102,9 +103,9 @@ public class SessionUnitCacheAppService(
 
         if (shouldLoadAll)
         {
-            var allUnitIds = result.Select(x => x.Id).Distinct().ToList();
-            var settingMap = (await SessionUnitSettingManager.GetManyCacheAsync(allUnitIds))
-                .ToDictionary(x => x.Key, x => x.Value);
+            //var allUnitIds = result.Select(x => x.Id).Distinct().ToList();
+            //var settingMap = (await SessionUnitSettingManager.GetManyCacheAsync(allUnitIds))
+            //    .ToDictionary(x => x.Key, x => x.Value);
 
             var allDestIds = result
                 .Where(x => x.DestinationId.HasValue)
@@ -119,14 +120,14 @@ public class SessionUnitCacheAppService(
             // 🤩 提前填充
             foreach (var item in result)
             {
-                item.Settings = settingMap.GetValueOrDefault(item.Id);
+                //item.Setting = settingMap.GetValueOrDefault(item.Id);
                 item.Destination = item.DestinationId.HasValue
                     ? destMap.GetValueOrDefault(item.DestinationId.Value)
                     : null;
                 item.SearchText = string.Join(" ",
                     item.Destination?.Name ?? "",
-                    item.Settings?.MemberName ?? "",
-                    item.Settings?.Rename ?? ""
+                    item.Setting?.MemberName ?? "",
+                    item.Setting?.Rename ?? ""
                 ).Replace("  ", " ").ToLower();
             }
         }
@@ -155,15 +156,19 @@ public class SessionUnitCacheAppService(
 
         var pagedList = await GetPagedListAsync(baseQuery, input);
 
-        // 分页后再按需加载 Settings & Destination
-        return await FillDataAsync(pagedList);
+        // 分页后再按需加载 Setting & Destination
+        await FillSettingAsync(pagedList);
+
+        await FillDestinationAsync(pagedList);
+
+        return pagedList;
     }
 
-    private async Task<PagedResultDto<SessionUnitCacheDto>> FillDataAsync(PagedResultDto<SessionUnitCacheDto> pagedList)
+    private async Task<PagedResultDto<SessionUnitCacheDto>> FillSettingAsync(PagedResultDto<SessionUnitCacheDto> pagedList)
     {
-        // fill Settings
+        // fill Setting
         var nullSettingsItems = pagedList.Items
-            .Where(x => x.Settings == null)
+            .Where(x => x.Setting == null)
             .ToList();
 
         if (nullSettingsItems.Count != 0)
@@ -174,9 +179,14 @@ public class SessionUnitCacheAppService(
 
             foreach (var item in nullSettingsItems)
             {
-                item.Settings = settingMap.GetValueOrDefault(item.Id);
+                item.Setting = settingMap.GetValueOrDefault(item.Id);
             }
         }
+        return pagedList;
+    }
+
+    private async Task<PagedResultDto<SessionUnitCacheDto>> FillDestinationAsync(PagedResultDto<SessionUnitCacheDto> pagedList)
+    {
         // fill Destination
         var nullDestItems = pagedList.Items
             .Where(x => x.DestinationId.HasValue && x.Destination == null)
@@ -193,7 +203,6 @@ public class SessionUnitCacheAppService(
                 item.Destination = destMap.GetValueOrDefault(item.DestinationId.Value);
             }
         }
-
         return pagedList;
     }
 
@@ -247,5 +256,15 @@ public class SessionUnitCacheAppService(
     public Task<List<BadgeDto>> GetBadgeByCurrentUserAsync(bool? isImmersed = null)
     {
         return GetBadgeByUserIdAsync(CurrentUser.GetId(), isImmersed);
+    }
+
+    /// <summary>
+    /// UnitTest
+    /// </summary>
+    /// <returns></returns>
+    [HttpGet]
+    public Task<SessionUnitCacheItem> UnitTestAsync()
+    {
+        return SessionUnitCacheManager.UnitTestAsync();
     }
 }
