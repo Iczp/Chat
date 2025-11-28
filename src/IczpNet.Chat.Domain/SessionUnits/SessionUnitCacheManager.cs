@@ -55,7 +55,7 @@ public class SessionUnitCacheManager(
     private static string F_IsPublic => nameof(SessionUnitCacheItem.IsPublic);
     private static string F_IsVisible => nameof(SessionUnitCacheItem.IsVisible);
     private static string F_IsEnabled => nameof(SessionUnitCacheItem.IsEnabled);
-    private static string F_ReadedMessageId => nameof(SessionUnitCacheItem.ReadedMessageId);
+    //private static string F_ReadedMessageId => nameof(SessionUnitCacheItem.ReadedMessageId);
     private static string F_LastMessageId => nameof(SessionUnitCacheItem.LastMessageId);
     private static string F_PublicBadge => nameof(SessionUnitCacheItem.PublicBadge);
     private static string F_PrivateBadge => nameof(SessionUnitCacheItem.PrivateBadge);
@@ -64,6 +64,9 @@ public class SessionUnitCacheManager(
     private static string F_FollowingCount => nameof(SessionUnitCacheItem.FollowingCount);
     private static string F_Ticks => nameof(SessionUnitCacheItem.Ticks);
     private static string F_Sorting => nameof(SessionUnitCacheItem.Sorting);
+
+    private static string F_Setting_ReadedMessageId => $"{nameof(SessionUnitCacheItem.Setting)}.{nameof(SessionUnitCacheItem.Setting.ReadedMessageId)}";
+    
     #endregion
 
     #region Safe helpers (avoid null values)
@@ -162,7 +165,7 @@ public class SessionUnitCacheManager(
                 new HashEntry(F_IsPublic, Safe(unit.IsPublic ? 1 : 0)),
                 new HashEntry(F_IsVisible, Safe(unit.IsVisible ? 1 : 0)),
                 new HashEntry(F_IsEnabled, Safe(unit.IsEnabled ? 1 : 0)),
-                new HashEntry(F_ReadedMessageId, Safe(unit.ReadedMessageId)),
+                //new HashEntry(F_ReadedMessageId, Safe(unit.ReadedMessageId)),
                 new HashEntry(F_LastMessageId, Safe(unit.LastMessageId)),
                 new HashEntry(F_PublicBadge, Safe(unit.PublicBadge)),
                 new HashEntry(F_PrivateBadge, Safe(unit.PrivateBadge)),
@@ -415,7 +418,7 @@ public class SessionUnitCacheManager(
             else if (name == F_IsPublic && e.Value.HasValue) item.IsPublic = (int)e.Value == 1;
             else if (name == F_IsVisible && e.Value.HasValue) item.IsVisible = (int)e.Value == 1;
             else if (name == F_IsEnabled && e.Value.HasValue) item.IsEnabled = (int)e.Value == 1;
-            else if (name == F_ReadedMessageId && e.Value.HasValue) item.ReadedMessageId = TryGetLong(entries, F_ReadedMessageId, 0);
+            //else if (name == F_ReadedMessageId && e.Value.HasValue) item.ReadedMessageId = TryGetLong(entries, F_ReadedMessageId, 0);
             else if (name == F_LastMessageId && e.Value.HasValue) item.LastMessageId = TryGetLong(entries, F_LastMessageId, 0);
             else if (name == F_PublicBadge && e.Value.HasValue) item.PublicBadge = TryGetInt(entries, F_PublicBadge, 0);
             else if (name == F_PrivateBadge && e.Value.HasValue) item.PrivateBadge = TryGetInt(entries, F_PrivateBadge, 0);
@@ -561,10 +564,10 @@ public class SessionUnitCacheManager(
         return r1;//&& r2;
     }
 
-    public async Task UpdateReadedMessageIdAsync(Guid sessionId, Guid unitId, long readedMessageId, TimeSpan? expire = null)
+    public async Task UpdateReadedMessageIdAsync(Guid unitId, long readedMessageId, TimeSpan? expire = null)
     {
         var key = UnitKey(unitId);
-        await Database.HashSetAsync(key, F_ReadedMessageId, readedMessageId);
+        await Database.HashSetAsync(key, F_Setting_ReadedMessageId, readedMessageId);
         if (expire.HasValue) await Database.KeyExpireAsync(key, expire.Value);
     }
 
@@ -598,7 +601,8 @@ public class SessionUnitCacheManager(
             batch.HashSetAsync(unitKey, F_PrivateBadge, counter.PrivateBadge),
             batch.HashSetAsync(unitKey, F_RemindAllCount, counter.RemindAllCount),
             batch.HashSetAsync(unitKey, F_RemindMeCount, counter.RemindMeCount),
-            batch.HashSetAsync(unitKey, F_FollowingCount, counter.FollowingCount)
+            batch.HashSetAsync(unitKey, F_FollowingCount, counter.FollowingCount),
+            batch.HashSetAsync(unitKey, F_Setting_ReadedMessageId, counter.ReadedMessageId)
         };
 
         if (_cacheExpire.HasValue)

@@ -77,7 +77,7 @@ public class SessionUnitCacheAppService(
             IsPublic = item.IsPublic,
             IsVisible = item.IsVisible,
             IsEnabled = item.IsEnabled,
-            ReadedMessageId = item.ReadedMessageId,
+            //ReadedMessageId = item.ReadedMessageId,
             LastMessageId = item.LastMessageId,
             PublicBadge = item.PublicBadge,
             PrivateBadge = item.PrivateBadge,

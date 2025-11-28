@@ -57,7 +57,7 @@ public class SessionUnitCacheItem : ISessionUnit
     /// </summary>
     public virtual bool IsEnabled { get; set; }
 
-    public virtual long? ReadedMessageId { get; set; }
+    //public virtual long? ReadedMessageId { get; set; }
 
     public virtual long? LastMessageId { get; set; }
 
