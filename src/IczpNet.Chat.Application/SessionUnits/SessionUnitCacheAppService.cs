@@ -2,6 +2,8 @@
 using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Follows;
+using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
@@ -22,10 +24,12 @@ namespace IczpNet.Chat.SessionUnits;
 /// 会话单元
 /// </summary>
 public class SessionUnitCacheAppService(
+    IMessageRepository messageRepository,
     ISessionUnitSettingManager sessionUnitSettingManager,
     IFollowManager followManager,
     ISessionUnitCacheManager sessionUnitCacheManager) : ChatAppService, ISessionUnitCacheAppService
 {
+    public IMessageRepository MessageRepository { get; } = messageRepository;
     public ISessionUnitSettingManager SessionUnitSettingManager { get; } = sessionUnitSettingManager;
     public IFollowManager FollowManager { get; } = followManager;
     public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
@@ -142,49 +146,71 @@ public class SessionUnitCacheAppService(
 
         await FillDestinationAsync(pagedList);
 
+        await FillLastMessageAsync(pagedList);
+
         return pagedList;
     }
 
-    private async Task<PagedResultDto<SessionUnitCacheDto>> FillSettingAsync(PagedResultDto<SessionUnitCacheDto> pagedList)
+    private async Task FillLastMessageAsync(PagedResultDto<SessionUnitCacheDto> pagedList)
+    {
+        // fill Setting
+        var messageIdList = pagedList.Items
+            .Where(x => x.LastMessageId.HasValue)
+            .Select(x => x.LastMessageId)
+            .ToList();
+        if (messageIdList.Count == 0)
+        {
+            return;
+        }
+        var queryable = await MessageRepository.GetQueryableAsync();
+        var messages = await MessageRepository.GetListAsync(x => messageIdList.Contains(x.Id));
+        var messageMap = messages
+            .Select(ObjectMapper.Map<Message, MessageOwnerDto>)
+            .ToDictionary(x => x.Id, x => x);
+        foreach (var item in pagedList.Items)
+        {
+            item.LastMessage = item.LastMessageId.HasValue ? messageMap.GetValueOrDefault(item.LastMessageId.Value) : null;
+        }
+    }
+
+    private async Task FillSettingAsync(PagedResultDto<SessionUnitCacheDto> pagedList)
     {
         // fill Setting
         var nullSettingsItems = pagedList.Items
             .Where(x => x.Setting == null)
             .ToList();
-
-        if (nullSettingsItems.Count != 0)
+        if (nullSettingsItems.Count == 0)
         {
-            var unitIds = nullSettingsItems.Select(x => x.Id).Distinct().ToList();
-            var settingMap = (await SessionUnitSettingManager.GetManyCacheAsync(unitIds))
-                .ToDictionary(x => x.Key, x => x.Value);
-
-            foreach (var item in nullSettingsItems)
-            {
-                item.Setting = settingMap.GetValueOrDefault(item.Id);
-            }
+            return;
         }
-        return pagedList;
+        var unitIds = nullSettingsItems.Select(x => x.Id).Distinct().ToList();
+        var settingMap = (await SessionUnitSettingManager.GetManyCacheAsync(unitIds))
+            .ToDictionary(x => x.Key, x => x.Value);
+
+        foreach (var item in nullSettingsItems)
+        {
+            item.Setting = settingMap.GetValueOrDefault(item.Id);
+        }
     }
 
-    private async Task<PagedResultDto<SessionUnitCacheDto>> FillDestinationAsync(PagedResultDto<SessionUnitCacheDto> pagedList)
+    private async Task FillDestinationAsync(PagedResultDto<SessionUnitCacheDto> pagedList)
     {
         // fill Destination
         var nullDestItems = pagedList.Items
             .Where(x => x.DestinationId.HasValue && x.Destination == null)
             .ToList();
-
-        if (nullDestItems.Count != 0)
+        if (nullDestItems.Count == 0)
         {
-            var destIds = nullDestItems.Select(x => x.DestinationId.Value).Distinct().ToList();
-            var destMap = (await ChatObjectManager.GetManyByCacheAsync(destIds))
-                .ToDictionary(x => x.Id, x => x);
-
-            foreach (var item in nullDestItems)
-            {
-                item.Destination = destMap.GetValueOrDefault(item.DestinationId.Value);
-            }
+            return;
         }
-        return pagedList;
+        var destIds = nullDestItems.Select(x => x.DestinationId.Value).Distinct().ToList();
+        var destMap = (await ChatObjectManager.GetManyByCacheAsync(destIds))
+            .ToDictionary(x => x.Id, x => x);
+
+        foreach (var item in nullDestItems)
+        {
+            item.Destination = destMap.GetValueOrDefault(item.DestinationId.Value);
+        }
     }
 
     public async Task<SessionUnitCacheDto> GetAsync(Guid id)
