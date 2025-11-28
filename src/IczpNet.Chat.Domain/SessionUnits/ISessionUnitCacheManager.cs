@@ -24,6 +24,8 @@ public interface ISessionUnitCacheManager
 
     Task<IEnumerable<SessionUnitCacheItem>> GetListByOwnerIdAsync(long ownerId);
 
+    Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetManyAsync(IEnumerable<Guid> unitIds);
+
     Task BatchIncrementBadgeAndSetLastMessageAsync(Message message, TimeSpan? expire = null);
 
     Task UpdateCountersync(SessionUnitCounterInfo counter);

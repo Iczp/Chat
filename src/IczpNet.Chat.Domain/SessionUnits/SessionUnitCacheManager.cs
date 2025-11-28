@@ -66,7 +66,7 @@ public class SessionUnitCacheManager(
     private static string F_Sorting => nameof(SessionUnitCacheItem.Sorting);
 
     private static string F_Setting_ReadedMessageId => $"{nameof(SessionUnitCacheItem.Setting)}.{nameof(SessionUnitCacheItem.Setting.ReadedMessageId)}";
-    
+
     #endregion
 
     #region Safe helpers (avoid null values)
@@ -347,7 +347,7 @@ public class SessionUnitCacheManager(
         var redisMap = redisZset.ToDictionary(x => Guid.Parse(x.Element), x => x.Score);
         var unitIdList = redisMap.Keys.ToList();
         var listMap = await GetManyAsync(unitIdList);
-        return listMap.Values
+        return listMap.Select(x => x.Value)
             .OrderByDescending(x => x.Sorting)
             .ThenByDescending(x => x.LastMessageId);
     }
@@ -356,7 +356,7 @@ public class SessionUnitCacheManager(
 
     #region Map / GetMany
 
-    public async Task<IDictionary<Guid, SessionUnitCacheItem>> GetManyAsync(IEnumerable<Guid> unitIds)
+    public async Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetManyAsync(IEnumerable<Guid> unitIds)
     {
         var unitIdList = unitIds?.ToList();
         var batch = Database.CreateBatch();
@@ -373,18 +373,18 @@ public class SessionUnitCacheManager(
 
         await Task.WhenAll(tasks);
 
-        var dict = new Dictionary<Guid, SessionUnitCacheItem>(unitIdList.Count);
+        var arr = new KeyValuePair<Guid, SessionUnitCacheItem>[unitIdList.Count];
 
         for (int i = 0; i < unitIdList.Count; i++)
         {
-
             var entries = tasks[i].Result;
             var unitId = unitIdList[i];
-            //dict[unitId] = MapHashEntriesToCacheItem(entries);
-            dict[unitId] = RedisMapper.ToObject<SessionUnitCacheItem>(entries);
+            //arr[unitId] = MapHashEntriesToCacheItem(entries);
+            var val = RedisMapper.ToObject<SessionUnitCacheItem>(entries);
+            arr[i] = new KeyValuePair<Guid, SessionUnitCacheItem>(unitId, val);
         }
 
-        return dict;
+        return arr;
     }
 
     private static SessionUnitCacheItem MapHashEntriesToCacheItem(HashEntry[] entries)

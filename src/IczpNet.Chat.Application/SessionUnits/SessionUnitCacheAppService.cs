@@ -1,4 +1,6 @@
-﻿using IczpNet.Chat.BaseAppServices;
+﻿using AutoMapper.Internal.Mappers;
+using IczpNet.AbpCommons;
+using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionUnits;
@@ -63,30 +65,10 @@ public class SessionUnitCacheAppService(
                await SessionUnitManager.GetListByOwnerIdAsync(ownerId));
     }
 
-    public static SessionUnitCacheDto MapToDto(SessionUnitCacheItem item)
+
+    public SessionUnitCacheDto MapToDto(SessionUnitCacheItem item)
     {
-        return new SessionUnitCacheDto
-        {
-            Id = item.Id,
-            SessionId = item.SessionId,
-            OwnerId = item.OwnerId,
-            OwnerObjectType = item.OwnerObjectType,
-            DestinationId = item.DestinationId,
-            DestinationObjectType = item.DestinationObjectType,
-            IsStatic = item.IsStatic,
-            IsPublic = item.IsPublic,
-            IsVisible = item.IsVisible,
-            IsEnabled = item.IsEnabled,
-            //ReadedMessageId = item.ReadedMessageId,
-            LastMessageId = item.LastMessageId,
-            PublicBadge = item.PublicBadge,
-            PrivateBadge = item.PrivateBadge,
-            RemindAllCount = item.RemindAllCount,
-            RemindMeCount = item.RemindMeCount,
-            FollowingCount = item.FollowingCount,
-            Ticks = item.Ticks,
-            Sorting = item.Sorting,
-        };
+        return ObjectMapper.Map<SessionUnitCacheItem, SessionUnitCacheDto>(item);
     }
 
     protected virtual async Task<IQueryable<SessionUnitCacheDto>> CreateQueryableAsync(SessionUnitCacheItemGetListInput input)
@@ -94,8 +76,7 @@ public class SessionUnitCacheAppService(
         var allList = await GetAllListAsync(input.OwnerId);
 
         var result = allList
-            .Select(ObjectMapper.Map<SessionUnitCacheItem, SessionUnitCacheDto>)
-            //.Select(MapToDto)
+            .Select(MapToDto)
             .ToList()
             .AsQueryable();
 
@@ -204,6 +185,17 @@ public class SessionUnitCacheAppService(
             }
         }
         return pagedList;
+    }
+
+    public async Task<SessionUnitCacheDto> GetAsync(Guid id)
+    {
+        var items = await SessionUnitCacheManager.GetManyAsync([id]);
+
+        var item = items.FirstOrDefault().Value;
+
+        Assert.If(item == null, $"No such cache id:{id}");
+
+        return MapToDto(item);
     }
 
     /// <summary>
