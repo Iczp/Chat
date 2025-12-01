@@ -262,6 +262,9 @@ public class SessionUnitManager(
                 return ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(entity);
             });
 
+        // 删除总记数缓存
+        await SessionUnitCacheManager.RemoveTotalBadgeAsync(entity.OwnerId);
+
         return entity;
     }
 
