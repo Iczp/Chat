@@ -35,9 +35,9 @@ public interface ISessionUnitManager
     /// <summary>
     /// 获取会话单元
     /// </summary>
-    /// <param name="idList"></param>
+    /// <param name="unitIds"></param>
     /// <returns></returns>
-    Task<List<SessionUnit>> GetManyAsync(List<Guid> idList);
+    Task<KeyValuePair<Guid, SessionUnit>[]> GetManyAsync(IEnumerable<Guid> unitIds);
 
     /// <summary>
     /// 查找会话单元
@@ -122,7 +122,7 @@ public interface ISessionUnitManager
     /// <returns></returns>
     Task<Guid?> FindIdAsync(Expression<Func<SessionUnit, bool>> predicate);
 
-    
+
 
     /// <summary>
     /// 设置置顶

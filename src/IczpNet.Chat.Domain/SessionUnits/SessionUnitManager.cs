@@ -141,15 +141,17 @@ public class SessionUnitManager(
     }
 
     /// <inheritdoc />
-    public virtual async Task<List<SessionUnit>> GetManyAsync(List<Guid> idList)
+    public virtual async Task<KeyValuePair<Guid, SessionUnit>[]> GetManyAsync(IEnumerable<Guid> unitIds)
     {
-        var result = new List<SessionUnit>();
+        var idList = unitIds.Distinct().ToList();
+        var arr = new KeyValuePair<Guid, SessionUnit>[idList.Count()];
 
-        foreach (var id in idList)
+        for (int i = 0; i < idList.Count; i++)
         {
-            result.Add(await GetAsync(id));
+            var id = idList[i];
+            arr[i] = new KeyValuePair<Guid, SessionUnit>(id, await GetAsync(id));
         }
-        return result;
+        return arr;
     }
 
     /// <inheritdoc />
@@ -248,11 +250,19 @@ public class SessionUnitManager(
         }
         // 更新Setting
         await SetEntityAsync(entity, x => x.UpdateCounter(counter));
-        // 更新缓存
-        await SessionUnitCacheManager.UpdateCountersync(counter);
-        //await SetEntityAsync(entity, x => x.UpdateCounter(counter));
         // 更新记数器
-        return await Repository.UpdateCountersync(counter);
+        entity = await Repository.UpdateCountersync(counter);
+
+        // 更新缓存
+        await SessionUnitCacheManager.UpdateCountersync(
+            counter,
+            async (id) =>
+            {
+                await Task.Yield();
+                return ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(entity);
+            });
+
+        return entity;
     }
 
     protected virtual async Task<int> GetBadgeAsync(Func<IQueryable<SessionUnit>, IQueryable<SessionUnit>> queryAction)

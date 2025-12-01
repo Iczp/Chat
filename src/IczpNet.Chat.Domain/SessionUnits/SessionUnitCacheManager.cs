@@ -69,113 +69,12 @@ public class SessionUnitCacheManager(
 
     #endregion
 
-    #region Safe helpers (avoid null values)
-    private static RedisValue Safe(object? value)
-    {
-        if (value == null)
-            return RedisValue.EmptyString;
-
-        // handle Nullable<T> (long?, int?, double?, Guid?, bool?, etc)
-        var type = value.GetType();
-        if (Nullable.GetUnderlyingType(type) != null)
-        {
-            // extract actual value in nullable
-            value = Convert.ChangeType(value, Nullable.GetUnderlyingType(type)!);
-            if (value == null)
-                return RedisValue.EmptyString;
-            type = value.GetType();
-        }
-
-        return value switch
-        {
-            string s => s,
-            Guid g => g.ToString(),
-            bool b => b ? "1" : "0",
-            int i => i,
-            long l => l,
-            double d => d,
-            float f => (double)f,
-            DateTime dt => new DateTimeOffset(dt).ToUnixTimeMilliseconds(),
-            DateTimeOffset dto => dto.ToUnixTimeMilliseconds(),
-            _ => value.ToString() ?? RedisValue.EmptyString
-        };
-    }
-
-    private static long TryGetLong(HashEntry[] entries, string field, long defaultValue)
-    {
-        var e = Array.Find(entries, x => (string)x.Name == field);
-        if (e.Equals(default) || e.Value.IsNull) return defaultValue;
-        if (long.TryParse(e.Value.ToString(), out var v)) return v;
-        try { return (long)e.Value; } catch { return defaultValue; }
-    }
-
-    private static int TryGetInt(HashEntry[] entries, string field, int defaultValue)
-    {
-        var e = Array.Find(entries, x => (string)x.Name == field);
-        if (e.Equals(default) || e.Value.IsNull) return defaultValue;
-        if (int.TryParse(e.Value.ToString(), out var v)) return v;
-        try { return (int)e.Value; } catch { return defaultValue; }
-    }
-
-    private static double TryGetDouble(HashEntry[] entries, string field, double defaultValue)
-    {
-        var e = Array.Find(entries, x => (string)x.Name == field);
-        if (e.Equals(default) || e.Value.IsNull) return defaultValue;
-        if (double.TryParse(e.Value.ToString(), out var v)) return v;
-        try { return (double)e.Value; } catch { return defaultValue; }
-    }
-
-    private static bool TryGetBool(HashEntry[] entries, string field, bool defaultValue)
-    {
-        var e = Array.Find(entries, x => (string)x.Name == field);
-        if (e.Equals(default) || e.Value.IsNull) return defaultValue;
-        if (int.TryParse(e.Value.ToString(), out var iv)) return iv == 1;
-        if (bool.TryParse(e.Value.ToString(), out var bv)) return bv;
-        try { return (int)e.Value == 1; } catch { return defaultValue; }
-    }
-
-    private static Guid? TryGetGuid(HashEntry[] entries, string field)
-    {
-        var e = Array.Find(entries, x => (string)x.Name == field);
-        if (e.Equals(default) || e.Value.IsNull) return null;
-        if (Guid.TryParse(e.Value.ToString(), out var g)) return g;
-        return null;
-    }
-
-    #endregion
-
     #region Initialize / Ensure helpers
 
     private static HashEntry[] MapToHashEntries(SessionUnitCacheItem unit)
     {
 
         return RedisMapper.ToHashEntries(unit);
-    }
-    private static HashEntry[] MapToHashEntriesV1(SessionUnitCacheItem unit)
-    {
-        var entries = new HashEntry[]
-            {
-                new HashEntry(F_Id, Safe(unit.Id.ToString())),
-                new HashEntry(F_SessionId, Safe(unit.SessionId)),
-                new HashEntry(F_OwnerId, Safe(unit.OwnerId)),
-                new HashEntry(F_OwnerObjectType, Safe(unit.OwnerObjectType?.ToString())),
-                new HashEntry(F_DestinationId, Safe(unit.DestinationId)),
-                new HashEntry(F_DestinationObjectType, Safe(unit.DestinationObjectType?.ToString())),
-                new HashEntry(F_IsStatic, Safe(unit.IsStatic ? 1 : 0)),
-                new HashEntry(F_IsPublic, Safe(unit.IsPublic ? 1 : 0)),
-                new HashEntry(F_IsVisible, Safe(unit.IsVisible ? 1 : 0)),
-                new HashEntry(F_IsEnabled, Safe(unit.IsEnabled ? 1 : 0)),
-                //new HashEntry(F_ReadedMessageId, Safe(unit.ReadedMessageId)),
-                new HashEntry(F_LastMessageId, Safe(unit.LastMessageId)),
-                new HashEntry(F_PublicBadge, Safe(unit.PublicBadge)),
-                new HashEntry(F_PrivateBadge, Safe(unit.PrivateBadge)),
-                new HashEntry(F_RemindAllCount, Safe(unit.RemindAllCount)),
-                new HashEntry(F_RemindMeCount, Safe(unit.RemindMeCount)),
-                new HashEntry(F_FollowingCount, Safe(unit.FollowingCount)),
-                new HashEntry(F_Ticks, Safe(unit.Ticks)),
-                new HashEntry(F_Sorting, Safe(unit.Sorting)),
-            };
-        return entries;
     }
     public async Task SetListBySessionAsync(Guid sessionId, IEnumerable<SessionUnitCacheItem> units)
     {
@@ -336,6 +235,7 @@ public class SessionUnitCacheManager(
     {
         return await SetListByOwnerIfNotExistsAsync(ownerId, fetchTask) ?? await GetListByOwnerIdAsync(ownerId);
     }
+
     public async Task<IEnumerable<SessionUnitCacheItem>> GetListByOwnerIdAsync(long ownerId)
     {
         string ownerSortedKey = OwnerSortedSetKey(ownerId);
@@ -387,49 +287,42 @@ public class SessionUnitCacheManager(
         return arr;
     }
 
-    private static SessionUnitCacheItem MapHashEntriesToCacheItem(HashEntry[] entries)
+    public async Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetOrSetManyAsync(IEnumerable<Guid> unitIds, Func<List<Guid>, Task<KeyValuePair<Guid, SessionUnitCacheItem>[]>> func)
     {
-        if (entries == null || entries.Length == 0) return null;
 
-        var item = new SessionUnitCacheItem();
+        var list = await GetManyAsync(unitIds);
+        var nullKeys = list.Where(x => x.Value == null).Select(x => x.Key).ToList();
 
-        foreach (var e in entries)
+        if (nullKeys.Count == 0)
         {
-            var name = (string)e.Name;
-            if (string.IsNullOrEmpty(name)) continue;
+            return list;
+        }
+        var fetchedList = await func(nullKeys);
+        var fetchedMap = fetchedList.ToDictionary(x => x.Key, x => x.Value);
+        var batch = Database.CreateBatch();
+        var hashTasks = new List<Task>();
+        foreach (var nullKey in nullKeys)
+        {
+            if (fetchedMap.TryGetValue(nullKey, out var fetchedItem) && fetchedItem != null)
+            {
+                var unitKey = UnitKey(nullKey);
+                var entries = MapToHashEntries(fetchedItem);
+                hashTasks.Add(batch.HashSetAsync(unitKey, entries));
+                var index = list.FindIndex(x => x.Key == nullKey);
+                if (index >= 0)
+                {
+                    list[index] = new KeyValuePair<Guid, SessionUnitCacheItem>(nullKey, fetchedItem);
+                }
+            }
+        }
+        batch.Execute();
 
-            if (name == F_Id && e.Value.HasValue)
-            {
-                if (Guid.TryParse(e.Value.ToString(), out var gid)) item.Id = gid;
-                else item.Id = Guid.Empty;
-            }
-            else if (name == F_SessionId && e.Value.HasValue) item.SessionId = Guid.TryParse(e.Value.ToString(), out var ss) ? ss : (Guid?)null;
-            else if (name == F_OwnerId && e.Value.HasValue) item.OwnerId = TryGetLong(entries, F_OwnerId, 0);
-            else if (name == F_OwnerObjectType && e.Value.HasValue)
-            {
-                if (Enum.TryParse(typeof(ChatObjectTypeEnums), e.Value.ToString(), out var o)) item.OwnerObjectType = (ChatObjectTypeEnums?)o;
-            }
-            else if (name == F_DestinationId && e.Value.HasValue) item.DestinationId = long.TryParse(e.Value.ToString(), out var dd) ? (long?)dd : (long?)null;
-            else if (name == F_DestinationObjectType && e.Value.HasValue)
-            {
-                if (Enum.TryParse(typeof(ChatObjectTypeEnums), e.Value.ToString(), out var d)) item.DestinationObjectType = (ChatObjectTypeEnums?)d;
-            }
-            else if (name == F_IsStatic && e.Value.HasValue) item.IsStatic = (int)e.Value == 1;
-            else if (name == F_IsPublic && e.Value.HasValue) item.IsPublic = (int)e.Value == 1;
-            else if (name == F_IsVisible && e.Value.HasValue) item.IsVisible = (int)e.Value == 1;
-            else if (name == F_IsEnabled && e.Value.HasValue) item.IsEnabled = (int)e.Value == 1;
-            //else if (name == F_ReadedMessageId && e.Value.HasValue) item.ReadedMessageId = TryGetLong(entries, F_ReadedMessageId, 0);
-            else if (name == F_LastMessageId && e.Value.HasValue) item.LastMessageId = TryGetLong(entries, F_LastMessageId, 0);
-            else if (name == F_PublicBadge && e.Value.HasValue) item.PublicBadge = TryGetInt(entries, F_PublicBadge, 0);
-            else if (name == F_PrivateBadge && e.Value.HasValue) item.PrivateBadge = TryGetInt(entries, F_PrivateBadge, 0);
-            else if (name == F_RemindAllCount && e.Value.HasValue) item.RemindAllCount = TryGetInt(entries, F_RemindAllCount, 0);
-            else if (name == F_RemindMeCount && e.Value.HasValue) item.RemindMeCount = TryGetInt(entries, F_RemindMeCount, 0);
-            else if (name == F_FollowingCount && e.Value.HasValue) item.FollowingCount = TryGetInt(entries, F_FollowingCount, 0);
-            else if (name == F_Ticks && e.Value.HasValue) item.Ticks = TryGetDouble(entries, F_Ticks, 0);
-            else if (name == F_Sorting && e.Value.HasValue) item.Sorting = TryGetDouble(entries, F_Sorting, 0);
+        if (hashTasks.Count > 0)
+        {
+            await Task.WhenAll(hashTasks);
         }
 
-        return item;
+        return list;
     }
 
     #endregion
@@ -475,7 +368,6 @@ public class SessionUnitCacheManager(
             {
                 if (isPrivate) hashIncTasks.Add(batch.HashIncrementAsync(unitKey, F_PrivateBadge, 1));
                 else hashIncTasks.Add(batch.HashIncrementAsync(unitKey, F_PublicBadge, 1));
-
                 if (isRemindAll) hashIncTasks.Add(batch.HashIncrementAsync(unitKey, F_RemindAllCount, 1));
             }
 
@@ -483,22 +375,20 @@ public class SessionUnitCacheManager(
             hashSetTasks.Add(batch.HashSetAsync(unitKey, F_LastMessageId, lastMessageId));
             // update ticks
             hashSetTasks.Add(batch.HashSetAsync(unitKey, F_Ticks, (double)DateTime.UtcNow.Ticks));
-            // update global last-message sorted set
-            //zsetGlobalTasks.Add(batch.SortedSetAddAsync(lastMsgKey, idStr, lastMessageId));
+            var expireTime = expire ?? _cacheExpire;
+            if (expireTime.HasValue)
+            {
+                expireTasks.Add(batch.KeyExpireAsync(unitKey, expire ?? _cacheExpire));
+            }
 
-            // owner-specific zset update (compute composite score from Sorting & lastMessageId)
+            // owner score
             var ownerSortedKey = OwnerSortedSetKey(unit.OwnerId);
-
-            // read current sorting from hash (deferred read not allowed inside pipeline easily) - we will read from unitId.Sorting (cached snapshot) and redis hash will be handled by GetListByOwnerId flow
-
             var score = GetScore(unit.Sorting, lastMessageId);
             zsetOwnerTasks.Add(batch.SortedSetAddAsync(ownerSortedKey, idStr, score));
-
-            // expire tasks
-            expireTasks.Add(batch.KeyExpireAsync(unitKey, expire ?? _cacheExpire));
-            // ensure owner zset expire and global zset expire
-            expireTasks.Add(batch.KeyExpireAsync(ownerSortedKey, expire ?? _cacheExpire));
-            //expireTasks.Add(batch.KeyExpireAsync(lastMsgKey, expire ?? _cacheExpire));
+            if (expireTime.HasValue)
+            {
+                expireTasks.Add(batch.KeyExpireAsync(ownerSortedKey, expire ?? _cacheExpire));
+            }
         }
 
         batch.Execute();
@@ -589,11 +479,45 @@ public class SessionUnitCacheManager(
         return results.All(x => x);
     }
 
-    public async Task UpdateCountersync(SessionUnitCounterInfo counter)
+    public async Task UpdateCountersync(SessionUnitCounterInfo counter, Func<Guid, Task<SessionUnitCacheItem>> fetchTask)
     {
         var unitKey = UnitKey(counter.Id);
 
+        //
+        var isExists = await Database.KeyExistsAsync(unitKey);
+
         var batch = Database.CreateBatch();
+
+        if (!isExists)
+        {
+            // º”‘ÿª∫¥ÊœÓ
+
+            var unit = await fetchTask(counter.Id);
+
+            var hashTasks = new List<Task>();
+
+            var boolHashTasks = new List<Task<bool>>();
+
+            unit.PublicBadge = counter.PublicBadge;
+            unit.PrivateBadge = counter.PrivateBadge;
+            unit.RemindAllCount = counter.RemindAllCount;
+            unit.RemindMeCount = counter.RemindMeCount;
+            unit.FollowingCount = counter.FollowingCount;
+            unit.Setting.ReadedMessageId = counter.ReadedMessageId;
+
+            var entries = MapToHashEntries(unit);
+
+            hashTasks.Add(batch.HashSetAsync(unitKey, entries));
+
+            if (_cacheExpire.HasValue)
+            {
+                boolHashTasks.Add(Database.KeyExpireAsync(unitKey, _cacheExpire));
+            }
+            batch.Execute();
+            await Task.WhenAll(boolHashTasks);
+            await Task.WhenAll(hashTasks);
+            return;
+        }
 
         var setTasks = new List<Task<bool>>
         {

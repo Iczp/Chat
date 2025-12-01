@@ -11,7 +11,12 @@ namespace IczpNet.Chat.SessionUnits;
 public interface ISessionUnitCacheAppService
 {
     Task<PagedResultDto<SessionUnitCacheDto>> GetListAsync(SessionUnitCacheItemGetListInput input);
+
+    Task<List<SessionUnitCacheDto>> GetManyAsync(List<Guid> unitIds);
+
     Task<SessionUnitCacheDto> GetAsync(Guid id);
+
+
 
     Task<List<BadgeDto>> GetBadgeByUserIdAsync([Required] Guid userId, bool? isImmersed = null);
 

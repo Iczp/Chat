@@ -26,9 +26,11 @@ public interface ISessionUnitCacheManager
 
     Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetManyAsync(IEnumerable<Guid> unitIds);
 
+    Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetOrSetManyAsync(IEnumerable<Guid> unitIds, Func<List<Guid>, Task<KeyValuePair<Guid, SessionUnitCacheItem>[]>> func);
+
     Task BatchIncrementBadgeAndSetLastMessageAsync(Message message, TimeSpan? expire = null);
 
-    Task UpdateCountersync(SessionUnitCounterInfo counter);
+    Task UpdateCountersync(SessionUnitCounterInfo counter, Func<Guid,Task<SessionUnitCacheItem>> fetchTask);
 
 
     Task<SessionUnitCacheItem> UnitTestAsync();

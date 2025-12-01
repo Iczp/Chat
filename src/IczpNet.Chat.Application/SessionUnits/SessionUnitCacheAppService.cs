@@ -1,5 +1,4 @@
-﻿using AutoMapper.Internal.Mappers;
-using IczpNet.AbpCommons;
+﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
@@ -69,8 +68,17 @@ public class SessionUnitCacheAppService(
                await SessionUnitManager.GetListByOwnerIdAsync(ownerId));
     }
 
+    protected Task<SessionUnitCacheItem> MapToCacheItemAsync(SessionUnit entity)
+    {
+        return Task.FromResult(MapToCacheItem(entity));
+    }
 
-    public SessionUnitCacheDto MapToDto(SessionUnitCacheItem item)
+    protected virtual SessionUnitCacheItem MapToCacheItem(SessionUnit entity)
+    {
+        return ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(entity);
+    }
+
+    protected virtual SessionUnitCacheDto MapToDto(SessionUnitCacheItem item)
     {
         return ObjectMapper.Map<SessionUnitCacheItem, SessionUnitCacheDto>(item);
     }
@@ -213,11 +221,37 @@ public class SessionUnitCacheAppService(
         }
     }
 
+    public async Task<List<SessionUnitCacheDto>> GetManyAsync(List<Guid> unitIds)
+    {
+        var list = await SessionUnitCacheManager.GetOrSetManyAsync(unitIds, async (keys) =>
+        {
+            var kvs = await SessionUnitManager.GetManyAsync(keys);
+
+            var cacheItems = kvs.Select(x => MapToCacheItem(x.Value)).ToList();
+
+            var arr = new KeyValuePair<Guid, SessionUnitCacheItem>[cacheItems.Count];
+
+            for (int i = 0; i < cacheItems.Count; i++)
+            {
+                arr[i] = new KeyValuePair<Guid, SessionUnitCacheItem>(cacheItems[i].Id, cacheItems[i]);
+            }
+            return arr;
+        });
+
+        var items = list.Select(x => x.Value)
+            .Where(x => x != null)
+            .Select(MapToDto)
+            .ToList();
+
+        return items;
+    }
+
+
     public async Task<SessionUnitCacheDto> GetAsync(Guid id)
     {
-        var items = await SessionUnitCacheManager.GetManyAsync([id]);
+        var items = await GetManyAsync([id]);
 
-        var item = items.FirstOrDefault().Value;
+        var item = items.FirstOrDefault();
 
         Assert.If(item == null, $"No such cache id:{id}");
 
