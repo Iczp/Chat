@@ -37,9 +37,10 @@ public class SessionUnitCacheManager(
         => $"{Prefix}LastMessages:SessionId-{sessionId}";
     private string OwnerSortedSetKey(long ownerId)
         => $"{Prefix}Owners:Sorted:OwnerId-{ownerId}";
-
     private string OwnerExistsSetKey(long ownerId)
         => $"{Prefix}Owners:Exists:OwnerId-{ownerId}";
+    private string OwnerTotalBadgeSetKey(long ownerId)
+        => $"{Options.Value.KeyPrefix}ChatObjects:TotalBadges:OwnerId-{ownerId}";
 
     // composite score multiplier (sorting * MULT + lastMessageId)
     private const double OWNER_SCORE_MULT = 1_000_000_000_000d; // 1e12
@@ -356,7 +357,7 @@ public class SessionUnitCacheManager(
         var zsetGlobalTasks = new List<Task<bool>>();
         var zsetOwnerTasks = new List<Task<bool>>();
         var expireTasks = new List<Task<bool>>();
-
+        var deleteKeyTasks = new List<Task<bool>>();
         foreach (var unit in sessionUnitList)
         {
             var id = unit.Id;
@@ -369,6 +370,9 @@ public class SessionUnitCacheManager(
                 if (isPrivate) hashIncTasks.Add(batch.HashIncrementAsync(unitKey, F_PrivateBadge, 1));
                 else hashIncTasks.Add(batch.HashIncrementAsync(unitKey, F_PublicBadge, 1));
                 if (isRemindAll) hashIncTasks.Add(batch.HashIncrementAsync(unitKey, F_RemindAllCount, 1));
+                var ownerTotalBadgeKey = OwnerTotalBadgeSetKey(unit.OwnerId);
+                deleteKeyTasks.Add(batch.KeyDeleteAsync(ownerTotalBadgeKey));
+                //hashIncTasks.Add(batch.HashIncrementAsync(ownerTotalBadgeKey, "TotalBadge", 1));
             }
 
             // update lastMessageId in hash
@@ -398,6 +402,40 @@ public class SessionUnitCacheManager(
         if (zsetGlobalTasks.Count > 0) await Task.WhenAll(zsetGlobalTasks);
         if (zsetOwnerTasks.Count > 0) await Task.WhenAll(zsetOwnerTasks);
         if (expireTasks.Count > 0) await Task.WhenAll(expireTasks);
+        if (deleteKeyTasks.Count > 0) await Task.WhenAll(deleteKeyTasks);
+    }
+
+
+    public virtual async Task<bool> SetTotalBadgeAsync(long ownerId, long badge)
+    {
+        var ownerTotalBadgeKey = OwnerTotalBadgeSetKey(ownerId);
+        var result = await Database.HashSetAsync(ownerTotalBadgeKey, "TotalBadge", badge);
+        return result;
+    }
+
+    public virtual async Task<long?> GetTotalBadgeAsync(long ownerId)
+    {
+        var ownerTotalBadgeKey = OwnerTotalBadgeSetKey(ownerId);
+
+        var redisValue = await Database.HashGetAsync(ownerTotalBadgeKey, "TotalBadge");
+
+        var value = redisValue.ToString();
+
+        if (string.IsNullOrEmpty(value))
+        {
+            return null;
+        }
+        if (long.TryParse(redisValue.ToString(), out long badge))
+        {
+            return badge;
+        }
+        return null;
+    }
+
+    public virtual async Task<bool> RemoveTotalBadgeAsync(long ownerId)
+    {
+        var ownerTotalBadgeKey = OwnerTotalBadgeSetKey(ownerId);
+        return await Database.HashDeleteAsync(ownerTotalBadgeKey, "TotalBadge");
     }
 
     #endregion

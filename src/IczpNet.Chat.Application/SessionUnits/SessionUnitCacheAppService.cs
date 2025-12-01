@@ -265,11 +265,21 @@ public class SessionUnitCacheAppService(
     /// <returns></returns>
     public async Task<long> GetBadgeAsync(long ownerId)
     {
+        var totalBadge = await SessionUnitCacheManager.GetTotalBadgeAsync(ownerId);
+
+        if (totalBadge.HasValue)
+        {
+            return totalBadge.Value;
+        }
         var allList = await GetAllListAsync(ownerId);
 
         var hasBadgeList = allList.Where(x => x.PublicBadge > 0 || x.PrivateBadge > 0).ToList();
 
-        return allList.Sum(x => x.PublicBadge + x.PrivateBadge);
+        totalBadge = allList.Sum(x => x.PublicBadge + x.PrivateBadge);
+
+        await SessionUnitCacheManager.SetTotalBadgeAsync(ownerId, totalBadge.Value);
+
+        return totalBadge.Value;
     }
 
     /// <summary>
