@@ -40,11 +40,9 @@ public class PublishToClientForMessageCreatedEventHandler(
     public IJsonSerializer JsonSerializer { get; } = jsonSerializer;
     public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
 
-
     [UnitOfWork]
     public async Task HandleEventAsync(EntityCreatedEventData<Message> eventData)
     {
-        await Task.Yield();
         var message = eventData.Entity;
         Logger.LogInformation($"{nameof(PublishToClientForMessageCreatedEventHandler)} Created message:{message}");
         await PublishMessageDistributedEventAsync(message);

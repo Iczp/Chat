@@ -6,7 +6,6 @@ using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Pipelines.Sockets.Unofficial.Buffers;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
@@ -35,8 +34,6 @@ public class SessionUnitCacheManager(
         => $"{Prefix}Units:UnitId-{unitId}";
     private string SessionSetKey(Guid sessionId)
         => $"{Options.Value.KeyPrefix}Sessions:SessionId-{sessionId}";
-    private string LastMessageSetKey(Guid sessionId)
-        => $"{Prefix}LastMessages:SessionId-{sessionId}";
     private string OwnerSortedSetKey(long ownerId)
         => $"{Options.Value.KeyPrefix}ChatObjects:Sorted:OwnerId-{ownerId}";
     private string OwnerExistsSetKey(long ownerId)
@@ -318,8 +315,8 @@ public class SessionUnitCacheManager(
 
     public async Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetOrSetManyAsync(IEnumerable<Guid> unitIds, Func<List<Guid>, Task<KeyValuePair<Guid, SessionUnitCacheItem>[]>> func)
     {
-
         var list = await GetManyAsync(unitIds);
+
         var nullKeys = list.Where(x => x.Value == null).Select(x => x.Key).ToList();
 
         if (nullKeys.Count == 0)
@@ -327,29 +324,27 @@ public class SessionUnitCacheManager(
             return list;
         }
         var fetchedList = await func(nullKeys);
+
         var fetchedMap = fetchedList.ToDictionary(x => x.Key, x => x.Value);
+
         var batch = Database.CreateBatch();
-        var hashTasks = new List<Task>();
+
         foreach (var nullKey in nullKeys)
         {
-            if (fetchedMap.TryGetValue(nullKey, out var fetchedItem) && fetchedItem != null)
+            if (!fetchedMap.TryGetValue(nullKey, out var fetchedItem) || fetchedItem != null)
             {
-                var unitKey = UnitKey(nullKey);
-                var entries = MapToHashEntries(fetchedItem);
-                hashTasks.Add(batch.HashSetAsync(unitKey, entries));
-                var index = list.FindIndex(x => x.Key == nullKey);
-                if (index >= 0)
-                {
-                    list[index] = new KeyValuePair<Guid, SessionUnitCacheItem>(nullKey, fetchedItem);
-                }
+                continue;
+            }
+            var unitKey = UnitKey(nullKey);
+            var entries = MapToHashEntries(fetchedItem);
+            _ = batch.HashSetAsync(unitKey, entries);
+            var index = list.FindIndex(x => x.Key == nullKey);
+            if (index >= 0)
+            {
+                list[index] = new KeyValuePair<Guid, SessionUnitCacheItem>(nullKey, fetchedItem);
             }
         }
         batch.Execute();
-
-        if (hashTasks.Count > 0)
-        {
-            await Task.WhenAll(hashTasks);
-        }
 
         return list;
     }
@@ -440,12 +435,14 @@ public class SessionUnitCacheManager(
 
         var isPrivate = message.IsPrivateMessage();
         var isRemindAll = message.IsRemindAll;
+        var reminderIds = message.MessageReminderList.Select(x => x.SessionUnitId).ToHashSet();
+        var followerIds = message.MessageFollowerList.Select(x => x.SessionUnitId).ToHashSet();
 
         //var unitList = await GetDictBySessionAsync(sessionId);
-        //var unitList = await GetListBySessionAsync(sessionId);
-        var unitList = await SessionUnitManager.GetCacheListAsync(message);
+        var unitList = await GetListBySessionAsync(sessionId);
+        //var unitList = await SessionUnitManager.GetCacheListAsync(message);
 
-        if (unitList == null || unitList.Count == 0) return;
+        if (unitList == null || !unitList.Any()) return;
 
         var batch = Database.CreateBatch();
         var expireTime = expire ?? _cacheExpire;
@@ -465,9 +462,20 @@ public class SessionUnitCacheManager(
             if (!isSender)
             {
                 _ = batch.HashIncrementAsync(unitKey, isPrivate ? F_PrivateBadge : F_PublicBadge, 1);
+                //remindAllCount
                 if (isRemindAll)
                 {
                     _ = batch.HashIncrementAsync(unitKey, F_RemindAllCount, 1);
+                }
+                //remindMeCount
+                if (reminderIds.Contains(unitId))
+                {
+                    _ = batch.HashIncrementAsync(unitKey, F_RemindMeCount, 1);
+                }
+                // followingCount
+                if (followerIds.Contains(unitId))
+                {
+                    _ = batch.HashIncrementAsync(unitKey, F_FollowingCount, 1);
                 }
                 // delete owner badge
                 _ = batch.KeyDeleteAsync(ownerTotalBadgeKey);
@@ -495,8 +503,6 @@ public class SessionUnitCacheManager(
 
         Logger.LogInformation("BatchIncrementBadgeAndSetLastMessageAsync executed.");
     }
-
-
 
     public virtual async Task<bool> SetTotalBadgeAsync(long ownerId, long badge)
     {
