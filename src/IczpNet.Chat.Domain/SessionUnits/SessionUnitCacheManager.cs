@@ -32,13 +32,13 @@ public class SessionUnitCacheManager(
     private string UnitKey(Guid unitId)
         => $"{Prefix}Units:UnitId-{unitId}";
     private string SessionSetKey(Guid sessionId)
-        => $"{Prefix}Sessions:SessionId-{sessionId}";
+        => $"{Options.Value.KeyPrefix}Sessions:SessionId-{sessionId}";
     private string LastMessageSetKey(Guid sessionId)
         => $"{Prefix}LastMessages:SessionId-{sessionId}";
     private string OwnerSortedSetKey(long ownerId)
-        => $"{Prefix}Owners:Sorted:OwnerId-{ownerId}";
+        => $"{Options.Value.KeyPrefix}ChatObjects:Sorted:OwnerId-{ownerId}";
     private string OwnerExistsSetKey(long ownerId)
-        => $"{Prefix}Owners:Exists:OwnerId-{ownerId}";
+        => $"{Options.Value.KeyPrefix}ChatObjects:Exists:OwnerId-{ownerId}";
     private string OwnerTotalBadgeSetKey(long ownerId)
         => $"{Options.Value.KeyPrefix}ChatObjects:TotalBadges:OwnerId-{ownerId}";
 
