@@ -55,7 +55,7 @@ public class SessionUnitCacheAppService(
         );
 
         return Task.FromResult(
-               !string.IsNullOrWhiteSpace(input.Keyword)  // 🔥搜索 Keyword 时一定需要全量加载
+               !string.IsNullOrWhiteSpace(input.Keyword)  // 搜索 Keyword 时一定需要全量加载
             || needLoadBySorting
         );
     }
@@ -110,7 +110,7 @@ public class SessionUnitCacheAppService(
 
             var destMap = allDestList.ToDictionary(x => x.Id, x => x);
 
-            // 🤩 提前填充
+            //  提前填充
             foreach (var item in result)
             {
                 //item.Setting = settingMap.GetValueOrDefault(item.Id);

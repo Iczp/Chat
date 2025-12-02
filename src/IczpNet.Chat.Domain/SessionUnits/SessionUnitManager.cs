@@ -144,7 +144,7 @@ public class SessionUnitManager(
     public virtual async Task<KeyValuePair<Guid, SessionUnit>[]> GetManyAsync(IEnumerable<Guid> unitIds)
     {
         var idList = unitIds.Distinct().ToList();
-        var arr = new KeyValuePair<Guid, SessionUnit>[idList.Count()];
+        var arr = new KeyValuePair<Guid, SessionUnit>[idList.Count];
 
         for (int i = 0; i < idList.Count; i++)
         {

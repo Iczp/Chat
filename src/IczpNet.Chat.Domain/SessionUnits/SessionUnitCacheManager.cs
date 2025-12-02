@@ -4,6 +4,7 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.RedisMapping;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using System;
@@ -91,20 +92,16 @@ public class SessionUnitCacheManager(
         // clear existing set to avoid stale members
         _ = batch.KeyDeleteAsync(sessionSetKey);
 
-        var setAddTasks = new List<Task<bool>>();
-        var hashTasks = new List<Task>();
-        var zsetAddTasks = new List<Task<bool>>();
-
         foreach (var unit in unitList)
         {
             var idStr = unit.Id.ToString();
-            setAddTasks.Add(batch.HashSetAsync(sessionSetKey, idStr, unit.OwnerId));
+            _ = batch.HashSetAsync(sessionSetKey, idStr, unit.OwnerId);
 
             var unitKey = UnitKey(unit.Id);
 
             var entries = MapToHashEntries(unit);
 
-            hashTasks.Add(batch.HashSetAsync(unitKey, entries));
+            _ = batch.HashSetAsync(unitKey, entries);
 
             //if (unit.LastMessageId.HasValue)
             //{
@@ -113,15 +110,10 @@ public class SessionUnitCacheManager(
 
             _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
         }
-
         _ = batch.KeyExpireAsync(sessionSetKey, _cacheExpire);
         //_ = batch.KeyExpireAsync(lastMsgKey, _cacheExpire);
 
         batch.Execute();
-
-        if (setAddTasks.Count > 0) await Task.WhenAll(setAddTasks);
-        if (hashTasks.Count > 0) await Task.WhenAll(hashTasks);
-        if (zsetAddTasks.Count > 0) await Task.WhenAll(zsetAddTasks);
     }
 
     public async Task SetListBySessionAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
@@ -141,6 +133,37 @@ public class SessionUnitCacheManager(
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns>{Key:SessionUnitId, Value:OwnerId}</returns>
+    public async Task<IDictionary<Guid, long>> GetDictBySessionAsync(Guid sessionId)
+    {
+        var sessionSetKey = SessionSetKey(sessionId);
+
+        if (!await Database.KeyExistsAsync(sessionSetKey))
+        {
+            return new Dictionary<Guid, long>();
+        }
+        var entries = await Database.HashGetAllAsync(sessionSetKey);
+
+        var dict = entries.ToDictionary(x => Guid.Parse(x.Name), x => long.Parse(x.Value));
+
+        return dict;
+    }
+
+    public async Task<IEnumerable<SessionUnitCacheItem>> GetListBySessionAsync(Guid sessionId)
+    {
+        var dict = await GetDictBySessionAsync(sessionId);
+
+        var unitIds = dict.Keys.ToList();
+
+        var kvs = await GetManyAsync(unitIds);
+
+        return kvs.Where(x => x.Value != null).Select(x => x.Value);
+    }
+
     #endregion
 
     #region GetListByOwnerIdAsync (DB initial values + Redis merge)
@@ -157,12 +180,8 @@ public class SessionUnitCacheManager(
         // clear existing set to avoid stale members
         _ = batch.KeyDeleteAsync(ownerExistsKey);
 
-        var boolHashTasks = new List<Task<bool>>();
+        _ = batch.SetAddAsync(ownerExistsKey, true);
 
-        var hashTasks = new List<Task>
-        {
-            batch.SetAddAsync(ownerExistsKey, true)
-        };
         //foreach (var unitId in unitList)
         //{
         //    hashTasks.Add(batch.SetAddAsync(ownerExistsKey, unitId.Id.ToString()));
@@ -178,8 +197,6 @@ public class SessionUnitCacheManager(
 
         var unCachedUnits = unitList.ExceptBy(cachedUnits.Select(x => x.Id), x => x.Id).ToList();
 
-        var zsetOwnerTasks = new List<Task<bool>>();
-
         foreach (var unit in unCachedUnits)
         {
             var idStr = unit.Id.ToString();
@@ -188,27 +205,21 @@ public class SessionUnitCacheManager(
 
             var entries = MapToHashEntries(unit);
 
-            hashTasks.Add(batch.HashSetAsync(unitKey, entries));
+            _ = batch.HashSetAsync(unitKey, entries);
 
-            boolHashTasks.Add(batch.KeyExpireAsync(unitKey, _cacheExpire));
+            _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
 
             // score
             var score = GetScore(unit.Sorting, unit.LastMessageId ?? 0);
 
-            zsetOwnerTasks.Add(batch.SortedSetAddAsync(ownerSortedKey, idStr, score));
+            _ = batch.SortedSetAddAsync(ownerSortedKey, idStr, score);
         }
 
         if (_cacheExpire.HasValue)
         {
-            boolHashTasks.Add(batch.KeyExpireAsync(ownerSortedKey, _cacheExpire));
+            _ = batch.KeyExpireAsync(ownerSortedKey, _cacheExpire);
         }
         batch.Execute();
-
-        if (zsetOwnerTasks.Count > 0) await Task.WhenAll(zsetOwnerTasks);
-
-        if (hashTasks.Count > 0) await Task.WhenAll(hashTasks);
-
-        if (boolHashTasks.Count > 0) await Task.WhenAll(boolHashTasks);
 
         var list = cachedUnits.Concat(unCachedUnits);
 
@@ -259,33 +270,42 @@ public class SessionUnitCacheManager(
 
     public async Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetManyAsync(IEnumerable<Guid> unitIds)
     {
-        var unitIdList = unitIds?.ToList();
+        if (unitIds == null) return [];
+
+        var idList = unitIds.ToList();
+        if (idList.Count == 0) return [];
+
         var batch = Database.CreateBatch();
+        var tasks = new List<Task<HashEntry[]>>(idList.Count);
 
-        var tasks = new Task<HashEntry[]>[unitIdList.Count];
-
-        for (int i = 0; i < unitIdList.Count; i++)
+        // pipeline 全部 HashGetAll
+        foreach (var unitId in idList)
         {
-            var unitId = unitIdList[i];
-            tasks[i] = batch.HashGetAllAsync(UnitKey(unitId));
+            tasks.Add(batch.HashGetAllAsync(UnitKey(unitId)));
         }
 
+        // 一次提交（高性能关键点）
         batch.Execute();
 
-        await Task.WhenAll(tasks);
+        // 等待全部完成
+        var resultEntries = await Task.WhenAll(tasks);
 
-        var arr = new KeyValuePair<Guid, SessionUnitCacheItem>[unitIdList.Count];
+        // 构建结果
+        var result = new KeyValuePair<Guid, SessionUnitCacheItem>[idList.Count];
 
-        for (int i = 0; i < unitIdList.Count; i++)
+        for (int i = 0; i < idList.Count; i++)
         {
-            var entries = tasks[i].Result;
-            var unitId = unitIdList[i];
-            //arr[unitId] = MapHashEntriesToCacheItem(entries);
-            var val = RedisMapper.ToObject<SessionUnitCacheItem>(entries);
-            arr[i] = new KeyValuePair<Guid, SessionUnitCacheItem>(unitId, val);
+            var entries = resultEntries[i];
+
+            var item =
+                (entries == null || entries.Length == 0)
+                ? null
+                : RedisMapper.ToObject<SessionUnitCacheItem>(entries);
+
+            result[i] = new KeyValuePair<Guid, SessionUnitCacheItem>(idList[i], item);
         }
 
-        return arr;
+        return result;
     }
 
     public async Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetOrSetManyAsync(IEnumerable<Guid> unitIds, Func<List<Guid>, Task<KeyValuePair<Guid, SessionUnitCacheItem>[]>> func)
@@ -335,9 +355,7 @@ public class SessionUnitCacheManager(
         return sorting * OWNER_SCORE_MULT + lastMessageId;
     }
 
-    public async Task BatchIncrementBadgeAndSetLastMessageAsync(
-        Message message,
-        TimeSpan? expire = null)
+    public async Task BatchIncrement_BackAsync(Message message, TimeSpan? expire = null)
     {
         ArgumentNullException.ThrowIfNull(message);
 
@@ -405,6 +423,72 @@ public class SessionUnitCacheManager(
         if (deleteKeyTasks.Count > 0) await Task.WhenAll(deleteKeyTasks);
     }
 
+    public async Task BatchIncrementAsync(Message message, TimeSpan? expire = null)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+
+        var sessionId = message.SessionId!.Value;
+        var lastMessageId = message.Id;
+
+        var isPrivate = message.IsPrivateMessage();
+        var isRemindAll = message.IsRemindAll;
+
+        //var unitList = await GetDictBySessionAsync(sessionId);
+        //var unitList = await GetListBySessionAsync(sessionId);
+        var unitList = await SessionUnitManager.GetCacheListAsync(message);
+
+        if (unitList == null || unitList.Count == 0) return;
+
+        var batch = Database.CreateBatch();
+        var expireTime = expire ?? _cacheExpire;
+
+        foreach (var unit in unitList)
+        {
+            //var unitId = unit.Key;
+            //var ownerId = unit.Value;
+            var unitId = unit.Id;
+            var ownerId = unit.OwnerId;
+            var unitKey = UnitKey(unitId);
+            var ownerSortedKey = OwnerSortedSetKey(ownerId);
+            var ownerTotalBadgeKey = OwnerTotalBadgeSetKey(ownerId);
+            var isSender = unitId == message.SenderSessionUnitId;
+
+            // badge
+            if (!isSender)
+            {
+                _ = batch.HashIncrementAsync(unitKey, isPrivate ? F_PrivateBadge : F_PublicBadge, 1);
+                if (isRemindAll)
+                {
+                    _ = batch.HashIncrementAsync(unitKey, F_RemindAllCount, 1);
+                }
+                // delete owner badge
+                _ = batch.KeyDeleteAsync(ownerTotalBadgeKey);
+            }
+
+            // lastMessageId
+            _ = batch.HashSetAsync(unitKey, F_LastMessageId, lastMessageId);
+
+            // ticks
+            _ = batch.HashSetAsync(unitKey, F_Ticks, (double)message.CreationTime.Ticks);
+
+            // owner sortedset
+            var score = GetScore(unit.Sorting, lastMessageId);
+            _ = batch.SortedSetAddAsync(ownerSortedKey, unitId.ToString(), score);
+
+            // expire
+            if (expireTime.HasValue)
+            {
+                _ = batch.KeyExpireAsync(unitKey, expireTime.Value);
+                _ = batch.KeyExpireAsync(ownerSortedKey, expireTime.Value);
+            }
+        }
+
+        batch.Execute();
+
+        Logger.LogInformation("BatchIncrementBadgeAndSetLastMessageAsync executed.");
+    }
+
+
 
     public virtual async Task<bool> SetTotalBadgeAsync(long ownerId, long badge)
     {
@@ -442,7 +526,7 @@ public class SessionUnitCacheManager(
 
     #region Remove / Set / Misc
 
-    public async Task AddUnitIdToSessionAsync(Guid sessionId, Guid unitId,long ownerId)
+    public async Task AddUnitIdToSessionAsync(Guid sessionId, Guid unitId, long ownerId)
     {
         await Database.HashSetAsync(SessionSetKey(sessionId), unitId.ToString(), ownerId);
         await Database.KeyExpireAsync(SessionSetKey(sessionId), _cacheExpire);

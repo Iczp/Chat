@@ -25,7 +25,11 @@ public class PublishToClientForMessageCreatedEventHandler(
     IObjectMapper objectMapper,
     ICurrentHosted currentHosted,
     IJsonSerializer jsonSerializer,
-    IDistributedEventBus distributedEventBus) : DomainService, ILocalEventHandler<EntityCreatedEventData<Message>>, ITransientDependency
+    IDistributedEventBus distributedEventBus) 
+    : 
+    DomainService, 
+    ILocalEventHandler<EntityCreatedEventData<Message>>, 
+    ITransientDependency
 {
 
     protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;

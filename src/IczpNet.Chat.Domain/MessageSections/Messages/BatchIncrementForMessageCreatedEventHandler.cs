@@ -15,10 +15,10 @@ namespace IczpNet.Chat.MessageSections.Messages;
 /// </summary>
 public class BatchIncrementForMessageCreatedEventHandler(
     ISessionUnitManager sessionUnitManager,
-    ISessionUnitCacheManager sessionUnitCacheManager) :
-    DomainService,
-    // 先暂时不启用 SessionUnitMessage
-    ILocalEventHandler<EntityCreatedEventData<Message>>,
+    ISessionUnitCacheManager sessionUnitCacheManager) 
+    : 
+    DomainService, 
+    ILocalEventHandler<EntityCreatedEventData<Message>>, 
     ITransientDependency
 {
     public ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
@@ -35,9 +35,11 @@ public class BatchIncrementForMessageCreatedEventHandler(
 
         var stopwatch = Stopwatch.StartNew();
 
-        await SessionUnitCacheManager.SetListBySessionIfNotExistsAsync(sessionId.Value, async (sessionId) => await SessionUnitManager.GetCacheListBySessionIdAsync(sessionId));
+        await SessionUnitCacheManager.SetListBySessionIfNotExistsAsync(
+            sessionId.Value,
+            async (sessionId) => await SessionUnitManager.GetCacheListBySessionIdAsync(sessionId));
 
-        await SessionUnitCacheManager.BatchIncrementBadgeAndSetLastMessageAsync(message);
+        await SessionUnitCacheManager.BatchIncrementAsync(message);
 
         Logger.LogInformation($"{nameof(BatchIncrementForMessageCreatedEventHandler)}  watch={stopwatch.ElapsedMilliseconds}ms");
 

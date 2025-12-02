@@ -5,6 +5,7 @@ using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -41,7 +42,15 @@ public class MessageSenderAppService(
     {
         var sessionunit = await GetAndCheckSessionUnitAsync(sessionUnitId);
 
-        return await MessageSender.SendTextAsync(sessionunit, input);
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+        var result = await MessageSender.SendTextAsync(sessionunit, input);
+
+        Logger.LogInformation("SendTextAsync Stopwatch: {0} ms", stopwatch.Elapsed.TotalMilliseconds);
+
+        stopwatch.Stop();
+
+        return result;
     }
 
     /// <summary>
