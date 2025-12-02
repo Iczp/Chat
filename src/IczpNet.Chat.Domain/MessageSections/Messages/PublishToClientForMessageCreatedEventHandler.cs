@@ -52,7 +52,7 @@ public class PublishToClientForMessageCreatedEventHandler(
 
     protected virtual async Task PublishMessageDistributedEventAsync(Message message, bool onUnitOfWorkComplete = true, bool useOutbox = true)
     {
-        var cacheKey = await SessionUnitManager.GetCacheKeyByMessageAsync(message);
+        //var cacheKey = await SessionUnitManager.GetCacheKeyByMessageAsync(message);
 
         var command = message.ForwardMessageId.HasValue ? CommandConsts.MessageForwarded : CommandConsts.MessageCreated;
 
@@ -74,7 +74,7 @@ public class PublishToClientForMessageCreatedEventHandler(
         var eventData = new SendToClientDistributedEto()
         {
             Command = command.ToString(),
-            CacheKey = cacheKey,
+            //CacheKey = cacheKey,
             HostName = CurrentHosted.Name,
             MessageId = message.Id,
             Message = messageDto
@@ -82,7 +82,7 @@ public class PublishToClientForMessageCreatedEventHandler(
 
         Logger.LogInformation($"PublishMessageDistributedEventAsync-eventData:{JsonSerializer.Serialize(eventData)}");
 
-        await SessionUnitManager.GetOrAddByMessageAsync(message);
+        //await SessionUnitManager.GetOrAddByMessageAsync(message);
 
         await DistributedEventBus.PublishAsync(eventData, onUnitOfWorkComplete, useOutbox);
 

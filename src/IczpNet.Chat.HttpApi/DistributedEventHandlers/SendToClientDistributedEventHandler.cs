@@ -21,6 +21,7 @@ namespace IczpNet.Chat.DistributedEventHandlers;
 public class SendToClientDistributedEventHandler : DomainService, IDistributedEventHandler<SendToClientDistributedEto>, ITransientDependency
 {
     public ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
+    public ISessionUnitCacheManager SessionUnitCacheManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitCacheManager>();
     public IConnectionPoolManager ConnectionPoolManager => LazyServiceProvider.LazyGetRequiredService<IConnectionPoolManager>();
     public ICurrentHosted CurrentHosted => LazyServiceProvider.LazyGetRequiredService<ICurrentHosted>();
     public IJsonSerializer JsonSerializer => LazyServiceProvider.LazyGetRequiredService<IJsonSerializer>();
@@ -37,7 +38,11 @@ public class SendToClientDistributedEventHandler : DomainService, IDistributedEv
 
         //await SessionUnitManager.GetOrAddByMessageAsync(message);
 
-        var sessionUnitInfoList = await SessionUnitManager.GetCacheListAsync(cacheKey);
+        //var sessionUnitInfoList = await SessionUnitManager.GetCacheListAsync(cacheKey);
+        var sessionId = eventData.Message.SessionId;
+
+        // 使用 SessionUnitCache 代替 SessionUnitManager --2025.12.2
+        var sessionUnitInfoList = (await SessionUnitCacheManager.GetListBySessionAsync(sessionId)).ToList();
 
         Logger.LogInformation($"{nameof(SendToClientDistributedEventHandler)}-Command-{command}-MessageId-{eventData.MessageId}");
 

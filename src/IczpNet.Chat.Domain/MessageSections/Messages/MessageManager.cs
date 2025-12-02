@@ -38,6 +38,7 @@ public partial class MessageManager(
     IDistributedEventBus distributedEventBus,
     ICurrentHosted currentHosted,
     ISessionUnitManager sessionUnitManager,
+    ISessionUnitCacheManager sessionUnitCacheManager,
     IUnitOfWorkManager unitOfWorkManager,
     ISessionRepository sessionRepository,
     ISettingProvider settingProvider,
@@ -52,6 +53,7 @@ public partial class MessageManager(
     public IShortIdGenerator ShortIdGenerator { get; } = shortIdGenerator;
     protected IMessageValidator MessageValidator { get; } = messageValidator;
     protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
+    public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
     protected IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
     protected IChatPusher ChatPusher { get; } = chatPusher;
     public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
@@ -96,8 +98,16 @@ public partial class MessageManager(
         // Create SessionUnit By Message
         await CreateSessionUnitByMessageAsync(senderSessionUnit);
 
+        var sessionId = senderSessionUnit.SessionId.Value;
+
         //cache
-        //await SessionUnitManager.GetOrAddCacheListAsync(senderSessionUnit.SessionId.Value);
+        //await SessionUnitManager.GetOrAddCacheListAsync(sessionId);
+        var unitCacheList = await SessionUnitCacheManager.GetOrSetListBySessionAsync(
+            sessionId,
+            async (sessionId) =>
+            {
+                return await SessionUnitManager.GetCacheListBySessionIdAsync(sessionId);
+            });
 
         var message = new Message(senderSessionUnit)
         {
@@ -128,6 +138,7 @@ public partial class MessageManager(
 
         Assert.NotNull(messageContent, $"Message content is null");
 
+
         //TryToSetOwnerId(messageContent, senderSessionUnit.SessionUnitId);
         messageContent.SetOwnerId(senderSessionUnit.OwnerId);
 
@@ -151,7 +162,7 @@ public partial class MessageManager(
         await MessageValidator.CheckAsync(message);
 
         //sessionUnitCount
-        var sessionUnitCount = message.IsPrivateMessage() ? 2 : await SessionUnitManager.GetCountBySessionIdAsync(senderSessionUnit.SessionId.Value);
+        var sessionUnitCount = message.IsPrivateMessage() ? 2 : unitCacheList.Count();
 
         message.SetSessionUnitCount(sessionUnitCount);
 
@@ -162,7 +173,7 @@ public partial class MessageManager(
         //message = await Repository.GetAsync(message.Id);
 
         // update Session LastMessage
-        await SessionRepository.UpdateLastMessageIdAsync(senderSessionUnit.SessionId.Value, message.Id);
+        await SessionRepository.UpdateLastMessageIdAsync(sessionId, message.Id);
 
         // update SessionUnitSetting LastSendMessageId
         await SessionUnitSettingRepository.UpdateLastSendMessageAsync(senderSessionUnit.Id, message.Id, message.CreationTime);
@@ -415,30 +426,6 @@ public partial class MessageManager(
     {
         var messageContent = ObjectMapper.Map<TContentInfo, TContentEntity>(input.Content);
         return await SendAsync<TContentInfo, TContentEntity>(senderSessionUnit, input, messageContent);
-    }
-
-    [Obsolete($"(移动到本地事伯 MessageCreated:${nameof(PublishToClientForMessageCreatedEventHandler)})")]
-    protected virtual async Task PublishMessageDistributedEventAsync(Message message, Command command, bool onUnitOfWorkComplete = true, bool useOutbox = true)
-    {
-        var cacheKey = await SessionUnitManager.GetCacheKeyByMessageAsync(message);
-
-        // 重新获取，防止导航属性没有加载完全
-        var dbMessage = await Repository.GetAsync(message.Id);
-
-        var eventData = new SendToClientDistributedEto()
-        {
-            Command = command.ToString(),
-            CacheKey = cacheKey,
-            HostName = CurrentHosted.Name,
-            MessageId = message.Id,
-            Message = ObjectMapper.Map<Message, MessageInfo<object>>(dbMessage)
-        };
-
-        await SessionUnitManager.GetOrAddByMessageAsync(message);
-
-        await DistributedEventBus.PublishAsync(eventData, onUnitOfWorkComplete, useOutbox);
-
-        Logger.LogInformation($"PublishMessageDistributedEventAsync(onUnitOfWorkComplete:{onUnitOfWorkComplete},useOutbox:{useOutbox})[{nameof(SendToClientDistributedEto)}]:{eventData}");
     }
 
     /// <inheritdoc />

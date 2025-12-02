@@ -12,6 +12,11 @@ public class MessageCacheItem
     public virtual long Id { get; set; }
 
     /// <summary>
+    /// SessionId
+    /// </summary>
+    public virtual Guid SessionId { get; set; }
+
+    /// <summary>
     /// 
     /// </summary>
     public virtual long? ForwardMessageId { get; set; }

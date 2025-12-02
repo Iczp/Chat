@@ -6,6 +6,7 @@ using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Pipelines.Sockets.Unofficial.Buffers;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
@@ -75,14 +76,13 @@ public class SessionUnitCacheManager(
 
     private static HashEntry[] MapToHashEntries(SessionUnitCacheItem unit)
     {
-
         return RedisMapper.ToHashEntries(unit);
     }
-    public async Task SetListBySessionAsync(Guid sessionId, IEnumerable<SessionUnitCacheItem> units)
+    public async Task<IEnumerable<SessionUnitCacheItem>> SetListBySessionAsync(Guid sessionId, IEnumerable<SessionUnitCacheItem> units)
     {
         ArgumentNullException.ThrowIfNull(units);
         var unitList = units.ToList();
-        if (unitList.Count == 0) return;
+        if (unitList.Count == 0) return [];
 
         var sessionSetKey = SessionSetKey(sessionId);
         //var lastMsgKey = LastMessageSetKey(sessionId);
@@ -114,23 +114,31 @@ public class SessionUnitCacheManager(
         //_ = batch.KeyExpireAsync(lastMsgKey, _cacheExpire);
 
         batch.Execute();
+
+        return units;
     }
 
-    public async Task SetListBySessionAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
+    public async Task<IEnumerable<SessionUnitCacheItem>> SetListBySessionAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
     {
         ArgumentNullException.ThrowIfNull(fetchTask);
         var units = (await fetchTask(sessionId))?.ToList() ?? [];
-        await SetListBySessionAsync(sessionId, units);
+        return await SetListBySessionAsync(sessionId, units);
     }
 
-    public async Task SetListBySessionIfNotExistsAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
+    public async Task<IEnumerable<SessionUnitCacheItem>> SetListBySessionIfNotExistsAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
     {
         var sessionSetKey = SessionSetKey(sessionId);
 
         if (!await Database.KeyExistsAsync(sessionSetKey))
         {
-            await SetListBySessionAsync(sessionId, fetchTask);
+            return await SetListBySessionAsync(sessionId, fetchTask);
         }
+        return null;
+    }
+
+    public async Task<IEnumerable<SessionUnitCacheItem>> GetOrSetListBySessionAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
+    {
+        return await SetListBySessionIfNotExistsAsync(sessionId, fetchTask) ?? await GetListBySessionAsync(sessionId);
     }
 
     /// <summary>
