@@ -1389,9 +1389,10 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("DestinationId");
 
-                    b.HasIndex("MessageId");
-
                     b.HasIndex("OwnerId");
+
+                    b.HasIndex("MessageId", "SessionUnitId")
+                        .HasDatabaseName("IX_Chat_DeletedRecorder_MessageUnit");
 
                     b.ToTable("Chat_DeletedRecorder", (string)null);
                 });
@@ -1663,6 +1664,7 @@ namespace IczpNet.Chat.Migrations
                         .HasComment("设备品牌");
 
                     b.Property<string>("DeviceId")
+                        .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)")
                         .HasComment("设备 ID");
@@ -2973,6 +2975,9 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasKey("SessionUnitId", "MessageId");
 
+                    b.HasIndex("CreationTime")
+                        .IsDescending();
+
                     b.HasIndex("MessageId");
 
                     b.ToTable("Chat_MessageReminder", (string)null);
@@ -3216,8 +3221,6 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("SenderSessionUnitId");
 
-                    b.HasIndex("SessionId");
-
                     b.HasIndex("SessionUnitCount");
 
                     b.HasIndex("ShortId");
@@ -3225,9 +3228,21 @@ namespace IczpNet.Chat.Migrations
                     b.HasIndex("SessionId", "Id")
                         .IsDescending();
 
-                    b.HasIndex("SessionId", "IsPrivate", "SenderId", "ReceiverId", "IsDeleted", "CreationTime", "ForwardDepth", "QuoteDepth");
+                    b.HasIndex("SessionId", "IsDeleted");
 
-                    b.HasIndex("SessionId", "IsPrivate", "SenderSessionUnitId", "ReceiverSessionUnitId", "IsDeleted", "CreationTime", "ForwardDepth", "QuoteDepth");
+                    b.HasIndex("SessionId", "IsDeleted", "IsPrivate")
+                        .HasDatabaseName("IX_ChatMessage_CountQuery");
+
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("SessionId", "IsDeleted", "IsPrivate"), new[] { "Id", "SenderSessionUnitId", "ReceiverSessionUnitId" });
+
+                    b.HasIndex("SessionId", "IsDeleted", "IsPrivate", "SenderSessionUnitId", "ReceiverSessionUnitId")
+                        .HasDatabaseName("IX_Message_Session_Count");
+
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("SessionId", "IsDeleted", "IsPrivate", "SenderSessionUnitId", "ReceiverSessionUnitId"), new[] { "Id" });
+
+                    b.HasIndex("SessionId", "IsDeleted", "IsPrivate", "SenderId", "ReceiverId", "CreationTime", "ForwardDepth", "QuoteDepth");
+
+                    b.HasIndex("SessionId", "IsDeleted", "IsPrivate", "SenderSessionUnitId", "ReceiverSessionUnitId", "CreationTime", "ForwardDepth", "QuoteDepth");
 
                     b.HasIndex(new[] { "CreationTime" }, "IX_Chat_Message_CreationTime_Asc");
 
@@ -6121,6 +6136,107 @@ namespace IczpNet.Chat.Migrations
                     b.ToTable("Chat_Session", (string)null);
                 });
 
+            modelBuilder.Entity("IczpNet.Chat.SessionUnitMessages.SessionUnitMessage", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<bool>("IsFavorited")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsFollowing")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsOpened")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRemindMe")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<long>("MessageId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("OwnerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid?>("SessionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SessionUnitId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreationTime")
+                        .IsDescending();
+
+                    b.HasIndex("MessageId")
+                        .IsDescending();
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("SessionId");
+
+                    b.HasIndex("SessionUnitId", "IsFavorited");
+
+                    b.HasIndex("SessionUnitId", "IsFollowing");
+
+                    b.HasIndex("SessionUnitId", "IsRead");
+
+                    b.HasIndex("SessionUnitId", "MessageId")
+                        .IsUnique();
+
+                    b.ToTable("Chat_SessionUnitMessage", (string)null);
+                });
+
             modelBuilder.Entity("IczpNet.Chat.SessionUnitSettings.SessionUnitSetting", b =>
                 {
                     b.Property<Guid>("SessionUnitId")
@@ -6305,6 +6421,12 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasKey("SessionUnitId");
 
+                    b.HasIndex("ClearTime");
+
+                    b.HasIndex("HistoryFristTime");
+
+                    b.HasIndex("HistoryLastTime");
+
                     b.HasIndex("InviterId");
 
                     b.HasIndex("IsImmersed")
@@ -6324,6 +6446,10 @@ namespace IczpNet.Chat.Migrations
                         .IsDescending();
 
                     b.HasIndex("SessionId");
+
+                    b.HasIndex("HistoryFristTime", "HistoryLastTime", "ClearTime");
+
+                    b.HasIndex("SessionUnitId", "IsEnabled", "IsKilled");
 
                     b.ToTable("Chat_SessionUnitSetting", null, t =>
                         {
@@ -8422,6 +8548,37 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("LastMessage");
 
                     b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.SessionUnitMessages.SessionUnitMessage", b =>
+                {
+                    b.HasOne("IczpNet.Chat.MessageSections.Messages.Message", "Message")
+                        .WithMany()
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId");
+
+                    b.HasOne("IczpNet.Chat.SessionSections.Sessions.Session", "Session")
+                        .WithMany()
+                        .HasForeignKey("SessionId");
+
+                    b.HasOne("IczpNet.Chat.SessionUnits.SessionUnit", "SessionUnit")
+                        .WithMany()
+                        .HasForeignKey("SessionUnitId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Message");
+
+                    b.Navigation("Owner");
+
+                    b.Navigation("Session");
+
+                    b.Navigation("SessionUnit");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.SessionUnitSettings.SessionUnitSetting", b =>

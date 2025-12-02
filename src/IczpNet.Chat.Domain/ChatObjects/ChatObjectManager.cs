@@ -1,4 +1,5 @@
-﻿using Castle.Core.Internal;
+﻿using AutoMapper.Internal.Mappers;
+using Castle.Core.Internal;
 using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjectTypes;
@@ -6,6 +7,7 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionUnits;
+using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -187,17 +189,17 @@ public class ChatObjectManager(IChatObjectRepository repository) : TreeManager<C
 
     public virtual async Task<List<long>> GetIdListByUserIdAsync(Guid userId)
     {
-        return (await Repository.GetQueryableAsync())
-            .Where(x => x.AppUserId == userId)
-            .Select(x => x.Id)
-            .ToList();
-        //return await UserChatObjectCache.GetOrAddAsync(userId, async () =>
-        //{
-        //    return (await Repository.GetQueryableAsync())
+        //return (await Repository.GetQueryableAsync())
         //    .Where(x => x.AppUserId == userId)
         //    .Select(x => x.Id)
         //    .ToList();
-        //});
+        return await UserChatObjectCache.GetOrAddAsync(userId, async () =>
+        {
+            return (await Repository.GetQueryableAsync())
+            .Where(x => x.AppUserId == userId)
+            .Select(x => x.Id)
+            .ToList();
+        });
     }
 
     public virtual async Task<List<long>> GetIdListByNameAsync(List<string> nameList)
@@ -351,6 +353,9 @@ public class ChatObjectManager(IChatObjectRepository repository) : TreeManager<C
 
         Logger.LogInformation($"SessionUnitRepository.BatchUpdateAppUserIdAsync:{count}");
 
+        // Clear Cache
+        await UserChatObjectCache.RemoveAsync(appUserId);
+
         return await base.UpdateAsync(entity, entity.ParentId, isUnique: false);
     }
 
@@ -366,5 +371,29 @@ public class ChatObjectManager(IChatObjectRepository repository) : TreeManager<C
         });
 
         return userChatObject;
+    }
+
+    public override async Task<List<ChatObjectInfo>> GetManyByCacheAsync(List<long> idList)
+    {
+        var kvs = await ItemCache.GetOrAddManyAsync(idList, async keys =>
+          {
+              var entities = await Repository.GetListAsync(x => keys.Contains(x.Id));
+
+              var dict = entities.ToDictionary(
+                  x => x.Id,
+                  x => ObjectMapper.Map<ChatObject, ChatObjectInfo>(x));
+
+              var result = new List<KeyValuePair<long, ChatObjectInfo>>();
+
+              foreach (var id in keys)
+              {
+                  dict.TryGetValue(id, out var cacheItem);
+                  result.Add(new KeyValuePair<long, ChatObjectInfo>(id, cacheItem));
+              }
+
+              return result;
+          });
+        return kvs.Select(x => x.Value).ToList();
+
     }
 }

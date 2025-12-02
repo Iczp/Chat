@@ -21,7 +21,10 @@ public class AiTrigger(
     IFollowManager followManager,
     IJsonSerializer jsonSerializer,
     IBackgroundJobManager backgroundJobManager,
-    IChatObjectManager chatObjectManager) : DomainService, ILocalEventHandler<EntityCreatedEventData<Message>>, ITransientDependency
+    IChatObjectManager chatObjectManager) : 
+    DomainService, 
+    ILocalEventHandler<EntityCreatedEventData<Message>>,
+    ITransientDependency
 {
     protected IAiResolver AiResolver { get; } = aiResolver;
     protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;

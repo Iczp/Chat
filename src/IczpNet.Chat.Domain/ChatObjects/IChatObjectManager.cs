@@ -49,7 +49,7 @@ public interface IChatObjectManager : ITreeManager<ChatObject, long, ChatObjectI
 
     //Task<ChatObjectInfo> GetItemByCacheAsync(Guid chatObjectId);
 
-    //Task<List<ChatObjectInfo>> GetManyByCacheAsync(List<Guid> chatObjectIdList);
+    //Task<List<ChatObjectInfo>> GetManyCacheAsync(List<Guid> chatObjectIdList);
 
     //Task<List<ChatObject>> GetManyAsync(List<Guid> chatObjectIdList);
 

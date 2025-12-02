@@ -1,5 +1,5 @@
-using IczpNet.Chat.AppVersionDevices;
 using IczpNet.Chat.AppVersionDeviceGroups;
+using IczpNet.Chat.AppVersionDevices;
 using IczpNet.Chat.AppVersions;
 using IczpNet.Chat.Articles;
 using IczpNet.Chat.Blobs;
@@ -52,6 +52,7 @@ using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
 using IczpNet.Chat.SessionSections.SessionUnitOrganizations;
 using IczpNet.Chat.SessionSections.SessionUnitRoles;
 using IczpNet.Chat.SessionSections.SessionUnitTags;
+using IczpNet.Chat.SessionUnitMessages;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
 using IczpNet.Chat.TextContentWords;
@@ -94,6 +95,9 @@ public class ChatDbContext(DbContextOptions<ChatDbContext> options) : AbpDbConte
 
     public DbSet<Session> Session { get; set; }
     public DbSet<SessionUnit> SessionUnit { get; set; }
+
+    public DbSet<SessionUnitMessage> SessionUnitMessage { get; set; }
+
     public DbSet<SessionUnitEntryValue> SessionUnitEntryValue { get; set; }
     public DbSet<SessionUnitSetting> SessionUnitSetting { get; set; }
     public DbSet<SessionUnitCounter> SessionUnitCounter { get; set; }

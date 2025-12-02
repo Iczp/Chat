@@ -21,7 +21,11 @@ public class DeveloperTrigger(
     IJsonSerializer jsonSerializer,
     IBackgroundJobManager backgroundJobManager,
     IChatObjectManager chatObjectManager,
-    IDeveloperManager developerManager) : DomainService, ILocalEventHandler<EntityCreatedEventData<Message>>, ITransientDependency
+    IDeveloperManager developerManager) 
+    : 
+    DomainService, 
+    ILocalEventHandler<EntityCreatedEventData<Message>>,
+    ITransientDependency
 {
     protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
     protected IFollowManager FollowManager { get; } = followManager;

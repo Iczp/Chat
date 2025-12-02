@@ -24,6 +24,7 @@ using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.Sessions.Dtos;
 using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionTags.Dtos;
+using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
 using IczpNet.Chat.SessionUnitSettings;
@@ -55,11 +56,25 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
         CreateMap<SessionUnit, SessionUnitDestinationDetailDto>();
         CreateMap<SessionUnit, SessionUnitDestinationDto>();
         CreateMap<SessionUnit, SessionUnitWithDestinationDto>();
+        
         CreateMap<SessionUnit, SessionUnitSenderDto>()
             .Ignore(x => x.IsFriendship)
             .Ignore(x => x.FriendshipName)
             .Ignore(x => x.FriendshipSessionUnitId)
             ;
+
+        CreateMap<SessionUnit, SessionUnitCacheItem>();
+
+        CreateMap<SessionUnitCacheItem, SessionUnitCacheDto>(MemberList.None)
+            //.Ignore(x => x.Setting)
+            //.Ignore(x => x.Destination)
+            ;
+        CreateMap<SessionUnitCacheDto, SessionUnitCacheDto>()
+            .ForMember(x => x.Setting, opt => opt.MapFrom(y => y.Setting))
+            .ForMember(x => x.Destination, opt => opt.MapFrom(y => y.Destination))
+            .PreserveReferences()
+            .MaxDepth(3);
+
 
         //CreateMap<SessionUnitModel, SessionUnitOwnerDto>();
 

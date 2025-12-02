@@ -9,6 +9,7 @@ using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits;
+using IczpNet.Chat.SessionUnitSettings;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -94,5 +95,8 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<DisconnectedEto, ActivedEto>().ReverseMap();
         CreateMap<ConnectedEto, ActivedEto>().ReverseMap();
 
+
+        CreateMap<SessionUnitSetting, SessionUnitSettingCacheItem>();
+        
     }
 }

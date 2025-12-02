@@ -54,3 +54,9 @@ type DeviceType 'pc' | 'phone' | 'web' | 'html5plus' | 'tablet' | 'pad' | 'webvi
 
 
 
+### Redis 缓存版
+
+- [x] SessionUnit、SessionUnitSetting 缓存
+- [x] 更新角标
+- [ ] 提醒、关注、最后发送消息
+- [ ] 消息列表+消息缓存

@@ -31,7 +31,7 @@ public class IncremenetBadge(
 
         var shouldbeBackgroundJob = BackgroundJobManager.IsAvailable() && !message.IsPrivateMessage() && message.SessionUnitCount > useBackgroundJobSenderMinSessionUnitCount;
 
-        Logger.LogWarning($"ShouldbeBackgroundJobAsync: shouldbeBackgroundJob={shouldbeBackgroundJob},useBackgroundJobSenderMinSessionUnitCount={useBackgroundJobSenderMinSessionUnitCount}");
+        Logger.LogWarning($"ShouldbeBackgroundJobAsync: shouldbeBackgroundJob={shouldbeBackgroundJob}, message.SessionUnitCount:{message.SessionUnitCount},useBackgroundJobSenderMinSessionUnitCount={useBackgroundJobSenderMinSessionUnitCount}");
 
         return shouldbeBackgroundJob;
     }

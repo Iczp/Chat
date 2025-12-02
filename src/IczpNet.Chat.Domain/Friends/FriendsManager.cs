@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
-using System.Xml.Schema;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Services;
 

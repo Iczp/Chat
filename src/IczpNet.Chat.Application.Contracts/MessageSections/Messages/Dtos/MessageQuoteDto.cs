@@ -1,5 +1,4 @@
 ﻿using IczpNet.Chat.SessionUnits.Dtos;
-using System;
 using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.MessageSections.Messages.Dtos;

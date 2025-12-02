@@ -36,6 +36,7 @@ using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
 using IczpNet.Chat.SessionSections.SessionUnitOrganizations;
 using IczpNet.Chat.SessionSections.SessionUnitRoles;
 using IczpNet.Chat.SessionSections.SessionUnitTags;
+using IczpNet.Chat.SessionUnitMessages;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
 using IczpNet.Chat.TextContentWords;
@@ -47,6 +48,7 @@ using System.Linq;
 using System.Reflection;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities;
+using Volo.Abp.EntityFrameworkCore.Modeling;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -146,13 +148,23 @@ public static class ChatDbContextModelCreatingExtensions
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        builder.Entity<MessageReminder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
+        builder.Entity<MessageReminder>(b =>
+        {
+            b.HasKey(x => new { x.SessionUnitId, x.MessageId });
+            b.HasIndex(x => x.CreationTime).IsDescending([true]);
+        });
         builder.Entity<MessageFollower>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
 
         builder.Entity<FavoritedRecorder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
         builder.Entity<OpenedRecorder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
         builder.Entity<ReadedRecorder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
-        builder.Entity<DeletedRecorder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
+        builder.Entity<DeletedRecorder>(b =>
+        {
+
+            b.HasKey(x => new { x.SessionUnitId, x.MessageId });
+            //ChatGPT 优化 2025.11.20
+            b.HasIndex(x => new { x.MessageId, x.SessionUnitId }).HasDatabaseName("IX_Chat_DeletedRecorder_MessageUnit");
+        });
 
         builder.Entity<Scoped>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
 
@@ -193,6 +205,8 @@ public static class ChatDbContextModelCreatingExtensions
             b.HasOne(x => x.Blob).WithOne(x => x.Content).HasForeignKey<BlobContent>(x => x.BlobId).IsRequired(true);
         });
 
+
+
         builder.Entity<Message>(b =>
             {
                 var _prefix = $"{ChatDbProperties.DbTablePrefix}_{nameof(Message)}_MapTo";
@@ -219,7 +233,60 @@ public static class ChatDbContextModelCreatingExtensions
                 b.HasOne(x => x.OpenedCounter).WithOne(x => x.Message).HasForeignKey<OpenedCounter>(x => x.MessageId).IsRequired(true);
                 b.HasOne(x => x.FavoritedCounter).WithOne(x => x.Message).HasForeignKey<FavoritedCounter>(x => x.MessageId).IsRequired(true);
                 b.HasOne(x => x.DeletedCounter).WithOne(x => x.Message).HasForeignKey<DeletedCounter>(x => x.MessageId).IsRequired(true);
+
+                //ChatGPT 优化 2025.11.20
+                b.HasIndex(x => new { x.SessionId, x.IsDeleted, x.IsPrivate }).HasDatabaseName("IX_ChatMessage_CountQuery").IncludeProperties(x => new { x.Id, x.SenderSessionUnitId, x.ReceiverSessionUnitId });
+
+                // 优化 GetList COUNT 的关键索引
+                b.HasIndex(x => new
+                {
+                    x.SessionId,
+                    x.IsDeleted,
+                    x.IsPrivate,
+                    x.SenderSessionUnitId,
+                    x.ReceiverSessionUnitId
+                })
+                .HasDatabaseName("IX_Message_Session_Count")
+                .IncludeProperties(x => new { x.Id });
+
             });
+
+        builder.Entity<SessionUnitMessage>(b =>
+        {
+            // 主键，自增 Id
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Id).ValueGeneratedOnAdd();
+
+            // 唯一约束：一个 SessionUnit 对同一 message 只能有一条记录
+            b.HasIndex(x => new { x.SessionUnitId, x.MessageId }).IsUnique();
+
+            // MessageId 单字段查询（比如通过消息找所有 SessionUnitMessage）
+            b.HasIndex(x => x.MessageId).IsDescending(true);
+
+            // 已读查询
+            b.HasIndex(x => new { x.SessionUnitId, x.IsRead });
+
+            // 是否关注
+            b.HasIndex(x => new { x.SessionUnitId, x.IsFollowing });
+
+            // 是否收藏
+            b.HasIndex(x => new { x.SessionUnitId, x.IsFavorited });
+
+            // 创建时间排序（用于按时间分页）
+            b.HasIndex(x => x.CreationTime).IsDescending(true);
+
+            // 外键
+            b.HasOne(x => x.SessionUnit)
+                .WithMany()
+                .HasForeignKey(x => x.SessionUnitId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            b.HasOne(x => x.Message)
+                .WithMany()
+                .HasForeignKey(x => x.MessageId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+        });
 
         builder.Entity<UserDevice>(b => { b.HasKey(x => new { x.UserId, x.DeviceId }); });
 

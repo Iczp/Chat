@@ -1,4 +1,3 @@
-using DeviceDetectorNET.Parser.Device;
 using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjects;
@@ -67,6 +66,8 @@ namespace IczpNet.Chat;
         {
             options.GlobalStateCheckers.Add<SessionUnitStateChecker>();
         });
+
+
     }
 
     public override async Task OnPostApplicationInitializationAsync(ApplicationInitializationContext context)

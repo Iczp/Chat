@@ -25,7 +25,11 @@ public class PublishToClientForMessageCreatedEventHandler(
     IObjectMapper objectMapper,
     ICurrentHosted currentHosted,
     IJsonSerializer jsonSerializer,
-    IDistributedEventBus distributedEventBus) : DomainService, ILocalEventHandler<EntityCreatedEventData<Message>>, ITransientDependency
+    IDistributedEventBus distributedEventBus) 
+    : 
+    DomainService, 
+    ILocalEventHandler<EntityCreatedEventData<Message>>,
+    ITransientDependency
 {
 
     protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
@@ -36,11 +40,9 @@ public class PublishToClientForMessageCreatedEventHandler(
     public IJsonSerializer JsonSerializer { get; } = jsonSerializer;
     public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
 
-
     [UnitOfWork]
     public async Task HandleEventAsync(EntityCreatedEventData<Message> eventData)
     {
-        await Task.Yield();
         var message = eventData.Entity;
         Logger.LogInformation($"{nameof(PublishToClientForMessageCreatedEventHandler)} Created message:{message}");
         await PublishMessageDistributedEventAsync(message);
@@ -48,7 +50,7 @@ public class PublishToClientForMessageCreatedEventHandler(
 
     protected virtual async Task PublishMessageDistributedEventAsync(Message message, bool onUnitOfWorkComplete = true, bool useOutbox = true)
     {
-        var cacheKey = await SessionUnitManager.GetCacheKeyByMessageAsync(message);
+        //var cacheKey = await SessionUnitManager.GetCacheKeyByMessageAsync(message);
 
         var command = message.ForwardMessageId.HasValue ? CommandConsts.MessageForwarded : CommandConsts.MessageCreated;
 
@@ -70,7 +72,7 @@ public class PublishToClientForMessageCreatedEventHandler(
         var eventData = new SendToClientDistributedEto()
         {
             Command = command.ToString(),
-            CacheKey = cacheKey,
+            //CacheKey = cacheKey,
             HostName = CurrentHosted.Name,
             MessageId = message.Id,
             Message = messageDto
@@ -78,7 +80,7 @@ public class PublishToClientForMessageCreatedEventHandler(
 
         Logger.LogInformation($"PublishMessageDistributedEventAsync-eventData:{JsonSerializer.Serialize(eventData)}");
 
-        await SessionUnitManager.GetOrAddByMessageAsync(message);
+        //await SessionUnitManager.GetOrAddByMessageAsync(message);
 
         await DistributedEventBus.PublishAsync(eventData, onUnitOfWorkComplete, useOutbox);
 

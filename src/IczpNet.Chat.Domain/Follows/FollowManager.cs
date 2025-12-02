@@ -62,7 +62,8 @@ public class FollowManager(ISessionUnitManager sessionUnitManager,
 
     public async Task<bool> CreateAsync(SessionUnit owner, List<Guid> idList)
     {
-        var destinationList = await SessionUnitManager.GetManyAsync(idList.Distinct().ToList());
+        var destinationList = (await SessionUnitManager.GetManyAsync([.. idList.Distinct()]))
+            .Select(x => x.Value);
 
         Assert.If(idList.Contains(owner.Id), $"Unable following oneself.");
 
@@ -77,7 +78,7 @@ public class FollowManager(ISessionUnitManager sessionUnitManager,
              .ToList();
 
         var newList = idList.Except(followedIdList)
-            .Where(X => X != owner.Id)
+            .Where(x => x != owner.Id)
             .Select(x => new Follow(owner, x))
             .ToList();
 
