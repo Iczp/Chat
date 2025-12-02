@@ -98,7 +98,7 @@ public class SessionUnitCacheManager(
         foreach (var unit in unitList)
         {
             var idStr = unit.Id.ToString();
-            setAddTasks.Add(batch.SetAddAsync(sessionSetKey, idStr));
+            setAddTasks.Add(batch.HashSetAsync(sessionSetKey, idStr, unit.OwnerId));
 
             var unitKey = UnitKey(unit.Id);
 
@@ -442,15 +442,15 @@ public class SessionUnitCacheManager(
 
     #region Remove / Set / Misc
 
-    public async Task AddUnitIdToSessionAsync(Guid sessionId, Guid unitId)
+    public async Task AddUnitIdToSessionAsync(Guid sessionId, Guid unitId,long ownerId)
     {
-        await Database.SetAddAsync(SessionSetKey(sessionId), unitId.ToString());
+        await Database.HashSetAsync(SessionSetKey(sessionId), unitId.ToString(), ownerId);
         await Database.KeyExpireAsync(SessionSetKey(sessionId), _cacheExpire);
     }
 
     public async Task RemoveUnitIdFromSessionAsync(Guid sessionId, Guid unitId)
     {
-        await Database.SetRemoveAsync(SessionSetKey(sessionId), unitId.ToString());
+        await Database.HashDeleteAsync(SessionSetKey(sessionId), unitId.ToString());
         await Database.KeyDeleteAsync(UnitKey(unitId));
     }
 
@@ -466,7 +466,7 @@ public class SessionUnitCacheManager(
         {
             delTasks.Add(batch.KeyDeleteAsync(UnitKey(id)));
             //zremoveTasks.Add(batch.SortedSetRemoveAsync(zkey, id.ToString()));
-            _ = batch.SetRemoveAsync(SessionSetKey(sessionId), id.ToString());
+            _ = batch.HashDeleteAsync(SessionSetKey(sessionId), id.ToString());
         }
 
         batch.Execute();
