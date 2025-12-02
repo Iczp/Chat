@@ -11,14 +11,14 @@ using Volo.Abp.Uow;
 namespace IczpNet.Chat.MessageSections.Messages;
 
 /// <summary>
-/// SessionUnitMessage 处理
+/// SessionUnitCache 批量增量事件处理
 /// </summary>
 public class BatchIncrementForMessageCreatedEventHandler(
     ISessionUnitManager sessionUnitManager,
     ISessionUnitCacheManager sessionUnitCacheManager) 
     : 
     DomainService, 
-    ILocalEventHandler<EntityCreatedEventData<Message>>, 
+    ILocalEventHandler<EntityCreatedEventData<Message>>,
     ITransientDependency
 {
     public ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;

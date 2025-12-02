@@ -8,6 +8,8 @@ public class SessionUnitIncrementJobArgs
 {
     public Guid SessionId { get; set; }
 
+    public long OwnerId { get; set; }
+
     public bool IsPrivate { get; set; } = false;
 
     public Guid SenderSessionUnitId { get; set; }

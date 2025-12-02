@@ -23,7 +23,11 @@ public class IncremenetBadgeForMessageCreatedEventHandler(
     IFollowManager followManager,
     IJsonSerializer jsonSerializer,
     IBackgroundJobManager backgroundJobManager,
-    IDeveloperManager developerManager) : DomainService, ILocalEventHandler<EntityCreatedEventData<Message>>, ITransientDependency
+    IDeveloperManager developerManager) 
+    : 
+    DomainService, 
+    ILocalEventHandler<EntityCreatedEventData<Message>>,
+    ITransientDependency
 {
     public IIncremenetBadge IncremenetBadge { get; } = incremenetBadge;
     protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
@@ -44,6 +48,7 @@ public class IncremenetBadgeForMessageCreatedEventHandler(
         var sessionUnitIncrementJobArgs = new SessionUnitIncrementJobArgs()
         {
             SessionId = message.SessionId.Value,
+            OwnerId = message.SenderId.Value,
             SenderSessionUnitId = message.SenderSessionUnitId.Value,
             RemindSessionUnitIdList = message.MessageReminderList.Select(x => x.SessionUnitId).ToList(),
             PrivateBadgeSessionUnitIdList = isPrivateMessage ? [message.ReceiverSessionUnitId.Value] : [],
