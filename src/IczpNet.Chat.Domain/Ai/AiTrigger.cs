@@ -23,7 +23,7 @@ public class AiTrigger(
     IBackgroundJobManager backgroundJobManager,
     IChatObjectManager chatObjectManager) : 
     DomainService, 
-    ILocalEventHandler<EntityCreatedEventData<Message>>,
+    //ILocalEventHandler<EntityCreatedEventData<Message>>,
     ITransientDependency
 {
     protected IAiResolver AiResolver { get; } = aiResolver;

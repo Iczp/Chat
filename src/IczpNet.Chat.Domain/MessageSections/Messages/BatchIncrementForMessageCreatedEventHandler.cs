@@ -18,7 +18,7 @@ public class BatchIncrementForMessageCreatedEventHandler(
     ISessionUnitCacheManager sessionUnitCacheManager) 
     : 
     DomainService, 
-    ILocalEventHandler<EntityCreatedEventData<Message>>,
+    //ILocalEventHandler<EntityCreatedEventData<Message>>,
     ITransientDependency
 {
     public ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;

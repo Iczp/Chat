@@ -33,13 +33,13 @@ public class SessionUnitCacheManager(
     private string UnitKey(Guid unitId)
         => $"{Prefix}Units:UnitId-{unitId}";
     private string SessionSetKey(Guid sessionId)
-        => $"{Options.Value.KeyPrefix}Sessions:SessionId-{sessionId}";
+        => $"{Prefix}Sessions:SessionId-{sessionId}";
     private string OwnerSortedSetKey(long ownerId)
-        => $"{Options.Value.KeyPrefix}ChatObjects:Sorted:OwnerId-{ownerId}";
+        => $"{Prefix}ChatObjects:Sorted:OwnerId-{ownerId}";
     private string OwnerExistsSetKey(long ownerId)
-        => $"{Options.Value.KeyPrefix}ChatObjects:Exists:OwnerId-{ownerId}";
+        => $"{Prefix}ChatObjects:Exists:OwnerId-{ownerId}";
     private string OwnerTotalBadgeSetKey(long ownerId)
-        => $"{Options.Value.KeyPrefix}ChatObjects:TotalBadges:OwnerId-{ownerId}";
+        => $"{Prefix}ChatObjects:TotalBadges:OwnerId-{ownerId}";
 
     // composite score multiplier (sorting * MULT + lastMessageId)
     private const double OWNER_SCORE_MULT = 1_000_000_000_000d; // 1e12

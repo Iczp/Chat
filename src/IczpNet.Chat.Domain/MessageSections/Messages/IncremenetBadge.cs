@@ -23,15 +23,16 @@ public class IncremenetBadge(
     public async Task<bool> ShouldbeBackgroundJobAsync(Message message)
     {
         //return true;
-        await Task.Yield();
 
         //return BackgroundJobManager.IsAvailable();
 
+        var sessionUnitCount = message.SessionUnitCount;
+
         var useBackgroundJobSenderMinSessionUnitCount = await SettingProvider.GetAsync(ChatSettings.UseBackgroundJobSenderMinSessionUnitCount, 500);
 
-        var shouldbeBackgroundJob = BackgroundJobManager.IsAvailable() && !message.IsPrivateMessage() && message.SessionUnitCount > useBackgroundJobSenderMinSessionUnitCount;
+        var shouldbeBackgroundJob = BackgroundJobManager.IsAvailable() && !message.IsPrivateMessage() && sessionUnitCount > useBackgroundJobSenderMinSessionUnitCount;
 
-        Logger.LogWarning($"ShouldbeBackgroundJobAsync: shouldbeBackgroundJob={shouldbeBackgroundJob}, message.SessionUnitCount:{message.SessionUnitCount},useBackgroundJobSenderMinSessionUnitCount={useBackgroundJobSenderMinSessionUnitCount}");
+        Logger.LogWarning($"ShouldbeBackgroundJobAsync: shouldbeBackgroundJob={shouldbeBackgroundJob}, sessionUnitCount:{sessionUnitCount},useBackgroundJobSenderMinSessionUnitCount={useBackgroundJobSenderMinSessionUnitCount}");
 
         return shouldbeBackgroundJob;
     }

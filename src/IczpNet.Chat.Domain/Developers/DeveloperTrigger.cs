@@ -24,7 +24,7 @@ public class DeveloperTrigger(
     IDeveloperManager developerManager) 
     : 
     DomainService, 
-    ILocalEventHandler<EntityCreatedEventData<Message>>,
+    //ILocalEventHandler<EntityCreatedEventData<Message>>,
     ITransientDependency
 {
     protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
