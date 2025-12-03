@@ -102,12 +102,12 @@ public partial class MessageManager(
 
         //cache
         //await SessionUnitManager.GetOrAddCacheListAsync(sessionId);
-        var unitCacheList = await SessionUnitCacheManager.GetOrSetListBySessionAsync(
-            sessionId,
-            async (sessionId) =>
-            {
-                return await SessionUnitManager.GetCacheListBySessionIdAsync(sessionId);
-            });
+        //var unitCacheList = await SessionUnitCacheManager.GetOrSetListBySessionAsync(
+        //    sessionId,
+        //    async (sessionId) =>
+        //    {
+        //        return await SessionUnitManager.GetCacheListBySessionIdAsync(sessionId);
+        //    });
 
         var message = new Message(senderSessionUnit)
         {
@@ -161,10 +161,10 @@ public partial class MessageManager(
         // Message Validator
         await MessageValidator.CheckAsync(message);
 
-        //sessionUnitCount
-        var sessionUnitCount = message.IsPrivateMessage() ? 2 : unitCacheList.Count();
+        ////sessionUnitCount
+        //var sessionUnitCount = message.IsPrivateMessage() ? 2 : unitCacheList.Count();
 
-        message.SetSessionUnitCount(sessionUnitCount);
+        //message.SetSessionUnitCount(sessionUnitCount);
 
         // Save
         await Repository.InsertAsync(message, autoSave: true);
@@ -185,7 +185,7 @@ public partial class MessageManager(
         await UpdateForwardCountAsync(message.ForwardPath);
 
         // 发出事件 (移动到本地事伯 MessageCreated)
-        //await PublishMessageDistributedEventAsync(message, message.ForwardMessageId.HasValue ? Command.Forward : Command.Created);
+        //await PublishDistributedEventAsync(message, message.ForwardMessageId.HasValue ? Command.Forward : Command.Created);
 
         ////以下可能导致锁表
         //await SessionUnitRepository.UpdateLastMessageIdAsync(senderSessionUnit.Id, message.Id);
@@ -481,7 +481,7 @@ public partial class MessageManager(
         message.Rollback(nowTime);
 
         //(移动到本地事伯 MessageCreated)
-        //await PublishMessageDistributedEventAsync(message, Command.Rollback);
+        //await PublishDistributedEventAsync(message, Command.Rollback);
 
         //await Repository.UpdateAsync(message, true);
         await UnitOfWorkManager.Current.SaveChangesAsync();
@@ -535,7 +535,7 @@ public partial class MessageManager(
             });
             messageList.Add(newMessage);
 
-            //await PublishMessageDistributedEventAsync(newMessage, Command.Forward);
+            //await PublishDistributedEventAsync(newMessage, Command.Forward);
 
             var output = ObjectMapper.Map<Message, MessageInfo<object>>(newMessage);
 

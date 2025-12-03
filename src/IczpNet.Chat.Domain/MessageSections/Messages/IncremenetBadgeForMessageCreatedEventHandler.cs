@@ -26,7 +26,7 @@ public class IncremenetBadgeForMessageCreatedEventHandler(
     IDeveloperManager developerManager) 
     : 
     DomainService, 
-    ILocalEventHandler<EntityCreatedEventData<Message>>,
+    //ILocalEventHandler<EntityCreatedEventData<Message>>,
     ITransientDependency
 {
     public IIncremenetBadge IncremenetBadge { get; } = incremenetBadge;
@@ -39,7 +39,6 @@ public class IncremenetBadgeForMessageCreatedEventHandler(
     [UnitOfWork]
     public async Task HandleEventAsync(EntityCreatedEventData<Message> eventData)
     {
-        await Task.Yield();
         var message = eventData.Entity;
         Logger.LogInformation($"Created message:{message}");
 
@@ -60,15 +59,18 @@ public class IncremenetBadgeForMessageCreatedEventHandler(
 
         Logger.LogInformation($"{nameof(SessionUnitIncrementJobArgs)}:{JsonSerializer.Serialize(sessionUnitIncrementJobArgs)}");
 
-        if (await IncremenetBadge.ShouldbeBackgroundJobAsync(message))
-        {
-            var jobId = await BackgroundJobManager.EnqueueAsync(sessionUnitIncrementJobArgs);
-            Logger.LogInformation($"{nameof(SessionUnitIncrementJobArgs)} backgroupJobId:{jobId},messageId={message.Id}");
-        }
-        else
-        {
-            Logger.LogWarning($"BackgroundJobManager.IsAvailable():False, messageId={message.Id}");
-            await SessionUnitManager.IncremenetAsync(sessionUnitIncrementJobArgs);
-        }
+        var jobId = await BackgroundJobManager.EnqueueAsync(sessionUnitIncrementJobArgs);
+        Logger.LogInformation($"{nameof(SessionUnitIncrementJobArgs)} backgroupJobId:{jobId},messageId={message.Id}");
+
+        //if (await IncremenetBadge.ShouldbeBackgroundJobAsync(message))
+        //{
+        //    var jobId = await BackgroundJobManager.EnqueueAsync(sessionUnitIncrementJobArgs);
+        //    Logger.LogInformation($"{nameof(SessionUnitIncrementJobArgs)} backgroupJobId:{jobId},messageId={message.Id}");
+        //}
+        //else
+        //{
+        //    Logger.LogWarning($"BackgroundJobManager.IsAvailable():False, messageId={message.Id}");
+        //    await SessionUnitManager.IncremenetAsync(sessionUnitIncrementJobArgs);
+        //}
     }
 }

@@ -28,7 +28,7 @@ public class PublishToClientForMessageCreatedEventHandler(
     IDistributedEventBus distributedEventBus) 
     : 
     DomainService, 
-    ILocalEventHandler<EntityCreatedEventData<Message>>,
+    //ILocalEventHandler<EntityCreatedEventData<Message>>,
     ITransientDependency
 {
 
