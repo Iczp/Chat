@@ -188,7 +188,7 @@ public partial class MessageManager(
         //await PublishDistributedEventAsync(message, message.ForwardMessageId.HasValue ? Command.Forward : Command.Created);
 
         ////以下可能导致锁表
-        //await SessionUnitRepository.UpdateLastMessageIdAsync(senderSessionUnit.Id, message.Id);
+        //await SessionUnitManager.UpdateLastMessageIdAsync(senderSessionUnit.Id, message.Id);
 
         //await CurrentUnitOfWork.SaveChangesAsync();
 
@@ -398,7 +398,7 @@ public partial class MessageManager(
 
         message.SetReminder(finalRemindIdList, ReminderTypes.Normal);
 
-        //await SessionUnitRepository.IncrementRemindMeCountAsync(message.CreationTime, finalRemindIdList);
+        //await SessionUnitManager.IncrementRemindMeCountAsync(message.CreationTime, finalRemindIdList);
 
         return finalRemindIdList;
     }

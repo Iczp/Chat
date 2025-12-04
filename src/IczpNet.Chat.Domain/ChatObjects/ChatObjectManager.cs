@@ -311,9 +311,9 @@ public class ChatObjectManager(IChatObjectRepository repository) : TreeManager<C
     {
         entity.SetName(name);
 
-        //var count = await SessionUnitRepository.BatchUpdateNameAsync(entity.Id, entity.Name, entity.NameSpelling, entity.NameSpellingAbbreviation);
+        //var count = await SessionUnitManager.BatchUpdateNameAsync(entity.Id, entity.Name, entity.NameSpelling, entity.NameSpellingAbbreviation);
 
-        //Logger.LogInformation($"SessionUnitRepository.BatchUpdateNameAsync:{count}");
+        //Logger.LogInformation($"SessionUnitManager.BatchUpdateNameAsync:{count}");
 
         return await base.UpdateAsync(entity, entity.ParentId, isUnique: true);
     }

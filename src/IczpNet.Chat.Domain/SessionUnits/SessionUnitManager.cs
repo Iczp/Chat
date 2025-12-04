@@ -41,7 +41,7 @@ public class SessionUnitManager(
     IDistributedCache<string, Guid> sessionUnitCountCache,
     IChatObjectRepository chatObjectRepository,
     IMessageSender messageSender,
-    IObjectMapper objectMapper,
+    //IObjectMapper objectMapper,
     IUnitOfWorkManager unitOfWorkManager,
     ISessionGenerator sessionGenerator,
     ISessionManager sessionManager,
@@ -1170,5 +1170,22 @@ public class SessionUnitManager(
                 });
 
         return [newsSessionUnit, userSessionUnit];
+    }
+
+    public async Task<Dictionary<long, List<Guid>>> GetSessionsByChatObjectAsync(List<long> chatObjectIdList)
+    {
+        var result = (await Repository.GetQueryableAsync())
+            .Where(x => chatObjectIdList.Contains(x.OwnerId))
+            .Select(x => new { x.OwnerId, x.SessionId })
+            .GroupBy(x => x.OwnerId, x => x.SessionId.Value)
+            .ToDictionary(x => x.Key, x => x.ToList())
+            ;
+        return result;
+    }
+
+    public async Task<Dictionary<long, List<Guid>>> GetSessionsByUserAsync(Guid userId)
+    {
+        var chatObjectIds = await ChatObjectManager.GetIdListByUserIdAsync(userId);
+        return await GetSessionsByChatObjectAsync(chatObjectIds);
     }
 }
