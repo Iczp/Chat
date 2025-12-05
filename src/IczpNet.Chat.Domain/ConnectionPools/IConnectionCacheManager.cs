@@ -30,6 +30,13 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     Task<bool> DisconnectedAsync(string connectionId, CancellationToken token = default);
 
     /// <summary>
+    /// 删除主机所有连接
+    /// </summary>
+    /// <param name="hostHame"></param>
+    /// <returns></returns>
+    Task DeleteByHostNameAsync(string hostHame);
+
+    /// <summary>
     /// 
     /// </summary>
     /// <param name="cancellationToken"></param>

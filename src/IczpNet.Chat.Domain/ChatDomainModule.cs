@@ -1,4 +1,3 @@
-using DeviceDetectorNET.Parser.Device;
 using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjects;
