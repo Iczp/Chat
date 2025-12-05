@@ -59,6 +59,7 @@
 
   <ItemGroup>
     <Folder Include="Commands\" />
+    <Folder Include="ConnectionCaches\" />
     <Folder Include="GotRecorders\" />
     <Folder Include="Personals\" />
     <Folder Include="RedPackets\" />

@@ -1,3 +1,4 @@
+using DeviceDetectorNET.Parser.Device;
 using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjects;
@@ -7,6 +8,8 @@ using IczpNet.Chat.SessionUnits;
 using IczpNet.Pusher;
 using IczpNet.Pusher.ShortIds;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using StackExchange.Redis;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.AutoMapper;
@@ -40,6 +43,8 @@ namespace IczpNet.Chat;
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        var configuration = context.Services.GetConfiguration();
+
         context.Services.AddAutoMapperObjectMapper<ChatDomainModule>();
 
         context.Services.AddHttpClient(HttpRequest.ClientName);
@@ -67,6 +72,9 @@ namespace IczpNet.Chat;
             options.GlobalStateCheckers.Add<SessionUnitStateChecker>();
         });
 
+        // Redis
+        var redisOptions = ConfigurationOptions.Parse(configuration["Redis:Configuration"]);
+        context.Services.TryAddSingleton<IConnectionMultiplexer>(provider => ConnectionMultiplexer.Connect(redisOptions));
 
     }
 
