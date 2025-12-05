@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Uow;
+using static Volo.Abp.Identity.Settings.IdentitySettingNames;
 
 namespace IczpNet.Chat.ConnectionPools;
 
@@ -49,6 +50,8 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
     private string OwnerSessionKey(long chatObjectId)
         => $"{Prefix}Owners:Sessions:OwnerId-{chatObjectId}";
 
+    private string UserConnKey(Guid userId)
+        => $"{Prefix}Users:userId-{userId}";
 
     private static HashEntry[] MapToHashEntries(ConnectionPoolCacheItem connectionPool)
     {
@@ -189,8 +192,8 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
         // Read batch: try to get owner sessions from redis
         var ownerIds = connectionPool.ChatObjectIdList ?? [];
         var connectionId = connectionPool.ConnectionId;
-
-        Logger.LogInformation($"[CreateAsync] connectionId:{connectionId},ownerIds:{ownerIds.JoinAsString(",")}");
+        var userId = connectionPool.UserId.Value;
+        Logger.LogInformation($"[CreateAsync] connectionId:{connectionId},userId:{userId},ownerIds:{ownerIds.JoinAsString(",")}");
 
         var chatObjectSessions = await GetOrSetSessionsAsync(ownerIds, token);
 
@@ -206,6 +209,11 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
         var hostConnKey = HostConnKey(connectionPool.Host);
         _ = writeBatch.SortedSetAddAsync(hostConnKey, connectionId, Clock.Now.Ticks);
         Expire(writeBatch, hostConnKey);
+
+        //User
+        var userConnKey = UserConnKey(userId);
+        _ = writeBatch.HashSetAsync(userConnKey, userId.ToString(),ownerIds.JoinAsString(","));
+        Expire(writeBatch, userConnKey);
 
         // connectionPool hash
         var hashEntries = MapToHashEntries(connectionPool);
@@ -269,12 +277,13 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
         // Schedule reading ChatObjectIdList and Host
         var chatObjectIdListTask = readBatch.HashGetAsync(connKey, nameof(ConnectionPoolCacheItem.ChatObjectIdList));
         var hostTask = readBatch.HashGetAsync(connKey, nameof(ConnectionPool.Host));
+        var userTask = readBatch.HashGetAsync(connKey, nameof(ConnectionPool.UserId));
 
         readBatch.Execute();
 
         var chatObjectIdListValue = await chatObjectIdListTask;
-
         var hostValue = await hostTask;
+        var userValue = await userTask;
 
         var chatObjectIdList = chatObjectIdListValue.IsNull ? new List<long>() : chatObjectIdListValue.ToString().Split(",").Select(x => long.Parse(x)).ToList();
 
@@ -304,9 +313,19 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
         }
 
         // Host: update timestamp in sorted set
-        var hostConnKey = HostConnKey(hostValue.ToString());
-        _ = writeBatch.SortedSetAddAsync(hostConnKey, connectionId, Clock.Now.Ticks);
-        Expire(writeBatch, hostConnKey);
+        if (!hostValue.IsNullOrEmpty)
+        {
+            var hostConnKey = HostConnKey(hostValue.ToString());
+            _ = writeBatch.SortedSetAddAsync(hostConnKey, connectionId, Clock.Now.Ticks);
+            Expire(writeBatch, hostConnKey);
+        }
+
+        // User: update 
+        if (userValue.IsNullOrEmpty)
+        {
+            var userConnKey = HostConnKey(userValue.ToString());
+            Expire(writeBatch, userConnKey);
+        }
 
         // expire conn hash itself
         Expire(writeBatch, connKey);
@@ -333,14 +352,21 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
     {
         var connKey = ConnKey(connectionId);
 
+
+
         // Read ChatObjectIdList and Host in a read batch
         var readBatch = Db.CreateBatch();
         var chatObjectIdListTask = readBatch.HashGetAsync(connKey, nameof(ConnectionPoolCacheItem.ChatObjectIdList));
-        var hostTask = readBatch.HashGetAsync(connKey, nameof(ConnectionPool.Host));
+        var hostTask = readBatch.HashGetAsync(connKey, nameof(ConnectionPoolCacheItem.Host));
+        var userTask = readBatch.HashGetAsync(connKey, nameof(ConnectionPoolCacheItem.UserId));
         readBatch.Execute();
+
+        
 
         var chatObjectIdListValue = await chatObjectIdListTask;
         var hostValue = await hostTask;
+        var userValue = await userTask;
+
 
         var chatObjectIdList = chatObjectIdListValue.IsNull ? [] : chatObjectIdListValue.ToString().Split(",").Select(x => long.Parse(x)).ToList();
 
@@ -371,6 +397,14 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
             var hostConnKey = HostConnKey(hostValue.ToString());
             _ = batch.SortedSetRemoveAsync(hostConnKey, connectionId);
             Expire(batch, hostConnKey);
+        }
+
+        //User
+        if (!userValue.IsNullOrEmpty && Guid.TryParse(userValue.ToString(), out var userId))
+        {
+            var userConnKey = UserConnKey(userId);
+            _ = batch.HashDeleteAsync(userConnKey, userId.ToString());
+            Expire(batch, userConnKey);
         }
 
         // Delete conn hash
