@@ -2,7 +2,6 @@ using IczpNet.Chat.Connections;
 using IczpNet.Chat.Hosting;
 using IczpNet.Chat.RedisMapping;
 using IczpNet.Chat.SessionUnits;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
@@ -17,7 +16,7 @@ using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.ConnectionPools;
 
-public class ConnectionCacheManager : DomainService, IConnectionCacheManager, IHostedService
+public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, IHostedService
 {
     public IOptions<AbpDistributedCacheOptions> Options => LazyServiceProvider.LazyGetRequiredService<IOptions<AbpDistributedCacheOptions>>();
 
@@ -350,13 +349,13 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager, IH
     {
         var hostConnKey = HostConnKey(hostHame.ToString());
 
-        var members = await Db.SetMembersAsync(hostConnKey);
+        var members = await Db.HashGetAllAsync(hostConnKey);
 
         var batch = Db.CreateBatch();
 
         foreach (var member in members)
         {
-            var connectionId = member.ToString();
+            var connectionId = member.Name;
             await DeleteConnctionAsync(batch, connectionId);
         }
 

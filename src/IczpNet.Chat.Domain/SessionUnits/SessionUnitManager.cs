@@ -1171,7 +1171,7 @@ public class SessionUnitManager(
 
         return [newsSessionUnit, userSessionUnit];
     }
-
+    [UnitOfWork]
     public async Task<Dictionary<long, List<Guid>>> GetSessionsByChatObjectAsync(List<long> chatObjectIdList)
     {
         var result = (await Repository.GetQueryableAsync())

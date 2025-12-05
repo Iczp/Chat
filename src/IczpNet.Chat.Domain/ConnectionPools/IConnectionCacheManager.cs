@@ -28,4 +28,19 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     /// <param name="token"></param>
     /// <returns></returns>
     Task<bool> DisconnectedAsync(string connectionId, CancellationToken token = default);
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task StartAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task StopAsync(CancellationToken cancellationToken);
+
 }
