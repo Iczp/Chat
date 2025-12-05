@@ -44,7 +44,7 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
     private string SessionConnKey(Guid sessionId)
        => $"{Prefix}Sessions:SessionId-{sessionId}";
 
-    private string OwnerConnKey(long chatObjectId)
+    private string OwnerDeviceKey(long chatObjectId)
         => $"{Prefix}Owners:Conns:OwnerId-{chatObjectId}";
     private string OwnerSessionKey(long chatObjectId)
         => $"{Prefix}Owners:Sessions:OwnerId-{chatObjectId}";
@@ -242,9 +242,10 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
         // chatObject -> connection hash (owner conn mapping)
         foreach (var ownerId in ownerIds)
         {
-            var chatObjectConnKey = OwnerConnKey(ownerId);
-            _ = writeBatch.HashSetAsync(chatObjectConnKey, connectionId, connectionPool.DeviceType);
-            Expire(writeBatch, chatObjectConnKey);
+            var ownerDeviceKey = OwnerDeviceKey(ownerId);
+            var deviceValue = $"{connectionPool.DeviceType}:{connectionPool.DeviceId}";
+            _ = writeBatch.HashSetAsync(ownerDeviceKey, connectionId, deviceValue);
+            Expire(writeBatch, ownerDeviceKey);
         }
 
         // session -> connection hash (session -> connId : owners joined)
@@ -304,8 +305,8 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
             var ownerSessionKey = OwnerSessionKey(ownerId);
             Expire(writeBatch, ownerSessionKey);
 
-            var ownerConnKey = OwnerConnKey(ownerId);
-            Expire(writeBatch, ownerConnKey);
+            var ownerDeviceKey = OwnerDeviceKey(ownerId);
+            Expire(writeBatch, ownerDeviceKey);
         }
 
         foreach (var kv in sessionChatObjects)
@@ -376,9 +377,9 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
         // Use provided batch (caller may be a batch)
         foreach (var ownerId in chatObjectIdList)
         {
-            var chatObjectConnKey = OwnerConnKey(ownerId);
-            _ = batch.HashDeleteAsync(chatObjectConnKey, connectionId);
-            Expire(batch, chatObjectConnKey);
+            var ownerDeviceKey = OwnerDeviceKey(ownerId);
+            _ = batch.HashDeleteAsync(ownerDeviceKey, connectionId);
+            Expire(batch, ownerDeviceKey);
         }
 
         foreach (var kv in sessionChatObjects)
