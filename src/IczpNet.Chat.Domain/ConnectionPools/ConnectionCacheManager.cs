@@ -194,7 +194,7 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
         // Read batch: try to get owner sessions from redis
         var ownerIds = connectionPool.ChatObjectIdList ?? [];
         var connectionId = connectionPool.ConnectionId;
-        var userId = connectionPool.UserId.Value;
+        var userId = connectionPool.UserId;
         Logger.LogInformation($"[CreateAsync] connectionId:{connectionId},userId:{userId},ownerIds:{ownerIds.JoinAsString(",")}");
 
         var chatObjectSessions = await GetOrSetSessionsAsync(ownerIds, token);
@@ -213,9 +213,12 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
         Expire(writeBatch, hostConnKey);
 
         //User
-        var userConnKey = UserConnKey(userId);
-        _ = writeBatch.HashSetAsync(userConnKey, userId.ToString(), ownerIds.JoinAsString(","));
-        Expire(writeBatch, userConnKey);
+        if (userId.HasValue)
+        {
+            var userConnKey = UserConnKey(userId.Value);
+            _ = writeBatch.HashSetAsync(userConnKey, connectionId, ownerIds.JoinAsString(","));
+            Expire(writeBatch, userConnKey);
+        }
 
         // connectionPool hash
         var hashEntries = MapToHashEntries(connectionPool);
@@ -401,7 +404,7 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
         if (!userValue.IsNullOrEmpty && Guid.TryParse(userValue.ToString(), out var userId))
         {
             var userConnKey = UserConnKey(userId);
-            _ = batch.HashDeleteAsync(userConnKey, userId.ToString());
+            _ = batch.HashDeleteAsync(userConnKey, connectionId);
             Expire(batch, userConnKey);
         }
 
