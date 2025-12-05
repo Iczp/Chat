@@ -106,9 +106,12 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
     /// Try to get owner->sessions from Redis. For owners with empty sets, fetch from SessionUnitManager and write back to Redis.
     /// All Redis reads are batched; writes are batched separately.
     /// </summary>
-    private async Task<Dictionary<long, List<Guid>>> GetOrSetSessionsAsync(IBatch batchForReads, List<long> chatObjectIdList, CancellationToken token = default)
+    private async Task<Dictionary<long, List<Guid>>> GetOrSetSessionsAsync(List<long> chatObjectIdList, CancellationToken token = default)
     {
         // Schedule SetMembersAsync for all keys
+        Logger.LogInformation($"[GetOrSetSessionsAsync] chatObjectIdList:{chatObjectIdList.JoinAsString(",")}");
+
+        var batchForReads = Db.CreateBatch();
         var setTasks = new Dictionary<long, Task<RedisValue[]>>(chatObjectIdList.Count);
         foreach (var id in chatObjectIdList)
         {
@@ -136,6 +139,8 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
             }
         }
 
+        Logger.LogInformation($"[GetOrSetSessionsAsync] missingOwnerIds:{missingOwnerIds.JoinAsString(",")}");
+
         if (missingOwnerIds.Count == 0)
         {
             return result;
@@ -145,6 +150,7 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
         var sessionDict = await SessionUnitManager.GetSessionsByChatObjectAsync(missingOwnerIds);
 
         // Write missing session sets back to Redis in a new batch (non-blocking)
+        Logger.LogInformation($"[GetOrSetSessionsAsync] batchForWrites Db.CreateBatch()");
         var batchForWrites = Db.CreateBatch();
         foreach (var ownerId in missingOwnerIds)
         {
@@ -167,6 +173,8 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
         }
         batchForWrites.Execute();
 
+        Logger.LogInformation($"[GetOrSetSessionsAsync] batchForWrites.Execute()");
+
         return result;
     }
 
@@ -179,25 +187,30 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
     protected async Task<bool> CreateAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default)
     {
         // Read batch: try to get owner sessions from redis
-        var readBatch = Db.CreateBatch();
         var ownerIds = connectionPool.ChatObjectIdList ?? [];
-        var chatObjectSessions = await GetOrSetSessionsAsync(readBatch, ownerIds, token);
+        var connectionId = connectionPool.ConnectionId;
+
+        Logger.LogInformation($"[CreateAsync] connectionId:{connectionId},ownerIds:{ownerIds.JoinAsString(",")}");
+
+        var chatObjectSessions = await GetOrSetSessionsAsync(ownerIds, token);
 
         // Build session -> owners mapping efficiently
         var sessionChatObjects = BuildSessionChatObjects(chatObjectSessions);
 
         // Now create a write batch to set all required keys
+
+        Logger.LogInformation($"[CreateAsync] writeBatch:Db.CreateBatch()");
         var writeBatch = Db.CreateBatch();
 
         // Host: use sorted set for timestamped connections
         var hostConnKey = HostConnKey(connectionPool.Host);
-        _ = writeBatch.SortedSetAddAsync(hostConnKey, connectionPool.ConnectionId, Clock.Now.Ticks);
+        _ = writeBatch.SortedSetAddAsync(hostConnKey, connectionId, Clock.Now.Ticks);
         Expire(writeBatch, hostConnKey);
 
         // connectionPool hash
         var hashEntries = MapToHashEntries(connectionPool);
-        _ = writeBatch.HashSetAsync(ConnKey(connectionPool.ConnectionId), hashEntries);
-        Expire(writeBatch, ConnKey(connectionPool.ConnectionId));
+        _ = writeBatch.HashSetAsync(ConnKey(connectionId), hashEntries);
+        Expire(writeBatch, ConnKey(connectionId));
 
         // owner session sets only if not exists - to avoid race we'll set expire and add members if sessions exist in memory
         foreach (var ownerId in ownerIds)
@@ -220,7 +233,7 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
         foreach (var ownerId in ownerIds)
         {
             var chatObjectConnKey = OwnerConnKey(ownerId);
-            _ = writeBatch.HashSetAsync(chatObjectConnKey, connectionPool.ConnectionId, connectionPool.DeviceId);
+            _ = writeBatch.HashSetAsync(chatObjectConnKey, connectionId, connectionPool.DeviceType);
             Expire(writeBatch, chatObjectConnKey);
         }
 
@@ -230,11 +243,13 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
             var sessionId = kv.Key;
             var owners = kv.Value;
             var sessionConnKey = SessionConnKey(sessionId);
-            _ = writeBatch.HashSetAsync(sessionConnKey, connectionPool.ConnectionId, owners.JoinAsString(","));
+            _ = writeBatch.HashSetAsync(sessionConnKey, connectionId, owners.JoinAsString(","));
             Expire(writeBatch, sessionConnKey);
         }
 
         writeBatch.Execute();
+
+        Logger.LogInformation($"[CreateAsync] writeBatch.Execute()");
 
         return true;
     }
@@ -246,6 +261,8 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
 
     protected virtual async Task<ConnectionPoolCacheItem> RefreshExpireAsync(string connectionId, CancellationToken token = default)
     {
+        Logger.LogInformation($"[RefreshExpireAsync] connectionId: {connectionId}");
+
         var connKey = ConnKey(connectionId);
         var readBatch = Db.CreateBatch();
 
@@ -256,13 +273,15 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
         readBatch.Execute();
 
         var chatObjectIdListValue = await chatObjectIdListTask;
+
         var hostValue = await hostTask;
 
         var chatObjectIdList = chatObjectIdListValue.IsNull ? new List<long>() : chatObjectIdListValue.ToString().Split(",").Select(x => long.Parse(x)).ToList();
 
+        Logger.LogInformation($"[RefreshExpireAsync] chatObjectIdList: {chatObjectIdList.JoinAsString(",")}");
+
         // get or set sessions for owners (batch reads inside)
-        var readBatch2 = Db.CreateBatch();
-        var chatObjectSessions = await GetOrSetSessionsAsync(readBatch2, chatObjectIdList, token);
+        var chatObjectSessions = await GetOrSetSessionsAsync(chatObjectIdList, token);
 
         var sessionChatObjects = BuildSessionChatObjects(chatObjectSessions);
 
@@ -294,6 +313,7 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
 
         writeBatch.Execute();
 
+        Logger.LogInformation($"[RefreshExpireAsync] writeBatch.Execute()");
         // Original method returned default; to be safe keep behavior unchanged.
         return default;
     }
@@ -325,8 +345,7 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
         var chatObjectIdList = chatObjectIdListValue.IsNull ? [] : chatObjectIdListValue.ToString().Split(",").Select(x => long.Parse(x)).ToList();
 
         // Get sessions per owner (batched inside)
-        var readBatch2 = Db.CreateBatch();
-        var chatObjectSessions = await GetOrSetSessionsAsync(readBatch2, chatObjectIdList, token);
+        var chatObjectSessions = await GetOrSetSessionsAsync(chatObjectIdList, token);
 
         var sessionChatObjects = BuildSessionChatObjects(chatObjectSessions);
 
