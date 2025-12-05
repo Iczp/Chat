@@ -324,9 +324,9 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
         }
 
         // User: update 
-        if (userValue.IsNullOrEmpty)
+        if (!userValue.IsNullOrEmpty && Guid.TryParse(userValue.ToString(), out var userId))
         {
-            var userConnKey = HostConnKey(userValue.ToString());
+            var userConnKey = UserConnKey(userId);
             Expire(writeBatch, userConnKey);
         }
 
