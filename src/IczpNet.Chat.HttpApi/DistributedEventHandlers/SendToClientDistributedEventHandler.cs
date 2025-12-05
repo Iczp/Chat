@@ -7,6 +7,7 @@ using IczpNet.Chat.SessionUnits;
 
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -23,11 +24,17 @@ public class SendToClientDistributedEventHandler : DomainService, IDistributedEv
     public ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
     public ISessionUnitCacheManager SessionUnitCacheManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitCacheManager>();
     public IConnectionPoolManager ConnectionPoolManager => LazyServiceProvider.LazyGetRequiredService<IConnectionPoolManager>();
+    public IConnectionCacheManager ConnectionCacheManager => LazyServiceProvider.LazyGetRequiredService<IConnectionCacheManager>();
     public ICurrentHosted CurrentHosted => LazyServiceProvider.LazyGetRequiredService<ICurrentHosted>();
     public IJsonSerializer JsonSerializer => LazyServiceProvider.LazyGetRequiredService<IJsonSerializer>();
     public IHubContext<ChatHub, IChatClient> HubContext => LazyServiceProvider.LazyGetRequiredService<IHubContext<ChatHub, IChatClient>>();
 
     public async Task HandleEventAsync(SendToClientDistributedEto eventData)
+    {
+        //await SendToClientByAsync(eventData);
+        await SendToClientBySessionAsync(eventData);
+    }
+    public async Task SendToClientByAsync(SendToClientDistributedEto eventData)
     {
         Logger.LogInformation($"{nameof(SendToClientDistributedEventHandler)} received eventData[{nameof(SendToClientDistributedEto)}]:{eventData}");
 
@@ -70,6 +77,7 @@ public class SendToClientDistributedEventHandler : DomainService, IDistributedEv
 
         Logger.LogInformation($"Online count:{connectionPools.Count}");
 
+
         //
         foreach (var item in connectionPools)
         {
@@ -98,6 +106,40 @@ public class SendToClientDistributedEventHandler : DomainService, IDistributedEv
             Logger.LogInformation($"Send [{nameof(IChatClient.ReceivedMessage)}]:{connectionPools.Count},commandPayload={JsonSerializer.Serialize(commandPayload)}");
 
             await HubContext.Clients.Client(item.ConnectionId).ReceivedMessage(commandPayload);
+        }
+
+    }
+
+    protected async Task SendToClientBySessionAsync(SendToClientDistributedEto eventData)
+    {
+        var sessionId = eventData.Message.SessionId;
+        var command = eventData.Command;
+        var connDict = await ConnectionCacheManager.GetConnectionsBySessionAsync(sessionId);
+
+        // 使用 SessionUnitCache 代替 SessionUnitManager --2025.12.2
+        var sessionUnitInfoList = (await SessionUnitCacheManager.GetListBySessionAsync(sessionId)).ToList();
+
+        foreach (var item in connDict)
+        {
+            var connectionId = item.Key;
+            var chatObjectIdList = item.Value;
+
+            var units = chatObjectIdList
+                .Select(chatObjectId => new CommandPayload.ScopeUnit
+                {
+                    ChatObjectId = chatObjectId,
+                    SessionUnitId = sessionUnitInfoList.Find(x => x.OwnerId == chatObjectId).Id
+                }).ToList();
+
+            var commandPayload = new CommandPayload()
+            {
+                //AppUserId = item.UserId,
+                Scopes = units,
+                Command = command,
+                Payload = eventData,
+            };
+
+            await HubContext.Clients.Client(connectionId).ReceivedMessage(commandPayload);
         }
     }
 }
