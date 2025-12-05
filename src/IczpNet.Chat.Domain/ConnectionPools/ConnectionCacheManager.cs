@@ -45,7 +45,7 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
        => $"{Prefix}Sessions:SessionId-{sessionId}";
 
     private string OwnerDeviceKey(long chatObjectId)
-        => $"{Prefix}Owners:Conns:OwnerId-{chatObjectId}";
+        => $"{Prefix}Owners:Devices:OwnerId-{chatObjectId}";
     private string OwnerSessionKey(long chatObjectId)
         => $"{Prefix}Owners:Sessions:OwnerId-{chatObjectId}";
 
