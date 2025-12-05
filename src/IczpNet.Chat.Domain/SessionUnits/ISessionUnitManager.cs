@@ -454,4 +454,18 @@ public interface ISessionUnitManager
     /// <param name="chatObject"></param>
     /// <returns></returns>
     Task<List<SessionUnit>> GenerateDefaultSessionByChatObjectAsync(ChatObject chatObject);
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="chatObjectIdList"></param>
+    /// <returns></returns>
+    Task<Dictionary<long, List<Guid>>> GetSessionsByChatObjectAsync(List<long> chatObjectIdList);
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <returns></returns>
+    Task<Dictionary<long, List<Guid>>> GetSessionsByUserAsync(Guid userId);
 }
