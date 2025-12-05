@@ -474,4 +474,160 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
         });
 
     }
+
+    public async Task<bool> IsOnlineAsync(Guid userId, CancellationToken token = default)
+    {
+        var key = UserConnKey(userId);
+        var length = await Db.HashLengthAsync(key);
+        return length > 0;
+    }
+
+    public async Task<bool> IsOnlineAsync(long chatObjectId, CancellationToken token = default)
+    {
+        var key = OwnerDeviceKey(chatObjectId);
+        var length = await Db.HashLengthAsync(key);
+        return length > 0;
+    }
+
+    public async Task<List<string>> GetDeviceTypesAsync(long chatObjectId, CancellationToken token = default)
+    {
+        var key = OwnerDeviceKey(chatObjectId);
+
+        var values = await Db.HashValuesAsync(key);
+        if (values == null || values.Length == 0)
+        {
+            return [];
+        }
+
+        // DeviceType:DeviceId
+        return values
+            .Select(v => v.ToString().Split(':')[0])
+            .Distinct()
+            .ToList();
+    }
+
+    public async Task<Dictionary<long, List<string>>> GetDeviceTypesAsync(List<long> chatObjectIdList, CancellationToken token = default)
+    {
+        var result = new Dictionary<long, List<string>>(chatObjectIdList.Count);
+
+        if (chatObjectIdList == null || chatObjectIdList.Count == 0)
+        {
+            return result;
+        }
+
+        // 批量读取
+        var batch = Db.CreateBatch();
+
+        var taskMap = new Dictionary<long, Task<HashEntry[]>>(chatObjectIdList.Count);
+
+        foreach (var id in chatObjectIdList)
+        {
+            var ownerDeviceKey = OwnerDeviceKey(id);
+            taskMap[id] = batch.HashGetAllAsync(ownerDeviceKey);
+        }
+
+        batch.Execute();
+
+        // 解析结果
+        foreach (var kv in taskMap)
+        {
+            var ownerId = kv.Key;
+            var entries = await kv.Value;
+
+            if (entries == null || entries.Length == 0)
+            {
+                result[ownerId] = [];
+                continue;
+            }
+
+            var types = entries
+                .Select(x => x.Value.ToString())
+                .Where(v => !string.IsNullOrWhiteSpace(v))
+                .Select(v => v.Split(':')[0]) // DeviceType:DeviceId → 取 DeviceType
+                .Distinct()
+                .ToList();
+
+            result[ownerId] = types;
+        }
+
+        return result;
+    }
+
+
+    public async Task<List<string>> GetDeviceTypesAsync(Guid userId, CancellationToken token = default)
+    {
+        var userKey = UserConnKey(userId);
+        var hash = await Db.HashGetAllAsync(userKey);
+
+        if (hash == null || hash.Length == 0)
+        {
+            return [];
+        }
+
+        var deviceTypes = new HashSet<string>();
+
+        // Hash: connectionId -> ownerIdList "12,45,66"
+        foreach (var entry in hash)
+        {
+            var ownerIdsStr = entry.Value.ToString();
+            if (string.IsNullOrWhiteSpace(ownerIdsStr))
+            {
+                continue;
+            }
+
+            foreach (var ownerId in ownerIdsStr.Split(',').Select(long.Parse))
+            {
+                var ownerKey = OwnerDeviceKey(ownerId);
+                var ownerValues = await Db.HashValuesAsync(ownerKey);
+
+                foreach (var v in ownerValues)
+                {
+                    var deviceType = v.ToString().Split(':')[0];
+                    deviceTypes.Add(deviceType);
+                }
+            }
+        }
+
+        return deviceTypes.ToList();
+    }
+
+    public async Task<int> GetCountByUserAsync(Guid userId, CancellationToken token = default)
+    {
+        var userConnKey = UserConnKey(userId);
+        var length = await Db.HashLengthAsync(userConnKey);
+        return (int)length;
+    }
+
+    public async Task<int> GetCountByChatObjectAsync(long chatObjectId, CancellationToken token = default)
+    {
+        var ownerDeviceKey = OwnerDeviceKey(chatObjectId);
+        var length = await Db.HashLengthAsync(ownerDeviceKey);
+        return (int)length;
+    }
+
+    public async Task<Dictionary<string, List<long>>> GetConnectionsBySessionAsync(Guid sessionId, CancellationToken token = default)
+    {
+        var sessionConnKey = SessionConnKey(sessionId);
+
+        // Hash entry: field = connId, value = "1,2,3"
+        var entries = await Db.HashGetAllAsync(sessionConnKey);
+
+        var result = new Dictionary<string, List<long>>(entries?.Length ?? 0);
+
+        if (entries == null || entries.Length == 0)
+        {
+            return result;
+        }
+
+        foreach (var entry in entries)
+        {
+            var connId = entry.Name.ToString();
+            var ownerList = entry.Value.ToString().Split(",").Select(long.Parse).ToList();  // chatObjectIdList 已经是逗号分隔
+
+            result[connId] = ownerList;
+        }
+
+        return result;
+    }
+
 }

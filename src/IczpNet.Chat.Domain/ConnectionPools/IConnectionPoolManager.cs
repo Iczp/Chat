@@ -113,4 +113,5 @@ public interface IConnectionPoolManager: IConnectionPoolManagerBase<ConnectionPo
     /// <param name="token"></param>
     /// <returns></returns>
     Task<int> GetCountByChatObjectAsync(long chatObjectId, CancellationToken token = default);
+
 }
