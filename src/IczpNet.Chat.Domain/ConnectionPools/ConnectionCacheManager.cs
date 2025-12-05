@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,12 +37,12 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
 
     // connKey 
     private string ConnKey(string connectionId)
-        => $"{Prefix}Items:ConnId-{connectionId}";
-    // connKey 
+        => $"{Prefix}Conns:ConnId-{connectionId}";
+    // host -> sorted set of connection ids (score = ticks)
     private string HostConnKey(string hostName)
         => $"{Prefix}Hosts:{hostName}";
     private string SessionConnKey(Guid sessionId)
-       => $"{Prefix}Sessions:Conns:SessionId-{sessionId}";
+       => $"{Prefix}Sessions:SessionId-{sessionId}";
 
     private string OwnerConnKey(long chatObjectId)
         => $"{Prefix}Owners:Conns:OwnerId-{chatObjectId}";
@@ -59,289 +60,304 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
 
         return newList.ToArray();
     }
-
-
-    private async Task<Dictionary<long, List<Guid>>> SetSessionsIfNotExistsAsync(IBatch batch, List<long> chatObjectIdList)
+    protected virtual async Task<T> MeasureAsync<T>(string name, Func<Task<T>> func)
     {
-        var unstoreIds = new List<long>();
-        var storedIds = new List<long>();
-        foreach (var chatObjectId in chatObjectIdList)
+        var sw = Stopwatch.StartNew();
+        var result = await func();
+        Logger.LogInformation($"[{this.GetType().FullName}] [{name}] Elapsed Time: {sw.ElapsedMilliseconds} ms");
+        sw.Stop();
+        return result;
+    }
+
+    private void Expire(IBatch batch, string key)
+    {
+        if (CacheExpire.HasValue)
         {
-            var ownerSessionKey = OwnerSessionKey(chatObjectId);
-            var isExists = await Db.KeyExistsAsync(ownerSessionKey);
-            if (!isExists)
+            _ = batch.KeyExpireAsync(key, CacheExpire);
+        }
+    }
+
+    /// <summary>
+    /// Build dictionary: sessionId -> list of ownerIds
+    /// More efficient than repeated LINQ GroupBy
+    /// </summary>
+    private static Dictionary<Guid, List<long>> BuildSessionChatObjects(Dictionary<long, List<Guid>> ownerSessions)
+    {
+        var dict = new Dictionary<Guid, List<long>>(ownerSessions.Count * 2);
+        foreach (var kv in ownerSessions)
+        {
+            var ownerId = kv.Key;
+            var sessionList = kv.Value;
+            if (sessionList == null) continue;
+            foreach (var sid in sessionList)
             {
-                unstoreIds.Add(chatObjectId);
+                if (!dict.TryGetValue(sid, out var owners))
+                {
+                    owners = new List<long>(4);
+                    dict[sid] = owners;
+                }
+                owners.Add(ownerId);
+            }
+        }
+        return dict;
+    }
+
+    /// <summary>
+    /// Try to get owner->sessions from Redis. For owners with empty sets, fetch from SessionUnitManager and write back to Redis.
+    /// All Redis reads are batched; writes are batched separately.
+    /// </summary>
+    private async Task<Dictionary<long, List<Guid>>> GetOrSetSessionsAsync(IBatch batchForReads, List<long> chatObjectIdList, CancellationToken token = default)
+    {
+        // Schedule SetMembersAsync for all keys
+        var setTasks = new Dictionary<long, Task<RedisValue[]>>(chatObjectIdList.Count);
+        foreach (var id in chatObjectIdList)
+        {
+            var key = OwnerSessionKey(id);
+            setTasks[id] = batchForReads.SetMembersAsync(key);
+        }
+
+        // Execute the read batch
+        batchForReads.Execute();
+
+        // Await read results
+        var result = new Dictionary<long, List<Guid>>(chatObjectIdList.Count);
+        var missingOwnerIds = new List<long>();
+        foreach (var id in chatObjectIdList)
+        {
+            var vals = await setTasks[id];
+            if (vals == null || vals.Length == 0)
+            {
+                missingOwnerIds.Add(id);
             }
             else
             {
-                storedIds.Add(chatObjectId);
+                var list = vals.Select(x => Guid.Parse(x)).ToList();
+                result[id] = list;
             }
         }
 
-        // Î´»º´æµÄ
-        var sessionDict = await SessionUnitManager.GetSessionsByChatObjectAsync(unstoreIds);
-        foreach (var chatObjectId in unstoreIds)
+        if (missingOwnerIds.Count == 0)
         {
-            var ownerSessionKey = OwnerSessionKey(chatObjectId);
-            var sessions = sessionDict.GetValueOrDefault(chatObjectId, []);
-            if (sessions.IsNullOrEmpty())
+            return result;
+        }
+
+        // Fetch missing owners' sessions from DB (single batch call)
+        var sessionDict = await SessionUnitManager.GetSessionsByChatObjectAsync(missingOwnerIds);
+
+        // Write missing session sets back to Redis in a new batch (non-blocking)
+        var batchForWrites = Db.CreateBatch();
+        foreach (var ownerId in missingOwnerIds)
+        {
+            var sessions = sessionDict.GetValueOrDefault(ownerId);
+            if (sessions == null || sessions.Count == 0)
             {
+                // keep as empty - skip
                 continue;
             }
-            foreach (var sessionId in sessions)
+
+            var ownerKey = OwnerSessionKey(ownerId);
+            // Add each member
+            foreach (var sid in sessions)
             {
-                _ = batch.SetAddAsync(ownerSessionKey, sessionId.ToString());
+                _ = batchForWrites.SetAddAsync(ownerKey, sid.ToString());
             }
+            Expire(batchForWrites, ownerKey);
+
+            result[ownerId] = sessions;
         }
-        return sessionDict;
-    }
-
-    private async Task<Dictionary<long, List<Guid>>> GetSessionsAsync(List<long> chatObjectIdList)
-    {
-
-        var sessionDict = new Dictionary<long, List<Guid>>();
-        foreach (var chatObjectId in chatObjectIdList)
-        {
-            var ownerSessionKey = OwnerSessionKey(chatObjectId);
-            var sessionValues = await Db.SetMembersAsync(ownerSessionKey);
-            var sessionIds = (sessionValues == null || sessionValues.Length == 0) ? [] : sessionValues.Select(x => Guid.Parse(x)).ToList();
-            sessionDict[chatObjectId] = sessionIds;
-        }
-        return sessionDict;
-    }
-
-    private async Task<Dictionary<long, List<Guid>>> GetOrSetSessionsAsync(IBatch batch, List<long> chatObjectIdList)
-    {
-        var setDict = await SetSessionsIfNotExistsAsync(batch, chatObjectIdList);
-
-        var keys = chatObjectIdList.Except(setDict.Keys).ToList();
-
-        var getDict = await GetSessionsAsync(keys);
-
-        var result = setDict.Concat(getDict).ToDictionary(k => k.Key, v => v.Value);
+        batchForWrites.Execute();
 
         return result;
     }
 
     [UnitOfWork]
-    public async Task<bool> ConnectedAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default)
+    public Task<bool> ConnectedAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default)
     {
-        return await CreateAsync(connectionPool, token);
+        return MeasureAsync(nameof(CreateAsync), () => CreateAsync(connectionPool, token));
     }
 
-    public async Task<bool> CreateAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default)
+    protected async Task<bool> CreateAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default)
     {
-        var batch = Db.CreateBatch();
+        // Read batch: try to get owner sessions from redis
+        var readBatch = Db.CreateBatch();
+        var ownerIds = connectionPool.ChatObjectIdList ?? [];
+        var chatObjectSessions = await GetOrSetSessionsAsync(readBatch, ownerIds, token);
 
-        var chatObjectIdList = connectionPool.ChatObjectIdList;
+        // Build session -> owners mapping efficiently
+        var sessionChatObjects = BuildSessionChatObjects(chatObjectSessions);
 
-        var connectionId = connectionPool.ConnectionId;
+        // Now create a write batch to set all required keys
+        var writeBatch = Db.CreateBatch();
 
-        var chatObjectSessions = await GetOrSetSessionsAsync(batch, chatObjectIdList);
-
-        var sessionChatObjects = chatObjectSessions
-            .SelectMany(x => x.Value.Select(d => new { sessionId = d, ownerId = x.Key }))
-            .GroupBy(x => x.sessionId, x => x.ownerId)
-            .ToDictionary(g => g.Key, g => g.ToList())
-            ;
-
-        // Host
+        // Host: use sorted set for timestamped connections
         var hostConnKey = HostConnKey(connectionPool.Host);
+        _ = writeBatch.SortedSetAddAsync(hostConnKey, connectionPool.ConnectionId, Clock.Now.Ticks);
+        Expire(writeBatch, hostConnKey);
 
-        _ = batch.HashSetAsync(hostConnKey, connectionId, Clock.Now.Ticks);
-
-        // connectionPool
+        // connectionPool hash
         var hashEntries = MapToHashEntries(connectionPool);
-        _ = batch.HashSetAsync(ConnKey(connectionId), hashEntries);
-        _ = batch.KeyExpireAsync(ConnKey(connectionId), CacheExpire);
+        _ = writeBatch.HashSetAsync(ConnKey(connectionPool.ConnectionId), hashEntries);
+        Expire(writeBatch, ConnKey(connectionPool.ConnectionId));
 
-        //owner session
-        foreach (var chatObjectId in chatObjectIdList)
+        // owner session sets only if not exists - to avoid race we'll set expire and add members if sessions exist in memory
+        foreach (var ownerId in ownerIds)
         {
-            var ownerSessionKey = OwnerSessionKey(chatObjectId);
-            var isExist = await Db.KeyExistsAsync(ownerSessionKey);
-            if (!isExist)
+            var ownerKey = OwnerSessionKey(ownerId);
+            // if chatObjectSessions contains it, we assume set was exists or just created. To avoid extra KeyExists roundtrip, only set expire
+            // but add members if we have sessions and set wasn't in Redis earlier (GetOrSetSessionsAsync only returns existing/filled).
+            var sessions = chatObjectSessions.GetValueOrDefault(ownerId);
+            if (sessions.IsNullOrEmpty()) continue;
+
+            // Add members (idempotent)
+            foreach (var sid in sessions)
             {
-                var sessions = chatObjectSessions.GetValueOrDefault(chatObjectId, []);
-                if (sessions.IsNullOrEmpty())
-                {
-                    continue;
-                }
-                foreach (var sessionId in sessions)
-                {
-                    _ = batch.SetAddAsync(ownerSessionKey, sessionId.ToString());
-                }
-                _ = batch.KeyExpireAsync(ownerSessionKey, CacheExpire);
+                _ = writeBatch.SetAddAsync(ownerKey, sid.ToString());
             }
+            Expire(writeBatch, ownerKey);
         }
 
-        //chatObject
-        foreach (var chatObjectId in chatObjectIdList)
+        // chatObject -> connection hash (owner conn mapping)
+        foreach (var ownerId in ownerIds)
         {
-            var chatObjectConnKey = OwnerConnKey(chatObjectId);
-            _ = batch.HashSetAsync(chatObjectConnKey, connectionId, connectionPool.DeviceId);
-            _ = batch.KeyExpireAsync(chatObjectConnKey, CacheExpire);
+            var chatObjectConnKey = OwnerConnKey(ownerId);
+            _ = writeBatch.HashSetAsync(chatObjectConnKey, connectionPool.ConnectionId, connectionPool.DeviceId);
+            Expire(writeBatch, chatObjectConnKey);
         }
 
-        //var connAllSessionsKey = ConnAllSessionsKey(connectionId);
-        //_ = batch.KeyExpireAsync(connAllSessionsKey, CacheExpire);
-
-        // sessionValues
-        foreach (var item in sessionChatObjects)
+        // session -> connection hash (session -> connId : owners joined)
+        foreach (var kv in sessionChatObjects)
         {
-            var sessionId = item.Key;
-            var chatObjectIds = item.Value;
+            var sessionId = kv.Key;
+            var owners = kv.Value;
             var sessionConnKey = SessionConnKey(sessionId);
-            _ = batch.HashSetAsync(sessionConnKey, connectionId, chatObjectIds.JoinAsString(","));
-            _ = batch.KeyExpireAsync(sessionConnKey, CacheExpire);
-            //_ = batch.SetAddAsync(connAllSessionsKey, sessionId.ToString());
+            _ = writeBatch.HashSetAsync(sessionConnKey, connectionPool.ConnectionId, owners.JoinAsString(","));
+            Expire(writeBatch, sessionConnKey);
         }
 
-        batch.Execute();
+        writeBatch.Execute();
 
         return true;
     }
 
-    public async Task<ConnectionPoolCacheItem> UpdateActiveTimeAsync(string connectionId, CancellationToken token = default)
+    public virtual Task<ConnectionPoolCacheItem> UpdateActiveTimeAsync(string connectionId, CancellationToken token = default)
     {
-        var batch = Db.CreateBatch();
+        return MeasureAsync(nameof(RefreshExpireAsync), () => RefreshExpireAsync(connectionId, token));
+    }
 
+    protected virtual async Task<ConnectionPoolCacheItem> RefreshExpireAsync(string connectionId, CancellationToken token = default)
+    {
         var connKey = ConnKey(connectionId);
+        var readBatch = Db.CreateBatch();
 
-        var chatObjectIdListValue = await Db.HashGetAsync(connKey, nameof(ConnectionPoolCacheItem.ChatObjectIdList));
+        // Schedule reading ChatObjectIdList and Host
+        var chatObjectIdListTask = readBatch.HashGetAsync(connKey, nameof(ConnectionPoolCacheItem.ChatObjectIdList));
+        var hostTask = readBatch.HashGetAsync(connKey, nameof(ConnectionPool.Host));
 
-        var chatObjectIdList = chatObjectIdListValue.IsNull ? [] : chatObjectIdListValue.ToString().Split(",").Select(x => long.Parse(x)).ToList();
+        readBatch.Execute();
 
-        var chatObjectSessions = await GetOrSetSessionsAsync(batch, chatObjectIdList);
+        var chatObjectIdListValue = await chatObjectIdListTask;
+        var hostValue = await hostTask;
 
-        var sessionChatObjects = chatObjectSessions
-            .SelectMany(x => x.Value.Select(d => new { sessionId = d, ownerId = x.Key }))
-            .GroupBy(x => x.sessionId, x => x.ownerId)
-            .ToDictionary(g => g.Key, g => g.ToList())
-            ;
+        var chatObjectIdList = chatObjectIdListValue.IsNull ? new List<long>() : chatObjectIdListValue.ToString().Split(",").Select(x => long.Parse(x)).ToList();
 
-        foreach (var chatObjectId in chatObjectIdList)
+        // get or set sessions for owners (batch reads inside)
+        var readBatch2 = Db.CreateBatch();
+        var chatObjectSessions = await GetOrSetSessionsAsync(readBatch2, chatObjectIdList, token);
+
+        var sessionChatObjects = BuildSessionChatObjects(chatObjectSessions);
+
+        var writeBatch = Db.CreateBatch();
+
+        // Refresh expire on owner session sets, owner conn hashes, session conn hashes
+        foreach (var ownerId in chatObjectIdList)
         {
-            var ownerSessionKey = OwnerSessionKey(chatObjectId);
-            var isExist = await Db.KeyExistsAsync(ownerSessionKey);
-            if (isExist)
-            {
-                _ = batch.KeyExpireAsync(ownerSessionKey, CacheExpire);
-            }
+            var ownerSessionKey = OwnerSessionKey(ownerId);
+            Expire(writeBatch, ownerSessionKey);
+
+            var ownerConnKey = OwnerConnKey(ownerId);
+            Expire(writeBatch, ownerConnKey);
         }
 
-        //chatObject
-        foreach (var chatObjectId in chatObjectIdList)
+        foreach (var kv in sessionChatObjects)
         {
-            var chatObjectConnKey = OwnerConnKey(chatObjectId);
-            _ = batch.KeyExpireAsync(chatObjectConnKey, CacheExpire);
+            var sessionConnKey = SessionConnKey(kv.Key);
+            Expire(writeBatch, sessionConnKey);
         }
 
-        //var connAllSessionsKey = ConnAllSessionsKey(connectionId);
-        //_ = batch.KeyExpireAsync(connAllSessionsKey, CacheExpire);
-        // sessionValues
-        foreach (var item in sessionChatObjects)
-        {
-            var sessionId = item.Key;
-            var sessionConnKey = SessionConnKey(sessionId);
-            _ = batch.KeyExpireAsync(sessionConnKey, CacheExpire);
-        }
+        // Host: update timestamp in sorted set
+        var hostConnKey = HostConnKey(hostValue.ToString());
+        _ = writeBatch.SortedSetAddAsync(hostConnKey, connectionId, Clock.Now.Ticks);
+        Expire(writeBatch, hostConnKey);
 
-        // Host
-        var hostHame = await Db.HashGetAsync(connKey, nameof(ConnectionPool.Host));
-        var hostConnKey = HostConnKey(hostHame.ToString());
-        _ = batch.HashSetAsync(hostConnKey, connectionId, Clock.Now.Ticks);
+        // expire conn hash itself
+        Expire(writeBatch, connKey);
 
-        // Delete ConnKey
-        _ = batch.KeyExpireAsync(connKey, CacheExpire);
+        writeBatch.Execute();
 
-        batch.Execute();
-
+        // Original method returned default; to be safe keep behavior unchanged.
         return default;
     }
 
     public async Task<bool> DisconnectedAsync(string connectionId, CancellationToken token = default)
     {
-        var batch = Db.CreateBatch();
-        await DeleteConnctionAsync(batch, connectionId, token);
-        batch.Execute();
-        return true;
+        return await MeasureAsync(nameof(DisconnectedAsync), async () =>
+        {
+            var batch = Db.CreateBatch();
+            await DeleteConnctionAsync(batch, connectionId, token);
+            batch.Execute();
+            return true;
+        });
     }
 
-    public async Task DeleteConnctionAsync(IBatch batch, string connectionId, CancellationToken token = default)
+    protected virtual async Task DeleteConnctionAsync(IBatch batch, string connectionId, CancellationToken token = default)
     {
         var connKey = ConnKey(connectionId);
 
-        //var entities = await Db.HashGetAllAsync(connKey);
+        // Read ChatObjectIdList and Host in a read batch
+        var readBatch = Db.CreateBatch();
+        var chatObjectIdListTask = readBatch.HashGetAsync(connKey, nameof(ConnectionPoolCacheItem.ChatObjectIdList));
+        var hostTask = readBatch.HashGetAsync(connKey, nameof(ConnectionPool.Host));
+        readBatch.Execute();
 
-        //var connectionPool = RedisMapper.ToObject<ConnectionPoolCacheItem>(entities);
-
-        var chatObjectIdListValue = await Db.HashGetAsync(connKey, nameof(ConnectionPoolCacheItem.ChatObjectIdList));
+        var chatObjectIdListValue = await chatObjectIdListTask;
+        var hostValue = await hostTask;
 
         var chatObjectIdList = chatObjectIdListValue.IsNull ? [] : chatObjectIdListValue.ToString().Split(",").Select(x => long.Parse(x)).ToList();
 
-        var chatObjectSessions = await GetOrSetSessionsAsync(batch, chatObjectIdList);
+        // Get sessions per owner (batched inside)
+        var readBatch2 = Db.CreateBatch();
+        var chatObjectSessions = await GetOrSetSessionsAsync(readBatch2, chatObjectIdList, token);
 
-        var sessionChatObjects = chatObjectSessions
-            .SelectMany(x => x.Value.Select(d => new { sessionId = d, ownerId = x.Key }))
-            .GroupBy(x => x.sessionId, x => x.ownerId)
-            .ToDictionary(g => g.Key, g => g.ToList())
-            ;
+        var sessionChatObjects = BuildSessionChatObjects(chatObjectSessions);
 
-        foreach (var chatObjectId in chatObjectIdList)
+        // Remove connection from owner -> conn hash, session -> conn hash, host sorted set
+        // Use provided batch (caller may be a batch)
+        foreach (var ownerId in chatObjectIdList)
         {
-            var ownerSessionKey = OwnerSessionKey(chatObjectId);
-            var isExist = await Db.KeyExistsAsync(ownerSessionKey);
-            if (!isExist)
-            {
-                var sessions = chatObjectSessions.GetValueOrDefault(chatObjectId, []);
-                if (sessions.IsNullOrEmpty())
-                {
-                    continue;
-                }
-                //var batch1 = Db.CreateBatch();
-                foreach (var sessionId in sessions)
-                {
-                    _ = batch.HashDeleteAsync(ownerSessionKey, sessionId.ToString());
-                }
-                _ = batch.KeyExpireAsync(ownerSessionKey, CacheExpire);
-            }
-        }
-
-        //var hashEntries = MapToHashEntries(connectionPool);
-        //_ = batch.HashSetAsync(ConnKey(connectionId), hashEntries);
-        //_ = batch.KeyExpireAsync(ConnKey(connectionPool.ConnectionId), CacheExpire);
-        //chatObject
-        foreach (var chatObjectId in chatObjectIdList)
-        {
-            var chatObjectConnKey = OwnerConnKey(chatObjectId);
+            var chatObjectConnKey = OwnerConnKey(ownerId);
             _ = batch.HashDeleteAsync(chatObjectConnKey, connectionId);
-            //_ = batch.KeyExpireAsync(chatObjectConnKey, CacheExpire);
+            Expire(batch, chatObjectConnKey);
         }
 
-        //var connAllSessionsKey = ConnAllSessionsKey(connectionId);
-        //_ = batch.KeyExpireAsync(connAllSessionsKey, CacheExpire);
-        // sessionValues
-        foreach (var item in sessionChatObjects)
+        foreach (var kv in sessionChatObjects)
         {
-            var sessionId = item.Key;
-            var chatObjectIds = item.Value;
-            var sessionConnKey = SessionConnKey(sessionId);
+            var sessionConnKey = SessionConnKey(kv.Key);
             _ = batch.HashDeleteAsync(sessionConnKey, connectionId);
-            //_ = batch.KeyExpireAsync(sessionConnKey, CacheExpire);
-            //_ = batch.HashDeleteAsync(connAllSessionsKey, sessionId.ToString());
+            Expire(batch, sessionConnKey);
         }
 
         // Host
-        var hostHame = await Db.HashGetAsync(connKey, nameof(ConnectionPool.Host));
-        var hostConnKey = HostConnKey(hostHame.ToString());
-        _ = batch.HashDeleteAsync(hostConnKey, connectionId);
+        if (!hostValue.IsNullOrEmpty)
+        {
+            var hostConnKey = HostConnKey(hostValue.ToString());
+            _ = batch.SortedSetRemoveAsync(hostConnKey, connectionId);
+            Expire(batch, hostConnKey);
+        }
 
-        // Delete ConnKey
+        // Delete conn hash
         _ = batch.KeyDeleteAsync(connKey);
 
-        //batch.Execute();
+        // Note: we do not execute batch here because caller may pass batch and execute later.
     }
 
 
@@ -349,28 +365,45 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
     {
         var hostConnKey = HostConnKey(hostHame.ToString());
 
-        var members = await Db.HashGetAllAsync(hostConnKey);
+        // get connection ids from sorted set (members only)
+        var members = await Db.SortedSetRangeByRankAsync(hostConnKey, 0, -1, Order.Ascending);
+
+        if (members == null || members.Length == 0)
+        {
+            return;
+        }
 
         var batch = Db.CreateBatch();
 
         foreach (var member in members)
         {
-            var connectionId = member.Name;
+            var connectionId = member.ToString();
+            // DeleteConnctionAsync will schedule deletes on batch
             await DeleteConnctionAsync(batch, connectionId);
         }
 
         batch.Execute();
     }
 
+    // These methods implement IHostedService (if you want them enabled, uncomment interface)
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        Logger.LogWarning($"[App Stop] DeleteByHostNameAsync,HostName:{CurrentHosted.Name}");
-        await DeleteByHostNameAsync(CurrentHosted.Name);
+        await MeasureAsync(nameof(StartAsync), async () =>
+        {
+            Logger.LogWarning($"[App Start] DeleteByHostNameAsync,HostName:{CurrentHosted.Name}");
+            await DeleteByHostNameAsync(CurrentHosted.Name);
+            return true;
+        });
+
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        Logger.LogWarning($"[App Start] DeleteByHostNameAsync,HostName:{CurrentHosted.Name}");
-        await DeleteByHostNameAsync(CurrentHosted.Name);
+        await MeasureAsync(nameof(StopAsync), async () =>
+        {
+            Logger.LogWarning($"[App Stop] DeleteByHostNameAsync,HostName:{CurrentHosted.Name}");
+            await DeleteByHostNameAsync(CurrentHosted.Name);
+            return true;
+        });
     }
 }
