@@ -14,7 +14,6 @@ using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Uow;
-using static Volo.Abp.Identity.Settings.IdentitySettingNames;
 
 namespace IczpNet.Chat.ConnectionPools;
 
@@ -52,6 +51,9 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
 
     private string UserConnKey(Guid userId)
         => $"{Prefix}Users:userId-{userId}";
+
+    private string AllHostKey()
+        => $"{Prefix}AllHosts";
 
     private static HashEntry[] MapToHashEntries(ConnectionPoolCacheItem connectionPool)
     {
@@ -212,7 +214,7 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
 
         //User
         var userConnKey = UserConnKey(userId);
-        _ = writeBatch.HashSetAsync(userConnKey, userId.ToString(),ownerIds.JoinAsString(","));
+        _ = writeBatch.HashSetAsync(userConnKey, userId.ToString(), ownerIds.JoinAsString(","));
         Expire(writeBatch, userConnKey);
 
         // connectionPool hash
@@ -352,8 +354,6 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
     {
         var connKey = ConnKey(connectionId);
 
-
-
         // Read ChatObjectIdList and Host in a read batch
         var readBatch = Db.CreateBatch();
         var chatObjectIdListTask = readBatch.HashGetAsync(connKey, nameof(ConnectionPoolCacheItem.ChatObjectIdList));
@@ -361,12 +361,9 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
         var userTask = readBatch.HashGetAsync(connKey, nameof(ConnectionPoolCacheItem.UserId));
         readBatch.Execute();
 
-        
-
         var chatObjectIdListValue = await chatObjectIdListTask;
         var hostValue = await hostTask;
         var userValue = await userTask;
-
 
         var chatObjectIdList = chatObjectIdListValue.IsNull ? [] : chatObjectIdListValue.ToString().Split(",").Select(x => long.Parse(x)).ToList();
 
@@ -435,6 +432,9 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
             await DeleteConnctionAsync(batch, connectionId);
         }
 
+        // remove host in allHosts
+        _ = batch.SortedSetRemoveAsync(AllHostKey(), CurrentHosted.Name);
+
         batch.Execute();
     }
 
@@ -444,10 +444,16 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
         await MeasureAsync(nameof(StartAsync), async () =>
         {
             Logger.LogWarning($"[App Start] DeleteByHostNameAsync,HostName:{CurrentHosted.Name}");
+
             await DeleteByHostNameAsync(CurrentHosted.Name);
+
+            var batch = Db.CreateBatch();
+            _ = batch.SortedSetAddAsync(AllHostKey(), CurrentHosted.Name, Clock.Now.Ticks);
+            _ = batch.KeyExpireAsync(AllHostKey(), TimeSpan.FromDays(7));
+            batch.Execute();
+
             return true;
         });
-
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
@@ -455,8 +461,13 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
         await MeasureAsync(nameof(StopAsync), async () =>
         {
             Logger.LogWarning($"[App Stop] DeleteByHostNameAsync,HostName:{CurrentHosted.Name}");
+
             await DeleteByHostNameAsync(CurrentHosted.Name);
+
+            await Db.SortedSetRemoveAsync(AllHostKey(), CurrentHosted.Name);
+
             return true;
         });
+
     }
 }
