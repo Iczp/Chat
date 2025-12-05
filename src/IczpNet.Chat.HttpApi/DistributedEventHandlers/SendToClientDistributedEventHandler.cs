@@ -7,7 +7,9 @@ using IczpNet.Chat.SessionUnits;
 
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.DependencyInjection;
@@ -23,11 +25,28 @@ public class SendToClientDistributedEventHandler : DomainService, IDistributedEv
     public ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
     public ISessionUnitCacheManager SessionUnitCacheManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitCacheManager>();
     public IConnectionPoolManager ConnectionPoolManager => LazyServiceProvider.LazyGetRequiredService<IConnectionPoolManager>();
+    public IConnectionCacheManager ConnectionCacheManager => LazyServiceProvider.LazyGetRequiredService<IConnectionCacheManager>();
     public ICurrentHosted CurrentHosted => LazyServiceProvider.LazyGetRequiredService<ICurrentHosted>();
     public IJsonSerializer JsonSerializer => LazyServiceProvider.LazyGetRequiredService<IJsonSerializer>();
     public IHubContext<ChatHub, IChatClient> HubContext => LazyServiceProvider.LazyGetRequiredService<IHubContext<ChatHub, IChatClient>>();
 
+    protected virtual async Task<T> MeasureAsync<T>(string name, Func<Task<T>> func)
+    {
+        var sw = Stopwatch.StartNew();
+        var result = await func();
+        Logger.LogInformation($"[{GetType().FullName}] [{name}] Elapsed Time: {sw.ElapsedMilliseconds} ms");
+        sw.Stop();
+        return result;
+    }
+
     public async Task HandleEventAsync(SendToClientDistributedEto eventData)
+    {
+        //await SendToClientByAsync(eventData);
+
+        await MeasureAsync(nameof(SendToClientBySessionAsync), () => SendToClientBySessionAsync(eventData));
+
+    }
+    public async Task<bool> SendToClientByAsync(SendToClientDistributedEto eventData)
     {
         Logger.LogInformation($"{nameof(SendToClientDistributedEventHandler)} received eventData[{nameof(SendToClientDistributedEto)}]:{eventData}");
 
@@ -51,7 +70,7 @@ public class SendToClientDistributedEventHandler : DomainService, IDistributedEv
         if (sessionUnitInfoList == null)
         {
             Logger.LogWarning($"sessionUnitInfoList is null, eventData:{eventData}");
-            return;
+            return false;
         }
 
         Logger.LogInformation($"sessionUnitInfoList.count:{sessionUnitInfoList.Count}");
@@ -69,6 +88,7 @@ public class SendToClientDistributedEventHandler : DomainService, IDistributedEv
             .ToList();
 
         Logger.LogInformation($"Online count:{connectionPools.Count}");
+
 
         //
         foreach (var item in connectionPools)
@@ -99,5 +119,42 @@ public class SendToClientDistributedEventHandler : DomainService, IDistributedEv
 
             await HubContext.Clients.Client(item.ConnectionId).ReceivedMessage(commandPayload);
         }
+        return true;
+
+    }
+
+    protected async Task<bool> SendToClientBySessionAsync(SendToClientDistributedEto eventData)
+    {
+        var sessionId = eventData.Message.SessionId;
+        var command = eventData.Command;
+        var connDict = await ConnectionCacheManager.GetConnectionsBySessionAsync(sessionId);
+
+        // 使用 SessionUnitCache 代替 SessionUnitManager --2025.12.2
+        var sessionUnitInfoList = (await SessionUnitCacheManager.GetListBySessionAsync(sessionId)).ToList();
+
+        foreach (var item in connDict)
+        {
+            var connectionId = item.Key;
+            var chatObjectIdList = item.Value;
+
+            var units = chatObjectIdList
+                .Select(chatObjectId => new CommandPayload.ScopeUnit
+                {
+                    ChatObjectId = chatObjectId,
+                    SessionUnitId = sessionUnitInfoList.Find(x => x.OwnerId == chatObjectId).Id
+                }).ToList();
+
+            var commandPayload = new CommandPayload()
+            {
+                //AppUserId = item.UserId,
+                Scopes = units,
+                Command = command,
+                Payload = eventData,
+            };
+
+            await HubContext.Clients.Client(connectionId).ReceivedMessage(commandPayload);
+        }
+
+        return true;
     }
 }

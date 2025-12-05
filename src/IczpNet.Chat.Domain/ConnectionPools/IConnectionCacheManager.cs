@@ -1,4 +1,6 @@
-﻿using System.Threading;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.ConnectionPools;
@@ -50,4 +52,67 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     /// <returns></returns>
     Task StopAsync(CancellationToken cancellationToken);
 
+    /// <summary>
+    /// 是否在线（用户）
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<bool> IsOnlineAsync(Guid userId, CancellationToken token = default);
+
+    /// <summary>
+    /// 是否在线（聊天对象）
+    /// </summary>
+    /// <param name="chatObjectId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<bool> IsOnlineAsync(long chatObjectId, CancellationToken token = default);
+
+    /// <summary>
+    /// 获取设备类型 聊天对象
+    /// </summary>
+    /// <param name="chatObjectId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<List<string>> GetDeviceTypesAsync(long chatObjectId, CancellationToken token = default);
+
+    /// <summary>
+    /// 获取设备类型 聊天对象
+    /// </summary>
+    /// <param name="chatObjectIdList"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<Dictionary<long, List<string>>> GetDeviceTypesAsync(List<long> chatObjectIdList, CancellationToken token = default);
+
+    /// <summary>
+    /// 获取设备类型 用户
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<List<string>> GetDeviceTypesAsync(Guid userId, CancellationToken token = default);
+
+    /// <summary>
+    /// 获取连接数量(用户)
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<int> GetCountByUserAsync(Guid userId, CancellationToken token = default);
+
+    /// <summary>
+    /// 获取连接数量(聊天对象)
+    /// </summary>
+    /// <param name="chatObjectId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<int> GetCountByChatObjectAsync(long chatObjectId, CancellationToken token = default);
+
+    /// <summary>
+    /// 获取会话连接
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="token"></param>
+    /// <returns>Dictionary: key = connId, value = chatObjectList</returns>
+    Task<Dictionary<string, List<long>>> GetConnectionsBySessionAsync(Guid sessionId, CancellationToken token = default);
 }
