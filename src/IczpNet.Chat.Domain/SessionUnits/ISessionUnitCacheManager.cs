@@ -30,7 +30,7 @@ public interface ISessionUnitCacheManager
 
     Task<IEnumerable<SessionUnitCacheItem>> GetOrSetListByOwnerAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
 
-    Task<IEnumerable<SessionUnitCacheItem>> GetListByOwnerIdAsync(long ownerId);
+    Task<IEnumerable<SessionUnitCacheItem>> GetListByOwnerAsync(long ownerId, double minScore = double.NegativeInfinity, double maxScore = double.PositiveInfinity, long skip = 0, long take = -1);
 
     Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetManyAsync(IEnumerable<Guid> unitIds);
 
@@ -47,6 +47,8 @@ public interface ISessionUnitCacheManager
     Task<bool> RemoveTotalBadgeAsync(long ownerId);
 
     Task<SessionUnitCacheItem> UnitTestAsync();
+
+
 
     //Task<long?> GetBadgeAsync(Guid sessionId, Guid sessionUnitId);
     //Task<bool> SetBadgeAsync(Guid sessionId, Guid sessionUnitId, long badge);
