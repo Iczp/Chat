@@ -5,6 +5,7 @@ using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Pipelines.Sockets.Unofficial.Buffers;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
@@ -42,10 +43,20 @@ public class SessionUnitCacheManager(
 
     // composite score multiplier (sorting * MULT + lastMessageId)
     private const double OWNER_SCORE_MULT = 1_000_000_000_000d; // 1e12
-
-    private static readonly string IncrementTotalBadgeIfExistsScript = @"
+    /// <summary>
+    /// 1. key 不存在 : 返回 nil（不创建）
+    /// 2. key 存在 : 执行 HINCRBY(key, field, increment)
+    /// 3. 若结果 &lt;0,设置为 0
+    /// </summary>
+    private static string IncrementTotalBadgeIfExistsScript => @"
 if redis.call('EXISTS', KEYS[1]) == 1 then
-    return redis.call('HINCRBY', KEYS[1], ARGV[1], ARGV[2])
+    local newValue = redis.call('HINCRBY', KEYS[1], ARGV[1], ARGV[2])
+    if newValue < 0 then
+        redis.call('HSET', KEYS[1], ARGV[1], 0)
+        return 0
+    else
+        return newValue
+    end
 else
     return nil
 end
@@ -632,12 +643,7 @@ end
         if (!isExists)
         {
             // 加载缓存项
-
             var unit = await fetchTask(counter.Id);
-
-            var hashTasks = new List<Task>();
-
-            var boolHashTasks = new List<Task<bool>>();
 
             unit.PublicBadge = counter.PublicBadge;
             unit.PrivateBadge = counter.PrivateBadge;
@@ -647,37 +653,58 @@ end
             unit.Setting.ReadedMessageId = counter.ReadedMessageId;
 
             var entries = MapToHashEntries(unit);
-
-            hashTasks.Add(batch.HashSetAsync(unitKey, entries));
+            _ = batch.HashSetAsync(unitKey, entries);
 
             if (_cacheExpire.HasValue)
             {
-                boolHashTasks.Add(Database.KeyExpireAsync(unitKey, _cacheExpire));
+                _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
             }
             batch.Execute();
-            await Task.WhenAll(boolHashTasks);
-            await Task.WhenAll(hashTasks);
+
+            Logger.LogInformation($"[{nameof(UpdateCountersync)}] 还未缓存，直接写入缓存:{counter}");
             return;
         }
 
-        var setTasks = new List<Task<bool>>
-        {
-            batch.HashSetAsync(unitKey, F_PublicBadge, counter.PublicBadge),
-            batch.HashSetAsync(unitKey, F_PrivateBadge, counter.PrivateBadge),
-            batch.HashSetAsync(unitKey, F_RemindAllCount, counter.RemindAllCount),
-            batch.HashSetAsync(unitKey, F_RemindMeCount, counter.RemindMeCount),
-            batch.HashSetAsync(unitKey, F_FollowingCount, counter.FollowingCount),
-            batch.HashSetAsync(unitKey, F_Setting_ReadedMessageId, counter.ReadedMessageId)
-        };
+        //old badge
+        var taskPublicOld = batch.HashGetAsync(unitKey, F_PublicBadge);
+        var taskPrivateOld = batch.HashGetAsync(unitKey, F_PrivateBadge);
+
+        // 清零
+        _ = batch.HashSetAsync(unitKey, F_PublicBadge, counter.PublicBadge);
+        _ = batch.HashSetAsync(unitKey, F_PrivateBadge, counter.PrivateBadge);
+        _ = batch.HashSetAsync(unitKey, F_RemindAllCount, counter.RemindAllCount);
+        _ = batch.HashSetAsync(unitKey, F_RemindMeCount, counter.RemindMeCount);
+        _ = batch.HashSetAsync(unitKey, F_FollowingCount, counter.FollowingCount);
+        _ = batch.HashSetAsync(unitKey, F_Setting_ReadedMessageId, counter.ReadedMessageId);
 
         if (_cacheExpire.HasValue)
         {
-            setTasks.Add(Database.KeyExpireAsync(unitKey, _cacheExpire));
+            _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
         }
 
         batch.Execute();
 
-        await Task.WhenAll(setTasks);
+        Logger.LogInformation($"[{nameof(UpdateCountersync)}] 已缓存，直接更新缓存:{counter}");
+
+        // 减量更新 Owner 总角标（key 必须已存在才更新）
+        var oldPublic = await taskPublicOld;
+        var oldPrivate = await taskPrivateOld;
+
+        if (oldPublic.HasValue
+            && oldPrivate.HasValue
+            && long.TryParse(oldPublic.ToString(), out long publicBadge)
+            && long.TryParse(oldPrivate.ToString(), out long privateBadge))
+        {
+            var oldTotal = publicBadge + privateBadge;
+
+            Logger.LogInformation($"ownerId:{counter.OwnerId},需要减量角标数:{oldTotal},publicBadge:{publicBadge},privateBadge:{privateBadge}");
+
+            if (oldTotal > 0)
+            {
+                var ownerTotalBadgeKey = OwnerTotalBadgeSetKey(counter.OwnerId);
+                _ = await Database.ScriptEvaluateAsync(IncrementTotalBadgeIfExistsScript, [ownerTotalBadgeKey], [F_TotalBadge, -oldTotal]);
+            }
+        }
     }
 
     public async Task<SessionUnitCacheItem> UnitTestAsync()

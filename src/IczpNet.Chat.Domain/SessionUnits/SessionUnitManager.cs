@@ -236,6 +236,7 @@ public class SessionUnitManager(
         var counter = new SessionUnitCounterInfo()
         {
             Id = entity.Id,
+            OwnerId = entity.OwnerId,
             ReadedMessageId = lastMessageId,
             PublicBadge = 0,
             PrivateBadge = 0,
@@ -262,8 +263,8 @@ public class SessionUnitManager(
                 return ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(entity);
             });
 
-        // 删除总记数缓存
-        await SessionUnitCacheManager.RemoveTotalBadgeAsync(entity.OwnerId);
+        //// 删除总记数缓存
+        //await SessionUnitCacheManager.RemoveTotalBadgeAsync(entity.OwnerId);
 
         return entity;
     }
