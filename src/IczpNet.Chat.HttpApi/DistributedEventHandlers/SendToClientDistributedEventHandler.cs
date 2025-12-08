@@ -133,9 +133,6 @@ public class SendToClientDistributedEventHandler : DomainService, IDistributedEv
 
         var ownerUnitDict = await SessionUnitCacheManager.GetUnitsBySessionAsync(sessionId, onlineOwnerIds);
 
-        //// 使用 SessionUnitCache 代替 SessionUnitManager --2025.12.2
-        //var sessionUnitInfoList = (await SessionUnitCacheManager.GetListBySessionAsync(sessionId)).ToList();
-
         foreach (var item in connDict)
         {
             var connectionId = item.Key;
