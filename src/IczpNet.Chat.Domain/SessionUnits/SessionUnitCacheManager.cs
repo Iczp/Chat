@@ -43,6 +43,14 @@ public class SessionUnitCacheManager(
     // composite score multiplier (sorting * MULT + lastMessageId)
     private const double OWNER_SCORE_MULT = 1_000_000_000_000d; // 1e12
 
+    private static readonly string IncrementTotalBadgeIfExistsScript = @"
+if redis.call('EXISTS', KEYS[1]) == 1 then
+    return redis.call('HINCRBY', KEYS[1], ARGV[1], ARGV[2])
+else
+    return nil
+end
+";
+
     #region Field names
     private static string F_Id => nameof(SessionUnitCacheItem.Id);
     private static string F_SessionId => nameof(SessionUnitCacheItem.SessionId);
@@ -64,7 +72,10 @@ public class SessionUnitCacheManager(
     private static string F_Ticks => nameof(SessionUnitCacheItem.Ticks);
     private static string F_Sorting => nameof(SessionUnitCacheItem.Sorting);
 
+
     private static string F_Setting_ReadedMessageId => $"{nameof(SessionUnitCacheItem.Setting)}.{nameof(SessionUnitCacheItem.Setting.ReadedMessageId)}";
+
+    private static string F_TotalBadge => "TotalBadge";
 
     #endregion
 
@@ -457,7 +468,7 @@ public class SessionUnitCacheManager(
                 if (isRemindAll) hashIncTasks.Add(batch.HashIncrementAsync(unitKey, F_RemindAllCount, 1));
                 var ownerTotalBadgeKey = OwnerTotalBadgeSetKey(unit.OwnerId);
                 deleteKeyTasks.Add(batch.KeyDeleteAsync(ownerTotalBadgeKey));
-                //hashIncTasks.Add(batch.HashIncrementAsync(ownerTotalBadgeKey, "TotalBadge", 1));
+                //hashIncTasks.Add(batch.HashIncrementAsync(ownerTotalBadgeKey, F_TotalBadge, 1));
             }
 
             // update lastMessageId in hash
@@ -541,15 +552,20 @@ public class SessionUnitCacheManager(
                 {
                     _ = batch.HashIncrementAsync(unitKey, F_FollowingCount, 1);
                 }
-                // delete owner badge
-                _ = batch.KeyDeleteAsync(ownerTotalBadgeKey);
+
+                //// delete owner badge
+                //_ = batch.KeyDeleteAsync(ownerTotalBadgeKey);
+
+                // 如果已经统计过角标直接+1
+                _ = batch.ScriptEvaluateAsync(IncrementTotalBadgeIfExistsScript, [ownerTotalBadgeKey], [F_TotalBadge, 1]);
             }
 
             // lastMessageId
             _ = batch.HashSetAsync(unitKey, F_LastMessageId, lastMessageId);
 
             // ticks
-            _ = batch.HashSetAsync(unitKey, F_Ticks, (double)message.CreationTime.Ticks);
+            var ticks = (double)message.CreationTime.Ticks;
+            _ = batch.HashSetAsync(unitKey, F_Ticks, ticks);
 
             // owner sortedset
             var score = GetScore(unit.Sorting, lastMessageId);
@@ -571,7 +587,7 @@ public class SessionUnitCacheManager(
     public virtual async Task<bool> SetTotalBadgeAsync(long ownerId, long badge)
     {
         var ownerTotalBadgeKey = OwnerTotalBadgeSetKey(ownerId);
-        var result = await Database.HashSetAsync(ownerTotalBadgeKey, "TotalBadge", badge);
+        var result = await Database.HashSetAsync(ownerTotalBadgeKey, F_TotalBadge, badge);
         return result;
     }
 
@@ -579,7 +595,7 @@ public class SessionUnitCacheManager(
     {
         var ownerTotalBadgeKey = OwnerTotalBadgeSetKey(ownerId);
 
-        var redisValue = await Database.HashGetAsync(ownerTotalBadgeKey, "TotalBadge");
+        var redisValue = await Database.HashGetAsync(ownerTotalBadgeKey, F_TotalBadge);
 
         var value = redisValue.ToString();
 
@@ -597,7 +613,7 @@ public class SessionUnitCacheManager(
     public virtual async Task<bool> RemoveTotalBadgeAsync(long ownerId)
     {
         var ownerTotalBadgeKey = OwnerTotalBadgeSetKey(ownerId);
-        return await Database.HashDeleteAsync(ownerTotalBadgeKey, "TotalBadge");
+        return await Database.HashDeleteAsync(ownerTotalBadgeKey, F_TotalBadge);
     }
 
     #endregion
