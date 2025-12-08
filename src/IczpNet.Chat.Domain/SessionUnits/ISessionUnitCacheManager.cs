@@ -30,7 +30,21 @@ public interface ISessionUnitCacheManager
 
     Task<IEnumerable<SessionUnitCacheItem>> GetOrSetListByOwnerAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
 
-    Task<IEnumerable<SessionUnitCacheItem>> GetListByOwnerAsync(long ownerId, double minScore = double.NegativeInfinity, double maxScore = double.PositiveInfinity, long skip = 0, long take = -1);
+    Task<IEnumerable<SessionUnitCacheItem>> GetListByOwnerAsync(
+        long ownerId, 
+        double minScore = double.NegativeInfinity, 
+        double maxScore = double.PositiveInfinity, 
+        long skip = 0, 
+        long take = -1, 
+        bool isDescending = true);
+
+    Task<KeyValuePair<Guid, double>[]> GetSrotedSetByOwnerAsync(
+        long ownerId, 
+        double minScore = double.NegativeInfinity, 
+        double maxScore = double.PositiveInfinity, 
+        long skip = 0, 
+        long take = -1, 
+        bool isDescending = true);
 
     Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetManyAsync(IEnumerable<Guid> unitIds);
 

@@ -223,6 +223,9 @@ public class SessionUnitCacheAppService(
 
     public async Task<List<SessionUnitCacheDto>> GetManyAsync(List<Guid> unitIds)
     {
+        // check owner
+        // ...
+
         var list = await SessionUnitCacheManager.GetOrSetManyAsync(unitIds, async (keys) =>
         {
             var kvs = await SessionUnitManager.GetManyAsync(keys);
@@ -243,6 +246,12 @@ public class SessionUnitCacheAppService(
             .Select(MapToDto)
             .ToList();
 
+        await FillSettingAsync(items);
+
+        await FillDestinationAsync(items);
+
+        await FillLastMessageAsync(items);
+
         return items;
     }
 
@@ -256,16 +265,16 @@ public class SessionUnitCacheAppService(
     /// <returns></returns>
     public async Task<List<SessionUnitCacheDto>> GetLatestAsync(long ownerId, double minScore, long? maxResultCount, long? skipCount)
     {
-        var list = await SessionUnitCacheManager.GetListByOwnerAsync(ownerId, minScore, skip: skipCount ?? 0, take: maxResultCount ?? 10);
+        // check owner
+        // ...
 
-        var items = list
-            .Where(x => x != null)
-            .Select(MapToDto)
-            .ToList();
+        var kvs = await SessionUnitCacheManager.GetSrotedSetByOwnerAsync(ownerId, minScore, skip: skipCount ?? 0, take: maxResultCount ?? 10);
 
-        await FillDestinationAsync(items);
+        var unitIds = kvs.Select(x => x.Key).ToList();
 
-        return items;
+        var list = await GetManyAsync(unitIds);
+
+        return list;
     }
 
 
@@ -277,7 +286,7 @@ public class SessionUnitCacheAppService(
 
         Assert.If(item == null, $"No such cache id:{id}");
 
-        return MapToDto(item);
+        return item;
     }
 
     /// <summary>

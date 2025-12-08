@@ -36,6 +36,8 @@ public class SessionUnitCacheManager(
         => $"{Prefix}Sessions:SessionId-{sessionId}";
     private string OwnerSortedSetKey(long ownerId)
         => $"{Prefix}ChatObjects:Sorted:OwnerId-{ownerId}";
+    private string OwnerToppingSetKey(long ownerId)
+       => $"{Prefix}ChatObjects:Toppings:OwnerId-{ownerId}";
     private string OwnerExistsSetKey(long ownerId)
         => $"{Prefix}ChatObjects:Exists:OwnerId-{ownerId}";
     private string OwnerTotalBadgeSetKey(long ownerId)
@@ -271,6 +273,7 @@ end
 
         // owner zset unitKey
         var ownerSortedKey = OwnerSortedSetKey(ownerId);
+        var toppingKey = OwnerToppingSetKey(ownerId);
 
         var unitMap = await GetManyAsync(unitList.Select(x => x.Id));
 
@@ -280,7 +283,7 @@ end
 
         foreach (var unit in unCachedUnits)
         {
-            var idStr = unit.Id.ToString();
+            var unitId = unit.Id.ToString();
 
             var unitKey = UnitKey(unit.Id);
 
@@ -293,7 +296,13 @@ end
             // score
             var score = GetScore(unit.Sorting, unit.LastMessageId ?? 0);
 
-            _ = batch.SortedSetAddAsync(ownerSortedKey, idStr, score);
+            _ = batch.SortedSetAddAsync(ownerSortedKey, unitId, score);
+
+            // set top
+            if (unit.Sorting > 0)
+            {
+                _ = batch.SortedSetAddAsync(toppingKey, unitId, unit.Sorting);
+            }
         }
 
         if (_cacheExpire.HasValue)
@@ -329,7 +338,13 @@ end
         return await SetListByOwnerIfNotExistsAsync(ownerId, fetchTask) ?? await GetListByOwnerAsync(ownerId);
     }
 
-    public async Task<IEnumerable<SessionUnitCacheItem>> GetListByOwnerAsync(long ownerId, double minScore = double.NegativeInfinity, double maxScore = double.PositiveInfinity, long skip = 0, long take = -1)
+    public async Task<KeyValuePair<Guid, double>[]> GetSrotedSetByOwnerAsync(
+        long ownerId, 
+        double minScore = double.NegativeInfinity, 
+        double maxScore = double.PositiveInfinity, 
+        long skip = 0, 
+        long take = -1, 
+        bool isDescending = true)
     {
         string ownerSortedKey = OwnerSortedSetKey(ownerId);
 
@@ -340,12 +355,37 @@ end
             stop: maxScore,
             skip: skip,
             take: take,
-            order: Order.Descending);
+            order: isDescending ? Order.Descending : Order.Ascending);
+
+        var result = redisZset.Select(x => new KeyValuePair<Guid, double>(Guid.Parse(x.Element), x.Score)).ToArray();
+
+        return result;
+
+    }
+
+    public async Task<IEnumerable<SessionUnitCacheItem>> GetListByOwnerAsync(
+        long ownerId, 
+        double minScore = double.NegativeInfinity, 
+        double maxScore = double.PositiveInfinity, 
+        long skip = 0, 
+        long take = -1,
+        bool isDescending = true)
+    {
+        string ownerSortedKey = OwnerSortedSetKey(ownerId);
+
+        // read owner zset (may be empty)
+        var kvs = await GetSrotedSetByOwnerAsync(
+            ownerId: ownerId,
+            minScore: minScore,
+            maxScore: maxScore,
+            skip: skip,
+            take: take,
+            isDescending: true);
 
         // 按序取
-        var unitIdList = redisZset.Select(x => Guid.Parse(x.Element)).ToList();
+        var unitIdList = kvs.Select(x => x.Key).ToList();
 
-        var listMap = (await GetManyAsync(unitIdList)).ToDictionary(x => x.Key, x => x.Value); ;
+        var listMap = (await GetManyAsync(unitIdList)).ToDictionary(x => x.Key, x => x.Value);
 
         var result = unitIdList.Select(id => listMap[id]).ToList();
 
