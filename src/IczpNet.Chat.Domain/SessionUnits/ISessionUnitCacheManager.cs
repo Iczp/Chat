@@ -18,6 +18,8 @@ public interface ISessionUnitCacheManager
 
     Task<IDictionary<Guid, long>> GetDictBySessionAsync(Guid sessionId);
 
+    Task<IDictionary<long, Guid>> GetUnitsBySessionAsync(Guid sessionId, List<long> ownerIds);
+
     Task<IEnumerable<SessionUnitCacheItem>> GetListBySessionAsync(Guid sessionId);
 
     Task<IEnumerable<SessionUnitCacheItem>> SetListByOwnerAsync(long ownerId, IEnumerable<SessionUnitCacheItem> units);
@@ -36,7 +38,7 @@ public interface ISessionUnitCacheManager
 
     Task BatchIncrementAsync(Message message, TimeSpan? expire = null);
 
-    Task UpdateCountersync(SessionUnitCounterInfo counter, Func<Guid,Task<SessionUnitCacheItem>> fetchTask);
+    Task UpdateCountersync(SessionUnitCounterInfo counter, Func<Guid, Task<SessionUnitCacheItem>> fetchTask);
 
     Task<bool> SetTotalBadgeAsync(long ownerId, long badge);
 
