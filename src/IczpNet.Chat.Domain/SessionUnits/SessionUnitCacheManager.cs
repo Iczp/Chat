@@ -1,4 +1,4 @@
-using IczpNet.Chat.Enums;
+﻿using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.RedisMapping;
 using IczpNet.Chat.SessionSections.SessionUnits;
@@ -90,8 +90,9 @@ public class SessionUnitCacheManager(
 
         foreach (var unit in unitList)
         {
-            var idStr = unit.Id.ToString();
-            _ = batch.HashSetAsync(sessionSetKey, idStr, unit.OwnerId);
+            var unitId = unit.Id.ToString();
+
+            _ = batch.HashSetAsync(sessionSetKey, unit.OwnerId, unitId);
 
             var unitKey = UnitKey(unit.Id);
 
@@ -101,7 +102,7 @@ public class SessionUnitCacheManager(
 
             //if (unit.LastMessageId.HasValue)
             //{
-            //    zsetAddTasks.Add(batch.SortedSetAddAsync(lastMsgKey, idStr, unit.LastMessageId.Value));
+            //    zsetAddTasks.Add(batch.SortedSetAddAsync(lastMsgKey, unitId, unit.LastMessageId.Value));
             //}
 
             _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
@@ -152,16 +153,70 @@ public class SessionUnitCacheManager(
         }
         var entries = await Database.HashGetAllAsync(sessionSetKey);
 
-        var dict = entries.ToDictionary(x => Guid.Parse(x.Name), x => long.Parse(x.Value));
+        var dict = entries.ToDictionary(x => Guid.Parse(x.Value), x => long.Parse(x.Name));
 
         return dict;
+    }
+
+    public async Task<IDictionary<long, Guid>> GetUnitsBySessionAsync(Guid sessionId, List<long> ownerIds)
+    {
+        var sessionSetKey = SessionSetKey(sessionId);
+
+        // 直接 Hash 长度判断即可，无需 KeyExistsAsync（减少一次 Redis 请求）
+        var length = await Database.HashLengthAsync(sessionSetKey);
+        if (length == 0)
+        {
+            return new Dictionary<long, Guid>();
+        }
+
+        // ownerIds = null 或 ownerIds.Count == 0 返回全部
+        if (ownerIds == null || ownerIds.Count == 0)
+        {
+            var entries = await Database.HashGetAllAsync(sessionSetKey);
+
+            return entries.ToDictionary(
+                e => (long)e.Value,      // value 是 ownerId
+                e => Guid.Parse(e.Name)        // name 是 unitId
+            );
+        }
+
+        // 只取指定 ownerIds 用 Batch 批量获取
+        var batch = Database.CreateBatch();
+        var tasks = new Dictionary<long, Task<RedisValue>>(ownerIds.Count);
+
+        foreach (var ownerId in ownerIds)
+        {
+            tasks[ownerId] = batch.HashGetAsync(sessionSetKey, ownerId);
+        }
+
+        batch.Execute();
+
+        var result = new Dictionary<long, Guid>(ownerIds.Count);
+
+        foreach (var kv in tasks)
+        {
+            var ownerId = kv.Key;
+            var val = await kv.Value;
+
+            if (val.IsNullOrEmpty)
+            {
+                // 没有对应 unitId 设为 Guid.Empty（或可不放入）
+                result[ownerId] = Guid.Empty;
+            }
+            else
+            {
+                result[ownerId] = Guid.Parse(val.ToString());
+            }
+        }
+
+        return result;
     }
 
     public async Task<IEnumerable<SessionUnitCacheItem>> GetListBySessionAsync(Guid sessionId)
     {
         var dict = await GetDictBySessionAsync(sessionId);
 
-        var unitIds = dict.Keys.ToList();
+        var unitIds = dict.Keys.Distinct().ToList();
 
         var kvs = await GetManyAsync(unitIds);
 
@@ -282,19 +337,19 @@ public class SessionUnitCacheManager(
         var batch = Database.CreateBatch();
         var tasks = new List<Task<HashEntry[]>>(idList.Count);
 
-        // pipeline ȫ�� HashGetAll
+        // pipeline 全部 HashGetAll
         foreach (var unitId in idList)
         {
             tasks.Add(batch.HashGetAllAsync(UnitKey(unitId)));
         }
 
-        // һ���ύ�������ܹؼ��㣩
+        // 一次提交（高性能关键点）
         batch.Execute();
 
-        // �ȴ�ȫ�����
+        // 等待全部完成
         var resultEntries = await Task.WhenAll(tasks);
 
-        // �������
+        // 构建结果
         var result = new KeyValuePair<Guid, SessionUnitCacheItem>[idList.Count];
 
         for (int i = 0; i < idList.Count; i++)
@@ -539,81 +594,6 @@ public class SessionUnitCacheManager(
 
     #region Remove / Set / Misc
 
-    public async Task AddUnitIdToSessionAsync(Guid sessionId, Guid unitId, long ownerId)
-    {
-        await Database.HashSetAsync(SessionSetKey(sessionId), unitId.ToString(), ownerId);
-        await Database.KeyExpireAsync(SessionSetKey(sessionId), _cacheExpire);
-    }
-
-    public async Task RemoveUnitIdFromSessionAsync(Guid sessionId, Guid unitId)
-    {
-        await Database.HashDeleteAsync(SessionSetKey(sessionId), unitId.ToString());
-        await Database.KeyDeleteAsync(UnitKey(unitId));
-    }
-
-    public async Task<bool> RemoveManyAsync(Guid sessionId, IEnumerable<Guid> unitIds)
-    {
-        var batch = Database.CreateBatch();
-        //var zkey = LastMessageSetKey(sessionId);
-
-        var delTasks = new List<Task<bool>>();
-        var zremoveTasks = new List<Task<bool>>();
-
-        foreach (var id in unitIds)
-        {
-            delTasks.Add(batch.KeyDeleteAsync(UnitKey(id)));
-            //zremoveTasks.Add(batch.SortedSetRemoveAsync(zkey, id.ToString()));
-            _ = batch.HashDeleteAsync(SessionSetKey(sessionId), id.ToString());
-        }
-
-        batch.Execute();
-
-        if (delTasks.Count > 0) await Task.WhenAll(delTasks);
-        if (zremoveTasks.Count > 0) await Task.WhenAll(zremoveTasks);
-
-        return true;
-    }
-
-    public async Task<bool> RemoveAsync(Guid sessionId, Guid unitId)
-    {
-        return await RemoveManyAsync(sessionId, new[] { unitId });
-    }
-
-    public async Task<bool> RemoveAllAsync(Guid sessionId)
-    {
-        var sessionSetKey = SessionSetKey(sessionId);
-        //var lastKey = LastMessageSetKey(sessionId);
-
-        var r1 = await Database.KeyDeleteAsync(sessionSetKey);
-        //var r2 = await Database.KeyDeleteAsync(lastKey);
-        return r1;//&& r2;
-    }
-
-    public async Task UpdateReadedMessageIdAsync(Guid unitId, long readedMessageId, TimeSpan? expire = null)
-    {
-        var key = UnitKey(unitId);
-        await Database.HashSetAsync(key, F_Setting_ReadedMessageId, readedMessageId);
-        if (expire.HasValue) await Database.KeyExpireAsync(key, expire.Value);
-    }
-
-    public async Task<bool> SetExpireAsync(Guid sessionId, Guid? unitId = null, TimeSpan? expire = null)
-    {
-        var e = expire ?? _cacheExpire;
-        var tasks = new List<Task<bool>>();
-        if (unitId.HasValue)
-        {
-            tasks.Add(Database.KeyExpireAsync(UnitKey(unitId.Value), e));
-        }
-        else
-        {
-            tasks.Add(Database.KeyExpireAsync(SessionSetKey(sessionId), e));
-            //tasks.Add(Database.KeyExpireAsync(LastMessageSetKey(sessionId), e));
-        }
-
-        var results = await Task.WhenAll(tasks);
-        return results.All(x => x);
-    }
-
     public async Task UpdateCountersync(SessionUnitCounterInfo counter, Func<Guid, Task<SessionUnitCacheItem>> fetchTask)
     {
         var unitKey = UnitKey(counter.Id);
@@ -625,7 +605,7 @@ public class SessionUnitCacheManager(
 
         if (!isExists)
         {
-            // ���ػ�����
+            // 加载缓存项
 
             var unit = await fetchTask(counter.Id);
 

@@ -129,8 +129,12 @@ public class SendToClientDistributedEventHandler : DomainService, IDistributedEv
         var command = eventData.Command;
         var connDict = await ConnectionCacheManager.GetConnectionsBySessionAsync(sessionId);
 
-        // 使用 SessionUnitCache 代替 SessionUnitManager --2025.12.2
-        var sessionUnitInfoList = (await SessionUnitCacheManager.GetListBySessionAsync(sessionId)).ToList();
+        var onlineOwnerIds = connDict.SelectMany(x => x.Value).Distinct().ToList();
+
+        var ownerUnitDict = await SessionUnitCacheManager.GetUnitsBySessionAsync(sessionId, onlineOwnerIds);
+
+        //// 使用 SessionUnitCache 代替 SessionUnitManager --2025.12.2
+        //var sessionUnitInfoList = (await SessionUnitCacheManager.GetListBySessionAsync(sessionId)).ToList();
 
         foreach (var item in connDict)
         {
@@ -141,7 +145,8 @@ public class SendToClientDistributedEventHandler : DomainService, IDistributedEv
                 .Select(chatObjectId => new CommandPayload.ScopeUnit
                 {
                     ChatObjectId = chatObjectId,
-                    SessionUnitId = sessionUnitInfoList.Find(x => x.OwnerId == chatObjectId).Id
+                    //SessionUnitId = sessionUnitInfoList.Find(x => x.OwnerId == chatObjectId).Id
+                    SessionUnitId = ownerUnitDict[chatObjectId]
                 }).ToList();
 
             var commandPayload = new CommandPayload()
