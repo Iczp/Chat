@@ -304,24 +304,33 @@ public class SessionUnitCacheManager(
 
     public async Task<IEnumerable<SessionUnitCacheItem>> GetOrSetListByOwnerAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
     {
-        return await SetListByOwnerIfNotExistsAsync(ownerId, fetchTask) ?? await GetListByOwnerIdAsync(ownerId);
+        return await SetListByOwnerIfNotExistsAsync(ownerId, fetchTask) ?? await GetListByOwnerAsync(ownerId);
     }
 
-    public async Task<IEnumerable<SessionUnitCacheItem>> GetListByOwnerIdAsync(long ownerId)
+    public async Task<IEnumerable<SessionUnitCacheItem>> GetListByOwnerAsync(long ownerId, double minScore = double.NegativeInfinity, double maxScore = double.PositiveInfinity, long skip = 0, long take = -1)
     {
         string ownerSortedKey = OwnerSortedSetKey(ownerId);
+
         // read owner zset (may be empty)
         var redisZset = await Database.SortedSetRangeByScoreWithScoresAsync(
             key: ownerSortedKey,
-            order: Order.Descending
-            );
-        var redisMap = redisZset.ToDictionary(x => Guid.Parse(x.Element), x => x.Score);
-        var unitIdList = redisMap.Keys.ToList();
-        var listMap = await GetManyAsync(unitIdList);
-        return listMap.Select(x => x.Value)
-            .OrderByDescending(x => x.Sorting)
-            .ThenByDescending(x => x.LastMessageId);
+            start: minScore,
+            stop: maxScore,
+            skip: skip,
+            take: take,
+            order: Order.Descending);
+
+        // 按序取
+        var unitIdList = redisZset.Select(x => Guid.Parse(x.Element)).ToList();
+
+        var listMap = (await GetManyAsync(unitIdList)).ToDictionary(x => x.Key, x => x.Value); ;
+
+        var result = unitIdList.Select(id => listMap[id]).ToList();
+
+        return result;
     }
+
+
 
     #endregion
 
@@ -409,7 +418,8 @@ public class SessionUnitCacheManager(
 
     private static double GetScore(double sorting, long lastMessageId)
     {
-        return sorting * OWNER_SCORE_MULT + lastMessageId;
+        //return sorting * OWNER_SCORE_MULT + lastMessageId;
+        return lastMessageId;
     }
 
     public async Task BatchIncrement_BackAsync(Message message, TimeSpan? expire = null)
@@ -676,6 +686,7 @@ public class SessionUnitCacheManager(
 
         return item2;
     }
+
 
     #endregion
 }

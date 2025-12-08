@@ -150,19 +150,19 @@ public class SessionUnitCacheAppService(
         var pagedList = await GetPagedListAsync(baseQuery, input);
 
         // 分页后再按需加载 Setting & Destination
-        await FillSettingAsync(pagedList);
+        await FillSettingAsync(pagedList.Items);
 
-        await FillDestinationAsync(pagedList);
+        await FillDestinationAsync(pagedList.Items);
 
-        await FillLastMessageAsync(pagedList);
+        await FillLastMessageAsync(pagedList.Items);
 
         return pagedList;
     }
 
-    private async Task FillLastMessageAsync(PagedResultDto<SessionUnitCacheDto> pagedList)
+    private async Task FillLastMessageAsync(IEnumerable<SessionUnitCacheDto> items)
     {
         // fill Setting
-        var messageIdList = pagedList.Items
+        var messageIdList = items
             .Where(x => x.LastMessageId.HasValue)
             .Select(x => x.LastMessageId)
             .ToList();
@@ -175,16 +175,16 @@ public class SessionUnitCacheAppService(
         var messageMap = messages
             .Select(ObjectMapper.Map<Message, MessageOwnerDto>)
             .ToDictionary(x => x.Id, x => x);
-        foreach (var item in pagedList.Items)
+        foreach (var item in items)
         {
             item.LastMessage = item.LastMessageId.HasValue ? messageMap.GetValueOrDefault(item.LastMessageId.Value) : null;
         }
     }
 
-    private async Task FillSettingAsync(PagedResultDto<SessionUnitCacheDto> pagedList)
+    private async Task FillSettingAsync(IEnumerable<SessionUnitCacheDto> items)
     {
         // fill Setting
-        var nullSettingsItems = pagedList.Items
+        var nullSettingsItems = items
             .Where(x => x.Setting == null)
             .ToList();
         if (nullSettingsItems.Count == 0)
@@ -201,10 +201,10 @@ public class SessionUnitCacheAppService(
         }
     }
 
-    private async Task FillDestinationAsync(PagedResultDto<SessionUnitCacheDto> pagedList)
+    private async Task FillDestinationAsync(IEnumerable<SessionUnitCacheDto> items)
     {
         // fill Destination
-        var nullDestItems = pagedList.Items
+        var nullDestItems = items
             .Where(x => x.DestinationId.HasValue && x.Destination == null)
             .ToList();
         if (nullDestItems.Count == 0)
@@ -242,6 +242,28 @@ public class SessionUnitCacheAppService(
             .Where(x => x != null)
             .Select(MapToDto)
             .ToList();
+
+        return items;
+    }
+
+    /// <summary>
+    /// 获取最新消息
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <param name="minScore"></param>
+    /// <param name="maxResultCount"></param>
+    /// <param name="skipCount"></param>
+    /// <returns></returns>
+    public async Task<List<SessionUnitCacheDto>> GetLatestAsync(long ownerId, double minScore, long? maxResultCount, long? skipCount)
+    {
+        var list = await SessionUnitCacheManager.GetListByOwnerAsync(ownerId, minScore, skip: skipCount ?? 0, take: maxResultCount ?? 10);
+
+        var items = list
+            .Where(x => x != null)
+            .Select(MapToDto)
+            .ToList();
+
+        await FillDestinationAsync(items);
 
         return items;
     }
