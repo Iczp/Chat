@@ -1,8 +1,6 @@
 ﻿using AutoMapper;
 using IczpNet.Chat.Wallets;
 using IczpNet.Chat.Wallets.Dtos;
-using IczpNet.Chat.Words.Dtos;
-using IczpNet.Chat.Words;
 using IczpNet.Chat.WalletOrders;
 using IczpNet.Chat.WalletOrders.Dtos;
 using IczpNet.Chat.WalletRecorders.Dtos;

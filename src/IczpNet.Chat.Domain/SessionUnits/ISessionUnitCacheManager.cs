@@ -38,13 +38,23 @@ public interface ISessionUnitCacheManager
         long take = -1, 
         bool isDescending = true);
 
-    Task<KeyValuePair<Guid, double>[]> GetSrotedSetByOwnerAsync(
+    Task<KeyValuePair<Guid, double>[]> GetSortedSetByOwnerAsync(
         long ownerId, 
         double minScore = double.NegativeInfinity, 
         double maxScore = double.PositiveInfinity, 
         long skip = 0, 
         long take = -1, 
         bool isDescending = true);
+
+    Task<KeyValuePair<Guid, double>[]> GetHistoryByOwnerAsync(
+        long ownerId,
+        double minScore = double.NegativeInfinity,
+        double maxScore = double.PositiveInfinity,
+        long skip = 0,
+        long take = -1,
+        bool isDescending = true);
+
+    Task<long> GetTotalCountByOwnerAsync(long ownerId);
 
     Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetManyAsync(IEnumerable<Guid> unitIds);
 

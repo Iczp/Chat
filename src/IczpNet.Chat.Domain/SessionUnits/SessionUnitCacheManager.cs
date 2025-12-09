@@ -44,7 +44,7 @@ public class SessionUnitCacheManager(
         => $"{Prefix}ChatObjects:TotalBadges:OwnerId-{ownerId}";
 
     // composite score multiplier (sorting * MULT + lastMessageId)
-    private const double OWNER_SCORE_MULT = 1_000_000_000_000d; // 1e12
+    public const double OWNER_SCORE_MULT = 1_000_000_000_000d; // 1e12
     /// <summary>
     /// 1. key 不存在 : 返回 nil（不创建）
     /// 2. key 存在 : 执行 HINCRBY(key, field, increment)
@@ -63,6 +63,13 @@ else
     return nil
 end
 ";
+
+
+    private static double GetScore(double sorting, long lastMessageId)
+    {
+        return sorting * OWNER_SCORE_MULT + lastMessageId;
+        //return lastMessageId;
+    }
 
     #region Field names
     private static string F_Id => nameof(SessionUnitCacheItem.Id);
@@ -128,6 +135,13 @@ end
             //{
             //    zsetAddTasks.Add(batch.SortedSetAddAsync(lastMsgKey, unitId, unit.LastMessageId.Value));
             //}
+
+            // set top
+            if (unit.Sorting > 0)
+            {
+                var toppingKey = OwnerToppingSetKey(unit.OwnerId);
+                _ = batch.SortedSetAddAsync(toppingKey, unitId, unit.Sorting);
+            }
 
             _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
         }
@@ -279,6 +293,12 @@ end
 
         var cachedUnits = unitMap.Where(x => x.Value != null).Select(x => x.Value).ToList();
 
+        //foreach (var unit in cachedUnits.Where(x => x.Sorting > 0))
+        //{
+        //    var unitId = unit.Id.ToString();
+        //    _ = batch.SortedSetAddAsync(toppingKey, unitId, unit.Sorting);
+        //}
+
         var unCachedUnits = unitList.ExceptBy(cachedUnits.Select(x => x.Id), x => x.Id).ToList();
 
         foreach (var unit in unCachedUnits)
@@ -295,7 +315,6 @@ end
 
             // score
             var score = GetScore(unit.Sorting, unit.LastMessageId ?? 0);
-
             _ = batch.SortedSetAddAsync(ownerSortedKey, unitId, score);
 
             // set top
@@ -338,17 +357,17 @@ end
         return await SetListByOwnerIfNotExistsAsync(ownerId, fetchTask) ?? await GetListByOwnerAsync(ownerId);
     }
 
-    public async Task<KeyValuePair<Guid, double>[]> GetSrotedSetByOwnerAsync(
-        long ownerId, 
-        double minScore = double.NegativeInfinity, 
-        double maxScore = double.PositiveInfinity, 
-        long skip = 0, 
-        long take = -1, 
+    public async Task<KeyValuePair<Guid, double>[]> GetSortedSetByOwnerAsync(
+        long ownerId,
+        double minScore = double.NegativeInfinity,
+        double maxScore = double.PositiveInfinity,
+        long skip = 0,
+        long take = -1,
         bool isDescending = true)
     {
         string ownerSortedKey = OwnerSortedSetKey(ownerId);
 
-        // read owner zset (may be empty)
+        // read owner zset (may be empty) SortedSetRangeByScoreWithScoresAsync
         var redisZset = await Database.SortedSetRangeByScoreWithScoresAsync(
             key: ownerSortedKey,
             start: minScore,
@@ -363,18 +382,123 @@ end
 
     }
 
+    public async Task<long> GetTotalCountByOwnerAsync(long ownerId)
+    {
+        var ownerSortedKey = OwnerSortedSetKey(ownerId);
+        var totalCount = await Database.SortedSetLengthAsync(ownerSortedKey);
+        return totalCount;
+    }
+    public async Task<KeyValuePair<Guid, double>[]> GetHistoryByOwnerAsync(
+        long ownerId,
+        double minScore = double.NegativeInfinity,
+        double maxScore = double.PositiveInfinity,
+        long skip = 0,
+        long take = -1,
+        bool isDescending = true)
+    {
+
+        var list = await GetHistoryByOwnerInternalAsync(ownerId: ownerId,
+            minScore: minScore,
+            maxScore: maxScore,
+            skip: skip,
+            take: take,
+            isDescending: true);
+        return list.Select(x => new KeyValuePair<Guid, double>(Guid.Parse(x.Element), x.Score)).ToArray();
+    }
+
+    protected async Task<List<SortedSetEntry>> GetHistoryByOwnerInternalAsync(
+        long ownerId,
+        double minScore = double.NegativeInfinity,
+        double maxScore = double.PositiveInfinity,
+        long skip = 0,
+        long take = -1,
+        bool isDescending = true)
+    {
+        var ownerSortedKey = OwnerSortedSetKey(ownerId);
+
+        if (maxScore == 0)
+        {
+            maxScore = double.PositiveInfinity;
+        }
+
+        var order = isDescending ? Order.Descending : Order.Ascending;
+        // 1. 获取置顶的所有元素（不分页）
+        var allPinned = await Database.SortedSetRangeByScoreWithScoresAsync(
+            ownerSortedKey,
+            start: OWNER_SCORE_MULT + minScore,
+            stop: OWNER_SCORE_MULT + maxScore - 1,
+            order: order
+        );
+
+        int pinnedCount = allPinned.Length;
+
+        // 结果
+        var result = new List<SortedSetEntry>();
+
+        // 如果 skip 在置顶区内，则要从置顶区分页
+        if (skip < pinnedCount)
+        {
+            // 决定从置顶区取多少
+            int takeFromPinned = (int)(take == -1 ? int.MaxValue : take);
+
+            var pinnedPart = allPinned
+                .Skip((int)skip)
+                .Take((int)takeFromPinned)
+                .ToArray();
+
+            result.AddRange(pinnedPart);
+
+            // 如果置顶区已经提供足够数量，直接返回
+            if (take != -1 && result.Count >= take)
+            {
+                return result;
+            }
+
+            // 需要从未置顶区补齐
+            var remainingTake = take == -1 ? -1 : (take - result.Count);
+
+            var nonPinned = await Database.SortedSetRangeByScoreWithScoresAsync(
+                ownerSortedKey,
+                start: minScore,
+                stop: Math.Min(OWNER_SCORE_MULT, maxScore) - 1,
+                skip: 0,
+                take: remainingTake,
+                order: order
+            );
+
+            result.AddRange(nonPinned);
+            return result;
+        }
+
+        // skip 超出置顶区  只从未置顶区开始取
+        var skipFromNonPinned = skip - pinnedCount;
+
+        var nonPinnedOnly = await Database.SortedSetRangeByScoreWithScoresAsync(
+            ownerSortedKey,
+            start: minScore,
+            stop: Math.Min(OWNER_SCORE_MULT, maxScore) - 1,
+            skip: skipFromNonPinned,
+            take: take,
+            order: order
+        );
+
+        return nonPinnedOnly.ToList();
+    }
+
+
+
     public async Task<IEnumerable<SessionUnitCacheItem>> GetListByOwnerAsync(
-        long ownerId, 
-        double minScore = double.NegativeInfinity, 
-        double maxScore = double.PositiveInfinity, 
-        long skip = 0, 
+        long ownerId,
+        double minScore = double.NegativeInfinity,
+        double maxScore = double.PositiveInfinity,
+        long skip = 0,
         long take = -1,
         bool isDescending = true)
     {
         string ownerSortedKey = OwnerSortedSetKey(ownerId);
 
         // read owner zset (may be empty)
-        var kvs = await GetSrotedSetByOwnerAsync(
+        var kvs = await GetSortedSetByOwnerAsync(
             ownerId: ownerId,
             minScore: minScore,
             maxScore: maxScore,
@@ -478,11 +602,6 @@ end
 
     #region BatchIncrementBadgeAndSetLastMessageAsync (updates owner zset score)
 
-    private static double GetScore(double sorting, long lastMessageId)
-    {
-        //return sorting * OWNER_SCORE_MULT + lastMessageId;
-        return lastMessageId;
-    }
 
     public async Task BatchIncrement_BackAsync(Message message, TimeSpan? expire = null)
     {
@@ -536,6 +655,7 @@ end
             var ownerSortedKey = OwnerSortedSetKey(unit.OwnerId);
             var score = GetScore(unit.Sorting, lastMessageId);
             zsetOwnerTasks.Add(batch.SortedSetAddAsync(ownerSortedKey, idStr, score));
+
             if (expireTime.HasValue)
             {
                 expireTasks.Add(batch.KeyExpireAsync(ownerSortedKey, expire ?? _cacheExpire));
