@@ -286,7 +286,15 @@ public class SessionUnitCacheAppService(
         return list;
     }
 
-
+    /// <summary>
+    /// 获取会话(Linq)
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <param name="minScore"></param>
+    /// <param name="maxScore"></param>
+    /// <param name="maxResultCount"></param>
+    /// <param name="skipCount"></param>
+    /// <returns></returns>
     public async Task<PagedResultDto<SessionUnitCacheDto>> GetHistory1Async(long ownerId, double minScore, double maxScore, long? maxResultCount, long? skipCount)
     {
         //加载全部
@@ -323,7 +331,7 @@ public class SessionUnitCacheAppService(
     }
 
     /// <summary>
-    /// 获取
+    /// 获取会话(SortSet)
     /// </summary>
     /// <param name="ownerId"></param>
     /// <param name="minScore"></param>
