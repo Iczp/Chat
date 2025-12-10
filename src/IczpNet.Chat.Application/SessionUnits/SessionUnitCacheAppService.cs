@@ -8,7 +8,6 @@ using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
 using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.AspNetCore.Mvc;
-using Pipelines.Sockets.Unofficial.Buffers;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -277,9 +276,13 @@ public class SessionUnitCacheAppService(
         // check owner
         // ...
 
-        var kvs = await SessionUnitCacheManager.GetSortedSetByOwnerAsync(ownerId, minScore, skip: skipCount ?? 0, take: maxResultCount ?? 10);
+        Assert.If(maxResultCount > 100, $"params:{nameof(maxResultCount)} max value: 100");
 
-        var unitIds = kvs.Select(x => x.Key).ToList();
+        var queryable = await SessionUnitCacheManager.GetSortedSetQueryableByOwnerAsync(ownerId, minScore, skip: skipCount ?? 0, take: Math.Min(maxResultCount ?? 10, 100));
+
+        var query = queryable.Where(x => x.Ticks > minScore);
+        //var unitIds = kvs.Select(x => x.Key).ToList();
+        var unitIds = queryable.Where(x => x.Ticks > minScore).Select(x => x.UnitId).ToList();
 
         var list = await GetManyAsync(unitIds);
 
@@ -300,25 +303,20 @@ public class SessionUnitCacheAppService(
         //加载全部
         await LoadAllByOwnerIfNotExistsAsync(ownerId);
 
-        var kvs = await SessionUnitCacheManager.GetSortedSetByOwnerAsync(ownerId);
-        var queryable = kvs.Select(x => new
-        {
-            UnitId = x.Key,
-            Sorting = x.Value / 1_000_000_000_000d,
-            LastMessageId = x.Value % 1_000_000_000_000d
-        }).AsQueryable();
+        var queryable = await SessionUnitCacheManager.GetSortedSetQueryableByOwnerAsync(ownerId);
 
         var query = queryable
-            .WhereIf(minScore > 0, x => x.LastMessageId > minScore)
-            .WhereIf(maxScore > 0, x => x.LastMessageId < maxScore)
+            .WhereIf(minScore > 0, x => x.Ticks > minScore)
+            .WhereIf(maxScore > 0, x => x.Ticks < maxScore)
             ;
 
-        var totalCount = kvs.Length; // query.Count(); //kvs.Length
+        var totalCount = query.Count(); //kvs.Length
+        //var totalCount = await SessionUnitCacheManager.GetTotalCountByOwnerAsync(ownerId);
 
         // sorting
         query = query
             .OrderByDescending(x => x.Sorting)
-            .ThenByDescending(x => x.LastMessageId)
+            .ThenByDescending(x => x.Ticks)
             ;
         // paged
         query = query.Skip((int)(skipCount ?? 0)).Take((int)(maxResultCount ?? 10));

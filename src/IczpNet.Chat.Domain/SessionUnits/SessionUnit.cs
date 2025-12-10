@@ -163,7 +163,7 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     /// 时间
     /// </summary>
     [Comment("时间")]
-    public virtual double Ticks { get; protected set; } = DateTime.Now.Ticks;
+    public virtual double Ticks { get; protected set; } = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
     /// <summary>
     /// 计数器（弃用）
@@ -371,14 +371,9 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
         return shopObjectTypes.Contains(OwnerObjectType);
     }
 
-    internal virtual void SetTopping(bool isTopping)
+    internal virtual void SetTopping(long sorting)
     {
-        Sorting = isTopping ? DateTime.Now.Ticks : 0;
-    }
-
-    internal virtual void SetTicks(double? ticks)
-    {
-        Ticks = ticks ?? 0;
+        Sorting = sorting;
     }
 
     private List<SessionTag> GetTagList()

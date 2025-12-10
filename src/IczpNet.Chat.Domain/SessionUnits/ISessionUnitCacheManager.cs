@@ -2,6 +2,7 @@
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.SessionUnits;
@@ -46,6 +47,14 @@ public interface ISessionUnitCacheManager
         long take = -1, 
         bool isDescending = true);
 
+    Task<IQueryable<(Guid UnitId, double Sorting, double Ticks)>> GetSortedSetQueryableByOwnerAsync(
+        long ownerId,
+        double minScore = double.NegativeInfinity,
+        double maxScore = double.PositiveInfinity,
+        long skip = 0,
+        long take = -1,
+        bool isDescending = true);
+
     Task<KeyValuePair<Guid, double>[]> GetHistoryByOwnerAsync(
         long ownerId,
         double minScore = double.NegativeInfinity,
@@ -71,6 +80,8 @@ public interface ISessionUnitCacheManager
     Task<bool> RemoveTotalBadgeAsync(long ownerId);
 
     Task<SessionUnitCacheItem> UnitTestAsync();
+
+    Task SetToppingAsync(Guid unitId, long ownerId, long sorting);
 
 
 

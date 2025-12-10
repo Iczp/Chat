@@ -5,10 +5,10 @@ using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Pipelines.Sockets.Unofficial.Buffers;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
@@ -43,8 +43,7 @@ public class SessionUnitCacheManager(
     private string OwnerTotalBadgeSetKey(long ownerId)
         => $"{Prefix}ChatObjects:TotalBadges:OwnerId-{ownerId}";
 
-    // composite score multiplier (sorting * MULT + lastMessageId)
-    public const double OWNER_SCORE_MULT = 1_000_000_000_000d; // 1e12
+
     /// <summary>
     /// 1. key 不存在 : 返回 nil（不创建）
     /// 2. key 存在 : 执行 HINCRBY(key, field, increment)
@@ -65,10 +64,15 @@ end
 ";
 
 
-    private static double GetScore(double sorting, long lastMessageId)
+    /// <summary>
+    /// 1e16
+    /// </summary>
+    public const long OWNER_SCORE_MULT = 10_000_000_000_000_000; // 1e16
+    private static double GetScore(double sorting, double ticks)
     {
-        return sorting * OWNER_SCORE_MULT + lastMessageId;
-        //return lastMessageId;
+        var score = sorting * OWNER_SCORE_MULT + ticks;
+
+        return score;
     }
 
     #region Field names
@@ -213,8 +217,8 @@ end
             var entries = await Database.HashGetAllAsync(sessionSetKey);
 
             return entries.ToDictionary(
-                e => (long)e.Value,      // value 是 ownerId
-                e => Guid.Parse(e.Name)        // name 是 unitId
+                e => (long)e.Name,      // Name 是 ownerId
+                e => Guid.Parse(e.Value)        // value 是 unitId
             );
         }
 
@@ -314,7 +318,7 @@ end
             _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
 
             // score
-            var score = GetScore(unit.Sorting, unit.LastMessageId ?? 0);
+            var score = GetScore(unit.Sorting, unit.Ticks);
             _ = batch.SortedSetAddAsync(ownerSortedKey, unitId, score);
 
             // set top
@@ -380,6 +384,25 @@ end
 
         return result;
 
+    }
+
+    public async Task<IQueryable<(Guid UnitId, double Sorting, double Ticks)>> GetSortedSetQueryableByOwnerAsync(
+        long ownerId,
+        double minScore = double.NegativeInfinity,
+        double maxScore = double.PositiveInfinity,
+        long skip = 0,
+        long take = -1,
+        bool isDescending = true)
+    {
+        var kvs = await GetSortedSetByOwnerAsync(ownerId, minScore, maxScore, skip, take, isDescending);
+
+        var result = kvs.Select(x => (
+               UnitId: x.Key,
+               Sorting: Math.Floor(x.Value / OWNER_SCORE_MULT),
+               Ticks: x.Value % OWNER_SCORE_MULT
+           )).AsQueryable();
+
+        return result;
     }
 
     public async Task<long> GetTotalCountByOwnerAsync(long ownerId)
@@ -603,75 +626,6 @@ end
     #region BatchIncrementBadgeAndSetLastMessageAsync (updates owner zset score)
 
 
-    public async Task BatchIncrement_BackAsync(Message message, TimeSpan? expire = null)
-    {
-        ArgumentNullException.ThrowIfNull(message);
-
-        var sessionId = message.SessionId!.Value;
-        var lastMessageId = message.Id;
-        //var lastMsgKey = LastMessageSetKey(sessionId);
-        var isPrivate = message.IsPrivateMessage();
-        var isRemindAll = message.IsRemindAll;
-
-        var sessionUnitList = await SessionUnitManager.GetCacheListAsync(message);
-        if (sessionUnitList == null || sessionUnitList.Count == 0) return;
-
-        var batch = Database.CreateBatch();
-
-        var hashSetTasks = new List<Task<bool>>();
-        var hashIncTasks = new List<Task<long>>();
-        var zsetGlobalTasks = new List<Task<bool>>();
-        var zsetOwnerTasks = new List<Task<bool>>();
-        var expireTasks = new List<Task<bool>>();
-        var deleteKeyTasks = new List<Task<bool>>();
-        foreach (var unit in sessionUnitList)
-        {
-            var id = unit.Id;
-            var unitKey = UnitKey(id);
-            var idStr = id.ToString();
-            var isSender = id == message.SenderSessionUnitId;
-
-            if (!isSender)
-            {
-                if (isPrivate) hashIncTasks.Add(batch.HashIncrementAsync(unitKey, F_PrivateBadge, 1));
-                else hashIncTasks.Add(batch.HashIncrementAsync(unitKey, F_PublicBadge, 1));
-                if (isRemindAll) hashIncTasks.Add(batch.HashIncrementAsync(unitKey, F_RemindAllCount, 1));
-                var ownerTotalBadgeKey = OwnerTotalBadgeSetKey(unit.OwnerId);
-                deleteKeyTasks.Add(batch.KeyDeleteAsync(ownerTotalBadgeKey));
-                //hashIncTasks.Add(batch.HashIncrementAsync(ownerTotalBadgeKey, F_TotalBadge, 1));
-            }
-
-            // update lastMessageId in hash
-            hashSetTasks.Add(batch.HashSetAsync(unitKey, F_LastMessageId, lastMessageId));
-            // update ticks
-            hashSetTasks.Add(batch.HashSetAsync(unitKey, F_Ticks, (double)DateTime.UtcNow.Ticks));
-            var expireTime = expire ?? _cacheExpire;
-            if (expireTime.HasValue)
-            {
-                expireTasks.Add(batch.KeyExpireAsync(unitKey, expire ?? _cacheExpire));
-            }
-
-            // owner score
-            var ownerSortedKey = OwnerSortedSetKey(unit.OwnerId);
-            var score = GetScore(unit.Sorting, lastMessageId);
-            zsetOwnerTasks.Add(batch.SortedSetAddAsync(ownerSortedKey, idStr, score));
-
-            if (expireTime.HasValue)
-            {
-                expireTasks.Add(batch.KeyExpireAsync(ownerSortedKey, expire ?? _cacheExpire));
-            }
-        }
-
-        batch.Execute();
-
-        if (hashSetTasks.Count > 0) await Task.WhenAll(hashSetTasks);
-        if (hashIncTasks.Count > 0) await Task.WhenAll(hashIncTasks);
-        if (zsetGlobalTasks.Count > 0) await Task.WhenAll(zsetGlobalTasks);
-        if (zsetOwnerTasks.Count > 0) await Task.WhenAll(zsetOwnerTasks);
-        if (expireTasks.Count > 0) await Task.WhenAll(expireTasks);
-        if (deleteKeyTasks.Count > 0) await Task.WhenAll(deleteKeyTasks);
-    }
-
     public async Task BatchIncrementAsync(Message message, TimeSpan? expire = null)
     {
         ArgumentNullException.ThrowIfNull(message);
@@ -735,11 +689,11 @@ end
             _ = batch.HashSetAsync(unitKey, F_LastMessageId, lastMessageId);
 
             // ticks
-            var ticks = (double)message.CreationTime.Ticks;
+            var ticks = new DateTimeOffset(message.CreationTime).ToUnixTimeMilliseconds();
             _ = batch.HashSetAsync(unitKey, F_Ticks, ticks);
 
-            // owner sortedset
-            var score = GetScore(unit.Sorting, lastMessageId);
+            // owner sortedset tick: message.CreationTime.Ticks
+            var score = GetScore(unit.Sorting, ticks);
             _ = batch.SortedSetAddAsync(ownerSortedKey, unitId.ToString(), score);
 
             // expire
@@ -888,6 +842,53 @@ end
         var item2 = RedisMapper.ToObject<SessionUnitCacheItem>(entries2);
 
         return item2;
+    }
+
+    public async Task SetToppingAsync(Guid unitId, long ownerId, long sorting)
+    {
+        var unitKey = UnitKey(unitId);
+
+        // 1. 检查缓存项是否存在
+        var isExists = await Database.KeyExistsAsync(unitKey);
+
+        // 2. owner sortedset key
+        var ownerSortedKey = OwnerSortedSetKey(ownerId);
+
+        // 3. 先读取旧 score
+        double? oldScore = await Database.SortedSetScoreAsync(ownerSortedKey, unitId.ToString());
+
+        if (oldScore is null)
+        {
+            // 没有旧 score，说明该单元未加入 ownerSortedSet，不做置顶
+            return;
+        }
+
+        // 4. 解析旧的 ticks
+        var ticks = oldScore.Value % OWNER_SCORE_MULT;     // 低位 JS 毫秒
+                                                           // 如果你担心 double 精度，可以加  Math.Round
+        ticks = Math.Round(ticks);
+
+        // 5. 新的 score = sorting * MULT + ticks
+        var newScore = GetScore(sorting, ticks);
+
+        // 6. 批处理写入
+        var batch = Database.CreateBatch();
+
+        // 6.1 更新 unitKey 中的 Sorting 字段（如果你有该字段）
+        if (isExists)
+        {
+            _ = batch.HashSetAsync(unitKey, F_Sorting, sorting);
+        }
+
+        // 6.2 更新置顶表（ownerToppingSet）
+        var toppingKey = OwnerToppingSetKey(ownerId);
+        _ = batch.SortedSetAddAsync(toppingKey, unitId.ToString(), sorting);
+
+        // 6.3 更新 ownerSortedSet 的新 score
+        _ = batch.SortedSetAddAsync(ownerSortedKey, unitId.ToString(), newScore);
+
+        // 7. 执行 batch
+        batch.Execute();
     }
 
 
