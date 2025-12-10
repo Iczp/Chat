@@ -25,6 +25,4 @@ public interface ISessionUnitCacheAppService
     Task<List<BadgeDto>> GetBadgeByUserIdAsync([Required] Guid userId, bool? isImmersed = null);
 
     Task<List<BadgeDto>> GetBadgeByCurrentUserAsync(bool? isImmersed = null);
-
-    Task<SessionUnitCacheItem> UnitTestAsync();
 }
