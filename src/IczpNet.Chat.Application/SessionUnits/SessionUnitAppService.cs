@@ -257,7 +257,7 @@ public class SessionUnitAppService(
         var query = (await Repository.GetQueryableAsync())
             .Where(x => x.SessionId == entity.SessionId)
             .Where(x => x.Setting.IsPublic)
-            .Where(SessionUnit.GetActivePredicate())
+            .Where(SessionUnit.GetActivePredicate(Clock.Now))
             .Select(x => new
             {
                 x.Id,

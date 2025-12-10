@@ -321,7 +321,11 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
 
         setting?.Invoke(Setting);
     }
-
+    /// <summary>
+    /// 可用的(SessionUnit)查询条件
+    /// </summary>
+    /// <param name="messageCreationTime"></param>
+    /// <returns></returns>
     public static Expression<Func<SessionUnit, bool>> GetActivePredicate(DateTime? messageCreationTime = null)
     {
         var creationTime = messageCreationTime ?? DateTime.Now;
