@@ -14,7 +14,7 @@ public interface ISessionUnitCacheAppService
 
     Task<List<SessionUnitCacheDto>> GetManyAsync(List<Guid> unitIds);
 
-    Task<List<SessionUnitCacheDto>> GetLatestAsync(long ownerId, double minScore, long? maxResultCount = 20, long? skipCount = 0);
+    Task<PagedResultDto<SessionUnitCacheDto>> GetLatestAsync(long ownerId, double minScore, long? maxResultCount = 20, long? skipCount = 0);
 
     Task<SessionUnitCacheDto> GetAsync(Guid id);
 

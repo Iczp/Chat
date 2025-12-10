@@ -8,10 +8,12 @@ using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
 using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.AspNetCore.Mvc;
+using Minio.DataModel;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Users;
@@ -58,6 +60,13 @@ public class SessionUnitCacheAppService(
                !string.IsNullOrWhiteSpace(input.Keyword)  // 搜索 Keyword 时一定需要全量加载
             || needLoadBySorting
         );
+    }
+
+    protected virtual async Task LoadAllByOwnerIfNotExistsAsync(long ownerId)
+    {
+        await SessionUnitCacheManager.SetListByOwnerIfNotExistsAsync(ownerId,
+           async (ownerId) =>
+               await SessionUnitManager.GetListByOwnerIdAsync(ownerId));
     }
 
     protected virtual async Task<IEnumerable<SessionUnitCacheItem>> GetAllListAsync(long ownerId)
@@ -223,6 +232,9 @@ public class SessionUnitCacheAppService(
 
     public async Task<List<SessionUnitCacheDto>> GetManyAsync(List<Guid> unitIds)
     {
+        // check owner
+        // ...
+
         var list = await SessionUnitCacheManager.GetOrSetManyAsync(unitIds, async (keys) =>
         {
             var kvs = await SessionUnitManager.GetManyAsync(keys);
@@ -243,6 +255,12 @@ public class SessionUnitCacheAppService(
             .Select(MapToDto)
             .ToList();
 
+        await FillSettingAsync(items);
+
+        await FillDestinationAsync(items);
+
+        await FillLastMessageAsync(items);
+
         return items;
     }
 
@@ -254,18 +272,89 @@ public class SessionUnitCacheAppService(
     /// <param name="maxResultCount"></param>
     /// <param name="skipCount"></param>
     /// <returns></returns>
-    public async Task<List<SessionUnitCacheDto>> GetLatestAsync(long ownerId, double minScore, long? maxResultCount, long? skipCount)
+    public async Task<PagedResultDto<SessionUnitCacheDto>> GetLatestAsync(long ownerId, double minScore, long? maxResultCount, long? skipCount)
     {
-        var list = await SessionUnitCacheManager.GetListByOwnerAsync(ownerId, minScore, skip: skipCount ?? 0, take: maxResultCount ?? 10);
+        // check owner
+        // ...
 
-        var items = list
-            .Where(x => x != null)
-            .Select(MapToDto)
-            .ToList();
+        Assert.If(maxResultCount > 100, $"params:{nameof(maxResultCount)} max value: 100");
 
-        await FillDestinationAsync(items);
+        var queryable = await SessionUnitCacheManager.GetSortedSetQueryableByOwnerAsync(ownerId, minScore, skip: skipCount ?? 0, take: Math.Min(maxResultCount ?? 10, 100));
 
-        return items;
+        var query = queryable.Where(x => x.Ticks > minScore);
+        //var unitIds = kvs.Select(x => x.Key).ToList();
+        var unitIds = queryable.Where(x => x.Ticks > minScore).Select(x => x.UnitId).ToList();
+
+        var items = await GetManyAsync(unitIds);
+
+
+        return new PagedResultDto<SessionUnitCacheDto>(items.Count, items);
+
+    }
+
+    /// <summary>
+    /// 获取会话(Linq)
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <param name="minScore"></param>
+    /// <param name="maxScore"></param>
+    /// <param name="maxResultCount"></param>
+    /// <param name="skipCount"></param>
+    /// <returns></returns>
+    public async Task<PagedResultDto<SessionUnitCacheDto>> GetHistory1Async(long ownerId, double minScore, double maxScore, long? maxResultCount, long? skipCount)
+    {
+        //加载全部
+        await LoadAllByOwnerIfNotExistsAsync(ownerId);
+
+        var queryable = await SessionUnitCacheManager.GetSortedSetQueryableByOwnerAsync(ownerId);
+
+        var query = queryable
+            .WhereIf(minScore > 0, x => x.Ticks > minScore)
+            .WhereIf(maxScore > 0, x => x.Ticks < maxScore)
+            ;
+
+        var totalCount = query.Count(); //kvs.Length
+        //var totalCount = await SessionUnitCacheManager.GetTotalCountByOwnerAsync(ownerId);
+
+        // sorting
+        query = query
+            .OrderByDescending(x => x.Sorting)
+            .ThenByDescending(x => x.Ticks)
+            ;
+        // paged
+        query = query.Skip((int)(skipCount ?? 0)).Take((int)(maxResultCount ?? 10));
+
+        var unitIds = query.Select(x => x.UnitId).ToList();
+
+        var items = await GetManyAsync(unitIds);
+
+        return new PagedResultDto<SessionUnitCacheDto>(totalCount, items);
+    }
+
+    /// <summary>
+    /// 获取会话(SortSet)
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <param name="minScore"></param>
+    /// <param name="maxScore"></param>
+    /// <param name="maxResultCount"></param>
+    /// <param name="skipCount"></param>
+    /// <returns></returns>
+    public async Task<PagedResultDto<SessionUnitCacheDto>> GetHistoryAsync(long ownerId, double minScore, double maxScore, long? maxResultCount, long? skipCount)
+    {
+        // check owner
+        // ...
+        await LoadAllByOwnerIfNotExistsAsync(ownerId);
+
+        var totalCount = await SessionUnitCacheManager.GetTotalCountByOwnerAsync(ownerId);
+
+        var kvs = await SessionUnitCacheManager.GetHistoryByOwnerAsync(ownerId, minScore, maxScore: maxScore, skip: skipCount ?? 0, take: maxResultCount ?? 10);
+
+        var unitIds = kvs.Select(x => x.Key).ToList();
+
+        var items = await GetManyAsync(unitIds);
+
+        return new PagedResultDto<SessionUnitCacheDto>(totalCount, items);
     }
 
 
@@ -277,7 +366,7 @@ public class SessionUnitCacheAppService(
 
         Assert.If(item == null, $"No such cache id:{id}");
 
-        return MapToDto(item);
+        return item;
     }
 
     /// <summary>
