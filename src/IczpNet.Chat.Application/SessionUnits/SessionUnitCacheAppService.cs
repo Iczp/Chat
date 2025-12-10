@@ -8,7 +8,6 @@ using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
 using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.AspNetCore.Mvc;
-using Minio.DataModel;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -27,11 +26,13 @@ namespace IczpNet.Chat.SessionUnits;
 public class SessionUnitCacheAppService(
     IMessageRepository messageRepository,
     ISessionUnitSettingManager sessionUnitSettingManager,
+    ISessionUnitRepository sessionUnitRepository,
     IFollowManager followManager,
     ISessionUnitCacheManager sessionUnitCacheManager) : ChatAppService, ISessionUnitCacheAppService
 {
     public IMessageRepository MessageRepository { get; } = messageRepository;
     public ISessionUnitSettingManager SessionUnitSettingManager { get; } = sessionUnitSettingManager;
+    public ISessionUnitRepository SessionUnitRepository { get; } = sessionUnitRepository;
     public IFollowManager FollowManager { get; } = followManager;
     public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
     protected override string GetListPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.MessageBus;
@@ -267,51 +268,86 @@ public class SessionUnitCacheAppService(
     /// <summary>
     /// 获取最新消息
     /// </summary>
-    /// <param name="ownerId"></param>
-    /// <param name="minScore"></param>
-    /// <param name="maxResultCount"></param>
-    /// <param name="skipCount"></param>
+    /// <param name="input"></param>
     /// <returns></returns>
-    public async Task<PagedResultDto<SessionUnitCacheDto>> GetLatestAsync(long ownerId, double minScore, long? maxResultCount, long? skipCount)
+    public async Task<PagedResultDto<SessionUnitCacheDto>> GetLatestAsync(SessionUnitCacheScoreGetListInput input)
     {
         // check owner
         // ...
 
-        Assert.If(maxResultCount > 100, $"params:{nameof(maxResultCount)} max value: 100");
+        Assert.If(input.MaxResultCount > 100, $"params:{nameof(input.MaxResultCount)} max value: 100");
 
-        var queryable = await SessionUnitCacheManager.GetSortedSetQueryableByOwnerAsync(ownerId, minScore, skip: skipCount ?? 0, take: Math.Min(maxResultCount ?? 10, 100));
+        var queryable = await SessionUnitCacheManager.GetSortedSetQueryableByOwnerAsync(input.OwnerId, minScore: input.MinScore ?? 0, skip: input.SkipCount, take: Math.Min(input.MaxResultCount, 100));
 
-        var query = queryable.Where(x => x.Ticks > minScore);
+        var query = queryable.Where(x => x.Ticks > input.MinScore);
         //var unitIds = kvs.Select(x => x.Key).ToList();
-        var unitIds = queryable.Where(x => x.Ticks > minScore).Select(x => x.UnitId).ToList();
+        var unitIds = queryable.Where(x => x.Ticks > input.MinScore).Select(x => x.UnitId).ToList();
 
         var items = await GetManyAsync(unitIds);
-
 
         return new PagedResultDto<SessionUnitCacheDto>(items.Count, items);
 
     }
 
     /// <summary>
+    /// 查询/过滤
+    /// </summary>
+    /// <param name="query"></param>
+    /// <param name="ownerId"></param>
+    /// <param name="keyword"></param>
+    /// <returns></returns>
+    private async Task<IQueryable<(Guid UnitId, double Sorting, double Ticks)>> ApplyFilterAsync(IQueryable<(Guid UnitId, double Sorting, double Ticks)> query, long ownerId, string keyword)
+    {
+        if (string.IsNullOrWhiteSpace(keyword))
+        {
+            return query;
+        }
+        var allUnitIds = query.Select(x => x.UnitId).ToList();
+
+        if (allUnitIds.Count == 0)
+        {
+            return query;
+        }
+
+        var searchChatObjectIdList = await ChatObjectManager.SearchKeywordByCacheAsync(keyword);
+
+        if (searchChatObjectIdList.Count == 0)
+        {
+            return query;
+        }
+
+        var querySearch = (await SessionUnitRepository.GetQueryableAsync())
+            .Where(x => x.OwnerId == ownerId)
+            .Where(SessionUnit.GetActivePredicate(Clock.Now))
+            .Where(new KeywordDestinationSessionUnitSpecification(keyword, searchChatObjectIdList))
+            .Where(x => allUnitIds.Contains(x.Id))
+            ;
+        var searchUnitIds = querySearch.Select(x => x.Id).ToList();
+
+        // 加入查询条件
+        query = query.WhereIf(searchUnitIds.Count > 0, x => searchUnitIds.Contains(x.UnitId));
+
+        return query;
+    }
+
+    /// <summary>
     /// 获取会话(Linq)
     /// </summary>
-    /// <param name="ownerId"></param>
-    /// <param name="minScore"></param>
-    /// <param name="maxScore"></param>
-    /// <param name="maxResultCount"></param>
-    /// <param name="skipCount"></param>
     /// <returns></returns>
-    public async Task<PagedResultDto<SessionUnitCacheDto>> GetHistory1Async(long ownerId, double minScore, double maxScore, long? maxResultCount, long? skipCount)
+    public async Task<PagedResultDto<SessionUnitCacheDto>> GetHistoryAsync(SessionUnitCacheScoreGetListInput input)
     {
         //加载全部
-        await LoadAllByOwnerIfNotExistsAsync(ownerId);
+        await LoadAllByOwnerIfNotExistsAsync(input.OwnerId);
 
-        var queryable = await SessionUnitCacheManager.GetSortedSetQueryableByOwnerAsync(ownerId);
+        var queryable = await SessionUnitCacheManager.GetSortedSetQueryableByOwnerAsync(input.OwnerId);
 
         var query = queryable
-            .WhereIf(minScore > 0, x => x.Ticks > minScore)
-            .WhereIf(maxScore > 0, x => x.Ticks < maxScore)
+            .WhereIf(input.MinScore > 0, x => x.Ticks > input.MinScore)
+            .WhereIf(input.MaxScore > 0, x => x.Ticks < input.MaxScore)
             ;
+
+        //search 
+        query = await ApplyFilterAsync(query, input.OwnerId, input.Keyword);
 
         var totalCount = query.Count(); //kvs.Length
         //var totalCount = await SessionUnitCacheManager.GetTotalCountByOwnerAsync(ownerId);
@@ -321,8 +357,9 @@ public class SessionUnitCacheAppService(
             .OrderByDescending(x => x.Sorting)
             .ThenByDescending(x => x.Ticks)
             ;
+
         // paged
-        query = query.Skip((int)(skipCount ?? 0)).Take((int)(maxResultCount ?? 10));
+        query = query.Skip(input.SkipCount).Take(input.MaxResultCount);
 
         var unitIds = query.Select(x => x.UnitId).ToList();
 
@@ -330,33 +367,6 @@ public class SessionUnitCacheAppService(
 
         return new PagedResultDto<SessionUnitCacheDto>(totalCount, items);
     }
-
-    /// <summary>
-    /// 获取会话(SortSet)
-    /// </summary>
-    /// <param name="ownerId"></param>
-    /// <param name="minScore"></param>
-    /// <param name="maxScore"></param>
-    /// <param name="maxResultCount"></param>
-    /// <param name="skipCount"></param>
-    /// <returns></returns>
-    public async Task<PagedResultDto<SessionUnitCacheDto>> GetHistoryAsync(long ownerId, double minScore, double maxScore, long? maxResultCount, long? skipCount)
-    {
-        // check owner
-        // ...
-        await LoadAllByOwnerIfNotExistsAsync(ownerId);
-
-        var totalCount = await SessionUnitCacheManager.GetTotalCountByOwnerAsync(ownerId);
-
-        var kvs = await SessionUnitCacheManager.GetHistoryByOwnerAsync(ownerId, minScore, maxScore: maxScore, skip: skipCount ?? 0, take: maxResultCount ?? 10);
-
-        var unitIds = kvs.Select(x => x.Key).ToList();
-
-        var items = await GetManyAsync(unitIds);
-
-        return new PagedResultDto<SessionUnitCacheDto>(totalCount, items);
-    }
-
 
     public async Task<SessionUnitCacheDto> GetAsync(Guid id)
     {
