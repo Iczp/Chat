@@ -8,6 +8,7 @@ using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
 using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.AspNetCore.Mvc;
+using Minio.DataModel;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -271,7 +272,7 @@ public class SessionUnitCacheAppService(
     /// <param name="maxResultCount"></param>
     /// <param name="skipCount"></param>
     /// <returns></returns>
-    public async Task<List<SessionUnitCacheDto>> GetLatestAsync(long ownerId, double minScore, long? maxResultCount, long? skipCount)
+    public async Task<PagedResultDto<SessionUnitCacheDto>> GetLatestAsync(long ownerId, double minScore, long? maxResultCount, long? skipCount)
     {
         // check owner
         // ...
@@ -284,9 +285,11 @@ public class SessionUnitCacheAppService(
         //var unitIds = kvs.Select(x => x.Key).ToList();
         var unitIds = queryable.Where(x => x.Ticks > minScore).Select(x => x.UnitId).ToList();
 
-        var list = await GetManyAsync(unitIds);
+        var items = await GetManyAsync(unitIds);
 
-        return list;
+
+        return new PagedResultDto<SessionUnitCacheDto>(items.Count, items);
+
     }
 
     /// <summary>
