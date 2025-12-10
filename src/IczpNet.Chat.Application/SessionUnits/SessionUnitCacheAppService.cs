@@ -7,7 +7,6 @@ using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
 using IczpNet.Chat.SessionUnitSettings;
-using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -140,6 +139,9 @@ public class SessionUnitCacheAppService(
 
     public async Task<PagedResultDto<SessionUnitCacheDto>> GetListAsync(SessionUnitCacheItemGetListInput input)
     {
+        // check owner
+        await CheckPolicyForUserAsync(input.OwnerId, () => CheckPolicyAsync(GetListPolicyName, input.OwnerId));
+
         var queryable = await CreateQueryableAsync(input);
 
         var baseQuery = queryable
@@ -233,9 +235,6 @@ public class SessionUnitCacheAppService(
 
     public async Task<List<SessionUnitCacheDto>> GetManyAsync(List<Guid> unitIds)
     {
-        // check owner
-        // ...
-
         var list = await SessionUnitCacheManager.GetOrSetManyAsync(unitIds, async (keys) =>
         {
             var kvs = await SessionUnitManager.GetManyAsync(keys);
@@ -250,6 +249,10 @@ public class SessionUnitCacheAppService(
             }
             return arr;
         });
+
+        // check owner
+        var chatObjectIdList = list.Select(x => x.Value).Select(x => x.OwnerId).Distinct().ToList();
+        await CheckPolicyForUserAsync(chatObjectIdList, () => CheckPolicyAsync(GetListPolicyName));
 
         var items = list.Select(x => x.Value)
             .Where(x => x != null)
@@ -273,15 +276,19 @@ public class SessionUnitCacheAppService(
     public async Task<PagedResultDto<SessionUnitCacheDto>> GetLatestAsync(SessionUnitCacheScoreGetListInput input)
     {
         // check owner
-        // ...
+        await CheckPolicyForUserAsync(input.OwnerId, () => CheckPolicyAsync(GetListPolicyName, input.OwnerId));
 
         Assert.If(input.MaxResultCount > 100, $"params:{nameof(input.MaxResultCount)} max value: 100");
 
-        var queryable = await SessionUnitCacheManager.GetSortedSetQueryableByOwnerAsync(input.OwnerId, minScore: input.MinScore ?? 0, skip: input.SkipCount, take: Math.Min(input.MaxResultCount, 100));
+        var minScore = input.MinScore ?? 0;
 
-        var query = queryable.Where(x => x.Ticks > input.MinScore);
-        //var unitIds = kvs.Select(x => x.Key).ToList();
-        var unitIds = queryable.Where(x => x.Ticks > input.MinScore).Select(x => x.UnitId).ToList();
+        var queryable = await SessionUnitCacheManager.GetSortedSetQueryableByOwnerAsync(input.OwnerId, minScore: minScore, skip: input.SkipCount, take: Math.Min(input.MaxResultCount, 100));
+
+        var unitIds = queryable
+            .Where(x => x.Ticks > minScore)
+            .OrderByDescending(x => x.Ticks)
+            .Select(x => x.UnitId)
+            .ToList();
 
         var items = await GetManyAsync(unitIds);
 
@@ -336,6 +343,9 @@ public class SessionUnitCacheAppService(
     /// <returns></returns>
     public async Task<PagedResultDto<SessionUnitCacheDto>> GetHistoryAsync(SessionUnitCacheScoreGetListInput input)
     {
+        // check owner
+        await CheckPolicyForUserAsync(input.OwnerId, () => CheckPolicyAsync(GetListPolicyName, input.OwnerId));
+
         //加载全部
         await LoadAllByOwnerIfNotExistsAsync(input.OwnerId);
 
@@ -368,6 +378,11 @@ public class SessionUnitCacheAppService(
         return new PagedResultDto<SessionUnitCacheDto>(totalCount, items);
     }
 
+    /// <summary>
+    /// 获取会话
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
     public async Task<SessionUnitCacheDto> GetAsync(Guid id)
     {
         var items = await GetManyAsync([id]);
@@ -386,6 +401,9 @@ public class SessionUnitCacheAppService(
     /// <returns></returns>
     public async Task<long> GetBadgeAsync(long ownerId)
     {
+        // check owner
+        await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
+
         var totalBadge = await SessionUnitCacheManager.GetTotalBadgeAsync(ownerId);
 
         if (totalBadge.HasValue)
@@ -439,15 +457,5 @@ public class SessionUnitCacheAppService(
     public Task<List<BadgeDto>> GetBadgeByCurrentUserAsync(bool? isImmersed = null)
     {
         return GetBadgeByUserIdAsync(CurrentUser.GetId(), isImmersed);
-    }
-
-    /// <summary>
-    /// UnitTest
-    /// </summary>
-    /// <returns></returns>
-    [HttpGet]
-    public Task<SessionUnitCacheItem> UnitTestAsync()
-    {
-        return SessionUnitCacheManager.UnitTestAsync();
     }
 }
