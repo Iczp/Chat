@@ -96,7 +96,7 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
 
     protected virtual async Task<int> UpdateSenderLastMessageIdAsync(IQueryable<SessionUnit> query, Guid senderSessionUnitId, long lastMessageId, long? ticks)
     {
-        var newTicks = ticks ?? Clock.Now.Ticks;
+        var newTicks = ticks ?? new DateTimeOffset(Clock.Now).ToUnixTimeMilliseconds();
         return await query
              .Where(x => x.Id == senderSessionUnitId)
              .Where(x => x.LastMessageId == null || x.LastMessageId < lastMessageId)
@@ -111,7 +111,7 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
     {
         var query = await GetQueryableAsync(Clock.Now, null);
 
-        return await UpdateSenderLastMessageIdAsync(query, senderSessionUnitId, lastMessageId, Clock.Now.Ticks);
+        return await UpdateSenderLastMessageIdAsync(query, senderSessionUnitId, lastMessageId, new DateTimeOffset(Clock.Now).ToUnixTimeMilliseconds());
     }
 
     public virtual async Task<int> UpdateTicksAsync(Guid senderSessionUnitId, long? ticks)
@@ -122,7 +122,7 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
             .Where(x => x.Id == senderSessionUnitId)
             .ExecuteUpdateAsync(s => s
                 .SetProperty(b => b.LastModificationTime, b => Clock.Now)
-                .SetProperty(b => b.Ticks, b => ticks ?? Clock.Now.Ticks)
+                .SetProperty(b => b.Ticks, b => ticks ?? new DateTimeOffset(Clock.Now).ToUnixTimeMilliseconds())
             );
     }
 
@@ -130,7 +130,7 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
     {
         var query = (await GetQueryableAsync(messageCreationTime, sessionId));
 
-        var ticks = messageCreationTime.Ticks;
+        var ticks = new DateTimeOffset(messageCreationTime).ToUnixTimeMilliseconds(); //messageCreationTime.Ticks;
 
         await UpdateSenderLastMessageIdAsync(query, senderSessionUnitId, lastMessageId, ticks);
 
@@ -159,7 +159,7 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
     {
         var query = await GetQueryableAsync(messageCreationTime, sessionId);
 
-        var ticks = messageCreationTime.Ticks;
+        var ticks = new DateTimeOffset(messageCreationTime).ToUnixTimeMilliseconds();// messageCreationTime.Ticks;
 
         await UpdateSenderLastMessageIdAsync(query, senderSessionUnitId, lastMessageId, ticks);
 

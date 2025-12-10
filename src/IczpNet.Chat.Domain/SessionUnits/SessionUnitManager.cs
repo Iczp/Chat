@@ -11,6 +11,7 @@ using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
 using IczpNet.Chat.TextTemplates;
 using JetBrains.Annotations;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -208,9 +209,27 @@ public class SessionUnitManager(
     }
 
     /// <inheritdoc />
-    public virtual Task<SessionUnit> SetToppingAsync(SessionUnit entity, bool isTopping)
+    public virtual async Task<SessionUnit> SetToppingAsync(SessionUnit entity, bool isTopping)
     {
-        return SetEntityAsync(entity, x => x.SetTopping(isTopping));
+        long sorting = 0;
+
+        if (isTopping)
+        {
+            //sorting = isTopping ? new DateTimeOffset(Clock.Now).ToUnixTimeMilliseconds() : 0;
+
+            var maxSorting = await (await Repository.GetQueryableAsync())
+                .Where(x => x.OwnerId == entity.OwnerId)
+                .MaxAsync(x => x.Sorting);
+
+            sorting = (long)maxSorting + 1;
+        }
+
+        var result = await SetEntityAsync(entity, x => x.SetTopping(sorting));
+
+        //update cache
+        await SessionUnitCacheManager.SetToppingAsync(entity.Id, entity.OwnerId, sorting);
+
+        return result;
     }
     /// <inheritdoc />
     public virtual async Task<SessionUnit> SetReadedMessageIdAsync(Guid sessionUnitId, bool isForce = false, long? messageId = null)
@@ -236,6 +255,7 @@ public class SessionUnitManager(
         var counter = new SessionUnitCounterInfo()
         {
             Id = entity.Id,
+            OwnerId = entity.OwnerId,
             ReadedMessageId = lastMessageId,
             PublicBadge = 0,
             PrivateBadge = 0,
@@ -262,8 +282,8 @@ public class SessionUnitManager(
                 return ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(entity);
             });
 
-        // 删除总记数缓存
-        await SessionUnitCacheManager.RemoveTotalBadgeAsync(entity.OwnerId);
+        //// 删除总记数缓存
+        //await SessionUnitCacheManager.RemoveTotalBadgeAsync(entity.OwnerId);
 
         return entity;
     }
