@@ -29,14 +29,14 @@ public class SessionUnitCacheAppService(
     ISessionUnitSettingManager sessionUnitSettingManager,
     ISessionUnitRepository sessionUnitRepository,
     IFollowManager followManager,
-    IDistributedCache<List<Guid>, SessionUnitSearchCacheKey> searchCache,
+    IDistributedCache<SessionUnitSearchCacheItem, SessionUnitSearchCacheKey> searchCache,
     ISessionUnitCacheManager sessionUnitCacheManager) : ChatAppService, ISessionUnitCacheAppService
 {
     public IMessageRepository MessageRepository { get; } = messageRepository;
     public ISessionUnitSettingManager SessionUnitSettingManager { get; } = sessionUnitSettingManager;
     public ISessionUnitRepository SessionUnitRepository { get; } = sessionUnitRepository;
     public IFollowManager FollowManager { get; } = followManager;
-    public IDistributedCache<List<Guid>, SessionUnitSearchCacheKey> SearchCache { get; } = searchCache;
+    public IDistributedCache<SessionUnitSearchCacheItem, SessionUnitSearchCacheKey> SearchCache { get; } = searchCache;
     public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
 
 
@@ -330,7 +330,7 @@ public class SessionUnitCacheAppService(
             return null;
         }
 
-        var searchUnitIds = await SearchCache.GetOrAddAsync(new SessionUnitSearchCacheKey(ownerId, keyword), async () =>
+        var searchResult = await SearchCache.GetOrAddAsync(new SessionUnitSearchCacheKey(ownerId, keyword), async () =>
         {
             var querySearch = (await SessionUnitRepository.GetQueryableAsync())
             .Where(x => x.OwnerId == ownerId)
@@ -342,8 +342,10 @@ public class SessionUnitCacheAppService(
             .Where(x => allUnitIds.Contains(x.Id))
             ;
             var searchUnitIds = querySearch.Select(x => x.Id).ToList();
-            return searchUnitIds;
+            return new SessionUnitSearchCacheItem(searchUnitIds);
         });
+
+        var searchUnitIds = searchResult.UnitIds;
 
         if (searchUnitIds.Count == 0)
         {
