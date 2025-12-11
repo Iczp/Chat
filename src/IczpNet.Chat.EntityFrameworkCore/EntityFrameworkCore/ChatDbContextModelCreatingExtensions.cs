@@ -183,6 +183,26 @@ public static class ChatDbContextModelCreatingExtensions
         {
             b.HasOne(x => x.Setting).WithOne(x => x.SessionUnit).HasForeignKey<SessionUnitSetting>(x => x.SessionUnitId).IsRequired(false);
             b.HasOne(x => x.Counter).WithOne(x => x.SessionUnit).HasForeignKey<SessionUnitCounter>(x => x.SessionUnitId).IsRequired(true);
+
+            // 唯一约束：同一个会话 OwnerId 只能有一条记录
+            b.HasIndex(x => new { x.OwnerId, x.SessionId }).IsUnique();
+
+            // 唯一约束：会话好友 只能有一条记录
+            b.HasIndex(x => new { x.OwnerId, x.DestinationId }).IsUnique();
+
+            // 外键
+            b.HasOne(x => x.Owner)
+                .WithMany(x => x.OwnerSessionUnitList)
+                .HasForeignKey(x => x.OwnerId)
+                .OnDelete(DeleteBehavior.Restrict); //DeleteBehavior.Restrict: 删除 ChatObject（用户）时，系统应该阻止删除
+
+
+            // 外键
+            b.HasOne(x => x.Destination)
+                .WithMany(x => x.DestinationSessionUnitList)
+                .HasForeignKey(x => x.DestinationId)
+                .OnDelete(DeleteBehavior.Restrict); //DeleteBehavior.Restrict: 删除 ChatObject（用户）时，系统应该阻止删除
+
         });
 
         builder.Entity<SessionUnit>().Navigation(x => x.Setting).AutoInclude();

@@ -1,5 +1,4 @@
-﻿using AutoMapper.Internal.Mappers;
-using Castle.Core.Internal;
+﻿using Castle.Core.Internal;
 using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjectTypes;
@@ -7,9 +6,9 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionUnits;
-using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -28,7 +27,7 @@ public class ChatObjectManager(IChatObjectRepository repository) : TreeManager<C
     protected IMessageSender MessageSender => LazyServiceProvider.LazyGetRequiredService<IMessageSender>();
     protected ISessionGenerator SessionGenerator => LazyServiceProvider.LazyGetRequiredService<ISessionGenerator>();
     protected IDistributedCache<List<long>, Guid> UserChatObjectCache => LazyServiceProvider.LazyGetRequiredService<IDistributedCache<List<long>, Guid>>();
-    protected IDistributedCache<List<long>, string> SearchCache => LazyServiceProvider.LazyGetRequiredService<IDistributedCache<List<long>, string>>();
+    protected IDistributedCache<ChatObjectSearchCacheItem, ChatObjectSearchCacheKey> SearchCache => LazyServiceProvider.LazyGetRequiredService<IDistributedCache<ChatObjectSearchCacheItem, ChatObjectSearchCacheKey>>();
     protected ISessionUnitRepository SessionUnitRepository => LazyServiceProvider.LazyGetRequiredService<ISessionUnitRepository>();
 
     public virtual async Task<IQueryable<long>> QueryByKeywordAsync(string keyword)
@@ -51,11 +50,17 @@ public class ChatObjectManager(IChatObjectRepository repository) : TreeManager<C
             return null;
         }
 
-        return await SearchCache.GetOrAddAsync(keyword,
-            async () => (await Repository.GetQueryableAsync())
-             .WhereIf(!keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(keyword) || x.NameSpellingAbbreviation.Contains(keyword))
-             .Select(x => x.Id)
-             .ToList());
+        var result = await SearchCache.GetOrAddAsync(new ChatObjectSearchCacheKey(keyword),
+            async () =>
+            {
+                var idList = (await Repository.GetQueryableAsync())
+                 .WhereIf(!keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(keyword) || x.NameSpellingAbbreviation.Contains(keyword))
+                 .Select(x => x.Id)
+                 .ToList();
+                return new ChatObjectSearchCacheItem(idList);
+            });
+
+        return result.ChatObjectIdList;
     }
 
 
