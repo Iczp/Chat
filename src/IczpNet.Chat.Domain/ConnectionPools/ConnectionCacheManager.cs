@@ -85,7 +85,7 @@ return 1";
         return result;
     }
 
-    private int ExpireSeconds => (int)(CacheExpire?.TotalSeconds ?? 0);
+    private int ExpireSeconds => (int)(CacheExpire?.TotalSeconds ?? -1);
     private void Expire(IBatch batch, string key)
     {
         if (CacheExpire.HasValue)
