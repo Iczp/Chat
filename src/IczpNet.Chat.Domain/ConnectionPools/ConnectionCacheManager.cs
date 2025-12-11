@@ -659,6 +659,30 @@ return 1";
         return result;
     }
 
+    public async Task<Dictionary<string, bool>> BatchKeyExistsAsync(IEnumerable<string> keys)
+    {
+        var batch = Db.CreateBatch();
+        var tasks = new Dictionary<string, Task<bool>>();
+
+        // 1. 循环添加 KeyExistsAsync 到 batch
+        foreach (var key in keys)
+        {
+            tasks[key] = batch.KeyExistsAsync(key);
+        }
+
+        // 2. 批量执行
+        batch.Execute();
+
+        // 3. 等待所有 Task 完成，并返回字典
+        var result = new Dictionary<string, bool>();
+        foreach (var kv in tasks)
+        {
+            result[kv.Key] = await kv.Value;  // batch 执行完成后这里才返回真正结果
+        }
+
+        return result;
+    }
+
     public async Task AddSessionAsync(List<(Guid SessionId, long OwnerId)> ownerSessions)
     {
         var preparedScript = LuaScript.Prepare(LuaSAddIfExistsScript);
@@ -687,6 +711,9 @@ return 1";
                 g => g.Key,
                 g => g.Select(u => new { u.OwnerId, }).ToList()
             );
+
+        var ownerSessionKeys = ownerIds.Select(OwnerSessionKey);
+        var ownerSessionKeyExists = await BatchKeyExistsAsync(ownerSessionKeys);
 
         var batch = Db.CreateBatch();
 
@@ -721,19 +748,19 @@ return 1";
             {
                 var ownerSessionKey = OwnerSessionKey(unit.OwnerId);
                 //var isExists = await Db.KeyExistsAsync(ownerSessionKey);
-                //// 缓存Key存在才执行
-                //if (isExists)
-                //{
-                //    _ = batch.SetAddAsync(ownerSessionKey, sessionId.ToString());
-                //    Expire(batch, ownerSessionKey);
-                //    Logger.LogInformation($"SetAddAsync: ownerSessionKey={ownerSessionKey}, sessionId={sessionId}");
-                //}
-                _ = preparedScript.EvaluateAsync(batch, new
+                // 缓存Key存在才执行
+                if (ownerSessionKeyExists.TryGetValue(ownerSessionKey, out var isExists) && isExists)
                 {
-                    KEYS = new[] { ownerSessionKey },
-                    ARGV = new[] { sessionId.ToString(), ExpireSeconds.ToString() }
-                });
-                Logger.LogInformation($"Lua-SAdd-IfExists: ownerSessionKey={ownerSessionKey}, sessionId={sessionId}");
+                    _ = batch.SetAddAsync(ownerSessionKey, sessionId.ToString());
+                    Expire(batch, ownerSessionKey);
+                    Logger.LogInformation($"SetAddAsync: ownerSessionKey={ownerSessionKey}, sessionId={sessionId}");
+                }
+                //_ = preparedScript.EvaluateAsync(batch, new
+                //{
+                //    KEYS = new[] { ownerSessionKeys },
+                //    ARGV = new[] { sessionId.ToString(), ExpireSeconds.ToString() }
+                //});
+                //Logger.LogInformation($"Lua-SAdd-IfExists: ownerSessionKeys={ownerSessionKeys}, sessionId={sessionId}");
             }
         }
         batch.Execute();
