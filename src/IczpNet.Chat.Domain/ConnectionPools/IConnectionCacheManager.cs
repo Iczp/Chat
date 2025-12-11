@@ -85,6 +85,14 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     Task<Dictionary<long, List<string>>> GetDeviceTypesAsync(List<long> chatObjectIdList, CancellationToken token = default);
 
     /// <summary>
+    /// 获取设备信息(DeviceId,DeviceType) 聊天对象
+    /// </summary>
+    /// <param name="chatObjectIdList"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<Dictionary<long, List<(string ConnectionId, string DeviceId, string DeviceType)>>> GetDevicesAsync(List<long> chatObjectIdList, CancellationToken token = default);
+
+    /// <summary>
     /// 获取设备类型 用户
     /// </summary>
     /// <param name="userId"></param>
@@ -115,4 +123,11 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     /// <param name="token"></param>
     /// <returns>Dictionary: key = connId, value = chatObjectList</returns>
     Task<Dictionary<string, List<long>>> GetConnectionsBySessionAsync(Guid sessionId, CancellationToken token = default);
+
+    /// <summary>
+    /// 添加到连接池
+    /// </summary>
+    /// <param name="ownerSessions"></param>
+    /// <returns></returns>
+    Task AddSessionAsync(List<(Guid SessionId, long OwnerId)> ownerSessions);
 }

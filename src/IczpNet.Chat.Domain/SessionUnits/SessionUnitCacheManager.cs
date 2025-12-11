@@ -1,8 +1,6 @@
-﻿using IczpNet.Chat.Enums;
-using IczpNet.Chat.MessageSections.Messages;
+﻿using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.RedisMapping;
 using IczpNet.Chat.SessionSections.SessionUnits;
-using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
@@ -409,23 +407,7 @@ end
         var totalCount = await Database.SortedSetLengthAsync(ownerSortedKey);
         return totalCount;
     }
-    public async Task<KeyValuePair<Guid, double>[]> GetHistoryByOwnerAsync(
-        long ownerId,
-        double minScore = double.NegativeInfinity,
-        double maxScore = double.PositiveInfinity,
-        long skip = 0,
-        long take = -1,
-        bool isDescending = true)
-    {
 
-        var list = await GetHistoryByOwnerInternalAsync(ownerId: ownerId,
-            minScore: minScore,
-            maxScore: maxScore,
-            skip: skip,
-            take: take,
-            isDescending: true);
-        return list.Select(x => new KeyValuePair<Guid, double>(Guid.Parse(x.Element), x.Score)).ToArray();
-    }
 
     protected async Task<List<SortedSetEntry>> GetHistoryByOwnerInternalAsync(
         long ownerId,
@@ -817,29 +799,6 @@ end
                 _ = await Database.ScriptEvaluateAsync(IncrementTotalBadgeIfExistsScript, [ownerTotalBadgeKey], [F_TotalBadge, -oldTotal]);
             }
         }
-    }
-
-    public async Task<SessionUnitCacheItem> UnitTestAsync()
-    {
-        var item = new SessionUnitCacheItem
-        {
-            PublicBadge = 5,
-            Setting = new SessionUnitSettingCacheItem
-            {
-                HistoryLastTime = DateTime.UtcNow,
-                JoinWay = JoinWays.Invitation,
-            },
-        };
-
-        var entries = RedisMapper.ToHashEntries(item); // or ToHashEntries_V2 is provided as robust flatten (see file)
-
-        var key = "IM:Mappers:unit-test";
-        await Database.HashSetAsync(key, entries);
-
-        var entries2 = await Database.HashGetAllAsync(key);
-        var item2 = RedisMapper.ToObject<SessionUnitCacheItem>(entries2);
-
-        return item2;
     }
 
     public async Task SetToppingAsync(Guid unitId, long ownerId, long sorting)

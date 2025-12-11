@@ -55,13 +55,6 @@ public interface ISessionUnitCacheManager
         long take = -1,
         bool isDescending = true);
 
-    Task<KeyValuePair<Guid, double>[]> GetHistoryByOwnerAsync(
-        long ownerId,
-        double minScore = double.NegativeInfinity,
-        double maxScore = double.PositiveInfinity,
-        long skip = 0,
-        long take = -1,
-        bool isDescending = true);
 
     Task<long> GetTotalCountByOwnerAsync(long ownerId);
 
@@ -78,8 +71,6 @@ public interface ISessionUnitCacheManager
     Task<long?> GetTotalBadgeAsync(long ownerId);
 
     Task<bool> RemoveTotalBadgeAsync(long ownerId);
-
-    Task<SessionUnitCacheItem> UnitTestAsync();
 
     Task SetToppingAsync(Guid unitId, long ownerId, long sorting);
 

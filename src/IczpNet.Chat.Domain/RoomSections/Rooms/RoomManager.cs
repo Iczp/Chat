@@ -2,6 +2,7 @@
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjectTypes;
+using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
@@ -22,6 +23,7 @@ using Volo.Abp.Uow;
 namespace IczpNet.Chat.RoomSections.Rooms;
 
 public class RoomManager(
+    IConnectionCacheManager connectionCacheManager,
     IChatObjectRepository chatObjectRepository,
     IOptions<RoomOptions> options,
     ISessionManager sessionManager,
@@ -43,6 +45,7 @@ public class RoomManager(
     protected IChatObjectTypeManager ChatObjectTypeManager { get; } = chatObjectTypeManager;
     protected ISessionGenerator SessionGenerator { get; } = sessionGenerator;
     protected IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
+    public IConnectionCacheManager ConnectionCacheManager { get; } = connectionCacheManager;
     protected IChatObjectRepository ChatObjectRepository { get; } = chatObjectRepository;
     protected IMessageSender MessageSender { get; } = messageSender;
     protected IRoomCodeGenerator RoomCodeGenerator { get; } = roomCodeGenerator;
@@ -141,10 +144,13 @@ public class RoomManager(
 
         var insertSessionUnitList = new List<SessionUnit>() { roomSessionUnit, creatorSessionUnit }.Concat(memberSessionUnitList).Where(x => x != null).ToList();
 
-        await SessionUnitRepository.InsertManyAsync(insertSessionUnitList);
+        await SessionUnitRepository.InsertManyAsync(insertSessionUnitList, autoSave: true);
+
+        //添加会话到连接池
+        await AddUnitsToConnectionPoolsAsync(insertSessionUnitList);
 
         // commit to db
-        await UnitOfWorkManager.Current.SaveChangesAsync();
+        //await UnitOfWorkManager.Current.SaveChangesAsync();
 
         var members = await ChatObjectManager.GetManyByCacheAsync(_memberIdList.Take(3).ToList());
 
@@ -226,7 +232,10 @@ public class RoomManager(
                 }))
             .ToList();
 
-        await SessionUnitRepository.InsertManyAsync(joinMemberSessionUnitList);
+        await SessionUnitRepository.InsertManyAsync(joinMemberSessionUnitList, autoSave: true);
+
+        //添加会话到连接池
+        await AddUnitsToConnectionPoolsAsync(joinMemberSessionUnitList);
 
         //await UnitOfWorkManager.Current.SaveChangesAsync();
 
@@ -262,6 +271,17 @@ public class RoomManager(
         });
 
         return joinMemberSessionUnitList;
+    }
+
+    /// <summary>
+    /// 添加会话到连接池
+    /// </summary>
+    /// <param name="joinMemberSessionUnitList"></param>
+    /// <returns></returns>
+    private async Task AddUnitsToConnectionPoolsAsync(List<SessionUnit> joinMemberSessionUnitList)
+    {
+        var units = joinMemberSessionUnitList.Select(x => (SessionId: x.SessionId.Value, x.OwnerId)).ToList();
+        await ConnectionCacheManager.AddSessionAsync(units);
     }
 
     protected virtual Task SendRoomMessageAsync(SessionUnit roomSessionUnit, CmdContentInfo content)
@@ -434,7 +454,8 @@ public class RoomManager(
         if (isSendMessageToRoom)
         {
             await SendRoomMessageAsync(sessionUnit.Destination, new CmdContentInfo()
-            {   Cmd = MessageKeyNames.TransferCreator,
+            {
+                Cmd = MessageKeyNames.TransferCreator,
                 Text = new TextTemplate("{operator} 转让群,{targetObject} 成为群主")
                     .WithData("operator", new SessionUnitTextTemplate(sessionUnit))
                     .WithData("targetObject", new SessionUnitTextTemplate(targetSessionUnit))
