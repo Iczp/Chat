@@ -1,5 +1,4 @@
-﻿using AutoMapper.Internal.Mappers;
-using Castle.Core.Internal;
+﻿using Castle.Core.Internal;
 using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjectTypes;
@@ -7,7 +6,6 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionUnits;
-using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -28,7 +26,7 @@ public class ChatObjectManager(IChatObjectRepository repository) : TreeManager<C
     protected IMessageSender MessageSender => LazyServiceProvider.LazyGetRequiredService<IMessageSender>();
     protected ISessionGenerator SessionGenerator => LazyServiceProvider.LazyGetRequiredService<ISessionGenerator>();
     protected IDistributedCache<List<long>, Guid> UserChatObjectCache => LazyServiceProvider.LazyGetRequiredService<IDistributedCache<List<long>, Guid>>();
-    protected IDistributedCache<List<long>, string> SearchCache => LazyServiceProvider.LazyGetRequiredService<IDistributedCache<List<long>, string>>();
+    protected IDistributedCache<List<long>, ChatObjectSearchCacheKey> SearchCache => LazyServiceProvider.LazyGetRequiredService<IDistributedCache<List<long>, ChatObjectSearchCacheKey>>();
     protected ISessionUnitRepository SessionUnitRepository => LazyServiceProvider.LazyGetRequiredService<ISessionUnitRepository>();
 
     public virtual async Task<IQueryable<long>> QueryByKeywordAsync(string keyword)
@@ -51,7 +49,7 @@ public class ChatObjectManager(IChatObjectRepository repository) : TreeManager<C
             return null;
         }
 
-        return await SearchCache.GetOrAddAsync(keyword,
+        return await SearchCache.GetOrAddAsync(new ChatObjectSearchCacheKey(keyword),
             async () => (await Repository.GetQueryableAsync())
              .WhereIf(!keyword.IsNullOrWhiteSpace(), x => x.Name.Contains(keyword) || x.NameSpellingAbbreviation.Contains(keyword))
              .Select(x => x.Id)

@@ -1,5 +1,6 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
@@ -14,6 +15,7 @@ using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Caching;
 using Volo.Abp.Users;
 
 
@@ -27,13 +29,18 @@ public class SessionUnitCacheAppService(
     ISessionUnitSettingManager sessionUnitSettingManager,
     ISessionUnitRepository sessionUnitRepository,
     IFollowManager followManager,
+    IDistributedCache<List<Guid>, SessionUnitSearchCacheKey> searchCache,
     ISessionUnitCacheManager sessionUnitCacheManager) : ChatAppService, ISessionUnitCacheAppService
 {
     public IMessageRepository MessageRepository { get; } = messageRepository;
     public ISessionUnitSettingManager SessionUnitSettingManager { get; } = sessionUnitSettingManager;
     public ISessionUnitRepository SessionUnitRepository { get; } = sessionUnitRepository;
     public IFollowManager FollowManager { get; } = followManager;
+    public IDistributedCache<List<Guid>, SessionUnitSearchCacheKey> SearchCache { get; } = searchCache;
     public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
+
+
+
     protected override string GetListPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.MessageBus;
     protected override string GetPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.MessageBus;
     protected virtual string GetDetailPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.MessageBus;
@@ -313,23 +320,35 @@ public class SessionUnitCacheAppService(
 
         if (allUnitIds.Count == 0)
         {
-            return query;
+            return null;
         }
 
         var searchChatObjectIdList = await ChatObjectManager.SearchKeywordByCacheAsync(keyword);
 
         if (searchChatObjectIdList.Count == 0)
         {
-            return query;
+            return null;
         }
 
-        var querySearch = (await SessionUnitRepository.GetQueryableAsync())
+        var searchUnitIds = await SearchCache.GetOrAddAsync(new SessionUnitSearchCacheKey(ownerId, keyword), async () =>
+        {
+            var querySearch = (await SessionUnitRepository.GetQueryableAsync())
             .Where(x => x.OwnerId == ownerId)
             .Where(SessionUnit.GetActivePredicate(Clock.Now))
-            .Where(new KeywordDestinationSessionUnitSpecification(keyword, searchChatObjectIdList))
+            .Where(x => searchChatObjectIdList.Contains(x.DestinationId.Value)
+                || x.Setting.Rename.Contains(keyword)
+                || x.Setting.RenameSpellingAbbreviation.Contains(keyword)
+                || x.Setting.RenameSpelling.Contains(keyword))
             .Where(x => allUnitIds.Contains(x.Id))
             ;
-        var searchUnitIds = querySearch.Select(x => x.Id).ToList();
+            var searchUnitIds = querySearch.Select(x => x.Id).ToList();
+            return searchUnitIds;
+        });
+
+        if (searchUnitIds.Count == 0)
+        {
+            return null;
+        }
 
         // 加入查询条件
         query = query.WhereIf(searchUnitIds.Count > 0, x => searchUnitIds.Contains(x.UnitId));
@@ -358,6 +377,11 @@ public class SessionUnitCacheAppService(
 
         //search 
         query = await ApplyFilterAsync(query, input.OwnerId, input.Keyword);
+
+        if (query == null)
+        {
+            return new PagedResultDto<SessionUnitCacheDto>(0, []);
+        }
 
         var totalCount = query.Count(); //kvs.Length
         //var totalCount = await SessionUnitCacheManager.GetTotalCountByOwnerAsync(ownerId);
