@@ -425,26 +425,14 @@ public class SessionUnitCacheAppService(
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    public async Task<long> GetBadgeAsync(long ownerId)
+    public async Task<IDictionary<string, long>> GetBadgeAsync(long ownerId)
     {
         // check owner
         await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
 
         var totalBadge = await SessionUnitCacheManager.GetTotalBadgeAsync(ownerId);
 
-        if (totalBadge.HasValue)
-        {
-            return totalBadge.Value;
-        }
-        var allList = await GetAllListAsync(ownerId);
-
-        var hasBadgeList = allList.Where(x => x.PublicBadge > 0 || x.PrivateBadge > 0).ToList();
-
-        totalBadge = allList.Sum(x => x.PublicBadge + x.PrivateBadge);
-
-        await SessionUnitCacheManager.SetTotalBadgeAsync(ownerId, totalBadge.Value);
-
-        return totalBadge.Value;
+        return totalBadge;
     }
 
     /// <summary>
@@ -464,11 +452,13 @@ public class SessionUnitCacheAppService(
 
         foreach (var chatObjectId in chatObjectIdList)
         {
+            var totalBadge = await GetBadgeAsync(chatObjectId);
+            var badge = totalBadge.TryGetValue("Public", out long publicBadge) ? publicBadge : 0;
             result.Add(new BadgeDto()
             {
                 AppUserId = userId,
                 ChatObjectId = chatObjectId,
-                Badge = (int)await GetBadgeAsync(chatObjectId)
+                Badge = (int)badge
             });
         }
 
