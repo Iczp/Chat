@@ -141,6 +141,7 @@ end
             {
                 var toppingKey = OwnerToppingSetKey(unit.OwnerId);
                 _ = batch.SortedSetAddAsync(toppingKey, unitId, unit.Sorting);
+                _ = batch.KeyExpireAsync(toppingKey, _cacheExpire);
             }
 
             _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
@@ -310,7 +311,6 @@ end
             var entries = MapToHashEntries(unit);
 
             _ = batch.HashSetAsync(unitKey, entries);
-
             _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
 
             // score
@@ -321,6 +321,7 @@ end
             if (unit.Sorting > 0)
             {
                 _ = batch.SortedSetAddAsync(toppingKey, unitId, unit.Sorting);
+                _ = batch.KeyExpireAsync(toppingKey, _cacheExpire);
             }
         }
 
@@ -365,7 +366,7 @@ end
         long take = -1,
         bool isDescending = true)
     {
-        string ownerSortedKey = OwnerSortedSetKey(ownerId);
+        var ownerSortedKey = OwnerSortedSetKey(ownerId);
 
         // read owner zset (may be empty) SortedSetRangeByScoreWithScoresAsync
         var redisZset = await Database.SortedSetRangeByScoreWithScoresAsync(
@@ -498,7 +499,7 @@ end
         long take = -1,
         bool isDescending = true)
     {
-        string ownerSortedKey = OwnerSortedSetKey(ownerId);
+        var ownerSortedKey = OwnerSortedSetKey(ownerId);
 
         // read owner zset (may be empty)
         var kvs = await GetSortedSetByOwnerAsync(
@@ -840,9 +841,11 @@ end
         // 6.2 更新置顶表（ownerToppingSet）
         var toppingKey = OwnerToppingSetKey(ownerId);
         _ = batch.SortedSetAddAsync(toppingKey, unitId.ToString(), sorting);
+        _ = batch.KeyExpireAsync(toppingKey, _cacheExpire);
 
         // 6.3 更新 ownerSortedSet 的新 score
         _ = batch.SortedSetAddAsync(ownerSortedKey, unitId.ToString(), newScore);
+        _ = batch.KeyExpireAsync(ownerSortedKey, _cacheExpire);
 
         // 7. 执行 batch
         batch.Execute();
