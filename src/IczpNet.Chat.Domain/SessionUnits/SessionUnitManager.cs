@@ -793,10 +793,12 @@ public class SessionUnitManager(
     /// <inheritdoc />
     public virtual async Task<List<SessionUnitCacheItem>> GetListByOwnerIdAsync(long ownerId)
     {
+        var stopwatch = Stopwatch.StartNew();
         var list = ToCacheItem((await SessionUnitReadOnlyRepository.GetQueryableAsync())
                 .Where(SessionUnit.GetActivePredicate(Clock.Now))
                 .Where(x => x.OwnerId == ownerId)
             ).ToList();
+        Logger.LogInformation($"{nameof(GetListByOwnerIdAsync)} ownerId:{ownerId}, [DB:{stopwatch.ElapsedMilliseconds}ms]");
         return list;
     }
 
