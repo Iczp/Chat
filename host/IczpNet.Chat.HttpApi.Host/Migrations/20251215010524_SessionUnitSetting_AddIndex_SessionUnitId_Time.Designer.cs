@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251215010524_SessionUnitSetting_AddIndex_SessionUnitId_Time")]
+    partial class SessionUnitSetting_AddIndex_SessionUnitId_Time
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -6585,6 +6588,8 @@ namespace IczpNet.Chat.Migrations
                     b.HasIndex("OwnerObjectType")
                         .IsDescending();
 
+                    b.HasIndex("SessionId");
+
                     b.HasIndex("Sorting")
                         .IsDescending();
 
@@ -6601,13 +6606,7 @@ namespace IczpNet.Chat.Migrations
                     b.HasIndex("Sorting", "Ticks")
                         .IsDescending();
 
-                    b.HasIndex("OwnerId", "CreationTime", "Id")
-                        .IsDescending();
-
                     b.HasIndex("OwnerId", "PublicBadge", "PrivateBadge")
-                        .IsDescending();
-
-                    b.HasIndex("SessionId", "CreationTime", "Id")
                         .IsDescending();
 
                     b.HasIndex("OwnerId", "Sorting", "LastMessageId", "IsDeleted")

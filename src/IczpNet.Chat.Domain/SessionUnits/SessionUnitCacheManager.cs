@@ -280,10 +280,11 @@ end
     {
 
         var stopwatch = Stopwatch.StartNew();
-
+        var index = 0;
         void Log(string log)
         {
-            Logger.LogInformation($"{nameof(SetListByOwnerAsync)}[{stopwatch.ElapsedMilliseconds}ms]: {log}");
+            index++;
+            Logger.LogInformation($"{nameof(SetListByOwnerAsync)}({index})--[{stopwatch.ElapsedMilliseconds}ms]: {log}");
         }
 
         Log($"ownerId={ownerId},units:{units.Count()}");
@@ -310,7 +311,6 @@ end
 
         var cachedUnits = unitMap.Where(x => x.Value != null).Select(x => x.Value).ToList();
         Log($"cachedUnits:{cachedUnits.Count}");
-
 
         var unCachedUnits = unitList.ExceptBy(cachedUnits.Select(x => x.Id), x => x.Id).ToList();
         Log($"unCachedUnits:{unCachedUnits.Count}");
@@ -384,9 +384,11 @@ end
     {
         ArgumentNullException.ThrowIfNull(fetchTask);
         var stopwatch = Stopwatch.StartNew();
+        var index=0;
         void Log(string log)
         {
-            Logger.LogInformation($"{nameof(SetListByOwnerAsync)}[{stopwatch.ElapsedMilliseconds}ms]: {log}");
+            index++;
+            Logger.LogInformation($"{nameof(SetListByOwnerAsync)}({index})--[{stopwatch.ElapsedMilliseconds}ms]: {log}");
         }
         Log($"fetchUnits ownerId:{ownerId} Start");
         var units = (await fetchTask(ownerId))?.ToList() ?? [];

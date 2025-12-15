@@ -62,6 +62,11 @@ namespace IczpNet.Chat.SessionUnits;
 //Ticks
 [Index(nameof(OwnerId), nameof(Sorting), nameof(Ticks), nameof(IsDeleted), AllDescending = true)]
 [Index(nameof(OwnerId), nameof(Sorting), nameof(Ticks), nameof(IsDeleted), IsDescending = [true, true, false, true], Name = $"IX_Chat_SessionUnit_${nameof(OwnerId)}_${nameof(Sorting)}_Desc_{nameof(Ticks)}_Asc")]
+
+//分片
+[Index(nameof(OwnerId), nameof(CreationTime), nameof(Id), AllDescending = true)]
+[Index(nameof(SessionId), nameof(CreationTime), nameof(Id), AllDescending = true)]
+
 public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, ISessionId, IHasSimpleStateCheckers<SessionUnit>, IMaterializationInterceptor, ISessionUnit
 {
 
@@ -267,7 +272,7 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     /// <summary>
     /// 备注名称
     /// </summary>
-    [NotMapped] 
+    [NotMapped]
     public virtual string Rename => Setting.Rename;
 
     [NotMapped]
