@@ -1,7 +1,9 @@
 using IczpNet.Chat.Connections;
 using IczpNet.Chat.Hosting;
 using IczpNet.Chat.RedisMapping;
+using IczpNet.Chat.ScanLogins;
 using IczpNet.Chat.SessionUnits;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
@@ -14,6 +16,8 @@ using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Uow;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
+using IDatabase = StackExchange.Redis.IDatabase;
 
 namespace IczpNet.Chat.ConnectionPools;
 
@@ -34,6 +38,13 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
     protected virtual TimeSpan? CacheExpire => TimeSpan.FromSeconds(ConnectionOptions.Value.ConnectionCacheExpirationSeconds);
 
     protected virtual string Prefix => $"{Options.Value.KeyPrefix}{ConnectionOptions.Value.AllConnectionsCacheKey}:";
+
+    private static string LuaSAddIfExistsScript => @"
+if redis.call('EXISTS', KEYS[1]) == 1 then
+    redis.call('SADD', KEYS[1], ARGV[1])
+    redis.call('EXPIRE', KEYS[1], ARGV[2])
+end
+return 1";
 
     // connKey 
     private string ConnKey(string connectionId)
@@ -74,6 +85,7 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
         return result;
     }
 
+    private int ExpireSeconds => (int)(CacheExpire?.TotalSeconds ?? -1);
     private void Expire(IBatch batch, string key)
     {
         if (CacheExpire.HasValue)
@@ -83,7 +95,7 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
     }
 
     /// <summary>
-    /// Build dictionary: sessionId -> list of ownerIds
+    /// Build dictionary: sessionId -> ownerSessions of ownerIds
     /// More efficient than repeated LINQ GroupBy
     /// </summary>
     private static Dictionary<Guid, List<long>> BuildSessionChatObjects(Dictionary<long, List<Guid>> ownerSessions)
@@ -120,8 +132,8 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
         var setTasks = new Dictionary<long, Task<RedisValue[]>>(chatObjectIdList.Count);
         foreach (var id in chatObjectIdList)
         {
-            var key = OwnerSessionKey(id);
-            setTasks[id] = batchForReads.SetMembersAsync(key);
+            var ownerSessionKey = OwnerSessionKey(id);
+            setTasks[id] = batchForReads.SetMembersAsync(ownerSessionKey);
         }
 
         // Execute the read batch
@@ -166,13 +178,13 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
                 continue;
             }
 
-            var ownerKey = OwnerSessionKey(ownerId);
+            var ownerSessionKey = OwnerSessionKey(ownerId);
             // Add each member
-            foreach (var sid in sessions)
+            foreach (var sessionId in sessions)
             {
-                _ = batchForWrites.SetAddAsync(ownerKey, sid.ToString());
+                _ = batchForWrites.SetAddAsync(ownerSessionKey, sessionId.ToString());
             }
-            Expire(batchForWrites, ownerKey);
+            Expire(batchForWrites, ownerSessionKey);
 
             result[ownerId] = sessions;
         }
@@ -235,9 +247,9 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
             if (sessions.IsNullOrEmpty()) continue;
 
             // Add members (idempotent)
-            foreach (var sid in sessions)
+            foreach (var sessionId in sessions)
             {
-                _ = writeBatch.SetAddAsync(ownerKey, sid.ToString());
+                _ = writeBatch.SetAddAsync(ownerKey, sessionId.ToString());
             }
             Expire(writeBatch, ownerKey);
         }
@@ -508,7 +520,18 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
 
     public async Task<Dictionary<long, List<string>>> GetDeviceTypesAsync(List<long> chatObjectIdList, CancellationToken token = default)
     {
-        var result = new Dictionary<long, List<string>>(chatObjectIdList.Count);
+        return (await GetDevicesAsync(chatObjectIdList, token))
+            .ToDictionary(
+                x => x.Key,
+                x => x.Value
+                    .Select(d => d.DeviceType)
+                    .ToList()
+             );
+    }
+
+    public async Task<Dictionary<long, List<(string ConnectionId, string DeviceId, string DeviceType)>>> GetDevicesAsync(List<long> chatObjectIdList, CancellationToken token = default)
+    {
+        var result = new Dictionary<long, List<(string ConnectionId, string DeviceId, string DeviceType)>>(chatObjectIdList.Count);
 
         if (chatObjectIdList == null || chatObjectIdList.Count == 0)
         {
@@ -541,9 +564,15 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
             }
 
             var types = entries
-                .Select(x => x.Value.ToString())
-                .Where(v => !string.IsNullOrWhiteSpace(v))
-                .Select(v => v.Split(':')[0]) // DeviceType:DeviceId → 取 DeviceType
+                .Where(v => !string.IsNullOrWhiteSpace(v.Value.ToString()))
+                .Select(v =>
+                {
+                    // DeviceType:DeviceId → 取 DeviceType
+                    var arr = v.Value.ToString().Split(':');
+
+                    return (v.Name.ToString(), arr[0], arr[1]);
+
+                })
                 .Distinct()
                 .ToList();
 
@@ -628,6 +657,185 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
         }
 
         return result;
+    }
+
+    public async Task<Dictionary<string, bool>> BatchKeyExistsAsync(IEnumerable<string> keys)
+    {
+        var batch = Db.CreateBatch();
+        var tasks = new Dictionary<string, Task<bool>>();
+
+        // 1. 循环添加 KeyExistsAsync 到 batch
+        foreach (var key in keys)
+        {
+            tasks[key] = batch.KeyExistsAsync(key);
+        }
+
+        // 2. 批量执行
+        batch.Execute();
+
+        // 3. 等待所有 Task 完成，并返回字典
+        var result = new Dictionary<string, bool>();
+        foreach (var kv in tasks)
+        {
+            result[kv.Key] = await kv.Value;  // batch 执行完成后这里才返回真正结果
+        }
+
+        return result;
+    }
+
+    public async Task AddSessionAsync(List<(Guid SessionId, long OwnerId)> ownerSessions)
+    {
+        var preparedScript = LuaScript.Prepare(LuaSAddIfExistsScript);
+
+        Logger.LogInformation("AddUnitsAsync");
+
+        foreach (var unit in ownerSessions)
+        {
+            Logger.LogInformation($"(Guid SessionId, long OwnerId): ({unit})");
+        }
+
+        var ownerIds = ownerSessions.Select(x => x.OwnerId).Distinct().ToList();
+
+        var deviceDict = await GetDevicesAsync(ownerIds);
+
+        // 全局：connectionId -> ownerId 列表
+        var connOwnersMap = deviceDict
+            .SelectMany(x => x.Value.Select(d => new { d.ConnectionId, OwnerId = x.Key }))
+            .GroupBy(x => x.ConnectionId, x => x.OwnerId)
+            .ToDictionary(x => x.Key, x => x.Distinct().ToList());
+
+        // sessionId -> [{OwnerId}]
+        var sessionDict = ownerSessions
+            .GroupBy(x => x.SessionId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(u => new { u.OwnerId, }).ToList()
+            );
+
+        var ownerSessionKeys = ownerIds.Select(OwnerSessionKey);
+        var ownerSessionKeyExists = await BatchKeyExistsAsync(ownerSessionKeys);
+
+        var batch = Db.CreateBatch();
+
+        foreach (var (sessionId, units) in sessionDict)
+        {
+            var sessionConnKey = SessionConnKey(sessionId);
+            Expire(batch, sessionConnKey);
+
+            // ① 当前 session 关联的 ownerIds
+            var sessionOwnerIds = units.Select(x => x.OwnerId).Distinct().ToHashSet();
+
+            // ② 找到这些 ownerIds 所对应的 connectionId 列表
+            foreach (var (connectionId, ownerIdList) in connOwnersMap)
+            {
+                // 得到当前 connectionId 中，属于本 session 的 ownerId 列表
+                var relatedOwnerIds = ownerIdList
+                    .Where(oid => sessionOwnerIds.Contains(oid))
+                    .ToList();
+
+                if (relatedOwnerIds.Count == 0)
+                    continue;
+
+                // ③ 写入到 Redis
+                var ownerIdStr = string.Join(",", relatedOwnerIds);
+                _ = batch.HashSetAsync(sessionConnKey, connectionId, ownerIdStr);
+
+                Logger.LogInformation($"HashSetAsync: sessionConnKey={sessionConnKey}, connectionId={connectionId}, ownerIdStr={ownerIdStr}");
+            }
+
+            // ④ ownerId -> sessionId 反向索引
+            foreach (var unit in units)
+            {
+                var ownerSessionKey = OwnerSessionKey(unit.OwnerId);
+                //var isExists = await Db.KeyExistsAsync(ownerSessionKey);
+                // 缓存Key存在才执行
+                if (ownerSessionKeyExists.TryGetValue(ownerSessionKey, out var isExists) && isExists)
+                {
+                    _ = batch.SetAddAsync(ownerSessionKey, sessionId.ToString());
+                    Expire(batch, ownerSessionKey);
+                    Logger.LogInformation($"SetAddAsync: ownerSessionKey={ownerSessionKey}, sessionId={sessionId}");
+                }
+                //_ = preparedScript.EvaluateAsync(batch, new
+                //{
+                //    KEYS = new[] { ownerSessionKeys },
+                //    ARGV = new[] { sessionId.ToString(), ExpireSeconds.ToString() }
+                //});
+                //Logger.LogInformation($"Lua-SAdd-IfExists: ownerSessionKeys={ownerSessionKeys}, sessionId={sessionId}");
+            }
+        }
+        batch.Execute();
+    }
+
+
+    public async Task AddSession1Async(List<(Guid SessionId, long OwnerId)> ownerSessions)
+    {
+        var preparedScript = LuaScript.Prepare(LuaSAddIfExistsScript);
+
+        Logger.LogInformation("AddSessionAsync");
+
+        var ownerIds = ownerSessions.Select(x => x.OwnerId).Distinct().ToList();
+
+        // 在线用户 (ownerId -> devices)
+        var deviceDict = await GetDevicesAsync(ownerIds);
+
+        // sessionId -> ownerId list
+        var sessionDict = ownerSessions
+            .GroupBy(x => x.SessionId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(u => u.OwnerId).Distinct().ToList()
+            );
+
+        // 新增一个映射：ownerId -> sessionId list
+        var ownerSessionMap = ownerSessions
+            .GroupBy(x => x.OwnerId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(u => u.SessionId).Distinct().ToList()
+            );
+
+        var batch = Db.CreateBatch();
+
+        // 最外层：deviceDict（最小字典）
+        foreach (var (ownerId, devices) in deviceDict)
+        {
+            // 找到该 ownerId 属于哪些会话（session）
+            if (!ownerSessionMap.TryGetValue(ownerId, out var ownerSessionIds))
+                continue; // 在线但没有 session，跳过
+
+            foreach (var sessionId in ownerSessionIds)
+            {
+                var sessionConnKey = SessionConnKey(sessionId);
+                Expire(batch, sessionConnKey);
+
+                // 当前 ownerId 的所有在线 connection 写入此 session
+                foreach (var device in devices)
+                {
+                    var connectionId = device.ConnectionId;
+
+                    _ = batch.HashSetAsync(sessionConnKey, connectionId, ownerId.ToString());
+
+                    Logger.LogInformation(
+                        $"HashSetAsync: sessionId={sessionId}, connId={connectionId}, ownerId={ownerId}"
+                    );
+                }
+
+                // owner → session 索引（Lua：只有 Key 存在才写入）
+                var ownerSessionKey = OwnerSessionKey(ownerId);
+
+                _ = preparedScript.EvaluateAsync(batch, new
+                {
+                    KEYS = new[] { ownerSessionKey },
+                    ARGV = new[] { sessionId.ToString(), ExpireSeconds.ToString() }
+                });
+
+                Logger.LogInformation(
+                    $"Lua-SAdd-IfExists: ownerSessionKey={ownerSessionKey}, sessionId={sessionId}"
+                );
+            }
+        }
+
+        batch.Execute();
     }
 
 }

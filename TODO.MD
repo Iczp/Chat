@@ -41,14 +41,14 @@ type DeviceType 'pc' | 'phone' | 'web' | 'html5plus' | 'tablet' | 'pad' | 'webvi
 
 ### 扫码登录 qr-login
 
-- [ ] 扩展 OpenIddict 登录方式（qr-login）
-- [ ] SignalR连接
-- [ ] 扫码登录
+- [x] 扩展 OpenIddict 登录方式（qr-login）
+- [x] SignalR连接
+- [x] 扫码登录
 
 ### App版本管理
 
-- [ ] 增加预发布
-- [ ] 增加 Electron PC版App 的版本管理
+- [x] 增加预发布
+- [x] 增加 Electron PC版App 的版本管理
 
 
 
@@ -59,4 +59,6 @@ type DeviceType 'pc' | 'phone' | 'web' | 'html5plus' | 'tablet' | 'pad' | 'webvi
 - [x] SessionUnit、SessionUnitSetting 缓存
 - [x] 更新角标
 - [ ] 提醒、关注、最后发送消息
-- [ ] 消息列表+消息缓存
+- [x] 消息列表+消息缓存
+
+ClockExtensions

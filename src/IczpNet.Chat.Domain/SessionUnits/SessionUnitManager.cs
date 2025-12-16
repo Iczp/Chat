@@ -15,12 +15,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Pipelines.Sockets.Unofficial.Buffers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Caching;
@@ -72,6 +74,110 @@ public class SessionUnitManager(
     public ISessionGenerator SessionGenerator { get; } = sessionGenerator;
     public ISessionManager SessionManager { get; } = sessionManager;
     protected ISessionUnitIdGenerator IdGenerator { get; } = idGenerator;
+
+    /// <summary>
+    /// 游标模型
+    /// </summary>
+    /// <param name="CreationTime"></param>
+    /// <param name="Id"></param>
+    private readonly record struct SessionUnitCursor(DateTime CreationTime, Guid Id)
+    {
+        public static SessionUnitCursor Start => new(DateTime.MinValue, Guid.Empty);
+    }
+    /// <summary>
+    /// 通用游标分片器（核心）
+    /// </summary>
+    /// <param name="baseQuery"></param>
+    /// <param name="batchSize"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    private async IAsyncEnumerable<SessionUnitCacheItem> ShardLoadAsync(
+        IQueryable<SessionUnit> baseQuery,
+        int batchSize = 1000,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var totalSw = Stopwatch.StartNew();
+
+        var cursor = SessionUnitCursor.Start;
+        var batchIndex = 0;
+        var totalCount = 0;
+        var method = nameof(ShardLoadAsync);
+        try
+        {
+            while (true)
+            {
+                batchIndex++;
+
+                var swQuery = Stopwatch.StartNew();
+
+                var batch = baseQuery
+                    .Where(x =>
+                        x.CreationTime > cursor.CreationTime ||
+                        (x.CreationTime == cursor.CreationTime &&
+                         x.Id.CompareTo(cursor.Id) > 0))
+                    .OrderBy(x => x.CreationTime)
+                    .ThenBy(x => x.Id)
+                    .Take(batchSize)
+                    .AsNoTracking()
+                    .ToList();
+
+                swQuery.Stop();
+
+                if (batch.Count == 0)
+                {
+                    Logger.LogInformation(
+                        "{Method} finished. batches={BatchIndex}, total={TotalCount}, elapsed={Elapsed}ms",
+                        method,
+                        batchIndex - 1,
+                        totalCount,
+                        totalSw.ElapsedMilliseconds);
+
+                    yield break;
+                }
+
+                Logger.LogInformation(
+                    "{Method} batch#{BatchIndex} DB {Count} rows in {Elapsed}ms",
+                    method,
+                    batchIndex,
+                    batch.Count,
+                    swQuery.ElapsedMilliseconds);
+
+                var swMap = Stopwatch.StartNew();
+                var list = ObjectMapper.Map<List<SessionUnit>, List<SessionUnitCacheItem>>(batch);
+                swMap.Stop();
+
+                Logger.LogInformation(
+                    "{Method} batch#{BatchIndex} Map {Count} rows in {Elapsed}ms",
+                    method,
+                    batchIndex,
+                    list.Count,
+                    swMap.ElapsedMilliseconds);
+
+                foreach (var item in list)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    yield return item;
+                }
+
+                totalCount += batch.Count;
+
+                var last = batch[^1];
+                cursor = new SessionUnitCursor(last.CreationTime, last.Id);
+            }
+        }
+        finally
+        {
+            totalSw.Stop();
+
+            Logger.LogInformation(
+                "{Method} exit. batches={BatchIndex}, total={TotalCount}, elapsed={Elapsed}ms",
+                method,
+                batchIndex,
+                totalCount,
+                totalSw.ElapsedMilliseconds);
+        }
+    }
+
 
     protected static DistributedCacheEntryOptions DistributedCacheEntryOptions => new()
     {
@@ -736,6 +842,11 @@ public class SessionUnitManager(
         await SessionUnitListCache.SetAsync(cacheKey, sessionUnitList, options, hideErrors, considerUow, token);
     }
 
+    private SessionUnitCacheItem ToCacheItem(SessionUnit entity)
+    {
+        return ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(entity);
+    }
+
     private IEnumerable<SessionUnitCacheItem> ToCacheItem(IQueryable<SessionUnit> qurey)
     {
         return qurey.Select(ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>);
@@ -770,12 +881,24 @@ public class SessionUnitManager(
     /// <inheritdoc />
     public virtual async Task<List<SessionUnitCacheItem>> GetListBySessionIdAsync(Guid sessionId)
     {
-        var list = ToCacheItem((await SessionUnitReadOnlyRepository.GetQueryableAsync())
-                .Where(SessionUnit.GetActivePredicate(Clock.Now))
-                .Where(x => x.SessionId == sessionId)
-            ).ToList();
+        //var list = ToCacheItem((await SessionUnitReadOnlyRepository.GetQueryableAsync())
+        //        .Where(SessionUnit.GetActivePredicate(Clock.Now))
+        //        .Where(x => x.SessionId == sessionId)
+        //    ).ToList();
+        //await SessionUnitCountCache.SetAsync(sessionId, list.Where(x => x.IsPublic).Count().ToString());
+
+        //return list;
+
+        var stopwatch = Stopwatch.StartNew();
+
+        var list = await BatchGetListAsync(queryable =>
+        {
+            return queryable.Where(x => x.SessionId == sessionId);
+        });
 
         await SessionUnitCountCache.SetAsync(sessionId, list.Where(x => x.IsPublic).Count().ToString());
+
+        Logger.LogInformation($"{nameof(GetListBySessionIdAsync)} SessionId:{sessionId}, [DB:{stopwatch.ElapsedMilliseconds}ms] count:{list.Count}");
 
         return list;
     }
@@ -790,14 +913,51 @@ public class SessionUnitManager(
         return list;
     }
 
+
+    public virtual async Task<List<SessionUnitCacheItem>> BatchGetListAsync(
+        Func<IQueryable<SessionUnit>, IQueryable<SessionUnit>> queryableAction,
+        int batchSize = 1000,
+        CancellationToken cancellationToken = default)
+    {
+
+        var result = new List<SessionUnitCacheItem>();
+
+        var queryable = (await SessionUnitReadOnlyRepository.GetQueryableAsync())
+                 .Where(SessionUnit.GetActivePredicate(Clock.Now))
+                 ;
+
+        queryable = queryableAction(queryable);
+
+        await foreach (var item in ShardLoadAsync(queryable, 1000, cancellationToken))
+        {
+            result.Add(item);
+        }
+
+        return result;
+    }
+
     /// <inheritdoc />
     public virtual async Task<List<SessionUnitCacheItem>> GetListByOwnerIdAsync(long ownerId)
     {
-        var list = ToCacheItem((await SessionUnitReadOnlyRepository.GetQueryableAsync())
-                .Where(SessionUnit.GetActivePredicate(Clock.Now))
-                .Where(x => x.OwnerId == ownerId)
-            ).ToList();
-        return list;
+        var stopwatch = Stopwatch.StartNew();
+
+        var result = await BatchGetListAsync(queryable =>
+        {
+            return queryable.Where(x => x.OwnerId == ownerId);
+        });
+
+        Logger.LogInformation($"{nameof(GetListByOwnerIdAsync)} ownerId:{ownerId}, [DB:{stopwatch.ElapsedMilliseconds}ms]");
+
+        return result;
+
+        //var queryable = (await SessionUnitReadOnlyRepository.GetQueryableAsync())
+        //        .AsNoTracking()
+        //        .Where(SessionUnit.GetActivePredicate(Clock.Now))
+        //        .Where(x => x.OwnerId == ownerId)
+        //        ;
+        //var list = ToCacheItem(queryable).ToList();
+        //Logger.LogInformation($"{nameof(BatchGetListByOwnerIdAsync)} ownerId:{ownerId}, [DB:{stopwatch.ElapsedMilliseconds}ms]");
+        //return list;
     }
 
     /// <inheritdoc />

@@ -28,9 +28,9 @@ namespace IczpNet.Chat.SessionUnitSettings;
 [Index(nameof(SessionUnitId), nameof(IsEnabled), nameof(IsKilled))]
 [Index(nameof(HistoryFristTime), nameof(HistoryLastTime), nameof(ClearTime))]
 // 时间索引
-[Index(nameof(HistoryFristTime))]
-[Index(nameof(HistoryLastTime))]
-[Index(nameof(ClearTime))]
+[Index(nameof(SessionUnitId), nameof(HistoryFristTime))]
+[Index(nameof(SessionUnitId), nameof(HistoryLastTime))]
+[Index(nameof(SessionUnitId), nameof(ClearTime))]
 
 [Comment("会话设置")]
 public class SessionUnitSetting : BaseEntity, IHasCreationTime, IHasModificationTime, IIsStatic, IIsPublic//, ISoftDelete

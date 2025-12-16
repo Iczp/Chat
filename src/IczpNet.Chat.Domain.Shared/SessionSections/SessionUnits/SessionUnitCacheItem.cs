@@ -75,5 +75,7 @@ public class SessionUnitCacheItem : ISessionUnit
 
     public virtual double Sorting { get; set; }
 
+    public virtual DateTime CreationTime { get; set; }
+
     public virtual SessionUnitSettingCacheItem Setting { get; set; }
 }

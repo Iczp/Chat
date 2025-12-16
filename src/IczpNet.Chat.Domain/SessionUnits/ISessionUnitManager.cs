@@ -468,4 +468,16 @@ public interface ISessionUnitManager
     /// <param name="userId"></param>
     /// <returns></returns>
     Task<Dictionary<long, List<Guid>>> GetSessionsByUserAsync(Guid userId);
+
+    /// <summary>
+    /// 分片批量获取
+    /// </summary>
+    /// <param name="queryableAction"></param>
+    /// <param name="batchSize"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<List<SessionUnitCacheItem>> BatchGetListAsync(
+        Func<IQueryable<SessionUnit>, IQueryable<SessionUnit>> queryableAction, 
+        int batchSize=1000, 
+        CancellationToken cancellationToken = default);
 }

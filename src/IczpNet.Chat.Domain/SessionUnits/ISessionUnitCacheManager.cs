@@ -32,19 +32,19 @@ public interface ISessionUnitCacheManager
     Task<IEnumerable<SessionUnitCacheItem>> GetOrSetListByOwnerAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
 
     Task<IEnumerable<SessionUnitCacheItem>> GetListByOwnerAsync(
-        long ownerId, 
-        double minScore = double.NegativeInfinity, 
-        double maxScore = double.PositiveInfinity, 
-        long skip = 0, 
-        long take = -1, 
+        long ownerId,
+        double minScore = double.NegativeInfinity,
+        double maxScore = double.PositiveInfinity,
+        long skip = 0,
+        long take = -1,
         bool isDescending = true);
 
     Task<KeyValuePair<Guid, double>[]> GetSortedSetByOwnerAsync(
-        long ownerId, 
-        double minScore = double.NegativeInfinity, 
-        double maxScore = double.PositiveInfinity, 
-        long skip = 0, 
-        long take = -1, 
+        long ownerId,
+        double minScore = double.NegativeInfinity,
+        double maxScore = double.PositiveInfinity,
+        long skip = 0,
+        long take = -1,
         bool isDescending = true);
 
     Task<IQueryable<(Guid UnitId, double Sorting, double Ticks)>> GetSortedSetQueryableByOwnerAsync(
@@ -55,13 +55,6 @@ public interface ISessionUnitCacheManager
         long take = -1,
         bool isDescending = true);
 
-    Task<KeyValuePair<Guid, double>[]> GetHistoryByOwnerAsync(
-        long ownerId,
-        double minScore = double.NegativeInfinity,
-        double maxScore = double.PositiveInfinity,
-        long skip = 0,
-        long take = -1,
-        bool isDescending = true);
 
     Task<long> GetTotalCountByOwnerAsync(long ownerId);
 
@@ -75,11 +68,9 @@ public interface ISessionUnitCacheManager
 
     Task<bool> SetTotalBadgeAsync(long ownerId, long badge);
 
-    Task<long?> GetTotalBadgeAsync(long ownerId);
+    Task<IDictionary<string, long>> GetTotalBadgeAsync(long ownerId);
 
     Task<bool> RemoveTotalBadgeAsync(long ownerId);
-
-    Task<SessionUnitCacheItem> UnitTestAsync();
 
     Task SetToppingAsync(Guid unitId, long ownerId, long sorting);
 

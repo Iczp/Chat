@@ -1,6 +1,5 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
@@ -425,26 +424,17 @@ public class SessionUnitCacheAppService(
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    public async Task<long> GetBadgeAsync(long ownerId)
+    public async Task<IDictionary<string, long>> GetBadgeAsync(long ownerId)
     {
         // check owner
         await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
 
+        //加载全部
+        await LoadAllByOwnerIfNotExistsAsync(ownerId);
+
         var totalBadge = await SessionUnitCacheManager.GetTotalBadgeAsync(ownerId);
 
-        if (totalBadge.HasValue)
-        {
-            return totalBadge.Value;
-        }
-        var allList = await GetAllListAsync(ownerId);
-
-        var hasBadgeList = allList.Where(x => x.PublicBadge > 0 || x.PrivateBadge > 0).ToList();
-
-        totalBadge = allList.Sum(x => x.PublicBadge + x.PrivateBadge);
-
-        await SessionUnitCacheManager.SetTotalBadgeAsync(ownerId, totalBadge.Value);
-
-        return totalBadge.Value;
+        return totalBadge;
     }
 
     /// <summary>
@@ -462,13 +452,18 @@ public class SessionUnitCacheAppService(
 
         var result = new List<BadgeDto>();
 
-        foreach (var chatObjectId in chatObjectIdList)
+        foreach (var ownerId in chatObjectIdList)
         {
+            //加载全部
+            await LoadAllByOwnerIfNotExistsAsync(ownerId);
+
+            var totalBadge = await GetBadgeAsync(ownerId);
+            var badge = totalBadge.TryGetValue("Public", out long publicBadge) ? publicBadge : 0;
             result.Add(new BadgeDto()
             {
                 AppUserId = userId,
-                ChatObjectId = chatObjectId,
-                Badge = (int)await GetBadgeAsync(chatObjectId)
+                ChatObjectId = ownerId,
+                Badge = (int)badge
             });
         }
 
