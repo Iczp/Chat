@@ -15,7 +15,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Pipelines.Sockets.Unofficial.Buffers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -110,15 +109,40 @@ public class SessionUnitManager(
 
                 var swQuery = Stopwatch.StartNew();
 
-                var batch = baseQuery
+                var batch = baseQuery//.Include(x => x.Setting)
                     .Where(x =>
                         x.CreationTime > cursor.CreationTime ||
                         (x.CreationTime == cursor.CreationTime &&
                          x.Id.CompareTo(cursor.Id) > 0))
+                    
                     .OrderBy(x => x.CreationTime)
                     .ThenBy(x => x.Id)
                     .Take(batchSize)
                     .AsNoTracking()
+                    .Select(x => new SessionUnitCacheItem()
+                    {
+                        Id = x.Id,
+                        //UserId = x.UserId,
+                        SessionId = x.SessionId,
+                        OwnerId = x.OwnerId,
+                        OwnerObjectType = x.OwnerObjectType,
+                        DestinationId = x.DestinationId,
+                        DestinationObjectType = x.DestinationObjectType,
+                        IsPublic = x.Setting.IsPublic,
+                        IsStatic = x.Setting.IsStatic,
+                        IsVisible = x.Setting.IsVisible,
+                        IsEnabled = x.Setting.IsEnabled,
+                        //ReadedMessageId = x.Setting.ReadedMessageId,
+                        PublicBadge = x.PublicBadge,
+                        PrivateBadge = x.PrivateBadge,
+                        RemindAllCount = x.RemindAllCount,
+                        RemindMeCount = x.RemindMeCount,
+                        FollowingCount = x.FollowingCount,
+                        LastMessageId = x.LastMessageId,
+                        Ticks = x.Ticks,
+                        Sorting = x.Sorting,
+                        CreationTime = x.CreationTime,
+                    })
                     .ToList();
 
                 swQuery.Stop();
@@ -143,7 +167,8 @@ public class SessionUnitManager(
                     swQuery.ElapsedMilliseconds);
 
                 var swMap = Stopwatch.StartNew();
-                var list = ObjectMapper.Map<List<SessionUnit>, List<SessionUnitCacheItem>>(batch);
+                //var list = ObjectMapper.Map<List<SessionUnit>, List<SessionUnitCacheItem>>(batch);
+                var list = batch.ToList();
                 swMap.Stop();
 
                 Logger.LogInformation(
@@ -852,7 +877,8 @@ public class SessionUnitManager(
         return qurey.Select(ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>);
     }
 
-    private static List<SessionUnitCacheItem> ToCacheItemV1(IQueryable<SessionUnit> qurey)
+
+    private static List<SessionUnitCacheItem> SelectCacheItem(IQueryable<SessionUnit> qurey)
     {
         return [.. qurey.Select(x => new SessionUnitCacheItem()
         {
@@ -863,10 +889,10 @@ public class SessionUnitManager(
             OwnerObjectType = x.OwnerObjectType,
             DestinationId = x.DestinationId,
             DestinationObjectType = x.DestinationObjectType,
-            IsPublic = x.Setting.IsPublic,
-            IsStatic = x.Setting.IsStatic,
-            IsVisible = x.Setting.IsVisible,
-            IsEnabled = x.Setting.IsEnabled,
+            //IsPublic = x.Setting.IsPublic,
+            //IsStatic = x.Setting.IsStatic,
+            //IsVisible = x.Setting.IsVisible,
+            //IsEnabled = x.Setting.IsEnabled,
             //ReadedMessageId = x.Setting.ReadedMessageId,
             PublicBadge = x.PublicBadge,
             PrivateBadge = x.PrivateBadge,
@@ -896,7 +922,9 @@ public class SessionUnitManager(
             return queryable.Where(x => x.SessionId == sessionId);
         });
 
-        await SessionUnitCountCache.SetAsync(sessionId, list.Where(x => x.IsPublic).Count().ToString());
+        await SessionUnitCountCache.SetAsync(sessionId, list
+            //.Where(x => x.IsPublic)
+            .Count().ToString());
 
         Logger.LogInformation($"{nameof(GetListBySessionIdAsync)} SessionId:{sessionId}, [DB:{stopwatch.ElapsedMilliseconds}ms] count:{list.Count}");
 
@@ -928,7 +956,7 @@ public class SessionUnitManager(
 
         queryable = queryableAction(queryable);
 
-        await foreach (var item in ShardLoadAsync(queryable, 1000, cancellationToken))
+        await foreach (var item in ShardLoadAsync(queryable, batchSize, cancellationToken))
         {
             result.Add(item);
         }
@@ -1235,7 +1263,7 @@ public class SessionUnitManager(
     [Obsolete($"Move to {nameof(ISessionUnitSettingManager.SetMuteExpireTimeAsync)}")]
     public virtual async Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime)
     {
-        var setterSessionUnit = await SessionUnitReadOnlyRepository.FirstOrDefaultAsync(x => x.SessionId == muterSessionUnit.SessionId && x.IsStatic && !x.IsPublic && x.Id != muterSessionUnit.Id);
+        var setterSessionUnit = await SessionUnitReadOnlyRepository.FirstOrDefaultAsync(x => x.SessionId == muterSessionUnit.SessionId && x.Setting.IsStatic && !x.Setting.IsPublic && x.Id != muterSessionUnit.Id);
 
         return await SetMuteExpireTimeAsync(muterSessionUnit, muteExpireTime, setterSessionUnit, setterSessionUnit != null);
     }

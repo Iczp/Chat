@@ -58,8 +58,8 @@ public class SessionUnitCacheAppService(
             .Select(x => x.Trim().Split(" ")[0]) ?? [];
 
         var needLoadBySorting = sortingFields.Any(f =>
-               f.StartsWith($"{nameof(SessionUnitCacheDto.Setting)}.")
-            || f.StartsWith($"{nameof(SessionUnitCacheDto.Destination)}.")
+               //f.StartsWith($"{nameof(SessionUnitCacheDto.Setting)}.") || 
+               f.StartsWith($"{nameof(SessionUnitCacheDto.Destination)}.")
         );
 
         return Task.FromResult(
@@ -133,9 +133,9 @@ public class SessionUnitCacheAppService(
                     ? destMap.GetValueOrDefault(item.DestinationId.Value)
                     : null;
                 item.SearchText = string.Join(" ",
-                    item.Destination?.Name ?? "",
-                    item.Setting?.MemberName ?? "",
-                    item.Setting?.Rename ?? ""
+                    item.Destination?.Name ?? ""
+                    //item.Setting?.MemberName ?? "",
+                    //item.Setting?.Rename ?? ""
                 ).Replace("  ", " ").ToLower();
             }
         }
@@ -201,9 +201,10 @@ public class SessionUnitCacheAppService(
 
     private async Task FillSettingAsync(IEnumerable<SessionUnitCacheDto> items)
     {
+        return;
         // fill Setting
         var nullSettingsItems = items
-            .Where(x => x.Setting == null)
+            //.Where(x => x.Setting == null)
             .ToList();
         if (nullSettingsItems.Count == 0)
         {
@@ -215,7 +216,7 @@ public class SessionUnitCacheAppService(
 
         foreach (var item in nullSettingsItems)
         {
-            item.Setting = settingMap.GetValueOrDefault(item.Id);
+            //item.Setting = settingMap.GetValueOrDefault(item.Id);
         }
     }
 
@@ -424,7 +425,7 @@ public class SessionUnitCacheAppService(
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    public async Task<IDictionary<string, long>> GetBadgeAsync(long ownerId)
+    public async Task<SessionUnitStatistic> GetStatisticAsync(long ownerId)
     {
         // check owner
         await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
@@ -432,7 +433,7 @@ public class SessionUnitCacheAppService(
         //加载全部
         await LoadAllByOwnerIfNotExistsAsync(ownerId);
 
-        var totalBadge = await SessionUnitCacheManager.GetTotalBadgeAsync(ownerId);
+        var totalBadge = await SessionUnitCacheManager.GetStatisticAsync(ownerId);
 
         return totalBadge;
     }
@@ -444,7 +445,7 @@ public class SessionUnitCacheAppService(
     /// <param name="isImmersed"></param>
     /// <returns></returns>
     /// <exception cref="NotImplementedException"></exception>
-    public async Task<List<BadgeDto>> GetBadgeByUserIdAsync([Required] Guid userId, bool? isImmersed = null)
+    public async Task<List<BadgeDto>> GetStatisticByUserIdAsync([Required] Guid userId, bool? isImmersed = null)
     {
         var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(userId);
 
@@ -457,13 +458,13 @@ public class SessionUnitCacheAppService(
             //加载全部
             await LoadAllByOwnerIfNotExistsAsync(ownerId);
 
-            var totalBadge = await GetBadgeAsync(ownerId);
-            var badge = totalBadge.TryGetValue("Public", out long publicBadge) ? publicBadge : 0;
+            var stat = await GetStatisticAsync(ownerId);
+           
             result.Add(new BadgeDto()
             {
                 AppUserId = userId,
                 ChatObjectId = ownerId,
-                Badge = (int)badge
+                Statistic = stat,
             });
         }
 
@@ -475,8 +476,8 @@ public class SessionUnitCacheAppService(
     /// </summary>
     /// <param name="isImmersed"></param>
     /// <returns></returns>
-    public Task<List<BadgeDto>> GetBadgeByCurrentUserAsync(bool? isImmersed = null)
+    public Task<List<BadgeDto>> GetStatisticByCurrentUserAsync(bool? isImmersed = null)
     {
-        return GetBadgeByUserIdAsync(CurrentUser.GetId(), isImmersed);
+        return GetStatisticByUserIdAsync(CurrentUser.GetId(), isImmersed);
     }
 }
