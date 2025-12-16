@@ -92,9 +92,9 @@ public class SessionUnitManager(
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     private async IAsyncEnumerable<SessionUnitCacheItem> ShardLoadAsync(
-    IQueryable<SessionUnit> baseQuery,
-    int batchSize = 1000,
-    [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        IQueryable<SessionUnit> baseQuery,
+        int batchSize = 1000,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var totalSw = Stopwatch.StartNew();
 

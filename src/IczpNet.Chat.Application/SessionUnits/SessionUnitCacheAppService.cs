@@ -1,6 +1,5 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
@@ -430,6 +429,9 @@ public class SessionUnitCacheAppService(
         // check owner
         await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
 
+        //加载全部
+        await LoadAllByOwnerIfNotExistsAsync(ownerId);
+
         var totalBadge = await SessionUnitCacheManager.GetTotalBadgeAsync(ownerId);
 
         return totalBadge;
@@ -450,14 +452,17 @@ public class SessionUnitCacheAppService(
 
         var result = new List<BadgeDto>();
 
-        foreach (var chatObjectId in chatObjectIdList)
+        foreach (var ownerId in chatObjectIdList)
         {
-            var totalBadge = await GetBadgeAsync(chatObjectId);
+            //加载全部
+            await LoadAllByOwnerIfNotExistsAsync(ownerId);
+
+            var totalBadge = await GetBadgeAsync(ownerId);
             var badge = totalBadge.TryGetValue("Public", out long publicBadge) ? publicBadge : 0;
             result.Add(new BadgeDto()
             {
                 AppUserId = userId,
-                ChatObjectId = chatObjectId,
+                ChatObjectId = ownerId,
                 Badge = (int)badge
             });
         }
