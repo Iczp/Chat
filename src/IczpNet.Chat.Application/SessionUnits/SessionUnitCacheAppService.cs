@@ -7,11 +7,16 @@ using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
 using IczpNet.Chat.SessionUnitSettings;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Dynamic.Core;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Caching;
@@ -134,8 +139,8 @@ public class SessionUnitCacheAppService(
                     : null;
                 item.SearchText = string.Join(" ",
                     item.Destination?.Name ?? ""
-                    //item.Setting?.MemberName ?? "",
-                    //item.Setting?.Rename ?? ""
+                //item.Setting?.MemberName ?? "",
+                //item.Setting?.Rename ?? ""
                 ).Replace("  ", " ").ToLower();
             }
         }
@@ -177,6 +182,8 @@ public class SessionUnitCacheAppService(
         return pagedList;
     }
 
+
+
     private async Task FillLastMessageAsync(IEnumerable<SessionUnitCacheDto> items)
     {
         // fill Setting
@@ -188,7 +195,7 @@ public class SessionUnitCacheAppService(
         {
             return;
         }
-        var queryable = await MessageRepository.GetQueryableAsync();
+
         var messages = await MessageRepository.GetListAsync(x => messageIdList.Contains(x.Id));
         var messageMap = messages
             .Select(ObjectMapper.Map<Message, MessageOwnerDto>)
@@ -303,6 +310,99 @@ public class SessionUnitCacheAppService(
 
     }
 
+
+    public async IAsyncEnumerable<Guid> BatchSearchAsync(
+        long ownerId,
+        string keyword,
+        IReadOnlyCollection<long> searchChatObjectIdList,
+        IReadOnlyCollection<Guid> allUnitIds,
+        int batchSize,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var totalStopwatch = Stopwatch.StartNew();
+        var totalCount = 0;
+        var batchIndex = 0;
+        var method = nameof(BatchSearchAsync);
+
+        Logger.LogInformation(
+            "[{method}] Start | OwnerId={OwnerId}, batchSize={batchSize}, Keyword={Keyword}",
+            method,
+            ownerId,
+            batchSize,
+            keyword);
+
+        var baseQuery = (await SessionUnitRepository.GetQueryableAsync())
+            .Where(x => x.OwnerId == ownerId)
+            .Where(SessionUnit.GetActivePredicate(Clock.Now))
+            .Where(x =>
+                searchChatObjectIdList.Contains(x.DestinationId!.Value)
+                || x.Setting.Rename.Contains(keyword)
+                || x.Setting.RenameSpellingAbbreviation.Contains(keyword)
+                || x.Setting.RenameSpelling.Contains(keyword))
+            .Where(x => allUnitIds.Contains(x.Id))
+            .Select(x => new
+            {
+                x.Id,
+                x.CreationTime
+            });
+
+        DateTime? lastTime = null;
+        Guid? lastId = null;
+
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var batchStopwatch = Stopwatch.StartNew();
+
+            var query = baseQuery;
+
+            if (lastTime.HasValue)
+            {
+                query = query.Where(x =>
+                    x.CreationTime > lastTime.Value ||
+                    (x.CreationTime == lastTime.Value &&
+                     x.Id.CompareTo(lastId!.Value) > 0));
+            }
+
+            var batch = await query
+                .OrderBy(x => x.CreationTime)
+                .ThenBy(x => x.Id)
+                .Take(batchSize)
+                .ToListAsync(cancellationToken);
+
+            batchStopwatch.Stop();
+
+            if (batch.Count == 0)
+                break;
+
+            batchIndex++;
+            totalCount += batch.Count;
+
+            foreach (var item in batch)
+                yield return item.Id;
+
+            var last = batch[^1];
+            lastTime = last.CreationTime;
+            lastId = last.Id;
+
+            Logger.LogDebug(
+                "[{method}] Batch#{Batch} Count={Count}, batchSize={batchSize}, Elapsed={Elapsed}ms",
+                method,
+                batchIndex,
+                batch.Count,
+                batchSize,
+                batchStopwatch.ElapsedMilliseconds);
+        }
+
+        Logger.LogInformation(
+            "[{method}] Completed | Total={Total}, Batches={Batches}, batchSize={batchSize}, Elapsed={Elapsed}ms",
+            method,
+            totalCount,
+            batchIndex,
+            batchSize,
+            totalStopwatch.ElapsedMilliseconds);
+    }
+
     /// <summary>
     /// 查询/过滤
     /// </summary>
@@ -332,17 +432,32 @@ public class SessionUnitCacheAppService(
 
         var searchResult = await SearchCache.GetOrAddAsync(new SessionUnitSearchCacheKey(ownerId, keyword), async () =>
         {
-            var querySearch = (await SessionUnitRepository.GetQueryableAsync())
-            .Where(x => x.OwnerId == ownerId)
-            .Where(SessionUnit.GetActivePredicate(Clock.Now))
-            .Where(x => searchChatObjectIdList.Contains(x.DestinationId.Value)
-                || x.Setting.Rename.Contains(keyword)
-                || x.Setting.RenameSpellingAbbreviation.Contains(keyword)
-                || x.Setting.RenameSpelling.Contains(keyword))
-            .Where(x => allUnitIds.Contains(x.Id))
-            ;
-            var searchUnitIds = querySearch.Select(x => x.Id).ToList();
-            return new SessionUnitSearchCacheItem(searchUnitIds);
+
+            var ids = new List<Guid>();
+
+            await foreach (var id in BatchSearchAsync(
+                ownerId,
+                keyword,
+                searchChatObjectIdList,
+                allUnitIds,
+                batchSize: 200))
+            {
+                ids.Add(id);
+            }
+
+            return new SessionUnitSearchCacheItem(ids);
+
+            //var querySearch = (await SessionUnitRepository.GetQueryableAsync())
+            //.Where(x => x.OwnerId == ownerId)
+            //.Where(SessionUnit.GetActivePredicate(Clock.Now))
+            //.Where(x => searchChatObjectIdList.Contains(x.DestinationId.Value)
+            //    || x.Setting.Rename.Contains(keyword)
+            //    || x.Setting.RenameSpellingAbbreviation.Contains(keyword)
+            //    || x.Setting.RenameSpelling.Contains(keyword))
+            //.Where(x => allUnitIds.Contains(x.Id))
+            //;
+            //var searchUnitIds = querySearch.Select(x => x.Id).ToList();
+            //return new SessionUnitSearchCacheItem(searchUnitIds);
         });
 
         var searchUnitIds = searchResult.UnitIds;
@@ -459,7 +574,7 @@ public class SessionUnitCacheAppService(
             await LoadAllByOwnerIfNotExistsAsync(ownerId);
 
             var stat = await GetStatisticAsync(ownerId);
-           
+
             result.Add(new BadgeDto()
             {
                 AppUserId = userId,

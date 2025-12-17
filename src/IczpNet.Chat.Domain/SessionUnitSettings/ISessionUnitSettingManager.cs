@@ -1,12 +1,30 @@
 ﻿using IczpNet.Chat.SessionUnits;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.SessionUnitSettings;
 
 public interface ISessionUnitSettingManager
 {
+    /// <summary>
+    /// 分片搜索 Rename 
+    /// </summary>
+    /// <param name="keyword"></param>
+    /// <param name="batchSize"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>List&lt;Guid&gt; SessionUnitId</returns>
+    IAsyncEnumerable<Guid> BatchSearchAsync(
+        string keyword,
+        int batchSize = 1000,
+        CancellationToken cancellationToken = default);
+    /// <summary>
+    /// 搜索 Rename 
+    /// </summary>
+    /// <param name="keyword"></param>
+    /// <returns>List&lt;Guid&gt; SessionUnitId</returns>
+    Task<List<Guid>> SearchRenameIdsAsync(string keyword);
     /// <summary>
     /// 设置成员名称
     /// </summary>

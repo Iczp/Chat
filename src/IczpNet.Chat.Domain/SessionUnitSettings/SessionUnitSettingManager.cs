@@ -1,14 +1,19 @@
 ﻿
+using Castle.Core.Logging;
 using IczpNet.AbpCommons;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.TextTemplates;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Services;
@@ -35,12 +40,98 @@ public class SessionUnitSettingManager(
         return SessionUnitSettingRepository.GetAsync(x => x.SessionUnitId == sessionUnitId);
 
     }
+
+    public async IAsyncEnumerable<Guid> BatchSearchAsync(
+        string keyword,
+        int batchSize = 1000,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var totalStopwatch = Stopwatch.StartNew();
+        var totalCount = 0;
+        var batchIndex = 0;
+
+        Logger.LogInformation(
+            "[BatchSearch] Start | Keyword={Keyword}, BatchSize={BatchSize}",
+            keyword, batchSize);
+
+        var baseQuery = (await SessionUnitSettingRepository.GetQueryableAsync())
+            .Where(x =>
+                x.Rename.Contains(keyword) ||
+                x.RenameSpellingAbbreviation.Contains(keyword) ||
+                x.RenameSpelling.Contains(keyword))
+            .Select(x => new
+            {
+                x.SessionUnitId,
+                x.CreationTime
+            });
+
+        DateTime? lastCreationTime = null;
+        Guid? lastSessionUnitId = null;
+
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var batchStopwatch = Stopwatch.StartNew();
+
+            var query = baseQuery;
+
+            if (lastCreationTime.HasValue)
+            {
+                query = query.Where(x =>
+                    x.CreationTime > lastCreationTime.Value ||
+                    (x.CreationTime == lastCreationTime.Value &&
+                     x.SessionUnitId.CompareTo(lastSessionUnitId!.Value) > 0));
+            }
+
+            var batch = await query
+                .OrderBy(x => x.CreationTime)
+                .ThenBy(x => x.SessionUnitId)
+                .Take(batchSize)
+                .ToListAsync(cancellationToken);
+
+            batchStopwatch.Stop();
+
+            if (batch.Count == 0)
+            {
+                Logger.LogInformation(
+                    "[BatchSearch] Completed | Total={Total}, Batches={Batches}, Elapsed={Elapsed}ms",
+                    totalCount,
+                    batchIndex,
+                    totalStopwatch.ElapsedMilliseconds);
+
+                yield break;
+            }
+
+            batchIndex++;
+            totalCount += batch.Count;
+
+            var last = batch[^1];
+            lastCreationTime = last.CreationTime;
+            lastSessionUnitId = last.SessionUnitId;
+
+            Logger.LogDebug(
+                "[BatchSearch] Batch#{BatchIndex} | Count={Count}, LastTime={LastTime}, Elapsed={Elapsed}ms",
+                batchIndex,
+                batch.Count,
+                lastCreationTime,
+                batchStopwatch.ElapsedMilliseconds);
+
+            foreach (var item in batch)
+            {
+                yield return item.SessionUnitId;
+            }
+
+        }
+    }
+
+
+
     protected async Task<SessionUnitSetting> SetEntityAsync(Guid sessionUnitId, Action<SessionUnitSetting> action, bool autoSave = true)
     {
         var sessionUnitSetting = await GetAsync(sessionUnitId);
 
         action?.Invoke(sessionUnitSetting);
-        
+
         var sessionUnitSettingCacheItem = ObjectMapper.Map<SessionUnitSetting, SessionUnitSettingCacheItem>(sessionUnitSetting);
 
         // Update Cache
@@ -49,6 +140,16 @@ public class SessionUnitSettingManager(
         await SessionUnitSettingCache.SetAsync(sessionUnitId, sessionUnitSettingCacheItem);
 
         return entity;
+    }
+
+    public async Task<List<Guid>> SearchRenameIdsAsync(string keyword)
+    {
+        var searchIds = new List<Guid>();
+        await foreach (var id in BatchSearchAsync(keyword, 1000))
+        {
+            searchIds.Add(id);
+        }
+        return searchIds;
     }
 
     /// <inheritdoc />
