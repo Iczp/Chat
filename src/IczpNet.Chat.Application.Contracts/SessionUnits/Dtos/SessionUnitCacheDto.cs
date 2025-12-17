@@ -1,6 +1,7 @@
 ﻿using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionUnitSettings;
 using System.Text.Json.Serialization;
 
 namespace IczpNet.Chat.SessionUnits.Dtos;
@@ -15,4 +16,6 @@ public class SessionUnitCacheDto : SessionUnitCacheItem
     public virtual ChatObjectInfo Destination { get; set; }
 
     public virtual MessageOwnerDto LastMessage { get; set; }
+
+    public virtual SessionUnitSettingCacheItem Setting { get; set; }
 }

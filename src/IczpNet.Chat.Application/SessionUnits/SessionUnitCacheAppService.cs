@@ -201,7 +201,7 @@ public class SessionUnitCacheAppService(
 
     private async Task FillSettingAsync(IEnumerable<SessionUnitCacheDto> items)
     {
-        return;
+        //return;
         // fill Setting
         var nullSettingsItems = items
             //.Where(x => x.Setting == null)
@@ -216,7 +216,7 @@ public class SessionUnitCacheAppService(
 
         foreach (var item in nullSettingsItems)
         {
-            //item.Setting = settingMap.GetValueOrDefault(item.Id);
+            item.Setting = settingMap.GetValueOrDefault(item.Id);
         }
     }
 

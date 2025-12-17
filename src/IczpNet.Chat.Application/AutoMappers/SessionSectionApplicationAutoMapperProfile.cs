@@ -70,7 +70,7 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
             //.Ignore(x => x.Destination)
             ;
         CreateMap<SessionUnitCacheDto, SessionUnitCacheDto>()
-            //.ForMember(x => x.Setting, opt => opt.MapFrom(y => y.Setting))
+            .ForMember(x => x.Setting, opt => opt.MapFrom(y => y.Setting))
             .ForMember(x => x.Destination, opt => opt.MapFrom(y => y.Destination))
             .PreserveReferences()
             .MaxDepth(3);

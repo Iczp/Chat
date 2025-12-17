@@ -151,7 +151,11 @@ end
     public async Task<IEnumerable<SessionUnitCacheItem>> SetListBySessionAsync(Guid sessionId, IEnumerable<SessionUnitCacheItem> units)
     {
         ArgumentNullException.ThrowIfNull(units);
+
+        var stopwatch = Stopwatch.StartNew();
+
         var unitList = units.ToList();
+
         if (unitList.Count == 0) return [];
 
         var sessionSetKey = SessionSetKey(sessionId);
@@ -159,8 +163,11 @@ end
 
         var unitKeys = unitList.Select(x => UnitKey(x.Id)).ToList();
         var unitKeysExists = await BatchKeyExistsAsync(unitKeys);
+        var existsCount = unitKeysExists.Count(x => x.Value);
 
-        Logger.LogInformation($"sessionId={sessionId},unitKeysExists:{unitKeysExists.Count(x => x.Value)}");
+        Logger.LogInformation("sessionId={sessionId},unitKeysExists:{ExistsCount}", 
+            sessionId,
+            existsCount);
 
         var batch = Database.CreateBatch();
 
@@ -195,6 +202,14 @@ end
         _ = batch.KeyExpireAsync(sessionSetKey, _cacheExpire);
 
         batch.Execute();
+
+        Logger.LogInformation(
+           "[{Method}] sessionId={sessionId}, count:{Count},Exists:{ExistsCount} Elapsed:{Elapsed}ms",
+           nameof(SetListBySessionAsync),
+           sessionId,
+           unitList.Count,
+           existsCount,
+           stopwatch.ElapsedMilliseconds);
 
         return units;
     }
