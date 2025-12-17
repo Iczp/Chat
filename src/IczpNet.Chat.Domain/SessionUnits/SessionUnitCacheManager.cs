@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reactive.Concurrency;
 using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Services;
@@ -75,16 +74,16 @@ end
     }
 
     #region Field names
-    private static string F_Id => nameof(SessionUnitCacheItem.Id);
-    private static string F_SessionId => nameof(SessionUnitCacheItem.SessionId);
-    private static string F_OwnerId => nameof(SessionUnitCacheItem.OwnerId);
-    private static string F_OwnerObjectType => nameof(SessionUnitCacheItem.OwnerObjectType);
-    private static string F_DestinationId => nameof(SessionUnitCacheItem.DestinationId);
-    private static string F_DestinationObjectType => nameof(SessionUnitCacheItem.DestinationObjectType);
-    private static string F_IsStatic => nameof(SessionUnitCacheItem.IsStatic);
-    private static string F_IsPublic => nameof(SessionUnitCacheItem.IsPublic);
-    private static string F_IsVisible => nameof(SessionUnitCacheItem.IsVisible);
-    private static string F_IsEnabled => nameof(SessionUnitCacheItem.IsEnabled);
+    //private static string F_Id => nameof(SessionUnitCacheItem.Id);
+    //private static string F_SessionId => nameof(SessionUnitCacheItem.SessionId);
+    //private static string F_OwnerId => nameof(SessionUnitCacheItem.OwnerId);
+    //private static string F_OwnerObjectType => nameof(SessionUnitCacheItem.OwnerObjectType);
+    //private static string F_DestinationId => nameof(SessionUnitCacheItem.DestinationId);
+    //private static string F_DestinationObjectType => nameof(SessionUnitCacheItem.DestinationObjectType);
+    //private static string F_IsStatic => nameof(SessionUnitCacheItem.IsStatic);
+    //private static string F_IsPublic => nameof(SessionUnitCacheItem.IsPublic);
+    //private static string F_IsVisible => nameof(SessionUnitCacheItem.IsVisible);
+    //private static string F_IsEnabled => nameof(SessionUnitCacheItem.IsEnabled);
     //private static string F_ReadedMessageId => nameof(SessionUnitCacheItem.ReadedMessageId);
     private static string F_LastMessageId => nameof(SessionUnitCacheItem.LastMessageId);
     private static string F_PublicBadge => nameof(SessionUnitCacheItem.PublicBadge);
@@ -96,15 +95,15 @@ end
     private static string F_Sorting => nameof(SessionUnitCacheItem.Sorting);
 
 
-    private static string F_Setting_ReadedMessageId => $"{nameof(SessionUnitCacheItem.Setting)}.{nameof(SessionUnitCacheItem.Setting.ReadedMessageId)}";
+    //private static string F_Setting_ReadedMessageId => $"{nameof(SessionUnitCacheItem.Setting)}.{nameof(SessionUnitCacheItem.Setting.ReadedMessageId)}";
 
     // total
-    private static string F_Total_Badge => "TotalBadge";
-    private static string F_Total_Public => "Public";
-    private static string F_Total_Private => "Private";
-    private static string F_Total_Following => "Following";
-    private static string F_Total_RemindMe => "RemindMe";
-    private static string F_Total_RemindAll => "RemindAll";
+    //private static string F_Total_Badge => "TotalBadge";
+    private static string F_Total_Public => nameof(SessionUnitStatistic.PublicBadge);
+    private static string F_Total_Private => nameof(SessionUnitStatistic.PrivateBadge);
+    private static string F_Total_Following => nameof(SessionUnitStatistic.Following);
+    private static string F_Total_RemindMe => nameof(SessionUnitStatistic.RemindMe);
+    private static string F_Total_RemindAll => nameof(SessionUnitStatistic.RemindAll);
 
     #endregion
 
@@ -114,14 +113,61 @@ end
     {
         return RedisMapper.ToHashEntries(unit);
     }
+
+    protected virtual async Task<Dictionary<string, bool>> BatchKeyExistsAsync(IEnumerable<string> keys)
+    {
+        var stopwatch = Stopwatch.StartNew();
+
+        var keyList = keys as IList<string> ?? keys.ToList();
+        if (keyList.Count == 0)
+            return [];
+
+        var batch = Database.CreateBatch();
+        var tasks = new Task<bool>[keyList.Count];
+
+        for (int i = 0; i < keyList.Count; i++)
+        {
+            tasks[i] = batch.KeyExistsAsync(keyList[i]);
+        }
+
+        batch.Execute();
+
+        var results = await Task.WhenAll(tasks);
+
+        var dict = new Dictionary<string, bool>(keyList.Count);
+        for (int i = 0; i < keyList.Count; i++)
+        {
+            dict[keyList[i]] = results[i];
+        }
+
+        Logger.LogInformation(
+            "[{Method}] keys:{Count}, Elapsed:{Elapsed}ms",
+            nameof(BatchKeyExistsAsync),
+            keyList.Count,
+            stopwatch.ElapsedMilliseconds);
+
+        return dict;
+    }
     public async Task<IEnumerable<SessionUnitCacheItem>> SetListBySessionAsync(Guid sessionId, IEnumerable<SessionUnitCacheItem> units)
     {
         ArgumentNullException.ThrowIfNull(units);
+
+        var stopwatch = Stopwatch.StartNew();
+
         var unitList = units.ToList();
+
         if (unitList.Count == 0) return [];
 
         var sessionSetKey = SessionSetKey(sessionId);
         //var lastMsgKey = LastMessageSetKey(sessionId);
+
+        var unitKeys = unitList.Select(x => UnitKey(x.Id)).ToList();
+        var unitKeysExists = await BatchKeyExistsAsync(unitKeys);
+        var existsCount = unitKeysExists.Count(x => x.Value);
+
+        Logger.LogInformation("sessionId={sessionId},unitKeysExists:{ExistsCount}", 
+            sessionId,
+            existsCount);
 
         var batch = Database.CreateBatch();
 
@@ -135,15 +181,14 @@ end
             _ = batch.HashSetAsync(sessionSetKey, unit.OwnerId, unitId);
 
             var unitKey = UnitKey(unit.Id);
+            var isExists = unitKeysExists.TryGetValue(unitKey, out var exists) && exists;
 
-            var entries = MapToHashEntries(unit);
-
-            _ = batch.HashSetAsync(unitKey, entries);
-
-            //if (unit.LastMessageId.HasValue)
-            //{
-            //    zsetAddTasks.Add(batch.SortedSetAddAsync(lastMsgKey, unitId, unit.LastMessageId.Value));
-            //}
+            if (!isExists)
+            {
+                var entries = MapToHashEntries(unit);
+                _ = batch.HashSetAsync(unitKey, entries);
+                _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
+            }
 
             // set top
             if (unit.Sorting > 0)
@@ -152,13 +197,19 @@ end
                 _ = batch.SortedSetAddAsync(toppingKey, unitId, unit.Sorting);
                 _ = batch.KeyExpireAsync(toppingKey, _cacheExpire);
             }
-
-            _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
         }
+
         _ = batch.KeyExpireAsync(sessionSetKey, _cacheExpire);
-        //_ = batch.KeyExpireAsync(lastMsgKey, _cacheExpire);
 
         batch.Execute();
+
+        Logger.LogInformation(
+           "[{Method}] sessionId={sessionId}, count:{Count},Exists:{ExistsCount} Elapsed:{Elapsed}ms",
+           nameof(SetListBySessionAsync),
+           sessionId,
+           unitList.Count,
+           existsCount,
+           stopwatch.ElapsedMilliseconds);
 
         return units;
     }
@@ -384,7 +435,7 @@ end
     {
         ArgumentNullException.ThrowIfNull(fetchTask);
         var stopwatch = Stopwatch.StartNew();
-        var index=0;
+        var index = 0;
         void Log(string log)
         {
             index++;
@@ -742,22 +793,23 @@ end
         Logger.LogInformation("BatchIncrementBadgeAndSetLastMessageAsync executed.");
     }
 
-    public virtual async Task<bool> SetTotalBadgeAsync(long ownerId, long badge)
+    private static SessionUnitStatistic MapToStatistic(HashEntry[] entities)
     {
-        var ownerBadgeKey = OwnerBadgeSetKey(ownerId);
-        var result = await Database.HashSetAsync(ownerBadgeKey, F_Total_Badge, badge);
-        return result;
+        return RedisMapper.ToObject<SessionUnitStatistic>(entities);
+
     }
 
-    public virtual async Task<IDictionary<string, long>> GetTotalBadgeAsync(long ownerId)
+    public virtual async Task<SessionUnitStatistic> GetStatisticAsync(long ownerId)
     {
         var ownerBadgeKey = OwnerBadgeSetKey(ownerId);
 
         var entities = await Database.HashGetAllAsync(ownerBadgeKey);
 
-        var dict = entities.ToDictionary(x => x.Name.ToString(), x => (long)x.Value);
+        return MapToStatistic(entities);
 
-        return dict;
+        //var dict = entities.ToDictionary(x => x.Name.ToString(), x => (long)x.Value);
+
+        //return dict;
     }
 
     public virtual async Task<bool> RemoveTotalBadgeAsync(long ownerId)
@@ -787,7 +839,7 @@ end
             unit.RemindAllCount = counter.RemindAllCount;
             unit.RemindMeCount = counter.RemindMeCount;
             unit.FollowingCount = counter.FollowingCount;
-            unit.Setting.ReadedMessageId = counter.ReadedMessageId;
+            //unit.Setting.ReadedMessageId = counter.ReadedMessageId;
 
             var entries = MapToHashEntries(unit);
 
@@ -832,7 +884,7 @@ end
         _ = writeBatch.HashSetAsync(unitKey, F_RemindAllCount, counter.RemindAllCount);
         _ = writeBatch.HashSetAsync(unitKey, F_RemindMeCount, counter.RemindMeCount);
         _ = writeBatch.HashSetAsync(unitKey, F_FollowingCount, counter.FollowingCount);
-        _ = writeBatch.HashSetAsync(unitKey, F_Setting_ReadedMessageId, counter.ReadedMessageId);
+        //_ = writeBatch.HashSetAsync(unitKey, F_Setting_ReadedMessageId, counter.ReadedMessageId);
 
         if (_cacheExpire.HasValue)
         {

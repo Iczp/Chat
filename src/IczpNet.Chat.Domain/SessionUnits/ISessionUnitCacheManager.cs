@@ -66,9 +66,7 @@ public interface ISessionUnitCacheManager
 
     Task UpdateCountersync(SessionUnitCounterInfo counter, Func<Guid, Task<SessionUnitCacheItem>> fetchTask);
 
-    Task<bool> SetTotalBadgeAsync(long ownerId, long badge);
-
-    Task<IDictionary<string, long>> GetTotalBadgeAsync(long ownerId);
+    Task<SessionUnitStatistic> GetStatisticAsync(long ownerId);
 
     Task<bool> RemoveTotalBadgeAsync(long ownerId);
 

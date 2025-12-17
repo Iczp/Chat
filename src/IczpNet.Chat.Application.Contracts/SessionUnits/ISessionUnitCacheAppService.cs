@@ -20,9 +20,9 @@ public interface ISessionUnitCacheAppService
 
     Task<SessionUnitCacheDto> GetAsync(Guid id);
 
+    Task<SessionUnitStatistic> GetStatisticAsync(long ownerId);
 
+    Task<List<BadgeDto>> GetStatisticByUserIdAsync([Required] Guid userId, bool? isImmersed = null);
 
-    Task<List<BadgeDto>> GetBadgeByUserIdAsync([Required] Guid userId, bool? isImmersed = null);
-
-    Task<List<BadgeDto>> GetBadgeByCurrentUserAsync(bool? isImmersed = null);
+    Task<List<BadgeDto>> GetStatisticByCurrentUserAsync(bool? isImmersed = null);
 }
