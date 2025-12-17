@@ -32,6 +32,12 @@ namespace IczpNet.Chat.SessionUnitSettings;
 [Index(nameof(SessionUnitId), nameof(HistoryLastTime))]
 [Index(nameof(SessionUnitId), nameof(ClearTime))]
 
+// 分片加载索引
+[Index(nameof(CreationTime), nameof(SessionUnitId))]
+[Index(nameof(Rename))]
+[Index(nameof(RenameSpelling))]
+[Index(nameof(RenameSpellingAbbreviation))]
+
 [Comment("会话设置")]
 public class SessionUnitSetting : BaseEntity, IHasCreationTime, IHasModificationTime, IIsStatic, IIsPublic//, ISoftDelete
 {
