@@ -95,7 +95,7 @@ public partial class Message : BaseEntity<long>, ISessionId, IHasEntityVersion
     /// <summary>
     /// 
     /// </summary>
-    public virtual string SenderName => SenderSessionUnit?.DisplayName ?? SenderSessionUnit?.Owner?.Name;
+    public virtual string SenderName => SenderSessionUnit?.Setting?.MemberName ?? SenderSessionUnit?.Owner?.Name;
 
     //public virtual int ReadedCount { get; set; }
 

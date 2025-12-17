@@ -77,5 +77,5 @@ public class SessionUnitCacheItem : ISessionUnit
 
     public virtual DateTime CreationTime { get; set; }
 
-    public virtual SessionUnitSettingCacheItem Setting { get; set; }
+    //public virtual SessionUnitSettingCacheItem Setting { get; set; }
 }

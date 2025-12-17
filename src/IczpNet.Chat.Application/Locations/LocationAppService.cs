@@ -172,7 +172,7 @@ public class LocationAppService(
             items.Add(new UserLocationDto()
             {
                 SessionUnitId = item.SessionUnitId,
-                DisplayName = su.DisplayName,
+                DisplayName = su.Setting?.MemberName,
                 UserLocation = userLocation,
             });
         }
