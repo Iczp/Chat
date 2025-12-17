@@ -113,6 +113,41 @@ end
     {
         return RedisMapper.ToHashEntries(unit);
     }
+
+    protected virtual async Task<Dictionary<string, bool>> BatchKeyExistsAsync(IEnumerable<string> keys)
+    {
+        var stopwatch = Stopwatch.StartNew();
+
+        var keyList = keys as IList<string> ?? keys.ToList();
+        if (keyList.Count == 0)
+            return [];
+
+        var batch = Database.CreateBatch();
+        var tasks = new Task<bool>[keyList.Count];
+
+        for (int i = 0; i < keyList.Count; i++)
+        {
+            tasks[i] = batch.KeyExistsAsync(keyList[i]);
+        }
+
+        batch.Execute();
+
+        var results = await Task.WhenAll(tasks);
+
+        var dict = new Dictionary<string, bool>(keyList.Count);
+        for (int i = 0; i < keyList.Count; i++)
+        {
+            dict[keyList[i]] = results[i];
+        }
+
+        Logger.LogInformation(
+            "[{Method}] keys:{Count}, Elapsed:{Elapsed}ms",
+            nameof(BatchKeyExistsAsync),
+            keyList.Count,
+            stopwatch.ElapsedMilliseconds);
+
+        return dict;
+    }
     public async Task<IEnumerable<SessionUnitCacheItem>> SetListBySessionAsync(Guid sessionId, IEnumerable<SessionUnitCacheItem> units)
     {
         ArgumentNullException.ThrowIfNull(units);
@@ -121,6 +156,11 @@ end
 
         var sessionSetKey = SessionSetKey(sessionId);
         //var lastMsgKey = LastMessageSetKey(sessionId);
+
+        var unitKeys = unitList.Select(x => UnitKey(x.Id)).ToList();
+        var unitKeysExists = await BatchKeyExistsAsync(unitKeys);
+
+        Logger.LogInformation($"sessionId={sessionId},unitKeysExists:{unitKeysExists.Count(x => x.Value)}");
 
         var batch = Database.CreateBatch();
 
@@ -134,15 +174,14 @@ end
             _ = batch.HashSetAsync(sessionSetKey, unit.OwnerId, unitId);
 
             var unitKey = UnitKey(unit.Id);
+            var isExists = unitKeysExists.TryGetValue(unitKey, out var exists) && exists;
 
-            var entries = MapToHashEntries(unit);
-
-            _ = batch.HashSetAsync(unitKey, entries);
-
-            //if (unit.LastMessageId.HasValue)
-            //{
-            //    zsetAddTasks.Add(batch.SortedSetAddAsync(lastMsgKey, unitId, unit.LastMessageId.Value));
-            //}
+            if (!isExists)
+            {
+                var entries = MapToHashEntries(unit);
+                _ = batch.HashSetAsync(unitKey, entries);
+                _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
+            }
 
             // set top
             if (unit.Sorting > 0)
@@ -151,11 +190,9 @@ end
                 _ = batch.SortedSetAddAsync(toppingKey, unitId, unit.Sorting);
                 _ = batch.KeyExpireAsync(toppingKey, _cacheExpire);
             }
-
-            _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
         }
+
         _ = batch.KeyExpireAsync(sessionSetKey, _cacheExpire);
-        //_ = batch.KeyExpireAsync(lastMsgKey, _cacheExpire);
 
         batch.Execute();
 

@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reactive.Concurrency;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Caching;
@@ -33,7 +34,7 @@ public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, 
 
     public ICurrentHosted CurrentHosted => LazyServiceProvider.LazyGetRequiredService<ICurrentHosted>();
 
-    protected IDatabase Db => ConnectionMultiplexer.GetDatabase();
+    protected IDatabase Database => ConnectionMultiplexer.GetDatabase();
 
     protected virtual TimeSpan? CacheExpire => TimeSpan.FromSeconds(ConnectionOptions.Value.ConnectionCacheExpirationSeconds);
 
@@ -128,7 +129,7 @@ return 1";
         // Schedule SetMembersAsync for all keys
         Logger.LogInformation($"[GetOrSetSessionsAsync] chatObjectIdList:{chatObjectIdList.JoinAsString(",")}");
 
-        var batchForReads = Db.CreateBatch();
+        var batchForReads = Database.CreateBatch();
         var setTasks = new Dictionary<long, Task<RedisValue[]>>(chatObjectIdList.Count);
         foreach (var id in chatObjectIdList)
         {
@@ -167,8 +168,8 @@ return 1";
         var sessionDict = await SessionUnitManager.GetSessionsByChatObjectAsync(missingOwnerIds);
 
         // Write missing session sets back to Redis in a new batch (non-blocking)
-        Logger.LogInformation($"[GetOrSetSessionsAsync] batchForWrites Db.CreateBatch()");
-        var batchForWrites = Db.CreateBatch();
+        Logger.LogInformation($"[GetOrSetSessionsAsync] batchForWrites Database.CreateBatch()");
+        var batchForWrites = Database.CreateBatch();
         foreach (var ownerId in missingOwnerIds)
         {
             var sessions = sessionDict.GetValueOrDefault(ownerId);
@@ -216,8 +217,8 @@ return 1";
 
         // Now create a write batch to set all required keys
 
-        Logger.LogInformation($"[CreateAsync] writeBatch:Db.CreateBatch()");
-        var writeBatch = Db.CreateBatch();
+        Logger.LogInformation($"[CreateAsync] writeBatch:Database.CreateBatch()");
+        var writeBatch = Database.CreateBatch();
 
         // Host: use sorted set for timestamped connections
         var hostConnKey = HostConnKey(connectionPool.Host);
@@ -290,7 +291,7 @@ return 1";
         Logger.LogInformation($"[RefreshExpireAsync] connectionId: {connectionId}");
 
         var connKey = ConnKey(connectionId);
-        var readBatch = Db.CreateBatch();
+        var readBatch = Database.CreateBatch();
 
         // Schedule reading ChatObjectIdList and Host
         var chatObjectIdListTask = readBatch.HashGetAsync(connKey, nameof(ConnectionPoolCacheItem.ChatObjectIdList));
@@ -312,7 +313,7 @@ return 1";
 
         var sessionChatObjects = BuildSessionChatObjects(chatObjectSessions);
 
-        var writeBatch = Db.CreateBatch();
+        var writeBatch = Database.CreateBatch();
 
         // Refresh expire on owner session sets, owner conn hashes, session conn hashes
         foreach (var ownerId in chatObjectIdList)
@@ -359,7 +360,7 @@ return 1";
     {
         return await MeasureAsync(nameof(DisconnectedAsync), async () =>
         {
-            var batch = Db.CreateBatch();
+            var batch = Database.CreateBatch();
             await DeleteConnctionAsync(batch, connectionId, token);
             batch.Execute();
             return true;
@@ -371,7 +372,7 @@ return 1";
         var connKey = ConnKey(connectionId);
 
         // Read ChatObjectIdList and Host in a read batch
-        var readBatch = Db.CreateBatch();
+        var readBatch = Database.CreateBatch();
         var chatObjectIdListTask = readBatch.HashGetAsync(connKey, nameof(ConnectionPoolCacheItem.ChatObjectIdList));
         var hostTask = readBatch.HashGetAsync(connKey, nameof(ConnectionPoolCacheItem.Host));
         var userTask = readBatch.HashGetAsync(connKey, nameof(ConnectionPoolCacheItem.UserId));
@@ -432,14 +433,14 @@ return 1";
         var hostConnKey = HostConnKey(hostHame.ToString());
 
         // get connection ids from sorted set (members only)
-        var members = await Db.SortedSetRangeByRankAsync(hostConnKey, 0, -1, Order.Ascending);
+        var members = await Database.SortedSetRangeByRankAsync(hostConnKey, 0, -1, Order.Ascending);
 
         if (members == null || members.Length == 0)
         {
             return;
         }
 
-        var batch = Db.CreateBatch();
+        var batch = Database.CreateBatch();
 
         foreach (var member in members)
         {
@@ -463,7 +464,7 @@ return 1";
 
             await DeleteByHostNameAsync(CurrentHosted.Name);
 
-            var batch = Db.CreateBatch();
+            var batch = Database.CreateBatch();
             _ = batch.SortedSetAddAsync(AllHostKey(), CurrentHosted.Name, Clock.Now.Ticks);
             _ = batch.KeyExpireAsync(AllHostKey(), TimeSpan.FromDays(7));
             batch.Execute();
@@ -480,7 +481,7 @@ return 1";
 
             await DeleteByHostNameAsync(CurrentHosted.Name);
 
-            await Db.SortedSetRemoveAsync(AllHostKey(), CurrentHosted.Name);
+            await Database.SortedSetRemoveAsync(AllHostKey(), CurrentHosted.Name);
 
             return true;
         });
@@ -490,14 +491,14 @@ return 1";
     public async Task<bool> IsOnlineAsync(Guid userId, CancellationToken token = default)
     {
         var key = UserConnKey(userId);
-        var length = await Db.HashLengthAsync(key);
+        var length = await Database.HashLengthAsync(key);
         return length > 0;
     }
 
     public async Task<bool> IsOnlineAsync(long chatObjectId, CancellationToken token = default)
     {
         var key = OwnerDeviceKey(chatObjectId);
-        var length = await Db.HashLengthAsync(key);
+        var length = await Database.HashLengthAsync(key);
         return length > 0;
     }
 
@@ -505,7 +506,7 @@ return 1";
     {
         var key = OwnerDeviceKey(chatObjectId);
 
-        var values = await Db.HashValuesAsync(key);
+        var values = await Database.HashValuesAsync(key);
         if (values == null || values.Length == 0)
         {
             return [];
@@ -539,7 +540,7 @@ return 1";
         }
 
         // 批量读取
-        var batch = Db.CreateBatch();
+        var batch = Database.CreateBatch();
 
         var taskMap = new Dictionary<long, Task<HashEntry[]>>(chatObjectIdList.Count);
 
@@ -586,7 +587,7 @@ return 1";
     public async Task<List<string>> GetDeviceTypesAsync(Guid userId, CancellationToken token = default)
     {
         var userKey = UserConnKey(userId);
-        var hash = await Db.HashGetAllAsync(userKey);
+        var hash = await Database.HashGetAllAsync(userKey);
 
         if (hash == null || hash.Length == 0)
         {
@@ -607,7 +608,7 @@ return 1";
             foreach (var ownerId in ownerIdsStr.Split(',').Select(long.Parse))
             {
                 var ownerKey = OwnerDeviceKey(ownerId);
-                var ownerValues = await Db.HashValuesAsync(ownerKey);
+                var ownerValues = await Database.HashValuesAsync(ownerKey);
 
                 foreach (var v in ownerValues)
                 {
@@ -623,14 +624,14 @@ return 1";
     public async Task<int> GetCountByUserAsync(Guid userId, CancellationToken token = default)
     {
         var userConnKey = UserConnKey(userId);
-        var length = await Db.HashLengthAsync(userConnKey);
+        var length = await Database.HashLengthAsync(userConnKey);
         return (int)length;
     }
 
     public async Task<int> GetCountByChatObjectAsync(long chatObjectId, CancellationToken token = default)
     {
         var ownerDeviceKey = OwnerDeviceKey(chatObjectId);
-        var length = await Db.HashLengthAsync(ownerDeviceKey);
+        var length = await Database.HashLengthAsync(ownerDeviceKey);
         return (int)length;
     }
 
@@ -639,7 +640,7 @@ return 1";
         var sessionConnKey = SessionConnKey(sessionId);
 
         // Hash entry: field = connId, value = "1,2,3"
-        var entries = await Db.HashGetAllAsync(sessionConnKey);
+        var entries = await Database.HashGetAllAsync(sessionConnKey);
 
         var result = new Dictionary<string, List<long>>(entries?.Length ?? 0);
 
@@ -659,28 +660,39 @@ return 1";
         return result;
     }
 
-    public async Task<Dictionary<string, bool>> BatchKeyExistsAsync(IEnumerable<string> keys)
+    protected virtual async Task<Dictionary<string, bool>> BatchKeyExistsAsync(IEnumerable<string> keys)
     {
-        var batch = Db.CreateBatch();
-        var tasks = new Dictionary<string, Task<bool>>();
+        var stopwatch = Stopwatch.StartNew();
 
-        // 1. 循环添加 KeyExistsAsync 到 batch
-        foreach (var key in keys)
+        var keyList = keys as IList<string> ?? keys.ToList();
+        if (keyList.Count == 0)
+            return [];
+
+        var batch = Database.CreateBatch();
+        var tasks = new Task<bool>[keyList.Count];
+
+        for (int i = 0; i < keyList.Count; i++)
         {
-            tasks[key] = batch.KeyExistsAsync(key);
+            tasks[i] = batch.KeyExistsAsync(keyList[i]);
         }
 
-        // 2. 批量执行
         batch.Execute();
 
-        // 3. 等待所有 Task 完成，并返回字典
-        var result = new Dictionary<string, bool>();
-        foreach (var kv in tasks)
+        var results = await Task.WhenAll(tasks);
+
+        var dict = new Dictionary<string, bool>(keyList.Count);
+        for (int i = 0; i < keyList.Count; i++)
         {
-            result[kv.Key] = await kv.Value;  // batch 执行完成后这里才返回真正结果
+            dict[keyList[i]] = results[i];
         }
 
-        return result;
+        Logger.LogInformation(
+            "[{Method}] keys:{Count}, Elapsed:{Elapsed}ms",
+            nameof(BatchKeyExistsAsync),
+            keyList.Count,
+            stopwatch.ElapsedMilliseconds);
+
+        return dict;
     }
 
     public async Task AddSessionAsync(List<(Guid SessionId, long OwnerId)> ownerSessions)
@@ -715,7 +727,7 @@ return 1";
         var ownerSessionKeys = ownerIds.Select(OwnerSessionKey);
         var ownerSessionKeyExists = await BatchKeyExistsAsync(ownerSessionKeys);
 
-        var batch = Db.CreateBatch();
+        var batch = Database.CreateBatch();
 
         foreach (var (sessionId, units) in sessionDict)
         {
@@ -747,7 +759,7 @@ return 1";
             foreach (var unit in units)
             {
                 var ownerSessionKey = OwnerSessionKey(unit.OwnerId);
-                //var isExists = await Db.KeyExistsAsync(ownerSessionKey);
+                //var isExists = await Database.KeyExistsAsync(ownerSessionKey);
                 // 缓存Key存在才执行
                 if (ownerSessionKeyExists.TryGetValue(ownerSessionKey, out var isExists) && isExists)
                 {
@@ -794,7 +806,7 @@ return 1";
                 g => g.Select(u => u.SessionId).Distinct().ToList()
             );
 
-        var batch = Db.CreateBatch();
+        var batch = Database.CreateBatch();
 
         // 最外层：deviceDict（最小字典）
         foreach (var (ownerId, devices) in deviceDict)
