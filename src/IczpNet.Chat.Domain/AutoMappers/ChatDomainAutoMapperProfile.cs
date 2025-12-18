@@ -41,6 +41,11 @@ public class ChatApplicationAutoMapperProfile : Profile
             .ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()))
             //.ForMember(x => x.SenderSessionUnit, o => o.MapFrom<SenderSessionUnitResolver<MessageAnyInfo>>())
             ;
+        CreateMap<Message, MessageQuoteCacheItem>()
+            .MaxDepth(3)
+            .ForMember(x => x.Content, o => o.MapFrom(x => x.GetContentDto()))
+            //.ForMember(x => x.SenderSessionUnit, o => o.MapFrom<SenderSessionUnitResolver<MessageAnyInfo>>())
+            ;
 
         CreateMap<Message, MessageInfo<IContentInfo>>()
             .MaxDepth(3)

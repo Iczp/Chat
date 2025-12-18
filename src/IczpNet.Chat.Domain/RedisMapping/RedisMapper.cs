@@ -13,17 +13,17 @@ namespace IczpNet.Chat.RedisMapping;
 /// <summary>
 /// RedisMapper
 /// - ToHashEntries: 将对象扁平化为 HashEntry[]（支持 Parent.Child、List[index]、Dictionary[key]）
-/// - ToObject<T>: 从 HashEntry[] 反序列化回对象（会创建子对象并设置属性）
+/// - ToObject&lt;T&gt; 从 HashEntry[] 反序列化回对象（会创建子对象并设置属性）
 /// - HashSetField (IDatabase / IBatch) : 直接设置单个字段（支持点路径）
 /// - HashSetFields (IDatabase / IBatch) : 批量设置多个字段
 /// 
 /// 规则：
-/// - DateTime -> ISO8601 ("o")
-/// - TimeSpan -> total milliseconds (number)
-/// - null -> RedisValue.EmptyString (读时空字符串被解释为 null 对于可空/引用类型)
+/// - DateTime -&gt; ISO8601 ("o")
+/// - TimeSpan -&gt; total milliseconds (number)
+/// - null -&gt; RedisValue.EmptyString (读时空字符串被解释为 null 对于可空/引用类型)
 /// - 数字类型写为数字（long/double/decimal）
-/// - List<T> -> Deps[0].Prop or Deps[0] for primitive list elements
-/// - Dictionary<string,T> -> Dict[key].Prop or Dict[key] for primitive values
+/// - List&lt;T&gt; -&gt; Deps[0].Prop or Deps[0] for primitive list elements
+/// - Dictionary&lt;string,T&gt; -&gt; Dict[key].Prop or Dict[key] for primitive values
 /// </summary>
 public static class RedisMapper
 {

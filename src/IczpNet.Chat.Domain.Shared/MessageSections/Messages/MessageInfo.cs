@@ -45,9 +45,19 @@ public class MessageInfo
     public virtual long? ForwardMessageId { get; set; }
 
     /// <summary>
+    /// 转发层级 0:不是转发
+    /// </summary>
+    public virtual long ForwardDepth { get; set; }
+
+    /// <summary>
     /// 
     /// </summary>
     public virtual long? QuoteMessageId { get; set; }
+
+    /// <summary>
+    /// 引用层级 0:不是引用
+    /// </summary>
+    public virtual long QuoteDepth { get; set; }
 
     /// <summary>
     /// 发送人
@@ -88,16 +98,6 @@ public class MessageInfo
     /// 是否@所有人
     /// </summary>
     public virtual bool IsRemindAll { get; set; }
-
-    /// <summary>
-    /// 是否@我
-    /// </summary>
-    public virtual bool? IsRemindMe { get; set; }
-
-    /// <summary>
-    /// 是否关注
-    /// </summary>
-    public virtual bool? IsFollowing { get; set; }
 
     /// <summary>
     /// 撤回消息时间
