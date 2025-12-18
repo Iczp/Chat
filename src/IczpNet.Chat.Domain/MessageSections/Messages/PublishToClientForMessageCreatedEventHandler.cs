@@ -5,6 +5,7 @@ using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
+using Volo.Abp.Caching;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities.Events;
 using Volo.Abp.Domain.Services;
@@ -25,9 +26,10 @@ public class PublishToClientForMessageCreatedEventHandler(
     IObjectMapper objectMapper,
     ICurrentHosted currentHosted,
     IJsonSerializer jsonSerializer,
-    IDistributedEventBus distributedEventBus) 
-    : 
-    DomainService, 
+    IDistributedCache<MessageCacheItem, MessageCacheKey> messageCache,
+    IDistributedEventBus distributedEventBus)
+    :
+    DomainService,
     //ILocalEventHandler<EntityCreatedEventData<Message>>,
     ITransientDependency
 {
@@ -38,6 +40,7 @@ public class PublishToClientForMessageCreatedEventHandler(
     public IObjectMapper ObjectMapper { get; } = objectMapper;
     public ICurrentHosted CurrentHosted { get; } = currentHosted;
     public IJsonSerializer JsonSerializer { get; } = jsonSerializer;
+    public IDistributedCache<MessageCacheItem, MessageCacheKey> MessageCache { get; } = messageCache;
     public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
 
     [UnitOfWork]
@@ -58,7 +61,9 @@ public class PublishToClientForMessageCreatedEventHandler(
         //var dbMessage = await MessageRepository.GetAsync(message.Id);
         var dbMessage = message;
 
-        var messageDto = ObjectMapper.Map<Message, MessageInfo<object>>(dbMessage);
+        var messageDto = ObjectMapper.Map<Message, MessageCacheItem>(dbMessage);
+
+
 
         //fix: 导航属性没有加载完全 改为手动转换Map
         if (dbMessage.SenderSessionUnit == null && dbMessage.SenderSessionUnitId.HasValue)
@@ -68,6 +73,8 @@ public class PublishToClientForMessageCreatedEventHandler(
         }
 
         messageDto.Content ??= message.GetContentDto();
+
+        await MessageCache.SetAsync(new MessageCacheKey(messageDto.Id), messageDto);
 
         var eventData = new SendToClientDistributedEto()
         {

@@ -109,7 +109,7 @@ namespace IczpNet.Chat.ListSets
             token.ThrowIfCancellationRequested();
             if (keys == null) return Array.Empty<KeyValuePair<TKey, IEnumerable<TListItem>>>();
 
-            // Use DistributedCache.GetManyAsync if available to batch fetch; otherwise fetch individually.
+            // Use MessageCache.GetManyAsync if available to batch fetch; otherwise fetch individually.
             try
             {
                 var keyArray = keys.ToArray();

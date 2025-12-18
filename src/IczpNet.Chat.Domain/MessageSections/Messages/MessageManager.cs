@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.EventBus.Distributed;
@@ -46,6 +47,7 @@ public partial class MessageManager(
     IRepository<MessageReminder> messageReminderRepository,
     ISessionUnitSettingRepository sessionUnitSettingRepository,
     IFollowManager followManager,
+    IDistributedCache<MessageCacheItem, MessageCacheKey> messageCache,
     ISessionGenerator sessionGenerator) : DomainService, IMessageManager
 {
     protected IObjectMapper ObjectMapper { get; } = objectMapper;
@@ -61,6 +63,7 @@ public partial class MessageManager(
     protected ISessionRepository SessionRepository { get; } = sessionRepository;
     protected ISessionUnitSettingRepository SessionUnitSettingRepository { get; } = sessionUnitSettingRepository;
     public IFollowManager FollowManager { get; } = followManager;
+    public IDistributedCache<MessageCacheItem, MessageCacheKey> MessageCache { get; } = messageCache;
     protected ISettingProvider SettingProvider { get; } = settingProvider;
     protected IJsonSerializer JsonSerializer { get; } = jsonSerializer;
     protected IRepository<MessageReminder> MessageReminderRepository { get; } = messageReminderRepository;
