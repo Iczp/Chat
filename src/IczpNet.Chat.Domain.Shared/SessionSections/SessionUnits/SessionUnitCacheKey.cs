@@ -1,10 +1,11 @@
-﻿using System;
+﻿using IczpNet.Chat.CacheKeys;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits;
 
-public class SessionUnitCacheKey
+public class SessionUnitCacheKey : CacheKey<SessionUnitCacheKey>
 {
     public string Type { get; private set; }
 
@@ -35,5 +36,15 @@ public class SessionUnitCacheKey
     public override string ToString()
     {
         return $"{Type}_{Value}";
+    }
+
+    protected override int GetKeyHashCode()
+    {
+        return HashCode.Combine(Type, Value);
+    }
+
+    protected override bool EqualsCore(SessionUnitCacheKey other)
+    {
+        return Type == other.Type && Value == other.Value;
     }
 }

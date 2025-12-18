@@ -13,11 +13,13 @@ using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
 using IczpNet.Chat.Settings;
 using IczpNet.Pusher.ShortIds;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
@@ -173,7 +175,7 @@ public partial class MessageManager(
         await Repository.InsertAsync(message, autoSave: true);
 
         //// 重新获取一下，填充导航属性
-        //message = await Repository.GetAsync(message.Id);
+        //message = await Repository.GetAsync(message.MessageId);
 
         // update Session LastMessage
         await SessionRepository.UpdateLastMessageIdAsync(sessionId, message.Id);
@@ -191,7 +193,7 @@ public partial class MessageManager(
         //await PublishDistributedEventAsync(message, message.ForwardMessageId.HasValue ? Command.Forward : Command.Created);
 
         ////以下可能导致锁表
-        //await SessionUnitManager.UpdateLastMessageIdAsync(senderSessionUnit.Id, message.Id);
+        //await SessionUnitManager.UpdateLastMessageIdAsync(senderSessionUnit.MessageId, message.MessageId);
 
         //await CurrentUnitOfWork.SaveChangesAsync();
 
@@ -204,7 +206,7 @@ public partial class MessageManager(
         //    RemindSessionUnitIdList = message.MessageReminderList.Select(x => x.SessionUnitId).ToList(),
         //    PrivateBadgeSessionUnitIdList = isPrivateMessage ? [message.ReceiverSessionUnitId.Value] : [],
         //    FollowingSessionUnitIdList = !isPrivateMessage ? await FollowManager.GetFollowerIdListAsync(message.SenderSessionUnitId.Value) : [],
-        //    LastMessageId = message.Id,
+        //    LastMessageId = message.MessageId,
         //    IsRemindAll = message.IsRemindAll,
         //    MessageCreationTime = message.CreationTime
         //};
@@ -298,8 +300,8 @@ public partial class MessageManager(
     //    {
     //        var jobId = await BackgroundJobManager.EnqueueAsync(new UpdateStatsForSessionUnitArgs()
     //        {
-    //            SenderSessionUnitId = senderSessionUnit.Id,
-    //            MessageId = message.Id,
+    //            SenderSessionUnitId = senderSessionUnit.MessageId,
+    //            MessageId = message.MessageId,
     //        });
 
     //        Logger.LogInformation($"JobId:{jobId}");
@@ -447,7 +449,7 @@ public partial class MessageManager(
 
         //var output = ObjectMapper.Map<Message, MessageInfo<object>>(message);
         var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
-        //var output = new MessageInfo<TContentInfo>() { Id = message.Id };
+        //var output = new MessageInfo<TContentInfo>() { MessageId = message.MessageId };
         output.SenderSessionUnit ??= ObjectMapper.Map<SessionUnit, SessionUnitSenderInfo>(senderSessionUnit);
 
         if (message.IsPrivateMessage())
@@ -524,9 +526,9 @@ public partial class MessageManager(
         {
             var targetSessionUnit = await SessionUnitManager.GetAsync(targetSessionUnitId);
 
-            Assert.If(!targetSessionUnit.Setting.IsEnabled, $"Target session unit disabled,id:{targetSessionUnit.Id}");
+            Assert.If(!targetSessionUnit.Setting.IsEnabled, $"Target session unit disabled,key:{targetSessionUnit.Id}");
 
-            Assert.If(!targetSessionUnit.Setting.IsInputEnabled, $"Target session unit input state is disabled,id:{targetSessionUnit.Id}");
+            Assert.If(!targetSessionUnit.Setting.IsInputEnabled, $"Target session unit input state is disabled,key:{targetSessionUnit.Id}");
 
             Assert.If(currentSessionUnit.OwnerId != targetSessionUnit.OwnerId, $"[TargetSessionUnitId:{targetSessionUnitId}] is fail.");
 
@@ -542,7 +544,7 @@ public partial class MessageManager(
 
             var output = ObjectMapper.Map<Message, MessageInfo<object>>(newMessage);
 
-            //var output = new MessageInfo<object>() { Id = newMessage.Id };
+            //var output = new MessageInfo<object>() { MessageId = newMessage.MessageId };
 
             args.Add((newMessage.SessionId.Value, output));
         }
@@ -572,5 +574,81 @@ public partial class MessageManager(
             .Where(x => messageIdList.Contains(x.MessageId) && x.SessionUnitId == sessionUnitId)
             .Select(x => x.MessageId)
             .ToList();
+    }
+
+    public async Task<MessageCacheItem> SetCacheAsync(
+        Message message,
+        DistributedCacheEntryOptions options = null,
+        bool? hideErrors = null,
+        bool considerUow = false,
+        CancellationToken token = default)
+    {
+        var messageInfo = ObjectMapper.Map<Message, MessageCacheItem>(message);
+
+        //fix: 导航属性没有加载完全 改为手动转换Map
+        if (message.SenderSessionUnit == null && message.SenderSessionUnitId.HasValue)
+        {
+            var senderSessionUnit = await SessionUnitManager.GetAsync(message.SenderSessionUnitId.Value);
+            messageInfo.SenderSessionUnit = ObjectMapper.Map<SessionUnit, SessionUnitSenderInfo>(senderSessionUnit);
+        }
+
+        messageInfo.Content ??= message.GetContentDto();
+
+        await MessageCache.SetAsync(new MessageCacheKey(messageInfo.Id), messageInfo, options, hideErrors, considerUow, token);
+
+        return messageInfo;
+    }
+
+    public Task<MessageCacheItem> GetCacheAsync(
+        long messageId,
+        bool? hideErrors = null,
+        bool considerUow = false,
+        CancellationToken token = default)
+    {
+        return MessageCache.GetAsync(new MessageCacheKey(messageId), hideErrors, considerUow, token);
+    }
+
+    public Task<KeyValuePair<MessageCacheKey, MessageCacheItem>[]> GetManyCacheAsync(
+        IEnumerable<long> messageIds,
+        bool? hideErrors = null,
+        bool considerUow = false,
+        CancellationToken token = default)
+    {
+        var keys = messageIds.Select(x => new MessageCacheKey(x));
+        return MessageCache.GetManyAsync(keys, hideErrors, considerUow, token);
+    }
+
+    public async Task<KeyValuePair<MessageCacheKey, MessageCacheItem>[]> GetOrAddManyCacheAsync(
+        IEnumerable<long> messageIds, 
+        Func<DistributedCacheEntryOptions> optionsFactory = null,
+        bool? hideErrors = null,
+        bool considerUow = false,
+        CancellationToken token = default)
+    {
+        var keys = messageIds.Select(x => new MessageCacheKey(x));
+        var list = await MessageCache.GetOrAddManyAsync(keys, async (keys) =>
+        {
+            var messageIds = keys.Select(x => x.MessageId);
+
+            var entities = await Repository.GetListAsync(x => messageIds.Contains(x.Id));
+
+            var dict = entities.ToDictionary(
+                x => new MessageCacheKey(x.Id),
+                x => ObjectMapper.Map<Message, MessageCacheItem>(x));
+
+            var result = new List<KeyValuePair<MessageCacheKey, MessageCacheItem>>();
+
+            foreach (var key in keys)
+            {
+                dict.TryGetValue(key, out var cacheItem);
+                result.Add(new KeyValuePair<MessageCacheKey, MessageCacheItem>(key, cacheItem));
+            }
+
+            return result;
+
+        }, optionsFactory, hideErrors, considerUow, token);
+
+        return list;
+
     }
 }

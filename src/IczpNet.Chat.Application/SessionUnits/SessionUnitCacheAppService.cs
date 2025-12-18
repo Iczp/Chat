@@ -2,7 +2,6 @@
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
-using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
@@ -29,6 +28,7 @@ namespace IczpNet.Chat.SessionUnits;
 /// 会话单元
 /// </summary>
 public class SessionUnitCacheAppService(
+    IMessageManager messageManager,
     IMessageRepository messageRepository,
     ISessionUnitSettingManager sessionUnitSettingManager,
     ISessionUnitRepository sessionUnitRepository,
@@ -36,6 +36,7 @@ public class SessionUnitCacheAppService(
     IDistributedCache<SessionUnitSearchCacheItem, SessionUnitSearchCacheKey> searchCache,
     ISessionUnitCacheManager sessionUnitCacheManager) : ChatAppService, ISessionUnitCacheAppService
 {
+    public IMessageManager MessageManager { get; } = messageManager;
     public IMessageRepository MessageRepository { get; } = messageRepository;
     public ISessionUnitSettingManager SessionUnitSettingManager { get; } = sessionUnitSettingManager;
     public ISessionUnitRepository SessionUnitRepository { get; } = sessionUnitRepository;
@@ -116,7 +117,7 @@ public class SessionUnitCacheAppService(
 
         if (shouldLoadAll)
         {
-            //var allUnitIds = result.Select(x => x.Id).Distinct().ToList();
+            //var allUnitIds = result.Select(x => x.MessageId).Distinct().ToList();
             //var settingMap = (await SessionUnitSettingManager.GetManyCacheAsync(allUnitIds))
             //    .ToDictionary(x => x.Key, x => x.Value);
 
@@ -133,7 +134,7 @@ public class SessionUnitCacheAppService(
             //  提前填充
             foreach (var item in result)
             {
-                //item.Setting = settingMap.GetValueOrDefault(item.Id);
+                //item.Setting = settingMap.GetValueOrDefault(item.MessageId);
                 item.Destination = item.DestinationId.HasValue
                     ? destMap.GetValueOrDefault(item.DestinationId.Value)
                     : null;
@@ -189,21 +190,29 @@ public class SessionUnitCacheAppService(
         // fill Setting
         var messageIdList = items
             .Where(x => x.LastMessageId.HasValue)
-            .Select(x => x.LastMessageId)
+            .Select(x => x.LastMessageId.Value)
             .ToList();
         if (messageIdList.Count == 0)
         {
             return;
         }
+        var messages = await MessageManager.GetOrAddManyCacheAsync(messageIdList);
 
-        var messages = await MessageRepository.GetListAsync(x => messageIdList.Contains(x.Id));
-        var messageMap = messages
-            .Select(ObjectMapper.Map<Message, MessageOwnerDto>)
-            .ToDictionary(x => x.Id, x => x);
+        var messageMap = messages.ToDictionary(x => x.Key.MessageId, x => x.Value);
+
         foreach (var item in items)
         {
             item.LastMessage = item.LastMessageId.HasValue ? messageMap.GetValueOrDefault(item.LastMessageId.Value) : null;
         }
+
+        //var messages = await MessageRepository.GetListAsync(x => messageIdList.Contains(x.Id));
+        //var messageMap = messages
+        //    .Select(ObjectMapper.Map<Message, MessageOwnerDto>)
+        //    .ToDictionary(x => x.Id, x => x);
+        //foreach (var item in items)
+        //{
+        //    item.LastMessage = item.LastMessageId.HasValue ? messageMap.GetValueOrDefault(item.LastMessageId.Value) : null;
+        //}
     }
 
     private async Task FillSettingAsync(IEnumerable<SessionUnitCacheDto> items)
@@ -454,9 +463,9 @@ public class SessionUnitCacheAppService(
             //    || x.Setting.Rename.Contains(keyword)
             //    || x.Setting.RenameSpellingAbbreviation.Contains(keyword)
             //    || x.Setting.RenameSpelling.Contains(keyword))
-            //.Where(x => allUnitIds.Contains(x.Id))
+            //.Where(x => allUnitIds.Contains(x.MessageId))
             //;
-            //var searchUnitIds = querySearch.Select(x => x.Id).ToList();
+            //var searchUnitIds = querySearch.Select(x => x.MessageId).ToList();
             //return new SessionUnitSearchCacheItem(searchUnitIds);
         });
 
