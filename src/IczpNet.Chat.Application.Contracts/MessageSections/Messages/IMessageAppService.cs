@@ -4,18 +4,17 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 
-namespace IczpNet.Chat.MessageSections.Messages
+namespace IczpNet.Chat.MessageSections.Messages;
+
+public interface IMessageAppService
 {
-    public interface IMessageAppService
-    {
-        Task<List<EnumDto>> GetDisabledForwardListAsync();
+    Task<List<EnumDto>> GetDisabledForwardListAsync();
 
-        Task<PagedResultDto<MessageOwnerDto>> GetListAsync(MessageGetListInput input);
+    Task<PagedResultDto<MessageOwnerDto>> GetListAsync(MessageGetListInput input);
 
-        Task<MessageOwnerDto> GetItemAsync(MessageGetItemInput input);
+    Task<MessageOwnerDto> GetItemAsync(MessageGetItemInput input);
 
-        Task<MessageOwnerDto> GetFileAsync(MessageGetItemInput input);
+    Task<MessageOwnerDto> GetFileAsync(MessageGetItemInput input);
 
 
-    }
 }

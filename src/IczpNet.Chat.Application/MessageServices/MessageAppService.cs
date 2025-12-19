@@ -1,6 +1,7 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Enums.Dtos;
 using IczpNet.Chat.FavoritedRecorders;
@@ -11,6 +12,7 @@ using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.SessionUnits;
+using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -21,8 +23,10 @@ using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
+using YamlDotNet.Serialization;
 
 namespace IczpNet.Chat.MessageServices;
 
@@ -68,46 +72,25 @@ public class MessageAppService(
         return Task.FromResult(result);
     }
 
-
-
-    /// <summary>
-    /// 获取消息列表
-    /// </summary>
-    /// <param name="input"></param>
-    /// <returns></returns>
-    [HttpGet]
-    [UnitOfWork(true, IsolationLevel.ReadUncommitted)]
-    public async Task<PagedResultDto<MessageOwnerDto>> GetListAsync(MessageGetListInput input)
+    private async Task<IQueryable<Message>> CreateQueryableAsync(SessionUnit entity, MessageGetListInput input)
     {
+        var setting = entity.Setting;
+        var sessionId = entity.SessionId;
+        var sessionUnitId = entity.Id;
 
-        var sessionUnitId = input.SessionUnitId;
+        //var deletedIdList = await DeletedRecorderManager.GetDeletedMessageIdListAsync(sessionUnitId);
 
-        var deletedIdList = await DeletedRecorderManager.GetDeletedMessageIdListAsync(sessionUnitId);
+        //var followingIdList = await FollowManager.GetFollowingIdListAsync(sessionUnitId);
 
-        var entity = await GetAndCheckPolicyAsync(GetListPolicyName, sessionUnitId);
-
-        //Assert.NotNull(entity.Session, "session is null");
-
-        var settting = entity.Setting;
-
-        var followingIdList = await FollowManager.GetFollowingIdListAsync(sessionUnitId);
-
-        var baseQuery = (await Repository.GetQueryableAsync())
-            .Where(x => x.SessionId == entity.SessionId)
-            //.Where(x => !x.IsPrivate || (x.IsPrivate && (x.SenderId == entity.OwnerId || x.ReceiverId == entity.OwnerId)))
-            // OR 条件，是性能杀手。➡ SQL Server 不能很好利用索引，会扫描大量数据。
-            //.Where(x => !x.IsPrivate || x.SenderSessionUnitId == entity.Id || x.ReceiverSessionUnitId == entity.Id)
-            ;
-        //var q1 = baseQuery.Where(x => !x.IsPrivate);
-        //var q2 = baseQuery.Where(x => x.IsPrivate && x.SenderSessionUnitId == sessionUnitId);
-        //var q3 = baseQuery.Where(x => x.IsPrivate && x.ReceiverSessionUnitId == sessionUnitId);
-
-        //// 合并（去重，用 Distinct）  --- Distinct（完全重新扫描）
-        //var query = q1.Union(q2).Union(q3).Distinct()
-        var query = baseQuery
-            .WhereIf(settting.HistoryFristTime.HasValue, x => x.CreationTime >= settting.HistoryFristTime)
-            .WhereIf(settting.HistoryLastTime.HasValue, x => x.CreationTime < settting.HistoryFristTime)
-            .WhereIf(settting.ClearTime.HasValue, x => x.CreationTime > settting.ClearTime)
+        var query = (await Repository.GetQueryableAsync())
+            .Where(x => x.SessionId == sessionId)
+            //排除已删除的消息
+            .Where(x => !x.DeletedList.Any(d => d.SessionUnitId == sessionUnitId && d.MessageId == x.Id))
+            //排除已删除的消息 -- 删除数据量大小，不稳定
+            //.WhereIf(deletedIdList.Count != 0, x => !deletedIdList.Contains(x.Id))
+            .WhereIf(setting.HistoryFristTime.HasValue, x => x.CreationTime >= setting.HistoryFristTime)
+            .WhereIf(setting.HistoryLastTime.HasValue, x => x.CreationTime < setting.HistoryLastTime)
+            .WhereIf(setting.ClearTime.HasValue, x => x.CreationTime > setting.ClearTime)
 
             .WhereIf(input.StartTime.HasValue, x => x.CreationTime >= input.StartTime)
             .WhereIf(input.EndTime.HasValue, x => x.CreationTime < input.EndTime)
@@ -124,9 +107,31 @@ public class MessageAppService(
             .WhereIf(input.MinMessageId.HasValue, x => x.Id > input.MinMessageId)
             .WhereIf(input.MaxMessageId.HasValue, x => x.Id < input.MaxMessageId)
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TextContentList.Any(d => d.Text.Contains(input.Keyword)))
-            //排除已删除的消息
-            //.Where(x => !x.DeletedList.Any(d => d.SessionUnitId == sessionUnitId && d.MessageId == x.Id))
-            .WhereIf(deletedIdList.Count != 0, x => !deletedIdList.Contains(x.Id));
+            ;
+
+        return query;
+
+    }
+
+    /// <summary>
+    /// 获取消息列表
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [HttpGet]
+    [UnitOfWork(true, IsolationLevel.ReadUncommitted)]
+    public async Task<PagedResultDto<MessageOwnerDto>> GetListAsync(MessageGetListInput input)
+    {
+
+        var sessionUnitId = input.SessionUnitId;
+
+        var entity = await GetAndCheckPolicyAsync(GetListPolicyName, sessionUnitId);
+
+        //Assert.NotNull(entity.Session, "session is null");
+
+        var followingIdList = await FollowManager.GetFollowingIdListAsync(sessionUnitId);
+
+        var query = await CreateQueryableAsync(entity, input);
 
         var result = await GetPagedListAsync<Message, MessageOwnerDto>(query, input,
             x => x.OrderByDescending(x => x.Id),
@@ -147,21 +152,6 @@ public class MessageAppService(
                     e.IsFollowing = e.SenderSessionUnitId.HasValue && followingIdList.Contains(e.SenderSessionUnitId.Value);
                     e.IsRemindMe = remindMessageIdList.Contains(e.Id);
                 }
-
-                //foreach (var e in entities)
-                //{
-                //    //if (e.SenderId.HasValue && entity.OwnerId != e.SenderId)
-                //    //{
-                //    //    var friendshipSessionUnit = await SessionUnitManager.FindAsync(entity.OwnerId, e.SenderId.Value);
-                //    //    e.SenderDisplayName = friendshipSessionUnit?.Setting.Rename;
-                //    //    e.FriendshipSessionUnitId = friendshipSessionUnit?.Id;
-                //    //}
-                //    e.IsReaded = await ReadedRecorderManager.IsAnyAsync(sessionUnitId, e.Id);
-                //    e.IsOpened = await OpenedRecorderManager.IsAnyAsync(sessionUnitId, e.Id);
-                //    e.IsFavorited = await FavoritedRecorderManager.IsAnyAsync(sessionUnitId, e.Id);
-                //    e.IsFollowing = e.SenderSessionUnitId.HasValue && followingIdList.Contains(e.SenderSessionUnitId.Value);
-                //    e.IsRemindMe = await MessageManager.IsRemindAsync(e.Id, sessionUnitId);
-                //}
 
                 return entities;
             });
@@ -200,39 +190,11 @@ public class MessageAppService(
     {
         var sessionUnitId = input.SessionUnitId;
 
-        var deletedIdList = await DeletedRecorderManager.GetDeletedMessageIdListAsync(sessionUnitId);
-
         var entity = await GetAndCheckPolicyAsync(GetListPolicyName, sessionUnitId);
 
         //Assert.NotNull(entity.Session, "session is null");
 
-        var setting = entity.Setting;
-
-        var followingIdList = await FollowManager.GetFollowingIdListAsync(sessionUnitId);
-
-        var query = (await Repository.GetQueryableAsync())
-            .Where(x => x.SessionId == entity.SessionId)
-            //.Where(x => !x.IsPrivate || (x.IsPrivate && (x.SenderId == entity.OwnerId || x.ReceiverId == entity.OwnerId)))
-            .WhereIf(setting.HistoryFristTime.HasValue, x => x.CreationTime >= setting.HistoryFristTime)
-            .WhereIf(setting.HistoryLastTime.HasValue, x => x.CreationTime < setting.HistoryFristTime)
-            .WhereIf(setting.ClearTime.HasValue, x => x.CreationTime > setting.ClearTime)
-
-            .WhereIf(input.StartTime.HasValue, x => x.CreationTime >= input.StartTime)
-            .WhereIf(input.EndTime.HasValue, x => x.CreationTime < input.EndTime)
-
-            .WhereIf(input.MessageTypes.IsAny(), x => input.MessageTypes.Contains(x.MessageType))
-            .WhereIf(input.IsFollowed.HasValue, x => followingIdList.Contains(x.SenderSessionUnitId.Value))
-            .WhereIf(input.IsRemind == true, x => x.IsRemindAll || x.MessageReminderList.Any(x => x.SessionUnitId == sessionUnitId))
-            .WhereIf(input.SenderId.HasValue, x => x.SenderId == input.SenderId)
-            .WhereIf(input.ForwardDepth.HasValue, x => x.ForwardDepth == input.ForwardDepth.Value)
-            .WhereIf(input.QuoteDepth.HasValue, x => x.QuoteDepth == input.QuoteDepth.Value)
-            .WhereIf(input.MinMessageId.HasValue, x => x.Id > input.MinMessageId)
-            .WhereIf(input.MaxMessageId.HasValue, x => x.Id < input.MaxMessageId)
-            .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TextContentList.Any(d => d.Text.Contains(input.Keyword)))
-            //排除已删除的消息
-            //.Where(x => !x.DeletedList.Any(d => d.SessionUnitId == sessionUnitId && d.MessageId == x.Id))
-            .WhereIf(deletedIdList.Count != 0, x => !deletedIdList.Contains(x.Id))
-            ;
+        var query = await CreateQueryableAsync(entity, input);
 
         var q = query.GroupBy(x => x.CreationTime.Date).Select(x => new MessageByDateDto
         {
