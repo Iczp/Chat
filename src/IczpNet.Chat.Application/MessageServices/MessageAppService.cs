@@ -16,6 +16,7 @@ using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Minio.DataModel;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -114,6 +115,70 @@ public class MessageAppService(
     }
 
     /// <summary>
+    /// 统计信息
+    /// </summary>
+    /// <param name="sessionUnitId"></param>
+    /// <param name="result"></param>
+    /// <returns></returns>
+    private async Task FillStatisticsAsync(Guid sessionUnitId, PagedResultDto<MessageOwnerDto> result)
+    {
+        var followingIdList = await FollowManager.GetFollowingIdListAsync(sessionUnitId);
+
+        // 一次性获取(实时查询)
+        var messageIdList = result.Items.Select(x => x.Id).ToList();
+        var readMessageIdList = await ReadedRecorderManager.GetRecorderMessageIdListAsync(sessionUnitId, messageIdList);
+        var openedMessageIdList = await OpenedRecorderManager.GetRecorderMessageIdListAsync(sessionUnitId, messageIdList);
+        var favoritedMessageIdList = await FavoritedRecorderManager.GetRecorderMessageIdListAsync(sessionUnitId, messageIdList);
+        var remindMessageIdList = await MessageManager.GetRemindMessageIdListAsync(sessionUnitId, messageIdList);
+
+        foreach (var e in result.Items)
+        {
+            e.IsReaded = readMessageIdList.Contains(e.Id);
+            e.IsOpened = openedMessageIdList.Contains(e.Id);
+            e.IsFavorited = favoritedMessageIdList.Contains(e.Id);
+            e.IsFollowing = e.SenderSessionUnitId.HasValue && followingIdList.Contains(e.SenderSessionUnitId.Value);
+            e.IsRemindMe = remindMessageIdList.Contains(e.Id);
+        }
+
+    }
+
+    /// <summary>
+    /// 好友关系
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <param name="result"></param>
+    /// <returns></returns>
+    private async Task FillFriendshipAsync(long ownerId, PagedResultDto<MessageOwnerDto> result)
+    {
+        // friendship
+        var distnactionIds = result.Items
+            .Where(x => x.SenderSessionUnit != null)
+            .Select(x => x.SenderSessionUnit.OwnerId)
+            .Distinct()
+            .ToList();
+
+        var destnactions = await SessionUnitManager.FindManyAsync(ownerId, distnactionIds);
+
+        var friendsMap = destnactions.ToDictionary(x => x.OwnerId);
+
+        foreach (var item in result.Items)
+        {
+            if (item.SenderSessionUnit == null)
+            {
+                Logger.LogWarning($"item.SenderSessionUnit is null, MessageId:{item.Id}");
+                continue;
+            }
+
+            var friendshipSessionUnit = friendsMap.GetValueOrDefault(item.SenderSessionUnit.OwnerId);
+            
+            item.SenderSessionUnit.IsFriendship = friendshipSessionUnit != null;
+            item.SenderSessionUnit.FriendshipSessionUnitId = friendshipSessionUnit?.Id;
+            item.SenderSessionUnit.FriendshipName = friendshipSessionUnit?.Setting.Rename;
+            item.SenderSessionUnit.MemberName = friendshipSessionUnit?.Setting.MemberName;
+        }
+    }
+
+    /// <summary>
     /// 获取消息列表
     /// </summary>
     /// <param name="input"></param>
@@ -122,7 +187,6 @@ public class MessageAppService(
     [UnitOfWork(true, IsolationLevel.ReadUncommitted)]
     public async Task<PagedResultDto<MessageOwnerDto>> GetListAsync(MessageGetListInput input)
     {
-
         var sessionUnitId = input.SessionUnitId;
 
         var entity = await GetAndCheckPolicyAsync(GetListPolicyName, sessionUnitId);
@@ -134,49 +198,31 @@ public class MessageAppService(
         var query = await CreateQueryableAsync(entity, input);
 
         var result = await GetPagedListAsync<Message, MessageOwnerDto>(query, input,
-            x => x.OrderByDescending(x => x.Id),
-            async entities =>
-            {
-                // 一次性获取(实时查询)
-                var messageIdList = entities.Select(x => x.Id).ToList();
-                var readMessageIdList = await ReadedRecorderManager.GetRecorderMessageIdListAsync(sessionUnitId, messageIdList);
-                var openedMessageIdList = await OpenedRecorderManager.GetRecorderMessageIdListAsync(sessionUnitId, messageIdList);
-                var favoritedMessageIdList = await FavoritedRecorderManager.GetRecorderMessageIdListAsync(sessionUnitId, messageIdList);
-                var remindMessageIdList = await MessageManager.GetRemindMessageIdListAsync(sessionUnitId, messageIdList);
+            x => x.OrderByDescending(x => x.Id));
 
-                foreach (var e in entities)
-                {
-                    e.IsReaded = readMessageIdList.Contains(e.Id);
-                    e.IsOpened = openedMessageIdList.Contains(e.Id);
-                    e.IsFavorited = favoritedMessageIdList.Contains(e.Id);
-                    e.IsFollowing = e.SenderSessionUnitId.HasValue && followingIdList.Contains(e.SenderSessionUnitId.Value);
-                    e.IsRemindMe = remindMessageIdList.Contains(e.Id);
-                }
+        await FillStatisticsAsync(sessionUnitId, result);
 
-                return entities;
-            });
+        await FillFriendshipAsync(entity.OwnerId, result);
 
-        // friendship
-        var dicts = new Dictionary<string, SessionUnit>();
-        foreach (var item in result.Items)
-        {
-            if (item.SenderSessionUnit == null)
-            {
-                Logger.LogWarning($"item.SenderSessionUnit is null, MessageId:{item.Id}");
-                continue;
-            }
-            var key = $"{entity.OwnerId}-{item.SenderSessionUnit.OwnerId}";
-            if (!dicts.TryGetValue(key, out var friendshipSessionUnit))
-            {
-                friendshipSessionUnit = await SessionUnitManager.FindAsync(entity.OwnerId, item.SenderSessionUnit.OwnerId);
-                dicts.TryAdd(key, friendshipSessionUnit);
-            }
-            item.SenderSessionUnit.IsFriendship = friendshipSessionUnit != null;
-            item.SenderSessionUnit.FriendshipSessionUnitId = friendshipSessionUnit?.Id;
-            item.SenderSessionUnit.FriendshipName = friendshipSessionUnit?.Setting.Rename;
-            item.SenderSessionUnit.MemberName = friendshipSessionUnit?.Setting.MemberName;
-        }
         return result;
+    }
+
+    public async Task<PagedResultDto<MessageCacheItem>> GetListFastAsync(MessageGetListInput input)
+    {
+        var sessionUnitId = input.SessionUnitId;
+
+        var entity = await GetAndCheckPolicyAsync(GetListPolicyName, sessionUnitId);
+        var query = await CreateQueryableAsync(entity, input);
+
+        var idQueryable = query.Select(x => x.Id);
+        var result = await GetPagedListAsync(idQueryable, input,
+            x => x.OrderByDescending(x => x));
+
+        var messages = await MessageManager.GetOrAddManyCacheAsync(result.Items);
+
+        var items = messages.Select(x => x.Value).ToList();
+
+        return new PagedResultDto<MessageCacheItem>(result.TotalCount, items);
     }
 
     /// <summary>

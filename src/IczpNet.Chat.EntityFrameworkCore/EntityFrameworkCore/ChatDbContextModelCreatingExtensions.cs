@@ -162,8 +162,8 @@ public static class ChatDbContextModelCreatingExtensions
         {
 
             b.HasKey(x => new { x.SessionUnitId, x.MessageId });
-            //ChatGPT 优化 2025.11.20
-            b.HasIndex(x => new { x.MessageId, x.SessionUnitId }).HasDatabaseName("IX_Chat_DeletedRecorder_MessageUnit");
+            ////ChatGPT 优化 2025.11.20
+            //b.HasIndex(x => new { x.SessionUnitId, x.MessageId }).HasDatabaseName("IX_Chat_DeletedRecorder_MessageUnit");
         });
 
         builder.Entity<Scoped>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });

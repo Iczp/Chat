@@ -30,6 +30,7 @@ using Volo.Abp.Domain.Services;
 using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
 
+
 namespace IczpNet.Chat.SessionUnits;
 
 public class SessionUnitManager(
@@ -248,6 +249,23 @@ public class SessionUnitManager(
     public virtual Task<SessionUnit> FindAsync(Expression<Func<SessionUnit, bool>> predicate)
     {
         return Repository.FindAsync(predicate);
+    }
+
+    public virtual async Task<List<SessionUnit>> FindManyAsync(
+        long ownerId,
+        IReadOnlyList<long> destinationIdList,
+        CancellationToken cancellationToken = default)
+    {
+        if (destinationIdList == null || destinationIdList.Count == 0)
+        {
+            return [];
+        }
+
+        return await Repository.GetListAsync(
+            x => x.OwnerId == ownerId
+              && destinationIdList.Contains(x.DestinationId.Value),
+            cancellationToken: cancellationToken
+        );
     }
 
     /// <inheritdoc />
