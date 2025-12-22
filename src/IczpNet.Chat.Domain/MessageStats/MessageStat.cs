@@ -42,7 +42,7 @@ public class MessageStat : BaseEntity<long>
     [Comment("数量")]
     public virtual long Count { get; set; }
 
-    public MessageStat() { }
+    protected MessageStat() { }
 
     public MessageStat(long id)
     {
