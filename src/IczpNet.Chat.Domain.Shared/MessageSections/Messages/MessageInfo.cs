@@ -3,6 +3,8 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Pusher.Commands;
 using System;
+using Volo.Abp.Data;
+using Volo.Abp.ObjectExtending;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
@@ -27,7 +29,7 @@ public class MessageInfo<T> : MessageInfo
 }
 
 [Command(CommandConsts.Chat)]
-public class MessageInfo
+public class MessageInfo : ExtensibleObject, IHasExtraProperties
 {
     /// <summary>
     /// 消息Id
@@ -38,6 +40,37 @@ public class MessageInfo
     /// SessionId
     /// </summary>
     public virtual Guid SessionId { get; set; }
+
+    /// <summary>
+    /// 发送人
+    /// </summary>
+    public virtual long? SenderId { get; set; }
+
+    /// <summary>
+    /// 发送人单元
+    /// </summary>
+    public virtual Guid? SenderSessionUnitId { get; set; }
+
+    /// <summary>
+    /// 发送人
+    /// </summary>
+    public virtual string SenderName { get; set; }
+
+    /// <summary>
+    /// 发送人显示名称
+    /// </summary>
+    public virtual string SenderDisplayName { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+
+    public virtual long? ReceiverId { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public virtual Guid? ReceiverSessionUnitId { get; set; }
 
     /// <summary>
     /// 
@@ -60,11 +93,6 @@ public class MessageInfo
     public virtual long QuoteDepth { get; set; }
 
     /// <summary>
-    /// 发送人
-    /// </summary>
-    public virtual string SenderName { get; set; }
-
-    /// <summary>
     ///  消息类型
     /// </summary>
     public virtual MessageTypes MessageType { get; set; }
@@ -83,6 +111,16 @@ public class MessageInfo
     /// 提醒类型
     /// </summary>
     public virtual string ReminderTypeDescription { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public virtual string KeyName { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public virtual string KeyValue { get; set; }
 
     /// <summary>
     /// 是否私有消息
@@ -113,4 +151,5 @@ public class MessageInfo
     /// 发送人信息
     /// </summary>
     public virtual SessionUnitSenderInfo SenderSessionUnit { get; set; }
+
 }

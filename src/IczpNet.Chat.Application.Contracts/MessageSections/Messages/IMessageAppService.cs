@@ -12,7 +12,7 @@ public interface IMessageAppService
 
     Task<PagedResultDto<MessageOwnerDto>> GetListAsync(MessageGetListInput input);
 
-    Task<PagedResultDto<MessageCacheItem>> GetListFastAsync(MessageGetListInput input);
+    Task<PagedResultDto<MessageOwnerDto>> GetListFastAsync(MessageGetListInput input);
 
     Task<MessageOwnerDto> GetItemAsync(MessageGetItemInput input);
 

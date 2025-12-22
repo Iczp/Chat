@@ -26,6 +26,7 @@ using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
 using YamlDotNet.Serialization;
 
@@ -159,7 +160,9 @@ public class MessageAppService(
 
         var destnactions = await SessionUnitManager.FindManyAsync(ownerId, distnactionIds);
 
-        var friendsMap = destnactions.ToDictionary(x => x.OwnerId);
+        var friendsMap = destnactions
+            .GroupBy(x => x.DestinationId)
+            .ToDictionary(x => x.Key, g => g.FirstOrDefault());
 
         foreach (var item in result.Items)
         {
@@ -170,7 +173,7 @@ public class MessageAppService(
             }
 
             var friendshipSessionUnit = friendsMap.GetValueOrDefault(item.SenderSessionUnit.OwnerId);
-            
+
             item.SenderSessionUnit.IsFriendship = friendshipSessionUnit != null;
             item.SenderSessionUnit.FriendshipSessionUnitId = friendshipSessionUnit?.Id;
             item.SenderSessionUnit.FriendshipName = friendshipSessionUnit?.Setting.Rename;
@@ -207,22 +210,36 @@ public class MessageAppService(
         return result;
     }
 
-    public async Task<PagedResultDto<MessageCacheItem>> GetListFastAsync(MessageGetListInput input)
+
+
+    public async Task<PagedResultDto<MessageOwnerDto>> GetListFastAsync(MessageGetListInput input)
     {
         var sessionUnitId = input.SessionUnitId;
 
         var entity = await GetAndCheckPolicyAsync(GetListPolicyName, sessionUnitId);
+
         var query = await CreateQueryableAsync(entity, input);
 
         var idQueryable = query.Select(x => x.Id);
-        var result = await GetPagedListAsync(idQueryable, input,
+
+        var pagedResult = await GetPagedListAsync(
+            idQueryable,
+            input,
             x => x.OrderByDescending(x => x));
 
-        var messages = await MessageManager.GetOrAddManyCacheAsync(result.Items);
+        var messages = await MessageManager.GetOrAddManyCacheAsync(pagedResult.Items);
 
-        var items = messages.Select(x => x.Value).ToList();
+        var cacheItems = messages.Select(x => x.Value).ToList();
 
-        return new PagedResultDto<MessageCacheItem>(result.TotalCount, items);
+        var items = await MapToMessagesAsync(cacheItems);
+
+        var result = new PagedResultDto<MessageOwnerDto>(pagedResult.TotalCount, items);
+
+        await FillStatisticsAsync(sessionUnitId, result);
+
+        await FillFriendshipAsync(entity.OwnerId, result);
+
+        return result;
     }
 
     /// <summary>
@@ -275,6 +292,18 @@ public class MessageAppService(
     {
         await Task.Yield();
         return ObjectMapper.Map<Message, MessageOwnerDto>(message);
+    }
+
+    protected virtual async Task<MessageOwnerDto> MapToMessageAsync(MessageCacheItem message)
+    {
+        await Task.Yield();
+        return ObjectMapper.Map<MessageCacheItem, MessageOwnerDto>(message);
+    }
+
+    protected virtual async Task<List<MessageOwnerDto>> MapToMessagesAsync(List<MessageCacheItem> messages)
+    {
+        await Task.Yield();
+        return ObjectMapper.Map<List<MessageCacheItem>, List<MessageOwnerDto>>(messages);
     }
 
     /// <summary>

@@ -17,12 +17,12 @@ public class MessageSimpleDto : ExtensibleEntityDto, IEntityDto<long>
     public virtual Guid SessionId { get; set; }
 
     /// <summary>
-    /// 
+    /// 发送人
     /// </summary>
     public virtual long? SenderId { get; set; }
 
     /// <summary>
-    /// 
+    /// 发送人单元
     /// </summary>
     public virtual Guid? SenderSessionUnitId { get; set; }
 

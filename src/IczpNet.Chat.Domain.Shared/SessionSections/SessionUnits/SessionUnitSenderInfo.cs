@@ -3,10 +3,11 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.SessionSections.SessionTags;
 using System;
 using System.Collections.Generic;
+using Volo.Abp.ObjectExtending;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits;
 
-public class SessionUnitSenderInfo
+public class SessionUnitSenderInfo : ExtensibleObject
 {
     public virtual Guid Id { get; set; }
 
