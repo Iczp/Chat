@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.Enums;
+using IczpNet.Pusher.Commands;
 using System;
 
 namespace IczpNet.Chat.SessionUnitSettings;
@@ -14,6 +15,7 @@ public class SessionUnitSettingCacheItem
     /// 会话Id
     /// </summary>
     public virtual Guid? SessionId { get; set; }
+
 
     /// <summary>
     /// 已读的消息
@@ -154,4 +156,29 @@ public class SessionUnitSettingCacheItem
     /// 是否创建者（群主等）
     /// </summary>
     public virtual bool IsCreator { get; protected set; } = false;
+
+    /// <summary>
+    /// 禁言过期时间
+    /// </summary>
+    public virtual DateTime? MuteExpireTime { get; set; }
+
+    /// <summary>
+    /// 邀请人
+    /// </summary>
+    public virtual Guid? InviterId { get; set; }
+
+    /// <summary>
+    /// 删除渠道
+    /// </summary>
+    public virtual KillTypes? KillType { get; set; }
+
+    /// <summary>
+    /// 删除会话时间
+    /// </summary>
+    public virtual DateTime? KillTime { get; set; }
+
+    /// <summary>
+    /// 删除人Id
+    /// </summary>
+    public virtual Guid? KillerId { get; set; }
 }

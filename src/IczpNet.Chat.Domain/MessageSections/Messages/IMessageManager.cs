@@ -1,6 +1,8 @@
 ﻿using IczpNet.Chat.SessionUnits;
+using Microsoft.Extensions.Caching.Distributed;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.MessageSections.Messages;
@@ -83,4 +85,56 @@ public interface IMessageManager
     /// <param name="messageIdList"></param>
     /// <returns></returns>
     Task<List<long>> GetRemindMessageIdListAsync(Guid sessionUnitId, List<long> messageIdList);
+
+    /// <summary>
+    /// 缓存消息
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="options"></param>
+    /// <param name="hideErrors"></param>
+    /// <param name="considerUow"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<MessageCacheItem> SetCacheAsync(
+        Message message,
+        DistributedCacheEntryOptions options = null,
+        bool? hideErrors = null,
+        bool considerUow = false,
+        CancellationToken token = default);
+
+    /// <summary>
+    /// 获取消息缓存
+    /// </summary>
+    /// <param name="messageId"></param>
+    /// <param name="hideErrors"></param>
+    /// <param name="considerUow"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<MessageCacheItem> GetCacheAsync(
+        long messageId,
+        bool? hideErrors = null,
+        bool considerUow = false,
+        CancellationToken token = default);
+
+    /// <summary>
+    /// 获取消息缓存
+    /// </summary>
+    /// <param name="messageIds"></param>
+    /// <param name="hideErrors"></param>
+    /// <param name="considerUow"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<KeyValuePair<MessageCacheKey, MessageCacheItem>[]> GetManyCacheAsync(
+        IEnumerable<long> messageIds,
+        bool? hideErrors = null,
+        bool considerUow = false,
+        CancellationToken token = default);
+
+    Task<KeyValuePair<MessageCacheKey, MessageCacheItem>[]> GetOrAddManyCacheAsync(
+        IEnumerable<long> messageIds,
+        Func<DistributedCacheEntryOptions> optionsFactory = null,
+        bool? hideErrors = null,
+        bool considerUow = false,
+        CancellationToken token = default);
+
 }

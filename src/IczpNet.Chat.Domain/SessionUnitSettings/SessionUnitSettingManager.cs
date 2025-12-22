@@ -1,6 +1,4 @@
-﻿
-using Castle.Core.Logging;
-using IczpNet.AbpCommons;
+﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Templates;
@@ -261,7 +259,19 @@ public class SessionUnitSettingManager(
         return await SessionUnitSettingRepository.GetListAsync(x => unitIdList.Contains(x.SessionUnitId));
     }
 
-    public virtual async Task<KeyValuePair<Guid, SessionUnitSettingCacheItem>[]> GetManyCacheAsync(List<Guid> unitIdList)
+    public virtual async Task<SessionUnitSettingCacheItem> GetOrAddCacheAsync(Guid unitId)
+    {
+        return await SessionUnitSettingCache.GetOrAddAsync(
+            unitId,
+            async () =>
+            {
+                var entity = await GetAsync(unitId);
+                var result = ObjectMapper.Map<SessionUnitSetting, SessionUnitSettingCacheItem>(entity);
+                return result;
+            });
+    }
+
+    public virtual async Task<KeyValuePair<Guid, SessionUnitSettingCacheItem>[]> GetOrAddManyCacheAsync(List<Guid> unitIdList)
     {
         return await SessionUnitSettingCache.GetOrAddManyAsync(
             unitIdList,

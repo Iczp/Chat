@@ -55,6 +55,15 @@ public interface ISessionUnitManager
     Task<SessionUnit> FindAsync(long ownerId, long destinactionId);
 
     /// <summary>
+    /// 查找会话单元
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <param name="destinactionIdList"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<List<SessionUnit>> FindManyAsync(long ownerId, IReadOnlyList<long> destinactionIdList, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// 创建会话单元
     /// </summary>
     /// <param name="session"></param>

@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251222064842_MessageStat_Index_Id_SessionId_MessageType")]
+    partial class MessageStat_Index_Id_SessionId_MessageType
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -4493,10 +4496,9 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("LastModifierId");
 
-                    b.Property<string>("MessageType")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)")
+                    b.Property<int>("MessageType")
+                        .HasMaxLength(36)
+                        .HasColumnType("int")
                         .HasComment("消息类型");
 
                     b.Property<Guid>("SessionId")
@@ -4504,10 +4506,6 @@ namespace IczpNet.Chat.Migrations
                         .HasComment("会话Id");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("MessageType");
-
-                    b.HasIndex("SessionId");
 
                     b.HasIndex("SessionId", "MessageType")
                         .IsUnique();

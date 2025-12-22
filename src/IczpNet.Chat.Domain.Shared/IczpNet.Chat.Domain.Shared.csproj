@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <!--<TargetFramework>net9.0</TargetFramework>-->
-		<TargetFrameworks>netstandard2.0;netstandard2.1;net9.0</TargetFrameworks>
+		<TargetFrameworks>net9.0</TargetFrameworks>
     <Version>0.2.1.903</Version>
     <Nullable>disable</Nullable>
     <RootNamespace>IczpNet.Chat</RootNamespace>

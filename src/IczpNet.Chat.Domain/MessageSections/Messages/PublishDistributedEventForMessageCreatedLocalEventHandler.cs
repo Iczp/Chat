@@ -13,6 +13,7 @@ namespace IczpNet.Chat.MessageSections.Messages;
 /// 发布分布式事件(发送消息)
 /// </summary>
 public class PublishDistributedEventForMessageCreatedLocalEventHandler(
+    IMessageManager messageManager,
     ICurrentHosted currentHosted,
     IDistributedEventBus distributedEventBus)
     :
@@ -20,6 +21,7 @@ public class PublishDistributedEventForMessageCreatedLocalEventHandler(
     ILocalEventHandler<EntityCreatedEventData<Message>>,
     ITransientDependency
 {
+    public IMessageManager MessageManager { get; } = messageManager;
     public ICurrentHosted CurrentHosted { get; } = currentHosted;
     public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
 
@@ -32,8 +34,16 @@ public class PublishDistributedEventForMessageCreatedLocalEventHandler(
         await PublishDistributedEventAsync(message);
     }
 
+    protected Task<MessageCacheItem> CacheMessageAsync(Message message)
+    {
+        return MessageManager.SetCacheAsync(message);
+    }
+
     protected virtual async Task PublishDistributedEventAsync(Message message, bool onUnitOfWorkComplete = true, bool useOutbox = true)
     {
+
+        await CacheMessageAsync(message);
+
         var eventData = new MessageSentEto()
         {
             Id = message.Id,

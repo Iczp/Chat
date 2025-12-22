@@ -3,10 +3,11 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.SessionSections.SessionTags;
 using System;
 using System.Collections.Generic;
+using Volo.Abp.ObjectExtending;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits;
 
-public class SessionUnitSenderInfo
+public class SessionUnitSenderInfo : ExtensibleObject
 {
     public virtual Guid Id { get; set; }
 
@@ -30,7 +31,23 @@ public class SessionUnitSenderInfo
     /// </summary>
     public virtual string MemberName { get; set; }
 
+    /// <summary>
+    /// 创建时间
+    /// </summary>
+    public virtual DateTime CreationTime { get; set; }
+
+    /// <summary>
+    /// 最后修改时间
+    /// </summary>
+    public DateTime? LastModificationTime { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public virtual ChatObjectInfo Owner { get; set; }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public virtual List<SessionTagInfo> TagList { get; set; }
 }

@@ -67,20 +67,20 @@ public class MessageOwnerDto : MessageQuoteDto, IEntityDto<long>
     /// <summary>
     /// 成员数量
     /// </summary>
-    public virtual long SessionUnitCount { get; set; }
+    public virtual long? SessionUnitCount { get; set; }
 
     /// <summary>
     /// 已读数量
     /// </summary>
-    public virtual long ReadedCount { get; set; }
+    public virtual long? ReadedCount { get; set; }
 
     /// <summary>
     /// 打开数量
     /// </summary>
-    public virtual long OpenedCount { get; set; }
+    public virtual long? OpenedCount { get; set; }
 
     /// <summary>
     /// 收藏数量
     /// </summary>
-    public virtual long FavoritedCount { get; set; }
+    public virtual long? FavoritedCount { get; set; }
 }

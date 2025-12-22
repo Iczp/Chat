@@ -23,6 +23,7 @@ using IczpNet.Chat.MessageSections.MessageFollowers;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.MessageStats;
 using IczpNet.Chat.MessageWords;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
@@ -42,6 +43,7 @@ using IczpNet.Chat.SessionUnitSettings;
 using IczpNet.Chat.TextContentWords;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using StackExchange.Redis;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -162,8 +164,8 @@ public static class ChatDbContextModelCreatingExtensions
         {
 
             b.HasKey(x => new { x.SessionUnitId, x.MessageId });
-            //ChatGPT 优化 2025.11.20
-            b.HasIndex(x => new { x.MessageId, x.SessionUnitId }).HasDatabaseName("IX_Chat_DeletedRecorder_MessageUnit");
+            ////ChatGPT 优化 2025.11.20
+            //b.HasIndex(x => new { x.SessionUnitId, x.MessageId }).HasDatabaseName("IX_Chat_DeletedRecorder_MessageUnit");
         });
 
         builder.Entity<Scoped>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
@@ -306,6 +308,17 @@ public static class ChatDbContextModelCreatingExtensions
                 .HasForeignKey(x => x.MessageId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+        });
+
+        builder.Entity<MessageStat>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Id).ValueGeneratedNever();
+            b.HasIndex(x => new { x.SessionId, x.MessageType }).IsUnique();
+            b.HasIndex(x => new { x.Id, x.SessionId, x.MessageType });
+            b.HasIndex(x => x.SessionId);
+            b.HasIndex(x => x.MessageType);
+            b.Property(x => x.MessageType).HasConversion<string>().HasMaxLength(32);
         });
 
         builder.Entity<UserDevice>(b => { b.HasKey(x => new { x.UserId, x.DeviceId }); });
