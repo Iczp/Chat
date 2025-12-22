@@ -112,10 +112,18 @@ public interface ISessionUnitSettingManager
     /// <returns></returns>
     Task<DateTime?> SetMuteExpireTimeAsync(Guid muterSessionUnitId, DateTime? muteExpireTime, SessionUnit setterSessionUnit, bool isSendMessage);
 
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="unitId"></param>
+    /// <returns></returns>
+    Task<SessionUnitSettingCacheItem> GetOrAddCacheAsync(Guid unitId);
+
     /// <summary>
     /// 
     /// </summary>
     /// <param name="unitIdList"></param>
     /// <returns></returns>
-    Task<KeyValuePair<Guid, SessionUnitSettingCacheItem>[]> GetManyCacheAsync(List<Guid> unitIdList);
+    Task<KeyValuePair<Guid, SessionUnitSettingCacheItem>[]> GetOrAddManyCacheAsync(List<Guid> unitIdList);
 }

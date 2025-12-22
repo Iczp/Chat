@@ -1,4 +1,5 @@
-﻿using IczpNet.AbpCommons;
+﻿using AutoMapper.Internal.Mappers;
+using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.DataFilters;
@@ -13,6 +14,7 @@ using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
+using IczpNet.Chat.SessionUnitSettings.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -43,6 +45,7 @@ public class MessageAppService(
     IFavoritedRecorderManager favoriteManager,
     IFollowManager followManager,
     ISessionUnitRepository sessionUnitRepository,
+    ISessionUnitSettingManager sessionUnitSettingManager,
     IMessageManager messageManager) : ChatAppService, IMessageAppService
 {
     public IDeletedRecorderManager DeletedRecorderManager { get; } = deletedRecorderManager;
@@ -52,6 +55,7 @@ public class MessageAppService(
     protected IFavoritedRecorderManager FavoritedRecorderManager { get; } = favoriteManager;
     protected IFollowManager FollowManager { get; } = followManager;
     protected ISessionUnitRepository SessionUnitRepository { get; } = sessionUnitRepository;
+    public ISessionUnitSettingManager SessionUnitSettingManager { get; } = sessionUnitSettingManager;
     protected IMessageManager MessageManager { get; } = messageManager;
 
     /// <summary>
@@ -76,9 +80,12 @@ public class MessageAppService(
 
     private async Task<IQueryable<Message>> CreateQueryableAsync(SessionUnit entity, MessageGetListInput input)
     {
-        var setting = entity.Setting;
+
         var sessionId = entity.SessionId;
         var sessionUnitId = entity.Id;
+        //var setting = entity.Setting;
+
+        var setting = await SessionUnitSettingManager.GetOrAddCacheAsync(sessionUnitId);
 
         //var deletedIdList = await DeletedRecorderManager.GetDeletedMessageIdListAsync(sessionUnitId);
 
@@ -113,6 +120,32 @@ public class MessageAppService(
 
         return query;
 
+    }
+
+    /// <summary>
+    /// 填充设置信息
+    /// </summary>
+    /// <param name="result"></param>
+    /// <returns></returns>
+    private async Task FillSettingsAsync(PagedResultDto<MessageOwnerDto> result)
+    {
+        var senderUnitIdList = result.Items
+            .Where(x => x.SenderSessionUnitId != null)
+            .Select(x => x.SenderSessionUnitId.Value)
+            .Distinct()
+            .ToList();
+
+        var settings = await SessionUnitSettingManager.GetOrAddManyCacheAsync(senderUnitIdList);
+
+        var settingsMap = settings.ToDictionary(x => x.Key, x => x.Value);
+
+        foreach (var item in result.Items)
+        {
+            if (item.SenderSessionUnitId.HasValue && settingsMap.TryGetValue(item.SenderSessionUnitId.Value, out var senderSetting))
+            {
+                item.SenderSessionUnit.Setting = ObjectMapper.Map<SessionUnitSettingCacheItem, SessionUnitSettingSimpleDto>(senderSetting);
+            }
+        }
     }
 
     /// <summary>
@@ -238,6 +271,8 @@ public class MessageAppService(
         await FillStatisticsAsync(sessionUnitId, result);
 
         await FillFriendshipAsync(entity.OwnerId, result);
+
+        await FillSettingsAsync(result);
 
         return result;
     }

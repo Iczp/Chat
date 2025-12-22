@@ -31,7 +31,23 @@ public class SessionUnitSenderInfo : ExtensibleObject
     /// </summary>
     public virtual string MemberName { get; set; }
 
+    /// <summary>
+    /// 创建时间
+    /// </summary>
+    public virtual DateTime CreationTime { get; set; }
+
+    /// <summary>
+    /// 最后修改时间
+    /// </summary>
+    public DateTime? LastModificationTime { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public virtual ChatObjectInfo Owner { get; set; }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public virtual List<SessionTagInfo> TagList { get; set; }
 }

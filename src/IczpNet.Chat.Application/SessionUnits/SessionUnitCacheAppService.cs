@@ -227,7 +227,7 @@ public class SessionUnitCacheAppService(
             return;
         }
         var unitIds = nullSettingsItems.Select(x => x.Id).Distinct().ToList();
-        var settingMap = (await SessionUnitSettingManager.GetManyCacheAsync(unitIds))
+        var settingMap = (await SessionUnitSettingManager.GetOrAddManyCacheAsync(unitIds))
             .ToDictionary(x => x.Key, x => x.Value);
 
         foreach (var item in nullSettingsItems)
