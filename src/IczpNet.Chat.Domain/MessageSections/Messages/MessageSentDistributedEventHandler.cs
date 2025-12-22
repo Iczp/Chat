@@ -5,6 +5,7 @@ using IczpNet.Chat.Developers;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.Hosting;
+using IczpNet.Chat.MessageStats;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.Extensions.Logging;
@@ -36,6 +37,7 @@ public class MessageSentDistributedEventHandler(
     IJsonSerializer jsonSerializer,
     IFollowManager followManager,
     ISessionUnitManager sessionUnitManager,
+    IMessageStatRepository messageStatRepository,
     IMessageRepository messageRepository,
     ISessionUnitCacheManager sessionUnitCacheManager,
     ICurrentHosted currentHosted,
@@ -59,6 +61,7 @@ public class MessageSentDistributedEventHandler(
     public IJsonSerializer JsonSerializer { get; } = jsonSerializer;
     public IFollowManager FollowManager { get; } = followManager;
     public ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
+    public IMessageStatRepository MessageStatRepository { get; } = messageStatRepository;
     public IMessageRepository MessageRepository { get; } = messageRepository;
     public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
     protected ICurrentHosted CurrentHosted { get; } = currentHosted;
@@ -85,6 +88,9 @@ public class MessageSentDistributedEventHandler(
         using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
 
         var message = await MessageRepository.GetAsync(eventData.Id);
+
+        //统计消息
+        await MeasureAsync($"{nameof(StatMessageAsync)}", () => StatMessageAsync(message));
 
         //缓存会话单元计数增量
         await MeasureAsync($"{nameof(CachingUnitsAsync)}", () => CachingUnitsAsync(message));
@@ -120,6 +126,13 @@ public class MessageSentDistributedEventHandler(
         sw.Stop();
         return result;
     }
+
+    protected virtual async Task<long> StatMessageAsync(Message message)
+    {
+        var sessionId = message.SessionId.Value;
+        return await MessageStatRepository.StatAsync(sessionId, message.MessageType);
+    }
+
 
     protected virtual async Task<IEnumerable<SessionUnitCacheItem>> CachingUnitsAsync(Message message)
     {

@@ -29,6 +29,7 @@ using IczpNet.Chat.MessageSections.MessageFollowers;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.MessageStats;
 using IczpNet.Chat.MessageWords;
 using IczpNet.Chat.Mottos;
 using IczpNet.Chat.OpenedRecorders;
@@ -164,6 +165,7 @@ public class ChatDbContext(DbContextOptions<ChatDbContext> options) : AbpDbConte
     public DbSet<RedEnvelopeUnit> RedEnvelopeUnit { get; set; }
     public DbSet<HistoryContent> HistoryContent { get; set; }
     public DbSet<HistoryMessage> HistoryMessage { get; set; }
+    public DbSet<MessageStat> MessageStat { get; set; }
 
 
     public DbSet<Wallet> Wallet { get; set; }
