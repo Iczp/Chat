@@ -1,4 +1,5 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
+using IczpNet.Chat.AppVersionDevices;
 using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.DeviceGroupMaps;
 using IczpNet.Chat.DeviceGroups;
@@ -515,6 +516,12 @@ public class Device : BaseEntity<Guid>, IDeviceId, IIsEnabled
     /// DeviceGroupMapList
     /// </summary>
     public virtual IList<DeviceGroupMap> DeviceGroupMapList { get; protected set; } = [];
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public virtual IList<AppVersionDevice> AppVersionDeviceList { get; protected set; } = [];
+    
 
     /// <summary>
     /// 

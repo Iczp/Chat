@@ -1,5 +1,6 @@
 ﻿using Castle.DynamicProxy;
 using IczpNet.AbpCommons.Extensions;
+using IczpNet.Chat.Articles;
 using IczpNet.Chat.Attributes;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.MessageContents;
@@ -67,6 +68,9 @@ public partial class Message
     //HistoryMessageList
     [InverseProperty(nameof(HistoryMessage.Message))]
     public virtual IList<HistoryMessage> HistoryMessageList { get; set; } = [];
+
+    [InverseProperty(nameof(ArticleMessage.Message))]
+    public virtual IList<ArticleMessage> ArticleMessageList { get; set; } = [];
 
     public virtual dynamic GetContentEntity()
     {

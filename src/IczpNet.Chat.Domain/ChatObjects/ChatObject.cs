@@ -5,6 +5,7 @@ using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.ChatObjectCategoryUnits;
 using IczpNet.Chat.ChatObjectEntryValues;
 using IczpNet.Chat.ChatObjectTypes;
+using IczpNet.Chat.Connections;
 using IczpNet.Chat.Developers;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
@@ -295,8 +296,11 @@ public class ChatObject : BaseTreeEntity<ChatObject, long>, IName, IChatObject, 
 
     #region ChatObjectEntryValue 
     [InverseProperty(nameof(ChatObjectEntryValue.Owner))]
-    public virtual IList<ChatObjectEntryValue> Entries { get; set; } = new List<ChatObjectEntryValue>();
+    public virtual IList<ChatObjectEntryValue> Entries { get; set; } = [];
     #endregion
+
+    public virtual IList<ConnectionChatObject> ConnectionChatObjectList { get; protected set; } = [];
+    
 
     #region Motto 
     public virtual Guid? MottoId { get; protected set; }

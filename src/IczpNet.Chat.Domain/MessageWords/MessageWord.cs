@@ -37,6 +37,6 @@ public class MessageWord : BaseEntity
 
     public override object[] GetKeys()
     {
-        return new object[] { MessageId, WordId };
+        return [MessageId, WordId];
     }
 }

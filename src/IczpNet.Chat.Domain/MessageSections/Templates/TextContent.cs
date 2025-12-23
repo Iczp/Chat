@@ -1,7 +1,10 @@
 ﻿using IczpNet.Chat.Attributes;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.TextContentWords;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.MessageSections.Templates;
 
@@ -19,4 +22,7 @@ public class TextContent : MessageContentEntityBase
     public override string GetBody() => FormatString(Text);
 
     public override long GetSize() => System.Text.Encoding.Default.GetByteCount(Text);
+
+    [InverseProperty(nameof(TextContentWord.TextContent))]
+    public virtual IList<TextContentWord> TextContentWordList { get; protected set; } = [];
 }

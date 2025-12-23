@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.BaseEntities;
+﻿using IczpNet.Chat.AppVersionDeviceGroups;
+using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.DeviceGroupMaps;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -32,6 +33,12 @@ public class DeviceGroup : BaseEntity<Guid>
     /// 
     /// </summary>
     public virtual IList<DeviceGroupMap> DeviceGroupMapList { get; protected set; } = [];
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public virtual IList<AppVersionDeviceGroup> AppVersionDeviceGroupList { get; protected set; } = [];
+    
 
     /// <summary>
     /// 设备数量

@@ -29,7 +29,7 @@ public class HistoryContent : MessageContentEntityBase
     public virtual string Description { get; protected set; }
 
     [InverseProperty(nameof(HistoryMessage.HistoryContent))]
-    public virtual IList<HistoryMessage> HistoryMessageList { set; protected get; }
+    public virtual IList<HistoryMessage> HistoryMessageList { get; set; }
 
     protected HistoryContent() { }
 

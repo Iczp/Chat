@@ -1,10 +1,13 @@
 ﻿using IczpNet.AbpCommons.Extensions;
+using IczpNet.Chat.Articles;
 using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.MessageWords;
 using IczpNet.Chat.SessionSections;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Volo.Abp.Auditing;
@@ -256,4 +259,8 @@ public partial class Message : BaseEntity<long>, ISessionId, IHasEntityVersion
     /// </summary>
     /// <returns></returns>
     public virtual bool IsRollbackMessage() => IsRollbacked || RollbackTime != null;
+
+
+    [InverseProperty(nameof(MessageWord.Message))]
+    public virtual IList<MessageWord> MessageWordList { get; set; } = [];
 }

@@ -14,6 +14,7 @@ public static class AutoMapperExtensions
     {
         return mappingExpression
             .IgnoreAllPropertiesWithAnInaccessibleSetter()
+            .IgnoreAllSourcePropertiesWithAnInaccessibleSetter()
             .IgnoreFullAuditedObjectProperties()
             //.Ignore(x => x.Id)
             //.Ignore(x => x.TenantId)
