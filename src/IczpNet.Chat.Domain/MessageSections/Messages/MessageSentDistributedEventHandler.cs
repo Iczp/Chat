@@ -47,7 +47,6 @@ public class MessageSentDistributedEventHandler(
     ITransientDependency
 {
     protected string HandlerName => $"{nameof(MessageSentDistributedEventHandler)}";
-    protected string LockerName => HandlerName;
 
     protected IAbpDistributedLock DistributedLock { get; set; } = distributedLock;
     public IAiResolver AiResolver { get; } = aiResolver;
@@ -72,7 +71,11 @@ public class MessageSentDistributedEventHandler(
     {
         Logger.LogInformation($"Handle HostName:{CurrentHosted.Name},eventData:{eventData}");
 
-        await using var handle = await DistributedLock.TryAcquireAsync(LockerName);
+        var lockerName = $"{HandlerName}-messageId-{eventData.Id}";
+
+        await using var handle = await DistributedLock.TryAcquireAsync(lockerName);
+
+        Logger.LogInformation("Handle=={handle},LockerName={LockerName}", handle, lockerName);
 
         if (handle == null)
         {
@@ -82,7 +85,9 @@ public class MessageSentDistributedEventHandler(
 
         var s = Clock.Now.Ticks - eventData.PublishTime?.Ticks ?? 0;
 
-        Logger.LogInformation($"Handle NetDelay: {s / 10000}ms");
+        Logger.LogInformation("Handle NetDelay: {ms}ms", s / 10000);
+
+        Logger.LogWarning("HandleEventAsync: MessageId={Id}, Thread={Thread}", eventData.Id, Environment.CurrentManagedThreadId);
 
         // 分布式事件要开启工作单元
         using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
@@ -119,18 +124,31 @@ public class MessageSentDistributedEventHandler(
 
     protected virtual async Task<T> MeasureAsync<T>(string name, Func<Task<T>> func)
     {
-        var sw = Stopwatch.StartNew();
-        var result = await func();
-        Logger.LogInformation($"[{HandlerName}] [{name}] Elapsed Time: {sw.ElapsedMilliseconds} ms");
-        ExecutedMilliseconds.TryAdd(name, sw.ElapsedMilliseconds);
-        sw.Stop();
-        return result;
+        try
+        {
+            var sw = Stopwatch.StartNew();
+            var result = await func();
+            Logger.LogInformation("[{HandlerName}] [{name}] Elapsed Time: {ms} ms", HandlerName, name, sw.ElapsedMilliseconds);
+            ExecutedMilliseconds.TryAdd(name, sw.ElapsedMilliseconds);
+            sw.Stop();
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError("Exe: {name} Error:{ex}", name, ex);
+            return default;
+        }
     }
 
-    protected virtual async Task<long> StatMessageAsync(Message message)
+    protected virtual async Task<bool> StatMessageAsync(Message message)
     {
+        using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
         var sessionId = message.SessionId.Value;
-        return await MessageStatRepository.StatAsync(sessionId, message.MessageType);
+        await MessageStatRepository.IncrementAsync(sessionId, message.MessageType, "yyyyMM");
+        await MessageStatRepository.IncrementAsync(sessionId, message.MessageType, "yyyyMMdd");
+        await MessageStatRepository.IncrementAsync(sessionId, message.MessageType, "yyyyMMddHH");
+        await uow.CompleteAsync(); //  提前提交
+        return true;
     }
 
 

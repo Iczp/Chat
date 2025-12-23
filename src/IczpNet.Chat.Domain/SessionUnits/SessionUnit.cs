@@ -12,6 +12,7 @@ using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
+using IczpNet.Chat.Scopeds;
 using IczpNet.Chat.SessionSections;
 using IczpNet.Chat.SessionSections.SessionPermissionUnitGrants;
 using IczpNet.Chat.SessionSections.SessionRequests;
@@ -241,6 +242,13 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     public virtual IList<SessionUnitEntryValue> Entries { get; set; }
 
     public virtual IList<SessionUnitContactTag> SessionUnitContactTagList { get; set; }
+
+    /// <summary>
+    /// 指定范围消息
+    /// </summary>
+    [InverseProperty(nameof(Scoped.SessionUnit))]
+    public virtual IList<Scoped> ScopedList { get; set; }
+
 
     [NotMapped]
     public virtual List<ContactTag> ContactTags => SessionUnitContactTagList.Select(x => x.Tag).ToList();

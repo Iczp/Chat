@@ -103,22 +103,89 @@ public static class ChatDbContextModelCreatingExtensions
             //    .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
             b.UseTptMappingStrategy();
         });
-        builder.Entity<ConnectionChatObject>(b => { b.HasKey(x => new { x.ChatObjectId, x.ConnectionId }); });
-        builder.Entity<ChatObjectEntryValue>(b => { b.HasKey(x => new { x.OwnerId, x.EntryValueId }); });
-        builder.Entity<ChatObjectCategoryUnit>(b => { b.HasKey(x => new { x.ChatObjectId, x.CategoryId }); });
-        builder.Entity<ArticleMessage>(b => { b.HasKey(x => new { x.MessageId, x.ArticleId }); });
+        builder.Entity<ConnectionChatObject>(b =>
+        {
+            b.HasKey(x => new { x.ChatObjectId, x.ConnectionId });
+            b.HasOne(x => x.ChatObject).WithMany(x => x.ConnectionChatObjectList).HasForeignKey(x => x.ChatObjectId).OnDelete(DeleteBehavior.NoAction).IsRequired(false);
+            b.HasOne(x => x.Connection).WithMany(x => x.ConnectionChatObjectList).HasForeignKey(x => x.ConnectionId).OnDelete(DeleteBehavior.NoAction).IsRequired(false);
+        });
+        builder.Entity<ChatObjectEntryValue>(b =>
+        {
+            b.HasKey(x => new { x.OwnerId, x.EntryValueId });
+            b.HasOne(x => x.Owner).WithMany(x => x.Entries).HasForeignKey(x => x.OwnerId).OnDelete(DeleteBehavior.NoAction).IsRequired(false);
+            b.HasOne(x => x.EntryValue).WithMany(x => x.ChatObjectEntryValueList).HasForeignKey(x => x.EntryValueId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+        });
 
-        builder.Entity<HistoryMessage>(b => { b.HasKey(x => new { x.MessageId, x.HistoryContentId }); });
-        builder.Entity<MessageWord>(b => { b.HasKey(x => new { x.MessageId, x.WordId }); });
+        builder.Entity<ChatObjectCategoryUnit>(b =>
+        {
+            b.HasKey(x => new { x.ChatObjectId, x.CategoryId });
+            b.HasOne(x => x.Category).WithMany(x => x.ChatObjectCategoryUnitList).HasForeignKey(x => x.CategoryId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+            b.HasOne(x => x.ChatObject).WithMany(x => x.ChatObjectCategoryUnitList).HasForeignKey(x => x.ChatObjectId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+        });
+        builder.Entity<ArticleMessage>(b =>
+        {
+            b.HasKey(x => new { x.MessageId, x.ArticleId });
+            b.HasOne(x => x.Article).WithMany(x => x.MessageList).HasForeignKey(x => x.ArticleId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+            b.HasOne(x => x.Message).WithMany(x => x.ArticleMessageList).HasForeignKey(x => x.MessageId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+        });
 
-        builder.Entity<SessionUnitEntryValue>(b => { b.HasKey(x => new { x.SessionUnitId, x.EntryValueId }); });
-        builder.Entity<SessionUnitTag>(b => { b.HasKey(x => new { x.SessionUnitId, x.SessionTagId }); });
-        builder.Entity<SessionUnitContactTag>(b => { b.HasKey(x => new { x.SessionUnitId, x.TagId }); });
+        builder.Entity<HistoryMessage>(b =>
+        {
+            b.HasKey(x => new { x.MessageId, x.HistoryContentId });
+            b.HasOne(x => x.Message).WithMany(x => x.HistoryMessageList).HasForeignKey(x => x.MessageId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+            b.HasOne(x => x.HistoryContent).WithMany(x => x.HistoryMessageList).HasForeignKey(x => x.HistoryContentId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+        });
+        builder.Entity<MessageWord>(b =>
+        {
+            b.HasKey(x => new { x.MessageId, x.WordId });
+            b.HasOne(x => x.Message).WithMany(x => x.MessageWordList).HasForeignKey(x => x.MessageId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+            b.HasOne(x => x.Word).WithMany(x => x.MessageWordList).HasForeignKey(x => x.WordId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+        });
 
-        builder.Entity<SessionUnitRole>(b => { b.HasKey(x => new { x.SessionUnitId, x.SessionRoleId }); });
-        builder.Entity<SessionUnitOrganization>(b => { b.HasKey(x => new { x.SessionUnitId, x.SessionOrganizationId }); });
-        builder.Entity<SessionPermissionRoleGrant>(b => { b.HasKey(x => new { x.DefinitionId, x.RoleId }); });
-        builder.Entity<SessionPermissionUnitGrant>(b => { b.HasKey(x => new { x.DefinitionId, x.SessionUnitId }); });
+        builder.Entity<SessionUnitEntryValue>(b =>
+        {
+            b.HasKey(x => new { x.SessionUnitId, x.EntryValueId });
+            b.HasOne(x => x.SessionUnit).WithMany(x => x.Entries).HasForeignKey(x => x.SessionUnitId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+            b.HasOne(x => x.EntryValue).WithMany(x => x.SessionUnitEntryValueList).HasForeignKey(x => x.EntryValueId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+        });
+        builder.Entity<SessionUnitTag>(b =>
+        {
+            b.HasKey(x => new { x.SessionUnitId, x.SessionTagId });
+            b.HasOne(x => x.SessionUnit).WithMany(x => x.SessionUnitTagList).HasForeignKey(x => x.SessionUnitId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+            b.HasOne(x => x.SessionTag).WithMany(x => x.SessionUnitTagList).HasForeignKey(x => x.SessionTagId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+
+        });
+        builder.Entity<SessionUnitContactTag>(b =>
+        {
+            b.HasKey(x => new { x.SessionUnitId, x.TagId });
+            b.HasOne(x => x.SessionUnit).WithMany(x => x.SessionUnitContactTagList).HasForeignKey(x => x.SessionUnitId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+            b.HasOne(x => x.Tag).WithMany(x => x.SessionUnitContactTagList).HasForeignKey(x => x.TagId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+        });
+
+        builder.Entity<SessionUnitRole>(b =>
+        {
+            b.HasKey(x => new { x.SessionUnitId, x.SessionRoleId });
+            b.HasOne(x => x.SessionUnit).WithMany(x => x.SessionUnitRoleList).HasForeignKey(x => x.SessionUnitId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+            b.HasOne(x => x.SessionRole).WithMany(x => x.SessionUnitRoleList).HasForeignKey(x => x.SessionRoleId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+        });
+        builder.Entity<SessionUnitOrganization>(b =>
+        {
+            b.HasKey(x => new { x.SessionUnitId, x.SessionOrganizationId });
+            b.HasOne(x => x.SessionUnit).WithMany(x => x.SessionUnitOrganizationList).HasForeignKey(x => x.SessionUnitId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+            b.HasOne(x => x.SessionOrganization).WithMany(x => x.SessionUnitOrganizationList).HasForeignKey(x => x.SessionOrganizationId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+        });
+        builder.Entity<SessionPermissionRoleGrant>(b =>
+        {
+            b.HasKey(x => new { x.DefinitionId, x.RoleId });
+            b.HasOne(x => x.Definition).WithMany(x => x.RoleGrantList).HasForeignKey(x => x.DefinitionId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+            b.HasOne(x => x.Role).WithMany(x => x.GrantList).HasForeignKey(x => x.RoleId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+        });
+        builder.Entity<SessionPermissionUnitGrant>(b =>
+        {
+            b.HasKey(x => new { x.DefinitionId, x.SessionUnitId });
+            b.HasOne(x => x.Definition).WithMany(x => x.UnitGrantList).HasForeignKey(x => x.DefinitionId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+            b.HasOne(x => x.SessionUnit).WithMany(x => x.GrantList).HasForeignKey(x => x.SessionUnitId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+        });
 
         builder.Entity<Follow>(entity =>
         {
@@ -128,13 +195,15 @@ public static class ChatDbContextModelCreatingExtensions
             entity.HasOne(e => e.OwnerSessionUnit)
                 .WithMany(su => su.FollowingList)
                 .HasForeignKey(e => e.OwnerSessionUnitId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
 
             // DestinationSessionUnit 关系
             entity.HasOne(e => e.DestinationSessionUnit)
                 .WithMany(su => su.FollowerList)
                 .HasForeignKey(e => e.DestinationSessionUnitId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
 
             // ChatObject 关系（可选）
             entity.HasOne(e => e.Owner)
@@ -154,23 +223,62 @@ public static class ChatDbContextModelCreatingExtensions
         {
             b.HasKey(x => new { x.SessionUnitId, x.MessageId });
             b.HasIndex(x => x.CreationTime).IsDescending([true]);
-        });
-        builder.Entity<MessageFollower>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
 
-        builder.Entity<FavoritedRecorder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
-        builder.Entity<OpenedRecorder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
-        builder.Entity<ReadedRecorder>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
+            b.HasOne(x => x.Message).WithMany(x => x.MessageReminderList).HasForeignKey(x => x.MessageId).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
+            b.HasOne(x => x.SessionUnit).WithMany(x => x.ReminderList).HasForeignKey(x => x.SessionUnitId).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
+
+        });
+        builder.Entity<MessageFollower>(b =>
+        {
+            b.HasKey(x => new { x.SessionUnitId, x.MessageId });
+            b.HasOne(x => x.Message).WithMany(x => x.MessageFollowerList).HasForeignKey(x => x.MessageId).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
+            b.HasOne(x => x.SessionUnit).WithMany(x => x.MessageFollowerList).HasForeignKey(x => x.SessionUnitId).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
+        });
+
+        builder.Entity<FavoritedRecorder>(b =>
+        {
+            b.HasKey(x => new { x.SessionUnitId, x.MessageId });
+            b.HasOne(x => x.Message).WithMany(x => x.FavoriteList).HasForeignKey(x => x.MessageId).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
+            b.HasOne(x => x.SessionUnit).WithMany(x => x.FavoriteList).HasForeignKey(x => x.SessionUnitId).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
+
+        });
+        builder.Entity<OpenedRecorder>(b =>
+        {
+            b.HasKey(x => new { x.SessionUnitId, x.MessageId });
+            b.HasOne(x => x.Message).WithMany(x => x.OpenedRecorderList).HasForeignKey(x => x.MessageId).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
+            b.HasOne(x => x.SessionUnit).WithMany(x => x.OpenedRecorderList).HasForeignKey(x => x.SessionUnitId).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
+        });
+        builder.Entity<ReadedRecorder>(b =>
+        {
+            b.HasKey(x => new { x.SessionUnitId, x.MessageId });
+            b.HasOne(x => x.Message).WithMany(x => x.ReadedRecorderList).HasForeignKey(x => x.MessageId).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
+            b.HasOne(x => x.SessionUnit).WithMany(x => x.ReadedRecorderList).HasForeignKey(x => x.SessionUnitId).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
+        });
         builder.Entity<DeletedRecorder>(b =>
         {
 
             b.HasKey(x => new { x.SessionUnitId, x.MessageId });
+            b.HasOne(x => x.Message).WithMany(x => x.DeletedList).HasForeignKey(x => x.MessageId).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
+            b.HasOne(x => x.SessionUnit).WithMany(x => x.DeletedRecorderList).HasForeignKey(x => x.SessionUnitId).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
+
             ////ChatGPT 优化 2025.11.20
             //b.HasIndex(x => new { x.SessionUnitId, x.MessageId }).HasDatabaseName("IX_Chat_DeletedRecorder_MessageUnit");
         });
 
-        builder.Entity<Scoped>(b => { b.HasKey(x => new { x.SessionUnitId, x.MessageId }); });
+        builder.Entity<Scoped>(b =>
+        {
+            b.HasKey(x => new { x.SessionUnitId, x.MessageId });
+            b.HasOne(x => x.Message).WithMany(x => x.ScopedList).HasForeignKey(x => x.MessageId).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
+            b.HasOne(x => x.SessionUnit).WithMany(x => x.ScopedList).HasForeignKey(x => x.SessionUnitId).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
+        });
 
-        builder.Entity<TextContentWord>(b => { b.HasKey(x => new { x.TextContentId, x.WordId }); });
+        builder.Entity<TextContentWord>(b =>
+        {
+            b.HasKey(x => new { x.TextContentId, x.WordId });
+            b.HasOne(x => x.Word).WithMany(x => x.TextContentWordList).HasForeignKey(x => x.WordId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+            b.HasOne(x => x.TextContent).WithMany(x => x.TextContentWordList).HasForeignKey(x => x.TextContentId).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
+
+        });
 
         builder.Entity<ReadedCounter>(b => { b.HasKey(x => new { x.MessageId }); });
         builder.Entity<OpenedCounter>(b => { b.HasKey(x => new { x.MessageId }); });
@@ -212,19 +320,19 @@ public static class ChatDbContextModelCreatingExtensions
         builder.Entity<Developer>(b =>
         {
             b.HasKey(x => x.OwnerId);
-            b.HasOne(x => x.Owner).WithOne(x => x.Developer).HasForeignKey<Developer>(x => x.OwnerId).IsRequired(true);
+            b.HasOne(x => x.Owner).WithOne(x => x.Developer).HasForeignKey<Developer>(x => x.OwnerId).IsRequired(false);
         });
 
         builder.Entity<HttpResponse>(b =>
         {
             b.HasKey(x => new { x.HttpRequestId });
-            b.HasOne(x => x.HttpRequest).WithOne(x => x.Response).HasForeignKey<HttpResponse>(x => x.HttpRequestId).IsRequired(true);
+            b.HasOne(x => x.HttpRequest).WithOne(x => x.Response).HasForeignKey<HttpResponse>(x => x.HttpRequestId).IsRequired(false);
         });
 
         builder.Entity<BlobContent>(b =>
         {
             b.HasKey(x => new { x.BlobId });
-            b.HasOne(x => x.Blob).WithOne(x => x.Content).HasForeignKey<BlobContent>(x => x.BlobId).IsRequired(true);
+            b.HasOne(x => x.Blob).WithOne(x => x.Content).HasForeignKey<BlobContent>(x => x.BlobId).OnDelete(DeleteBehavior.NoAction).IsRequired(false);
         });
 
 
@@ -312,27 +420,51 @@ public static class ChatDbContextModelCreatingExtensions
 
         builder.Entity<MessageStat>(b =>
         {
-            b.HasKey(x => x.Id);
-            b.Property(x => x.Id).ValueGeneratedNever();
-            b.HasIndex(x => new { x.SessionId, x.MessageType }).IsUnique();
-            b.HasIndex(x => new { x.Id, x.SessionId, x.MessageType });
+            //b.HasKey(x => x.Id);
+            //b.Property(x => x.Id).ValueGeneratedNever();
+            b.HasIndex(x => new { x.SessionId, x.MessageType }).IsUnique(false);
+            b.HasIndex(x => new { x.SessionId, x.DateBucket, x.MessageType }).IsUnique(true);
             b.HasIndex(x => x.SessionId);
             b.HasIndex(x => x.MessageType);
             b.Property(x => x.MessageType).HasConversion<string>().HasMaxLength(32);
         });
 
-        builder.Entity<UserDevice>(b => { b.HasKey(x => new { x.UserId, x.DeviceId }); });
+        builder.Entity<UserDevice>(b =>
+        {
+            b.HasKey(x => new { x.UserId, x.DeviceId });
+            b.HasOne(x => x.Device).WithMany(x => x.UserDeviceList).HasForeignKey(x => x.DeviceId).IsRequired(false);
+        });
 
-        builder.Entity<DeviceGroupMap>(b => { b.HasKey(x => new { x.DeviceGroupId, x.DeviceId }); });
+        builder.Entity<DeviceGroupMap>(b =>
+        {
+            b.HasKey(x => new { x.DeviceGroupId, x.DeviceId });
+            b.HasOne(x => x.Device).WithMany(x => x.DeviceGroupMapList).HasForeignKey(x => x.DeviceId).IsRequired(false);
+            b.HasOne(x => x.DeviceGroup).WithMany(x => x.DeviceGroupMapList).HasForeignKey(x => x.DeviceGroupId).IsRequired(false);
+        });
 
-        builder.Entity<AppVersionDevice>(b => { b.HasKey(x => new { x.AppVersionId, x.DeviceId }); });
+        builder.Entity<AppVersionDevice>(b =>
+        {
+            b.HasKey(x => new { x.AppVersionId, x.DeviceId });
+            b.HasOne(x => x.AppVersion).WithMany(x => x.VersionDeviceList).HasForeignKey(x => x.AppVersionId).IsRequired(false);
+            b.HasOne(x => x.Device).WithMany(x => x.AppVersionDeviceList).HasForeignKey(x => x.DeviceId).IsRequired(false);
+        });
 
-        builder.Entity<AppVersionDeviceGroup>(b => { b.HasKey(x => new { x.AppVersionId, x.DeviceGroupId }); });
+        builder.Entity<AppVersionDeviceGroup>(b =>
+        {
+            b.HasKey(x => new { x.AppVersionId, x.DeviceGroupId });
+            b.HasOne(x => x.DeviceGroup).WithMany(x => x.AppVersionDeviceGroupList).HasForeignKey(x => x.DeviceGroupId).IsRequired(false);
+        });
 
         builder.Entity<AppVersion>(b =>
         {
             b.HasIndex(x => new { x.AppId, x.Platform, x.VersionCode }).IsDescending([false, false, true]).IsUnique();
             b.HasIndex(x => x.VersionCode).IsDescending(true);
+            b.HasMany(x => x.AppVersionDeviceGroupList)
+                .WithOne(x => x.AppVersion)
+                .HasForeignKey(x => x.AppVersionId)
+                .OnDelete(DeleteBehavior.NoAction)
+                .IsRequired(false);
+
         });
     }
 

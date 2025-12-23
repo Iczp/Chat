@@ -2,7 +2,6 @@
 using IczpNet.Chat.AppVersionDeviceGroups;
 using IczpNet.Chat.AppVersionDevices;
 using IczpNet.Chat.BaseEntities;
-using IczpNet.Chat.DeviceGroupMaps;
 using IczpNet.Chat.DeviceGroups;
 using System;
 using System.Collections.Generic;

@@ -1,8 +1,12 @@
 ﻿using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.BaseEntities;
+using IczpNet.Chat.MessageWords;
+using IczpNet.Chat.TextContentWords;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IczpNet.Chat.Words;
 
@@ -27,6 +31,14 @@ public class Word : BaseEntity<Guid>, IIsEnabled
     /// 是否脏词
     /// </summary>
     public virtual bool IsDirty { get; set; }
+
+    [InverseProperty(nameof(MessageWord.Word))]
+    public virtual IList<MessageWord> MessageWordList { get; set; } = [];
+
+
+    [InverseProperty(nameof(TextContentWord.Word))]
+    public virtual IList<TextContentWord> TextContentWordList { get; set; } = [];
+    
 
     protected Word() { }
 }

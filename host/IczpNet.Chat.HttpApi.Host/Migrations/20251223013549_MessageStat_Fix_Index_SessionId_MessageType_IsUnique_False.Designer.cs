@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251223013549_MessageStat_Fix_Index_SessionId_MessageType_IsUnique_False")]
+    partial class MessageStat_Fix_Index_SessionId_MessageType_IsUnique_False
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -4443,9 +4446,9 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.MessageStats.MessageStat", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<long>("Id")
+                        .HasColumnType("bigint")
+                        .HasComment("主键 日期");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -4465,10 +4468,6 @@ namespace IczpNet.Chat.Migrations
                     b.Property<Guid?>("CreatorId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("CreatorId");
-
-                    b.Property<long>("DateBucket")
-                        .HasColumnType("bigint")
-                        .HasComment("日期(数字)");
 
                     b.Property<Guid?>("DeleterId")
                         .HasColumnType("uniqueidentifier")
@@ -4515,8 +4514,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("SessionId", "MessageType");
 
-                    b.HasIndex("SessionId", "DateBucket", "MessageType")
-                        .IsUnique();
+                    b.HasIndex("Id", "SessionId", "MessageType");
 
                     b.ToTable("Chat_MessageStat", (string)null);
                 });

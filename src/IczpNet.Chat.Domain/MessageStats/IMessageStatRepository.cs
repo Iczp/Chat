@@ -5,7 +5,7 @@ using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.MessageStats;
 
-public interface IMessageStatRepository : IRepository<MessageStat,long>
+public interface IMessageStatRepository : IRepository<MessageStat, Guid>
 {
-    Task<long> StatAsync(Guid sessionId, MessageTypes messageType);
+    Task IncrementAsync(Guid sessionId, MessageTypes messageType, string dateBucketFormat = "yyyyMMdd");
 }

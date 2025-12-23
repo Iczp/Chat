@@ -12,10 +12,8 @@ namespace IczpNet.Chat.MessageStats;
 /// 
 /// </summary>
 
-public class MessageStat : BaseEntity<long>
+public class MessageStat : BaseEntity<Guid>
 {
-    [Comment("主键 日期")]
-    public override long Id { get; protected set; }
 
     /// <summary>
     /// 
@@ -39,13 +37,17 @@ public class MessageStat : BaseEntity<long>
     /// <summary>
     /// 
     /// </summary>
+    [Comment("日期(数字)")]
+    public virtual long DateBucket { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
     [Comment("数量")]
     public virtual long Count { get; set; }
 
     protected MessageStat() { }
 
-    public MessageStat(long id)
-    {
-        Id = id;
-    }
+    public MessageStat(Guid id) : base(id) { }
+
 }
