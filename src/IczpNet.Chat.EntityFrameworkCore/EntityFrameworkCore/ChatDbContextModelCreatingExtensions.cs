@@ -17,13 +17,13 @@ using IczpNet.Chat.Devices;
 using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.HttpRequests;
+using IczpNet.Chat.MessageReports;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Counters;
 using IczpNet.Chat.MessageSections.MessageFollowers;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
-using IczpNet.Chat.MessageStats;
 using IczpNet.Chat.MessageWords;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
@@ -418,10 +418,24 @@ public static class ChatDbContextModelCreatingExtensions
 
         });
 
-        builder.Entity<MessageStat>(b =>
+        builder.Entity<MessageReportDay>(b =>
         {
-            //b.HasKey(x => x.Id);
-            //b.Property(x => x.Id).ValueGeneratedNever();
+            b.HasIndex(x => new { x.SessionId, x.MessageType }).IsUnique(false);
+            b.HasIndex(x => new { x.SessionId, x.DateBucket, x.MessageType }).IsUnique(true);
+            b.HasIndex(x => x.SessionId);
+            b.HasIndex(x => x.MessageType);
+            //b.Property(x => x.MessageType).HasConversion<string>().HasMaxLength(32);
+        });
+        builder.Entity<MessageReportMonth>(b =>
+        {
+            b.HasIndex(x => new { x.SessionId, x.MessageType }).IsUnique(false);
+            b.HasIndex(x => new { x.SessionId, x.DateBucket, x.MessageType }).IsUnique(true);
+            b.HasIndex(x => x.SessionId);
+            b.HasIndex(x => x.MessageType);
+            //b.Property(x => x.MessageType).HasConversion<string>().HasMaxLength(32);
+        });
+        builder.Entity<MessageReportHour>(b =>
+        {
             b.HasIndex(x => new { x.SessionId, x.MessageType }).IsUnique(false);
             b.HasIndex(x => new { x.SessionId, x.DateBucket, x.MessageType }).IsUnique(true);
             b.HasIndex(x => x.SessionId);
