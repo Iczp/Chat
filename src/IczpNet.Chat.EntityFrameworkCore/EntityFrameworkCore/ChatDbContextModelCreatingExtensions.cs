@@ -426,7 +426,7 @@ public static class ChatDbContextModelCreatingExtensions
             b.HasIndex(x => new { x.SessionId, x.DateBucket, x.MessageType }).IsUnique(true);
             b.HasIndex(x => x.SessionId);
             b.HasIndex(x => x.MessageType);
-            b.Property(x => x.MessageType).HasConversion<string>().HasMaxLength(32);
+            //b.Property(x => x.MessageType).HasConversion<string>().HasMaxLength(32);
         });
 
         builder.Entity<UserDevice>(b =>

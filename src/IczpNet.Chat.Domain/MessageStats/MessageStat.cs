@@ -31,7 +31,6 @@ public class MessageStat : BaseEntity<Guid>
     /// 
     /// </summary>
     [Comment("消息类型")]
-    [StringLength(32)]
     public virtual MessageTypes MessageType { get; set; }
 
     /// <summary>
