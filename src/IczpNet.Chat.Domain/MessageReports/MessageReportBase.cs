@@ -3,16 +3,15 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.SessionSections.Sessions;
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace IczpNet.Chat.MessageStats;
+namespace IczpNet.Chat.MessageReports;
 
 /// <summary>
 /// 
 /// </summary>
 
-public class MessageStat : BaseEntity<Guid>
+public abstract class MessageReportBase : BaseEntity<Guid>
 {
 
     /// <summary>
@@ -45,8 +44,12 @@ public class MessageStat : BaseEntity<Guid>
     [Comment("数量")]
     public virtual long Count { get; set; }
 
-    protected MessageStat() { }
+    protected MessageReportBase() { }
 
-    public MessageStat(Guid id) : base(id) { }
+    public MessageReportBase(Guid id) : base(id) { }
 
+    public void SetId(Guid id)
+    {
+        Id = id;
+    }
 }
