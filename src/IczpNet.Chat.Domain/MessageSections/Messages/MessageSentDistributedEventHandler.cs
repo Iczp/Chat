@@ -47,7 +47,6 @@ public class MessageSentDistributedEventHandler(
     ITransientDependency
 {
     protected string HandlerName => $"{nameof(MessageSentDistributedEventHandler)}";
-    protected string LockerName => HandlerName;
 
     protected IAbpDistributedLock DistributedLock { get; set; } = distributedLock;
     public IAiResolver AiResolver { get; } = aiResolver;
@@ -72,7 +71,11 @@ public class MessageSentDistributedEventHandler(
     {
         Logger.LogInformation($"Handle HostName:{CurrentHosted.Name},eventData:{eventData}");
 
-        await using var handle = await DistributedLock.TryAcquireAsync(LockerName);
+        var lockerName = $"{HandlerName}-messageId-{eventData.Id}";
+
+        await using var handle = await DistributedLock.TryAcquireAsync(lockerName);
+
+        Logger.LogInformation("Handle=={handle},LockerName={LockerName}", handle, lockerName);
 
         if (handle == null)
         {
@@ -82,7 +85,9 @@ public class MessageSentDistributedEventHandler(
 
         var s = Clock.Now.Ticks - eventData.PublishTime?.Ticks ?? 0;
 
-        Logger.LogInformation($"Handle NetDelay: {s / 10000}ms");
+        Logger.LogInformation("Handle NetDelay: {ms}ms", s / 10000);
+
+        Logger.LogWarning("HandleEventAsync: MessageId={Id}, Thread={Thread}", eventData.Id, Environment.CurrentManagedThreadId);
 
         // 分布式事件要开启工作单元
         using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
@@ -127,10 +132,12 @@ public class MessageSentDistributedEventHandler(
         return result;
     }
 
-    protected virtual async Task<long> StatMessageAsync(Message message)
+    protected virtual async Task<bool> StatMessageAsync(Message message)
     {
         var sessionId = message.SessionId.Value;
-        return await MessageStatRepository.StatAsync(sessionId, message.MessageType);
+        await MessageStatRepository.IncrementAsync(sessionId, message.MessageType, "yyyyMMdd");
+        await MessageStatRepository.IncrementAsync(sessionId, message.MessageType, "yyyyMMddHH");
+        return true;
     }
 
 

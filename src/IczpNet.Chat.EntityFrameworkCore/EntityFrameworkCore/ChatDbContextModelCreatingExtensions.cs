@@ -420,10 +420,10 @@ public static class ChatDbContextModelCreatingExtensions
 
         builder.Entity<MessageStat>(b =>
         {
-            b.HasKey(x => x.Id);
-            b.Property(x => x.Id).ValueGeneratedNever();
-            b.HasIndex(x => new { x.SessionId, x.MessageType }).IsUnique();
-            b.HasIndex(x => new { x.Id, x.SessionId, x.MessageType });
+            //b.HasKey(x => x.Id);
+            //b.Property(x => x.Id).ValueGeneratedNever();
+            b.HasIndex(x => new { x.SessionId, x.MessageType }).IsUnique(false);
+            b.HasIndex(x => new { x.SessionId, x.DateBucket, x.MessageType }).IsUnique(true);
             b.HasIndex(x => x.SessionId);
             b.HasIndex(x => x.MessageType);
             b.Property(x => x.MessageType).HasConversion<string>().HasMaxLength(32);
