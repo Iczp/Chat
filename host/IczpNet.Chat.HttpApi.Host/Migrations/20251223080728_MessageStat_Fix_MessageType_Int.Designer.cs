@@ -4,6 +4,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace IczpNet.Chat.Migrations
 {
     [DbContext(typeof(ChatHttpApiHostMigrationsDbContext))]
-    partial class ChatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251223080728_MessageStat_Fix_MessageType_Int")]
+    partial class MessageStat_Fix_MessageType_Int
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2715,240 +2718,6 @@ namespace IczpNet.Chat.Migrations
                     b.ToTable("Chat_Menu", (string)null);
                 });
 
-            modelBuilder.Entity("IczpNet.Chat.MessageReports.MessageReportDay", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<long>("Count")
-                        .HasColumnType("bigint")
-                        .HasComment("数量");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<long>("DateBucket")
-                        .HasColumnType("bigint")
-                        .HasComment("日期(数字)");
-
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<string>("ExtraProperties")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<int>("MessageType")
-                        .HasColumnType("int")
-                        .HasComment("消息类型");
-
-                    b.Property<Guid>("SessionId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasComment("会话Id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MessageType");
-
-                    b.HasIndex("SessionId");
-
-                    b.HasIndex("SessionId", "MessageType");
-
-                    b.HasIndex("SessionId", "DateBucket", "MessageType")
-                        .IsUnique();
-
-                    b.ToTable("Chat_MessageReportDay", (string)null);
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.MessageReports.MessageReportHour", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<long>("Count")
-                        .HasColumnType("bigint")
-                        .HasComment("数量");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<long>("DateBucket")
-                        .HasColumnType("bigint")
-                        .HasComment("日期(数字)");
-
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<string>("ExtraProperties")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<int>("MessageType")
-                        .HasColumnType("int")
-                        .HasComment("消息类型");
-
-                    b.Property<Guid>("SessionId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasComment("会话Id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MessageType");
-
-                    b.HasIndex("SessionId");
-
-                    b.HasIndex("SessionId", "MessageType");
-
-                    b.HasIndex("SessionId", "DateBucket", "MessageType")
-                        .IsUnique();
-
-                    b.ToTable("Chat_MessageReportHour", (string)null);
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.MessageReports.MessageReportMonth", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<long>("Count")
-                        .HasColumnType("bigint")
-                        .HasComment("数量");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<long>("DateBucket")
-                        .HasColumnType("bigint")
-                        .HasComment("日期(数字)");
-
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<string>("ExtraProperties")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<int>("MessageType")
-                        .HasColumnType("int")
-                        .HasComment("消息类型");
-
-                    b.Property<Guid>("SessionId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasComment("会话Id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MessageType");
-
-                    b.HasIndex("SessionId");
-
-                    b.HasIndex("SessionId", "MessageType");
-
-                    b.HasIndex("SessionId", "DateBucket", "MessageType")
-                        .IsUnique();
-
-                    b.ToTable("Chat_MessageReportMonth", (string)null);
-                });
-
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Counters.DeletedCounter", b =>
                 {
                     b.Property<long>("MessageId")
@@ -4673,6 +4442,84 @@ namespace IczpNet.Chat.Migrations
                     b.HasIndex("OwnerId");
 
                     b.ToTable("Chat_Message_Template_VideoContent", (string)null);
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.MessageStats.MessageStat", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<long>("Count")
+                        .HasColumnType("bigint")
+                        .HasComment("数量");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<long>("DateBucket")
+                        .HasColumnType("bigint")
+                        .HasComment("日期(数字)");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<int>("MessageType")
+                        .HasColumnType("int")
+                        .HasComment("消息类型");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasComment("会话Id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MessageType");
+
+                    b.HasIndex("SessionId");
+
+                    b.HasIndex("SessionId", "MessageType");
+
+                    b.HasIndex("SessionId", "DateBucket", "MessageType")
+                        .IsUnique();
+
+                    b.ToTable("Chat_MessageStat", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.MessageWords.MessageWord", b =>
@@ -8091,39 +7938,6 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("Parent");
                 });
 
-            modelBuilder.Entity("IczpNet.Chat.MessageReports.MessageReportDay", b =>
-                {
-                    b.HasOne("IczpNet.Chat.SessionSections.Sessions.Session", "Session")
-                        .WithMany()
-                        .HasForeignKey("SessionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Session");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.MessageReports.MessageReportHour", b =>
-                {
-                    b.HasOne("IczpNet.Chat.SessionSections.Sessions.Session", "Session")
-                        .WithMany()
-                        .HasForeignKey("SessionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Session");
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.MessageReports.MessageReportMonth", b =>
-                {
-                    b.HasOne("IczpNet.Chat.SessionSections.Sessions.Session", "Session")
-                        .WithMany()
-                        .HasForeignKey("SessionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Session");
-                });
-
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Counters.DeletedCounter", b =>
                 {
                     b.HasOne("IczpNet.Chat.MessageSections.Messages.Message", "Message")
@@ -8408,6 +8222,17 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("Blob");
 
                     b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.MessageStats.MessageStat", b =>
+                {
+                    b.HasOne("IczpNet.Chat.SessionSections.Sessions.Session", "Session")
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Session");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.MessageWords.MessageWord", b =>

@@ -22,13 +22,13 @@ using IczpNet.Chat.Follows;
 using IczpNet.Chat.HttpRequests;
 using IczpNet.Chat.InvitationCodes;
 using IczpNet.Chat.Menus;
+using IczpNet.Chat.MessageReports;
 using IczpNet.Chat.MessageSections.Counters;
 using IczpNet.Chat.MessageSections.MessageContents;
 using IczpNet.Chat.MessageSections.MessageFollowers;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
-using IczpNet.Chat.MessageStats;
 using IczpNet.Chat.MessageWords;
 using IczpNet.Chat.Mottos;
 using IczpNet.Chat.OpenedRecorders;
@@ -154,7 +154,9 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<RedEnvelopeUnit> RedEnvelopeUnit { get; }
     DbSet<HistoryContent> HistoryContent { get; }
     DbSet<HistoryMessage> HistoryMessage { get; }
-    DbSet<MessageStat> MessageStat { get; }
+    DbSet<MessageReportDay> MessageReportDay { get; }
+    DbSet<MessageReportMonth> MessageReportMonth { get; }
+    DbSet<MessageReportHour> MessageReportHour { get; }
 
     DbSet<Wallet> Wallet { get; }
     DbSet<WalletOrder> WalletOrder { get; }

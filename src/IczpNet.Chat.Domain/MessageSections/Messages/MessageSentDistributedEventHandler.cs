@@ -5,7 +5,7 @@ using IczpNet.Chat.Developers;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.Hosting;
-using IczpNet.Chat.MessageStats;
+using IczpNet.Chat.MessageReports;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.Extensions.Logging;
@@ -37,7 +37,9 @@ public class MessageSentDistributedEventHandler(
     IJsonSerializer jsonSerializer,
     IFollowManager followManager,
     ISessionUnitManager sessionUnitManager,
-    IMessageStatRepository messageStatRepository,
+    IMessageReportDayRepository messageReportDayRepository,
+    IMessageReportMonthRepository messageReportMonthRepository,
+    IMessageReportHourRepository messageReportHourRepository,
     IMessageRepository messageRepository,
     ISessionUnitCacheManager sessionUnitCacheManager,
     ICurrentHosted currentHosted,
@@ -60,7 +62,9 @@ public class MessageSentDistributedEventHandler(
     public IJsonSerializer JsonSerializer { get; } = jsonSerializer;
     public IFollowManager FollowManager { get; } = followManager;
     public ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
-    public IMessageStatRepository MessageStatRepository { get; } = messageStatRepository;
+    public IMessageReportDayRepository MessageReportDayRepository { get; } = messageReportDayRepository;
+    public IMessageReportMonthRepository MessageReportMonthRepository { get; } = messageReportMonthRepository;
+    public IMessageReportHourRepository MessageReportHourRepository { get; } = messageReportHourRepository;
     public IMessageRepository MessageRepository { get; } = messageRepository;
     public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
     protected ICurrentHosted CurrentHosted { get; } = currentHosted;
@@ -144,9 +148,9 @@ public class MessageSentDistributedEventHandler(
     {
         using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
         var sessionId = message.SessionId.Value;
-        await MessageStatRepository.IncrementAsync(sessionId, message.MessageType, "yyyyMM");
-        await MessageStatRepository.IncrementAsync(sessionId, message.MessageType, "yyyyMMdd");
-        await MessageStatRepository.IncrementAsync(sessionId, message.MessageType, "yyyyMMddHH");
+        await MessageReportMonthRepository.IncrementAsync(sessionId, message.MessageType, "yyyyMM");
+        await MessageReportDayRepository.IncrementAsync(sessionId, message.MessageType, "yyyyMMdd");
+        await MessageReportHourRepository.IncrementAsync(sessionId, message.MessageType, "yyyyMMddHH");
         await uow.CompleteAsync(); //  提前提交
         return true;
     }
