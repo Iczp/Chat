@@ -124,20 +124,30 @@ public class MessageSentDistributedEventHandler(
 
     protected virtual async Task<T> MeasureAsync<T>(string name, Func<Task<T>> func)
     {
-        var sw = Stopwatch.StartNew();
-        var result = await func();
-        Logger.LogInformation($"[{HandlerName}] [{name}] Elapsed Time: {sw.ElapsedMilliseconds} ms");
-        ExecutedMilliseconds.TryAdd(name, sw.ElapsedMilliseconds);
-        sw.Stop();
-        return result;
+        try
+        {
+            var sw = Stopwatch.StartNew();
+            var result = await func();
+            Logger.LogInformation("[{HandlerName}] [{name}] Elapsed Time: {ms} ms", HandlerName, name, sw.ElapsedMilliseconds);
+            ExecutedMilliseconds.TryAdd(name, sw.ElapsedMilliseconds);
+            sw.Stop();
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError("Exe: {name} Error:{ex}", name, ex);
+            return default;
+        }
     }
 
     protected virtual async Task<bool> StatMessageAsync(Message message)
     {
+        using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
         var sessionId = message.SessionId.Value;
         await MessageStatRepository.IncrementAsync(sessionId, message.MessageType, "yyyyMM");
         await MessageStatRepository.IncrementAsync(sessionId, message.MessageType, "yyyyMMdd");
         await MessageStatRepository.IncrementAsync(sessionId, message.MessageType, "yyyyMMddHH");
+        await uow.CompleteAsync(); //  提前提交
         return true;
     }
 
