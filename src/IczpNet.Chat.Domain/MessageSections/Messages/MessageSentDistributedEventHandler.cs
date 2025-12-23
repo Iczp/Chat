@@ -135,6 +135,7 @@ public class MessageSentDistributedEventHandler(
     protected virtual async Task<bool> StatMessageAsync(Message message)
     {
         var sessionId = message.SessionId.Value;
+        await MessageStatRepository.IncrementAsync(sessionId, message.MessageType, "yyyyMM");
         await MessageStatRepository.IncrementAsync(sessionId, message.MessageType, "yyyyMMdd");
         await MessageStatRepository.IncrementAsync(sessionId, message.MessageType, "yyyyMMddHH");
         return true;
