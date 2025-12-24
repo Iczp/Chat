@@ -1,8 +1,9 @@
 ﻿using System;
 
-namespace IczpNet.Chat.MessageStats;
+namespace IczpNet.Chat.MessageReports;
 
-public interface IDataBucket
+public interface IDateBucket
 {
     long Create(DateTime dateTime, string format = "yyyyMMdd");
+
 }

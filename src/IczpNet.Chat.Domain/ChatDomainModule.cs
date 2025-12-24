@@ -3,6 +3,7 @@ using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.HttpRequests;
 using IczpNet.Chat.ListSets;
+using IczpNet.Chat.MessageReports;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Pusher;
 using IczpNet.Pusher.ShortIds;
@@ -13,6 +14,7 @@ using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.BackgroundJobs;
+using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.Domain;
 using Volo.Abp.Imaging;
@@ -86,6 +88,8 @@ namespace IczpNet.Chat;
         //await context.AddBackgroundWorkerAsync<SendToRoomUnitTestWorker>();
         //await context.AddBackgroundWorkerAsync<SessionUnitRequestUnitTestWorker>();
         //await context.AddBackgroundWorkerAsync<RecorderUnitTestWorker>();
+
+        await context.AddBackgroundWorkerAsync<MessageReportFlushWorker>();
 
         await base.OnPostApplicationInitializationAsync(context);
     }

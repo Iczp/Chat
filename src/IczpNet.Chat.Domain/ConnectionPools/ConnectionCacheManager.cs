@@ -1,9 +1,8 @@
 using IczpNet.Chat.Connections;
 using IczpNet.Chat.Hosting;
 using IczpNet.Chat.RedisMapping;
-using IczpNet.Chat.ScanLogins;
+using IczpNet.Chat.RedisServices;
 using IczpNet.Chat.SessionUnits;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
@@ -11,30 +10,20 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reactive.Concurrency;
 using System.Threading;
 using System.Threading.Tasks;
-using Volo.Abp.Caching;
-using Volo.Abp.Domain.Services;
 using Volo.Abp.Uow;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
-using IDatabase = StackExchange.Redis.IDatabase;
 
 namespace IczpNet.Chat.ConnectionPools;
 
-public class ConnectionCacheManager : DomainService, IConnectionCacheManager//, IHostedService
+public class ConnectionCacheManager : RedisService, IConnectionCacheManager//, IHostedService
 {
-    public IOptions<AbpDistributedCacheOptions> Options => LazyServiceProvider.LazyGetRequiredService<IOptions<AbpDistributedCacheOptions>>();
-
     public IOptions<ConnectionOptions> ConnectionOptions => LazyServiceProvider.LazyGetRequiredService<IOptions<ConnectionOptions>>();
-
-    public IConnectionMultiplexer ConnectionMultiplexer => LazyServiceProvider.LazyGetRequiredService<IConnectionMultiplexer>();
 
     public ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
 
     public ICurrentHosted CurrentHosted => LazyServiceProvider.LazyGetRequiredService<ICurrentHosted>();
 
-    protected IDatabase Database => ConnectionMultiplexer.GetDatabase();
 
     protected virtual TimeSpan? CacheExpire => TimeSpan.FromSeconds(ConnectionOptions.Value.ConnectionCacheExpirationSeconds);
 

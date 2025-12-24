@@ -37,9 +37,8 @@ public class MessageSentDistributedEventHandler(
     IJsonSerializer jsonSerializer,
     IFollowManager followManager,
     ISessionUnitManager sessionUnitManager,
-    IMessageReportDayRepository messageReportDayRepository,
-    IMessageReportMonthRepository messageReportMonthRepository,
-    IMessageReportHourRepository messageReportHourRepository,
+    IMessageReportManager messageReportManager,
+    IMessageManager messageManager,
     IMessageRepository messageRepository,
     ISessionUnitCacheManager sessionUnitCacheManager,
     ICurrentHosted currentHosted,
@@ -62,9 +61,8 @@ public class MessageSentDistributedEventHandler(
     public IJsonSerializer JsonSerializer { get; } = jsonSerializer;
     public IFollowManager FollowManager { get; } = followManager;
     public ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
-    public IMessageReportDayRepository MessageReportDayRepository { get; } = messageReportDayRepository;
-    public IMessageReportMonthRepository MessageReportMonthRepository { get; } = messageReportMonthRepository;
-    public IMessageReportHourRepository MessageReportHourRepository { get; } = messageReportHourRepository;
+    public IMessageReportManager MessageReportManager { get; } = messageReportManager;
+    public IMessageManager MessageManager { get; } = messageManager;
     public IMessageRepository MessageRepository { get; } = messageRepository;
     public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
     protected ICurrentHosted CurrentHosted { get; } = currentHosted;
@@ -96,7 +94,9 @@ public class MessageSentDistributedEventHandler(
         // 分布式事件要开启工作单元
         using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
 
+        //var message = await MessageManager.GetCacheAsync(eventData.Id);
         var message = await MessageRepository.GetAsync(eventData.Id);
+
 
         //统计消息
         await MeasureAsync($"{nameof(StatMessageAsync)}", () => StatMessageAsync(message));
@@ -146,12 +146,12 @@ public class MessageSentDistributedEventHandler(
 
     protected virtual async Task<bool> StatMessageAsync(Message message)
     {
-        using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
-        var sessionId = message.SessionId.Value;
-        await MessageReportMonthRepository.IncrementAsync(sessionId, message.MessageType, "yyyyMM");
-        await MessageReportDayRepository.IncrementAsync(sessionId, message.MessageType, "yyyyMMdd");
-        await MessageReportHourRepository.IncrementAsync(sessionId, message.MessageType, "yyyyMMddHH");
-        await uow.CompleteAsync(); //  提前提交
+        await MessageReportManager.StatAsync(message);
+
+        //using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+        //await MessageReportManager.IncrementAsync(message);
+        //await uow.CompleteAsync(); //  提前提交
+
         return true;
     }
 

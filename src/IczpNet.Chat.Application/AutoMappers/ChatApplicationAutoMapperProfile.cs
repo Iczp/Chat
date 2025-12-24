@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using IczpNet.AbpTrees;
+using IczpNet.Chat.AppVersions;
 using IczpNet.Chat.Articles;
 using IczpNet.Chat.Articles.Dtos;
 using IczpNet.Chat.Blobs;
@@ -20,6 +22,8 @@ using IczpNet.Chat.Dashboards.Dtos;
 using IczpNet.Chat.DbTables;
 using IczpNet.Chat.Developers;
 using IczpNet.Chat.Developers.Dtos;
+using IczpNet.Chat.DeviceGroups;
+using IczpNet.Chat.Devices;
 using IczpNet.Chat.Entries.Dtos;
 using IczpNet.Chat.EntryNames;
 using IczpNet.Chat.EntryNames.Dtos;
@@ -30,6 +34,7 @@ using IczpNet.Chat.InvitationCodes;
 using IczpNet.Chat.InvitationCodes.Dtos;
 using IczpNet.Chat.Menus;
 using IczpNet.Chat.Menus.Dtos;
+using IczpNet.Chat.MessageReports;
 using IczpNet.Chat.Mottos;
 using IczpNet.Chat.Mottos.Dtos;
 using IczpNet.Chat.Robots.Dtos;
@@ -42,9 +47,6 @@ using IczpNet.Chat.Squares.Dtos;
 using IczpNet.Chat.Words;
 using IczpNet.Chat.Words.Dtos;
 using Volo.Abp.AutoMapper;
-using IczpNet.Chat.AppVersions;
-using IczpNet.Chat.DeviceGroups;
-using IczpNet.Chat.Devices;
 /*---------code-generator-namespace: Do not modify or delete this line of comments--------*/
 
 namespace IczpNet.Chat.AutoMappers;
@@ -250,6 +252,8 @@ public class ChatApplicationAutoMapperProfile : Profile
             .IgnoreAllSourcePropertiesWithAnInaccessibleSetter()
             .IgnoreAllPropertiesWithAnInaccessibleSetter();
 
+
+        CreateMap<MessageReportBase, MessageReportDto>();
 
         /*---------code-generator-mapper: Do not modify or delete this line of comments--------*/
     }

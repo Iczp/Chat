@@ -11,6 +11,10 @@ namespace IczpNet.Chat.MessageReports;
 /// 
 /// </summary>
 
+[Index(nameof(DateBucket),AllDescending = true)]
+[Index(nameof(CreationTime), AllDescending = true)]
+[Index(nameof(MessageType), AllDescending = true)]
+[Index(nameof(Count), AllDescending = true)]
 public abstract class MessageReportBase : BaseEntity<Guid>
 {
 
