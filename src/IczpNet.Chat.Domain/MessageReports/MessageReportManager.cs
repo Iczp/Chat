@@ -80,7 +80,7 @@ public class MessageReportManager(
         await IncrementOneAsync("Month", message);
     }
 
-    public async Task FlushAsync(string granularity, long? dateBucketInput = null)
+    public async Task<bool> FlushAsync(string granularity, long? dateBucketInput = null)
     {
         var dateBucket = dateBucketInput ?? BuildDateBucket(granularity);
 
@@ -92,7 +92,7 @@ public class MessageReportManager(
 
         if (!isExists)
         {
-            return;
+            return false;
         }
 
         // 1. 原子切换
@@ -108,7 +108,7 @@ public class MessageReportManager(
         if (entries.Length == 0)
         {
             await Database.KeyDeleteAsync(processingKey);
-            return;
+            return false;
         }
 
         // 3. 落库
@@ -116,6 +116,8 @@ public class MessageReportManager(
 
         // 4️⃣ 删除 processing
         await Database.KeyDeleteAsync(processingKey);
+
+        return true;
     }
 
     private static DataTable ToDataTable(long dateBucket, HashEntry[] entries)
@@ -160,17 +162,17 @@ public class MessageReportManager(
         Logger.LogInformation("FlushToDbAsync: {granularity}, entries count{Count},Elapsed:{ms}ms", granularity, entries.Length, stopwatch.ElapsedMilliseconds);
     }
 
-    public Task FlushMonthAsync()
+    public Task<bool> FlushMonthAsync()
     {
         return FlushAsync("Month");
     }
 
-    public Task FlushDayAsync()
+    public Task<bool> FlushDayAsync()
     {
         return FlushAsync("Day");
     }
 
-    public Task FlushHourAsync()
+    public Task<bool> FlushHourAsync()
     {
         return FlushAsync("Hour");
     }

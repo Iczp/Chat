@@ -24,25 +24,25 @@ public interface IMessageReportManager
     /// <param name="granularity">Month | Day | Hour</param>
     /// <param name="dateBucket"></param>
     /// <returns></returns>
-    Task FlushAsync(string granularity, long? dateBucket = null);
+    Task<bool> FlushAsync(string granularity, long? dateBucket = null);
 
     /// <summary>
     /// 
     /// </summary>
     /// <returns></returns>
-    Task FlushMonthAsync();
+    Task<bool> FlushMonthAsync();
 
     /// <summary>
     /// 
     /// </summary>
     /// <returns></returns>
-    Task FlushDayAsync();
+    Task<bool> FlushDayAsync();
 
     /// <summary>
     /// 
     /// </summary>
     /// <returns></returns>
-    Task FlushHourAsync();
+    Task<bool> FlushHourAsync();
 
     /// <summary>
     /// 补偿
