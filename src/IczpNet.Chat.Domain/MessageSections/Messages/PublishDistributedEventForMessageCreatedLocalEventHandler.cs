@@ -6,6 +6,7 @@ using Volo.Abp.Domain.Entities.Events;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.EventBus;
 using Volo.Abp.EventBus.Distributed;
+using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
@@ -26,7 +27,8 @@ public class PublishDistributedEventForMessageCreatedLocalEventHandler(
     public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
 
     protected string HandlerName => $"[{nameof(PublishDistributedEventForMessageCreatedLocalEventHandler)}]";
-    //[UnitOfWork]
+
+    [UnitOfWork]
     public async Task HandleEventAsync(EntityCreatedEventData<Message> eventData)
     {
         var message = eventData.Entity;
