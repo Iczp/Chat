@@ -65,7 +65,7 @@ public class SessionUnitManager(
     protected IChatObjectRepository ChatObjectRepository { get; } = chatObjectRepository;
     protected IMessageSender MessageSender { get; } = messageSender;
     //protected IObjectMapper ObjectMapper { get; } = objectMapper;
-    protected Type? ObjectMapperContext { get; set; }
+    protected Type ObjectMapperContext { get; set; }
     protected IObjectMapper ObjectMapper => LazyServiceProvider.LazyGetService<IObjectMapper>(provider =>
         ObjectMapperContext == null
             ? provider.GetRequiredService<IObjectMapper>()

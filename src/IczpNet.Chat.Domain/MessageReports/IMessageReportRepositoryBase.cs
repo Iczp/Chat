@@ -1,12 +1,11 @@
-﻿using IczpNet.Chat.Enums;
-using IczpNet.Chat.MessageReports;
-using System;
-using System.Threading.Tasks;
+﻿using System;
 using Volo.Abp.Domain.Repositories;
 
-namespace IczpNet.Chat.MessageStats;
+namespace IczpNet.Chat.MessageReports;
 
-public interface IMessageReportRepositoryBase<T> : IRepository<T, Guid> where T : MessageReportBase
+
+
+public interface IMessageReportRepositoryBase<T> : IMessageReportRepository, IRepository<T, Guid> where T : MessageReportBase
 {
-    Task IncrementAsync(Guid sessionId, MessageTypes messageType, string dateBucketFormat = "yyyyMMdd");
+
 }

@@ -1,6 +1,5 @@
 ﻿using IczpNet.Chat.EntityFrameworkCore;
 using IczpNet.Chat.Enums;
-using IczpNet.Chat.MessageStats;
 using IczpNet.Chat.Repositories;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -18,7 +17,8 @@ public abstract class MessageReportRepositoryBase<T>(
     : ChatRepositoryBase<T, Guid>(dbContextProvider), IMessageReportRepositoryBase<T>
     where T : MessageReportBase, new()
 {
-    protected IDataBucket DataBucket => LazyServiceProvider.LazyGetRequiredService<IDataBucket>();
+    protected static bool IsEnsureMessageReportMergeType { get; set; } = false;
+    protected IDateBucket DataBucket => LazyServiceProvider.LazyGetRequiredService<IDateBucket>();
 
     private static bool IsUniqueConflict(DbUpdateException ex)
     {
@@ -162,4 +162,89 @@ WHEN NOT MATCHED THEN
             new SqlParameter("@ExtraProperties", "{}")
         );
     }
+
+    public async Task EnsureMessageReportMergeTypeAsync()
+    {
+        if (IsEnsureMessageReportMergeType)
+        {
+            Logger.LogInformation("IsEnsureMessageReportMergeType:{IsEnsureMessageReportMergeType}", IsEnsureMessageReportMergeType);
+            return;
+        }
+        var context = await GetDbContextAsync();
+        var dbSchema = string.IsNullOrWhiteSpace(ChatDbProperties.DbSchema) ? "dbo" : ChatDbProperties.DbSchema;
+        string sql = @$"
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.types t
+    JOIN sys.schemas s ON t.schema_id = s.schema_id
+    WHERE t.name = 'MessageReportMergeType'
+      AND s.name = '{dbSchema}'
+)
+BEGIN
+    CREATE TYPE {dbSchema}.MessageReportMergeType AS TABLE
+    (
+        SessionId   UNIQUEIDENTIFIER NOT NULL,
+        MessageType INT              NOT NULL,
+        DateBucket  BIGINT           NOT NULL,
+        Count       BIGINT           NOT NULL
+    );
+END
+";
+        Logger.LogInformation("EnsureMessageReportMergeTypeAsync sql:{sql}", sql);
+        await context.Database.ExecuteSqlRawAsync(sql);
+
+        IsEnsureMessageReportMergeType = true;
+    }
+
+
+    public async Task FlushToDbAsync(DataTable dataTable)
+    {
+        var now = Clock.Now;
+        var context = await GetDbContextAsync();
+        var dbSchema = string.IsNullOrWhiteSpace(ChatDbProperties.DbSchema) ? "dbo" : ChatDbProperties.DbSchema;
+        var tableName = $"{ChatDbProperties.DbTablePrefix}_{typeof(T).Name}";
+
+        var sql = $@"
+MERGE [{dbSchema}].[{tableName}] WITH (HOLDLOCK) AS T
+USING @Source AS S
+ON  T.SessionId = S.SessionId
+AND T.MessageType = S.MessageType
+AND T.DateBucket = S.DateBucket
+WHEN MATCHED THEN
+  UPDATE SET
+    Count = T.Count + S.Count,
+    LastModificationTime = @Now
+WHEN NOT MATCHED THEN
+  INSERT (
+    Id, 
+    SessionId, 
+    MessageType, 
+    DateBucket,
+    Count,
+    CreationTime, 
+    ConcurrencyStamp, 
+    ExtraProperties
+  )
+  VALUES (
+    NEWID(), 
+    S.SessionId, 
+    S.MessageType, 
+    S.DateBucket,
+    S.Count, 
+    @Now, 
+    REPLACE(NEWID(),'-',''), 
+    @ExtraProperties
+  );
+";
+        await context.Database.ExecuteSqlRawAsync(
+            sql,
+            new SqlParameter("@Now", now),
+            new SqlParameter("@ExtraProperties", "{}"),
+            new SqlParameter("@Source", dataTable)
+            {
+                TypeName = $"{dbSchema}.MessageReportMergeType",
+                SqlDbType = SqlDbType.Structured
+            });
+    }
+
 }

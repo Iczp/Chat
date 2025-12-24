@@ -1,9 +1,9 @@
 ﻿using System;
 using Volo.Abp.Domain.Services;
 
-namespace IczpNet.Chat.MessageStats;
+namespace IczpNet.Chat.MessageReports;
 
-public class DataBucket : DomainService, IDataBucket
+public class DateBucket : DomainService, IDateBucket
 {
     public long Create(DateTime dateTime, string format = "yyyyMMdd")
     {

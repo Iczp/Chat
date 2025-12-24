@@ -48,7 +48,7 @@ public static class RedisMapper
     /// <summary>
     /// 从 HashEntry[] 反序列化为对象 T（T 必须有无参构造）
     /// 支持点路径 Setting.HistoryLastTime、Setting.MemberName 等
-    /// 支持 List[index] 和 Dictionary[key] 的解析（尽量还原子对象；对于集合会尝试创建 List<T> 或 IDictionary）
+    /// 支持 List[index] 和 Dictionary[key] 的解析（尽量还原子对象；对于集合会尝试创建 List&lt;T&gt; 或 IDictionary）
     /// </summary>
     public static T ToObject<T>(HashEntry[] entries) where T : new()
     {

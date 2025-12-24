@@ -1,28 +1,21 @@
 ﻿using IczpNet.Chat.Clocks;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.RedisMapping;
+using IczpNet.Chat.RedisServices;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Volo.Abp.Caching;
-using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.SessionUnits;
 
-public class SessionUnitCacheManager(
-    IOptions<AbpDistributedCacheOptions> options,
-    IConnectionMultiplexer connection) : DomainService, ISessionUnitCacheManager
+public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 {
-    protected readonly IDatabase Database = connection.GetDatabase();
-
-    public ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
-    public IOptions<AbpDistributedCacheOptions> Options { get; } = options;
+    //protected readonly IDatabase Database = connection.GetDatabase();
 
     private readonly TimeSpan? _cacheExpire = TimeSpan.FromDays(7);
 
@@ -165,7 +158,7 @@ end
         var unitKeysExists = await BatchKeyExistsAsync(unitKeys);
         var existsCount = unitKeysExists.Count(x => x.Value);
 
-        Logger.LogInformation("sessionId={sessionId},unitKeysExists:{ExistsCount}", 
+        Logger.LogInformation("sessionId={sessionId},unitKeysExists:{ExistsCount}",
             sessionId,
             existsCount);
 
