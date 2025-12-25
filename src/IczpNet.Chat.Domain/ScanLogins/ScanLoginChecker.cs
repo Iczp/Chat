@@ -9,12 +9,12 @@ namespace IczpNet.Chat.ScanLogins;
 
 public class ScanLoginChecker(
     IHttpContextAccessor httpContextAccessor,
-    IOptions<ScanLoginOption> options) : DomainService, IScanLoginChecker
+    IOptions<ScanLoginOptions> options) : DomainService, IScanLoginChecker
 {
     public IHttpContextAccessor HttpContextAccessor { get; } = httpContextAccessor;
-    public IOptions<ScanLoginOption> Options { get; } = options;
+    public IOptions<ScanLoginOptions> Options { get; } = options;
 
-    protected ScanLoginOption Config => Options.Value;
+    protected ScanLoginOptions Config => Options.Value;
 
     protected List<string> AllowedDeviceTypes => Config.AllowedDeviceTypes;
 

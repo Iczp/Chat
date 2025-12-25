@@ -17,7 +17,7 @@ public class MessageReportFlushWorker : AsyncPeriodicBackgroundWorkerBase
         IServiceScopeFactory serviceScopeFactory,
         IOptions<MessageReportOptions> options) : base(timer, serviceScopeFactory)
     {
-        Timer.Period = options.Value.TimerPeriodSeconds * 1000; //60 seconds
+        Timer.Period = options.Value.FlushToDbTimerPeriodSeconds * 1000; //60 seconds
         MessageReportManager = messageReportManager;
     }
 

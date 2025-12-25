@@ -8,11 +8,11 @@ using Volo.Abp.Domain.Services;
 namespace IczpNet.Chat.ScanLogins;
 
 public class ScanLoginScanCodeHandler(
-    IOptions<ScanLoginOption> options
+    IOptions<ScanLoginOptions> options
     ) : DomainService, IScanCodeHandler
 {
-    public IOptions<ScanLoginOption> Options { get; } = options;
-    protected ScanLoginOption Config => Options.Value;
+    public IOptions<ScanLoginOptions> Options { get; } = options;
+    protected ScanLoginOptions Config => Options.Value;
 
     public async Task<ScanHandlerResult> HandleAsync(ScanCode scanCode)
     {

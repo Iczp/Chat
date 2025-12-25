@@ -1,9 +1,17 @@
-﻿namespace IczpNet.Chat.MessageReports;
+﻿using IczpNet.Chat.Options;
 
-public class MessageReportOptions
+namespace IczpNet.Chat.MessageReports;
+
+[OptionsSection("MessageReport")]
+public class MessageReportOptions : IConventionOptions
 {
+
+    /// <summary>
+    /// 是否启用
+    /// </summary>
+    public bool Enable { get; set; } = true;
     /// <summary>
     /// 秒
     /// </summary>
-    public int TimerPeriodSeconds { get; set; } = 60 * 5;
+    public int FlushToDbTimerPeriodSeconds { get; set; } = 60 * 5;
 }

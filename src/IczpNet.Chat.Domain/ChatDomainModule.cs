@@ -4,12 +4,15 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.HttpRequests;
 using IczpNet.Chat.ListSets;
 using IczpNet.Chat.MessageReports;
+using IczpNet.Chat.Options;
+using IczpNet.Chat.ScanLogins;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Pusher;
 using IczpNet.Pusher.ShortIds;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using StackExchange.Redis;
+using System;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.AutoMapper;
@@ -40,7 +43,7 @@ namespace IczpNet.Chat;
 [DependsOn(typeof(AbpBlobStoringModule))]
 //[DependsOn(typeof(AbpBlobStoringMinioModule))] //minio
 [DependsOn(typeof(AbpImagingAbstractionsModule))]
-    public class ChatDomainModule : AbpModule
+public class ChatDomainModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
@@ -51,6 +54,10 @@ namespace IczpNet.Chat;
         context.Services.AddHttpClient(HttpRequest.ClientName);
 
         context.Services.AddTransient(typeof(IDistributedCacheListSet<,>), typeof(DistributedCacheListSet<,>));
+
+        //context.Services.ConfigureConventionModuleOptions<ChatDomainModule>();
+        //context.Services.ConfigureByConvention<MessageReportOptions>();
+        //context.Services.ConfigureByConvention<ScanLoginOptions>();
 
         Configure<AbpAutoMapperOptions>(options =>
         {
