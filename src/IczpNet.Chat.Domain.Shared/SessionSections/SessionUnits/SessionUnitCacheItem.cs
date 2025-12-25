@@ -1,5 +1,4 @@
 ﻿using IczpNet.Chat.Enums;
-using IczpNet.Chat.SessionUnitSettings;
 using System;
 
 namespace IczpNet.Chat.SessionSections.SessionUnits;
@@ -78,4 +77,9 @@ public class SessionUnitCacheItem : ISessionUnit
     public virtual DateTime CreationTime { get; set; }
 
     //public virtual SessionUnitSettingCacheItem Setting { get; set; }
+
+    /// <summary>
+    /// Setting.IsImmersed
+    /// </summary>
+    public virtual bool IsImmersed { get; set; }
 }

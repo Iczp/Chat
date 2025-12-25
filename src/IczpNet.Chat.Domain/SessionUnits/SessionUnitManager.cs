@@ -143,6 +143,7 @@ public class SessionUnitManager(
                         Ticks = x.Ticks,
                         Sorting = x.Sorting,
                         CreationTime = x.CreationTime,
+                        IsImmersed = x.Setting.IsImmersed,
                     })
                     .ToList();
 

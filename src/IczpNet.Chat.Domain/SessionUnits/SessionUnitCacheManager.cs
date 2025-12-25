@@ -97,6 +97,7 @@ end
     private static string F_Total_Following => nameof(SessionUnitStatistic.Following);
     private static string F_Total_RemindMe => nameof(SessionUnitStatistic.RemindMe);
     private static string F_Total_RemindAll => nameof(SessionUnitStatistic.RemindAll);
+    private static string F_Total_Immersed => nameof(SessionUnitStatistic.Immersed);
 
     #endregion
 
@@ -739,8 +740,16 @@ end
             // badge
             if (!isSender)
             {
-                _ = batch.HashIncrementAsync(unitKey, isPrivate ? F_PrivateBadge : F_PublicBadge, 1);
-                _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerBadgeKey], [isPrivate ? F_Total_Private : F_Total_Public, 1]);
+                // 静默方式 IsImmersed
+                if (unit.IsImmersed)
+                {
+                    _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerBadgeKey], [F_Total_Immersed, 1]);
+                }
+                else
+                {
+                    _ = batch.HashIncrementAsync(unitKey, isPrivate ? F_PrivateBadge : F_PublicBadge, 1);
+                    _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerBadgeKey], [isPrivate ? F_Total_Private : F_Total_Public, 1]);
+                }
 
                 //remindAllCount
                 if (isRemindAll)
