@@ -25,12 +25,14 @@ public class SessionUnitSettingManager(
     IObjectMapper objectMapper,
     IMessageSender messageSender,
     ISessionUnitManager sessionUnitManager,
+    ISessionUnitCacheManager sessionUnitCacheManager,
     ISessionUnitSettingRepository sessionUnitSettingRepository) : DomainService, ISessionUnitSettingManager
 {
     public IDistributedCache<SessionUnitSettingCacheItem, Guid> SessionUnitSettingCache { get; } = sessionUnitSettingCache;
     public IObjectMapper ObjectMapper { get; } = objectMapper;
     public IMessageSender MessageSender { get; } = messageSender;
     public ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
+    public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
     public ISessionUnitSettingRepository SessionUnitSettingRepository { get; } = sessionUnitSettingRepository;
 
     protected Task<SessionUnitSetting> GetAsync(Guid sessionUnitId)
@@ -176,13 +178,16 @@ public class SessionUnitSettingManager(
     }
 
     /// <inheritdoc />
-    public virtual Task<SessionUnitSetting> SetImmersedAsync(Guid sessionUnitId, bool isImmersed)
+    public virtual async Task<SessionUnitSetting> SetImmersedAsync(Guid sessionUnitId, bool isImmersed)
     {
-        return SetEntityAsync(sessionUnitId, x =>
+        var setting = await SetEntityAsync(sessionUnitId, x =>
         {
             Assert.If(!x.Session.IsEnableSetImmersed, "Session is disable to set immersed.");
             x.SetImmersed(isImmersed);
         });
+        // change total stat for Immersed
+        await SessionUnitCacheManager.ChangeImmersedAsync(sessionUnitId, isImmersed);
+        return setting;
     }
 
     /// <inheritdoc />

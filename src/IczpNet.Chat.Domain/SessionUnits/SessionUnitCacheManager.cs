@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.Clocks;
+﻿using IczpNet.AbpCommons;
+using IczpNet.Chat.Clocks;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.RedisMapping;
 using IczpNet.Chat.RedisServices;
@@ -9,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reactive;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.SessionUnits;
@@ -398,14 +400,21 @@ end
         long totalRemindMe = 0;
         long totalRemindAll = 0;
         long totalFollowing = 0;
-
-        foreach (var x in allList)
+        long totalImmersed = 0;
+        foreach (var unit in allList)
         {
-            totalPublic += x.PublicBadge;
-            totalPrivate += x.PrivateBadge;
-            totalRemindMe += x.RemindMeCount;
-            totalRemindAll += x.RemindAllCount;
-            totalFollowing += x.FollowingCount;
+            if (unit.IsImmersed)
+            {
+                totalImmersed += unit.PublicBadge;
+            }
+            else
+            {
+                totalPublic += unit.PublicBadge;
+            }
+            totalPrivate += unit.PrivateBadge;
+            totalRemindMe += unit.RemindMeCount;
+            totalRemindAll += unit.RemindAllCount;
+            totalFollowing += unit.FollowingCount;
         }
 
         var ownerBadgeKey = OwnerBadgeSetKey(ownerId);
@@ -415,6 +424,7 @@ end
         _ = batch.HashSetAsync(ownerBadgeKey, F_Total_RemindMe, totalRemindMe);
         _ = batch.HashSetAsync(ownerBadgeKey, F_Total_RemindAll, totalRemindAll);
         _ = batch.HashSetAsync(ownerBadgeKey, F_Total_Following, totalFollowing);
+        _ = batch.HashSetAsync(ownerBadgeKey, F_Total_Immersed, totalImmersed);
 
         _ = batch.KeyExpireAsync(ownerBadgeKey, _cacheExpire);
 
@@ -976,6 +986,48 @@ end
         _ = batch.KeyExpireAsync(ownerSortedKey, _cacheExpire);
 
         // 7. 执行 batch
+        batch.Execute();
+    }
+
+    public async Task ChangeImmersedAsync(Guid unitId, bool isImmersed)
+    {
+        var units = await GetManyAsync([unitId]);
+
+        var unit = units[0].Value;
+
+        if (unit == null)
+        {
+            Logger.LogWarning("unit is null,unitId:{unitId}", unitId);
+            return;
+        }
+
+        if (unit.PublicBadge <= 0)
+        {
+            Logger.LogWarning("PublicBadge: 0 ,unitId:{unitId}", unitId);
+            return;
+        }
+
+        if (unit.IsImmersed == isImmersed)
+        {
+            Logger.LogWarning("Unchanged unitId:{unitId},isImmersed={isImmersed}", unitId, isImmersed);
+            return;
+        }
+
+        var ownerBadgeSetKey = OwnerBadgeSetKey(unit.OwnerId);
+
+        var batch = Database.CreateBatch();
+
+        if (isImmersed)
+        {
+            _ = batch.HashIncrementAsync(ownerBadgeSetKey, F_Total_Public, -unit.PublicBadge);
+            _ = batch.HashIncrementAsync(ownerBadgeSetKey, F_Total_Immersed, unit.PublicBadge);
+        }
+        else
+        {
+            _ = batch.HashIncrementAsync(ownerBadgeSetKey, F_Total_Public, unit.PublicBadge);
+            _ = batch.HashIncrementAsync(ownerBadgeSetKey, F_Total_Immersed, -unit.PublicBadge);
+        }
+
         batch.Execute();
     }
 
