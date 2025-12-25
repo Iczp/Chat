@@ -7,15 +7,18 @@ using System;
 using System.Data;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Volo.Abp.DistributedLocking;
 
 namespace IczpNet.Chat.MessageReports;
 
 public class MessageReportManager(
+    IAbpDistributedLock abpDistributedLock,
     IDateBucket dateBucket,
     IMessageReportDayRepository messageReportDayRepository,
     IMessageReportMonthRepository messageReportMonthRepository,
     IMessageReportHourRepository messageReportHourRepository) : RedisService, IMessageReportManager
 {
+    public IAbpDistributedLock AbpDistributedLock { get; } = abpDistributedLock;
     public IDateBucket DateBucket { get; } = dateBucket;
     public IMessageReportDayRepository MessageReportDayRepository { get; } = messageReportDayRepository;
     public IMessageReportMonthRepository MessageReportMonthRepository { get; } = messageReportMonthRepository;
@@ -95,6 +98,16 @@ public class MessageReportManager(
             return false;
         }
 
+        //0. 分布式锁
+        var lockerName = $"DistributedLock:{sourceKey}";
+        await using var handle = await AbpDistributedLock.TryAcquireAsync(lockerName);
+        Logger.LogInformation("Handle=={handle},LockerName={LockerName}", handle, lockerName);
+        if (handle == null)
+        {
+            Logger.LogInformation("AbpDistributedLock Handle==null, {sourceKey} is processing", sourceKey);
+            return false;
+        }
+
         // 1. 原子切换
         var processingKey = $"{sourceKey}:processing";
 
@@ -110,12 +123,18 @@ public class MessageReportManager(
             await Database.KeyDeleteAsync(processingKey);
             return false;
         }
-
+        
         // 3. 落库
         await FlushToDbAsync(granularity, dateBucket, entries);
 
-        // 4️⃣ 删除 processing
+        // 4. 删除 processing
         await Database.KeyDeleteAsync(processingKey);
+
+        //// 4. 改为已完成 用于调试
+        //var completedKey = $"{sourceKey}:completed";
+        //// 原子切换
+        //await Database.KeyRenameAsync(processingKey, completedKey);
+        //await Database.KeyExpireAsync(completedKey, TimeSpan.FromSeconds(300));
 
         return true;
     }
