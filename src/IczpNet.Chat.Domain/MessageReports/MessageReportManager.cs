@@ -2,6 +2,7 @@
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.RedisServices;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using System;
 using System.Data;
@@ -14,12 +15,14 @@ namespace IczpNet.Chat.MessageReports;
 public class MessageReportManager(
     IAbpDistributedLock abpDistributedLock,
     IDateBucket dateBucket,
+    IOptions<MessageReportOptions> reportOptions,
     IMessageReportDayRepository messageReportDayRepository,
     IMessageReportMonthRepository messageReportMonthRepository,
     IMessageReportHourRepository messageReportHourRepository) : RedisService, IMessageReportManager
 {
     public IAbpDistributedLock AbpDistributedLock { get; } = abpDistributedLock;
     public IDateBucket DateBucket { get; } = dateBucket;
+    public IOptions<MessageReportOptions> ReportOptions { get; } = reportOptions;
     public IMessageReportDayRepository MessageReportDayRepository { get; } = messageReportDayRepository;
     public IMessageReportMonthRepository MessageReportMonthRepository { get; } = messageReportMonthRepository;
     public IMessageReportHourRepository MessageReportHourRepository { get; } = messageReportHourRepository;
@@ -98,14 +101,17 @@ public class MessageReportManager(
             return false;
         }
 
-        //0. 分布式锁
-        var lockerName = $"DistributedLock:{sourceKey}";
-        await using var handle = await AbpDistributedLock.TryAcquireAsync(lockerName);
-        Logger.LogInformation("Handle=={handle},LockerName={LockerName}", handle, lockerName);
-        if (handle == null)
+        if (ReportOptions.Value.UseDistributedLock)
         {
-            Logger.LogInformation("AbpDistributedLock Handle==null, {sourceKey} is processing", sourceKey);
-            return false;
+            //0. 分布式锁
+            var lockerName = $"DistributedLock:{sourceKey}";
+            await using var handle = await AbpDistributedLock.TryAcquireAsync(lockerName);
+            Logger.LogInformation("Handle=={handle},LockerName={LockerName}", handle, lockerName);
+            if (handle == null)
+            {
+                Logger.LogInformation("AbpDistributedLock Handle==null, {sourceKey} is processing", sourceKey);
+                return false;
+            }
         }
 
         // 1. 原子切换
@@ -123,7 +129,7 @@ public class MessageReportManager(
             await Database.KeyDeleteAsync(processingKey);
             return false;
         }
-        
+
         // 3. 落库
         await FlushToDbAsync(granularity, dateBucket, entries);
 
