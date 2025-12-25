@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using IczpNet.Chat.Options;
+using System.Collections.Generic;
 
 namespace IczpNet.Chat.ScanLogins;
 
-public class ScanLoginOption
+public class ScanLoginOptions : IConventionOptions
 {
 
     /// <summary>

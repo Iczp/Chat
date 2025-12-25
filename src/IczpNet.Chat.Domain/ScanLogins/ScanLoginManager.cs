@@ -12,7 +12,7 @@ using Volo.Abp.Users;
 
 namespace IczpNet.Chat.ScanLogins;
 
-public class ScanLoginManager(IOptions<ScanLoginOption> options,
+public class ScanLoginManager(IOptions<ScanLoginOptions> options,
     IDistributedEventBus distributedEventBus,
     IScanLoginChecker scanLoginChecker,
     ICurrentUser currentUser,
@@ -24,13 +24,13 @@ public class ScanLoginManager(IOptions<ScanLoginOption> options,
 
     public IDistributedCache<GrantedInfo, Guid> GrantedDistributedCache { get; set; }
 
-    public IOptions<ScanLoginOption> Options { get; } = options;
+    public IOptions<ScanLoginOptions> Options { get; } = options;
     public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
     public IScanLoginChecker ScanLoginChecker { get; } = scanLoginChecker;
     public ICurrentUser CurrentUser { get; } = currentUser;
     public ICurrentClient CurrentClient { get; } = currentClient;
 
-    protected ScanLoginOption Config => Options.Value;
+    protected ScanLoginOptions Config => Options.Value;
 
     protected string ParamKey => Config.ParamKey;
 

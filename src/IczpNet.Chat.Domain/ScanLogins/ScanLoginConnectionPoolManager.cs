@@ -8,9 +8,9 @@ namespace IczpNet.Chat.ScanLogins;
 public class ScanLoginConnectionPoolManager : ConnectionPoolManagerBase<ConnectionPool, IndexCacheKey>, IScanLoginConnectionPoolManager
 {
 
-    public IOptions<ScanLoginOption> Options { get; set; }
+    public IOptions<ScanLoginOptions> Options { get; set; }
 
-    protected ScanLoginOption Config => Options.Value;
+    protected ScanLoginOptions Config => Options.Value;
 
     protected override string ConnectionIdListSetCacheKey => nameof(ScanLoginConnectionPoolManager);
 

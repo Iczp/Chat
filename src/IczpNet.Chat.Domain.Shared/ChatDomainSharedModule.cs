@@ -1,13 +1,14 @@
-using Volo.Abp.Modularity;
-using Volo.Abp.Localization;
+using IczpNet.AbpCommons;
+using IczpNet.AbpTrees;
 using IczpNet.Chat.Localization;
+using IczpNet.Chat.Options;
+using Volo.Abp.Identity;
+using Volo.Abp.Localization;
 using Volo.Abp.Localization.ExceptionHandling;
+using Volo.Abp.Modularity;
 using Volo.Abp.Validation;
 using Volo.Abp.Validation.Localization;
 using Volo.Abp.VirtualFileSystem;
-using IczpNet.AbpCommons;
-using IczpNet.AbpTrees;
-using Volo.Abp.Identity;
 
 namespace IczpNet.Chat;
 [DependsOn(
@@ -20,6 +21,10 @@ namespace IczpNet.Chat;
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        //context.Services.ConfigureConventionOptions<ChatDomainSharedModule>();
+        // 自动扫描所有已加载程序集，注册所有 IConventionOptions
+        context.Services.ConfigureAllConventionOptions();
+
         Configure<AbpVirtualFileSystemOptions>(options =>
         {
             options.FileSets.AddEmbedded<ChatDomainSharedModule>();
