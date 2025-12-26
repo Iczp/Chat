@@ -1,5 +1,4 @@
-﻿using IczpNet.AbpCommons;
-using IczpNet.Chat.Clocks;
+﻿using IczpNet.Chat.Clocks;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.RedisMapping;
 using IczpNet.Chat.RedisServices;
@@ -10,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reactive;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.SessionUnits;
@@ -1007,36 +1005,39 @@ end
             return;
         }
 
-        if (unit.PublicBadge <= 0)
-        {
-            Logger.LogWarning("PublicBadge: 0 ,unitId:{unitId}", unitId);
-            return;
-        }
-
         if (unit.IsImmersed == isImmersed)
         {
             Logger.LogWarning("Unchanged unitId:{unitId},isImmersed={isImmersed}", unitId, isImmersed);
             return;
         }
 
-        var ownerBadgeSetKey = OwnerBadgeSetKey(unit.OwnerId);
+        var tran = Database.CreateTransaction();
 
-        var batch = Database.CreateBatch();
-
-        if (isImmersed)
+        if (unit.PublicBadge > 0)
         {
-            _ = batch.HashIncrementAsync(ownerBadgeSetKey, F_Total_Public, -unit.PublicBadge);
-            _ = batch.HashIncrementAsync(ownerBadgeSetKey, F_Total_Immersed, unit.PublicBadge);
+            var ownerBadgeSetKey = OwnerBadgeSetKey(unit.OwnerId);
+            var publicDelta = isImmersed ? -unit.PublicBadge : unit.PublicBadge;
+            var immersedDelta = -publicDelta;
+
+            _ = tran.HashIncrementAsync(ownerBadgeSetKey, F_Total_Public, publicDelta);
+            _ = tran.HashIncrementAsync(ownerBadgeSetKey, F_Total_Immersed, immersedDelta);
         }
         else
         {
-            _ = batch.HashIncrementAsync(ownerBadgeSetKey, F_Total_Public, unit.PublicBadge);
-            _ = batch.HashIncrementAsync(ownerBadgeSetKey, F_Total_Immersed, -unit.PublicBadge);
+            Logger.LogWarning("PublicBadge: 0 ,unitId:{unitId}", unitId);
+            return;
         }
 
-        batch.Execute();
-    }
+        var committed = await tran.ExecuteAsync();
 
+        if (!committed)
+        {
+            Logger.LogWarning("Redis transaction failed, unitId:{unitId}", unitId);
+            return;
+        }
+
+        unit.IsImmersed = isImmersed;
+    }
 
     #endregion
 }
