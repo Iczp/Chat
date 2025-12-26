@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.MessageSections.Messages;
+﻿using IczpNet.Chat.Clocks;
+using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.RedisMapping;
 using IczpNet.Chat.RedisServices;
 using IczpNet.Chat.SessionSections.SessionUnits;
@@ -44,12 +45,20 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     private string OwnerFriendsSetKey(long ownerId)
         => $"{Prefix}Friends:OwnerId-{ownerId}";
     /// <summary>
-    /// 置顶的好友
+    /// 置顶的会话单元
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
     private string OwnerToppingSetKey(long ownerId)
        => $"{Prefix}Toppings:OwnerId-{ownerId}";
+
+    /// <summary>
+    /// 静默会话单元
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    private string OwnerImmersedSetKey(long ownerId)
+       => $"{Prefix}Immerseds:OwnerId-{ownerId}";
 
     /// <summary>
     /// 消息统计
@@ -62,7 +71,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// <summary>
     /// 1. key 不存在 : 返回 nil（不创建）
     /// 2. key 存在 : 执行 HINCRBY(key, field, increment)
-    /// 3. 若结果 &lt;0,设置为 0
+    /// 3. 若结果 小于 0, 设置为 0
     /// </summary>
     private static string IncrementIfExistsScript => @"
 if redis.call('EXISTS', KEYS[1]) == 1 then
@@ -216,6 +225,14 @@ end
                 var toppingKey = OwnerToppingSetKey(unit.OwnerId);
                 _ = batch.SortedSetAddAsync(toppingKey, unitId, unit.Sorting);
                 _ = batch.KeyExpireAsync(toppingKey, _cacheExpire);
+            }
+
+            //IsImmersed
+            if (unit.IsImmersed)
+            {
+                var ownerImmersedSetKey = OwnerImmersedSetKey(unit.OwnerId);
+                _ = batch.SortedSetAddAsync(ownerImmersedSetKey, unitId, unit.IsImmersed ? 1 : 0);
+                _ = batch.KeyExpireAsync(ownerImmersedSetKey, _cacheExpire);
             }
         }
 
@@ -372,6 +389,7 @@ end
         // owner zset unitKey
         var ownerFriendsSetKey = OwnerFriendsSetKey(ownerId);
         var toppingKey = OwnerToppingSetKey(ownerId);
+        var ownerImmersedSetKey = OwnerImmersedSetKey(ownerId);
 
         Log($"GetManyAsync Start");
         var unitMap = await GetManyAsync(unitList.Select(x => x.Id));
@@ -403,6 +421,12 @@ end
             {
                 _ = batch.SortedSetAddAsync(toppingKey, unitId, unit.Sorting);
                 _ = batch.KeyExpireAsync(toppingKey, _cacheExpire);
+            }
+            //IsImmersed
+            if (unit.IsImmersed)
+            {
+                _ = batch.SortedSetAddAsync(ownerImmersedSetKey, unitId, unit.CreationTime.ToUnixTimeMilliseconds());
+                _ = batch.KeyExpireAsync(ownerImmersedSetKey, _cacheExpire);
             }
         }
 
@@ -1036,8 +1060,11 @@ end
             var publicDelta = isImmersed ? -unit.PublicBadge : unit.PublicBadge;
             var immersedDelta = -publicDelta;
 
-            _ = tran.HashIncrementAsync(ownerStatisticSetKey, F_Total_Public, publicDelta);
-            _ = tran.HashIncrementAsync(ownerStatisticSetKey, F_Total_Immersed, immersedDelta);
+            //_ = tran.HashIncrementAsync(ownerStatisticSetKey, F_Total_Public, publicDelta);
+            //_ = tran.HashIncrementAsync(ownerStatisticSetKey, F_Total_Immersed, immersedDelta);
+            _ = tran.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerStatisticSetKey], [F_Total_Public, publicDelta]);
+            _ = tran.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerStatisticSetKey], [F_Total_Immersed, immersedDelta]);
+
         }
         else
         {
@@ -1045,6 +1072,18 @@ end
         }
 
         _ = tran.HashSetAsync(UnitKey(unitId), F_Immersed, isImmersed);
+
+
+        var ownerImmersedSetKey = OwnerImmersedSetKey(unit.OwnerId);
+        if (isImmersed)
+        {
+            _ = tran.SortedSetAddAsync(ownerImmersedSetKey, unitId.ToString(), Clock.Now.ToUnixTimeMilliseconds());
+            _ = tran.KeyExpireAsync(ownerImmersedSetKey, _cacheExpire);
+        }
+        else
+        {
+            _ = tran.HashDeleteAsync(ownerImmersedSetKey, unitId.ToString());
+        }
 
         var committed = await tran.ExecuteAsync();
 
