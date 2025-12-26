@@ -406,10 +406,7 @@ end
             }
         }
 
-        if (_cacheExpire.HasValue)
-        {
-            _ = batch.KeyExpireAsync(ownerFriendsSetKey, _cacheExpire);
-        }
+        _ = batch.KeyExpireAsync(ownerFriendsSetKey, _cacheExpire);
 
         //合并
         var allList = cachedUnits.Concat(unCachedUnits);
