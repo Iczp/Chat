@@ -72,6 +72,8 @@ public interface ISessionUnitCacheManager
 
     Task SetToppingAsync(Guid unitId, long ownerId, long sorting);
 
+    Task ChangeImmersedAsync(Guid unitId, bool isImmersed);
+
 
 
     //Task<long?> GetBadgeAsync(Guid sessionId, Guid sessionUnitId);

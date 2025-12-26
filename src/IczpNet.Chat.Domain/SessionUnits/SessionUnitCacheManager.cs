@@ -86,6 +86,8 @@ end
     private static string F_FollowingCount => nameof(SessionUnitCacheItem.FollowingCount);
     private static string F_Ticks => nameof(SessionUnitCacheItem.Ticks);
     private static string F_Sorting => nameof(SessionUnitCacheItem.Sorting);
+    private static string F_Immersed => nameof(SessionUnitCacheItem.IsImmersed);
+
 
 
     //private static string F_Setting_ReadedMessageId => $"{nameof(SessionUnitCacheItem.Setting)}.{nameof(SessionUnitCacheItem.Setting.ReadedMessageId)}";
@@ -97,6 +99,7 @@ end
     private static string F_Total_Following => nameof(SessionUnitStatistic.Following);
     private static string F_Total_RemindMe => nameof(SessionUnitStatistic.RemindMe);
     private static string F_Total_RemindAll => nameof(SessionUnitStatistic.RemindAll);
+    private static string F_Total_Immersed => nameof(SessionUnitStatistic.Immersed);
 
     #endregion
 
@@ -397,14 +400,21 @@ end
         long totalRemindMe = 0;
         long totalRemindAll = 0;
         long totalFollowing = 0;
-
-        foreach (var x in allList)
+        long totalImmersed = 0;
+        foreach (var unit in allList)
         {
-            totalPublic += x.PublicBadge;
-            totalPrivate += x.PrivateBadge;
-            totalRemindMe += x.RemindMeCount;
-            totalRemindAll += x.RemindAllCount;
-            totalFollowing += x.FollowingCount;
+            if (unit.IsImmersed)
+            {
+                totalImmersed += unit.PublicBadge;
+            }
+            else
+            {
+                totalPublic += unit.PublicBadge;
+            }
+            totalPrivate += unit.PrivateBadge;
+            totalRemindMe += unit.RemindMeCount;
+            totalRemindAll += unit.RemindAllCount;
+            totalFollowing += unit.FollowingCount;
         }
 
         var ownerBadgeKey = OwnerBadgeSetKey(ownerId);
@@ -414,6 +424,7 @@ end
         _ = batch.HashSetAsync(ownerBadgeKey, F_Total_RemindMe, totalRemindMe);
         _ = batch.HashSetAsync(ownerBadgeKey, F_Total_RemindAll, totalRemindAll);
         _ = batch.HashSetAsync(ownerBadgeKey, F_Total_Following, totalFollowing);
+        _ = batch.HashSetAsync(ownerBadgeKey, F_Total_Immersed, totalImmersed);
 
         _ = batch.KeyExpireAsync(ownerBadgeKey, _cacheExpire);
 
@@ -740,7 +751,16 @@ end
             if (!isSender)
             {
                 _ = batch.HashIncrementAsync(unitKey, isPrivate ? F_PrivateBadge : F_PublicBadge, 1);
-                _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerBadgeKey], [isPrivate ? F_Total_Private : F_Total_Public, 1]);
+
+                // 静默方式 IsImmersed
+                if (unit.IsImmersed)
+                {
+                    _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerBadgeKey], [F_Total_Immersed, 1]);
+                }
+                else
+                {
+                    _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerBadgeKey], [isPrivate ? F_Total_Private : F_Total_Public, 1]);
+                }
 
                 //remindAllCount
                 if (isRemindAll)
@@ -856,17 +876,18 @@ end
         //old badge
         var taskPublicOld = readBatch.HashGetAsync(unitKey, F_PublicBadge);
         var taskPrivateOld = readBatch.HashGetAsync(unitKey, F_PrivateBadge);
-        var tasRemindMeCountOld = readBatch.HashGetAsync(unitKey, F_RemindMeCount);
-        var tasRemindAllCountOld = readBatch.HashGetAsync(unitKey, F_RemindAllCount);
-        var tasFollowingCountOld = readBatch.HashGetAsync(unitKey, F_FollowingCount);
+        var taskRemindMeCountOld = readBatch.HashGetAsync(unitKey, F_RemindMeCount);
+        var taskRemindAllCountOld = readBatch.HashGetAsync(unitKey, F_RemindAllCount);
+        var taskFollowingCountOld = readBatch.HashGetAsync(unitKey, F_FollowingCount);
+        var taskImmersedOld = readBatch.HashGetAsync(unitKey, F_Immersed);
         readBatch.Execute();
 
         var oldPublic = await taskPublicOld;
         var oldPrivate = await taskPrivateOld;
-        var oldRemindMeCount = await tasRemindMeCountOld;
-        var oldRemindAllCount = await tasRemindAllCountOld;
-        var oldFollowingCount = await tasFollowingCountOld;
-
+        var oldRemindMeCount = await taskRemindMeCountOld;
+        var oldRemindAllCount = await taskRemindAllCountOld;
+        var oldFollowingCount = await taskFollowingCountOld;
+        var oldImmersed = await taskImmersedOld;
 
         // 3. 写入新值（只写）
         // -----------------------------
@@ -894,12 +915,15 @@ end
         var ownerBadgeKey = OwnerBadgeSetKey(counter.OwnerId);
 
         static long ToLong(RedisValue v) => v.HasValue && long.TryParse(v.ToString(), out var n) ? n : 0;
+        static bool ToBool(RedisValue v) => v.HasValue && bool.TryParse(v.ToString(), out var n) && n;
 
         var oldPublicBadge = ToLong(oldPublic);
         var oldPrivatePublic = ToLong(oldPrivate);
         var remindMeCount = ToLong(oldRemindMeCount);
         var remindAllCount = ToLong(oldRemindAllCount);
         var followingCount = ToLong(oldFollowingCount);
+        //静默方式
+        var immersed = ToBool(oldImmersed);
 
         async Task UpdateAsync(string field, RedisValue redisValue)
         {
@@ -913,7 +937,7 @@ end
         }
 
         await Task.WhenAll(
-            UpdateAsync(F_Total_Public, oldPublicBadge),
+            UpdateAsync(immersed ? F_Total_Immersed : F_Total_Public, oldPublicBadge),
             UpdateAsync(F_Total_Private, oldPrivatePublic),
             UpdateAsync(F_Total_RemindMe, oldRemindMeCount),
             UpdateAsync(F_Total_RemindAll, oldRemindAllCount),
@@ -970,6 +994,52 @@ end
         batch.Execute();
     }
 
+    public async Task ChangeImmersedAsync(Guid unitId, bool isImmersed)
+    {
+        var units = await GetManyAsync([unitId]);
+
+        var unit = units[0].Value;
+
+        if (unit == null)
+        {
+            Logger.LogWarning("unit is null,unitId:{unitId}", unitId);
+            return;
+        }
+
+        if (unit.IsImmersed == isImmersed)
+        {
+            Logger.LogWarning("Unchanged unitId:{unitId},isImmersed={isImmersed}", unitId, isImmersed);
+            return;
+        }
+
+        var tran = Database.CreateTransaction();
+
+        if (unit.PublicBadge > 0)
+        {
+            var ownerBadgeSetKey = OwnerBadgeSetKey(unit.OwnerId);
+            var publicDelta = isImmersed ? -unit.PublicBadge : unit.PublicBadge;
+            var immersedDelta = -publicDelta;
+
+            _ = tran.HashIncrementAsync(ownerBadgeSetKey, F_Total_Public, publicDelta);
+            _ = tran.HashIncrementAsync(ownerBadgeSetKey, F_Total_Immersed, immersedDelta);
+        }
+        else
+        {
+            Logger.LogWarning("PublicBadge: 0 ,unitId:{unitId}", unitId);
+        }
+
+        _ = tran.HashSetAsync(UnitKey(unitId), F_Immersed, isImmersed);
+
+        var committed = await tran.ExecuteAsync();
+
+        if (!committed)
+        {
+            Logger.LogWarning("Redis transaction failed, unitId:{unitId}", unitId);
+            return;
+        }
+
+        unit.IsImmersed = isImmersed;
+    }
 
     #endregion
 }

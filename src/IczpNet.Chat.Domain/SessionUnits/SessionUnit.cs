@@ -307,6 +307,9 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     [NotMapped]
     public virtual long? ReadedMessageId => Setting.ReadedMessageId;
 
+    [NotMapped]
+    public virtual bool IsImmersed => Setting.IsImmersed;
+
     protected SessionUnit() { }
 
     internal SessionUnit(ISessionUnitIdGenerator idGenerator,
