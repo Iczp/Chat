@@ -1,5 +1,4 @@
-﻿using IczpNet.Chat.Clocks;
-using IczpNet.Chat.MessageSections.Messages;
+﻿using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.RedisMapping;
 using IczpNet.Chat.RedisServices;
 using IczpNet.Chat.SessionSections.SessionUnits;
@@ -20,20 +19,45 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     private readonly TimeSpan? _cacheExpire = TimeSpan.FromDays(7);
 
     protected string Prefix => $"{Options.Value.KeyPrefix}SessionUnits:";
-    // unitKey builders
+
+    /// <summary>
+    /// 会话单元详情信息
+    /// </summary>
+    /// <param name="unitId"></param>
+    /// <returns></returns>
     private string UnitKey(Guid unitId)
         => $"{Prefix}Units:UnitId-{unitId}";
+
+    /// <summary>
+    /// 会话单元集合
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
     private string SessionSetKey(Guid sessionId)
         => $"{Prefix}Sessions:SessionId-{sessionId}";
-    private string OwnerSortedSetKey(long ownerId)
-        => $"{Prefix}ChatObjects:Sorted:OwnerId-{ownerId}";
-    private string OwnerToppingSetKey(long ownerId)
-       => $"{Prefix}ChatObjects:Toppings:OwnerId-{ownerId}";
-    private string OwnerExistsSetKey(long ownerId)
-        => $"{Prefix}ChatObjects:Exists:OwnerId-{ownerId}";
-    private string OwnerStatisticSetKey(long ownerId)
-        => $"{Prefix}ChatObjects:Statistics:OwnerId-{ownerId}";
 
+    /// <summary>
+    /// 好友会话单元
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    private string OwnerFriendsSetKey(long ownerId)
+        => $"{Prefix}Friends:OwnerId-{ownerId}";
+    /// <summary>
+    /// 置顶的好友
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    private string OwnerToppingSetKey(long ownerId)
+       => $"{Prefix}Toppings:OwnerId-{ownerId}";
+
+    /// <summary>
+    /// 消息统计
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    private string OwnerStatisticSetKey(long ownerId)
+        => $"{Prefix}Statistics:OwnerId-{ownerId}";
 
     /// <summary>
     /// 1. key 不存在 : 返回 nil（不创建）
@@ -340,16 +364,13 @@ end
 
         var batch = Database.CreateBatch();
 
-        var ownerExistsKey = OwnerExistsSetKey(ownerId);
+        var ownerStatisticSetKey = OwnerStatisticSetKey(ownerId);
 
-        // clear existing set to avoid stale members
-        //_ = batch.KeyDeleteAsync(ownerExistsKey);
-
-        _ = batch.SetAddAsync(ownerExistsKey, Clock.Now.ToUnixTimeMilliseconds());
-        _ = batch.KeyExpireAsync(ownerExistsKey, _cacheExpire);
+        //clear existing set to avoid stale members
+        _ = batch.KeyDeleteAsync(ownerStatisticSetKey);
 
         // owner zset unitKey
-        var ownerSortedKey = OwnerSortedSetKey(ownerId);
+        var ownerFriendsSetKey = OwnerFriendsSetKey(ownerId);
         var toppingKey = OwnerToppingSetKey(ownerId);
 
         Log($"GetManyAsync Start");
@@ -375,7 +396,7 @@ end
 
             // score
             var score = GetScore(unit.Sorting, unit.Ticks);
-            _ = batch.SortedSetAddAsync(ownerSortedKey, unitId, score);
+            _ = batch.SortedSetAddAsync(ownerFriendsSetKey, unitId, score);
 
             // set top
             if (unit.Sorting > 0)
@@ -385,10 +406,7 @@ end
             }
         }
 
-        if (_cacheExpire.HasValue)
-        {
-            _ = batch.KeyExpireAsync(ownerSortedKey, _cacheExpire);
-        }
+        _ = batch.KeyExpireAsync(ownerFriendsSetKey, _cacheExpire);
 
         //合并
         var allList = cachedUnits.Concat(unCachedUnits);
@@ -416,8 +434,6 @@ end
             totalRemindAll += unit.RemindAllCount;
             totalFollowing += unit.FollowingCount;
         }
-
-        var ownerStatisticSetKey = OwnerStatisticSetKey(ownerId);
 
         _ = batch.HashSetAsync(ownerStatisticSetKey, F_Total_Public, totalPublic);
         _ = batch.HashSetAsync(ownerStatisticSetKey, F_Total_Private, totalPrivate);
@@ -453,8 +469,8 @@ end
 
     public async Task<IEnumerable<SessionUnitCacheItem>> SetListByOwnerIfNotExistsAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
     {
-        var ownerExistsKey = OwnerExistsSetKey(ownerId);
-        if (!await Database.KeyExistsAsync(ownerExistsKey))
+        var ownerStatisticSetKey = OwnerStatisticSetKey(ownerId);
+        if (!await Database.KeyExistsAsync(ownerStatisticSetKey))
         {
             return await SetListByOwnerAsync(ownerId, fetchTask);
         }
@@ -474,11 +490,11 @@ end
         long take = -1,
         bool isDescending = true)
     {
-        var ownerSortedKey = OwnerSortedSetKey(ownerId);
+        var ownerFriendsSetKey = OwnerFriendsSetKey(ownerId);
 
         // read owner zset (may be empty) SortedSetRangeByScoreWithScoresAsync
         var redisZset = await Database.SortedSetRangeByScoreWithScoresAsync(
-            key: ownerSortedKey,
+            key: ownerFriendsSetKey,
             start: minScore,
             stop: maxScore,
             skip: skip,
@@ -512,8 +528,8 @@ end
 
     public async Task<long> GetTotalCountByOwnerAsync(long ownerId)
     {
-        var ownerSortedKey = OwnerSortedSetKey(ownerId);
-        var totalCount = await Database.SortedSetLengthAsync(ownerSortedKey);
+        var ownerFriendsSetKey = OwnerFriendsSetKey(ownerId);
+        var totalCount = await Database.SortedSetLengthAsync(ownerFriendsSetKey);
         return totalCount;
     }
 
@@ -526,7 +542,7 @@ end
         long take = -1,
         bool isDescending = true)
     {
-        var ownerSortedKey = OwnerSortedSetKey(ownerId);
+        var ownerFriendsSetKey = OwnerFriendsSetKey(ownerId);
 
         if (maxScore == 0)
         {
@@ -536,7 +552,7 @@ end
         var order = isDescending ? Order.Descending : Order.Ascending;
         // 1. 获取置顶的所有元素（不分页）
         var allPinned = await Database.SortedSetRangeByScoreWithScoresAsync(
-            ownerSortedKey,
+            ownerFriendsSetKey,
             start: OWNER_SCORE_MULT + minScore,
             stop: OWNER_SCORE_MULT + maxScore - 1,
             order: order
@@ -570,7 +586,7 @@ end
             var remainingTake = take == -1 ? -1 : (take - result.Count);
 
             var nonPinned = await Database.SortedSetRangeByScoreWithScoresAsync(
-                ownerSortedKey,
+                ownerFriendsSetKey,
                 start: minScore,
                 stop: Math.Min(OWNER_SCORE_MULT, maxScore) - 1,
                 skip: 0,
@@ -586,7 +602,7 @@ end
         var skipFromNonPinned = skip - pinnedCount;
 
         var nonPinnedOnly = await Database.SortedSetRangeByScoreWithScoresAsync(
-            ownerSortedKey,
+            ownerFriendsSetKey,
             start: minScore,
             stop: Math.Min(OWNER_SCORE_MULT, maxScore) - 1,
             skip: skipFromNonPinned,
@@ -607,7 +623,7 @@ end
         long take = -1,
         bool isDescending = true)
     {
-        var ownerSortedKey = OwnerSortedSetKey(ownerId);
+        var ownerFriendsSetKey = OwnerFriendsSetKey(ownerId);
 
         // read owner zset (may be empty)
         var kvs = await GetSortedSetByOwnerAsync(
@@ -743,7 +759,7 @@ end
             var unitId = unit.Id;
             var ownerId = unit.OwnerId;
             var unitKey = UnitKey(unitId);
-            var ownerSortedKey = OwnerSortedSetKey(ownerId);
+            var ownerFriendsSetKey = OwnerFriendsSetKey(ownerId);
             var ownerStatisticSetKey = OwnerStatisticSetKey(ownerId);
             var isSender = unitId == message.SenderSessionUnitId;
 
@@ -791,13 +807,13 @@ end
 
             // owner sortedset tick: message.CreationTime.Ticks
             var score = GetScore(unit.Sorting, ticks);
-            _ = batch.SortedSetAddAsync(ownerSortedKey, unitId.ToString(), score);
+            _ = batch.SortedSetAddAsync(ownerFriendsSetKey, unitId.ToString(), score);
 
             // expire
             if (expireTime.HasValue)
             {
                 _ = batch.KeyExpireAsync(unitKey, expireTime.Value);
-                _ = batch.KeyExpireAsync(ownerSortedKey, expireTime.Value);
+                _ = batch.KeyExpireAsync(ownerFriendsSetKey, expireTime.Value);
             }
         }
 
@@ -953,10 +969,10 @@ end
         var isExists = await Database.KeyExistsAsync(unitKey);
 
         // 2. owner sortedset key
-        var ownerSortedKey = OwnerSortedSetKey(ownerId);
+        var ownerFriendsSetKey = OwnerFriendsSetKey(ownerId);
 
         // 3. 先读取旧 score
-        double? oldScore = await Database.SortedSetScoreAsync(ownerSortedKey, unitId.ToString());
+        double? oldScore = await Database.SortedSetScoreAsync(ownerFriendsSetKey, unitId.ToString());
 
         if (oldScore is null)
         {
@@ -987,8 +1003,8 @@ end
         _ = batch.KeyExpireAsync(toppingKey, _cacheExpire);
 
         // 6.3 更新 ownerSortedSet 的新 score
-        _ = batch.SortedSetAddAsync(ownerSortedKey, unitId.ToString(), newScore);
-        _ = batch.KeyExpireAsync(ownerSortedKey, _cacheExpire);
+        _ = batch.SortedSetAddAsync(ownerFriendsSetKey, unitId.ToString(), newScore);
+        _ = batch.KeyExpireAsync(ownerFriendsSetKey, _cacheExpire);
 
         // 7. 执行 batch
         batch.Execute();
