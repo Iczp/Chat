@@ -88,6 +88,8 @@ end
     private static string F_FollowingCount => nameof(SessionUnitCacheItem.FollowingCount);
     private static string F_Ticks => nameof(SessionUnitCacheItem.Ticks);
     private static string F_Sorting => nameof(SessionUnitCacheItem.Sorting);
+    private static string F_Immersed => nameof(SessionUnitCacheItem.IsImmersed);
+
 
 
     //private static string F_Setting_ReadedMessageId => $"{nameof(SessionUnitCacheItem.Setting)}.{nameof(SessionUnitCacheItem.Setting.ReadedMessageId)}";
@@ -875,17 +877,18 @@ end
         //old badge
         var taskPublicOld = readBatch.HashGetAsync(unitKey, F_PublicBadge);
         var taskPrivateOld = readBatch.HashGetAsync(unitKey, F_PrivateBadge);
-        var tasRemindMeCountOld = readBatch.HashGetAsync(unitKey, F_RemindMeCount);
-        var tasRemindAllCountOld = readBatch.HashGetAsync(unitKey, F_RemindAllCount);
-        var tasFollowingCountOld = readBatch.HashGetAsync(unitKey, F_FollowingCount);
+        var taskRemindMeCountOld = readBatch.HashGetAsync(unitKey, F_RemindMeCount);
+        var taskRemindAllCountOld = readBatch.HashGetAsync(unitKey, F_RemindAllCount);
+        var taskFollowingCountOld = readBatch.HashGetAsync(unitKey, F_FollowingCount);
+        var taskImmersedOld = readBatch.HashGetAsync(unitKey, F_Immersed);
         readBatch.Execute();
 
         var oldPublic = await taskPublicOld;
         var oldPrivate = await taskPrivateOld;
-        var oldRemindMeCount = await tasRemindMeCountOld;
-        var oldRemindAllCount = await tasRemindAllCountOld;
-        var oldFollowingCount = await tasFollowingCountOld;
-
+        var oldRemindMeCount = await taskRemindMeCountOld;
+        var oldRemindAllCount = await taskRemindAllCountOld;
+        var oldFollowingCount = await taskFollowingCountOld;
+        var oldImmersed = await taskImmersedOld;
 
         // 3. 写入新值（只写）
         // -----------------------------
@@ -913,12 +916,15 @@ end
         var ownerBadgeKey = OwnerBadgeSetKey(counter.OwnerId);
 
         static long ToLong(RedisValue v) => v.HasValue && long.TryParse(v.ToString(), out var n) ? n : 0;
+        static bool ToBool(RedisValue v) => v.HasValue && bool.TryParse(v.ToString(), out var n) && n;
 
         var oldPublicBadge = ToLong(oldPublic);
         var oldPrivatePublic = ToLong(oldPrivate);
         var remindMeCount = ToLong(oldRemindMeCount);
         var remindAllCount = ToLong(oldRemindAllCount);
         var followingCount = ToLong(oldFollowingCount);
+        //静默方式
+        var immersed = ToBool(oldImmersed);
 
         async Task UpdateAsync(string field, RedisValue redisValue)
         {
@@ -932,7 +938,7 @@ end
         }
 
         await Task.WhenAll(
-            UpdateAsync(F_Total_Public, oldPublicBadge),
+            UpdateAsync(immersed ? F_Total_Immersed : F_Total_Public, oldPublicBadge),
             UpdateAsync(F_Total_Private, oldPrivatePublic),
             UpdateAsync(F_Total_RemindMe, oldRemindMeCount),
             UpdateAsync(F_Total_RemindAll, oldRemindAllCount),
