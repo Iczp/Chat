@@ -182,7 +182,7 @@ public class SessionUnitSettingManager(
     {
         var setting = await SetEntityAsync(sessionUnitId, x =>
         {
-            Assert.If(!x.Session.IsEnableSetImmersed, "Session is disable to set immersed.");
+            Assert.If(x.Session?.IsEnableSetImmersed == false, "Session is disable to set immersed.");
             x.SetImmersed(isImmersed);
         });
         // change total stat for Immersed
