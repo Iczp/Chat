@@ -31,5 +31,5 @@ public class SessionUnitStatistic
     /// <summary>
     /// 
     /// </summary>
-    public static long Immersed { get; set; }
+    public long Immersed { get; set; }
 }

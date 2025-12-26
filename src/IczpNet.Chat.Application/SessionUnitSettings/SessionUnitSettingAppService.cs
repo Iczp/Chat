@@ -5,6 +5,7 @@ using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionSections.SessionUnitContactTags;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
+using IczpNet.Chat.SessionUnitSettings.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -140,9 +141,13 @@ public class SessionUnitSettingAppService(
     {
         var entity = await GetAndCheckPolicyAsync(SetImmersedPolicyName, sessionUnitId);
 
-        var sessionUnit = await SessionUnitSettingManager.SetImmersedAsync(sessionUnitId, isImmersed);
+        var sessionUnitSetting = await SessionUnitSettingManager.SetImmersedAsync(sessionUnitId, isImmersed);
 
-        return await MapToDtoAsync(entity);
+        var result = await MapToDtoAsync(entity);
+
+        result.Setting = ObjectMapper.Map<SessionUnitSetting, SessionUnitSettingDto>(sessionUnitSetting);
+
+        return result;
     }
 
     /// <summary>
@@ -155,9 +160,13 @@ public class SessionUnitSettingAppService(
     {
         var entity = await GetAndCheckPolicyAsync(SetIsContactsPolicyName, sessionUnitId);
 
-        var sessionUnit = await SessionUnitSettingManager.SetIsContactsAsync(sessionUnitId, isContacts);
+        var sessionUnitSetting = await SessionUnitSettingManager.SetIsContactsAsync(sessionUnitId, isContacts);
 
-        return await MapToDtoAsync(entity);
+        var result = await MapToDtoAsync(entity);
+
+        result.Setting = ObjectMapper.Map<SessionUnitSetting, SessionUnitSettingDto>(sessionUnitSetting);
+
+        return result;
     }
 
     /// <summary>
@@ -170,9 +179,13 @@ public class SessionUnitSettingAppService(
     {
         var entity = await GetAndCheckPolicyAsync(SetIsShowMemberNamePolicyName, sessionUnitId);
 
-        var sessionUnit = await SessionUnitSettingManager.SetIsShowMemberNameAsync(sessionUnitId, isShowMemberName);
+        var sessionUnitSetting = await SessionUnitSettingManager.SetIsShowMemberNameAsync(sessionUnitId, isShowMemberName);
 
-        return await MapToDtoAsync(entity);
+        var result = await MapToDtoAsync(entity);
+
+        result.Setting = ObjectMapper.Map<SessionUnitSetting, SessionUnitSettingDto>(sessionUnitSetting);
+
+        return result;
     }
 
     /// <summary>
@@ -185,9 +198,13 @@ public class SessionUnitSettingAppService(
     {
         var entity = await GetAndCheckPolicyAsync(RemoveSessionPolicyName, sessionUnitId);
 
-        var sessionUnit = await SessionUnitSettingManager.RemoveAsync(sessionUnitId);
+        var sessionUnitSetting = await SessionUnitSettingManager.RemoveAsync(sessionUnitId);
 
-        return await MapToDtoAsync(entity);
+        var result = await MapToDtoAsync(entity);
+
+        result.Setting = ObjectMapper.Map<SessionUnitSetting, SessionUnitSettingDto>(sessionUnitSetting);
+
+        return result;
     }
 
     /// <summary>
@@ -200,9 +217,13 @@ public class SessionUnitSettingAppService(
     {
         var entity = await GetAndCheckPolicyAsync(RemoveSessionPolicyName, sessionUnitId);
 
-        var sessionUnit = await SessionUnitSettingManager.RemoveAsync(sessionUnitId);
+        var sessionUnitSetting = await SessionUnitSettingManager.RemoveAsync(sessionUnitId);
 
-        return await MapToDtoAsync(entity);
+        var result = await MapToDtoAsync(entity);
+
+        result.Setting = ObjectMapper.Map<SessionUnitSetting, SessionUnitSettingDto>(sessionUnitSetting);
+
+        return result;
     }
 
     /// <summary>
@@ -215,9 +236,13 @@ public class SessionUnitSettingAppService(
     {
         var entity = await GetAndCheckPolicyAsync(KillPolicyName, sessionUnitId);
 
-        var sessionUnit = await SessionUnitSettingManager.KillAsync(sessionUnitId);
+        var sessionUnitSetting = await SessionUnitSettingManager.KillAsync(sessionUnitId);
 
-        return await MapToDtoAsync(entity);
+        var result = await MapToDtoAsync(entity);
+
+        result.Setting = ObjectMapper.Map<SessionUnitSetting, SessionUnitSettingDto>(sessionUnitSetting);
+
+        return result;
     }
 
     /// <summary>
@@ -230,9 +255,13 @@ public class SessionUnitSettingAppService(
     {
         var entity = await GetAndCheckPolicyAsync(ClearMessagePolicyName, sessionUnitId);
 
-        var sessionUnit = await SessionUnitSettingManager.ClearMessageAsync(sessionUnitId);
+        var sessionUnitSetting = await SessionUnitSettingManager.ClearMessageAsync(sessionUnitId);
 
-        return await MapToDtoAsync(entity);
+        var result = await MapToDtoAsync(entity);
+
+        result.Setting = ObjectMapper.Map<SessionUnitSetting, SessionUnitSettingDto>(sessionUnitSetting);
+
+        return result;
     }
 
     /// <summary>

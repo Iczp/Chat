@@ -132,10 +132,10 @@ public class SessionUnitSettingManager(
 
         action?.Invoke(sessionUnitSetting);
 
-        var sessionUnitSettingCacheItem = ObjectMapper.Map<SessionUnitSetting, SessionUnitSettingCacheItem>(sessionUnitSetting);
-
         // Update Cache
         var entity = await SessionUnitSettingRepository.UpdateAsync(sessionUnitSetting, autoSave);
+
+        var sessionUnitSettingCacheItem = ObjectMapper.Map<SessionUnitSetting, SessionUnitSettingCacheItem>(entity);
 
         await SessionUnitSettingCache.SetAsync(sessionUnitId, sessionUnitSettingCacheItem);
 

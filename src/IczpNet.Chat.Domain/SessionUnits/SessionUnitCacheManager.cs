@@ -750,6 +750,8 @@ end
             // badge
             if (!isSender)
             {
+                _ = batch.HashIncrementAsync(unitKey, isPrivate ? F_PrivateBadge : F_PublicBadge, 1);
+
                 // 静默方式 IsImmersed
                 if (unit.IsImmersed)
                 {
@@ -757,7 +759,6 @@ end
                 }
                 else
                 {
-                    _ = batch.HashIncrementAsync(unitKey, isPrivate ? F_PrivateBadge : F_PublicBadge, 1);
                     _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerBadgeKey], [isPrivate ? F_Total_Private : F_Total_Public, 1]);
                 }
 
@@ -1025,8 +1026,9 @@ end
         else
         {
             Logger.LogWarning("PublicBadge: 0 ,unitId:{unitId}", unitId);
-            return;
         }
+
+        _ = tran.HashSetAsync(UnitKey(unitId), F_Immersed, isImmersed);
 
         var committed = await tran.ExecuteAsync();
 
