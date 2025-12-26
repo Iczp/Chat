@@ -31,8 +31,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
        => $"{Prefix}ChatObjects:Toppings:OwnerId-{ownerId}";
     private string OwnerExistsSetKey(long ownerId)
         => $"{Prefix}ChatObjects:Exists:OwnerId-{ownerId}";
-    private string OwnerBadgeSetKey(long ownerId)
-        => $"{Prefix}ChatObjects:TotalBadges:OwnerId-{ownerId}";
+    private string OwnerStatisticSetKey(long ownerId)
+        => $"{Prefix}ChatObjects:Statistics:OwnerId-{ownerId}";
 
 
     /// <summary>
@@ -417,16 +417,16 @@ end
             totalFollowing += unit.FollowingCount;
         }
 
-        var ownerBadgeKey = OwnerBadgeSetKey(ownerId);
+        var ownerStatisticSetKey = OwnerStatisticSetKey(ownerId);
 
-        _ = batch.HashSetAsync(ownerBadgeKey, F_Total_Public, totalPublic);
-        _ = batch.HashSetAsync(ownerBadgeKey, F_Total_Private, totalPrivate);
-        _ = batch.HashSetAsync(ownerBadgeKey, F_Total_RemindMe, totalRemindMe);
-        _ = batch.HashSetAsync(ownerBadgeKey, F_Total_RemindAll, totalRemindAll);
-        _ = batch.HashSetAsync(ownerBadgeKey, F_Total_Following, totalFollowing);
-        _ = batch.HashSetAsync(ownerBadgeKey, F_Total_Immersed, totalImmersed);
+        _ = batch.HashSetAsync(ownerStatisticSetKey, F_Total_Public, totalPublic);
+        _ = batch.HashSetAsync(ownerStatisticSetKey, F_Total_Private, totalPrivate);
+        _ = batch.HashSetAsync(ownerStatisticSetKey, F_Total_RemindMe, totalRemindMe);
+        _ = batch.HashSetAsync(ownerStatisticSetKey, F_Total_RemindAll, totalRemindAll);
+        _ = batch.HashSetAsync(ownerStatisticSetKey, F_Total_Following, totalFollowing);
+        _ = batch.HashSetAsync(ownerStatisticSetKey, F_Total_Immersed, totalImmersed);
 
-        _ = batch.KeyExpireAsync(ownerBadgeKey, _cacheExpire);
+        _ = batch.KeyExpireAsync(ownerStatisticSetKey, _cacheExpire);
 
         batch.Execute();
 
@@ -744,7 +744,7 @@ end
             var ownerId = unit.OwnerId;
             var unitKey = UnitKey(unitId);
             var ownerSortedKey = OwnerSortedSetKey(ownerId);
-            var ownerBadgeKey = OwnerBadgeSetKey(ownerId);
+            var ownerStatisticSetKey = OwnerStatisticSetKey(ownerId);
             var isSender = unitId == message.SenderSessionUnitId;
 
             // badge
@@ -755,30 +755,30 @@ end
                 // 静默方式 IsImmersed
                 if (unit.IsImmersed)
                 {
-                    _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerBadgeKey], [F_Total_Immersed, 1]);
+                    _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerStatisticSetKey], [F_Total_Immersed, 1]);
                 }
                 else
                 {
-                    _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerBadgeKey], [isPrivate ? F_Total_Private : F_Total_Public, 1]);
+                    _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerStatisticSetKey], [isPrivate ? F_Total_Private : F_Total_Public, 1]);
                 }
 
                 //remindAllCount
                 if (isRemindAll)
                 {
                     _ = batch.HashIncrementAsync(unitKey, F_RemindAllCount, 1);
-                    _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerBadgeKey], [F_Total_RemindAll, 1]);
+                    _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerStatisticSetKey], [F_Total_RemindAll, 1]);
                 }
                 //remindMeCount
                 if (reminderIds.Contains(unitId))
                 {
                     _ = batch.HashIncrementAsync(unitKey, F_RemindMeCount, 1);
-                    _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerBadgeKey], [F_Total_RemindMe, 1]);
+                    _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerStatisticSetKey], [F_Total_RemindMe, 1]);
                 }
                 // followingCount
                 if (followerIds.Contains(unitId))
                 {
                     _ = batch.HashIncrementAsync(unitKey, F_FollowingCount, 1);
-                    _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerBadgeKey], [F_Total_Following, 1]);
+                    _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerStatisticSetKey], [F_Total_Following, 1]);
                 }
             }
 
@@ -814,9 +814,9 @@ end
 
     public virtual async Task<SessionUnitStatistic> GetStatisticAsync(long ownerId)
     {
-        var ownerBadgeKey = OwnerBadgeSetKey(ownerId);
+        var ownerStatisticSetKey = OwnerStatisticSetKey(ownerId);
 
-        var entities = await Database.HashGetAllAsync(ownerBadgeKey);
+        var entities = await Database.HashGetAllAsync(ownerStatisticSetKey);
 
         return MapToStatistic(entities);
 
@@ -827,8 +827,8 @@ end
 
     public virtual async Task<bool> RemoveTotalBadgeAsync(long ownerId)
     {
-        var ownerBadgeKey = OwnerBadgeSetKey(ownerId);
-        return await Database.KeyDeleteAsync(ownerBadgeKey);
+        var ownerStatisticSetKey = OwnerStatisticSetKey(ownerId);
+        return await Database.KeyDeleteAsync(ownerStatisticSetKey);
     }
 
     #endregion
@@ -912,7 +912,7 @@ end
         // -----------------------------
         // 减量更新 Owner 总角标（key 必须已存在才更新）
         // -----------------------------
-        var ownerBadgeKey = OwnerBadgeSetKey(counter.OwnerId);
+        var ownerStatisticSetKey = OwnerStatisticSetKey(counter.OwnerId);
 
         static long ToLong(RedisValue v) => v.HasValue && long.TryParse(v.ToString(), out var n) ? n : 0;
         static bool ToBool(RedisValue v) => v.HasValue && bool.TryParse(v.ToString(), out var n) && n;
@@ -932,7 +932,7 @@ end
             if (val > 0)
             {
                 Logger.LogInformation($"ownerId:{counter.OwnerId},需要减量 [{field}]:{val}");
-                _ = await Database.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerBadgeKey], [field, -val]);
+                _ = await Database.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerStatisticSetKey], [field, -val]);
             }
         }
 
@@ -1016,12 +1016,12 @@ end
 
         if (unit.PublicBadge > 0)
         {
-            var ownerBadgeSetKey = OwnerBadgeSetKey(unit.OwnerId);
+            var ownerStatisticSetKey = OwnerStatisticSetKey(unit.OwnerId);
             var publicDelta = isImmersed ? -unit.PublicBadge : unit.PublicBadge;
             var immersedDelta = -publicDelta;
 
-            _ = tran.HashIncrementAsync(ownerBadgeSetKey, F_Total_Public, publicDelta);
-            _ = tran.HashIncrementAsync(ownerBadgeSetKey, F_Total_Immersed, immersedDelta);
+            _ = tran.HashIncrementAsync(ownerStatisticSetKey, F_Total_Public, publicDelta);
+            _ = tran.HashIncrementAsync(ownerStatisticSetKey, F_Total_Immersed, immersedDelta);
         }
         else
         {
