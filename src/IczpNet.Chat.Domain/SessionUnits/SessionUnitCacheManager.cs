@@ -1,9 +1,11 @@
 ﻿using IczpNet.Chat.Clocks;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.RedisMapping;
 using IczpNet.Chat.RedisServices;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Extensions.Logging;
+using NUglify.Helpers;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
@@ -44,6 +46,10 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// <returns></returns>
     private string OwnerFriendsSetKey(long ownerId)
         => $"{Prefix}Friends:OwnerId-{ownerId}";
+
+    private string DestinationsSetKey(long ownerId)
+        => $"{Prefix}Destinations:OwnerId-{ownerId}";
+
     /// <summary>
     /// 置顶的会话单元
     /// </summary>
@@ -67,6 +73,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// <returns></returns>
     private string OwnerStatisticSetKey(long ownerId)
         => $"{Prefix}Statistics:OwnerId-{ownerId}";
+
+
 
     /// <summary>
     /// 1e16
@@ -111,6 +119,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     private static string F_Total_RemindMe => nameof(SessionUnitStatistic.RemindMe);
     private static string F_Total_RemindAll => nameof(SessionUnitStatistic.RemindAll);
     private static string F_Total_Immersed => nameof(SessionUnitStatistic.Immersed);
+    private static string F_Total_Type => nameof(SessionUnitStatistic.Immersed);
 
     #endregion
 
@@ -357,6 +366,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         var ownerStatisticSetKey = OwnerStatisticSetKey(ownerId);
 
+
         //clear existing set to avoid stale members
         _ = batch.KeyDeleteAsync(ownerStatisticSetKey);
 
@@ -396,6 +406,10 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         long totalFollowing = 0;
         long totalImmersed = 0;
 
+        var countMap = new Dictionary<ChatObjectTypeEnums?, long>();
+
+        Enum.GetValues<ChatObjectTypeEnums>().ForEach(x => countMap[x] = 0);
+
         foreach (var unit in allList)
         {
             var unitId = unit.Id.ToString();
@@ -412,6 +426,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             }
             else
             {
+                //非静默统计PublicBadge
+                countMap[unit.DestinationObjectType] += unit.PublicBadge;
                 totalPublic += unit.PublicBadge;
             }
             totalPrivate += unit.PrivateBadge;
@@ -426,9 +442,17 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         _ = batch.HashSetAsync(ownerStatisticSetKey, F_Total_RemindAll, totalRemindAll);
         _ = batch.HashSetAsync(ownerStatisticSetKey, F_Total_Following, totalFollowing);
         _ = batch.HashSetAsync(ownerStatisticSetKey, F_Total_Immersed, totalImmersed);
-
         _ = batch.KeyExpireAsync(ownerStatisticSetKey, _cacheExpire);
+
         _ = batch.KeyExpireAsync(ownerFriendsSetKey, _cacheExpire);
+
+        //destinations
+        var destinationsSetKey = DestinationsSetKey(ownerId);
+        foreach (var item in countMap)
+        {
+            _ = batch.HashSetAsync(destinationsSetKey, item.Key.ToString(), item.Value);
+        }
+        _ = batch.KeyExpireAsync(destinationsSetKey, _cacheExpire);
 
         batch.Execute();
 
@@ -679,6 +703,15 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return result;
     }
 
+
+    public async Task<SessionUnitCacheItem> GetAsync(Guid id)
+    {
+        var units = await GetManyAsync([id]);
+
+        return units[0].Value;
+    }
+
+
     public async Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetOrSetManyAsync(IEnumerable<Guid> unitIds, Func<List<Guid>, Task<KeyValuePair<Guid, SessionUnitCacheItem>[]>> func)
     {
         var list = await GetManyAsync(unitIds);
@@ -733,6 +766,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         var reminderIds = message.MessageReminderList.Select(x => x.SessionUnitId).ToHashSet();
         var followerIds = message.MessageFollowerList.Select(x => x.SessionUnitId).ToHashSet();
 
+        var receiverType = message.ReceiverType;
+
         //var unitList = await GetDictBySessionAsync(sessionId);
         var unitList = await GetListBySessionAsync(sessionId);
         //var unitList = await SessionUnitManager.GetCacheListAsync(message);
@@ -742,7 +777,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         var batch = Database.CreateBatch();
         var expireTime = expire ?? _cacheExpire;
 
-        
+
 
         foreach (var unit in unitList)
         {
@@ -758,6 +793,10 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             // badge
             if (!isSender)
             {
+                // receiverType
+                _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript, [DestinationsSetKey(ownerId)], [receiverType.ToString(), 1]);
+
+                // badge
                 _ = batch.HashIncrementAsync(unitKey, isPrivate ? F_PrivateBadge : F_PublicBadge, 1);
 
                 // 静默方式 IsImmersed
@@ -788,6 +827,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
                     _ = batch.HashIncrementAsync(unitKey, F_FollowingCount, 1);
                     _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerStatisticSetKey], [F_Total_Following, 1]);
                 }
+
             }
 
             // lastMessageId
@@ -847,18 +887,17 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     #endregion
 
     #region Remove / Set / Misc
-
-    public async Task UpdateCountersync(SessionUnitCounterInfo counter, Func<Guid, Task<SessionUnitCacheItem>> fetchTask)
+    private async Task UpdateCountersync(SessionUnitCounterInfo counter, Func<Guid, Task<SessionUnitCacheItem>> fetchTask)
     {
         var unitKey = UnitKey(counter.Id);
-
+        SessionUnitCacheItem unit;
         //
         var isExists = await Database.KeyExistsAsync(unitKey);
 
         if (!isExists)
         {
             // 加载缓存项
-            var unit = await fetchTask(counter.Id);
+            unit = await fetchTask(counter.Id);
 
             unit.PublicBadge = counter.PublicBadge;
             unit.PrivateBadge = counter.PrivateBadge;
@@ -867,15 +906,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             unit.FollowingCount = counter.FollowingCount;
             //unit.Setting.ReadedMessageId = counter.ReadedMessageId;
 
-            var entries = MapToHashEntries(unit);
-
             var batch = Database.CreateBatch();
-            _ = batch.HashSetAsync(unitKey, entries);
-
-            if (_cacheExpire.HasValue)
-            {
-                _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
-            }
+            SetUnit(batch, unit, refreshExpire: true);
             batch.Execute();
 
             Logger.LogInformation($"[{nameof(UpdateCountersync)}] 还未缓存，直接写入缓存:{counter}");
@@ -949,6 +981,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             }
         }
 
+
         await Task.WhenAll(
             UpdateAsync(immersed ? F_Total_Immersed : F_Total_Public, oldPublicBadge),
             UpdateAsync(F_Total_Private, oldPrivatePublic),
@@ -956,6 +989,81 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             UpdateAsync(F_Total_RemindAll, oldRemindAllCount),
             UpdateAsync(F_Total_Following, oldFollowingCount)
          );
+    }
+    public async Task UpdateCounterAsync(SessionUnitCounterInfo counter, Func<Guid, Task<SessionUnitCacheItem>> fetchTask)
+    {
+        var isExists = await Database.KeyExistsAsync(UnitKey(counter.Id));
+
+        var batch = Database.CreateBatch();
+
+        void UpdateUnit(SessionUnitCacheItem unit, SessionUnitCounterInfo counter)
+        {
+            unit.PublicBadge = counter.PublicBadge;
+            unit.PrivateBadge = counter.PrivateBadge;
+            unit.RemindAllCount = counter.RemindAllCount;
+            unit.RemindMeCount = counter.RemindMeCount;
+            unit.FollowingCount = counter.FollowingCount;
+            SetUnit(batch, unit, refreshExpire: true);
+        }
+        if (!isExists)
+        {
+            // 加载缓存项
+            UpdateUnit(await fetchTask(counter.Id), counter);
+            Logger.LogInformation("[{method}] 还未缓存，直接写入缓存:{counter}", nameof(UpdateCounterAsync), counter);
+            batch.Execute();
+            return;
+        }
+
+        // -----------------------------
+        // 2. 先读旧值（只读）
+        // -----------------------------
+
+        var unit = await GetAsync(counter.Id);
+
+        if (unit == null)
+        {
+            Logger.LogWarning("unit is null,unitId:{unitId}", counter.Id);
+            return;
+        }
+        var publicBadge = unit.PublicBadge;
+        var privatePublic = unit.PublicBadge;
+        var remindMeCount = unit.RemindMeCount;
+        var remindAllCount = unit.RemindAllCount;
+        var followingCount = unit.FollowingCount;
+        //静默方式
+        var immersed = unit.IsImmersed;
+
+        // 3. 写入新值（只写）
+        // -----------------------------
+
+        UpdateUnit(unit, counter);
+        Logger.LogInformation("[{method}] 已缓存，直接更新缓存:{counter}", nameof(UpdateCounterAsync), counter);
+
+        if (!immersed)
+        {
+            // //非静默减量 destinations （key 必须已存在才更新）
+            _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript, [DestinationsSetKey(unit.OwnerId)], [unit.DestinationObjectType.ToString(), -publicBadge]);
+        }
+
+        // 减量更新 Owner 总角标（key 必须已存在才更新）
+        var ownerStatisticSetKey = OwnerStatisticSetKey(counter.OwnerId);
+
+        void UpdateStatisticAsync(string field, int val)
+        {
+            if (val > 0)
+            {
+                Logger.LogInformation($"ownerId:{counter.OwnerId},需要减量 [{field}]:{val}");
+                _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerStatisticSetKey], [field, -val]);
+            }
+        }
+
+        UpdateStatisticAsync(immersed ? F_Total_Immersed : F_Total_Public, publicBadge);
+        UpdateStatisticAsync(F_Total_Private, privatePublic);
+        UpdateStatisticAsync(F_Total_RemindMe, remindMeCount);
+        UpdateStatisticAsync(F_Total_RemindAll, remindAllCount);
+        UpdateStatisticAsync(F_Total_Following, followingCount);
+
+        batch.Execute();
     }
 
     public async Task SetToppingAsync(Guid unitId, long ownerId, long sorting)
@@ -1009,9 +1117,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
     public async Task ChangeImmersedAsync(Guid unitId, bool isImmersed)
     {
-        var units = await GetManyAsync([unitId]);
-
-        var unit = units[0].Value;
+        var unit = await GetAsync(unitId);
 
         if (unit == null)
         {
@@ -1037,6 +1143,9 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             //_ = tran.HashIncrementAsync(ownerStatisticSetKey, F_Total_Immersed, immersedDelta);
             _ = tran.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerStatisticSetKey], [F_Total_Public, publicDelta]);
             _ = tran.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerStatisticSetKey], [F_Total_Immersed, immersedDelta]);
+
+            //destinations
+            _ = tran.ScriptEvaluateAsync(IncrementIfExistsScript, [DestinationsSetKey(unit.OwnerId)], [unit.DestinationObjectType.ToString(), publicDelta]);
 
         }
         else

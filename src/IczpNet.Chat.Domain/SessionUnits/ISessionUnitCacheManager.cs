@@ -62,11 +62,13 @@ public interface ISessionUnitCacheManager
 
     Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetManyAsync(IEnumerable<Guid> unitIds);
 
+    Task<SessionUnitCacheItem> GetAsync(Guid id);
+
     Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetOrSetManyAsync(IEnumerable<Guid> unitIds, Func<List<Guid>, Task<KeyValuePair<Guid, SessionUnitCacheItem>[]>> func);
 
     Task BatchIncrementAsync(Message message, TimeSpan? expire = null);
 
-    Task UpdateCountersync(SessionUnitCounterInfo counter, Func<Guid, Task<SessionUnitCacheItem>> fetchTask);
+    Task UpdateCounterAsync(SessionUnitCounterInfo counter, Func<Guid, Task<SessionUnitCacheItem>> fetchTask);
 
     Task<SessionUnitStatistic> GetStatisticAsync(long ownerId);
 

@@ -2,8 +2,6 @@
 
 public class SessionUnitStatistic
 {
-    
-
     /// <summary>
     /// 
     /// </summary>
@@ -31,5 +29,5 @@ public class SessionUnitStatistic
     /// <summary>
     /// 
     /// </summary>
-    public long Immersed { get; set; }
+    public long? Immersed { get; set; }
 }
