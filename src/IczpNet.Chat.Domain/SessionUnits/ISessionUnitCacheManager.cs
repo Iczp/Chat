@@ -19,6 +19,8 @@ public interface ISessionUnitCacheManager
 
     Task<IDictionary<Guid, long>> GetDictBySessionAsync(Guid sessionId);
 
+    Task<long> GetMembersCountAsync(Guid sessionId);
+
     Task<IDictionary<long, Guid>> GetUnitsBySessionAsync(Guid sessionId, List<long> ownerIds);
 
     Task<IEnumerable<SessionUnitCacheItem>> GetListBySessionAsync(Guid sessionId);
@@ -56,7 +58,7 @@ public interface ISessionUnitCacheManager
         bool isDescending = true);
 
 
-    Task<long> GetTotalCountByOwnerAsync(long ownerId);
+    Task<long> GetFirendsCountAsync(long ownerId);
 
     Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetManyAsync(IEnumerable<Guid> unitIds);
 
@@ -68,7 +70,7 @@ public interface ISessionUnitCacheManager
 
     Task<SessionUnitStatistic> GetStatisticAsync(long ownerId);
 
-    Task<bool> RemoveTotalBadgeAsync(long ownerId);
+    Task<bool> RemoveStatisticAsync(long ownerId);
 
     Task SetToppingAsync(Guid unitId, long ownerId, long sorting);
 

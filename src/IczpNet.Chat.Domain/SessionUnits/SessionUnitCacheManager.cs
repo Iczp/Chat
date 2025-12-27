@@ -68,9 +68,6 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     private string OwnerStatisticSetKey(long ownerId)
         => $"{Prefix}Statistics:OwnerId-{ownerId}";
 
-
-
-
     /// <summary>
     /// 1e16
     /// </summary>
@@ -123,9 +120,6 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     {
         return RedisMapper.ToHashEntries(unit);
     }
-
-    
-
 
     private void SetTopping(IBatch batch, SessionUnitCacheItem unit)
     {
@@ -262,6 +256,16 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         var dict = entries.ToDictionary(x => Guid.Parse(x.Value), x => long.Parse(x.Name));
 
         return dict;
+    }
+
+    /// <summary>
+    /// 获取会话单元数量
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    public async Task<long> GetMembersCountAsync(Guid sessionId)
+    {
+        return await Database.HashLengthAsync(SessionSetKey(sessionId));
     }
 
     public async Task<IDictionary<long, Guid>> GetUnitsBySessionAsync(Guid sessionId, List<long> ownerIds)
@@ -508,11 +512,14 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return result;
     }
 
-    public async Task<long> GetTotalCountByOwnerAsync(long ownerId)
+    /// <summary>
+    /// 获取好友会话单元数量
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    public async Task<long> GetFirendsCountAsync(long ownerId)
     {
-        var ownerFriendsSetKey = OwnerFriendsSetKey(ownerId);
-        var totalCount = await Database.SortedSetLengthAsync(ownerFriendsSetKey);
-        return totalCount;
+        return await Database.SortedSetLengthAsync(OwnerFriendsSetKey(ownerId));
     }
 
 
@@ -831,7 +838,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         //return dict;
     }
 
-    public virtual async Task<bool> RemoveTotalBadgeAsync(long ownerId)
+    public virtual async Task<bool> RemoveStatisticAsync(long ownerId)
     {
         var ownerStatisticSetKey = OwnerStatisticSetKey(ownerId);
         return await Database.KeyDeleteAsync(ownerStatisticSetKey);

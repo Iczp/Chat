@@ -124,8 +124,6 @@ public class SessionUnitSettingManager(
         }
     }
 
-
-
     protected async Task<SessionUnitSetting> SetEntityAsync(Guid sessionUnitId, Action<SessionUnitSetting> action, bool autoSave = true)
     {
         var sessionUnitSetting = await GetAsync(sessionUnitId);
