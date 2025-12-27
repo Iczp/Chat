@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.MessageSections.Messages;
+﻿using IczpNet.Chat.Enums;
+using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
@@ -73,6 +74,10 @@ public interface ISessionUnitCacheManager
     Task<SessionUnitStatistic> GetStatisticAsync(long ownerId);
 
     Task<bool> RemoveStatisticAsync(long ownerId);
+
+    Task<Dictionary<string, long>> GetRawBadgeMapAsync(long ownerId);
+
+    Task<Dictionary<ChatObjectTypeEnums, long>> GetBadgeMapAsync(long ownerId);
 
     Task SetToppingAsync(Guid unitId, long ownerId, long sorting);
 

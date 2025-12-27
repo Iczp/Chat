@@ -859,29 +859,55 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         Logger.LogInformation("BatchIncrementBadgeAndSetLastMessageAsync executed.");
     }
 
-    private static SessionUnitStatistic MapToStatistic(HashEntry[] entities)
+    private static SessionUnitStatistic MapToStatistic(HashEntry[] entries)
     {
-        return RedisMapper.ToObject<SessionUnitStatistic>(entities);
+        return RedisMapper.ToObject<SessionUnitStatistic>(entries);
 
     }
 
     public virtual async Task<SessionUnitStatistic> GetStatisticAsync(long ownerId)
     {
-        var ownerStatisticSetKey = OwnerStatisticSetKey(ownerId);
-
-        var entities = await Database.HashGetAllAsync(ownerStatisticSetKey);
-
-        return MapToStatistic(entities);
-
-        //var dict = entities.ToDictionary(x => x.Name.ToString(), x => (long)x.Value);
-
-        //return dict;
+        var entries = await Database.HashGetAllAsync(OwnerStatisticSetKey(ownerId));
+        return MapToStatistic(entries);
     }
 
     public virtual async Task<bool> RemoveStatisticAsync(long ownerId)
     {
-        var ownerStatisticSetKey = OwnerStatisticSetKey(ownerId);
-        return await Database.KeyDeleteAsync(ownerStatisticSetKey);
+        return await Database.KeyDeleteAsync(OwnerStatisticSetKey(ownerId));
+    }
+
+    public virtual async Task<Dictionary<string, long>> GetRawBadgeMapAsync(long ownerId)
+    {
+        var entries = await Database.HashGetAllAsync(DestinationsSetKey(ownerId));
+        var result = entries.ToDictionary(
+            x => x.Name.ToString(),
+            x => long.TryParse(x.Value.ToString(), out var v) ? v : 0);
+        
+        return result;
+    }
+    public async Task<Dictionary<ChatObjectTypeEnums, long>> GetBadgeMapAsync(long ownerId)
+    {
+        var raw = await GetRawBadgeMapAsync(ownerId);
+
+        var map = new Dictionary<ChatObjectTypeEnums, long>();
+
+        foreach (var (key, value) in raw)
+        {
+            if (!Enum.TryParse<ChatObjectTypeEnums>(key, true, out var type))
+            {
+                continue;
+            }
+
+            map[type] = value;
+        }
+
+        // 补齐所有枚举
+        foreach (var type in Enum.GetValues<ChatObjectTypeEnums>())
+        {
+            map.TryAdd(type, 0);
+        }
+
+        return map;
     }
 
     #endregion
