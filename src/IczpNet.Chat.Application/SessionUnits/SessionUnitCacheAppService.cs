@@ -1,5 +1,6 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.Permissions;
@@ -557,9 +558,9 @@ public class SessionUnitCacheAppService(
         //加载全部
         await LoadAllByOwnerIfNotExistsAsync(ownerId);
 
-        var totalBadge = await SessionUnitCacheManager.GetStatisticAsync(ownerId);
+        var stat = await SessionUnitCacheManager.GetStatisticAsync(ownerId);
 
-        return totalBadge;
+        return stat;
     }
 
     /// <summary>
@@ -582,13 +583,12 @@ public class SessionUnitCacheAppService(
             //加载全部
             await LoadAllByOwnerIfNotExistsAsync(ownerId);
 
-            var stat = await GetStatisticAsync(ownerId);
-
             result.Add(new BadgeDto()
             {
                 AppUserId = userId,
                 ChatObjectId = ownerId,
-                Statistic = stat,
+                Statistic = await SessionUnitCacheManager.GetStatisticAsync(ownerId),
+                BadgeMap = await SessionUnitCacheManager.GetRawBadgeMapAsync(ownerId)
             });
         }
 

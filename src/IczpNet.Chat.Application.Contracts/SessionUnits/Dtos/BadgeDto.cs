@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
+using System.Collections.Generic;
 
 namespace IczpNet.Chat.SessionUnits.Dtos;
 
@@ -12,5 +13,7 @@ public class BadgeDto
     public virtual long? Badge { get; set; }
 
     public virtual SessionUnitStatistic Statistic { get; set; }
+
+    public virtual Dictionary<string,long> BadgeMap { get; set; }
 
 }

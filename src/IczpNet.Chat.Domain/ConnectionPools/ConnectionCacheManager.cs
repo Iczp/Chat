@@ -649,41 +649,6 @@ return 1";
         return result;
     }
 
-    protected virtual async Task<Dictionary<string, bool>> BatchKeyExistsAsync(IEnumerable<string> keys)
-    {
-        var stopwatch = Stopwatch.StartNew();
-
-        var keyList = keys as IList<string> ?? keys.ToList();
-        if (keyList.Count == 0)
-            return [];
-
-        var batch = Database.CreateBatch();
-        var tasks = new Task<bool>[keyList.Count];
-
-        for (int i = 0; i < keyList.Count; i++)
-        {
-            tasks[i] = batch.KeyExistsAsync(keyList[i]);
-        }
-
-        batch.Execute();
-
-        var results = await Task.WhenAll(tasks);
-
-        var dict = new Dictionary<string, bool>(keyList.Count);
-        for (int i = 0; i < keyList.Count; i++)
-        {
-            dict[keyList[i]] = results[i];
-        }
-
-        Logger.LogInformation(
-            "[{Method}] keys:{Count}, Elapsed:{Elapsed}ms",
-            nameof(BatchKeyExistsAsync),
-            keyList.Count,
-            stopwatch.ElapsedMilliseconds);
-
-        return dict;
-    }
-
     public async Task AddSessionAsync(List<(Guid SessionId, long OwnerId)> ownerSessions)
     {
         var preparedScript = LuaScript.Prepare(LuaSAddIfExistsScript);

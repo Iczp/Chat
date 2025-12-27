@@ -1,8 +1,11 @@
-﻿using IczpNet.Chat.MessageSections.Messages;
+﻿using IczpNet.Chat.Clocks;
+using IczpNet.Chat.Enums;
+using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.RedisMapping;
 using IczpNet.Chat.RedisServices;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Extensions.Logging;
+using NUglify.Helpers;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
@@ -43,13 +46,25 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// <returns></returns>
     private string OwnerFriendsSetKey(long ownerId)
         => $"{Prefix}Friends:OwnerId-{ownerId}";
+
+    private string DestinationsSetKey(long ownerId)
+        => $"{Prefix}Destinations:OwnerId-{ownerId}";
+
     /// <summary>
-    /// 置顶的好友
+    /// 置顶的会话单元
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
     private string OwnerToppingSetKey(long ownerId)
        => $"{Prefix}Toppings:OwnerId-{ownerId}";
+
+    /// <summary>
+    /// 静默会话单元
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    private string OwnerImmersedSetKey(long ownerId)
+       => $"{Prefix}Immerseds:OwnerId-{ownerId}";
 
     /// <summary>
     /// 消息统计
@@ -59,24 +74,6 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     private string OwnerStatisticSetKey(long ownerId)
         => $"{Prefix}Statistics:OwnerId-{ownerId}";
 
-    /// <summary>
-    /// 1. key 不存在 : 返回 nil（不创建）
-    /// 2. key 存在 : 执行 HINCRBY(key, field, increment)
-    /// 3. 若结果 &lt;0,设置为 0
-    /// </summary>
-    private static string IncrementIfExistsScript => @"
-if redis.call('EXISTS', KEYS[1]) == 1 then
-    local newValue = redis.call('HINCRBY', KEYS[1], ARGV[1], ARGV[2])
-    if newValue < 0 then
-        redis.call('HSET', KEYS[1], ARGV[1], 0)
-        return 0
-    else
-        return newValue
-    end
-else
-    return nil
-end
-";
 
 
     /// <summary>
@@ -112,8 +109,6 @@ end
     private static string F_Sorting => nameof(SessionUnitCacheItem.Sorting);
     private static string F_Immersed => nameof(SessionUnitCacheItem.IsImmersed);
 
-
-
     //private static string F_Setting_ReadedMessageId => $"{nameof(SessionUnitCacheItem.Setting)}.{nameof(SessionUnitCacheItem.Setting.ReadedMessageId)}";
 
     // total
@@ -124,6 +119,7 @@ end
     private static string F_Total_RemindMe => nameof(SessionUnitStatistic.RemindMe);
     private static string F_Total_RemindAll => nameof(SessionUnitStatistic.RemindAll);
     private static string F_Total_Immersed => nameof(SessionUnitStatistic.Immersed);
+    private static string F_Total_Type => nameof(SessionUnitStatistic.Immersed);
 
     #endregion
 
@@ -134,40 +130,39 @@ end
         return RedisMapper.ToHashEntries(unit);
     }
 
-    protected virtual async Task<Dictionary<string, bool>> BatchKeyExistsAsync(IEnumerable<string> keys)
+    private void SetTopping(IBatch batch, SessionUnitCacheItem unit)
     {
-        var stopwatch = Stopwatch.StartNew();
-
-        var keyList = keys as IList<string> ?? keys.ToList();
-        if (keyList.Count == 0)
-            return [];
-
-        var batch = Database.CreateBatch();
-        var tasks = new Task<bool>[keyList.Count];
-
-        for (int i = 0; i < keyList.Count; i++)
+        if (unit.Sorting == 0)
         {
-            tasks[i] = batch.KeyExistsAsync(keyList[i]);
+            return;
         }
-
-        batch.Execute();
-
-        var results = await Task.WhenAll(tasks);
-
-        var dict = new Dictionary<string, bool>(keyList.Count);
-        for (int i = 0; i < keyList.Count; i++)
-        {
-            dict[keyList[i]] = results[i];
-        }
-
-        Logger.LogInformation(
-            "[{Method}] keys:{Count}, Elapsed:{Elapsed}ms",
-            nameof(BatchKeyExistsAsync),
-            keyList.Count,
-            stopwatch.ElapsedMilliseconds);
-
-        return dict;
+        var toppingKey = OwnerToppingSetKey(unit.OwnerId);
+        _ = batch.SortedSetAddAsync(toppingKey, unit.Id.ToString(), unit.Sorting);
+        _ = batch.KeyExpireAsync(toppingKey, _cacheExpire);
     }
+
+    private void SetImmersed(IBatch batch, SessionUnitCacheItem unit)
+    {
+        if (!unit.IsImmersed)
+        {
+            return;
+        }
+        var ownerImmersedSetKey = OwnerImmersedSetKey(unit.OwnerId);
+        _ = batch.SortedSetAddAsync(ownerImmersedSetKey, unit.Id.ToString(), unit.CreationTime.ToUnixTimeMilliseconds());
+        _ = batch.KeyExpireAsync(ownerImmersedSetKey, _cacheExpire);
+    }
+
+    private void SetUnit(IBatch batch, SessionUnitCacheItem unit, bool refreshExpire)
+    {
+        var unitKey = UnitKey(unit.Id);
+        var entries = MapToHashEntries(unit);
+        _ = batch.HashSetAsync(unitKey, entries);
+        if (refreshExpire)
+        {
+            _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
+        }
+    }
+
     public async Task<IEnumerable<SessionUnitCacheItem>> SetListBySessionAsync(Guid sessionId, IEnumerable<SessionUnitCacheItem> units)
     {
         ArgumentNullException.ThrowIfNull(units);
@@ -205,18 +200,13 @@ end
 
             if (!isExists)
             {
-                var entries = MapToHashEntries(unit);
-                _ = batch.HashSetAsync(unitKey, entries);
-                _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
+                SetUnit(batch, unit, refreshExpire: true);
             }
 
-            // set top
-            if (unit.Sorting > 0)
-            {
-                var toppingKey = OwnerToppingSetKey(unit.OwnerId);
-                _ = batch.SortedSetAddAsync(toppingKey, unitId, unit.Sorting);
-                _ = batch.KeyExpireAsync(toppingKey, _cacheExpire);
-            }
+            // set Topping
+            SetTopping(batch, unit);
+            // set Immersed
+            SetImmersed(batch, unit);
         }
 
         _ = batch.KeyExpireAsync(sessionSetKey, _cacheExpire);
@@ -275,6 +265,16 @@ end
         var dict = entries.ToDictionary(x => Guid.Parse(x.Value), x => long.Parse(x.Name));
 
         return dict;
+    }
+
+    /// <summary>
+    /// 获取会话单元数量
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    public async Task<long> GetMembersCountAsync(Guid sessionId)
+    {
+        return await Database.HashLengthAsync(SessionSetKey(sessionId));
     }
 
     public async Task<IDictionary<long, Guid>> GetUnitsBySessionAsync(Guid sessionId, List<long> ownerIds)
@@ -366,12 +366,14 @@ end
 
         var ownerStatisticSetKey = OwnerStatisticSetKey(ownerId);
 
+
         //clear existing set to avoid stale members
         _ = batch.KeyDeleteAsync(ownerStatisticSetKey);
 
         // owner zset unitKey
         var ownerFriendsSetKey = OwnerFriendsSetKey(ownerId);
-        var toppingKey = OwnerToppingSetKey(ownerId);
+        //var toppingKey = OwnerToppingSetKey(ownerId);
+        //var ownerImmersedSetKey = OwnerImmersedSetKey(ownerId);
 
         Log($"GetManyAsync Start");
         var unitMap = await GetManyAsync(unitList.Select(x => x.Id));
@@ -385,28 +387,12 @@ end
 
         foreach (var unit in unCachedUnits)
         {
-            var unitId = unit.Id.ToString();
-
-            var unitKey = UnitKey(unit.Id);
-
-            var entries = MapToHashEntries(unit);
-
-            _ = batch.HashSetAsync(unitKey, entries);
-            _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
-
-            // score
-            var score = GetScore(unit.Sorting, unit.Ticks);
-            _ = batch.SortedSetAddAsync(ownerFriendsSetKey, unitId, score);
-
-            // set top
-            if (unit.Sorting > 0)
-            {
-                _ = batch.SortedSetAddAsync(toppingKey, unitId, unit.Sorting);
-                _ = batch.KeyExpireAsync(toppingKey, _cacheExpire);
-            }
+            SetUnit(batch, unit, refreshExpire: false);
+            // set Topping
+            SetTopping(batch, unit);
+            // set Immersed
+            SetImmersed(batch, unit);
         }
-
-        _ = batch.KeyExpireAsync(ownerFriendsSetKey, _cacheExpire);
 
         //合并
         var allList = cachedUnits.Concat(unCachedUnits);
@@ -419,14 +405,29 @@ end
         long totalRemindAll = 0;
         long totalFollowing = 0;
         long totalImmersed = 0;
+
+        var countMap = new Dictionary<ChatObjectTypeEnums?, long>();
+
+        Enum.GetValues<ChatObjectTypeEnums>().ForEach(x => countMap[x] = 0);
+
         foreach (var unit in allList)
         {
+            var unitId = unit.Id.ToString();
+
+            // score
+            _ = batch.SortedSetAddAsync(ownerFriendsSetKey, unit.Id.ToString(), GetScore(unit.Sorting, unit.Ticks));
+            // 刷新所有UnitKey过期时间
+            _ = batch.KeyExpireAsync(UnitKey(unit.Id), _cacheExpire);
+
+            //IsImmersed
             if (unit.IsImmersed)
             {
                 totalImmersed += unit.PublicBadge;
             }
             else
             {
+                //非静默统计PublicBadge
+                countMap[unit.DestinationObjectType] += unit.PublicBadge;
                 totalPublic += unit.PublicBadge;
             }
             totalPrivate += unit.PrivateBadge;
@@ -441,8 +442,17 @@ end
         _ = batch.HashSetAsync(ownerStatisticSetKey, F_Total_RemindAll, totalRemindAll);
         _ = batch.HashSetAsync(ownerStatisticSetKey, F_Total_Following, totalFollowing);
         _ = batch.HashSetAsync(ownerStatisticSetKey, F_Total_Immersed, totalImmersed);
-
         _ = batch.KeyExpireAsync(ownerStatisticSetKey, _cacheExpire);
+
+        _ = batch.KeyExpireAsync(ownerFriendsSetKey, _cacheExpire);
+
+        //destinations
+        var destinationsSetKey = DestinationsSetKey(ownerId);
+        foreach (var item in countMap)
+        {
+            _ = batch.HashSetAsync(destinationsSetKey, item.Key.ToString(), item.Value);
+        }
+        _ = batch.KeyExpireAsync(destinationsSetKey, _cacheExpire);
 
         batch.Execute();
 
@@ -526,11 +536,14 @@ end
         return result;
     }
 
-    public async Task<long> GetTotalCountByOwnerAsync(long ownerId)
+    /// <summary>
+    /// 获取好友会话单元数量
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    public async Task<long> GetFirendsCountAsync(long ownerId)
     {
-        var ownerFriendsSetKey = OwnerFriendsSetKey(ownerId);
-        var totalCount = await Database.SortedSetLengthAsync(ownerFriendsSetKey);
-        return totalCount;
+        return await Database.SortedSetLengthAsync(OwnerFriendsSetKey(ownerId));
     }
 
 
@@ -690,6 +703,15 @@ end
         return result;
     }
 
+
+    public async Task<SessionUnitCacheItem> GetAsync(Guid id)
+    {
+        var units = await GetManyAsync([id]);
+
+        return units[0].Value;
+    }
+
+
     public async Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetOrSetManyAsync(IEnumerable<Guid> unitIds, Func<List<Guid>, Task<KeyValuePair<Guid, SessionUnitCacheItem>[]>> func)
     {
         var list = await GetManyAsync(unitIds);
@@ -712,9 +734,10 @@ end
             {
                 continue;
             }
-            var unitKey = UnitKey(nullKey);
-            var entries = MapToHashEntries(fetchedItem);
-            _ = batch.HashSetAsync(unitKey, entries);
+            SetUnit(batch, fetchedItem, refreshExpire: true);
+            //var unitKey = UnitKey(nullKey);
+            //var entries = MapToHashEntries(fetchedItem);
+            //_ = batch.HashSetAsync(unitKey, entries);
             var index = list.FindIndex(x => x.Key == nullKey);
             if (index >= 0)
             {
@@ -743,6 +766,8 @@ end
         var reminderIds = message.MessageReminderList.Select(x => x.SessionUnitId).ToHashSet();
         var followerIds = message.MessageFollowerList.Select(x => x.SessionUnitId).ToHashSet();
 
+        var receiverType = message.ReceiverType;
+
         //var unitList = await GetDictBySessionAsync(sessionId);
         var unitList = await GetListBySessionAsync(sessionId);
         //var unitList = await SessionUnitManager.GetCacheListAsync(message);
@@ -751,6 +776,8 @@ end
 
         var batch = Database.CreateBatch();
         var expireTime = expire ?? _cacheExpire;
+
+
 
         foreach (var unit in unitList)
         {
@@ -766,6 +793,10 @@ end
             // badge
             if (!isSender)
             {
+                // receiverType
+                _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript, [DestinationsSetKey(ownerId)], [receiverType.ToString(), 1]);
+
+                // badge
                 _ = batch.HashIncrementAsync(unitKey, isPrivate ? F_PrivateBadge : F_PublicBadge, 1);
 
                 // 静默方式 IsImmersed
@@ -796,6 +827,7 @@ end
                     _ = batch.HashIncrementAsync(unitKey, F_FollowingCount, 1);
                     _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerStatisticSetKey], [F_Total_Following, 1]);
                 }
+
             }
 
             // lastMessageId
@@ -817,51 +849,81 @@ end
             }
         }
 
+        if (expireTime.HasValue)
+        {
+            _ = batch.KeyExpireAsync(SessionSetKey(sessionId), expireTime.Value);
+        }
+
         batch.Execute();
 
         Logger.LogInformation("BatchIncrementBadgeAndSetLastMessageAsync executed.");
     }
 
-    private static SessionUnitStatistic MapToStatistic(HashEntry[] entities)
+    private static SessionUnitStatistic MapToStatistic(HashEntry[] entries)
     {
-        return RedisMapper.ToObject<SessionUnitStatistic>(entities);
+        return RedisMapper.ToObject<SessionUnitStatistic>(entries);
 
     }
 
     public virtual async Task<SessionUnitStatistic> GetStatisticAsync(long ownerId)
     {
-        var ownerStatisticSetKey = OwnerStatisticSetKey(ownerId);
-
-        var entities = await Database.HashGetAllAsync(ownerStatisticSetKey);
-
-        return MapToStatistic(entities);
-
-        //var dict = entities.ToDictionary(x => x.Name.ToString(), x => (long)x.Value);
-
-        //return dict;
+        var entries = await Database.HashGetAllAsync(OwnerStatisticSetKey(ownerId));
+        return MapToStatistic(entries);
     }
 
-    public virtual async Task<bool> RemoveTotalBadgeAsync(long ownerId)
+    public virtual async Task<bool> RemoveStatisticAsync(long ownerId)
     {
-        var ownerStatisticSetKey = OwnerStatisticSetKey(ownerId);
-        return await Database.KeyDeleteAsync(ownerStatisticSetKey);
+        return await Database.KeyDeleteAsync(OwnerStatisticSetKey(ownerId));
+    }
+
+    public virtual async Task<Dictionary<string, long>> GetRawBadgeMapAsync(long ownerId)
+    {
+        var entries = await Database.HashGetAllAsync(DestinationsSetKey(ownerId));
+        var result = entries.ToDictionary(
+            x => x.Name.ToString(),
+            x => long.TryParse(x.Value.ToString(), out var v) ? v : 0);
+        
+        return result;
+    }
+    public async Task<Dictionary<ChatObjectTypeEnums, long>> GetBadgeMapAsync(long ownerId)
+    {
+        var raw = await GetRawBadgeMapAsync(ownerId);
+
+        var map = new Dictionary<ChatObjectTypeEnums, long>();
+
+        foreach (var (key, value) in raw)
+        {
+            if (!Enum.TryParse<ChatObjectTypeEnums>(key, true, out var type))
+            {
+                continue;
+            }
+
+            map[type] = value;
+        }
+
+        // 补齐所有枚举
+        foreach (var type in Enum.GetValues<ChatObjectTypeEnums>())
+        {
+            map.TryAdd(type, 0);
+        }
+
+        return map;
     }
 
     #endregion
 
     #region Remove / Set / Misc
-
-    public async Task UpdateCountersync(SessionUnitCounterInfo counter, Func<Guid, Task<SessionUnitCacheItem>> fetchTask)
+    private async Task UpdateCountersync(SessionUnitCounterInfo counter, Func<Guid, Task<SessionUnitCacheItem>> fetchTask)
     {
         var unitKey = UnitKey(counter.Id);
-
+        SessionUnitCacheItem unit;
         //
         var isExists = await Database.KeyExistsAsync(unitKey);
 
         if (!isExists)
         {
             // 加载缓存项
-            var unit = await fetchTask(counter.Id);
+            unit = await fetchTask(counter.Id);
 
             unit.PublicBadge = counter.PublicBadge;
             unit.PrivateBadge = counter.PrivateBadge;
@@ -870,15 +932,8 @@ end
             unit.FollowingCount = counter.FollowingCount;
             //unit.Setting.ReadedMessageId = counter.ReadedMessageId;
 
-            var entries = MapToHashEntries(unit);
-
             var batch = Database.CreateBatch();
-            _ = batch.HashSetAsync(unitKey, entries);
-
-            if (_cacheExpire.HasValue)
-            {
-                _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
-            }
+            SetUnit(batch, unit, refreshExpire: true);
             batch.Execute();
 
             Logger.LogInformation($"[{nameof(UpdateCountersync)}] 还未缓存，直接写入缓存:{counter}");
@@ -952,6 +1007,7 @@ end
             }
         }
 
+
         await Task.WhenAll(
             UpdateAsync(immersed ? F_Total_Immersed : F_Total_Public, oldPublicBadge),
             UpdateAsync(F_Total_Private, oldPrivatePublic),
@@ -959,6 +1015,81 @@ end
             UpdateAsync(F_Total_RemindAll, oldRemindAllCount),
             UpdateAsync(F_Total_Following, oldFollowingCount)
          );
+    }
+    public async Task UpdateCounterAsync(SessionUnitCounterInfo counter, Func<Guid, Task<SessionUnitCacheItem>> fetchTask)
+    {
+        var isExists = await Database.KeyExistsAsync(UnitKey(counter.Id));
+
+        var batch = Database.CreateBatch();
+
+        void UpdateUnit(SessionUnitCacheItem unit, SessionUnitCounterInfo counter)
+        {
+            unit.PublicBadge = counter.PublicBadge;
+            unit.PrivateBadge = counter.PrivateBadge;
+            unit.RemindAllCount = counter.RemindAllCount;
+            unit.RemindMeCount = counter.RemindMeCount;
+            unit.FollowingCount = counter.FollowingCount;
+            SetUnit(batch, unit, refreshExpire: true);
+        }
+        if (!isExists)
+        {
+            // 加载缓存项
+            UpdateUnit(await fetchTask(counter.Id), counter);
+            Logger.LogInformation("[{method}] 还未缓存，直接写入缓存:{counter}", nameof(UpdateCounterAsync), counter);
+            batch.Execute();
+            return;
+        }
+
+        // -----------------------------
+        // 2. 先读旧值（只读）
+        // -----------------------------
+
+        var unit = await GetAsync(counter.Id);
+
+        if (unit == null)
+        {
+            Logger.LogWarning("unit is null,unitId:{unitId}", counter.Id);
+            return;
+        }
+        var publicBadge = unit.PublicBadge;
+        var privatePublic = unit.PublicBadge;
+        var remindMeCount = unit.RemindMeCount;
+        var remindAllCount = unit.RemindAllCount;
+        var followingCount = unit.FollowingCount;
+        //静默方式
+        var immersed = unit.IsImmersed;
+
+        // 3. 写入新值（只写）
+        // -----------------------------
+
+        UpdateUnit(unit, counter);
+        Logger.LogInformation("[{method}] 已缓存，直接更新缓存:{counter}", nameof(UpdateCounterAsync), counter);
+
+        if (!immersed)
+        {
+            // //非静默减量 destinations （key 必须已存在才更新）
+            _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript, [DestinationsSetKey(unit.OwnerId)], [unit.DestinationObjectType.ToString(), -publicBadge]);
+        }
+
+        // 减量更新 Owner 总角标（key 必须已存在才更新）
+        var ownerStatisticSetKey = OwnerStatisticSetKey(counter.OwnerId);
+
+        void UpdateStatisticAsync(string field, int val)
+        {
+            if (val > 0)
+            {
+                Logger.LogInformation($"ownerId:{counter.OwnerId},需要减量 [{field}]:{val}");
+                _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerStatisticSetKey], [field, -val]);
+            }
+        }
+
+        UpdateStatisticAsync(immersed ? F_Total_Immersed : F_Total_Public, publicBadge);
+        UpdateStatisticAsync(F_Total_Private, privatePublic);
+        UpdateStatisticAsync(F_Total_RemindMe, remindMeCount);
+        UpdateStatisticAsync(F_Total_RemindAll, remindAllCount);
+        UpdateStatisticAsync(F_Total_Following, followingCount);
+
+        batch.Execute();
     }
 
     public async Task SetToppingAsync(Guid unitId, long ownerId, long sorting)
@@ -1012,9 +1143,7 @@ end
 
     public async Task ChangeImmersedAsync(Guid unitId, bool isImmersed)
     {
-        var units = await GetManyAsync([unitId]);
-
-        var unit = units[0].Value;
+        var unit = await GetAsync(unitId);
 
         if (unit == null)
         {
@@ -1036,8 +1165,14 @@ end
             var publicDelta = isImmersed ? -unit.PublicBadge : unit.PublicBadge;
             var immersedDelta = -publicDelta;
 
-            _ = tran.HashIncrementAsync(ownerStatisticSetKey, F_Total_Public, publicDelta);
-            _ = tran.HashIncrementAsync(ownerStatisticSetKey, F_Total_Immersed, immersedDelta);
+            //_ = tran.HashIncrementAsync(ownerStatisticSetKey, F_Total_Public, publicDelta);
+            //_ = tran.HashIncrementAsync(ownerStatisticSetKey, F_Total_Immersed, immersedDelta);
+            _ = tran.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerStatisticSetKey], [F_Total_Public, publicDelta]);
+            _ = tran.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerStatisticSetKey], [F_Total_Immersed, immersedDelta]);
+
+            //destinations
+            _ = tran.ScriptEvaluateAsync(IncrementIfExistsScript, [DestinationsSetKey(unit.OwnerId)], [unit.DestinationObjectType.ToString(), publicDelta]);
+
         }
         else
         {
@@ -1045,6 +1180,18 @@ end
         }
 
         _ = tran.HashSetAsync(UnitKey(unitId), F_Immersed, isImmersed);
+
+
+        var ownerImmersedSetKey = OwnerImmersedSetKey(unit.OwnerId);
+        if (isImmersed)
+        {
+            _ = tran.SortedSetAddAsync(ownerImmersedSetKey, unitId.ToString(), Clock.Now.ToUnixTimeMilliseconds());
+            _ = tran.KeyExpireAsync(ownerImmersedSetKey, _cacheExpire);
+        }
+        else
+        {
+            _ = tran.HashDeleteAsync(ownerImmersedSetKey, unitId.ToString());
+        }
 
         var committed = await tran.ExecuteAsync();
 

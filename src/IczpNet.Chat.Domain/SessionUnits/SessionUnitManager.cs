@@ -424,7 +424,7 @@ public class SessionUnitManager(
         entity = await Repository.UpdateCountersync(counter);
 
         // 更新缓存
-        await SessionUnitCacheManager.UpdateCountersync(
+        await SessionUnitCacheManager.UpdateCounterAsync(
             counter,
             async (id) =>
             {

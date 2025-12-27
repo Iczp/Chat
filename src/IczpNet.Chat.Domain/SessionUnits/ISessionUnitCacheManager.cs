@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.MessageSections.Messages;
+﻿using IczpNet.Chat.Enums;
+using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
@@ -18,6 +19,8 @@ public interface ISessionUnitCacheManager
     Task<IEnumerable<SessionUnitCacheItem>> GetOrSetListBySessionAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
 
     Task<IDictionary<Guid, long>> GetDictBySessionAsync(Guid sessionId);
+
+    Task<long> GetMembersCountAsync(Guid sessionId);
 
     Task<IDictionary<long, Guid>> GetUnitsBySessionAsync(Guid sessionId, List<long> ownerIds);
 
@@ -56,19 +59,25 @@ public interface ISessionUnitCacheManager
         bool isDescending = true);
 
 
-    Task<long> GetTotalCountByOwnerAsync(long ownerId);
+    Task<long> GetFirendsCountAsync(long ownerId);
 
     Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetManyAsync(IEnumerable<Guid> unitIds);
+
+    Task<SessionUnitCacheItem> GetAsync(Guid id);
 
     Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetOrSetManyAsync(IEnumerable<Guid> unitIds, Func<List<Guid>, Task<KeyValuePair<Guid, SessionUnitCacheItem>[]>> func);
 
     Task BatchIncrementAsync(Message message, TimeSpan? expire = null);
 
-    Task UpdateCountersync(SessionUnitCounterInfo counter, Func<Guid, Task<SessionUnitCacheItem>> fetchTask);
+    Task UpdateCounterAsync(SessionUnitCounterInfo counter, Func<Guid, Task<SessionUnitCacheItem>> fetchTask);
 
     Task<SessionUnitStatistic> GetStatisticAsync(long ownerId);
 
-    Task<bool> RemoveTotalBadgeAsync(long ownerId);
+    Task<bool> RemoveStatisticAsync(long ownerId);
+
+    Task<Dictionary<string, long>> GetRawBadgeMapAsync(long ownerId);
+
+    Task<Dictionary<ChatObjectTypeEnums, long>> GetBadgeMapAsync(long ownerId);
 
     Task SetToppingAsync(Guid unitId, long ownerId, long sorting);
 
