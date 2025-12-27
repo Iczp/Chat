@@ -1,4 +1,5 @@
 ﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Localization;
 using IczpNet.Chat.SessionUnits;
@@ -66,6 +67,7 @@ public abstract class ChatAppService : AbpCommonsAppService
     //}
 
     #region CheckPolicyForUserAsync
+
     protected virtual async Task<bool> IsAnyCurrentUserAsync(IEnumerable<long?> ownerIdList)
     {
         var appUserId = CurrentUser.Id;

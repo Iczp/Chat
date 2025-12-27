@@ -545,22 +545,31 @@ public class SessionUnitCacheAppService(
         return item;
     }
 
+    protected virtual async Task<BadgeDto> GetBadgeInternalAsync(long ownerId)
+    {
+        var owner = await ChatObjectManager.GetItemByCacheAsync(ownerId);
+        //加载全部
+        await LoadAllByOwnerIfNotExistsAsync(ownerId);
+
+        return new BadgeDto()
+        {
+            AppUserId = owner.AppUserId,
+            ChatObjectId = ownerId,
+            Statistic = await SessionUnitCacheManager.GetStatisticAsync(ownerId),
+            BadgeMap = await SessionUnitCacheManager.GetRawBadgeMapAsync(ownerId)
+        };
+    }
+
     /// <summary>
     /// 聊天对象角标总数
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    public async Task<SessionUnitStatistic> GetStatisticAsync(long ownerId)
+    public async Task<BadgeDto> GetBadgeAsync(long ownerId)
     {
         // check owner
         await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
-
-        //加载全部
-        await LoadAllByOwnerIfNotExistsAsync(ownerId);
-
-        var stat = await SessionUnitCacheManager.GetStatisticAsync(ownerId);
-
-        return stat;
+        return await GetBadgeInternalAsync(ownerId);
     }
 
     /// <summary>
@@ -570,7 +579,7 @@ public class SessionUnitCacheAppService(
     /// <param name="isImmersed"></param>
     /// <returns></returns>
     /// <exception cref="NotImplementedException"></exception>
-    public async Task<List<BadgeDto>> GetStatisticByUserIdAsync([Required] Guid userId, bool? isImmersed = null)
+    public async Task<List<BadgeDto>> GetBadgeByUserIdAsync([Required] Guid userId, bool? isImmersed = null)
     {
         var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(userId);
 
@@ -580,16 +589,7 @@ public class SessionUnitCacheAppService(
 
         foreach (var ownerId in chatObjectIdList)
         {
-            //加载全部
-            await LoadAllByOwnerIfNotExistsAsync(ownerId);
-
-            result.Add(new BadgeDto()
-            {
-                AppUserId = userId,
-                ChatObjectId = ownerId,
-                Statistic = await SessionUnitCacheManager.GetStatisticAsync(ownerId),
-                BadgeMap = await SessionUnitCacheManager.GetRawBadgeMapAsync(ownerId)
-            });
+            result.Add(await GetBadgeInternalAsync(ownerId));
         }
 
         return result;
@@ -600,8 +600,8 @@ public class SessionUnitCacheAppService(
     /// </summary>
     /// <param name="isImmersed"></param>
     /// <returns></returns>
-    public Task<List<BadgeDto>> GetStatisticByCurrentUserAsync(bool? isImmersed = null)
+    public Task<List<BadgeDto>> GetBadgeByCurrentUserAsync(bool? isImmersed = null)
     {
-        return GetStatisticByUserIdAsync(CurrentUser.GetId(), isImmersed);
+        return GetBadgeByUserIdAsync(CurrentUser.GetId(), isImmersed);
     }
 }

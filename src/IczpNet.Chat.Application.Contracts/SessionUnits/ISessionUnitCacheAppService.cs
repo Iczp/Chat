@@ -1,5 +1,4 @@
-﻿using IczpNet.Chat.SessionSections.SessionUnits;
-using IczpNet.Chat.SessionUnits.Dtos;
+﻿using IczpNet.Chat.SessionUnits.Dtos;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -20,9 +19,9 @@ public interface ISessionUnitCacheAppService
 
     Task<SessionUnitCacheDto> GetAsync(Guid id);
 
-    Task<SessionUnitStatistic> GetStatisticAsync(long ownerId);
+    Task<BadgeDto> GetBadgeAsync(long ownerId);
 
-    Task<List<BadgeDto>> GetStatisticByUserIdAsync([Required] Guid userId, bool? isImmersed = null);
+    Task<List<BadgeDto>> GetBadgeByUserIdAsync([Required] Guid userId, bool? isImmersed = null);
 
-    Task<List<BadgeDto>> GetStatisticByCurrentUserAsync(bool? isImmersed = null);
+    Task<List<BadgeDto>> GetBadgeByCurrentUserAsync(bool? isImmersed = null);
 }
