@@ -68,24 +68,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     private string OwnerStatisticSetKey(long ownerId)
         => $"{Prefix}Statistics:OwnerId-{ownerId}";
 
-    /// <summary>
-    /// 1. key 不存在 : 返回 nil（不创建）
-    /// 2. key 存在 : 执行 HINCRBY(key, field, increment)
-    /// 3. 若结果 小于 0, 设置为 0
-    /// </summary>
-    private static string IncrementIfExistsScript => @"
-if redis.call('EXISTS', KEYS[1]) == 1 then
-    local newValue = redis.call('HINCRBY', KEYS[1], ARGV[1], ARGV[2])
-    if newValue < 0 then
-        redis.call('HSET', KEYS[1], ARGV[1], 0)
-        return 0
-    else
-        return newValue
-    end
-else
-    return nil
-end
-";
+
 
 
     /// <summary>
@@ -121,8 +104,6 @@ end
     private static string F_Sorting => nameof(SessionUnitCacheItem.Sorting);
     private static string F_Immersed => nameof(SessionUnitCacheItem.IsImmersed);
 
-
-
     //private static string F_Setting_ReadedMessageId => $"{nameof(SessionUnitCacheItem.Setting)}.{nameof(SessionUnitCacheItem.Setting.ReadedMessageId)}";
 
     // total
@@ -143,40 +124,42 @@ end
         return RedisMapper.ToHashEntries(unit);
     }
 
-    protected virtual async Task<Dictionary<string, bool>> BatchKeyExistsAsync(IEnumerable<string> keys)
+    
+
+
+    private void SetTopping(IBatch batch, SessionUnitCacheItem unit)
     {
-        var stopwatch = Stopwatch.StartNew();
-
-        var keyList = keys as IList<string> ?? keys.ToList();
-        if (keyList.Count == 0)
-            return [];
-
-        var batch = Database.CreateBatch();
-        var tasks = new Task<bool>[keyList.Count];
-
-        for (int i = 0; i < keyList.Count; i++)
+        if (unit.Sorting == 0)
         {
-            tasks[i] = batch.KeyExistsAsync(keyList[i]);
+            return;
         }
-
-        batch.Execute();
-
-        var results = await Task.WhenAll(tasks);
-
-        var dict = new Dictionary<string, bool>(keyList.Count);
-        for (int i = 0; i < keyList.Count; i++)
-        {
-            dict[keyList[i]] = results[i];
-        }
-
-        Logger.LogInformation(
-            "[{Method}] keys:{Count}, Elapsed:{Elapsed}ms",
-            nameof(BatchKeyExistsAsync),
-            keyList.Count,
-            stopwatch.ElapsedMilliseconds);
-
-        return dict;
+        var toppingKey = OwnerToppingSetKey(unit.OwnerId);
+        _ = batch.SortedSetAddAsync(toppingKey, unit.Id.ToString(), unit.Sorting);
+        _ = batch.KeyExpireAsync(toppingKey, _cacheExpire);
     }
+
+    private void SetImmersed(IBatch batch, SessionUnitCacheItem unit)
+    {
+        if (!unit.IsImmersed)
+        {
+            return;
+        }
+        var ownerImmersedSetKey = OwnerImmersedSetKey(unit.OwnerId);
+        _ = batch.SortedSetAddAsync(ownerImmersedSetKey, unit.Id.ToString(), unit.CreationTime.ToUnixTimeMilliseconds());
+        _ = batch.KeyExpireAsync(ownerImmersedSetKey, _cacheExpire);
+    }
+
+    private void SetUnit(IBatch batch, SessionUnitCacheItem unit, bool refreshExpire)
+    {
+        var unitKey = UnitKey(unit.Id);
+        var entries = MapToHashEntries(unit);
+        _ = batch.HashSetAsync(unitKey, entries);
+        if (refreshExpire)
+        {
+            _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
+        }
+    }
+
     public async Task<IEnumerable<SessionUnitCacheItem>> SetListBySessionAsync(Guid sessionId, IEnumerable<SessionUnitCacheItem> units)
     {
         ArgumentNullException.ThrowIfNull(units);
@@ -214,26 +197,13 @@ end
 
             if (!isExists)
             {
-                var entries = MapToHashEntries(unit);
-                _ = batch.HashSetAsync(unitKey, entries);
-                _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
+                SetUnit(batch, unit, refreshExpire: true);
             }
 
-            // set top
-            if (unit.Sorting > 0)
-            {
-                var toppingKey = OwnerToppingSetKey(unit.OwnerId);
-                _ = batch.SortedSetAddAsync(toppingKey, unitId, unit.Sorting);
-                _ = batch.KeyExpireAsync(toppingKey, _cacheExpire);
-            }
-
-            //IsImmersed
-            if (unit.IsImmersed)
-            {
-                var ownerImmersedSetKey = OwnerImmersedSetKey(unit.OwnerId);
-                _ = batch.SortedSetAddAsync(ownerImmersedSetKey, unitId, unit.IsImmersed ? 1 : 0);
-                _ = batch.KeyExpireAsync(ownerImmersedSetKey, _cacheExpire);
-            }
+            // set Topping
+            SetTopping(batch, unit);
+            // set Immersed
+            SetImmersed(batch, unit);
         }
 
         _ = batch.KeyExpireAsync(sessionSetKey, _cacheExpire);
@@ -388,8 +358,8 @@ end
 
         // owner zset unitKey
         var ownerFriendsSetKey = OwnerFriendsSetKey(ownerId);
-        var toppingKey = OwnerToppingSetKey(ownerId);
-        var ownerImmersedSetKey = OwnerImmersedSetKey(ownerId);
+        //var toppingKey = OwnerToppingSetKey(ownerId);
+        //var ownerImmersedSetKey = OwnerImmersedSetKey(ownerId);
 
         Log($"GetManyAsync Start");
         var unitMap = await GetManyAsync(unitList.Select(x => x.Id));
@@ -403,34 +373,12 @@ end
 
         foreach (var unit in unCachedUnits)
         {
-            var unitId = unit.Id.ToString();
-
-            var unitKey = UnitKey(unit.Id);
-
-            var entries = MapToHashEntries(unit);
-
-            _ = batch.HashSetAsync(unitKey, entries);
-            _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
-
-            // score
-            var score = GetScore(unit.Sorting, unit.Ticks);
-            _ = batch.SortedSetAddAsync(ownerFriendsSetKey, unitId, score);
-
-            // set top
-            if (unit.Sorting > 0)
-            {
-                _ = batch.SortedSetAddAsync(toppingKey, unitId, unit.Sorting);
-                _ = batch.KeyExpireAsync(toppingKey, _cacheExpire);
-            }
-            //IsImmersed
-            if (unit.IsImmersed)
-            {
-                _ = batch.SortedSetAddAsync(ownerImmersedSetKey, unitId, unit.CreationTime.ToUnixTimeMilliseconds());
-                _ = batch.KeyExpireAsync(ownerImmersedSetKey, _cacheExpire);
-            }
+            SetUnit(batch, unit, refreshExpire: false);
+            // set Topping
+            SetTopping(batch, unit);
+            // set Immersed
+            SetImmersed(batch, unit);
         }
-
-        _ = batch.KeyExpireAsync(ownerFriendsSetKey, _cacheExpire);
 
         //合并
         var allList = cachedUnits.Concat(unCachedUnits);
@@ -443,8 +391,17 @@ end
         long totalRemindAll = 0;
         long totalFollowing = 0;
         long totalImmersed = 0;
+
         foreach (var unit in allList)
         {
+            var unitId = unit.Id.ToString();
+
+            // score
+            _ = batch.SortedSetAddAsync(ownerFriendsSetKey, unit.Id.ToString(), GetScore(unit.Sorting, unit.Ticks));
+            // 刷新所有UnitKey过期时间
+            _ = batch.KeyExpireAsync(UnitKey(unit.Id), _cacheExpire);
+
+            //IsImmersed
             if (unit.IsImmersed)
             {
                 totalImmersed += unit.PublicBadge;
@@ -467,6 +424,7 @@ end
         _ = batch.HashSetAsync(ownerStatisticSetKey, F_Total_Immersed, totalImmersed);
 
         _ = batch.KeyExpireAsync(ownerStatisticSetKey, _cacheExpire);
+        _ = batch.KeyExpireAsync(ownerFriendsSetKey, _cacheExpire);
 
         batch.Execute();
 
@@ -736,9 +694,10 @@ end
             {
                 continue;
             }
-            var unitKey = UnitKey(nullKey);
-            var entries = MapToHashEntries(fetchedItem);
-            _ = batch.HashSetAsync(unitKey, entries);
+            SetUnit(batch, fetchedItem, refreshExpire: true);
+            //var unitKey = UnitKey(nullKey);
+            //var entries = MapToHashEntries(fetchedItem);
+            //_ = batch.HashSetAsync(unitKey, entries);
             var index = list.FindIndex(x => x.Key == nullKey);
             if (index >= 0)
             {
@@ -775,6 +734,8 @@ end
 
         var batch = Database.CreateBatch();
         var expireTime = expire ?? _cacheExpire;
+
+        
 
         foreach (var unit in unitList)
         {
@@ -839,6 +800,11 @@ end
                 _ = batch.KeyExpireAsync(unitKey, expireTime.Value);
                 _ = batch.KeyExpireAsync(ownerFriendsSetKey, expireTime.Value);
             }
+        }
+
+        if (expireTime.HasValue)
+        {
+            _ = batch.KeyExpireAsync(SessionSetKey(sessionId), expireTime.Value);
         }
 
         batch.Execute();
