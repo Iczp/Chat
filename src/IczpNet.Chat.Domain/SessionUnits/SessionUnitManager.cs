@@ -1415,4 +1415,11 @@ public class SessionUnitManager(
         var chatObjectIds = await ChatObjectManager.GetIdListByUserIdAsync(userId);
         return await GetSessionsByChatObjectAsync(chatObjectIds);
     }
+
+    public virtual async Task<IEnumerable<SessionUnitCacheItem>> LoadFriendsIfNotExistsAsync(long ownerId)
+    {
+        return await SessionUnitCacheManager.SetFriendsIfNotExistsAsync(ownerId,
+             async (ownerId) =>
+                 await GetListByOwnerIdAsync(ownerId));
+    }
 }

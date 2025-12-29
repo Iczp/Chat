@@ -542,8 +542,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
     public async Task<IEnumerable<SessionUnitCacheItem>> SetFriendsIfNotExistsAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
     {
-        var ownerStatisticSetKey = OwnerStatisticSetKey(ownerId);
-        if (!await Database.KeyExistsAsync(ownerStatisticSetKey))
+        if (!await Database.KeyExistsAsync(OwnerStatisticSetKey(ownerId)))
         {
             return await SetFriendsAsync(ownerId, fetchTask);
         }

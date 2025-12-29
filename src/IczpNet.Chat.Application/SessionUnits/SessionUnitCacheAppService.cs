@@ -75,11 +75,9 @@ public class SessionUnitCacheAppService(
         );
     }
 
-    protected virtual async Task LoadAllByOwnerIfNotExistsAsync(long ownerId)
+    protected virtual async Task LoadFriendsIfNotExistsAsync(long ownerId)
     {
-        await SessionUnitCacheManager.SetFriendsIfNotExistsAsync(ownerId,
-           async (ownerId) =>
-               await SessionUnitManager.GetListByOwnerIdAsync(ownerId));
+        await SessionUnitManager.LoadFriendsIfNotExistsAsync(ownerId);
     }
 
     protected virtual async Task<IEnumerable<SessionUnitCacheItem>> GetAllListAsync(long ownerId)
@@ -493,7 +491,7 @@ public class SessionUnitCacheAppService(
         await CheckPolicyForUserAsync(input.OwnerId, () => CheckPolicyAsync(GetListPolicyName, input.OwnerId));
 
         //加载全部
-        await LoadAllByOwnerIfNotExistsAsync(input.OwnerId);
+        await LoadFriendsIfNotExistsAsync(input.OwnerId);
 
         var queryable = await SessionUnitCacheManager.GetFriendsAsync(input.OwnerId);
 
@@ -549,7 +547,7 @@ public class SessionUnitCacheAppService(
     {
         var owner = await ChatObjectManager.GetItemByCacheAsync(ownerId);
         //加载全部
-        await LoadAllByOwnerIfNotExistsAsync(ownerId);
+        await LoadFriendsIfNotExistsAsync(ownerId);
 
         return new BadgeDto()
         {
