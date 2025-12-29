@@ -35,7 +35,7 @@ public class BatchIncrementForMessageCreatedEventHandler(
 
         var stopwatch = Stopwatch.StartNew();
 
-        await SessionUnitCacheManager.SetListBySessionIfNotExistsAsync(
+        await SessionUnitCacheManager.SetMembersIfNotExistsAsync(
             sessionId.Value,
             async (sessionId) => await SessionUnitManager.GetCacheListBySessionIdAsync(sessionId));
 

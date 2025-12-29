@@ -61,7 +61,7 @@ public class SendToClientDistributedEventHandler : DomainService, IDistributedEv
         var sessionId = eventData.Message.SessionId;
 
         // 使用 SessionUnitCache 代替 SessionUnitManager --2025.12.2
-        var sessionUnitInfoList = (await SessionUnitCacheManager.GetListBySessionAsync(sessionId)).ToList();
+        var sessionUnitInfoList = (await SessionUnitCacheManager.GetMemberUnitsAsync(sessionId)).ToList();
 
         Logger.LogInformation($"{nameof(SendToClientDistributedEventHandler)}-Command-{command}-MessageId-{eventData.MessageId}");
 
@@ -131,7 +131,9 @@ public class SendToClientDistributedEventHandler : DomainService, IDistributedEv
 
         var onlineOwnerIds = connDict.SelectMany(x => x.Value).Distinct().ToList();
 
-        var ownerUnitDict = await SessionUnitCacheManager.GetUnitsBySessionAsync(sessionId, onlineOwnerIds);
+        var ownerUnitDict = await SessionUnitCacheManager.GetMembersAsync(sessionId, onlineOwnerIds);
+
+        //await HubContext.Clients.Group(sessionId.ToString()).ReceivedMessage(commandPayload);
 
         foreach (var item in connDict)
         {

@@ -77,14 +77,14 @@ public class SessionUnitCacheAppService(
 
     protected virtual async Task LoadAllByOwnerIfNotExistsAsync(long ownerId)
     {
-        await SessionUnitCacheManager.SetListByOwnerIfNotExistsAsync(ownerId,
+        await SessionUnitCacheManager.SetFriendsIfNotExistsAsync(ownerId,
            async (ownerId) =>
                await SessionUnitManager.GetListByOwnerIdAsync(ownerId));
     }
 
     protected virtual async Task<IEnumerable<SessionUnitCacheItem>> GetAllListAsync(long ownerId)
     {
-        return await SessionUnitCacheManager.GetOrSetListByOwnerAsync(
+        return await SessionUnitCacheManager.GetOrSetFriendsAsync(
            ownerId,
            async (ownerId) =>
                await SessionUnitManager.GetListByOwnerIdAsync(ownerId));
@@ -306,12 +306,12 @@ public class SessionUnitCacheAppService(
 
         var minScore = input.MinScore ?? 0;
 
-        var queryable = await SessionUnitCacheManager.GetSortedSetQueryableByOwnerAsync(input.OwnerId, minScore: minScore, skip: input.SkipCount, take: Math.Min(input.MaxResultCount, 100));
+        var queryable = await SessionUnitCacheManager.GetFriendsAsync(input.OwnerId, minScore: minScore, skip: input.SkipCount, take: Math.Min(input.MaxResultCount, 100));
 
         var unitIds = queryable
             .Where(x => x.Ticks > minScore)
             .OrderByDescending(x => x.Ticks)
-            .Select(x => x.UnitId)
+            .Select(x => x.Id)
             .ToList();
 
         var items = await GetManyAsync(unitIds);
@@ -420,13 +420,13 @@ public class SessionUnitCacheAppService(
     /// <param name="ownerId"></param>
     /// <param name="keyword"></param>
     /// <returns></returns>
-    private async Task<IQueryable<(Guid UnitId, double Sorting, double Ticks)>> ApplyFilterAsync(IQueryable<(Guid UnitId, double Sorting, double Ticks)> query, long ownerId, string keyword)
+    private async Task<IQueryable<SessionUnitQueryModel>> ApplyFilterAsync(IQueryable<SessionUnitQueryModel> query, long ownerId, string keyword)
     {
         if (string.IsNullOrWhiteSpace(keyword))
         {
             return query;
         }
-        var allUnitIds = query.Select(x => x.UnitId).ToList();
+        var allUnitIds = query.Select(x => x.Id).ToList();
 
         if (allUnitIds.Count == 0)
         {
@@ -478,7 +478,7 @@ public class SessionUnitCacheAppService(
         }
 
         // 加入查询条件
-        query = query.WhereIf(searchUnitIds.Count > 0, x => searchUnitIds.Contains(x.UnitId));
+        query = query.WhereIf(searchUnitIds.Count > 0, x => searchUnitIds.Contains(x.Id));
 
         return query;
     }
@@ -495,9 +495,9 @@ public class SessionUnitCacheAppService(
         //加载全部
         await LoadAllByOwnerIfNotExistsAsync(input.OwnerId);
 
-        var queryable = await SessionUnitCacheManager.GetSortedSetQueryableByOwnerAsync(input.OwnerId);
+        var queryable = await SessionUnitCacheManager.GetFriendsAsync(input.OwnerId);
 
-        var query = queryable
+        var query = queryable.AsQueryable()
             .WhereIf(input.MinScore > 0, x => x.Ticks > input.MinScore)
             .WhereIf(input.MaxScore > 0, x => x.Ticks < input.MaxScore)
             ;
@@ -522,7 +522,7 @@ public class SessionUnitCacheAppService(
         // paged
         query = query.Skip(input.SkipCount).Take(input.MaxResultCount);
 
-        var unitIds = query.Select(x => x.UnitId).ToList();
+        var unitIds = query.Select(x => x.Id).ToList();
 
         var items = await GetManyAsync(unitIds);
 
@@ -545,22 +545,31 @@ public class SessionUnitCacheAppService(
         return item;
     }
 
+    protected virtual async Task<BadgeDto> GetBadgeInternalAsync(long ownerId)
+    {
+        var owner = await ChatObjectManager.GetItemByCacheAsync(ownerId);
+        //加载全部
+        await LoadAllByOwnerIfNotExistsAsync(ownerId);
+
+        return new BadgeDto()
+        {
+            AppUserId = owner.AppUserId,
+            ChatObjectId = ownerId,
+            Statistic = await SessionUnitCacheManager.GetStatisticAsync(ownerId),
+            BadgeMap = await SessionUnitCacheManager.GetRawBadgeMapAsync(ownerId)
+        };
+    }
+
     /// <summary>
     /// 聊天对象角标总数
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    public async Task<SessionUnitStatistic> GetStatisticAsync(long ownerId)
+    public async Task<BadgeDto> GetBadgeAsync(long ownerId)
     {
         // check owner
         await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
-
-        //加载全部
-        await LoadAllByOwnerIfNotExistsAsync(ownerId);
-
-        var stat = await SessionUnitCacheManager.GetStatisticAsync(ownerId);
-
-        return stat;
+        return await GetBadgeInternalAsync(ownerId);
     }
 
     /// <summary>
@@ -570,7 +579,7 @@ public class SessionUnitCacheAppService(
     /// <param name="isImmersed"></param>
     /// <returns></returns>
     /// <exception cref="NotImplementedException"></exception>
-    public async Task<List<BadgeDto>> GetStatisticByUserIdAsync([Required] Guid userId, bool? isImmersed = null)
+    public async Task<List<BadgeDto>> GetBadgeByUserIdAsync([Required] Guid userId, bool? isImmersed = null)
     {
         var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(userId);
 
@@ -580,16 +589,7 @@ public class SessionUnitCacheAppService(
 
         foreach (var ownerId in chatObjectIdList)
         {
-            //加载全部
-            await LoadAllByOwnerIfNotExistsAsync(ownerId);
-
-            result.Add(new BadgeDto()
-            {
-                AppUserId = userId,
-                ChatObjectId = ownerId,
-                Statistic = await SessionUnitCacheManager.GetStatisticAsync(ownerId),
-                BadgeMap = await SessionUnitCacheManager.GetRawBadgeMapAsync(ownerId)
-            });
+            result.Add(await GetBadgeInternalAsync(ownerId));
         }
 
         return result;
@@ -600,8 +600,8 @@ public class SessionUnitCacheAppService(
     /// </summary>
     /// <param name="isImmersed"></param>
     /// <returns></returns>
-    public Task<List<BadgeDto>> GetStatisticByCurrentUserAsync(bool? isImmersed = null)
+    public Task<List<BadgeDto>> GetBadgeByCurrentUserAsync(bool? isImmersed = null)
     {
-        return GetStatisticByUserIdAsync(CurrentUser.GetId(), isImmersed);
+        return GetBadgeByUserIdAsync(CurrentUser.GetId(), isImmersed);
     }
 }
