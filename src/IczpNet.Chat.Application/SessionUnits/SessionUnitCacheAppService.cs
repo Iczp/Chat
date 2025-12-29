@@ -77,14 +77,14 @@ public class SessionUnitCacheAppService(
 
     protected virtual async Task LoadAllByOwnerIfNotExistsAsync(long ownerId)
     {
-        await SessionUnitCacheManager.SetListByOwnerIfNotExistsAsync(ownerId,
+        await SessionUnitCacheManager.SetFriendsIfNotExistsAsync(ownerId,
            async (ownerId) =>
                await SessionUnitManager.GetListByOwnerIdAsync(ownerId));
     }
 
     protected virtual async Task<IEnumerable<SessionUnitCacheItem>> GetAllListAsync(long ownerId)
     {
-        return await SessionUnitCacheManager.GetOrSetListByOwnerAsync(
+        return await SessionUnitCacheManager.GetOrSetFriendsAsync(
            ownerId,
            async (ownerId) =>
                await SessionUnitManager.GetListByOwnerIdAsync(ownerId));
@@ -306,7 +306,7 @@ public class SessionUnitCacheAppService(
 
         var minScore = input.MinScore ?? 0;
 
-        var queryable = await SessionUnitCacheManager.GetFriendsQueryableByOwnerAsync(input.OwnerId, minScore: minScore, skip: input.SkipCount, take: Math.Min(input.MaxResultCount, 100));
+        var queryable = await SessionUnitCacheManager.GetFriendsQueryableAsync(input.OwnerId, minScore: minScore, skip: input.SkipCount, take: Math.Min(input.MaxResultCount, 100));
 
         var unitIds = queryable
             .Where(x => x.Ticks > minScore)
@@ -495,7 +495,7 @@ public class SessionUnitCacheAppService(
         //加载全部
         await LoadAllByOwnerIfNotExistsAsync(input.OwnerId);
 
-        var queryable = await SessionUnitCacheManager.GetFriendsQueryableByOwnerAsync(input.OwnerId);
+        var queryable = await SessionUnitCacheManager.GetFriendsQueryableAsync(input.OwnerId);
 
         var query = queryable
             .WhereIf(input.MinScore > 0, x => x.Ticks > input.MinScore)

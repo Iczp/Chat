@@ -205,7 +205,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         }
     }
 
-    public async Task<IEnumerable<SessionUnitCacheItem>> SetListBySessionAsync(Guid sessionId, IEnumerable<SessionUnitCacheItem> units)
+    public async Task<IEnumerable<SessionUnitCacheItem>> SetMembersAsync(Guid sessionId, IEnumerable<SessionUnitCacheItem> units)
     {
         ArgumentNullException.ThrowIfNull(units);
 
@@ -263,7 +263,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         Logger.LogInformation(
            "[{Method}] sessionId={sessionId}, count:{Count},Exists:{ExistsCount} Elapsed:{Elapsed}ms",
-           nameof(SetListBySessionAsync),
+           nameof(SetMembersAsync),
            sessionId,
            unitList.Count,
            existsCount,
@@ -272,25 +272,25 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return units;
     }
 
-    public async Task<IEnumerable<SessionUnitCacheItem>> SetListBySessionAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
+    public async Task<IEnumerable<SessionUnitCacheItem>> SetMembersAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
     {
         ArgumentNullException.ThrowIfNull(fetchTask);
         var units = (await fetchTask(sessionId))?.ToList() ?? [];
-        return await SetListBySessionAsync(sessionId, units);
+        return await SetMembersAsync(sessionId, units);
     }
 
-    public async Task<IEnumerable<SessionUnitCacheItem>> SetListBySessionIfNotExistsAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
+    public async Task<IEnumerable<SessionUnitCacheItem>> SetMembersIfNotExistsAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
     {
         if (!await Database.KeyExistsAsync(SessionMembersSetKey(sessionId)))
         {
-            return await SetListBySessionAsync(sessionId, fetchTask);
+            return await SetMembersAsync(sessionId, fetchTask);
         }
         return null;
     }
 
-    public async Task<IEnumerable<SessionUnitCacheItem>> GetOrSetListBySessionAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
+    public async Task<IEnumerable<SessionUnitCacheItem>> GetOrSetMembersAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
     {
-        return await SetListBySessionIfNotExistsAsync(sessionId, fetchTask) ?? await GetListBySessionAsync(sessionId);
+        return await SetMembersIfNotExistsAsync(sessionId, fetchTask) ?? await GetMemberUnitsAsync(sessionId);
     }
 
     /// <summary>
@@ -298,7 +298,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns>{Key:SessionUnitId, Value:OwnerId}</returns>
-    public async Task<IDictionary<Guid, long>> GetDictBySessionAsync(Guid sessionId)
+    public async Task<IDictionary<Guid, long>> GetMembersMapAsync(Guid sessionId)
     {
         var entries = await Database.HashGetAllAsync(SessionMembersSetKey(sessionId));
         var dict = entries.ToDictionary(x => x.Value.ToGuid(), x => x.Name.ToLong());
@@ -339,7 +339,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return await Database.HashLengthAsync(SessionMembersSetKey(sessionId));
     }
 
-    public async Task<IDictionary<long, Guid>> GetMembersBySessionAsync(Guid sessionId, List<long> ownerIds)
+    public async Task<IDictionary<long, Guid>> GetMembersAsync(Guid sessionId, List<long> ownerIds = null)
     {
         var sessionMembersSetKey = SessionMembersSetKey(sessionId);
 
@@ -393,9 +393,9 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return result;
     }
 
-    public async Task<IEnumerable<SessionUnitCacheItem>> GetListBySessionAsync(Guid sessionId)
+    public async Task<IEnumerable<SessionUnitCacheItem>> GetMemberUnitsAsync(Guid sessionId)
     {
-        var dict = await GetDictBySessionAsync(sessionId);
+        var dict = await GetMembersMapAsync(sessionId);
 
         var unitIds = dict.Keys.Distinct().ToList();
 
@@ -409,7 +409,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     #region GetListByOwnerIdAsync (DB initial values + Redis merge)
 
 
-    public async Task<IEnumerable<SessionUnitCacheItem>> SetListByOwnerAsync(long ownerId, IEnumerable<SessionUnitCacheItem> units)
+    public async Task<IEnumerable<SessionUnitCacheItem>> SetFriendsAsync(long ownerId, IEnumerable<SessionUnitCacheItem> units)
     {
 
         var stopwatch = Stopwatch.StartNew();
@@ -417,7 +417,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         void Log(string log)
         {
             index++;
-            Logger.LogInformation($"{nameof(SetListByOwnerAsync)}({index})--[{stopwatch.ElapsedMilliseconds}ms]: {log}");
+            Logger.LogInformation($"{nameof(SetFriendsAsync)}({index})--[{stopwatch.ElapsedMilliseconds}ms]: {log}");
         }
 
         Log($"ownerId={ownerId},units:{units.Count()}");
@@ -525,7 +525,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return allList;
     }
 
-    public async Task<IEnumerable<SessionUnitCacheItem>> SetListByOwnerAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
+    public async Task<IEnumerable<SessionUnitCacheItem>> SetFriendsAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
     {
         ArgumentNullException.ThrowIfNull(fetchTask);
         var stopwatch = Stopwatch.StartNew();
@@ -533,30 +533,30 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         void Log(string log)
         {
             index++;
-            Logger.LogInformation($"{nameof(SetListByOwnerAsync)}({index})--[{stopwatch.ElapsedMilliseconds}ms]: {log}");
+            Logger.LogInformation($"{nameof(SetFriendsAsync)}({index})--[{stopwatch.ElapsedMilliseconds}ms]: {log}");
         }
         Log($"fetchUnits ownerId:{ownerId} Start");
         var units = (await fetchTask(ownerId))?.ToList() ?? [];
         Log($"fetchUnits ownerId:{ownerId} End, units:{units.Count}");
-        return await SetListByOwnerAsync(ownerId, units);
+        return await SetFriendsAsync(ownerId, units);
     }
 
-    public async Task<IEnumerable<SessionUnitCacheItem>> SetListByOwnerIfNotExistsAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
+    public async Task<IEnumerable<SessionUnitCacheItem>> SetFriendsIfNotExistsAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
     {
         var ownerStatisticSetKey = OwnerStatisticSetKey(ownerId);
         if (!await Database.KeyExistsAsync(ownerStatisticSetKey))
         {
-            return await SetListByOwnerAsync(ownerId, fetchTask);
+            return await SetFriendsAsync(ownerId, fetchTask);
         }
         return null;
     }
 
-    public async Task<IEnumerable<SessionUnitCacheItem>> GetOrSetListByOwnerAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
+    public async Task<IEnumerable<SessionUnitCacheItem>> GetOrSetFriendsAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
     {
-        return await SetListByOwnerIfNotExistsAsync(ownerId, fetchTask) ?? await GetListByOwnerAsync(ownerId);
+        return await SetFriendsIfNotExistsAsync(ownerId, fetchTask) ?? await GetFriendUnitsAsync(ownerId);
     }
 
-    public async Task<KeyValuePair<SessionUnitElement, SessionUnitScore>[]> GetFriendsByOwnerAsync(
+    public async Task<KeyValuePair<SessionUnitElement, SessionUnitScore>[]> GetFriendsAsync(
         long ownerId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
@@ -581,7 +581,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
     }
 
-    public async Task<IQueryable<SessionUnitQueryModel>> GetFriendsQueryableByOwnerAsync(
+    public async Task<IQueryable<SessionUnitQueryModel>> GetFriendsQueryableAsync(
         long ownerId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
@@ -589,7 +589,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         long take = -1,
         bool isDescending = true)
     {
-        var kvs = await GetFriendsByOwnerAsync(ownerId, minScore, maxScore, skip, take, isDescending);
+        var kvs = await GetFriendsAsync(ownerId, minScore, maxScore, skip, take, isDescending);
 
         var result = kvs.Select(x => new SessionUnitQueryModel
         {
@@ -695,7 +695,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
 
 
-    public async Task<IEnumerable<SessionUnitCacheItem>> GetListByOwnerAsync(
+    public async Task<IEnumerable<SessionUnitCacheItem>> GetFriendUnitsAsync(
         long ownerId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
@@ -706,7 +706,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         var ownerFriendsSetKey = OwnerFriendsSetKey(ownerId);
 
         // read owner zset (may be empty)
-        var kvs = await GetFriendsByOwnerAsync(
+        var kvs = await GetFriendsAsync(
             ownerId: ownerId,
             minScore: minScore,
             maxScore: maxScore,
@@ -837,7 +837,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         var receiverType = message.ReceiverType;
 
-        var unitList = await GetDictBySessionAsync(sessionId);
+        var unitList = await GetMembersMapAsync(sessionId);
         //var unitList = await GetListBySessionAsync(sessionId);
         //var unitList = await SessionUnitManager.GetCacheListAsync(message);
 

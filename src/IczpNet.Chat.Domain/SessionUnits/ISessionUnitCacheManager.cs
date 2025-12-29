@@ -10,33 +10,33 @@ namespace IczpNet.Chat.SessionUnits;
 
 public interface ISessionUnitCacheManager
 {
-    Task<IEnumerable<SessionUnitCacheItem>> SetListBySessionAsync(Guid sessionId, IEnumerable<SessionUnitCacheItem> units);
+    Task<IEnumerable<SessionUnitCacheItem>> SetMembersAsync(Guid sessionId, IEnumerable<SessionUnitCacheItem> units);
 
-    Task<IEnumerable<SessionUnitCacheItem>> SetListBySessionAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
+    Task<IEnumerable<SessionUnitCacheItem>> SetMembersAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
 
-    Task<IEnumerable<SessionUnitCacheItem>> SetListBySessionIfNotExistsAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
+    Task<IEnumerable<SessionUnitCacheItem>> SetMembersIfNotExistsAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
 
-    Task<IEnumerable<SessionUnitCacheItem>> GetOrSetListBySessionAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
+    Task<IEnumerable<SessionUnitCacheItem>> GetOrSetMembersAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
 
-    Task<IDictionary<Guid, long>> GetDictBySessionAsync(Guid sessionId);
+    Task<IDictionary<Guid, long>> GetMembersMapAsync(Guid sessionId);
     Task<IDictionary<long, double>> GetToppingBySessionAsync(Guid sessionId);
     Task<IDictionary<long, bool>> GetImmersedBySessionAsync(Guid sessionId);
 
     Task<long> GetMembersCountAsync(Guid sessionId);
 
-    Task<IDictionary<long, Guid>> GetMembersBySessionAsync(Guid sessionId, List<long> ownerIds);
+    Task<IDictionary<long, Guid>> GetMembersAsync(Guid sessionId, List<long> ownerIds = null);
 
-    Task<IEnumerable<SessionUnitCacheItem>> GetListBySessionAsync(Guid sessionId);
+    Task<IEnumerable<SessionUnitCacheItem>> GetMemberUnitsAsync(Guid sessionId);
 
-    Task<IEnumerable<SessionUnitCacheItem>> SetListByOwnerAsync(long ownerId, IEnumerable<SessionUnitCacheItem> units);
+    Task<IEnumerable<SessionUnitCacheItem>> SetFriendsAsync(long ownerId, IEnumerable<SessionUnitCacheItem> units);
 
-    Task<IEnumerable<SessionUnitCacheItem>> SetListByOwnerAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
+    Task<IEnumerable<SessionUnitCacheItem>> SetFriendsAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
 
-    Task<IEnumerable<SessionUnitCacheItem>> SetListByOwnerIfNotExistsAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
+    Task<IEnumerable<SessionUnitCacheItem>> SetFriendsIfNotExistsAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
 
-    Task<IEnumerable<SessionUnitCacheItem>> GetOrSetListByOwnerAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
+    Task<IEnumerable<SessionUnitCacheItem>> GetOrSetFriendsAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
 
-    Task<IEnumerable<SessionUnitCacheItem>> GetListByOwnerAsync(
+    Task<IEnumerable<SessionUnitCacheItem>> GetFriendUnitsAsync(
         long ownerId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
@@ -44,7 +44,7 @@ public interface ISessionUnitCacheManager
         long take = -1,
         bool isDescending = true);
 
-    Task<KeyValuePair<SessionUnitElement, SessionUnitScore>[]> GetFriendsByOwnerAsync(
+    Task<KeyValuePair<SessionUnitElement, SessionUnitScore>[]> GetFriendsAsync(
         long ownerId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
@@ -52,7 +52,7 @@ public interface ISessionUnitCacheManager
         long take = -1,
         bool isDescending = true);
 
-    Task<IQueryable<SessionUnitQueryModel>> GetFriendsQueryableByOwnerAsync(
+    Task<IQueryable<SessionUnitQueryModel>> GetFriendsQueryableAsync(
         long ownerId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
