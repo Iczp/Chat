@@ -786,6 +786,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     {
         ArgumentNullException.ThrowIfNull(message);
 
+        var stopwatch = Stopwatch.StartNew();
+
         var sessionId = message.SessionId!.Value;
         var lastMessageId = message.Id;
 
@@ -800,12 +802,17 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         var unitList = await GetListBySessionAsync(sessionId);
         //var unitList = await SessionUnitManager.GetCacheListAsync(message);
 
+        Logger.LogInformation(
+            "GetListBySessionAsync, sessionId:{sessionId},messageId:{messageId} count:{count},Elapsed:{ms}ms",
+            sessionId,
+            lastMessageId,
+            unitList.Count(),
+            stopwatch.ElapsedMilliseconds);
+
         if (unitList == null || !unitList.Any()) return;
 
         var batch = Database.CreateBatch();
         var expireTime = expire ?? _cacheExpire;
-
-
 
         foreach (var unit in unitList)
         {
@@ -885,7 +892,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         batch.Execute();
 
-        Logger.LogInformation("BatchIncrementBadgeAndSetLastMessageAsync executed.");
+        Logger.LogInformation("BatchIncrementBadgeAndSetLastMessageAsync executed, Elapsed:{ms}ms", stopwatch.ElapsedMilliseconds);
     }
 
     private static SessionUnitStatistic MapToStatistic(HashEntry[] entries)
@@ -1145,7 +1152,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         var scoreObj = new SessionUnitScore(oldScore.Value);
 
         var ticks = scoreObj.Ticks;     // 低位 JS 毫秒
-                                                                      // 如果你担心 double 精度，可以加  Math.Round
+                                        // 如果你担心 double 精度，可以加  Math.Round
         ticks = Math.Round(ticks);
 
         // 5. 新的 score = sorting * MULT + ticks
