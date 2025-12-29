@@ -19,10 +19,12 @@ public interface ISessionUnitCacheManager
     Task<IEnumerable<SessionUnitCacheItem>> GetOrSetListBySessionAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
 
     Task<IDictionary<Guid, long>> GetDictBySessionAsync(Guid sessionId);
+    Task<IDictionary<long, double>> GetToppingBySessionAsync(Guid sessionId);
+    Task<IDictionary<long, bool>> GetImmersedBySessionAsync(Guid sessionId);
 
     Task<long> GetMembersCountAsync(Guid sessionId);
 
-    Task<IDictionary<long, Guid>> GetUnitsBySessionAsync(Guid sessionId, List<long> ownerIds);
+    Task<IDictionary<long, Guid>> GetMembersBySessionAsync(Guid sessionId, List<long> ownerIds);
 
     Task<IEnumerable<SessionUnitCacheItem>> GetListBySessionAsync(Guid sessionId);
 
@@ -42,7 +44,7 @@ public interface ISessionUnitCacheManager
         long take = -1,
         bool isDescending = true);
 
-    Task<KeyValuePair<SessionUnitElement, SessionUnitScore>[]> GetSortedSetByOwnerAsync(
+    Task<KeyValuePair<SessionUnitElement, SessionUnitScore>[]> GetFriendsByOwnerAsync(
         long ownerId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
@@ -50,7 +52,7 @@ public interface ISessionUnitCacheManager
         long take = -1,
         bool isDescending = true);
 
-    Task<IQueryable<(Guid UnitId, double Sorting, double Ticks)>> GetSortedSetQueryableByOwnerAsync(
+    Task<IQueryable<SessionUnitQueryModel>> GetFriendsQueryableByOwnerAsync(
         long ownerId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,

@@ -604,6 +604,44 @@ public static class RedisMapper
         return value.ToString();
     }
 
+    public static bool ToBoolean(string val)
+    {
+        if (val == "1" || val.Equals("true", StringComparison.OrdinalIgnoreCase)) return true;
+        if (val == "0" || val.Equals("false", StringComparison.OrdinalIgnoreCase)) return false;
+        if (bool.TryParse(val, out var bv)) return bv;
+        return false;
+    }
+    public static bool ToBoolean(this RedisValue rv)
+    {
+        if (rv.IsNull) return false;
+        return ToBoolean(rv.ToString());
+    }
+
+    public static long ToLong(this RedisValue rv)
+    {
+        if (rv.IsNull) return 0L;
+        if (rv.TryParse(out long l)) return l;
+        var s = rv.ToString();
+        if (long.TryParse(s, NumberStyles.Any, Invariant, out var l2)) return l2;
+        return 0L;
+    }
+
+    public static double ToDouble(this RedisValue rv)
+    {
+        if (rv.IsNull) return 0;
+        if (rv.TryParse(out double d)) return d;
+        var s = rv.ToString();
+        if (double.TryParse(s, NumberStyles.Any, Invariant, out var d2)) return d2;
+        return 0;
+    }
+    public static Guid ToGuid(this RedisValue rv)
+    {
+        if (rv.IsNull) return Guid.Empty;
+        var s = rv.ToString();
+        if (Guid.TryParse(s, out var g)) return g;
+        return Guid.Empty;
+    }
+
     private static object ConvertFromRedisValue(RedisValue rv, Type targetType)
     {
         if (rv.IsNull)
@@ -624,29 +662,19 @@ public static class RedisMapper
         Type underlying = Nullable.GetUnderlyingType(targetType) ?? targetType;
 
         if (underlying == typeof(string)) return s;
-        if (underlying == typeof(bool))
-        {
-            if (s == "1" || s.Equals("true", StringComparison.OrdinalIgnoreCase)) return true;
-            if (s == "0" || s.Equals("false", StringComparison.OrdinalIgnoreCase)) return false;
-            if (bool.TryParse(s, out var bv)) return bv;
-            return false;
-        }
+        if (underlying == typeof(bool)) return rv.ToBoolean();
         if (underlying == typeof(byte)) return byte.Parse(s, Invariant);
         if (underlying == typeof(sbyte)) return sbyte.Parse(s, Invariant);
         if (underlying == typeof(short)) return short.Parse(s, Invariant);
         if (underlying == typeof(ushort)) return ushort.Parse(s, Invariant);
         if (underlying == typeof(int)) return int.Parse(s, Invariant);
         if (underlying == typeof(uint)) return uint.Parse(s, Invariant);
-        if (underlying == typeof(long)) return long.Parse(s, Invariant);
+        if (underlying == typeof(long)) return rv.ToLong();
         if (underlying == typeof(ulong)) return ulong.Parse(s, Invariant);
         if (underlying == typeof(float)) return float.Parse(s, Invariant);
-        if (underlying == typeof(double)) return double.Parse(s, Invariant);
+        if (underlying == typeof(double)) return rv.ToDouble();
         if (underlying == typeof(decimal)) return decimal.Parse(s, Invariant);
-        if (underlying == typeof(Guid))
-        {
-            if (Guid.TryParse(s, out var g)) return g;
-            return Guid.Empty;
-        }
+        if (underlying == typeof(Guid)) return rv.ToGuid();
         if (underlying.IsEnum)
         {
             try

@@ -306,12 +306,12 @@ public class SessionUnitCacheAppService(
 
         var minScore = input.MinScore ?? 0;
 
-        var queryable = await SessionUnitCacheManager.GetSortedSetQueryableByOwnerAsync(input.OwnerId, minScore: minScore, skip: input.SkipCount, take: Math.Min(input.MaxResultCount, 100));
+        var queryable = await SessionUnitCacheManager.GetFriendsQueryableByOwnerAsync(input.OwnerId, minScore: minScore, skip: input.SkipCount, take: Math.Min(input.MaxResultCount, 100));
 
         var unitIds = queryable
             .Where(x => x.Ticks > minScore)
             .OrderByDescending(x => x.Ticks)
-            .Select(x => x.UnitId)
+            .Select(x => x.Id)
             .ToList();
 
         var items = await GetManyAsync(unitIds);
@@ -420,13 +420,13 @@ public class SessionUnitCacheAppService(
     /// <param name="ownerId"></param>
     /// <param name="keyword"></param>
     /// <returns></returns>
-    private async Task<IQueryable<(Guid UnitId, double Sorting, double Ticks)>> ApplyFilterAsync(IQueryable<(Guid UnitId, double Sorting, double Ticks)> query, long ownerId, string keyword)
+    private async Task<IQueryable<SessionUnitQueryModel>> ApplyFilterAsync(IQueryable<SessionUnitQueryModel> query, long ownerId, string keyword)
     {
         if (string.IsNullOrWhiteSpace(keyword))
         {
             return query;
         }
-        var allUnitIds = query.Select(x => x.UnitId).ToList();
+        var allUnitIds = query.Select(x => x.Id).ToList();
 
         if (allUnitIds.Count == 0)
         {
@@ -478,7 +478,7 @@ public class SessionUnitCacheAppService(
         }
 
         // 加入查询条件
-        query = query.WhereIf(searchUnitIds.Count > 0, x => searchUnitIds.Contains(x.UnitId));
+        query = query.WhereIf(searchUnitIds.Count > 0, x => searchUnitIds.Contains(x.Id));
 
         return query;
     }
@@ -495,7 +495,7 @@ public class SessionUnitCacheAppService(
         //加载全部
         await LoadAllByOwnerIfNotExistsAsync(input.OwnerId);
 
-        var queryable = await SessionUnitCacheManager.GetSortedSetQueryableByOwnerAsync(input.OwnerId);
+        var queryable = await SessionUnitCacheManager.GetFriendsQueryableByOwnerAsync(input.OwnerId);
 
         var query = queryable
             .WhereIf(input.MinScore > 0, x => x.Ticks > input.MinScore)
@@ -522,7 +522,7 @@ public class SessionUnitCacheAppService(
         // paged
         query = query.Skip(input.SkipCount).Take(input.MaxResultCount);
 
-        var unitIds = query.Select(x => x.UnitId).ToList();
+        var unitIds = query.Select(x => x.Id).ToList();
 
         var items = await GetManyAsync(unitIds);
 

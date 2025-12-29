@@ -131,7 +131,9 @@ public class SendToClientDistributedEventHandler : DomainService, IDistributedEv
 
         var onlineOwnerIds = connDict.SelectMany(x => x.Value).Distinct().ToList();
 
-        var ownerUnitDict = await SessionUnitCacheManager.GetUnitsBySessionAsync(sessionId, onlineOwnerIds);
+        var ownerUnitDict = await SessionUnitCacheManager.GetMembersBySessionAsync(sessionId, onlineOwnerIds);
+
+        //await HubContext.Clients.Group(sessionId.ToString()).ReceivedMessage(commandPayload);
 
         foreach (var item in connDict)
         {
