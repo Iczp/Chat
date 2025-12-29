@@ -115,7 +115,7 @@ public class SessionUnitManager(
                         x.CreationTime > cursor.CreationTime ||
                         (x.CreationTime == cursor.CreationTime &&
                          x.Id.CompareTo(cursor.Id) > 0))
-                    
+
                     .OrderBy(x => x.CreationTime)
                     .ThenBy(x => x.Id)
                     .Take(batchSize)
@@ -377,7 +377,7 @@ public class SessionUnitManager(
         var result = await SetEntityAsync(entity, x => x.SetTopping(sorting));
 
         //update cache
-        await SessionUnitCacheManager.SetToppingAsync(entity.Id, entity.OwnerId, sorting);
+        await SessionUnitCacheManager.SetToppingAsync(entity.SessionId.Value, entity.Id, entity.OwnerId, sorting);
 
         return result;
     }

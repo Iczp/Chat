@@ -47,6 +47,11 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     private string OwnerFriendsSetKey(long ownerId)
         => $"{Prefix}Friends:OwnerId-{ownerId}";
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
     private string DestinationsSetKey(long ownerId)
         => $"{Prefix}Destinations:OwnerId-{ownerId}";
 
@@ -74,17 +79,16 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     private string OwnerStatisticSetKey(long ownerId)
         => $"{Prefix}Statistics:OwnerId-{ownerId}";
 
-
-
     /// <summary>
     /// 1e16
     /// </summary>
-    public const long OWNER_SCORE_MULT = 10_000_000_000_000_000; // 1e16
+    //public const long OWNER_SCORE_MULT = 10_000_000_000_000_000; // 1e16
     private static double GetScore(double sorting, double ticks)
     {
-        var score = sorting * OWNER_SCORE_MULT + ticks;
+        return SessionUnitScore.Create(sorting, ticks);
 
-        return score;
+        //var score = sorting * OWNER_SCORE_MULT + ticks;
+        //return score;
     }
 
     #region Field names
@@ -124,6 +128,28 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     #endregion
 
     #region Initialize / Ensure helpers
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="ownerId"></param>
+    /// <param name="unitId"></param>
+    /// <returns></returns>
+    private static SessionUnitElement CreateSessionUnitElement(Guid sessionId, long ownerId, Guid unitId)
+    {
+        return new SessionUnitElement(sessionId, ownerId, unitId);
+    }
+
+    private static SessionUnitElement ParseSessionUnitElement(RedisValue element)
+    {
+        if (!SessionUnitElement.TryParse(element, out var field))
+        {
+            throw new FormatException($"Invalid SessionUnitField: {element}");
+        }
+
+        return field;
+    }
 
     private static HashEntry[] MapToHashEntries(SessionUnitCacheItem unit)
     {
@@ -415,7 +441,9 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             var unitId = unit.Id.ToString();
 
             // score
-            _ = batch.SortedSetAddAsync(ownerFriendsSetKey, unit.Id.ToString(), GetScore(unit.Sorting, unit.Ticks));
+            var element = new SessionUnitElement(unit.SessionId!.Value, unit.OwnerId, unit.Id);
+            var score = GetScore(unit.Sorting, unit.Ticks);
+            _ = batch.SortedSetAddAsync(ownerFriendsSetKey, element, score);
             // 刷新所有UnitKey过期时间
             _ = batch.KeyExpireAsync(UnitKey(unit.Id), _cacheExpire);
 
@@ -492,7 +520,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return await SetListByOwnerIfNotExistsAsync(ownerId, fetchTask) ?? await GetListByOwnerAsync(ownerId);
     }
 
-    public async Task<KeyValuePair<Guid, double>[]> GetSortedSetByOwnerAsync(
+    public async Task<KeyValuePair<SessionUnitElement, SessionUnitScore>[]> GetSortedSetByOwnerAsync(
         long ownerId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
@@ -511,7 +539,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             take: take,
             order: isDescending ? Order.Descending : Order.Ascending);
 
-        var result = redisZset.Select(x => new KeyValuePair<Guid, double>(Guid.Parse(x.Element), x.Score)).ToArray();
+        var result = redisZset.Select(x => new KeyValuePair<SessionUnitElement, SessionUnitScore>(SessionUnitElement.Parse(x.Element), new SessionUnitScore(x.Score))).ToArray();
 
         return result;
 
@@ -528,9 +556,9 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         var kvs = await GetSortedSetByOwnerAsync(ownerId, minScore, maxScore, skip, take, isDescending);
 
         var result = kvs.Select(x => (
-               UnitId: x.Key,
-               Sorting: Math.Floor(x.Value / OWNER_SCORE_MULT),
-               Ticks: x.Value % OWNER_SCORE_MULT
+               UnitId: x.Key.SessionUnitId,
+               Sorting: x.Value.Sorting,
+               Ticks: x.Value.Ticks
            )).AsQueryable();
 
         return result;
@@ -566,8 +594,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         // 1. 获取置顶的所有元素（不分页）
         var allPinned = await Database.SortedSetRangeByScoreWithScoresAsync(
             ownerFriendsSetKey,
-            start: OWNER_SCORE_MULT + minScore,
-            stop: OWNER_SCORE_MULT + maxScore - 1,
+            start: SessionUnitScore.Multiplier + minScore,
+            stop: SessionUnitScore.Multiplier + maxScore - 1,
             order: order
         );
 
@@ -601,7 +629,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             var nonPinned = await Database.SortedSetRangeByScoreWithScoresAsync(
                 ownerFriendsSetKey,
                 start: minScore,
-                stop: Math.Min(OWNER_SCORE_MULT, maxScore) - 1,
+                stop: Math.Min(SessionUnitScore.Multiplier, maxScore) - 1,
                 skip: 0,
                 take: remainingTake,
                 order: order
@@ -617,7 +645,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         var nonPinnedOnly = await Database.SortedSetRangeByScoreWithScoresAsync(
             ownerFriendsSetKey,
             start: minScore,
-            stop: Math.Min(OWNER_SCORE_MULT, maxScore) - 1,
+            stop: Math.Min(SessionUnitScore.Multiplier, maxScore) - 1,
             skip: skipFromNonPinned,
             take: take,
             order: order
@@ -648,7 +676,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             isDescending: true);
 
         // 按序取
-        var unitIdList = kvs.Select(x => x.Key).ToList();
+        var unitIdList = kvs.Select(x => x.Key.SessionUnitId).ToList();
 
         var listMap = (await GetManyAsync(unitIdList)).ToDictionary(x => x.Key, x => x.Value);
 
@@ -838,8 +866,9 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             _ = batch.HashSetAsync(unitKey, F_Ticks, ticks);
 
             // owner sortedset tick: message.CreationTime.Ticks
+            var element = new SessionUnitElement(sessionId, ownerId, unitId);
             var score = GetScore(unit.Sorting, ticks);
-            _ = batch.SortedSetAddAsync(ownerFriendsSetKey, unitId.ToString(), score);
+            _ = batch.SortedSetAddAsync(ownerFriendsSetKey, element, score);
 
             // expire
             if (expireTime.HasValue)
@@ -882,7 +911,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         var result = entries.ToDictionary(
             x => x.Name.ToString(),
             x => long.TryParse(x.Value.ToString(), out var v) ? v : 0);
-        
+
         return result;
     }
     public async Task<Dictionary<ChatObjectTypeEnums, long>> GetBadgeMapAsync(long ownerId)
@@ -1092,7 +1121,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         batch.Execute();
     }
 
-    public async Task SetToppingAsync(Guid unitId, long ownerId, long sorting)
+    public async Task SetToppingAsync(Guid sessionId, Guid unitId, long ownerId, long sorting)
     {
         var unitKey = UnitKey(unitId);
 
@@ -1103,7 +1132,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         var ownerFriendsSetKey = OwnerFriendsSetKey(ownerId);
 
         // 3. 先读取旧 score
-        double? oldScore = await Database.SortedSetScoreAsync(ownerFriendsSetKey, unitId.ToString());
+        var element = new SessionUnitElement(sessionId, ownerId, unitId);
+        double? oldScore = await Database.SortedSetScoreAsync(ownerFriendsSetKey, element);
 
         if (oldScore is null)
         {
@@ -1112,8 +1142,10 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         }
 
         // 4. 解析旧的 ticks
-        var ticks = oldScore.Value % OWNER_SCORE_MULT;     // 低位 JS 毫秒
-                                                           // 如果你担心 double 精度，可以加  Math.Round
+        var scoreObj = new SessionUnitScore(oldScore.Value);
+
+        var ticks = scoreObj.Ticks;     // 低位 JS 毫秒
+                                                                      // 如果你担心 double 精度，可以加  Math.Round
         ticks = Math.Round(ticks);
 
         // 5. 新的 score = sorting * MULT + ticks
@@ -1134,7 +1166,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         _ = batch.KeyExpireAsync(toppingKey, _cacheExpire);
 
         // 6.3 更新 ownerSortedSet 的新 score
-        _ = batch.SortedSetAddAsync(ownerFriendsSetKey, unitId.ToString(), newScore);
+        _ = batch.SortedSetAddAsync(ownerFriendsSetKey, element, newScore);
         _ = batch.KeyExpireAsync(ownerFriendsSetKey, _cacheExpire);
 
         // 7. 执行 batch

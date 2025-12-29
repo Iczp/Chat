@@ -42,7 +42,7 @@ public interface ISessionUnitCacheManager
         long take = -1,
         bool isDescending = true);
 
-    Task<KeyValuePair<Guid, double>[]> GetSortedSetByOwnerAsync(
+    Task<KeyValuePair<SessionUnitElement, SessionUnitScore>[]> GetSortedSetByOwnerAsync(
         long ownerId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
@@ -79,7 +79,7 @@ public interface ISessionUnitCacheManager
 
     Task<Dictionary<ChatObjectTypeEnums, long>> GetBadgeMapAsync(long ownerId);
 
-    Task SetToppingAsync(Guid unitId, long ownerId, long sorting);
+    Task SetToppingAsync(Guid sessionId, Guid unitId, long ownerId, long sorting);
 
     Task ChangeImmersedAsync(Guid unitId, bool isImmersed);
 
