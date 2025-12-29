@@ -1,5 +1,4 @@
-﻿using IczpNet.Chat.Clocks;
-using IczpNet.Chat.Enums;
+﻿using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.RedisMapping;
 using IczpNet.Chat.RedisServices;
@@ -556,7 +555,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return await SetFriendsIfNotExistsAsync(ownerId, fetchTask) ?? await GetFriendUnitsAsync(ownerId);
     }
 
-    public async Task<KeyValuePair<SessionUnitElement, SessionUnitScore>[]> GetFriendsAsync(
+    public async Task<IEnumerable<SessionUnitQueryModel>> GetFriendsAsync(
         long ownerId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
@@ -575,32 +574,23 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             take: take,
             order: isDescending ? Order.Descending : Order.Ascending);
 
-        var result = redisZset.Select(x => new KeyValuePair<SessionUnitElement, SessionUnitScore>(SessionUnitElement.Parse(x.Element), new SessionUnitScore(x.Score))).ToArray();
-
-        return result;
-
-    }
-
-    public async Task<IQueryable<SessionUnitQueryModel>> GetFriendsQueryableAsync(
-        long ownerId,
-        double minScore = double.NegativeInfinity,
-        double maxScore = double.PositiveInfinity,
-        long skip = 0,
-        long take = -1,
-        bool isDescending = true)
-    {
-        var kvs = await GetFriendsAsync(ownerId, minScore, maxScore, skip, take, isDescending);
-
-        var result = kvs.Select(x => new SessionUnitQueryModel
+        //var result = redisZset.Select(x => new KeyValuePair<SessionUnitElement, SessionUnitScore>(SessionUnitElement.Parse(x.Element), new SessionUnitScore(x.Score))).ToArray();
+        var result = redisZset.Select(x =>
         {
-            OwnerId = x.Key.OwnerId,
-            SessionId = x.Key.SessionId,
-            Id = x.Key.SessionUnitId,
-            Sorting = x.Value.Sorting,
-            Ticks = x.Value.Ticks
-        }).AsQueryable();
+            var element = SessionUnitElement.Parse(x.Element);
+            var score = new SessionUnitScore(x.Score);
+            return new SessionUnitQueryModel
+            {
+                OwnerId = element.OwnerId,//ownerId
+                SessionId = element.SessionId,
+                Id = element.SessionUnitId,
+                Sorting = score.Sorting,
+                Ticks = score.Ticks
+            };
+        });
 
         return result;
+
     }
 
     /// <summary>
@@ -715,7 +705,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             isDescending: true);
 
         // 按序取
-        var unitIdList = kvs.Select(x => x.Key.SessionUnitId).ToList();
+        var unitIdList = kvs.Select(x => x.Id).ToList();
 
         var listMap = (await GetManyAsync(unitIdList)).ToDictionary(x => x.Key, x => x.Value);
 
@@ -723,8 +713,6 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         return result;
     }
-
-
 
     #endregion
 
