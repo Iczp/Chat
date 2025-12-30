@@ -6,7 +6,7 @@ namespace IczpNet.Chat.SessionUnits;
 /// ZSet 中 SessionUnit 的排序分值（可逆）
 /// score = Sorting * Multiplier + Ticks
 /// </summary>
-public readonly record struct SessionUnitScore(double Value)
+public readonly record struct FriendScore(double Value)
 {
     /// <summary>
     /// 1e13
@@ -20,9 +20,9 @@ public readonly record struct SessionUnitScore(double Value)
     /// <summary>
     /// 构造 score
     /// </summary>
-    public static SessionUnitScore Create(double sorting, double ticks)
+    public static FriendScore Create(double sorting, double ticks)
     {
-        return new SessionUnitScore(sorting * Multiplier + ticks);
+        return new FriendScore(sorting * Multiplier + ticks);
     }
 
     /// <summary>
@@ -40,7 +40,7 @@ public readonly record struct SessionUnitScore(double Value)
     /// <summary>
     /// 隐式转换，便于 Redis API 使用
     /// </summary>
-    public static implicit operator double(SessionUnitScore score)
+    public static implicit operator double(FriendScore score)
         => score.Value;
 
     public override string ToString()

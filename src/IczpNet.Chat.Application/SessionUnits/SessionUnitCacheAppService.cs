@@ -418,7 +418,7 @@ public class SessionUnitCacheAppService(
     /// <param name="ownerId"></param>
     /// <param name="keyword"></param>
     /// <returns></returns>
-    private async Task<IQueryable<SessionUnitQueryModel>> ApplyFilterAsync(IQueryable<SessionUnitQueryModel> query, long ownerId, string keyword)
+    private async Task<IQueryable<FriendModel>> ApplyFilterAsync(IQueryable<FriendModel> query, long ownerId, string keyword)
     {
         if (string.IsNullOrWhiteSpace(keyword))
         {

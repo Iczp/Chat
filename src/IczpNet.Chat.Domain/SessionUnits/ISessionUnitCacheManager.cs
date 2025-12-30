@@ -45,8 +45,50 @@ public interface ISessionUnitCacheManager
     /// 获取会话成员映射
     /// </summary>
     /// <param name="sessionId"></param>
-    /// <returns></returns>
+    /// <returns>{Key:SessionUnitId, Value:OwnerId}</returns>
     Task<IDictionary<Guid, long>> GetMembersMapAsync(Guid sessionId);
+
+    /// <summary>
+    /// 获取会话成员数量
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    Task<long> GetMembersCountAsync(Guid sessionId);
+
+    /// <summary>
+    /// 获取会话成员
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="minScore"></param>
+    /// <param name="maxScore"></param>
+    /// <param name="skip"></param>
+    /// <param name="take"></param>
+    /// <param name="isDescending"></param>
+
+    Task<IEnumerable<MemberModel>> GetMembersAsync(
+        Guid sessionId,
+        double minScore = double.NegativeInfinity,
+        double maxScore = double.PositiveInfinity,
+        long skip = 0,
+        long take = -1,
+        bool isDescending = true);
+
+    /// <summary>
+    /// 获取会话成员
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="minScore"></param>
+    /// <param name="maxScore"></param>
+    /// <param name="skip"></param>
+    /// <param name="take"></param>
+    /// <param name="isDescending"></param>
+    Task<IEnumerable<SessionUnitCacheItem>> GetMemberUnitsAsync(
+        Guid sessionId,
+        double minScore = double.NegativeInfinity,
+        double maxScore = double.PositiveInfinity,
+        long skip = 0,
+        long take = -1,
+        bool isDescending = true);
 
     /// <summary>
     /// 获取会话置顶映射
@@ -61,28 +103,6 @@ public interface ISessionUnitCacheManager
     /// <param name="sessionId"></param>
     /// <returns></returns>
     Task<IDictionary<long, bool>> GetImmersedBySessionAsync(Guid sessionId);
-
-    /// <summary>
-    /// 获取会话成员数量
-    /// </summary>
-    /// <param name="sessionId"></param>
-    /// <returns></returns>
-    Task<long> GetMembersCountAsync(Guid sessionId);
-
-    /// <summary>
-    /// 获取会话成员(key: OwnerId, value: SessionUnitId)
-    /// </summary>
-    /// <param name="sessionId"></param>
-    /// <param name="ownerIds"></param>
-    /// <returns>key: OwnerId, value: SessionUnitId</returns>
-    Task<IDictionary<long, Guid>> GetMembersAsync(Guid sessionId, List<long> ownerIds = null);
-
-    /// <summary>
-    /// 获取会话成员
-    /// </summary>
-    /// <param name="sessionId"></param>
-    /// <returns></returns>
-    Task<IEnumerable<SessionUnitCacheItem>> GetMemberUnitsAsync(Guid sessionId);
 
     /// <summary>
     /// 设置好友会话单元
@@ -134,6 +154,7 @@ public interface ISessionUnitCacheManager
         long take = -1,
         bool isDescending = true);
 
+
     /// <summary>
     /// 获取好友会话单元
     /// </summary>
@@ -144,7 +165,7 @@ public interface ISessionUnitCacheManager
     /// <param name="take"></param>
     /// <param name="isDescending"></param>
     /// <returns></returns>
-    Task<IEnumerable<SessionUnitQueryModel>> GetFriendsAsync(
+    Task<IEnumerable<FriendModel>> GetFriendsAsync(
         long ownerId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,

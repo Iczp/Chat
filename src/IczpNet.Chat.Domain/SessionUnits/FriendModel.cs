@@ -2,7 +2,7 @@
 
 namespace IczpNet.Chat.SessionUnits;
 
-public  class SessionUnitQueryModel
+public  class FriendModel
 {
     public Guid Id { get; set; }
 
