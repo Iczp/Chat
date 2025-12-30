@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -15,6 +16,18 @@ public abstract class RedisService : DomainService
     protected IOptions<AbpDistributedCacheOptions> Options => LazyServiceProvider.LazyGetRequiredService<IOptions<AbpDistributedCacheOptions>>();
     protected IConnectionMultiplexer ConnectionMultiplexer => LazyServiceProvider.LazyGetRequiredService<IConnectionMultiplexer>();
     protected IDatabase Database => ConnectionMultiplexer.GetDatabase();
+
+    protected virtual async Task<T> MeasureAsync<T>(string name, Func<Task<T>> func)
+    {
+        var sw = Stopwatch.StartNew();
+        var result = await func();
+        Logger.LogInformation("[{fullname}] [{name}] Elapsed Time: {Elapsed} ms",
+            GetType().FullName,
+            name,
+            sw.ElapsedMilliseconds);
+        sw.Stop();
+        return result;
+    }
 
     /// <summary>
     /// 批量检查 Key 是否存在

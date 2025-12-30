@@ -68,14 +68,7 @@ return 1";
 
         return newList.ToArray();
     }
-    protected virtual async Task<T> MeasureAsync<T>(string name, Func<Task<T>> func)
-    {
-        var sw = Stopwatch.StartNew();
-        var result = await func();
-        Logger.LogInformation($"[{this.GetType().FullName}] [{name}] Elapsed Time: {sw.ElapsedMilliseconds} ms");
-        sw.Stop();
-        return result;
-    }
+    
 
     private int ExpireSeconds => (int)(CacheExpire?.TotalSeconds ?? -1);
     private void Expire(IBatch batch, string key)
@@ -110,8 +103,6 @@ return 1";
         }
         return dict;
     }
-
-
 
     private async Task<Dictionary<long, List<Guid>>> GetOrSetSessionsAsync(List<long> chatObjectIdList, CancellationToken token = default)
     {
