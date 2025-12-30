@@ -366,7 +366,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
                {
                    SessionId = element.SessionId,
                    OwnerId = element.OwnerId,
-                   SessionUnitId = element.SessionUnitId,
+                   Id = element.SessionUnitId,
                    JoinedTime = score.CreationTime,
                    IsCreator = score.IsCreator
                };
@@ -388,7 +388,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
              skip: skip,
              take: take,
              isDescending: isDescending);
-        var unitIds = members.Select(x => x.SessionUnitId).Distinct().ToList();
+        var unitIds = members.Select(x => x.Id).Distinct().ToList();
         var kvs = await GetManyAsync(unitIds);
         return kvs.Where(x => x.Value != null).Select(x => x.Value);
     }
