@@ -22,6 +22,8 @@ public class ConnectionCacheManager : RedisService, IConnectionCacheManager//, I
 
     public ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
 
+    public ISessionUnitCacheManager SessionUnitCacheManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitCacheManager>();
+
     public ICurrentHosted CurrentHosted => LazyServiceProvider.LazyGetRequiredService<ICurrentHosted>();
 
 
@@ -66,14 +68,7 @@ return 1";
 
         return newList.ToArray();
     }
-    protected virtual async Task<T> MeasureAsync<T>(string name, Func<Task<T>> func)
-    {
-        var sw = Stopwatch.StartNew();
-        var result = await func();
-        Logger.LogInformation($"[{this.GetType().FullName}] [{name}] Elapsed Time: {sw.ElapsedMilliseconds} ms");
-        sw.Stop();
-        return result;
-    }
+    
 
     private int ExpireSeconds => (int)(CacheExpire?.TotalSeconds ?? -1);
     private void Expire(IBatch batch, string key)
@@ -109,11 +104,24 @@ return 1";
         return dict;
     }
 
+    private async Task<Dictionary<long, List<Guid>>> GetOrSetSessionsAsync(List<long> chatObjectIdList, CancellationToken token = default)
+    {
+        var result = new Dictionary<long, List<Guid>>();
+        foreach (var chatObjectId in chatObjectIdList)
+        {
+            await SessionUnitManager.LoadFriendsIfNotExistsAsync(chatObjectId);
+            var units = await SessionUnitCacheManager.GetFriendsAsync(chatObjectId);
+            var sessionIds = units.Select(x => x.SessionId).ToList();
+            result.TryAdd(chatObjectId, sessionIds);
+        }
+        return result;
+    }
+
     /// <summary>
     /// Try to get owner->sessions from Redis. For owners with empty sets, fetch from SessionUnitManager and write back to Redis.
     /// All Redis reads are batched; writes are batched separately.
     /// </summary>
-    private async Task<Dictionary<long, List<Guid>>> GetOrSetSessionsAsync(List<long> chatObjectIdList, CancellationToken token = default)
+    private async Task<Dictionary<long, List<Guid>>> GetOrSetSessionsBackAsync(List<long> chatObjectIdList, CancellationToken token = default)
     {
         // Schedule SetMembersAsync for all keys
         Logger.LogInformation($"[GetOrSetSessionsAsync] chatObjectIdList:{chatObjectIdList.JoinAsString(",")}");
@@ -230,7 +238,7 @@ return 1";
         // owner session sets only if not exists - to avoid race we'll set expire and add members if sessions exist in memory
         foreach (var ownerId in ownerIds)
         {
-            var ownerKey = OwnerSessionKey(ownerId);
+            var ownerSessionKey = OwnerSessionKey(ownerId);
             // if chatObjectSessions contains it, we assume set was exists or just created. To avoid extra KeyExists roundtrip, only set expire
             // but add members if we have sessions and set wasn't in Redis earlier (GetOrSetSessionsAsync only returns existing/filled).
             var sessions = chatObjectSessions.GetValueOrDefault(ownerId);
@@ -239,9 +247,9 @@ return 1";
             // Add members (idempotent)
             foreach (var sessionId in sessions)
             {
-                _ = writeBatch.SetAddAsync(ownerKey, sessionId.ToString());
+                _ = writeBatch.SetAddAsync(ownerSessionKey, sessionId.ToString());
             }
-            Expire(writeBatch, ownerKey);
+            Expire(writeBatch, ownerSessionKey);
         }
 
         // chatObject -> connection hash (owner conn mapping)

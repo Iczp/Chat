@@ -11,7 +11,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Volo.Abp.Users;
 
 namespace IczpNet.Chat.SessionUnits;
 
@@ -489,4 +488,8 @@ public interface ISessionUnitManager
         Func<IQueryable<SessionUnit>, IQueryable<SessionUnit>> queryableAction, 
         int batchSize=1000, 
         CancellationToken cancellationToken = default);
+
+    Task<IEnumerable<SessionUnitCacheItem>> LoadFriendsIfNotExistsAsync(long ownerId);
+
+    Task<IEnumerable<SessionUnitCacheItem>> LoadMembersIfNotExistsAsync(Guid sessionUnitId);
 }

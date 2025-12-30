@@ -158,13 +158,7 @@ public class MessageSentDistributedEventHandler(
 
     protected virtual async Task<IEnumerable<SessionUnitCacheItem>> CachingUnitsAsync(Message message)
     {
-        var sessionId = message.SessionId.Value;
-        return await SessionUnitCacheManager.SetMembersIfNotExistsAsync(
-            sessionId,
-            async (sessionId) =>
-            {
-                return await SessionUnitManager.GetCacheListBySessionIdAsync(sessionId);
-            });
+        return await SessionUnitManager.LoadMembersIfNotExistsAsync(message.SessionId.Value);
     }
 
     /// <summary>

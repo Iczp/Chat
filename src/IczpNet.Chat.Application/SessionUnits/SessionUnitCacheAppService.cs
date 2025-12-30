@@ -1,5 +1,6 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.Clocks;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
@@ -66,7 +67,7 @@ public class SessionUnitCacheAppService(
 
         var needLoadBySorting = sortingFields.Any(f =>
                //f.StartsWith($"{nameof(SessionUnitCacheDto.Setting)}.") || 
-               f.StartsWith($"{nameof(SessionUnitCacheDto.Destination)}.")
+               f.StartsWith($"{nameof(SessionUnitFriendDto.Destination)}.")
         );
 
         return Task.FromResult(
@@ -75,19 +76,19 @@ public class SessionUnitCacheAppService(
         );
     }
 
-    protected virtual async Task LoadAllByOwnerIfNotExistsAsync(long ownerId)
+    protected virtual async Task LoadFriendsIfNotExistsAsync(long ownerId)
     {
-        await SessionUnitCacheManager.SetFriendsIfNotExistsAsync(ownerId,
-           async (ownerId) =>
-               await SessionUnitManager.GetListByOwnerIdAsync(ownerId));
+        await SessionUnitManager.LoadFriendsIfNotExistsAsync(ownerId);
+    }
+    protected virtual async Task LoadMembersIfNotExistsAsync(Guid sessionId)
+    {
+        await SessionUnitManager.LoadMembersIfNotExistsAsync(sessionId);
     }
 
     protected virtual async Task<IEnumerable<SessionUnitCacheItem>> GetAllListAsync(long ownerId)
     {
-        return await SessionUnitCacheManager.GetOrSetFriendsAsync(
-           ownerId,
-           async (ownerId) =>
-               await SessionUnitManager.GetListByOwnerIdAsync(ownerId));
+        await LoadFriendsIfNotExistsAsync(ownerId);
+        return await SessionUnitCacheManager.GetFriendUnitsAsync(ownerId);
     }
 
     protected Task<SessionUnitCacheItem> MapToCacheItemAsync(SessionUnit entity)
@@ -100,12 +101,12 @@ public class SessionUnitCacheAppService(
         return ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(entity);
     }
 
-    protected virtual SessionUnitCacheDto MapToDto(SessionUnitCacheItem item)
+    protected virtual SessionUnitFriendDto MapToDto(SessionUnitCacheItem item)
     {
-        return ObjectMapper.Map<SessionUnitCacheItem, SessionUnitCacheDto>(item);
+        return ObjectMapper.Map<SessionUnitCacheItem, SessionUnitFriendDto>(item);
     }
 
-    protected virtual async Task<IQueryable<SessionUnitCacheDto>> CreateQueryableAsync(SessionUnitCacheItemGetListInput input)
+    protected virtual async Task<IQueryable<SessionUnitFriendDto>> CreateQueryableAsync(SessionUnitCacheItemGetListInput input)
     {
         var allList = await GetAllListAsync(input.OwnerId);
 
@@ -150,7 +151,7 @@ public class SessionUnitCacheAppService(
     }
 
 
-    public async Task<PagedResultDto<SessionUnitCacheDto>> GetListAsync(SessionUnitCacheItemGetListInput input)
+    public async Task<PagedResultDto<SessionUnitFriendDto>> GetListAsync(SessionUnitCacheItemGetListInput input)
     {
         // check owner
         await CheckPolicyForUserAsync(input.OwnerId, () => CheckPolicyAsync(GetListPolicyName, input.OwnerId));
@@ -186,7 +187,7 @@ public class SessionUnitCacheAppService(
 
 
 
-    private async Task FillLastMessageAsync(IEnumerable<SessionUnitCacheDto> items)
+    private async Task FillLastMessageAsync(IEnumerable<SessionUnitFriendDto> items)
     {
         // fill Setting
         var messageIdList = items
@@ -216,7 +217,7 @@ public class SessionUnitCacheAppService(
         //}
     }
 
-    private async Task FillSettingAsync(IEnumerable<SessionUnitCacheDto> items)
+    private async Task FillSettingAsync(IEnumerable<SessionUnitFriendDto> items)
     {
         //return;
         // fill Setting
@@ -237,42 +238,66 @@ public class SessionUnitCacheAppService(
         }
     }
 
-    private async Task FillDestinationAsync(IEnumerable<SessionUnitCacheDto> items)
+    private async Task FillDestinationAsync(IEnumerable<SessionUnitFriendDto> items)
     {
         // fill Destination
-        var nullDestItems = items
+        var nulltems = items
             .Where(x => x.DestinationId.HasValue && x.Destination == null)
             .ToList();
-        if (nullDestItems.Count == 0)
+        if (nulltems.Count == 0)
         {
             return;
         }
-        var destIds = nullDestItems.Select(x => x.DestinationId.Value).Distinct().ToList();
+        var destIds = nulltems.Select(x => x.DestinationId.Value).Distinct().ToList();
         var destMap = (await ChatObjectManager.GetManyByCacheAsync(destIds))
             .ToDictionary(x => x.Id, x => x);
 
-        foreach (var item in nullDestItems)
+        foreach (var item in nulltems)
         {
             item.Destination = destMap.GetValueOrDefault(item.DestinationId.Value);
         }
     }
-
-    public async Task<List<SessionUnitCacheDto>> GetManyAsync(List<Guid> unitIds)
+    private async Task FillOwnerAsync(IEnumerable<SessionUnitMemberDto> items)
     {
-        var list = await SessionUnitCacheManager.GetOrSetManyAsync(unitIds, async (keys) =>
+        // fill Destination
+        var nulltems = items
+            .Where(x => x.Owner == null)
+            .ToList();
+        if (nulltems.Count == 0)
         {
-            var kvs = await SessionUnitManager.GetManyAsync(keys);
+            return;
+        }
+        var idlist = nulltems.Select(x => x.OwnerId).Distinct().ToList();
+        var destMap = (await ChatObjectManager.GetManyByCacheAsync(idlist))
+            .ToDictionary(x => x.Id, x => x);
 
-            var cacheItems = kvs.Select(x => MapToCacheItem(x.Value)).ToList();
+        foreach (var item in nulltems)
+        {
+            item.Owner = destMap.GetValueOrDefault(item.OwnerId);
+        }
+    }
 
-            var arr = new KeyValuePair<Guid, SessionUnitCacheItem>[cacheItems.Count];
+    private async Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetCacheManyAsync(List<Guid> unitIds)
+    {
+        return await SessionUnitCacheManager.GetOrSetManyAsync(unitIds, async (keys) =>
+           {
+               var kvs = await SessionUnitManager.GetManyAsync(keys);
 
-            for (int i = 0; i < cacheItems.Count; i++)
-            {
-                arr[i] = new KeyValuePair<Guid, SessionUnitCacheItem>(cacheItems[i].Id, cacheItems[i]);
-            }
-            return arr;
-        });
+               var cacheItems = kvs.Select(x => MapToCacheItem(x.Value)).ToList();
+
+               var arr = new KeyValuePair<Guid, SessionUnitCacheItem>[cacheItems.Count];
+
+               for (int i = 0; i < cacheItems.Count; i++)
+               {
+                   arr[i] = new KeyValuePair<Guid, SessionUnitCacheItem>(cacheItems[i].Id, cacheItems[i]);
+               }
+               return arr;
+           });
+    }
+
+    public async Task<List<SessionUnitFriendDto>> GetManyAsync(List<Guid> unitIds)
+    {
+        var list = await GetCacheManyAsync(unitIds);
 
         // check owner
         var chatObjectIdList = list.Select(x => x.Value).Select(x => x.OwnerId).Distinct().ToList();
@@ -295,18 +320,19 @@ public class SessionUnitCacheAppService(
     /// <summary>
     /// 获取最新消息
     /// </summary>
+    /// <param name="ownerId"></param>
     /// <param name="input"></param>
     /// <returns></returns>
-    public async Task<PagedResultDto<SessionUnitCacheDto>> GetLatestAsync(SessionUnitCacheScoreGetListInput input)
+    public async Task<PagedResultDto<SessionUnitFriendDto>> GetLatestAsync([Required] long ownerId, SessionUnitCacheScoreGetListInput input)
     {
         // check owner
-        await CheckPolicyForUserAsync(input.OwnerId, () => CheckPolicyAsync(GetListPolicyName, input.OwnerId));
+        await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
 
         Assert.If(input.MaxResultCount > 100, $"params:{nameof(input.MaxResultCount)} max value: 100");
 
         var minScore = input.MinScore ?? 0;
 
-        var queryable = await SessionUnitCacheManager.GetFriendsAsync(input.OwnerId, minScore: minScore, skip: input.SkipCount, take: Math.Min(input.MaxResultCount, 100));
+        var queryable = await SessionUnitCacheManager.GetFriendsAsync(ownerId, minScore: minScore, skip: input.SkipCount, take: Math.Min(input.MaxResultCount, 100));
 
         var unitIds = queryable
             .Where(x => x.Ticks > minScore)
@@ -316,12 +342,12 @@ public class SessionUnitCacheAppService(
 
         var items = await GetManyAsync(unitIds);
 
-        return new PagedResultDto<SessionUnitCacheDto>(items.Count, items);
+        return new PagedResultDto<SessionUnitFriendDto>(items.Count, items);
 
     }
 
 
-    public async IAsyncEnumerable<Guid> BatchSearchAsync(
+    protected virtual async IAsyncEnumerable<Guid> BatchSearchAsync(
         long ownerId,
         string keyword,
         IReadOnlyCollection<long> searchChatObjectIdList,
@@ -420,7 +446,7 @@ public class SessionUnitCacheAppService(
     /// <param name="ownerId"></param>
     /// <param name="keyword"></param>
     /// <returns></returns>
-    private async Task<IQueryable<SessionUnitQueryModel>> ApplyFilterAsync(IQueryable<SessionUnitQueryModel> query, long ownerId, string keyword)
+    private async Task<IQueryable<FriendModel>> ApplyFilterAsync(IQueryable<FriendModel> query, long ownerId, string keyword)
     {
         if (string.IsNullOrWhiteSpace(keyword))
         {
@@ -482,20 +508,25 @@ public class SessionUnitCacheAppService(
 
         return query;
     }
+    private async Task<IQueryable<MemberModel>> ApplyFilterAsync(IQueryable<MemberModel> query, Guid sessionId, string keyword)
+    {
+        return query;
+
+    }
 
     /// <summary>
     /// 获取会话(Linq)
     /// </summary>
     /// <returns></returns>
-    public async Task<PagedResultDto<SessionUnitCacheDto>> GetHistoryAsync(SessionUnitCacheScoreGetListInput input)
+    public async Task<PagedResultDto<SessionUnitFriendDto>> GetFriendsAsync([Required] long ownerId, SessionUnitCacheScoreGetListInput input)
     {
         // check owner
-        await CheckPolicyForUserAsync(input.OwnerId, () => CheckPolicyAsync(GetListPolicyName, input.OwnerId));
+        await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
 
         //加载全部
-        await LoadAllByOwnerIfNotExistsAsync(input.OwnerId);
+        await LoadFriendsIfNotExistsAsync(ownerId);
 
-        var queryable = await SessionUnitCacheManager.GetFriendsAsync(input.OwnerId);
+        var queryable = await SessionUnitCacheManager.GetFriendsAsync(ownerId);
 
         var query = queryable.AsQueryable()
             .WhereIf(input.MinScore > 0, x => x.Ticks > input.MinScore)
@@ -503,11 +534,11 @@ public class SessionUnitCacheAppService(
             ;
 
         //search 
-        query = await ApplyFilterAsync(query, input.OwnerId, input.Keyword);
+        query = await ApplyFilterAsync(query, ownerId, input.Keyword);
 
         if (query == null)
         {
-            return new PagedResultDto<SessionUnitCacheDto>(0, []);
+            return new PagedResultDto<SessionUnitFriendDto>(0, []);
         }
 
         var totalCount = query.Count(); //kvs.Length
@@ -526,7 +557,70 @@ public class SessionUnitCacheAppService(
 
         var items = await GetManyAsync(unitIds);
 
-        return new PagedResultDto<SessionUnitCacheDto>(totalCount, items);
+        return new PagedResultDto<SessionUnitFriendDto>(totalCount, items);
+    }
+
+    /// <summary>
+    /// 获取会话成员
+    /// </summary>
+    /// <param name="unitId"></param>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    public async Task<PagedResultDto<SessionUnitMemberDto>> GetMembersAsync([Required] Guid unitId, SessionUnitCacheScoreGetListInput input)
+    {
+        var unit = await SessionUnitCacheManager.GetAsync(unitId);
+        var ownerId = unit.OwnerId;
+        var sessionId = unit.SessionId.Value;
+        // check owner
+        await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
+
+        //加载全部
+        await LoadMembersIfNotExistsAsync(sessionId);
+
+        var queryable = await SessionUnitCacheManager.GetMembersAsync(sessionId);
+
+        var query = queryable.AsQueryable()
+            .WhereIf(input.MinScore > 0, x => x.CreationTime.ToUnixTimeMilliseconds() > input.MinScore)
+            .WhereIf(input.MaxScore > 0, x => x.CreationTime.ToUnixTimeMilliseconds() < input.MaxScore)
+            ;
+
+        //search 
+        query = await ApplyFilterAsync(query, sessionId, input.Keyword);
+
+        if (query == null)
+        {
+            return new PagedResultDto<SessionUnitMemberDto>(0, []);
+        }
+
+        var totalCount = query.Count(); //kvs.Length
+        //var totalCount = await SessionUnitCacheManager.GetTotalCountByOwnerAsync(ownerId);
+
+        // sorting
+        query = query
+            .OrderByDescending(x => x.IsCreator)
+            .ThenByDescending(x => x.CreationTime)
+            ;
+
+        // paged
+        query = query.Skip(input.SkipCount).Take(input.MaxResultCount);
+
+        var unitIds = query.Select(x => x.Id).ToList();
+
+        var list = await GetCacheManyAsync(unitIds);
+
+        var items = list
+            .Select(x => x.Value)
+            .Select(MapToMemberDto)
+            .ToList();
+
+        await FillOwnerAsync(items);
+
+        return new PagedResultDto<SessionUnitMemberDto>(totalCount, items);
+    }
+
+    protected virtual SessionUnitMemberDto MapToMemberDto(SessionUnitCacheItem item)
+    {
+        return ObjectMapper.Map<SessionUnitCacheItem, SessionUnitMemberDto>(item);
     }
 
     /// <summary>
@@ -534,7 +628,7 @@ public class SessionUnitCacheAppService(
     /// </summary>
     /// <param name="id"></param>
     /// <returns></returns>
-    public async Task<SessionUnitCacheDto> GetAsync(Guid id)
+    public async Task<SessionUnitFriendDto> GetAsync(Guid id)
     {
         var items = await GetManyAsync([id]);
 
@@ -549,7 +643,7 @@ public class SessionUnitCacheAppService(
     {
         var owner = await ChatObjectManager.GetItemByCacheAsync(ownerId);
         //加载全部
-        await LoadAllByOwnerIfNotExistsAsync(ownerId);
+        await LoadFriendsIfNotExistsAsync(ownerId);
 
         return new BadgeDto()
         {
@@ -603,5 +697,18 @@ public class SessionUnitCacheAppService(
     public Task<List<BadgeDto>> GetBadgeByCurrentUserAsync(bool? isImmersed = null)
     {
         return GetBadgeByUserIdAsync(CurrentUser.GetId(), isImmersed);
+    }
+
+    /// <summary>
+    /// 获取会话成员数量
+    /// </summary>
+    /// <param name="unitId"></param>
+    /// <returns></returns>
+    public async Task<long> GetMembersCountAsync(Guid unitId)
+    {
+        var unit = await SessionUnitCacheManager.GetAsync(unitId);
+        var sessionId = unit.SessionId.Value;
+        await SessionUnitManager.LoadMembersIfNotExistsAsync(sessionId);
+        return await SessionUnitCacheManager.GetMembersCountAsync(sessionId);
     }
 }

@@ -37,6 +37,16 @@ public class SessionUnitCacheItem : ISessionUnit
     public virtual ChatObjectTypeEnums? DestinationObjectType { get; set; }
 
     /// <summary>
+    /// 备注名称
+    /// </summary>
+    public virtual string Rename { get; set; }
+
+    /// <summary>
+    /// 会话内名称
+    /// </summary>
+    public virtual string MemberName { get; set; }
+
+    /// <summary>
     /// 是否固定成员
     /// </summary>
     public virtual bool IsStatic { get; set; }
@@ -73,6 +83,8 @@ public class SessionUnitCacheItem : ISessionUnit
     public virtual double Ticks { get; set; }
 
     public virtual double Sorting { get; set; }
+
+    public virtual bool IsCreator { get; set; }
 
     public virtual DateTime CreationTime { get; set; }
 

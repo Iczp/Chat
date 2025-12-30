@@ -9,19 +9,23 @@ namespace IczpNet.Chat.SessionUnits;
 
 public interface ISessionUnitCacheAppService
 {
-    Task<PagedResultDto<SessionUnitCacheDto>> GetListAsync(SessionUnitCacheItemGetListInput input);
+    Task<PagedResultDto<SessionUnitFriendDto>> GetListAsync(SessionUnitCacheItemGetListInput input);
 
-    Task<List<SessionUnitCacheDto>> GetManyAsync(List<Guid> unitIds);
+    Task<List<SessionUnitFriendDto>> GetManyAsync(List<Guid> unitIds);
 
-    Task<PagedResultDto<SessionUnitCacheDto>> GetHistoryAsync(SessionUnitCacheScoreGetListInput input);
+    Task<PagedResultDto<SessionUnitFriendDto>> GetFriendsAsync([Required] long ownerId, SessionUnitCacheScoreGetListInput input);
 
-    Task<PagedResultDto<SessionUnitCacheDto>> GetLatestAsync(SessionUnitCacheScoreGetListInput input);
+    Task<PagedResultDto<SessionUnitFriendDto>> GetLatestAsync([Required] long ownerId, SessionUnitCacheScoreGetListInput input);
 
-    Task<SessionUnitCacheDto> GetAsync(Guid id);
+    Task<SessionUnitFriendDto> GetAsync(Guid id);
 
     Task<BadgeDto> GetBadgeAsync(long ownerId);
 
     Task<List<BadgeDto>> GetBadgeByUserIdAsync([Required] Guid userId, bool? isImmersed = null);
 
     Task<List<BadgeDto>> GetBadgeByCurrentUserAsync(bool? isImmersed = null);
+
+    Task<long> GetMembersCountAsync(Guid sessionId);
+
+
 }

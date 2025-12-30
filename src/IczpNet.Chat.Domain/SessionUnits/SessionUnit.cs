@@ -277,11 +277,11 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     [NotMapped]
     public virtual bool IsWaiter => IsWaiterOfDestination() && IsWaiterOfOwner();
 
-    ///// <summary>
-    ///// 备注名称
-    ///// </summary>
-    //[NotMapped]
-    //public virtual string Rename => Setting.Rename;
+    /// <summary>
+    /// 备注名称
+    /// </summary>
+    [NotMapped]
+    public virtual string Rename => Setting.Rename;
 
     [NotMapped]
     public virtual string DisplayName => Setting.MemberName;

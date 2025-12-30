@@ -100,7 +100,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     //public const long OWNER_SCORE_MULT = 10_000_000_000_000_000; // 1e16
     private static double GetScore(double sorting, double ticks)
     {
-        return SessionUnitScore.Create(sorting, ticks);
+        return FriendScore.Create(sorting, ticks);
 
         //var score = sorting * OWNER_SCORE_MULT + ticks;
         //return score;
@@ -233,9 +233,9 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         foreach (var unit in unitList)
         {
-            var unitId = unit.Id.ToString();
-
-            _ = batch.HashSetAsync(sessionMembersSetKey, unit.OwnerId, unitId);
+            var element = new SessionUnitElement(sessionId, unit.OwnerId, unit.Id);
+            var score = MemberScore.Create(unit.IsCreator, unit.CreationTime);
+            _ = batch.SortedSetAddAsync(sessionMembersSetKey, element, score);
 
             var unitKey = UnitKey(unit.Id);
             var isExists = unitKeysExists.TryGetValue(unitKey, out var exists) && exists;
@@ -293,14 +293,18 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     }
 
     /// <summary>
-    /// 
+    /// 获取会话成员映射
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns>{Key:SessionUnitId, Value:OwnerId}</returns>
     public async Task<IDictionary<Guid, long>> GetMembersMapAsync(Guid sessionId)
     {
-        var entries = await Database.HashGetAllAsync(SessionMembersSetKey(sessionId));
-        var dict = entries.ToDictionary(x => x.Value.ToGuid(), x => x.Name.ToLong());
+        var redisZset = await Database.SortedSetRangeByScoreWithScoresAsync(SessionMembersSetKey(sessionId));
+
+        var dict = redisZset
+            .Select(x => SessionUnitElement.Parse(x.Element))
+            .ToDictionary(x => x.SessionUnitId, x => x.OwnerId);
+
         return dict;
     }
 
@@ -335,71 +339,57 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// <returns></returns>
     public async Task<long> GetMembersCountAsync(Guid sessionId)
     {
-        return await Database.HashLengthAsync(SessionMembersSetKey(sessionId));
+        return await Database.SortedSetLengthAsync(SessionMembersSetKey(sessionId));
     }
 
-    public async Task<IDictionary<long, Guid>> GetMembersAsync(Guid sessionId, List<long> ownerIds = null)
+    public async Task<IEnumerable<MemberModel>> GetMembersAsync(
+        Guid sessionId,
+        double minScore = double.NegativeInfinity,
+        double maxScore = double.PositiveInfinity,
+        long skip = 0,
+        long take = -1,
+        bool isDescending = true)
     {
-        var sessionMembersSetKey = SessionMembersSetKey(sessionId);
-
-        // 直接 Hash 长度判断即可，无需 KeyExistsAsync（减少一次 Redis 请求）
-        var length = await Database.HashLengthAsync(sessionMembersSetKey);
-        if (length == 0)
-        {
-            return new Dictionary<long, Guid>();
-        }
-
-        // ownerIds = null 或 ownerIds.Count == 0 返回全部
-        if (ownerIds == null || ownerIds.Count == 0)
-        {
-            var entries = await Database.HashGetAllAsync(sessionMembersSetKey);
-
-            return entries.ToDictionary(
-                e => (long)e.Name,      // Name 是 ownerId
-                e => Guid.Parse(e.Value)        // value 是 unitId
-            );
-        }
-
-        // 只取指定 ownerIds 用 Batch 批量获取
-        var batch = Database.CreateBatch();
-        var tasks = new Dictionary<long, Task<RedisValue>>(ownerIds.Count);
-
-        foreach (var ownerId in ownerIds)
-        {
-            tasks[ownerId] = batch.HashGetAsync(sessionMembersSetKey, ownerId);
-        }
-
-        batch.Execute();
-
-        var result = new Dictionary<long, Guid>(ownerIds.Count);
-
-        foreach (var kv in tasks)
-        {
-            var ownerId = kv.Key;
-            var val = await kv.Value;
-
-            if (val.IsNullOrEmpty)
-            {
-                // 没有对应 unitId 设为 Guid.Empty（或可不放入）
-                result[ownerId] = Guid.Empty;
-            }
-            else
-            {
-                result[ownerId] = Guid.Parse(val.ToString());
-            }
-        }
-
-        return result;
+        var redisZset = await Database.SortedSetRangeByScoreWithScoresAsync(
+            key: SessionMembersSetKey(sessionId),
+            start: minScore,
+            stop: maxScore,
+            skip: skip,
+            take: take,
+            order: isDescending ? Order.Descending : Order.Ascending);
+        return redisZset
+           .Select(x =>
+           {
+               var element = SessionUnitElement.Parse(x.Element);
+               var score = new MemberScore(x.Score);
+               return new MemberModel
+               {
+                   SessionId = element.SessionId,
+                   OwnerId = element.OwnerId,
+                   Id = element.SessionUnitId,
+                   CreationTime = score.CreationTime,
+                   IsCreator = score.IsCreator
+               };
+           }); ;
     }
 
-    public async Task<IEnumerable<SessionUnitCacheItem>> GetMemberUnitsAsync(Guid sessionId)
+    public async Task<IEnumerable<SessionUnitCacheItem>> GetMemberUnitsAsync(
+       Guid sessionId,
+        double minScore = double.NegativeInfinity,
+        double maxScore = double.PositiveInfinity,
+        long skip = 0,
+        long take = -1,
+        bool isDescending = true)
     {
-        var dict = await GetMembersMapAsync(sessionId);
-
-        var unitIds = dict.Keys.Distinct().ToList();
-
+        var members = await GetMembersAsync(
+             sessionId: sessionId,
+             minScore: minScore,
+             maxScore: maxScore,
+             skip: skip,
+             take: take,
+             isDescending: isDescending);
+        var unitIds = members.Select(x => x.Id).Distinct().ToList();
         var kvs = await GetManyAsync(unitIds);
-
         return kvs.Where(x => x.Value != null).Select(x => x.Value);
     }
 
@@ -542,8 +532,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
     public async Task<IEnumerable<SessionUnitCacheItem>> SetFriendsIfNotExistsAsync(long ownerId, Func<long, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
     {
-        var ownerStatisticSetKey = OwnerStatisticSetKey(ownerId);
-        if (!await Database.KeyExistsAsync(ownerStatisticSetKey))
+        if (!await Database.KeyExistsAsync(OwnerStatisticSetKey(ownerId)))
         {
             return await SetFriendsAsync(ownerId, fetchTask);
         }
@@ -555,7 +544,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return await SetFriendsIfNotExistsAsync(ownerId, fetchTask) ?? await GetFriendUnitsAsync(ownerId);
     }
 
-    public async Task<IEnumerable<SessionUnitQueryModel>> GetFriendsAsync(
+    public async Task<IEnumerable<FriendModel>> GetFriendsAsync(
         long ownerId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
@@ -578,8 +567,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         var result = redisZset.Select(x =>
         {
             var element = SessionUnitElement.Parse(x.Element);
-            var score = new SessionUnitScore(x.Score);
-            return new SessionUnitQueryModel
+            var score = new FriendScore(x.Score);
+            return new FriendModel
             {
                 OwnerId = element.OwnerId,//ownerId
                 SessionId = element.SessionId,
@@ -623,8 +612,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         // 1. 获取置顶的所有元素（不分页）
         var allPinned = await Database.SortedSetRangeByScoreWithScoresAsync(
             ownerFriendsSetKey,
-            start: SessionUnitScore.Multiplier + minScore,
-            stop: SessionUnitScore.Multiplier + maxScore - 1,
+            start: FriendScore.Multiplier + minScore,
+            stop: FriendScore.Multiplier + maxScore - 1,
             order: order
         );
 
@@ -658,7 +647,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             var nonPinned = await Database.SortedSetRangeByScoreWithScoresAsync(
                 ownerFriendsSetKey,
                 start: minScore,
-                stop: Math.Min(SessionUnitScore.Multiplier, maxScore) - 1,
+                stop: Math.Min(FriendScore.Multiplier, maxScore) - 1,
                 skip: 0,
                 take: remainingTake,
                 order: order
@@ -674,7 +663,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         var nonPinnedOnly = await Database.SortedSetRangeByScoreWithScoresAsync(
             ownerFriendsSetKey,
             start: minScore,
-            stop: Math.Min(SessionUnitScore.Multiplier, maxScore) - 1,
+            stop: Math.Min(FriendScore.Multiplier, maxScore) - 1,
             skip: skipFromNonPinned,
             take: take,
             order: order
@@ -1190,7 +1179,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         }
 
         // 4. 解析旧的 ticks
-        var scoreObj = new SessionUnitScore(oldScore.Value);
+        var scoreObj = new FriendScore(oldScore.Value);
 
         var ticks = scoreObj.Ticks;     // 低位 JS 毫秒
                                         // 如果你担心 double 精度，可以加  Math.Round

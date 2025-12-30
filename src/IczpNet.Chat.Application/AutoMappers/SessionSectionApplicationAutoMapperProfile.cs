@@ -65,15 +65,17 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
 
         CreateMap<SessionUnit, SessionUnitCacheItem>();
 
-        CreateMap<SessionUnitCacheItem, SessionUnitCacheDto>(MemberList.None)
+        CreateMap<SessionUnitCacheItem, SessionUnitFriendDto>(MemberList.None)
             //.Ignore(x => x.Setting)
             //.Ignore(x => x.Destination)
             ;
-        CreateMap<SessionUnitCacheDto, SessionUnitCacheDto>()
+        CreateMap<SessionUnitFriendDto, SessionUnitFriendDto>()
             .ForMember(x => x.Setting, opt => opt.MapFrom(y => y.Setting))
             .ForMember(x => x.Destination, opt => opt.MapFrom(y => y.Destination))
             .PreserveReferences()
             .MaxDepth(3);
+
+        CreateMap<SessionUnitCacheItem, SessionUnitMemberDto>(MemberList.None);
 
 
         //CreateMap<SessionUnitModel, SessionUnitOwnerDto>();
