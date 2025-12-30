@@ -234,7 +234,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         foreach (var unit in unitList)
         {
             var element = new SessionUnitElement(sessionId, unit.OwnerId, unit.Id);
-            var score = MemberScore.Create(false, unit.CreationTime);
+            var score = MemberScore.Create(unit.IsCreator, unit.CreationTime);
             _ = batch.SortedSetAddAsync(sessionMembersSetKey, element, score);
 
             var unitKey = UnitKey(unit.Id);
@@ -367,7 +367,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
                    SessionId = element.SessionId,
                    OwnerId = element.OwnerId,
                    Id = element.SessionUnitId,
-                   JoinedTime = score.CreationTime,
+                   CreationTime = score.CreationTime,
                    IsCreator = score.IsCreator
                };
            }); ;

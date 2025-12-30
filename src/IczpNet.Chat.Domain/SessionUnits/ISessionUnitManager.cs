@@ -490,4 +490,6 @@ public interface ISessionUnitManager
         CancellationToken cancellationToken = default);
 
     Task<IEnumerable<SessionUnitCacheItem>> LoadFriendsIfNotExistsAsync(long ownerId);
+
+    Task<IEnumerable<SessionUnitCacheItem>> LoadMembersIfNotExistsAsync(Guid sessionUnitId);
 }

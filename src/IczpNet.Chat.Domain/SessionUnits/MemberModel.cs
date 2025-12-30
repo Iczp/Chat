@@ -4,6 +4,6 @@ namespace IczpNet.Chat.SessionUnits;
 
 public class MemberModel: UnitModelBase
 {
-    public DateTime JoinedTime { get; set; }
+    public DateTime CreationTime { get; set; }
     public bool IsCreator { get; set; }
 }

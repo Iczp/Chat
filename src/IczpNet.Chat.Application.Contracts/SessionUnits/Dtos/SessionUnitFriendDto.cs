@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 
 namespace IczpNet.Chat.SessionUnits.Dtos;
 
-public class SessionUnitCacheDto : SessionUnitCacheItem
+public class SessionUnitFriendDto : SessionUnitCacheItem
 {
     [JsonIgnore]
     public virtual string SearchText { get; set; }

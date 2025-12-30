@@ -129,11 +129,6 @@ public class SessionUnitManager(
                         OwnerObjectType = x.OwnerObjectType,
                         DestinationId = x.DestinationId,
                         DestinationObjectType = x.DestinationObjectType,
-                        IsPublic = x.Setting.IsPublic,
-                        IsStatic = x.Setting.IsStatic,
-                        IsVisible = x.Setting.IsVisible,
-                        IsEnabled = x.Setting.IsEnabled,
-                        //ReadedMessageId = x.Setting.ReadedMessageId,
                         PublicBadge = x.PublicBadge,
                         PrivateBadge = x.PrivateBadge,
                         RemindAllCount = x.RemindAllCount,
@@ -143,7 +138,17 @@ public class SessionUnitManager(
                         Ticks = x.Ticks,
                         Sorting = x.Sorting,
                         CreationTime = x.CreationTime,
+
+                        //ReadedMessageId = x.Setting.ReadedMessageId,
+                        IsPublic = x.Setting.IsPublic,
+                        IsStatic = x.Setting.IsStatic,
+                        IsVisible = x.Setting.IsVisible,
+                        IsEnabled = x.Setting.IsEnabled,
+
                         IsImmersed = x.Setting.IsImmersed,
+                        IsCreator = x.Setting.IsCreator,
+                        Rename = x.Setting.Rename,
+                        MemberName = x.Setting.MemberName,
                     })
                     .ToList();
 
@@ -1421,5 +1426,12 @@ public class SessionUnitManager(
         return await SessionUnitCacheManager.SetFriendsIfNotExistsAsync(ownerId,
              async (ownerId) =>
                  await GetListByOwnerIdAsync(ownerId));
+    }
+
+    public virtual async Task<IEnumerable<SessionUnitCacheItem>> LoadMembersIfNotExistsAsync(Guid sessionId)
+    {
+        return await SessionUnitCacheManager.SetMembersIfNotExistsAsync(sessionId,
+             async (ownerId) =>
+                 await GetOrAddCacheListAsync(ownerId));
     }
 }
