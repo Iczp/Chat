@@ -1167,8 +1167,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         SetUnit(batch, unit, refreshExpire: true);
 
         ZsetUpdateIfExistsAsync(batch, OwnerFollowingSetKey(unit.OwnerId), unit.Id.ToString(), counter.FollowingCount);
-        ZsetUpdateIfExistsAsync(batch, OwnerRemindAllSetKey(unit.OwnerId), unit.Id.ToString(), counter.RemindAllCount);
-        ZsetUpdateIfExistsAsync(batch, OwnerRemindMeSetKey(unit.OwnerId), unit.Id.ToString(), counter.RemindMeCount);
+        ZsetUpdateIfExistsAsync(batch, OwnerRemindAllSetKey(unit.OwnerId), unit.Id.ToString(), counter.RemindAllCount, removeWhenZero: true);
+        ZsetUpdateIfExistsAsync(batch, OwnerRemindMeSetKey(unit.OwnerId), unit.Id.ToString(), counter.RemindMeCount, removeWhenZero: true);
         ZsetUpdateIfExistsAsync(batch, OwnerImmersedSetKey(unit.OwnerId), unit.Id.ToString(), counter.PublicBadge);
         ZsetUpdateIfExistsAsync(batch, OwnerPinnedBadgeSetKey(unit.OwnerId), unit.Id.ToString(), counter.PublicBadge);
     }

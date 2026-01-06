@@ -32,10 +32,18 @@ if not redis.call('ZSCORE', KEYS[1], ARGV[1]) then
     return nil
 end
 
--- 直接修改 score（不新增成员）
-redis.call('ZADD', KEYS[1], 'XX', ARGV[2], ARGV[1])
+local score = tonumber(ARGV[2])
+local deleteWhenZero = tonumber(ARGV[3]) == 1
 
-return tonumber(ARGV[2])
+if score == 0 and deleteWhenZero then
+    redis.call('ZREM', KEYS[1], ARGV[1])
+    return 0
+end
+
+-- 直接修改 score（不新增成员）
+redis.call('ZADD', KEYS[1], 'XX', score, ARGV[1])
+
+return score
 ";
     /// <summary>
     /// 1. key 不存在 : 返回 nil（不创建）
@@ -222,16 +230,16 @@ return tonumber(newValue)
             [member, increment]);
     }
 
-    protected static Task<RedisResult> ZsetUpdateIfExistsAsync(IDatabaseAsync batch, string key, string member, double score)
+    protected static Task<RedisResult> ZsetUpdateIfExistsAsync(IDatabaseAsync batch, string key, string member, double score, bool removeWhenZero = false)
     {
         return batch.ScriptEvaluateAsync(ZsetUpdateIfExistsScript,
             [key],
-            [member, score]);
+            [member, score, removeWhenZero]);
     }
 
-    protected static void ZsetDecrementOrDelete(IBatch batch, string key, string member, double decrement, bool deleteWhenZero = true)
+    protected static void ZsetDecrementOrDelete(IBatch batch, string key, string member, double decrement, bool removeWhenZero = true)
     {
-        if (decrement == 0 && deleteWhenZero)
+        if (decrement == 0 && removeWhenZero)
         {
             _ = batch.SortedSetRemoveAsync(key, member);
         }
@@ -241,11 +249,11 @@ return tonumber(newValue)
         }
     }
 
-    protected static void Zset1DecrementOrDelete(IBatch batch, string key, string member, double decrement, bool deleteWhenZero = true)
+    protected static void Zset1DecrementOrDelete(IBatch batch, string key, string member, double decrement, bool removeWhenZero = true)
     {
         _ = batch.ScriptEvaluateAsync(DecrementOrDeleteZsetScript,
             [key],
-            [member, decrement, deleteWhenZero ? 1 : 0]);
+            [member, decrement, removeWhenZero ? 1 : 0]);
     }
 
 }
