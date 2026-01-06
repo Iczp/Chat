@@ -95,14 +95,14 @@ public interface ISessionUnitCacheManager
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    Task<IDictionary<long, double>> GetToppingBySessionAsync(Guid sessionId);
+    Task<IDictionary<long, double>> GetPinnedMembersAsync(Guid sessionId);
 
     /// <summary>
     /// 获取会话免打扰映射
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    Task<IDictionary<long, bool>> GetImmersedBySessionAsync(Guid sessionId);
+    Task<IDictionary<long, bool>> GetImmersedMembersAsync(Guid sessionId);
 
     /// <summary>
     /// 设置好友会话单元
@@ -254,7 +254,7 @@ public interface ISessionUnitCacheManager
     /// <param name="ownerId"></param>
     /// <param name="sorting"></param>
     /// <returns></returns>
-    Task SetToppingAsync(Guid sessionId, Guid unitId, long ownerId, long sorting);
+    Task SetPinningAsync(Guid sessionId, Guid unitId, long ownerId, long sorting);
 
     /// <summary>
     /// 变更免打扰状态
@@ -264,4 +264,19 @@ public interface ISessionUnitCacheManager
     /// <returns></returns>
     Task ChangeImmersedAsync(Guid unitId, bool isImmersed);
 
+    /// <summary>
+    /// 取消关注
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <param name="unitIdList"></param>
+    /// <returns></returns>
+    Task UnfollowAsync(long ownerId, List<Guid> unitIdList);
+
+    /// <summary>
+    /// 添加关注
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <param name="unitIdList"></param>
+    /// <returns></returns>
+    Task FollowAsync(long ownerId, List<Guid> unitIdList);
 }

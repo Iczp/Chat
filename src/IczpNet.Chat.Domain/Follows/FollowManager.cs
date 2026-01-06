@@ -1,4 +1,5 @@
 ﻿using IczpNet.AbpCommons;
+using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.Settings;
 using System;
@@ -11,11 +12,14 @@ using Volo.Abp.Settings;
 
 namespace IczpNet.Chat.Follows;
 
-public class FollowManager(ISessionUnitManager sessionUnitManager,
+public class FollowManager(
+    ISessionUnitManager sessionUnitManager,
+    ISessionUnitCacheManager sessionUnitCacheManager,
     IRepository<Follow> repository,
     ISettingProvider settingProvider) : DomainService, IFollowManager
 {
     protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
+    public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
     protected IRepository<Follow> Repository { get; } = repository;
     protected ISettingProvider SettingProvider { get; } = settingProvider;
 
@@ -45,7 +49,7 @@ public class FollowManager(ISessionUnitManager sessionUnitManager,
         return await Repository.CountAsync(x => x.OwnerSessionUnitId == ownerId);
     }
 
-    public async Task<bool> CreateAsync(Guid sessionUnitId, List<Guid> idList)
+    public async Task<bool> CreateAsync(Guid sessionUnitId, List<Guid> unitIdList)
     {
         var followingCount = await GetFollowingCountAsync(sessionUnitId);
 
@@ -55,29 +59,29 @@ public class FollowManager(ISessionUnitManager sessionUnitManager,
 
         var owner = await SessionUnitManager.GetAsync(sessionUnitId);
 
-        return await CreateAsync(owner, idList);
+        return await CreateAsync(owner, unitIdList);
     }
 
-    public async Task<bool> CreateAsync(SessionUnit owner, List<Guid> idList)
+    public async Task<bool> CreateAsync(SessionUnit ownerUnit, List<Guid> unitIdList)
     {
-        var destinationList = (await SessionUnitManager.GetManyAsync([.. idList.Distinct()]))
+        var destinationList = (await SessionUnitManager.GetManyAsync([.. unitIdList.Distinct()]))
             .Select(x => x.Value);
 
-        Assert.If(idList.Contains(owner.Id), $"Unable following oneself.");
+        Assert.If(unitIdList.Contains(ownerUnit.Id), $"Unable following oneself.");
 
         foreach (var item in destinationList)
         {
-            Assert.If(owner.SessionId != item.SessionId, $"Not in the same session,id:{item.Id}");
+            Assert.If(ownerUnit.SessionId != item.SessionId, $"Not in the same session,id:{item.Id}");
         }
 
         var followedIdList = (await Repository.GetQueryableAsync())
-             .Where(x => x.OwnerSessionUnitId == owner.Id)
+             .Where(x => x.OwnerSessionUnitId == ownerUnit.Id)
              .Select(x => x.DestinationSessionUnitId)
              .ToList();
 
-        var newList = idList.Except(followedIdList)
-            .Where(x => x != owner.Id)
-            .Select(x => new Follow(owner, x))
+        var newList = unitIdList.Except(followedIdList)
+            .Where(x => x != ownerUnit.Id)
+            .Select(x => new Follow(ownerUnit, x))
             .ToList();
 
         if (newList.Count != 0)
@@ -85,17 +89,14 @@ public class FollowManager(ISessionUnitManager sessionUnitManager,
             await Repository.InsertManyAsync(newList, autoSave: true);
         }
 
+        await SessionUnitCacheManager.FollowAsync(ownerUnit.OwnerId, unitIdList);
         return true;
     }
 
-    public async Task DeleteAsync(Guid sessionUnitId, List<Guid> idList)
+    public async Task DeleteAsync(SessionUnit ownerUnit, List<Guid> unitIdList)
     {
-        await Repository.DeleteAsync(x => x.OwnerSessionUnitId == sessionUnitId && idList.Contains(x.DestinationSessionUnitId));
-    }
-
-    public async Task DeleteAsync(SessionUnit owner, List<Guid> idList)
-    {
-        await DeleteAsync(owner.Id, idList);
+        await Repository.DeleteAsync(x => x.OwnerSessionUnitId == ownerUnit.Id && unitIdList.Contains(x.DestinationSessionUnitId));
+        await SessionUnitCacheManager.UnfollowAsync(ownerUnit.OwnerId, unitIdList);
     }
 
     public async Task<int> GetFollowingCountAsync(long chatObjectId)
