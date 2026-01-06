@@ -30,4 +30,9 @@ public class SessionUnitStatistic
     /// 
     /// </summary>
     public long? Immersed { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public long? Pinned { get; set; }
 }
