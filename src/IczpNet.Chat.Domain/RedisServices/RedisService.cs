@@ -20,11 +20,29 @@ public abstract class RedisService : DomainService
 
 
     /// <summary>
+    /// Zset 仅在存在时修改
+    /// </summary>
+    protected static string ZsetUpdateIfExistsScript => @"
+if redis.call('EXISTS', KEYS[1]) ~= 1 then
+    return nil
+end
+
+-- 成员不存在，不处理
+if not redis.call('ZSCORE', KEYS[1], ARGV[1]) then
+    return nil
+end
+
+-- 直接修改 score（不新增成员）
+redis.call('ZADD', KEYS[1], 'XX', ARGV[2], ARGV[1])
+
+return tonumber(ARGV[2])
+";
+    /// <summary>
     /// 1. key 不存在 : 返回 nil（不创建）
     /// 2. key 存在 : 执行 HINCRBY(key, field, increment)
     /// 3. 若结果 小于 0, 设置为 0
     /// </summary>
-    protected static string IncrementIfExistsScript => @"
+    protected static string HashIncrementIfExistsScript => @"
 if redis.call('EXISTS', KEYS[1]) == 1 then
     local newValue = redis.call('HINCRBY', KEYS[1], ARGV[1], ARGV[2])
     if newValue < 0 then
@@ -37,13 +55,51 @@ else
     return nil
 end
 ";
+
+    /// <summary>
+    /// Key1 不存在 : 返回 nil（不创建）
+    /// </summary>
+    protected static string HIncrementIfGuardKeyExistScript => @"
+if redis.call('EXISTS', KEYS[1]) ~= 1 then
+    return nil
+end
+
+local newValue = redis.call('HINCRBY', KEYS[2], ARGV[1], ARGV[2])
+
+if newValue < 0 then
+    redis.call('HSET', KEYS[2], ARGV[1], 0)
+    return 0
+end
+
+return newValue
+
+";
+
+    protected static string ZsetIncrementIfGuardKeyExistScript => @"
+if redis.call('EXISTS', KEYS[1]) ~= 1 then
+    return nil
+end
+
+-- ZSet 增量修改
+local newValue = redis.call('ZINCRBY', KEYS[2], ARGV[2], ARGV[1])
+
+-- 不允许小于 0
+if tonumber(newValue) < 0 then
+    redis.call('ZADD', KEYS[2], 0, ARGV[1])
+    return 0
+end
+
+return tonumber(newValue)
+";
+
+
     /// <summary>
     /// key 不存在 → 返回 nil（不创建）
     /// key 存在 & member 存在 → ZINCRBY
     /// 结果< 0 → 设为 0
     /// member 不存在 → 不创建，返回 nil
     /// </summary>
-    protected static string IncrementIfExistsZsetScript => @"
+    protected static string ZsetIncrementIfExistsScript => @"
 if redis.call('EXISTS', KEYS[1]) == 1 then
     local current = redis.call('ZSCORE', KEYS[1], ARGV[1])
     if not current then
@@ -145,20 +201,35 @@ return tonumber(newValue)
         return dict;
     }
 
-    protected static void IncrementIfExists(IBatch batch, string key, string member, double increment)
+    protected static void HashIncrementIfExist(IBatch batch, string key, string member, double increment)
     {
-        _ = batch.ScriptEvaluateAsync(IncrementIfExistsScript,
-            [key],
-            [member, increment]);
-    }
-    protected Task<RedisResult> IncrementIfExistsAsync(string key, string member, double increment)
-    {
-        return Database.ScriptEvaluateAsync(IncrementIfExistsScript,
+        _ = batch.ScriptEvaluateAsync(HashIncrementIfExistsScript,
             [key],
             [member, increment]);
     }
 
-    protected static void DecrementOrDeleteZset(IBatch batch, string key, string member, double decrement, bool deleteWhenZero = true)
+    protected Task<RedisResult> HashIncrementIfExistsAsync(string key, string member, double increment)
+    {
+        return Database.ScriptEvaluateAsync(HashIncrementIfExistsScript,
+            [key],
+            [member, increment]);
+    }
+
+    protected static void ZsetIncrementIfGuardKeyExist(IBatch batch, string guardKey, string key, string member, double increment)
+    {
+        _ = batch.ScriptEvaluateAsync(ZsetIncrementIfGuardKeyExistScript,
+            [guardKey, key],
+            [member, increment]);
+    }
+
+    protected static Task<RedisResult> ZsetUpdateIfExistsAsync(IDatabaseAsync batch, string key, string member, double score)
+    {
+        return batch.ScriptEvaluateAsync(ZsetUpdateIfExistsScript,
+            [key],
+            [member, score]);
+    }
+
+    protected static void ZsetDecrementOrDelete(IBatch batch, string key, string member, double decrement, bool deleteWhenZero = true)
     {
         if (decrement == 0 && deleteWhenZero)
         {
@@ -166,10 +237,11 @@ return tonumber(newValue)
         }
         else
         {
-            _ = batch.ScriptEvaluateAsync(IncrementIfExistsZsetScript, [key], [member, -decrement]);
+            _ = batch.ScriptEvaluateAsync(ZsetIncrementIfExistsScript, [key], [member, -decrement]);
         }
     }
-    protected static void DecrementOrDeleteZset1(IBatch batch, string key, string member, double decrement, bool deleteWhenZero = true)
+
+    protected static void Zset1DecrementOrDelete(IBatch batch, string key, string member, double decrement, bool deleteWhenZero = true)
     {
         _ = batch.ScriptEvaluateAsync(DecrementOrDeleteZsetScript,
             [key],
