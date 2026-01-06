@@ -22,12 +22,12 @@ public interface IFollowManager
 
     Task<int> GetFollowerCountAsync(long chatObjectId);
 
-    Task<bool> CreateAsync(Guid sessionUnitId, List<Guid> idList);
+    Task<bool> CreateAsync(Guid sessionUnitId, List<Guid> unitIdList);
 
-    Task<bool> CreateAsync(SessionUnit owner, List<Guid> idList);
+    Task<bool> CreateAsync(SessionUnit ownerUnit, List<Guid> unitIdList);
 
-    Task DeleteAsync(Guid sessionUnitId, List<Guid> idList);
+    //Task DeleteAsync(Guid sessionUnitId, List<Guid> idList);
 
-    Task DeleteAsync(SessionUnit owner, List<Guid> idList);
+    Task DeleteAsync(SessionUnit ownerUnit, List<Guid> unitIdList);
     
 }

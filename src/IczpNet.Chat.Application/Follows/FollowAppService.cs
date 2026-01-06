@@ -74,11 +74,11 @@ public class FollowAppService(
     [HttpPost]
     public async Task<bool> CreateAsync([FromQuery] FollowCreateInput input)
     {
-        var owner = await SessionUnitManager.GetAsync(input.SessionUnitId);
+        var ownerUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
 
         //check owner
 
-        return await FollowManager.CreateAsync(owner, input.IdList);
+        return await FollowManager.CreateAsync(ownerUnit, input.IdList);
     }
 
     /// <summary>
@@ -89,9 +89,9 @@ public class FollowAppService(
     [HttpPost]
     public async Task DeleteAsync([FromQuery] FollowDeleteInput input)
     {
-        var owner = await SessionUnitManager.GetAsync(input.SessionUnitId);
+        var ownerUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
         //check owner
-        await FollowManager.DeleteAsync(input.SessionUnitId, input.IdList);
+        await FollowManager.DeleteAsync(ownerUnit, input.IdList);
     }
 
 

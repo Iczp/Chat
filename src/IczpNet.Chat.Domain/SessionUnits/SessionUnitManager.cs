@@ -382,7 +382,7 @@ public class SessionUnitManager(
         var result = await SetEntityAsync(entity, x => x.SetTopping(sorting));
 
         //update cache
-        await SessionUnitCacheManager.SetToppingAsync(entity.SessionId.Value, entity.Id, entity.OwnerId, sorting);
+        await SessionUnitCacheManager.SetPinningAsync(entity.SessionId.Value, entity.Id, entity.OwnerId, sorting);
 
         return result;
     }
