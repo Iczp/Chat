@@ -162,7 +162,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     private static string F_Total_RemindMe => nameof(SessionUnitStatistic.RemindMe);
     private static string F_Total_RemindAll => nameof(SessionUnitStatistic.RemindAll);
     private static string F_Total_Immersed => nameof(SessionUnitStatistic.Immersed);
-    private static string F_Total_Type => nameof(SessionUnitStatistic.Immersed);
+    private static string F_Total_Pinned => nameof(SessionUnitStatistic.Pinned);
 
     #endregion
 
@@ -510,6 +510,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         long totalRemindAll = 0;
         long totalFollowing = 0;
         long totalImmersed = 0;
+        long totalPinned = 0;
 
         var countMap = new Dictionary<ChatObjectTypeEnums?, long>();
 
@@ -529,6 +530,12 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             SetOwnerRemindMe(batch, unit);
             SetOwnerRemindAll(batch, unit);
             SetOwnerFollowing(batch, unit);
+
+            //Pinned
+            if (unit.Sorting > 0)
+            {
+                totalPinned += unit.PublicBadge;
+            }
             //IsImmersed
             if (unit.IsImmersed)
             {
@@ -552,6 +559,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         _ = batch.HashSetAsync(ownerStatisticSetKey, F_Total_RemindAll, totalRemindAll);
         _ = batch.HashSetAsync(ownerStatisticSetKey, F_Total_Following, totalFollowing);
         _ = batch.HashSetAsync(ownerStatisticSetKey, F_Total_Immersed, totalImmersed);
+        _ = batch.HashSetAsync(ownerStatisticSetKey, F_Total_Pinned, totalPinned);
         _ = batch.KeyExpireAsync(ownerStatisticSetKey, _cacheExpire);
 
         _ = batch.KeyExpireAsync(ownerFriendsSetKey, _cacheExpire);
@@ -946,6 +954,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             // setTopping/pinned
             if (sorting > 0)
             {
+                HashIncrementIfExist(batch, ownerStatisticSetKey, F_Total_Pinned, 1);
                 ZsetIncrementIfGuardKeyExist(batch, ownerStatisticSetKey, OwnerPinnedBadgeSetKey(ownerId), unitId.ToString(), 1);
             }
 
@@ -1050,111 +1059,6 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     #endregion
 
     #region Remove / Set / Misc
-    private async Task UpdateCounter_BackAsync(SessionUnitCounterInfo counter, Func<Guid, Task<SessionUnitCacheItem>> fetchTask)
-    {
-        var unitKey = UnitKey(counter.Id);
-        SessionUnitCacheItem unit;
-        //
-        var isExists = await Database.KeyExistsAsync(unitKey);
-
-        if (!isExists)
-        {
-            // 加载缓存项
-            unit = await fetchTask(counter.Id);
-
-            unit.PublicBadge = counter.PublicBadge;
-            unit.PrivateBadge = counter.PrivateBadge;
-            unit.RemindAllCount = counter.RemindAllCount;
-            unit.RemindMeCount = counter.RemindMeCount;
-            unit.FollowingCount = counter.FollowingCount;
-            //unit.Setting.ReadedMessageId = counter.ReadedMessageId;
-
-            var batch = Database.CreateBatch();
-            SetUnit(batch, unit, refreshExpire: true);
-            batch.Execute();
-
-            Logger.LogInformation($"[{nameof(UpdateCounter_BackAsync)}] 还未缓存，直接写入缓存:{counter}");
-            return;
-        }
-
-        // -----------------------------
-        // 2. 先读旧值（只读）
-        // -----------------------------
-        var readBatch = Database.CreateBatch();
-        //old badge
-        var taskPublicOld = readBatch.HashGetAsync(unitKey, F_PublicBadge);
-        var taskPrivateOld = readBatch.HashGetAsync(unitKey, F_PrivateBadge);
-        var taskRemindMeCountOld = readBatch.HashGetAsync(unitKey, F_RemindMeCount);
-        var taskRemindAllCountOld = readBatch.HashGetAsync(unitKey, F_RemindAllCount);
-        var taskFollowingCountOld = readBatch.HashGetAsync(unitKey, F_FollowingCount);
-        var taskImmersedOld = readBatch.HashGetAsync(unitKey, F_Immersed);
-        readBatch.Execute();
-
-        var oldPublic = await taskPublicOld;
-        var oldPrivate = await taskPrivateOld;
-        var oldRemindMeCount = await taskRemindMeCountOld;
-        var oldRemindAllCount = await taskRemindAllCountOld;
-        var oldFollowingCount = await taskFollowingCountOld;
-        var oldImmersed = await taskImmersedOld;
-
-        // 3. 写入新值（只写）
-        // -----------------------------
-        var writeBatch = Database.CreateBatch();
-
-        _ = writeBatch.HashSetAsync(unitKey, F_PublicBadge, counter.PublicBadge);
-        _ = writeBatch.HashSetAsync(unitKey, F_PrivateBadge, counter.PrivateBadge);
-        _ = writeBatch.HashSetAsync(unitKey, F_RemindAllCount, counter.RemindAllCount);
-        _ = writeBatch.HashSetAsync(unitKey, F_RemindMeCount, counter.RemindMeCount);
-        _ = writeBatch.HashSetAsync(unitKey, F_FollowingCount, counter.FollowingCount);
-        //_ = writeBatch.HashSetAsync(unitKey, F_Setting_ReadedMessageId, counter.ReadedMessageId);
-
-        if (_cacheExpire.HasValue)
-        {
-            _ = writeBatch.KeyExpireAsync(unitKey, _cacheExpire);
-        }
-
-        writeBatch.Execute();
-
-        Logger.LogInformation($"[{nameof(UpdateCounter_BackAsync)}] 已缓存，直接更新缓存:{counter}");
-
-        // -----------------------------
-        // 减量更新 Owner 总角标（key 必须已存在才更新）
-        // -----------------------------
-        var ownerStatisticSetKey = OwnerStatisticSetKey(counter.OwnerId);
-
-        static long ToLong(RedisValue v) => v.HasValue && long.TryParse(v.ToString(), out var n) ? n : 0;
-        static bool ToBool(RedisValue v) => v.HasValue && bool.TryParse(v.ToString(), out var n) && n;
-
-        var oldPublicBadge = ToLong(oldPublic);
-        var oldPrivatePublic = ToLong(oldPrivate);
-        var remindMeCount = ToLong(oldRemindMeCount);
-        var remindAllCount = ToLong(oldRemindAllCount);
-        var followingCount = ToLong(oldFollowingCount);
-        //静默方式
-        var immersed = ToBool(oldImmersed);
-
-        async Task UpdateAsync(string field, RedisValue redisValue)
-        {
-            var val = ToLong(redisValue);
-
-            if (val > 0)
-            {
-                Logger.LogInformation($"ownerId:{counter.OwnerId},需要减量 [{field}]:{val}");
-                _ = await HashIncrementIfExistsAsync(ownerStatisticSetKey, field, -val);
-            }
-        }
-
-
-        await Task.WhenAll(
-            UpdateAsync(immersed ? F_Total_Immersed : F_Total_Public, oldPublicBadge),
-            UpdateAsync(F_Total_Private, oldPrivatePublic),
-            UpdateAsync(F_Total_RemindMe, oldRemindMeCount),
-            UpdateAsync(F_Total_RemindAll, oldRemindAllCount),
-            UpdateAsync(F_Total_Following, oldFollowingCount)
-         );
-    }
-
-
 
     private void UpdateUnit(IBatch batch, SessionUnitCacheItem unit, SessionUnitCounterInfo counter)
     {
@@ -1216,7 +1120,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         // 减量更新 Owner 总角标（key 必须已存在才更新）
         var ownerStatisticSetKey = OwnerStatisticSetKey(counter.OwnerId);
 
-        void UpdateStatisticAsync(string field, int val)
+        void DecrementStatisticAsync(string field, int val)
         {
             if (val > 0)
             {
@@ -1225,12 +1129,13 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             }
         }
 
-        UpdateStatisticAsync(immersed ? F_Total_Immersed : F_Total_Public, publicBadge);
-        UpdateStatisticAsync(F_Total_Private, privatePublic);
-        UpdateStatisticAsync(F_Total_RemindMe, remindMeCount);
-        UpdateStatisticAsync(F_Total_RemindAll, remindAllCount);
-        UpdateStatisticAsync(F_Total_Following, followingCount);
+        DecrementStatisticAsync(immersed ? F_Total_Immersed : F_Total_Public, publicBadge);
 
+        DecrementStatisticAsync(F_Total_Pinned, publicBadge);
+        DecrementStatisticAsync(F_Total_Private, privatePublic);
+        DecrementStatisticAsync(F_Total_RemindMe, remindMeCount);
+        DecrementStatisticAsync(F_Total_RemindAll, remindAllCount);
+        DecrementStatisticAsync(F_Total_Following, followingCount);
 
         batch.Execute();
     }
