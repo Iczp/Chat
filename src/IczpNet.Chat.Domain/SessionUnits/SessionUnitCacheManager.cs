@@ -1235,7 +1235,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             //_ = tran.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerStatisticSetKey], [F_Total_Immersed, immersedDelta]);
 
             HashIncrementIfExist(tran, ownerStatisticSetKey, F_Total_Public, publicDelta);
-            HashIncrementIfExist(tran, ownerStatisticSetKey, F_Total_Public, immersedDelta);
+            HashIncrementIfExist(tran, ownerStatisticSetKey, F_Total_Immersed, immersedDelta);
 
             //destinations
             //_ = tran.ScriptEvaluateAsync(IncrementIfExistsScript, [StatisticTypedSetKey(unit.OwnerId)], [unit.DestinationObjectType.ToString(), publicDelta]);
