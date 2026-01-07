@@ -677,6 +677,33 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return await Database.SortedSetLengthAsync(OwnerFriendsSetKey(ownerId));
     }
 
+    /// <summary>
+    /// 获取指定类型的好友列表
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <param name="friendType"></param>
+    /// <returns>Key:UnitId,Value:OwnerId</returns>
+    public async Task<Dictionary<Guid, long>> GetTypedFirendsAsync(long ownerId, ChatObjectTypeEnums friendType)
+    {
+        var entries = await Database.HashGetAllAsync(OwnerFriendTypedHashKey(ownerId, friendType));
+        var result = entries.ToDictionary(
+            x => x.Name.ToGuid(),
+            x => x.Value.ToLong());
+
+        return result;
+    }
+
+    public async Task<Dictionary<ChatObjectTypeEnums, long>> GetTypedFirendsCountAsync(long ownerId, IEnumerable<ChatObjectTypeEnums> types = null)
+    {
+        var result = new Dictionary<ChatObjectTypeEnums, long>();
+        var typeList = types ?? Enum.GetValues<ChatObjectTypeEnums>();
+        foreach (var item in typeList)
+        {
+            var length = await Database.HashLengthAsync(OwnerFriendTypedHashKey(ownerId, item));
+            result.TryAdd(item, length);
+        }
+        return result;
+    }
 
     protected async Task<List<SortedSetEntry>> GetHistoryByOwnerInternalAsync(
         long ownerId,
@@ -1325,6 +1352,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         //}
         var committed = await tran.ExecuteAsync();
     }
+
+
 
     #endregion
 }

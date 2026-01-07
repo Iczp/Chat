@@ -181,6 +181,22 @@ public interface ISessionUnitCacheManager
     Task<long> GetFirendsCountAsync(long ownerId);
 
     /// <summary>
+    /// 获取指定类型的好友列表
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <param name="friendType"></param>
+    /// <returns>Key:UnitId,Value:OwnerId</returns>
+    Task<Dictionary<Guid, long>> GetTypedFirendsAsync(long ownerId, ChatObjectTypeEnums friendType);
+
+    /// <summary>
+    /// 获取指定类型的好友数量
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <param name="types">为null时，获取全部</param>
+    /// <returns></returns>
+    Task<Dictionary<ChatObjectTypeEnums, long>> GetTypedFirendsCountAsync(long ownerId, IEnumerable<ChatObjectTypeEnums> types = null);
+
+    /// <summary>
     /// 获取会话单元(多个)
     /// </summary>
     /// <param name="unitIds"></param>
@@ -279,4 +295,6 @@ public interface ISessionUnitCacheManager
     /// <param name="unitIdList"></param>
     /// <returns></returns>
     Task FollowAsync(long ownerId, List<Guid> unitIdList);
+
+
 }

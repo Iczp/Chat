@@ -544,7 +544,8 @@ public class SessionUnitCacheAppService(
             AppUserId = owner.AppUserId,
             ChatObjectId = ownerId,
             Statistic = await SessionUnitCacheManager.GetStatisticAsync(ownerId),
-            BadgeMap = await SessionUnitCacheManager.GetRawBadgeMapAsync(ownerId)
+            BadgeMap = await SessionUnitCacheManager.GetRawBadgeMapAsync(ownerId),
+            CountMap = await SessionUnitCacheManager.GetTypedFirendsCountAsync(ownerId),
         };
     }
 
