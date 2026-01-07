@@ -1069,38 +1069,24 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return await Database.KeyDeleteAsync(OwnerStatisticSetKey(ownerId));
     }
 
-    public virtual async Task<Dictionary<string, long>> GetRawBadgeMapAsync(long ownerId)
+    public virtual async Task<Dictionary<ChatObjectTypeEnums, long>> GetRawBadgeMapAsync(long ownerId)
     {
         var entries = await Database.HashGetAllAsync(StatisticTypedSetKey(ownerId));
         var result = entries.ToDictionary(
-            x => x.Name.ToString(),
-            x => long.TryParse(x.Value.ToString(), out var v) ? v : 0);
+            x => x.Name.ToEnum<ChatObjectTypeEnums>(),
+            x => x.Value.ToLong());
 
         return result;
     }
     public async Task<Dictionary<ChatObjectTypeEnums, long>> GetBadgeMapAsync(long ownerId)
     {
         var raw = await GetRawBadgeMapAsync(ownerId);
-
-        var map = new Dictionary<ChatObjectTypeEnums, long>();
-
-        foreach (var (key, value) in raw)
-        {
-            if (!Enum.TryParse<ChatObjectTypeEnums>(key, true, out var type))
-            {
-                continue;
-            }
-
-            map[type] = value;
-        }
-
         // 补齐所有枚举
         foreach (var type in Enum.GetValues<ChatObjectTypeEnums>())
         {
-            map.TryAdd(type, 0);
+            raw.TryAdd(type, 0);
         }
-
-        return map;
+        return raw;
     }
 
     #endregion

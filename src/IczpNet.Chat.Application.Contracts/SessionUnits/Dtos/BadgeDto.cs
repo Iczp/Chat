@@ -15,7 +15,7 @@ public class BadgeDto
 
     public virtual SessionUnitStatistic Statistic { get; set; }
 
-    public virtual Dictionary<string,long> BadgeMap { get; set; }
+    public virtual Dictionary<ChatObjectTypeEnums, long> BadgeMap { get; set; }
 
     public virtual Dictionary<ChatObjectTypeEnums, long> CountMap { get; set; }
 

@@ -253,7 +253,7 @@ public interface ISessionUnitCacheManager
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    Task<Dictionary<string, long>> GetRawBadgeMapAsync(long ownerId);
+    Task<Dictionary<ChatObjectTypeEnums, long>> GetRawBadgeMapAsync(long ownerId);
 
     /// <summary>
     /// 获取角标
