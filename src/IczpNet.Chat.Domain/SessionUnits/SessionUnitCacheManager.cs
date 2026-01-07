@@ -63,6 +63,15 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         => $"{Prefix}Owners:Friends:OwnerId-{ownerId}";
 
     /// <summary>
+    /// 好友分类
+    /// </summary>
+    /// <param name="friendType"></param>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    private string OwnerFriendTypedHashKey(long ownerId, ChatObjectTypeEnums? friendType)
+    => $"{Prefix}Owners:FriendTyped:{friendType}:OwnerId-{ownerId}";
+
+    /// <summary>
     /// 置顶的会话单元
     /// </summary>
     /// <param name="ownerId"></param>
@@ -117,6 +126,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// <returns></returns>
     private string StatisticTypedSetKey(long ownerId)
         => $"{Prefix}Owners:StatisticTyped:OwnerId-{ownerId}";
+
+
 
     /// <summary>
     /// 1e16
@@ -205,6 +216,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         _ = batch.SortedSetAddAsync(followingSetKey, unit.Id.ToString(), unit.FollowingCount);
         _ = batch.KeyExpireAsync(followingSetKey, _cacheExpire);
     }
+
+
     private void SetOwnerRemindAll(IBatch batch, SessionUnitCacheItem unit)
     {
         if (unit.RemindAllCount == 0)
@@ -224,6 +237,13 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         var remindMeSetKey = OwnerRemindMeSetKey(unit.OwnerId);
         _ = batch.SortedSetAddAsync(remindMeSetKey, unit.Id.ToString(), unit.RemindMeCount);
         _ = batch.KeyExpireAsync(remindMeSetKey, _cacheExpire);
+    }
+
+    private void SetOwnerFriendTyped(IBatch batch, SessionUnitCacheItem unit)
+    {
+        var firendTypeHashKey = OwnerFriendTypedHashKey(unit.OwnerId, unit.DestinationObjectType);
+        _ = batch.HashSetAsync(firendTypeHashKey, unit.Id.ToString(), unit.DestinationId);
+        _ = batch.KeyExpireAsync(firendTypeHashKey, _cacheExpire);
     }
 
     private void SetSessionPinnedSorting(IBatch batch, SessionUnitCacheItem unit)
@@ -530,7 +550,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             SetOwnerRemindMe(batch, unit);
             SetOwnerRemindAll(batch, unit);
             SetOwnerFollowing(batch, unit);
-
+            SetOwnerFriendTyped(batch, unit);
             //Pinned
             if (unit.Sorting > 0)
             {

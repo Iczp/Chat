@@ -91,7 +91,7 @@ public class SessionUnitManager(
     /// <param name="batchSize"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    private async IAsyncEnumerable<SessionUnitCacheItem> ShardLoadAsync(
+    private async IAsyncEnumerable<SessionUnitCacheItem> LoadUnitsAsync(
         IQueryable<SessionUnit> baseQuery,
         int batchSize = 1000,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -101,7 +101,7 @@ public class SessionUnitManager(
         var cursor = SessionUnitCursor.Start;
         var batchIndex = 0;
         var totalCount = 0;
-        var method = nameof(ShardLoadAsync);
+        var method = nameof(LoadUnitsAsync);
         try
         {
             while (true)
@@ -364,7 +364,7 @@ public class SessionUnitManager(
     }
 
     /// <inheritdoc />
-    public virtual async Task<SessionUnit> SetToppingAsync(SessionUnit entity, bool isTopping)
+    public virtual async Task<SessionUnit> SetPinningAsync(SessionUnit entity, bool isTopping)
     {
         long sorting = 0;
 
@@ -980,7 +980,7 @@ public class SessionUnitManager(
 
         queryable = queryableAction(queryable);
 
-        await foreach (var item in ShardLoadAsync(queryable, batchSize, cancellationToken))
+        await foreach (var item in LoadUnitsAsync(queryable, batchSize, cancellationToken))
         {
             result.Add(item);
         }
