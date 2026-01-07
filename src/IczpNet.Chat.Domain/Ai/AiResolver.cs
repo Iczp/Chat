@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,12 +10,20 @@ namespace IczpNet.Chat.Ai;
 
 public class AiResolver : DomainService, IAiResolver, ISingletonDependency
 {
-    public ConcurrentDictionary<string, Type> Providers => _providers;
+    // 使用 Lazy<T> 确保 _messageTypeDictionary 只初始化一次
+    private static readonly Lazy<ConcurrentDictionary<string, Type>> lazyDictionary = new(GenerateDictionary);
 
-    private readonly ConcurrentDictionary<string, Type> _providers = new();
+    public static ConcurrentDictionary<string, Type> Providers => lazyDictionary.Value;
 
     public AiResolver()
     {
+
+    }
+
+    private static ConcurrentDictionary<string, Type> GenerateDictionary()
+    {
+        var dictionary = new ConcurrentDictionary<string, Type>();
+
         // 1. 获取所有已加载的程序集
         var typeList = AppDomain.CurrentDomain.GetAssemblies()
             .SelectMany(x => x.GetExportedTypes())
@@ -33,23 +40,25 @@ public class AiResolver : DomainService, IAiResolver, ISingletonDependency
         foreach (var type in typeList)
         {
             var typeName = type.GetCustomAttribute<AiAttribute>(true)?.Name ?? type.FullName;
-            var isAdd = _providers.TryAdd(typeName, type);
+            var isAdd = dictionary.TryAdd(typeName, type);
             //Logger.LogInformation($"Add AI provider '{typeName}' result:{isAdd}.");
         }
+
+        return dictionary;
     }
 
     public Type GetProvider(string name)
     {
-        return _providers[name];
+        return Providers[name];
     }
 
     public bool HasProvider(string name)
     {
-        return !string.IsNullOrWhiteSpace(name) && _providers.ContainsKey(name);
+        return !string.IsNullOrWhiteSpace(name) && Providers.ContainsKey(name);
     }
 
     public Type GetProviderOrDefault(string name)
     {
-        return _providers.GetOrDefault(name);
+        return Providers.GetOrDefault(name);
     }
 }
