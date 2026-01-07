@@ -2,7 +2,7 @@
 
 namespace IczpNet.Chat.SessionUnits.Dtos;
 
-public class SessionUnitCacheScoreGetListInput : GetListInput
+public class SessionUnitMemberGetListInput : GetListInput
 {
     ///// <summary>
     ///// ChatObjectId
@@ -19,4 +19,14 @@ public class SessionUnitCacheScoreGetListInput : GetListInput
     /// 最小Ticks
     /// </summary>
     public double? MaxScore { get; set; }
+
+    /// <summary>
+    /// 是否创建者（群主）
+    /// </summary>
+    public bool? IsCreator { get; set; }
+
+    /// <summary>
+    /// 所属成员Id
+    /// </summary>
+    public long? OwnerId { get; set; }
 }

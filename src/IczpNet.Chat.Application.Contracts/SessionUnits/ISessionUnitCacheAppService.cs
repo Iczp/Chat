@@ -13,9 +13,15 @@ public interface ISessionUnitCacheAppService
 
     Task<List<SessionUnitFriendDto>> GetManyAsync(List<Guid> unitIds);
 
-    Task<PagedResultDto<SessionUnitFriendDto>> GetFriendsAsync([Required] long ownerId, SessionUnitCacheScoreGetListInput input);
+    Task<PagedResultDto<SessionUnitFriendDto>> GetFriendsAsync([Required] long ownerId, SessionUnitFirendGetListInput input);
 
-    Task<PagedResultDto<SessionUnitFriendDto>> GetLatestAsync([Required] long ownerId, SessionUnitCacheScoreGetListInput input);
+    Task<long> GetFriendsCountAsync([Required] long ownerId);
+
+    Task<PagedResultDto<SessionUnitMemberDto>> GetMembersAsync([Required] Guid unitId, SessionUnitMemberGetListInput input);
+    Task<long> GetMembersCountAsync(Guid sessionId);
+
+
+    Task<PagedResultDto<SessionUnitFriendDto>> GetLatestAsync([Required] long ownerId, SessionUnitFirendGetListInput input);
 
     Task<SessionUnitFriendDto> GetAsync(Guid id);
 
@@ -24,8 +30,6 @@ public interface ISessionUnitCacheAppService
     Task<List<BadgeDto>> GetBadgeByUserIdAsync([Required] Guid userId, bool? isImmersed = null);
 
     Task<List<BadgeDto>> GetBadgeByCurrentUserAsync(bool? isImmersed = null);
-
-    Task<long> GetMembersCountAsync(Guid sessionId);
 
 
 }
