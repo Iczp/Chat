@@ -103,8 +103,8 @@ return tonumber(newValue)
 
     /// <summary>
     /// key 不存在 → 返回 nil（不创建）
-    /// key 存在 & member 存在 → ZINCRBY
-    /// 结果< 0 → 设为 0
+    /// key 存在 member 存在 → ZINCRBY
+    /// 结果 小于 0 → 设为 0
     /// member 不存在 → 不创建，返回 nil
     /// </summary>
     protected static string ZsetIncrementIfExistsScript => @"
