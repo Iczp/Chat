@@ -864,7 +864,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     {
         var units = await GetManyAsync([id]);
 
-        return units[0].Value;
+        return units.FirstOrDefault().Value;
     }
 
 
