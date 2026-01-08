@@ -63,6 +63,15 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         => $"{Prefix}Owners:Friends:OwnerId-{ownerId}";
 
     /// <summary>
+    /// 好友分类
+    /// </summary>
+    /// <param name="friendType"></param>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    private string OwnerFriendTypedHashKey(long ownerId, ChatObjectTypeEnums? friendType)
+    => $"{Prefix}Owners:FriendTyped:{friendType}:OwnerId-{ownerId}";
+
+    /// <summary>
     /// 置顶的会话单元
     /// </summary>
     /// <param name="ownerId"></param>
@@ -117,6 +126,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// <returns></returns>
     private string StatisticTypedSetKey(long ownerId)
         => $"{Prefix}Owners:StatisticTyped:OwnerId-{ownerId}";
+
+
 
     /// <summary>
     /// 1e16
@@ -205,6 +216,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         _ = batch.SortedSetAddAsync(followingSetKey, unit.Id.ToString(), unit.FollowingCount);
         _ = batch.KeyExpireAsync(followingSetKey, _cacheExpire);
     }
+
+
     private void SetOwnerRemindAll(IBatch batch, SessionUnitCacheItem unit)
     {
         if (unit.RemindAllCount == 0)
@@ -224,6 +237,13 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         var remindMeSetKey = OwnerRemindMeSetKey(unit.OwnerId);
         _ = batch.SortedSetAddAsync(remindMeSetKey, unit.Id.ToString(), unit.RemindMeCount);
         _ = batch.KeyExpireAsync(remindMeSetKey, _cacheExpire);
+    }
+
+    private void SetOwnerFriendTyped(IBatch batch, SessionUnitCacheItem unit)
+    {
+        var firendTypeHashKey = OwnerFriendTypedHashKey(unit.OwnerId, unit.DestinationObjectType);
+        _ = batch.HashSetAsync(firendTypeHashKey, unit.Id.ToString(), unit.DestinationId);
+        _ = batch.KeyExpireAsync(firendTypeHashKey, _cacheExpire);
     }
 
     private void SetSessionPinnedSorting(IBatch batch, SessionUnitCacheItem unit)
@@ -530,7 +550,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             SetOwnerRemindMe(batch, unit);
             SetOwnerRemindAll(batch, unit);
             SetOwnerFollowing(batch, unit);
-
+            SetOwnerFriendTyped(batch, unit);
             //Pinned
             if (unit.Sorting > 0)
             {
@@ -657,6 +677,33 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return await Database.SortedSetLengthAsync(OwnerFriendsSetKey(ownerId));
     }
 
+    /// <summary>
+    /// 获取指定类型的好友列表
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <param name="friendType"></param>
+    /// <returns>Key:UnitId,Value:OwnerId</returns>
+    public async Task<Dictionary<Guid, long>> GetTypedFirendsAsync(long ownerId, ChatObjectTypeEnums friendType)
+    {
+        var entries = await Database.HashGetAllAsync(OwnerFriendTypedHashKey(ownerId, friendType));
+        var result = entries.ToDictionary(
+            x => x.Name.ToGuid(),
+            x => x.Value.ToLong());
+
+        return result;
+    }
+
+    public async Task<Dictionary<ChatObjectTypeEnums, long>> GetTypedFirendsCountAsync(long ownerId, IEnumerable<ChatObjectTypeEnums> types = null)
+    {
+        var result = new Dictionary<ChatObjectTypeEnums, long>();
+        var typeList = types ?? Enum.GetValues<ChatObjectTypeEnums>();
+        foreach (var item in typeList)
+        {
+            var length = await Database.HashLengthAsync(OwnerFriendTypedHashKey(ownerId, item));
+            result.TryAdd(item, length);
+        }
+        return result;
+    }
 
     protected async Task<List<SortedSetEntry>> GetHistoryByOwnerInternalAsync(
         long ownerId,
@@ -1022,38 +1069,24 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return await Database.KeyDeleteAsync(OwnerStatisticSetKey(ownerId));
     }
 
-    public virtual async Task<Dictionary<string, long>> GetRawBadgeMapAsync(long ownerId)
+    public virtual async Task<Dictionary<ChatObjectTypeEnums, long>> GetRawBadgeMapAsync(long ownerId)
     {
         var entries = await Database.HashGetAllAsync(StatisticTypedSetKey(ownerId));
         var result = entries.ToDictionary(
-            x => x.Name.ToString(),
-            x => long.TryParse(x.Value.ToString(), out var v) ? v : 0);
+            x => x.Name.ToEnum<ChatObjectTypeEnums>(),
+            x => x.Value.ToLong());
 
         return result;
     }
     public async Task<Dictionary<ChatObjectTypeEnums, long>> GetBadgeMapAsync(long ownerId)
     {
         var raw = await GetRawBadgeMapAsync(ownerId);
-
-        var map = new Dictionary<ChatObjectTypeEnums, long>();
-
-        foreach (var (key, value) in raw)
-        {
-            if (!Enum.TryParse<ChatObjectTypeEnums>(key, true, out var type))
-            {
-                continue;
-            }
-
-            map[type] = value;
-        }
-
         // 补齐所有枚举
         foreach (var type in Enum.GetValues<ChatObjectTypeEnums>())
         {
-            map.TryAdd(type, 0);
+            raw.TryAdd(type, 0);
         }
-
-        return map;
+        return raw;
     }
 
     #endregion
@@ -1235,7 +1268,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             //_ = tran.ScriptEvaluateAsync(IncrementIfExistsScript, [ownerStatisticSetKey], [F_Total_Immersed, immersedDelta]);
 
             HashIncrementIfExist(tran, ownerStatisticSetKey, F_Total_Public, publicDelta);
-            HashIncrementIfExist(tran, ownerStatisticSetKey, F_Total_Public, immersedDelta);
+            HashIncrementIfExist(tran, ownerStatisticSetKey, F_Total_Immersed, immersedDelta);
 
             //destinations
             //_ = tran.ScriptEvaluateAsync(IncrementIfExistsScript, [StatisticTypedSetKey(unit.OwnerId)], [unit.DestinationObjectType.ToString(), publicDelta]);
@@ -1305,6 +1338,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         //}
         var committed = await tran.ExecuteAsync();
     }
+
+
 
     #endregion
 }

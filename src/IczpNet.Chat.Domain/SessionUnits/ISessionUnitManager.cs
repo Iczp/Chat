@@ -130,15 +130,13 @@ public interface ISessionUnitManager
     /// <returns></returns>
     Task<Guid?> FindIdAsync(Expression<Func<SessionUnit, bool>> predicate);
 
-
-
     /// <summary>
     /// 设置置顶
     /// </summary>
     /// <param name="entity"></param>
-    /// <param name="isTopping"></param>
+    /// <param name="isPinned"></param>
     /// <returns></returns>
-    Task<SessionUnit> SetToppingAsync(SessionUnit entity, bool isTopping);
+    Task<SessionUnit> SetPinningAsync(SessionUnit entity, bool isPinned);
 
     /// <summary>
     /// 设置已读的消息Id

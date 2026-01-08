@@ -108,7 +108,7 @@ public class SessionUnitSettingAppService(
     {
         var entity = await GetAndCheckPolicyAsync(SetToppingPolicyName, sessionUnitId);
 
-        await SessionUnitManager.SetToppingAsync(entity, isTopping);
+        await SessionUnitManager.SetPinningAsync(entity, isTopping);
 
         return await MapToDtoAsync(entity);
     }

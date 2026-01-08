@@ -641,6 +641,27 @@ public static class RedisMapper
         if (Guid.TryParse(s, out var g)) return g;
         return Guid.Empty;
     }
+    public static TEnum ToEnum<TEnum>(this RedisValue rv, TEnum defaultValue = default)
+        where TEnum : struct, Enum
+    {
+        if (rv.IsNull) return defaultValue;
+
+        var s = rv.ToString();
+        if (string.IsNullOrWhiteSpace(s)) return defaultValue;
+
+        // 先按字符串解析（忽略大小写）
+        if (Enum.TryParse<TEnum>(s, true, out var result))
+            return result;
+
+        // 再尝试按数字解析
+        if (long.TryParse(s, out var number) &&
+            Enum.IsDefined(typeof(TEnum), number))
+        {
+            return (TEnum)Enum.ToObject(typeof(TEnum), number);
+        }
+
+        return defaultValue;
+    }
 
     private static object ConvertFromRedisValue(RedisValue rv, Type targetType)
     {
