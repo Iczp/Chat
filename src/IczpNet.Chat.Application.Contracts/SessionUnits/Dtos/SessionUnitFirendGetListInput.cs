@@ -1,47 +1,18 @@
-﻿using IczpNet.Chat.BaseDtos;
+﻿using IczpNet.Chat.Enums;
 
 namespace IczpNet.Chat.SessionUnits.Dtos;
 
-public class SessionUnitFirendGetListInput : GetListInput
+public class SessionUnitFirendGetListInput : SessionUnitLatestGetListInput
 {
-    ///// <summary>
-    ///// ChatObjectId
-    ///// </summary>
-    //[Required]
-    //public long OwnerId { get; set; }
-
     /// <summary>
-    /// 最小Ticks
+    /// 好友归档
+    /// 0: All 全部,
+    /// 1: Pinned 置顶,
+    /// 2: Following 关注,
+    /// 3: RemindAll @所有人,
+    /// 4: RemindMe @我,
+    /// 5: Immersed 静默,
+    /// 6: Creator 创建人,
     /// </summary>
-    public double? MinScore { get; set; }
-
-    /// <summary>
-    /// 最小Ticks
-    /// </summary>
-    public double? MaxScore { get; set; }
-
-    ///// <summary>
-    ///// 是否关注
-    ///// </summary>
-    //public bool? IsFollowing { get; set; }
-
-    ///// <summary>
-    ///// 是否@我
-    ///// </summary>
-    //public bool? IsReminMe { get; set; }
-
-    ///// <summary>
-    ///// 是否@所有人
-    ///// </summary>
-    //public bool? IsReminAll { get; set; }
-
-    ///// <summary>
-    ///// 是否静默消息
-    ///// </summary>
-    //public bool? IsImmersed { get; set; }
-
-    ///// <summary>
-    ///// 是否置顶
-    ///// </summary>
-    //public bool? IsPinned { get; set; }
+    public FriendTypes FriendType { get; set; }
 }

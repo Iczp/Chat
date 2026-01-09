@@ -150,8 +150,6 @@ public class SessionUnitCacheAppService(
         return result;
     }
 
-
-
     private async Task FillLastMessageAsync(IEnumerable<SessionUnitFriendDto> items)
     {
         // fill Setting
@@ -478,9 +476,11 @@ public class SessionUnitCacheAppService(
 
         var unitIds = queryable.ToList();
 
+        var totalCount = await SessionUnitCacheManager.GetTypedFriendsCountAsync(friendType, ownerId);
+
         var items = await GetManyAsync(unitIds);
 
-        return new PagedResultDto<SessionUnitFriendDto>(items.Count, items);
+        return new PagedResultDto<SessionUnitFriendDto>(totalCount, items);
 
     }
 
@@ -603,23 +603,23 @@ public class SessionUnitCacheAppService(
         return item;
     }
 
+
     /// <summary>
     /// 获取最新消息
     /// </summary>
-    /// <param name="ownerId"></param>
     /// <param name="input"></param>
     /// <returns></returns>
-    public async Task<PagedResultDto<SessionUnitFriendDto>> GetLatestAsync([Required] long ownerId, SessionUnitFirendGetListInput input)
+    public async Task<PagedResultDto<SessionUnitFriendDto>> GetLatestAsync(SessionUnitLatestGetListInput input)
     {
         // check owner
-        await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
+        await CheckPolicyForUserAsync(input.OwnerId, () => CheckPolicyAsync(GetListPolicyName, input.OwnerId));
 
         Assert.If(input.MaxResultCount > 100, $"params:{nameof(input.MaxResultCount)} max value: 100");
 
         var minScore = input.MinScore ?? 0;
 
         var queryable = await SessionUnitCacheManager.GetFriendsAsync(
-            ownerId,
+            input.OwnerId,
             minScore: minScore,
             skip: input.SkipCount,
             take: Math.Min(input.MaxResultCount, 100));
@@ -639,31 +639,24 @@ public class SessionUnitCacheAppService(
     /// <summary>
     /// 获取好友会话
     /// </summary>
-    /// <param name="ownerId"></param>
-    /// <param name="friendType">
-    /// 0: All,
-    /// 1: Pinned,
-    /// 2: Following,
-    /// 3: RemindAll,
-    /// 4: RemindMe,
-    /// 5: Immersed,
-    /// </param>
-    /// <param name="input"></param>
-    /// <returns></returns>
-    /// <exception cref="Exception"></exception>
-    public async Task<PagedResultDto<SessionUnitFriendDto>> GetFriendsAsync([Required] long ownerId, FriendTypes friendType, SessionUnitFirendGetListInput input)
+    public async Task<PagedResultDto<SessionUnitFriendDto>> GetFriendsAsync(SessionUnitFirendGetListInput input)
     {
         // check owner
-        await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
+        await CheckPolicyForUserAsync(input.OwnerId, () => CheckPolicyAsync(GetListPolicyName, input.OwnerId));
 
         //加载全部
-        await LoadFriendsIfNotExistsAsync(ownerId);
+        await LoadFriendsIfNotExistsAsync(input.OwnerId);
 
-        return friendType switch
+        return input.FriendType switch
         {
-            FriendTypes.All => await LoadAllFriendsAsync(ownerId, input),
-            FriendTypes.Following or FriendTypes.RemindAll or FriendTypes.RemindMe or FriendTypes.Immersed or FriendTypes.Pinned => await GetTypedFriendsAsync(ownerId, friendType, input),
-            _ => throw new Exception(""),
+            FriendTypes.All => await LoadAllFriendsAsync(input.OwnerId, input),
+            FriendTypes.Following
+            or FriendTypes.RemindAll
+            or FriendTypes.RemindMe
+            or FriendTypes.Immersed
+            or FriendTypes.Pinned
+            or FriendTypes.Creator => await GetTypedFriendsAsync(input.OwnerId, input.FriendType, input),
+            _ => throw new Exception($"Undefined {nameof(input.FriendType)}: {input.FriendType}"),
         };
     }
 
@@ -685,12 +678,11 @@ public class SessionUnitCacheAppService(
     /// <summary>
     /// 获取会话成员
     /// </summary>
-    /// <param name="unitId"></param>
     /// <param name="input"></param>
     /// <returns></returns>
-    public async Task<PagedResultDto<SessionUnitMemberDto>> GetMembersAsync([Required] Guid unitId, SessionUnitMemberGetListInput input)
+    public async Task<PagedResultDto<SessionUnitMemberDto>> GetMembersAsync(SessionUnitMemberGetListInput input)
     {
-        var unit = await GetCacheAsync(unitId);
+        var unit = await GetCacheAsync(input.UnitId);
         var ownerId = unit.OwnerId;
         var sessionId = unit.SessionId.Value;
         // check owner
@@ -775,10 +767,7 @@ public class SessionUnitCacheAppService(
     /// 用户聊天对象角标列表
     /// </summary>
     /// <param name="userId"></param>
-    /// <param name="isImmersed"></param>
-    /// <returns></returns>
-    /// <exception cref="NotImplementedException"></exception>
-    public async Task<List<BadgeDto>> GetBadgeByUserIdAsync([Required] Guid userId, bool? isImmersed = null)
+    public async Task<List<BadgeDto>> GetBadgeByUserIdAsync([Required] Guid userId)
     {
         var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(userId);
 
@@ -797,11 +786,10 @@ public class SessionUnitCacheAppService(
     /// <summary>
     /// 登录用户聊天对象角标列表
     /// </summary>
-    /// <param name="isImmersed"></param>
     /// <returns></returns>
-    public Task<List<BadgeDto>> GetBadgeByCurrentUserAsync(bool? isImmersed = null)
+    public Task<List<BadgeDto>> GetBadgeByCurrentUserAsync()
     {
-        return GetBadgeByUserIdAsync(CurrentUser.GetId(), isImmersed);
+        return GetBadgeByUserIdAsync(CurrentUser.GetId());
     }
 
 }

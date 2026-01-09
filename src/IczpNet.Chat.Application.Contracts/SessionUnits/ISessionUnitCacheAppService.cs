@@ -14,22 +14,22 @@ public interface ISessionUnitCacheAppService
 
     Task<List<SessionUnitFriendDto>> GetManyAsync(List<Guid> unitIds);
 
-    Task<PagedResultDto<SessionUnitFriendDto>> GetFriendsAsync([Required] long ownerId, FriendTypes friendType, SessionUnitFirendGetListInput input);
+    Task<PagedResultDto<SessionUnitFriendDto>> GetLatestAsync(SessionUnitLatestGetListInput input);
+
+    Task<PagedResultDto<SessionUnitFriendDto>> GetFriendsAsync(SessionUnitFirendGetListInput input);
 
     Task<FriendCountDto> GetFriendsCountAsync([Required] long ownerId);
 
-    Task<PagedResultDto<SessionUnitMemberDto>> GetMembersAsync([Required] Guid unitId, SessionUnitMemberGetListInput input);
+    Task<PagedResultDto<SessionUnitMemberDto>> GetMembersAsync(SessionUnitMemberGetListInput input);
 
     Task<MemberCountDto> GetMembersCountAsync(Guid sessionId);
-
-    Task<PagedResultDto<SessionUnitFriendDto>> GetLatestAsync([Required] long ownerId, SessionUnitFirendGetListInput input);
 
     Task<SessionUnitFriendDto> GetAsync(Guid id);
 
     Task<BadgeDto> GetBadgeAsync(long ownerId);
 
-    Task<List<BadgeDto>> GetBadgeByUserIdAsync([Required] Guid userId, bool? isImmersed = null);
+    Task<List<BadgeDto>> GetBadgeByUserIdAsync([Required] Guid userId);
 
-    Task<List<BadgeDto>> GetBadgeByCurrentUserAsync(bool? isImmersed = null);
+    Task<List<BadgeDto>> GetBadgeByCurrentUserAsync();
 
 }
