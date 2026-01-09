@@ -1,12 +1,23 @@
 ﻿using IczpNet.Chat.Enums;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.MessageReports;
 
 public class MessageReportGetListInput : PagedAndSortedResultRequestDto
 {
+
+    /// <summary>
+    /// 消息报表类型
+    /// 20: Month 月,
+    /// 30: Day 日,
+    /// 40: Hour 时,
+    /// </summary>
+    [Required]
+    public virtual MessageReportTypes ReportType { get; set; }
+
     /// <summary>
     /// 会话Id
     /// </summary>

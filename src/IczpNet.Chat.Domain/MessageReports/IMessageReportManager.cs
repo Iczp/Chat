@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.MessageSections.Messages;
+﻿using IczpNet.Chat.Enums;
+using IczpNet.Chat.MessageSections.Messages;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.MessageReports;
@@ -21,10 +22,10 @@ public interface IMessageReportManager
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="granularity">Month | Day | Hour</param>
+    /// <param name="reportType">Month | Day | Hour</param>
     /// <param name="dateBucket"></param>
     /// <returns></returns>
-    Task<bool> FlushAsync(string granularity, long? dateBucket = null);
+    Task<bool> FlushAsync(MessageReportTypes reportType, long? dateBucket = null);
 
     /// <summary>
     /// 

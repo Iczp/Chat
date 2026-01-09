@@ -1,5 +1,4 @@
-﻿using IczpNet.AbpCommons;
-using IczpNet.AbpCommons.Extensions;
+﻿using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Enums;
 using Microsoft.Extensions.Options;
@@ -27,12 +26,17 @@ public class MessageReportAppService(
     /// <summary>
     /// 统计落库
     /// </summary>
-    /// <param name="granularity">Month/Day/Hour</param>
+    /// <param name="type">
+    /// /// 消息报表类型
+    /// 20: Month 月,
+    /// 30: Day 日,
+    /// 40: Hour 时,
+    /// </param>
     /// <param name="dateBucket"></param>
     /// <returns></returns>
-    public Task<bool> FlushAsync([Required] string granularity, long dateBucket)
+    public Task<bool> FlushAsync([Required] MessageReportTypes type, long dateBucket)
     {
-        return MessageReportManager.FlushAsync(granularity, dateBucket);
+        return MessageReportManager.FlushAsync(type, dateBucket);
     }
 
     /// <summary>
@@ -57,9 +61,9 @@ public class MessageReportAppService(
         return queryable;
     }
 
-    protected async Task<PagedResultDto<MessageReportDto>> GetListInternalAsync([Required] MessageReportTypes granularity, MessageReportGetListInput input)
+    protected async Task<PagedResultDto<MessageReportDto>> GetListInternalAsync(MessageReportGetListInput input)
     {
-        var queryable = await CreateQueryableAsync(granularity);
+        var queryable = await CreateQueryableAsync(input.ReportType);
 
         var query = queryable
            .WhereIf(input.SessionId.HasValue, x => x.SessionId == input.SessionId)
@@ -75,19 +79,15 @@ public class MessageReportAppService(
     /// <summary>
     /// 报表
     /// </summary>
-    /// <param name="granularity">Month/Day/Hour</param>
-    /// <param name="input"></param>
     /// <returns></returns>
-    public Task<PagedResultDto<MessageReportDto>> GetListAsync([Required] string granularity, MessageReportGetListInput input)
+    public Task<PagedResultDto<MessageReportDto>> GetListAsync(MessageReportGetListInput input)
     {
-        Assert.If(!Enum.TryParse(granularity, out MessageReportTypes reportType), $"Undefined {nameof(MessageReportTypes)}: {granularity}");
-
-        return GetListInternalAsync(reportType, input);
+        return GetListInternalAsync(input);
     }
 
-    protected async Task<PagedResultDto<MessageSummaryDto>> GetSummaryInternalAsync([Required] MessageReportTypes granularity, MessageReportSummaryGetListInput input)
+    protected async Task<PagedResultDto<MessageSummaryDto>> GetSummaryInternalAsync(MessageReportSummaryGetListInput input)
     {
-        var queryable = await CreateQueryableAsync(granularity);
+        var queryable = await CreateQueryableAsync(input.ReportType);
 
         var query = queryable
             .WhereIf(input.SessionId.HasValue, x => x.SessionId == input.SessionId)
@@ -108,14 +108,9 @@ public class MessageReportAppService(
     /// <summary>
     /// 汇总
     /// </summary>
-    /// <param name="granularity">Month/Day/Hour</param>
-    /// <param name="input"></param>
-    /// <returns></returns>
-    public Task<PagedResultDto<MessageSummaryDto>> GetSummaryAsync([Required] string granularity, MessageReportSummaryGetListInput input)
+    public Task<PagedResultDto<MessageSummaryDto>> GetSummaryAsync( MessageReportSummaryGetListInput input)
     {
-        Assert.If(!Enum.TryParse(granularity, out MessageReportTypes reportType), $"Undefined {nameof(MessageReportTypes)}: {granularity}");
-
-        return GetSummaryInternalAsync(reportType, input);
+        return GetSummaryInternalAsync( input);
 
     }
 

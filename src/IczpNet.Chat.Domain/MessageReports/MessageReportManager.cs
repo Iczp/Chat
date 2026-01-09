@@ -40,31 +40,31 @@ public class MessageReportManager(
         await MessageReportHourRepository.IncrementAsync(sessionId, messageType, "yyyyMMddHH");
     }
 
-    protected long BuildDateBucket(string granularity)
+    protected long BuildDateBucket(MessageReportTypes reportType)
     {
-        var format = granularity switch
+        var format = reportType switch
         {
-            "Day" => "yyyyMMdd",
-            "Hour" => "yyyyMMddHH",
-            "Month" => "yyyyMM",
+            MessageReportTypes.Day => "yyyyMMdd",
+            MessageReportTypes.Hour => "yyyyMMddHH",
+            MessageReportTypes.Month => "yyyyMM",
             _ => throw new NotImplementedException()
         };
         return DateBucket.Create(Clock.Now, format);
     }
 
-    protected string BuildKey(string granularity, long dateBucket)
+    protected string BuildKey(MessageReportTypes reportType, long dateBucket)
     {
-        return $"{Prefix}{granularity}:{dateBucket}";
+        return $"{Prefix}{reportType}:{dateBucket}";
     }
-    protected string BuildKey(string granularity)
+    protected string BuildKey(MessageReportTypes reportType)
     {
-        var dateBucket = BuildDateBucket(granularity);
-        return $"{Prefix}{granularity}:{dateBucket}";
+        var dateBucket = BuildDateBucket(reportType);
+        return $"{Prefix}{reportType}:{dateBucket}";
     }
 
-    protected virtual Task IncrementOneAsync(string granularity, Message message)
+    protected virtual Task IncrementOneAsync(MessageReportTypes reportType, Message message)
     {
-        var key = BuildKey(granularity);
+        var key = BuildKey(reportType);
         //SessionId:MessageType
         var field = $"{message.SessionId}:{message.MessageType}";
         return Database.HashIncrementAsync(key, field, 1);
@@ -81,20 +81,20 @@ public class MessageReportManager(
 
     public async Task StatAsync(Message message)
     {
-        await IncrementOneAsync("Day", message);
-        await IncrementOneAsync("Hour", message);
-        await IncrementOneAsync("Month", message);
+        await IncrementOneAsync(MessageReportTypes.Day, message);
+        await IncrementOneAsync(MessageReportTypes.Hour, message);
+        await IncrementOneAsync(MessageReportTypes.Month, message);
     }
 
-    public async Task<bool> FlushAsync(string granularity, long? dateBucketInput = null)
+    public async Task<bool> FlushAsync(MessageReportTypes reportType, long? dateBucketInput = null)
     {
-        var dateBucket = dateBucketInput ?? BuildDateBucket(granularity);
+        var dateBucket = dateBucketInput ?? BuildDateBucket(reportType);
 
-        var sourceKey = BuildKey(granularity, dateBucket);
+        var sourceKey = BuildKey(reportType, dateBucket);
 
         var isExists = await Database.KeyExistsAsync(sourceKey);
 
-        Logger.LogInformation("FlushAsync {granularity}, DataBucket:{dateBucket}, isExists:{isExists}", granularity, dateBucket, isExists);
+        Logger.LogInformation("FlushAsync {reportType}, DataBucket:{dateBucket}, isExists:{isExists}", reportType, dateBucket, isExists);
 
         if (!isExists)
         {
@@ -131,7 +131,7 @@ public class MessageReportManager(
         }
 
         // 3. 落库
-        await FlushToDbAsync(granularity, dateBucket, entries);
+        await FlushToDbAsync(reportType, dateBucket, entries);
 
         // 4. 删除 processing
         await Database.KeyDeleteAsync(processingKey);
@@ -167,39 +167,39 @@ public class MessageReportManager(
         return table;
     }
 
-    protected async Task FlushToDbAsync(string granularity, long dateBucket, HashEntry[] entries)
+    protected async Task FlushToDbAsync(MessageReportTypes reportType, long dateBucket, HashEntry[] entries)
     {
         var stopwatch = Stopwatch.StartNew();
-        IMessageReportRepository repository = granularity switch
+        IMessageReportRepository repository = reportType switch
         {
-            "Day" => MessageReportDayRepository,
-            "Hour" => MessageReportHourRepository,
-            "Month" => MessageReportMonthRepository,
+            MessageReportTypes.Day => MessageReportDayRepository,
+            MessageReportTypes.Hour => MessageReportHourRepository,
+            MessageReportTypes.Month => MessageReportMonthRepository,
             _ => throw new NotImplementedException()
         };
 
-        Logger.LogInformation("FlushToDbAsync: {granularity}, entries count{Count}", granularity, entries.Length);
+        Logger.LogInformation("FlushToDbAsync: {reportType}, entries count{Count}", reportType, entries.Length);
 
         var dataTable = ToDataTable(dateBucket, entries);
 
         await repository.FlushToDbAsync(dataTable);
 
-        Logger.LogInformation("FlushToDbAsync: {granularity}, entries count{Count},Elapsed:{ms}ms", granularity, entries.Length, stopwatch.ElapsedMilliseconds);
+        Logger.LogInformation("FlushToDbAsync: {reportType}, entries count{Count},Elapsed:{ms}ms", reportType, entries.Length, stopwatch.ElapsedMilliseconds);
     }
 
     public Task<bool> FlushMonthAsync()
     {
-        return FlushAsync("Month");
+        return FlushAsync(MessageReportTypes.Month);
     }
 
     public Task<bool> FlushDayAsync()
     {
-        return FlushAsync("Day");
+        return FlushAsync(MessageReportTypes.Day);
     }
 
     public Task<bool> FlushHourAsync()
     {
-        return FlushAsync("Hour");
+        return FlushAsync(MessageReportTypes.Hour);
     }
 
     /// <summary>
@@ -216,21 +216,21 @@ public class MessageReportManager(
         for (int h = 0; h < 72; h++)
         {
             var hour = now.AddHours(-h);
-            await FlushAsync("Hour", DateBucket.Create(hour, "yyyyMMddHH"));
+            await FlushAsync(MessageReportTypes.Hour, DateBucket.Create(hour, MessageReportTypes.Hour));
         }
 
         for (int i = 0; i <= 3; i++)
         {
             var day = now.Date.AddDays(-i);
             // day
-            await FlushAsync("Day", DateBucket.Create(day, "yyyyMMdd"));
+            await FlushAsync(MessageReportTypes.Day, DateBucket.Create(day, MessageReportTypes.Day));
         }
 
         // month（一般只需要补 1～2 个月）
         for (int i = 0; i <= 2; i++)
         {
             var month = now.AddMonths(-i);
-            await FlushAsync("Month", DateBucket.Create(month, "yyyyMM"));
+            await FlushAsync(MessageReportTypes.Month, DateBucket.Create(month, MessageReportTypes.Month));
         }
     }
 }

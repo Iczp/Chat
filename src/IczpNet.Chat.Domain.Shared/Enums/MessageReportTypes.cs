@@ -4,6 +4,9 @@ namespace IczpNet.Chat.Enums;
 
 /// <summary>
 /// 消息报表类型
+/// 20: Month 月,
+/// 30: Day 日,
+/// 40: Hour 时,
 /// </summary>
 [Description("消息报表类型")]
 public enum MessageReportTypes
