@@ -6,9 +6,8 @@ using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.MessageReports;
 
-public class MessageReportGetListInput : PagedAndSortedResultRequestDto
+public class MessageReportSummaryGetListInput : PagedAndSortedResultRequestDto
 {
-
     /// <summary>
     /// 消息报表类型
     /// 20: Month 月,

@@ -4,28 +4,8 @@ using System;
 namespace IczpNet.Chat.SessionSections.SessionUnits;
 
 [Serializable]
-public class SessionUnitCacheItem : ISessionUnit
+public class SessionUnitCacheItem : SessionUnitBase, ISessionUnit
 {
-    /// <summary>
-    /// SessionUnitId
-    /// </summary>
-    public virtual Guid Id { get; set; }
-
-    /// <summary>
-    /// 会话Id
-    /// </summary>
-    public virtual Guid? SessionId { get; set; }
-
-    /// <summary>
-    /// OwnerId
-    /// </summary>
-    public virtual long OwnerId { get; set; }
-
-    /// <summary>
-    /// OwnerType
-    /// </summary>
-    public virtual ChatObjectTypeEnums? OwnerObjectType { get; set; }
-
     /// <summary>
     /// DestinationId
     /// </summary>
@@ -35,36 +15,6 @@ public class SessionUnitCacheItem : ISessionUnit
     /// DestinationType
     /// </summary>
     public virtual ChatObjectTypeEnums? DestinationObjectType { get; set; }
-
-    /// <summary>
-    /// 备注名称
-    /// </summary>
-    public virtual string Rename { get; set; }
-
-    /// <summary>
-    /// 会话内名称
-    /// </summary>
-    public virtual string MemberName { get; set; }
-
-    /// <summary>
-    /// 是否固定成员
-    /// </summary>
-    public virtual bool IsStatic { get; set; }
-
-    /// <summary>
-    /// 是否公开
-    /// </summary>
-    public virtual bool IsPublic { get; set; }
-
-    /// <summary>
-    /// 是否可见
-    /// </summary>
-    public virtual bool IsVisible { get; set; }
-
-    /// <summary>
-    /// 是否可用
-    /// </summary>
-    public virtual bool IsEnabled { get; set; }
 
     //public virtual long? ReadedMessageId { get; set; }
 
@@ -83,10 +33,6 @@ public class SessionUnitCacheItem : ISessionUnit
     public virtual double Ticks { get; set; }
 
     public virtual double Sorting { get; set; }
-
-    public virtual bool IsCreator { get; set; }
-
-    public virtual DateTime CreationTime { get; set; }
 
     //public virtual SessionUnitSettingCacheItem Setting { get; set; }
 

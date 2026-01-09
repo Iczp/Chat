@@ -1,5 +1,4 @@
 ﻿using IczpNet.Chat.Enums;
-using IczpNet.Pusher.Commands;
 using System;
 
 namespace IczpNet.Chat.SessionUnitSettings;
@@ -11,10 +10,10 @@ public class SessionUnitSettingCacheItem
     /// </summary>
     public virtual Guid SessionUnitId { get; set; }
 
-    /// <summary>
-    /// 会话Id
-    /// </summary>
-    public virtual Guid? SessionId { get; set; }
+    ///// <summary>
+    ///// 会话Id
+    ///// </summary>
+    //public virtual Guid? SessionId { get; set; }
 
 
     /// <summary>

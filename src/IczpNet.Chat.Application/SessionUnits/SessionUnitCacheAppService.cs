@@ -1,6 +1,7 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Clocks;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.Permissions;
@@ -150,41 +151,6 @@ public class SessionUnitCacheAppService(
     }
 
 
-    public async Task<PagedResultDto<SessionUnitFriendDto>> GetListAsync(SessionUnitCacheItemGetListInput input)
-    {
-        // check owner
-        await CheckPolicyForUserAsync(input.OwnerId, () => CheckPolicyAsync(GetListPolicyName, input.OwnerId));
-
-        var queryable = await CreateQueryableAsync(input);
-
-        var baseQuery = queryable
-            .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
-            .WhereIf(input.DestinationObjectType.HasValue, x => x.DestinationObjectType == input.DestinationObjectType)
-            .WhereIf(input.MinMessageId.HasValue, x => x.LastMessageId >= input.MinMessageId)
-            .WhereIf(input.MaxMessageId.HasValue, x => x.LastMessageId < input.MaxMessageId)
-            .WhereIf(input.MinTicks.HasValue, x => x.Ticks >= input.MinTicks)
-            .WhereIf(input.MaxTicks.HasValue, x => x.Ticks < input.MaxTicks)
-            .WhereIf(input.IsBadge.HasValue, x => x.PublicBadge > 0)
-            //@我、@所有人
-            .WhereIf(input.IsRemind == true, x => (x.RemindAllCount + x.RemindMeCount) > 0)
-            .WhereIf(input.IsRemind == false, x => (x.RemindAllCount + x.RemindMeCount) == 0)
-            //搜索
-            .WhereIf(!string.IsNullOrWhiteSpace(input.Keyword), x => x.SearchText.Contains(input.Keyword.ToLower()))
-            ;
-
-        var pagedList = await GetPagedListAsync(baseQuery, input);
-
-        // 分页后再按需加载 Setting & Destination
-        await FillSettingAsync(pagedList.Items);
-
-        await FillDestinationAsync(pagedList.Items);
-
-        await FillLastMessageAsync(pagedList.Items);
-
-        return pagedList;
-    }
-
-
 
     private async Task FillLastMessageAsync(IEnumerable<SessionUnitFriendDto> items)
     {
@@ -300,61 +266,6 @@ public class SessionUnitCacheAppService(
         var unit = list.FirstOrDefault().Value;
         Assert.If(unit == null, $"No such cache id:{unitId}");
         return unit;
-    }
-
-    public async Task<List<SessionUnitFriendDto>> GetManyAsync(List<Guid> unitIds)
-    {
-        var list = await GetCacheManyAsync(unitIds);
-
-        // check owner
-        var chatObjectIdList = list.Select(x => x.Value).Select(x => x.OwnerId).Distinct().ToList();
-        await CheckPolicyForUserAsync(chatObjectIdList, () => CheckPolicyAsync(GetListPolicyName));
-
-        var items = list.Select(x => x.Value)
-            .Where(x => x != null)
-            .Select(MapToDto)
-            .ToList();
-
-        await FillSettingAsync(items);
-
-        await FillDestinationAsync(items);
-
-        await FillLastMessageAsync(items);
-
-        return items;
-    }
-
-    /// <summary>
-    /// 获取最新消息
-    /// </summary>
-    /// <param name="ownerId"></param>
-    /// <param name="input"></param>
-    /// <returns></returns>
-    public async Task<PagedResultDto<SessionUnitFriendDto>> GetLatestAsync([Required] long ownerId, SessionUnitFirendGetListInput input)
-    {
-        // check owner
-        await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
-
-        Assert.If(input.MaxResultCount > 100, $"params:{nameof(input.MaxResultCount)} max value: 100");
-
-        var minScore = input.MinScore ?? 0;
-
-        var queryable = await SessionUnitCacheManager.GetFriendsAsync(
-            ownerId, 
-            minScore: minScore, 
-            skip: input.SkipCount, 
-            take: Math.Min(input.MaxResultCount, 100));
-
-        var unitIds = queryable
-            .Where(x => x.Ticks > minScore)
-            .OrderByDescending(x => x.Ticks)
-            .Select(x => x.Id)
-            .ToList();
-
-        var items = await GetManyAsync(unitIds);
-
-        return new PagedResultDto<SessionUnitFriendDto>(items.Count, items);
-
     }
 
 
@@ -545,22 +456,36 @@ public class SessionUnitCacheAppService(
             ChatObjectId = ownerId,
             Statistic = await SessionUnitCacheManager.GetStatisticAsync(ownerId),
             BadgeMap = await SessionUnitCacheManager.GetRawBadgeMapAsync(ownerId),
-            CountMap = await SessionUnitCacheManager.GetTypedFirendsCountAsync(ownerId),
+            CountMap = await SessionUnitCacheManager.GetFriendsCountMapAsync(ownerId),
         };
     }
 
-    /// <summary>
-    /// 获取会话(Linq)
-    /// </summary>
-    /// <returns></returns>
-    public async Task<PagedResultDto<SessionUnitFriendDto>> GetFriendsAsync([Required] long ownerId, SessionUnitFirendGetListInput input)
+    protected virtual async Task<PagedResultDto<SessionUnitFriendDto>> GetTypedFriendsAsync([Required] long ownerId, FriendTypes friendType, SessionUnitFirendGetListInput input)
     {
         // check owner
         await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
 
-        //加载全部
-        await LoadFriendsIfNotExistsAsync(ownerId);
+        Assert.If(input.MaxResultCount > 100, $"params:{nameof(input.MaxResultCount)} max value: 100");
 
+        var minScore = input.MinScore ?? 0;
+
+        var queryable = await SessionUnitCacheManager.GetTypedFriendsAsync(
+            friendType,
+            ownerId,
+            minScore: minScore,
+            skip: input.SkipCount,
+            take: Math.Min(input.MaxResultCount, 100));
+
+        var unitIds = queryable.ToList();
+
+        var items = await GetManyAsync(unitIds);
+
+        return new PagedResultDto<SessionUnitFriendDto>(items.Count, items);
+
+    }
+
+    protected virtual async Task<PagedResultDto<SessionUnitFriendDto>> LoadAllFriendsAsync(long ownerId, SessionUnitFirendGetListInput input)
+    {
         var queryable = await SessionUnitCacheManager.GetFriendsAsync(ownerId,
             //minScore: input.MinScore ?? double.NegativeInfinity,
             //maxScore: input.MaxScore ?? double.PositiveInfinity,
@@ -600,15 +525,161 @@ public class SessionUnitCacheAppService(
         return new PagedResultDto<SessionUnitFriendDto>(totalCount, items);
     }
 
+
+    public async Task<PagedResultDto<SessionUnitFriendDto>> GetListAsync(SessionUnitCacheItemGetListInput input)
+    {
+        // check owner
+        await CheckPolicyForUserAsync(input.OwnerId, () => CheckPolicyAsync(GetListPolicyName, input.OwnerId));
+
+        var queryable = await CreateQueryableAsync(input);
+
+        var baseQuery = queryable
+            .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
+            .WhereIf(input.DestinationObjectType.HasValue, x => x.DestinationObjectType == input.DestinationObjectType)
+            .WhereIf(input.MinMessageId.HasValue, x => x.LastMessageId >= input.MinMessageId)
+            .WhereIf(input.MaxMessageId.HasValue, x => x.LastMessageId < input.MaxMessageId)
+            .WhereIf(input.MinTicks.HasValue, x => x.Ticks >= input.MinTicks)
+            .WhereIf(input.MaxTicks.HasValue, x => x.Ticks < input.MaxTicks)
+            .WhereIf(input.IsBadge.HasValue, x => x.PublicBadge > 0)
+            //@我、@所有人
+            .WhereIf(input.IsRemind == true, x => (x.RemindAllCount + x.RemindMeCount) > 0)
+            .WhereIf(input.IsRemind == false, x => (x.RemindAllCount + x.RemindMeCount) == 0)
+            //搜索
+            .WhereIf(!string.IsNullOrWhiteSpace(input.Keyword), x => x.SearchText.Contains(input.Keyword.ToLower()))
+            ;
+
+        var pagedList = await GetPagedListAsync(baseQuery, input);
+
+        // 分页后再按需加载 Setting & Destination
+        await FillSettingAsync(pagedList.Items);
+
+        await FillDestinationAsync(pagedList.Items);
+
+        await FillLastMessageAsync(pagedList.Items);
+
+        return pagedList;
+    }
+
+    /// <summary>
+    /// 获取会话（多个）
+    /// </summary>
+    /// <param name="unitIds"></param>
+    /// <returns></returns>
+    public async Task<List<SessionUnitFriendDto>> GetManyAsync(List<Guid> unitIds)
+    {
+        var list = await GetCacheManyAsync(unitIds);
+
+        // check owner
+        var chatObjectIdList = list.Select(x => x.Value).Select(x => x.OwnerId).Distinct().ToList();
+        await CheckPolicyForUserAsync(chatObjectIdList, () => CheckPolicyAsync(GetListPolicyName));
+
+        var items = list.Select(x => x.Value)
+            .Where(x => x != null)
+            .Select(MapToDto)
+            .ToList();
+
+        await FillSettingAsync(items);
+
+        await FillDestinationAsync(items);
+
+        await FillLastMessageAsync(items);
+
+        return items;
+    }
+
+    /// <summary>
+    /// 获取会话
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    public async Task<SessionUnitFriendDto> GetAsync(Guid id)
+    {
+        var items = await GetManyAsync([id]);
+
+        var item = items.FirstOrDefault();
+
+        Assert.If(item == null, $"No such cache id:{id}");
+
+        return item;
+    }
+
+    /// <summary>
+    /// 获取最新消息
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    public async Task<PagedResultDto<SessionUnitFriendDto>> GetLatestAsync([Required] long ownerId, SessionUnitFirendGetListInput input)
+    {
+        // check owner
+        await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
+
+        Assert.If(input.MaxResultCount > 100, $"params:{nameof(input.MaxResultCount)} max value: 100");
+
+        var minScore = input.MinScore ?? 0;
+
+        var queryable = await SessionUnitCacheManager.GetFriendsAsync(
+            ownerId,
+            minScore: minScore,
+            skip: input.SkipCount,
+            take: Math.Min(input.MaxResultCount, 100));
+
+        var unitIds = queryable
+            .Where(x => x.Ticks > minScore)
+            .OrderByDescending(x => x.Ticks)
+            .Select(x => x.Id)
+            .ToList();
+
+        var items = await GetManyAsync(unitIds);
+
+        return new PagedResultDto<SessionUnitFriendDto>(items.Count, items);
+
+    }
+
+    /// <summary>
+    /// 获取好友会话
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <param name="friendType">
+    /// 0: All,
+    /// 1: Pinned,
+    /// 2: Following,
+    /// 3: RemindAll,
+    /// 4: RemindMe,
+    /// 5: Immersed,
+    /// </param>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
+    public async Task<PagedResultDto<SessionUnitFriendDto>> GetFriendsAsync([Required] long ownerId, FriendTypes friendType, SessionUnitFirendGetListInput input)
+    {
+        // check owner
+        await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
+
+        //加载全部
+        await LoadFriendsIfNotExistsAsync(ownerId);
+
+        return friendType switch
+        {
+            FriendTypes.All => await LoadAllFriendsAsync(ownerId, input),
+            FriendTypes.Following or FriendTypes.RemindAll or FriendTypes.RemindMe or FriendTypes.Immersed or FriendTypes.Pinned => await GetTypedFriendsAsync(ownerId, friendType, input),
+            _ => throw new Exception(""),
+        };
+    }
+
     /// <summary>
     /// 获取好友数量
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    public async Task<long> GetFriendsCountAsync([Required] long ownerId)
+    public async Task<FriendCountDto> GetFriendsCountAsync([Required] long ownerId)
     {
         await LoadFriendsIfNotExistsAsync(ownerId);
-        return await SessionUnitCacheManager.GetFirendsCountAsync(ownerId);
+        return new FriendCountDto()
+        {
+            TotalCount = await SessionUnitCacheManager.GetFriendsCountAsync(ownerId),
+            CountMap = await SessionUnitCacheManager.GetFriendsCountMapAsync(ownerId),
+        };
     }
 
     /// <summary>
@@ -676,28 +747,16 @@ public class SessionUnitCacheAppService(
     /// </summary>
     /// <param name="unitId"></param>
     /// <returns></returns>
-    public async Task<long> GetMembersCountAsync(Guid unitId)
+    public async Task<MemberCountDto> GetMembersCountAsync(Guid unitId)
     {
         var unit = await GetCacheAsync(unitId);
         var sessionId = unit.SessionId.Value;
         await LoadMembersIfNotExistsAsync(sessionId);
-        return await SessionUnitCacheManager.GetMembersCountAsync(sessionId);
-    }
-
-    /// <summary>
-    /// 获取会话
-    /// </summary>
-    /// <param name="id"></param>
-    /// <returns></returns>
-    public async Task<SessionUnitFriendDto> GetAsync(Guid id)
-    {
-        var items = await GetManyAsync([id]);
-
-        var item = items.FirstOrDefault();
-
-        Assert.If(item == null, $"No such cache id:{id}");
-
-        return item;
+        return new MemberCountDto()
+        {
+            SessionId = sessionId,
+            TotalCount = await SessionUnitCacheManager.GetMembersCountAsync(sessionId),
+        };
     }
 
     /// <summary>
