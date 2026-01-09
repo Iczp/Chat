@@ -1,6 +1,7 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Clocks;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.Permissions;
@@ -455,9 +456,75 @@ public class SessionUnitCacheAppService(
             ChatObjectId = ownerId,
             Statistic = await SessionUnitCacheManager.GetStatisticAsync(ownerId),
             BadgeMap = await SessionUnitCacheManager.GetRawBadgeMapAsync(ownerId),
-            CountMap = await SessionUnitCacheManager.GetTypedFirendsCountAsync(ownerId),
+            CountMap = await SessionUnitCacheManager.GetFriendsCountMapAsync(ownerId),
         };
     }
+
+    protected virtual async Task<PagedResultDto<SessionUnitFriendDto>> GetTypedFriendsAsync([Required] long ownerId, FriendTypes friendType, SessionUnitFirendGetListInput input)
+    {
+        // check owner
+        await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
+
+        Assert.If(input.MaxResultCount > 100, $"params:{nameof(input.MaxResultCount)} max value: 100");
+
+        var minScore = input.MinScore ?? 0;
+
+        var queryable = await SessionUnitCacheManager.GetTypedFriendsAsync(
+            friendType,
+            ownerId,
+            minScore: minScore,
+            skip: input.SkipCount,
+            take: Math.Min(input.MaxResultCount, 100));
+
+        var unitIds = queryable.ToList();
+
+        var items = await GetManyAsync(unitIds);
+
+        return new PagedResultDto<SessionUnitFriendDto>(items.Count, items);
+
+    }
+
+    protected virtual async Task<PagedResultDto<SessionUnitFriendDto>> LoadAllFriendsAsync(long ownerId, SessionUnitFirendGetListInput input)
+    {
+        var queryable = await SessionUnitCacheManager.GetFriendsAsync(ownerId,
+            //minScore: input.MinScore ?? double.NegativeInfinity,
+            //maxScore: input.MaxScore ?? double.PositiveInfinity,
+            //skip: input.SkipCount,
+            //take: input.MaxResultCount,
+            isDescending: true);
+
+        var query = queryable.AsQueryable()
+            .WhereIf(input.MinScore > 0, x => x.Ticks > input.MinScore)
+            .WhereIf(input.MaxScore > 0, x => x.Ticks < input.MaxScore)
+            ;
+
+        //search 
+        query = await ApplyFriendFilterAsync(query, ownerId, input.Keyword);
+
+        if (query == null)
+        {
+            return new PagedResultDto<SessionUnitFriendDto>(0, []);
+        }
+
+        var totalCount = query.Count(); //kvs.Length
+        //var totalCount = await SessionUnitCacheManager.GetFirendsCountAsync(ownerId);
+
+        // sorting
+        query = query
+            .OrderByDescending(x => x.Sorting)
+            .ThenByDescending(x => x.Ticks)
+            ;
+
+        //paged
+        query = query.Skip(input.SkipCount).Take(input.MaxResultCount);
+
+        var unitIds = query.Select(x => x.Id).ToList();
+
+        var items = await GetManyAsync(unitIds);
+
+        return new PagedResultDto<SessionUnitFriendDto>(totalCount, items);
+    }
+
 
     public async Task<PagedResultDto<SessionUnitFriendDto>> GetListAsync(SessionUnitCacheItemGetListInput input)
     {
@@ -570,10 +637,21 @@ public class SessionUnitCacheAppService(
     }
 
     /// <summary>
-    /// 获取会话(Linq)
+    /// 获取好友会话
     /// </summary>
+    /// <param name="ownerId"></param>
+    /// <param name="friendType">
+    /// 0: All,
+    /// 1: Pinned,
+    /// 2: Following,
+    /// 3: RemindAll,
+    /// 4: RemindMe,
+    /// 5: Immersed,
+    /// </param>
+    /// <param name="input"></param>
     /// <returns></returns>
-    public async Task<PagedResultDto<SessionUnitFriendDto>> GetFriendsAsync([Required] long ownerId, SessionUnitFirendGetListInput input)
+    /// <exception cref="Exception"></exception>
+    public async Task<PagedResultDto<SessionUnitFriendDto>> GetFriendsAsync([Required] long ownerId, FriendTypes friendType, SessionUnitFirendGetListInput input)
     {
         // check owner
         await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
@@ -581,43 +659,12 @@ public class SessionUnitCacheAppService(
         //加载全部
         await LoadFriendsIfNotExistsAsync(ownerId);
 
-        var queryable = await SessionUnitCacheManager.GetFriendsAsync(ownerId,
-            //minScore: input.MinScore ?? double.NegativeInfinity,
-            //maxScore: input.MaxScore ?? double.PositiveInfinity,
-            //skip: input.SkipCount,
-            //take: input.MaxResultCount,
-            isDescending: true);
-
-        var query = queryable.AsQueryable()
-            .WhereIf(input.MinScore > 0, x => x.Ticks > input.MinScore)
-            .WhereIf(input.MaxScore > 0, x => x.Ticks < input.MaxScore)
-            ;
-
-        //search 
-        query = await ApplyFriendFilterAsync(query, ownerId, input.Keyword);
-
-        if (query == null)
+        return friendType switch
         {
-            return new PagedResultDto<SessionUnitFriendDto>(0, []);
-        }
-
-        var totalCount = query.Count(); //kvs.Length
-        //var totalCount = await SessionUnitCacheManager.GetFirendsCountAsync(ownerId);
-
-        // sorting
-        query = query
-            .OrderByDescending(x => x.Sorting)
-            .ThenByDescending(x => x.Ticks)
-            ;
-
-        //paged
-        query = query.Skip(input.SkipCount).Take(input.MaxResultCount);
-
-        var unitIds = query.Select(x => x.Id).ToList();
-
-        var items = await GetManyAsync(unitIds);
-
-        return new PagedResultDto<SessionUnitFriendDto>(totalCount, items);
+            FriendTypes.All => await LoadAllFriendsAsync(ownerId, input),
+            FriendTypes.Following or FriendTypes.RemindAll or FriendTypes.RemindMe or FriendTypes.Immersed or FriendTypes.Pinned => await GetTypedFriendsAsync(ownerId, friendType, input),
+            _ => throw new Exception(""),
+        };
     }
 
     /// <summary>
@@ -625,10 +672,14 @@ public class SessionUnitCacheAppService(
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    public async Task<long> GetFriendsCountAsync([Required] long ownerId)
+    public async Task<FriendCountDto> GetFriendsCountAsync([Required] long ownerId)
     {
         await LoadFriendsIfNotExistsAsync(ownerId);
-        return await SessionUnitCacheManager.GetFirendsCountAsync(ownerId);
+        return new FriendCountDto()
+        {
+            TotalCount = await SessionUnitCacheManager.GetFriendsCountAsync(ownerId),
+            CountMap = await SessionUnitCacheManager.GetFriendsCountMapAsync(ownerId),
+        };
     }
 
     /// <summary>
@@ -696,12 +747,16 @@ public class SessionUnitCacheAppService(
     /// </summary>
     /// <param name="unitId"></param>
     /// <returns></returns>
-    public async Task<long> GetMembersCountAsync(Guid unitId)
+    public async Task<MemberCountDto> GetMembersCountAsync(Guid unitId)
     {
         var unit = await GetCacheAsync(unitId);
         var sessionId = unit.SessionId.Value;
         await LoadMembersIfNotExistsAsync(sessionId);
-        return await SessionUnitCacheManager.GetMembersCountAsync(sessionId);
+        return new MemberCountDto()
+        {
+            SessionId = sessionId,
+            TotalCount = await SessionUnitCacheManager.GetMembersCountAsync(sessionId),
+        };
     }
 
     /// <summary>

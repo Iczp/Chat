@@ -173,12 +173,29 @@ public interface ISessionUnitCacheManager
         long take = -1,
         bool isDescending = true);
 
+    Task<IEnumerable<Guid>> GetPinnedFriendsAsync(
+        long ownerId,
+        double minScore = double.NegativeInfinity,
+        double maxScore = double.PositiveInfinity,
+        long skip = 0,
+        long take = -1,
+        bool isDescending = true);
+
+    Task<IEnumerable<Guid>> GetTypedFriendsAsync(
+        FriendTypes friendType,
+        long ownerId,
+        double minScore = double.NegativeInfinity,
+        double maxScore = double.PositiveInfinity,
+        long skip = 0,
+        long take = -1,
+        bool isDescending = true);
+
     /// <summary>
     /// 获取好友会话单元数量
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    Task<long> GetFirendsCountAsync(long ownerId);
+    Task<long> GetFriendsCountAsync(long ownerId);
 
     /// <summary>
     /// 获取指定类型的好友列表
@@ -186,7 +203,7 @@ public interface ISessionUnitCacheManager
     /// <param name="ownerId"></param>
     /// <param name="friendType"></param>
     /// <returns>Key:UnitId,Value:OwnerId</returns>
-    Task<Dictionary<Guid, long>> GetTypedFirendsAsync(long ownerId, ChatObjectTypeEnums friendType);
+    Task<Dictionary<Guid, long>> GetFriendsMapAsync(long ownerId, ChatObjectTypeEnums friendType);
 
     /// <summary>
     /// 获取指定类型的好友数量
@@ -194,7 +211,7 @@ public interface ISessionUnitCacheManager
     /// <param name="ownerId"></param>
     /// <param name="types">为null时，获取全部</param>
     /// <returns></returns>
-    Task<Dictionary<ChatObjectTypeEnums, long>> GetTypedFirendsCountAsync(long ownerId, IEnumerable<ChatObjectTypeEnums> types = null);
+    Task<Dictionary<ChatObjectTypeEnums, long>> GetFriendsCountMapAsync(long ownerId, IEnumerable<ChatObjectTypeEnums> types = null);
 
     /// <summary>
     /// 获取会话单元(多个)

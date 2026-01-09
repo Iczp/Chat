@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.SessionUnits.Dtos;
+﻿using IczpNet.Chat.Enums;
+using IczpNet.Chat.SessionUnits.Dtos;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -13,13 +14,13 @@ public interface ISessionUnitCacheAppService
 
     Task<List<SessionUnitFriendDto>> GetManyAsync(List<Guid> unitIds);
 
-    Task<PagedResultDto<SessionUnitFriendDto>> GetFriendsAsync([Required] long ownerId, SessionUnitFirendGetListInput input);
+    Task<PagedResultDto<SessionUnitFriendDto>> GetFriendsAsync([Required] long ownerId, FriendTypes friendType, SessionUnitFirendGetListInput input);
 
-    Task<long> GetFriendsCountAsync([Required] long ownerId);
+    Task<FriendCountDto> GetFriendsCountAsync([Required] long ownerId);
 
     Task<PagedResultDto<SessionUnitMemberDto>> GetMembersAsync([Required] Guid unitId, SessionUnitMemberGetListInput input);
-    Task<long> GetMembersCountAsync(Guid sessionId);
 
+    Task<MemberCountDto> GetMembersCountAsync(Guid sessionId);
 
     Task<PagedResultDto<SessionUnitFriendDto>> GetLatestAsync([Required] long ownerId, SessionUnitFirendGetListInput input);
 
@@ -30,6 +31,5 @@ public interface ISessionUnitCacheAppService
     Task<List<BadgeDto>> GetBadgeByUserIdAsync([Required] Guid userId, bool? isImmersed = null);
 
     Task<List<BadgeDto>> GetBadgeByCurrentUserAsync(bool? isImmersed = null);
-
 
 }
