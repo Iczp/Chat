@@ -1,16 +1,15 @@
 ﻿using IczpNet.Chat.BaseDtos;
-using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.SessionUnits.Dtos;
 
-public class SessionUnitMemberGetListInput : GetListInput
+public class SessionUnitLatestGetListInput : GetListInput
 {
     /// <summary>
-    /// SessionUnitId
+    /// ChatObjectId
     /// </summary>
     [Required]
-    public Guid UnitId { get; set; }
+    public long OwnerId { get; set; }
 
     /// <summary>
     /// 最小Ticks
@@ -21,14 +20,4 @@ public class SessionUnitMemberGetListInput : GetListInput
     /// 最小Ticks
     /// </summary>
     public double? MaxScore { get; set; }
-
-    /// <summary>
-    /// 是否创建者（群主）
-    /// </summary>
-    public bool? IsCreator { get; set; }
-
-    /// <summary>
-    /// 所属成员Id
-    /// </summary>
-    public long? OwnerId { get; set; }
 }

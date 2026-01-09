@@ -105,6 +105,13 @@ public interface ISessionUnitCacheManager
     Task<IDictionary<long, bool>> GetImmersedMembersAsync(Guid sessionId);
 
     /// <summary>
+    /// 获取会话创建人映射
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    Task<IDictionary<long, bool>> GetCreatorMembersAsync(Guid sessionId);
+
+    /// <summary>
     /// 设置好友会话单元
     /// </summary>
     /// <param name="ownerId"></param>
@@ -173,14 +180,6 @@ public interface ISessionUnitCacheManager
         long take = -1,
         bool isDescending = true);
 
-    Task<IEnumerable<Guid>> GetPinnedFriendsAsync(
-        long ownerId,
-        double minScore = double.NegativeInfinity,
-        double maxScore = double.PositiveInfinity,
-        long skip = 0,
-        long take = -1,
-        bool isDescending = true);
-
     Task<IEnumerable<Guid>> GetTypedFriendsAsync(
         FriendTypes friendType,
         long ownerId,
@@ -189,6 +188,8 @@ public interface ISessionUnitCacheManager
         long skip = 0,
         long take = -1,
         bool isDescending = true);
+
+    Task<long> GetTypedFriendsCountAsync(FriendTypes friendType, long ownerId);
 
     /// <summary>
     /// 获取好友会话单元数量

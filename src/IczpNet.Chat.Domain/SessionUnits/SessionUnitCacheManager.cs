@@ -53,7 +53,10 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// <param name="sessionId"></param>
     /// <returns></returns>
     private string SessionImmersedSetKey(Guid sessionId)
-       => $"{Prefix}Sessions:Immerseds:SessionId-{sessionId}";
+       => $"{Prefix}Sessions:Immersed:SessionId-{sessionId}";
+
+    private string SessionCreatorSetKey(Guid sessionId)
+       => $"{Prefix}Sessions:Creator:SessionId-{sessionId}";
 
     /// <summary>
     /// 好友会话单元
@@ -111,6 +114,14 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// <returns></returns>
     private string OwnerRemindMeSetKey(long ownerId)
        => $"{Prefix}Owners:RemindMe:OwnerId-{ownerId}";
+
+    /// <summary>
+    /// 创建人 会话单元
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    private string OwnerCreatorSetKey(long ownerId)
+       => $"{Prefix}Owners:Creator:OwnerId-{ownerId}";
 
     /// <summary>
     /// 消息统计
@@ -239,6 +250,16 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         _ = batch.SortedSetAddAsync(remindMeSetKey, unit.Id.ToString(), unit.RemindMeCount);
         _ = batch.KeyExpireAsync(remindMeSetKey, _cacheExpire);
     }
+    private void SetOwnerCreator(IBatch batch, SessionUnitCacheItem unit)
+    {
+        if (!unit.IsCreator)
+        {
+            return;
+        }
+        var creatorSetKey = OwnerCreatorSetKey(unit.OwnerId);
+        _ = batch.SortedSetAddAsync(creatorSetKey, unit.Id.ToString(), unit.PublicBadge);
+        _ = batch.KeyExpireAsync(creatorSetKey, _cacheExpire);
+    }
 
     private void SetOwnerFriendMap(IBatch batch, SessionUnitCacheItem unit)
     {
@@ -266,6 +287,16 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         var immersedSetKey = SessionImmersedSetKey(unit.SessionId.Value);
         _ = batch.SortedSetAddAsync(immersedSetKey, unit.OwnerId.ToString(), unit.PublicBadge);
         _ = batch.KeyExpireAsync(immersedSetKey, _cacheExpire);
+    }
+    private void SetSessionCreator(IBatch batch, SessionUnitCacheItem unit)
+    {
+        if (!unit.IsCreator)
+        {
+            return;
+        }
+        var creatorSetKey = SessionCreatorSetKey(unit.SessionId.Value);
+        _ = batch.SortedSetAddAsync(creatorSetKey, unit.OwnerId.ToString(), unit.PublicBadge);
+        _ = batch.KeyExpireAsync(creatorSetKey, _cacheExpire);
     }
 
     private void SetUnit(IBatch batch, SessionUnitCacheItem unit, bool refreshExpire)
@@ -324,6 +355,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             SetSessionPinnedSorting(batch, unit);
             // set session Immersed
             SetSessionImmersed(batch, unit);
+            // set sessuib Creator
+            SetSessionCreator(batch, unit);
 
             //// set owner Topping
             //SetOwnerTopping(batch, unit);
@@ -403,6 +436,18 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     public async Task<IDictionary<long, bool>> GetImmersedMembersAsync(Guid sessionId)
     {
         var entries = await Database.SortedSetRangeByScoreWithScoresAsync(SessionImmersedSetKey(sessionId));
+        var dict = entries.ToDictionary(x => x.Element.ToLong(), x => x.Score == 1);
+        return dict;
+    }
+
+    /// <summary>
+    /// 获取静默会话单元
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns>{Key:OwnerId, Value:Immersed}</returns>
+    public async Task<IDictionary<long, bool>> GetCreatorMembersAsync(Guid sessionId)
+    {
+        var entries = await Database.SortedSetRangeByScoreWithScoresAsync(SessionCreatorSetKey(sessionId));
         var dict = entries.ToDictionary(x => x.Element.ToLong(), x => x.Score == 1);
         return dict;
     }
@@ -552,6 +597,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             SetOwnerRemindAll(batch, unit);
             SetOwnerFollowing(batch, unit);
             SetOwnerFriendMap(batch, unit);
+            SetOwnerCreator(batch, unit);
+
             //Pinned
             if (unit.Sorting > 0)
             {
@@ -668,28 +715,18 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
     }
 
-    public async Task<IEnumerable<Guid>> GetPinnedFriendsAsync(
-        long ownerId,
-        double minScore = double.NegativeInfinity,
-        double maxScore = double.PositiveInfinity,
-        long skip = 0,
-        long take = -1,
-        bool isDescending = true)
+    private string GetFriendTypeKey(FriendTypes friendType, long ownerId)
     {
-        var ownerPinnedBadgeSetKey = OwnerPinnedBadgeSetKey(ownerId);
-
-        var redisZset = await Database.SortedSetRangeByScoreWithScoresAsync(
-            key: ownerPinnedBadgeSetKey,
-            start: minScore,
-            stop: maxScore,
-            skip: skip,
-            take: take,
-            order: isDescending ? Order.Descending : Order.Ascending);
-
-        var result = redisZset.Select(x => x.Element.ToGuid());
-
-        return result;
-
+        return friendType switch
+        {
+            FriendTypes.Pinned => OwnerPinnedBadgeSetKey(ownerId),
+            FriendTypes.Following => OwnerFollowingSetKey(ownerId),
+            FriendTypes.RemindAll => OwnerRemindAllSetKey(ownerId),
+            FriendTypes.RemindMe => OwnerRemindMeSetKey(ownerId),
+            FriendTypes.Immersed => OwnerImmersedSetKey(ownerId),
+            FriendTypes.Creator => OwnerCreatorSetKey(ownerId),
+            _ => throw new UserFriendlyException($"Non handle FriendTypes:{friendType}"),
+        };
     }
 
     public async Task<IEnumerable<Guid>> GetTypedFriendsAsync(
@@ -701,16 +738,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         long take = -1,
         bool isDescending = true)
     {
-        string zsetKey = string.Empty;
-        zsetKey = friendType switch
-        {
-            FriendTypes.Pinned => OwnerPinnedBadgeSetKey(ownerId),
-            FriendTypes.Following => OwnerFollowingSetKey(ownerId),
-            FriendTypes.RemindAll => OwnerRemindAllSetKey(ownerId),
-            FriendTypes.RemindMe => OwnerRemindMeSetKey(ownerId),
-            FriendTypes.Immersed => OwnerImmersedSetKey(ownerId),
-            _ => throw new UserFriendlyException($"Non handle FriendTypes:{friendType}"),
-        };
+        var zsetKey = GetFriendTypeKey(friendType, ownerId);
         var redisZset = await Database.SortedSetRangeByScoreWithScoresAsync(
             key: zsetKey,
             start: minScore,
@@ -723,6 +751,12 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         return result;
 
+    }
+
+    public async Task<long> GetTypedFriendsCountAsync(FriendTypes friendType, long ownerId)
+    {
+        var zsetKey = GetFriendTypeKey(friendType, ownerId);
+        return await Database.SortedSetLengthAsync(zsetKey);
     }
 
     /// <summary>
@@ -979,6 +1013,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         var isPrivate = message.IsPrivateMessage();
         var isRemindAll = message.IsRemindAll;
+
         var reminderIds = message.MessageReminderList.Select(x => x.SessionUnitId).ToHashSet();
         var followerIds = message.MessageFollowerList.Select(x => x.SessionUnitId).ToHashSet();
 
@@ -990,7 +1025,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         var pinnedMap = await GetPinnedMembersAsync(sessionId);
         var immersedMap = await GetImmersedMembersAsync(sessionId);
-
+        var creatorMap = await GetCreatorMembersAsync(sessionId);
         //var umitMap = new Dictionary<long, (bool Immersed, double Sorting)>();
 
         Logger.LogInformation(
@@ -1023,6 +1058,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             //var isImmersed = unit.IsImmersed;
             //var sorting = unit.Sorting;
             var isImmersed = immersedMap.TryGetValue(ownerId, out bool immersed) && immersed;
+            var isCreator = creatorMap.TryGetValue(ownerId, out bool creator) && creator;
             var sorting = pinnedMap.TryGetValue(ownerId, out var _sorting) ? _sorting : 0;
 
             // lastMessageId
@@ -1061,6 +1097,12 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             {
                 HashIncrementIfExist(batch, ownerStatisticSetKey, F_Total_Pinned, 1);
                 ZsetIncrementIfGuardKeyExist(batch, ownerStatisticSetKey, OwnerPinnedBadgeSetKey(ownerId), unitId.ToString(), 1);
+            }
+
+            //创建人
+            if (isCreator)
+            {
+                ZsetIncrementIfGuardKeyExist(batch, ownerStatisticSetKey, OwnerCreatorSetKey(ownerId), unitId.ToString(), 1);
             }
 
             // 静默方式 IsImmersed
@@ -1166,6 +1208,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         ZsetUpdateIfExistsAsync(batch, OwnerRemindMeSetKey(unit.OwnerId), unit.Id.ToString(), counter.RemindMeCount, removeWhenZero: true);
         ZsetUpdateIfExistsAsync(batch, OwnerImmersedSetKey(unit.OwnerId), unit.Id.ToString(), counter.PublicBadge);
         ZsetUpdateIfExistsAsync(batch, OwnerPinnedBadgeSetKey(unit.OwnerId), unit.Id.ToString(), counter.PublicBadge);
+        ZsetUpdateIfExistsAsync(batch, OwnerCreatorSetKey(unit.OwnerId), unit.Id.ToString(), counter.PublicBadge);
     }
     public async Task UpdateCounterAsync(SessionUnitCounterInfo counter, Func<Guid, Task<SessionUnitCacheItem>> fetchTask)
     {
