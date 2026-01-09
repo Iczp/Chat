@@ -1,3 +1,4 @@
+using IczpNet.Chat.Clocks;
 using IczpNet.Chat.Connections;
 using IczpNet.Chat.Hosting;
 using IczpNet.Chat.RedisMapping;
@@ -8,7 +9,6 @@ using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -47,8 +47,14 @@ return 1";
     private string SessionConnKey(Guid sessionId)
        => $"{Prefix}Sessions:SessionId-{sessionId}";
 
+
     private string OwnerDeviceKey(long chatObjectId)
         => $"{Prefix}Owners:Devices:OwnerId-{chatObjectId}";
+
+    private string OwnerConnZsetKey(long chatObjectId)
+        => $"{Prefix}Owners:Connections:OwnerId-{chatObjectId}";
+
+
     private string OwnerSessionKey(long chatObjectId)
         => $"{Prefix}Owners:Sessions:OwnerId-{chatObjectId}";
 
@@ -57,6 +63,80 @@ return 1";
 
     private string AllHostKey()
         => $"{Prefix}AllHosts";
+
+    private void HashSetConn(IBatch batch, ConnectionPoolCacheItem connectionPool)
+    {
+        var connKey = ConnKey(connectionPool.ConnectionId);
+        var hashEntries = MapToHashEntries(connectionPool);
+        _ = batch.HashSetAsync(connKey, hashEntries);
+        Expire(batch, connKey);
+    }
+    private void SortedSetHostConn(IBatch batch, ConnectionPoolCacheItem connectionPool)
+    {
+        if (string.IsNullOrWhiteSpace(connectionPool.Host))
+        {
+            return;
+        }
+        var hostConnKey = HostConnKey(connectionPool.Host);
+        var connectionId = connectionPool.ConnectionId;
+        _ = batch.SortedSetAddAsync(hostConnKey, connectionId, Clock.Now.ToUnixTimeMilliseconds());
+        Expire(batch, hostConnKey);
+    }
+    private void HashSetUserConn(IBatch batch, ConnectionPoolCacheItem connectionPool)
+    {
+        if (!connectionPool.UserId.HasValue)
+        {
+            return;
+        }
+        var userConnKey = UserConnKey(connectionPool.UserId.Value);
+        var ownerIds = connectionPool.ChatObjectIdList ?? [];
+        var ownerIdsStr = ownerIds.JoinAsString(",");
+        _ = batch.HashSetAsync(userConnKey, connectionPool.ConnectionId, ownerIdsStr);
+        Expire(batch, userConnKey);
+    }
+    private void HashSetOwnerDevice(IBatch batch, ConnectionPoolCacheItem connectionPool)
+    {
+        var ownerIds = connectionPool.ChatObjectIdList ?? [];
+        foreach (var ownerId in ownerIds)
+        {
+            var ownerDeviceKey = OwnerDeviceKey(ownerId);
+            var deviceValue = $"{connectionPool.DeviceType}:{connectionPool.DeviceId}";
+            _ = batch.HashSetAsync(ownerDeviceKey, connectionPool.ConnectionId, deviceValue);
+            Expire(batch, ownerDeviceKey);
+        }
+
+    }
+    private void HashSetOwnerSession(IBatch batch, ConnectionPoolCacheItem connectionPool, Dictionary<long, List<Guid>> chatObjectSessionMap)
+    {
+        var ownerIds = connectionPool.ChatObjectIdList ?? [];
+        foreach (var ownerId in ownerIds)
+        {
+            var ownerSessionKey = OwnerSessionKey(ownerId);
+            // if chatObjectSessions contains it, we assume set was exists or just created. To avoid extra KeyExists roundtrip, only set expire
+            // but add members if we have sessions and set wasn't in Redis earlier (GetOrSetSessionsAsync only returns existing/filled).
+            var sessions = chatObjectSessionMap.GetValueOrDefault(ownerId);
+            if (sessions.IsNullOrEmpty()) continue;
+
+            // Add members (idempotent)
+            foreach (var sessionId in sessions)
+            {
+                _ = batch.SetAddAsync(ownerSessionKey, sessionId.ToString());
+            }
+            Expire(batch, ownerSessionKey);
+        }
+    }
+    private void HashSetSessionConn(IBatch batch, ConnectionPoolCacheItem connectionPool, Dictionary<Guid, List<long>> sessionChatObjectsMap)
+    {
+        var connectionId = connectionPool.ConnectionId;
+        foreach (var kv in sessionChatObjectsMap)
+        {
+            var sessionId = kv.Key;
+            var owners = kv.Value;
+            var sessionConnKey = SessionConnKey(sessionId);
+            _ = batch.HashSetAsync(sessionConnKey, connectionId, owners.JoinAsString(","));
+            Expire(batch, sessionConnKey);
+        }
+    }
 
     private static HashEntry[] MapToHashEntries(ConnectionPoolCacheItem connectionPool)
     {
@@ -68,7 +148,7 @@ return 1";
 
         return newList.ToArray();
     }
-    
+
 
     private int ExpireSeconds => (int)(CacheExpire?.TotalSeconds ?? -1);
     private void Expire(IBatch batch, string key)
@@ -207,10 +287,10 @@ return 1";
         var userId = connectionPool.UserId;
         Logger.LogInformation($"[CreateAsync] connectionId:{connectionId},userId:{userId},ownerIds:{ownerIds.JoinAsString(",")}");
 
-        var chatObjectSessions = await GetOrSetSessionsAsync(ownerIds, token);
+        var chatObjectSessionMap = await GetOrSetSessionsAsync(ownerIds, token);
 
         // Build session -> owners mapping efficiently
-        var sessionChatObjects = BuildSessionChatObjects(chatObjectSessions);
+        var sessionChatObjectsMap = BuildSessionChatObjects(chatObjectSessionMap);
 
         // Now create a write batch to set all required keys
 
@@ -218,58 +298,22 @@ return 1";
         var writeBatch = Database.CreateBatch();
 
         // Host: use sorted set for timestamped connections
-        var hostConnKey = HostConnKey(connectionPool.Host);
-        _ = writeBatch.SortedSetAddAsync(hostConnKey, connectionId, Clock.Now.Ticks);
-        Expire(writeBatch, hostConnKey);
+        SortedSetHostConn(writeBatch, connectionPool);
 
         //User
-        if (userId.HasValue)
-        {
-            var userConnKey = UserConnKey(userId.Value);
-            _ = writeBatch.HashSetAsync(userConnKey, connectionId, ownerIds.JoinAsString(","));
-            Expire(writeBatch, userConnKey);
-        }
+        HashSetUserConn(writeBatch, connectionPool);
 
         // connectionPool hash
-        var hashEntries = MapToHashEntries(connectionPool);
-        _ = writeBatch.HashSetAsync(ConnKey(connectionId), hashEntries);
-        Expire(writeBatch, ConnKey(connectionId));
+        HashSetConn(writeBatch, connectionPool);
 
         // owner session sets only if not exists - to avoid race we'll set expire and add members if sessions exist in memory
-        foreach (var ownerId in ownerIds)
-        {
-            var ownerSessionKey = OwnerSessionKey(ownerId);
-            // if chatObjectSessions contains it, we assume set was exists or just created. To avoid extra KeyExists roundtrip, only set expire
-            // but add members if we have sessions and set wasn't in Redis earlier (GetOrSetSessionsAsync only returns existing/filled).
-            var sessions = chatObjectSessions.GetValueOrDefault(ownerId);
-            if (sessions.IsNullOrEmpty()) continue;
-
-            // Add members (idempotent)
-            foreach (var sessionId in sessions)
-            {
-                _ = writeBatch.SetAddAsync(ownerSessionKey, sessionId.ToString());
-            }
-            Expire(writeBatch, ownerSessionKey);
-        }
+        HashSetOwnerSession(writeBatch, connectionPool, chatObjectSessionMap);
 
         // chatObject -> connection hash (owner conn mapping)
-        foreach (var ownerId in ownerIds)
-        {
-            var ownerDeviceKey = OwnerDeviceKey(ownerId);
-            var deviceValue = $"{connectionPool.DeviceType}:{connectionPool.DeviceId}";
-            _ = writeBatch.HashSetAsync(ownerDeviceKey, connectionId, deviceValue);
-            Expire(writeBatch, ownerDeviceKey);
-        }
+        HashSetOwnerDevice(writeBatch, connectionPool);
 
         // session -> connection hash (session -> connId : owners joined)
-        foreach (var kv in sessionChatObjects)
-        {
-            var sessionId = kv.Key;
-            var owners = kv.Value;
-            var sessionConnKey = SessionConnKey(sessionId);
-            _ = writeBatch.HashSetAsync(sessionConnKey, connectionId, owners.JoinAsString(","));
-            Expire(writeBatch, sessionConnKey);
-        }
+        HashSetSessionConn(writeBatch, connectionPool, sessionChatObjectsMap);
 
         writeBatch.Execute();
 
@@ -332,7 +376,7 @@ return 1";
         if (!hostValue.IsNullOrEmpty)
         {
             var hostConnKey = HostConnKey(hostValue.ToString());
-            _ = writeBatch.SortedSetAddAsync(hostConnKey, connectionId, Clock.Now.Ticks);
+            _ = writeBatch.SortedSetAddAsync(hostConnKey, connectionId, Clock.Now.ToUnixTimeMilliseconds());
             Expire(writeBatch, hostConnKey);
         }
 
@@ -340,6 +384,7 @@ return 1";
         if (!userValue.IsNullOrEmpty && Guid.TryParse(userValue.ToString(), out var userId))
         {
             var userConnKey = UserConnKey(userId);
+            _ = writeBatch.HashSetAsync(connKey, userConnKey, Clock.Now.ToUnixTimeMilliseconds());
             Expire(writeBatch, userConnKey);
         }
 
