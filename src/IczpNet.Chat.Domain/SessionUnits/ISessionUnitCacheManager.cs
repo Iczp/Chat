@@ -314,5 +314,10 @@ public interface ISessionUnitCacheManager
     /// <returns></returns>
     Task FollowAsync(long ownerId, List<Guid> unitIdList);
 
-
+    /// <summary>
+    /// 清除消息角标
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    Task<bool> ClearBadgeAsync(long ownerId);
 }

@@ -70,4 +70,11 @@ public interface ISessionUnitAppService
     /// <param name="ticks"></param>
     /// <returns></returns>
     Task<long> UpdateTicksAsync(Guid senderSessionUnitId, long? ticks);
+
+    /// <summary>
+    /// 清除角标
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    Task<long> ClearBadgeAsync(long ownerId);
 }

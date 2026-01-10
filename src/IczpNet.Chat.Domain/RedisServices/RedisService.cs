@@ -100,6 +100,14 @@ end
 return tonumber(newValue)
 ";
 
+    protected static string HashSetIfFieldExistsScript => @"
+if redis.call('HEXISTS', KEYS[1], ARGV[1]) == 1 then
+    redis.call('HSET', KEYS[1], ARGV[1], ARGV[2])
+    return 1
+end
+return 0
+";
+
 
     /// <summary>
     /// key 不存在 → 返回 nil（不创建）
@@ -221,6 +229,13 @@ return tonumber(newValue)
         return Database.ScriptEvaluateAsync(HashIncrementIfExistsScript,
             [key],
             [member, increment]);
+    }
+
+    protected static Task<RedisResult> HashSetIfFieldExistsAsync(IBatch batch, string key, string field, RedisValue value)
+    {
+        return batch.ScriptEvaluateAsync(HashSetIfFieldExistsScript,
+            [key],
+            [field, value]);
     }
 
     protected static void ZsetIncrementIfGuardKeyExist(IBatch batch, string guardKey, string key, string member, double increment)
