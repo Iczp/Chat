@@ -4,6 +4,7 @@ using IczpNet.Chat.Hosting;
 using IczpNet.Chat.RedisMapping;
 using IczpNet.Chat.RedisServices;
 using IczpNet.Chat.SessionUnits;
+using Microsoft.AspNetCore.Mvc.TagHelpers.Cache;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
@@ -47,8 +48,8 @@ return 1";
 
     /// <summary>
     /// 会话连接
-    /// key: connectionId
-    /// value: ownerId
+    /// key: connectionId,
+    /// value: ownerId,
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
@@ -57,8 +58,8 @@ return 1";
 
     /// <summary>
     /// 设备
-    /// key: connectionId
-    /// value: deviceType:eviceId
+    /// key: connectionId,
+    /// value: deviceType:eviceId,
     /// </summary>
     /// <param name="chatObjectId"></param>
     /// <returns></returns>
@@ -67,8 +68,8 @@ return 1";
 
     /// <summary>
     /// 最后连接时间
-    /// element: deviceType:deviceId
-    /// score: unixTime
+    /// element: deviceType:deviceId,
+    /// score: unixTime,
     /// </summary>
     /// <param name="chatObjectId"></param>
     /// <returns></returns>
@@ -77,8 +78,8 @@ return 1";
 
     /// <summary>
     /// 会话
-    /// key: connectionId
-    /// value: 
+    /// key: connectionId,
+    /// value: ,
     /// </summary>
     /// <param name="chatObjectId"></param>
     /// <returns></returns>
@@ -87,8 +88,8 @@ return 1";
 
     /// <summary>
     /// 用户连接
-    /// key: connectionId
-    /// value: ownerId[]
+    /// key: connectionId,
+    /// value: ownerId[],
     /// </summary>
     /// <param name="userId"></param>
     /// <returns></returns>
@@ -446,10 +447,8 @@ return 1";
 
     public async Task DeleteByHostNameAsync(string hostHame)
     {
-        var hostConnKey = HostConnKey(hostHame.ToString());
-
         // get connection ids from sorted set (members only)
-        var members = await Database.SortedSetRangeByRankAsync(hostConnKey, 0, -1, Order.Ascending);
+        var members = await Database.SortedSetRangeByRankAsync(HostConnKey(hostHame.ToString()), 0, -1, Order.Ascending);
 
         if (members == null || members.Length == 0)
         {
@@ -506,21 +505,32 @@ return 1";
 
     public async Task<bool> IsOnlineAsync(Guid userId, CancellationToken token = default)
     {
-        var key = UserConnKey(userId);
-        var length = await Database.HashLengthAsync(key);
+        var length = await Database.HashLengthAsync(UserConnKey(userId));
         return length > 0;
     }
 
-    public async Task<bool> IsOnlineAsync(long chatObjectId, CancellationToken token = default)
+    public async Task<bool> IsOnlineAsync(long ownertId, CancellationToken token = default)
     {
-        var key = OwnerDeviceKey(chatObjectId);
-        var length = await Database.HashLengthAsync(key);
+        var length = await Database.HashLengthAsync(OwnerDeviceKey(ownertId));
         return length > 0;
     }
 
-    public async Task<List<string>> GetDeviceTypesAsync(long chatObjectId, CancellationToken token = default)
+    public async Task<DateTime> GetLatestOnlineAsync(long ownertId, CancellationToken token = default)
     {
-        var key = OwnerDeviceKey(chatObjectId);
+        var key = OwnerLatestZsetKey(ownertId);
+        var result = await Database.SortedSetRangeByScoreWithScoresAsync(key, -1, -1, take: 1, order: Order.Descending);
+        if (result == null || result.Length == 0)
+        {
+            return DateTime.MinValue;
+        }
+        var score = result[0].Score;
+        var dateTime = DateTimeOffset.FromUnixTimeMilliseconds((long)score).DateTime;
+        return dateTime;
+    }
+
+    public async Task<List<string>> GetDeviceTypesAsync(long ownertId, CancellationToken token = default)
+    {
+        var key = OwnerDeviceKey(ownertId);
 
         var values = await Database.HashValuesAsync(key);
         if (values == null || values.Length == 0)
@@ -546,9 +556,9 @@ return 1";
              );
     }
 
-    public async Task<Dictionary<long, List<(string ConnectionId, string DeviceId, string DeviceType)>>> GetDevicesAsync(List<long> chatObjectIdList, CancellationToken token = default)
+    public async Task<Dictionary<long, List<DeviceModel>>> GetDevicesAsync(List<long> chatObjectIdList, CancellationToken token = default)
     {
-        var result = new Dictionary<long, List<(string ConnectionId, string DeviceId, string DeviceType)>>(chatObjectIdList.Count);
+        var result = new Dictionary<long, List<DeviceModel>>(chatObjectIdList.Count);
 
         if (chatObjectIdList == null || chatObjectIdList.Count == 0)
         {
@@ -584,11 +594,14 @@ return 1";
                 .Where(v => !string.IsNullOrWhiteSpace(v.Value.ToString()))
                 .Select(v =>
                 {
-                    // DeviceType:DeviceId → 取 DeviceType
-                    var arr = v.Value.ToString().Split(':');
-
-                    return (v.Name.ToString(), arr[0], arr[1]);
-
+                    var element = DeviceElement.Parse(v.Value);
+                    return new DeviceModel()
+                    {
+                        OwnerId = ownerId,
+                        ConnectionId = v.Name.ToString(),
+                        DeviceType = element.DeviceType,
+                        DeviceId = element.DeviceId,
+                    };
                 })
                 .Distinct()
                 .ToList();
@@ -637,18 +650,14 @@ return 1";
         return deviceTypes.ToList();
     }
 
-    public async Task<int> GetCountByUserAsync(Guid userId, CancellationToken token = default)
+    public async Task<long> GetCountByUserAsync(Guid userId, CancellationToken token = default)
     {
-        var userConnKey = UserConnKey(userId);
-        var length = await Database.HashLengthAsync(userConnKey);
-        return (int)length;
+        return await Database.HashLengthAsync(UserConnKey(userId));
     }
 
-    public async Task<int> GetCountByChatObjectAsync(long chatObjectId, CancellationToken token = default)
+    public async Task<long> GetCountByChatObjectAsync(long chatObjectId, CancellationToken token = default)
     {
-        var ownerDeviceKey = OwnerDeviceKey(chatObjectId);
-        var length = await Database.HashLengthAsync(ownerDeviceKey);
-        return (int)length;
+        return await Database.HashLengthAsync(OwnerDeviceKey(chatObjectId));
     }
 
     public async Task<Dictionary<string, List<long>>> GetConnectionsBySessionAsync(Guid sessionId, CancellationToken token = default)

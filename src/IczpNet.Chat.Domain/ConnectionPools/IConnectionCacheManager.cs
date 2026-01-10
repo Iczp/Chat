@@ -63,18 +63,26 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     /// <summary>
     /// 是否在线（聊天对象）
     /// </summary>
-    /// <param name="chatObjectId"></param>
+    /// <param name="ownertId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<bool> IsOnlineAsync(long chatObjectId, CancellationToken token = default);
+    Task<bool> IsOnlineAsync(long ownertId, CancellationToken token = default);
+
+    /// <summary>
+    /// 获取最后在线时间（聊天对象）
+    /// </summary>
+    /// <param name="ownertId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<DateTime> GetLatestOnlineAsync(long ownertId, CancellationToken token = default);
 
     /// <summary>
     /// 获取设备类型 聊天对象
     /// </summary>
-    /// <param name="chatObjectId"></param>
+    /// <param name="ownertId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<List<string>> GetDeviceTypesAsync(long chatObjectId, CancellationToken token = default);
+    Task<List<string>> GetDeviceTypesAsync(long ownertId, CancellationToken token = default);
 
     /// <summary>
     /// 获取设备类型 聊天对象
@@ -90,7 +98,7 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     /// <param name="chatObjectIdList"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<Dictionary<long, List<(string ConnectionId, string DeviceId, string DeviceType)>>> GetDevicesAsync(List<long> chatObjectIdList, CancellationToken token = default);
+    Task<Dictionary<long, List<DeviceModel>>> GetDevicesAsync(List<long> chatObjectIdList, CancellationToken token = default);
 
     /// <summary>
     /// 获取设备类型 用户
@@ -106,15 +114,15 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     /// <param name="userId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<int> GetCountByUserAsync(Guid userId, CancellationToken token = default);
+    Task<long> GetCountByUserAsync(Guid userId, CancellationToken token = default);
 
     /// <summary>
     /// 获取连接数量(聊天对象)
     /// </summary>
-    /// <param name="chatObjectId"></param>
+    /// <param name="ownertId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<int> GetCountByChatObjectAsync(long chatObjectId, CancellationToken token = default);
+    Task<long> GetCountByChatObjectAsync(long ownertId, CancellationToken token = default);
 
     /// <summary>
     /// 获取会话连接
