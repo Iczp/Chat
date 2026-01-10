@@ -74,6 +74,8 @@ public class FollowManager(
             Assert.If(ownerUnit.SessionId != item.SessionId, $"Not in the same session,id:{item.Id}");
         }
 
+        var destMap = destinationList.ToDictionary(x => x.Id);
+
         var followedIdList = (await Repository.GetQueryableAsync())
              .Where(x => x.OwnerSessionUnitId == ownerUnit.Id)
              .Select(x => x.DestinationSessionUnitId)
@@ -81,7 +83,8 @@ public class FollowManager(
 
         var newList = unitIdList.Except(followedIdList)
             .Where(x => x != ownerUnit.Id)
-            .Select(x => new Follow(ownerUnit, x))
+            .Where(x => destMap[x] != null)
+            .Select(x => new Follow(ownerUnit, destMap[x]))
             .ToList();
 
         if (newList.Count != 0)

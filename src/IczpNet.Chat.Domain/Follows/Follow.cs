@@ -75,12 +75,16 @@ public class Follow : BaseEntity
 
     public Follow(SessionUnit ownerSessionUnit, Guid destinationId)
     {
-        OwnerSessionUnit = ownerSessionUnit; 
+        //OwnerSessionUnit = ownerSessionUnit; 
+        OwnerSessionUnitId = ownerSessionUnit.Id;
+        OwnerId = ownerSessionUnit.OwnerId;
+        OwnerType = ownerSessionUnit.Owner?.ObjectType;
+
         DestinationSessionUnitId = destinationId;
     }
     public Follow(SessionUnit ownerSessionUnit, SessionUnit destinationSessionUnit)
     {
-        OwnerSessionUnit = ownerSessionUnit;
+        //OwnerSessionUnit = ownerSessionUnit;
         OwnerId = ownerSessionUnit.OwnerId;
         OwnerType = ownerSessionUnit.Owner?.ObjectType;
 
