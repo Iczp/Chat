@@ -549,7 +549,13 @@ public static class RedisMapper
 
     #region Convert helpers (to/from RedisValue)
 
-    private static RedisValue ConvertToRedisValue(object value, Type declaredType)
+
+    public static RedisValue ToRedisValue(this DateTime value, string format = "o")
+    {
+        return value.ToUniversalTime().ToString(format, Invariant);
+    }
+
+    public static RedisValue ConvertToRedisValue(object value, Type declaredType)
     {
         if (value == null) return RedisValue.EmptyString;
 
@@ -590,7 +596,7 @@ public static class RedisMapper
         if (underlying == typeof(DateTime))
         {
             var dt = (DateTime)value;
-            return dt.ToUniversalTime().ToString("o", Invariant);
+            return dt.ToRedisValue();
         }
         if (underlying == typeof(TimeSpan))
         {
