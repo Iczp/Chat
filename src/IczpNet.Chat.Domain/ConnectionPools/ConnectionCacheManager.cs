@@ -4,7 +4,6 @@ using IczpNet.Chat.Hosting;
 using IczpNet.Chat.RedisMapping;
 using IczpNet.Chat.RedisServices;
 using IczpNet.Chat.SessionUnits;
-using Microsoft.AspNetCore.Mvc.TagHelpers.Cache;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
@@ -480,7 +479,7 @@ return 1";
             await DeleteByHostNameAsync(CurrentHosted.Name);
 
             var batch = Database.CreateBatch();
-            _ = batch.SortedSetAddAsync(AllHostKey(), CurrentHosted.Name, Clock.Now.Ticks);
+            _ = batch.SortedSetAddAsync(AllHostKey(), CurrentHosted.Name, Clock.Now.ToUnixTimeMilliseconds());
             _ = batch.KeyExpireAsync(AllHostKey(), TimeSpan.FromDays(7));
             batch.Execute();
 
