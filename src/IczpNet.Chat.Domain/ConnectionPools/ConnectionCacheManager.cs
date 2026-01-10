@@ -479,8 +479,9 @@ return 1";
             await DeleteByHostNameAsync(CurrentHosted.Name);
 
             var batch = Database.CreateBatch();
-            _ = batch.SortedSetAddAsync(AllHostKey(), CurrentHosted.Name, Clock.Now.ToUnixTimeMilliseconds());
-            _ = batch.KeyExpireAsync(AllHostKey(), TimeSpan.FromDays(7));
+            var allHostKey = AllHostKey();
+            _ = batch.SortedSetAddAsync(allHostKey, CurrentHosted.Name, Clock.Now.ToUnixTimeMilliseconds());
+            _ = batch.KeyExpireAsync(allHostKey, TimeSpan.FromDays(7));
             batch.Execute();
 
             return true;
