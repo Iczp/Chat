@@ -32,6 +32,7 @@ namespace IczpNet.Chat.SessionUnits;
 public class SessionUnitAppService(
     IMessageRepository messageRepository,
     ISessionUnitRepository repository,
+    ISessionUnitCacheManager sessionUnitCacheManager,
     IReadedRecorderManager readedRecorderManager,
     IOpenedRecorderManager openedRecorderManager,
     IFavoritedRecorderManager favoriteManager,
@@ -48,6 +49,7 @@ public class SessionUnitAppService(
     protected virtual string GetCounterPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.GetCounter;
 
     protected ISessionUnitRepository Repository { get; } = repository;
+    public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
     protected IMessageRepository MessageRepository { get; } = messageRepository;
     protected IReadedRecorderManager ReadedRecorderManager { get; } = readedRecorderManager;
     protected IOpenedRecorderManager OpenedRecorderManager { get; } = openedRecorderManager;
@@ -666,6 +668,20 @@ public class SessionUnitAppService(
     [HttpPost]
     public async Task<long> UpdateTicksAsync(Guid senderSessionUnitId, long? ticks)
     {
-       return  await Repository.UpdateTicksAsync(senderSessionUnitId, ticks);
+        return await Repository.UpdateTicksAsync(senderSessionUnitId, ticks);
+    }
+
+    /// <summary>
+    /// 清除消息角标
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    [HttpPost]
+    public async Task<long> ClearBadgeAsync(long ownerId)
+    {
+
+        var result = await Repository.ClearBadgeAsync(ownerId);
+        var clearResult = await SessionUnitCacheManager.ClearBadgeAsync(ownerId);
+        return result;
     }
 }

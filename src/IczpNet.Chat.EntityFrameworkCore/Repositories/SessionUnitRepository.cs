@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
@@ -255,6 +256,7 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
                  .SetProperty(b => b.FollowingCount, b => info.FollowingCount)
                  .SetProperty(b => b.RemindMeCount, b => info.RemindMeCount)
                  .SetProperty(b => b.RemindAllCount, b => info.RemindAllCount)
+                 .SetProperty(b => b.LastModificationTime, b => Clock.Now)
              );
 
         // 确保更新已经提交
@@ -271,5 +273,25 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
         return entity;
     }
 
+    public async Task<long> ClearBadgeAsync(long ownerId)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var context = await GetDbContextAsync();
+        Logger.LogInformation("{method} ownerId:{ownerId} [START]", nameof(ClearBadgeAsync), ownerId);
 
+        //清除角标
+        //return 
+        var result = await context.SessionUnit
+            .Where(x => x.OwnerId == ownerId)
+            .ExecuteUpdateAsync(s => s
+                 .SetProperty(b => b.PublicBadge, b => 0)
+                 .SetProperty(b => b.PrivateBadge, b => 0)
+                 .SetProperty(b => b.FollowingCount, b => 0)
+                 .SetProperty(b => b.RemindMeCount, b => 0)
+                 .SetProperty(b => b.RemindAllCount, b => 0)
+                 .SetProperty(b => b.LastModificationTime, b => Clock.Now)
+             );
+        Logger.LogInformation("{method} ownerId:{ownerId},[END] Elapsed:{elapsed}ms", nameof(ClearBadgeAsync), ownerId, stopwatch.ElapsedMilliseconds);
+        return result;
+    }
 }

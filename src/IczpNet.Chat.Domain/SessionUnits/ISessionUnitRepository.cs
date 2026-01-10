@@ -34,5 +34,10 @@ public interface ISessionUnitRepository : IRepository<SessionUnit, Guid>
     /// <returns></returns>
     Task<SessionUnit> UpdateCountersync(SessionUnitCounterInfo info);
 
-
+    /// <summary>
+    /// 清除角标
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    Task<long> ClearBadgeAsync(long ownerId);
 }
