@@ -1,7 +1,9 @@
-﻿using IczpNet.AbpCommons.Extensions;
+﻿using IczpNet.AbpCommons.Dtos;
+using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ConnectionPools.Dtos;
 using IczpNet.Chat.Permissions;
+using Minio.DataModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,13 +13,12 @@ using Volo.Abp.Application.Dtos;
 namespace IczpNet.Chat.ConnectionPools;
 
 /// <summary>
-/// 连接池
+/// 连接池(Cache)
 /// </summary>
-/// <param name="abortService"></param>
-/// <param name="connectionPoolManager"></param>
-public class ConnectionPoolAppService(
+
+public class ConnectionCacheAppService(
     IAbortService abortService,
-    IConnectionPoolManager connectionPoolManager) : ChatAppService, IConnectionPoolAppService
+    IConnectionCacheManager connectionCacheManager) : ChatAppService, IConnectionCacheAppService
 {
 
     protected override string CreatePolicyName { get; set; } = ChatPermissions.ConnectionPoolPermission.Create;
@@ -32,13 +33,44 @@ public class ConnectionPoolAppService(
     protected virtual string UpdateUserConnectionIdsPolicyName { get; set; } = ChatPermissions.ConnectionPoolPermission.UpdateUserConnectionIds;
     protected virtual string GetCountByUserIdPolicyName { get; set; } = ChatPermissions.ConnectionPoolPermission.GetCountByUserId;
     public IAbortService AbortService { get; } = abortService;
-    public IConnectionPoolManager ConnectionPoolManager { get; } = connectionPoolManager;
+    public IConnectionCacheManager ConnectionPoolManager { get; } = connectionCacheManager;
 
 
-    /// <inheritdoc />
-    public async Task<int> GetTotalCountAsync(string host)
+    /// <summary>
+    /// 获取所有主机在线人数
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    public async Task<PagedResultDto<OnlineHostDto>> GetHostsAsync(ConnectionHostGetListInput input)
     {
-        return await ConnectionPoolManager.GetTotalCountAsync(host);
+        var allHost = await ConnectionPoolManager.GetAllHostsAsync();
+
+        var countMap = await ConnectionPoolManager.OnlineCountByHostAsync(allHost.Select(x => x.Key));
+
+        var queryable = allHost.Select(x => new OnlineHostDto()
+        {
+            Host = x.Key,
+            StartTime = x.Value,
+            Count = countMap.GetValueOrDefault(x.Key),
+        }).AsQueryable();
+
+        var query = queryable.WhereIf(!string.IsNullOrWhiteSpace(input.Host), x => x.Host == input.Host);
+
+        return await GetPagedListAsync(query, input, q => q.OrderByDescending(x => x.StartTime));
+    }
+
+    /// <summary>
+    /// 获取所有主机在线人数
+    /// </summary>
+    /// <param name="host"></param>
+    /// <returns></returns>
+    public async Task<long> GetTotalCountAsync(string host)
+    {
+        var result = await GetHostsAsync(new ConnectionHostGetListInput()
+        {
+            MaxResultCount = 999
+        });
+        return result.Items.Sum(x => x.Count);
     }
 
     protected virtual async Task<PagedResultDto<ConnectionPoolDto>> QueryPagedListAsync(IQueryable<ConnectionPoolCacheItem> connectionPools, ConnectionPoolGetListInput input)
@@ -63,8 +95,7 @@ public class ConnectionPoolAppService(
 
     protected virtual async Task<PagedResultDto<ConnectionPoolDto>> FetchPagedListAsync(ConnectionPoolGetListInput input)
     {
-        var queryable = (await ConnectionPoolManager.CreateQueryableAsync());
-        return await QueryPagedListAsync(queryable, input);
+        throw new NotImplementedException();
     }
 
     /// <summary>
@@ -86,9 +117,7 @@ public class ConnectionPoolAppService(
     public async Task<PagedResultDto<ConnectionPoolDto>> GetListByChatObjectAsync(long chatObjectId)
     {
         //await CheckGetItemPolicyAsync();
-        var queryable = (await ConnectionPoolManager.GetListByChatObjectAsync(chatObjectId)).AsQueryable();
-
-        return await QueryPagedListAsync(queryable, new ConnectionPoolGetListInput() { MaxResultCount = 999 });
+        throw new NotImplementedException();
     }
 
     /// <summary>
@@ -99,11 +128,7 @@ public class ConnectionPoolAppService(
     {
         await CheckPolicyAsync(GetListByCurrentUserPolicyName);
 
-        var userConnList = await ConnectionPoolManager.GetListByUserAsync(input.UserId.Value);
-
-        var queryable = (userConnList.AsQueryable());
-
-        return await QueryPagedListAsync(queryable, input);
+        throw new NotImplementedException();
     }
 
     /// <summary>
@@ -126,9 +151,7 @@ public class ConnectionPoolAppService(
     {
         await CheckGetItemPolicyAsync();
 
-        var item = await ConnectionPoolManager.GetAsync(id);
-
-        return ObjectMapper.Map<ConnectionPoolCacheItem, ConnectionPoolDto>(item);
+        throw new NotImplementedException();
     }
 
 
@@ -141,7 +164,7 @@ public class ConnectionPoolAppService(
     public async Task ClearAllAsync(string host, string reason)
     {
         await CheckPolicyAsync(ClearAllPolicyName);
-        await ConnectionPoolManager.ClearAllAsync(host, reason);
+        throw new NotImplementedException();
     }
 
     /// <summary>
@@ -162,7 +185,7 @@ public class ConnectionPoolAppService(
     public async Task<int> UpdateConnectionIdsAsync()
     {
         await CheckPolicyAsync(UpdateConnectionIdsPolicyName);
-        return await ConnectionPoolManager.UpdateAllConnectionIdsAsync();
+        throw new NotImplementedException();
     }
 
     /// <summary>
@@ -173,12 +196,12 @@ public class ConnectionPoolAppService(
     public async Task<int> GetCountByUserAsync(Guid userId)
     {
         await CheckPolicyAsync(GetCountByUserIdPolicyName);
-        return await ConnectionPoolManager.GetCountByUserAsync(userId);
+        throw new NotImplementedException();
     }
     public async Task<int> GetCountByChatObjectAsync(long chatObjectId)
     {
         await CheckPolicyAsync(GetCountByUserIdPolicyName);
-        return await ConnectionPoolManager.GetCountByChatObjectAsync(chatObjectId);
+        throw new NotImplementedException();
     }
 
     /// <summary>
@@ -188,7 +211,7 @@ public class ConnectionPoolAppService(
     public async Task<int> UpdateUserAsync(Guid userId)
     {
         await CheckPolicyAsync(UpdateUserConnectionIdsPolicyName);
-        return await ConnectionPoolManager.UpdateIndexByUserAsync(userId);
+        throw new NotImplementedException();
     }
 
     /// <summary>
@@ -198,7 +221,18 @@ public class ConnectionPoolAppService(
     public async Task<int> UpdateChatObjectAsync(long chatObjectId)
     {
         await CheckPolicyAsync(UpdateUserConnectionIdsPolicyName);
-        return await ConnectionPoolManager.UpdateIndexByChatObjectAsync(chatObjectId);
+        throw new NotImplementedException();
+    }
+
+    public async Task<PagedResultDto<OwnerLatestOnline>> GetLatestOnlineAsync(long ownerId, LatestOnlineGetListInput input)
+    {
+        var list = await ConnectionPoolManager.GetLatestOnlineAsync(ownerId);
+        var queryable = list.AsQueryable();
+        var query = queryable
+            .WhereIf(!string.IsNullOrWhiteSpace(input.DeviceId), x => x.DeviceId == input.DeviceId)
+            .WhereIf(!string.IsNullOrWhiteSpace(input.DeviceType), x => x.DeviceType == input.DeviceType)
+            ;
+        return await GetPagedListAsync(query, input);
     }
 
     /// <summary>
@@ -211,5 +245,8 @@ public class ConnectionPoolAppService(
         await AbortService.AbortAsync(input.ConnectionIdList, input.Reason);
     }
 
-
+    public Task<long> GetFriendsOnlineCountAsync(long ownerId)
+    {
+        return ConnectionPoolManager.GetFriendsOnlineCountAsync(ownerId);
+    }
 }

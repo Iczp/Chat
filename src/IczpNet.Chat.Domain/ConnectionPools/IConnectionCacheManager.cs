@@ -74,7 +74,7 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     /// <param name="ownertId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<DateTime> GetLatestOnlineAsync(long ownertId, CancellationToken token = default);
+    Task<IEnumerable<OwnerLatestOnline>> GetLatestOnlineAsync(long ownertId, CancellationToken token = default);
 
     /// <summary>
     /// 获取设备类型 聊天对象
@@ -138,4 +138,24 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     /// <param name="ownerSessions"></param>
     /// <returns></returns>
     Task AddSessionAsync(List<(Guid SessionId, long OwnerId)> ownerSessions);
+
+    /// <summary>
+    /// 获取主机最后在线时间
+    /// </summary>
+    /// <returns></returns>
+    Task<Dictionary<string, DateTime?>> GetAllHostsAsync();
+
+    /// <summary>
+    /// 获取主机在线连接数
+    /// </summary>
+    /// <param name="hosts"></param>
+    /// <returns></returns>
+    Task<Dictionary<string, long>> OnlineCountByHostAsync(IEnumerable<string> hosts);
+
+    /// <summary>
+    /// 获取好友在线数量
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    Task<long> GetFriendsOnlineCountAsync(long ownerId);
 }

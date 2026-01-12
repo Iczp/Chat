@@ -46,7 +46,7 @@ public interface ISessionUnitCacheManager
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns>{Key:SessionUnitId, Value:OwnerId}</returns>
-    Task<IDictionary<Guid, long>> GetMembersMapAsync(Guid sessionId);
+    Task<IDictionary<Guid, SessionUnitElement>> GetMembersMapAsync(Guid sessionId);
 
     /// <summary>
     /// 获取会话成员数量

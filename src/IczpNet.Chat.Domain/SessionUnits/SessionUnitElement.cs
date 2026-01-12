@@ -3,13 +3,15 @@ using System;
 
 namespace IczpNet.Chat.SessionUnits;
 
-public readonly record struct SessionUnitElement(
-    Guid SessionId,
-    long OwnerId,
-    Guid SessionUnitId)
+public readonly record struct SessionUnitElement(long OwnerId, long FriendId, Guid SessionUnitId, Guid SessionId)
 {
     public override string ToString()
-        => $"{SessionId}:{OwnerId}:{SessionUnitId}";
+        => $"{OwnerId}:{FriendId}:{SessionUnitId}:{SessionId}";
+
+    public static SessionUnitElement Create(long OwnerId, long FriendId, Guid SessionUnitId, Guid SessionId)
+    {
+        return new SessionUnitElement(OwnerId, FriendId, SessionUnitId, SessionId);
+    }
 
     /// <summary>
     /// 隐式转换，便于 Redis API 使用
@@ -37,17 +39,17 @@ public readonly record struct SessionUnitElement(
         }
 
         var parts = value.ToString().Split(':');
-        if (parts.Length != 3)
+        if (parts.Length != 4)
         {
             return false;
         }
 
-        if (!Guid.TryParse(parts[0], out var sessionId))
+        if (!long.TryParse(parts[0], out var ownerId))
         {
             return false;
         }
 
-        if (!long.TryParse(parts[1], out var ownerId))
+        if (!long.TryParse(parts[1], out var friendId))
         {
             return false;
         }
@@ -56,8 +58,12 @@ public readonly record struct SessionUnitElement(
         {
             return false;
         }
+        if (!Guid.TryParse(parts[2], out var sessionId))
+        {
+            return false;
+        }
 
-        field = new SessionUnitElement(sessionId, ownerId, unitId);
+        field = Create(ownerId, friendId, unitId, sessionId);
         return true;
     }
 }

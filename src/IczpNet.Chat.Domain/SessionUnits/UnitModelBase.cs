@@ -8,5 +8,7 @@ public class UnitModelBase
 
     public long OwnerId { get; set; }
 
+    public long FriendId { get; set; }
+
     public Guid SessionId { get; set; }
 }
