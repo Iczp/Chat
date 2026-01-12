@@ -55,6 +55,21 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     Task StopAsync(CancellationToken cancellationToken);
 
     /// <summary>
+    /// 获取连接信息
+    /// </summary>
+    /// <param name="connectionId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<ConnectionPoolCacheItem> GetAsync(string connectionId, CancellationToken token = default);
+
+    /// <summary>
+    /// 获取连接信息(多个)
+    /// </summary>
+    /// <param name="connectionIds"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<Dictionary<string, ConnectionPoolCacheItem>> GetManyAsync(List<string> connectionIds, CancellationToken token = default);
+    /// <summary>
     /// 是否在线（用户）
     /// </summary>
     /// <param name="userId"></param>

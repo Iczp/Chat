@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.ConnectionPools.Dtos;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 
@@ -52,6 +53,13 @@ public interface IConnectionCacheAppService
     /// <param name="connectionId"></param>
     /// <returns></returns>
     Task<ConnectionPoolDto> GetAsync(string connectionId);
+
+    /// <summary>
+    /// 获取连接(多个)
+    /// </summary>
+    /// <param name="connectionIds"></param>
+    /// <returns></returns>
+    Task<Dictionary<string, ConnectionPoolDto>> GetManyAsync(List<string> connectionIds);
 
     /// <summary>
     /// 清空所有连接

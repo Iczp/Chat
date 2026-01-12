@@ -37,6 +37,10 @@ public class ConnectionCacheAppService(
     public IAbortService AbortService { get; } = abortService;
     public IConnectionCacheManager ConnectionPoolManager { get; } = connectionCacheManager;
 
+    private ConnectionPoolDto MapToDto(ConnectionPoolCacheItem item)
+    {
+        return ObjectMapper.Map<ConnectionPoolCacheItem, ConnectionPoolDto>(item);
+    }
 
     /// <summary>
     /// 获取所有主机在线人数
@@ -152,10 +156,16 @@ public class ConnectionCacheAppService(
     public async Task<ConnectionPoolDto> GetAsync(string id)
     {
         await CheckGetItemPolicyAsync();
-
-        throw new NotImplementedException();
+        var item = await ConnectionPoolManager.GetAsync(id);
+        return MapToDto(item);
     }
 
+    public async Task<Dictionary<string, ConnectionPoolDto>> GetManyAsync(List<string> connectionIds)
+    {
+        await CheckGetItemPolicyAsync();
+        var items = await ConnectionPoolManager.GetManyAsync(connectionIds);
+        return items.ToDictionary(x => x.Key, x => MapToDto(x.Value));
+    }
 
     /// <summary>
     /// 清空所有连接

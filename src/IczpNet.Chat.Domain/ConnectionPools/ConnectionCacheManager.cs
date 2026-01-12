@@ -524,6 +524,23 @@ return 1";
 
     }
 
+    public async Task<ConnectionPoolCacheItem> GetAsync(string connectionId, CancellationToken token = default)
+    {
+        var items = await GetManyAsync([ConnKey(connectionId)], token);
+        return items.FirstOrDefault().Value;
+    }
+
+    public async Task<Dictionary<string, ConnectionPoolCacheItem>> GetManyAsync(List<string> connectionIds, CancellationToken token = default)
+    {
+        var batch = Database.CreateBatch();
+        var tasks = connectionIds.ToDictionary(x => x, x => batch.HashGetAllAsync(ConnKey(x)));
+        batch.Execute();
+
+        await Task.WhenAll(tasks.Values);
+        var result = tasks.ToDictionary(x => x.Key, x => x.Value.Result.ToObject<ConnectionPoolCacheItem>());
+        return result;
+    }
+
     public async Task<bool> IsOnlineAsync(Guid userId, CancellationToken token = default)
     {
         var length = await Database.HashLengthAsync(UserConnKey(userId));
