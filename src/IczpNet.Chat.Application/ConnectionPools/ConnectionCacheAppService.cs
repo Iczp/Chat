@@ -3,10 +3,12 @@ using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ConnectionPools.Dtos;
 using IczpNet.Chat.Permissions;
+using IczpNet.Chat.SessionUnits;
 using Minio.DataModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 
@@ -245,8 +247,21 @@ public class ConnectionCacheAppService(
         await AbortService.AbortAsync(input.ConnectionIdList, input.Reason);
     }
 
-    public Task<long> GetFriendsOnlineCountAsync(long ownerId)
+    public Task<long> GetOnlineFriendsCountAsync(long ownerId)
     {
-        return ConnectionPoolManager.GetFriendsOnlineCountAsync(ownerId);
+        return ConnectionPoolManager.GetOnlineFriendsCountAsync(ownerId);
+    }
+
+    public async Task<PagedResultDto<SessionUnitElement>> GetOnlineFriendsAsync(OnlineFriendsGetListInput input)
+    {
+        var list = await ConnectionPoolManager.GetOnlineFriendsAsync(input.OwnerId);
+
+        var queryable = list.AsQueryable();
+        var query = queryable
+            .WhereIf(input.FriendId.HasValue, x => x.FriendId == input.FriendId)
+            .WhereIf(input.SessionId.HasValue, x => x.SessionId == input.SessionId)
+            .WhereIf(input.SessionUnitId.HasValue, x => x.SessionUnitId == input.SessionUnitId)
+            ;
+        return await GetPagedListAsync(query, input);
     }
 }

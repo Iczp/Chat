@@ -1,4 +1,6 @@
-﻿using System;
+﻿using IczpNet.Chat.SessionUnits;
+using StackExchange.Redis;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -153,9 +155,30 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     Task<Dictionary<string, long>> OnlineCountByHostAsync(IEnumerable<string> hosts);
 
     /// <summary>
-    /// 获取好友在线数量
+    /// 获取在线好友数量
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    Task<long> GetFriendsOnlineCountAsync(long ownerId);
+    Task<long> GetOnlineFriendsCountAsync(long ownerId);
+
+    /// <summary>
+    /// 获取在线好友
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <param name="start"></param>
+    /// <param name="stop"></param>
+    /// <param name="exclude"></param>
+    /// <param name="order"></param>
+    /// <param name="skip"></param>
+    /// <param name="take"></param>
+    /// <param name="flags"></param>
+    /// <returns></returns>
+    Task<IEnumerable<SessionUnitElement>> GetOnlineFriendsAsync(long ownerId,
+        double start = double.NegativeInfinity,
+        double stop = double.PositiveInfinity,
+        Exclude exclude = Exclude.None,
+        Order order = Order.Descending,
+        long skip = 0,
+        long take = -1,
+        CommandFlags flags = CommandFlags.None);
 }

@@ -889,8 +889,24 @@ return 1";
         return result;
     }
 
-    public async Task<long> GetFriendsOnlineCountAsync(long ownerId)
+    public async Task<long> GetOnlineFriendsCountAsync(long ownerId)
     {
         return await Database.SortedSetLengthAsync(FriendLatestZsetKey(ownerId));
+    }
+
+    public async Task<IEnumerable<SessionUnitElement>> GetOnlineFriendsAsync(
+        long ownerId,
+        double start = double.NegativeInfinity,
+        double stop = double.PositiveInfinity,
+        Exclude exclude = Exclude.None,
+        Order order = Order.Ascending,
+        long skip = 0,
+        long take = -1,
+        CommandFlags flags = CommandFlags.None)
+    {
+        var list = await Database.SortedSetRangeByScoreWithScoresAsync(FriendLatestZsetKey(ownerId), start, stop, exclude, order, skip, take, flags);
+
+        return list.Select(x => SessionUnitElement.Parse(x.Element));
+
     }
 }

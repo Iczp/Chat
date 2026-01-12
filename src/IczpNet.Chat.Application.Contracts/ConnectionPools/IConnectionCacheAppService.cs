@@ -115,7 +115,15 @@ public interface IConnectionCacheAppService
     /// <param name="ownerId"></param>
     /// <param name="input"></param>
     /// <returns></returns>
-    Task<long> GetFriendsOnlineCountAsync(long ownerId);
+    Task<long> GetOnlineFriendsCountAsync(long ownerId);
+
+    ///// <summary>
+    ///// 
+    ///// </summary>
+    ///// <param name="ownerId"></param>
+    ///// <param name="input"></param>
+    ///// <returns></returns>
+    //Task<PagedResultDto<SessionUnitElement>> GetOnlineFriendsAsync(long ownerId, OnlineFriendsGetListInput input);
 
     /// <summary>
     /// 强制断开连接
