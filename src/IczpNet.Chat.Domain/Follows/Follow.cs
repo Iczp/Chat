@@ -85,10 +85,11 @@ public class Follow : BaseEntity
     public Follow(SessionUnit ownerSessionUnit, SessionUnit destinationSessionUnit)
     {
         //OwnerSessionUnit = ownerSessionUnit;
+        OwnerSessionUnitId = ownerSessionUnit.Id;
         OwnerId = ownerSessionUnit.OwnerId;
         OwnerType = ownerSessionUnit.Owner?.ObjectType;
 
-        DestinationSessionUnit = destinationSessionUnit;
+        //DestinationSessionUnit = destinationSessionUnit;
         DestinationSessionUnitId = destinationSessionUnit.Id;
         DestinationId = destinationSessionUnit.OwnerId;
         DestinationType = destinationSessionUnit.Owner?.ObjectType;
