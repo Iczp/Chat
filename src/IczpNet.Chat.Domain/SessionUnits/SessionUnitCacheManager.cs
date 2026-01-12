@@ -339,7 +339,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         foreach (var unit in unitList)
         {
-            var element = new SessionUnitElement(sessionId, unit.OwnerId, unit.Id);
+            var element = SessionUnitElement.Create(unit.OwnerId, unit.DestinationId.GetValueOrDefault(), unit.Id, sessionId);
             var score = MemberScore.Create(unit.IsCreator, unit.CreationTime);
             _ = batch.SortedSetAddAsync(sessionMembersSetKey, element, score);
 
@@ -405,14 +405,12 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns>{Key:SessionUnitId, Value:OwnerId}</returns>
-    public async Task<IDictionary<Guid, long>> GetMembersMapAsync(Guid sessionId)
+    public async Task<IDictionary<Guid, SessionUnitElement>> GetMembersMapAsync(Guid sessionId)
     {
         var redisZset = await Database.SortedSetRangeByScoreWithScoresAsync(SessionMembersSetKey(sessionId));
-
         var dict = redisZset
             .Select(x => SessionUnitElement.Parse(x.Element))
-            .ToDictionary(x => x.SessionUnitId, x => x.OwnerId);
-
+            .ToDictionary(x => x.SessionUnitId);
         return dict;
     }
 
@@ -486,6 +484,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
                {
                    SessionId = element.SessionId,
                    OwnerId = element.OwnerId,
+                   FriendId = element.FriendId,
                    Id = element.SessionUnitId,
                    CreationTime = score.CreationTime,
                    IsCreator = score.IsCreator
@@ -586,10 +585,11 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         {
             var unitId = unit.Id.ToString();
 
-            // score
-            var element = new SessionUnitElement(unit.SessionId!.Value, unit.OwnerId, unit.Id);
+            // SetOwnerFriend()
+            var element = SessionUnitElement.Create(unit.OwnerId, unit.DestinationId.GetValueOrDefault(), unit.Id, unit.SessionId.GetValueOrDefault());
             var score = GetFriendScore(unit.Sorting, unit.Ticks);
             _ = batch.SortedSetAddAsync(ownerFriendsSetKey, element, score);
+
             // 刷新所有UnitKey过期时间
             _ = batch.KeyExpireAsync(UnitHashKey(unit.Id), _cacheExpire);
 
@@ -696,7 +696,6 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             take: take,
             order: isDescending ? Order.Descending : Order.Ascending);
 
-        //var result = redisZset.Select(x => new KeyValuePair<SessionUnitElement, SessionUnitScore>(SessionUnitElement.Parse(x.Element), new SessionUnitScore(x.Score))).ToArray();
         var result = redisZset.Select(x =>
         {
             var element = SessionUnitElement.Parse(x.Element);
@@ -704,6 +703,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             return new FriendModel
             {
                 OwnerId = element.OwnerId,//ownerId
+                FriendId = element.FriendId,
                 SessionId = element.SessionId,
                 Id = element.SessionUnitId,
                 Sorting = score.Sorting,
@@ -1019,7 +1019,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         var receiverType = message.ReceiverType;
 
-        var unitList = await GetMembersMapAsync(sessionId);
+        var membersMap = await GetMembersMapAsync(sessionId);
         //var unitList = await GetListBySessionAsync(sessionId);
         //var unitList = await SessionUnitManager.GetCacheListAsync(message);
 
@@ -1033,10 +1033,10 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             nameof(GetMembersMapAsync),
             sessionId,
             lastMessageId,
-            unitList.Count,
+            membersMap.Count,
             stopwatch.ElapsedMilliseconds);
 
-        if (unitList == null || !unitList.Any()) return;
+        if (membersMap == null || !membersMap.Any()) return;
 
         stopwatch.Restart();
 
@@ -1044,10 +1044,11 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         var expireTime = expire ?? _cacheExpire;
 
-        foreach (var unit in unitList)
+        foreach (var unit in membersMap)
         {
             var unitId = unit.Key;
-            var ownerId = unit.Value;
+            var ownerId = unit.Value.OwnerId;
+            var friendId = unit.Value.FriendId;
             //var unitId = unit.Id;
             //var ownerId = unit.OwnerId;
             var unitKey = UnitHashKey(unitId);
@@ -1069,7 +1070,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             _ = batch.HashSetAsync(unitKey, F_Ticks, ticks);
 
             // owner sortedset tick: message.CreationTime.Ticks
-            var element = new SessionUnitElement(sessionId, ownerId, unitId);
+            var element = SessionUnitElement.Create(ownerId, friendId, unitId, sessionId);
             var score = GetFriendScore(sorting, ticks);
             _ = batch.SortedSetAddAsync(ownerFriendsSetKey, element, score);
 
@@ -1287,7 +1288,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         var ownerFriendsSetKey = OwnerFriendsSetKey(ownerId);
 
         // 3. 先读取旧 score
-        var element = new SessionUnitElement(sessionId, ownerId, unitId);
+        var element = SessionUnitElement.Create(ownerId, FriendId: unit.DestinationId.GetValueOrDefault(), unitId, sessionId);
+
         double? oldScore = await Database.SortedSetScoreAsync(ownerFriendsSetKey, element);
 
         if (oldScore is null)

@@ -552,7 +552,7 @@ public static class RedisMapper
 
     public static RedisValue ToRedisValue(this DateTime value, string format = "o")
     {
-        return value.ToUniversalTime().ToString(format, Invariant);
+        return value.ToString(format, Invariant);
     }
 
     public static RedisValue ConvertToRedisValue(object value, Type declaredType)
@@ -669,6 +669,44 @@ public static class RedisMapper
         return defaultValue;
     }
 
+    public static DateTime? ToDateTime(this RedisValue rv, DateTime? defaultValue = null)
+    {
+        if (rv.IsNull) return DateTime.MinValue;
+        var s = rv.ToString();
+        if (string.IsNullOrWhiteSpace(s)) return DateTime.MinValue;
+        // try ISO8601
+
+
+        if (DateTime.TryParseExact(s, "o", Invariant, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var dt))
+            return dt;
+        // try parse as long ms
+        if (long.TryParse(s, out var ms))
+        {
+            try
+            {
+                return DateTimeOffset.FromUnixTimeMilliseconds(ms).UtcDateTime;
+            }
+            catch { }
+        }
+        if (DateTime.TryParse(s, Invariant, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var dt2))
+        {
+            return dt2;
+        }
+
+        return defaultValue;
+    }
+
+    public static DateTime? ToDateTime(this double score, DateTime? defaultValue = null)
+    {
+        try
+        {
+            return DateTimeOffset.FromUnixTimeMilliseconds((long)score).UtcDateTime;
+        }
+        catch { }
+
+        return defaultValue;
+    }
+
     private static object ConvertFromRedisValue(RedisValue rv, Type targetType)
     {
         if (rv.IsNull)
@@ -715,21 +753,7 @@ public static class RedisMapper
         }
         if (underlying == typeof(DateTime))
         {
-            // try ISO8601
-            if (DateTime.TryParseExact(s, "o", Invariant, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var dt))
-                return dt.ToUniversalTime();
-            // try parse as long ms
-            if (long.TryParse(s, out var ms))
-            {
-                try
-                {
-                    return DateTimeOffset.FromUnixTimeMilliseconds(ms).UtcDateTime;
-                }
-                catch { }
-            }
-            if (DateTime.TryParse(s, Invariant, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var dt2))
-                return dt2.ToUniversalTime();
-            return null;
+            return rv.ToDateTime();
         }
         if (underlying == typeof(TimeSpan))
         {

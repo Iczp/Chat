@@ -1,4 +1,6 @@
-﻿using System;
+﻿using IczpNet.Chat.SessionUnits;
+using StackExchange.Redis;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -74,7 +76,7 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     /// <param name="ownertId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<DateTime> GetLatestOnlineAsync(long ownertId, CancellationToken token = default);
+    Task<IEnumerable<OwnerLatestOnline>> GetLatestOnlineAsync(long ownertId, CancellationToken token = default);
 
     /// <summary>
     /// 获取设备类型 聊天对象
@@ -138,4 +140,45 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     /// <param name="ownerSessions"></param>
     /// <returns></returns>
     Task AddSessionAsync(List<(Guid SessionId, long OwnerId)> ownerSessions);
+
+    /// <summary>
+    /// 获取主机最后在线时间
+    /// </summary>
+    /// <returns></returns>
+    Task<Dictionary<string, DateTime?>> GetAllHostsAsync();
+
+    /// <summary>
+    /// 获取主机在线连接数
+    /// </summary>
+    /// <param name="hosts"></param>
+    /// <returns></returns>
+    Task<Dictionary<string, long>> OnlineCountByHostAsync(IEnumerable<string> hosts);
+
+    /// <summary>
+    /// 获取在线好友数量
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    Task<long> GetOnlineFriendsCountAsync(long ownerId);
+
+    /// <summary>
+    /// 获取在线好友
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <param name="start"></param>
+    /// <param name="stop"></param>
+    /// <param name="exclude"></param>
+    /// <param name="order"></param>
+    /// <param name="skip"></param>
+    /// <param name="take"></param>
+    /// <param name="flags"></param>
+    /// <returns></returns>
+    Task<IEnumerable<SessionUnitElement>> GetOnlineFriendsAsync(long ownerId,
+        double start = double.NegativeInfinity,
+        double stop = double.PositiveInfinity,
+        Exclude exclude = Exclude.None,
+        Order order = Order.Descending,
+        long skip = 0,
+        long take = -1,
+        CommandFlags flags = CommandFlags.None);
 }
