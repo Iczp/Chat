@@ -196,7 +196,7 @@ return 1";
 
         var newList = entries.ToList();
 
-        newList.Add(new HashEntry(nameof(connectionPool.ChatObjectIdList), connectionPool.ChatObjectIdList.JoinAsString(",")));
+        //newList.Add(new HashEntry(nameof(connectionPool.ChatObjectIdList), connectionPool.ChatObjectIdList.JoinAsString(",")));
 
         return newList.ToArray();
     }
@@ -338,7 +338,7 @@ return 1";
         var deviceType = redisValues[3];
         var deviceId = redisValues[4];
 
-        var ownerIds = chatObjectIdListValue.IsNull ? [] : chatObjectIdListValue.ToString().Split(",").Select(x => long.Parse(x)).ToList();
+        var ownerIds = chatObjectIdListValue.IsNull ? [] : chatObjectIdListValue.ToList<long>();
 
         Logger.LogInformation($"[RefreshExpireAsync] chatObjectIdList: {ownerIds.JoinAsString(",")}");
 
@@ -419,7 +419,7 @@ return 1";
         var hostValue = await hostTask;
         var userValue = await userTask;
 
-        var chatObjectIdList = chatObjectIdListValue.IsNull ? [] : chatObjectIdListValue.ToString().Split(",").Select(x => long.Parse(x)).ToList();
+        var chatObjectIdList = chatObjectIdListValue.IsNull ? [] : chatObjectIdListValue.ToList<long>();
 
         // Get sessions per owner (batched inside)
         var friendsMap = await GetOrSetFriendsAsync(chatObjectIdList, token);
@@ -526,14 +526,14 @@ return 1";
 
     public async Task<ConnectionPoolCacheItem> GetAsync(string connectionId, CancellationToken token = default)
     {
-        var items = await GetManyAsync([ConnKey(connectionId)], token);
+        var items = await GetManyAsync([connectionId], token);
         return items.FirstOrDefault().Value;
     }
 
     public async Task<Dictionary<string, ConnectionPoolCacheItem>> GetManyAsync(List<string> connectionIds, CancellationToken token = default)
     {
         var batch = Database.CreateBatch();
-        var tasks = connectionIds.ToDictionary(x => x, x => batch.HashGetAllAsync(ConnKey(x)));
+        var tasks = connectionIds.Distinct().ToDictionary(x => x, x => batch.HashGetAllAsync(ConnKey(x)));
         batch.Execute();
 
         await Task.WhenAll(tasks.Values);
