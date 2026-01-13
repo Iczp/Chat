@@ -8,9 +8,9 @@ namespace IczpNet.Chat.ConnectionPools.Dtos;
 [Serializable]
 public class ConnectionPoolDto : ConnectionPoolCacheItem
 {
-    /// <summary>
-    /// ChatObjectIdList
-    /// </summary>
+    ///// <summary>
+    ///// ChatObjectIdList
+    ///// </summary>
     //public virtual List<long> ChatObjectIdList { get; set; } = [];
 
     //public override string ToString()

@@ -494,6 +494,9 @@ public class SessionUnitCacheAppService(
             isDescending: true);
 
         var query = queryable.AsQueryable()
+            .WhereIf(input.FriendId.HasValue, x => x.FriendId == input.FriendId)
+            .WhereIf(input.SessionId.HasValue, x => x.SessionId == input.SessionId)
+            .WhereIf(input.UnitId.HasValue, x => x.Id == input.UnitId)
             .WhereIf(input.MinScore > 0, x => x.Ticks > input.MinScore)
             .WhereIf(input.MaxScore > 0, x => x.Ticks < input.MaxScore)
             ;
