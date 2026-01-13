@@ -1,6 +1,8 @@
-﻿using IczpNet.Chat.ConnectionPools.Dtos;
+﻿using IczpNet.AbpCommons.Dtos;
+using IczpNet.Chat.ConnectionPools.Dtos;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 
@@ -28,24 +30,26 @@ public interface IConnectionCacheAppService
     Task<PagedResultDto<ConnectionPoolDto>> GetListAsync(ConnectionPoolGetListInput input);
 
     /// <summary>
-    ///  
+    ///  获取用户连接
     /// </summary>
+    /// <param name="userId"></param>
     /// <param name="input"></param>
     /// <returns></returns>
-    Task<PagedResultDto<ConnectionPoolDto>> GetListByUserAsync(ConnectionPoolGetListInput input);
+    Task<PagedResultDto<ConnectionPoolDto>> GetListByUserAsync(Guid userId, GetListInput input);
 
     /// <summary>
     /// 获取在线人数列表(当前用户)
     /// </summary>
     /// <returns></returns>
-    Task<PagedResultDto<ConnectionPoolDto>> GetListByCurrentUserAsync(ConnectionPoolGetListInput input);
+    Task<PagedResultDto<ConnectionPoolDto>> GetListByCurrentUserAsync(GetListInput input);
 
     /// <summary>
     ///  获取在线人数列表(聊天对象)
     /// </summary>
-    /// <param name="chatObjectId"></param>
+    /// <param name="ownerId"></param>
+    /// <param name="input"></param>
     /// <returns></returns>
-    Task<PagedResultDto<ConnectionPoolDto>> GetListByChatObjectAsync(long chatObjectId);
+    Task<PagedResultDto<ConnectionPoolDto>> GetListByOwnerAsync(long ownerId, GetListInput input);
 
     /// <summary>
     /// 获取连接
@@ -64,10 +68,10 @@ public interface IConnectionCacheAppService
     /// <summary>
     /// 清空所有连接
     /// </summary>
-    /// <param name="host"></param>
+    /// <param name="hosts"></param>
     /// <param name="reason"></param>
     /// <returns></returns>
-    Task ClearAllAsync(string host, string reason);
+    Task<Dictionary<string, long>> ClearAllAsync(List<string> hosts, string reason);
 
     /// <summary>
     /// 移除连接
@@ -77,37 +81,20 @@ public interface IConnectionCacheAppService
     Task RemoveAsync(string connectionId);
 
     /// <summary>
-    /// 更新连接数量
-    /// </summary>
-    /// <returns></returns>
-    Task<int> UpdateConnectionIdsAsync();
-
-    /// <summary>
     /// 获取连接数量(用户)
     /// </summary>
     /// <param name="userId"></param>
     /// <returns></returns>
-    Task<int> GetCountByUserAsync(Guid userId);
+    Task<long> GetCountByUserAsync(Guid userId);
 
     /// <summary>
     /// 获取连接数量(聊天对象)
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    Task<int> GetCountByChatObjectAsync(long ownerId);
+    Task<long> GetCountByOwnerAsync(long ownerId);
 
-    /// <summary>
-    /// 更新用户连接数量
-    /// </summary>
-    /// <returns></returns>
-    Task<int> UpdateUserAsync(Guid userId);
-
-    /// <summary>
-    /// 更新聊天对象连接数量
-    /// </summary>
-    /// <param name="ownerId"></param>
-    /// <returns></returns>
-    Task<int> UpdateChatObjectAsync(long ownerId);
+    
 
     /// <summary>
     /// 获取最近在线列表

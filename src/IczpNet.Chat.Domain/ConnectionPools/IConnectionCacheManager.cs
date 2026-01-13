@@ -38,7 +38,7 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     /// </summary>
     /// <param name="hostHame"></param>
     /// <returns></returns>
-    Task DeleteByHostNameAsync(string hostHame);
+    Task<long> DeleteByHostNameAsync(string hostHame);
 
     /// <summary>
     /// 
@@ -104,18 +104,18 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     /// <summary>
     /// 获取设备类型 聊天对象
     /// </summary>
-    /// <param name="chatObjectIdList"></param>
+    /// <param name="ownerIds"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<Dictionary<long, List<string>>> GetDeviceTypesAsync(List<long> chatObjectIdList, CancellationToken token = default);
+    Task<Dictionary<long, List<string>>> GetDeviceTypesAsync(List<long> ownerIds, CancellationToken token = default);
 
     /// <summary>
     /// 获取设备信息(DeviceId,DeviceType) 聊天对象
     /// </summary>
-    /// <param name="chatObjectIdList"></param>
+    /// <param name="ownerIds"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<Dictionary<long, List<DeviceModel>>> GetDevicesAsync(List<long> chatObjectIdList, CancellationToken token = default);
+    Task<Dictionary<long, List<DeviceModel>>> GetDevicesAsync(List<long> ownerIds, CancellationToken token = default);
 
     /// <summary>
     /// 获取设备类型 用户
@@ -123,7 +123,7 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     /// <param name="userId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<List<string>> GetDeviceTypesAsync(Guid userId, CancellationToken token = default);
+    Task<IEnumerable<string>> GetDeviceTypesAsync(Guid userId, CancellationToken token = default);
 
     /// <summary>
     /// 获取连接数量(用户)
@@ -134,12 +134,20 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     Task<long> GetCountByUserAsync(Guid userId, CancellationToken token = default);
 
     /// <summary>
+    /// 获取连接(用户)
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<IEnumerable<string>> GetConnectionsByUserAsync(Guid userId, CancellationToken token = default);
+
+    /// <summary>
     /// 获取连接数量(聊天对象)
     /// </summary>
     /// <param name="ownertId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<long> GetCountByChatObjectAsync(long ownertId, CancellationToken token = default);
+    Task<long> GetCountByOwnerAsync(long ownertId, CancellationToken token = default);
 
     /// <summary>
     /// 获取会话连接
@@ -167,7 +175,22 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     /// </summary>
     /// <param name="hosts"></param>
     /// <returns></returns>
-    Task<Dictionary<string, long>> OnlineCountByHostAsync(IEnumerable<string> hosts);
+    Task<Dictionary<string, long>> GetCountByHostsAsync(IEnumerable<string> hosts);
+
+    /// <summary>
+    /// 获取连接数量(主机)
+    /// </summary>
+    /// <param name="host"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<long> GetCountByHostAsync(string host, CancellationToken token = default);
+    /// <summary>
+    /// 获取连接(主机)
+    /// </summary>
+    /// <param name="host"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<IEnumerable<string>> GetConnectionsByHostAsync(string host, CancellationToken token = default);
 
     /// <summary>
     /// 获取在线好友数量

@@ -696,7 +696,7 @@ public static class RedisMapper
         return defaultValue;
     }
 
-    public static DateTime? ToDateTime(this RedisValue rv, DateTime? defaultValue = null)
+    public static DateTime? ToLocalDateTime(this RedisValue rv, DateTime? defaultValue = null)
     {
         if (rv.IsNull) return DateTime.MinValue;
         var s = rv.ToString();
@@ -711,7 +711,7 @@ public static class RedisMapper
         {
             try
             {
-                return DateTimeOffset.FromUnixTimeMilliseconds(ms).UtcDateTime;
+                return DateTimeOffset.FromUnixTimeMilliseconds(ms).LocalDateTime;
             }
             catch { }
         }
@@ -723,11 +723,11 @@ public static class RedisMapper
         return defaultValue;
     }
 
-    public static DateTime? ToDateTime(this double score, DateTime? defaultValue = null)
+    public static DateTime? ToLocalDateTime(this double score, DateTime? defaultValue = null)
     {
         try
         {
-            return DateTimeOffset.FromUnixTimeMilliseconds((long)score).UtcDateTime;
+            return DateTimeOffset.FromUnixTimeMilliseconds((long)score).LocalDateTime;
         }
         catch { }
 
@@ -810,7 +810,7 @@ public static class RedisMapper
         }
         if (underlying == typeof(DateTime))
         {
-            return rv.ToDateTime();
+            return rv.ToLocalDateTime();
         }
         if (underlying == typeof(TimeSpan))
         {
