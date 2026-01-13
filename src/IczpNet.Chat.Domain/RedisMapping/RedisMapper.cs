@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.RedisMapping;
@@ -37,7 +38,7 @@ public static class RedisMapper
     /// <summary>
     /// 将对象扁平化为 HashEntry[]
     /// </summary>
-    public static HashEntry[] ToHashEntries(object obj)
+    public static HashEntry[] ToHashEntries(this object obj)
     {
         if (obj == null) return Array.Empty<HashEntry>();
         var list = new List<HashEntry>();
@@ -50,7 +51,7 @@ public static class RedisMapper
     /// 支持点路径 Setting.HistoryLastTime、Setting.MemberName 等
     /// 支持 List[index] 和 Dictionary[key] 的解析（尽量还原子对象；对于集合会尝试创建 List&lt;T&gt; 或 IDictionary）
     /// </summary>
-    public static T ToObject<T>(HashEntry[] entries) where T : new()
+    public static T ToObject<T>(this HashEntry[] entries) where T : new()
     {
         if (entries == null || entries.Length == 0) return default;
         var dict = entries?.ToDictionary(e => e.Name.ToString(), e => e.Value, StringComparer.OrdinalIgnoreCase)
@@ -114,6 +115,8 @@ public static class RedisMapper
 
     #region Flatten (object -> HashEntry list)
 
+
+
     private static void FlattenObject(string prefix, object obj, List<HashEntry> outList)
     {
         if (obj == null)
@@ -124,6 +127,12 @@ public static class RedisMapper
         }
 
         var type = obj.GetType();
+
+        if (IsSimpleEnumerable(type, out _))
+        {
+            outList.Add(new HashEntry(prefix.Trim('.'), JsonSerializer.Serialize(obj)));
+            return;
+        }
 
         // If it's simple type, write under prefix (caller must provide a prefix)
         if (IsSimpleType(type))
@@ -480,6 +489,20 @@ public static class RedisMapper
                     }
                     else if (IsEnumerableType(propType))
                     {
+                        if (dict.TryGetValue(baseName, out var rv) && !rv.IsNull && rv.ToString().TrimStart().StartsWith("["))
+                        {
+                            try
+                            {
+                                var listObj = ConvertFromRedisValue(rv, propType);
+                                prop.SetValue(obj, listObj);
+                                continue;
+                            }
+                            catch
+                            {
+                                // fallback to old behavior
+                            }
+                        }
+
                         // handle List<T> style
                         var listInstance = CreateListInstance(propType);
                         if (listInstance != null)
@@ -605,6 +628,10 @@ public static class RedisMapper
             var ms = (long)ts.TotalMilliseconds;
             return ms;
         }
+        if (IsSimpleEnumerable(type, out _))
+        {
+            return JsonSerializer.Serialize(value);
+        }
 
         // fallback: ToString
         return value.ToString();
@@ -669,7 +696,7 @@ public static class RedisMapper
         return defaultValue;
     }
 
-    public static DateTime? ToDateTime(this RedisValue rv, DateTime? defaultValue = null)
+    public static DateTime? ToLocalDateTime(this RedisValue rv, DateTime? defaultValue = null)
     {
         if (rv.IsNull) return DateTime.MinValue;
         var s = rv.ToString();
@@ -684,7 +711,7 @@ public static class RedisMapper
         {
             try
             {
-                return DateTimeOffset.FromUnixTimeMilliseconds(ms).UtcDateTime;
+                return DateTimeOffset.FromUnixTimeMilliseconds(ms).LocalDateTime;
             }
             catch { }
         }
@@ -696,15 +723,44 @@ public static class RedisMapper
         return defaultValue;
     }
 
-    public static DateTime? ToDateTime(this double score, DateTime? defaultValue = null)
+    public static DateTime? ToLocalDateTime(this double score, DateTime? defaultValue = null)
     {
         try
         {
-            return DateTimeOffset.FromUnixTimeMilliseconds((long)score).UtcDateTime;
+            return DateTimeOffset.FromUnixTimeMilliseconds((long)score).LocalDateTime;
         }
         catch { }
 
         return defaultValue;
+    }
+
+    public static List<T> ToList<T>(this RedisValue rv)
+    {
+        if (rv.IsNull) return new List<T>();
+
+        var s = rv.ToString();
+        if (string.IsNullOrWhiteSpace(s))
+            return new List<T>();
+
+        s = s.Trim();
+
+        // JSON array
+        if (s.StartsWith("[") && s.EndsWith("]"))
+        {
+            try
+            {
+                return JsonSerializer.Deserialize<List<T>>(s) ?? new List<T>();
+            }
+            catch
+            {
+                // fall through
+            }
+        }
+
+        // legacy: comma separated
+        return s.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => (T)Convert.ChangeType(x.Trim(), typeof(T), CultureInfo.InvariantCulture))
+                .ToList();
     }
 
     private static object ConvertFromRedisValue(RedisValue rv, Type targetType)
@@ -723,6 +779,7 @@ public static class RedisMapper
                 return null;
             return Activator.CreateInstance(targetType);
         }
+
 
         Type underlying = Nullable.GetUnderlyingType(targetType) ?? targetType;
 
@@ -753,7 +810,7 @@ public static class RedisMapper
         }
         if (underlying == typeof(DateTime))
         {
-            return rv.ToDateTime();
+            return rv.ToLocalDateTime();
         }
         if (underlying == typeof(TimeSpan))
         {
@@ -763,6 +820,28 @@ public static class RedisMapper
                 return TimeSpan.FromMilliseconds(dms);
             if (TimeSpan.TryParse(s, Invariant, out var ts)) return ts;
             return TimeSpan.Zero;
+        }
+
+        // Check for simple enumerable (List<T> or T[]) 
+        // IEnumerable<T> (simple) from JSON
+        if (IsSimpleEnumerable(targetType, out var elementType))
+        {
+            try
+            {
+                if (targetType.IsArray)
+                {
+                    return JsonSerializer.Deserialize(s, targetType);
+                }
+
+                if (targetType.IsGenericType)
+                {
+                    return JsonSerializer.Deserialize(s, typeof(List<>).MakeGenericType(elementType));
+                }
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         // fallback
@@ -785,6 +864,9 @@ public static class RedisMapper
         return _propsCache.GetOrAdd(t, tt => tt.GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(p => p.CanRead && p.CanWrite).ToArray());
     }
 
+
+
+
     private static bool IsSimpleType(Type t)
     {
         t = Nullable.GetUnderlyingType(t) ?? t;
@@ -802,6 +884,28 @@ public static class RedisMapper
             var g = t.GetGenericTypeDefinition();
             if (g == typeof(IDictionary<,>) || g == typeof(Dictionary<,>)) return true;
         }
+        return false;
+    }
+
+    private static bool IsSimpleEnumerable(Type t, out Type elementType)
+    {
+        elementType = null;
+
+        if (t == typeof(string)) return false;
+        if (!typeof(IEnumerable).IsAssignableFrom(t)) return false;
+
+        if (t.IsArray)
+        {
+            elementType = t.GetElementType();
+            return IsSimpleType(elementType);
+        }
+
+        if (t.IsGenericType)
+        {
+            elementType = t.GetGenericArguments()[0];
+            return IsSimpleType(elementType);
+        }
+
         return false;
     }
 

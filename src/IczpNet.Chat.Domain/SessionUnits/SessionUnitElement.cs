@@ -58,7 +58,7 @@ public readonly record struct SessionUnitElement(long OwnerId, long FriendId, Gu
         {
             return false;
         }
-        if (!Guid.TryParse(parts[2], out var sessionId))
+        if (!Guid.TryParse(parts[3], out var sessionId))
         {
             return false;
         }

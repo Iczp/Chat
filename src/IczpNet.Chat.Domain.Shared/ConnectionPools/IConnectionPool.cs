@@ -88,9 +88,4 @@ public interface IConnectionPool
     /// CreationTime
     /// </summary>
     DateTime CreationTime { get; set; }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    Object Extra { get; set; }
 }

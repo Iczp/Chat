@@ -89,12 +89,6 @@ public class ConnectionPool: IConnectionPool
     /// </summary>
     public virtual DateTime CreationTime { get; set; }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    public virtual Object Extra { get; set; }
-    
-
     public override string ToString()
     {
         return $"{nameof(AppId)}={AppId},{nameof(ClientId)}={ClientId},{nameof(ConnectionId)}={ConnectionId},{nameof(UserId)}={UserId},{nameof(UserName)}={UserName},{nameof(DeviceId)}={DeviceId},{nameof(PushClientId)}={PushClientId}";

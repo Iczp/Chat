@@ -4,7 +4,6 @@ using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ConnectionPools.Dtos;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionUnits;
-using Minio.DataModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,13 +29,15 @@ public class ConnectionCacheAppService(
     protected override string GetPolicyName { get; set; } = ChatPermissions.ConnectionPoolPermission.GetItem;
     protected override string DeletePolicyName { get; set; } = ChatPermissions.ConnectionPoolPermission.Delete;
     protected virtual string ClearAllPolicyName { get; set; } = ChatPermissions.ConnectionPoolPermission.ClearAll;
-    protected virtual string UpdateConnectionIdsPolicyName { get; set; } = ChatPermissions.ConnectionPoolPermission.UpdateConnectionIds;
-    protected virtual string GetConnectionIdsByUserIdPolicyName { get; set; } = ChatPermissions.ConnectionPoolPermission.GetConnectionIdsByUserId;
-    protected virtual string UpdateUserConnectionIdsPolicyName { get; set; } = ChatPermissions.ConnectionPoolPermission.UpdateUserConnectionIds;
+    protected virtual string GetListByUserPolicyName { get; set; } = ChatPermissions.ConnectionPoolPermission.GetConnectionIdsByUserId;
     protected virtual string GetCountByUserIdPolicyName { get; set; } = ChatPermissions.ConnectionPoolPermission.GetCountByUserId;
     public IAbortService AbortService { get; } = abortService;
-    public IConnectionCacheManager ConnectionPoolManager { get; } = connectionCacheManager;
+    public IConnectionCacheManager ConnectionCacheManager { get; } = connectionCacheManager;
 
+    private ConnectionPoolDto MapToDto(ConnectionPoolCacheItem item)
+    {
+        return ObjectMapper.Map<ConnectionPoolCacheItem, ConnectionPoolDto>(item);
+    }
 
     /// <summary>
     /// 获取所有主机在线人数
@@ -45,9 +46,9 @@ public class ConnectionCacheAppService(
     /// <returns></returns>
     public async Task<PagedResultDto<OnlineHostDto>> GetHostsAsync(ConnectionHostGetListInput input)
     {
-        var allHost = await ConnectionPoolManager.GetAllHostsAsync();
+        var allHost = await ConnectionCacheManager.GetAllHostsAsync();
 
-        var countMap = await ConnectionPoolManager.OnlineCountByHostAsync(allHost.Select(x => x.Key));
+        var countMap = await ConnectionCacheManager.GetCountByHostsAsync(allHost.Select(x => x.Key));
 
         var queryable = allHost.Select(x => new OnlineHostDto()
         {
@@ -108,40 +109,53 @@ public class ConnectionCacheAppService(
     public async Task<PagedResultDto<ConnectionPoolDto>> GetListAsync(ConnectionPoolGetListInput input)
     {
         await CheckGetListPolicyAsync();
-        return await FetchPagedListAsync(input);
+        var connIds = await ConnectionCacheManager.GetConnectionsByHostAsync(input.Host);
+        var connList = await GetManyAsync(connIds.ToList());
+        var query = connList.Values.AsQueryable();
+        return await GetPagedListAsync(query, input);
+    }
+
+
+    protected async Task<PagedResultDto<ConnectionPoolDto>> GetPagedListByConnIdsAsync(List<string> connIds, GetListInput input)
+    {
+        var connList = await GetManyAsync(connIds);
+        var query = connList.Values.AsQueryable();
+        return await GetPagedListAsync(query, input);
     }
 
     /// <summary>
-    /// 获取设备类型列表
+    /// 获取在线人数列表(聊天对象)
     /// </summary>
-    /// <param name="chatObjectId"></param>
+    /// <param name="ownerId"></param>
+    /// <param name="input"></param>
     /// <returns></returns>
-    public async Task<PagedResultDto<ConnectionPoolDto>> GetListByChatObjectAsync(long chatObjectId)
+    public async Task<PagedResultDto<ConnectionPoolDto>> GetListByOwnerAsync(long ownerId, GetListInput input)
     {
-        //await CheckGetItemPolicyAsync();
-        throw new NotImplementedException();
+        await CheckPolicyAsync(GetListByChatObjectPolicyName);
+        var dict = await ConnectionCacheManager.GetDevicesAsync([ownerId]);
+        var connIds = dict.Values.SelectMany(x => x.Select(v => v.ConnectionId)).ToList();
+        return await GetPagedListByConnIdsAsync(connIds, input);
     }
 
     /// <summary>
     /// 获取在线人数列表(用户)
     /// </summary>
     /// <returns></returns>
-    public async Task<PagedResultDto<ConnectionPoolDto>> GetListByUserAsync(ConnectionPoolGetListInput input)
+    public async Task<PagedResultDto<ConnectionPoolDto>> GetListByUserAsync(Guid userId, GetListInput input)
     {
-        await CheckPolicyAsync(GetListByCurrentUserPolicyName);
-
-        throw new NotImplementedException();
+        await CheckPolicyAsync(GetListByUserPolicyName);
+        var connIds = await ConnectionCacheManager.GetConnectionsByUserAsync(userId);
+        return await GetPagedListByConnIdsAsync(connIds.ToList(), input);
     }
 
     /// <summary>
     /// 获取在线人数列表(当前用户)
     /// </summary>
     /// <returns></returns>
-    public async Task<PagedResultDto<ConnectionPoolDto>> GetListByCurrentUserAsync(ConnectionPoolGetListInput input)
+    public async Task<PagedResultDto<ConnectionPoolDto>> GetListByCurrentUserAsync(GetListInput input)
     {
         await CheckPolicyAsync(GetListByCurrentUserPolicyName);
-        input.UserId = CurrentUser.Id;
-        return await GetListByUserAsync(input);
+        return await GetListByUserAsync(CurrentUser.Id.Value, input);
     }
 
     /// <summary>
@@ -152,21 +166,42 @@ public class ConnectionCacheAppService(
     public async Task<ConnectionPoolDto> GetAsync(string id)
     {
         await CheckGetItemPolicyAsync();
-
-        throw new NotImplementedException();
+        var item = await ConnectionCacheManager.GetAsync(id);
+        return MapToDto(item);
     }
 
+    /// <summary>
+    /// 获取连接(多个)
+    /// </summary>
+    /// <param name="connectionIds"></param>
+    /// <returns></returns>
+    public async Task<Dictionary<string, ConnectionPoolDto>> GetManyAsync(List<string> connectionIds)
+    {
+        await CheckGetItemPolicyAsync();
+        var items = await ConnectionCacheManager.GetManyAsync(connectionIds);
+        return items.ToDictionary(x => x.Key, x => MapToDto(x.Value));
+    }
 
     /// <summary>
     /// 清空所有连接
     /// </summary>
-    /// <param name="host"></param>
+    /// <param name="hosts"></param>
     /// <param name="reason"></param>
     /// <returns></returns>
-    public async Task ClearAllAsync(string host, string reason)
+    public async Task<Dictionary<string, long>> ClearAllAsync(List<string> hosts, string reason)
     {
         await CheckPolicyAsync(ClearAllPolicyName);
-        throw new NotImplementedException();
+        var hostList = hosts ?? (await ConnectionCacheManager.GetAllHostsAsync())
+                .Select(x => x.Key).ToList();
+
+        var result = new Dictionary<string, long>(hostList.Count);
+
+        foreach (var item in hostList)
+        {
+            result[item] = await ConnectionCacheManager.DeleteByHostNameAsync(item);
+        }
+        return result;
+
     }
 
     /// <summary>
@@ -177,17 +212,7 @@ public class ConnectionCacheAppService(
     public async Task RemoveAsync(string connectionId)
     {
         await CheckDeletePolicyAsync();
-        await ConnectionPoolManager.DisconnectedAsync(connectionId);
-    }
-
-    /// <summary>
-    /// 更新连接数量
-    /// </summary>
-    /// <returns></returns>
-    public async Task<int> UpdateConnectionIdsAsync()
-    {
-        await CheckPolicyAsync(UpdateConnectionIdsPolicyName);
-        throw new NotImplementedException();
+        await ConnectionCacheManager.DisconnectedAsync(connectionId);
     }
 
     /// <summary>
@@ -195,40 +220,31 @@ public class ConnectionCacheAppService(
     /// </summary>
     /// <param name="userId"></param>
     /// <returns></returns>
-    public async Task<int> GetCountByUserAsync(Guid userId)
+    public async Task<long> GetCountByUserAsync(Guid userId)
     {
         await CheckPolicyAsync(GetCountByUserIdPolicyName);
-        throw new NotImplementedException();
+        return await ConnectionCacheManager.GetCountByUserAsync(userId);
     }
-    public async Task<int> GetCountByChatObjectAsync(long chatObjectId)
+    /// <summary>
+    /// 获取连接数量(聊天对象)
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    public async Task<long> GetCountByOwnerAsync(long ownerId)
     {
         await CheckPolicyAsync(GetCountByUserIdPolicyName);
-        throw new NotImplementedException();
+        return await ConnectionCacheManager.GetCountByOwnerAsync(ownerId);
     }
 
     /// <summary>
-    /// 更新用户连接数量
+    /// 获取最后在线时间
     /// </summary>
+    /// <param name="ownerId"></param>
+    /// <param name="input"></param>
     /// <returns></returns>
-    public async Task<int> UpdateUserAsync(Guid userId)
-    {
-        await CheckPolicyAsync(UpdateUserConnectionIdsPolicyName);
-        throw new NotImplementedException();
-    }
-
-    /// <summary>
-    /// 更新聊天对象连接数量
-    /// </summary>
-    /// <returns></returns>
-    public async Task<int> UpdateChatObjectAsync(long chatObjectId)
-    {
-        await CheckPolicyAsync(UpdateUserConnectionIdsPolicyName);
-        throw new NotImplementedException();
-    }
-
     public async Task<PagedResultDto<OwnerLatestOnline>> GetLatestOnlineAsync(long ownerId, LatestOnlineGetListInput input)
     {
-        var list = await ConnectionPoolManager.GetLatestOnlineAsync(ownerId);
+        var list = await ConnectionCacheManager.GetLatestOnlineAsync(ownerId);
         var queryable = list.AsQueryable();
         var query = queryable
             .WhereIf(!string.IsNullOrWhiteSpace(input.DeviceId), x => x.DeviceId == input.DeviceId)
@@ -247,14 +263,24 @@ public class ConnectionCacheAppService(
         await AbortService.AbortAsync(input.ConnectionIdList, input.Reason);
     }
 
+    /// <summary>
+    /// 获取在线好友数量
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
     public Task<long> GetOnlineFriendsCountAsync(long ownerId)
     {
-        return ConnectionPoolManager.GetOnlineFriendsCountAsync(ownerId);
+        return ConnectionCacheManager.GetOnlineFriendsCountAsync(ownerId);
     }
 
+    /// <summary>
+    /// 获取在线好友列表
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
     public async Task<PagedResultDto<SessionUnitElement>> GetOnlineFriendsAsync(OnlineFriendsGetListInput input)
     {
-        var list = await ConnectionPoolManager.GetOnlineFriendsAsync(input.OwnerId);
+        var list = await ConnectionCacheManager.GetOnlineFriendsAsync(input.OwnerId);
 
         var queryable = list.AsQueryable();
         var query = queryable
