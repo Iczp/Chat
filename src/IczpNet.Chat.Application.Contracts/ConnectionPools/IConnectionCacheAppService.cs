@@ -121,7 +121,6 @@ public interface IConnectionCacheAppService
     /// 
     /// </summary>
     /// <param name="ownerId"></param>
-    /// <param name="input"></param>
     /// <returns></returns>
     Task<long> GetOnlineFriendsCountAsync(long ownerId);
 
