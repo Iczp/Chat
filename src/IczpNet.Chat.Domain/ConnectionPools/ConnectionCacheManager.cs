@@ -357,7 +357,7 @@ return 1";
         var deviceType = redisValues[3];
         var deviceId = redisValues[4];
 
-        var ownerIds = chatObjectIdListValue.IsNull ? [] : chatObjectIdListValue.ToList<long>();
+        var ownerIds = chatObjectIdListValue.ToList<long>();
 
         Logger.LogInformation($"[RefreshExpireAsync] chatObjectIdList: {ownerIds.JoinAsString(",")}");
 
@@ -438,7 +438,7 @@ return 1";
         var hostValue = await hostTask;
         var userValue = await userTask;
 
-        var chatObjectIdList = chatObjectIdListValue.IsNull ? [] : chatObjectIdListValue.ToList<long>();
+        var chatObjectIdList = chatObjectIdListValue.ToList<long>();
 
         // Get sessions per owner (batched inside)
         var friendsMap = await GetOrSetFriendsAsync(chatObjectIdList, token);
