@@ -49,7 +49,7 @@ return 1";
     /// <summary>
     /// 会话连接
     /// key: connectionId,
-    /// value: ownerId,
+    /// value: [ownerId],
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
@@ -76,6 +76,11 @@ return 1";
     private string OwnerLatestZsetKey(long ownerId)
         => $"{Prefix}Owners:Latest:OwnerId-{ownerId}";
 
+    /// <summary>
+    /// 好友最后在线时间
+    /// </summary>
+    /// <param name="friendOwnerId"></param>
+    /// <returns></returns>
     private string FriendLatestZsetKey(long friendOwnerId)
         => $"{Prefix}Owners:Friends:OwnerId-{friendOwnerId}";
 
@@ -202,11 +207,17 @@ return 1";
         foreach (var kv in sessionChatObjectsMap)
         {
             var sessionId = kv.Key;
-            var owners = kv.Value;
+            var ownerIds = kv.Value;
             var sessionConnKey = SessionConnHashKey(sessionId);
-            _ = batch.HashSetAsync(sessionConnKey, connectionId, owners.JoinAsString(","));
+            var ownerIdsStr = ToJson(ownerIds);
+            _ = batch.HashSetAsync(sessionConnKey, connectionId, ownerIdsStr);
             Expire(batch, sessionConnKey);
         }
+    }
+
+    private string ToJson(List<long> ownerIds)
+    {
+        return JsonSerializer.Serialize(ownerIds ?? []);
     }
 
     private static HashEntry[] MapToHashEntries(ConnectionPoolCacheItem connectionPool)
@@ -488,7 +499,7 @@ return 1";
 
         // Note: we do not execute batch here because caller may pass batch and execute later.
     }
-    
+
 
     public async Task<long> DeleteByHostNameAsync(string hostHame)
     {
@@ -749,12 +760,17 @@ return 1";
         foreach (var entry in entries)
         {
             var connId = entry.Name.ToString();
-            var ownerList = entry.Value.ToString().Split(",").Select(long.Parse).ToList();  // chatObjectIdList 已经是逗号分隔
+            var ownerList = entry.Value.ToList<long>();  // chatObjectIdList 已经是逗号分隔
 
             result[connId] = ownerList;
         }
 
         return result;
+    }
+
+    public async Task<long> GetCountBySessionAsync(Guid sessionId, CancellationToken token = default)
+    {
+        return await Database.HashLengthAsync(SessionConnHashKey(sessionId));
     }
 
     public async Task AddSessionAsync(List<(Guid SessionId, long OwnerId)> ownerSessions)
@@ -811,7 +827,7 @@ return 1";
                     continue;
 
                 // 3. 写入到 Redis
-                var ownerIdStr = string.Join(",", relatedOwnerIds);
+                var ownerIdStr = ToJson(relatedOwnerIds);
                 _ = batch.HashSetAsync(sessionConnKey, connectionId, ownerIdStr);
 
                 Logger.LogInformation($"HashSetAsync: sessionConnKey={sessionConnKey}, connectionId={connectionId}, ownerIdStr={ownerIdStr}");
@@ -887,7 +903,7 @@ return 1";
                 {
                     var connectionId = device.ConnectionId;
 
-                    _ = batch.HashSetAsync(sessionConnKey, connectionId, ownerId.ToString());
+                    _ = batch.HashSetAsync(sessionConnKey, connectionId, ToJson([ownerId]));
 
                     Logger.LogInformation(
                         $"HashSetAsync: sessionId={sessionId}, connId={connectionId}, ownerId={ownerId}"

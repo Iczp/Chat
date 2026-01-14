@@ -94,7 +94,12 @@ public interface IConnectionCacheAppService
     /// <returns></returns>
     Task<long> GetCountByOwnerAsync(long ownerId);
 
-    
+    /// <summary>
+    /// 获取连接数量(会话)
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    Task<long> GetCountBySessionAsync(Guid sessionId);
 
     /// <summary>
     /// 获取最近在线列表

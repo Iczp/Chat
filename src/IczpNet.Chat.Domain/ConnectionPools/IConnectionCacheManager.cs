@@ -158,6 +158,14 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     Task<Dictionary<string, List<long>>> GetConnectionsBySessionAsync(Guid sessionId, CancellationToken token = default);
 
     /// <summary>
+    /// 获取会话在线人数
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<long> GetCountBySessionAsync(Guid sessionId, CancellationToken token = default);
+
+    /// <summary>
     /// 添加到连接池
     /// </summary>
     /// <param name="ownerSessions"></param>
