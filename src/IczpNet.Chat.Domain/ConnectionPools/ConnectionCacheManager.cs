@@ -27,6 +27,8 @@ public class ConnectionCacheManager : RedisService, IConnectionCacheManager//, I
 
     public ICurrentHosted CurrentHosted => LazyServiceProvider.LazyGetRequiredService<ICurrentHosted>();
     public IJsonSerializer JsonSerializer => LazyServiceProvider.LazyGetRequiredService<IJsonSerializer>();
+    public IConnectionStatManager ConnectionStatManager => LazyServiceProvider.LazyGetRequiredService<IConnectionStatManager>();
+
 
     protected virtual TimeSpan? CacheExpire => TimeSpan.FromSeconds(ConnectionOptions.Value.ConnectionCacheExpirationSeconds);
 
@@ -287,9 +289,17 @@ return 1";
     }
 
     [UnitOfWork]
-    public Task<bool> ConnectedAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default)
+    public async Task<bool> ConnectedAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default)
     {
-        return MeasureAsync(nameof(CreateAsync), () => CreateAsync(connectionPool, token));
+        await MeasureAsync(nameof(CreateAsync), () => CreateAsync(connectionPool, token));
+
+        await ConnectionStatManager.RecordConnectionAsync();
+
+        var currentOnlineCount = await GetTotalCountAsync();
+
+        await ConnectionStatManager.RecordOnlinePeakAsync(currentOnlineCount, "OnConnected");
+
+        return true;
     }
 
     protected async Task<bool> CreateAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default)
@@ -934,7 +944,12 @@ return 1";
         return allHost.ToDictionary(x => x.Element.ToString(), x => x.Score.ToLocalDateTime());
     }
 
-    public async Task<Dictionary<string, long>> GetCountByHostsAsync(IEnumerable<string> hosts)
+    public async Task<long> GetTotalCountAsync()
+    {
+        return (await GetCountByHostsAsync()).Sum(x => x.Value);
+    }
+
+    public async Task<Dictionary<string, long>> GetCountByHostsAsync(IEnumerable<string> hosts = null)
     {
         var hostList = (hosts as IList<string> ?? hosts.ToList())
             .Distinct()

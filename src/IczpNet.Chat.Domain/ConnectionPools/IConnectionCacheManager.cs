@@ -179,11 +179,17 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     Task<Dictionary<string, DateTime?>> GetAllHostsAsync();
 
     /// <summary>
+    /// 获取总连接数
+    /// </summary>
+    /// <returns></returns>
+    Task<long> GetTotalCountAsync();
+
+    /// <summary>
     /// 获取主机在线连接数
     /// </summary>
     /// <param name="hosts"></param>
     /// <returns></returns>
-    Task<Dictionary<string, long>> GetCountByHostsAsync(IEnumerable<string> hosts);
+    Task<Dictionary<string, long>> GetCountByHostsAsync(IEnumerable<string> hosts = null);
 
     /// <summary>
     /// 获取连接数量(主机)
