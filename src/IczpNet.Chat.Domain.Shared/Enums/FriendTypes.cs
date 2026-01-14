@@ -3,14 +3,15 @@
 namespace IczpNet.Chat.Enums;
 
 /// <summary>
-/// 好友归档
-/// 0: All 全部,
-/// 1: Pinned 置顶,
-/// 2: Following 关注,
-/// 3: RemindAll @所有人,
-/// 4: RemindMe @我,
-/// 5: Immersed 静默,
-/// 6: Creator 创建人,
+/// # 好友归档
+/// - 0=All:全部,
+/// - 1=Pinned:置顶,
+/// - 2=Following:关注,
+/// - 3=RemindAll:@所有人,
+/// - 4=RemindMe:@我,
+/// - 5=Immersed:静默,
+/// - 6=Creator:创建人,
+/// - 7=HasBadge:有未读消息
 /// </summary>
 [Description("好友归档")]
 public enum FriendTypes
@@ -56,4 +57,10 @@ public enum FriendTypes
     /// </summary>  
     [Description("创建人")]
     Creator = 6,
+
+    /// <summary>  
+    /// 有未读消息
+    /// </summary>  
+    [Description("有未读消息")]
+    HasBadge = 7,
 }

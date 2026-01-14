@@ -653,7 +653,8 @@ public class SessionUnitCacheAppService(
         return input.FriendType switch
         {
             FriendTypes.All => await LoadAllFriendsAsync(input.OwnerId, input),
-            FriendTypes.Following
+            FriendTypes.HasBadge
+            or FriendTypes.Following
             or FriendTypes.RemindAll
             or FriendTypes.RemindMe
             or FriendTypes.Immersed

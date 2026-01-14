@@ -237,6 +237,17 @@ public class ConnectionCacheAppService(
     }
 
     /// <summary>
+    /// 获取会话在线人数
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    public async Task<long> GetCountBySessionAsync(Guid sessionId)
+    {
+        await CheckPolicyAsync(GetPolicyName);
+        return await ConnectionCacheManager.GetCountBySessionAsync(sessionId);
+    }
+
+    /// <summary>
     /// 获取最后在线时间
     /// </summary>
     /// <param name="ownerId"></param>
