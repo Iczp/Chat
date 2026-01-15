@@ -13,6 +13,7 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.Scopeds;
+using IczpNet.Chat.SessionBoxs;
 using IczpNet.Chat.SessionSections;
 using IczpNet.Chat.SessionSections.SessionPermissionUnitGrants;
 using IczpNet.Chat.SessionSections.SessionRequests;
@@ -91,6 +92,18 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     /// </summary>
     [ForeignKey(nameof(SessionId))]
     public virtual Session Session { get; protected set; }
+
+    /// <summary>
+    /// 会话盒子Id
+    /// </summary>
+    [Comment("会话盒子Id")]
+    public virtual Guid? BoxId { get; protected set; }
+
+    /// <summary>
+    /// 会话盒子
+    /// </summary>
+    [ForeignKey(nameof(BoxId))]
+    public virtual Box Box { get; protected set; }
 
     /// <summary>
     /// Key

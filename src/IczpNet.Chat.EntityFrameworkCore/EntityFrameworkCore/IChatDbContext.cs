@@ -37,6 +37,7 @@ using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.ScanCodes;
 using IczpNet.Chat.Scopeds;
 using IczpNet.Chat.ServerHosts;
+using IczpNet.Chat.SessionBoxs;
 using IczpNet.Chat.SessionSections.SessionOrganizations;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionPermissionGroups;
@@ -91,6 +92,7 @@ public interface IChatDbContext : IEfCoreDbContext
 
     DbSet<Session> Session { get; }
     DbSet<SessionUnit> SessionUnit { get; }
+    DbSet<Box> SessionBox { get; }
 
     DbSet<SessionUnitMessage> SessionUnitMessage { get; }
 

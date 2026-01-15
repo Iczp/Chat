@@ -126,6 +126,7 @@ public class SessionUnitManager(
                         //UserId = x.UserId,
                         SessionId = x.SessionId,
                         OwnerId = x.OwnerId,
+                        BoxId = x.BoxId,
                         OwnerObjectType = x.OwnerObjectType,
                         DestinationId = x.DestinationId,
                         DestinationObjectType = x.DestinationObjectType,
@@ -837,7 +838,7 @@ public class SessionUnitManager(
     /// <inheritdoc />
     public virtual Task<List<SessionUnitCacheItem>> GetOrAddCacheListAsync(Guid sessionId)
     {
-        return SessionUnitListCache.GetOrAddAsync($"{new SessionUnitCacheKey(sessionId)}", () => GetListBySessionIdAsync(sessionId));
+        return SessionUnitListCache.GetOrAddAsync($"{new SessionUnitCacheKey(sessionId)}", () => GetMembersAsync(sessionId));
     }
 
     /// <inheritdoc />
@@ -880,7 +881,7 @@ public class SessionUnitManager(
 
                 return ToCacheItem(sessionUnitList.Where(x => x != null).AsQueryable()).ToList();
             }
-            return await GetListBySessionIdAsync(message.SessionId.Value);
+            return await GetMembersAsync(message.SessionId.Value);
 
         }, () => DistributedCacheEntryOptions);
     }
@@ -929,7 +930,7 @@ public class SessionUnitManager(
         })];
     }
     /// <inheritdoc />
-    public virtual async Task<List<SessionUnitCacheItem>> GetListBySessionIdAsync(Guid sessionId)
+    public virtual async Task<List<SessionUnitCacheItem>> GetMembersAsync(Guid sessionId, int batchSize = 1000, CancellationToken cancellationToken = default)
     {
         //var list = ToCacheItem((await SessionUnitReadOnlyRepository.GetQueryableAsync())
         //        .Where(SessionUnit.GetActivePredicate(Clock.Now))
@@ -944,25 +945,37 @@ public class SessionUnitManager(
         var list = await BatchGetListAsync(queryable =>
         {
             return queryable.Where(x => x.SessionId == sessionId);
-        });
+        }, batchSize, cancellationToken);
 
         await SessionUnitCountCache.SetAsync(sessionId, list
             //.Where(x => x.IsPublic)
-            .Count().ToString());
+            .Count.ToString(), token: cancellationToken);
 
-        Logger.LogInformation($"{nameof(GetListBySessionIdAsync)} SessionId:{sessionId}, [DB:{stopwatch.ElapsedMilliseconds}ms] count:{list.Count}");
+        Logger.LogInformation($"{nameof(GetMembersAsync)} SessionId:{sessionId}, [DB:{stopwatch.ElapsedMilliseconds}ms] count:{list.Count}");
 
         return list;
     }
     /// <inheritdoc />
-    public virtual async Task<List<SessionUnitCacheItem>> GetListByUserIdAsync(Guid userId)
+    public virtual async Task<List<SessionUnitCacheItem>> GetListByUserAsync(Guid userId, int batchSize = 1000, CancellationToken cancellationToken = default)
     {
+        var stopwatch = Stopwatch.StartNew();
+
         var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(userId);
-        var list = ToCacheItem((await SessionUnitReadOnlyRepository.GetQueryableAsync())
-                .Where(SessionUnit.GetActivePredicate(Clock.Now))
-                .Where(x => chatObjectIdList.Contains(x.OwnerId))
-            ).ToList();
-        return list;
+
+        //var list = ToCacheItem((await SessionUnitReadOnlyRepository.GetQueryableAsync())
+        //        .Where(SessionUnit.GetActivePredicate(Clock.Now))
+        //        .Where(x => chatObjectIdList.Contains(x.OwnerId))
+        //    ).ToList();
+        //return list;
+
+        var result = await BatchGetListAsync(queryable =>
+        {
+            return queryable.Where(x => chatObjectIdList.Contains(x.OwnerId));
+        }, batchSize, cancellationToken);
+
+        Logger.LogInformation($"{nameof(GetListByUserAsync)} userId:{userId}, [DB:{stopwatch.ElapsedMilliseconds}ms]");
+
+        return result;
     }
 
 
@@ -989,27 +1002,34 @@ public class SessionUnitManager(
     }
 
     /// <inheritdoc />
-    public virtual async Task<List<SessionUnitCacheItem>> GetListByOwnerIdAsync(long ownerId)
+    public virtual async Task<List<SessionUnitCacheItem>> GetFriendsAsync(long ownerId, int batchSize = 1000, CancellationToken cancellationToken = default)
     {
         var stopwatch = Stopwatch.StartNew();
 
         var result = await BatchGetListAsync(queryable =>
         {
             return queryable.Where(x => x.OwnerId == ownerId);
-        });
+        }, batchSize, cancellationToken);
 
-        Logger.LogInformation($"{nameof(GetListByOwnerIdAsync)} ownerId:{ownerId}, [DB:{stopwatch.ElapsedMilliseconds}ms]");
+        Logger.LogInformation($"{nameof(GetFriendsAsync)} ownerId:{ownerId}, [DB:{stopwatch.ElapsedMilliseconds}ms]");
 
         return result;
+    }
 
-        //var queryable = (await SessionUnitReadOnlyRepository.GetQueryableAsync())
-        //        .AsNoTracking()
-        //        .Where(SessionUnit.GetActivePredicate(Clock.Now))
-        //        .Where(x => x.OwnerId == ownerId)
-        //        ;
-        //var list = ToCacheItem(queryable).ToList();
-        //Logger.LogInformation($"{nameof(BatchGetListByOwnerIdAsync)} ownerId:{ownerId}, [DB:{stopwatch.ElapsedMilliseconds}ms]");
-        //return list;
+    /// <inheritdoc />
+    public virtual async Task<List<SessionUnitCacheItem>> GetReverseFriendsAsync(long destinationId, int batchSize = 1000, CancellationToken cancellationToken = default)
+    {
+        var stopwatch = Stopwatch.StartNew();
+
+        var result = await BatchGetListAsync(queryable =>
+        {
+            //反向好友：对方把自己加为好友的会话单元
+            return queryable.Where(x => x.DestinationId == destinationId);
+        }, batchSize, cancellationToken);
+
+        Logger.LogInformation($"{nameof(GetReverseFriendsAsync)} DestinationId:{destinationId}, [DB:{stopwatch.ElapsedMilliseconds}ms]");
+
+        return result;
     }
 
     /// <inheritdoc />
@@ -1425,7 +1445,7 @@ public class SessionUnitManager(
     {
         return await SessionUnitCacheManager.SetFriendsIfNotExistsAsync(ownerId,
              async (ownerId) =>
-                 await GetListByOwnerIdAsync(ownerId));
+                 await GetFriendsAsync(ownerId));
     }
 
     public virtual async Task<IEnumerable<SessionUnitCacheItem>> LoadMembersIfNotExistsAsync(Guid sessionId)

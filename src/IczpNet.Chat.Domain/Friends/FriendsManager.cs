@@ -29,13 +29,13 @@ public class FriendsManager(
     /// <inheritdoc />
     public virtual Task<List<SessionUnitCacheItem>> GetFriendsAsync(Guid userId)
     {
-        return UserFriendsCache.GetOrAddAsync(userId, () => SessionUnitManager.GetListByUserIdAsync(userId));
+        return UserFriendsCache.GetOrAddAsync(userId, () => SessionUnitManager.GetListByUserAsync(userId));
     }
 
     /// <inheritdoc />
     public virtual Task<List<SessionUnitCacheItem>> GetFriendsAsync(long chatObjectId)
     {
-        return FriendsCache.GetOrAddAsync(chatObjectId, () => SessionUnitManager.GetListByOwnerIdAsync(chatObjectId));
+        return FriendsCache.GetOrAddAsync(chatObjectId, () => SessionUnitManager.GetFriendsAsync(chatObjectId));
     }
 
     public async Task<List<FriendStatus>> GetListOnlineAsync(Guid userId)

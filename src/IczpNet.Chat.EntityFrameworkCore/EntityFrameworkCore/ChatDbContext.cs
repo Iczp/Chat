@@ -38,6 +38,7 @@ using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.ScanCodes;
 using IczpNet.Chat.Scopeds;
 using IczpNet.Chat.ServerHosts;
+using IczpNet.Chat.SessionBoxs;
 using IczpNet.Chat.SessionSections.SessionOrganizations;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionPermissionGroups;
@@ -96,6 +97,8 @@ public class ChatDbContext(DbContextOptions<ChatDbContext> options) : AbpDbConte
 
     public DbSet<Session> Session { get; set; }
     public DbSet<SessionUnit> SessionUnit { get; set; }
+
+    public DbSet<Box> SessionBox { get; set; }
 
     public DbSet<SessionUnitMessage> SessionUnitMessage { get; set; }
 

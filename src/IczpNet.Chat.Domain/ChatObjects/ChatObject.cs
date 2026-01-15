@@ -12,6 +12,7 @@ using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.Mottos;
 using IczpNet.Chat.RedEnvelopes;
+using IczpNet.Chat.SessionBoxs;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.EntityFrameworkCore;
@@ -300,7 +301,9 @@ public class ChatObject : BaseTreeEntity<ChatObject, long>, IName, IChatObject, 
     #endregion
 
     public virtual IList<ConnectionChatObject> ConnectionChatObjectList { get; protected set; } = [];
-    
+
+    [InverseProperty(nameof(Box.Owner))]
+    public virtual IList<Box> SessionBoxList { get; protected set; } = [];
 
     #region Motto 
     public virtual Guid? MottoId { get; protected set; }
