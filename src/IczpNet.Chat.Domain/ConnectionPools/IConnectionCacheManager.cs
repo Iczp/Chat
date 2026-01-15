@@ -69,6 +69,7 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     /// <param name="token"></param>
     /// <returns></returns>
     Task<Dictionary<string, ConnectionPoolCacheItem>> GetManyAsync(List<string> connectionIds, CancellationToken token = default);
+
     /// <summary>
     /// 是否在线（用户）
     /// </summary>
@@ -99,7 +100,7 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     /// <param name="ownertId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<List<string>> GetDeviceTypesAsync(long ownertId, CancellationToken token = default);
+    Task<IEnumerable<string>> GetDeviceTypesAsync(long ownertId, CancellationToken token = default);
 
     /// <summary>
     /// 获取设备类型 聊天对象
@@ -116,6 +117,14 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     /// <param name="token"></param>
     /// <returns></returns>
     Task<Dictionary<long, List<DeviceModel>>> GetDevicesAsync(List<long> ownerIds, CancellationToken token = default);
+
+    /// <summary>
+    /// 获取连接Id
+    /// </summary>
+    /// <param name="ownerIds"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<Dictionary<long, List<string>>> GetConnectionsAsync(List<long> ownerIds, CancellationToken token = default);
 
     /// <summary>
     /// 获取设备类型 用户

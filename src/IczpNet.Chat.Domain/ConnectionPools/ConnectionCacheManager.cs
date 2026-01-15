@@ -14,6 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Json;
 using Volo.Abp.Uow;
+using YamlDotNet.Core.Tokens;
 
 namespace IczpNet.Chat.ConnectionPools;
 
@@ -615,7 +616,7 @@ return 1";
         });
     }
 
-    public async Task<List<string>> GetDeviceTypesAsync(long ownertId, CancellationToken token = default)
+    public async Task<IEnumerable<string>> GetDeviceTypesAsync(long ownertId, CancellationToken token = default)
     {
         var key = OwnerDeviceHashKey(ownertId);
 
@@ -627,9 +628,9 @@ return 1";
 
         // DeviceType:DeviceId
         return values
-            .Select(v => v.ToString().Split(':')[0])
-            .Distinct()
-            .ToList();
+            .Select(DeviceElement.Parse)
+            .Select(x => x.DeviceType)
+            .Distinct();
     }
 
     public async Task<Dictionary<long, List<string>>> GetDeviceTypesAsync(List<long> ownerIds, CancellationToken token = default)
@@ -641,6 +642,16 @@ return 1";
                     .Select(d => d.DeviceType)
                     .ToList()
              );
+    }
+    public async Task<Dictionary<long, List<string>>> GetConnectionsAsync(List<long> ownerIds, CancellationToken token = default)
+    {
+        return (await GetDevicesAsync(ownerIds, token))
+           .ToDictionary(
+               x => x.Key,
+               x => x.Value
+                   .Select(d => d.ConnectionId)
+                   .ToList()
+            );
     }
 
     public async Task<Dictionary<long, List<DeviceModel>>> GetDevicesAsync(List<long> ownerIds, CancellationToken token = default)
@@ -681,13 +692,13 @@ return 1";
                 .Where(v => !string.IsNullOrWhiteSpace(v.Value.ToString()))
                 .Select(v =>
                 {
-                    var element = DeviceElement.Parse(v.Value);
+                    var value = DeviceElement.Parse(v.Value);
                     return new DeviceModel()
                     {
                         OwnerId = ownerId,
                         ConnectionId = v.Name.ToString(),
-                        DeviceType = element.DeviceType,
-                        DeviceId = element.DeviceId,
+                        DeviceType = value.DeviceType,
+                        DeviceId = value.DeviceId,
                     };
                 })
                 .Distinct()
