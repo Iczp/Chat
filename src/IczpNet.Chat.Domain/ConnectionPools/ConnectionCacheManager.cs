@@ -6,6 +6,7 @@ using IczpNet.Chat.RedisServices;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Minio.DataModel;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
@@ -14,7 +15,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Json;
 using Volo.Abp.Uow;
-using YamlDotNet.Core.Tokens;
 
 namespace IczpNet.Chat.ConnectionPools;
 
@@ -76,16 +76,16 @@ return 1";
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private string OwnerLatestZsetKey(long ownerId)
-        => $"{Prefix}Owners:Latest:OwnerId-{ownerId}";
+    private string OwnerLatestOnlineDeviceZsetKey(long ownerId)
+        => $"{Prefix}Owners:LatestOnlineDevice:OwnerId-{ownerId}";
 
     /// <summary>
-    /// 好友最后在线时间
+    /// 
     /// </summary>
-    /// <param name="friendOwnerId"></param>
+    /// <param name="firendOwnerId"></param>
     /// <returns></returns>
-    private string FriendLatestZsetKey(long friendOwnerId)
-        => $"{Prefix}Owners:Friends:OwnerId-{friendOwnerId}";
+    private string FriendsConnsHashKey(long firendOwnerId)
+        => $"{Prefix}Friends:OwnerId-{firendOwnerId}";
 
     /// <summary>
     /// 会话
@@ -172,7 +172,7 @@ return 1";
         }
     }
 
-    private void SortedActionOwnerFriends(List<long> ownerIds, Dictionary<long, IEnumerable<FriendModel>> friendsMap, Action<string, SessionUnitElement> action)
+    private void SortedActionOwnerFriends(List<long> ownerIds, Dictionary<long, IEnumerable<FriendModel>> friendsMap, Action<long, FriendModel> eachAction)
     {
         foreach (var ownerId in ownerIds)
         {
@@ -180,28 +180,35 @@ return 1";
             var friends = friendsMap.GetValueOrDefault(ownerId);
             foreach (var item in friends)
             {
-                var friendLatestZsetKey = FriendLatestZsetKey(item.FriendId);
-                var element = SessionUnitElement.Create(item.OwnerId, item.FriendId, item.Id, item.SessionId);
-                action(friendLatestZsetKey, element);
+                eachAction(ownerId, item);
             }
         }
     }
 
-    private void SortedSetOwnerFriends(IBatch batch, List<long> ownerIds, Dictionary<long, IEnumerable<FriendModel>> friendsMap, double unixTime)
+    private void SortedSetOwnerFriends(IBatch batch, List<long> ownerIds, Dictionary<long, IEnumerable<FriendModel>> friendsMap, double unixTime, string connectionId)
     {
-        SortedActionOwnerFriends(ownerIds, friendsMap, (friendLatestZsetKey, element) =>
+        SortedActionOwnerFriends(ownerIds, friendsMap, (ownerId, friend) =>
         {
-            _ = batch.SortedSetAddAsync(friendLatestZsetKey, element, unixTime);
-            Expire(batch, friendLatestZsetKey);
+            var element = SessionUnitElement.Create(friend.OwnerId, friend.FriendId, friend.Id, friend.SessionId);
+
+            //Friends Conns
+            var friendConnsHashKey = FriendsConnsHashKey(friend.FriendId);
+            batch.HashSetAsync(friendConnsHashKey, element, connectionId);
+            Expire(batch, friendConnsHashKey);
+
         });
     }
 
     private void SortedRemoveOwnerFriends(IBatch batch, List<long> ownerIds, Dictionary<long, IEnumerable<FriendModel>> friendsMap)
     {
-        SortedActionOwnerFriends(ownerIds, friendsMap, (friendLatestZsetKey, element) =>
+        SortedActionOwnerFriends(ownerIds, friendsMap, (ownerId, friend) =>
         {
-            _ = batch.SortedSetRemoveAsync(friendLatestZsetKey, element);
-            Expire(batch, friendLatestZsetKey);
+            var element = SessionUnitElement.Create(friend.OwnerId, friend.FriendId, friend.Id, friend.SessionId);
+
+            //Friends Conns
+            var friendConnsHashKey = FriendsConnsHashKey(friend.FriendId);
+            batch.HashDeleteAsync(friendConnsHashKey, element);
+            Expire(batch, friendConnsHashKey);
         });
     }
     private void HashSetSessionConn(IBatch batch, ConnectionPoolCacheItem connectionPool, Dictionary<Guid, List<long>> sessionChatObjectsMap)
@@ -334,7 +341,7 @@ return 1";
         HashSetOwnerSessions(batch, connectionPool, friendsMap);
 
         //
-        SortedSetOwnerFriends(batch, ownerIds, friendsMap, Clock.Now.ToUnixTimeMilliseconds());
+        SortedSetOwnerFriends(batch, ownerIds, friendsMap, connectionPool.CreationTime.ToUnixTimeMilliseconds(), connectionId);
 
         // chatObject -> connection hash (owner conn mapping)
         HashSetOwnerDevice(batch, connectionPool);
@@ -397,11 +404,11 @@ return 1";
             Expire(batch, OwnerSessionsHashKey(ownerId));
             Expire(batch, OwnerDeviceHashKey(ownerId));
             //latest
-            _ = batch.SortedSetAddAsync(OwnerLatestZsetKey(ownerId), $"{deviceType}:{deviceId}", unixTime);
+            _ = batch.SortedSetAddAsync(OwnerLatestOnlineDeviceZsetKey(ownerId), $"{deviceType}:{deviceId}", unixTime);
         }
 
         // 
-        SortedSetOwnerFriends(batch, ownerIds, friendsMap, unixTime);
+        SortedSetOwnerFriends(batch, ownerIds, friendsMap, unixTime, connectionId);
 
         foreach (var kv in sessionChatObjects)
         {
@@ -515,7 +522,7 @@ return 1";
     public async Task<long> DeleteByHostNameAsync(string hostHame)
     {
         // get connection ids from sorted set (members only)
-        var connIds = (await GetConnectionsByHostAsync(hostHame)).ToList();
+        var connIds = (await GetConnectionIdsByHostAsync(hostHame)).ToList();
 
         if (connIds == null || connIds.Count == 0)
         {
@@ -577,7 +584,7 @@ return 1";
         return items.FirstOrDefault().Value;
     }
 
-    public async Task<Dictionary<string, ConnectionPoolCacheItem>> GetManyAsync(List<string> connectionIds, CancellationToken token = default)
+    public async Task<Dictionary<string, ConnectionPoolCacheItem>> GetManyAsync(IEnumerable<string> connectionIds, CancellationToken token = default)
     {
         var batch = Database.CreateBatch();
         var tasks = connectionIds.Distinct().ToDictionary(x => x, x => batch.HashGetAllAsync(ConnHashKey(x)));
@@ -602,7 +609,7 @@ return 1";
 
     public async Task<IEnumerable<OwnerLatestOnline>> GetLatestOnlineAsync(long ownertId, CancellationToken token = default)
     {
-        var key = OwnerLatestZsetKey(ownertId);
+        var key = OwnerLatestOnlineDeviceZsetKey(ownertId);
         var result = await Database.SortedSetRangeByScoreWithScoresAsync(key, order: Order.Descending);
         return result.Select(x =>
         {
@@ -642,16 +649,6 @@ return 1";
                     .Select(d => d.DeviceType)
                     .ToList()
              );
-    }
-    public async Task<Dictionary<long, List<string>>> GetConnectionsAsync(List<long> ownerIds, CancellationToken token = default)
-    {
-        return (await GetDevicesAsync(ownerIds, token))
-           .ToDictionary(
-               x => x.Key,
-               x => x.Value
-                   .Select(d => d.ConnectionId)
-                   .ToList()
-            );
     }
 
     public async Task<Dictionary<long, List<DeviceModel>>> GetDevicesAsync(List<long> ownerIds, CancellationToken token = default)
@@ -726,13 +723,7 @@ return 1";
         // Hash: connectionId -> ownerIdList "12,45,66"
         foreach (var entry in hash)
         {
-            var ownerIdsStr = entry.Value.ToString();
-            if (string.IsNullOrWhiteSpace(ownerIdsStr))
-            {
-                continue;
-            }
-
-            foreach (var ownerId in ownerIdsStr.Split(',').Select(long.Parse))
+            foreach (var ownerId in entry.Value.ToList<long>())
             {
                 var ownerKey = OwnerDeviceHashKey(ownerId);
                 var ownerValues = await Database.HashValuesAsync(ownerKey);
@@ -748,7 +739,28 @@ return 1";
         return deviceTypes.ToList();
     }
 
-    public async Task<IEnumerable<string>> GetConnectionsByUserAsync(Guid userId, CancellationToken token = default)
+    public async Task<Dictionary<long, IEnumerable<string>>> GetConnectionIdsByOwnerAsync(List<long> ownerIds, CancellationToken token = default)
+    {
+        return (await GetDevicesAsync(ownerIds, token))
+           .ToDictionary(
+               x => x.Key,
+               x => x.Value
+                   .Select(d => d.ConnectionId)
+            );
+    }
+
+    public async Task<Dictionary<long, IEnumerable<ConnectionPoolCacheItem>>> GetConnectionsByOwnerAsync(List<long> ownerIds, CancellationToken token = default)
+    {
+        var connIdMap = await GetConnectionIdsByOwnerAsync(ownerIds, token);
+
+        var connIdList = connIdMap.SelectMany(x => x.Value).Distinct().ToList();
+
+        var connMap = await GetManyAsync(connIdList, token);
+
+        return connIdMap.ToDictionary(x => x.Key, x => x.Value.Select(v => connMap[v]));
+    }
+
+    public async Task<IEnumerable<string>> GetConnectionIdsByUserAsync(Guid userId, CancellationToken token = default)
     {
         var entries = await Database.HashGetAllAsync(UserConnKey(userId));
         return entries.Select(x => x.Name.ToString());
@@ -962,9 +974,7 @@ return 1";
 
     public async Task<Dictionary<string, long>> GetCountByHostsAsync(IEnumerable<string> hosts = null)
     {
-        var hostList = (hosts as IList<string> ?? hosts.ToList())
-            .Distinct()
-            .ToList();
+        var hostList = hosts?.Distinct() ?? (await GetAllHostsAsync()).Select(x => x.Key);
 
         var batch = Database.CreateBatch();
 
@@ -984,7 +994,7 @@ return 1";
         return (await GetCountByHostsAsync([host])).Values.FirstOrDefault();
     }
 
-    public async Task<IEnumerable<string>> GetConnectionsByHostAsync(string host, CancellationToken token = default)
+    public async Task<IEnumerable<string>> GetConnectionIdsByHostAsync(string host, CancellationToken token = default)
     {
         var members = await Database.SortedSetRangeByRankAsync(HostConnZsetKey(host));
         return members.Select(x => x.ToString());
@@ -992,22 +1002,22 @@ return 1";
 
     public async Task<long> GetOnlineFriendsCountAsync(long ownerId)
     {
-        return await Database.SortedSetLengthAsync(FriendLatestZsetKey(ownerId));
+        //return await Database.SortedSetLengthAsync(FriendsLatestOnlineZsetKey(ownerId));
+        return await Database.HashLengthAsync(FriendsConnsHashKey(ownerId));
     }
 
-    public async Task<IEnumerable<SessionUnitElement>> GetOnlineFriendsAsync(
-        long ownerId,
-        double start = double.NegativeInfinity,
-        double stop = double.PositiveInfinity,
-        Exclude exclude = Exclude.None,
-        Order order = Order.Ascending,
-        long skip = 0,
-        long take = -1,
-        CommandFlags flags = CommandFlags.None)
+    public async Task<IEnumerable<SessionUnitElement>> GetOnlineFriendsAsync(long ownerId)
     {
-        var list = await Database.SortedSetRangeByScoreWithScoresAsync(FriendLatestZsetKey(ownerId), start, stop, exclude, order, skip, take, flags);
+        var entries = await Database.HashGetAllAsync(FriendsConnsHashKey(ownerId));
+        return entries.Select(x => SessionUnitElement.Parse(x.Name));
+    }
 
-        return list.Select(x => SessionUnitElement.Parse(x.Element));
+    public async Task<IEnumerable<string>> GetOnlineFriendsConnectionIdsAsync(long ownerId)
+    {
+        var friendsConnsHashKey = FriendsConnsHashKey(ownerId);
 
+        var values = await Database.HashValuesAsync(friendsConnsHashKey);
+
+        return values.Select(x => x.ToString()).Distinct();
     }
 }

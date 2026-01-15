@@ -1,4 +1,5 @@
 ﻿using DeviceDetectorNET;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Friends;
@@ -21,6 +22,8 @@ public abstract class ChatHubService : DomainService
     public IConnectionPoolManager ConnectionPoolManager => LazyServiceProvider.LazyGetRequiredService<IConnectionPoolManager>();
     public ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
     public IFriendsManager FriendManager => LazyServiceProvider.LazyGetRequiredService<IFriendsManager>();
+    public IChatObjectManager ChatObjectManager => LazyServiceProvider.LazyGetRequiredService<IChatObjectManager>();
+    public IConnectionCacheManager ConnectionCacheManager => LazyServiceProvider.LazyGetRequiredService<IConnectionCacheManager>();
     public ICurrentHosted CurrentHosted => LazyServiceProvider.LazyGetRequiredService<ICurrentHosted>();
     public IJsonSerializer JsonSerializer => LazyServiceProvider.LazyGetRequiredService<IJsonSerializer>();
 
@@ -30,6 +33,22 @@ public abstract class ChatHubService : DomainService
     /// <param name="userId"></param>
     /// <returns></returns>
     protected virtual async Task<List<ConnectionPoolCacheItem>> GetFriendsConnectionIdsAsync(Guid userId)
+    {
+        var ownerIds = await ChatObjectManager.GetIdListByUserIdAsync(userId);
+
+        var connIdMap = new Dictionary<long, IEnumerable<string>>(ownerIds.Count);
+
+        foreach (var ownerId in ownerIds)
+        {
+            connIdMap[ownerId] = await ConnectionCacheManager.GetOnlineFriendsConnectionIdsAsync(ownerId);
+        }
+        var connIdList = connIdMap.SelectMany(x => x.Value).Distinct().ToList();
+
+        var conns = await ConnectionCacheManager.GetManyAsync(connIdList);
+
+        return conns.Values.ToList();
+    }
+    protected virtual async Task<List<ConnectionPoolCacheItem>> GetFriendsConnectionIdsOldAsync(Guid userId)
     {
         var sessionUnitList = await FriendManager.GetFriendsAsync(userId);
 
@@ -54,14 +73,16 @@ public abstract class ChatHubService : DomainService
     /// <returns></returns>
     protected virtual async Task<List<string>> GetUserConnectionIdsAsync(Guid userId)
     {
-        var userConnectionIds = (await ConnectionPoolManager.CreateQueryableAsync())
-        .Where(x => x.Host == CurrentHosted.Name)
-        .Where(x => x.UserId == userId)
-        .Select(x => x.ConnectionId)
-        .ToList();
-        ;
+        return await ConnectionPoolManager.GetConnectionIdsByUserAsync(userId);
 
-        return userConnectionIds;
+        //var userConnectionIds = (await ConnectionPoolManager.CreateQueryableAsync())
+        //.Where(x => x.Host == CurrentHosted.Name)
+        //.Where(x => x.UserId == userId)
+        //.Select(x => x.ConnectionId)
+        //.ToList();
+        //;
+
+        //return userConnectionIds;
     }
 
     /// <summary>

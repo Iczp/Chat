@@ -109,7 +109,7 @@ public class ConnectionCacheAppService(
     public async Task<PagedResultDto<ConnectionPoolDto>> GetListAsync(ConnectionPoolGetListInput input)
     {
         await CheckGetListPolicyAsync();
-        var connIds = await ConnectionCacheManager.GetConnectionsByHostAsync(input.Host);
+        var connIds = await ConnectionCacheManager.GetConnectionIdsByHostAsync(input.Host);
         var connList = await GetManyAsync(connIds.ToList());
         var query = connList.Values.AsQueryable();
         return await GetPagedListAsync(query, input);
@@ -144,7 +144,7 @@ public class ConnectionCacheAppService(
     public async Task<PagedResultDto<ConnectionPoolDto>> GetListByUserAsync(Guid userId, GetListInput input)
     {
         await CheckPolicyAsync(GetListByUserPolicyName);
-        var connIds = await ConnectionCacheManager.GetConnectionsByUserAsync(userId);
+        var connIds = await ConnectionCacheManager.GetConnectionIdsByUserAsync(userId);
         return await GetPagedListByConnIdsAsync(connIds.ToList(), input);
     }
 

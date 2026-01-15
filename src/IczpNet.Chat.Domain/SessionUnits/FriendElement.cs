@@ -1,5 +1,6 @@
 ﻿using StackExchange.Redis;
 using System;
+using System.Xml.Linq;
 
 namespace IczpNet.Chat.SessionUnits;
 
@@ -28,6 +29,13 @@ public readonly record struct FriendElement(long OwnerId, long FriendId, Guid Se
 
         return field;
     }
+
+    public static FriendElement Parse(SessionUnitElement element)
+    {
+        return Create(element.OwnerId, element.FriendId, element.SessionUnitId);
+    }
+
+    
 
     public static bool TryParse(RedisValue value, out FriendElement field)
     {

@@ -68,7 +68,7 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     /// <param name="connectionIds"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<Dictionary<string, ConnectionPoolCacheItem>> GetManyAsync(List<string> connectionIds, CancellationToken token = default);
+    Task<Dictionary<string, ConnectionPoolCacheItem>> GetManyAsync(IEnumerable<string> connectionIds, CancellationToken token = default);
 
     /// <summary>
     /// 是否在线（用户）
@@ -118,13 +118,6 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     /// <returns></returns>
     Task<Dictionary<long, List<DeviceModel>>> GetDevicesAsync(List<long> ownerIds, CancellationToken token = default);
 
-    /// <summary>
-    /// 获取连接Id
-    /// </summary>
-    /// <param name="ownerIds"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<Dictionary<long, List<string>>> GetConnectionsAsync(List<long> ownerIds, CancellationToken token = default);
 
     /// <summary>
     /// 获取设备类型 用户
@@ -133,6 +126,23 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     /// <param name="token"></param>
     /// <returns></returns>
     Task<IEnumerable<string>> GetDeviceTypesAsync(Guid userId, CancellationToken token = default);
+
+
+    /// <summary>
+    /// 获取连接Id
+    /// </summary>
+    /// <param name="ownerIds"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<Dictionary<long, IEnumerable<string>>> GetConnectionIdsByOwnerAsync(List<long> ownerIds, CancellationToken token = default);
+
+    /// <summary>
+    /// 获取连接信息
+    /// </summary>
+    /// <param name="ownerIds"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<Dictionary<long, IEnumerable<ConnectionPoolCacheItem>>> GetConnectionsByOwnerAsync(List<long> ownerIds, CancellationToken token = default);
 
     /// <summary>
     /// 获取连接数量(用户)
@@ -148,7 +158,7 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     /// <param name="userId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<IEnumerable<string>> GetConnectionsByUserAsync(Guid userId, CancellationToken token = default);
+    Task<IEnumerable<string>> GetConnectionIdsByUserAsync(Guid userId, CancellationToken token = default);
 
     /// <summary>
     /// 获取连接数量(聊天对象)
@@ -214,7 +224,7 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     /// <param name="host"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<IEnumerable<string>> GetConnectionsByHostAsync(string host, CancellationToken token = default);
+    Task<IEnumerable<string>> GetConnectionIdsByHostAsync(string host, CancellationToken token = default);
 
     /// <summary>
     /// 获取在线好友数量
@@ -227,20 +237,13 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     /// 获取在线好友
     /// </summary>
     /// <param name="ownerId"></param>
-    /// <param name="start"></param>
-    /// <param name="stop"></param>
-    /// <param name="exclude"></param>
-    /// <param name="order"></param>
-    /// <param name="skip"></param>
-    /// <param name="take"></param>
-    /// <param name="flags"></param>
     /// <returns></returns>
-    Task<IEnumerable<SessionUnitElement>> GetOnlineFriendsAsync(long ownerId,
-        double start = double.NegativeInfinity,
-        double stop = double.PositiveInfinity,
-        Exclude exclude = Exclude.None,
-        Order order = Order.Descending,
-        long skip = 0,
-        long take = -1,
-        CommandFlags flags = CommandFlags.None);
+    Task<IEnumerable<SessionUnitElement>> GetOnlineFriendsAsync(long ownerId);
+
+    /// <summary>
+    /// 获取在线好友连接列表
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    Task<IEnumerable<string>> GetOnlineFriendsConnectionIdsAsync(long ownerId);
 }
