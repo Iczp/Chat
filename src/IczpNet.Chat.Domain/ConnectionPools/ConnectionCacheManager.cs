@@ -192,7 +192,7 @@ return 1";
             var element = SessionUnitElement.Create(friend.OwnerId, friend.FriendId, friend.Id, friend.SessionId);
             //Friends Conns
             var friendConnsHashKey = FriendsConnsHashKey(friend.FriendId);
-            if (string.IsNullOrWhiteSpace(connectionId))
+            if (!string.IsNullOrWhiteSpace(connectionId))
             {
                 batch.HashSetAsync(friendConnsHashKey, element, connectionId);
             }
