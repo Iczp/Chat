@@ -207,6 +207,7 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     /// <param name="token"></param>
     /// <returns></returns>
     Task<long> GetCountByHostAsync(string host, CancellationToken token = default);
+
     /// <summary>
     /// 获取连接(主机)
     /// </summary>
