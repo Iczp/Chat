@@ -968,6 +968,12 @@ public class SessionUnitManager(
         //    ).ToList();
         //return list;
 
+        //foreach (var chatObjectId in chatObjectIdList)
+        //{
+
+        //    var list = await LoadFriendsIfNotExistsAsync(chatObjectId);
+        //}
+
         var result = await BatchGetListAsync(queryable =>
         {
             return queryable.Where(x => chatObjectIdList.Contains(x.OwnerId));
