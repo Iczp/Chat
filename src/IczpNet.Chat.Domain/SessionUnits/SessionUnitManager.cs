@@ -15,7 +15,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Pipelines.Sockets.Unofficial.Buffers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -127,6 +126,7 @@ public class SessionUnitManager(
                         //UserId = x.UserId,
                         SessionId = x.SessionId,
                         OwnerId = x.OwnerId,
+                        BoxId = x.BoxId,
                         OwnerObjectType = x.OwnerObjectType,
                         DestinationId = x.DestinationId,
                         DestinationObjectType = x.DestinationObjectType,

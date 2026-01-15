@@ -12,6 +12,11 @@ public class SessionUnitCacheItem : SessionUnitBase, ISessionUnit
     public virtual long? DestinationId { get; set; }
 
     /// <summary>
+    /// BoxId
+    /// </summary>
+    public virtual Guid? BoxId { get; set; }
+
+    /// <summary>
     /// DestinationType
     /// </summary>
     public virtual ChatObjectTypeEnums? DestinationObjectType { get; set; }

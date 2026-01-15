@@ -43,14 +43,12 @@ using IczpNet.Chat.SessionUnitSettings;
 using IczpNet.Chat.TextContentWords;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using StackExchange.Redis;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Reflection;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities;
-using Volo.Abp.EntityFrameworkCore.Modeling;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -312,6 +310,12 @@ public static class ChatDbContextModelCreatingExtensions
                 .WithMany(x => x.DestinationSessionUnitList)
                 .HasForeignKey(x => x.DestinationId)
                 .OnDelete(DeleteBehavior.Restrict); //DeleteBehavior.Restrict: 删除 ChatObject（用户）时，系统应该阻止删除
+
+            //b.HasOne(x => x.Box)
+            //    .WithMany(x => x.SessionUnitList)
+            //    .HasForeignKey(x => x.BoxId)
+            //    //.IsRequired()
+            //    .OnDelete(DeleteBehavior.SetNull);
 
         });
 
