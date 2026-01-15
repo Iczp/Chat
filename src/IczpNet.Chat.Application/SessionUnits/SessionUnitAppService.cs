@@ -228,7 +228,7 @@ public class SessionUnitAppService(
 
         await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetListForSameSessionPolicyName));
 
-        var list = await SessionUnitManager.GetListBySessionIdAsync(entity.SessionId.Value);
+        var list = await SessionUnitManager.GetMembersAsync(entity.SessionId.Value);
 
         return list.Select(x => x.OwnerId).ToList();
 

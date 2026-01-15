@@ -335,22 +335,37 @@ public interface ISessionUnitManager
     /// 获取缓存
     /// </summary>
     /// <param name="sessionId"></param>
+    /// <param name="batchSize"></param>
+    /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task<List<SessionUnitCacheItem>> GetListBySessionIdAsync(Guid sessionId);
+    Task<List<SessionUnitCacheItem>> GetMembersAsync(Guid sessionId, int batchSize = 1000, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// 获取好友列表
     /// </summary>
     /// <param name="userId"></param>
+    /// <param name="batchSize"></param>
+    /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task<List<SessionUnitCacheItem>> GetListByUserIdAsync(Guid userId);
+    Task<List<SessionUnitCacheItem>> GetListByUserAsync(Guid userId, int batchSize = 1000, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// 获取好友列表(ChatObject)
+    /// 获取好友列表(我的好友)
     /// </summary>
     /// <param name="ownerId">chatObjectId</param>
+    /// <param name="batchSize"></param>
+    /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task<List<SessionUnitCacheItem>> GetListByOwnerIdAsync(long ownerId);
+    Task<List<SessionUnitCacheItem>> GetFriendsAsync(long ownerId, int batchSize = 1000, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 获取反向好友列表（我是别人的好友）
+    /// </summary>
+    /// <param name="destinationId"></param>
+    /// <param name="batchSize"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<List<SessionUnitCacheItem>> GetReverseFriendsAsync(long destinationId, int batchSize = 1000, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// 移除缓存
@@ -483,8 +498,8 @@ public interface ISessionUnitManager
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     Task<List<SessionUnitCacheItem>> BatchGetListAsync(
-        Func<IQueryable<SessionUnit>, IQueryable<SessionUnit>> queryableAction, 
-        int batchSize=1000, 
+        Func<IQueryable<SessionUnit>, IQueryable<SessionUnit>> queryableAction,
+        int batchSize = 1000,
         CancellationToken cancellationToken = default);
 
     Task<IEnumerable<SessionUnitCacheItem>> LoadFriendsIfNotExistsAsync(long ownerId);
