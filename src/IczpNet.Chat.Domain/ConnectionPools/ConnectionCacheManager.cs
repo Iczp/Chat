@@ -185,17 +185,18 @@ return 1";
         }
     }
 
-    private void SortedSetOwnerFriends(IBatch batch, List<long> ownerIds, Dictionary<long, IEnumerable<FriendModel>> friendsMap, double unixTime, string connectionId)
+    private void SortedSetOwnerFriendsConns(IBatch batch, List<long> ownerIds, Dictionary<long, IEnumerable<FriendModel>> friendsMap, string connectionId)
     {
         SortedActionOwnerFriends(ownerIds, friendsMap, (ownerId, friend) =>
         {
             var element = SessionUnitElement.Create(friend.OwnerId, friend.FriendId, friend.Id, friend.SessionId);
-
             //Friends Conns
             var friendConnsHashKey = FriendsConnsHashKey(friend.FriendId);
-            batch.HashSetAsync(friendConnsHashKey, element, connectionId);
+            if (string.IsNullOrWhiteSpace(connectionId))
+            {
+                batch.HashSetAsync(friendConnsHashKey, element, connectionId);
+            }
             Expire(batch, friendConnsHashKey);
-
         });
     }
 
@@ -340,8 +341,8 @@ return 1";
         // owner session sets only if not exists - to avoid race we'll set expire and add members if sessions exist in memory
         HashSetOwnerSessions(batch, connectionPool, friendsMap);
 
-        //
-        SortedSetOwnerFriends(batch, ownerIds, friendsMap, connectionPool.CreationTime.ToUnixTimeMilliseconds(), connectionId);
+        //Friends Conns
+        SortedSetOwnerFriendsConns(batch, ownerIds, friendsMap, connectionId);
 
         // chatObject -> connection hash (owner conn mapping)
         HashSetOwnerDevice(batch, connectionPool);
@@ -408,7 +409,7 @@ return 1";
         }
 
         // 
-        SortedSetOwnerFriends(batch, ownerIds, friendsMap, unixTime, connectionId);
+        SortedSetOwnerFriendsConns(batch, ownerIds, friendsMap, null);
 
         foreach (var kv in sessionChatObjects)
         {
