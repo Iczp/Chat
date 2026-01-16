@@ -238,14 +238,14 @@ return tonumber(newValue)
             [field, value]);
     }
 
-    protected static void ZsetIncrementIfGuardKeyExist(IBatch batch, string guardKey, string key, string member, double increment)
+    protected static void ZsetIncrementIfGuardKeyExist(IBatch batch, string guardKey, string key, RedisValue member, double increment)
     {
         _ = batch.ScriptEvaluateAsync(ZsetIncrementIfGuardKeyExistScript,
             [guardKey, key],
             [member, increment]);
     }
 
-    protected static Task<RedisResult> ZsetUpdateIfExistsAsync(IDatabaseAsync batch, string key, string member, double score, bool removeWhenZero = false)
+    protected static Task<RedisResult> ZsetUpdateIfExistsAsync(IDatabaseAsync batch, string key, RedisValue member, double score, bool removeWhenZero = false)
     {
         return batch.ScriptEvaluateAsync(ZsetUpdateIfExistsScript,
             [key],
