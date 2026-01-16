@@ -180,11 +180,11 @@ return tonumber(newValue)
     /// </summary>
     /// <param name="keys"></param>
     /// <returns></returns>
-    protected virtual async Task<Dictionary<string, bool>> BatchKeyExistsAsync(IEnumerable<string> keys)
+    protected virtual async Task<Dictionary<string, bool>> BatchKeyExistsAsync(IEnumerable<RedisKey> keys)
     {
         var stopwatch = Stopwatch.StartNew();
 
-        var keyList = keys as IList<string> ?? keys.ToList();
+        var keyList = keys as IList<RedisKey> ?? keys.ToList();
         if (keyList.Count == 0)
         {
             return [];

@@ -42,11 +42,9 @@ end
 return 1";
 
     // connKey 
-    private string ConnHashKey(string connectionId)
-        => $"{Prefix}Conns:ConnId-{connectionId}";
+    private RedisKey ConnHashKey(string connectionId) => $"{Prefix}Conns:ConnId-{connectionId}";
     // host -> sorted set of connection ids (score = ticks)
-    private string HostConnZsetKey(string hostName)
-        => $"{Prefix}Hosts:{hostName}";
+    private RedisKey HostConnZsetKey(string hostName) => $"{Prefix}Hosts:{hostName}";
 
     /// <summary>
     /// 会话连接
@@ -55,8 +53,7 @@ return 1";
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    private string SessionConnHashKey(Guid sessionId)
-       => $"{Prefix}Sessions:SessionId-{sessionId}";
+    private RedisKey SessionConnHashKey(Guid sessionId) => $"{Prefix}Sessions:SessionId-{sessionId}";
 
     /// <summary>
     /// 设备
@@ -65,8 +62,7 @@ return 1";
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private string OwnerDeviceHashKey(long ownerId)
-        => $"{Prefix}Owners:Devices:OwnerId-{ownerId}";
+    private RedisKey OwnerDeviceHashKey(long ownerId) => $"{Prefix}Owners:Devices:OwnerId-{ownerId}";
 
     /// <summary>
     /// 最后连接时间
@@ -75,16 +71,14 @@ return 1";
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private string OwnerLatestOnlineDeviceZsetKey(long ownerId)
-        => $"{Prefix}Owners:LatestOnlineDevice:OwnerId-{ownerId}";
+    private RedisKey OwnerLatestOnlineDeviceZsetKey(long ownerId) => $"{Prefix}Owners:LatestOnlineDevice:OwnerId-{ownerId}";
 
     /// <summary>
     /// 
     /// </summary>
     /// <param name="firendOwnerId"></param>
     /// <returns></returns>
-    private string FriendsConnsHashKey(long firendOwnerId)
-        => $"{Prefix}Friends:OwnerId-{firendOwnerId}";
+    private RedisKey FriendsConnsHashKey(long firendOwnerId) => $"{Prefix}Friends:OwnerId-{firendOwnerId}";
 
     /// <summary>
     /// 会话
@@ -93,8 +87,7 @@ return 1";
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private string OwnerSessionsHashKey(long ownerId)
-        => $"{Prefix}Owners:Sessions:OwnerId-{ownerId}";
+    private RedisKey OwnerSessionsHashKey(long ownerId) => $"{Prefix}Owners:Sessions:OwnerId-{ownerId}";
 
     /// <summary>
     /// 用户连接
@@ -103,11 +96,13 @@ return 1";
     /// </summary>
     /// <param name="userId"></param>
     /// <returns></returns>
-    private string UserConnKey(Guid userId)
-        => $"{Prefix}Users:userId-{userId}";
+    private RedisKey UserConnKey(Guid userId) => $"{Prefix}Users:userId-{userId}";
 
-    private string AllHostZsetKey()
-        => $"{Prefix}AllHosts";
+    /// <summary>
+    /// 所有主机
+    /// </summary>
+    /// <returns></returns>
+    private RedisKey AllHostZsetKey() => $"{Prefix}AllHosts";
 
     private void HashSetConn(IBatch batch, ConnectionPoolCacheItem connectionPool)
     {
