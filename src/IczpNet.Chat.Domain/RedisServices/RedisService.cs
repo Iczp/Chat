@@ -271,4 +271,20 @@ return tonumber(newValue)
             [member, decrement, removeWhenZero ? 1 : 0]);
     }
 
+    protected async Task<double?[]> GetZsetScoresAsync(string key, RedisValue[] members, IBatch newBatch = null)
+    {
+        var batch = newBatch ?? Database.CreateBatch();
+        var tasks = new Task<double?>[members.Length];
+
+        for (int i = 0; i < members.Length; i++)
+        {
+            tasks[i] = batch.SortedSetScoreAsync(key, members[i]);
+        }
+
+        batch.Execute();
+        await Task.WhenAll(tasks);
+
+        return tasks.Select(t => t.Result).ToArray();
+    }
+
 }
