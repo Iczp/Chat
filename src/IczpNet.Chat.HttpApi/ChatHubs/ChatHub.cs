@@ -21,7 +21,7 @@ namespace IczpNet.Chat.ChatHubs;
 
 [Authorize]
 public class ChatHub(
-    IConnectionCacheManager connectionCacheManager,
+    IOnlineManager onlineManager,
     IConnectionManager connectionManager,
     IChatObjectManager chatObjectManager,
     IObjectMapper objectMapper,
@@ -39,7 +39,7 @@ public class ChatHub(
     /// </summary>
     private static readonly ConcurrentDictionary<string, List<HubCallerContext>> DeviceIdToContextMap = new();
 
-    public IConnectionCacheManager ConnectionCacheManager { get; } = connectionCacheManager;
+    public IOnlineManager OnlineManager { get; } = onlineManager;
     public IConnectionManager ConnectionManager { get; } = connectionManager;
     public IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
     public IObjectMapper ObjectMapper { get; } = objectMapper;
@@ -83,7 +83,7 @@ public class ChatHub(
 
             await HubCallerContextManager.ConnectedAsync(Context, connectedEto);
 
-            await ConnectionCacheManager.ConnectedAsync(connectedEto);
+            await OnlineManager.ConnectedAsync(connectedEto);
 
             await Clients.Caller.ReceivedMessage(new CommandPayload()
             {
@@ -142,7 +142,7 @@ public class ChatHub(
             // 删除连接
             await ConnectionPoolManager.DisconnectedAsync(connectionId, cancellationToken);
 
-            await ConnectionCacheManager.DisconnectedAsync(connectionId);
+            await OnlineManager.DisconnectedAsync(connectionId);
         }
         catch (TaskCanceledException ex)
         {
@@ -181,7 +181,7 @@ public class ChatHub(
             await DistributedEventBus.PublishAsync(activedEto, onUnitOfWorkComplete: false);
         }
 
-        await ConnectionCacheManager.UpdateActiveTimeAsync(Context.ConnectionId);
+        await OnlineManager.UpdateActiveTimeAsync(Context.ConnectionId);
 
         return ticks;
     }

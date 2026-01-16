@@ -1,6 +1,7 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Clocks;
+using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
@@ -493,6 +494,7 @@ public class SessionUnitCacheAppService(
             //take: input.MaxResultCount,
             isDescending: true);
 
+
         var query = queryable.AsQueryable()
             .WhereIf(input.FriendId.HasValue, x => x.FriendId == input.FriendId)
             .WhereIf(input.SessionId.HasValue, x => x.SessionId == input.SessionId)
@@ -500,6 +502,12 @@ public class SessionUnitCacheAppService(
             .WhereIf(input.MinScore > 0, x => x.Ticks > input.MinScore)
             .WhereIf(input.MaxScore > 0, x => x.Ticks < input.MaxScore)
             ;
+        //是否在线
+        if (input.IsOnline.HasValue)
+        {
+            
+
+        }
 
         //search 
         query = await ApplyFriendFilterAsync(query, ownerId, input.Keyword);

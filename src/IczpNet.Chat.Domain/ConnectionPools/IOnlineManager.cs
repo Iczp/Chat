@@ -1,13 +1,11 @@
-﻿using IczpNet.Chat.SessionUnits;
-using StackExchange.Redis;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.ConnectionPools;
 
-public interface IConnectionCacheManager //: IConnectionPoolManager
+public interface IOnlineManager //: IConnectionPoolManager
 {
     /// <summary>
     /// 添加连接
@@ -238,7 +236,7 @@ public interface IConnectionCacheManager //: IConnectionPoolManager
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    Task<IEnumerable<SessionUnitElement>> GetOnlineFriendsAsync(long ownerId);
+    Task<IEnumerable<OnlineFriendInfo>> GetOnlineFriendsAsync(long ownerId);
 
     /// <summary>
     /// 获取在线好友连接列表

@@ -6,7 +6,6 @@ using IczpNet.Chat.RedisServices;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Minio.DataModel;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
@@ -18,7 +17,7 @@ using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.ConnectionPools;
 
-public class ConnectionCacheManager : RedisService, IConnectionCacheManager//, IHostedService
+public class OnlineManager : RedisService, IOnlineManager//, IHostedService
 {
     public IOptions<ConnectionOptions> ConnectionOptions => LazyServiceProvider.LazyGetRequiredService<IOptions<ConnectionOptions>>();
 
@@ -1007,10 +1006,21 @@ return 1";
         return await Database.HashLengthAsync(FriendsConnsHashKey(ownerId));
     }
 
-    public async Task<IEnumerable<SessionUnitElement>> GetOnlineFriendsAsync(long ownerId)
+    public async Task<IEnumerable<OnlineFriendInfo>> GetOnlineFriendsAsync(long ownerId)
     {
         var entries = await Database.HashGetAllAsync(FriendsConnsHashKey(ownerId));
-        return entries.Select(x => SessionUnitElement.Parse(x.Name));
+        return entries.Select(x =>
+        {
+            var element = SessionUnitElement.Parse(x.Name);
+            return new OnlineFriendInfo()
+            {
+                ConnectionId = x.Value.ToString(),
+                OwnerId = element.OwnerId,
+                DestinationId = element.FriendId,
+                SessionId = element.SessionId,
+                SessionUnitId = element.SessionUnitId,
+            };
+        });
     }
 
     public async Task<IEnumerable<string>> GetOnlineFriendsConnectionIdsAsync(long ownerId)

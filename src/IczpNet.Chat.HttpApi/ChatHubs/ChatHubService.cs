@@ -23,7 +23,7 @@ public abstract class ChatHubService : DomainService
     public ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
     public IFriendsManager FriendManager => LazyServiceProvider.LazyGetRequiredService<IFriendsManager>();
     public IChatObjectManager ChatObjectManager => LazyServiceProvider.LazyGetRequiredService<IChatObjectManager>();
-    public IConnectionCacheManager ConnectionCacheManager => LazyServiceProvider.LazyGetRequiredService<IConnectionCacheManager>();
+    public IOnlineManager OnlineManager => LazyServiceProvider.LazyGetRequiredService<IOnlineManager>();
     public ICurrentHosted CurrentHosted => LazyServiceProvider.LazyGetRequiredService<ICurrentHosted>();
     public IJsonSerializer JsonSerializer => LazyServiceProvider.LazyGetRequiredService<IJsonSerializer>();
 
@@ -40,11 +40,11 @@ public abstract class ChatHubService : DomainService
 
         foreach (var ownerId in ownerIds)
         {
-            connIdMap[ownerId] = await ConnectionCacheManager.GetOnlineFriendsConnectionIdsAsync(ownerId);
+            connIdMap[ownerId] = await OnlineManager.GetOnlineFriendsConnectionIdsAsync(ownerId);
         }
         var connIdList = connIdMap.SelectMany(x => x.Value).Distinct().ToList();
 
-        var conns = await ConnectionCacheManager.GetManyAsync(connIdList);
+        var conns = await OnlineManager.GetManyAsync(connIdList);
 
         return conns.Values.ToList();
     }

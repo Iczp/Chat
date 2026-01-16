@@ -3,7 +3,6 @@ using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ConnectionPools.Dtos;
 using IczpNet.Chat.Permissions;
-using IczpNet.Chat.SessionUnits;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,9 +16,9 @@ namespace IczpNet.Chat.ConnectionPools;
 /// 连接池(Cache)
 /// </summary>
 
-public class ConnectionCacheAppService(
+public class OnlineAppService(
     IAbortService abortService,
-    IConnectionCacheManager connectionCacheManager) : ChatAppService, IConnectionCacheAppService
+    IOnlineManager onlineManager) : ChatAppService, IOnlineAppService
 {
 
     protected override string CreatePolicyName { get; set; } = ChatPermissions.ConnectionPoolPermission.Create;
@@ -32,7 +31,7 @@ public class ConnectionCacheAppService(
     protected virtual string GetListByUserPolicyName { get; set; } = ChatPermissions.ConnectionPoolPermission.GetConnectionIdsByUserId;
     protected virtual string GetCountByUserIdPolicyName { get; set; } = ChatPermissions.ConnectionPoolPermission.GetCountByUserId;
     public IAbortService AbortService { get; } = abortService;
-    public IConnectionCacheManager ConnectionCacheManager { get; } = connectionCacheManager;
+    public IOnlineManager OnlineManager { get; } = onlineManager;
 
     private ConnectionPoolDto MapToDto(ConnectionPoolCacheItem item)
     {
@@ -46,9 +45,9 @@ public class ConnectionCacheAppService(
     /// <returns></returns>
     public async Task<PagedResultDto<OnlineHostDto>> GetHostsAsync(ConnectionHostGetListInput input)
     {
-        var allHost = await ConnectionCacheManager.GetAllHostsAsync();
+        var allHost = await OnlineManager.GetAllHostsAsync();
 
-        var countMap = await ConnectionCacheManager.GetCountByHostsAsync(allHost.Select(x => x.Key));
+        var countMap = await OnlineManager.GetCountByHostsAsync(allHost.Select(x => x.Key));
 
         var queryable = allHost.Select(x => new OnlineHostDto()
         {
@@ -109,7 +108,7 @@ public class ConnectionCacheAppService(
     public async Task<PagedResultDto<ConnectionPoolDto>> GetListAsync(ConnectionPoolGetListInput input)
     {
         await CheckGetListPolicyAsync();
-        var connIds = await ConnectionCacheManager.GetConnectionIdsByHostAsync(input.Host);
+        var connIds = await OnlineManager.GetConnectionIdsByHostAsync(input.Host);
         var connList = await GetManyAsync(connIds.ToList());
         var query = connList.Values.AsQueryable();
         return await GetPagedListAsync(query, input);
@@ -132,7 +131,7 @@ public class ConnectionCacheAppService(
     public async Task<PagedResultDto<ConnectionPoolDto>> GetListByOwnerAsync(long ownerId, GetListInput input)
     {
         await CheckPolicyAsync(GetListByChatObjectPolicyName);
-        var dict = await ConnectionCacheManager.GetDevicesAsync([ownerId]);
+        var dict = await OnlineManager.GetDevicesAsync([ownerId]);
         var connIds = dict.Values.SelectMany(x => x.Select(v => v.ConnectionId)).ToList();
         return await GetPagedListByConnIdsAsync(connIds, input);
     }
@@ -144,7 +143,7 @@ public class ConnectionCacheAppService(
     public async Task<PagedResultDto<ConnectionPoolDto>> GetListByUserAsync(Guid userId, GetListInput input)
     {
         await CheckPolicyAsync(GetListByUserPolicyName);
-        var connIds = await ConnectionCacheManager.GetConnectionIdsByUserAsync(userId);
+        var connIds = await OnlineManager.GetConnectionIdsByUserAsync(userId);
         return await GetPagedListByConnIdsAsync(connIds.ToList(), input);
     }
 
@@ -166,7 +165,7 @@ public class ConnectionCacheAppService(
     public async Task<ConnectionPoolDto> GetAsync(string id)
     {
         await CheckGetItemPolicyAsync();
-        var item = await ConnectionCacheManager.GetAsync(id);
+        var item = await OnlineManager.GetAsync(id);
         return MapToDto(item);
     }
 
@@ -178,7 +177,7 @@ public class ConnectionCacheAppService(
     public async Task<Dictionary<string, ConnectionPoolDto>> GetManyAsync(List<string> connectionIds)
     {
         await CheckGetItemPolicyAsync();
-        var items = await ConnectionCacheManager.GetManyAsync(connectionIds);
+        var items = await OnlineManager.GetManyAsync(connectionIds);
         return items.ToDictionary(x => x.Key, x => MapToDto(x.Value));
     }
 
@@ -191,14 +190,14 @@ public class ConnectionCacheAppService(
     public async Task<Dictionary<string, long>> ClearAllAsync(List<string> hosts, string reason)
     {
         await CheckPolicyAsync(ClearAllPolicyName);
-        var hostList = hosts ?? (await ConnectionCacheManager.GetAllHostsAsync())
+        var hostList = hosts ?? (await OnlineManager.GetAllHostsAsync())
                 .Select(x => x.Key).ToList();
 
         var result = new Dictionary<string, long>(hostList.Count);
 
         foreach (var item in hostList)
         {
-            result[item] = await ConnectionCacheManager.DeleteByHostNameAsync(item);
+            result[item] = await OnlineManager.DeleteByHostNameAsync(item);
         }
         return result;
 
@@ -212,7 +211,7 @@ public class ConnectionCacheAppService(
     public async Task RemoveAsync(string connectionId)
     {
         await CheckDeletePolicyAsync();
-        await ConnectionCacheManager.DisconnectedAsync(connectionId);
+        await OnlineManager.DisconnectedAsync(connectionId);
     }
 
     /// <summary>
@@ -223,7 +222,7 @@ public class ConnectionCacheAppService(
     public async Task<long> GetCountByUserAsync(Guid userId)
     {
         await CheckPolicyAsync(GetCountByUserIdPolicyName);
-        return await ConnectionCacheManager.GetCountByUserAsync(userId);
+        return await OnlineManager.GetCountByUserAsync(userId);
     }
     /// <summary>
     /// 获取连接数量(聊天对象)
@@ -233,7 +232,7 @@ public class ConnectionCacheAppService(
     public async Task<long> GetCountByOwnerAsync(long ownerId)
     {
         await CheckPolicyAsync(GetCountByUserIdPolicyName);
-        return await ConnectionCacheManager.GetCountByOwnerAsync(ownerId);
+        return await OnlineManager.GetCountByOwnerAsync(ownerId);
     }
 
     /// <summary>
@@ -244,7 +243,7 @@ public class ConnectionCacheAppService(
     public async Task<long> GetCountBySessionAsync(Guid sessionId)
     {
         await CheckPolicyAsync(GetPolicyName);
-        return await ConnectionCacheManager.GetCountBySessionAsync(sessionId);
+        return await OnlineManager.GetCountBySessionAsync(sessionId);
     }
 
     /// <summary>
@@ -255,7 +254,7 @@ public class ConnectionCacheAppService(
     /// <returns></returns>
     public async Task<PagedResultDto<OwnerLatestOnline>> GetLatestOnlineAsync(long ownerId, LatestOnlineGetListInput input)
     {
-        var list = await ConnectionCacheManager.GetLatestOnlineAsync(ownerId);
+        var list = await OnlineManager.GetLatestOnlineAsync(ownerId);
         var queryable = list.AsQueryable();
         var query = queryable
             .WhereIf(!string.IsNullOrWhiteSpace(input.DeviceId), x => x.DeviceId == input.DeviceId)
@@ -281,7 +280,7 @@ public class ConnectionCacheAppService(
     /// <returns></returns>
     public Task<long> GetOnlineFriendsCountAsync(long ownerId)
     {
-        return ConnectionCacheManager.GetOnlineFriendsCountAsync(ownerId);
+        return OnlineManager.GetOnlineFriendsCountAsync(ownerId);
     }
 
     /// <summary>
@@ -289,13 +288,12 @@ public class ConnectionCacheAppService(
     /// </summary>
     /// <param name="input"></param>
     /// <returns></returns>
-    public async Task<PagedResultDto<SessionUnitElement>> GetOnlineFriendsAsync(OnlineFriendsGetListInput input)
+    public async Task<PagedResultDto<OnlineFriendInfo>> GetOnlineFriendsAsync(OnlineFriendsGetListInput input)
     {
-        var list = await ConnectionCacheManager.GetOnlineFriendsAsync(input.OwnerId);
-
+        var list = await OnlineManager.GetOnlineFriendsAsync(input.OwnerId);
         var queryable = list.AsQueryable();
         var query = queryable
-            .WhereIf(input.FriendId.HasValue, x => x.FriendId == input.FriendId)
+            .WhereIf(input.FriendId.HasValue, x => x.DestinationId == input.FriendId)
             .WhereIf(input.SessionId.HasValue, x => x.SessionId == input.SessionId)
             .WhereIf(input.SessionUnitId.HasValue, x => x.SessionUnitId == input.SessionUnitId)
             ;

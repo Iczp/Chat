@@ -7,7 +7,7 @@ using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.ConnectionPools;
 
-public interface IConnectionCacheAppService
+public interface IOnlineAppService
 {
     /// <summary>
     /// 获取所有主机在线人数

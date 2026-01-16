@@ -25,7 +25,7 @@ public class SendToClientDistributedEventHandler : DomainService, IDistributedEv
     public ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
     public ISessionUnitCacheManager SessionUnitCacheManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitCacheManager>();
     public IConnectionPoolManager ConnectionPoolManager => LazyServiceProvider.LazyGetRequiredService<IConnectionPoolManager>();
-    public IConnectionCacheManager ConnectionCacheManager => LazyServiceProvider.LazyGetRequiredService<IConnectionCacheManager>();
+    public IOnlineManager OnlineManager => LazyServiceProvider.LazyGetRequiredService<IOnlineManager>();
     public ICurrentHosted CurrentHosted => LazyServiceProvider.LazyGetRequiredService<ICurrentHosted>();
     public IJsonSerializer JsonSerializer => LazyServiceProvider.LazyGetRequiredService<IJsonSerializer>();
     public IHubContext<ChatHub, IChatClient> HubContext => LazyServiceProvider.LazyGetRequiredService<IHubContext<ChatHub, IChatClient>>();
@@ -127,7 +127,7 @@ public class SendToClientDistributedEventHandler : DomainService, IDistributedEv
     {
         var sessionId = eventData.Message.SessionId;
         var command = eventData.Command;
-        var connDict = await ConnectionCacheManager.GetConnectionsBySessionAsync(sessionId);
+        var connDict = await OnlineManager.GetConnectionsBySessionAsync(sessionId);
 
         var onlineOwnerIds = connDict.SelectMany(x => x.Value).Distinct().ToList();
 
