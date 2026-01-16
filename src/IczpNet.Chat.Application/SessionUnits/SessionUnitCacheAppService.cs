@@ -1,6 +1,7 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Clocks;
+using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
@@ -10,6 +11,7 @@ using IczpNet.Chat.SessionUnits.Dtos;
 using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Pipelines.Sockets.Unofficial.Buffers;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -35,6 +37,7 @@ public class SessionUnitCacheAppService(
     ISessionUnitSettingManager sessionUnitSettingManager,
     ISessionUnitRepository sessionUnitRepository,
     IFollowManager followManager,
+    IOnlineManager onlineManager,
     IDistributedCache<SessionUnitSearchCacheItem, SessionUnitSearchCacheKey> searchCache,
     ISessionUnitCacheManager sessionUnitCacheManager) : ChatAppService, ISessionUnitCacheAppService
 {
@@ -43,6 +46,7 @@ public class SessionUnitCacheAppService(
     public ISessionUnitSettingManager SessionUnitSettingManager { get; } = sessionUnitSettingManager;
     public ISessionUnitRepository SessionUnitRepository { get; } = sessionUnitRepository;
     public IFollowManager FollowManager { get; } = followManager;
+    public IOnlineManager OnlineManager { get; } = onlineManager;
     public IDistributedCache<SessionUnitSearchCacheItem, SessionUnitSearchCacheKey> SearchCache { get; } = searchCache;
     public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
 
@@ -365,7 +369,6 @@ public class SessionUnitCacheAppService(
 
     }
 
-
     /// <summary>
     /// 查询/过滤
     /// </summary>
@@ -457,77 +460,6 @@ public class SessionUnitCacheAppService(
             CountMap = await SessionUnitCacheManager.GetFriendsCountMapAsync(ownerId),
         };
     }
-
-    protected virtual async Task<PagedResultDto<SessionUnitFriendDto>> GetTypedFriendsAsync([Required] long ownerId, FriendTypes friendType, SessionUnitFirendGetListInput input)
-    {
-        // check owner
-        await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
-
-        Assert.If(input.MaxResultCount > 100, $"params:{nameof(input.MaxResultCount)} max value: 100");
-
-        var minScore = input.MinScore ?? 0;
-
-        var queryable = await SessionUnitCacheManager.GetTypedFriendsAsync(
-            friendType,
-            ownerId,
-            minScore: minScore,
-            skip: input.SkipCount,
-            take: Math.Min(input.MaxResultCount, 100));
-
-        var unitIds = queryable.ToList();
-
-        var totalCount = await SessionUnitCacheManager.GetTypedFriendsCountAsync(friendType, ownerId);
-
-        var items = await GetManyAsync(unitIds);
-
-        return new PagedResultDto<SessionUnitFriendDto>(totalCount, items);
-
-    }
-
-    protected virtual async Task<PagedResultDto<SessionUnitFriendDto>> LoadAllFriendsAsync(long ownerId, SessionUnitFirendGetListInput input)
-    {
-        var queryable = await SessionUnitCacheManager.GetFriendsAsync(ownerId,
-            //minScore: input.MinScore ?? double.NegativeInfinity,
-            //maxScore: input.MaxScore ?? double.PositiveInfinity,
-            //skip: input.SkipCount,
-            //take: input.MaxResultCount,
-            isDescending: true);
-
-        var query = queryable.AsQueryable()
-            .WhereIf(input.FriendId.HasValue, x => x.FriendId == input.FriendId)
-            .WhereIf(input.SessionId.HasValue, x => x.SessionId == input.SessionId)
-            .WhereIf(input.UnitId.HasValue, x => x.Id == input.UnitId)
-            .WhereIf(input.MinScore > 0, x => x.Ticks > input.MinScore)
-            .WhereIf(input.MaxScore > 0, x => x.Ticks < input.MaxScore)
-            ;
-
-        //search 
-        query = await ApplyFriendFilterAsync(query, ownerId, input.Keyword);
-
-        if (query == null)
-        {
-            return new PagedResultDto<SessionUnitFriendDto>(0, []);
-        }
-
-        var totalCount = query.Count(); //kvs.Length
-        //var totalCount = await SessionUnitCacheManager.GetFirendsCountAsync(ownerId);
-
-        // sorting
-        query = query
-            .OrderByDescending(x => x.Sorting)
-            .ThenByDescending(x => x.Ticks)
-            ;
-
-        //paged
-        query = query.Skip(input.SkipCount).Take(input.MaxResultCount);
-
-        var unitIds = query.Select(x => x.Id).ToList();
-
-        var items = await GetManyAsync(unitIds);
-
-        return new PagedResultDto<SessionUnitFriendDto>(totalCount, items);
-    }
-
 
     public async Task<PagedResultDto<SessionUnitFriendDto>> GetListAsync(SessionUnitCacheItemGetListInput input)
     {
@@ -650,18 +582,57 @@ public class SessionUnitCacheAppService(
         //加载全部
         await LoadFriendsIfNotExistsAsync(input.OwnerId);
 
-        return input.FriendType switch
+        IEnumerable<long> onlineFriendIds = [];
+        //是否在线
+        if (input.IsOnline.HasValue)
         {
-            FriendTypes.All => await LoadAllFriendsAsync(input.OwnerId, input),
-            FriendTypes.HasBadge
-            or FriendTypes.Following
-            or FriendTypes.RemindAll
-            or FriendTypes.RemindMe
-            or FriendTypes.Immersed
-            or FriendTypes.Pinned
-            or FriendTypes.Creator => await GetTypedFriendsAsync(input.OwnerId, input.FriendType, input),
-            _ => throw new Exception($"Undefined {nameof(input.FriendType)}: {input.FriendType}"),
-        };
+            var online = await OnlineManager.GetOnlineFriendsAsync(input.OwnerId);
+            onlineFriendIds = online.Select(x => x.OwnerId).Distinct();
+        }
+
+        var queryable = await SessionUnitCacheManager.GetTypedFriendsAsync(input.View, input.OwnerId,
+            //minScore: input.MinScore ?? double.NegativeInfinity,
+            //maxScore: input.MaxScore ?? double.PositiveInfinity,
+            //skip: input.SkipCount,
+            //take: input.MaxResultCount,
+            isDescending: true);
+
+
+        var query = queryable.AsQueryable()
+            .WhereIf(input.FriendId.HasValue, x => x.FriendId == input.FriendId)
+            .WhereIf(input.SessionId.HasValue, x => x.SessionId == input.SessionId)
+            .WhereIf(input.UnitId.HasValue, x => x.Id == input.UnitId)
+            .WhereIf(input.MinScore > 0, x => x.Ticks > input.MinScore)
+            .WhereIf(input.MaxScore > 0, x => x.Ticks < input.MaxScore)
+            .WhereIf(input.IsOnline == true, x => onlineFriendIds.Contains(x.FriendId))
+            .WhereIf(input.IsOnline == false, x => !onlineFriendIds.Contains(x.FriendId))
+            ;
+
+        //search 
+        query = await ApplyFriendFilterAsync(query, input.OwnerId, input.Keyword);
+
+        if (query == null)
+        {
+            return new PagedResultDto<SessionUnitFriendDto>(0, []);
+        }
+
+        var totalCount = query.Count(); //kvs.Length
+        //var totalCount = await SessionUnitCacheManager.GetFirendsCountAsync(ownerId);
+
+        // sorting
+        query = query
+            .OrderByDescending(x => x.Sorting)
+            .ThenByDescending(x => x.Ticks)
+            ;
+
+        //paged
+        query = query.Skip(input.SkipCount).Take(input.MaxResultCount);
+
+        var unitIds = query.Select(x => x.Id).ToList();
+
+        var items = await GetManyAsync(unitIds);
+
+        return new PagedResultDto<SessionUnitFriendDto>(totalCount, items);
     }
 
     /// <summary>

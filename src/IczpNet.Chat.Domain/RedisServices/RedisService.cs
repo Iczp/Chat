@@ -180,11 +180,11 @@ return tonumber(newValue)
     /// </summary>
     /// <param name="keys"></param>
     /// <returns></returns>
-    protected virtual async Task<Dictionary<string, bool>> BatchKeyExistsAsync(IEnumerable<string> keys)
+    protected virtual async Task<Dictionary<string, bool>> BatchKeyExistsAsync(IEnumerable<RedisKey> keys)
     {
         var stopwatch = Stopwatch.StartNew();
 
-        var keyList = keys as IList<string> ?? keys.ToList();
+        var keyList = keys as IList<RedisKey> ?? keys.ToList();
         if (keyList.Count == 0)
         {
             return [];
@@ -238,14 +238,14 @@ return tonumber(newValue)
             [field, value]);
     }
 
-    protected static void ZsetIncrementIfGuardKeyExist(IBatch batch, string guardKey, string key, string member, double increment)
+    protected static void ZsetIncrementIfGuardKeyExist(IBatch batch, string guardKey, string key, RedisValue member, double increment)
     {
         _ = batch.ScriptEvaluateAsync(ZsetIncrementIfGuardKeyExistScript,
             [guardKey, key],
             [member, increment]);
     }
 
-    protected static Task<RedisResult> ZsetUpdateIfExistsAsync(IDatabaseAsync batch, string key, string member, double score, bool removeWhenZero = false)
+    protected static Task<RedisResult> ZsetUpdateIfExistsAsync(IDatabaseAsync batch, string key, RedisValue member, double score, bool removeWhenZero = false)
     {
         return batch.ScriptEvaluateAsync(ZsetUpdateIfExistsScript,
             [key],
@@ -269,6 +269,22 @@ return tonumber(newValue)
         _ = batch.ScriptEvaluateAsync(DecrementOrDeleteZsetScript,
             [key],
             [member, decrement, removeWhenZero ? 1 : 0]);
+    }
+
+    protected async Task<double?[]> GetZsetScoresAsync(string key, RedisValue[] members, IBatch newBatch = null)
+    {
+        var batch = newBatch ?? Database.CreateBatch();
+        var tasks = new Task<double?>[members.Length];
+
+        for (int i = 0; i < members.Length; i++)
+        {
+            tasks[i] = batch.SortedSetScoreAsync(key, members[i]);
+        }
+
+        batch.Execute();
+        await Task.WhenAll(tasks);
+
+        return tasks.Select(t => t.Result).ToArray();
     }
 
 }

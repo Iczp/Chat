@@ -12,13 +12,13 @@ namespace IczpNet.Chat;
 public class ChatHostedService(
     IMessageReportManager messageReportManager,
     IConnectionPoolManager connectionPoolManager,
-    IConnectionCacheManager connectionCacheManager,
+    IOnlineManager onlineManager,
     ILogger<ChatHostedService> logger,
     ICurrentHosted currentHosted) : IHostedService, ISingletonDependency
 {
     public IMessageReportManager MessageReportManager { get; } = messageReportManager;
     public IConnectionPoolManager ConnectionPoolManager { get; } = connectionPoolManager;
-    public IConnectionCacheManager ConnectionCacheManager { get; } = connectionCacheManager;
+    public IOnlineManager OnlineManager { get; } = onlineManager;
     public ILogger<ChatHostedService> Logger { get; } = logger;
     public ICurrentHosted CurrentHosted { get; } = currentHosted;
 
@@ -30,7 +30,7 @@ public class ChatHostedService(
 
         await MessageReportManager.InitializationAsync();
 
-        await ConnectionCacheManager.StartAsync(cancellationToken);
+        await OnlineManager.StartAsync(cancellationToken);
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
@@ -39,7 +39,7 @@ public class ChatHostedService(
 
         //await ConnectionPoolManager.ClearAllAsync(CurrentHosted.Name, "App Stop", cancellationToken);
 
-        await ConnectionCacheManager.StopAsync(cancellationToken);
+        await OnlineManager.StopAsync(cancellationToken);
 
     }
 }

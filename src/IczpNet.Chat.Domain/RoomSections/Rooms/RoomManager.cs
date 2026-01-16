@@ -23,7 +23,7 @@ using Volo.Abp.Uow;
 namespace IczpNet.Chat.RoomSections.Rooms;
 
 public class RoomManager(
-    IConnectionCacheManager connectionCacheManager,
+    IOnlineManager onlineManager,
     IChatObjectRepository chatObjectRepository,
     IOptions<RoomOptions> options,
     ISessionManager sessionManager,
@@ -45,7 +45,7 @@ public class RoomManager(
     protected IChatObjectTypeManager ChatObjectTypeManager { get; } = chatObjectTypeManager;
     protected ISessionGenerator SessionGenerator { get; } = sessionGenerator;
     protected IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
-    public IConnectionCacheManager ConnectionCacheManager { get; } = connectionCacheManager;
+    public IOnlineManager OnlineManager { get; } = onlineManager;
     protected IChatObjectRepository ChatObjectRepository { get; } = chatObjectRepository;
     protected IMessageSender MessageSender { get; } = messageSender;
     protected IRoomCodeGenerator RoomCodeGenerator { get; } = roomCodeGenerator;
@@ -281,7 +281,7 @@ public class RoomManager(
     private async Task AddUnitsToConnectionPoolsAsync(List<SessionUnit> joinMemberSessionUnitList)
     {
         var units = joinMemberSessionUnitList.Select(x => (SessionId: x.SessionId.Value, x.OwnerId)).ToList();
-        await ConnectionCacheManager.AddSessionAsync(units);
+        await OnlineManager.AddSessionAsync(units);
     }
 
     protected virtual Task SendRoomMessageAsync(SessionUnit roomSessionUnit, CmdContentInfo content)

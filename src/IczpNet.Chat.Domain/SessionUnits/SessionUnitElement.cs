@@ -23,7 +23,7 @@ public readonly record struct SessionUnitElement(long OwnerId, long FriendId, Gu
     {
         if (!TryParse(element, out var field))
         {
-            throw new FormatException($"Invalid SessionUnitField: {element}");
+            throw new FormatException($"Invalid {nameof(SessionUnitElement)}: {element}");
         }
 
         return field;

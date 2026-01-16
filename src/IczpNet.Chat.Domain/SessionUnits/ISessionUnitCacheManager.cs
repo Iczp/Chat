@@ -163,6 +163,21 @@ public interface ISessionUnitCacheManager
 
 
     /// <summary>
+    /// 获取好友会话单元(原始信息)
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <param name="minScore"></param>
+    /// <param name="maxScore"></param>
+    /// <param name="skip"></param>
+    /// <param name="take"></param>
+    /// <param name="isDescending"></param>
+    Task<IEnumerable<KeyValuePair<SessionUnitElement, double>>> GetRawFriendsAsync(long ownerId,
+        double minScore = double.NegativeInfinity,
+        double maxScore = double.PositiveInfinity,
+        long skip = 0,
+        long take = -1,
+        bool isDescending = true);
+    /// <summary>
     /// 获取好友会话单元
     /// </summary>
     /// <param name="ownerId"></param>
@@ -172,7 +187,7 @@ public interface ISessionUnitCacheManager
     /// <param name="take"></param>
     /// <param name="isDescending"></param>
     /// <returns></returns>
-    Task<IEnumerable<FriendModel>> GetFriendsAsync(
+    Task<IReadOnlyList<FriendModel>> GetFriendsAsync(
         long ownerId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
@@ -180,8 +195,8 @@ public interface ISessionUnitCacheManager
         long take = -1,
         bool isDescending = true);
 
-    Task<IEnumerable<Guid>> GetTypedFriendsAsync(
-        FriendTypes friendType,
+    Task<IReadOnlyList<FriendModel>> GetTypedFriendsAsync(
+        FriendViews friendView,
         long ownerId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
@@ -189,7 +204,7 @@ public interface ISessionUnitCacheManager
         long take = -1,
         bool isDescending = true);
 
-    Task<long> GetTypedFriendsCountAsync(FriendTypes friendType, long ownerId);
+    Task<long> GetTypedFriendsCountAsync(FriendViews friendView, long ownerId);
 
     /// <summary>
     /// 获取好友会话单元数量
@@ -204,7 +219,7 @@ public interface ISessionUnitCacheManager
     /// <param name="ownerId"></param>
     /// <param name="friendType"></param>
     /// <returns>Key:UnitId,Value:OwnerId</returns>
-    Task<Dictionary<Guid, long>> GetFriendsMapAsync(long ownerId, ChatObjectTypeEnums friendType);
+    Task<IEnumerable<KeyValuePair<SessionUnitElement, double>>> GetFriendsMapAsync(long ownerId, ChatObjectTypeEnums friendType);
 
     /// <summary>
     /// 获取指定类型的好友数量
