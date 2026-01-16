@@ -315,19 +315,19 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         }
     }
 
-    private string GetFriendTypeKey(FriendTypes friendType, long ownerId)
+    private string GetFriendTypeKey(FriendViews friendView, long ownerId)
     {
-        return friendType switch
+        return friendView switch
         {
-            FriendTypes.All => OwnerFriendsSetKey(ownerId),
-            FriendTypes.HasBadge => OwnerHasBadgeSetKey(ownerId),
-            FriendTypes.Pinned => OwnerPinnedBadgeSetKey(ownerId),
-            FriendTypes.Following => OwnerFollowingSetKey(ownerId),
-            FriendTypes.RemindAll => OwnerRemindAllSetKey(ownerId),
-            FriendTypes.RemindMe => OwnerRemindMeSetKey(ownerId),
-            FriendTypes.Immersed => OwnerImmersedSetKey(ownerId),
-            FriendTypes.Creator => OwnerCreatorSetKey(ownerId),
-            _ => throw new UserFriendlyException($"Non handle FriendTypes:{friendType}"),
+            FriendViews.All => OwnerFriendsSetKey(ownerId),
+            FriendViews.HasBadge => OwnerHasBadgeSetKey(ownerId),
+            FriendViews.Pinned => OwnerPinnedBadgeSetKey(ownerId),
+            FriendViews.Following => OwnerFollowingSetKey(ownerId),
+            FriendViews.RemindAll => OwnerRemindAllSetKey(ownerId),
+            FriendViews.RemindMe => OwnerRemindMeSetKey(ownerId),
+            FriendViews.Immersed => OwnerImmersedSetKey(ownerId),
+            FriendViews.Creator => OwnerCreatorSetKey(ownerId),
+            _ => throw new UserFriendlyException($"Non handle FriendTypes:{friendView}"),
         };
     }
 
@@ -727,7 +727,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         long take = -1,
         bool isDescending = true)
     {
-        return await GetTypedFriendsAsync(FriendTypes.All,
+        return await GetTypedFriendsAsync(FriendViews.All,
             ownerId: ownerId,
             minScore: minScore,
             maxScore: maxScore,
@@ -737,7 +737,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     }
 
     public async Task<IReadOnlyList<FriendModel>> GetTypedFriendsAsync(
-        FriendTypes friendType,
+        FriendViews friendView,
         long ownerId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
@@ -745,7 +745,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         long take = -1,
         bool isDescending = true)
     {
-        var zsetKey = GetFriendTypeKey(friendType, ownerId);
+        var zsetKey = GetFriendTypeKey(friendView, ownerId);
 
         var entries = await Database.SortedSetRangeByScoreWithScoresAsync(
             key: zsetKey,
@@ -760,7 +760,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         var scoreMap = new Dictionary<RedisValue, double>();
 
-        if (friendType != FriendTypes.All && list.Count > 0)
+        if (friendView != FriendViews.All && list.Count > 0)
         {
             var elements = list.Select(x => x.Element).ToArray();
             var scores = await GetZsetScoresAsync(OwnerFriendsSetKey(ownerId), elements);
@@ -773,7 +773,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return list.Select(x =>
         {
             var element = SessionUnitElement.Parse(x.Element);
-            var finalScore = friendType == FriendTypes.All ? x.Score : scoreMap.GetValueOrDefault(x.Element);
+            var finalScore = friendView == FriendViews.All ? x.Score : scoreMap.GetValueOrDefault(x.Element);
             var score = new FriendScore(finalScore);
             return new FriendModel
             {
@@ -787,9 +787,9 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         }).ToList();
     }
 
-    public async Task<long> GetTypedFriendsCountAsync(FriendTypes friendType, long ownerId)
+    public async Task<long> GetTypedFriendsCountAsync(FriendViews friendView, long ownerId)
     {
-        var zsetKey = GetFriendTypeKey(friendType, ownerId);
+        var zsetKey = GetFriendTypeKey(friendView, ownerId);
         return await Database.SortedSetLengthAsync(zsetKey);
     }
 

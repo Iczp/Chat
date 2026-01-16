@@ -10,7 +10,7 @@ public class SessionUnitLatestGetListInput : GetListInput
     /// OwnerId
     /// </summary>
     [Required]
-    public long OwnerId { get; set; }
+    public virtual long OwnerId { get; set; }
 
     /// <summary>
     /// 朋友Id

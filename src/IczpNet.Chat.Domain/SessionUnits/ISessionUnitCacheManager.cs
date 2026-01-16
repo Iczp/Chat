@@ -196,7 +196,7 @@ public interface ISessionUnitCacheManager
         bool isDescending = true);
 
     Task<IReadOnlyList<FriendModel>> GetTypedFriendsAsync(
-        FriendTypes friendType,
+        FriendViews friendView,
         long ownerId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
@@ -204,7 +204,7 @@ public interface ISessionUnitCacheManager
         long take = -1,
         bool isDescending = true);
 
-    Task<long> GetTypedFriendsCountAsync(FriendTypes friendType, long ownerId);
+    Task<long> GetTypedFriendsCountAsync(FriendViews friendView, long ownerId);
 
     /// <summary>
     /// 获取好友会话单元数量

@@ -590,7 +590,7 @@ public class SessionUnitCacheAppService(
             onlineFriendIds = online.Select(x => x.OwnerId).Distinct();
         }
 
-        var queryable = await SessionUnitCacheManager.GetTypedFriendsAsync(input.FriendType, input.OwnerId,
+        var queryable = await SessionUnitCacheManager.GetTypedFriendsAsync(input.View, input.OwnerId,
             //minScore: input.MinScore ?? double.NegativeInfinity,
             //maxScore: input.MaxScore ?? double.PositiveInfinity,
             //skip: input.SkipCount,

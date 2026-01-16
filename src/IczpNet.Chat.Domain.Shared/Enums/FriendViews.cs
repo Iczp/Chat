@@ -14,7 +14,7 @@ namespace IczpNet.Chat.Enums;
 /// - 7=HasBadge:有未读消息
 /// </summary>
 [Description("好友归档")]
-public enum FriendTypes
+public enum FriendViews
 {
     /// <summary>  
     /// 全部 
