@@ -64,6 +64,23 @@ public interface ISessionUnitCacheManager
     /// <param name="skip"></param>
     /// <param name="take"></param>
     /// <param name="isDescending"></param>
+    /// <returns></returns>
+    Task<IEnumerable<KeyValuePair<SessionUnitElement, MemberScore>>> GetRawMembersAsync(
+        Guid sessionId,
+        double minScore = double.NegativeInfinity,
+        double maxScore = double.PositiveInfinity,
+        long skip = 0,
+        long take = -1,
+        bool isDescending = true);
+    /// <summary>
+    /// 获取会话成员
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="minScore"></param>
+    /// <param name="maxScore"></param>
+    /// <param name="skip"></param>
+    /// <param name="take"></param>
+    /// <param name="isDescending"></param>
 
     Task<IEnumerable<MemberModel>> GetMembersAsync(
         Guid sessionId,
@@ -192,7 +209,8 @@ public interface ISessionUnitCacheManager
     /// <param name="skip"></param>
     /// <param name="take"></param>
     /// <param name="isDescending"></param>
-    Task<IEnumerable<KeyValuePair<SessionUnitElement, double>>> GetRawFriendsAsync(long ownerId,
+    Task<IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>> GetRawFriendsAsync(
+        long ownerId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
         long skip = 0,

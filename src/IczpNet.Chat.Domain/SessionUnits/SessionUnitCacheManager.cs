@@ -525,7 +525,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return await Database.SortedSetLengthAsync(SessionMembersSetKey(sessionId));
     }
 
-    public async Task<IEnumerable<MemberModel>> GetMembersAsync(
+    public async Task<IEnumerable<KeyValuePair<SessionUnitElement, MemberScore>>> GetRawMembersAsync(
         Guid sessionId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
@@ -540,11 +540,29 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             skip: skip,
             take: take,
             order: isDescending ? Order.Descending : Order.Ascending);
+        return redisZset.Select(x => new KeyValuePair<SessionUnitElement, MemberScore>(SessionUnitElement.Parse(x.Element), new MemberScore(x.Score))); ;
+    }
+
+    public async Task<IEnumerable<MemberModel>> GetMembersAsync(
+        Guid sessionId,
+        double minScore = double.NegativeInfinity,
+        double maxScore = double.PositiveInfinity,
+        long skip = 0,
+        long take = -1,
+        bool isDescending = true)
+    {
+        var redisZset = await GetRawMembersAsync(
+            sessionId: sessionId,
+            minScore: minScore,
+            maxScore: maxScore,
+            skip: skip,
+            take: take,
+            isDescending: isDescending);
         return redisZset
            .Select(x =>
            {
-               var element = SessionUnitElement.Parse(x.Element);
-               var score = new MemberScore(x.Score);
+               var element = x.Key;
+               var score = x.Value;
                return new MemberModel
                {
                    SessionId = element.SessionId,
@@ -556,6 +574,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
                };
            }); ;
     }
+
+
 
     public async Task<IEnumerable<SessionUnitCacheItem>> GetMemberUnitsAsync(
        Guid sessionId,
@@ -745,7 +765,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     }
 
 
-    public async Task<IEnumerable<KeyValuePair<SessionUnitElement, double>>> GetRawFriendsAsync(long ownerId,
+    public async Task<IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>> GetRawFriendsAsync(long ownerId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
         long skip = 0,
@@ -760,7 +780,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             skip: skip,
             take: take,
             order: isDescending ? Order.Descending : Order.Ascending);
-        return entries.Select(x => new KeyValuePair<SessionUnitElement, double>(SessionUnitElement.Parse(x.Element), x.Score));
+        return entries.Select(x => new KeyValuePair<SessionUnitElement, FriendScore>(SessionUnitElement.Parse(x.Element), FriendScore.Parse(x.Score)));
     }
 
     public async Task<IReadOnlyList<FriendModel>> GetFriendsAsync(
@@ -1091,9 +1111,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         var receiverType = message.ReceiverType;
 
-        var membersMap = await GetMembersMapAsync(sessionId);
-        //var unitList = await GetListBySessionAsync(sessionId);
-        //var unitList = await SessionUnitManager.GetCacheListAsync(message);
+        var members = (await GetRawMembersAsync(sessionId)).ToList();
 
         var pinnedMap = await GetPinnedMembersMapAsync(sessionId);
         var immersedMap = await GetImmersedMembersMapAsync(sessionId);
@@ -1102,13 +1120,13 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         Logger.LogInformation(
             "[{method}], sessionId:{sessionId}, lastMessageId:{lastMessageId}, count:{count},Elapsed:{ms}ms",
-            nameof(GetMembersMapAsync),
+            nameof(GetMembersAsync),
             sessionId,
             lastMessageId,
-            membersMap.Count,
+            members.Count,
             stopwatch.ElapsedMilliseconds);
 
-        if (membersMap == null || !membersMap.Any()) return;
+        if (members == null || members.Count == 0) return;
 
         stopwatch.Restart();
 
@@ -1116,10 +1134,10 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         var expireTime = expire ?? _cacheExpire;
 
-        foreach (var item in membersMap)
+        foreach (var item in members)
         {
-            var unitId = item.Key;
-            var element = item.Value;
+            var element = item.Key;
+            var unitId = element.SessionUnitId;
             var ownerId = element.OwnerId;
             var friendId = element.FriendId;
             var unitKey = UnitHashKey(unitId);

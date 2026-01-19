@@ -1,4 +1,6 @@
-﻿using System;
+﻿using StackExchange.Redis;
+using System;
+using YamlDotNet.Core.Tokens;
 
 namespace IczpNet.Chat.SessionUnits;
 
@@ -45,6 +47,26 @@ public readonly record struct FriendScore(double Value)
 
     public override string ToString()
         => Value.ToString("R");
+
+
+
+    public static FriendScore Parse(double score)
+    {
+        var sorting = (double)(score % Multiplier);
+        var tick = (double)(score % Multiplier);
+        return Create(sorting, tick);
+    }
+    public static bool TryParse(double value, out FriendScore field)
+    {
+        field = default;
+
+        var sorting = (double)(value % Multiplier);
+        var tick = (double)(value % Multiplier);
+
+
+        field = Create(sorting, tick);
+        return true;
+    }
 }
 
 
