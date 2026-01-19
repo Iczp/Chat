@@ -226,7 +226,7 @@ public interface ISessionUnitCacheManager
     /// <param name="take"></param>
     /// <param name="isDescending"></param>
     /// <returns></returns>
-    Task<IReadOnlyList<FriendModel>> GetFriendsAsync(
+    Task<IEnumerable<FriendModel>> GetFriendsAsync(
         long ownerId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
@@ -234,7 +234,7 @@ public interface ISessionUnitCacheManager
         long take = -1,
         bool isDescending = true);
 
-    Task<IReadOnlyList<FriendModel>> GetTypedFriendsAsync(
+    Task<IEnumerable<FriendModel>> GetTypedFriendsAsync(
         FriendViews friendView,
         long ownerId,
         double minScore = double.NegativeInfinity,

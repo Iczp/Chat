@@ -783,7 +783,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return entries.Select(x => new KeyValuePair<SessionUnitElement, FriendScore>(SessionUnitElement.Parse(x.Element), FriendScore.Parse(x.Score)));
     }
 
-    public async Task<IReadOnlyList<FriendModel>> GetFriendsAsync(
+    public async Task<IEnumerable<FriendModel>> GetFriendsAsync(
         long ownerId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
@@ -800,7 +800,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             isDescending);
     }
 
-    public async Task<IReadOnlyList<FriendModel>> GetTypedFriendsAsync(
+    public async Task<IEnumerable<FriendModel>> GetTypedFriendsAsync(
         FriendViews friendView,
         long ownerId,
         double minScore = double.NegativeInfinity,
@@ -820,13 +820,11 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             take: take,
             order: isDescending ? Order.Descending : Order.Ascending);
 
-        var list = entries.ToList();
-
         var scoreMap = new Dictionary<RedisValue, double>();
 
-        if (friendView != FriendViews.All && list.Count > 0)
+        if (friendView != FriendViews.All && entries.Length > 0)
         {
-            var elements = list.Select(x => x.Element).ToArray();
+            var elements = entries.Select(x => x.Element).ToArray();
             var scores = await GetZsetScoresAsync(OwnerFriendsSetKey(ownerId), elements);
             for (int i = 0; i < elements.Length; i++)
             {
@@ -834,7 +832,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             }
         }
 
-        return list.Select(x =>
+        return entries.Select(x =>
         {
             var element = SessionUnitElement.Parse(x.Element);
             var finalScore = friendView == FriendViews.All ? x.Score : scoreMap.GetValueOrDefault(x.Element);
@@ -848,7 +846,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
                 Sorting = score.Sorting,
                 Ticks = score.Ticks
             };
-        }).ToList();
+        });
     }
 
     public async Task<long> GetTypedFriendsCountAsync(FriendViews friendView, long ownerId)
