@@ -27,6 +27,8 @@ public abstract class HubBase<T, TConnPool> : AbpHub<T> where T : class
 
         var appId = CurrentUser.GetAppId() ?? httpContext?.Request.Query["appId"];
 
+        var appName = httpContext?.Request.Query["appName"];
+
         var deviceId = CurrentUser.GetDeviceId() ?? httpContext?.Request.Query["deviceId"];
 
         var pushClientId = httpContext?.Request.Query["pushClientId"];
@@ -42,7 +44,7 @@ public abstract class HubBase<T, TConnPool> : AbpHub<T> where T : class
             ConnectionId = Context.ConnectionId,
             PushClientId = pushClientId,
             AppId = appId,
-            AppName = await ClientApp.GetAppNameAsync(appId),
+            AppName = await ClientApp.GetAppNameAsync(appId, httpContext),
             QueryId = queryId,
             ClientId = CurrentClient.Id,
             ClientName = await ClientApp.GetClientNameAsync(CurrentClient.Id),
