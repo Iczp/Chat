@@ -15,7 +15,7 @@ public class SessionUnitLatestGetListInput : GetListInput
     /// <summary>
     /// 朋友Id
     /// </summary>
-    public long? FriendId { get; set; }
+    public long? DestinationId { get; set; }
 
     /// <summary>
     /// UnitId

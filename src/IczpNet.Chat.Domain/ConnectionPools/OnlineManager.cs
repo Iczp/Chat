@@ -185,7 +185,7 @@ return 1";
         {
             var element = friend.Key;
             //Friends Conns
-            var friendConnsHashKey = FriendsConnsHashKey(element.FriendId);
+            var friendConnsHashKey = FriendsConnsHashKey(element.DestinationId);
             if (!string.IsNullOrWhiteSpace(connectionId))
             {
                 batch.HashSetAsync(friendConnsHashKey, element, connectionId);
@@ -200,7 +200,7 @@ return 1";
         {
             var element = friend.Key;
             //Friends Conns
-            var friendConnsHashKey = FriendsConnsHashKey(element.FriendId);
+            var friendConnsHashKey = FriendsConnsHashKey(element.DestinationId);
             batch.HashDeleteAsync(friendConnsHashKey, element);
             Expire(batch, friendConnsHashKey);
         });
@@ -1010,7 +1010,7 @@ return 1";
             {
                 ConnectionId = x.Value.ToString(),
                 OwnerId = element.OwnerId,
-                DestinationId = element.FriendId,
+                DestinationId = element.DestinationId,
                 SessionId = element.SessionId,
                 SessionUnitId = element.SessionUnitId,
             };

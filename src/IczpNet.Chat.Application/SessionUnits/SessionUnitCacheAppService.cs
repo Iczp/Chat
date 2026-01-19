@@ -599,13 +599,14 @@ public class SessionUnitCacheAppService(
 
 
         var query = queryable.AsQueryable()
-            .WhereIf(input.FriendId.HasValue, x => x.FriendId == input.FriendId)
+            .WhereIf(input.FriendType.HasValue, x => x.DestinationObjectType == input.FriendType)
+            .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
             .WhereIf(input.SessionId.HasValue, x => x.SessionId == input.SessionId)
             .WhereIf(input.UnitId.HasValue, x => x.Id == input.UnitId)
             .WhereIf(input.MinScore > 0, x => x.Ticks > input.MinScore)
             .WhereIf(input.MaxScore > 0, x => x.Ticks < input.MaxScore)
-            .WhereIf(input.IsOnline == true, x => onlineFriendIds.Contains(x.FriendId))
-            .WhereIf(input.IsOnline == false, x => !onlineFriendIds.Contains(x.FriendId))
+            .WhereIf(input.IsOnline == true, x => onlineFriendIds.Contains(x.DestinationId))
+            .WhereIf(input.IsOnline == false, x => !onlineFriendIds.Contains(x.DestinationId))
             ;
 
         //search 
@@ -669,10 +670,11 @@ public class SessionUnitCacheAppService(
         var queryable = await SessionUnitCacheManager.GetMembersAsync(sessionId);
 
         var query = queryable.AsQueryable()
+            .WhereIf(input.IsCreator.HasValue, x => x.IsCreator == input.IsCreator.Value)
+            .WhereIf(input.OwnerObjectType.HasValue, x => x.OwnerObjectType == input.OwnerObjectType.Value)
+            .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId.Value)
             .WhereIf(input.MinScore > 0, x => x.CreationTime.ToUnixTimeMilliseconds() > input.MinScore)
             .WhereIf(input.MaxScore > 0, x => x.CreationTime.ToUnixTimeMilliseconds() < input.MaxScore)
-            .WhereIf(input.IsCreator.HasValue, x => x.IsCreator == input.IsCreator.Value)
-            .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId.Value)
             ;
 
         //search 

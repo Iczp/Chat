@@ -30,7 +30,7 @@ public class SessionUnitFirendGetListInput : SessionUnitLatestGetListInput
     public bool? IsOnline { get; set; }
 
     /// <summary>
-    /// 聊天对象类型:个人|群|服务号等
+    /// 朋友类型:
     /// - 0=Anonymous:匿名
     /// - 1=Personal:个人
     /// - 2=Room:群

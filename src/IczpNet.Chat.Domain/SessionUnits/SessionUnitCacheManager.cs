@@ -141,7 +141,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
     private static SessionUnitElement GetElement(SessionUnitCacheItem unit)
     {
-        return SessionUnitElement.Create(unit.OwnerId, unit.DestinationId.GetValueOrDefault(), unit.Id, unit.SessionId.GetValueOrDefault());
+        return SessionUnitElement.Create(unit.OwnerId, unit.OwnerObjectType, unit.DestinationId.GetValueOrDefault(), unit.DestinationObjectType, unit.Id, unit.SessionId.GetValueOrDefault());
     }
     /// <summary>
     /// 1e16
@@ -567,7 +567,9 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
                {
                    SessionId = element.SessionId,
                    OwnerId = element.OwnerId,
-                   FriendId = element.FriendId,
+                   OwnerObjectType = element.OwnerObjectType,
+                   DestinationId = element.DestinationId,
+                   DestinationObjectType = element.DestinationObjectType,
                    Id = element.SessionUnitId,
                    CreationTime = score.CreationTime,
                    IsCreator = score.IsCreator
@@ -840,7 +842,9 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             return new FriendModel
             {
                 OwnerId = element.OwnerId,
-                FriendId = element.FriendId,
+                OwnerObjectType = element.OwnerObjectType,
+                DestinationId = element.DestinationId,
+                DestinationObjectType = element.DestinationObjectType,
                 SessionId = element.SessionId,
                 Id = element.SessionUnitId,
                 Sorting = score.Sorting,
@@ -1137,7 +1141,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             var element = item.Key;
             var unitId = element.SessionUnitId;
             var ownerId = element.OwnerId;
-            var friendId = element.FriendId;
+            var friendId = element.DestinationId;
             var unitKey = UnitHashKey(unitId);
             var ownerFriendsSetKey = OwnerFriendsSetKey(ownerId);
             var ownerStatisticSetKey = OwnerStatisticHashKey(ownerId);
