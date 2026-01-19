@@ -95,21 +95,42 @@ public interface ISessionUnitCacheManager
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    Task<IDictionary<long, double>> GetPinnedMembersAsync(Guid sessionId);
+    Task<IEnumerable<KeyValuePair<SessionUnitElement, double>>> GetPinnedMembersAsync(Guid sessionId);
+
+    /// <summary>
+    /// 获取会话置顶映射
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    Task<IDictionary<long, double>> GetPinnedMembersMapAsync(Guid sessionId);
 
     /// <summary>
     /// 获取会话免打扰映射
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    Task<IDictionary<long, bool>> GetImmersedMembersAsync(Guid sessionId);
+    Task<IEnumerable<KeyValuePair<SessionUnitElement, double>>> GetImmersedMembersAsync(Guid sessionId);
+
+    /// <summary>
+    /// 获取会话免打扰映射
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    Task<IDictionary<long, bool>> GetImmersedMembersMapAsync(Guid sessionId);
 
     /// <summary>
     /// 获取会话创建人映射
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    Task<IDictionary<long, bool>> GetCreatorMembersAsync(Guid sessionId);
+    Task<IEnumerable<KeyValuePair<SessionUnitElement, double>>> GetCreatorMembersAsync(Guid sessionId);
+
+    /// <summary>
+    /// 获取会话创建人映射
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    Task<IDictionary<long, bool>> GetCreatorMembersMapAsync(Guid sessionId);
 
     /// <summary>
     /// 设置好友会话单元
