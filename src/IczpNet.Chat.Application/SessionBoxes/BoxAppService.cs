@@ -20,7 +20,8 @@ public class BoxAppService(IBoxRepository repository) : CrudChatAppService<Box, 
     protected override async Task<IQueryable<Box>> CreateFilteredQueryAsync(BoxGetListInput input)
     {
         return (await base.CreateFilteredQueryAsync(input))
-            //.WhereIf(!string.IsNullOrWhiteSpace(input.Keyword), x => x.Name.Contains(input.Keyword))
+            .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
+            .WhereIf(!string.IsNullOrWhiteSpace(input.Keyword), x => x.Name.Contains(input.Keyword))
             ;
     }
 }

@@ -1,13 +1,15 @@
-using IczpNet.Chat.BaseDtos; 
-using System; 
-using System.Collections.Generic;
-namespace IczpNet.Chat.SessionBoxes; 
+using IczpNet.Chat.BaseDtos;
+using System;
+namespace IczpNet.Chat.SessionBoxes;
 
 ///<summary>
 /// 查询列表 
 ///</summary>
-[Serializable] 
+[Serializable]
 public class BoxGetListInput : GetListInput
-{ 
-
+{
+    /// <summary>
+    /// 所属人
+    /// </summary>
+    public virtual long? OwnerId { get; set; }
 }
