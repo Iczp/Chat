@@ -1,13 +1,17 @@
 using IczpNet.Chat.BaseDtos;
-using System; 
-namespace IczpNet.Chat.SessionBoxes; 
+using System;
+namespace IczpNet.Chat.SessionBoxes;
 
 ///<summary>
 /// Dto 
 ///</summary>
-[Serializable] 
-public class BoxCountDto : BaseDto<Guid>
+[Serializable]
+public class BoxCountDto
 {
+    /// <summary>
+    /// Id
+    /// </summary>
+    public virtual Guid Id { get; set; }
     /// <summary>
     /// 名称
     /// </summary>
