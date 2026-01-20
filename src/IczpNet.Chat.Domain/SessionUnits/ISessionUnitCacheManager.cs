@@ -377,4 +377,12 @@ public interface ISessionUnitCacheManager
     /// <param name="ownerId"></param>
     /// <returns></returns>
     Task<bool> ClearBadgeAsync(long ownerId);
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <param name="friendType"></param>
+    /// <returns></returns>
+    Task<IEnumerable<KeyValuePair<Guid, double>>> GetBoxFriendsCountAsync(long ownerId);
 }

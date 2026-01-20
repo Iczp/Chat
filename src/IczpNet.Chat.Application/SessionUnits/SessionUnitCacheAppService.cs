@@ -1,17 +1,18 @@
-﻿using IczpNet.AbpCommons;
+﻿using CommunityToolkit.HighPerformance;
+using DeviceDetectorNET.Class;
+using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Clocks;
 using IczpNet.Chat.ConnectionPools;
-using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.Permissions;
+using IczpNet.Chat.SessionBoxes;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
 using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Pipelines.Sockets.Unofficial.Buffers;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -39,6 +40,7 @@ public class SessionUnitCacheAppService(
     IFollowManager followManager,
     IOnlineManager onlineManager,
     IDistributedCache<SessionUnitSearchCacheItem, SessionUnitSearchCacheKey> searchCache,
+    IBoxManager boxManager,
     ISessionUnitCacheManager sessionUnitCacheManager) : ChatAppService, ISessionUnitCacheAppService
 {
     public IMessageManager MessageManager { get; } = messageManager;
@@ -48,6 +50,7 @@ public class SessionUnitCacheAppService(
     public IFollowManager FollowManager { get; } = followManager;
     public IOnlineManager OnlineManager { get; } = onlineManager;
     public IDistributedCache<SessionUnitSearchCacheItem, SessionUnitSearchCacheKey> SearchCache { get; } = searchCache;
+    public IBoxManager BoxManager { get; } = boxManager;
     public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
 
 
@@ -591,7 +594,7 @@ public class SessionUnitCacheAppService(
         }
 
         var queryable = await SessionUnitCacheManager.GetTypedFriendsAsync(
-            input.View, 
+            input.View,
             input.OwnerId,
             input.BoxId,
             //minScore: input.MinScore ?? double.NegativeInfinity,
@@ -639,6 +642,23 @@ public class SessionUnitCacheAppService(
         return new PagedResultDto<SessionUnitFriendDto>(totalCount, items);
     }
 
+
+    private async Task<List<BoxCountDto>> GetBoxFriendsCountAsync([Required] long ownerId)
+    {
+        var boxes = await BoxManager.GetListByOwnerAsync(ownerId);
+
+        var countMap = (await SessionUnitCacheManager.GetBoxFriendsCountAsync(ownerId))
+            .ToDictionary(x => x.Key, x => x.Value);
+
+        var result = boxes.Select(x => new BoxCountDto()
+        {
+            Id = x.Id,
+            Name = x.Name,
+            Count = countMap.TryGetValue(x.Id, out var count) ? (long)count : 0,
+        }).ToList();
+
+        return result;
+    }
     /// <summary>
     /// 获取好友数量
     /// </summary>
@@ -647,10 +667,12 @@ public class SessionUnitCacheAppService(
     public async Task<FriendCountDto> GetFriendsCountAsync([Required] long ownerId)
     {
         await LoadFriendsIfNotExistsAsync(ownerId);
+
         return new FriendCountDto()
         {
             TotalCount = await SessionUnitCacheManager.GetFriendsCountAsync(ownerId),
             CountMap = await SessionUnitCacheManager.GetFriendsCountMapAsync(ownerId),
+            Boxes = await GetBoxFriendsCountAsync(ownerId),
         };
     }
 

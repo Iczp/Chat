@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace IczpNet.Chat.SessionBoxs;
+namespace IczpNet.Chat.SessionBoxes;
 
 public interface IBoxManager
 {
+    Task<IEnumerable<Box>> GetListByOwnerAsync(long ownerId);
 }

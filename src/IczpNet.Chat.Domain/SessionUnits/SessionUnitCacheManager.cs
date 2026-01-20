@@ -1748,5 +1748,13 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return true;
     }
 
+
+
     #endregion
+
+    public async Task<IEnumerable<KeyValuePair<Guid, double>>> GetBoxFriendsCountAsync(long ownerId)
+    {
+        var entries = await Database.SortedSetRangeByRankWithScoresAsync(OwnerBoxBadgeZsetKey(ownerId));
+        return entries.Select(x => new KeyValuePair<Guid, double>(x.Element.ToGuid(), x.Score));
+    }
 }
