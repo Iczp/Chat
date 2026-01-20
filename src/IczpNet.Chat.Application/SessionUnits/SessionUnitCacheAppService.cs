@@ -654,6 +654,7 @@ public class SessionUnitCacheAppService(
         {
             Id = x.Id,
             Name = x.Name,
+            OwnerId = x.OwnerId,
             Count = countMap.TryGetValue(x.Id, out var count) ? (long)count : 0,
         }).ToList();
 
