@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.Enums;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.SessionUnits.Dtos;
@@ -22,12 +23,17 @@ public class SessionUnitFirendGetListInput : SessionUnitLatestGetListInput
     /// - 6=Creator:创建人,
     /// - 7=HasBadge:有未读消息
     /// </summary>
-    public FriendViews View { get; set; }
+    public virtual FriendViews View { get; set; }
+
+    /// <summary>
+    /// 消息盒子
+    /// </summary>
+    public virtual Guid? BoxId { get; set; }
 
     /// <summary>
     /// 是否在线
     /// </summary>
-    public bool? IsOnline { get; set; }
+    public virtual bool? IsOnline { get; set; }
 
     /// <summary>
     /// 朋友类型:
@@ -42,7 +48,7 @@ public class SessionUnitFirendGetListInput : SessionUnitLatestGetListInput
     /// - 8=ShopWaiter:店小二
     /// - 9=Customer:客户
     /// </summary>
-    public ChatObjectTypeEnums? FriendType { get; set; }
+    public virtual ChatObjectTypeEnums? FriendType { get; set; }
 
 
 }

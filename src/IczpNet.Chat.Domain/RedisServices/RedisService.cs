@@ -51,17 +51,28 @@ return score
     /// 3. 若结果 小于 0, 设置为 0
     /// </summary>
     protected static string HashIncrementIfExistsScript => @"
-if redis.call('EXISTS', KEYS[1]) == 1 then
-    local newValue = redis.call('HINCRBY', KEYS[1], ARGV[1], ARGV[2])
-    if newValue < 0 then
-        redis.call('HSET', KEYS[1], ARGV[1], 0)
-        return 0
-    else
-        return newValue
-    end
-else
+-- KEYS[1] = hash key
+-- ARGV[1] = field
+-- ARGV[2] = increment
+
+local current = redis.call('HGET', KEYS[1], ARGV[1])
+if not current then
     return nil
 end
+
+local newValue = redis.call(
+    'HINCRBY',
+    KEYS[1],
+    ARGV[1],
+    tonumber(ARGV[2])
+)
+
+if newValue < 0 then
+    redis.call('HSET', KEYS[1], ARGV[1], 0)
+    return 0
+end
+
+return newValue
 ";
 
     /// <summary>
@@ -110,53 +121,66 @@ return 0
 
 
     /// <summary>
+    /// 存在才加，不创建
     /// key 不存在 → 返回 nil（不创建）
     /// key 存在 member 存在 → ZINCRBY
     /// 结果 小于 0 → 设为 0
     /// member 不存在 → 不创建，返回 nil
     /// </summary>
-    protected static string ZsetIncrementIfExistsScript => @"
-if redis.call('EXISTS', KEYS[1]) == 1 then
-    local current = redis.call('ZSCORE', KEYS[1], ARGV[1])
-    if not current then
-        return nil
-    end
+    protected static string ZsetIncrementIfExistsAndClampZeroScript => @"
+-- KEYS[1] = zset key
+-- ARGV[1] = member
+-- ARGV[2] = increment
 
-    local newValue = redis.call('ZINCRBY', KEYS[1], ARGV[1], ARGV[2])
-    if tonumber(newValue) < 0 then
-        redis.call('ZADD', KEYS[1], 0, ARGV[1])
-        return 0
-    else
-        return tonumber(newValue)
-    end
-else
+-- key 不存在 或 member 不存在 → nil
+local current = redis.call('ZSCORE', KEYS[1], ARGV[1])
+if not current then
     return nil
 end
+
+-- 加分（可能是负数 increment）
+local newValue = redis.call(
+    'ZINCRBY',
+    KEYS[1],
+    tonumber(ARGV[2]),
+    ARGV[1]
+)
+
+-- clamp 到 0（防御性，保持与 Decrement 语义对称）
+if tonumber(newValue) < 0 then
+    redis.call('ZADD', KEYS[1], 0, ARGV[1])
+    return 0
+end
+
+return tonumber(newValue)
 ";
 
-    protected static string DecrementOrDeleteZsetScript => @"
-if redis.call('EXISTS', KEYS[1]) ~= 1 then
-    return nil
-end
+    protected static string ZsetDecrementIfExistsAndClampZeroScript => @"
+-- KEYS[1] = zset key
+-- ARGV[1] = member
+-- ARGV[2] = decrement
+-- ARGV[3] = removeWhenZero (1 | 0)
 
 local current = redis.call('ZSCORE', KEYS[1], ARGV[1])
 if not current then
     return nil
 end
 
--- 减分
-local newValue = redis.call('ZINCRBY', KEYS[1], ARGV[1], -tonumber(ARGV[2]))
-local deleteWhenZero = tonumber(ARGV[3]) == 1
+-- 原子减分（注意参数顺序）
+local newValue = redis.call(
+    'ZINCRBY',
+    KEYS[1],
+    -tonumber(ARGV[2]),
+    ARGV[1]
+)
 
 if tonumber(newValue) <= 0 then
-    if deleteWhenZero then
+    if tonumber(ARGV[3]) == 1 then
         redis.call('ZREM', KEYS[1], ARGV[1])
-        return 0
     else
-        -- 保留成员，强制设为 0
         redis.call('ZADD', KEYS[1], 0, ARGV[1])
-        return 0
     end
+    return 0
 end
 
 return tonumber(newValue)
@@ -252,23 +276,20 @@ return tonumber(newValue)
             [member, score, removeWhenZero]);
     }
 
-    protected static void ZsetDecrementOrDelete(IBatch batch, string key, string member, double decrement, bool removeWhenZero = true)
+    protected static Task<RedisResult> ZsetDecrementIfExistsAndClampZeroAsync(IBatch batch, string key, string member, double decrement, bool removeWhenZero = true)
     {
-        if (decrement == 0 && removeWhenZero)
-        {
-            _ = batch.SortedSetRemoveAsync(key, member);
-        }
-        else
-        {
-            _ = batch.ScriptEvaluateAsync(ZsetIncrementIfExistsScript, [key], [member, -decrement]);
-        }
-    }
-
-    protected static void Zset1DecrementOrDelete(IBatch batch, string key, string member, double decrement, bool removeWhenZero = true)
-    {
-        _ = batch.ScriptEvaluateAsync(DecrementOrDeleteZsetScript,
+        return batch.ScriptEvaluateAsync(
+            ZsetDecrementIfExistsAndClampZeroScript,
             [key],
             [member, decrement, removeWhenZero ? 1 : 0]);
+    }
+
+    protected static Task<RedisResult> ZsetIncrementIfExistsAndClampZeroAsync(IBatch batch, string key, string member, double increment)
+    {
+        return batch.ScriptEvaluateAsync(
+            ZsetIncrementIfExistsAndClampZeroScript,
+            [key],
+            [member, increment]);
     }
 
     protected async Task<double?[]> GetZsetScoresAsync(string key, RedisValue[] members, IBatch newBatch = null)

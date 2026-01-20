@@ -220,6 +220,7 @@ public interface ISessionUnitCacheManager
     /// 获取好友会话单元
     /// </summary>
     /// <param name="ownerId"></param>
+    /// <param name="boxId"></param>
     /// <param name="minScore"></param>
     /// <param name="maxScore"></param>
     /// <param name="skip"></param>
@@ -228,6 +229,7 @@ public interface ISessionUnitCacheManager
     /// <returns></returns>
     Task<IEnumerable<FriendModel>> GetFriendsAsync(
         long ownerId,
+        Guid? boxId = null,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
         long skip = 0,
@@ -237,6 +239,7 @@ public interface ISessionUnitCacheManager
     Task<IEnumerable<FriendModel>> GetTypedFriendsAsync(
         FriendViews friendView,
         long ownerId,
+        Guid? boxId = null,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
         long skip = 0,
