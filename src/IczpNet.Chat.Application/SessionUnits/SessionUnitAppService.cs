@@ -661,14 +661,14 @@ public class SessionUnitAppService(
     /// <summary>
     /// 更新会话单元Ticks
     /// </summary>
-    /// <param name="senderSessionUnitId"></param>
+    /// <param name="sessionUnitId"></param>
     /// <param name="ticks"></param>
     /// <returns></returns>
 
     [HttpPost]
-    public async Task<long> UpdateTicksAsync(Guid senderSessionUnitId, long? ticks)
+    public async Task<long> UpdateTicksAsync(Guid sessionUnitId, long? ticks)
     {
-        return await Repository.UpdateTicksAsync(senderSessionUnitId, ticks);
+        return await Repository.UpdateTicksAsync(sessionUnitId, ticks);
     }
 
     /// <summary>

@@ -66,10 +66,10 @@ public interface ISessionUnitAppService
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="senderSessionUnitId"></param>
+    /// <param name="sessionUnitId"></param>
     /// <param name="ticks"></param>
     /// <returns></returns>
-    Task<long> UpdateTicksAsync(Guid senderSessionUnitId, long? ticks);
+    Task<long> UpdateTicksAsync(Guid sessionUnitId, long? ticks);
 
     /// <summary>
     /// 清除角标
