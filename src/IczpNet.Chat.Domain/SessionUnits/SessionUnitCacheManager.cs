@@ -142,7 +142,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerBoxBadgeZsetKey(long ownerId) => $"{Prefix}Owners:Box:OwnerId-{ownerId}";
+    private RedisKey OwnerBoxBadgeZsetKey(long ownerId) => $"{Prefix}Owners:BoxBadge:OwnerId-{ownerId}";
 
     /// <summary>
     /// 消息统计
@@ -1752,9 +1752,32 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
     #endregion
 
-    public async Task<IEnumerable<KeyValuePair<Guid, double>>> GetBoxFriendsCountAsync(long ownerId)
+    public async Task<IEnumerable<KeyValuePair<Guid, double>>> GetBoxFriendsBadgeAsync(long ownerId)
     {
         var entries = await Database.SortedSetRangeByRankWithScoresAsync(OwnerBoxBadgeZsetKey(ownerId));
         return entries.Select(x => new KeyValuePair<Guid, double>(x.Element.ToGuid(), x.Score));
+    }
+
+    public async Task<IEnumerable<KeyValuePair<Guid, (long? Badge, long? Count)>>> GetBoxFriendsBadgeAndCountAsync(long ownerId)
+    {
+        var boxFriends = await GetBoxFriendsBadgeAsync(ownerId);
+
+        if (!boxFriends.Any())
+        {
+            return [];
+        }
+
+        var batch = Database.CreateBatch();
+
+        var tasks = boxFriends.ToDictionary(
+            x => x.Key,
+            x => batch.SortedSetLengthAsync(OwnerBoxFriendsSetKey(ownerId, x.Key))
+        );
+
+        batch.Execute();
+
+        await Task.WhenAll(tasks.Values);
+
+        return boxFriends.Select(x => new KeyValuePair<Guid, (long? Badge, long? Count)>(x.Key, ((long)x.Value, tasks[x.Key].Result)));
     }
 }

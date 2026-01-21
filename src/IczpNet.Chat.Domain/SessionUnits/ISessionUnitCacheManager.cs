@@ -379,10 +379,16 @@ public interface ISessionUnitCacheManager
     Task<bool> ClearBadgeAsync(long ownerId);
 
     /// <summary>
-    /// 
+    /// 获取盒子角标
     /// </summary>
     /// <param name="ownerId"></param>
-    /// <param name="friendType"></param>
     /// <returns></returns>
-    Task<IEnumerable<KeyValuePair<Guid, double>>> GetBoxFriendsCountAsync(long ownerId);
+    Task<IEnumerable<KeyValuePair<Guid, double>>> GetBoxFriendsBadgeAsync(long ownerId);
+
+    /// <summary>
+    /// 获取盒子角标与好友数量
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    Task<IEnumerable<KeyValuePair<Guid, (long? Badge, long? Count)>>> GetBoxFriendsBadgeAndCountAsync(long ownerId);
 }

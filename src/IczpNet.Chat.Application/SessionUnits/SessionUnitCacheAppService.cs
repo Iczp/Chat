@@ -461,6 +461,7 @@ public class SessionUnitCacheAppService(
             Statistic = await SessionUnitCacheManager.GetStatisticAsync(ownerId),
             BadgeMap = await SessionUnitCacheManager.GetRawBadgeMapAsync(ownerId),
             CountMap = await SessionUnitCacheManager.GetFriendsCountMapAsync(ownerId),
+            Boxes = await GetBoxFriendsCountAsync(ownerId),
         };
     }
 
@@ -647,15 +648,20 @@ public class SessionUnitCacheAppService(
     {
         var boxes = await BoxManager.GetListByOwnerAsync(ownerId);
 
-        var countMap = (await SessionUnitCacheManager.GetBoxFriendsCountAsync(ownerId))
+        var countMap = (await SessionUnitCacheManager.GetBoxFriendsBadgeAndCountAsync(ownerId))
             .ToDictionary(x => x.Key, x => x.Value);
 
-        var result = boxes.Select(x => new BoxCountDto()
+        var result = boxes.Select(x =>
         {
-            Id = x.Id,
-            Name = x.Name,
-            OwnerId = x.OwnerId,
-            Count = countMap.TryGetValue(x.Id, out var count) ? (long)count : 0,
+            var (Badge, Count) = countMap.TryGetValue(x.Id, out var pair) ? pair : (Badge: null, Count: null);
+            return new BoxCountDto()
+            {
+                Id = x.Id,
+                Name = x.Name,
+                OwnerId = x.OwnerId,
+                Count = Count,
+                Badge = Badge,
+            };
         }).ToList();
 
         return result;

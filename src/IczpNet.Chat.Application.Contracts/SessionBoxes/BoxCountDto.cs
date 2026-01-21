@@ -1,4 +1,3 @@
-using IczpNet.Chat.BaseDtos;
 using System;
 namespace IczpNet.Chat.SessionBoxes;
 
@@ -12,10 +11,10 @@ public class BoxCountDto
     /// Id
     /// </summary>
     public virtual Guid Id { get; set; }
+
     /// <summary>
     /// 名称
     /// </summary>
-
     public virtual string Name { get; set; }
 
     /// <summary>
@@ -24,8 +23,12 @@ public class BoxCountDto
     public virtual long? OwnerId { get; set; }
 
     /// <summary>
-    /// 消息数量
+    /// 好友数量
     /// </summary>
-    public virtual long Count { get; set; }
+    public virtual long? Count { get; set; }
 
+    /// <summary>
+    /// 消息角标
+    /// </summary>
+    public virtual long? Badge { get; set; }
 }
