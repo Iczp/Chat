@@ -40,4 +40,12 @@ public interface ISessionUnitRepository : IRepository<SessionUnit, Guid>
     /// <param name="ownerId"></param>
     /// <returns></returns>
     Task<long> ClearBadgeAsync(long ownerId);
+
+    /// <summary>
+    /// 更新消息盒子
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="boxId"></param>
+    /// <returns></returns>
+    Task<long> UpdateBoxAsync(Guid id, Guid boxId);
 }

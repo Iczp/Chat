@@ -294,4 +294,21 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
         Logger.LogInformation("{method} ownerId:{ownerId},[END] Elapsed:{elapsed}ms", nameof(ClearBadgeAsync), ownerId, stopwatch.ElapsedMilliseconds);
         return result;
     }
+
+    public async Task<long> UpdateBoxAsync(Guid id, Guid boxId)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var context = await GetDbContextAsync();
+        Logger.LogInformation("{method} boxId:{boxId} [START]", nameof(UpdateBoxAsync), boxId);
+
+        // 修复消息盒子
+        var result = await context.SessionUnit
+            .Where(x => x.Id == id)
+            .ExecuteUpdateAsync(s => s
+                 .SetProperty(b => b.BoxId, b => boxId)
+                 .SetProperty(b => b.LastModificationTime, b => Clock.Now)
+             );
+        Logger.LogInformation("{method} boxId:{boxId},[END] Elapsed:{elapsed}ms", nameof(UpdateBoxAsync), boxId, stopwatch.ElapsedMilliseconds);
+        return result;
+    }
 }

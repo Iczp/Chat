@@ -17,7 +17,7 @@ public class SessionUnitOwnerDtoMappingAction : DomainService, IMappingAction<Se
 
     public void Process(SessionUnit source, SessionUnitOwnerDto destination, ResolutionContext context)
     {
-        var item = SessionUnitManager.GetCacheItemAsync(source).GetAwaiter().GetResult();
+        var item = SessionUnitManager.GetCacheAsync(source.Id).GetAwaiter().GetResult();
 
         if (item != null)
         {

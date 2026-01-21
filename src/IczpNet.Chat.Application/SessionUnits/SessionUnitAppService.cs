@@ -306,7 +306,7 @@ public class SessionUnitAppService(
 
         //await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetPolicyName));
 
-        return await SessionUnitManager.GetByCacheAsync(id);
+        return await SessionUnitManager.GetCacheAsync(id);
     }
 
     /// <summary>
@@ -622,11 +622,11 @@ public class SessionUnitAppService(
     [HttpGet]
     public async Task<SessionUnitCacheItem> GetCacheAsync([Required] Guid sessionUnitId)
     {
-        var entity = await GetEntityAsync(sessionUnitId);
+        var unit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
 
-        await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetPolicyName));
+        await CheckPolicyForUserAsync(unit.OwnerId, () => CheckPolicyAsync(GetPolicyName));
 
-        return await SessionUnitManager.GetCacheItemAsync(entity);
+        return unit;
     }
 
     /// <summary>
@@ -694,12 +694,12 @@ public class SessionUnitAppService(
     [HttpPost]
     public async Task<SessionUnitCacheItem> SetBoxAsync([Required] Guid sessionUnitId, [Required] Guid boxId)
     {
-        var entity = await GetEntityAsync(sessionUnitId);
+        var unit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
 
-        await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetPolicyName));
+        await CheckPolicyForUserAsync(unit.OwnerId, () => CheckPolicyAsync(GetPolicyName));
 
-        await SessionUnitManager.SetBoxAsync(entity, boxId);
+        await SessionUnitManager.SetBoxAsync(unit.Id, boxId);
 
-        return await SessionUnitManager.GetCacheItemAsync(entity);
+        return unit;
     }
 }
