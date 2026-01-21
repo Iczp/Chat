@@ -1,23 +1,23 @@
-﻿using StackExchange.Redis;
+﻿using IczpNet.Chat.Enums;
+using StackExchange.Redis;
 using System;
 
 namespace IczpNet.Chat.SessionUnits;
 
-public readonly record struct SessionUnitElement(long OwnerId, long FriendId, Guid SessionUnitId, Guid SessionId)
+public readonly record struct SessionUnitElement(long OwnerId, ChatObjectTypeEnums? OwnerObjectType, long DestinationId, ChatObjectTypeEnums? DestinationObjectType, Guid SessionUnitId, Guid SessionId)
 {
     public override string ToString()
-        => $"{OwnerId}:{FriendId}:{SessionUnitId}:{SessionId}";
+        => $"{OwnerId}:{OwnerObjectType}:{DestinationId}:{DestinationObjectType}:{SessionUnitId}:{SessionId}";
 
-    public static SessionUnitElement Create(long OwnerId, long FriendId, Guid SessionUnitId, Guid SessionId)
+    public static SessionUnitElement Create(long ownerId, ChatObjectTypeEnums? ownerObjectType, long destinationId, ChatObjectTypeEnums? destinationObjectType, Guid sessionUnitId, Guid sessionId)
     {
-        return new SessionUnitElement(OwnerId, FriendId, SessionUnitId, SessionId);
+        return new SessionUnitElement(ownerId, ownerObjectType, destinationId, destinationObjectType, sessionUnitId, sessionId);
     }
 
     /// <summary>
     /// 隐式转换，便于 Redis API 使用
     /// </summary>
-    public static implicit operator RedisValue(SessionUnitElement element)
-        => element.ToString();
+    public static implicit operator RedisValue(SessionUnitElement element) => element.ToString();
 
     public static SessionUnitElement Parse(RedisValue element)
     {
@@ -39,7 +39,7 @@ public readonly record struct SessionUnitElement(long OwnerId, long FriendId, Gu
         }
 
         var parts = value.ToString().Split(':');
-        if (parts.Length != 4)
+        if (parts.Length != 6)
         {
             return false;
         }
@@ -49,21 +49,33 @@ public readonly record struct SessionUnitElement(long OwnerId, long FriendId, Gu
             return false;
         }
 
-        if (!long.TryParse(parts[1], out var friendId))
+        if (!Enum.TryParse<ChatObjectTypeEnums>(parts[1], out var ownerObjectType))
         {
             return false;
         }
 
-        if (!Guid.TryParse(parts[2], out var unitId))
-        {
-            return false;
-        }
-        if (!Guid.TryParse(parts[3], out var sessionId))
+        if (!long.TryParse(parts[2], out var friendId))
         {
             return false;
         }
 
-        field = Create(ownerId, friendId, unitId, sessionId);
+        if (!Enum.TryParse<ChatObjectTypeEnums>(parts[3], out var destinationObjectType))
+        {
+            return false;
+        }
+
+        if (!Guid.TryParse(parts[4], out var unitId))
+        {
+            return false;
+        }
+        if (!Guid.TryParse(parts[5], out var sessionId))
+        {
+            return false;
+        }
+
+        field = Create(ownerId, ownerObjectType, friendId, destinationObjectType, unitId, sessionId);
         return true;
     }
+
+
 }

@@ -37,7 +37,7 @@ using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.ScanCodes;
 using IczpNet.Chat.Scopeds;
 using IczpNet.Chat.ServerHosts;
-using IczpNet.Chat.SessionBoxs;
+using IczpNet.Chat.SessionBoxes;
 using IczpNet.Chat.SessionSections.SessionOrganizations;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionPermissionGroups;

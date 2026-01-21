@@ -58,6 +58,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Boxes\" />
     <Folder Include="Commands\" />
     <Folder Include="GotRecorders\" />
     <Folder Include="Personals\" />

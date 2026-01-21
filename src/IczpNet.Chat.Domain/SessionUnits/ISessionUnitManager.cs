@@ -27,16 +27,23 @@ public interface ISessionUnitManager
     /// <summary>
     /// 获取会话单元
     /// </summary>
-    /// <param name="sessionUnitId"></param>
-    /// <returns></returns>
-    Task<SessionUnitCacheItem> GetByCacheAsync(Guid sessionUnitId);
-
-    /// <summary>
-    /// 获取会话单元
-    /// </summary>
     /// <param name="unitIds"></param>
     /// <returns></returns>
     Task<KeyValuePair<Guid, SessionUnit>[]> GetManyAsync(IEnumerable<Guid> unitIds);
+
+    /// <summary>
+    /// 获取会话单元缓存
+    /// </summary>
+    /// <param name="unitId"></param>
+    /// <returns></returns>
+    Task<SessionUnitCacheItem> GetCacheAsync(Guid unitId);
+
+    /// <summary>
+    /// 获取会话单元缓存(多个)
+    /// </summary>
+    /// <param name="unitIds"></param>
+    /// <returns></returns>
+    Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetCacheManyAsync(List<Guid> unitIds);
 
     /// <summary>
     /// 查找会话单元
@@ -283,21 +290,6 @@ public interface ISessionUnitManager
     Task<List<SessionUnitCacheItem>> GetCacheListBySessionIdAsync(Guid sessionId);
 
     /// <summary>
-    /// 获取缓存
-    /// </summary>
-    /// <param name="sessionId"></param>
-    /// <param name="sessionUnitId"></param>
-    /// <returns></returns>
-    Task<SessionUnitCacheItem> GetCacheItemAsync(Guid sessionId, Guid sessionUnitId);
-
-    /// <summary>
-    /// 获取缓存
-    /// </summary>
-    /// <param name="sessionUnit"></param>
-    /// <returns></returns>
-    Task<SessionUnitCacheItem> GetCacheItemAsync(SessionUnit sessionUnit);
-
-    /// <summary>
     /// 设置缓存
     /// </summary>
     /// <param name="sessionId"></param>
@@ -505,4 +497,8 @@ public interface ISessionUnitManager
     Task<IEnumerable<SessionUnitCacheItem>> LoadFriendsIfNotExistsAsync(long ownerId);
 
     Task<IEnumerable<SessionUnitCacheItem>> LoadMembersIfNotExistsAsync(Guid sessionUnitId);
+
+    Task<bool> SetBoxAsync(SessionUnitCacheItem entity, Guid boxId);
+
+    Task<bool> SetBoxAsync(Guid sessionUnitId, Guid boxId);
 }

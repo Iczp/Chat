@@ -306,7 +306,7 @@ public class SessionUnitAppService(
 
         //await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetPolicyName));
 
-        return await SessionUnitManager.GetByCacheAsync(id);
+        return await SessionUnitManager.GetCacheAsync(id);
     }
 
     /// <summary>
@@ -622,11 +622,11 @@ public class SessionUnitAppService(
     [HttpGet]
     public async Task<SessionUnitCacheItem> GetCacheAsync([Required] Guid sessionUnitId)
     {
-        var entity = await GetEntityAsync(sessionUnitId);
+        var unit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
 
-        await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetPolicyName));
+        await CheckPolicyForUserAsync(unit.OwnerId, () => CheckPolicyAsync(GetPolicyName));
 
-        return await SessionUnitManager.GetCacheItemAsync(entity);
+        return unit;
     }
 
     /// <summary>
@@ -661,14 +661,14 @@ public class SessionUnitAppService(
     /// <summary>
     /// 更新会话单元Ticks
     /// </summary>
-    /// <param name="senderSessionUnitId"></param>
+    /// <param name="sessionUnitId"></param>
     /// <param name="ticks"></param>
     /// <returns></returns>
 
     [HttpPost]
-    public async Task<long> UpdateTicksAsync(Guid senderSessionUnitId, long? ticks)
+    public async Task<long> UpdateTicksAsync(Guid sessionUnitId, long? ticks)
     {
-        return await Repository.UpdateTicksAsync(senderSessionUnitId, ticks);
+        return await Repository.UpdateTicksAsync(sessionUnitId, ticks);
     }
 
     /// <summary>
@@ -683,5 +683,23 @@ public class SessionUnitAppService(
         var result = await Repository.ClearBadgeAsync(ownerId);
         var clearResult = await SessionUnitCacheManager.ClearBadgeAsync(ownerId);
         return result;
+    }
+
+    /// <summary>
+    /// 设置会话盒子
+    /// </summary>
+    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <param name="boxId"></param>
+    /// <returns></returns>
+    [HttpPost]
+    public async Task<SessionUnitCacheItem> SetBoxAsync([Required] Guid sessionUnitId, [Required] Guid boxId)
+    {
+        var unit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
+
+        await CheckPolicyForUserAsync(unit.OwnerId, () => CheckPolicyAsync(GetPolicyName));
+
+        await SessionUnitManager.SetBoxAsync(unit.Id, boxId);
+
+        return unit;
     }
 }

@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace IczpNet.Chat.SessionBoxs;
+namespace IczpNet.Chat.SessionBoxes;
 
 /// <summary>
 /// 会话盒子

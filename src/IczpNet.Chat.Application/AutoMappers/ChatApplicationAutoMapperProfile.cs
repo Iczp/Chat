@@ -47,6 +47,7 @@ using IczpNet.Chat.Squares.Dtos;
 using IczpNet.Chat.Words;
 using IczpNet.Chat.Words.Dtos;
 using Volo.Abp.AutoMapper;
+using IczpNet.Chat.SessionBoxes;
 /*---------code-generator-namespace: Do not modify or delete this line of comments--------*/
 
 namespace IczpNet.Chat.AutoMappers;
@@ -254,6 +255,15 @@ public class ChatApplicationAutoMapperProfile : Profile
 
 
         CreateMap<MessageReportBase, MessageReportDto>();
+
+        
+        //Box
+        CreateMap<Box, BoxDto>();
+        CreateMap<Box, BoxSampleDto>();
+        CreateMap<Box, BoxDetailDto>();
+        CreateMap<BoxCreateInput, Box>(MemberList.None).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<BoxUpdateInput, Box>(MemberList.None).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        
 
         /*---------code-generator-mapper: Do not modify or delete this line of comments--------*/
     }

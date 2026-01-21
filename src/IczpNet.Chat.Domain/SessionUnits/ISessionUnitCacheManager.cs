@@ -64,6 +64,23 @@ public interface ISessionUnitCacheManager
     /// <param name="skip"></param>
     /// <param name="take"></param>
     /// <param name="isDescending"></param>
+    /// <returns></returns>
+    Task<IEnumerable<KeyValuePair<SessionUnitElement, MemberScore>>> GetRawMembersAsync(
+        Guid sessionId,
+        double minScore = double.NegativeInfinity,
+        double maxScore = double.PositiveInfinity,
+        long skip = 0,
+        long take = -1,
+        bool isDescending = true);
+    /// <summary>
+    /// 获取会话成员
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="minScore"></param>
+    /// <param name="maxScore"></param>
+    /// <param name="skip"></param>
+    /// <param name="take"></param>
+    /// <param name="isDescending"></param>
 
     Task<IEnumerable<MemberModel>> GetMembersAsync(
         Guid sessionId,
@@ -192,7 +209,8 @@ public interface ISessionUnitCacheManager
     /// <param name="skip"></param>
     /// <param name="take"></param>
     /// <param name="isDescending"></param>
-    Task<IEnumerable<KeyValuePair<SessionUnitElement, double>>> GetRawFriendsAsync(long ownerId,
+    Task<IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>> GetRawFriendsAsync(
+        long ownerId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
         long skip = 0,
@@ -202,23 +220,26 @@ public interface ISessionUnitCacheManager
     /// 获取好友会话单元
     /// </summary>
     /// <param name="ownerId"></param>
+    /// <param name="boxId"></param>
     /// <param name="minScore"></param>
     /// <param name="maxScore"></param>
     /// <param name="skip"></param>
     /// <param name="take"></param>
     /// <param name="isDescending"></param>
     /// <returns></returns>
-    Task<IReadOnlyList<FriendModel>> GetFriendsAsync(
+    Task<IEnumerable<FriendModel>> GetFriendsAsync(
         long ownerId,
+        Guid? boxId = null,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
         long skip = 0,
         long take = -1,
         bool isDescending = true);
 
-    Task<IReadOnlyList<FriendModel>> GetTypedFriendsAsync(
+    Task<IEnumerable<FriendModel>> GetTypedFriendsAsync(
         FriendViews friendView,
         long ownerId,
+        Guid? boxId = null,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
         long skip = 0,
@@ -356,4 +377,26 @@ public interface ISessionUnitCacheManager
     /// <param name="ownerId"></param>
     /// <returns></returns>
     Task<bool> ClearBadgeAsync(long ownerId);
+
+    /// <summary>
+    /// 变更消息盒子
+    /// </summary>
+    /// <param name="unitId"></param>
+    /// <param name="boxId"></param>
+    /// <returns></returns>
+    Task ChangeBoxAsync(Guid unitId, Guid? boxId);
+
+    /// <summary>
+    /// 获取盒子角标
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    Task<IEnumerable<KeyValuePair<Guid, double>>> GetBoxFriendsBadgeAsync(long ownerId);
+
+    /// <summary>
+    /// 获取盒子角标与好友数量
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    Task<IEnumerable<KeyValuePair<Guid, (long? Badge, long? Count)>>> GetBoxFriendsBadgeAndCountAsync(long ownerId);
 }

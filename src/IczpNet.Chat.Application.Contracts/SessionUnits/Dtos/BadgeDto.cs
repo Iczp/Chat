@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.Enums;
+using IczpNet.Chat.SessionBoxes;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
@@ -19,4 +20,5 @@ public class BadgeDto
 
     public virtual Dictionary<ChatObjectTypeEnums, long> CountMap { get; set; }
 
+    public virtual List<BoxCountDto> Boxes { get; set; }
 }

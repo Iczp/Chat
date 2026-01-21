@@ -146,7 +146,7 @@ return 1";
         }
 
     }
-    private void HashSetOwnerSessions(IBatch batch, ConnectionPoolCacheItem connectionPool, Dictionary<long, IEnumerable<FriendModel>> friendsMap)
+    private void HashSetOwnerSessions(IBatch batch, ConnectionPoolCacheItem connectionPool, Dictionary<long, IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>> friendsMap)
     {
         var ownerIds = connectionPool.ChatObjectIdList ?? [];
         foreach (var ownerId in ownerIds)
@@ -154,7 +154,7 @@ return 1";
             var ownerSessionKey = OwnerSessionsHashKey(ownerId);
             // if chatObjectSessions contains it, we assume set was exists or just created. To avoid extra KeyExists roundtrip, only set expire
             // but add members if we have sessions and set wasn't in Redis earlier (GetOrSetSessionsAsync only returns existing/filled).
-            var sessions = friendsMap.GetValueOrDefault(ownerId).Select(x => x.SessionId);
+            var sessions = friendsMap.GetValueOrDefault(ownerId).Select(x => x.Key.SessionId);
             if (sessions == null || !sessions.Any()) continue;
 
             // Add members (idempotent)
@@ -166,7 +166,7 @@ return 1";
         }
     }
 
-    private void SortedActionOwnerFriends(List<long> ownerIds, Dictionary<long, IEnumerable<FriendModel>> friendsMap, Action<long, FriendModel> eachAction)
+    private static void SortedActionOwnerFriends(List<long> ownerIds, Dictionary<long, IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>> friendsMap, Action<long, KeyValuePair<SessionUnitElement, FriendScore>> eachAction)
     {
         foreach (var ownerId in ownerIds)
         {
@@ -179,13 +179,13 @@ return 1";
         }
     }
 
-    private void SortedSetOwnerFriendsConns(IBatch batch, List<long> ownerIds, Dictionary<long, IEnumerable<FriendModel>> friendsMap, string connectionId)
+    private void SortedSetOwnerFriendsConns(IBatch batch, List<long> ownerIds, Dictionary<long, IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>> friendsMap, string connectionId)
     {
         SortedActionOwnerFriends(ownerIds, friendsMap, (ownerId, friend) =>
         {
-            var element = SessionUnitElement.Create(friend.OwnerId, friend.FriendId, friend.Id, friend.SessionId);
+            var element = friend.Key;
             //Friends Conns
-            var friendConnsHashKey = FriendsConnsHashKey(friend.FriendId);
+            var friendConnsHashKey = FriendsConnsHashKey(element.DestinationId);
             if (!string.IsNullOrWhiteSpace(connectionId))
             {
                 batch.HashSetAsync(friendConnsHashKey, element, connectionId);
@@ -194,14 +194,13 @@ return 1";
         });
     }
 
-    private void SortedRemoveOwnerFriends(IBatch batch, List<long> ownerIds, Dictionary<long, IEnumerable<FriendModel>> friendsMap)
+    private void SortedRemoveOwnerFriends(IBatch batch, List<long> ownerIds, Dictionary<long, IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>> friendsMap)
     {
         SortedActionOwnerFriends(ownerIds, friendsMap, (ownerId, friend) =>
         {
-            var element = SessionUnitElement.Create(friend.OwnerId, friend.FriendId, friend.Id, friend.SessionId);
-
+            var element = friend.Key;
             //Friends Conns
-            var friendConnsHashKey = FriendsConnsHashKey(friend.FriendId);
+            var friendConnsHashKey = FriendsConnsHashKey(element.DestinationId);
             batch.HashDeleteAsync(friendConnsHashKey, element);
             Expire(batch, friendConnsHashKey);
         });
@@ -250,13 +249,13 @@ return 1";
     /// Build dictionary: sessionId -> ownerSessions of ownerIds
     /// More efficient than repeated LINQ GroupBy
     /// </summary>
-    private static Dictionary<Guid, List<long>> BuildSessionChatObjects(Dictionary<long, IEnumerable<FriendModel>> friendsMap)
+    private static Dictionary<Guid, List<long>> BuildSessionChatObjects(Dictionary<long, IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>> friendsMap)
     {
         var dict = new Dictionary<Guid, List<long>>(friendsMap.Count * 2);
         foreach (var kv in friendsMap)
         {
             var ownerId = kv.Key;
-            var sessionList = kv.Value.Select(x => x.SessionId);
+            var sessionList = kv.Value.Select(x => x.Key.SessionId);
             if (sessionList == null) continue;
             foreach (var friend in sessionList)
             {
@@ -279,13 +278,13 @@ return 1";
     /// <param name="chatObjectIdList"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    private async Task<Dictionary<long, IEnumerable<FriendModel>>> GetOrSetFriendsAsync(List<long> chatObjectIdList, CancellationToken token = default)
+    private async Task<Dictionary<long, IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>>> GetOrSetFriendsAsync(List<long> chatObjectIdList, CancellationToken token = default)
     {
-        var result = new Dictionary<long, IEnumerable<FriendModel>>();
+        var result = new Dictionary<long, IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>>();
         foreach (var chatObjectId in chatObjectIdList)
         {
             await SessionUnitManager.LoadFriendsIfNotExistsAsync(chatObjectId);
-            var friends = await SessionUnitCacheManager.GetFriendsAsync(chatObjectId);
+            var friends = await SessionUnitCacheManager.GetRawFriendsAsync(chatObjectId);
             result.TryAdd(chatObjectId, friends);
         }
         return result;
@@ -1011,7 +1010,7 @@ return 1";
             {
                 ConnectionId = x.Value.ToString(),
                 OwnerId = element.OwnerId,
-                DestinationId = element.FriendId,
+                DestinationId = element.DestinationId,
                 SessionId = element.SessionId,
                 SessionUnitId = element.SessionUnitId,
             };

@@ -1,5 +1,4 @@
-﻿using IczpNet.Chat.Enums;
-using IczpNet.Chat.SessionUnits.Dtos;
+﻿using IczpNet.Chat.SessionUnits.Dtos;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;

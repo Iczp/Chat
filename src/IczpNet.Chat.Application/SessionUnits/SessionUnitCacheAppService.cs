@@ -1,17 +1,17 @@
-﻿using IczpNet.AbpCommons;
+﻿using CommunityToolkit.HighPerformance;
+using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Clocks;
 using IczpNet.Chat.ConnectionPools;
-using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.Permissions;
+using IczpNet.Chat.SessionBoxes;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
 using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Pipelines.Sockets.Unofficial.Buffers;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -39,6 +39,7 @@ public class SessionUnitCacheAppService(
     IFollowManager followManager,
     IOnlineManager onlineManager,
     IDistributedCache<SessionUnitSearchCacheItem, SessionUnitSearchCacheKey> searchCache,
+    IBoxManager boxManager,
     ISessionUnitCacheManager sessionUnitCacheManager) : ChatAppService, ISessionUnitCacheAppService
 {
     public IMessageManager MessageManager { get; } = messageManager;
@@ -48,6 +49,7 @@ public class SessionUnitCacheAppService(
     public IFollowManager FollowManager { get; } = followManager;
     public IOnlineManager OnlineManager { get; } = onlineManager;
     public IDistributedCache<SessionUnitSearchCacheItem, SessionUnitSearchCacheKey> SearchCache { get; } = searchCache;
+    public IBoxManager BoxManager { get; } = boxManager;
     public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
 
 
@@ -458,6 +460,7 @@ public class SessionUnitCacheAppService(
             Statistic = await SessionUnitCacheManager.GetStatisticAsync(ownerId),
             BadgeMap = await SessionUnitCacheManager.GetRawBadgeMapAsync(ownerId),
             CountMap = await SessionUnitCacheManager.GetFriendsCountMapAsync(ownerId),
+            Boxes = await GetBoxFriendsCountAsync(ownerId),
         };
     }
 
@@ -590,7 +593,10 @@ public class SessionUnitCacheAppService(
             onlineFriendIds = online.Select(x => x.OwnerId).Distinct();
         }
 
-        var queryable = await SessionUnitCacheManager.GetTypedFriendsAsync(input.View, input.OwnerId,
+        var queryable = await SessionUnitCacheManager.GetTypedFriendsAsync(
+            input.View,
+            input.OwnerId,
+            input.BoxId,
             //minScore: input.MinScore ?? double.NegativeInfinity,
             //maxScore: input.MaxScore ?? double.PositiveInfinity,
             //skip: input.SkipCount,
@@ -599,13 +605,14 @@ public class SessionUnitCacheAppService(
 
 
         var query = queryable.AsQueryable()
-            .WhereIf(input.FriendId.HasValue, x => x.FriendId == input.FriendId)
+            .WhereIf(input.FriendType.HasValue, x => x.DestinationObjectType == input.FriendType)
+            .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
             .WhereIf(input.SessionId.HasValue, x => x.SessionId == input.SessionId)
             .WhereIf(input.UnitId.HasValue, x => x.Id == input.UnitId)
             .WhereIf(input.MinScore > 0, x => x.Ticks > input.MinScore)
             .WhereIf(input.MaxScore > 0, x => x.Ticks < input.MaxScore)
-            .WhereIf(input.IsOnline == true, x => onlineFriendIds.Contains(x.FriendId))
-            .WhereIf(input.IsOnline == false, x => !onlineFriendIds.Contains(x.FriendId))
+            .WhereIf(input.IsOnline == true, x => onlineFriendIds.Contains(x.DestinationId))
+            .WhereIf(input.IsOnline == false, x => !onlineFriendIds.Contains(x.DestinationId))
             ;
 
         //search 
@@ -635,6 +642,29 @@ public class SessionUnitCacheAppService(
         return new PagedResultDto<SessionUnitFriendDto>(totalCount, items);
     }
 
+
+    private async Task<List<BoxCountDto>> GetBoxFriendsCountAsync([Required] long ownerId)
+    {
+        var boxes = await BoxManager.GetListByOwnerAsync(ownerId);
+
+        var countMap = (await SessionUnitCacheManager.GetBoxFriendsBadgeAndCountAsync(ownerId))
+            .ToDictionary(x => x.Key, x => x.Value);
+
+        var result = boxes.Select(x =>
+        {
+            var (Badge, Count) = countMap.TryGetValue(x.Id, out var pair) ? pair : (Badge: null, Count: null);
+            return new BoxCountDto()
+            {
+                Id = x.Id,
+                Name = x.Name,
+                OwnerId = x.OwnerId,
+                Count = Count,
+                Badge = Badge,
+            };
+        }).ToList();
+
+        return result;
+    }
     /// <summary>
     /// 获取好友数量
     /// </summary>
@@ -643,10 +673,12 @@ public class SessionUnitCacheAppService(
     public async Task<FriendCountDto> GetFriendsCountAsync([Required] long ownerId)
     {
         await LoadFriendsIfNotExistsAsync(ownerId);
+
         return new FriendCountDto()
         {
             TotalCount = await SessionUnitCacheManager.GetFriendsCountAsync(ownerId),
             CountMap = await SessionUnitCacheManager.GetFriendsCountMapAsync(ownerId),
+            Boxes = await GetBoxFriendsCountAsync(ownerId),
         };
     }
 
@@ -669,10 +701,11 @@ public class SessionUnitCacheAppService(
         var queryable = await SessionUnitCacheManager.GetMembersAsync(sessionId);
 
         var query = queryable.AsQueryable()
+            .WhereIf(input.IsCreator.HasValue, x => x.IsCreator == input.IsCreator.Value)
+            .WhereIf(input.OwnerObjectType.HasValue, x => x.OwnerObjectType == input.OwnerObjectType.Value)
+            .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId.Value)
             .WhereIf(input.MinScore > 0, x => x.CreationTime.ToUnixTimeMilliseconds() > input.MinScore)
             .WhereIf(input.MaxScore > 0, x => x.CreationTime.ToUnixTimeMilliseconds() < input.MaxScore)
-            .WhereIf(input.IsCreator.HasValue, x => x.IsCreator == input.IsCreator.Value)
-            .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId.Value)
             ;
 
         //search 

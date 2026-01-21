@@ -12,7 +12,7 @@ using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.Mottos;
 using IczpNet.Chat.RedEnvelopes;
-using IczpNet.Chat.SessionBoxs;
+using IczpNet.Chat.SessionBoxes;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.EntityFrameworkCore;

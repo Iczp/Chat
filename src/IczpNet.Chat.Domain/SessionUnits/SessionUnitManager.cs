@@ -6,6 +6,7 @@ using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.SessionBoxes;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
@@ -48,6 +49,7 @@ public class SessionUnitManager(
     IUnitOfWorkManager unitOfWorkManager,
     ISessionGenerator sessionGenerator,
     ISessionManager sessionManager,
+    IRepository<Box, Guid> boxRepository,
     ISessionUnitIdGenerator idGenerator) : DomainService, ISessionUnitManager
 {
     public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
@@ -73,6 +75,7 @@ public class SessionUnitManager(
     public IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
     public ISessionGenerator SessionGenerator { get; } = sessionGenerator;
     public ISessionManager SessionManager { get; } = sessionManager;
+    public IRepository<Box, Guid> BoxRepository { get; } = boxRepository;
     protected ISessionUnitIdGenerator IdGenerator { get; } = idGenerator;
 
     /// <summary>
@@ -288,16 +291,6 @@ public class SessionUnitManager(
     }
 
     /// <inheritdoc />
-    public virtual Task<SessionUnitCacheItem> GetByCacheAsync(Guid id)
-    {
-        return SessionUnitItemCache.GetOrAddAsync(id, async () =>
-        {
-            var sessionUnit = await GetAsync(id);
-            return ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(sessionUnit);
-        }, () => DistributedCacheEntryOptions);
-    }
-
-    /// <inheritdoc />
     public virtual async Task<KeyValuePair<Guid, SessionUnit>[]> GetManyAsync(IEnumerable<Guid> unitIds)
     {
         var idList = unitIds.Distinct().ToList();
@@ -309,6 +302,37 @@ public class SessionUnitManager(
             arr[i] = new KeyValuePair<Guid, SessionUnit>(id, await GetAsync(id));
         }
         return arr;
+    }
+
+    protected virtual SessionUnitCacheItem MapToCacheItem(SessionUnit entity)
+    {
+        return ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(entity);
+    }
+
+    public async Task<SessionUnitCacheItem> GetCacheAsync(Guid unitId)
+    {
+        var list = await GetCacheManyAsync([unitId]);
+        var unit = list.FirstOrDefault().Value;
+        Assert.If(unit == null, $"No such cache id:{unitId}");
+        return unit;
+    }
+
+    public async Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetCacheManyAsync(List<Guid> unitIds)
+    {
+        return await SessionUnitCacheManager.GetOrSetManyAsync(unitIds, async (keys) =>
+        {
+            var kvs = await GetManyAsync(keys);
+
+            var cacheItems = kvs.Select(x => MapToCacheItem(x.Value)).ToList();
+
+            var arr = new KeyValuePair<Guid, SessionUnitCacheItem>[cacheItems.Count];
+
+            for (int i = 0; i < cacheItems.Count; i++)
+            {
+                arr[i] = new KeyValuePair<Guid, SessionUnitCacheItem>(cacheItems[i].Id, cacheItems[i]);
+            }
+            return arr;
+        });
     }
 
     /// <inheritdoc />
@@ -802,6 +826,9 @@ public class SessionUnitManager(
                 .Count();
     }
 
+
+
+
     /// <inheritdoc />
     public virtual Task<List<SessionUnitCacheItem>> GetCacheListAsync(string sessionUnitCachKey)
     {
@@ -819,20 +846,6 @@ public class SessionUnitManager(
     public virtual Task<List<SessionUnitCacheItem>> GetCacheListBySessionIdAsync(Guid sessionId)
     {
         return SessionUnitListCache.GetAsync($"{new SessionUnitCacheKey(sessionId)}");
-    }
-
-    /// <inheritdoc />
-    public virtual async Task<SessionUnitCacheItem> GetCacheItemAsync(Guid sessionId, Guid sessionUnitId)
-    {
-        var items = await GetCacheListBySessionIdAsync(sessionId);
-
-        return items?.FirstOrDefault(x => x.Id == sessionUnitId);
-    }
-
-    /// <inheritdoc />
-    public virtual Task<SessionUnitCacheItem> GetCacheItemAsync(SessionUnit sessionUnit)
-    {
-        return GetCacheItemAsync(sessionUnit.SessionId.Value, sessionUnit.Id);
     }
 
     /// <inheritdoc />
@@ -1459,5 +1472,27 @@ public class SessionUnitManager(
         return await SessionUnitCacheManager.SetMembersIfNotExistsAsync(sessionId,
              async (ownerId) =>
                  await GetOrAddCacheListAsync(ownerId));
+    }
+
+    public async Task<bool> SetBoxAsync(Guid sessionUnitId, Guid boxId)
+    {
+        var unit = await GetCacheAsync(sessionUnitId);
+        return await SetBoxAsync(unit, boxId);
+    }
+
+    public async Task<bool> SetBoxAsync(SessionUnitCacheItem unit, Guid boxId)
+    {
+        var isBoxExists = await BoxRepository.AnyAsync(x => x.Id == boxId);
+
+        Assert.If(isBoxExists, $"No such Entity[Box], id:{boxId}");
+
+        //entity.SetBox(box.Id);
+        //await Repository.UpdateAsync(entity, autoSave: true);
+
+        var result = await Repository.UpdateBoxAsync(unit.Id, boxId);
+
+        await SessionUnitCacheManager.ChangeBoxAsync(unit.Id, boxId);
+
+        return result == 1;
     }
 }

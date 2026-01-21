@@ -13,7 +13,7 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.Scopeds;
-using IczpNet.Chat.SessionBoxs;
+using IczpNet.Chat.SessionBoxes;
 using IczpNet.Chat.SessionSections;
 using IczpNet.Chat.SessionSections.SessionPermissionUnitGrants;
 using IczpNet.Chat.SessionSections.SessionRequests;
@@ -419,4 +419,9 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     private List<SessionRole> GetRoleList() => SessionUnitRoleList.Select(x => x.SessionRole).ToList();
 
     private List<Guid> GetRoleIdList() => SessionUnitRoleList.Select(x => x.SessionRoleId).ToList();
+
+    public void SetBox(Guid boxId)
+    {
+       BoxId = boxId;
+    }
 }

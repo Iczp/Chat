@@ -66,10 +66,10 @@ public interface ISessionUnitAppService
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="senderSessionUnitId"></param>
+    /// <param name="sessionUnitId"></param>
     /// <param name="ticks"></param>
     /// <returns></returns>
-    Task<long> UpdateTicksAsync(Guid senderSessionUnitId, long? ticks);
+    Task<long> UpdateTicksAsync(Guid sessionUnitId, long? ticks);
 
     /// <summary>
     /// 清除角标
@@ -77,4 +77,12 @@ public interface ISessionUnitAppService
     /// <param name="ownerId"></param>
     /// <returns></returns>
     Task<long> ClearBadgeAsync(long ownerId);
+
+    /// <summary>
+    /// 设置会话盒子
+    /// </summary>
+    /// <param name="sessionUnitId"></param>
+    /// <param name="boxId"></param>
+    /// <returns></returns>
+    Task<SessionUnitCacheItem> SetBoxAsync([Required] Guid sessionUnitId, [Required] Guid boxId);
 }
