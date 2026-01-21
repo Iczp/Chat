@@ -1,5 +1,4 @@
 ﻿using CommunityToolkit.HighPerformance;
-using DeviceDetectorNET.Class;
 using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Clocks;

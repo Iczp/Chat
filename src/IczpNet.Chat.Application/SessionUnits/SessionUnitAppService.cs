@@ -684,4 +684,22 @@ public class SessionUnitAppService(
         var clearResult = await SessionUnitCacheManager.ClearBadgeAsync(ownerId);
         return result;
     }
+
+    /// <summary>
+    /// 设置会话盒子
+    /// </summary>
+    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <param name="boxId"></param>
+    /// <returns></returns>
+    [HttpPost]
+    public async Task<SessionUnitCacheItem> SetBoxAsync([Required] Guid sessionUnitId, [Required] Guid boxId)
+    {
+        var entity = await GetEntityAsync(sessionUnitId);
+
+        await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetPolicyName));
+
+        await SessionUnitManager.SetBoxAsync(entity, boxId);
+
+        return await SessionUnitManager.GetCacheItemAsync(entity);
+    }
 }

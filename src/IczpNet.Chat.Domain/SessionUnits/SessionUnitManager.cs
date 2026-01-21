@@ -6,6 +6,7 @@ using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.SessionBoxes;
 using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
@@ -48,6 +49,7 @@ public class SessionUnitManager(
     IUnitOfWorkManager unitOfWorkManager,
     ISessionGenerator sessionGenerator,
     ISessionManager sessionManager,
+    IRepository<Box, Guid> boxRepository,
     ISessionUnitIdGenerator idGenerator) : DomainService, ISessionUnitManager
 {
     public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
@@ -73,6 +75,7 @@ public class SessionUnitManager(
     public IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
     public ISessionGenerator SessionGenerator { get; } = sessionGenerator;
     public ISessionManager SessionManager { get; } = sessionManager;
+    public IRepository<Box, Guid> BoxRepository { get; } = boxRepository;
     protected ISessionUnitIdGenerator IdGenerator { get; } = idGenerator;
 
     /// <summary>
@@ -1459,5 +1462,19 @@ public class SessionUnitManager(
         return await SessionUnitCacheManager.SetMembersIfNotExistsAsync(sessionId,
              async (ownerId) =>
                  await GetOrAddCacheListAsync(ownerId));
+    }
+
+    public async Task SetBoxAsync(Guid sessionUnitId, Guid boxId)
+    {
+        var entity = await GetAsync(sessionUnitId);
+        await SetBoxAsync(entity, boxId);
+    }
+
+    public async Task SetBoxAsync(SessionUnit entity, Guid boxId)
+    {
+        var box = await BoxRepository.GetAsync(boxId);
+        entity.SetBox(box.Id);
+        await Repository.UpdateAsync(entity, autoSave: true);
+        await SessionUnitCacheManager.ChangeBoxAsync(entity.Id, boxId);
     }
 }

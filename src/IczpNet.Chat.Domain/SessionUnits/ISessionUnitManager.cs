@@ -505,4 +505,7 @@ public interface ISessionUnitManager
     Task<IEnumerable<SessionUnitCacheItem>> LoadFriendsIfNotExistsAsync(long ownerId);
 
     Task<IEnumerable<SessionUnitCacheItem>> LoadMembersIfNotExistsAsync(Guid sessionUnitId);
+
+    Task SetBoxAsync(SessionUnit entity, Guid boxId);
+    Task SetBoxAsync(Guid sessionUnitId, Guid boxId);
 }

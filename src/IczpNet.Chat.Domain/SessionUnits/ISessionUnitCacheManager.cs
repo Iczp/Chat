@@ -379,6 +379,14 @@ public interface ISessionUnitCacheManager
     Task<bool> ClearBadgeAsync(long ownerId);
 
     /// <summary>
+    /// 变更消息盒子
+    /// </summary>
+    /// <param name="unitId"></param>
+    /// <param name="boxId"></param>
+    /// <returns></returns>
+    Task ChangeBoxAsync(Guid unitId, Guid? boxId);
+
+    /// <summary>
     /// 获取盒子角标
     /// </summary>
     /// <param name="ownerId"></param>

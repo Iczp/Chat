@@ -77,4 +77,12 @@ public interface ISessionUnitAppService
     /// <param name="ownerId"></param>
     /// <returns></returns>
     Task<long> ClearBadgeAsync(long ownerId);
+
+    /// <summary>
+    /// 设置会话盒子
+    /// </summary>
+    /// <param name="sessionUnitId"></param>
+    /// <param name="boxId"></param>
+    /// <returns></returns>
+    Task<SessionUnitCacheItem> SetBoxAsync([Required] Guid sessionUnitId, [Required] Guid boxId);
 }

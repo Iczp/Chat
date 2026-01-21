@@ -197,6 +197,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     private static string F_Ticks => nameof(SessionUnitCacheItem.Ticks);
     private static string F_Sorting => nameof(SessionUnitCacheItem.Sorting);
     private static string F_Immersed => nameof(SessionUnitCacheItem.IsImmersed);
+    private static string F_BoxId => nameof(SessionUnitCacheItem.BoxId);
 
     //private static string F_Setting_ReadedMessageId => $"{nameof(SessionUnitCacheItem.Setting)}.{nameof(SessionUnitCacheItem.Setting.ReadedMessageId)}";
 
@@ -1626,6 +1627,79 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         }
 
         unit.IsImmersed = isImmersed;
+    }
+
+    public async Task ChangeBoxAsync(Guid unitId, Guid? boxId)
+    {
+        var unit = await GetAsync(unitId);
+
+        if (unit == null)
+        {
+            Logger.LogWarning("unit is null,unitId:{unitId}", unitId);
+            return;
+        }
+
+        if (unit.BoxId == boxId)
+        {
+            Logger.LogWarning("Unchanged boxId:{boxId}", boxId);
+            return;
+        }
+        var ownerId = unit.OwnerId;
+
+        var ownerBoxBadgeKey = OwnerBoxBadgeZsetKey(ownerId);
+        var element = GetElement(unit);
+        var score = GetFriendScore(unit.Sorting, unit.Ticks);
+        var isImmersed = unit.IsImmersed;
+
+        var tran = Database.CreateTransaction(ownerId);
+
+        // old boxId
+        if (unit.BoxId.HasValue)
+        {
+            var oldOwnerBoxFriendsSetKey = OwnerBoxFriendsSetKey(ownerId, unit.BoxId.Value);
+            _ = tran.SortedSetRemoveAsync(oldOwnerBoxFriendsSetKey, element);
+            if (!isImmersed && unit.PublicBadge > 0)
+            {
+                _ = ZsetIncrementIfExistsAndClampZeroAsync(tran, ownerBoxBadgeKey, unit.BoxId.ToString(), -unit.PublicBadge);
+            }
+        }
+
+        // new boxId
+        if (boxId.HasValue)
+        {
+            var newOwnerBoxFriendsSetKey = OwnerBoxFriendsSetKey(ownerId, boxId.Value);
+            _ = tran.SortedSetAddAsync(newOwnerBoxFriendsSetKey, element, score);
+            if (!isImmersed && unit.PublicBadge > 0)
+            {
+                _ = tran.SortedSetIncrementAsync(ownerBoxBadgeKey, boxId.ToString(), unit.PublicBadge);
+            }
+        }
+
+        // session box
+        if (unit.SessionId.HasValue)
+        {
+            if (boxId.HasValue)
+            {
+                _ = tran.HashSetAsync(SessionBoxHashKey(unit.SessionId.Value), element, boxId.ToString());
+            }
+            else
+            {
+                _ = tran.HashDeleteAsync(SessionBoxHashKey(unit.SessionId.Value), element);
+            }
+        }
+
+        // unit
+        _ = tran.HashSetAsync(UnitHashKey(unitId), F_BoxId, boxId.ToString());
+
+        var committed = await tran.ExecuteAsync();
+
+        if (!committed)
+        {
+            Logger.LogWarning("Redis transaction failed, unitId:{unitId}", unitId);
+            return;
+        }
+
+        unit.BoxId = boxId;
     }
 
     public async Task UnfollowAsync(long ownerId, List<Guid> unitIdList)
