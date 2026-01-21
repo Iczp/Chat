@@ -255,7 +255,7 @@ return tonumber(newValue)
             [member, increment]);
     }
 
-    protected static Task<RedisResult> HashSetIfFieldExistsAsync(IBatch batch, string key, string field, RedisValue value)
+    protected static Task<RedisResult> HashSetIfFieldExistsAsync(IBatch batch, string key, RedisValue field, RedisValue value)
     {
         return batch.ScriptEvaluateAsync(HashSetIfFieldExistsScript,
             [key],
