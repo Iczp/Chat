@@ -162,6 +162,7 @@ public class SessionUnitCacheAppService(
         var messageIdList = items
             .Where(x => x.LastMessageId.HasValue)
             .Select(x => x.LastMessageId.Value)
+            .Distinct()
             .ToList();
         if (messageIdList.Count == 0)
         {
@@ -169,7 +170,12 @@ public class SessionUnitCacheAppService(
         }
         var messages = await MessageManager.GetOrAddManyCacheAsync(messageIdList);
 
-        var messageMap = messages.ToDictionary(x => x.Key.MessageId, x => x.Value);
+        var messageMap = messages
+            .GroupBy(x => x.Key.MessageId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.First().Value
+            );
 
         foreach (var item in items)
         {
