@@ -42,21 +42,21 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    private RedisKey SessionPinnedSortingSetKey(Guid sessionId) => $"{Prefix}Sessions:PinnedSorting:SessionId-{sessionId}";
+    private RedisKey SessionPinnedSortingHashKey(Guid sessionId) => $"{Prefix}Sessions:PinnedSorting:SessionId-{sessionId}";
 
     /// <summary>
     /// 静默会话单元
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    private RedisKey SessionImmersedSetKey(Guid sessionId) => $"{Prefix}Sessions:Immersed:SessionId-{sessionId}";
+    private RedisKey SessionImmersedHashKey(Guid sessionId) => $"{Prefix}Sessions:Immersed:SessionId-{sessionId}";
 
     /// <summary>
     /// 创建人
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    private RedisKey SessionCreatorSetKey(Guid sessionId) => $"{Prefix}Sessions:Creator:SessionId-{sessionId}";
+    private RedisKey SessionCreatorHashKey(Guid sessionId) => $"{Prefix}Sessions:Creator:SessionId-{sessionId}";
 
     /// <summary>
     /// 创建人
@@ -320,9 +320,9 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         {
             return;
         }
-        var sessionPinnedSetKey = SessionPinnedSortingSetKey(unit.SessionId.Value);
-        _ = batch.SortedSetAddAsync(sessionPinnedSetKey, element, unit.Sorting);
-        _ = batch.KeyExpireAsync(sessionPinnedSetKey, _cacheExpire);
+        var sessionPinnedSortingHashKey = SessionPinnedSortingHashKey(unit.SessionId.Value);
+        _ = batch.HashSetAsync(sessionPinnedSortingHashKey, element, unit.Sorting);
+        _ = batch.KeyExpireAsync(sessionPinnedSortingHashKey, _cacheExpire);
     }
     private void SetSessionImmersed(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
     {
@@ -330,9 +330,9 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         {
             return;
         }
-        var immersedSetKey = SessionImmersedSetKey(unit.SessionId.Value);
-        _ = batch.SortedSetAddAsync(immersedSetKey, element, unit.IsImmersed ? 1 : 0);
-        _ = batch.KeyExpireAsync(immersedSetKey, _cacheExpire);
+        var sessionImmersedHashKey = SessionImmersedHashKey(unit.SessionId.Value);
+        _ = batch.HashSetAsync(sessionImmersedHashKey, element, unit.IsImmersed);
+        _ = batch.KeyExpireAsync(sessionImmersedHashKey, _cacheExpire);
     }
     private void SetSessionCreator(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
     {
@@ -340,9 +340,9 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         {
             return;
         }
-        var creatorSetKey = SessionCreatorSetKey(unit.SessionId.Value);
-        _ = batch.SortedSetAddAsync(creatorSetKey, element, unit.IsCreator ? 1 : 0);
-        _ = batch.KeyExpireAsync(creatorSetKey, _cacheExpire);
+        var sessionCreatorHashKey = SessionCreatorHashKey(unit.SessionId.Value);
+        _ = batch.HashSetAsync(sessionCreatorHashKey, element, unit.IsCreator);
+        _ = batch.KeyExpireAsync(sessionCreatorHashKey, _cacheExpire);
     }
     private void SetSessionBox(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
     {
@@ -494,22 +494,10 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns>{Key:OwnerId, Value:Sorting}</returns>
-    public async Task<IEnumerable<KeyValuePair<SessionUnitElement, double>>> GetPinnedMembersAsync(Guid sessionId)
+    public async Task<IEnumerable<KeyValuePair<SessionUnitElement, long>>> GetPinnedMembersAsync(Guid sessionId)
     {
-        var entries = await Database.SortedSetRangeByScoreWithScoresAsync(SessionPinnedSortingSetKey(sessionId));
-        var dict = entries.Select(x => new KeyValuePair<SessionUnitElement, double>(SessionUnitElement.Parse(x.Element), x.Score));
-        return dict;
-    }
-
-    /// <summary>
-    /// 获取置顶会话单元
-    /// </summary>
-    /// <param name="sessionId"></param>
-    /// <returns>{Key:OwnerId, Value:Sorting}</returns>
-    public async Task<IDictionary<long, double>> GetPinnedMembersMapAsync(Guid sessionId)
-    {
-        var items = await GetPinnedMembersAsync(sessionId);
-        var dict = items.ToDictionary(x => x.Key.OwnerId, x => x.Value);
+        var entries = await Database.HashGetAllAsync(SessionPinnedSortingHashKey(sessionId));
+        var dict = entries.Select(x => new KeyValuePair<SessionUnitElement, long>(SessionUnitElement.Parse(x.Name), x.Value.ToLong()));
         return dict;
     }
 
@@ -518,22 +506,10 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns>{Key:OwnerId, Value:PublicBadge}</returns>
-    public async Task<IEnumerable<KeyValuePair<SessionUnitElement, double>>> GetImmersedMembersAsync(Guid sessionId)
+    public async Task<IEnumerable<KeyValuePair<SessionUnitElement, bool>>> GetImmersedMembersAsync(Guid sessionId)
     {
-        var entries = await Database.SortedSetRangeByScoreWithScoresAsync(SessionImmersedSetKey(sessionId));
-        var dict = entries.Select(x => new KeyValuePair<SessionUnitElement, double>(SessionUnitElement.Parse(x.Element), x.Score));
-        return dict;
-    }
-
-    /// <summary>
-    /// 获取静默会话单元
-    /// </summary>
-    /// <param name="sessionId"></param>
-    /// <returns>{Key:OwnerId, Value:Immersed}</returns>
-    public async Task<IDictionary<long, bool>> GetImmersedMembersMapAsync(Guid sessionId)
-    {
-        var entries = await GetImmersedMembersAsync(sessionId);
-        var dict = entries.ToDictionary(x => x.Key.OwnerId, x => x.Value == 1);
+        var entries = await Database.HashGetAllAsync(SessionImmersedHashKey(sessionId));
+        var dict = entries.Select(x => new KeyValuePair<SessionUnitElement, bool>(SessionUnitElement.Parse(x.Name), x.Value.ToBoolean()));
         return dict;
     }
 
@@ -542,22 +518,10 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    public async Task<IEnumerable<KeyValuePair<SessionUnitElement, double>>> GetCreatorMembersAsync(Guid sessionId)
+    public async Task<IEnumerable<KeyValuePair<SessionUnitElement, bool>>> GetCreatorMembersAsync(Guid sessionId)
     {
-        var entries = await Database.SortedSetRangeByScoreWithScoresAsync(SessionCreatorSetKey(sessionId));
-        var dict = entries.Select(x => new KeyValuePair<SessionUnitElement, double>(SessionUnitElement.Parse(x.Element), x.Score));
-        return dict;
-    }
-
-    /// <summary>
-    /// 获取静默会话单元
-    /// </summary>
-    /// <param name="sessionId"></param>
-    /// <returns>{Key:OwnerId, Value:Immersed}</returns>
-    public async Task<IDictionary<long, bool>> GetCreatorMembersMapAsync(Guid sessionId)
-    {
-        var items = await GetCreatorMembersAsync(sessionId);
-        var dict = items.ToDictionary(x => x.Key.OwnerId, x => x.Value == 1);
+        var entries = await Database.HashGetAllAsync(SessionCreatorHashKey(sessionId));
+        var dict = entries.Select(x => new KeyValuePair<SessionUnitElement, bool>(SessionUnitElement.Parse(x.Name), x.Value.ToBoolean()));
         return dict;
     }
 
@@ -573,16 +537,29 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return dict;
     }
 
-    /// <summary>
-    /// 获取消息盒子会话单元
-    /// </summary>
-    /// <param name="sessionId"></param>
-    /// <returns>{key: OwnerId, value: boxId}</returns>
-    public async Task<IDictionary<SessionUnitElement, Guid>> GetBoxMembersMapAsync(Guid sessionId)
+    private async Task<(
+        Dictionary<SessionUnitElement, long> pinnedMap,
+        Dictionary<SessionUnitElement, bool> immersedMap,
+        Dictionary<SessionUnitElement, bool> creatorMap,
+        Dictionary<SessionUnitElement, Guid> boxMap
+        )> BatchGetMembersMapAsync(Guid sessionId)
     {
-        var items = await GetBoxMembersAsync(sessionId);
-        var dict = items.ToDictionary(x => x.Key, x => x.Value);
-        return dict;
+        var batch = Database.CreateBatch();
+        var pinnedTask = batch.HashGetAllAsync(SessionPinnedSortingHashKey(sessionId));
+        var immersedTask = batch.HashGetAllAsync(SessionImmersedHashKey(sessionId));
+        var creatorTask = batch.HashGetAllAsync(SessionCreatorHashKey(sessionId));
+        var boxTask = batch.HashGetAllAsync(SessionBoxHashKey(sessionId));
+        batch.Execute();
+
+        await Task.WhenAll(pinnedTask, immersedTask, creatorTask, boxTask);
+
+        var pinnedMap = pinnedTask.Result.ToDictionary(x => SessionUnitElement.Parse(x.Name), x => x.Value.ToLong());
+        var immersedMap = immersedTask.Result.ToDictionary(x => SessionUnitElement.Parse(x.Name), x => x.Value.ToBoolean());
+        var creatorMap = creatorTask.Result.ToDictionary(x => SessionUnitElement.Parse(x.Name), x => x.Value.ToBoolean());
+        var boxMap = boxTask.Result.ToDictionary(x => SessionUnitElement.Parse(x.Name), x => x.Value.ToGuid());
+        var result = (pinnedMap, immersedMap, creatorMap, boxMap);
+        return result;
+
     }
 
     /// <summary>
@@ -857,7 +834,6 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     {
         return await SetFriendsIfNotExistsAsync(ownerId, fetchTask) ?? await GetFriendUnitsAsync(ownerId);
     }
-
 
     public async Task<IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>> GetRawFriendsAsync(long ownerId,
         double minScore = double.NegativeInfinity,
@@ -1210,11 +1186,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         var members = (await GetRawMembersAsync(sessionId)).ToList();
 
-        var pinnedMap = await GetPinnedMembersMapAsync(sessionId);
-        var immersedMap = await GetImmersedMembersMapAsync(sessionId);
-        var creatorMap = await GetCreatorMembersMapAsync(sessionId);
-        var boxMap = await GetBoxMembersMapAsync(sessionId);
-        //var umitMap = new Dictionary<long, (bool Immersed, double Sorting)>();
+        var (pinnedMap, immersedMap, creatorMap, boxMap) = await BatchGetMembersMapAsync(sessionId);
 
         Logger.LogInformation(
             "[{method}], sessionId:{sessionId}, lastMessageId:{lastMessageId}, count:{count},Elapsed:{ms}ms",
@@ -1242,9 +1214,9 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             var ownerFriendsSetKey = OwnerFriendsSetKey(ownerId);
             var ownerStatisticSetKey = OwnerStatisticHashKey(ownerId);
             var isSender = unitId == message.SenderSessionUnitId;
-            var isImmersed = immersedMap.TryGetValue(ownerId, out bool immersed) && immersed;
-            var isCreator = creatorMap.TryGetValue(ownerId, out bool creator) && creator;
-            var sorting = pinnedMap.TryGetValue(ownerId, out var _sorting) ? _sorting : 0;
+            var isImmersed = immersedMap.TryGetValue(element, out bool immersed) && immersed;
+            var isCreator = creatorMap.TryGetValue(element, out bool creator) && creator;
+            var sorting = pinnedMap.TryGetValue(element, out var _sorting) ? _sorting : 0;
 
 
             // lastMessageId
@@ -1525,18 +1497,18 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         // 6.2 更新置顶表（ownerToppingSet）
         var ownerPinnedBadgeSetKey = OwnerPinnedBadgeSetKey(ownerId);
-        var sessionPinnedSortingSetKey = SessionPinnedSortingSetKey(sessionId);
+        var sessionPinnedSortingHashKey = SessionPinnedSortingHashKey(sessionId);
         if (sorting == 0)
         {
             _ = batch.SortedSetRemoveAsync(ownerPinnedBadgeSetKey, element);
-            _ = batch.SortedSetRemoveAsync(sessionPinnedSortingSetKey, element);
+            _ = batch.HashDeleteAsync(sessionPinnedSortingHashKey, element);
         }
         else
         {
             _ = batch.SortedSetAddAsync(ownerPinnedBadgeSetKey, element, unit?.PublicBadge ?? 0);
-            _ = batch.SortedSetAddAsync(sessionPinnedSortingSetKey, element, sorting);
+            _ = batch.HashSetAsync(sessionPinnedSortingHashKey, element, sorting);
             _ = batch.KeyExpireAsync(ownerPinnedBadgeSetKey, _cacheExpire);
-            _ = batch.KeyExpireAsync(sessionPinnedSortingSetKey, _cacheExpire);
+            _ = batch.KeyExpireAsync(sessionPinnedSortingHashKey, _cacheExpire);
         }
 
         // 6.3 更新 ownerSortedSet 的新 score
@@ -1603,19 +1575,19 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         _ = ZsetUpdateIfExistsAsync(tran, OwnerHasBadgeSetKey(unit.OwnerId), element, isImmersed ? 0 : unit.PublicBadge, removeWhenZero: true);
 
         var ownerImmersedSetKey = OwnerImmersedSetKey(unit.OwnerId);
-        var sessionImmersedSetKey = SessionImmersedSetKey(unit.SessionId!.Value);
+        var sessionImmersedHashKey = SessionImmersedHashKey(unit.SessionId!.Value);
         if (isImmersed)
         {
             _ = tran.SortedSetAddAsync(ownerImmersedSetKey, element, unit.PublicBadge);
             _ = tran.KeyExpireAsync(ownerImmersedSetKey, _cacheExpire);
 
-            _ = tran.SortedSetAddAsync(sessionImmersedSetKey, element, unit.PublicBadge);
-            _ = tran.KeyExpireAsync(sessionImmersedSetKey, _cacheExpire);
+            _ = tran.HashSetAsync(sessionImmersedHashKey, element, unit.PublicBadge);
+            _ = tran.KeyExpireAsync(sessionImmersedHashKey, _cacheExpire);
         }
         else
         {
             _ = tran.SortedSetRemoveAsync(ownerImmersedSetKey, element);
-            _ = tran.SortedSetRemoveAsync(sessionImmersedSetKey, element);
+            _ = tran.HashDeleteAsync(sessionImmersedHashKey, element);
         }
 
         var committed = await tran.ExecuteAsync();
@@ -1798,7 +1770,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         // session
         foreach (var item in friends)
         {
-            _ = batch.SortedSetAddAsync(SessionImmersedSetKey(item.Key.SessionId), item.Key, 0, SortedSetWhen.Exists);
+            _ = HashSetIfFieldExistsAsync(batch, SessionImmersedHashKey(item.Key.SessionId), item.Key, 0);
         }
 
 

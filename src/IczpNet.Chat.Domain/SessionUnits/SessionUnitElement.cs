@@ -49,20 +49,22 @@ public readonly record struct SessionUnitElement(long OwnerId, ChatObjectTypeEnu
             return false;
         }
 
-        if (!Enum.TryParse<ChatObjectTypeEnums>(parts[1], out var ownerObjectType))
-        {
-            return false;
-        }
+        ChatObjectTypeEnums? ownerObjectType = Enum.TryParse<ChatObjectTypeEnums>(parts[1], out var _ownerObjectType) ? _ownerObjectType : null;
+        //if (!Enum.TryParse<ChatObjectTypeEnums>(parts[1], out var ownerObjectType))
+        //{
+        //    return false;
+        //}
 
         if (!long.TryParse(parts[2], out var friendId))
         {
             return false;
         }
 
-        if (!Enum.TryParse<ChatObjectTypeEnums>(parts[3], out var destinationObjectType))
-        {
-            return false;
-        }
+        ChatObjectTypeEnums? destinationObjectType = Enum.TryParse<ChatObjectTypeEnums>(parts[1], out var _destinationObjectType) ? _destinationObjectType : null;
+        //if (!Enum.TryParse<ChatObjectTypeEnums>(parts[3], out var destinationObjectType))
+        //{
+        //    return false;
+        //}
 
         if (!Guid.TryParse(parts[4], out var unitId))
         {
