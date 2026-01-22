@@ -164,32 +164,19 @@ public class SessionUnitCacheAppService(
             .Select(x => x.LastMessageId.Value)
             .Distinct()
             .ToList();
+
         if (messageIdList.Count == 0)
         {
             return;
         }
         var messages = await MessageManager.GetOrAddManyCacheAsync(messageIdList);
 
-        var messageMap = messages
-            .GroupBy(x => x.Key.MessageId)
-            .ToDictionary(
-                g => g.Key,
-                g => g.First().Value
-            );
+        var messageMap = messages.ToDictionary(x => x.Key.MessageId, x => x.Value);
 
         foreach (var item in items)
         {
             item.LastMessage = item.LastMessageId.HasValue ? messageMap.GetValueOrDefault(item.LastMessageId.Value) : null;
         }
-
-        //var messages = await MessageRepository.GetListAsync(x => messageIdList.Contains(x.Id));
-        //var messageMap = messages
-        //    .Select(ObjectMapper.Map<Message, MessageOwnerDto>)
-        //    .ToDictionary(x => x.Id, x => x);
-        //foreach (var item in items)
-        //{
-        //    item.LastMessage = item.LastMessageId.HasValue ? messageMap.GetValueOrDefault(item.LastMessageId.Value) : null;
-        //}
     }
 
     private async Task FillSettingAsync(IEnumerable<SessionUnitFriendDto> items)

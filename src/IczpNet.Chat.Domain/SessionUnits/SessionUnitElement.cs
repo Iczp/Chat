@@ -29,55 +29,53 @@ public readonly record struct SessionUnitElement(long OwnerId, ChatObjectTypeEnu
         return field;
     }
 
-    public static bool TryParse(RedisValue value, out SessionUnitElement field)
+    public static bool TryParse(RedisValue element, out SessionUnitElement field)
     {
         field = default;
 
-        if (!value.HasValue)
+        if (!element.HasValue)
         {
             return false;
         }
 
-        var parts = value.ToString().Split(':');
+        var parts = element.ToString().Split(':');
+
         if (parts.Length != 6)
         {
             return false;
         }
 
+        // 0. ownerId
         if (!long.TryParse(parts[0], out var ownerId))
         {
             return false;
         }
 
+        // 1. ownerObjectType
         ChatObjectTypeEnums? ownerObjectType = Enum.TryParse<ChatObjectTypeEnums>(parts[1], out var _ownerObjectType) ? _ownerObjectType : null;
-        //if (!Enum.TryParse<ChatObjectTypeEnums>(parts[1], out var ownerObjectType))
-        //{
-        //    return false;
-        //}
 
-        if (!long.TryParse(parts[2], out var friendId))
+        // 2. destinationId
+        if (!long.TryParse(parts[2], out var destinationId))
         {
             return false;
         }
 
-        ChatObjectTypeEnums? destinationObjectType = Enum.TryParse<ChatObjectTypeEnums>(parts[1], out var _destinationObjectType) ? _destinationObjectType : null;
-        //if (!Enum.TryParse<ChatObjectTypeEnums>(parts[3], out var destinationObjectType))
-        //{
-        //    return false;
-        //}
+        // 3. destinationObjectType
+        ChatObjectTypeEnums? destinationObjectType = Enum.TryParse<ChatObjectTypeEnums>(parts[3], out var _destinationObjectType) ? _destinationObjectType : null;
 
+        // 4. unitId
         if (!Guid.TryParse(parts[4], out var unitId))
         {
             return false;
         }
+        // 5. sessionId
         if (!Guid.TryParse(parts[5], out var sessionId))
         {
             return false;
         }
 
-        field = Create(ownerId, ownerObjectType, friendId, destinationObjectType, unitId, sessionId);
+        field = Create(ownerId, ownerObjectType, destinationId, destinationObjectType, unitId, sessionId);
+
         return true;
     }
-
-
 }
