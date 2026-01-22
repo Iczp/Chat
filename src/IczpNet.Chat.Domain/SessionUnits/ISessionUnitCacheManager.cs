@@ -76,6 +76,10 @@ public interface ISessionUnitCacheManager
     /// 获取会话成员
     /// </summary>
     /// <param name="sessionId"></param>
+    /// <param name="isCreator"></param>
+    /// <param name="isPrivate"></param>
+    /// <param name="isStatic"></param>
+    /// <param name="isImmersed"></param>
     /// <param name="minScore"></param>
     /// <param name="maxScore"></param>
     /// <param name="skip"></param>
@@ -84,6 +88,11 @@ public interface ISessionUnitCacheManager
 
     Task<IEnumerable<MemberModel>> GetMembersAsync(
         Guid sessionId,
+        bool? isCreator = null,
+        bool? isPrivate = null,
+        bool? isStatic = null,
+        bool? isImmersed = null,
+
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
         long skip = 0,
