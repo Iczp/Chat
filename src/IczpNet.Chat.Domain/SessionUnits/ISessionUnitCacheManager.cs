@@ -42,6 +42,14 @@ public interface ISessionUnitCacheManager
     Task<IEnumerable<SessionUnitCacheItem>> GetOrSetMembersAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
 
     /// <summary>
+    /// 批量加载成员
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="load"></param>
+    /// <returns></returns>
+    Task<SessionMemberMaps> BatchGetMembersMapAsync(Guid sessionId, SessionMemberLoad load);
+
+    /// <summary>
     /// 获取会话成员映射
     /// </summary>
     /// <param name="sessionId"></param>

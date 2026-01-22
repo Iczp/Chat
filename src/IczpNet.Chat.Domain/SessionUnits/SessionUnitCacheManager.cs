@@ -48,49 +48,6 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             ));
     }
 
-    public async Task<SessionMemberMaps> BatchGetMembersMapAsync(Guid sessionId, SessionMemberLoad load)
-    {
-        var result = new SessionMemberMaps();
-        var batch = Database.CreateBatch();
-        var tasks = new List<Task>();
-
-        if (load.HasFlag(SessionMemberLoad.Pinned))
-        {
-            tasks.Add(GetSessionMembersMapAsync(batch, SessionPinnedSortingHashKey(sessionId), x => x.ToLong()).ContinueWith(t => result.Pinned = t.Result));
-        }
-
-        if (load.HasFlag(SessionMemberLoad.Immersed))
-        {
-            tasks.Add(GetSessionMembersMapAsync(batch, SessionImmersedHashKey(sessionId), x => x.ToBoolean()).ContinueWith(t => result.Immersed = t.Result));
-        }
-
-        if (load.HasFlag(SessionMemberLoad.Creator))
-        {
-            tasks.Add(GetSessionMembersMapAsync(batch, SessionCreatorHashKey(sessionId), x => x.ToBoolean()).ContinueWith(t => result.Creator = t.Result));
-        }
-
-        if (load.HasFlag(SessionMemberLoad.Private))
-        {
-            tasks.Add(GetSessionMembersMapAsync(batch, SessionPrivateHashKey(sessionId), x => x.ToBoolean()).ContinueWith(t => result.Private = t.Result));
-        }
-
-        if (load.HasFlag(SessionMemberLoad.Static))
-        {
-            tasks.Add(GetSessionMembersMapAsync(batch, SessionStaticHashKey(sessionId), x => x.ToBoolean()).ContinueWith(t => result.Static = t.Result));
-        }
-
-        if (load.HasFlag(SessionMemberLoad.Box))
-        {
-            tasks.Add(GetSessionMembersMapAsync(batch, SessionBoxHashKey(sessionId), x => x.ToGuid()).ContinueWith(t => result.Box = t.Result));
-        }
-
-        // 批量执行 Redis
-        batch.Execute();
-
-        await Task.WhenAll(tasks);
-
-        return result;
-    }
 
     protected string Prefix => $"{Options.Value.KeyPrefix}SessionUnits:";
 
@@ -495,7 +452,55 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return await SetMembersIfNotExistsAsync(sessionId, fetchTask) ?? await GetMemberUnitsAsync(sessionId);
     }
 
-   
+    /// <summary>
+    /// 批量加载成员
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="load"></param>
+    /// <returns></returns>
+    public async Task<SessionMemberMaps> BatchGetMembersMapAsync(Guid sessionId, SessionMemberLoad load)
+    {
+        var result = new SessionMemberMaps();
+        var batch = Database.CreateBatch();
+        var tasks = new List<Task>();
+
+        if (load.HasFlag(SessionMemberLoad.Pinned))
+        {
+            tasks.Add(GetSessionMembersMapAsync(batch, SessionPinnedSortingHashKey(sessionId), x => x.ToLong()).ContinueWith(t => result.Pinned = t.Result));
+        }
+
+        if (load.HasFlag(SessionMemberLoad.Immersed))
+        {
+            tasks.Add(GetSessionMembersMapAsync(batch, SessionImmersedHashKey(sessionId), x => x.ToBoolean()).ContinueWith(t => result.Immersed = t.Result));
+        }
+
+        if (load.HasFlag(SessionMemberLoad.Creator))
+        {
+            tasks.Add(GetSessionMembersMapAsync(batch, SessionCreatorHashKey(sessionId), x => x.ToBoolean()).ContinueWith(t => result.Creator = t.Result));
+        }
+
+        if (load.HasFlag(SessionMemberLoad.Private))
+        {
+            tasks.Add(GetSessionMembersMapAsync(batch, SessionPrivateHashKey(sessionId), x => x.ToBoolean()).ContinueWith(t => result.Private = t.Result));
+        }
+
+        if (load.HasFlag(SessionMemberLoad.Static))
+        {
+            tasks.Add(GetSessionMembersMapAsync(batch, SessionStaticHashKey(sessionId), x => x.ToBoolean()).ContinueWith(t => result.Static = t.Result));
+        }
+
+        if (load.HasFlag(SessionMemberLoad.Box))
+        {
+            tasks.Add(GetSessionMembersMapAsync(batch, SessionBoxHashKey(sessionId), x => x.ToGuid()).ContinueWith(t => result.Box = t.Result));
+        }
+
+        // 批量执行 Redis
+        batch.Execute();
+
+        await Task.WhenAll(tasks);
+
+        return result;
+    }
 
     /// <summary>
     /// 获取会话成员映射
