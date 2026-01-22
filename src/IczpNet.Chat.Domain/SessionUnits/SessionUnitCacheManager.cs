@@ -25,30 +25,6 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
     private delegate Task SessionMemberLoader(Guid sessionId, IBatch batch, SessionMemberMaps maps);
 
-    private static Task<Dictionary<SessionUnitElement, TValue>> GetSessionMembersMapAsync<TValue>(IBatch batch, string redisKey, Func<RedisValue, TValue> valueSelector)
-    {
-        // 注意这里不 await，而是直接返回 Task
-        var entriesTask = batch.HashGetAllAsync(redisKey);
-
-        return entriesTask.ContinueWith(t =>
-            t.Result.ToDictionary(
-                x => SessionUnitElement.Parse(x.Name),
-                x => valueSelector(x.Value)
-            )
-        );
-    }
-
-    private async Task<IEnumerable<KeyValuePair<SessionUnitElement, TValue>>> GetSessionMembersAsync<TValue>(string redisKey, Func<RedisValue, TValue> valueSelector)
-    {
-        var entries = await Database.HashGetAllAsync(redisKey);
-        return entries.Select(x =>
-            new KeyValuePair<SessionUnitElement, TValue>(
-                SessionUnitElement.Parse(x.Name),
-                valueSelector(x.Value)
-            ));
-    }
-
-
     protected string Prefix => $"{Options.Value.KeyPrefix}SessionUnits:";
 
     /// <summary>
@@ -354,6 +330,29 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             FriendViews.Creator => OwnerCreatorSetKey(ownerId),
             _ => throw new UserFriendlyException($"Non handle FriendTypes:{friendView}"),
         };
+    }
+
+    private static Task<Dictionary<SessionUnitElement, TValue>> GetSessionMembersMapAsync<TValue>(IBatch batch, string redisKey, Func<RedisValue, TValue> valueSelector)
+    {
+        // 注意这里不 await，而是直接返回 Task
+        var entriesTask = batch.HashGetAllAsync(redisKey);
+
+        return entriesTask.ContinueWith(t =>
+            t.Result.ToDictionary(
+                x => SessionUnitElement.Parse(x.Name),
+                x => valueSelector(x.Value)
+            )
+        );
+    }
+
+    private async Task<IEnumerable<KeyValuePair<SessionUnitElement, TValue>>> GetSessionMembersAsync<TValue>(string redisKey, Func<RedisValue, TValue> valueSelector)
+    {
+        var entries = await Database.HashGetAllAsync(redisKey);
+        return entries.Select(x =>
+            new KeyValuePair<SessionUnitElement, TValue>(
+                SessionUnitElement.Parse(x.Name),
+                valueSelector(x.Value)
+            ));
     }
 
     public async Task<IEnumerable<SessionUnitCacheItem>> SetMembersAsync(Guid sessionId, IEnumerable<SessionUnitCacheItem> units)
