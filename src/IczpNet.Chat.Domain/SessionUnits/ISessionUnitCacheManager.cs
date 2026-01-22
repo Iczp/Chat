@@ -129,6 +129,20 @@ public interface ISessionUnitCacheManager
     Task<IEnumerable<KeyValuePair<SessionUnitElement, bool>>> GetCreatorMembersAsync(Guid sessionId);
 
     /// <summary>
+    /// 获取非公开会话成员
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    Task<IEnumerable<KeyValuePair<SessionUnitElement, bool>>> GetPrivateMembersAsync(Guid sessionId);
+
+    /// <summary>
+    /// 获取固定会话成员
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    Task<IEnumerable<KeyValuePair<SessionUnitElement, bool>>> GetStaticMembersAsync(Guid sessionId);
+
+    /// <summary>
     /// 获取消息盒子会话单元
     /// </summary>
     /// <param name="sessionId"></param>

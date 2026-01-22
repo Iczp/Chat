@@ -59,6 +59,20 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     private RedisKey SessionCreatorHashKey(Guid sessionId) => $"{Prefix}Sessions:Creator:SessionId-{sessionId}";
 
     /// <summary>
+    /// 非公开会话单元
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    private RedisKey SessionPrivateHashKey(Guid sessionId) => $"{Prefix}Sessions:Private:SessionId-{sessionId}";
+
+    /// <summary>
+    /// 固定的会话单元
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    private RedisKey SessionStaticHashKey(Guid sessionId) => $"{Prefix}Sessions:Static:SessionId-{sessionId}";
+
+    /// <summary>
     /// 创建人
     /// </summary>
     /// <param name="sessionId"></param>
@@ -277,6 +291,12 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     private void SetSessionCreator(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
         => HashSetIf(unit.IsCreator, () => SessionImmersedHashKey(unit.SessionId.Value), element, unit.IsCreator, batch: batch);
 
+    private void SetSessionPrivate(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
+        => HashSetIf(!unit.IsPublic, () => SessionPrivateHashKey(unit.SessionId.Value), element, !unit.IsPublic, batch: batch);
+
+    private void SetSessionStatic(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
+        => HashSetIf(unit.IsStatic, () => SessionStaticHashKey(unit.SessionId.Value), element, unit.IsStatic, batch: batch);
+
     private void SetSessionBox(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
         => HashSetIf(unit.BoxId.HasValue, () => SessionImmersedHashKey(unit.SessionId.Value), element, unit.BoxId.ToString(), batch: batch);
 
@@ -353,9 +373,13 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             SetSessionPinnedSorting(batch, element, unit);
             // set session Immersed
             SetSessionImmersed(batch, element, unit);
-            // set sessuib Creator
+            // set sessuib IsCreator
             SetSessionCreator(batch, element, unit);
-            // set session box
+            // set sessuib IsPublic==false
+            SetSessionPrivate(batch, element, unit);
+            // set sessuib IsStatic
+            SetSessionStatic(batch, element, unit);
+            // set session boxId
             SetSessionBox(batch, element, unit);
 
             //// set owner Topping
@@ -400,6 +424,16 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return await SetMembersIfNotExistsAsync(sessionId, fetchTask) ?? await GetMemberUnitsAsync(sessionId);
     }
 
+    private async Task<IEnumerable<KeyValuePair<SessionUnitElement, TValue>>> GetSessionMembersAsync<TValue>(string redisKey, Func<RedisValue, TValue> valueSelector)
+    {
+        var entries = await Database.HashGetAllAsync(redisKey);
+        return entries.Select(x =>
+            new KeyValuePair<SessionUnitElement, TValue>(
+                SessionUnitElement.Parse(x.Name),
+                valueSelector(x.Value)
+            ));
+    }
+
     /// <summary>
     /// 获取会话成员映射
     /// </summary>
@@ -419,53 +453,55 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns>{Key:OwnerId, Value:Sorting}</returns>
-    public async Task<IEnumerable<KeyValuePair<SessionUnitElement, long>>> GetPinnedMembersAsync(Guid sessionId)
-    {
-        var entries = await Database.HashGetAllAsync(SessionPinnedSortingHashKey(sessionId));
-        var dict = entries.Select(x => new KeyValuePair<SessionUnitElement, long>(SessionUnitElement.Parse(x.Name), x.Value.ToLong()));
-        return dict;
-    }
+    public Task<IEnumerable<KeyValuePair<SessionUnitElement, long>>> GetPinnedMembersAsync(Guid sessionId)
+        => GetSessionMembersAsync(SessionPinnedSortingHashKey(sessionId), v => v.ToLong());
 
     /// <summary>
     /// 获取静默会话单元
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns>{Key:OwnerId, Value:PublicBadge}</returns>
-    public async Task<IEnumerable<KeyValuePair<SessionUnitElement, bool>>> GetImmersedMembersAsync(Guid sessionId)
-    {
-        var entries = await Database.HashGetAllAsync(SessionImmersedHashKey(sessionId));
-        var dict = entries.Select(x => new KeyValuePair<SessionUnitElement, bool>(SessionUnitElement.Parse(x.Name), x.Value.ToBoolean()));
-        return dict;
-    }
+    public Task<IEnumerable<KeyValuePair<SessionUnitElement, bool>>> GetImmersedMembersAsync(Guid sessionId)
+        => GetSessionMembersAsync(SessionImmersedHashKey(sessionId), v => v.ToBoolean());
 
     /// <summary>
     /// 获取静默会话单元
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    public async Task<IEnumerable<KeyValuePair<SessionUnitElement, bool>>> GetCreatorMembersAsync(Guid sessionId)
-    {
-        var entries = await Database.HashGetAllAsync(SessionCreatorHashKey(sessionId));
-        var dict = entries.Select(x => new KeyValuePair<SessionUnitElement, bool>(SessionUnitElement.Parse(x.Name), x.Value.ToBoolean()));
-        return dict;
-    }
+    public Task<IEnumerable<KeyValuePair<SessionUnitElement, bool>>> GetCreatorMembersAsync(Guid sessionId)
+        => GetSessionMembersAsync(SessionCreatorHashKey(sessionId), v => v.ToBoolean());
+
+    /// <summary>
+    /// 获取非公开会话成员
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    public Task<IEnumerable<KeyValuePair<SessionUnitElement, bool>>> GetPrivateMembersAsync(Guid sessionId)
+        => GetSessionMembersAsync(SessionPrivateHashKey(sessionId), v => v.ToBoolean());
+
+    /// <summary>
+    /// 获取固定会话成员
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    public Task<IEnumerable<KeyValuePair<SessionUnitElement, bool>>> GetStaticMembersAsync(Guid sessionId)
+        => GetSessionMembersAsync(SessionStaticHashKey(sessionId), v => v.ToBoolean());
 
     /// <summary>
     /// 获取消息盒子会话单元
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    public async Task<IEnumerable<KeyValuePair<SessionUnitElement, Guid>>> GetBoxMembersAsync(Guid sessionId)
-    {
-        var entries = await Database.HashGetAllAsync(SessionBoxHashKey(sessionId));
-        var dict = entries.Select(x => new KeyValuePair<SessionUnitElement, Guid>(SessionUnitElement.Parse(x.Name), x.Value.ToGuid()));
-        return dict;
-    }
+    public Task<IEnumerable<KeyValuePair<SessionUnitElement, Guid>>> GetBoxMembersAsync(Guid sessionId)
+        => GetSessionMembersAsync(SessionBoxHashKey(sessionId), v => v.ToGuid());
 
     private async Task<(
         Dictionary<SessionUnitElement, long> pinnedMap,
         Dictionary<SessionUnitElement, bool> immersedMap,
         Dictionary<SessionUnitElement, bool> creatorMap,
+        //Dictionary<SessionUnitElement, bool> publicMap,
+        //Dictionary<SessionUnitElement, bool> staticMap,
         Dictionary<SessionUnitElement, Guid> boxMap
         )> BatchGetMembersMapAsync(Guid sessionId)
     {
@@ -473,6 +509,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         var pinnedTask = batch.HashGetAllAsync(SessionPinnedSortingHashKey(sessionId));
         var immersedTask = batch.HashGetAllAsync(SessionImmersedHashKey(sessionId));
         var creatorTask = batch.HashGetAllAsync(SessionCreatorHashKey(sessionId));
+        //var publicTask = batch.HashGetAllAsync(SessionPublicHashKey(sessionId));
+        //var staticTask = batch.HashGetAllAsync(SessionStaticHashKey(sessionId));
         var boxTask = batch.HashGetAllAsync(SessionBoxHashKey(sessionId));
         batch.Execute();
 
@@ -481,8 +519,10 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         var pinnedMap = pinnedTask.Result.ToDictionary(x => SessionUnitElement.Parse(x.Name), x => x.Value.ToLong());
         var immersedMap = immersedTask.Result.ToDictionary(x => SessionUnitElement.Parse(x.Name), x => x.Value.ToBoolean());
         var creatorMap = creatorTask.Result.ToDictionary(x => SessionUnitElement.Parse(x.Name), x => x.Value.ToBoolean());
+        //var publicMap = publicTask.Result.ToDictionary(x => SessionUnitElement.Parse(x.Name), x => x.Value.ToBoolean());
+        //var staticMap = staticTask.Result.ToDictionary(x => SessionUnitElement.Parse(x.Name), x => x.Value.ToBoolean());
         var boxMap = boxTask.Result.ToDictionary(x => SessionUnitElement.Parse(x.Name), x => x.Value.ToGuid());
-        var result = (pinnedMap, immersedMap, creatorMap, boxMap);
+        var result = (pinnedMap, immersedMap, creatorMap, /*publicMap, staticMap,*/ boxMap);
         return result;
 
     }
@@ -1111,7 +1151,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         var members = (await GetRawMembersAsync(sessionId)).ToList();
 
-        var (pinnedMap, immersedMap, creatorMap, boxMap) = await BatchGetMembersMapAsync(sessionId);
+        var (pinnedMap, immersedMap, creatorMap, /*publicMap, staticMap,*/ boxMap) = await BatchGetMembersMapAsync(sessionId);
 
         Logger.LogInformation(
             "[{method}], sessionId:{sessionId}, lastMessageId:{lastMessageId}, count:{count},Elapsed:{ms}ms",
@@ -1141,6 +1181,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             var isSender = unitId == message.SenderSessionUnitId;
             var isImmersed = immersedMap.TryGetValue(element, out bool immersed) && immersed;
             var isCreator = creatorMap.TryGetValue(element, out bool creator) && creator;
+            //var isPublic = publicMap.TryGetValue(element, out bool _isPublic) && _isPublic;
+            //var isStatic = staticMap.TryGetValue(element, out bool _isStatic) && _isStatic;
             var sorting = pinnedMap.TryGetValue(element, out var _sorting) ? _sorting : 0;
 
 
