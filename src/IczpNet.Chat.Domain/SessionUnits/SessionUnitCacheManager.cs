@@ -230,10 +230,6 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     private static string F_Immersed => nameof(SessionUnitCacheItem.IsImmersed);
     private static string F_BoxId => nameof(SessionUnitCacheItem.BoxId);
 
-    //private static string F_Setting_ReadedMessageId => $"{nameof(SessionUnitCacheItem.Setting)}.{nameof(SessionUnitCacheItem.Setting.ReadedMessageId)}";
-
-    // total
-    //private static string F_Total_Badge => "TotalBadge";
     private static string F_Total_Public => nameof(SessionUnitStatistic.PublicBadge);
     private static string F_Total_Private => nameof(SessionUnitStatistic.PrivateBadge);
     private static string F_Total_Following => nameof(SessionUnitStatistic.Following);
