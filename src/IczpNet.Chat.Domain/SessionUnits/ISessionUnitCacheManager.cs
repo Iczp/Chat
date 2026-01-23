@@ -47,7 +47,7 @@ public interface ISessionUnitCacheManager
     /// <param name="sessionId"></param>
     /// <param name="load"></param>
     /// <returns></returns>
-    Task<SessionMemberMaps> BatchGetMembersMapAsync(Guid sessionId, SessionMemberLoad load);
+    Task<MemberMaps> BatchGetMembersMapAsync(Guid sessionId, MemberLoad load);
 
     /// <summary>
     /// 获取会话成员映射

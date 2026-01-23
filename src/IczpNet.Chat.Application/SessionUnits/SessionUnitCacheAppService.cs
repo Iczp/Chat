@@ -691,7 +691,12 @@ public class SessionUnitCacheAppService(
         //加载全部
         await LoadMembersIfNotExistsAsync(sessionId);
 
-        var queryable = await SessionUnitCacheManager.GetMembersAsync(sessionId);
+        var queryable = await SessionUnitCacheManager.GetMembersAsync(
+            sessionId,
+            isCreator: input.IsCreator,
+            isPrivate: input.IsPrivate,
+            isStatic: input.IsStatic,
+            isDescending: true);
 
         var query = queryable.AsQueryable()
             .WhereIf(input.IsCreator.HasValue, x => x.IsCreator == input.IsCreator.Value)

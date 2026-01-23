@@ -23,7 +23,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
     private readonly TimeSpan? _cacheExpire = TimeSpan.FromDays(7);
 
-    private delegate Task SessionMemberLoader(Guid sessionId, IBatch batch, SessionMemberMaps maps);
+    private delegate Task SessionMemberLoader(Guid sessionId, IBatch batch, MemberMaps maps);
 
     protected string Prefix => $"{Options.Value.KeyPrefix}SessionUnits:";
 
@@ -457,38 +457,38 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// <param name="sessionId"></param>
     /// <param name="load"></param>
     /// <returns></returns>
-    public async Task<SessionMemberMaps> BatchGetMembersMapAsync(Guid sessionId, SessionMemberLoad load)
+    public async Task<MemberMaps> BatchGetMembersMapAsync(Guid sessionId, MemberLoad load)
     {
-        var result = new SessionMemberMaps();
+        var result = new MemberMaps();
         var batch = Database.CreateBatch();
         var tasks = new List<Task>();
 
-        if (load.HasFlag(SessionMemberLoad.Pinned))
+        if (load.HasFlag(MemberLoad.Pinned))
         {
             tasks.Add(GetSessionMembersMapAsync(batch, SessionPinnedSortingHashKey(sessionId), x => x.ToLong()).ContinueWith(t => result.Pinned = t.Result));
         }
 
-        if (load.HasFlag(SessionMemberLoad.Immersed))
+        if (load.HasFlag(MemberLoad.Immersed))
         {
             tasks.Add(GetSessionMembersMapAsync(batch, SessionImmersedHashKey(sessionId), x => x.ToBoolean()).ContinueWith(t => result.Immersed = t.Result));
         }
 
-        if (load.HasFlag(SessionMemberLoad.Creator))
+        if (load.HasFlag(MemberLoad.Creator))
         {
             tasks.Add(GetSessionMembersMapAsync(batch, SessionCreatorHashKey(sessionId), x => x.ToBoolean()).ContinueWith(t => result.Creator = t.Result));
         }
 
-        if (load.HasFlag(SessionMemberLoad.Private))
+        if (load.HasFlag(MemberLoad.Private))
         {
             tasks.Add(GetSessionMembersMapAsync(batch, SessionPrivateHashKey(sessionId), x => x.ToBoolean()).ContinueWith(t => result.Private = t.Result));
         }
 
-        if (load.HasFlag(SessionMemberLoad.Static))
+        if (load.HasFlag(MemberLoad.Static))
         {
             tasks.Add(GetSessionMembersMapAsync(batch, SessionStaticHashKey(sessionId), x => x.ToBoolean()).ContinueWith(t => result.Static = t.Result));
         }
 
-        if (load.HasFlag(SessionMemberLoad.Box))
+        if (load.HasFlag(MemberLoad.Box))
         {
             tasks.Add(GetSessionMembersMapAsync(batch, SessionBoxHashKey(sessionId), x => x.ToGuid()).ContinueWith(t => result.Box = t.Result));
         }
@@ -521,7 +521,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// <param name="sessionId"></param>
     /// <returns>{Key:OwnerId, Value:Sorting}</returns>
     public Task<IEnumerable<KeyValuePair<SessionUnitElement, long>>> GetPinnedMembersAsync(Guid sessionId)
-        => GetSessionMembersAsync( SessionPinnedSortingHashKey(sessionId), v => v.ToLong());
+        => GetSessionMembersAsync(SessionPinnedSortingHashKey(sessionId), v => v.ToLong());
 
     /// <summary>
     /// 获取静默会话单元
@@ -615,23 +615,49 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             take: take,
             isDescending: isDescending);
 
+        var memberLoad = MemberLoad.Creator;
+
+        if (isPrivate.HasValue)
+        {
+            memberLoad |= MemberLoad.Private;
+        }
+        if (isStatic.HasValue)
+        {
+            memberLoad |= MemberLoad.Static;
+        }
+        if (isImmersed.HasValue)
+        {
+            memberLoad |= MemberLoad.Immersed;
+        }
+        var maps = await BatchGetMembersMapAsync(sessionId, memberLoad);
+
         return redisZset
-           .Select(x =>
-           {
-               var element = x.Key;
-               var score = x.Value;
-               return new MemberModel
-               {
-                   SessionId = element.SessionId,
-                   OwnerId = element.OwnerId,
-                   OwnerObjectType = element.OwnerObjectType,
-                   DestinationId = element.DestinationId,
-                   DestinationObjectType = element.DestinationObjectType,
-                   Id = element.SessionUnitId,
-                   CreationTime = score.CreationTime,
-                   IsCreator = score.IsCreator
-               };
-           }); ;
+            // Private
+            .WhereIf(maps.Private.Count != 0 && isPrivate == true, x => maps.Private.Select(d => d.Key).Contains(x.Key))
+            .WhereIf(maps.Private.Count != 0 && isPrivate == false, x => !maps.Private.Select(d => d.Key).Contains(x.Key))
+            // Static
+            .WhereIf(maps.Static.Count != 0 && isStatic == true, x => maps.Static.Select(d => d.Key).Contains(x.Key))
+            .WhereIf(maps.Static.Count != 0 && isStatic == false, x => !maps.Static.Select(d => d.Key).Contains(x.Key))
+            // isImmersed
+            .WhereIf(maps.Immersed.Count != 0 && isImmersed == true, x => maps.Immersed.Select(d => d.Key).Contains(x.Key))
+            .WhereIf(maps.Immersed.Count != 0 && isImmersed == false, x => !maps.Immersed.Select(d => d.Key).Contains(x.Key))
+            .Select(x =>
+            {
+                var element = x.Key;
+                var score = x.Value;
+                return new MemberModel
+                {
+                    SessionId = element.SessionId,
+                    OwnerId = element.OwnerId,
+                    OwnerObjectType = element.OwnerObjectType,
+                    DestinationId = element.DestinationId,
+                    DestinationObjectType = element.DestinationObjectType,
+                    Id = element.SessionUnitId,
+                    CreationTime = score.CreationTime,
+                    IsCreator = score.IsCreator
+                };
+            })
+           ;
     }
 
 
@@ -1196,7 +1222,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         var members = (await GetRawMembersAsync(sessionId)).ToList();
 
-        var sessionMemberMaps = await BatchGetMembersMapAsync(sessionId, SessionMemberLoad.Immersed | SessionMemberLoad.Creator | SessionMemberLoad.Pinned | SessionMemberLoad.Box);
+        var sessionMemberMaps = await BatchGetMembersMapAsync(sessionId, MemberLoad.Immersed | MemberLoad.Creator | MemberLoad.Pinned | MemberLoad.Box);
         var immersedMap = sessionMemberMaps.Immersed;
         var creatorMap = sessionMemberMaps.Creator;
         var pinnedMap = sessionMemberMaps.Pinned;

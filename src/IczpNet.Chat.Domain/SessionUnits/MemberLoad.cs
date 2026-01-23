@@ -6,7 +6,7 @@ namespace IczpNet.Chat.SessionUnits;
 /// 成员加载选项
 /// </summary>
 [Flags]
-public enum SessionMemberLoad
+public enum MemberLoad
 {
     /// <summary>
     /// 不加载
