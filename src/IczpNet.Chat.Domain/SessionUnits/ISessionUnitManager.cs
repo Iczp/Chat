@@ -501,4 +501,11 @@ public interface ISessionUnitManager
     Task<bool> SetBoxAsync(SessionUnitCacheItem entity, Guid boxId);
 
     Task<bool> SetBoxAsync(Guid sessionUnitId, Guid boxId);
+
+    /// <summary>
+    /// 添加会话单元到缓存
+    /// </summary>
+    /// <param name="entities"></param>
+    /// <returns></returns>
+    Task<IEnumerable<SessionUnitCacheItem>> AddUnitsToCacheAsync(IEnumerable<SessionUnit> entities);
 }

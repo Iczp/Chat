@@ -415,4 +415,11 @@ public interface ISessionUnitCacheManager
     /// <param name="ownerId"></param>
     /// <returns></returns>
     Task<IEnumerable<KeyValuePair<Guid, (long? Badge, long? Count)>>> GetBoxFriendsBadgeAndCountAsync(long ownerId);
+
+    /// <summary>
+    /// 添加会话单元缓存
+    /// </summary>
+    /// <param name="units"></param>
+    /// <returns></returns>
+    Task AddUnitsAsync(IEnumerable<SessionUnitCacheItem> units);
 }
