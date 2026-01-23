@@ -42,6 +42,14 @@ public interface ISessionUnitCacheManager
     Task<IEnumerable<SessionUnitCacheItem>> GetOrSetMembersAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask);
 
     /// <summary>
+    /// 批量加载成员
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="load"></param>
+    /// <returns></returns>
+    Task<MemberMaps> BatchGetMembersMapAsync(Guid sessionId, MemberLoad load);
+
+    /// <summary>
     /// 获取会话成员映射
     /// </summary>
     /// <param name="sessionId"></param>
@@ -76,6 +84,10 @@ public interface ISessionUnitCacheManager
     /// 获取会话成员
     /// </summary>
     /// <param name="sessionId"></param>
+    /// <param name="isCreator"></param>
+    /// <param name="isPrivate"></param>
+    /// <param name="isStatic"></param>
+    /// <param name="isImmersed"></param>
     /// <param name="minScore"></param>
     /// <param name="maxScore"></param>
     /// <param name="skip"></param>
@@ -84,6 +96,11 @@ public interface ISessionUnitCacheManager
 
     Task<IEnumerable<MemberModel>> GetMembersAsync(
         Guid sessionId,
+        bool? isCreator = null,
+        bool? isPrivate = null,
+        bool? isStatic = null,
+        bool? isImmersed = null,
+
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
         long skip = 0,
@@ -127,6 +144,20 @@ public interface ISessionUnitCacheManager
     /// <param name="sessionId"></param>
     /// <returns></returns>
     Task<IEnumerable<KeyValuePair<SessionUnitElement, bool>>> GetCreatorMembersAsync(Guid sessionId);
+
+    /// <summary>
+    /// 获取非公开会话成员
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    Task<IEnumerable<KeyValuePair<SessionUnitElement, bool>>> GetPrivateMembersAsync(Guid sessionId);
+
+    /// <summary>
+    /// 获取固定会话成员
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    Task<IEnumerable<KeyValuePair<SessionUnitElement, bool>>> GetStaticMembersAsync(Guid sessionId);
 
     /// <summary>
     /// 获取消息盒子会话单元
@@ -384,4 +415,11 @@ public interface ISessionUnitCacheManager
     /// <param name="ownerId"></param>
     /// <returns></returns>
     Task<IEnumerable<KeyValuePair<Guid, (long? Badge, long? Count)>>> GetBoxFriendsBadgeAndCountAsync(long ownerId);
+
+    /// <summary>
+    /// 添加会话单元缓存
+    /// </summary>
+    /// <param name="units"></param>
+    /// <returns></returns>
+    Task AddUnitsAsync(IEnumerable<SessionUnitCacheItem> units);
 }

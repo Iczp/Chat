@@ -27,6 +27,7 @@ public class RoomManager(
     IChatObjectRepository chatObjectRepository,
     IOptions<RoomOptions> options,
     ISessionManager sessionManager,
+    ISessionUnitCacheManager sessionUnitCacheManager,
     ISessionUnitRepository sessionUnitRepository,
     ISessionUnitManager sessionUnitManager,
     IChatObjectManager chatObjectManager,
@@ -39,6 +40,7 @@ public class RoomManager(
 {
     protected RoomOptions Config { get; } = options.Value;
     protected ISessionManager SessionManager { get; } = sessionManager;
+    public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
     protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
     protected ISessionUnitRepository SessionUnitRepository { get; } = sessionUnitRepository;
     protected IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
@@ -233,6 +235,9 @@ public class RoomManager(
             .ToList();
 
         await SessionUnitRepository.InsertManyAsync(joinMemberSessionUnitList, autoSave: true);
+
+        //添加会话到缓存
+        await SessionUnitManager.AddUnitsToCacheAsync(joinMemberSessionUnitList);
 
         //添加会话到连接池
         await AddUnitsToConnectionPoolsAsync(joinMemberSessionUnitList);

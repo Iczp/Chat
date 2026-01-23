@@ -996,6 +996,12 @@ return 1";
 
     public async Task<long> GetOnlineFriendsCountAsync(long ownerId)
     {
+        //var friendsMap = await GetOrSetFriendsAsync([ownerId]);
+        //var firendIds = friendsMap[ownerId].Select(x => x.Key.DestinationId).ToHashSet();
+        //var keys = firendIds.Select(OwnerDeviceHashKey);
+        //var result = await BatchKeyExistsAsync(keys);
+        //return result.Where(x => x.Value).Count();
+
         //return await Database.SortedSetLengthAsync(FriendsLatestOnlineZsetKey(ownerId));
         return await Database.HashLengthAsync(FriendsConnsHashKey(ownerId));
     }

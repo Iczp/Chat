@@ -19,6 +19,16 @@ public class SessionUnitMemberGetListInput : GetListInput
     public bool? IsCreator { get; set; }
 
     /// <summary>
+    /// 是否非公开
+    /// </summary>
+    public bool? IsPrivate { get; set; }
+
+    /// <summary>
+    /// 是否固定成员
+    /// </summary>
+    public bool? IsStatic { get; set; }
+
+    /// <summary>
     /// 所属类型:
     /// - 0=Anonymous:匿名
     /// - 1=Personal:个人

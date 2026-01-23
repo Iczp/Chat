@@ -22,6 +22,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
+using System.Reactive;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -1494,5 +1495,12 @@ public class SessionUnitManager(
         await SessionUnitCacheManager.ChangeBoxAsync(unit.Id, boxId);
 
         return result == 1;
+    }
+
+    public async Task<IEnumerable<SessionUnitCacheItem>> AddUnitsToCacheAsync(IEnumerable<SessionUnit> entities)
+    {
+        var units = entities.Select(MapToCacheItem);
+        await SessionUnitCacheManager.AddUnitsAsync(units);
+        return units;
     }
 }

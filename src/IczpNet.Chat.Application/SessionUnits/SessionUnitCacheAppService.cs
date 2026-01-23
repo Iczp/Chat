@@ -162,7 +162,9 @@ public class SessionUnitCacheAppService(
         var messageIdList = items
             .Where(x => x.LastMessageId.HasValue)
             .Select(x => x.LastMessageId.Value)
+            .Distinct()
             .ToList();
+
         if (messageIdList.Count == 0)
         {
             return;
@@ -175,15 +177,6 @@ public class SessionUnitCacheAppService(
         {
             item.LastMessage = item.LastMessageId.HasValue ? messageMap.GetValueOrDefault(item.LastMessageId.Value) : null;
         }
-
-        //var messages = await MessageRepository.GetListAsync(x => messageIdList.Contains(x.Id));
-        //var messageMap = messages
-        //    .Select(ObjectMapper.Map<Message, MessageOwnerDto>)
-        //    .ToDictionary(x => x.Id, x => x);
-        //foreach (var item in items)
-        //{
-        //    item.LastMessage = item.LastMessageId.HasValue ? messageMap.GetValueOrDefault(item.LastMessageId.Value) : null;
-        //}
     }
 
     private async Task FillSettingAsync(IEnumerable<SessionUnitFriendDto> items)
@@ -698,7 +691,12 @@ public class SessionUnitCacheAppService(
         //加载全部
         await LoadMembersIfNotExistsAsync(sessionId);
 
-        var queryable = await SessionUnitCacheManager.GetMembersAsync(sessionId);
+        var queryable = await SessionUnitCacheManager.GetMembersAsync(
+            sessionId,
+            isCreator: input.IsCreator,
+            isPrivate: input.IsPrivate,
+            isStatic: input.IsStatic,
+            isDescending: true);
 
         var query = queryable.AsQueryable()
             .WhereIf(input.IsCreator.HasValue, x => x.IsCreator == input.IsCreator.Value)
