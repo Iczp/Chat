@@ -4,18 +4,12 @@ using IczpNet.Chat.RedisMapping;
 using IczpNet.Chat.RedisServices;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
-using NUglify.Helpers;
-using Pipelines.Sockets.Unofficial.Buffers;
-using SixLabors.ImageSharp.Drawing;
 using StackExchange.Redis;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using Volo.Abp;
 
 namespace IczpNet.Chat.SessionUnits;
@@ -1059,85 +1053,6 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return result;
     }
 
-    protected async Task<List<SortedSetEntry>> GetHistoryByOwnerInternalAsync(
-        long ownerId,
-        double minScore = double.NegativeInfinity,
-        double maxScore = double.PositiveInfinity,
-        long skip = 0,
-        long take = -1,
-        bool isDescending = true)
-    {
-        var ownerFriendsSetKey = OwnerFriendsSetKey(ownerId);
-
-        if (maxScore == 0)
-        {
-            maxScore = double.PositiveInfinity;
-        }
-
-        var order = isDescending ? Order.Descending : Order.Ascending;
-        // 1. 获取置顶的所有元素（不分页）
-        var allPinned = await Database.SortedSetRangeByScoreWithScoresAsync(
-            ownerFriendsSetKey,
-            start: FriendScore.Multiplier + minScore,
-            stop: FriendScore.Multiplier + maxScore - 1,
-            order: order
-        );
-
-        int pinnedCount = allPinned.Length;
-
-        // 结果
-        var result = new List<SortedSetEntry>();
-
-        // 如果 skip 在置顶区内，则要从置顶区分页
-        if (skip < pinnedCount)
-        {
-            // 决定从置顶区取多少
-            int takeFromPinned = (int)(take == -1 ? int.MaxValue : take);
-
-            var pinnedPart = allPinned
-                .Skip((int)skip)
-                .Take((int)takeFromPinned)
-                .ToArray();
-
-            result.AddRange(pinnedPart);
-
-            // 如果置顶区已经提供足够数量，直接返回
-            if (take != -1 && result.Count >= take)
-            {
-                return result;
-            }
-
-            // 需要从未置顶区补齐
-            var remainingTake = take == -1 ? -1 : (take - result.Count);
-
-            var nonPinned = await Database.SortedSetRangeByScoreWithScoresAsync(
-                ownerFriendsSetKey,
-                start: minScore,
-                stop: Math.Min(FriendScore.Multiplier, maxScore) - 1,
-                skip: 0,
-                take: remainingTake,
-                order: order
-            );
-
-            result.AddRange(nonPinned);
-            return result;
-        }
-
-        // skip 超出置顶区  只从未置顶区开始取
-        var skipFromNonPinned = skip - pinnedCount;
-
-        var nonPinnedOnly = await Database.SortedSetRangeByScoreWithScoresAsync(
-            ownerFriendsSetKey,
-            start: minScore,
-            stop: Math.Min(FriendScore.Multiplier, maxScore) - 1,
-            skip: skipFromNonPinned,
-            take: take,
-            order: order
-        );
-
-        return nonPinnedOnly.ToList();
-    }
-
     public async Task<IEnumerable<SessionUnitCacheItem>> GetFriendUnitsAsync(
         long ownerId,
         double minScore = double.NegativeInfinity,
@@ -1878,16 +1793,24 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return true;
     }
 
-
-
     #endregion
 
+    /// <summary>
+    /// 获取盒子角标
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
     public async Task<IEnumerable<KeyValuePair<Guid, double>>> GetBoxFriendsBadgeAsync(long ownerId)
     {
         var entries = await Database.SortedSetRangeByRankWithScoresAsync(OwnerBoxBadgeZsetKey(ownerId));
         return entries.Select(x => new KeyValuePair<Guid, double>(x.Element.ToGuid(), x.Score));
     }
 
+    /// <summary>
+    /// 获取盒子角标与好友数量
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
     public async Task<IEnumerable<KeyValuePair<Guid, (long? Badge, long? Count)>>> GetBoxFriendsBadgeAndCountAsync(long ownerId)
     {
         var boxFriends = await GetBoxFriendsBadgeAsync(ownerId);
@@ -1911,6 +1834,11 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return boxFriends.Select(x => new KeyValuePair<Guid, (long? Badge, long? Count)>(x.Key, ((long)x.Value, tasks[x.Key].Result)));
     }
 
+    /// <summary>
+    /// 添加会话单元缓存
+    /// </summary>
+    /// <param name="units"></param>
+    /// <returns></returns>
     public async Task AddUnitsAsync(IEnumerable<SessionUnitCacheItem> units)
     {
         await Task.Yield();
