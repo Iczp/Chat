@@ -123,7 +123,7 @@ public interface IOnlineManager //: IConnectionPoolManager
     /// <param name="userId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<IEnumerable<string>> GetDeviceTypesAsync(Guid userId, CancellationToken token = default);
+    Task<IEnumerable<DeviceElement>> GetDeviceTypesAsync(Guid userId, CancellationToken token = default);
 
 
     /// <summary>

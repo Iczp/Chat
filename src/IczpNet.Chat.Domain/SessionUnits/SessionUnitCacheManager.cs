@@ -18,7 +18,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 {
     //protected readonly IDatabase Database = connection.GetDatabase();
 
-    private readonly TimeSpan? _cacheExpire = TimeSpan.FromDays(7);
+    protected  override TimeSpan? CacheExpire => TimeSpan.FromDays(1);
 
     private delegate Task SessionMemberLoader(Guid sessionId, IBatch batch, MemberMaps maps);
 
@@ -253,7 +253,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         var ownerStatisticSetKey = OwnerStatisticHashKey(ownerId);
         var entries = RedisMapper.ToHashEntries(statistic);
         _ = batch.HashSetAsync(ownerStatisticSetKey, entries);
-        _ = batch.KeyExpireAsync(ownerStatisticSetKey, _cacheExpire);
+        _ = batch.KeyExpireAsync(ownerStatisticSetKey, CacheExpire);
     }
 
     private void SetOwnerStatisticTypedMap(IBatch batch, long ownerId, Dictionary<ChatObjectTypeEnums, long> statTypedMap)
@@ -264,7 +264,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         {
             _ = batch.HashSetAsync(statisticTypedSetKey, item.Key.ToString(), item.Value);
         }
-        _ = batch.KeyExpireAsync(statisticTypedSetKey, _cacheExpire);
+        _ = batch.KeyExpireAsync(statisticTypedSetKey, CacheExpire);
     }
 
     private void SetOwnerBoxBadge(IBatch batch, long ownerId, Dictionary<Guid, long> statBoxMap)
@@ -275,30 +275,9 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             var boxId = item.Key;
             _ = batch.SortedSetAddAsync(ownerBoxBadgeZsetKey, boxId.ToString(), statBoxMap.GetValueOrDefault(boxId));
         }
-        _ = batch.KeyExpireAsync(ownerBoxBadgeZsetKey, _cacheExpire);
+        _ = batch.KeyExpireAsync(ownerBoxBadgeZsetKey, CacheExpire);
     }
 
-    private void HashSetIf(bool condition, Func<RedisKey> redisKeyFunc, RedisValue field, RedisValue value, IBatch batch, TimeSpan? expiry = null)
-    {
-        if (!condition)
-        {
-            return;
-        }
-        var redisKey = redisKeyFunc();
-        _ = batch.HashSetAsync(redisKey, field, value);
-        _ = batch.KeyExpireAsync(redisKey, expiry ?? _cacheExpire);
-    }
-
-    private void SortedSetIf(bool condition, Func<RedisKey> redisKeyFunc, RedisValue field, double score, IBatch batch, TimeSpan? expiry = null)
-    {
-        if (!condition)
-        {
-            return;
-        }
-        var redisKey = redisKeyFunc();
-        _ = batch.SortedSetAddAsync(redisKey, field, score);
-        _ = batch.KeyExpireAsync(redisKey, expiry ?? _cacheExpire);
-    }
 
     private void SetOwnerPinning(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
         => SortedSetIf(unit.Sorting > 0, () => OwnerPinnedBadgeSetKey(unit.OwnerId), element, unit.PublicBadge, batch: batch);
@@ -359,7 +338,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         _ = batch.HashSetAsync(unitKey, entries);
         if (refreshExpire)
         {
-            _ = batch.KeyExpireAsync(unitKey, _cacheExpire);
+            _ = batch.KeyExpireAsync(unitKey, CacheExpire);
         }
     }
 
@@ -466,7 +445,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             // set session relations
             SetSessionRelations(batch, sessionMembersSetKey, unit);
         }
-        _ = batch.KeyExpireAsync(sessionMembersSetKey, _cacheExpire);
+        _ = batch.KeyExpireAsync(sessionMembersSetKey, CacheExpire);
     }
 
     private void SetSessionRelations(IBatch batch, RedisKey sessionMembersSetKey, SessionUnitCacheItem unit)
@@ -803,14 +782,14 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             _ = batch.SortedSetAddAsync(ownerFriendsSetKey, element, score);
 
             // 刷新所有UnitKey过期时间
-            _ = batch.KeyExpireAsync(UnitHashKey(unit.Id), _cacheExpire);
+            _ = batch.KeyExpireAsync(UnitHashKey(unit.Id), CacheExpire);
 
             SetOwnerRelations(batch, element, unit, score);
 
             AccumulateStatistics(unit, stat, statTypedMap, statBoxMap);
         }
 
-        _ = batch.KeyExpireAsync(ownerFriendsSetKey, _cacheExpire);
+        _ = batch.KeyExpireAsync(ownerFriendsSetKey, CacheExpire);
 
         return new(stat, statTypedMap, statBoxMap);
     }
@@ -1211,7 +1190,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         var batch = Database.CreateBatch();
 
-        var expireTime = expire ?? _cacheExpire;
+        var expireTime = expire ?? CacheExpire;
 
         foreach (var item in members)
         {
@@ -1305,7 +1284,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             }
         }
         // SessionMembers
-        _ = batch.KeyExpireAsync(SessionMembersSetKey(sessionId), expireTime ?? _cacheExpire);
+        _ = batch.KeyExpireAsync(SessionMembersSetKey(sessionId), expireTime ?? CacheExpire);
 
         batch.Execute();
 
@@ -1502,13 +1481,13 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         {
             _ = batch.SortedSetAddAsync(ownerPinnedBadgeSetKey, element, unit?.PublicBadge ?? 0);
             _ = batch.HashSetAsync(sessionPinnedSortingHashKey, element, sorting);
-            _ = batch.KeyExpireAsync(ownerPinnedBadgeSetKey, _cacheExpire);
-            _ = batch.KeyExpireAsync(sessionPinnedSortingHashKey, _cacheExpire);
+            _ = batch.KeyExpireAsync(ownerPinnedBadgeSetKey, CacheExpire);
+            _ = batch.KeyExpireAsync(sessionPinnedSortingHashKey, CacheExpire);
         }
 
         // 6.3 更新 ownerSortedSet 的新 score
         _ = batch.SortedSetAddAsync(ownerFriendsSetKey, element, newScore);
-        _ = batch.KeyExpireAsync(ownerFriendsSetKey, _cacheExpire);
+        _ = batch.KeyExpireAsync(ownerFriendsSetKey, CacheExpire);
 
         // 7. 执行 batch
         batch.Execute();
@@ -1574,10 +1553,10 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         if (isImmersed)
         {
             _ = tran.SortedSetAddAsync(ownerImmersedSetKey, element, unit.PublicBadge);
-            _ = tran.KeyExpireAsync(ownerImmersedSetKey, _cacheExpire);
+            _ = tran.KeyExpireAsync(ownerImmersedSetKey, CacheExpire);
 
             _ = tran.HashSetAsync(sessionImmersedHashKey, element, unit.PublicBadge);
-            _ = tran.KeyExpireAsync(sessionImmersedHashKey, _cacheExpire);
+            _ = tran.KeyExpireAsync(sessionImmersedHashKey, CacheExpire);
         }
         else
         {
@@ -1722,7 +1701,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         _ = HashSetIfFieldExistsAsync(batch, ownerStatisticHashKey, F_Total_Following, 0);
         _ = HashSetIfFieldExistsAsync(batch, ownerStatisticHashKey, F_Total_Immersed, 0);
         _ = HashSetIfFieldExistsAsync(batch, ownerStatisticHashKey, F_Total_Pinned, 0);
-        _ = batch.KeyExpireAsync(ownerStatisticHashKey, _cacheExpire, when: ExpireWhen.Always);
+        _ = batch.KeyExpireAsync(ownerStatisticHashKey, CacheExpire, when: ExpireWhen.Always);
 
         // StatisticMap
         var statisticMapHashKey = StatisticMapHashKey(ownerId);

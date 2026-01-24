@@ -16,6 +16,11 @@ public readonly record struct DeviceElement(
     public static implicit operator RedisValue(DeviceElement element)
         => element.ToString();
 
+    public static DeviceElement Create(string deviceType, string deviceId)
+    {
+        return new DeviceElement(deviceType, deviceId);
+    }
+
     public static DeviceElement Parse(RedisValue element)
     {
         if (!TryParse(element, out var field))

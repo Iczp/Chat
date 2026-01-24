@@ -18,6 +18,7 @@ public abstract class RedisService : DomainService
     protected IConnectionMultiplexer ConnectionMultiplexer => LazyServiceProvider.LazyGetRequiredService<IConnectionMultiplexer>();
     protected IDatabase Database => ConnectionMultiplexer.GetDatabase();
 
+    protected virtual TimeSpan? CacheExpire { get; set; }
 
     /// <summary>
     /// Zset 仅在存在时修改
@@ -197,6 +198,62 @@ return tonumber(newValue)
             sw.ElapsedMilliseconds);
         sw.Stop();
         return result;
+    }
+    protected virtual void Expire(IBatch batch, string key, ExpireWhen when = ExpireWhen.Always, CommandFlags flags = CommandFlags.None)
+    {
+        if (CacheExpire.HasValue)
+        {
+            _ = batch.KeyExpireAsync(key, CacheExpire, when, flags);
+        }
+    }
+
+    protected void HashSetIf(bool condition, Func<RedisKey> redisKeyFunc, RedisValue field, RedisValue value, IBatch batch, TimeSpan? expire = null)
+    {
+        if (!condition)
+        {
+            return;
+        }
+        var redisKey = redisKeyFunc();
+        _ = batch.HashSetAsync(redisKey, field, value);
+        _ = batch.KeyExpireAsync(redisKey, expire ?? CacheExpire);
+    }
+    protected void HashRemoveIf(bool condition, Func<RedisKey> redisKeyFunc, RedisValue field, IBatch batch, bool refreshExpire = false)
+    {
+        if (!condition)
+        {
+            return;
+        }
+        var redisKey = redisKeyFunc();
+        _ = batch.HashDeleteAsync(redisKey, field);
+        if (refreshExpire)
+        {
+            _ = batch.KeyExpireAsync(redisKey, CacheExpire);
+        }
+    }
+
+    protected void SortedSetIf(bool condition, Func<RedisKey> redisKeyFunc, RedisValue field, double score, IBatch batch, TimeSpan? expiry = null)
+    {
+        if (!condition)
+        {
+            return;
+        }
+        var redisKey = redisKeyFunc();
+        _ = batch.SortedSetAddAsync(redisKey, field, score);
+        _ = batch.KeyExpireAsync(redisKey, expiry ?? CacheExpire);
+    }
+
+    protected void SortedRemoveIf(bool condition, Func<RedisKey> redisKeyFunc, RedisValue member, IBatch batch, bool refreshExpire = false)
+    {
+        if (!condition)
+        {
+            return;
+        }
+        var redisKey = redisKeyFunc();
+        _ = batch.SortedSetRemoveAsync(redisKey, member);
+        if (refreshExpire)
+        {
+            _ = batch.KeyExpireAsync(redisKey, CacheExpire);
+        }
     }
 
     /// <summary>
