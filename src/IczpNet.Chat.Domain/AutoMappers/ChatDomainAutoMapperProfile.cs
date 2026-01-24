@@ -6,6 +6,7 @@ using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.RedEnvelopes;
+using IczpNet.Chat.SessionBoxes;
 using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits;
@@ -109,6 +110,8 @@ public class ChatApplicationAutoMapperProfile : Profile
 
 
         CreateMap<SessionUnitSetting, SessionUnitSettingCacheItem>();
-        
+
+        CreateMap<Box, BoxInfo>();
+
     }
 }

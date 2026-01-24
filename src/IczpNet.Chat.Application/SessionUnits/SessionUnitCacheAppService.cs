@@ -638,12 +638,12 @@ public class SessionUnitCacheAppService(
 
     private async Task<List<BoxCountDto>> GetBoxFriendsCountAsync([Required] long ownerId)
     {
-        var boxes = await BoxManager.GetListByOwnerAsync(ownerId);
+        var boxes = await BoxManager.GetCacheListByOwnerAsync(ownerId);
 
         var countMap = (await SessionUnitCacheManager.GetBoxFriendsBadgeAndCountAsync(ownerId))
             .ToDictionary(x => x.Key, x => x.Value);
 
-        var result = boxes.Select(x =>
+        var result = boxes.List.Select(x =>
         {
             var (Badge, Count) = countMap.TryGetValue(x.Id, out var pair) ? pair : (Badge: null, Count: null);
             return new BoxCountDto()
