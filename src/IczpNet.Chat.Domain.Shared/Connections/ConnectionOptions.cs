@@ -15,7 +15,7 @@ public class ConnectionOptions
     /// <summary>
     /// 缓存Key
     /// </summary>
-    public string AllConnectionsCacheKey { get; set; } = $"Chat-Connections";
+    public string AllConnectionsCacheKey { get; set; } = $"Online";
 
     /// <summary>
     /// 缓存过期时间(秒)
