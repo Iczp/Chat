@@ -46,7 +46,7 @@ public abstract class ChatHubService : DomainService
 
         var conns = await OnlineManager.GetManyAsync(connIdList);
 
-        return conns.Values.Where(x => x != null).ToList();
+        return conns.Where(x => x.Value != null).Select(x => x.Value).ToList();
     }
     protected virtual async Task<List<ConnectionPoolCacheItem>> GetFriendsConnectionIdsOldAsync(Guid userId)
     {

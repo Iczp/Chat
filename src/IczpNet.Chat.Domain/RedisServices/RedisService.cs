@@ -1,10 +1,14 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using IczpNet.Chat.ConnectionPools;
+using IczpNet.Chat.RedisMapping;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Minio.DataModel;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Services;
@@ -206,6 +210,17 @@ return tonumber(newValue)
             _ = batch.KeyExpireAsync(key, CacheExpire, when, flags);
         }
     }
+    protected virtual void ExpireIf(bool condition, Func<RedisKey> redisKeyFunc, IBatch batch, ExpireWhen when = ExpireWhen.Always, CommandFlags flags = CommandFlags.None)
+    {
+        if (!condition)
+        {
+            return;
+        }
+        if (CacheExpire.HasValue)
+        {
+            _ = batch.KeyExpireAsync(redisKeyFunc(), CacheExpire, when, flags);
+        }
+    }
 
     protected void HashSetIf(bool condition, Func<RedisKey> redisKeyFunc, RedisValue field, RedisValue value, IBatch batch, TimeSpan? expire = null)
     {
@@ -365,4 +380,52 @@ return tonumber(newValue)
         return tasks.Select(t => t.Result).ToArray();
     }
 
+    protected async Task<KeyValuePair<TKey, TCacheItem>[]> GetManyHashSet1Async<TKey, TCacheItem>(IEnumerable<TKey> ids, Func<TKey, RedisKey> keyFunc) where TCacheItem : new()
+    {
+        var batch = Database.CreateBatch();
+        var tasks = ids.Select(x => new KeyValuePair<TKey, Task<HashEntry[]>>(x, batch.HashGetAllAsync(keyFunc(x))));
+        batch.Execute();
+        await Task.WhenAll(tasks.Select(x => x.Value));
+        var result = tasks.Select(x => new KeyValuePair<TKey, TCacheItem>(x.Key, x.Value.Result.ToObject<TCacheItem>())).ToArray();
+        return result;
+    }
+
+    protected async Task<KeyValuePair<TKey, TCacheItem>[]> GetManyHashSetAsync<TKey, TCacheItem>(IEnumerable<TKey> ids, Func<TKey, RedisKey> hashSetKeyFunc, CancellationToken token = default) where TCacheItem : new()
+    {
+        token.ThrowIfCancellationRequested();
+
+        if (ids == null) return [];
+
+        var idList = ids as IList<TKey> ?? ids.ToList();
+
+        if (idList.Count == 0) return [];
+
+        var batch = Database.CreateBatch();
+
+        var tasks = new Task<HashEntry[]>[idList.Count];
+
+        for (int i = 0; i < idList.Count; i++)
+        {
+            tasks[i] = batch.HashGetAllAsync(hashSetKeyFunc(idList[i]));
+        }
+
+        batch.Execute();
+
+        // 等待 Redis 返回（此处无法真正取消 IO，只能取消等待）
+        var entriesList = await Task.WhenAll(tasks);
+
+        var result = new KeyValuePair<TKey, TCacheItem>[idList.Count];
+
+        for (int i = 0; i < idList.Count; i++)
+        {
+            var entries = entriesList[i];
+            var item = (entries == null || entries.Length == 0)
+                ? default
+                : RedisMapper.ToObject<TCacheItem>(entries);
+
+            result[i] = new KeyValuePair<TKey, TCacheItem>(idList[i], item);
+        }
+
+        return result;
+    }
 }
