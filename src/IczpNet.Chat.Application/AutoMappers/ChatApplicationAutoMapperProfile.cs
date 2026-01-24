@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using IczpNet.AbpTrees;
 using IczpNet.Chat.AppVersions;
 using IczpNet.Chat.Articles;
 using IczpNet.Chat.Articles.Dtos;
@@ -261,6 +260,7 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<Box, BoxDto>();
         CreateMap<Box, BoxSampleDto>();
         CreateMap<Box, BoxDetailDto>();
+        CreateMap<BoxInfo, BoxDto>(MemberList.None).MapExtraProperties();
         CreateMap<BoxCreateInput, Box>(MemberList.None).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         CreateMap<BoxUpdateInput, Box>(MemberList.None).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         
