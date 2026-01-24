@@ -447,10 +447,10 @@ return 1";
         ExpireIf(connectionPool.UserId.HasValue, () => UserConnKey(connectionPool.UserId.Value), batch: batch);
 
         // App
-        ExpireIf(string.IsNullOrWhiteSpace(connectionPool.AppId), () => AppSetKey(connectionPool.AppId), batch: batch);
+        ExpireIf(!string.IsNullOrWhiteSpace(connectionPool.AppId), () => AppSetKey(connectionPool.AppId), batch: batch);
 
         // Client
-        ExpireIf(string.IsNullOrWhiteSpace(connectionPool.ClientId), () => ClientSetKey(connectionPool.ClientId), batch: batch);
+        ExpireIf(!string.IsNullOrWhiteSpace(connectionPool.ClientId), () => ClientSetKey(connectionPool.ClientId), batch: batch);
 
         // ActiveTime
         HashSetIf(true, () => ConnHashKey(connectionId), nameof(ConnectionPoolCacheItem.ActiveTime), Clock.Now.ToRedisValue(), batch: batch);
