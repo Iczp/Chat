@@ -810,6 +810,7 @@ return 1";
             // 4. ownerId -> sessionId 反向索引
             foreach (var unit in units)
             {
+
                 var ownerSessionKey = OwnerSessionsHashKey(unit.OwnerId);
                 //var isExists = await Database.KeyExistsAsync(ownerSessionKey);
                 // 缓存Key存在才执行
