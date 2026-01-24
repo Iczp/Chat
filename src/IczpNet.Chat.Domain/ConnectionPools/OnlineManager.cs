@@ -403,9 +403,7 @@ return 1";
     {
         Logger.LogInformation($"[RefreshExpireAsync] connectionId: {connectionId}");
 
-        var connKey = ConnHashKey(connectionId);
-
-        var connectionPool = await GetAsync(connKey, token);
+        var connectionPool = await GetAsync(connectionId, token);
 
         if (connectionPool == null)
         {
@@ -455,14 +453,12 @@ return 1";
         ExpireIf(string.IsNullOrWhiteSpace(connectionPool.ClientId), () => ClientSetKey(connectionPool.ClientId), batch: batch);
 
         // ActiveTime
-        _ = batch.HashSetAsync(connKey, nameof(ConnectionPool.ActiveTime), Clock.Now.ToRedisValue(), when: When.Always);
-        // expire conn hash itself
-        Expire(batch, connKey);
-
+        HashSetIf(true, () => ConnHashKey(connectionId), nameof(ConnectionPoolCacheItem.ActiveTime), Clock.Now.ToRedisValue(), batch: batch);
+        
         batch.Execute();
 
         Logger.LogInformation($"[RefreshExpireAsync] writeBatch.Execute()");
-        // Original method returned default; to be safe keep behavior unchanged.
+
         return default;
     }
 
