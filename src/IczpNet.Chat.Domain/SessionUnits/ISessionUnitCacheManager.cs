@@ -3,6 +3,7 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.SessionUnits;
@@ -291,15 +292,17 @@ public interface ISessionUnitCacheManager
     /// 获取会话单元(多个)
     /// </summary>
     /// <param name="unitIds"></param>
+    /// <param name="token"></param>
     /// <returns></returns>
-    Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetManyAsync(IEnumerable<Guid> unitIds);
+    Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetManyAsync(IEnumerable<Guid> unitIds, CancellationToken token = default);
 
     /// <summary>
     /// 获取会话单元(单个)
     /// </summary>
     /// <param name="id"></param>
+    /// <param name="token"></param>
     /// <returns></returns>
-    Task<SessionUnitCacheItem> GetAsync(Guid id);
+    Task<SessionUnitCacheItem> GetAsync(Guid id, CancellationToken token = default);
 
     /// <summary>
     /// 获取或设置会话单元(多个)

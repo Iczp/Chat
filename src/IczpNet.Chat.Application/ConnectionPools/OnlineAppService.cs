@@ -177,7 +177,7 @@ public class OnlineAppService(
     public async Task<Dictionary<string, ConnectionPoolDto>> GetManyAsync(List<string> connectionIds)
     {
         await CheckGetItemPolicyAsync();
-        var items = await OnlineManager.GetManyAsync(connectionIds);
+        var items = await OnlineManager.GetManyAsync(connectionIds.Distinct());
         return items.ToDictionary(x => x.Key, x => MapToDto(x.Value));
     }
 

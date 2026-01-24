@@ -66,7 +66,7 @@ public interface IOnlineManager //: IConnectionPoolManager
     /// <param name="connectionIds"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<Dictionary<string, ConnectionPoolCacheItem>> GetManyAsync(IEnumerable<string> connectionIds, CancellationToken token = default);
+    Task<KeyValuePair<string, ConnectionPoolCacheItem>[]> GetManyAsync(IEnumerable<string> connectionIds, CancellationToken token = default);
 
     /// <summary>
     /// 是否在线（用户）

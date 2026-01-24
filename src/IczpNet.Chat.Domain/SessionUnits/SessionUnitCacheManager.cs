@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
 
@@ -18,7 +19,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 {
     //protected readonly IDatabase Database = connection.GetDatabase();
 
-    protected  override TimeSpan? CacheExpire => TimeSpan.FromDays(1);
+    protected override TimeSpan? CacheExpire => TimeSpan.FromDays(1);
 
     private delegate Task SessionMemberLoader(Guid sessionId, IBatch batch, MemberMaps maps);
 
@@ -1061,54 +1062,9 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
     #region Map / GetMany
 
-    public async Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetManyAsync(IEnumerable<Guid> unitIds)
-    {
-        if (unitIds == null) return [];
+    public Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetManyAsync(IEnumerable<Guid> unitIds, CancellationToken token = default) => GetManyHashSetAsync<Guid, SessionUnitCacheItem>(unitIds, UnitHashKey, token);
 
-        var idList = unitIds.ToList();
-        if (idList.Count == 0) return [];
-
-        var batch = Database.CreateBatch();
-        var tasks = new List<Task<HashEntry[]>>(idList.Count);
-
-        // pipeline 全部 HashGetAll
-        foreach (var unitId in idList)
-        {
-            tasks.Add(batch.HashGetAllAsync(UnitHashKey(unitId)));
-        }
-
-        // 一次提交（高性能关键点）
-        batch.Execute();
-
-        // 等待全部完成
-        var resultEntries = await Task.WhenAll(tasks);
-
-        // 构建结果
-        var result = new KeyValuePair<Guid, SessionUnitCacheItem>[idList.Count];
-
-        for (int i = 0; i < idList.Count; i++)
-        {
-            var entries = resultEntries[i];
-
-            var item =
-                (entries == null || entries.Length == 0)
-                ? null
-                : RedisMapper.ToObject<SessionUnitCacheItem>(entries);
-
-            result[i] = new KeyValuePair<Guid, SessionUnitCacheItem>(idList[i], item);
-        }
-
-        return result;
-    }
-
-
-    public async Task<SessionUnitCacheItem> GetAsync(Guid id)
-    {
-        var units = await GetManyAsync([id]);
-
-        return units.FirstOrDefault().Value;
-    }
-
+    public async Task<SessionUnitCacheItem> GetAsync(Guid id, CancellationToken token = default) => (await GetManyAsync([id], token)).FirstOrDefault().Value;
 
     public async Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetOrSetManyAsync(IEnumerable<Guid> unitIds, Func<List<Guid>, Task<KeyValuePair<Guid, SessionUnitCacheItem>[]>> func)
     {
@@ -1834,7 +1790,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         //session 
         foreach (var items in units.Where(x => x.SessionId.HasValue).GroupBy(x => x.SessionId))
         {
-             BuildSessionMembers(batch,items.Key.Value, items.ToList());
+            BuildSessionMembers(batch, items.Key.Value, items.ToList());
         }
         batch.Execute();
     }
