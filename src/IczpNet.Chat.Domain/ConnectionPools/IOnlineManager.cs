@@ -85,6 +85,14 @@ public interface IOnlineManager //: IConnectionPoolManager
     Task<bool> IsOnlineAsync(long ownertId, CancellationToken token = default);
 
     /// <summary>
+    /// 是否在线（聊天对象）
+    /// </summary>
+    /// <param name="ownerIds"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<Dictionary<long, bool>> IsOnlineAsync(IEnumerable<long> ownerIds, CancellationToken token = default);
+
+    /// <summary>
     /// 获取最后在线时间（聊天对象）
     /// </summary>
     /// <param name="ownertId"></param>
@@ -241,7 +249,7 @@ public interface IOnlineManager //: IConnectionPoolManager
     /// <summary>
     /// 获取在线好友连接列表
     /// </summary>
-    /// <param name="ownerId"></param>
+    /// <param name="ownerIds"></param>
     /// <returns></returns>
-    Task<IEnumerable<string>> GetOnlineFriendsConnectionIdsAsync(long ownerId);
+    Task<Dictionary<long, IEnumerable<string>>> GetOnlineFriendsConnectionIdsAsync(List<long> ownerIds);
 }

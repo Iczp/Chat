@@ -25,7 +25,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
     protected string Prefix => $"{Options.Value.KeyPrefix}SessionUnits:";
 
-    private const string UnitKeyPattern = "Units:UnitId-";
+    private const string UnitKeyPattern = "Units:";
 
     /// <summary>
     /// 会话单元详情信息
@@ -53,56 +53,56 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    private RedisKey SessionMembersSetKey(Guid sessionId) => $"{Prefix}Sessions:Members:SessionId-{sessionId}";
+    private RedisKey SessionMembersSetKey(Guid sessionId) => $"{Prefix}Sessions:Members:{sessionId}";
 
     /// <summary>
     /// 置顶的会话单元
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    private RedisKey SessionPinnedSortingHashKey(Guid sessionId) => $"{Prefix}Sessions:PinnedSorting:SessionId-{sessionId}";
+    private RedisKey SessionPinnedSortingHashKey(Guid sessionId) => $"{Prefix}Sessions:PinnedSorting:{sessionId}";
 
     /// <summary>
     /// 静默会话单元
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    private RedisKey SessionImmersedHashKey(Guid sessionId) => $"{Prefix}Sessions:Immersed:SessionId-{sessionId}";
+    private RedisKey SessionImmersedHashKey(Guid sessionId) => $"{Prefix}Sessions:Immersed:{sessionId}";
 
     /// <summary>
     /// 创建人
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    private RedisKey SessionCreatorHashKey(Guid sessionId) => $"{Prefix}Sessions:Creator:SessionId-{sessionId}";
+    private RedisKey SessionCreatorHashKey(Guid sessionId) => $"{Prefix}Sessions:Creator:{sessionId}";
 
     /// <summary>
     /// 非公开会话单元
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    private RedisKey SessionPrivateHashKey(Guid sessionId) => $"{Prefix}Sessions:Private:SessionId-{sessionId}";
+    private RedisKey SessionPrivateHashKey(Guid sessionId) => $"{Prefix}Sessions:Private:{sessionId}";
 
     /// <summary>
     /// 固定的会话单元
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    private RedisKey SessionStaticHashKey(Guid sessionId) => $"{Prefix}Sessions:Static:SessionId-{sessionId}";
+    private RedisKey SessionStaticHashKey(Guid sessionId) => $"{Prefix}Sessions:Static:{sessionId}";
 
     /// <summary>
     /// 创建人
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    private RedisKey SessionBoxHashKey(Guid sessionId) => $"{Prefix}Sessions:Box:SessionId-{sessionId}";
+    private RedisKey SessionBoxHashKey(Guid sessionId) => $"{Prefix}Sessions:Box:{sessionId}";
 
     /// <summary>
     /// 好友会话单元
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerFriendsSetKey(long ownerId) => $"{Prefix}Owners:Friends:OwnerId-{ownerId}";
+    private RedisKey OwnerFriendsSetKey(long ownerId) => $"{Prefix}Owners:Friends:{ownerId}";
 
     /// <summary>
     /// 好友分类
@@ -110,56 +110,56 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// <param name="friendType"></param>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerFriendsMapZsetKey(long ownerId, ChatObjectTypeEnums? friendType) => $"{Prefix}Owners:FriendsMap:{friendType}:OwnerId-{ownerId}";
+    private RedisKey OwnerFriendsMapZsetKey(long ownerId, ChatObjectTypeEnums? friendType) => $"{Prefix}Owners:FriendsMap:{friendType}:{ownerId}";
 
     /// <summary>
     /// 置顶的会话单元
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerPinnedBadgeSetKey(long ownerId) => $"{Prefix}Owners:PinnedBadge:OwnerId-{ownerId}";
+    private RedisKey OwnerPinnedBadgeSetKey(long ownerId) => $"{Prefix}Owners:PinnedBadge:{ownerId}";
 
     /// <summary>
     /// 有未读消息的会话单元
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerHasBadgeSetKey(long ownerId) => $"{Prefix}Owners:HasBadge:OwnerId-{ownerId}";
+    private RedisKey OwnerHasBadgeSetKey(long ownerId) => $"{Prefix}Owners:HasBadge:{ownerId}";
 
     /// <summary>
     /// 静默会话单元
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerImmersedSetKey(long ownerId) => $"{Prefix}Owners:Immersed:OwnerId-{ownerId}";
+    private RedisKey OwnerImmersedSetKey(long ownerId) => $"{Prefix}Owners:Immersed:{ownerId}";
 
     /// <summary>
     /// 关注会话单元
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerFollowingSetKey(long ownerId) => $"{Prefix}Owners:Following:OwnerId-{ownerId}";
+    private RedisKey OwnerFollowingSetKey(long ownerId) => $"{Prefix}Owners:Following:{ownerId}";
 
     /// <summary>
     /// @所有人 会话单元
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerRemindAllSetKey(long ownerId) => $"{Prefix}Owners:RemindAll:OwnerId-{ownerId}";
+    private RedisKey OwnerRemindAllSetKey(long ownerId) => $"{Prefix}Owners:RemindAll:{ownerId}";
 
     /// <summary>
     /// @所有人 会话单元
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerRemindMeSetKey(long ownerId) => $"{Prefix}Owners:RemindMe:OwnerId-{ownerId}";
+    private RedisKey OwnerRemindMeSetKey(long ownerId) => $"{Prefix}Owners:RemindMe:{ownerId}";
 
     /// <summary>
     /// 创建人 会话单元
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerCreatorSetKey(long ownerId) => $"{Prefix}Owners:Creator:OwnerId-{ownerId}";
+    private RedisKey OwnerCreatorSetKey(long ownerId) => $"{Prefix}Owners:Creator:{ownerId}";
 
     /// <summary>
     /// 消息盒子
@@ -167,28 +167,28 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// <param name="ownerId"></param>
     /// <param name="boxId"></param>
     /// <returns></returns>
-    private RedisKey OwnerBoxFriendsSetKey(long ownerId, Guid boxId) => $"{Prefix}Owners:BoxFriends:OwnerId-{ownerId}:BoxId-{boxId}";
+    private RedisKey OwnerBoxFriendsSetKey(long ownerId, Guid boxId) => $"{Prefix}Owners:BoxFriends:{ownerId}:{boxId}";
 
     /// <summary>
     /// 消息盒子角标统计
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerBoxBadgeZsetKey(long ownerId) => $"{Prefix}Owners:BoxBadge:OwnerId-{ownerId}";
+    private RedisKey OwnerBoxBadgeZsetKey(long ownerId) => $"{Prefix}Owners:BoxBadge:{ownerId}";
 
     /// <summary>
     /// 消息统计
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerStatisticHashKey(long ownerId) => $"{Prefix}Owners:Statistic:OwnerId-{ownerId}";
+    private RedisKey OwnerStatisticHashKey(long ownerId) => $"{Prefix}Owners:Statistic:{ownerId}";
 
     /// <summary>
     /// 消息统计(分类)
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey StatisticMapHashKey(long ownerId) => $"{Prefix}Owners:StatisticMap:OwnerId-{ownerId}";
+    private RedisKey StatisticMapHashKey(long ownerId) => $"{Prefix}Owners:StatisticMap:{ownerId}";
 
     /// <summary>
     /// RedisKey： Element

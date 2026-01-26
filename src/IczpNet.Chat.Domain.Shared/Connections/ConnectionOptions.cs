@@ -22,4 +22,9 @@ public class ConnectionOptions
     /// </summary>
     public int ConnectionCacheExpirationSeconds { get; set; } = 60 * 5;
 
+    /// <summary>
+    /// 是否启用 单独 好友在线状态统计（单独Key）
+    /// </summary>
+    public bool IsEnableExclusiveStatFriends { get; set; } = false;
+
 }

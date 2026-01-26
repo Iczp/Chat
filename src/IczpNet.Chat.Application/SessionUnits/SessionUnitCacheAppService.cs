@@ -579,12 +579,6 @@ public class SessionUnitCacheAppService(
         await LoadFriendsIfNotExistsAsync(input.OwnerId);
 
         IEnumerable<long> onlineFriendIds = [];
-        //是否在线
-        if (input.IsOnline.HasValue)
-        {
-            var online = await OnlineManager.GetOnlineFriendsAsync(input.OwnerId);
-            onlineFriendIds = online.Select(x => x.OwnerId).Distinct();
-        }
 
         var queryable = await SessionUnitCacheManager.GetTypedFriendsAsync(
             input.View,
@@ -596,6 +590,14 @@ public class SessionUnitCacheAppService(
             //take: input.MaxResultCount,
             isDescending: true);
 
+
+        //是否在线
+        if (input.IsOnline.HasValue)
+        {
+            var firendIds = queryable.Select(x => x.DestinationId);
+            var onlineMap = await OnlineManager.IsOnlineAsync(firendIds);
+            onlineFriendIds = onlineMap.Where(x => x.Value).Select(x => x.Key).Distinct();
+        }
 
         var query = queryable.AsQueryable()
             .WhereIf(input.FriendType.HasValue, x => x.DestinationObjectType == input.FriendType)

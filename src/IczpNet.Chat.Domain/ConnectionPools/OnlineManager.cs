@@ -6,12 +6,14 @@ using IczpNet.Chat.RedisServices;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Pipelines.Sockets.Unofficial.Buffers;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Volo.Abp.Json;
 using Volo.Abp.Uow;
 
@@ -20,6 +22,8 @@ namespace IczpNet.Chat.ConnectionPools;
 public class OnlineManager : RedisService, IOnlineManager//, IHostedService
 {
     public IOptions<ConnectionOptions> ConnectionOptions => LazyServiceProvider.LazyGetRequiredService<IOptions<ConnectionOptions>>();
+
+    public ConnectionOptions Config => ConnectionOptions.Value;
 
     public ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
 
@@ -47,7 +51,7 @@ return 1";
     /// </summary>
     /// <param name="connectionId"></param>
     /// <returns></returns>
-    private RedisKey ConnHashKey(string connectionId) => $"{Prefix}Conns:ConnId-{connectionId}";
+    private RedisKey ConnHashKey(string connectionId) => $"{Prefix}Conns:{connectionId}";
 
     /// <summary>
     /// host -> sorted set of connection ids (score = ticks)
@@ -63,7 +67,7 @@ return 1";
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    private RedisKey SessionConnHashKey(Guid sessionId) => $"{Prefix}Sessions:SessionId-{sessionId}";
+    private RedisKey SessionConnHashKey(Guid sessionId) => $"{Prefix}Sessions:{sessionId}";
 
     /// <summary>
     /// 设备
@@ -72,7 +76,9 @@ return 1";
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerDeviceHashKey(long ownerId) => $"{Prefix}Owners:Devices:OwnerId-{ownerId}";
+    private RedisKey OwnerDeviceHashKey(long ownerId) => $"{Prefix}Owners:Devices:{ownerId}";
+
+    private static long? ParseOwnerDeviceHashKey(string ownerDeviceHashKey) => long.TryParse(ownerDeviceHashKey.Split(":").Last(), out var ownerId) ? ownerId : null;
 
     /// <summary>
     /// 最后连接时间
@@ -81,14 +87,14 @@ return 1";
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerLatestOnlineDeviceZsetKey(long ownerId) => $"{Prefix}Owners:LatestOnlineDevice:OwnerId-{ownerId}";
+    private RedisKey OwnerLatestOnlineDeviceZsetKey(long ownerId) => $"{Prefix}Owners:LatestOnlineDevice:{ownerId}";
 
     /// <summary>
     /// 
     /// </summary>
     /// <param name="firendOwnerId"></param>
     /// <returns></returns>
-    private RedisKey FriendsConnsHashKey(long firendOwnerId) => $"{Prefix}Friends:OwnerId-{firendOwnerId}";
+    private RedisKey FriendsConnsHashKey(long firendOwnerId) => $"{Prefix}Friends:{firendOwnerId}";
 
     /// <summary>
     /// 会话
@@ -97,7 +103,7 @@ return 1";
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerSessionsHashKey(long ownerId) => $"{Prefix}Owners:Sessions:OwnerId-{ownerId}";
+    private RedisKey OwnerSessionsHashKey(long ownerId) => $"{Prefix}Owners:Sessions:{ownerId}";
 
     /// <summary>
     /// 用户连接
@@ -106,7 +112,7 @@ return 1";
     /// </summary>
     /// <param name="userId"></param>
     /// <returns></returns>
-    private RedisKey UserConnKey(Guid userId) => $"{Prefix}Users:userId-{userId}";
+    private RedisKey UserConnKey(Guid userId) => $"{Prefix}Users:{userId}";
 
     /// <summary>
     /// App连接
@@ -115,7 +121,7 @@ return 1";
     /// </summary>
     /// <param name="appId"></param>
     /// <returns></returns>
-    private RedisKey AppSetKey(string appId) => $"{Prefix}Apps:AppId-{appId}";
+    private RedisKey AppSetKey(string appId) => $"{Prefix}Apps:{appId}";
 
     /// <summary>
     /// Client连接
@@ -124,7 +130,7 @@ return 1";
     /// </summary>
     /// <param name="clientId"></param>
     /// <returns></returns>
-    private RedisKey ClientSetKey(string clientId) => $"{Prefix}Clients:ClientId-{clientId}";
+    private RedisKey ClientSetKey(string clientId) => $"{Prefix}Clients:{clientId}";
 
     /// <summary>
     /// 所有主机
@@ -181,7 +187,7 @@ return 1";
         }
     }
 
-    private static void SortedActionOwnerFriends(List<long> ownerIds, Dictionary<long, IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>> friendsMap, Action<long, KeyValuePair<SessionUnitElement, FriendScore>> eachAction)
+    private static void HashSetFriendsAction(List<long> ownerIds, Dictionary<long, IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>> friendsMap, Action<long, KeyValuePair<SessionUnitElement, FriendScore>> eachAction)
     {
         foreach (var ownerId in ownerIds)
         {
@@ -194,9 +200,13 @@ return 1";
         }
     }
 
-    private void SortedSetOwnerFriendsConns(IBatch batch, List<long> ownerIds, Dictionary<long, IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>> friendsMap, string connectionId)
+    private void HashSetFriendsConns(IBatch batch, List<long> ownerIds, Dictionary<long, IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>> friendsMap, string connectionId)
     {
-        SortedActionOwnerFriends(ownerIds, friendsMap, (ownerId, friend) =>
+        if (!Config.IsEnableExclusiveStatFriends)
+        {
+            return;
+        }
+        HashSetFriendsAction(ownerIds, friendsMap, (ownerId, friend) =>
         {
             var element = friend.Key;
             //Friends Conns
@@ -209,9 +219,13 @@ return 1";
         });
     }
 
-    private void SortedRemoveOwnerFriends(IBatch batch, List<long> ownerIds, Dictionary<long, IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>> friendsMap)
+    private void HashRemoveFriends(IBatch batch, List<long> ownerIds, Dictionary<long, IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>> friendsMap)
     {
-        SortedActionOwnerFriends(ownerIds, friendsMap, (ownerId, friend) =>
+        if (!Config.IsEnableExclusiveStatFriends)
+        {
+            return;
+        }
+        HashSetFriendsAction(ownerIds, friendsMap, (ownerId, friend) =>
         {
             var element = friend.Key;
             //Friends Conns
@@ -378,7 +392,7 @@ return 1";
         HashSetOwnerSessions(batch, connectionPool, friendsMap);
 
         //Friends Conns
-        SortedSetOwnerFriendsConns(batch, ownerIds, friendsMap, connectionId);
+        HashSetFriendsConns(batch, ownerIds, friendsMap, connectionId);
 
         // chatObject -> connection hash (owner conn mapping)
         HashSetOwnerDevice(batch, connectionPool);
@@ -401,6 +415,8 @@ return 1";
 
     protected virtual async Task<ConnectionPoolCacheItem> RefreshExpireAsync(string connectionId, CancellationToken token = default)
     {
+        token.ThrowIfCancellationRequested();
+
         Logger.LogInformation($"[RefreshExpireAsync] connectionId: {connectionId}");
 
         var connectionPool = await GetAsync(connectionId, token);
@@ -418,10 +434,15 @@ return 1";
         // get or set sessions for owners (batch reads inside)
         var friendsMap = await GetOrSetFriendsAsync(ownerIds, token);
 
-        var sessionChatObjects = BuildSessionChatObjects(friendsMap);
+        var sessionChatObjectMap = BuildSessionChatObjects(friendsMap);
+
+        Logger.LogInformation("[RefreshExpireAsync] sessionChatObjectMap count: {count}", sessionChatObjectMap.Count);
+
+        var now = Clock.Now;
 
         var batch = Database.CreateBatch();
-        var unixTime = Clock.Now.ToUnixTimeMilliseconds();
+
+        var unixTime = now.ToUnixTimeMilliseconds();
 
         // Refresh expire on owner session sets, owner conn hashes, session conn hashes
         foreach (var ownerId in ownerIds)
@@ -432,14 +453,6 @@ return 1";
             _ = batch.SortedSetAddAsync(OwnerLatestOnlineDeviceZsetKey(ownerId), DeviceElement.Create(connectionPool.DeviceType, connectionPool.DeviceId), unixTime);
         }
 
-        // 
-        SortedSetOwnerFriendsConns(batch, ownerIds, friendsMap, null);
-
-        foreach (var kv in sessionChatObjects)
-        {
-            Expire(batch, SessionConnHashKey(kv.Key));
-        }
-
         // Host: update timestamp in sorted set
         SortedSetIf(!string.IsNullOrWhiteSpace(connectionPool.Host), () => HostConnZsetKey(connectionPool.Host), connectionId, unixTime, batch: batch);
 
@@ -447,19 +460,37 @@ return 1";
         ExpireIf(connectionPool.UserId.HasValue, () => UserConnKey(connectionPool.UserId.Value), batch: batch);
 
         // App
-        ExpireIf(string.IsNullOrWhiteSpace(connectionPool.AppId), () => AppSetKey(connectionPool.AppId), batch: batch);
+        ExpireIf(!string.IsNullOrWhiteSpace(connectionPool.AppId), () => AppSetKey(connectionPool.AppId), batch: batch);
 
         // Client
-        ExpireIf(string.IsNullOrWhiteSpace(connectionPool.ClientId), () => ClientSetKey(connectionPool.ClientId), batch: batch);
+        ExpireIf(!string.IsNullOrWhiteSpace(connectionPool.ClientId), () => ClientSetKey(connectionPool.ClientId), batch: batch);
 
         // ActiveTime
-        HashSetIf(true, () => ConnHashKey(connectionId), nameof(ConnectionPoolCacheItem.ActiveTime), Clock.Now.ToRedisValue(), batch: batch);
-        
+        HashSetIf(true, () => ConnHashKey(connectionId), nameof(ConnectionPoolCacheItem.ActiveTime), now.ToRedisValue(), batch: batch);
+
+        // key多时，超过半数的缓存时间 才刷新
+        var refreshInterval = TimeSpan.FromSeconds(Math.Max(1, Config.ConnectionCacheExpirationSeconds / 2));
+        var shouldRefreshBigKey = connectionPool.ActiveTime.HasValue && now - connectionPool.ActiveTime.Value > refreshInterval;
+        Logger.LogInformation("[RefreshExpireAsync] shouldRefreshBigKey: {shouldRefreshBigKey}, seconds: {seconds}", shouldRefreshBigKey, refreshInterval);
+        if (shouldRefreshBigKey)
+        {
+            Logger.LogInformation("[ActiveTimeCheck] now={now}, active={active}, diff={diff}", now, connectionPool.ActiveTime, now - connectionPool.ActiveTime);
+            // [key多:1] Friends 如果启用,这个Key较多
+            HashSetFriendsConns(batch, ownerIds, friendsMap, null);
+            foreach (var kv in sessionChatObjectMap)
+            {
+                // [key多:2] session
+                Expire(batch, SessionConnHashKey(kv.Key));
+            }
+        }
+
         batch.Execute();
 
         Logger.LogInformation($"[RefreshExpireAsync] writeBatch.Execute()");
 
-        return default;
+        connectionPool.ActiveTime = now;
+
+        return connectionPool;
     }
 
     public async Task<bool> DisconnectedAsync(string connectionId, CancellationToken token = default)
@@ -518,7 +549,7 @@ return 1";
         SortedRemoveIf(!string.IsNullOrEmpty(connectionPool.ClientId), () => ClientSetKey(connectionPool.ClientId), connectionId, refreshExpire: true, batch: batch);
 
         // Friends
-        SortedRemoveOwnerFriends(batch, chatObjectIdList, friendsMap);
+        HashRemoveFriends(batch, chatObjectIdList, friendsMap);
 
         // Delete conn hash
         _ = batch.KeyDeleteAsync(ConnHashKey(connectionId));
@@ -562,7 +593,7 @@ return 1";
             await DeleteByHostNameAsync(CurrentHosted.Name);
 
             var batch = Database.CreateBatch();
-            HashSetIf(true, () => AllHostZsetKey(), CurrentHosted.Name, Clock.Now.ToUnixTimeMilliseconds(), expire: TimeSpan.FromDays(7), batch: batch);
+            SortedSetIf(true, () => AllHostZsetKey(), CurrentHosted.Name, Clock.Now.ToUnixTimeMilliseconds(), expire: TimeSpan.FromDays(7), batch: batch);
             batch.Execute();
 
             return true;
@@ -596,8 +627,21 @@ return 1";
 
     public async Task<bool> IsOnlineAsync(long ownertId, CancellationToken token = default)
     {
+        token.ThrowIfCancellationRequested();
         var length = await Database.HashLengthAsync(OwnerDeviceHashKey(ownertId));
         return length > 0;
+    }
+    public async Task<Dictionary<long, bool>> IsOnlineAsync(IEnumerable<long> ownerIds, CancellationToken token = default)
+    {
+        token.ThrowIfCancellationRequested();
+        var ownerIdsList = ownerIds.Distinct().ToList();
+        var keys = ownerIdsList.Select(OwnerDeviceHashKey);
+        var onlineMap = await BatchKeyExistsAsync(keys);
+        var onlineOwnerIds = onlineMap.Where(x => x.Value)
+            .Select(x => ParseOwnerDeviceHashKey(x.Key))
+            .Where(x => x.HasValue)
+            .Select(x => x.Value);
+        return ownerIdsList.ToDictionary(x => x, x => onlineOwnerIds.Contains(x));
     }
 
     public async Task<IEnumerable<OwnerLatestOnline>> GetLatestOnlineAsync(long ownertId, CancellationToken token = default)
@@ -992,25 +1036,51 @@ return 1";
 
     public async Task<long> GetOnlineFriendsCountAsync(long ownerId)
     {
-        //var friendsMap = await GetOrSetFriendsAsync([ownerId]);
-        //var firendIds = friendsMap[ownerId].Select(x => x.Key.DestinationId).ToHashSet();
-        //var keys = firendIds.Select(OwnerDeviceHashKey);
-        //var result = await BatchKeyExistsAsync(keys);
-        //return result.Where(x => x.Value).Count();
-
-        //return await Database.SortedSetLengthAsync(FriendsLatestOnlineZsetKey(ownerId));
-        return await Database.HashLengthAsync(FriendsConnsHashKey(ownerId));
+        if (Config.IsEnableExclusiveStatFriends)
+        {
+            return await Database.HashLengthAsync(FriendsConnsHashKey(ownerId));
+        }
+        // 通过 ownerId 获取好友列表，检查每个好友的在线状态
+        var friendsMap = await GetOrSetFriendsAsync([ownerId]);
+        var firendIds = friendsMap[ownerId].Select(x => x.Key.DestinationId).ToHashSet();
+        var keys = firendIds.Select(OwnerDeviceHashKey);
+        var result = await BatchKeyExistsAsync(keys);
+        return result.Where(x => x.Value).Count();
     }
 
     public async Task<IEnumerable<OnlineFriendInfo>> GetOnlineFriendsAsync(long ownerId)
     {
-        var entries = await Database.HashGetAllAsync(FriendsConnsHashKey(ownerId));
-        return entries.Select(x =>
+        if (Config.IsEnableExclusiveStatFriends)
         {
-            var element = SessionUnitElement.Parse(x.Name);
+            var entries = await Database.HashGetAllAsync(FriendsConnsHashKey(ownerId));
+            return entries.Select(x =>
+            {
+                var element = SessionUnitElement.Parse(x.Name);
+                return new OnlineFriendInfo()
+                {
+                    //ConnectionId = x.Value.ToString(),
+                    OwnerId = element.OwnerId,
+                    DestinationId = element.DestinationId,
+                    SessionId = element.SessionId,
+                    SessionUnitId = element.SessionUnitId,
+                };
+            });
+        }
+
+        //通过 ownerId 获取好友列表，检查每个好友的在线状态
+        var friendsMap = await GetOrSetFriendsAsync([ownerId]);
+        var friends = friendsMap[ownerId];
+        var friendIds = friends.Select(x => x.Key.DestinationId).ToList();
+        var onlineMap = await IsOnlineAsync(friendIds);
+        var onlineFriendIds = onlineMap.Where(x => x.Value).Select(x => x.Key);
+
+        return onlineFriendIds.Select(x =>
+        {
+            var friend = friends.FirstOrDefault(f => f.Key.DestinationId == x);
+            var element = friend.Key;
             return new OnlineFriendInfo()
             {
-                ConnectionId = x.Value.ToString(),
+                //ConnectionId = conn?.ConnectionId,
                 OwnerId = element.OwnerId,
                 DestinationId = element.DestinationId,
                 SessionId = element.SessionId,
@@ -1019,12 +1089,34 @@ return 1";
         });
     }
 
-    public async Task<IEnumerable<string>> GetOnlineFriendsConnectionIdsAsync(long ownerId)
+    public async Task<Dictionary<long, IEnumerable<string>>> GetOnlineFriendsConnectionIdsAsync(List<long> ownerIds)
     {
-        var friendsConnsHashKey = FriendsConnsHashKey(ownerId);
+        // ownerId -> friends
+        var friendsMap = await GetOrSetFriendsAsync(ownerIds);
 
-        var values = await Database.HashValuesAsync(friendsConnsHashKey);
+        // 所有朋友 ownerId
+        var friendIds = friendsMap
+            .SelectMany(x => x.Value.Select(d => d.Key.OwnerId))
+            .Distinct()
+            .ToList();
 
-        return values.Select(x => x.ToString()).Distinct();
+        if (friendIds.Count == 0)
+        {
+            return [];
+        }
+
+        var batch = Database.CreateBatch();
+
+        // ownerId -> HashGetAllAsync Task
+        var taskMap = friendIds.ToDictionary(x => x, x => batch.HashKeysAsync(OwnerDeviceHashKey(x)));
+
+        batch.Execute();
+
+        await Task.WhenAll(taskMap.Values);
+
+        // ownerId -> connectionIds
+        return taskMap
+            .Where(x => x.Value.Result.Length > 0)
+            .ToDictionary(x => x.Key, x => x.Value.Result.Select(d => d.ToString()));
     }
 }
