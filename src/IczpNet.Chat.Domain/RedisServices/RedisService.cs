@@ -246,7 +246,7 @@ return tonumber(newValue)
         }
     }
 
-    protected void SortedSetIf(bool condition, Func<RedisKey> redisKeyFunc, RedisValue field, double score, IBatch batch, TimeSpan? expiry = null)
+    protected void SortedSetIf(bool condition, Func<RedisKey> redisKeyFunc, RedisValue field, double score, IBatch batch, TimeSpan? expiry = null, TimeSpan expire = default)
     {
         if (!condition)
         {

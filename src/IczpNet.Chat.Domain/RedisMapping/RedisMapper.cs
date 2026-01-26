@@ -701,24 +701,21 @@ public static class RedisMapper
         if (rv.IsNull) return DateTime.MinValue;
         var s = rv.ToString();
         if (string.IsNullOrWhiteSpace(s)) return DateTime.MinValue;
-        // try ISO8601
 
+        // try ISO8601 as Local
+        if (DateTime.TryParseExact(s, "o", Invariant, DateTimeStyles.RoundtripKind, out var dt))
+            return dt.ToLocalTime();
 
-        if (DateTime.TryParseExact(s, "o", Invariant, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var dt))
-            return dt;
         // try parse as long ms
         if (long.TryParse(s, out var ms))
         {
-            try
-            {
-                return DateTimeOffset.FromUnixTimeMilliseconds(ms).LocalDateTime;
-            }
+            try { return DateTimeOffset.FromUnixTimeMilliseconds(ms).LocalDateTime; }
             catch { }
         }
-        if (DateTime.TryParse(s, Invariant, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var dt2))
-        {
+
+        // try default parse
+        if (DateTime.TryParse(s, Invariant, DateTimeStyles.AssumeLocal, out var dt2))
             return dt2;
-        }
 
         return defaultValue;
     }

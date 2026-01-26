@@ -415,6 +415,8 @@ return 1";
 
     protected virtual async Task<ConnectionPoolCacheItem> RefreshExpireAsync(string connectionId, CancellationToken token = default)
     {
+        token.ThrowIfCancellationRequested();
+
         Logger.LogInformation($"[RefreshExpireAsync] connectionId: {connectionId}");
 
         var connectionPool = await GetAsync(connectionId, token);
@@ -432,10 +434,15 @@ return 1";
         // get or set sessions for owners (batch reads inside)
         var friendsMap = await GetOrSetFriendsAsync(ownerIds, token);
 
-        var sessionChatObjects = BuildSessionChatObjects(friendsMap);
+        var sessionChatObjectMap = BuildSessionChatObjects(friendsMap);
+
+        Logger.LogInformation("[RefreshExpireAsync] sessionChatObjectMap count: {count}", sessionChatObjectMap.Count);
+
+        var now = Clock.Now;
 
         var batch = Database.CreateBatch();
-        var unixTime = Clock.Now.ToUnixTimeMilliseconds();
+
+        var unixTime = now.ToUnixTimeMilliseconds();
 
         // Refresh expire on owner session sets, owner conn hashes, session conn hashes
         foreach (var ownerId in ownerIds)
@@ -444,14 +451,6 @@ return 1";
             Expire(batch, OwnerDeviceHashKey(ownerId));
             //latest
             _ = batch.SortedSetAddAsync(OwnerLatestOnlineDeviceZsetKey(ownerId), DeviceElement.Create(connectionPool.DeviceType, connectionPool.DeviceId), unixTime);
-        }
-
-        // Friends 
-        HashSetFriendsConns(batch, ownerIds, friendsMap, null);
-
-        foreach (var kv in sessionChatObjects)
-        {
-            Expire(batch, SessionConnHashKey(kv.Key));
         }
 
         // Host: update timestamp in sorted set
@@ -467,13 +466,31 @@ return 1";
         ExpireIf(!string.IsNullOrWhiteSpace(connectionPool.ClientId), () => ClientSetKey(connectionPool.ClientId), batch: batch);
 
         // ActiveTime
-        HashSetIf(true, () => ConnHashKey(connectionId), nameof(ConnectionPoolCacheItem.ActiveTime), Clock.Now.ToRedisValue(), batch: batch);
+        HashSetIf(true, () => ConnHashKey(connectionId), nameof(ConnectionPoolCacheItem.ActiveTime), now.ToRedisValue(), batch: batch);
+
+        // key多时，超过半数的缓存时间 才刷新
+        var refreshInterval = TimeSpan.FromSeconds(Math.Max(1, Config.ConnectionCacheExpirationSeconds / 2));
+        var shouldRefreshBigKey = connectionPool.ActiveTime.HasValue && now - connectionPool.ActiveTime.Value > refreshInterval;
+        Logger.LogInformation("[RefreshExpireAsync] shouldRefreshBigKey: {shouldRefreshBigKey}, seconds: {seconds}", shouldRefreshBigKey, refreshInterval);
+        if (shouldRefreshBigKey)
+        {
+            Logger.LogInformation("[ActiveTimeCheck] now={now}, active={active}, diff={diff}", now, connectionPool.ActiveTime, now - connectionPool.ActiveTime);
+            // [key多:1] Friends 如果启用,这个Key较多
+            HashSetFriendsConns(batch, ownerIds, friendsMap, null);
+            foreach (var kv in sessionChatObjectMap)
+            {
+                // [key多:2] session
+                Expire(batch, SessionConnHashKey(kv.Key));
+            }
+        }
 
         batch.Execute();
 
         Logger.LogInformation($"[RefreshExpireAsync] writeBatch.Execute()");
 
-        return default;
+        connectionPool.ActiveTime = now;
+
+        return connectionPool;
     }
 
     public async Task<bool> DisconnectedAsync(string connectionId, CancellationToken token = default)
@@ -576,7 +593,7 @@ return 1";
             await DeleteByHostNameAsync(CurrentHosted.Name);
 
             var batch = Database.CreateBatch();
-            HashSetIf(true, () => AllHostZsetKey(), CurrentHosted.Name, Clock.Now.ToUnixTimeMilliseconds(), expire: TimeSpan.FromDays(7), batch: batch);
+            SortedSetIf(true, () => AllHostZsetKey(), CurrentHosted.Name, Clock.Now.ToUnixTimeMilliseconds(), expire: TimeSpan.FromDays(7), batch: batch);
             batch.Execute();
 
             return true;
