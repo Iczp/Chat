@@ -465,11 +465,8 @@ return 1";
         // Client
         ExpireIf(!string.IsNullOrWhiteSpace(connectionPool.ClientId), () => ClientSetKey(connectionPool.ClientId), batch: batch);
 
-        // ActiveTime
-        HashSetIf(true, () => ConnHashKey(connectionId), nameof(ConnectionPoolCacheItem.ActiveTime), now.ToRedisValue(), batch: batch);
-
         // key多时，超过半数的缓存时间 才刷新
-        var refreshInterval = TimeSpan.FromSeconds(Math.Max(1, Config.ConnectionCacheExpirationSeconds / 2));
+        var refreshInterval = TimeSpan.FromSeconds(30); // TimeSpan.FromSeconds(Math.Max(1, Config.ConnectionCacheExpirationSeconds / 2));
         var shouldRefreshBigKey = connectionPool.ActiveTime.HasValue && now - connectionPool.ActiveTime.Value > refreshInterval;
         Logger.LogInformation("[RefreshExpireAsync] shouldRefreshBigKey: {shouldRefreshBigKey}, seconds: {seconds}", shouldRefreshBigKey, refreshInterval);
         if (shouldRefreshBigKey)
@@ -483,6 +480,9 @@ return 1";
                 Expire(batch, SessionConnHashKey(kv.Key));
             }
         }
+
+        // ActiveTime
+        HashSetIf(true, () => ConnHashKey(connectionId), nameof(ConnectionPoolCacheItem.ActiveTime), now.ToRedisValue(), batch: batch);
 
         batch.Execute();
 
