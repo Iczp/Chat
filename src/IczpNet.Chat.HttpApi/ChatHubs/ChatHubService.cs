@@ -7,6 +7,7 @@ using IczpNet.Chat.Hosting;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using Pipelines.Sockets.Unofficial.Buffers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,12 +37,14 @@ public abstract class ChatHubService : DomainService
     {
         var ownerIds = await ChatObjectManager.GetIdListByUserIdAsync(userId);
 
-        var connIdMap = new Dictionary<long, IEnumerable<string>>(ownerIds.Count);
+        var connIdMap = await OnlineManager.GetOnlineFriendsConnectionIdsAsync(ownerIds);
 
-        foreach (var ownerId in ownerIds)
-        {
-            connIdMap[ownerId] = await OnlineManager.GetOnlineFriendsConnectionIdsAsync(ownerId);
-        }
+        //var connIdMap = new Dictionary<long, IEnumerable<string>>(ownerIds.Count);
+        //foreach (var ownerId in ownerIds)
+        //{
+        //    connIdMap[ownerId] = await OnlineManager.GetOnlineFriendsConnectionIdsAsync(ownerId);
+        //}
+
         var connIdList = connIdMap.SelectMany(x => x.Value).Distinct().ToList();
 
         var conns = await OnlineManager.GetManyAsync(connIdList);
