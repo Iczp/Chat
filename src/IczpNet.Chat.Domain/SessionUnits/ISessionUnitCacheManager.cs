@@ -218,6 +218,13 @@ public interface ISessionUnitCacheManager
         bool isDescending = true);
 
     /// <summary>
+    /// 获取好友会话单元
+    /// </summary>
+    /// <param name="ownerIds"></param>
+    /// <returns></returns>
+    Task<Dictionary<long, IEnumerable<SessionUnitElement>>> GetFriendsElementAsync(List<long> ownerIds);
+
+    /// <summary>
     /// 获取好友会话单元(原始信息)
     /// </summary>
     /// <param name="ownerId"></param>

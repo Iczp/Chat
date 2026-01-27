@@ -4,16 +4,17 @@ using IczpNet.Chat.Hosting;
 using IczpNet.Chat.RedisMapping;
 using IczpNet.Chat.RedisServices;
 using IczpNet.Chat.SessionUnits;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Pipelines.Sockets.Unofficial.Buffers;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Reactive.Concurrency;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using Volo.Abp.Json;
 using Volo.Abp.Uow;
 
@@ -32,6 +33,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
     public ICurrentHosted CurrentHosted => LazyServiceProvider.LazyGetRequiredService<ICurrentHosted>();
     public IJsonSerializer JsonSerializer => LazyServiceProvider.LazyGetRequiredService<IJsonSerializer>();
     public IConnectionStatManager ConnectionStatManager => LazyServiceProvider.LazyGetRequiredService<IConnectionStatManager>();
+    public IMemoryCache MemoryCache => LazyServiceProvider.LazyGetRequiredService<IMemoryCache>();
 
     protected override TimeSpan? CacheExpire => TimeSpan.FromSeconds(ConnectionOptions.Value.ConnectionCacheExpirationSeconds);
 
@@ -167,7 +169,7 @@ return 1";
         }
 
     }
-    private void HashSetOwnerSessions(IBatch batch, ConnectionPoolCacheItem connectionPool, Dictionary<long, IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>> friendsMap)
+    private void HashSetOwnerSessions(IBatch batch, ConnectionPoolCacheItem connectionPool, Dictionary<long, IEnumerable<SessionUnitElement>> friendsMap)
     {
         var ownerIds = connectionPool.ChatObjectIdList ?? [];
         foreach (var ownerId in ownerIds)
@@ -175,7 +177,7 @@ return 1";
             var ownerSessionKey = OwnerSessionsHashKey(ownerId);
             // if chatObjectSessions contains it, we assume set was exists or just created. To avoid extra KeyExists roundtrip, only set expire
             // but add members if we have sessions and set wasn't in Redis earlier (GetOrSetSessionsAsync only returns existing/filled).
-            var sessions = friendsMap.GetValueOrDefault(ownerId).Select(x => x.Key.SessionId);
+            var sessions = friendsMap.GetValueOrDefault(ownerId).Select(x => x.SessionId);
             if (sessions == null || !sessions.Any()) continue;
 
             // Add members (idempotent)
@@ -187,7 +189,7 @@ return 1";
         }
     }
 
-    private static void HashSetFriendsAction(List<long> ownerIds, Dictionary<long, IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>> friendsMap, Action<long, KeyValuePair<SessionUnitElement, FriendScore>> eachAction)
+    private static void HashSetFriendsAction(List<long> ownerIds, Dictionary<long, IEnumerable<SessionUnitElement>> friendsMap, Action<long, SessionUnitElement> eachAction)
     {
         foreach (var ownerId in ownerIds)
         {
@@ -200,15 +202,14 @@ return 1";
         }
     }
 
-    private void HashSetFriendsConns(IBatch batch, List<long> ownerIds, Dictionary<long, IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>> friendsMap, string connectionId)
+    private void HashSetAndRefreshFriendsConns(IBatch batch, List<long> ownerIds, Dictionary<long, IEnumerable<SessionUnitElement>> friendsMap, string connectionId)
     {
         if (!Config.IsEnableExclusiveStatFriends)
         {
             return;
         }
-        HashSetFriendsAction(ownerIds, friendsMap, (ownerId, friend) =>
+        HashSetFriendsAction(ownerIds, friendsMap, (ownerId, element) =>
         {
-            var element = friend.Key;
             //Friends Conns
             var friendConnsHashKey = FriendsConnsHashKey(element.DestinationId);
             if (!string.IsNullOrWhiteSpace(connectionId))
@@ -219,25 +220,25 @@ return 1";
         });
     }
 
-    private void HashRemoveFriends(IBatch batch, List<long> ownerIds, Dictionary<long, IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>> friendsMap)
+    private void RemoveFriendsConn(IBatch batch, List<long> ownerIds, Dictionary<long, IEnumerable<SessionUnitElement>> friendsMap)
     {
         if (!Config.IsEnableExclusiveStatFriends)
         {
             return;
         }
-        HashSetFriendsAction(ownerIds, friendsMap, (ownerId, friend) =>
+        HashSetFriendsAction(ownerIds, friendsMap, (ownerId, element) =>
         {
-            var element = friend.Key;
             //Friends Conns
             var friendConnsHashKey = FriendsConnsHashKey(element.DestinationId);
             batch.HashDeleteAsync(friendConnsHashKey, element);
             Expire(batch, friendConnsHashKey);
         });
     }
-    private void HashSetSessionConn(IBatch batch, ConnectionPoolCacheItem connectionPool, Dictionary<Guid, List<long>> sessionChatObjectsMap)
+    private void HashSetSessionConn(IBatch batch, ConnectionPoolCacheItem connectionPool, Dictionary<long, IEnumerable<SessionUnitElement>> friendsMap)
     {
+        var sessionOwnersMap = BuildSessionChatObjects(friendsMap);
         var connectionId = connectionPool.ConnectionId;
-        foreach (var kv in sessionChatObjectsMap)
+        foreach (var kv in sessionOwnersMap)
         {
             var sessionId = kv.Key;
             var ownerIds = kv.Value;
@@ -262,13 +263,13 @@ return 1";
     /// Build dictionary: sessionId -> ownerSessions of ownerIds
     /// More efficient than repeated LINQ GroupBy
     /// </summary>
-    private static Dictionary<Guid, List<long>> BuildSessionChatObjects(Dictionary<long, IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>> friendsMap)
+    private static Dictionary<Guid, List<long>> BuildSessionChatObjects(Dictionary<long, IEnumerable<SessionUnitElement>> friendsMap)
     {
         var dict = new Dictionary<Guid, List<long>>(friendsMap.Count * 2);
         foreach (var kv in friendsMap)
         {
             var ownerId = kv.Key;
-            var sessionList = kv.Value.Select(x => x.Key.SessionId);
+            var sessionList = kv.Value.Select(x => x.SessionId);
             if (sessionList == null) continue;
             foreach (var friend in sessionList)
             {
@@ -288,18 +289,23 @@ return 1";
     /// key: ownerId
     /// value: sessionId[]
     /// </summary>
-    /// <param name="chatObjectIdList"></param>
+    /// <param name="ownerIds"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    private async Task<Dictionary<long, IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>>> GetOrSetFriendsAsync(List<long> chatObjectIdList, CancellationToken token = default)
+    private async Task<Dictionary<long, IEnumerable<SessionUnitElement>>> LoadFriendsMapAsync(List<long> ownerIds, CancellationToken token = default)
     {
-        var result = new Dictionary<long, IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>>();
-        foreach (var chatObjectId in chatObjectIdList)
+        token.ThrowIfCancellationRequested();
+
+        var stopwatch = Stopwatch.StartNew();
+
+        foreach (var ownerId in ownerIds)
         {
-            await SessionUnitManager.LoadFriendsIfNotExistsAsync(chatObjectId);
-            var friends = await SessionUnitCacheManager.GetRawFriendsAsync(chatObjectId);
-            result.TryAdd(chatObjectId, friends);
+            await SessionUnitManager.LoadFriendsIfNotExistsAsync(ownerId);
         }
+        var result = await SessionUnitCacheManager.GetFriendsElementAsync(ownerIds);
+
+        Logger.LogInformation("[LoadFriendsMapAsync] ownerIds=[{ownerIds}], Elapsed: {Elapsed}ms", ownerIds.JoinAsString(","), stopwatch.ElapsedMilliseconds);
+
         return result;
     }
 
@@ -365,14 +371,8 @@ return 1";
         var userId = connectionPool.UserId;
         Logger.LogInformation($"[CreateAsync] connectionId:{connectionId},userId:{userId},ownerIds:{ownerIds.JoinAsString(",")}");
 
-        var friendsMap = await GetOrSetFriendsAsync(ownerIds, token);
+        var friendsMap = await LoadFriendsMapAsync(ownerIds, token);
 
-        // Build session -> owners mapping efficiently
-        var sessionOwnersMap = BuildSessionChatObjects(friendsMap);
-
-        // Now create a write batch to set all required keys
-
-        Logger.LogInformation($"[CreateAsync] writeBatch:Database.CreateBatch()");
         var batch = Database.CreateBatch();
 
         // Host: use sorted set for timestamped connections
@@ -392,13 +392,13 @@ return 1";
         HashSetOwnerSessions(batch, connectionPool, friendsMap);
 
         //Friends Conns
-        HashSetFriendsConns(batch, ownerIds, friendsMap, connectionId);
+        HashSetAndRefreshFriendsConns(batch, ownerIds, friendsMap, connectionId);
 
         // chatObject -> connection hash (owner conn mapping)
         HashSetOwnerDevice(batch, connectionPool);
 
         // session -> connection hash (session -> connId : owners joined)
-        HashSetSessionConn(batch, connectionPool, sessionOwnersMap);
+        HashSetSessionConn(batch, connectionPool, friendsMap);
 
         batch.Execute();
 
@@ -417,9 +417,13 @@ return 1";
     {
         token.ThrowIfCancellationRequested();
 
-        Logger.LogInformation($"[RefreshExpireAsync] connectionId: {connectionId}");
+        Logger.LogInformation($"[RefreshExpireAsync] connectionId={connectionId}");
+
+        var stopwatch = Stopwatch.StartNew();
 
         var connectionPool = await GetAsync(connectionId, token);
+
+        Logger.LogInformation("[RefreshExpireAsync] GetAsync connectionId={connectionId}, Elapsed: {Elapsed}ms", connectionId, stopwatch.ElapsedMilliseconds);
 
         if (connectionPool == null)
         {
@@ -429,14 +433,9 @@ return 1";
 
         var ownerIds = connectionPool.ChatObjectIdList;
 
-        Logger.LogInformation($"[RefreshExpireAsync] chatObjectIdList: {ownerIds.JoinAsString(",")}");
+        var friendsMap = await LoadFriendsMapAsync(ownerIds, token);
 
-        // get or set sessions for owners (batch reads inside)
-        var friendsMap = await GetOrSetFriendsAsync(ownerIds, token);
-
-        var sessionChatObjectMap = BuildSessionChatObjects(friendsMap);
-
-        Logger.LogInformation("[RefreshExpireAsync] sessionChatObjectMap count: {count}", sessionChatObjectMap.Count);
+        Logger.LogInformation("[RefreshExpireAsync] GetFriendsMapAsync ownerIds=[{ownerIds}], Elapsed: {Elapsed}ms", ownerIds.JoinAsString(","), stopwatch.ElapsedMilliseconds);
 
         var now = Clock.Now;
 
@@ -465,32 +464,32 @@ return 1";
         // Client
         ExpireIf(!string.IsNullOrWhiteSpace(connectionPool.ClientId), () => ClientSetKey(connectionPool.ClientId), batch: batch);
 
-        // key多时，超过半数的缓存时间 才刷新
-        var refreshInterval = TimeSpan.FromSeconds(30); // TimeSpan.FromSeconds(Math.Max(1, Config.ConnectionCacheExpirationSeconds / 2));
-        var shouldRefreshBigKey = connectionPool.ActiveTime.HasValue && now - connectionPool.ActiveTime.Value > refreshInterval;
-        Logger.LogInformation("[RefreshExpireAsync] shouldRefreshBigKey: {shouldRefreshBigKey}, seconds: {seconds}", shouldRefreshBigKey, refreshInterval);
-        if (shouldRefreshBigKey)
-        {
-            Logger.LogInformation("[ActiveTimeCheck] now={now}, active={active}, diff={diff}", now, connectionPool.ActiveTime, now - connectionPool.ActiveTime);
-            // [key多:1] Friends 如果启用,这个Key较多
-            HashSetFriendsConns(batch, ownerIds, friendsMap, null);
-            foreach (var kv in sessionChatObjectMap)
-            {
-                // [key多:2] session
-                Expire(batch, SessionConnHashKey(kv.Key));
-            }
-        }
+        // [key多:1] Friends 如果启用,这个Key较多
+        HashSetAndRefreshFriendsConns(batch, ownerIds, friendsMap, null);
+
+        // SessionConn
+        RefreshSessionExpire(batch, friendsMap);
 
         // ActiveTime
         HashSetIf(true, () => ConnHashKey(connectionId), nameof(ConnectionPoolCacheItem.ActiveTime), now.ToRedisValue(), batch: batch);
 
         batch.Execute();
 
-        Logger.LogInformation($"[RefreshExpireAsync] writeBatch.Execute()");
+        Logger.LogInformation("[RefreshExpireAsync]  batch.Execute, Elapsed: {Elapsed}ms", stopwatch.ElapsedMilliseconds);
 
         connectionPool.ActiveTime = now;
 
         return connectionPool;
+    }
+
+    private void RefreshSessionExpire(IBatch batch, Dictionary<long, IEnumerable<SessionUnitElement>> friendsMap)
+    {
+        var sessionChatObjectMap = BuildSessionChatObjects(friendsMap);
+        foreach (var kv in sessionChatObjectMap)
+        {
+            Expire(batch, SessionConnHashKey(kv.Key));
+        }
+        Logger.LogInformation("[RefreshSessionExpire] sessionChatObjectMap count: {count}", sessionChatObjectMap.Count);
     }
 
     public async Task<bool> DisconnectedAsync(string connectionId, CancellationToken token = default)
@@ -514,27 +513,13 @@ return 1";
             return;
         }
 
-        var chatObjectIdList = connectionPool.ChatObjectIdList ?? [];
+        var ownerIds = connectionPool.ChatObjectIdList ?? [];
 
         // Get sessions per owner (batched inside)
-        var friendsMap = await GetOrSetFriendsAsync(chatObjectIdList, token);
-
-        var sessionChatObjects = BuildSessionChatObjects(friendsMap);
-
-        // Remove connection from owner -> conn hash, session -> conn hash, host sorted set
-        // Use provided batch (caller may be a batch)
+        var friendsMap = await LoadFriendsMapAsync(ownerIds, token);
 
         // OwnerDevice
-        foreach (var ownerId in chatObjectIdList)
-        {
-            HashRemoveIf(true, () => OwnerDeviceHashKey(ownerId), connectionId, refreshExpire: true, batch: batch);
-        }
-
-        // SessionConn
-        foreach (var kv in sessionChatObjects)
-        {
-            HashRemoveIf(true, () => SessionConnHashKey(kv.Key), connectionId, refreshExpire: true, batch: batch);
-        }
+        RemoveOwnerDevice(batch, connectionId, ownerIds);
 
         // Host
         SortedRemoveIf(!string.IsNullOrWhiteSpace(connectionPool.Host), () => HostConnZsetKey(connectionPool.Host), connectionId, refreshExpire: true, batch: batch);
@@ -549,7 +534,10 @@ return 1";
         SortedRemoveIf(!string.IsNullOrEmpty(connectionPool.ClientId), () => ClientSetKey(connectionPool.ClientId), connectionId, refreshExpire: true, batch: batch);
 
         // Friends
-        HashRemoveFriends(batch, chatObjectIdList, friendsMap);
+        RemoveFriendsConn(batch, ownerIds, friendsMap);
+
+        // SessionConn
+        RemoveSessionConn(batch, connectionId, friendsMap);
 
         // Delete conn hash
         _ = batch.KeyDeleteAsync(ConnHashKey(connectionId));
@@ -557,6 +545,22 @@ return 1";
         // Note: we do not execute batch here because caller may pass batch and execute later.
     }
 
+    private void RemoveOwnerDevice(IBatch batch, string connectionId, List<long> ownerIds)
+    {
+        foreach (var ownerId in ownerIds)
+        {
+            HashRemoveIf(true, () => OwnerDeviceHashKey(ownerId), connectionId, refreshExpire: true, batch: batch);
+        }
+    }
+
+    private void RemoveSessionConn(IBatch batch, string connectionId, Dictionary<long, IEnumerable<SessionUnitElement>> friendsMap)
+    {
+        var sessionChatObjects = BuildSessionChatObjects(friendsMap);
+        foreach (var kv in sessionChatObjects)
+        {
+            HashRemoveIf(true, () => SessionConnHashKey(kv.Key), connectionId, refreshExpire: true, batch: batch);
+        }
+    }
 
     public async Task<long> DeleteByHostNameAsync(string hostHame)
     {
@@ -677,20 +681,18 @@ return 1";
             .Distinct();
     }
 
-    public async Task<Dictionary<long, List<string>>> GetDeviceTypesAsync(List<long> ownerIds, CancellationToken token = default)
+    public async Task<Dictionary<long, IEnumerable<string>>> GetDeviceTypesAsync(List<long> ownerIds, CancellationToken token = default)
     {
         return (await GetDevicesAsync(ownerIds, token))
             .ToDictionary(
                 x => x.Key,
-                x => x.Value
-                    .Select(d => d.DeviceType)
-                    .ToList()
+                x => x.Value.Select(d => d.DeviceType)
              );
     }
 
-    public async Task<Dictionary<long, List<DeviceModel>>> GetDevicesAsync(List<long> ownerIds, CancellationToken token = default)
+    public async Task<Dictionary<long, IEnumerable<DeviceModel>>> GetDevicesAsync(List<long> ownerIds, CancellationToken token = default)
     {
-        var result = new Dictionary<long, List<DeviceModel>>(ownerIds.Count);
+        var result = new Dictionary<long, IEnumerable<DeviceModel>>(ownerIds.Count);
 
         if (ownerIds == null || ownerIds.Count == 0)
         {
@@ -699,78 +701,37 @@ return 1";
 
         // 批量读取
         var batch = Database.CreateBatch();
-
-        var taskMap = new Dictionary<long, Task<HashEntry[]>>(ownerIds.Count);
-
-        foreach (var id in ownerIds)
-        {
-            var ownerDeviceKey = OwnerDeviceHashKey(id);
-            taskMap[id] = batch.HashGetAllAsync(ownerDeviceKey);
-        }
+        // ownerId -> HashGetAllAsync Task
+        var taskMap = ownerIds.ToDictionary(x => x, x => batch.HashGetAllAsync(OwnerDeviceHashKey(x)));
 
         batch.Execute();
 
-        // 解析结果
-        foreach (var kv in taskMap)
-        {
-            var ownerId = kv.Key;
-            var entries = await kv.Value;
+        await Task.WhenAll(taskMap.Values);
 
-            if (entries == null || entries.Length == 0)
+        // ownerId -> DeviceModel[]
+        return taskMap
+            .Where(x => x.Value.Result.Length > 0)
+            .ToDictionary(x => x.Key, x => x.Value.Result.Select(v =>
             {
-                result[ownerId] = [];
-                continue;
-            }
-
-            var types = entries
-                .Where(v => !string.IsNullOrWhiteSpace(v.Value.ToString()))
-                .Select(v =>
+                var device = DeviceElement.Parse(v.Value);
+                return new DeviceModel()
                 {
-                    var value = DeviceElement.Parse(v.Value);
-                    return new DeviceModel()
-                    {
-                        OwnerId = ownerId,
-                        ConnectionId = v.Name.ToString(),
-                        DeviceType = value.DeviceType,
-                        DeviceId = value.DeviceId,
-                    };
-                })
-                .Distinct()
-                .ToList();
-
-            result[ownerId] = types;
-        }
-
-        return result;
+                    OwnerId = x.Key,
+                    ConnectionId = v.Name.ToString(),
+                    DeviceType = device.DeviceType,
+                    DeviceId = device.DeviceId,
+                };
+            }));
     }
 
 
-    public async Task<IEnumerable<DeviceElement>> GetDeviceTypesAsync(Guid userId, CancellationToken token = default)
+    public async Task<Dictionary<long, IEnumerable<DeviceModel>>> GetDevicesByUserAsync(Guid userId, CancellationToken token = default)
     {
-        var userKey = UserConnKey(userId);
-        var hash = await Database.HashGetAllAsync(userKey);
+        var entries = await Database.HashGetAllAsync(UserConnKey(userId));
 
-        if (hash == null || hash.Length == 0)
-        {
-            return [];
-        }
+        var ownerIds = entries.SelectMany(x => x.Value.ToList<long>()).Distinct().ToList();
 
-        var deviceTypes = new HashSet<DeviceElement>();
-
-        // Hash: connectionId -> ownerIdList "12,45,66"
-        foreach (var entry in hash)
-        {
-            foreach (var ownerId in entry.Value.ToList<long>())
-            {
-                var ownerValues = await Database.HashValuesAsync(OwnerDeviceHashKey(ownerId));
-                foreach (var v in ownerValues)
-                {
-                    deviceTypes.Add(DeviceElement.Parse(v));
-                }
-            }
-        }
-
-        return deviceTypes;
+        return await GetDevicesAsync(ownerIds, token);
     }
 
     public async Task<Dictionary<long, IEnumerable<string>>> GetConnectionIdsByOwnerAsync(List<long> ownerIds, CancellationToken token = default)
@@ -796,8 +757,8 @@ return 1";
 
     public async Task<IEnumerable<string>> GetConnectionIdsByUserAsync(Guid userId, CancellationToken token = default)
     {
-        var entries = await Database.HashGetAllAsync(UserConnKey(userId));
-        return entries.Select(x => x.Name.ToString());
+        var values = await Database.HashKeysAsync(UserConnKey(userId));
+        return values.Select(x => x.ToString());
     }
 
     public async Task<long> GetCountByUserAsync(Guid userId, CancellationToken token = default)
@@ -812,26 +773,10 @@ return 1";
 
     public async Task<Dictionary<string, List<long>>> GetConnectionsBySessionAsync(Guid sessionId, CancellationToken token = default)
     {
-        var sessionConnKey = SessionConnHashKey(sessionId);
+        // Hash entry: field = connId, value = [1,2,3]
+        var entries = await Database.HashGetAllAsync(SessionConnHashKey(sessionId));
 
-        // Hash entry: field = connId, value = "1,2,3"
-        var entries = await Database.HashGetAllAsync(sessionConnKey);
-
-        var result = new Dictionary<string, List<long>>(entries?.Length ?? 0);
-
-        if (entries == null || entries.Length == 0)
-        {
-            return result;
-        }
-
-        foreach (var entry in entries)
-        {
-            var connId = entry.Name.ToString();
-            var ownerList = entry.Value.ToList<long>();  // chatObjectIdList 已经是逗号分隔
-            result[connId] = ownerList;
-        }
-
-        return result;
+        return entries.ToDictionary(x => x.Name.ToString(), x => x.Value.ToList<long>());
     }
 
     public async Task<long> GetCountBySessionAsync(Guid sessionId, CancellationToken token = default)
@@ -1041,8 +986,8 @@ return 1";
             return await Database.HashLengthAsync(FriendsConnsHashKey(ownerId));
         }
         // 通过 ownerId 获取好友列表，检查每个好友的在线状态
-        var friendsMap = await GetOrSetFriendsAsync([ownerId]);
-        var firendIds = friendsMap[ownerId].Select(x => x.Key.DestinationId).ToHashSet();
+        var friendsMap = await LoadFriendsMapAsync([ownerId]);
+        var firendIds = friendsMap[ownerId].Select(x => x.DestinationId).ToHashSet();
         var keys = firendIds.Select(OwnerDeviceHashKey);
         var result = await BatchKeyExistsAsync(keys);
         return result.Where(x => x.Value).Count();
@@ -1068,16 +1013,15 @@ return 1";
         }
 
         //通过 ownerId 获取好友列表，检查每个好友的在线状态
-        var friendsMap = await GetOrSetFriendsAsync([ownerId]);
+        var friendsMap = await LoadFriendsMapAsync([ownerId]);
         var friends = friendsMap[ownerId];
-        var friendIds = friends.Select(x => x.Key.DestinationId).ToList();
+        var friendIds = friends.Select(x => x.DestinationId).ToList();
         var onlineMap = await IsOnlineAsync(friendIds);
         var onlineFriendIds = onlineMap.Where(x => x.Value).Select(x => x.Key);
 
         return onlineFriendIds.Select(x =>
         {
-            var friend = friends.FirstOrDefault(f => f.Key.DestinationId == x);
-            var element = friend.Key;
+            var element = friends.FirstOrDefault(f => f.DestinationId == x);
             return new OnlineFriendInfo()
             {
                 //ConnectionId = conn?.ConnectionId,
@@ -1092,11 +1036,11 @@ return 1";
     public async Task<Dictionary<long, IEnumerable<string>>> GetOnlineFriendsConnectionIdsAsync(List<long> ownerIds)
     {
         // ownerId -> friends
-        var friendsMap = await GetOrSetFriendsAsync(ownerIds);
+        var friendsMap = await LoadFriendsMapAsync(ownerIds);
 
         // 所有朋友 ownerId
         var friendIds = friendsMap
-            .SelectMany(x => x.Value.Select(d => d.Key.OwnerId))
+            .SelectMany(x => x.Value.Select(d => d.OwnerId))
             .Distinct()
             .ToList();
 
@@ -1105,18 +1049,6 @@ return 1";
             return [];
         }
 
-        var batch = Database.CreateBatch();
-
-        // ownerId -> HashGetAllAsync Task
-        var taskMap = friendIds.ToDictionary(x => x, x => batch.HashKeysAsync(OwnerDeviceHashKey(x)));
-
-        batch.Execute();
-
-        await Task.WhenAll(taskMap.Values);
-
-        // ownerId -> connectionIds
-        return taskMap
-            .Where(x => x.Value.Result.Length > 0)
-            .ToDictionary(x => x.Key, x => x.Value.Result.Select(d => d.ToString()));
+        return await GetConnectionIdsByOwnerAsync(friendIds);
     }
 }

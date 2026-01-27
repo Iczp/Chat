@@ -114,7 +114,7 @@ public interface IOnlineManager //: IConnectionPoolManager
     /// <param name="ownerIds"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<Dictionary<long, List<string>>> GetDeviceTypesAsync(List<long> ownerIds, CancellationToken token = default);
+    Task<Dictionary<long, IEnumerable<string>>> GetDeviceTypesAsync(List<long> ownerIds, CancellationToken token = default);
 
     /// <summary>
     /// 获取设备信息(DeviceId,DeviceType) 聊天对象
@@ -122,7 +122,7 @@ public interface IOnlineManager //: IConnectionPoolManager
     /// <param name="ownerIds"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<Dictionary<long, List<DeviceModel>>> GetDevicesAsync(List<long> ownerIds, CancellationToken token = default);
+    Task<Dictionary<long, IEnumerable<DeviceModel>>> GetDevicesAsync(List<long> ownerIds, CancellationToken token = default);
 
 
     /// <summary>
@@ -131,7 +131,7 @@ public interface IOnlineManager //: IConnectionPoolManager
     /// <param name="userId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<IEnumerable<DeviceElement>> GetDeviceTypesAsync(Guid userId, CancellationToken token = default);
+    Task<Dictionary<long, IEnumerable<DeviceModel>>> GetDevicesByUserAsync(Guid userId, CancellationToken token = default);
 
 
     /// <summary>

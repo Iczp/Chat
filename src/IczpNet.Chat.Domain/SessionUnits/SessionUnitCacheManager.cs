@@ -4,13 +4,16 @@ using IczpNet.Chat.RedisMapping;
 using IczpNet.Chat.RedisServices;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Extensions.Logging;
+using Pipelines.Sockets.Unofficial.Buffers;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reactive.Concurrency;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Volo.Abp;
 
 namespace IczpNet.Chat.SessionUnits;
@@ -899,6 +902,30 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return await SetFriendsIfNotExistsAsync(ownerId, fetchTask) ?? await GetFriendUnitsAsync(ownerId);
     }
 
+    public async Task<Dictionary<long, IEnumerable<SessionUnitElement>>> GetFriendsElementAsync(List<long> ownerIds)
+    {
+        var stopwatch = Stopwatch.StartNew();
+
+        var batch = Database.CreateBatch();
+
+        var ownerIdList = ownerIds.Distinct();
+
+        var taskMap = ownerIds.ToDictionary(x => x, x => batch.SortedSetRangeByScoreAsync(OwnerFriendsSetKey(x)));
+
+        batch.Execute();
+
+        await Task.WhenAll(taskMap.Values);
+
+        var result = taskMap.ToDictionary(x => x.Key, x => x.Value.Result.Select(SessionUnitElement.Parse));
+
+        Logger.LogInformation("GetFriendsElementAsync ownerIds=[{ownerIds}], totalCount={totalCount}, Elapsed:{Elapsed}ms",
+            ownerIds.JoinAsString(","),
+            result.Values.Sum(x => x.Count()),
+            stopwatch.ElapsedMilliseconds);
+
+        return result;
+    }
+
     public async Task<IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>> GetRawFriendsAsync(long ownerId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
@@ -906,6 +933,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         long take = -1,
         bool isDescending = true)
     {
+        var stopwatch = Stopwatch.StartNew();
         var entries = await Database.SortedSetRangeByScoreWithScoresAsync(
             key: OwnerFriendsSetKey(ownerId),
             start: minScore,
@@ -914,6 +942,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             skip: skip,
             take: take,
             order: isDescending ? Order.Descending : Order.Ascending);
+        Logger.LogInformation("GetRawFriendsAsync ownerId={ownerId}, count={count}, Elapsed:{Elapsed}ms", ownerId, entries.Length, stopwatch.ElapsedMilliseconds);
         return entries.Select(x => new KeyValuePair<SessionUnitElement, FriendScore>(SessionUnitElement.Parse(x.Element), FriendScore.Parse(x.Score)));
     }
 
