@@ -601,18 +601,18 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         return ownerIdsList.ToDictionary(x => x, x => onlineOwnerIds.Contains(x));
     }
 
-    public async Task<IEnumerable<OwnerLatestOnline>> GetLatestOnlineAsync(long ownertId, CancellationToken token = default)
+    public async Task<IEnumerable<LastOnline>> GetLastOnlineAsync(long ownertId, CancellationToken token = default)
     {
-        var key = LastOnlineZsetKey(ownertId);
-        var result = await Database.SortedSetRangeByScoreWithScoresAsync(key, order: Order.Descending);
-        return result.Select(x =>
+        var sortedSetEntries = await Database.SortedSetRangeByScoreWithScoresAsync(LastOnlineZsetKey(ownertId), order: Order.Descending);
+        return sortedSetEntries.Select(x =>
         {
             var element = DeviceElement.Parse(x.Element);
-            return new OwnerLatestOnline()
+            return new LastOnline()
             {
+                OwnerId = ownertId,
                 DeviceId = element.DeviceId,
                 DeviceType = element.DeviceType,
-                LatestTime = x.Score.ToLocalDateTime(),
+                LastTime = x.Score.ToLocalDateTime(),
             };
         });
     }

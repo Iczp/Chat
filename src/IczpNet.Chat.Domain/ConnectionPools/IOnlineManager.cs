@@ -98,7 +98,7 @@ public interface IOnlineManager //: IConnectionPoolManager
     /// <param name="ownertId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<IEnumerable<OwnerLatestOnline>> GetLatestOnlineAsync(long ownertId, CancellationToken token = default);
+    Task<IEnumerable<LastOnline>> GetLastOnlineAsync(long ownertId, CancellationToken token = default);
 
     /// <summary>
     /// 获取设备类型 聊天对象
