@@ -252,9 +252,9 @@ public class OnlineAppService(
     /// <param name="ownerId"></param>
     /// <param name="input"></param>
     /// <returns></returns>
-    public async Task<PagedResultDto<OwnerLatestOnline>> GetLatestOnlineAsync(long ownerId, LatestOnlineGetListInput input)
+    public async Task<PagedResultDto<LastOnline>> GetLastOnlineAsync(long ownerId, LastOnlineGetListInput input)
     {
-        var list = await OnlineManager.GetLatestOnlineAsync(ownerId);
+        var list = await OnlineManager.GetLastOnlineAsync(ownerId);
         var queryable = list.AsQueryable();
         var query = queryable
             .WhereIf(!string.IsNullOrWhiteSpace(input.DeviceId), x => x.DeviceId == input.DeviceId)

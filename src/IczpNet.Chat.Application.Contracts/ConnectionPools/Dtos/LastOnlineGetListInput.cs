@@ -2,7 +2,7 @@
 
 namespace IczpNet.Chat.ConnectionPools.Dtos;
 
-public class LatestOnlineGetListInput : GetListInput
+public class LastOnlineGetListInput : GetListInput
 {
     public string DeviceId { get; set; }
     public string DeviceType { get; set; }

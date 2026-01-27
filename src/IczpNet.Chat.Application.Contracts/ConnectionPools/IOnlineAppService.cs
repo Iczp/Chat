@@ -106,7 +106,7 @@ public interface IOnlineAppService
     /// <param name="ownerId"></param>
     /// <param name="input"></param>
     /// <returns></returns>
-    Task<PagedResultDto<OwnerLatestOnline>> GetLatestOnlineAsync(long ownerId, LatestOnlineGetListInput input);
+    Task<PagedResultDto<LastOnline>> GetLastOnlineAsync(long ownerId, LastOnlineGetListInput input);
 
     /// <summary>
     /// 
