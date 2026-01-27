@@ -12,7 +12,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reactive.Concurrency;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Json;
@@ -349,7 +348,7 @@ return 1";
         return result;
     }
 
-    [UnitOfWork]
+    //[UnitOfWork]
     public async Task<bool> ConnectedAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default)
     {
         await MeasureAsync(nameof(CreateAsync), () => CreateAsync(connectionPool, token));
