@@ -59,9 +59,14 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerDeviceHashKey(long ownerId) => $"{Prefix}Owners:Devices:{ownerId}";
+    private RedisKey DeviceHashKey(long ownerId) => $"{Prefix}Devices:{ownerId}";
 
-    private static long? ParseOwnerDeviceHashKey(string ownerDeviceHashKey) => long.TryParse(ownerDeviceHashKey.Split(":").Last(), out var ownerId) ? ownerId : null;
+    /// <summary>
+    /// Parse ownerId from DeviceHashKey
+    /// </summary>
+    /// <param name="deviceHashKey"></param>
+    /// <returns>ownerId</returns>
+    private static long? ParseDeviceHashKey(string deviceHashKey) => long.TryParse(deviceHashKey.Split(":").Last(), out var ownerId) ? ownerId : null;
 
     /// <summary>
     /// 最后连接时间
@@ -70,7 +75,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerLatestOnlineDeviceZsetKey(long ownerId) => $"{Prefix}Owners:LatestOnlineDevice:{ownerId}";
+    private RedisKey LastOnlineZsetKey(long ownerId) => $"{Prefix}Lasts:{ownerId}";
 
     /// <summary>
     /// 
@@ -78,15 +83,6 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
     /// <param name="firendOwnerId"></param>
     /// <returns></returns>
     private RedisKey FriendsConnsHashKey(long firendOwnerId) => $"{Prefix}Friends:{firendOwnerId}";
-
-    /// <summary>
-    /// 会话
-    /// key: connectionId,
-    /// value: ,
-    /// </summary>
-    /// <param name="ownerId"></param>
-    /// <returns></returns>
-    private RedisKey OwnerSessionsHashKey(long ownerId) => $"{Prefix}Owners:Sessions:{ownerId}";
 
     /// <summary>
     /// 用户连接
@@ -141,12 +137,12 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
     private void SortedSetClientConn(IBatch batch, ConnectionPoolCacheItem connectionPool)
         => SortedSetIf(!string.IsNullOrWhiteSpace(connectionPool.ClientId), () => ClientSetKey(connectionPool.ClientId), connectionPool.ConnectionId, Clock.Now.ToUnixTimeMilliseconds(), batch: batch);
 
-    private void HashSetOwnerDevice(IBatch batch, ConnectionPoolCacheItem connectionPool)
+    private void HashSetDevice(IBatch batch, ConnectionPoolCacheItem connectionPool)
     {
         var ownerIds = connectionPool.ChatObjectIdList ?? [];
         foreach (var ownerId in ownerIds)
         {
-            HashSetIf(true, () => OwnerDeviceHashKey(ownerId), connectionPool.ConnectionId, $"{connectionPool.DeviceType}:{connectionPool.DeviceId}", batch: batch);
+            HashSetIf(true, () => DeviceHashKey(ownerId), connectionPool.ConnectionId, $"{connectionPool.DeviceType}:{connectionPool.DeviceId}", batch: batch);
         }
 
     }
@@ -354,7 +350,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         HashSetAndRefreshFriendsConns(batch, ownerIds, friendsMap, connectionId);
 
         // chatObject -> connection hash (owner conn mapping)
-        HashSetOwnerDevice(batch, connectionPool);
+        HashSetDevice(batch, connectionPool);
 
         // session -> connection hash (session -> connId : owners joined)
         HashSetSessionConn(batch, connectionPool, friendsMap);
@@ -406,9 +402,9 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         foreach (var ownerId in ownerIds)
         {
             //Expire(batch, OwnerSessionsHashKey(ownerId));
-            Expire(batch, OwnerDeviceHashKey(ownerId));
+            Expire(batch, DeviceHashKey(ownerId));
             //latest
-            _ = batch.SortedSetAddAsync(OwnerLatestOnlineDeviceZsetKey(ownerId), DeviceElement.Create(connectionPool.DeviceType, connectionPool.DeviceId), unixTime);
+            _ = batch.SortedSetAddAsync(LastOnlineZsetKey(ownerId), DeviceElement.Create(connectionPool.DeviceType, connectionPool.DeviceId), unixTime);
         }
 
         // Host: update timestamp in sorted set
@@ -478,7 +474,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         var friendsMap = await LoadFriendsMapAsync(ownerIds, token);
 
         // OwnerDevice
-        RemoveOwnerDevice(batch, connectionId, ownerIds);
+        RemoveDevice(batch, connectionId, ownerIds);
 
         // Host
         SortedRemoveIf(!string.IsNullOrWhiteSpace(connectionPool.Host), () => HostConnZsetKey(connectionPool.Host), connectionId, refreshExpire: true, batch: batch);
@@ -502,11 +498,11 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         _ = batch.KeyDeleteAsync(ConnHashKey(connectionId));
     }
 
-    private void RemoveOwnerDevice(IBatch batch, string connectionId, List<long> ownerIds)
+    private void RemoveDevice(IBatch batch, string connectionId, List<long> ownerIds)
     {
         foreach (var ownerId in ownerIds)
         {
-            HashRemoveIf(true, () => OwnerDeviceHashKey(ownerId), connectionId, refreshExpire: true, batch: batch);
+            HashRemoveIf(true, () => DeviceHashKey(ownerId), connectionId, refreshExpire: true, batch: batch);
         }
     }
 
@@ -589,17 +585,17 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
     public async Task<bool> IsOnlineAsync(long ownertId, CancellationToken token = default)
     {
         token.ThrowIfCancellationRequested();
-        var length = await Database.HashLengthAsync(OwnerDeviceHashKey(ownertId));
+        var length = await Database.HashLengthAsync(DeviceHashKey(ownertId));
         return length > 0;
     }
     public async Task<Dictionary<long, bool>> IsOnlineAsync(IEnumerable<long> ownerIds, CancellationToken token = default)
     {
         token.ThrowIfCancellationRequested();
         var ownerIdsList = ownerIds.Distinct().ToList();
-        var keys = ownerIdsList.Select(OwnerDeviceHashKey);
+        var keys = ownerIdsList.Select(DeviceHashKey);
         var onlineMap = await BatchKeyExistsAsync(keys);
         var onlineOwnerIds = onlineMap.Where(x => x.Value)
-            .Select(x => ParseOwnerDeviceHashKey(x.Key))
+            .Select(x => ParseDeviceHashKey(x.Key))
             .Where(x => x.HasValue)
             .Select(x => x.Value);
         return ownerIdsList.ToDictionary(x => x, x => onlineOwnerIds.Contains(x));
@@ -607,7 +603,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
 
     public async Task<IEnumerable<OwnerLatestOnline>> GetLatestOnlineAsync(long ownertId, CancellationToken token = default)
     {
-        var key = OwnerLatestOnlineDeviceZsetKey(ownertId);
+        var key = LastOnlineZsetKey(ownertId);
         var result = await Database.SortedSetRangeByScoreWithScoresAsync(key, order: Order.Descending);
         return result.Select(x =>
         {
@@ -623,7 +619,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
 
     public async Task<IEnumerable<string>> GetDeviceTypesAsync(long ownertId, CancellationToken token = default)
     {
-        var key = OwnerDeviceHashKey(ownertId);
+        var key = DeviceHashKey(ownertId);
 
         var values = await Database.HashValuesAsync(key);
         if (values == null || values.Length == 0)
@@ -659,7 +655,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         // 批量读取
         var batch = Database.CreateBatch();
         // ownerId -> HashGetAllAsync Task
-        var taskMap = ownerIds.ToDictionary(x => x, x => batch.HashGetAllAsync(OwnerDeviceHashKey(x)));
+        var taskMap = ownerIds.ToDictionary(x => x, x => batch.HashGetAllAsync(DeviceHashKey(x)));
 
         batch.Execute();
 
@@ -725,7 +721,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
 
     public async Task<long> GetCountByOwnerAsync(long ownerId, CancellationToken token = default)
     {
-        return await Database.HashLengthAsync(OwnerDeviceHashKey(ownerId));
+        return await Database.HashLengthAsync(DeviceHashKey(ownerId));
     }
 
     public async Task<Dictionary<string, List<long>>> GetConnectionsBySessionAsync(Guid sessionId, CancellationToken token = default)
@@ -847,7 +843,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         // 通过 ownerId 获取好友列表，检查每个好友的在线状态
         var friendsMap = await LoadFriendsMapAsync([ownerId]);
         var firendIds = friendsMap[ownerId].Select(x => x.DestinationId).ToHashSet();
-        var keys = firendIds.Select(OwnerDeviceHashKey);
+        var keys = firendIds.Select(DeviceHashKey);
         var result = await BatchKeyExistsAsync(keys);
         return result.Where(x => x.Value).Count();
     }
