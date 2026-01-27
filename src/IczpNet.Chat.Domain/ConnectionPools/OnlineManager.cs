@@ -4,7 +4,6 @@ using IczpNet.Chat.Hosting;
 using IczpNet.Chat.RedisMapping;
 using IczpNet.Chat.RedisServices;
 using IczpNet.Chat.SessionUnits;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
@@ -15,37 +14,20 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Json;
-using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.ConnectionPools;
 
 public class OnlineManager : RedisService, IOnlineManager//, IHostedService
 {
     public IOptions<ConnectionOptions> ConnectionOptions => LazyServiceProvider.LazyGetRequiredService<IOptions<ConnectionOptions>>();
-
     public ConnectionOptions Config => ConnectionOptions.Value;
-
     public ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
-
     public ISessionUnitCacheManager SessionUnitCacheManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitCacheManager>();
-
     public ICurrentHosted CurrentHosted => LazyServiceProvider.LazyGetRequiredService<ICurrentHosted>();
     public IJsonSerializer JsonSerializer => LazyServiceProvider.LazyGetRequiredService<IJsonSerializer>();
     public IConnectionStatManager ConnectionStatManager => LazyServiceProvider.LazyGetRequiredService<IConnectionStatManager>();
-    public IMemoryCache MemoryCache => LazyServiceProvider.LazyGetRequiredService<IMemoryCache>();
-
     protected override TimeSpan? CacheExpire => TimeSpan.FromSeconds(ConnectionOptions.Value.ConnectionCacheExpirationSeconds);
-
-    protected virtual int ExpireSeconds => (int)(CacheExpire?.TotalSeconds ?? -1);
-
     protected virtual string Prefix => $"{Options.Value.KeyPrefix}{ConnectionOptions.Value.AllConnectionsCacheKey}:";
-
-    private static string LuaSAddIfExistsScript => @"
-if redis.call('EXISTS', KEYS[1]) == 1 then
-    redis.call('SADD', KEYS[1], ARGV[1])
-    redis.call('EXPIRE', KEYS[1], ARGV[2])
-end
-return 1";
 
     /// <summary>
     /// connKey
@@ -167,25 +149,6 @@ return 1";
             HashSetIf(true, () => OwnerDeviceHashKey(ownerId), connectionPool.ConnectionId, $"{connectionPool.DeviceType}:{connectionPool.DeviceId}", batch: batch);
         }
 
-    }
-    private void HashSetOwnerSessions(IBatch batch, ConnectionPoolCacheItem connectionPool, Dictionary<long, IEnumerable<SessionUnitElement>> friendsMap)
-    {
-        var ownerIds = connectionPool.ChatObjectIdList ?? [];
-        foreach (var ownerId in ownerIds)
-        {
-            var ownerSessionKey = OwnerSessionsHashKey(ownerId);
-            // if chatObjectSessions contains it, we assume set was exists or just created. To avoid extra KeyExists roundtrip, only set expire
-            // but add members if we have sessions and set wasn't in Redis earlier (GetOrSetSessionsAsync only returns existing/filled).
-            var sessions = friendsMap.GetValueOrDefault(ownerId).Select(x => x.SessionId);
-            if (sessions == null || !sessions.Any()) continue;
-
-            // Add members (idempotent)
-            foreach (var sessionId in sessions)
-            {
-                _ = batch.SetAddAsync(ownerSessionKey, sessionId.ToString());
-            }
-            Expire(batch, ownerSessionKey);
-        }
     }
 
     private static void HashSetFriendsAction(List<long> ownerIds, Dictionary<long, IEnumerable<SessionUnitElement>> friendsMap, Action<long, SessionUnitElement> eachAction)
@@ -387,9 +350,6 @@ return 1";
         // connectionPool hash
         HashSetConn(batch, connectionPool);
 
-        // owner session sets only if not exists - to avoid race we'll set expire and add members if sessions exist in memory
-        HashSetOwnerSessions(batch, connectionPool, friendsMap);
-
         //Friends Conns
         HashSetAndRefreshFriendsConns(batch, ownerIds, friendsMap, connectionId);
 
@@ -445,7 +405,7 @@ return 1";
         // Refresh expire on owner session sets, owner conn hashes, session conn hashes
         foreach (var ownerId in ownerIds)
         {
-            Expire(batch, OwnerSessionsHashKey(ownerId));
+            //Expire(batch, OwnerSessionsHashKey(ownerId));
             Expire(batch, OwnerDeviceHashKey(ownerId));
             //latest
             _ = batch.SortedSetAddAsync(OwnerLatestOnlineDeviceZsetKey(ownerId), DeviceElement.Create(connectionPool.DeviceType, connectionPool.DeviceId), unixTime);
@@ -540,8 +500,6 @@ return 1";
 
         // Delete conn hash
         _ = batch.KeyDeleteAsync(ConnHashKey(connectionId));
-
-        // Note: we do not execute batch here because caller may pass batch and execute later.
     }
 
     private void RemoveOwnerDevice(IBatch batch, string connectionId, List<long> ownerIds)
@@ -785,8 +743,6 @@ return 1";
 
     public async Task AddSessionAsync(List<(Guid SessionId, long OwnerId)> ownerSessions)
     {
-        var preparedScript = LuaScript.Prepare(LuaSAddIfExistsScript);
-
         Logger.LogInformation("AddUnitsAsync");
 
         foreach (var unit in ownerSessions)
@@ -811,9 +767,6 @@ return 1";
                 g => g.Key,
                 g => g.Select(u => new { u.OwnerId, }).ToList()
             );
-
-        var ownerSessionKeys = ownerIds.Select(OwnerSessionsHashKey);
-        var ownerSessionKeyExists = await BatchKeyExistsAsync(ownerSessionKeys);
 
         var batch = Database.CreateBatch();
 
@@ -842,100 +795,7 @@ return 1";
 
                 Logger.LogInformation($"HashSetAsync: sessionConnKey={sessionConnKey}, connectionId={connectionId}, ownerIdStr={ownerIdStr}");
             }
-
-            // 4. ownerId -> sessionId 反向索引
-            foreach (var unit in units)
-            {
-
-                var ownerSessionKey = OwnerSessionsHashKey(unit.OwnerId);
-                //var isExists = await Database.KeyExistsAsync(ownerSessionKey);
-                // 缓存Key存在才执行
-                if (ownerSessionKeyExists.TryGetValue(ownerSessionKey, out var isExists) && isExists)
-                {
-                    _ = batch.SetAddAsync(ownerSessionKey, sessionId.ToString());
-                    Expire(batch, ownerSessionKey);
-                    Logger.LogInformation($"SetAddAsync: ownerSessionKey={ownerSessionKey}, sessionId={sessionId}");
-                }
-                //_ = preparedScript.EvaluateAsync(batch, new
-                //{
-                //    KEYS = new[] { ownerSessionKeys },
-                //    ARGV = new[] { sessionId.ToString(), ExpireSeconds.ToString() }
-                //});
-                //Logger.LogInformation($"Lua-SAdd-IfExists: ownerSessionKeys={ownerSessionKeys}, sessionId={sessionId}");
-            }
         }
-        batch.Execute();
-    }
-
-
-    public async Task AddSession1Async(List<(Guid SessionId, long OwnerId)> ownerSessions)
-    {
-        var preparedScript = LuaScript.Prepare(LuaSAddIfExistsScript);
-
-        Logger.LogInformation("AddSessionAsync");
-
-        var ownerIds = ownerSessions.Select(x => x.OwnerId).Distinct().ToList();
-
-        // 在线用户 (ownerId -> devices)
-        var deviceDict = await GetDevicesAsync(ownerIds);
-
-        // sessionId -> ownerId list
-        var sessionDict = ownerSessions
-            .GroupBy(x => x.SessionId)
-            .ToDictionary(
-                g => g.Key,
-                g => g.Select(u => u.OwnerId).Distinct().ToList()
-            );
-
-        // 新增一个映射：ownerId -> sessionId list
-        var ownerSessionMap = ownerSessions
-            .GroupBy(x => x.OwnerId)
-            .ToDictionary(
-                g => g.Key,
-                g => g.Select(u => u.SessionId).Distinct().ToList()
-            );
-
-        var batch = Database.CreateBatch();
-
-        // 最外层：deviceDict（最小字典）
-        foreach (var (ownerId, devices) in deviceDict)
-        {
-            // 找到该 ownerId 属于哪些会话（session）
-            if (!ownerSessionMap.TryGetValue(ownerId, out var ownerSessionIds))
-                continue; // 在线但没有 session，跳过
-
-            foreach (var sessionId in ownerSessionIds)
-            {
-                var sessionConnKey = SessionConnHashKey(sessionId);
-                Expire(batch, sessionConnKey);
-
-                // 当前 ownerId 的所有在线 connection 写入此 session
-                foreach (var device in devices)
-                {
-                    var connectionId = device.ConnectionId;
-
-                    _ = batch.HashSetAsync(sessionConnKey, connectionId, ToJson([ownerId]));
-
-                    Logger.LogInformation(
-                        $"HashSetAsync: sessionId={sessionId}, connId={connectionId}, ownerId={ownerId}"
-                    );
-                }
-
-                // owner → session 索引（Lua：只有 Key 存在才写入）
-                var ownerSessionKey = OwnerSessionsHashKey(ownerId);
-
-                _ = preparedScript.EvaluateAsync(batch, new
-                {
-                    KEYS = new[] { ownerSessionKey },
-                    ARGV = new[] { sessionId.ToString(), ExpireSeconds.ToString() }
-                });
-
-                Logger.LogInformation(
-                    $"Lua-SAdd-IfExists: ownerSessionKey={ownerSessionKey}, sessionId={sessionId}"
-                );
-            }
-        }
-
         batch.Execute();
     }
 
