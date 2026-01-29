@@ -51,6 +51,7 @@ public class EnumAppService : ChatAppService, IEnumAppService
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(),
                 x => (x.Name != null && x.Name.Contains(input.Keyword))
                     || x.Items.Any(v => v.Name.Contains(input.Keyword))
+                    || x.Id == input.Keyword
             );
 
         return await GetPagedListAsync<EnumTypeDto, EnumTypeDto>(query, input);
