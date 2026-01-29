@@ -10,7 +10,7 @@ namespace IczpNet.Chat.Ai;
 
 public class AiResolver : DomainService, IAiResolver, ISingletonDependency
 {
-    // 使用 Lazy<T> 确保 _messageTypeDictionary 只初始化一次
+    // 使用 Lazy<T> 确保 Providers 只初始化一次
     private static readonly Lazy<ConcurrentDictionary<string, Type>> lazyDictionary = new(GenerateDictionary);
 
     public static ConcurrentDictionary<string, Type> Providers => lazyDictionary.Value;

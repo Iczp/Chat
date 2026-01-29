@@ -2,14 +2,12 @@
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.DeviceGroups;
 using IczpNet.Chat.Permissions;
-using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
-using Volo.Abp.ObjectMapping;
 
 namespace IczpNet.Chat.Devices;
 

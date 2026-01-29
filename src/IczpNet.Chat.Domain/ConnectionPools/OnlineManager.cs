@@ -248,23 +248,10 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
     /// value: sessionId[]
     /// </summary>
     /// <param name="ownerIds"></param>
-    /// <param name="token"></param>
     /// <returns></returns>
-    private async Task<Dictionary<long, IEnumerable<SessionUnitElement>>> LoadFriendsMapAsync(List<long> ownerIds, CancellationToken token = default)
+    private Task<Dictionary<long, IEnumerable<SessionUnitElement>>> LoadFriendsMapAsync(List<long> ownerIds)
     {
-        token.ThrowIfCancellationRequested();
-
-        var stopwatch = Stopwatch.StartNew();
-
-        foreach (var ownerId in ownerIds)
-        {
-            await SessionUnitManager.LoadFriendsIfNotExistsAsync(ownerId);
-        }
-        var result = await SessionUnitCacheManager.GetFriendsElementAsync(ownerIds);
-
-        Logger.LogInformation("[LoadFriendsMapAsync] ownerIds=[{ownerIds}], Elapsed: {Elapsed}ms", ownerIds.JoinAsString(","), stopwatch.ElapsedMilliseconds);
-
-        return result;
+        return SessionUnitManager.LoadFriendsMapAsync(ownerIds);
     }
 
     public async Task<KeyValuePair<string, ConnectionPoolCacheItem>[]> GetManyAsync(IEnumerable<string> ids)
@@ -329,7 +316,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         var userId = connectionPool.UserId;
         Logger.LogInformation($"[CreateAsync] connectionId:{connectionId},userId:{userId},ownerIds:{ownerIds.JoinAsString(",")}");
 
-        var friendsMap = await LoadFriendsMapAsync(ownerIds, token);
+        var friendsMap = await LoadFriendsMapAsync(ownerIds);
 
         var batch = Database.CreateBatch();
 
@@ -388,7 +375,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
 
         var ownerIds = connectionPool.ChatObjectIdList;
 
-        var friendsMap = await LoadFriendsMapAsync(ownerIds, token);
+        var friendsMap = await LoadFriendsMapAsync(ownerIds);
 
         Logger.LogInformation("[RefreshExpireAsync] GetFriendsMapAsync ownerIds=[{ownerIds}], Elapsed: {Elapsed}ms", ownerIds.JoinAsString(","), stopwatch.ElapsedMilliseconds);
 
@@ -471,7 +458,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         var ownerIds = connectionPool.ChatObjectIdList ?? [];
 
         // Get sessions per owner (batched inside)
-        var friendsMap = await LoadFriendsMapAsync(ownerIds, token);
+        var friendsMap = await LoadFriendsMapAsync(ownerIds);
 
         // OwnerDevice
         RemoveDevice(batch, connectionId, ownerIds);

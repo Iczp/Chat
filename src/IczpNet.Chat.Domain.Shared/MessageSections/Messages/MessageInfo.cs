@@ -47,6 +47,11 @@ public class MessageInfo : ExtensibleObject, IHasExtraProperties
     public virtual long? SenderId { get; set; }
 
     /// <summary>
+    /// 发送人类型
+    /// </summary>
+    public virtual ChatObjectTypeEnums? SenderObjectType { get; set; }
+
+    /// <summary>
     /// 发送人单元
     /// </summary>
     public virtual Guid? SenderSessionUnitId { get; set; }

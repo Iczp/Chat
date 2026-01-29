@@ -23,6 +23,7 @@ using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 
@@ -38,6 +39,7 @@ public class MessageAppService(
     IOpenedRecorderManager openedRecorderManager,
     IFavoritedRecorderManager favoriteManager,
     IFollowManager followManager,
+    ISessionUnitCacheManager sessionUnitCacheManager,
     ISessionUnitRepository sessionUnitRepository,
     ISessionUnitSettingManager sessionUnitSettingManager,
     IMessageManager messageManager) : ChatAppService, IMessageAppService
@@ -48,6 +50,7 @@ public class MessageAppService(
     protected IOpenedRecorderManager OpenedRecorderManager { get; } = openedRecorderManager;
     protected IFavoritedRecorderManager FavoritedRecorderManager { get; } = favoriteManager;
     protected IFollowManager FollowManager { get; } = followManager;
+    public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
     protected ISessionUnitRepository SessionUnitRepository { get; } = sessionUnitRepository;
     public ISessionUnitSettingManager SessionUnitSettingManager { get; } = sessionUnitSettingManager;
     protected IMessageManager MessageManager { get; } = messageManager;
@@ -185,11 +188,28 @@ public class MessageAppService(
             .Distinct()
             .ToList();
 
-        var destnactions = await SessionUnitManager.FindManyAsync(ownerId, distnactionIds);
+        var friendsMap = await SessionUnitManager.LoadFriendsMapAsync([ownerId]);
 
-        var friendsMap = destnactions
-            .GroupBy(x => x.DestinationId)
-            .ToDictionary(x => x.Key, g => g.FirstOrDefault());
+        var unitIdMap = friendsMap.GetOrDefault(ownerId)?.ToDictionary(x => x.DestinationId, x => x.SessionUnitId);
+
+        if (unitIdMap == null || unitIdMap.Count == 0)
+        {
+            return;
+        }
+
+        var friendshipSessionUnits = await SessionUnitCacheManager.GetManyAsync([.. unitIdMap.Values]);
+
+        var friendMap = friendshipSessionUnits
+            .Select(x => x.Value)
+            .Where(x => x.DestinationId.HasValue)
+            .DistinctBy(x => x.DestinationId.Value)
+            .ToDictionary(x => x.DestinationId.Value, x => x);
+
+        //var destnactions = await SessionUnitManager.FindManyAsync(ownerId, distnactionIds);
+
+        //var friendsMap = destnactions
+        //    .GroupBy(x => x.DestinationId)
+        //    .ToDictionary(x => x.Key, g => g.FirstOrDefault());
 
         foreach (var item in result.Items)
         {
@@ -199,12 +219,12 @@ public class MessageAppService(
                 continue;
             }
 
-            var friendshipSessionUnit = friendsMap.GetValueOrDefault(item.SenderSessionUnit.OwnerId);
+            var friendshipSessionUnit = friendMap.GetValueOrDefault(item.SenderSessionUnit.OwnerId);
 
             item.SenderSessionUnit.IsFriendship = friendshipSessionUnit != null;
             item.SenderSessionUnit.FriendshipSessionUnitId = friendshipSessionUnit?.Id;
-            item.SenderSessionUnit.FriendshipName = friendshipSessionUnit?.Setting.Rename;
-            item.SenderSessionUnit.MemberName = friendshipSessionUnit?.Setting.MemberName;
+            item.SenderSessionUnit.FriendshipName = friendshipSessionUnit?.Rename;
+            //item.SenderSessionUnit.MemberName = friendshipSessionUnit?.MemberName;
         }
     }
 

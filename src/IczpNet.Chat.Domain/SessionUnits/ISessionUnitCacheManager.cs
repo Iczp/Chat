@@ -225,6 +225,13 @@ public interface ISessionUnitCacheManager
     Task<Dictionary<long, IEnumerable<SessionUnitElement>>> GetFriendsElementAsync(List<long> ownerIds);
 
     /// <summary>
+    /// 获取好友Score(可用于判断好友是否存在)
+    /// </summary>
+    /// <param name="elements"></param>
+    /// <returns></returns>
+    Task<Dictionary<long, Dictionary<long, double?>>> FindFriendsAsync(List<SessionUnitElement> elements);
+
+    /// <summary>
     /// 获取好友会话单元(原始信息)
     /// </summary>
     /// <param name="ownerId"></param>
