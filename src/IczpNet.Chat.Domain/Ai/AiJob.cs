@@ -1,9 +1,7 @@
 ﻿using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
-using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;

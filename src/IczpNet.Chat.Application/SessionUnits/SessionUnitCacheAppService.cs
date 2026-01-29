@@ -112,6 +112,11 @@ public class SessionUnitCacheAppService(
         return ObjectMapper.Map<SessionUnitCacheItem, SessionUnitFriendDto>(item);
     }
 
+    protected virtual SessionUnitFriendDetailDto MapToDetailDto(SessionUnitCacheItem item)
+    {
+        return ObjectMapper.Map<SessionUnitCacheItem, SessionUnitFriendDetailDto>(item);
+    }
+
     protected virtual async Task<IQueryable<SessionUnitFriendDto>> CreateQueryableAsync(SessionUnitCacheItemGetListInput input)
     {
         var allList = await GetAllListAsync(input.OwnerId);
@@ -532,6 +537,44 @@ public class SessionUnitCacheAppService(
         Assert.If(item == null, $"No such cache id:{id}");
 
         return item;
+    }
+
+    /// <summary>
+    /// 获取会话
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    public async Task<SessionUnitFriendDetailDto> GetDetailAsync(Guid id)
+    {
+        var list = await GetCacheManyAsync([id]);
+
+        // check owner
+        var chatObjectIdList = list.Select(x => x.Value).Select(x => x.OwnerId).Distinct().ToList();
+        await CheckPolicyForUserAsync(chatObjectIdList, () => CheckPolicyAsync(GetListPolicyName));
+
+        var items = list.Select(x => x.Value)
+            .Where(x => x != null)
+            .Select(MapToDetailDto)
+            .ToList();
+
+        //await FillSettingAsync(items);
+        var ownerIds = items.Select(x => x.OwnerId);
+        var destinationIds = items
+            .Where(x => x.DestinationId.HasValue)
+            .Select(x => x.DestinationId!.Value);
+
+        var allIds = ownerIds.Concat(destinationIds).Distinct().ToList();
+
+        var chatObjectMap = (await ChatObjectManager.GetManyByCacheAsync(allIds))
+            .ToDictionary(x => x.Id, x => x);
+
+        foreach (var item in items)
+        {
+            item.Owner = chatObjectMap.GetValueOrDefault(item.OwnerId);
+            item.Destination = item.DestinationId.HasValue ? chatObjectMap.GetValueOrDefault(item.DestinationId.Value) : null;
+        }
+
+        return items[0];
     }
 
 

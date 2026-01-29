@@ -4,16 +4,13 @@ using IczpNet.Chat.RedisMapping;
 using IczpNet.Chat.RedisServices;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Extensions.Logging;
-using Pipelines.Sockets.Unofficial.Buffers;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reactive.Concurrency;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using Volo.Abp;
 
 namespace IczpNet.Chat.SessionUnits;
@@ -908,9 +905,9 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         var batch = Database.CreateBatch();
 
-        var ownerIdList = ownerIds.Distinct();
+        var ownerIdList = ownerIds.Distinct().ToList();
 
-        var taskMap = ownerIds.ToDictionary(x => x, x => batch.SortedSetRangeByScoreAsync(OwnerFriendsSetKey(x)));
+        var taskMap = ownerIdList.ToDictionary(x => x, x => batch.SortedSetRangeByScoreAsync(OwnerFriendsSetKey(x)));
 
         batch.Execute();
 
@@ -918,10 +915,51 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         var result = taskMap.ToDictionary(x => x.Key, x => x.Value.Result.Select(SessionUnitElement.Parse));
 
-        Logger.LogInformation("GetFriendsElementAsync ownerIds=[{ownerIds}], totalCount={totalCount}, Elapsed:{Elapsed}ms",
-            ownerIds.JoinAsString(","),
+        Logger.LogInformation("GetFriendsElementAsync ownerIdList=[{ownerIdList}], totalCount={totalCount}, Elapsed:{Elapsed}ms",
+            ownerIdList.JoinAsString(","),
             result.Values.Sum(x => x.Count()),
             stopwatch.ElapsedMilliseconds);
+
+        return result;
+    }
+
+    /// <summary>
+    /// 获取好友Score(可用于判断好友是否存在)
+    /// </summary>
+    /// <param name="elements"></param>
+    /// <returns></returns>
+    public async Task<Dictionary<long, Dictionary<long, double?>>> FindFriendsAsync(List<SessionUnitElement> elements)
+    {
+        var stopwatch = Stopwatch.StartNew();
+
+        var batch = Database.CreateBatch();
+
+        var elementMap = elements
+            .Distinct()
+            .GroupBy(x => x.OwnerId)
+            .ToDictionary(x => x.Key, x => x.ToList());
+
+        var taskMap = elementMap.ToDictionary(
+            x => x.Key,
+            x => x.Value.ToDictionary(
+                e => e.DestinationId,
+                e => batch.SortedSetScoreAsync(OwnerFriendsSetKey(x.Key), e)
+            )
+        );
+
+        batch.Execute();
+
+        await Task.WhenAll(taskMap.Values.SelectMany(v => v.Values));
+
+        var result = taskMap.ToDictionary(
+            x => x.Key,
+            x => x.Value.ToDictionary(
+                v => v.Key,
+                v => v.Value.Result
+                )
+            );
+
+        Logger.LogInformation("FindFriendsAsync Elapsed:{Elapsed}ms", stopwatch.ElapsedMilliseconds);
 
         return result;
     }

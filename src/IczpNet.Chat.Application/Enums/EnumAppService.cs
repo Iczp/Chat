@@ -1,9 +1,7 @@
 ﻿using Castle.Core.Internal;
-using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Enums.Dtos;
-using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -18,34 +16,43 @@ namespace IczpNet.Chat.Enums;
 /// </summary>
 public class EnumAppService : ChatAppService, IEnumAppService
 {
-    protected static List<EnumTypeDto> EnumItems;
+    // 使用 Lazy<T> 确保只初始化一次
+    private static readonly Lazy<Dictionary<string, EnumTypeDto>> lazyEnumTypesMap = new(GenerateEnumTypes);
+
+    protected static Dictionary<string, EnumTypeDto> EnumTypesMap => lazyEnumTypesMap.Value;
+
+    private static Dictionary<string, EnumTypeDto> GenerateEnumTypes()
+    {
+        return typeof(ChatDomainSharedModule).Assembly.GetExportedTypes()
+            .Where(x => x.IsEnum)
+            .Select(x => new EnumTypeDto()
+            {
+                Id = x.FullName,
+                Name = x.GetTypeAttribute<DescriptionAttribute>()?.Description,
+                Items = [.. Enum.GetNames(x)
+                   .Select(v => new EnumDto()
+                   {
+                       Name = v,
+                       Value = (int)Enum.Parse(x, v),
+                       Description = ((Enum)Enum.Parse(x, v)).GetDescription()
+                   })]
+            })
+            .ToDictionary(x => x.Id);
+    }
 
     /// <summary>
     /// 获取枚举列表
     /// </summary>
     /// <param name="input"></param>
     /// <returns></returns>
-    [HttpGet]
-    public async Task<PagedResultDto<EnumTypeDto>> GetListAsync(EnumGetListInput input)
+    public virtual async Task<PagedResultDto<EnumTypeDto>> GetListAsync(EnumGetListInput input)
     {
-        await Task.Yield();
-
-        EnumItems ??= typeof(ChatDomainSharedModule).Assembly.GetExportedTypes()
-            .Where(x => x.IsEnum)
-            .Select(x => new EnumTypeDto()
-            {
-                Type = x.FullName,
-                Description = x.GetTypeAttribute<DescriptionAttribute>()?.Description,
-                Names = Enum.GetNames(x)
-            })
-            .ToList();
-
-        var query = EnumItems.AsQueryable()
-            .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => (x.Description != null && x.Description.Contains(input.Keyword)) || x.Names.Contains(input.Keyword));
-
-        //var items = query.Skip(input.SkipCount).Take(input.MaxResultCount).ToList();
-
-        //return new PagedResultDto<EnumTypeDto>(EnumItems.Count, EnumItems);
+        var query = EnumTypesMap.Values.AsQueryable()
+            .WhereIf(!input.Keyword.IsNullOrWhiteSpace(),
+                x => (x.Name != null && x.Name.Contains(input.Keyword))
+                    || x.Items.Any(v => v.Name.Contains(input.Keyword))
+                    || x.Id == input.Keyword
+            );
 
         return await GetPagedListAsync<EnumTypeDto, EnumTypeDto>(query, input);
     }
@@ -53,24 +60,10 @@ public class EnumAppService : ChatAppService, IEnumAppService
     /// <summary>
     /// 获取枚举内容
     /// </summary>
-    /// <param name="type">枚举类型Fullname</param>
+    /// <param name="id">枚举类型Fullname</param>
     /// <returns></returns>
-    [HttpGet]
-    public async Task<List<EnumDto>> GetItemsAsync(string type)
+    public virtual Task<EnumTypeDto> GetAsync(string id)
     {
-        await Task.Yield();
-
-        var _type = typeof(ChatDomainSharedModule).Assembly.GetType(type);
-
-        Assert.NotNull(_type, $"Not found:{type}");
-
-        return Enum.GetNames(_type)
-           .Select(x => new EnumDto()
-           {
-               Name = x,
-               Value = (int)Enum.Parse(_type, x),
-               Description = ((Enum)Enum.Parse(_type, x)).GetDescription()
-           })
-           .ToList();
+        return Task.FromResult(EnumTypesMap.GetOrDefault(id));
     }
 }

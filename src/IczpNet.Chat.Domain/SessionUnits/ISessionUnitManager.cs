@@ -494,12 +494,43 @@ public interface ISessionUnitManager
         int batchSize = 1000,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// 加载好友会话，如果不存在则创建
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
     Task<IEnumerable<SessionUnitCacheItem>> LoadFriendsIfNotExistsAsync(long ownerId);
 
+    /// <summary>
+    /// 获取好友会话(自动加载)
+    /// key: ownerId
+    /// value: SessionUnitElement[]
+    /// </summary>
+    /// <param name="ownerIds"></param>
+    /// <returns></returns>
+    Task<Dictionary<long, IEnumerable<SessionUnitElement>>> LoadFriendsMapAsync(List<long> ownerIds);
+
+    /// <summary>
+    /// 加载成员，如果不存在则创建
+    /// </summary>
+    /// <param name="sessionUnitId"></param>
+    /// <returns></returns>
     Task<IEnumerable<SessionUnitCacheItem>> LoadMembersIfNotExistsAsync(Guid sessionUnitId);
 
+    /// <summary>
+    /// 设置会话单元盒子Id
+    /// </summary>
+    /// <param name="entity"></param>
+    /// <param name="boxId"></param>
+    /// <returns></returns>
     Task<bool> SetBoxAsync(SessionUnitCacheItem entity, Guid boxId);
 
+    /// <summary>
+    /// 设置会话单元盒子
+    /// </summary>
+    /// <param name="sessionUnitId"></param>
+    /// <param name="boxId"></param>
+    /// <returns></returns>
     Task<bool> SetBoxAsync(Guid sessionUnitId, Guid boxId);
 
     /// <summary>

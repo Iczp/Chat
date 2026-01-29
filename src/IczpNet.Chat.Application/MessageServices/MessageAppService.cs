@@ -15,6 +15,7 @@ using IczpNet.Chat.SessionUnitSettings;
 using IczpNet.Chat.SessionUnitSettings.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -38,6 +39,7 @@ public class MessageAppService(
     IOpenedRecorderManager openedRecorderManager,
     IFavoritedRecorderManager favoriteManager,
     IFollowManager followManager,
+    ISessionUnitCacheManager sessionUnitCacheManager,
     ISessionUnitRepository sessionUnitRepository,
     ISessionUnitSettingManager sessionUnitSettingManager,
     IMessageManager messageManager) : ChatAppService, IMessageAppService
@@ -48,6 +50,7 @@ public class MessageAppService(
     protected IOpenedRecorderManager OpenedRecorderManager { get; } = openedRecorderManager;
     protected IFavoritedRecorderManager FavoritedRecorderManager { get; } = favoriteManager;
     protected IFollowManager FollowManager { get; } = followManager;
+    public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
     protected ISessionUnitRepository SessionUnitRepository { get; } = sessionUnitRepository;
     public ISessionUnitSettingManager SessionUnitSettingManager { get; } = sessionUnitSettingManager;
     protected IMessageManager MessageManager { get; } = messageManager;
@@ -185,11 +188,28 @@ public class MessageAppService(
             .Distinct()
             .ToList();
 
-        var destnactions = await SessionUnitManager.FindManyAsync(ownerId, distnactionIds);
+        var friendsMap = await SessionUnitManager.LoadFriendsMapAsync([ownerId]);
 
-        var friendsMap = destnactions
-            .GroupBy(x => x.DestinationId)
-            .ToDictionary(x => x.Key, g => g.FirstOrDefault());
+        var unitIdMap = friendsMap.GetOrDefault(ownerId)?.ToDictionary(x => x.DestinationId, x => x.SessionUnitId);
+
+        if (unitIdMap == null || unitIdMap.Count == 0)
+        {
+            return;
+        }
+
+        var friendshipSessionUnits = await SessionUnitCacheManager.GetManyAsync([.. unitIdMap.Values]);
+
+        var friendMap = friendshipSessionUnits
+            .Select(x => x.Value)
+            .Where(x => x.DestinationId.HasValue)
+            .DistinctBy(x => x.DestinationId.Value)
+            .ToDictionary(x => x.DestinationId.Value, x => x);
+
+        //var destnactions = await SessionUnitManager.FindManyAsync(ownerId, distnactionIds);
+
+        //var friendsMap = destnactions
+        //    .GroupBy(x => x.DestinationId)
+        //    .ToDictionary(x => x.Key, g => g.FirstOrDefault());
 
         foreach (var item in result.Items)
         {
@@ -199,12 +219,12 @@ public class MessageAppService(
                 continue;
             }
 
-            var friendshipSessionUnit = friendsMap.GetValueOrDefault(item.SenderSessionUnit.OwnerId);
+            var friendshipSessionUnit = friendMap.GetValueOrDefault(item.SenderSessionUnit.OwnerId);
 
             item.SenderSessionUnit.IsFriendship = friendshipSessionUnit != null;
             item.SenderSessionUnit.FriendshipSessionUnitId = friendshipSessionUnit?.Id;
-            item.SenderSessionUnit.FriendshipName = friendshipSessionUnit?.Setting.Rename;
-            item.SenderSessionUnit.MemberName = friendshipSessionUnit?.Setting.MemberName;
+            item.SenderSessionUnit.FriendshipName = friendshipSessionUnit?.Rename;
+            //item.SenderSessionUnit.MemberName = friendshipSessionUnit?.MemberName;
         }
     }
 
@@ -237,9 +257,25 @@ public class MessageAppService(
         return result;
     }
 
+    /// <summary>
+    /// 消息 - 总数量
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    public async Task<long> GetTotalCountAsync(MessageGetListInput input)
+    {
+        var sessionUnitId = input.SessionUnitId;
+        var entity = await GetAndCheckPolicyAsync(GetListPolicyName, sessionUnitId);
+        var query = await CreateQueryableAsync(entity, input);
+        return query.Count();
+    }
 
-
-    public async Task<PagedResultDto<MessageOwnerDto>> GetListFastAsync(MessageGetListInput input)
+    /// <summary>
+    /// 历史消息
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    public async Task<PagedResultDto<MessageOwnerDto>> GetListFastAsync(MessageFastGetListInput input)
     {
         var sessionUnitId = input.SessionUnitId;
 
@@ -249,23 +285,39 @@ public class MessageAppService(
 
         var idQueryable = query.Select(x => x.Id);
 
-        var pagedResult = await GetPagedListAsync(
-            idQueryable,
-            input,
-            x => x.OrderByDescending(x => x));
+        var pageSize = input.MaxResultCount;
 
-        var messages = await MessageManager.GetOrAddManyCacheAsync(pagedResult.Items);
+        var skip = input.SkipCount;
+
+        var ids = await idQueryable
+            .OrderByDescending(x => x)
+            .Skip(skip)
+            // 多取一条
+            .Take(pageSize + 1)
+            .ToListAsync();
+
+        var hasMore = ids.Count > pageSize;
+
+        if (hasMore)
+        {
+            ids.RemoveAt(ids.Count - 1);
+        }
+
+        var messages = await MessageManager.GetOrAddManyCacheAsync(ids);
 
         var cacheItems = messages.Select(x => x.Value).ToList();
 
         var items = await MapToMessagesAsync(cacheItems);
 
-        var result = new PagedResultDto<MessageOwnerDto>(pagedResult.TotalCount, items);
+        // 不统计真实数量，防止全表扫描
+        var totalCount = input.IsRealTotalCount == true
+            ? idQueryable.Count()
+            : skip + items.Count + (hasMore ? 1 : 0);
+
+        var result = new PagedResultDto<MessageOwnerDto>(totalCount, items);
 
         await FillStatisticsAsync(sessionUnitId, result);
-
         await FillFriendshipAsync(entity.OwnerId, result);
-
         await FillSettingsAsync(result);
 
         return result;

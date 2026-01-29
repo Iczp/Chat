@@ -22,7 +22,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
-using System.Reactive;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -1466,6 +1465,28 @@ public class SessionUnitManager(
         return await SessionUnitCacheManager.SetFriendsIfNotExistsAsync(ownerId,
              async (ownerId) =>
                  await GetFriendsAsync(ownerId));
+    }
+
+    /// <summary>
+    /// 获取好友会话(自动加载)
+    /// key: ownerId
+    /// value: SessionUnitElement[]
+    /// </summary>
+    /// <param name="ownerIds"></param>
+    /// <returns></returns>
+    public async Task<Dictionary<long, IEnumerable<SessionUnitElement>>> LoadFriendsMapAsync(List<long> ownerIds)
+    {
+        var stopwatch = Stopwatch.StartNew();
+
+        foreach (var ownerId in ownerIds)
+        {
+            await LoadFriendsIfNotExistsAsync(ownerId);
+        }
+        var result = await SessionUnitCacheManager.GetFriendsElementAsync(ownerIds);
+
+        Logger.LogInformation("[LoadFriendsMapAsync] ownerIds=[{ownerIds}], Elapsed: {Elapsed}ms", ownerIds.JoinAsString(","), stopwatch.ElapsedMilliseconds);
+
+        return result;
     }
 
     public virtual async Task<IEnumerable<SessionUnitCacheItem>> LoadMembersIfNotExistsAsync(Guid sessionId)

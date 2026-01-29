@@ -25,6 +25,8 @@ public interface ISessionUnitCacheAppService
 
     Task<SessionUnitFriendDto> GetAsync(Guid id);
 
+    Task<SessionUnitFriendDetailDto> GetDetailAsync(Guid id);
+
     Task<BadgeDto> GetBadgeAsync(long ownerId);
 
     Task<List<BadgeDto>> GetBadgeByUserIdAsync([Required] Guid userId);
