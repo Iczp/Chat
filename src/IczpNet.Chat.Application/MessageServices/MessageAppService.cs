@@ -15,6 +15,7 @@ using IczpNet.Chat.SessionUnitSettings;
 using IczpNet.Chat.SessionUnitSettings.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -23,7 +24,6 @@ using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
-using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 
@@ -257,9 +257,25 @@ public class MessageAppService(
         return result;
     }
 
+    /// <summary>
+    /// 消息 - 总数量
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    public async Task<long> GetTotalCountAsync(MessageGetListInput input)
+    {
+        var sessionUnitId = input.SessionUnitId;
+        var entity = await GetAndCheckPolicyAsync(GetListPolicyName, sessionUnitId);
+        var query = await CreateQueryableAsync(entity, input);
+        return query.Count();
+    }
 
-
-    public async Task<PagedResultDto<MessageOwnerDto>> GetListFastAsync(MessageGetListInput input)
+    /// <summary>
+    /// 历史消息
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    public async Task<PagedResultDto<MessageOwnerDto>> GetListFastAsync(MessageFastGetListInput input)
     {
         var sessionUnitId = input.SessionUnitId;
 
@@ -269,23 +285,39 @@ public class MessageAppService(
 
         var idQueryable = query.Select(x => x.Id);
 
-        var pagedResult = await GetPagedListAsync(
-            idQueryable,
-            input,
-            x => x.OrderByDescending(x => x));
+        var pageSize = input.MaxResultCount;
 
-        var messages = await MessageManager.GetOrAddManyCacheAsync(pagedResult.Items);
+        var skip = input.SkipCount;
+
+        var ids = await idQueryable
+            .OrderByDescending(x => x)
+            .Skip(skip)
+            // 多取一条
+            .Take(pageSize + 1)
+            .ToListAsync();
+
+        var hasMore = ids.Count > pageSize;
+
+        if (hasMore)
+        {
+            ids.RemoveAt(ids.Count - 1);
+        }
+
+        var messages = await MessageManager.GetOrAddManyCacheAsync(ids);
 
         var cacheItems = messages.Select(x => x.Value).ToList();
 
         var items = await MapToMessagesAsync(cacheItems);
 
-        var result = new PagedResultDto<MessageOwnerDto>(pagedResult.TotalCount, items);
+        // 不统计真实数量，防止全表扫描
+        var totalCount = input.IsRealTotalCount == true
+            ? idQueryable.Count()
+            : skip + items.Count + (hasMore ? 1 : 0);
+
+        var result = new PagedResultDto<MessageOwnerDto>(totalCount, items);
 
         await FillStatisticsAsync(sessionUnitId, result);
-
         await FillFriendshipAsync(entity.OwnerId, result);
-
         await FillSettingsAsync(result);
 
         return result;
