@@ -82,18 +82,18 @@ public class SessionUnitCacheAppService(
         );
     }
 
-    protected virtual async Task LoadFriendsIfNotExistsAsync(long ownerId)
+    protected virtual async Task LoadFriendsAsync(long ownerId)
     {
         await SessionUnitManager.LoadFriendsIfNotExistsAsync(ownerId);
     }
-    protected virtual async Task LoadMembersIfNotExistsAsync(Guid sessionId)
+    protected virtual async Task LoadMembersAsync(Guid sessionId)
     {
         await SessionUnitManager.LoadMembersIfNotExistsAsync(sessionId);
     }
 
     protected virtual async Task<IEnumerable<SessionUnitCacheItem>> GetAllListAsync(long ownerId)
     {
-        await LoadFriendsIfNotExistsAsync(ownerId);
+        await LoadFriendsAsync(ownerId);
         return await SessionUnitCacheManager.GetFriendUnitsAsync(ownerId);
     }
 
@@ -449,7 +449,7 @@ public class SessionUnitCacheAppService(
     {
         var owner = await ChatObjectManager.GetItemByCacheAsync(ownerId);
         //加载全部
-        await LoadFriendsIfNotExistsAsync(ownerId);
+        await LoadFriendsAsync(ownerId);
 
         return new BadgeDto()
         {
@@ -506,7 +506,13 @@ public class SessionUnitCacheAppService(
         var list = await GetCacheManyAsync(unitIds);
 
         // check owner
-        var chatObjectIdList = list.Select(x => x.Value).Select(x => x.OwnerId).Distinct().ToList();
+        var chatObjectIdList = list
+            .Select(x => x.Value)
+            .Where(x => x != null)
+            .Select(x => x.OwnerId)
+            .Distinct()
+            .ToList();
+
         await CheckPolicyForUserAsync(chatObjectIdList, () => CheckPolicyAsync(GetListPolicyName));
 
         var items = list.Select(x => x.Value)
@@ -546,35 +552,24 @@ public class SessionUnitCacheAppService(
     /// <returns></returns>
     public async Task<SessionUnitFriendDetailDto> GetDetailAsync(Guid id)
     {
-        var list = await GetCacheManyAsync([id]);
+        var unit = await GetCacheAsync(id);
 
-        // check owner
-        var chatObjectIdList = list.Select(x => x.Value).Select(x => x.OwnerId).Distinct().ToList();
-        await CheckPolicyForUserAsync(chatObjectIdList, () => CheckPolicyAsync(GetListPolicyName));
+        await CheckPolicyForUserAsync([unit.OwnerId], () => CheckPolicyAsync(GetListPolicyName));
 
-        var items = list.Select(x => x.Value)
-            .Where(x => x != null)
-            .Select(MapToDetailDto)
+        var allIds = new List<long?>() { unit.OwnerId, unit.DestinationId }
+            .Where(x => x.HasValue)
+            .Select(x => x.Value)
+            .Distinct()
             .ToList();
-
-        //await FillSettingAsync(items);
-        var ownerIds = items.Select(x => x.OwnerId);
-        var destinationIds = items
-            .Where(x => x.DestinationId.HasValue)
-            .Select(x => x.DestinationId!.Value);
-
-        var allIds = ownerIds.Concat(destinationIds).Distinct().ToList();
 
         var chatObjectMap = (await ChatObjectManager.GetManyByCacheAsync(allIds))
             .ToDictionary(x => x.Id, x => x);
 
-        foreach (var item in items)
-        {
-            item.Owner = chatObjectMap.GetValueOrDefault(item.OwnerId);
-            item.Destination = item.DestinationId.HasValue ? chatObjectMap.GetValueOrDefault(item.DestinationId.Value) : null;
-        }
+        var item = MapToDetailDto(unit);
+        item.Owner = chatObjectMap.GetValueOrDefault(item.OwnerId);
+        item.Destination = item.DestinationId.HasValue ? chatObjectMap.GetValueOrDefault(item.DestinationId.Value) : null;
 
-        return items[0];
+        return item;
     }
 
 
@@ -619,7 +614,7 @@ public class SessionUnitCacheAppService(
         await CheckPolicyForUserAsync(input.OwnerId, () => CheckPolicyAsync(GetListPolicyName, input.OwnerId));
 
         //加载全部
-        await LoadFriendsIfNotExistsAsync(input.OwnerId);
+        await LoadFriendsAsync(input.OwnerId);
 
         IEnumerable<long> onlineFriendIds = [];
 
@@ -710,7 +705,7 @@ public class SessionUnitCacheAppService(
     /// <returns></returns>
     public async Task<FriendCountDto> GetFriendsCountAsync([Required] long ownerId)
     {
-        await LoadFriendsIfNotExistsAsync(ownerId);
+        await LoadFriendsAsync(ownerId);
 
         return new FriendCountDto()
         {
@@ -734,7 +729,7 @@ public class SessionUnitCacheAppService(
         await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
 
         //加载全部
-        await LoadMembersIfNotExistsAsync(sessionId);
+        await LoadMembersAsync(sessionId);
 
         var queryable = await SessionUnitCacheManager.GetMembersAsync(
             sessionId,
@@ -794,7 +789,7 @@ public class SessionUnitCacheAppService(
     {
         var unit = await GetCacheAsync(unitId);
         var sessionId = unit.SessionId.Value;
-        await LoadMembersIfNotExistsAsync(sessionId);
+        await LoadMembersAsync(sessionId);
         return new MemberCountDto()
         {
             SessionId = sessionId,

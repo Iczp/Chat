@@ -1151,7 +1151,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         foreach (var nullKey in nullKeys)
         {
-            if (!fetchedMap.TryGetValue(nullKey, out var fetchedItem) || fetchedItem != null)
+            if (!fetchedMap.TryGetValue(nullKey, out var fetchedItem) || fetchedItem == null)
             {
                 continue;
             }
