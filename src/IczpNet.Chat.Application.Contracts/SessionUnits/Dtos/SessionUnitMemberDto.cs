@@ -15,7 +15,7 @@ public class SessionUnitMemberDto : SessionUnitInfoBase //SessionUnitSenderInfo 
     /// <summary>
     /// 
     /// </summary>
-    public virtual List<SessionTagInfo> TagList { get; set; }
+    public virtual List<SessionTagCacheItem> TagList { get; set; }
 
     ///// <summary>
     ///// 最后发送的消息

@@ -96,7 +96,7 @@ public class ChatApplicationAutoMapperProfile : Profile
 
         CreateMap<SessionUnit, SessionUnitCacheItem>();
 
-        CreateMap<SessionTag, SessionTagInfo>();
+        CreateMap<SessionTag, SessionTagCacheItem>();
 
 
         //ConnectionPool

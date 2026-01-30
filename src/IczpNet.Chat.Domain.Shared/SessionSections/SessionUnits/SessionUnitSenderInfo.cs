@@ -25,5 +25,5 @@ public class SessionUnitSenderInfo : SessionUnitInfoBase
     /// <summary>
     /// 
     /// </summary>
-    public virtual List<SessionTagInfo> TagList { get; set; }
+    public virtual List<SessionTagCacheItem> TagList { get; set; }
 }
