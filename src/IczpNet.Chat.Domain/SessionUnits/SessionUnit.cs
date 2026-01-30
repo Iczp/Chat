@@ -321,6 +321,12 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     [NotMapped]
     public virtual bool IsImmersed => Setting.IsImmersed;
 
+    [NotMapped]
+    public virtual long? LastSendMessageId => Setting.LastSendMessageId;
+
+    [NotMapped]
+    public virtual DateTime? LastSendTime => Setting.LastSendTime;
+
     protected SessionUnit() { }
 
     internal SessionUnit(ISessionUnitIdGenerator idGenerator,

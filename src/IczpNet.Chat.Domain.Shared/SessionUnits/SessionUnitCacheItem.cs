@@ -46,8 +46,9 @@ public class SessionUnitCacheItem : SessionUnitInfoBase, ISessionUnit
 
     //public virtual SessionUnitSettingCacheItem Setting { get; set; }
 
-    /// <summary>
-    /// Setting.IsImmersed
-    /// </summary>
     public virtual bool IsImmersed { get; set; }
+
+    public DateTime? LastSendTime { get; set; }
+
+    public virtual long? LastSendMessageId { get; set; }
 }

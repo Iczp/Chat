@@ -19,6 +19,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="GotRecorders\**" />
+    <Compile Remove="Personals\**" />
+    <Compile Remove="RedPackets\**" />
+    <EmbeddedResource Remove="GotRecorders\**" />
+    <EmbeddedResource Remove="Personals\**" />
+    <EmbeddedResource Remove="RedPackets\**" />
+    <None Remove="GotRecorders\**" />
+    <None Remove="Personals\**" />
+    <None Remove="RedPackets\**" />
+  </ItemGroup>
+
+  <ItemGroup>
 		<PackageReference Include="IczpNet.AbpCommons.Domain" Version="0.9.1.903" />
 		<PackageReference Include="IczpNet.AbpTrees.Domain" Version="9.0.1.903" />
 		<PackageReference Include="IczpNet.BizCrypts" Version="0.0.1" />
@@ -60,9 +72,6 @@
   <ItemGroup>
     <Folder Include="Boxes\" />
     <Folder Include="Commands\" />
-    <Folder Include="GotRecorders\" />
-    <Folder Include="Personals\" />
-    <Folder Include="RedPackets\" />
     <Folder Include="ShortIds\" />
   </ItemGroup>
 
