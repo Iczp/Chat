@@ -6,25 +6,24 @@ using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.FavoritedRecorders.Dtos;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.OpenedRecorders.Dtos;
-using IczpNet.Chat.SessionSections.SessionOrganizations;
+using IczpNet.Chat.SessionOrganizations;
+using IczpNet.Chat.SessionPermissionDefinitions;
+using IczpNet.Chat.SessionPermissionGroups;
+using IczpNet.Chat.SessionPermissionRoleGrants;
+using IczpNet.Chat.SessionPermissions;
+using IczpNet.Chat.SessionPermissionUnitGrants;
+using IczpNet.Chat.SessionRequests;
+using IczpNet.Chat.SessionRoles;
+using IczpNet.Chat.Sessions;
 using IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;
-using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionSections.SessionPermissionDefinitions.Dtos;
-using IczpNet.Chat.SessionSections.SessionPermissionGroups;
 using IczpNet.Chat.SessionSections.SessionPermissionGroups.Dtos;
-using IczpNet.Chat.SessionSections.SessionPermissionRoleGrants;
-using IczpNet.Chat.SessionSections.SessionPermissions;
 using IczpNet.Chat.SessionSections.SessionPermissions.Dtos;
-using IczpNet.Chat.SessionSections.SessionPermissionUnitGrants;
-using IczpNet.Chat.SessionSections.SessionRequests;
 using IczpNet.Chat.SessionSections.SessionRequests.Dtos;
-using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
-using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.Sessions.Dtos;
-using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionTags.Dtos;
-using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.SessionTags;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
 using IczpNet.Chat.SessionUnitSettings;
@@ -63,7 +62,7 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
             .Ignore(x => x.FriendshipSessionUnitId)
             ;
 
-        CreateMap<SessionUnit, SessionUnitCacheItem>();
+        CreateMap<SessionUnit, SessionUnitCacheItem>();//.MapExtraProperties();
 
         CreateMap<SessionUnitCacheItem, SessionUnitFriendDetailDto>(MemberList.None);
 

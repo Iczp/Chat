@@ -4,7 +4,7 @@ using IczpNet.AbpTrees;
 using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
-using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.Sessions;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.Extensions.Logging;
 using System;

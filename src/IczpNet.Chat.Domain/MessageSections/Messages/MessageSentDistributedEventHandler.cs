@@ -6,7 +6,6 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.Hosting;
 using IczpNet.Chat.MessageReports;
-using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.Extensions.Logging;
 using System;

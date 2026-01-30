@@ -7,7 +7,6 @@ using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionBoxes;
-using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
 using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.EntityFrameworkCore;
@@ -225,6 +224,25 @@ public class SessionUnitCacheAppService(
         }
     }
     private async Task FillOwnerAsync(IEnumerable<SessionUnitMemberDto> items)
+    {
+        // fill Destination
+        var nulltems = items
+            .Where(x => x.Owner == null)
+            .ToList();
+        if (nulltems.Count == 0)
+        {
+            return;
+        }
+        var idlist = nulltems.Select(x => x.OwnerId).Distinct().ToList();
+        var destMap = (await ChatObjectManager.GetManyByCacheAsync(idlist))
+            .ToDictionary(x => x.Id, x => x);
+
+        foreach (var item in nulltems)
+        {
+            item.Owner = destMap.GetValueOrDefault(item.OwnerId);
+        }
+    }
+    private async Task FillTagAsync(IEnumerable<SessionUnitMemberDto> items)
     {
         // fill Destination
         var nulltems = items
@@ -776,6 +794,8 @@ public class SessionUnitCacheAppService(
             .ToList();
 
         await FillOwnerAsync(items);
+
+        await FillTagAsync(items);
 
         return new PagedResultDto<SessionUnitMemberDto>(totalCount, items);
     }

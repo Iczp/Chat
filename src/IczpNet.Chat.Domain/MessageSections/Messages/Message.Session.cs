@@ -4,7 +4,7 @@ using IczpNet.Chat.MessageSections.Counters;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.Scopeds;
-using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.Sessions;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
 using System.Collections.Generic;
@@ -59,7 +59,7 @@ public partial class Message
     /// <summary>
     /// 会话列表
     /// </summary>
-    [InverseProperty(nameof(SessionSections.Sessions.Session.LastMessage))]
+    [InverseProperty(nameof(Sessions.Session.LastMessage))]
     public virtual IList<Session> SessionList { get; set; }
 
     /// <summary>

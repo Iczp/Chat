@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.SessionSections.SessionOrganizations;
+﻿using IczpNet.Chat.SessionOrganizations;
 using System;
 using Volo.Abp.Application.Dtos;
 namespace IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;

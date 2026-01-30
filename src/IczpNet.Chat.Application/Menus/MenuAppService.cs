@@ -2,7 +2,7 @@
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Menus.Dtos;
-using IczpNet.Chat.SessionSections.SessionPermissions;
+using IczpNet.Chat.SessionPermissions;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;

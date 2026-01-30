@@ -39,7 +39,6 @@ using IczpNet.Chat.Mottos.Dtos;
 using IczpNet.Chat.Robots.Dtos;
 using IczpNet.Chat.ScanCodes;
 using IczpNet.Chat.ScanLogins;
-using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
 using IczpNet.Chat.ShopKeepers.Dtos;
 using IczpNet.Chat.ShopWaiters.Dtos;
 using IczpNet.Chat.Squares.Dtos;
@@ -47,6 +46,7 @@ using IczpNet.Chat.Words;
 using IczpNet.Chat.Words.Dtos;
 using Volo.Abp.AutoMapper;
 using IczpNet.Chat.SessionBoxes;
+using IczpNet.Chat.SessionUnitEntryValues;
 /*---------code-generator-namespace: Do not modify or delete this line of comments--------*/
 
 namespace IczpNet.Chat.AutoMappers;

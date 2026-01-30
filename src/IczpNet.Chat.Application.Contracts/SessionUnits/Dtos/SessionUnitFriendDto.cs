@@ -1,6 +1,5 @@
 ﻿using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.MessageSections.Messages;
-using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
 using System.Text.Json.Serialization;
 

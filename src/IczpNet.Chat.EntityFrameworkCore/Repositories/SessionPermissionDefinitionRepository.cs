@@ -1,5 +1,5 @@
 ﻿using IczpNet.Chat.EntityFrameworkCore;
-using IczpNet.Chat.SessionSections.SessionPermissionDefinitions;
+using IczpNet.Chat.SessionPermissionDefinitions;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;

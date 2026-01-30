@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using IczpNet.Chat.MessageSections.Messages;
-using IczpNet.Chat.SessionSections.SessionUnits;
 using IczpNet.Chat.SessionUnits;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Services;

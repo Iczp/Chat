@@ -7,8 +7,7 @@ using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionBoxes;
-using IczpNet.Chat.SessionSections.Sessions;
-using IczpNet.Chat.SessionSections.SessionUnits;
+using IczpNet.Chat.Sessions;
 using IczpNet.Chat.SessionUnitSettings;
 using IczpNet.Chat.TextTemplates;
 using JetBrains.Annotations;
@@ -16,6 +15,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Pipelines.Sockets.Unofficial.Buffers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -35,6 +36,7 @@ using Volo.Abp.Uow;
 namespace IczpNet.Chat.SessionUnits;
 
 public class SessionUnitManager(
+    IOptions<SessionUnitOptions> options,
     ISessionUnitCacheManager sessionUnitCacheManager,
     IChatObjectManager chatObjectManager,
     ISessionUnitRepository repository,
@@ -52,6 +54,9 @@ public class SessionUnitManager(
     IRepository<Box, Guid> boxRepository,
     ISessionUnitIdGenerator idGenerator) : DomainService, ISessionUnitManager
 {
+    public IOptions<SessionUnitOptions> Options { get; } = options;
+    public SessionUnitOptions Config => Options.Value;
+
     public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
     public IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
     protected ISessionUnitRepository Repository { get; } = repository;
@@ -96,9 +101,11 @@ public class SessionUnitManager(
     /// <returns></returns>
     private async IAsyncEnumerable<SessionUnitCacheItem> LoadUnitsAsync(
         IQueryable<SessionUnit> baseQuery,
-        int batchSize = 1000,
+        int? batchSize = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        int batchLoadSize = batchSize ?? Config.BatchLoadSize;
+
         var totalSw = Stopwatch.StartNew();
 
         var cursor = SessionUnitCursor.Start;
@@ -113,7 +120,7 @@ public class SessionUnitManager(
 
                 var swQuery = Stopwatch.StartNew();
 
-                var batch = baseQuery//.Include(x => x.Setting)
+                var batch = await baseQuery//.Include(x => x.Setting)
                     .Where(x =>
                         x.CreationTime > cursor.CreationTime ||
                         (x.CreationTime == cursor.CreationTime &&
@@ -121,8 +128,9 @@ public class SessionUnitManager(
 
                     .OrderBy(x => x.CreationTime)
                     .ThenBy(x => x.Id)
-                    .Take(batchSize)
+                    .Take(batchLoadSize)
                     .AsNoTracking()
+                    //.Select(x => MapToCacheItem(x))
                     .Select(x => new SessionUnitCacheItem()
                     {
                         Id = x.Id,
@@ -142,6 +150,7 @@ public class SessionUnitManager(
                         Ticks = x.Ticks,
                         Sorting = x.Sorting,
                         CreationTime = x.CreationTime,
+                        //ExtraProperties = x.ExtraProperties,
 
                         //ReadedMessageId = x.Setting.ReadedMessageId,
                         IsPublic = x.Setting.IsPublic,
@@ -154,7 +163,8 @@ public class SessionUnitManager(
                         Rename = x.Setting.Rename,
                         MemberName = x.Setting.MemberName,
                     })
-                    .ToList();
+                    //.ToList();
+                    .ToListAsync(cancellationToken: cancellationToken);
 
                 swQuery.Stop();
 
@@ -171,14 +181,16 @@ public class SessionUnitManager(
                 }
 
                 Logger.LogInformation(
-                    "{Method} batch#{BatchIndex} DB {Count} rows in {Elapsed}ms",
+                    "{Method} batchLoadSize={batchLoadSize}, batch#{BatchIndex} batch count={Count} rows in Elapsed={Elapsed}ms",
                     method,
+                    batchLoadSize,
                     batchIndex,
                     batch.Count,
                     swQuery.ElapsedMilliseconds);
 
                 var swMap = Stopwatch.StartNew();
-                //var list = ObjectMapper.Map<List<SessionUnit>, List<SessionUnitCacheItem>>(batch);
+                // 取消 MapToCacheItem，提高性能--2026.01.30
+                //var list = batch.Select(MapToCacheItem).ToList();
                 var list = batch.ToList();
                 swMap.Stop();
 
@@ -213,7 +225,6 @@ public class SessionUnitManager(
                 totalSw.ElapsedMilliseconds);
         }
     }
-
 
     protected static DistributedCacheEntryOptions DistributedCacheEntryOptions => new()
     {
@@ -943,54 +954,26 @@ public class SessionUnitManager(
         })];
     }
     /// <inheritdoc />
-    public virtual async Task<List<SessionUnitCacheItem>> GetMembersAsync(Guid sessionId, int batchSize = 1000, CancellationToken cancellationToken = default)
+    public virtual async Task<List<SessionUnitCacheItem>> GetMembersAsync(Guid sessionId, int? batchSize = null, CancellationToken cancellationToken = default)
     {
-        //var list = ToCacheItem((await SessionUnitReadOnlyRepository.GetQueryableAsync())
-        //        .Where(SessionUnit.GetActivePredicate(Clock.Now))
-        //        .Where(x => x.SessionId == sessionId)
-        //    ).ToList();
-        //await SessionUnitCountCache.SetAsync(sessionId, list.Where(x => x.IsPublic).Count().ToString());
-
-        //return list;
-
         var stopwatch = Stopwatch.StartNew();
 
-        var list = await BatchGetListAsync(queryable =>
-        {
-            return queryable.Where(x => x.SessionId == sessionId);
-        }, batchSize, cancellationToken);
+        var list = await BatchGetListAsync(queryable => queryable.Where(x => x.SessionId == sessionId), batchSize, cancellationToken);
 
-        await SessionUnitCountCache.SetAsync(sessionId, list
-            //.Where(x => x.IsPublic)
-            .Count.ToString(), token: cancellationToken);
+        await SessionUnitCountCache.SetAsync(sessionId, list.Count.ToString(), token: cancellationToken);
 
-        Logger.LogInformation($"{nameof(GetMembersAsync)} SessionId:{sessionId}, [DB:{stopwatch.ElapsedMilliseconds}ms] count:{list.Count}");
+        Logger.LogInformation("{method} sessionId={sessionId}, count={count}, [DB Elapsed:{Elapsed}ms]", nameof(GetMembersAsync), sessionId, list.Count, stopwatch.ElapsedMilliseconds);
 
         return list;
     }
     /// <inheritdoc />
-    public virtual async Task<List<SessionUnitCacheItem>> GetListByUserAsync(Guid userId, int batchSize = 1000, CancellationToken cancellationToken = default)
+    public virtual async Task<List<SessionUnitCacheItem>> GetListByUserAsync(Guid userId, int? batchSize = null, CancellationToken cancellationToken = default)
     {
         var stopwatch = Stopwatch.StartNew();
 
         var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(userId);
 
-        //var list = ToCacheItem((await SessionUnitReadOnlyRepository.GetQueryableAsync())
-        //        .Where(SessionUnit.GetActivePredicate(Clock.Now))
-        //        .Where(x => chatObjectIdList.Contains(x.OwnerId))
-        //    ).ToList();
-        //return list;
-
-        //foreach (var chatObjectId in chatObjectIdList)
-        //{
-
-        //    var list = await LoadFriendsIfNotExistsAsync(chatObjectId);
-        //}
-
-        var result = await BatchGetListAsync(queryable =>
-        {
-            return queryable.Where(x => chatObjectIdList.Contains(x.OwnerId));
-        }, batchSize, cancellationToken);
+        var result = await BatchGetListAsync(queryable => queryable.Where(x => chatObjectIdList.Contains(x.OwnerId)), batchSize, cancellationToken);
 
         Logger.LogInformation($"{nameof(GetListByUserAsync)} userId:{userId}, [DB:{stopwatch.ElapsedMilliseconds}ms]");
 
@@ -1000,7 +983,7 @@ public class SessionUnitManager(
 
     public virtual async Task<List<SessionUnitCacheItem>> BatchGetListAsync(
         Func<IQueryable<SessionUnit>, IQueryable<SessionUnit>> queryableAction,
-        int batchSize = 1000,
+        int? batchSize = null,
         CancellationToken cancellationToken = default)
     {
 
@@ -1021,34 +1004,28 @@ public class SessionUnitManager(
     }
 
     /// <inheritdoc />
-    public virtual async Task<List<SessionUnitCacheItem>> GetFriendsAsync(long ownerId, int batchSize = 1000, CancellationToken cancellationToken = default)
+    public virtual async Task<List<SessionUnitCacheItem>> GetFriendsAsync(long ownerId, int? batchSize = null, CancellationToken cancellationToken = default)
     {
         var stopwatch = Stopwatch.StartNew();
 
-        var result = await BatchGetListAsync(queryable =>
-        {
-            return queryable.Where(x => x.OwnerId == ownerId);
-        }, batchSize, cancellationToken);
+        var list = await BatchGetListAsync(queryable => queryable.Where(x => x.OwnerId == ownerId), batchSize, cancellationToken);
 
-        Logger.LogInformation($"{nameof(GetFriendsAsync)} ownerId:{ownerId}, [DB:{stopwatch.ElapsedMilliseconds}ms]");
+        Logger.LogInformation("{method} ownerId={ownerId}, count={count}, [DB Elapsed:{Elapsed}ms]", nameof(GetFriendsAsync), ownerId, list.Count, stopwatch.ElapsedMilliseconds);
 
-        return result;
+        return list;
     }
 
     /// <inheritdoc />
-    public virtual async Task<List<SessionUnitCacheItem>> GetReverseFriendsAsync(long destinationId, int batchSize = 1000, CancellationToken cancellationToken = default)
+    public virtual async Task<List<SessionUnitCacheItem>> GetReverseFriendsAsync(long destinationId, int? batchSize = null, CancellationToken cancellationToken = default)
     {
         var stopwatch = Stopwatch.StartNew();
 
-        var result = await BatchGetListAsync(queryable =>
-        {
-            //反向好友：对方把自己加为好友的会话单元
-            return queryable.Where(x => x.DestinationId == destinationId);
-        }, batchSize, cancellationToken);
+        //反向好友：对方把自己加为好友的会话单元
+        var list = await BatchGetListAsync(queryable => queryable.Where(x => x.DestinationId == destinationId), batchSize, cancellationToken);
 
-        Logger.LogInformation($"{nameof(GetReverseFriendsAsync)} DestinationId:{destinationId}, [DB:{stopwatch.ElapsedMilliseconds}ms]");
+        Logger.LogInformation("{method} DestinationId:{destinationId}, [DB Elapsed:{elapsed}ms]", nameof(GetReverseFriendsAsync), destinationId, stopwatch.ElapsedMilliseconds);
 
-        return result;
+        return list;
     }
 
     /// <inheritdoc />
