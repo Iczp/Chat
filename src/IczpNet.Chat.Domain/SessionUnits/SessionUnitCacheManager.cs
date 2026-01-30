@@ -229,6 +229,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     //private static string F_IsEnabled => nameof(SessionUnitCacheItem.IsEnabled);
     //private static string F_ReadedMessageId => nameof(SessionUnitCacheItem.ReadedMessageId);
     private static string F_LastMessageId => nameof(SessionUnitCacheItem.LastMessageId);
+    private static string F_LastSendMessageId => nameof(SessionUnitCacheItem.LastSendMessageId);
+    private static string F_LastSendTime => nameof(SessionUnitCacheItem.LastSendTime);
     private static string F_PublicBadge => nameof(SessionUnitCacheItem.PublicBadge);
     private static string F_PrivateBadge => nameof(SessionUnitCacheItem.PrivateBadge);
     private static string F_RemindAllCount => nameof(SessionUnitCacheItem.RemindAllCount);
@@ -1250,6 +1252,10 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             // Sender
             if (isSender)
             {
+                // expire
+                //LastSendMessageId
+                _ = batch.HashSetAsync(unitKey, F_LastSendMessageId, lastMessageId);
+                _ = batch.HashSetAsync(unitKey, F_LastSendTime, message.CreationTime.ToRedisValue());
                 continue;
             }
 

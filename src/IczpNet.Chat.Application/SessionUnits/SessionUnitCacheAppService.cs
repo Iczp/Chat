@@ -7,6 +7,7 @@ using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionBoxes;
+using IczpNet.Chat.SessionTags;
 using IczpNet.Chat.SessionUnits.Dtos;
 using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.EntityFrameworkCore;
@@ -39,6 +40,7 @@ public class SessionUnitCacheAppService(
     IOnlineManager onlineManager,
     IDistributedCache<SessionUnitSearchCacheItem, SessionUnitSearchCacheKey> searchCache,
     IBoxManager boxManager,
+    ISessionTagManager sessionTagManager,
     ISessionUnitCacheManager sessionUnitCacheManager) : ChatAppService, ISessionUnitCacheAppService
 {
     public IMessageManager MessageManager { get; } = messageManager;
@@ -49,6 +51,7 @@ public class SessionUnitCacheAppService(
     public IOnlineManager OnlineManager { get; } = onlineManager;
     public IDistributedCache<SessionUnitSearchCacheItem, SessionUnitSearchCacheKey> SearchCache { get; } = searchCache;
     public IBoxManager BoxManager { get; } = boxManager;
+    public ISessionTagManager SessionTagManager { get; } = sessionTagManager;
     public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
 
 
@@ -242,23 +245,18 @@ public class SessionUnitCacheAppService(
             item.Owner = destMap.GetValueOrDefault(item.OwnerId);
         }
     }
-    private async Task FillTagAsync(IEnumerable<SessionUnitMemberDto> items)
+    private async Task FillSessionTagAsync(IEnumerable<SessionUnitMemberDto> items)
     {
-        // fill Destination
-        var nulltems = items
-            .Where(x => x.Owner == null)
-            .ToList();
-        if (nulltems.Count == 0)
+        var unitIds = items.Select(x => x.Id).Distinct().ToList();
+        if (unitIds.Count == 0)
         {
             return;
         }
-        var idlist = nulltems.Select(x => x.OwnerId).Distinct().ToList();
-        var destMap = (await ChatObjectManager.GetManyByCacheAsync(idlist))
-            .ToDictionary(x => x.Id, x => x);
+        var tagMap = await SessionTagManager.GetSessionUnitTagMapAsync(unitIds);
 
-        foreach (var item in nulltems)
+        foreach (var item in items)
         {
-            item.Owner = destMap.GetValueOrDefault(item.OwnerId);
+            item.TagList = tagMap.GetValueOrDefault(item.Id) ?? [];
         }
     }
 
@@ -795,7 +793,7 @@ public class SessionUnitCacheAppService(
 
         await FillOwnerAsync(items);
 
-        await FillTagAsync(items);
+        await FillSessionTagAsync(items);
 
         return new PagedResultDto<SessionUnitMemberDto>(totalCount, items);
     }

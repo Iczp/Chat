@@ -62,7 +62,7 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
             .Ignore(x => x.FriendshipSessionUnitId)
             ;
 
-        CreateMap<SessionUnit, SessionUnitCacheItem>();//.MapExtraProperties();
+        CreateMap<SessionUnit, SessionUnitCacheItem>(MemberList.None);//.MapExtraProperties();
 
         CreateMap<SessionUnitCacheItem, SessionUnitFriendDetailDto>(MemberList.None);
 
@@ -99,6 +99,7 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
         CreateMap<SessionTag, SessionTagSimpleDto>();
         CreateMap<SessionTagCreateInput, SessionTag>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         CreateMap<SessionTagUpdateInput, SessionTag>(MemberList.Source).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
+        CreateMap<SessionTag, SessionTagCacheItem>(MemberList.None);
 
         //SessionRole
         CreateMap<SessionRole, SessionRoleDto>();
