@@ -2,7 +2,7 @@
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ContactTags;
 using IczpNet.Chat.Permissions;
-using IczpNet.Chat.SessionSections.SessionUnitContactTags;
+using IczpNet.Chat.SessionUnitContactTags;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
 using IczpNet.Chat.SessionUnitSettings.Dtos;

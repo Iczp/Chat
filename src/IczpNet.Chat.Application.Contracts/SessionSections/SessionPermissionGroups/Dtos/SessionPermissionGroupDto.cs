@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.SessionSections.SessionPermissionGroups;
+﻿using IczpNet.Chat.SessionPermissionGroups;
 using System;
 using Volo.Abp.Application.Dtos;
 namespace IczpNet.Chat.SessionSections.SessionPermissionGroups.Dtos;

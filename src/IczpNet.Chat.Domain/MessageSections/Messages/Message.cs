@@ -4,7 +4,7 @@ using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageWords;
-using IczpNet.Chat.SessionSections;
+using IczpNet.Chat.Sessions;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;

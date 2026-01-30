@@ -9,7 +9,8 @@ using IczpNet.Chat.SessionSections.SessionPermissionDefinitions.Dtos;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using IczpNet.Chat.Permissions;
-using IczpNet.Chat.SessionSections.SessionPermissionGroups;
+using IczpNet.Chat.SessionPermissionDefinitions;
+using IczpNet.Chat.SessionPermissionGroups;
 
 namespace IczpNet.Chat.SessionServices;
 

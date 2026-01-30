@@ -7,7 +7,7 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.SessionBoxes;
-using IczpNet.Chat.SessionSections.SessionTags;
+using IczpNet.Chat.SessionTags;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
 

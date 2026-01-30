@@ -1,7 +1,7 @@
 ﻿using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.ChatObjectEntryValues;
 using IczpNet.Chat.EntryNames;
-using IczpNet.Chat.SessionSections.SessionUnitEntryValues;
+using IczpNet.Chat.SessionUnitEntryValues;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;

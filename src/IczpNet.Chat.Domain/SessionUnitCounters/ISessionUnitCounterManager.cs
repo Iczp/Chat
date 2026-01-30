@@ -1,0 +1,13 @@
+﻿using System.Threading.Tasks;
+
+namespace IczpNet.Chat.SessionUnitCounters;
+
+public interface ISessionUnitCounterManager
+{
+    /// <summary>
+    /// increment counter
+    /// </summary>
+    /// <param name="args"></param>
+    /// <returns>update total count</returns>
+    Task<int> IncremenetAsync(SessionUnitCounterArgs args);
+}

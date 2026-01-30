@@ -1,7 +1,7 @@
 ﻿using IczpNet.Chat.BaseEntities;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.DataFilters;
-using IczpNet.Chat.SessionSections.SessionUnitContactTags;
+using IczpNet.Chat.SessionUnitContactTags;
 using JetBrains.Annotations;
 using System;
 using System.Collections.Generic;

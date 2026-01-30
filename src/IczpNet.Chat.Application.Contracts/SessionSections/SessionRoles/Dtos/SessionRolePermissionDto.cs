@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.SessionSections.SessionPermissions;
+﻿using IczpNet.Chat.SessionPermissions;
 using System.Collections.Generic;
 
 namespace IczpNet.Chat.SessionSections.SessionRoles.Dtos;

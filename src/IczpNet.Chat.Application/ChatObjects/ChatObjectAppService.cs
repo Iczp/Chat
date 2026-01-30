@@ -11,7 +11,7 @@ using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.ServiceStates;
-using IczpNet.Chat.SessionSections.SessionPermissions;
+using IczpNet.Chat.SessionPermissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using IczpNet.Chat.Sessions;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.SessionSections.SessionRoles.Dtos;

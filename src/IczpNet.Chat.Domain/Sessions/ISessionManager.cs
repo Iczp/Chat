@@ -1,5 +1,5 @@
-﻿using IczpNet.Chat.SessionSections.SessionRoles;
-using IczpNet.Chat.SessionSections.SessionTags;
+﻿using IczpNet.Chat.SessionRoles;
+using IczpNet.Chat.SessionTags;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;

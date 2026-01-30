@@ -1,5 +1,5 @@
 ﻿using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.SessionSections.SessionTags;
+using IczpNet.Chat.SessionTags;
 using System;
 using System.Collections.Generic;
 

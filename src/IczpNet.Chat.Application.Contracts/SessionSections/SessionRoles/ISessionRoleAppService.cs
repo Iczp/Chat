@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using IczpNet.Chat.SessionSections.SessionPermissions;
+using IczpNet.Chat.SessionPermissions;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 using Volo.Abp.Application.Services;
 

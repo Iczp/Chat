@@ -34,9 +34,12 @@
   <ItemGroup>
     <EmbeddedResource Include="Localization\Chat\*.json" />
     <Compile Remove="DataFilters\**" />
+    <Compile Remove="Sessions\SessionPermissionDefinitions\**" />
     <Content Remove="Localization\Chat\*.json" />
     <EmbeddedResource Remove="DataFilters\**" />
+    <EmbeddedResource Remove="Sessions\SessionPermissionDefinitions\**" />
     <None Remove="DataFilters\**" />
+    <None Remove="Sessions\SessionPermissionDefinitions\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -59,7 +62,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="SessionSections\SessionPermissionDefinitions\" />
-    <Folder Include="SessionSections\SessionPermissions\Dtos\" />
+    <Folder Include="SessionPermissions\Dtos\" />
   </ItemGroup>
 </Project>

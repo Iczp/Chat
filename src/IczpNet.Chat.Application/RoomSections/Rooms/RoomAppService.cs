@@ -7,7 +7,7 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.Enums.Dtos;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.RoomSections.Rooms.Dtos;
-using IczpNet.Chat.SessionSections.SessionPermissions;
+using IczpNet.Chat.SessionPermissions;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
 using Microsoft.AspNetCore.Mvc;
