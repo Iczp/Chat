@@ -1,4 +1,4 @@
-﻿namespace IczpNet.Chat.SessionSections.SessionUnits;
+﻿namespace IczpNet.Chat.SessionUnits;
 
 public class SessionUnitStatistic
 {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace IczpNet.Chat.SessionSections.SessionUnits;
+namespace IczpNet.Chat.SessionUnits;
 
 public class SessionUnitOptions
 {

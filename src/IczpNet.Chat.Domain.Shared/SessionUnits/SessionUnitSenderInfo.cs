@@ -3,7 +3,7 @@ using IczpNet.Chat.SessionSections.SessionTags;
 using System;
 using System.Collections.Generic;
 
-namespace IczpNet.Chat.SessionSections.SessionUnits;
+namespace IczpNet.Chat.SessionUnits;
 
 public class SessionUnitSenderInfo : SessionUnitInfoBase
 {

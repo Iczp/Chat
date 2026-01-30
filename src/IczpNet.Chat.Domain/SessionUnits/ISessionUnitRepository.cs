@@ -2,7 +2,6 @@
 using System;
 using Volo.Abp.Domain.Repositories;
 using System.Collections.Generic;
-using IczpNet.Chat.SessionSections.SessionUnits;
 
 namespace IczpNet.Chat.SessionUnits;
 

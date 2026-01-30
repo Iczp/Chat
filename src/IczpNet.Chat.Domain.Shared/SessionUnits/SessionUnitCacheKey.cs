@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace IczpNet.Chat.SessionSections.SessionUnits;
+namespace IczpNet.Chat.SessionUnits;
 
 public class SessionUnitCacheKey : CacheKey<SessionUnitCacheKey>
 {

@@ -22,7 +22,6 @@ using Blob = IczpNet.Chat.Blobs.Blob;
 using Microsoft.Extensions.Logging;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.Blobs;
-using IczpNet.Chat.SessionSections.SessionUnits;
 namespace IczpNet.Chat.Controllers;
 
 [Route($"/api/{ChatRemoteServiceConsts.ModuleName}/message-sender")]

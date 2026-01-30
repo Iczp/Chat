@@ -1,7 +1,7 @@
 ﻿using IczpNet.Chat.Enums;
 using System;
 
-namespace IczpNet.Chat.SessionSections.SessionUnits;
+namespace IczpNet.Chat.SessionUnits;
 
 public interface ISessionUnit
 {
