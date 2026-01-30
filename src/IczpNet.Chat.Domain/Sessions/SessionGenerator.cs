@@ -12,7 +12,6 @@ using Volo.Abp.Domain.Services;
 using Volo.Abp.Uow;
 using System.Security.Cryptography;
 using IczpNet.Chat.SessionUnits;
-using IczpNet.Chat.SessionSections;
 
 namespace IczpNet.Chat.Sessions;
 

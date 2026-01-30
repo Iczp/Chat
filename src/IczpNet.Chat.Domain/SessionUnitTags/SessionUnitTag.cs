@@ -28,6 +28,6 @@ public class SessionUnitTag : BaseEntity
 
     public override object[] GetKeys()
     {
-        return new object[] { SessionUnitId, SessionTagId };
+        return [SessionUnitId, SessionTagId];
     }
 }
