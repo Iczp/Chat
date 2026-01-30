@@ -243,6 +243,25 @@ public class SessionUnitCacheAppService(
             item.Owner = destMap.GetValueOrDefault(item.OwnerId);
         }
     }
+    private async Task FillTagAsync(IEnumerable<SessionUnitMemberDto> items)
+    {
+        // fill Destination
+        var nulltems = items
+            .Where(x => x.Owner == null)
+            .ToList();
+        if (nulltems.Count == 0)
+        {
+            return;
+        }
+        var idlist = nulltems.Select(x => x.OwnerId).Distinct().ToList();
+        var destMap = (await ChatObjectManager.GetManyByCacheAsync(idlist))
+            .ToDictionary(x => x.Id, x => x);
+
+        foreach (var item in nulltems)
+        {
+            item.Owner = destMap.GetValueOrDefault(item.OwnerId);
+        }
+    }
 
     private async Task<KeyValuePair<Guid, SessionUnitCacheItem>[]> GetCacheManyAsync(List<Guid> unitIds)
     {
@@ -776,6 +795,8 @@ public class SessionUnitCacheAppService(
             .ToList();
 
         await FillOwnerAsync(items);
+
+        await FillTagAsync(items);
 
         return new PagedResultDto<SessionUnitMemberDto>(totalCount, items);
     }

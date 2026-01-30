@@ -13,7 +13,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace IczpNet.Chat.SessionSections.Sessions;
+namespace IczpNet.Chat.Sessions;
 
 [Index(nameof(LastMessageId), AllDescending = true)]
 [Index(nameof(SessionKey))]

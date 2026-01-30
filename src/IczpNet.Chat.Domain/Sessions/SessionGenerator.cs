@@ -12,8 +12,9 @@ using Volo.Abp.Domain.Services;
 using Volo.Abp.Uow;
 using System.Security.Cryptography;
 using IczpNet.Chat.SessionUnits;
+using IczpNet.Chat.SessionSections;
 
-namespace IczpNet.Chat.SessionSections.Sessions;
+namespace IczpNet.Chat.Sessions;
 
 public class SessionGenerator : DomainService, ISessionGenerator
 {

@@ -5,7 +5,7 @@ using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.ServiceStates;
-using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.Sessions;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.TextTemplates;
 using Microsoft.Extensions.Logging;

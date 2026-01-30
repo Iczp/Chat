@@ -13,7 +13,7 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.Mottos;
 using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.SessionBoxes;
-using IczpNet.Chat.SessionSections.Sessions;
+using IczpNet.Chat.Sessions;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.EntityFrameworkCore;
 using System;
