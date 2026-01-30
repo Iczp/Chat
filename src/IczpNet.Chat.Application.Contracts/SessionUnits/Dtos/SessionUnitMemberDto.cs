@@ -3,7 +3,7 @@ using IczpNet.Chat.SessionSections.SessionUnits;
 
 namespace IczpNet.Chat.SessionUnits.Dtos;
 
-public class SessionUnitMemberDto : SessionUnitBase//SessionUnitCacheItem
+public class SessionUnitMemberDto : SessionUnitInfoBase//SessionUnitCacheItem
 {
     public virtual ChatObjectInfo Owner { get; set; }
 

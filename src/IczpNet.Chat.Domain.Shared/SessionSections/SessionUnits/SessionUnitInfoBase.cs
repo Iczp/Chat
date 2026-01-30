@@ -4,7 +4,7 @@ using System;
 namespace IczpNet.Chat.SessionSections.SessionUnits;
 
 [Serializable]
-public class SessionUnitBase
+public class SessionUnitInfoBase //: ExtensibleObject
 {
     /// <summary>
     /// SessionUnitId

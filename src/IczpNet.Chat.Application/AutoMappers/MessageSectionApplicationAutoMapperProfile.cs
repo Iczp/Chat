@@ -47,7 +47,7 @@ public class MessageSectionApplicationAutoMapperProfile : Profile
         // cache to dto
         CreateMap<MessageCacheItem, MessageOwnerDto>(MemberList.None).MapExtraProperties();
         CreateMap<MessageQuoteCacheItem, MessageQuoteDto>().MapExtraProperties();
-        CreateMap<SessionUnitSenderInfo, SessionUnitSenderDto>(MemberList.None).MapExtraProperties();
+        CreateMap<SessionUnitSenderInfo, SessionUnitSenderDto>(MemberList.None);//.MapExtraProperties();
         
 
     }

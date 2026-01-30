@@ -4,7 +4,7 @@ using System;
 namespace IczpNet.Chat.SessionSections.SessionUnits;
 
 [Serializable]
-public class SessionUnitCacheItem : SessionUnitBase, ISessionUnit
+public class SessionUnitCacheItem : SessionUnitInfoBase, ISessionUnit
 {
     /// <summary>
     /// DestinationId

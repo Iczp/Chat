@@ -113,7 +113,7 @@ public class SessionUnitManager(
 
                 var swQuery = Stopwatch.StartNew();
 
-                var batch = baseQuery//.Include(x => x.Setting)
+                var batch = await baseQuery//.Include(x => x.Setting)
                     .Where(x =>
                         x.CreationTime > cursor.CreationTime ||
                         (x.CreationTime == cursor.CreationTime &&
@@ -123,6 +123,7 @@ public class SessionUnitManager(
                     .ThenBy(x => x.Id)
                     .Take(batchSize)
                     .AsNoTracking()
+                    //.Select(x => MapToCacheItem(x))
                     .Select(x => new SessionUnitCacheItem()
                     {
                         Id = x.Id,
@@ -142,6 +143,7 @@ public class SessionUnitManager(
                         Ticks = x.Ticks,
                         Sorting = x.Sorting,
                         CreationTime = x.CreationTime,
+                        //ExtraProperties = x.ExtraProperties,
 
                         //ReadedMessageId = x.Setting.ReadedMessageId,
                         IsPublic = x.Setting.IsPublic,
@@ -154,7 +156,8 @@ public class SessionUnitManager(
                         Rename = x.Setting.Rename,
                         MemberName = x.Setting.MemberName,
                     })
-                    .ToList();
+                    //.ToList();
+                    .ToListAsync(cancellationToken: cancellationToken);
 
                 swQuery.Stop();
 
@@ -178,7 +181,8 @@ public class SessionUnitManager(
                     swQuery.ElapsedMilliseconds);
 
                 var swMap = Stopwatch.StartNew();
-                //var list = ObjectMapper.Map<List<SessionUnit>, List<SessionUnitCacheItem>>(batch);
+                // 取消 MapToCacheItem，提高性能--2026.01.30
+                //var list = batch.Select(MapToCacheItem).ToList();
                 var list = batch.ToList();
                 swMap.Stop();
 
@@ -213,7 +217,6 @@ public class SessionUnitManager(
                 totalSw.ElapsedMilliseconds);
         }
     }
-
 
     protected static DistributedCacheEntryOptions DistributedCacheEntryOptions => new()
     {
