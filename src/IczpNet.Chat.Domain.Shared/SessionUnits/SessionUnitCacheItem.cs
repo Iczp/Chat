@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.Enums;
+using IczpNet.Chat.SessionUnitSettings;
 using System;
 
 namespace IczpNet.Chat.SessionUnits;
@@ -44,11 +45,11 @@ public class SessionUnitCacheItem : SessionUnitInfoBase, ISessionUnit
 
     public virtual double Sorting { get; set; }
 
-    //public virtual SessionUnitSettingCacheItem Setting { get; set; }
-
     public virtual bool IsImmersed { get; set; }
 
     public DateTime? LastSendTime { get; set; }
 
     public virtual long? LastSendMessageId { get; set; }
+
+    //public virtual SessionUnitSettingCacheItem Setting { get; set; }
 }

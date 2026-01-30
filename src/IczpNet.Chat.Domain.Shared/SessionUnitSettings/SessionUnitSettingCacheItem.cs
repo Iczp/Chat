@@ -29,12 +29,12 @@ public class SessionUnitSettingCacheItem
     /// <summary>
     /// 最后发言时间
     /// </summary>
-    public virtual DateTime? LastSendTime { get; protected set; }
+    public virtual DateTime? LastSendTime { get; set; }
 
     /// <summary>
     /// 查看历史消息起始时间,为null时则不限
     /// </summary>
-    public virtual DateTime? HistoryFristTime { get; protected set; }
+    public virtual DateTime? HistoryFristTime { get; set; }
 
     /// <summary>
     /// 查看历史消息截止时间,为null时则不限
@@ -44,67 +44,67 @@ public class SessionUnitSettingCacheItem
     /// <summary>
     /// 清除历史消息最后时间,为null时则不限
     /// </summary>
-    public virtual DateTime? ClearTime { get; protected set; }
+    public virtual DateTime? ClearTime { get; set; }
 
     /// <summary>
     /// 不显示消息会话(不退群,不删除消息
     /// </summary>
-    public virtual DateTime? RemoveTime { get; protected set; }
+    public virtual DateTime? RemoveTime { get; set; }
 
     /// <summary>
     /// 会话内的名称
     /// </summary>
-    public virtual string MemberName { get; protected set; }
+    public virtual string MemberName { get; set; }
 
     /// <summary>
     /// 备注名称
     /// </summary>
-    public virtual string Rename { get; protected set; }
+    public virtual string Rename { get; set; }
 
     /// <summary>
     /// 会话内的名称拼音
     /// </summary>
-    public virtual string MemberNameSpelling { get; protected set; }
+    public virtual string MemberNameSpelling { get; set; }
 
     /// <summary>
     /// 会话内的名称拼音简写
     /// </summary>
-    public virtual string MemberNameSpellingAbbreviation { get; protected set; }
+    public virtual string MemberNameSpellingAbbreviation { get; set; }
 
     /// <summary>
     /// 备注拼音简写
     /// </summary>
-    public virtual string RenameSpelling { get; protected set; }
+    public virtual string RenameSpelling { get; set; }
 
     /// <summary>
     /// 备注拼音简写
     /// </summary>
-    public virtual string RenameSpellingAbbreviation { get; protected set; }
+    public virtual string RenameSpellingAbbreviation { get; set; }
 
     /// <summary>
     /// 
     /// </summary>
-    public virtual string Remarks { get; protected set; }
+    public virtual string Remarks { get; set; }
 
     /// <summary>
     /// 是否保存通讯录
     /// </summary>
-    public virtual bool IsContacts { get; protected set; }
+    public virtual bool IsContacts { get; set; }
 
     /// <summary>
     /// 消息免打扰，默认为 false
     /// </summary>
-    public virtual bool IsImmersed { get; protected set; } = false;
+    public virtual bool IsImmersed { get; set; } = false;
 
     /// <summary>
     /// 是否显示成员名称
     /// </summary>
-    public virtual bool IsShowMemberName { get; protected set; }
+    public virtual bool IsShowMemberName { get; set; }
 
     /// <summary>
     /// 是否显示已读
     /// </summary>
-    public virtual bool IsShowReaded { get; protected set; }
+    public virtual bool IsShowReaded { get; set; }
 
     /// <summary>
     /// 是否固定成员
@@ -139,7 +139,7 @@ public class SessionUnitSettingCacheItem
     /// <summary>
     /// 是否可用
     /// </summary>
-    public virtual bool IsEnabled { get; protected set; } = true;
+    public virtual bool IsEnabled { get; set; } = true;
 
     /// <summary>
     /// 聊天背景，默认为 null
@@ -154,7 +154,7 @@ public class SessionUnitSettingCacheItem
     /// <summary>
     /// 是否创建者（群主等）
     /// </summary>
-    public virtual bool IsCreator { get; protected set; } = false;
+    public virtual bool IsCreator { get; set; } = false;
 
     /// <summary>
     /// 禁言过期时间

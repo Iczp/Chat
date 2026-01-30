@@ -163,6 +163,20 @@ public class SessionUnitManager(
                         MemberName = x.Setting.MemberName,
                         LastSendTime = x.Setting.LastSendTime,
                         LastSendMessageId = x.Setting.LastSendMessageId,
+                        //Setting = new SessionUnitSettingCacheItem()
+                        //{
+                        //    ReadedMessageId = x.Setting.ReadedMessageId,
+                        //    IsPublic = x.Setting.IsPublic,
+                        //    IsStatic = x.Setting.IsStatic,
+                        //    IsVisible = x.Setting.IsVisible,
+                        //    IsEnabled = x.Setting.IsEnabled,
+                        //    IsImmersed = x.Setting.IsImmersed,
+                        //    IsCreator = x.Setting.IsCreator,
+                        //    Rename = x.Setting.Rename,
+                        //    MemberName = x.Setting.MemberName,
+                        //    LastSendTime = x.Setting.LastSendTime,
+                        //    LastSendMessageId = x.Setting.LastSendMessageId,
+                        //}
                     })
                     //.ToList();
                     .ToListAsync(cancellationToken: cancellationToken);
