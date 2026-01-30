@@ -24,10 +24,10 @@ public class SessionUnitSenderDto : SessionUnitSenderInfo
     /// </summary>
     public virtual Guid? FriendshipSessionUnitId { get; set; }
 
-    /// <summary>
-    /// 发送人设置
-    /// </summary>
-    public virtual SessionUnitSettingSimpleDto Setting { get; set; }
+    ///// <summary>
+    ///// 发送人设置
+    ///// </summary>
+    //public virtual SessionUnitSettingSimpleDto Setting { get; set; }
 
     ///// <summary>
     ///// 创建时间

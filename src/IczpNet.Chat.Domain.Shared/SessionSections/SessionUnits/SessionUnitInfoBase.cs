@@ -27,11 +27,6 @@ public class SessionUnitInfoBase //: ExtensibleObject
     public virtual ChatObjectTypeEnums? OwnerObjectType { get; set; }
 
     /// <summary>
-    /// 备注名称
-    /// </summary>
-    public virtual string Rename { get; set; }
-
-    /// <summary>
     /// 会话内名称
     /// </summary>
     public virtual string MemberName { get; set; }

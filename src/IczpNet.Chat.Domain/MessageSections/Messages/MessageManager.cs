@@ -614,19 +614,19 @@ public partial class MessageManager(
         bool considerUow = false,
         CancellationToken token = default)
     {
-        var keys = messageIds.Select(x => new MessageCacheKey(x));
-        return MessageCache.GetManyAsync(keys, hideErrors, considerUow, token);
+        return MessageCache.GetManyAsync(messageIds.Select(x => new MessageCacheKey(x)), hideErrors, considerUow, token);
     }
 
     public async Task<KeyValuePair<MessageCacheKey, MessageCacheItem>[]> GetOrAddManyCacheAsync(
-        IEnumerable<long> messageIds, 
+        IEnumerable<long> messageIds,
         Func<DistributedCacheEntryOptions> optionsFactory = null,
         bool? hideErrors = null,
         bool considerUow = false,
         CancellationToken token = default)
     {
-        var keys = messageIds.Select(x => new MessageCacheKey(x));
-        var list = await MessageCache.GetOrAddManyAsync(keys, async (keys) =>
+        var cacheKeys = messageIds.Select(x => new MessageCacheKey(x));
+
+        var list = await MessageCache.GetOrAddManyAsync(cacheKeys, async (keys) =>
         {
             var messageIds = keys.Select(x => x.MessageId);
 
@@ -636,15 +636,9 @@ public partial class MessageManager(
                 x => new MessageCacheKey(x.Id),
                 x => ObjectMapper.Map<Message, MessageCacheItem>(x));
 
-            var result = new List<KeyValuePair<MessageCacheKey, MessageCacheItem>>();
-
-            foreach (var key in keys)
-            {
-                dict.TryGetValue(key, out var cacheItem);
-                result.Add(new KeyValuePair<MessageCacheKey, MessageCacheItem>(key, cacheItem));
-            }
-
-            return result;
+            return [.. keys.Select(x =>
+                new KeyValuePair<MessageCacheKey, MessageCacheItem>(x, dict.TryGetValue(x, out var cacheItem) ? cacheItem : null)
+            )];
 
         }, optionsFactory, hideErrors, considerUow, token);
 

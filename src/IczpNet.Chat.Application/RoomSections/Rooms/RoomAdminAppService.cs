@@ -1,5 +1,4 @@
-﻿using IczpNet.AbpCommons.Extensions;
-using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjectCategories;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
@@ -18,23 +17,16 @@ using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.RoomSections.Rooms;
 
-public class RoomAdminAppService : ChatAppService, IRoomAdminAppService
+public class RoomAdminAppService(
+    IRoomManager roomManager,
+    IChatObjectCategoryManager chatObjectCategoryManager,
+    ISessionPermissionChecker sessionPermissionChecker) : ChatAppService, IRoomAdminAppService
 {
     public virtual string InvitePolicyName { get; set; }
     public virtual string CreateRoomPolicyName { get; set; }
-    protected IRoomManager RoomManager { get; }
-    protected IChatObjectCategoryManager ChatObjectCategoryManager { get; }
-    protected ISessionPermissionChecker SessionPermissionChecker { get; }
-
-    public RoomAdminAppService(IRoomManager roomManager,
-        IChatObjectCategoryManager chatObjectCategoryManager,
-        ISessionPermissionChecker sessionPermissionChecker)
-    {
-        RoomManager = roomManager;
-        ChatObjectCategoryManager = chatObjectCategoryManager;
-        SessionPermissionChecker = sessionPermissionChecker;
-    }
-
+    protected IRoomManager RoomManager { get; } = roomManager;
+    protected IChatObjectCategoryManager ChatObjectCategoryManager { get; } = chatObjectCategoryManager;
+    protected ISessionPermissionChecker SessionPermissionChecker { get; } = sessionPermissionChecker;
 
     [HttpPost]
     public virtual async Task<ChatObjectDto> CreateAsync(RoomCreateInput input)
@@ -69,15 +61,15 @@ public class RoomAdminAppService : ChatAppService, IRoomAdminAppService
     {
         await CheckPolicyAsync(InvitePolicyName);
 
-        var list = await RoomManager.InviteAsync(input, autoSendMessage: true);
+        var entities = await RoomManager.InviteAsync(input, autoSendMessage: true);
 
-        return ObjectMapper.Map<List<SessionUnit>, List<SessionUnitSenderInfo>>(list);
+        return ObjectMapper.Map<List<SessionUnit>, List<SessionUnitSenderInfo>>(entities);
     }
 
     [HttpGet]
     public async Task<PagedResultDto<SessionUnitDto>> GetSameAsync(SameGetListInput input)
     {
-        var query = await SessionUnitManager.GetSameSessionQeuryableAsync(input.SourceChatObjectId, input.TargetChatObjectId, new List<ChatObjectTypeEnums>() { ChatObjectTypeEnums.Room });
+        var query = await SessionUnitManager.GetSameSessionQeuryableAsync(input.SourceChatObjectId, input.TargetChatObjectId, [ChatObjectTypeEnums.Room]);
 
         return await GetPagedListAsync<SessionUnit, SessionUnitDto>(query, input, null);
     }
@@ -85,7 +77,7 @@ public class RoomAdminAppService : ChatAppService, IRoomAdminAppService
     [HttpGet]
     public Task<int> GetSameCountAsync(long sourceChatObjectId, long targetChatObjectId)
     {
-        return SessionUnitManager.GetSameSessionCountAsync(sourceChatObjectId, targetChatObjectId, new List<ChatObjectTypeEnums>() { ChatObjectTypeEnums.Room });
+        return SessionUnitManager.GetSameSessionCountAsync(sourceChatObjectId, targetChatObjectId, [ChatObjectTypeEnums.Room]);
     }
 
     [HttpPost]

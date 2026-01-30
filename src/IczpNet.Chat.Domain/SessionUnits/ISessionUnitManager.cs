@@ -330,7 +330,7 @@ public interface ISessionUnitManager
     /// <param name="batchSize"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task<List<SessionUnitCacheItem>> GetMembersAsync(Guid sessionId, int batchSize = 1000, CancellationToken cancellationToken = default);
+    Task<List<SessionUnitCacheItem>> GetMembersAsync(Guid sessionId, int? batchSize = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// 获取好友列表
@@ -339,7 +339,7 @@ public interface ISessionUnitManager
     /// <param name="batchSize"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task<List<SessionUnitCacheItem>> GetListByUserAsync(Guid userId, int batchSize = 1000, CancellationToken cancellationToken = default);
+    Task<List<SessionUnitCacheItem>> GetListByUserAsync(Guid userId, int? batchSize = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// 获取好友列表(我的好友)
@@ -348,7 +348,7 @@ public interface ISessionUnitManager
     /// <param name="batchSize"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task<List<SessionUnitCacheItem>> GetFriendsAsync(long ownerId, int batchSize = 1000, CancellationToken cancellationToken = default);
+    Task<List<SessionUnitCacheItem>> GetFriendsAsync(long ownerId, int? batchSize = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// 获取反向好友列表（我是别人的好友）
@@ -357,7 +357,7 @@ public interface ISessionUnitManager
     /// <param name="batchSize"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task<List<SessionUnitCacheItem>> GetReverseFriendsAsync(long destinationId, int batchSize = 1000, CancellationToken cancellationToken = default);
+    Task<List<SessionUnitCacheItem>> GetReverseFriendsAsync(long destinationId, int? batchSize = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// 移除缓存
@@ -491,7 +491,7 @@ public interface ISessionUnitManager
     /// <returns></returns>
     Task<List<SessionUnitCacheItem>> BatchGetListAsync(
         Func<IQueryable<SessionUnit>, IQueryable<SessionUnit>> queryableAction,
-        int batchSize = 1000,
+        int? batchSize = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>

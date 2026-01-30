@@ -7,10 +7,10 @@ namespace IczpNet.Chat.SessionSections.SessionUnits;
 
 public class SessionUnitSenderInfo : SessionUnitInfoBase
 {
-    /// <summary>
-    /// 
-    /// </summary>
-    public virtual string DisplayName { get; set; }
+    ///// <summary>
+    ///// 
+    ///// </summary>
+    //public virtual string DisplayName { get; set; }
 
     /// <summary>
     /// 最后修改时间

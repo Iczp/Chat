@@ -4,6 +4,7 @@ using IczpNet.Chat.RedisMapping;
 using IczpNet.Chat.RedisServices;
 using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
@@ -17,9 +18,11 @@ namespace IczpNet.Chat.SessionUnits;
 
 public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 {
-    //protected readonly IDatabase Database = connection.GetDatabase();
+    protected IOptions<SessionUnitOptions> SessionUnitOptions => LazyServiceProvider.LazyGetRequiredService<IOptions<SessionUnitOptions>>();
 
-    protected override TimeSpan? CacheExpire => TimeSpan.FromDays(1);
+    protected SessionUnitOptions Config => SessionUnitOptions.Value;
+
+    protected override TimeSpan? CacheExpire => Config.CacheExpire;
 
     private delegate Task SessionMemberLoader(Guid sessionId, IBatch batch, MemberMaps maps);
 
@@ -34,6 +37,12 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// <returns></returns>
     private RedisKey UnitHashKey(Guid unitId) => $"{Prefix}{UnitKeyPattern}{unitId}";
 
+    /// <summary>
+    /// TryParse UnitId
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="unitId"></param>
+    /// <returns></returns>
     private bool TryParseUnitId(RedisKey key, out Guid unitId)
     {
         var keyStr = key.ToString();

@@ -7,6 +7,11 @@ namespace IczpNet.Chat.SessionSections.SessionUnits;
 public class SessionUnitCacheItem : SessionUnitInfoBase, ISessionUnit
 {
     /// <summary>
+    /// 备注名称
+    /// </summary>
+    public virtual string Rename { get; set; }
+
+    /// <summary>
     /// DestinationId
     /// </summary>
     public virtual long? DestinationId { get; set; }

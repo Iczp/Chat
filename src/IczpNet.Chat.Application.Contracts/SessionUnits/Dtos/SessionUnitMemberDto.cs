@@ -1,11 +1,24 @@
 ﻿using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.SessionSections.SessionTags;
 using IczpNet.Chat.SessionSections.SessionUnits;
+using System.Collections.Generic;
 
 namespace IczpNet.Chat.SessionUnits.Dtos;
 
-public class SessionUnitMemberDto : SessionUnitInfoBase//SessionUnitCacheItem
+public class SessionUnitMemberDto : SessionUnitInfoBase //SessionUnitSenderInfo //: SessionUnitCacheItem SessionUnitInfoBase
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public virtual ChatObjectInfo Owner { get; set; }
 
-    //public virtual SessionUnitSettingCacheItem Setting { get; set; }
+    /// <summary>
+    /// 
+    /// </summary>
+    public virtual List<SessionTagInfo> TagList { get; set; }
+
+    ///// <summary>
+    ///// 最后发送的消息
+    ///// </summary>
+    //public virtual MessageSimpleDto LastSendMessage { get; set; }
 }

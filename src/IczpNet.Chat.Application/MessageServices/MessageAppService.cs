@@ -136,13 +136,13 @@ public class MessageAppService(
 
         var settingsMap = settings.ToDictionary(x => x.Key, x => x.Value);
 
-        foreach (var item in result.Items)
-        {
-            if (item.SenderSessionUnitId.HasValue && settingsMap.TryGetValue(item.SenderSessionUnitId.Value, out var senderSetting))
-            {
-                item.SenderSessionUnit.Setting = ObjectMapper.Map<SessionUnitSettingCacheItem, SessionUnitSettingSimpleDto>(senderSetting);
-            }
-        }
+        //foreach (var item in result.Items)
+        //{
+        //    if (item.SenderSessionUnitId.HasValue && settingsMap.TryGetValue(item.SenderSessionUnitId.Value, out var senderSetting))
+        //    {
+        //        item.SenderSessionUnit.Setting = ObjectMapper.Map<SessionUnitSettingCacheItem, SessionUnitSettingSimpleDto>(senderSetting);
+        //    }
+        //}
     }
 
     /// <summary>
@@ -318,7 +318,7 @@ public class MessageAppService(
 
         await FillStatisticsAsync(sessionUnitId, result);
         await FillFriendshipAsync(entity.OwnerId, result);
-        await FillSettingsAsync(result);
+        //await FillSettingsAsync(result);
 
         return result;
     }
