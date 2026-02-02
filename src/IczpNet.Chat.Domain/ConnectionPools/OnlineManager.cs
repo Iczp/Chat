@@ -537,7 +537,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
             await DeleteByHostNameAsync(CurrentHosted.Name);
 
             var batch = Database.CreateBatch();
-            SortedSetIf(true, () => AllHostZsetKey(), CurrentHosted.Name, Clock.Now.ToUnixTimeMilliseconds(), expiry: TimeSpan.FromDays(7), batch: batch);
+            SortedSetIf(true, () => AllHostZsetKey(), CurrentHosted.Name, Clock.Now.ToUnixTimeMilliseconds(), expiry: TimeSpan.FromDays(365), batch: batch);
             batch.Execute();
 
             return true;
