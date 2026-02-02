@@ -415,6 +415,8 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         // ActiveTime
         HashSetIf(true, () => ConnHashKey(connectionId), nameof(ConnectionPoolCacheItem.ActiveTime), now.ToRedisValue(), batch: batch);
 
+        Expire(batch, AllHostZsetKey());
+
         batch.Execute();
 
         Logger.LogInformation("[RefreshExpireAsync]  batch.Execute, Elapsed: {Elapsed}ms", stopwatch.ElapsedMilliseconds);
@@ -537,7 +539,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
             await DeleteByHostNameAsync(CurrentHosted.Name);
 
             var batch = Database.CreateBatch();
-            SortedSetIf(true, () => AllHostZsetKey(), CurrentHosted.Name, Clock.Now.ToUnixTimeMilliseconds(), expiry: TimeSpan.FromDays(365), batch: batch);
+            SortedSetIf(true, () => AllHostZsetKey(), CurrentHosted.Name, Clock.Now.ToUnixTimeMilliseconds(), batch: batch);
             batch.Execute();
 
             return true;
