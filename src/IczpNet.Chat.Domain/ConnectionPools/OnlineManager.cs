@@ -172,13 +172,13 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
             var friendConnsHashKey = FriendsConnsHashKey(element.DestinationId);
             if (!string.IsNullOrWhiteSpace(connectionId))
             {
-                batch.HashSetAsync(friendConnsHashKey, element, connectionId);
+                batch.HashSetAsync(friendConnsHashKey, connectionId, element);
             }
             Expire(batch, friendConnsHashKey);
         });
     }
 
-    private void RemoveFriendsConn(IBatch batch, List<long> ownerIds, Dictionary<long, IEnumerable<SessionUnitElement>> friendsMap)
+    private void RemoveFriendsConn(IBatch batch, List<long> ownerIds, Dictionary<long, IEnumerable<SessionUnitElement>> friendsMap, string connectionId)
     {
         if (!Config.IsEnableExclusiveStatFriends)
         {
@@ -188,7 +188,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         {
             //Friends Conns
             var friendConnsHashKey = FriendsConnsHashKey(element.DestinationId);
-            batch.HashDeleteAsync(friendConnsHashKey, element);
+            batch.HashDeleteAsync(friendConnsHashKey, connectionId);
             Expire(batch, friendConnsHashKey);
         });
     }
@@ -476,7 +476,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         SortedRemoveIf(!string.IsNullOrEmpty(connectionPool.ClientId), () => ClientSetKey(connectionPool.ClientId), connectionId, refreshExpire: true, batch: batch);
 
         // Friends
-        RemoveFriendsConn(batch, ownerIds, friendsMap);
+        RemoveFriendsConn(batch, ownerIds, friendsMap, connectionId);
 
         // SessionConn
         RemoveSessionConn(batch, connectionId, friendsMap);
@@ -840,12 +840,12 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         if (Config.IsEnableExclusiveStatFriends)
         {
             var entries = await Database.HashGetAllAsync(FriendsConnsHashKey(ownerId));
-            return entries.Select(x =>
+            return entries.GroupBy(x => x.Value).Select(x =>
             {
-                var element = SessionUnitElement.Parse(x.Name);
+                var element = SessionUnitElement.Parse(x.Key);
                 return new OnlineFriendInfo()
                 {
-                    //ConnectionId = x.Value.ToString(),
+                    ConnectionId = x.Select(re => re.Name.ToString()).ToList(),
                     OwnerId = element.OwnerId,
                     DestinationId = element.DestinationId,
                     SessionId = element.SessionId,
@@ -858,15 +858,15 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         var friendsMap = await LoadFriendsMapAsync([ownerId]);
         var friends = friendsMap[ownerId];
         var friendIds = friends.Select(x => x.DestinationId).ToList();
-        var onlineMap = await IsOnlineAsync(friendIds);
-        var onlineFriendIds = onlineMap.Where(x => x.Value).Select(x => x.Key);
+        var devicesMap = await GetDevicesAsync(friendIds);
 
-        return onlineFriendIds.Select(x =>
+        return devicesMap.Select(x =>
         {
-            var element = friends.FirstOrDefault(f => f.DestinationId == x);
+            var element = friends.FirstOrDefault(f => f.DestinationId == x.Key);
+
             return new OnlineFriendInfo()
             {
-                //ConnectionId = conn?.ConnectionId,
+                ConnectionId = devicesMap.GetValueOrDefault(x.Key)?.Select(v => v.ConnectionId).ToList() ?? [],
                 OwnerId = element.OwnerId,
                 DestinationId = element.DestinationId,
                 SessionId = element.SessionId,
