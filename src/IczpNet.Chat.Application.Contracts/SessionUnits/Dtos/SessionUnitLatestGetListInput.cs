@@ -28,12 +28,12 @@ public class SessionUnitLatestGetListInput : GetListInput
     public Guid? SessionId { get; set; }
 
     /// <summary>
-    /// 最小Ticks
+    /// 最小Score
     /// </summary>
     public double? MinScore { get; set; }
 
     /// <summary>
-    /// 最小Ticks
+    /// 最小Score
     /// </summary>
     public double? MaxScore { get; set; }
 }

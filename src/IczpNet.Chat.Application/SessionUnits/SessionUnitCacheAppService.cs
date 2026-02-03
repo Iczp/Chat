@@ -634,6 +634,8 @@ public class SessionUnitCacheAppService(
 
         IEnumerable<long> onlineFriendIds = [];
 
+        var stopwatch = Stopwatch.StartNew();
+
         var queryable = await SessionUnitCacheManager.GetTypedFriendsAsync(
             input.View,
             input.OwnerId,
@@ -658,8 +660,8 @@ public class SessionUnitCacheAppService(
             .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
             .WhereIf(input.SessionId.HasValue, x => x.SessionId == input.SessionId)
             .WhereIf(input.UnitId.HasValue, x => x.Id == input.UnitId)
-            .WhereIf(input.MinScore > 0, x => x.Ticks > input.MinScore)
-            .WhereIf(input.MaxScore > 0, x => x.Ticks < input.MaxScore)
+            .WhereIf(input.MinScore > 0, x => x.Score > input.MinScore)
+            .WhereIf(input.MaxScore > 0, x => x.Score < input.MaxScore)
             .WhereIf(input.IsOnline == true, x => onlineFriendIds.Contains(x.DestinationId))
             .WhereIf(input.IsOnline == false, x => !onlineFriendIds.Contains(x.DestinationId))
             ;
@@ -684,11 +686,30 @@ public class SessionUnitCacheAppService(
         //paged
         query = query.Skip(input.SkipCount).Take(input.MaxResultCount);
 
-        var unitIds = query.Select(x => x.Id).ToList();
+        var unitIdScoreMap = query.ToDictionary(x => x.Id, x => x.Score);
 
-        var items = await GetManyAsync(unitIds);
+        Logger.LogInformation("GetFriendsAsync OwnerId={OwnerId}, TotalCount={TotalCount}, ReturnedCount={ReturnedCount}, Elapsed={Elapsed}ms",
+            input.OwnerId,
+            totalCount,
+            unitIdScoreMap.Count,
+            stopwatch.ElapsedMilliseconds);
 
-        return new PagedResultDto<SessionUnitFriendDto>(totalCount, items);
+        stopwatch.Restart();
+
+        var items = await GetManyAsync(unitIdScoreMap.Keys.ToList());
+
+        foreach (var item in items)
+        {
+            item.Score = unitIdScoreMap.GetValueOrDefault(item.Id);
+        }
+
+        Logger.LogInformation("GetFriendsAsync GetManyAsync, ReturnedCount={ReturnedCount}, Elapsed={Elapsed}ms",
+            unitIdScoreMap.Count,
+            stopwatch.ElapsedMilliseconds);
+
+        var result = new PagedResultDto<SessionUnitFriendDto>(totalCount, items);
+
+        return result;
     }
 
 

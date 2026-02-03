@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace IczpNet.Chat.SessionUnits;
+﻿namespace IczpNet.Chat.SessionUnits;
 
 public class FriendModel : UnitModelBase
 {
@@ -15,4 +13,6 @@ public class FriendModel : UnitModelBase
     public double Sorting { get; set; }
 
     public double Ticks { get; set; }
+
+    public double Score { get; set; }
 }
