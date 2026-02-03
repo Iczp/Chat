@@ -19,4 +19,6 @@ public class SessionUnitFriendDto : SessionUnitCacheItem
     public virtual MessageCacheItem LastMessage { get; set; }
 
     public virtual SessionUnitSettingCacheItem Setting { get; set; }
+
+    public virtual double? Score { get; set; }
 }

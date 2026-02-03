@@ -118,7 +118,7 @@ public class OnlineAppService(
     protected async Task<PagedResultDto<ConnectionPoolDto>> GetPagedListByConnIdsAsync(List<string> connIds, GetListInput input)
     {
         var connList = await GetManyAsync(connIds);
-        var query = connList.Values.AsQueryable();
+        var query = connList.Values.AsQueryable().Where(x => x != null);
         return await GetPagedListAsync(query, input);
     }
 
