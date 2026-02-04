@@ -1,9 +1,13 @@
-﻿using IczpNet.Chat.Enums;
+﻿using AutoMapper.Internal;
+using IczpNet.AbpCommons.Extensions;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.RedisMapping;
 using IczpNet.Chat.RedisServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Minio.DataModel;
+using Pipelines.Sockets.Unofficial.Buffers;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
@@ -1385,6 +1389,107 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return raw;
     }
 
+    public async Task<List<OwnerBadgeInfo>> GetOwnerBadgeAsync(List<long> ownerIds)
+    {
+        if (ownerIds == null || ownerIds.Count == 0)
+            return [];
+
+        var batch = Database.CreateBatch();
+
+        // ownerId -> 好友数量 (type -> count)
+        var countTaskMap =
+            new Dictionary<long, Dictionary<ChatObjectTypeEnums, Task<long>>>();
+
+        // ownerId -> 角标 Hash
+        var badgeHashTaskMap =
+            new Dictionary<long, Task<HashEntry[]>>();
+
+        // ownerId -> 统计 Hash（如果你还有别的统计）
+        var statisticTaskMap =
+            new Dictionary<long, Task<HashEntry[]>>();
+
+        foreach (var ownerId in ownerIds)
+        {
+            // 角标统计（Hash：ChatObjectTypeEnums -> badgeCount）
+            badgeHashTaskMap[ownerId] =
+                batch.HashGetAllAsync(StatisticMapHashKey(ownerId));
+
+            // 其他统计（如果和角标是同一个 Hash，可删掉这一份）
+            statisticTaskMap[ownerId] =
+                batch.HashGetAllAsync(OwnerStatisticHashKey(ownerId));
+
+            var typeCountMap =
+                new Dictionary<ChatObjectTypeEnums, Task<long>>();
+
+            foreach (var type in Enum.GetValues<ChatObjectTypeEnums>())
+            {
+                // 好友 / 会话数量（ZSET）
+                typeCountMap[type] =
+                    batch.SortedSetLengthAsync(
+                        OwnerFriendsMapZsetKey(ownerId, type));
+            }
+
+            countTaskMap[ownerId] = typeCountMap;
+        }
+
+        var a = countTaskMap.Values.SelectMany(x => x.Values);
+        // 一次性执行 Redis Batch
+        batch.Execute();
+
+        await Task.WhenAll(
+            badgeHashTaskMap.Values.Cast<Task>()
+                .Concat(statisticTaskMap.Values.Cast<Task>())
+                .Concat(countTaskMap.Values.SelectMany(x => x.Values).Cast<Task>())
+        );
+        // 组装结果
+        var result = new List<OwnerBadgeInfo>(ownerIds.Count);
+
+        foreach (var ownerId in ownerIds)
+        {
+            // ---- 角标 ----
+            var badgeEntries = await badgeHashTaskMap[ownerId];
+
+            var badgeDict = badgeEntries.ToDictionary(
+                x => x.Name.ToEnum<ChatObjectTypeEnums>(),
+                x => x.Value.ToLong()
+            );
+
+            // ---- 统计 ----
+            var statisticEntries = await statisticTaskMap[ownerId];
+            var statistic = statisticEntries.Length == 0
+                ? null
+                : MapToStatistic(statisticEntries); // 你现有的映射方式
+
+            // ---- Types ----
+            var types = new List<TypeBadgeInfo>();
+
+            foreach (var type in Enum.GetValues<ChatObjectTypeEnums>())
+            {
+                badgeDict.TryGetValue(type, out var badge);
+
+                types.Add(new TypeBadgeInfo
+                {
+                    Id = type.ToString(),
+                    Name = type.GetDescription(),
+                    Count = await countTaskMap[ownerId][type],
+                    Badge = badge
+                });
+            }
+
+            result.Add(new OwnerBadgeInfo
+            {
+                OwnerId = ownerId,
+                Statistic = statistic,
+                Types = types,
+                Boxes = [] // 你如果后面有 Box 逻辑，从这里补
+            });
+        }
+
+        return result;
+    }
+
+
+
     #endregion
 
     #region Remove / Set / Misc
@@ -1828,10 +1933,34 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    public async Task<IEnumerable<KeyValuePair<Guid, double>>> GetBoxFriendsBadgeAsync(long ownerId)
+    public async Task<IEnumerable<KeyValuePair<Guid, double>>> GetBoxFriendsBadgeMapAsync(long ownerId)
     {
-        var entries = await Database.SortedSetRangeByRankWithScoresAsync(OwnerBoxBadgeZsetKey(ownerId));
-        return entries.Select(x => new KeyValuePair<Guid, double>(x.Element.ToGuid(), x.Score));
+        return (await GetBoxFriendsBadgeAsync([ownerId])).GetValueOrDefault(ownerId);
+    }
+    /// <summary>
+    /// 获取盒子角标
+    /// </summary>
+    /// <param name="ownerIds"></param>
+    /// <returns></returns>
+    public async Task<Dictionary<long, IEnumerable<KeyValuePair<Guid, double>>>> GetBoxFriendsBadgeAsync(List<long> ownerIds)
+    {
+        var batch = Database.CreateBatch();
+
+        var badgeTaskMap = ownerIds
+            .Distinct()
+            .ToDictionary(
+                x => x,
+                x => batch.SortedSetRangeByRankWithScoresAsync(OwnerBoxBadgeZsetKey(x))
+            );
+
+        batch.Execute();
+
+        await Task.WhenAll(badgeTaskMap.Values);
+
+        return badgeTaskMap.ToDictionary(
+            x => x.Key,
+            x => x.Value.Result.Select(x => new KeyValuePair<Guid, double>(x.Element.ToGuid(), x.Score))
+         );
     }
 
     /// <summary>
@@ -1839,27 +1968,55 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    public async Task<IEnumerable<KeyValuePair<Guid, (long? Badge, long? Count)>>> GetBoxFriendsBadgeAndCountAsync(long ownerId)
+    public async Task<IEnumerable<BoxBadgeInfo>> GetBoxBadgeInfoAsync(long ownerId)
     {
-        var boxFriends = await GetBoxFriendsBadgeAsync(ownerId);
+        return (await GetBoxBadgeInfoMapAsync([ownerId])).GetValueOrDefault(ownerId) ?? [];
+    }
+    /// <summary>
+    /// 获取盒子角标与好友数量
+    /// </summary>
+    /// <param name="ownerIds"></param>
+    /// <returns></returns>
 
-        if (!boxFriends.Any())
+    public async Task<Dictionary<long, IEnumerable<BoxBadgeInfo>>> GetBoxBadgeInfoMapAsync(List<long> ownerIds)
+    {
+        var boxFriendsBadgeMap = await GetBoxFriendsBadgeAsync(ownerIds);
+
+        if (boxFriendsBadgeMap.Count == 0)
         {
             return [];
         }
 
         var batch = Database.CreateBatch();
 
-        var tasks = boxFriends.ToDictionary(
+        var countTaskMap = boxFriendsBadgeMap.ToDictionary(
             x => x.Key,
-            x => batch.SortedSetLengthAsync(OwnerBoxFriendsSetKey(ownerId, x.Key))
+            x => x.Value.ToDictionary(v => v.Key, v => batch.SortedSetLengthAsync(OwnerBoxFriendsSetKey(x.Key, v.Key)))
         );
 
         batch.Execute();
 
-        await Task.WhenAll(tasks.Values);
+        await Task.WhenAll(countTaskMap.SelectMany(x => x.Value.Values));
 
-        return boxFriends.Select(x => new KeyValuePair<Guid, (long? Badge, long? Count)>(x.Key, ((long)x.Value, tasks[x.Key].Result)));
+        return boxFriendsBadgeMap.ToDictionary(
+              x => x.Key,
+              x => x.Value.Select(v =>
+              {
+                  var count =
+                      countTaskMap
+                          .GetValueOrDefault(x.Key)?
+                          .GetValueOrDefault(v.Key)?
+                          .Result ?? 0;
+
+                  return new BoxBadgeInfo
+                  {
+                      Id = v.Key,
+                      Name = null, // 可以根据 boxId 去加载名称
+                      Badge = (long)v.Value,
+                      Count = count
+                  };
+              })
+         );
     }
 
     /// <summary>

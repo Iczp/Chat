@@ -4,11 +4,13 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Volo.Abp.Caching;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
 public interface IMessageManager
 {
+    IDistributedCache<MessageCacheItem, MessageCacheKey> MessageCache { get; }
     /// <summary>
     /// 创建消息
     /// </summary>

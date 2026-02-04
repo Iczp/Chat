@@ -370,6 +370,13 @@ public interface ISessionUnitCacheManager
     Task<Dictionary<ChatObjectTypeEnums, long>> GetBadgeMapAsync(long ownerId);
 
     /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="ownerIds"></param>
+    /// <returns></returns>
+    Task<List<OwnerBadgeInfo>> GetOwnerBadgeAsync(List<long> ownerIds);
+
+    /// <summary>
     /// 设置置顶
     /// </summary>
     /// <param name="sessionId"></param>
@@ -423,14 +430,28 @@ public interface ISessionUnitCacheManager
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    Task<IEnumerable<KeyValuePair<Guid, double>>> GetBoxFriendsBadgeAsync(long ownerId);
+    Task<IEnumerable<KeyValuePair<Guid, double>>> GetBoxFriendsBadgeMapAsync(long ownerId);
+
+    /// <summary>
+    /// 获取盒子角标
+    /// </summary>
+    /// <param name="ownerIds"></param>
+    /// <returns></returns>
+    Task<Dictionary<long, IEnumerable<KeyValuePair<Guid, double>>>> GetBoxFriendsBadgeAsync(List<long> ownerIds);
 
     /// <summary>
     /// 获取盒子角标与好友数量
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    Task<IEnumerable<KeyValuePair<Guid, (long? Badge, long? Count)>>> GetBoxFriendsBadgeAndCountAsync(long ownerId);
+    Task<IEnumerable<BoxBadgeInfo>> GetBoxBadgeInfoAsync(long ownerId);
+
+    /// <summary>
+    /// 获取盒子角标与好友数量
+    /// </summary>
+    /// <param name="ownerIds"></param>
+    /// <returns></returns>
+    Task<Dictionary<long, IEnumerable<BoxBadgeInfo>>> GetBoxBadgeInfoMapAsync(List<long> ownerIds);
 
     /// <summary>
     /// 添加会话单元缓存
