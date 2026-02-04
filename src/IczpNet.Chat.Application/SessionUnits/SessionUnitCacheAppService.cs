@@ -735,6 +735,16 @@ public class SessionUnitCacheAppService(
 
         return result;
     }
+
+    /// <summary>
+    /// 获取聊天对象角标信息列表
+    /// </summary>
+    /// <param name="ownerIds"></param>
+    /// <returns></returns>
+    public Task<List<OwnerBadgeInfo>> GetOwnerBadgeAsync(List<long> ownerIds)
+    {
+        return SessionUnitCacheManager.GetOwnerBadgeAsync(ownerIds);
+    }
     /// <summary>
     /// 获取好友数量
     /// </summary>

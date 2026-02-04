@@ -7,6 +7,7 @@ using IczpNet.Chat.Follows;
 using IczpNet.Chat.Hosting;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.Options;
 using IczpNet.Chat.Sessions;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
@@ -14,6 +15,7 @@ using IczpNet.Chat.Settings;
 using IczpNet.Pusher.ShortIds;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -49,6 +51,7 @@ public partial class MessageManager(
     ISessionUnitSettingRepository sessionUnitSettingRepository,
     IFollowManager followManager,
     IDistributedCache<MessageCacheItem, MessageCacheKey> messageCache,
+    IOptions<MessageOptions> options,
     ISessionGenerator sessionGenerator) : DomainService, IMessageManager
 {
     protected IObjectMapper ObjectMapper { get; } = objectMapper;
@@ -65,11 +68,13 @@ public partial class MessageManager(
     protected ISessionUnitSettingRepository SessionUnitSettingRepository { get; } = sessionUnitSettingRepository;
     public IFollowManager FollowManager { get; } = followManager;
     public IDistributedCache<MessageCacheItem, MessageCacheKey> MessageCache { get; } = messageCache;
+    public IOptions<MessageOptions> Options { get; } = options;
+    public MessageOptions Config => Options.Value;
     protected ISettingProvider SettingProvider { get; } = settingProvider;
     protected IJsonSerializer JsonSerializer { get; } = jsonSerializer;
     protected IRepository<MessageReminder> MessageReminderRepository { get; } = messageReminderRepository;
-
     protected ISessionGenerator SessionGenerator { get; } = sessionGenerator;
+    protected virtual DistributedCacheEntryOptions CacheOptions => Config.CacheOptions;
 
     /// <inheritdoc />
     public virtual async Task CreateSessionUnitByMessageAsync(SessionUnit senderSessionUnit)
@@ -593,7 +598,7 @@ public partial class MessageManager(
 
         messageInfo.Content ??= message.GetContentDto();
 
-        await MessageCache.SetAsync(new MessageCacheKey(messageInfo.Id), messageInfo, options, hideErrors, considerUow, token);
+        await MessageCache.SetAsync(new MessageCacheKey(messageInfo.Id), messageInfo, options ?? CacheOptions, hideErrors, considerUow, token);
 
         return messageInfo;
     }
@@ -639,7 +644,7 @@ public partial class MessageManager(
                 new KeyValuePair<MessageCacheKey, MessageCacheItem>(x, dict.TryGetValue(x, out var cacheItem) ? cacheItem : null)
             )];
 
-        }, optionsFactory, hideErrors, considerUow, token);
+        }, optionsFactory ?? (() => CacheOptions), hideErrors, considerUow, token);
 
         return list;
 

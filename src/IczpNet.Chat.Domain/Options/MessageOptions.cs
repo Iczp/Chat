@@ -1,8 +1,16 @@
-﻿namespace IczpNet.Chat.Options;
+﻿using Microsoft.Extensions.Caching.Distributed;
+using System;
+
+namespace IczpNet.Chat.Options;
 
 public class MessageOptions
 {
     public string OutputTempPath { get; set; } = "/media_temp";
+
+    public DistributedCacheEntryOptions CacheOptions { get; set; } = new()
+    {
+        AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24)
+    };
 
     public VideoOptions VideoSetting { get; set; } = new VideoOptions();
 

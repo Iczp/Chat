@@ -370,6 +370,13 @@ public interface ISessionUnitCacheManager
     Task<Dictionary<ChatObjectTypeEnums, long>> GetBadgeMapAsync(long ownerId);
 
     /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="ownerIds"></param>
+    /// <returns></returns>
+    Task<List<OwnerBadgeInfo>> GetOwnerBadgeAsync(List<long> ownerIds);
+
+    /// <summary>
     /// 设置置顶
     /// </summary>
     /// <param name="sessionId"></param>
