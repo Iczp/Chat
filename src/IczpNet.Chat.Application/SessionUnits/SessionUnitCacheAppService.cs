@@ -54,8 +54,6 @@ public class SessionUnitCacheAppService(
     public ISessionTagManager SessionTagManager { get; } = sessionTagManager;
     public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
 
-
-
     protected override string GetListPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.MessageBus;
     protected override string GetPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.MessageBus;
     protected virtual string GetDetailPolicyName { get; set; } = ChatPermissions.SessionUnitPermissions.MessageBus;
@@ -461,23 +459,6 @@ public class SessionUnitCacheAppService(
         return ObjectMapper.Map<SessionUnitCacheItem, SessionUnitMemberDto>(item);
     }
 
-    protected virtual async Task<BadgeDto> GetBadgeInternalAsync(long ownerId)
-    {
-        var owner = await ChatObjectManager.GetItemByCacheAsync(ownerId);
-        //加载全部
-        await LoadFriendsAsync(ownerId);
-
-        return new BadgeDto()
-        {
-            AppUserId = owner.AppUserId,
-            ChatObjectId = ownerId,
-            Statistic = await SessionUnitCacheManager.GetStatisticAsync(ownerId),
-            BadgeMap = await SessionUnitCacheManager.GetRawBadgeMapAsync(ownerId),
-            CountMap = await SessionUnitCacheManager.GetFriendsCountMapAsync(ownerId),
-            Boxes = await GetBoxFriendsCountAsync(ownerId),
-        };
-    }
-
     public async Task<PagedResultDto<SessionUnitFriendDto>> GetListAsync(SessionUnitCacheItemGetListInput input)
     {
         // check owner
@@ -713,38 +694,9 @@ public class SessionUnitCacheAppService(
     }
 
 
-    private async Task<List<BoxCountDto>> GetBoxFriendsCountAsync([Required] long ownerId)
-    {
-        var boxes = await BoxManager.GetCacheListByOwnerAsync(ownerId);
+    
 
-        var countMap = (await SessionUnitCacheManager.GetBoxFriendsBadgeAndCountAsync(ownerId))
-            .ToDictionary(x => x.Key, x => x.Value);
-
-        var result = boxes.List.Select(x =>
-        {
-            var (Badge, Count) = countMap.TryGetValue(x.Id, out var pair) ? pair : (Badge: null, Count: null);
-            return new BoxCountDto()
-            {
-                Id = x.Id,
-                Name = x.Name,
-                OwnerId = x.OwnerId,
-                Count = Count,
-                Badge = Badge,
-            };
-        }).ToList();
-
-        return result;
-    }
-
-    /// <summary>
-    /// 获取聊天对象角标信息列表
-    /// </summary>
-    /// <param name="ownerIds"></param>
-    /// <returns></returns>
-    public Task<List<OwnerBadgeInfo>> GetOwnerBadgeAsync(List<long> ownerIds)
-    {
-        return SessionUnitCacheManager.GetOwnerBadgeAsync(ownerIds);
-    }
+  
     /// <summary>
     /// 获取好友数量
     /// </summary>
@@ -846,34 +798,52 @@ public class SessionUnitCacheAppService(
         };
     }
 
+   
+
+    /// <summary>
+    /// 获取聊天对象角标信息列表
+    /// </summary>
+    /// <param name="ownerIds"></param>
+    /// <returns></returns>
+    public async Task<List<OwnerBadgeInfo>> GetManyBadgeAsync(List<long> ownerIds)
+    {
+        var items = await SessionUnitCacheManager.GetOwnerBadgeAsync(ownerIds);
+
+        var boxInfoMap = await GetBoxBadgeAsync(ownerIds);
+
+        foreach (var item in items)
+        {
+            item.Boxes = [.. boxInfoMap.GetValueOrDefault(item.OwnerId)];
+        }
+
+        return items;
+    }
+
+
     /// <summary>
     /// 聊天对象角标总数
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    public async Task<BadgeDto> GetBadgeAsync(long ownerId)
+    public async Task<OwnerBadgeInfo> GetBadgeAsync(long ownerId)
     {
         // check owner
         await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
-        return await GetBadgeInternalAsync(ownerId);
+        var items = await GetManyBadgeAsync([ownerId]);
+        return items.FirstOrDefault();
     }
 
     /// <summary>
     /// 用户聊天对象角标列表
     /// </summary>
     /// <param name="userId"></param>
-    public async Task<List<BadgeDto>> GetBadgeByUserIdAsync([Required] Guid userId)
+    public async Task<List<OwnerBadgeInfo>> GetBadgeByUserAsync([Required] Guid userId)
     {
-        var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(userId);
+        var ownerIds = await ChatObjectManager.GetIdListByUserIdAsync(userId);
 
-        await CheckPolicyForUserAsync(chatObjectIdList, () => CheckPolicyAsync(GetBadgePolicyName));
+        await CheckPolicyForUserAsync(ownerIds, () => CheckPolicyAsync(GetBadgePolicyName));
 
-        var result = new List<BadgeDto>();
-
-        foreach (var ownerId in chatObjectIdList)
-        {
-            result.Add(await GetBadgeInternalAsync(ownerId));
-        }
+        var result = await GetManyBadgeAsync(ownerIds);
 
         return result;
     }
@@ -882,9 +852,56 @@ public class SessionUnitCacheAppService(
     /// 登录用户聊天对象角标列表
     /// </summary>
     /// <returns></returns>
-    public Task<List<BadgeDto>> GetBadgeByCurrentUserAsync()
+    public Task<List<OwnerBadgeInfo>> GetBadgeByCurrentUserAsync()
     {
-        return GetBadgeByUserIdAsync(CurrentUser.GetId());
+        return GetBadgeByUserAsync(CurrentUser.GetId());
+    }
+
+    private async Task<List<BoxCountDto>> GetBoxFriendsCountAsync([Required] long ownerId)
+    {
+        var boxes = await BoxManager.GetCacheListByOwnerAsync(ownerId);
+
+        var boxMap = boxes.List.ToDictionary(x => x.Id);
+
+        var items = await SessionUnitCacheManager.GetBoxBadgeInfoAsync(ownerId);
+
+        var result = items.Select(x =>
+        {
+            return new BoxCountDto()
+            {
+                Id = x.Id,
+                Name = x.Name ?? boxMap.GetValueOrDefault(x.Id)?.Name,
+                OwnerId = ownerId,
+                Count = x.Count,
+                Badge = x.Badge,
+            };
+        }).ToList();
+
+        return result;
+    }
+
+    /// <summary>
+    /// 获取盒子角标
+    /// </summary>
+    /// <param name="ownerIds"></param>
+    /// <returns></returns>
+    public async Task<Dictionary<long, IEnumerable<BoxBadgeInfo>>> GetBoxBadgeAsync(List<long> ownerIds)
+    {
+        var boxInfoMap = await SessionUnitCacheManager.GetBoxBadgeInfoMapAsync(ownerIds);
+
+        var boxMap = await BoxManager.GetCacheListByOwnersAsync(ownerIds);
+
+        return boxMap.ToDictionary(x => x.Key, x => x.Value.Select(v =>
+        {
+            var info = boxInfoMap.GetValueOrDefault(x.Key)?.FirstOrDefault(d => d.Id == v.Id);
+            return new BoxBadgeInfo
+            {
+                Id = v.Id,
+                Name = v.Name,
+                Badge = info?.Badge,
+                Count = info?.Count,
+            };
+        }));
     }
 
 }

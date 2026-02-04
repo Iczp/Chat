@@ -8,4 +8,6 @@ public interface IBoxManager
     Task<IEnumerable<Box>> GetListByOwnerAsync(long ownerId);
 
     Task<BoxCacheList> GetCacheListByOwnerAsync(long ownerId);
+
+    Task<Dictionary<long, List<BoxInfo>>> GetCacheListByOwnersAsync(List<long> ownerIds);
 }

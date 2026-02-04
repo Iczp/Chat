@@ -1,4 +1,7 @@
-﻿using System;
+﻿using IczpNet.AbpCommons.Extensions;
+using Microsoft.EntityFrameworkCore;
+using Pipelines.Sockets.Unofficial.Buffers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -42,5 +45,64 @@ public class BoxManager(
                 List = (await GetListByOwnerAsync(ownerId)).Select(MapToInfo).ToList(),
             };
         });
+    }
+
+    public async Task<Dictionary<long, List<BoxInfo>>> GetCacheListByOwnersAsync(List<long> ownerIds)
+    {
+        if (ownerIds == null || ownerIds.Count == 0)
+        {
+            return [];
+        }
+
+        var keys = ownerIds
+            .Distinct()
+            .Select(BoxOwnerCacheKey.Create)
+            .ToArray();
+
+        var result = await OwnerCache.GetOrAddManyAsync(keys, async cacheKeys =>
+        {
+            var ownerIdList = cacheKeys
+                .Select(x => x.OwnerId)
+                .Distinct()
+                .ToList();
+
+            var queryable = await Repository.GetQueryableAsync();
+
+            var entities = await queryable
+                .Where(x => ownerIdList.Contains(x.OwnerId.Value))
+                .ToListAsync();
+
+            var groupMap = entities
+                .GroupBy(x => x.OwnerId)
+                .ToDictionary(x => x.Key, x => x.ToList());
+
+            var result = new List<KeyValuePair<BoxOwnerCacheKey, BoxCacheList>>(
+                ownerIdList.Count);
+
+            foreach (var ownerId in ownerIdList)
+            {
+                if (!groupMap.TryGetValue(ownerId, out var list))
+                {
+                    // 空缓存，防穿透
+                    result.Add(
+                        new KeyValuePair<BoxOwnerCacheKey, BoxCacheList>(
+                            BoxOwnerCacheKey.Create(ownerId),
+                            BoxCacheList.Empty(ownerId)));
+
+                    continue;
+                }
+
+                var cacheList = new BoxCacheList
+                {
+                    OwnerId = ownerId,
+                    List = [.. list.Select(MapToInfo)]
+                };
+
+                result.Add(new KeyValuePair<BoxOwnerCacheKey, BoxCacheList>(BoxOwnerCacheKey.Create(ownerId), cacheList));
+            }
+
+            return [.. result];
+        });
+        return result.ToDictionary(x => x.Key.OwnerId, x => x.Value.List);
     }
 }

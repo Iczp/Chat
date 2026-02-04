@@ -27,10 +27,14 @@ public interface ISessionUnitCacheAppService
 
     Task<SessionUnitFriendDetailDto> GetDetailAsync(Guid id);
 
-    Task<BadgeDto> GetBadgeAsync(long ownerId);
+    Task<OwnerBadgeInfo> GetBadgeAsync(long ownerId);
 
-    Task<List<BadgeDto>> GetBadgeByUserIdAsync([Required] Guid userId);
+    Task<List<OwnerBadgeInfo>> GetManyBadgeAsync(List<long> ownerIds);
 
-    Task<List<BadgeDto>> GetBadgeByCurrentUserAsync();
+    Task<List<OwnerBadgeInfo>> GetBadgeByUserAsync([Required] Guid userId);
+
+    Task<List<OwnerBadgeInfo>> GetBadgeByCurrentUserAsync();
+
+    Task<Dictionary<long, IEnumerable<BoxBadgeInfo>>> GetBoxBadgeAsync(List<long> ownerIds);
 
 }

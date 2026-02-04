@@ -6,7 +6,7 @@ namespace IczpNet.Chat.SessionUnits;
 
 public class OwnerBadgeInfo
 {
-    public long? OwnerId { get; set; }
+    public long OwnerId { get; set; }
 
     public SessionUnitStatistic Statistic { get; set; }
 

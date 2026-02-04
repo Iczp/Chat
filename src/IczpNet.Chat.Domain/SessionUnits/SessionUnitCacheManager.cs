@@ -7,6 +7,7 @@ using IczpNet.Chat.RedisServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Minio.DataModel;
+using Pipelines.Sockets.Unofficial.Buffers;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
@@ -1932,10 +1933,34 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    public async Task<IEnumerable<KeyValuePair<Guid, double>>> GetBoxFriendsBadgeAsync(long ownerId)
+    public async Task<IEnumerable<KeyValuePair<Guid, double>>> GetBoxFriendsBadgeMapAsync(long ownerId)
     {
-        var entries = await Database.SortedSetRangeByRankWithScoresAsync(OwnerBoxBadgeZsetKey(ownerId));
-        return entries.Select(x => new KeyValuePair<Guid, double>(x.Element.ToGuid(), x.Score));
+        return (await GetBoxFriendsBadgeAsync([ownerId])).GetValueOrDefault(ownerId);
+    }
+    /// <summary>
+    /// 获取盒子角标
+    /// </summary>
+    /// <param name="ownerIds"></param>
+    /// <returns></returns>
+    public async Task<Dictionary<long, IEnumerable<KeyValuePair<Guid, double>>>> GetBoxFriendsBadgeAsync(List<long> ownerIds)
+    {
+        var batch = Database.CreateBatch();
+
+        var badgeTaskMap = ownerIds
+            .Distinct()
+            .ToDictionary(
+                x => x,
+                x => batch.SortedSetRangeByRankWithScoresAsync(OwnerBoxBadgeZsetKey(x))
+            );
+
+        batch.Execute();
+
+        await Task.WhenAll(badgeTaskMap.Values);
+
+        return badgeTaskMap.ToDictionary(
+            x => x.Key,
+            x => x.Value.Result.Select(x => new KeyValuePair<Guid, double>(x.Element.ToGuid(), x.Score))
+         );
     }
 
     /// <summary>
@@ -1943,27 +1968,55 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    public async Task<IEnumerable<KeyValuePair<Guid, (long? Badge, long? Count)>>> GetBoxFriendsBadgeAndCountAsync(long ownerId)
+    public async Task<IEnumerable<BoxBadgeInfo>> GetBoxBadgeInfoAsync(long ownerId)
     {
-        var boxFriends = await GetBoxFriendsBadgeAsync(ownerId);
+        return (await GetBoxBadgeInfoMapAsync([ownerId])).GetValueOrDefault(ownerId) ?? [];
+    }
+    /// <summary>
+    /// 获取盒子角标与好友数量
+    /// </summary>
+    /// <param name="ownerIds"></param>
+    /// <returns></returns>
 
-        if (!boxFriends.Any())
+    public async Task<Dictionary<long, IEnumerable<BoxBadgeInfo>>> GetBoxBadgeInfoMapAsync(List<long> ownerIds)
+    {
+        var boxFriendsBadgeMap = await GetBoxFriendsBadgeAsync(ownerIds);
+
+        if (boxFriendsBadgeMap.Count == 0)
         {
             return [];
         }
 
         var batch = Database.CreateBatch();
 
-        var tasks = boxFriends.ToDictionary(
+        var countTaskMap = boxFriendsBadgeMap.ToDictionary(
             x => x.Key,
-            x => batch.SortedSetLengthAsync(OwnerBoxFriendsSetKey(ownerId, x.Key))
+            x => x.Value.ToDictionary(v => v.Key, v => batch.SortedSetLengthAsync(OwnerBoxFriendsSetKey(x.Key, v.Key)))
         );
 
         batch.Execute();
 
-        await Task.WhenAll(tasks.Values);
+        await Task.WhenAll(countTaskMap.SelectMany(x => x.Value.Values));
 
-        return boxFriends.Select(x => new KeyValuePair<Guid, (long? Badge, long? Count)>(x.Key, ((long)x.Value, tasks[x.Key].Result)));
+        return boxFriendsBadgeMap.ToDictionary(
+              x => x.Key,
+              x => x.Value.Select(v =>
+              {
+                  var count =
+                      countTaskMap
+                          .GetValueOrDefault(x.Key)?
+                          .GetValueOrDefault(v.Key)?
+                          .Result ?? 0;
+
+                  return new BoxBadgeInfo
+                  {
+                      Id = v.Key,
+                      Name = null, // 可以根据 boxId 去加载名称
+                      Badge = (long)v.Value,
+                      Count = count
+                  };
+              })
+         );
     }
 
     /// <summary>
