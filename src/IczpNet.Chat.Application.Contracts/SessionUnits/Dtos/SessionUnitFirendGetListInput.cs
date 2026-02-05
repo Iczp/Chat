@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.SessionUnits.Dtos;
 
-public class SessionUnitFirendGetListInput : SessionUnitLatestGetListInput
+public class SessionUnitFirendGetListInput : SessionUnitChangesGetListInput
 {
     /// <summary>
     /// OwnerId
@@ -49,6 +49,16 @@ public class SessionUnitFirendGetListInput : SessionUnitLatestGetListInput
     /// - 9=Customer:客户
     /// </summary>
     public virtual ChatObjectTypeEnums? FriendType { get; set; }
+
+    /// <summary>
+    /// 最小Score(Sorting * 1e13 + Ticks)
+    /// </summary>
+    public virtual double? MinScore { get; set; }
+
+    /// <summary>
+    /// 最小Score(Sorting * 1e13 + Ticks)
+    /// </summary>
+    public virtual double? MaxScore { get; set; }
 
 
 }

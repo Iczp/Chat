@@ -20,5 +20,8 @@ public class SessionUnitFriendDto : SessionUnitCacheItem
 
     public virtual SessionUnitSettingCacheItem Setting { get; set; }
 
+    /// <summary>
+    /// 用于排序 Score(Sorting * 1e13 + Ticks)
+    /// </summary>
     public virtual double? Score { get; set; }
 }

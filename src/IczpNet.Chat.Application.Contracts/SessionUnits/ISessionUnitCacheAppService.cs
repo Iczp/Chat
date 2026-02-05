@@ -13,7 +13,7 @@ public interface ISessionUnitCacheAppService
 
     Task<List<SessionUnitFriendDto>> GetManyAsync(List<Guid> unitIds);
 
-    Task<PagedResultDto<SessionUnitFriendDto>> GetLatestAsync(SessionUnitLatestGetListInput input);
+    Task<PagedResultDto<SessionUnitFriendDto>> GetChangesAsync(SessionUnitChangesGetListInput input);
 
     Task<PagedResultDto<SessionUnitFriendDto>> GetFriendsAsync(SessionUnitFirendGetListInput input);
 
@@ -27,14 +27,14 @@ public interface ISessionUnitCacheAppService
 
     Task<SessionUnitFriendDetailDto> GetDetailAsync(Guid id);
 
-    Task<OwnerBadgeInfo> GetBadgeAsync(long ownerId);
+    Task<SessionUnitOverviewInfo> GetOverviewOwnerAsync(long ownerId);
 
-    Task<List<OwnerBadgeInfo>> GetManyBadgeAsync(List<long> ownerIds);
+    Task<List<SessionUnitOverviewInfo>> GetOverviewOwnersAsync(List<long> ownerIds);
 
-    Task<List<OwnerBadgeInfo>> GetBadgeByUserAsync([Required] Guid userId);
+    Task<List<SessionUnitOverviewInfo>> GetOverviewUserAsync([Required] Guid userId);
 
-    Task<List<OwnerBadgeInfo>> GetBadgeByCurrentUserAsync();
+    Task<List<SessionUnitOverviewInfo>> GetOverviewAsync();
 
-    Task<Dictionary<long, IEnumerable<BoxBadgeInfo>>> GetBoxBadgeAsync(List<long> ownerIds);
+    Task<Dictionary<long, IEnumerable<BoxBadgeInfo>>> GetBoxOverviewAsync(List<long> ownerIds);
 
 }

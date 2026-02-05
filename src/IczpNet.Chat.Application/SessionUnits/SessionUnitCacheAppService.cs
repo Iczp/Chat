@@ -496,7 +496,7 @@ public class SessionUnitCacheAppService(
     /// <summary>
     /// 获取会话（多个）
     /// </summary>
-    /// <param name="unitIds"></param>
+    /// <param name="unitIds">SessionUnitId</param>
     /// <returns></returns>
     public async Task<List<SessionUnitFriendDto>> GetManyAsync(List<Guid> unitIds)
     {
@@ -529,7 +529,7 @@ public class SessionUnitCacheAppService(
     /// <summary>
     /// 获取会话
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="id">SessionUnitId</param>
     /// <returns></returns>
     public async Task<SessionUnitFriendDto> GetAsync(Guid id)
     {
@@ -575,31 +575,27 @@ public class SessionUnitCacheAppService(
     /// </summary>
     /// <param name="input"></param>
     /// <returns></returns>
-    public async Task<PagedResultDto<SessionUnitFriendDto>> GetLatestAsync(SessionUnitLatestGetListInput input)
+    public async Task<PagedResultDto<SessionUnitFriendDto>> GetChangesAsync(SessionUnitChangesGetListInput input)
     {
         // check owner
         await CheckPolicyForUserAsync(input.OwnerId, () => CheckPolicyAsync(GetListPolicyName, input.OwnerId));
 
         Assert.If(input.MaxResultCount > 100, $"params:{nameof(input.MaxResultCount)} max value: 100");
 
-        var minScore = input.MinScore ?? 0;
-
         var queryable = await SessionUnitCacheManager.GetFriendsAsync(
             input.OwnerId,
-            minScore: minScore,
+            //minScore: input.MinTicks ?? 0,
             skip: input.SkipCount,
             take: Math.Min(input.MaxResultCount, 100));
 
-        var unitIds = queryable
-            .Where(x => x.Ticks > minScore)
-            .OrderByDescending(x => x.Ticks)
-            .Select(x => x.Id)
-            .ToList();
+        var query = queryable
+            .WhereIf(input.MinTicks > 0, x => x.Ticks > input.MinTicks)
+            .WhereIf(input.MaxTicks > 0, x => x.Ticks < input.MaxTicks)
+            .OrderByDescending(x => x.Ticks);
 
-        var items = await GetManyAsync(unitIds);
+        var items = await GetManyWithScoreAsync(query);
 
         return new PagedResultDto<SessionUnitFriendDto>(items.Count, items);
-
     }
 
     /// <summary>
@@ -640,9 +636,11 @@ public class SessionUnitCacheAppService(
             .WhereIf(input.FriendType.HasValue, x => x.DestinationObjectType == input.FriendType)
             .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
             .WhereIf(input.SessionId.HasValue, x => x.SessionId == input.SessionId)
-            .WhereIf(input.UnitId.HasValue, x => x.Id == input.UnitId)
+            .WhereIf(input.SessionUnitId.HasValue, x => x.Id == input.SessionUnitId)
             .WhereIf(input.MinScore > 0, x => x.Score > input.MinScore)
             .WhereIf(input.MaxScore > 0, x => x.Score < input.MaxScore)
+            .WhereIf(input.MinTicks > 0, x => x.Ticks > input.MinTicks)
+            .WhereIf(input.MaxTicks > 0, x => x.Ticks < input.MaxTicks)
             .WhereIf(input.IsOnline == true, x => onlineFriendIds.Contains(x.DestinationId))
             .WhereIf(input.IsOnline == false, x => !onlineFriendIds.Contains(x.DestinationId))
             ;
@@ -667,15 +665,18 @@ public class SessionUnitCacheAppService(
         //paged
         query = query.Skip(input.SkipCount).Take(input.MaxResultCount);
 
+        var items = await GetManyWithScoreAsync(query);
+
+        var result = new PagedResultDto<SessionUnitFriendDto>(totalCount, items);
+
+        return result;
+    }
+
+    private async Task<List<SessionUnitFriendDto>> GetManyWithScoreAsync(IEnumerable<FriendModel> query)
+    {
+        var stopwatch = Stopwatch.StartNew();
+
         var unitIdScoreMap = query.ToDictionary(x => x.Id, x => x.Score);
-
-        Logger.LogInformation("GetFriendsAsync OwnerId={OwnerId}, TotalCount={TotalCount}, ReturnedCount={ReturnedCount}, Elapsed={Elapsed}ms",
-            input.OwnerId,
-            totalCount,
-            unitIdScoreMap.Count,
-            stopwatch.ElapsedMilliseconds);
-
-        stopwatch.Restart();
 
         var items = await GetManyAsync(unitIdScoreMap.Keys.ToList());
 
@@ -684,19 +685,15 @@ public class SessionUnitCacheAppService(
             item.Score = unitIdScoreMap.GetValueOrDefault(item.Id);
         }
 
-        Logger.LogInformation("GetFriendsAsync GetManyAsync, ReturnedCount={ReturnedCount}, Elapsed={Elapsed}ms",
+        Logger.LogInformation("FillScoreAsync, ReturnedCount={ReturnedCount}, Elapsed={Elapsed}ms",
             unitIdScoreMap.Count,
             stopwatch.ElapsedMilliseconds);
 
-        var result = new PagedResultDto<SessionUnitFriendDto>(totalCount, items);
-
-        return result;
+        return items;
     }
 
 
-    
 
-  
     /// <summary>
     /// 获取好友数量
     /// </summary>
@@ -798,18 +795,18 @@ public class SessionUnitCacheAppService(
         };
     }
 
-   
+
 
     /// <summary>
     /// 获取聊天对象角标信息列表
     /// </summary>
     /// <param name="ownerIds"></param>
     /// <returns></returns>
-    public async Task<List<OwnerBadgeInfo>> GetManyBadgeAsync(List<long> ownerIds)
+    public async Task<List<SessionUnitOverviewInfo>> GetOverviewOwnersAsync(List<long> ownerIds)
     {
         var items = await SessionUnitCacheManager.GetOwnerBadgeAsync(ownerIds);
 
-        var boxInfoMap = await GetBoxBadgeAsync(ownerIds);
+        var boxInfoMap = await GetBoxOverviewAsync(ownerIds);
 
         foreach (var item in items)
         {
@@ -825,11 +822,11 @@ public class SessionUnitCacheAppService(
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    public async Task<OwnerBadgeInfo> GetBadgeAsync(long ownerId)
+    public async Task<SessionUnitOverviewInfo> GetOverviewOwnerAsync(long ownerId)
     {
         // check owner
         await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
-        var items = await GetManyBadgeAsync([ownerId]);
+        var items = await GetOverviewOwnersAsync([ownerId]);
         return items.FirstOrDefault();
     }
 
@@ -837,13 +834,13 @@ public class SessionUnitCacheAppService(
     /// 用户聊天对象角标列表
     /// </summary>
     /// <param name="userId"></param>
-    public async Task<List<OwnerBadgeInfo>> GetBadgeByUserAsync([Required] Guid userId)
+    public async Task<List<SessionUnitOverviewInfo>> GetOverviewUserAsync([Required] Guid userId)
     {
         var ownerIds = await ChatObjectManager.GetIdListByUserIdAsync(userId);
 
         await CheckPolicyForUserAsync(ownerIds, () => CheckPolicyAsync(GetBadgePolicyName));
 
-        var result = await GetManyBadgeAsync(ownerIds);
+        var result = await GetOverviewOwnersAsync(ownerIds);
 
         return result;
     }
@@ -852,9 +849,9 @@ public class SessionUnitCacheAppService(
     /// 登录用户聊天对象角标列表
     /// </summary>
     /// <returns></returns>
-    public Task<List<OwnerBadgeInfo>> GetBadgeByCurrentUserAsync()
+    public Task<List<SessionUnitOverviewInfo>> GetOverviewAsync()
     {
-        return GetBadgeByUserAsync(CurrentUser.GetId());
+        return GetOverviewUserAsync(CurrentUser.GetId());
     }
 
     private async Task<List<BoxCountDto>> GetBoxFriendsCountAsync([Required] long ownerId)
@@ -885,7 +882,7 @@ public class SessionUnitCacheAppService(
     /// </summary>
     /// <param name="ownerIds"></param>
     /// <returns></returns>
-    public async Task<Dictionary<long, IEnumerable<BoxBadgeInfo>>> GetBoxBadgeAsync(List<long> ownerIds)
+    public async Task<Dictionary<long, IEnumerable<BoxBadgeInfo>>> GetBoxOverviewAsync(List<long> ownerIds)
     {
         var boxInfoMap = await SessionUnitCacheManager.GetBoxBadgeInfoMapAsync(ownerIds);
 
