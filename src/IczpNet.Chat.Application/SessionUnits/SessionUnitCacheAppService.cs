@@ -718,7 +718,7 @@ public class SessionUnitCacheAppService(
     /// <returns></returns>
     public async Task<PagedResultDto<SessionUnitMemberDto>> GetMembersAsync(SessionUnitMemberGetListInput input)
     {
-        var unit = await GetCacheAsync(input.UnitId);
+        var unit = await GetCacheAsync(input.SessionUnitId);
         var ownerId = unit.OwnerId;
         var sessionId = unit.SessionId.Value;
         // check owner
