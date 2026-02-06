@@ -33,7 +33,7 @@ public class SessionUnitChangesGetListInput : GetListInput
     public virtual double? MinTicks { get; set; }
 
     /// <summary>
-    /// 最小Ticks
+    /// 最大Ticks
     /// </summary>
     public virtual double? MaxTicks { get; set; }
 }

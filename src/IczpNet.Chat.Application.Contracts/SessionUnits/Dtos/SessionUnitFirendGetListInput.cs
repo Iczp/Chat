@@ -51,12 +51,17 @@ public class SessionUnitFirendGetListInput : SessionUnitChangesGetListInput
     public virtual ChatObjectTypeEnums? FriendType { get; set; }
 
     /// <summary>
+    /// Guid CursorId 用 Last Item Id [SessionUnitId]
+    /// </summary>
+    public Guid? CursorId { get; set; }
+
+    /// <summary>
     /// 最小Score(Sorting * 1e13 + Ticks)
     /// </summary>
     public virtual double? MinScore { get; set; }
 
     /// <summary>
-    /// 最小Score(Sorting * 1e13 + Ticks)
+    /// 最大Score(Sorting * 1e13 + Ticks)
     /// </summary>
     public virtual double? MaxScore { get; set; }
 

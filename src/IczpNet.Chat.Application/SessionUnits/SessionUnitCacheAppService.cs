@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.HighPerformance;
 using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.Clocks;
 using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Follows;
@@ -601,7 +602,7 @@ public class SessionUnitCacheAppService(
     /// <summary>
     /// 获取好友会话
     /// </summary>
-    public async Task<PagedResultDto<SessionUnitFriendDto>> GetFriendsAsync(SessionUnitFirendGetListInput input)
+    public async Task<ExtraPagedResultDto<SessionUnitFriendDto>> GetFriendsAsync(SessionUnitFirendGetListInput input)
     {
         // check owner
         await CheckPolicyForUserAsync(input.OwnerId, () => CheckPolicyAsync(GetListPolicyName, input.OwnerId));
@@ -638,7 +639,10 @@ public class SessionUnitCacheAppService(
             .WhereIf(input.SessionId.HasValue, x => x.SessionId == input.SessionId)
             .WhereIf(input.SessionUnitId.HasValue, x => x.Id == input.SessionUnitId)
             .WhereIf(input.MinScore > 0, x => x.Score > input.MinScore)
-            .WhereIf(input.MaxScore > 0, x => x.Score < input.MaxScore)
+            .WhereIf(input.MaxScore > 0, x => x.Score < input.MaxScore || (
+                x.Score == input.MaxScore &&
+                x.Id.CompareTo(input.CursorId) < 0
+            ))
             .WhereIf(input.MinTicks > 0, x => x.Ticks > input.MinTicks)
             .WhereIf(input.MaxTicks > 0, x => x.Ticks < input.MaxTicks)
             .WhereIf(input.IsOnline == true, x => onlineFriendIds.Contains(x.DestinationId))
@@ -650,16 +654,16 @@ public class SessionUnitCacheAppService(
 
         if (query == null)
         {
-            return new PagedResultDto<SessionUnitFriendDto>(0, []);
+            return new ExtraPagedResultDto<SessionUnitFriendDto>(0, []);
         }
 
         var totalCount = query.Count(); //kvs.Length
         //var totalCount = await SessionUnitCacheManager.GetFirendsCountAsync(ownerId);
 
-        // sorting
+        // sorting desc, ticks desc ---此处可以不用，已经是按 score desc 排序了
         query = query
-            .OrderByDescending(x => x.Sorting)
-            .ThenByDescending(x => x.Ticks)
+            .OrderByDescending(x => x.Score)
+            .ThenByDescending(x => x.Id)
             ;
 
         //paged
@@ -667,7 +671,15 @@ public class SessionUnitCacheAppService(
 
         var items = await GetManyWithScoreAsync(query);
 
-        var result = new PagedResultDto<SessionUnitFriendDto>(totalCount, items);
+        // hasNextPage
+        var nextCursor = items.Count == input.MaxResultCount
+            ? new { CursorScore = items.Last().Score, CursorId = items.Last().Id }
+            : null;
+
+        var result = new ExtraPagedResultDto<SessionUnitFriendDto>(totalCount, items)
+        {
+            Extra = new { NextCursor = nextCursor }
+        };
 
         return result;
     }

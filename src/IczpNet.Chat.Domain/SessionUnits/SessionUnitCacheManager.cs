@@ -6,8 +6,6 @@ using IczpNet.Chat.RedisMapping;
 using IczpNet.Chat.RedisServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Minio.DataModel;
-using Pipelines.Sockets.Unofficial.Buffers;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
