@@ -4,11 +4,15 @@ using System.Collections.Generic;
 
 namespace IczpNet.Chat.SessionUnits;
 
-public class OwnerBadgeInfo
+public class SessionUnitOverviewInfo
 {
     public long OwnerId { get; set; }
 
-    public SessionUnitStatistic Statistic { get; set; }
+    public long TotalUnreadCount { get; set; }
+
+    public long TotalFriendsCount { get; set; }
+
+    public SessionUnitStatistic Stat { get; set; }
 
     public List<TypeBadgeInfo> Types { get; set; }
 

@@ -8,10 +8,10 @@ namespace IczpNet.Chat.SessionUnits.Dtos;
 public class SessionUnitMemberGetListInput : GetListInput
 {
     /// <summary>
-    /// SessionUnitId
+    /// 会话单元 SessionUnitId
     /// </summary>
     [Required]
-    public Guid UnitId { get; set; }
+    public Guid SessionUnitId { get; set; }
 
     /// <summary>
     /// 是否创建者（群主）

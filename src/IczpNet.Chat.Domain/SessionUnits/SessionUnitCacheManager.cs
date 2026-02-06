@@ -6,8 +6,6 @@ using IczpNet.Chat.RedisMapping;
 using IczpNet.Chat.RedisServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Minio.DataModel;
-using Pipelines.Sockets.Unofficial.Buffers;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
@@ -1389,7 +1387,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return raw;
     }
 
-    public async Task<List<OwnerBadgeInfo>> GetOwnerBadgeAsync(List<long> ownerIds)
+    public async Task<List<SessionUnitOverviewInfo>> GetOwnerBadgeAsync(List<long> ownerIds)
     {
         if (ownerIds == null || ownerIds.Count == 0)
             return [];
@@ -1431,8 +1429,6 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
             countTaskMap[ownerId] = typeCountMap;
         }
-
-        var a = countTaskMap.Values.SelectMany(x => x.Values);
         // 一次性执行 Redis Batch
         batch.Execute();
 
@@ -1442,7 +1438,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
                 .Concat(countTaskMap.Values.SelectMany(x => x.Values).Cast<Task>())
         );
         // 组装结果
-        var result = new List<OwnerBadgeInfo>(ownerIds.Count);
+        var result = new List<SessionUnitOverviewInfo>(ownerIds.Count);
 
         foreach (var ownerId in ownerIds)
         {
@@ -1463,23 +1459,28 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             // ---- Types ----
             var types = new List<TypeBadgeInfo>();
 
+            long totalFriendsCount = 0;
+
             foreach (var type in Enum.GetValues<ChatObjectTypeEnums>())
             {
                 badgeDict.TryGetValue(type, out var badge);
-
+                var typedCount = await countTaskMap[ownerId][type];
+                totalFriendsCount += typedCount;
                 types.Add(new TypeBadgeInfo
                 {
                     Id = type.ToString(),
                     Name = type.GetDescription(),
-                    Count = await countTaskMap[ownerId][type],
+                    Count = typedCount,
                     Badge = badge
                 });
             }
 
-            result.Add(new OwnerBadgeInfo
+            result.Add(new SessionUnitOverviewInfo
             {
                 OwnerId = ownerId,
-                Statistic = statistic,
+                TotalUnreadCount = statistic.PublicBadge,
+                TotalFriendsCount = totalFriendsCount,
+                Stat = statistic,
                 Types = types,
                 Boxes = [] // 你如果后面有 Box 逻辑，从这里补
             });
@@ -1487,8 +1488,6 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         return result;
     }
-
-
 
     #endregion
 
