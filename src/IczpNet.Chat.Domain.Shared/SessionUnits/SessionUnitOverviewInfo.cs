@@ -10,6 +10,8 @@ public class SessionUnitOverviewInfo
 
     public long TotalUnreadCount { get; set; }
 
+    public long TotalFriendsCount { get; set; }
+
     public SessionUnitStatistic Stat { get; set; }
 
     public List<TypeBadgeInfo> Types { get; set; }
