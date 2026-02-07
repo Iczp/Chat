@@ -28,6 +28,7 @@ using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
 
@@ -51,6 +52,7 @@ public class SessionUnitManager(
     ISessionGenerator sessionGenerator,
     ISessionManager sessionManager,
     IRepository<Box, Guid> boxRepository,
+    IDistributedEventBus distributedEventBus,
     ISessionUnitIdGenerator idGenerator) : DomainService, ISessionUnitManager
 {
     public IOptions<SessionUnitOptions> Options { get; } = options;
@@ -80,6 +82,7 @@ public class SessionUnitManager(
     public ISessionGenerator SessionGenerator { get; } = sessionGenerator;
     public ISessionManager SessionManager { get; } = sessionManager;
     public IRepository<Box, Guid> BoxRepository { get; } = boxRepository;
+    public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
     protected ISessionUnitIdGenerator IdGenerator { get; } = idGenerator;
 
     /// <summary>
@@ -480,16 +483,22 @@ public class SessionUnitManager(
         entity = await Repository.UpdateCountersync(counter);
 
         // 更新缓存
-        await SessionUnitCacheManager.UpdateCounterAsync(
-            counter,
-            async (id) =>
-            {
-                await Task.Yield();
-                return ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(entity);
-            });
+        var unit = await SessionUnitCacheManager.UpdateCounterAsync(
+             counter,
+             async (id) =>
+             {
+                 await Task.Yield();
+                 return ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(entity);
+             });
 
         //// 删除总记数缓存
         //await SessionUnitCacheManager.RemoveTotalBadgeAsync(entity.OwnerId);
+
+        //推送同步到客户端
+        await DistributedEventBus.PublishAsync(new SessionUnitChangedDistributedEto()
+        {
+            SessionUnit = unit
+        });
 
         return entity;
     }

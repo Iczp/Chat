@@ -1,10 +1,9 @@
-﻿using IczpNet.Chat.Enums;
-using System;
+﻿using System;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
 [Serializable]
-public class SendToClientDistributedEto : ISendToClientDistributedEto
+public class SendMessageToClientDistributedEto : ISendMessageToClientDistributedEto
 {
     /// <summary>
     /// Command
@@ -37,6 +36,6 @@ public class SendToClientDistributedEto : ISendToClientDistributedEto
     /// <returns></returns>
     public override string ToString()
     {
-        return $"[{nameof(SendToClientDistributedEto)}]:{nameof(Command)}={Command},{nameof(MessageId)}={MessageId},{nameof(HostName)}={HostName}";
+        return $"[{nameof(SendMessageToClientDistributedEto)}]:{nameof(Command)}={Command},{nameof(MessageId)}={MessageId},{nameof(HostName)}={HostName}";
     }
 }

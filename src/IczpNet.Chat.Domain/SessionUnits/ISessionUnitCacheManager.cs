@@ -339,7 +339,7 @@ public interface ISessionUnitCacheManager
     /// <param name="counter"></param>
     /// <param name="fetchTask"></param>
     /// <returns></returns>
-    Task UpdateCounterAsync(SessionUnitCounterInfo counter, Func<Guid, Task<SessionUnitCacheItem>> fetchTask);
+    Task<SessionUnitCacheItem> UpdateCounterAsync(SessionUnitCounterInfo counter, Func<Guid, Task<SessionUnitCacheItem>> fetchTask);
 
     /// <summary>
     /// 获取统计信息
@@ -444,14 +444,14 @@ public interface ISessionUnitCacheManager
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    Task<IEnumerable<BoxBadgeInfo>> GetBoxBadgeInfoAsync(long ownerId);
+    Task<IEnumerable<SessionUnitStatInfo>> GetBoxBadgeInfoAsync(long ownerId);
 
     /// <summary>
     /// 获取盒子角标与好友数量
     /// </summary>
     /// <param name="ownerIds"></param>
     /// <returns></returns>
-    Task<Dictionary<long, IEnumerable<BoxBadgeInfo>>> GetBoxBadgeInfoMapAsync(List<long> ownerIds);
+    Task<Dictionary<long, IEnumerable<SessionUnitStatInfo>>> GetBoxBadgeInfoMapAsync(List<long> ownerIds);
 
     /// <summary>
     /// 添加会话单元缓存

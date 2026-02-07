@@ -1457,7 +1457,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
                 : MapToStatistic(statisticEntries); // 你现有的映射方式
 
             // ---- Types ----
-            var types = new List<TypeBadgeInfo>();
+            var types = new List<SessionUnitStatInfo>();
 
             long totalFriendsCount = 0;
 
@@ -1466,7 +1466,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
                 badgeDict.TryGetValue(type, out var badge);
                 var typedCount = await countTaskMap[ownerId][type];
                 totalFriendsCount += typedCount;
-                types.Add(new TypeBadgeInfo
+                types.Add(new SessionUnitStatInfo
                 {
                     Id = type.ToString(),
                     Name = type.GetDescription(),
@@ -1514,7 +1514,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         ZsetUpdateIfExistsAsync(batch, OwnerHasBadgeSetKey(unit.OwnerId), element, counter.PublicBadge, removeWhenZero: true);
     }
 
-    public async Task UpdateCounterAsync(SessionUnitCounterInfo counter, Func<Guid, Task<SessionUnitCacheItem>> fetchTask)
+    public async Task<SessionUnitCacheItem> UpdateCounterAsync(SessionUnitCounterInfo counter, Func<Guid, Task<SessionUnitCacheItem>> fetchTask)
     {
         var unit = await GetAsync(counter.Id);
 
@@ -1527,7 +1527,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             UpdateUnit(batch, unit, counter);
             Logger.LogInformation("[{method}] 还未缓存，直接写入缓存:{counter}", nameof(UpdateCounterAsync), counter);
             batch.Execute();
-            return;
+            return unit;
         }
 
         // -----------------------------
@@ -1582,6 +1582,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         }
 
         batch.Execute();
+
+        return unit;
     }
 
     public async Task SetPinningAsync(Guid sessionId, Guid unitId, long ownerId, long sorting)
@@ -1967,7 +1969,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    public async Task<IEnumerable<BoxBadgeInfo>> GetBoxBadgeInfoAsync(long ownerId)
+    public async Task<IEnumerable<SessionUnitStatInfo>> GetBoxBadgeInfoAsync(long ownerId)
     {
         return (await GetBoxBadgeInfoMapAsync([ownerId])).GetValueOrDefault(ownerId) ?? [];
     }
@@ -1977,7 +1979,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// <param name="ownerIds"></param>
     /// <returns></returns>
 
-    public async Task<Dictionary<long, IEnumerable<BoxBadgeInfo>>> GetBoxBadgeInfoMapAsync(List<long> ownerIds)
+    public async Task<Dictionary<long, IEnumerable<SessionUnitStatInfo>>> GetBoxBadgeInfoMapAsync(List<long> ownerIds)
     {
         var boxFriendsBadgeMap = await GetBoxFriendsBadgeAsync(ownerIds);
 
@@ -2007,9 +2009,9 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
                           .GetValueOrDefault(v.Key)?
                           .Result ?? 0;
 
-                  return new BoxBadgeInfo
+                  return new SessionUnitStatInfo
                   {
-                      Id = v.Key,
+                      Id = v.Key.ToString(),
                       Name = null, // 可以根据 boxId 去加载名称
                       Badge = (long)v.Value,
                       Count = count

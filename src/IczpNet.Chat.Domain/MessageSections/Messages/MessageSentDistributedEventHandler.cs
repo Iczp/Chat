@@ -273,7 +273,7 @@ public class MessageSentDistributedEventHandler(
 
         var command = message.ForwardMessageId.HasValue ? CommandConsts.MessageForwarded : CommandConsts.MessageCreated;
 
-        var eventData = new SendToClientDistributedEto()
+        var eventData = new SendMessageToClientDistributedEto()
         {
             Command = command.ToString(),
             //CacheKey = cacheKey,

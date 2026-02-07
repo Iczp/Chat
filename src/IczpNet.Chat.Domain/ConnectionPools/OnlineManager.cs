@@ -676,7 +676,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         return await GetDevicesAsync(ownerIds, token);
     }
 
-    public async Task<Dictionary<long, IEnumerable<string>>> GetConnectionIdsByOwnerAsync(List<long> ownerIds, CancellationToken token = default)
+    public async Task<Dictionary<long, IEnumerable<string>>> GetConnectionIdsByOwnersAsync(List<long> ownerIds, CancellationToken token = default)
     {
         return (await GetDevicesAsync(ownerIds, token))
            .ToDictionary(
@@ -686,9 +686,14 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
             );
     }
 
+    public async Task<IEnumerable<string>> GetConnectionIdsByOwnerAsync(long ownerId, CancellationToken token = default)
+    {
+        return (await GetConnectionIdsByOwnersAsync([ownerId], token)).GetValueOrDefault(ownerId);
+    }
+
     public async Task<Dictionary<long, IEnumerable<ConnectionPoolCacheItem>>> GetConnectionsByOwnerAsync(List<long> ownerIds, CancellationToken token = default)
     {
-        var connIdMap = await GetConnectionIdsByOwnerAsync(ownerIds, token);
+        var connIdMap = await GetConnectionIdsByOwnersAsync(ownerIds, token);
 
         var connIdList = connIdMap.SelectMany(x => x.Value).Distinct().ToList();
 
@@ -893,6 +898,6 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
             return [];
         }
 
-        return await GetConnectionIdsByOwnerAsync(friendIds);
+        return await GetConnectionIdsByOwnersAsync(friendIds);
     }
 }

@@ -75,13 +75,13 @@ public class PublishToClientForMessageCreatedEventHandler(
 
         await MessageCache.SetAsync(new MessageCacheKey(messageDto.Id), messageDto);
 
-        var eventData = new SendToClientDistributedEto()
+        var eventData = new SendMessageToClientDistributedEto()
         {
             Command = command.ToString(),
             //CacheKey = cacheKey,
             HostName = CurrentHosted.Name,
             MessageId = message.Id,
-            Message = messageDto
+            Message = messageDto,
         };
 
         Logger.LogInformation($"PublishMessageDistributedEventAsync-eventData:{JsonSerializer.Serialize(eventData)}");
@@ -90,6 +90,6 @@ public class PublishToClientForMessageCreatedEventHandler(
 
         await DistributedEventBus.PublishAsync(eventData, onUnitOfWorkComplete, useOutbox);
 
-        Logger.LogInformation($"PublishMessageDistributedEventAsync(onUnitOfWorkComplete:{onUnitOfWorkComplete},useOutbox:{useOutbox})[{nameof(SendToClientDistributedEto)}]:{eventData}");
+        Logger.LogInformation($"PublishMessageDistributedEventAsync(onUnitOfWorkComplete:{onUnitOfWorkComplete},useOutbox:{useOutbox})[{nameof(SendMessageToClientDistributedEto)}]:{eventData}");
     }
 }
