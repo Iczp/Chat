@@ -374,7 +374,7 @@ public interface ISessionUnitCacheManager
     /// </summary>
     /// <param name="ownerIds"></param>
     /// <returns></returns>
-    Task<List<SessionUnitOverviewInfo>> GetOwnerBadgeAsync(List<long> ownerIds);
+    Task<List<SessionUnitOwnerOverviewInfo>> GetOwnerBadgeAsync(List<long> ownerIds);
 
     /// <summary>
     /// 设置置顶

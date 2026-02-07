@@ -2,7 +2,7 @@
 
 namespace IczpNet.Chat.SessionUnits;
 
-public class SessionUnitOverviewInfo
+public class SessionUnitOwnerOverviewInfo
 {
     public long OwnerId { get; set; }
 
