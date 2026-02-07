@@ -1387,7 +1387,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return raw;
     }
 
-    public async Task<List<SessionUnitOverviewInfo>> GetOwnerBadgeAsync(List<long> ownerIds)
+    public async Task<List<SessionUnitOwnerOverviewInfo>> GetOwnerBadgeAsync(List<long> ownerIds)
     {
         if (ownerIds == null || ownerIds.Count == 0)
             return [];
@@ -1438,7 +1438,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
                 .Concat(countTaskMap.Values.SelectMany(x => x.Values).Cast<Task>())
         );
         // 组装结果
-        var result = new List<SessionUnitOverviewInfo>(ownerIds.Count);
+        var result = new List<SessionUnitOwnerOverviewInfo>(ownerIds.Count);
 
         foreach (var ownerId in ownerIds)
         {
@@ -1475,7 +1475,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
                 });
             }
 
-            result.Add(new SessionUnitOverviewInfo
+            result.Add(new SessionUnitOwnerOverviewInfo
             {
                 OwnerId = ownerId,
                 TotalUnreadCount = statistic.PublicBadge,

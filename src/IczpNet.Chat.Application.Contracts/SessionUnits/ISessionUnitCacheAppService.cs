@@ -28,13 +28,13 @@ public interface ISessionUnitCacheAppService
 
     Task<SessionUnitFriendDetailDto> GetDetailAsync(Guid id);
 
-    Task<SessionUnitOverviewInfo> GetOverviewOwnerAsync(long ownerId);
+    Task<SessionUnitOwnerOverviewInfo> GetOverviewOwnerAsync(long ownerId);
 
-    Task<List<SessionUnitOverviewInfo>> GetOverviewOwnersAsync(List<long> ownerIds);
+    Task<List<SessionUnitOwnerOverviewInfo>> GetOverviewOwnersAsync(List<long> ownerIds);
 
-    Task<List<SessionUnitOverviewInfo>> GetOverviewUserAsync([Required] Guid userId);
+    Task<SessionUnitUserOverviewInfo> GetOverviewUserAsync([Required] Guid userId);
 
-    Task<List<SessionUnitOverviewInfo>> GetOverviewAsync();
+    Task<SessionUnitUserOverviewInfo> GetOverviewAsync();
 
     Task<Dictionary<long, IEnumerable<SessionUnitStatInfo>>> GetBoxOverviewAsync(List<long> ownerIds);
 
