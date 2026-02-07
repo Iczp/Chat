@@ -1514,7 +1514,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         ZsetUpdateIfExistsAsync(batch, OwnerHasBadgeSetKey(unit.OwnerId), element, counter.PublicBadge, removeWhenZero: true);
     }
 
-    public async Task UpdateCounterAsync(SessionUnitCounterInfo counter, Func<Guid, Task<SessionUnitCacheItem>> fetchTask)
+    public async Task<SessionUnitCacheItem> UpdateCounterAsync(SessionUnitCounterInfo counter, Func<Guid, Task<SessionUnitCacheItem>> fetchTask)
     {
         var unit = await GetAsync(counter.Id);
 
@@ -1527,7 +1527,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             UpdateUnit(batch, unit, counter);
             Logger.LogInformation("[{method}] 还未缓存，直接写入缓存:{counter}", nameof(UpdateCounterAsync), counter);
             batch.Execute();
-            return;
+            return unit;
         }
 
         // -----------------------------
@@ -1582,6 +1582,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         }
 
         batch.Execute();
+
+        return unit;
     }
 
     public async Task SetPinningAsync(Guid sessionId, Guid unitId, long ownerId, long sorting)

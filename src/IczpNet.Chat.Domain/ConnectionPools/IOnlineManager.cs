@@ -133,14 +133,21 @@ public interface IOnlineManager //: IConnectionPoolManager
     /// <returns></returns>
     Task<Dictionary<long, IEnumerable<DeviceModel>>> GetDevicesByUserAsync(Guid userId, CancellationToken token = default);
 
-
     /// <summary>
     /// 获取连接Id
     /// </summary>
     /// <param name="ownerIds"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<Dictionary<long, IEnumerable<string>>> GetConnectionIdsByOwnerAsync(List<long> ownerIds, CancellationToken token = default);
+    Task<Dictionary<long, IEnumerable<string>>> GetConnectionIdsByOwnersAsync(List<long> ownerIds, CancellationToken token = default);
+
+    /// <summary>
+    /// 获取连接Id
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<IEnumerable<string>> GetConnectionIdsByOwnerAsync(long ownerId, CancellationToken token = default);
 
     /// <summary>
     /// 获取连接信息
