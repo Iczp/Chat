@@ -1478,7 +1478,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             result.Add(new SessionUnitOwnerOverviewInfo
             {
                 OwnerId = ownerId,
-                TotalUnreadCount = statistic.PublicBadge,
+                TotalUnreadCount = statistic?.PublicBadge ?? 0,
                 TotalFriendsCount = totalFriendsCount,
                 Stat = statistic,
                 Types = types,

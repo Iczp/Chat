@@ -47,6 +47,7 @@ using IczpNet.Chat.Words.Dtos;
 using Volo.Abp.AutoMapper;
 using IczpNet.Chat.SessionBoxes;
 using IczpNet.Chat.SessionUnitEntryValues;
+using IczpNet.Chat.UrlNormalizers;
 /*---------code-generator-namespace: Do not modify or delete this line of comments--------*/
 
 namespace IczpNet.Chat.AutoMappers;
@@ -62,10 +63,18 @@ public class ChatApplicationAutoMapperProfile : Profile
         //ChatObject
         CreateMap<ChatObject, ChatObjectDto>()
             //.ForMember(x => x.ServiceStatus, opts => opts.MapFrom<ChatObjectDtoServiceStutusResolver>())
-            .ForMember(x => x.DeviceTypes, opts => opts.MapFrom<ChatObjectDtoServiceStutusResolver>());
+            .ForMember(x => x.DeviceTypes, opts => opts.MapFrom<ChatObjectDtoServiceStutusResolver>())
+            .ForMember(x => x.Thumbnail, opts => opts.MapFrom<UrlResolver, string>(x => x.Thumbnail))
+            .ForMember(x => x.Portrait, opts => opts.MapFrom<UrlResolver, string>(x => x.Portrait))
+            ;
 
-        CreateMap<ChatObject, ChatObjectSimpleDto>();
+        CreateMap<ChatObject, ChatObjectSimpleDto>()
+            .ForMember(x => x.Thumbnail, opts => opts.MapFrom<UrlResolver, string>(x => x.Thumbnail))
+            .ForMember(x => x.Portrait, opts => opts.MapFrom<UrlResolver, string > (x => x.Portrait))
+            ;
         CreateMap<ChatObject, ChatObjectDetailDto>()
+            .ForMember(x => x.Thumbnail, opts => opts.MapFrom<UrlResolver, string>(x => x.Thumbnail))
+            .ForMember(x => x.Portrait, opts => opts.MapFrom<UrlResolver, string>(x => x.Portrait))
             //.ForMember(x => x.SenderMessageCount, o => o.MapFrom(x => x.SenderMessageList.Count))
             //.ForMember(x => x.ReceiverMessageCount, o => o.MapFrom(x => x.ReceiverMessageList.Count))
             //.ForMember(x => x.FriendCount, o => o.MapFrom(x => x.OwnerFriendshipList.Count))
@@ -255,7 +264,7 @@ public class ChatApplicationAutoMapperProfile : Profile
 
         CreateMap<MessageReportBase, MessageReportDto>();
 
-        
+
         //Box
         CreateMap<Box, BoxDto>();
         CreateMap<Box, BoxSampleDto>();
@@ -263,7 +272,7 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<BoxInfo, BoxDto>(MemberList.None).MapExtraProperties();
         CreateMap<BoxCreateInput, Box>(MemberList.None).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
         CreateMap<BoxUpdateInput, Box>(MemberList.None).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
-        
+
 
         /*---------code-generator-mapper: Do not modify or delete this line of comments--------*/
     }

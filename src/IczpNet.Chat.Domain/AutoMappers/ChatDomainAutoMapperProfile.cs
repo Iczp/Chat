@@ -10,6 +10,7 @@ using IczpNet.Chat.SessionBoxes;
 using IczpNet.Chat.SessionTags;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
+using IczpNet.Chat.UrlNormalizers;
 
 namespace IczpNet.Chat.AutoMappers;
 
@@ -18,7 +19,7 @@ public class ChatApplicationAutoMapperProfile : Profile
     public ChatApplicationAutoMapperProfile()
     {
 
-        CreateMap(typeof(TreeEntity<,>),typeof(TreeInfo<>));
+        CreateMap(typeof(TreeEntity<,>), typeof(TreeInfo<>));
 
         //SessionUnit
         CreateMap<SessionUnit, SessionUnitCacheItem>();
@@ -26,7 +27,10 @@ public class ChatApplicationAutoMapperProfile : Profile
         //ChatObject
         CreateMap<ChatObject, ChatObjectInfo>()
             //.ForMember(x => x.ServiceStatus, opts => opts.MapFrom<ChatObjectInfoServiceStutusResolver>())
-            .ForMember(x => x.DeviceTypes, opts => opts.MapFrom<ChatObjectInfoServiceStutusResolver>());
+            .ForMember(x => x.DeviceTypes, opts => opts.MapFrom<ChatObjectInfoServiceStutusResolver>())
+            .ForMember(x => x.Thumbnail, opts => opts.MapFrom<UrlResolver, string>(x => x.Thumbnail))
+            .ForMember(x => x.Portrait, opts => opts.MapFrom<UrlResolver, string>(x => x.Portrait))
+            ;
 
         //Message
         CreateMap<Message, MessageInfo>().MaxDepth(3);
@@ -70,16 +74,38 @@ public class ChatApplicationAutoMapperProfile : Profile
 
         //MessageContent
 
-        CreateMap<TextContentInfo, TextContent>().UsingMessageTemplate().ReverseMap();
-        CreateMap<CmdContentInfo, CmdContent>().UsingMessageTemplate().ReverseMap();
+        CreateMap<TextContentInfo, TextContent>().UsingMessageTemplate()
+            .ReverseMap()
+
+            ;
+        CreateMap<CmdContentInfo, CmdContent>().UsingMessageTemplate().ReverseMap()
+
+            ;
         CreateMap<HtmlContentInfo, HtmlContent>().UsingMessageTemplate().ReverseMap();
         CreateMap<ContactsContentInfo, ContactsContent>().UsingMessageTemplate().ReverseMap();
-        CreateMap<FileContentInfo, FileContent>().UsingMessageTemplate().ReverseMap();
-        CreateMap<ImageContentInfo, ImageContent>().UsingMessageTemplate().ReverseMap();
-        CreateMap<LinkContentInfo, LinkContent>().UsingMessageTemplate().ReverseMap();
+        CreateMap<FileContentInfo, FileContent>().UsingMessageTemplate()
+            .ReverseMap()
+            .ForMember(x => x.ActionUrl, opts => opts.MapFrom<UrlResolver, string>(x => x.ActionUrl))
+            .ForMember(x => x.Url, opts => opts.MapFrom<UrlResolver, string>(x => x.Url))
+            ;
+        CreateMap<ImageContentInfo, ImageContent>().UsingMessageTemplate().ReverseMap()
+            .ForMember(x => x.ThumbnailActionUrl, opts => opts.MapFrom<UrlResolver, string>(x => x.ThumbnailActionUrl))
+            .ForMember(x => x.Url, opts => opts.MapFrom<UrlResolver, string>(x => x.Url))
+            .ForMember(x => x.ActionUrl, opts => opts.MapFrom<UrlResolver, string>(x => x.ActionUrl))
+            .ForMember(x => x.ThumbnailUrl, opts => opts.MapFrom<UrlResolver, string>(x => x.ThumbnailUrl))
+            ;
+        CreateMap<LinkContentInfo, LinkContent>().UsingMessageTemplate()
+            .ReverseMap();
         CreateMap<LocationContentInfo, LocationContent>().UsingMessageTemplate().ReverseMap();
-        CreateMap<SoundContentInfo, SoundContent>().UsingMessageTemplate().ReverseMap();
-        CreateMap<VideoContentInfo, VideoContent>().UsingMessageTemplate().ReverseMap();
+        CreateMap<SoundContentInfo, SoundContent>().UsingMessageTemplate().ReverseMap()
+            .ForMember(x => x.Url, opts => opts.MapFrom<UrlResolver, string>(x => x.Url))
+            ;
+        CreateMap<VideoContentInfo, VideoContent>().UsingMessageTemplate().ReverseMap()
+            .ForMember(x => x.Url, opts => opts.MapFrom<UrlResolver, string>(x => x.Url))
+            .ForMember(x => x.SnapshotUrl, opts => opts.MapFrom<UrlResolver, string>(x => x.SnapshotUrl))
+            .ForMember(x => x.SnapshotThumbnailUrl, opts => opts.MapFrom<UrlResolver, string>(x => x.SnapshotThumbnailUrl))
+            ;
+
         CreateMap<HistoryContentInput, HistoryContent>(MemberList.None).UsingMessageTemplate();
         CreateMap<HistoryContent, HistoryContentOutput>();
 
