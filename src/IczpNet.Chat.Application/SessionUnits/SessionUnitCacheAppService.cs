@@ -878,8 +878,8 @@ public class SessionUnitCacheAppService(
         {
             return new BoxCountDto()
             {
-                Id = x.Id,
-                Name = x.Name ?? boxMap.GetValueOrDefault(x.Id)?.Name,
+                Id = Guid.Parse(x.Id),
+                Name = x.Name ?? boxMap.GetValueOrDefault(Guid.Parse(x.Id))?.Name,
                 OwnerId = ownerId,
                 Count = x.Count,
                 Badge = x.Badge,
@@ -894,7 +894,7 @@ public class SessionUnitCacheAppService(
     /// </summary>
     /// <param name="ownerIds"></param>
     /// <returns></returns>
-    public async Task<Dictionary<long, IEnumerable<BoxBadgeInfo>>> GetBoxOverviewAsync(List<long> ownerIds)
+    public async Task<Dictionary<long, IEnumerable<SessionUnitStatInfo>>> GetBoxOverviewAsync(List<long> ownerIds)
     {
         var boxInfoMap = await SessionUnitCacheManager.GetBoxBadgeInfoMapAsync(ownerIds);
 
@@ -902,10 +902,10 @@ public class SessionUnitCacheAppService(
 
         return boxMap.ToDictionary(x => x.Key, x => x.Value.Select(v =>
         {
-            var info = boxInfoMap.GetValueOrDefault(x.Key)?.FirstOrDefault(d => d.Id == v.Id);
-            return new BoxBadgeInfo
+            var info = boxInfoMap.GetValueOrDefault(x.Key)?.FirstOrDefault(d => d.Id == v.Id.ToString());
+            return new SessionUnitStatInfo
             {
-                Id = v.Id,
+                Id = v.Id.ToString(),
                 Name = v.Name,
                 Badge = info?.Badge,
                 Count = info?.Count,

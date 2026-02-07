@@ -36,6 +36,6 @@ public interface ISessionUnitCacheAppService
 
     Task<List<SessionUnitOverviewInfo>> GetOverviewAsync();
 
-    Task<Dictionary<long, IEnumerable<BoxBadgeInfo>>> GetBoxOverviewAsync(List<long> ownerIds);
+    Task<Dictionary<long, IEnumerable<SessionUnitStatInfo>>> GetBoxOverviewAsync(List<long> ownerIds);
 
 }
