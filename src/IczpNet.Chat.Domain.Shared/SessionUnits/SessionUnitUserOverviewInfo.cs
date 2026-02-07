@@ -11,6 +11,6 @@ public class SessionUnitUserOverviewInfo
 
     public long TotalOwnersCount { get; set; }
 
-    public List<SessionUnitOwnerOverviewInfo> Owners { get; set; }
+    public List<SessionUnitOwnerOverviewInfo> Overviews { get; set; }
 
 }
