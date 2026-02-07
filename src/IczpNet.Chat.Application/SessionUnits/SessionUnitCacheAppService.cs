@@ -26,7 +26,6 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Caching;
 using Volo.Abp.Users;
 
-
 namespace IczpNet.Chat.SessionUnits;
 
 /// <summary>
@@ -814,7 +813,7 @@ public class SessionUnitCacheAppService(
     /// </summary>
     /// <param name="ownerIds"></param>
     /// <returns></returns>
-    public async Task<List<SessionUnitOverviewInfo>> GetOverviewOwnersAsync(List<long> ownerIds)
+    public async Task<List<SessionUnitOwnerOverviewInfo>> GetOverviewOwnersAsync(List<long> ownerIds)
     {
         var items = await SessionUnitCacheManager.GetOwnerBadgeAsync(ownerIds);
 
@@ -834,7 +833,7 @@ public class SessionUnitCacheAppService(
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    public async Task<SessionUnitOverviewInfo> GetOverviewOwnerAsync(long ownerId)
+    public async Task<SessionUnitOwnerOverviewInfo> GetOverviewOwnerAsync(long ownerId)
     {
         // check owner
         await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
@@ -846,22 +845,28 @@ public class SessionUnitCacheAppService(
     /// 用户聊天对象角标列表
     /// </summary>
     /// <param name="userId"></param>
-    public async Task<List<SessionUnitOverviewInfo>> GetOverviewUserAsync([Required] Guid userId)
+    public async Task<SessionUnitUserOverviewInfo> GetOverviewUserAsync([Required] Guid userId)
     {
         var ownerIds = await ChatObjectManager.GetIdListByUserIdAsync(userId);
 
         await CheckPolicyForUserAsync(ownerIds, () => CheckPolicyAsync(GetBadgePolicyName));
 
-        var result = await GetOverviewOwnersAsync(ownerIds);
+        var ownerOverviews = await GetOverviewOwnersAsync(ownerIds);
 
-        return result;
+        return new SessionUnitUserOverviewInfo()
+        {
+            UserId = userId,
+            Owners = ownerOverviews,
+            TotalOwnersCount = ownerOverviews.Count,
+            TotalUnreadCount = ownerOverviews.Sum(x => x.TotalUnreadCount),
+        };
     }
 
     /// <summary>
     /// 登录用户聊天对象角标列表
     /// </summary>
     /// <returns></returns>
-    public Task<List<SessionUnitOverviewInfo>> GetOverviewAsync()
+    public Task<SessionUnitUserOverviewInfo> GetOverviewAsync()
     {
         return GetOverviewUserAsync(CurrentUser.GetId());
     }
