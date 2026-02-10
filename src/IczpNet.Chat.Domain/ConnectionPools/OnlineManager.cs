@@ -852,7 +852,8 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
                 var element = SessionUnitElement.Parse(x.Key);
                 return new OnlineFriendInfo()
                 {
-                    ConnectionId = x.Select(re => re.Name.ToString()).ToList(),
+                    ConnectionId = [.. x.Select(re => re.Name.ToString())],
+                    DeviceTypes = [.. x.Select(re => DeviceElement.Parse(re.Value)).Select(x => x.DeviceType)],
                     OwnerId = element.OwnerId,
                     DestinationId = element.DestinationId,
                     SessionId = element.SessionId,
@@ -870,10 +871,12 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         return devicesMap.Select(x =>
         {
             var element = friends.FirstOrDefault(f => f.DestinationId == x.Key);
+            var devices = devicesMap.GetValueOrDefault(x.Key) ?? [];
 
             return new OnlineFriendInfo()
             {
-                ConnectionId = devicesMap.GetValueOrDefault(x.Key)?.Select(v => v.ConnectionId).ToList() ?? [],
+                ConnectionId = [.. devices.Select(v => v.ConnectionId)],
+                DeviceTypes = [.. devices.Select(v => v.DeviceType)],
                 OwnerId = element.OwnerId,
                 DestinationId = element.DestinationId,
                 SessionId = element.SessionId,

@@ -10,5 +10,6 @@ public class OnlineFriendInfo
     public Guid SessionId { get; set; }
     public Guid SessionUnitId { get; set; }
     public List<string> ConnectionId { get; set; }
+    public List<string> DeviceTypes { get; set; }
 
 }
