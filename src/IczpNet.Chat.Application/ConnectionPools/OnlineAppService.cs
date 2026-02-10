@@ -288,7 +288,7 @@ public class OnlineAppService(
     /// </summary>
     /// <param name="input"></param>
     /// <returns></returns>
-    public async Task<PagedResultDto<OnlineFriendInfo>> GetOnlineFriendsAsync(OnlineFriendsGetListInput input)
+    public async Task<PagedResultDto<OnlineFriendDto>> GetOnlineFriendsAsync(OnlineFriendsGetListInput input)
     {
         var list = await OnlineManager.GetOnlineFriendsAsync(input.OwnerId);
         var queryable = list.AsQueryable();
@@ -297,6 +297,6 @@ public class OnlineAppService(
             .WhereIf(input.SessionId.HasValue, x => x.SessionId == input.SessionId)
             .WhereIf(input.SessionUnitId.HasValue, x => x.SessionUnitId == input.SessionUnitId)
             ;
-        return await GetPagedListAsync(query, input);
+        return await GetPagedListAsync<OnlineFriendInfo, OnlineFriendDto>(query, input);
     }
 }
