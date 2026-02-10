@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using IczpNet.Chat.UrlNormalizers;
 using Volo.Abp.Auditing;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Domain.Entities;
@@ -18,7 +19,8 @@ public static class AutoMapperExtensions
             .IgnoreFullAuditedObjectProperties()
             //.Ignore(x => x.Id)
             //.Ignore(x => x.TenantId)
-            .Ignore(x => x.ConcurrencyStamp);
+            .Ignore(x => x.ConcurrencyStamp)
+            ;
     }
 
     //public static IMappingExpression<Message, TDestination> UsingMessageOutput<TSource, TDestination>(this IMappingExpression<TSource, TDestination> mappingExpression)

@@ -14,7 +14,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.ObjectMapping;
-using Volo.Abp.Uow;
 
 
 namespace IczpNet.Chat.ChatHubs;
