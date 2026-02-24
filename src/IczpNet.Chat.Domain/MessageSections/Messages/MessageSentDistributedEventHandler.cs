@@ -9,6 +9,7 @@ using IczpNet.Chat.MessageReports;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -66,63 +67,101 @@ public class MessageSentDistributedEventHandler(
     public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
     protected ICurrentHosted CurrentHosted { get; } = currentHosted;
 
-    private readonly Dictionary<string, long> ExecutedMilliseconds = [];
+    private readonly ConcurrentDictionary<string, long> ExecutedMilliseconds = [];
 
     public async Task HandleEventAsync(MessageSentEto eventData)
     {
-        Logger.LogInformation($"Handle HostName:{CurrentHosted.Name},eventData:{eventData}");
-
-        var lockerName = $"{HandlerName}-messageId-{eventData.Id}";
-
-        await using var handle = await DistributedLock.TryAcquireAsync(lockerName);
-
-        Logger.LogInformation("Handle=={handle},LockerName={LockerName}", handle, lockerName);
-
-        if (handle == null)
+        try
         {
-            Logger.LogInformation("Handle==null");
-            return;
+            Logger.LogInformation($"Handle HostName:{CurrentHosted.Name},eventData:{eventData}");
+
+            var lockerName = $"{HandlerName}-messageId-{eventData.Id}";
+
+            await using var handle = await DistributedLock.TryAcquireAsync(lockerName);
+
+            Logger.LogInformation("Handle=={handle},LockerName={LockerName}", handle, lockerName);
+
+            if (handle == null)
+            {
+                Logger.LogInformation("Handle==null");
+                return;
+            }
+
+            var s = Clock.Now.Ticks - eventData.PublishTime?.Ticks ?? 0;
+
+            Logger.LogInformation("Handle NetDelay: {ms}ms", s / 10000);
+
+            Logger.LogWarning("HandleEventAsync Start: MessageId={Id}, Thread={Thread}", eventData.Id, Environment.CurrentManagedThreadId);
+
+            // 分布式事件要开启工作单元
+            using var uow = UnitOfWorkManager.Begin();
+
+            Logger.LogWarning("After UOW: MessageId={Id}", eventData.Id);
+
+            //var message = await MessageManager.GetCacheAsync(eventData.Id);
+            // 解决“事务提交可见性延迟”问题（即 onUnitOfWorkComplete 为 true 但数据库还没查到）
+            var message = await GetMessageWithRetryAsync(eventData.Id, maxRetries: 10, delayMs: 500);
+
+            if (message == null)
+            {
+                Logger.LogError("Message is Null: MessageId={Id}", eventData.Id);
+                return;
+            }
+
+            Logger.LogWarning("MessageRepository.GetAsync: MessageId={Id}", message.Id);
+
+            //统计消息
+            await MeasureAsync($"{nameof(StatMessageAsync)}", () => StatMessageAsync(message));
+
+            //缓存会话单元计数增量
+            await MeasureAsync($"{nameof(CachingUnitsAsync)}", () => CachingUnitsAsync(message));
+
+            // 批量更新缓存中的会话单元计数
+            await MeasureAsync($"{nameof(BatchIncrementForCacheAsync)}", () => BatchIncrementForCacheAsync(message));
+
+            // 后台任务:数据库会话单元计数增量
+            await MeasureAsync($"{nameof(EnqueueSessionUnitIncrementJobAsync)}", () => EnqueueSessionUnitIncrementJobAsync(message));
+
+            // 后台任务:开发者
+            await MeasureAsync($"{nameof(EnqueueDeveloperJobAsync)}", () => EnqueueDeveloperJobAsync(message));
+
+            // 后台任务:AI
+            await MeasureAsync($"{nameof(EnqueueAiJobAsync)}", () => EnqueueAiJobAsync(message));
+
+            // 推送消息到客户端分布式事件
+            await MeasureAsync($"{nameof(PublishSendToClientDistributedAsync)}", () => PublishSendToClientDistributedAsync(message));
+
+            var totalExecutedMilliseconds = ExecutedMilliseconds.Sum(x => x.Value);
+
+            await uow.CompleteAsync();
+
+            Logger.LogWarning("Complete UOW: MessageId={Id}", eventData.Id);
+
+            Logger.LogInformation($"[{HandlerName}] TotalExecutedMilliseconds: {totalExecutedMilliseconds}ms");
         }
+        catch (Exception ex)
+        {
+            Logger.LogCritical(ex, "HandleEventAsync Failed for MessageId={Id}: {Error}", eventData.Id, ex.Message);
+            throw;
+        }
+    }
 
-        var s = Clock.Now.Ticks - eventData.PublishTime?.Ticks ?? 0;
-
-        Logger.LogInformation("Handle NetDelay: {ms}ms", s / 10000);
-
-        Logger.LogWarning("HandleEventAsync: MessageId={Id}, Thread={Thread}", eventData.Id, Environment.CurrentManagedThreadId);
-
-        // 分布式事件要开启工作单元
-        using var uow = UnitOfWorkManager.Begin();
-
-        //var message = await MessageManager.GetCacheAsync(eventData.Id);
-        var message = await MessageRepository.GetAsync(eventData.Id);
-
-
-        //统计消息
-        await MeasureAsync($"{nameof(StatMessageAsync)}", () => StatMessageAsync(message));
-
-        //缓存会话单元计数增量
-        await MeasureAsync($"{nameof(CachingUnitsAsync)}", () => CachingUnitsAsync(message));
-
-        // 批量更新缓存中的会话单元计数
-        await MeasureAsync($"{nameof(BatchIncrementForCacheAsync)}", () => BatchIncrementForCacheAsync(message));
-
-        // 后台任务:数据库会话单元计数增量
-        await MeasureAsync($"{nameof(EnqueueSessionUnitIncrementJobAsync)}", () => EnqueueSessionUnitIncrementJobAsync(message));
-
-        // 后台任务:开发者
-        await MeasureAsync($"{nameof(EnqueueDeveloperJobAsync)}", () => EnqueueDeveloperJobAsync(message));
-
-        // 后台任务:AI
-        await MeasureAsync($"{nameof(EnqueueAiJobAsync)}", () => EnqueueAiJobAsync(message));
-
-        // 推送消息到客户端分布式事件
-        await MeasureAsync($"{nameof(PublishSendToClientDistributedAsync)}", () => PublishSendToClientDistributedAsync(message));
-
-        var totalExecutedMilliseconds = ExecutedMilliseconds.Sum(x => x.Value);
-
-        await uow.CompleteAsync();
-
-        Logger.LogInformation($"[{HandlerName}] TotalExecutedMilliseconds: {totalExecutedMilliseconds}ms");
+    /// <summary>
+    /// 带有重试逻辑的消息查询
+    /// </summary>
+    private async Task<Message> GetMessageWithRetryAsync(long id, int maxRetries, int delayMs)
+    {
+        for (int i = 0; i < maxRetries; i++)
+        {
+            var message = await MessageRepository.FindAsync(id);
+            if (message != null)
+            {
+                return message;
+            }
+            Logger.LogWarning($"[Retry {i + 1}] MessageId={id} not found, waiting {delayMs}ms...");
+            await Task.Delay(delayMs);
+        }
+        return null;
     }
 
     protected virtual async Task<T> MeasureAsync<T>(string name, Func<Task<T>> func)
