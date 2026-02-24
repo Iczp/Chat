@@ -24,7 +24,7 @@ public class DisconnectedDistributedEventHandler(IUnitOfWorkManager unitOfWorkMa
         }
 
         // 分布式事件要开启工作单元
-        using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+        using var uow = UnitOfWorkManager.Begin();
 
         // 发送到用户其他客户端
         await SendToUserAsync(eventData.UserId.Value, new CommandPayload()

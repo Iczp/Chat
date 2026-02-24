@@ -48,7 +48,7 @@ public class ConnectedDistributedEventHandler(
         }
 
         // 分布式事件要开启工作单元
-        using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+        using var uow = UnitOfWorkManager.Begin();
 
         await ConnectionManager.CreateAsync(new Connection(eventData.ConnectionId, eventData.ChatObjectIdList)
         {

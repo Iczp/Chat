@@ -91,7 +91,7 @@ public class MessageSentDistributedEventHandler(
         Logger.LogWarning("HandleEventAsync: MessageId={Id}, Thread={Thread}", eventData.Id, Environment.CurrentManagedThreadId);
 
         // 分布式事件要开启工作单元
-        using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+        using var uow = UnitOfWorkManager.Begin();
 
         //var message = await MessageManager.GetCacheAsync(eventData.Id);
         var message = await MessageRepository.GetAsync(eventData.Id);
@@ -147,7 +147,7 @@ public class MessageSentDistributedEventHandler(
     {
         await MessageReportManager.StatAsync(message);
 
-        //using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+        //using var uow = UnitOfWorkManager.Begin();
         //await MessageReportManager.IncrementAsync(message);
         //await uow.CompleteAsync(); //  提前提交
 
