@@ -329,9 +329,10 @@ public interface ISessionUnitCacheManager
     /// 批量自增计数器(核心)
     /// </summary>
     /// <param name="message"></param>
-    /// <param name="expire"></param>
+    /// <param name="reminderIds"></param>
+    /// <param name="followerIds"></param>
     /// <returns></returns>
-    Task BatchIncrementAsync(Message message, TimeSpan? expire = null);
+    Task BatchIncrementAsync(MessageCacheItem message, List<Guid> reminderIds, List<Guid> followerIds);
 
     /// <summary>
     /// 更新会话单元计数器信息

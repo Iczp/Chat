@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities.Events;
@@ -49,6 +50,8 @@ public class PublishDistributedEventForMessageCreatedLocalEventHandler(
         var eventData = new MessageSentEto()
         {
             Id = message.Id,
+            ReminderIdList = [.. message.MessageReminderList.Select(x => x.SessionUnitId)],
+            FollowerIdList = [.. message.MessageFollowerList.Select(x => x.SessionUnitId)],
             HostName = CurrentHosted.Name,
             PublishTime = Clock.Now,
         };

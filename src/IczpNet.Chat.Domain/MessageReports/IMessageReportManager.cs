@@ -17,7 +17,7 @@ public interface IMessageReportManager
     /// </summary>
     /// <param name="message"></param>
     /// <returns></returns>
-    Task StatAsync(Message message);
+    Task StatAsync(MessageCacheItem message);
 
     /// <summary>
     /// 

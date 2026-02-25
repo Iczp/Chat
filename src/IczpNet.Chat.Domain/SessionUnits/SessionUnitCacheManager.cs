@@ -1202,20 +1202,20 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
     #region BatchIncrementBadgeAndSetLastMessageAsync (updates owner zset score)
 
-    public async Task BatchIncrementAsync(Message message, TimeSpan? expire = null)
+    public async Task BatchIncrementAsync(MessageCacheItem message, List<Guid> reminderIds, List<Guid> followerIds)
     {
         ArgumentNullException.ThrowIfNull(message);
 
         var stopwatch = Stopwatch.StartNew();
 
-        var sessionId = message.SessionId!.Value;
+        var sessionId = message.SessionId;
         var lastMessageId = message.Id;
 
-        var isPrivate = message.IsPrivateMessage();
+        var isPrivate = message.IsPrivate;
         var isRemindAll = message.IsRemindAll;
 
-        var reminderIds = message.MessageReminderList.Select(x => x.SessionUnitId).ToHashSet();
-        var followerIds = message.MessageFollowerList.Select(x => x.SessionUnitId).ToHashSet();
+        //var reminderIds = message.MessageReminderList.Select(x => x.SessionUnitId).ToHashSet();
+        //var followerIds = message.MessageFollowerList.Select(x => x.SessionUnitId).ToHashSet();
 
         var receiverType = message.ReceiverType;
 
@@ -1241,7 +1241,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         var batch = Database.CreateBatch();
 
-        var expireTime = expire ?? CacheExpire;
+        var expireTime = CacheExpire;
 
         foreach (var item in members)
         {
@@ -1339,7 +1339,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             }
         }
         // SessionMembers
-        _ = batch.KeyExpireAsync(SessionMembersSetKey(sessionId), expireTime ?? CacheExpire);
+        _ = batch.KeyExpireAsync(SessionMembersSetKey(sessionId), expireTime);
 
         batch.Execute();
 

@@ -49,7 +49,7 @@ public class MessageInfo : ExtensibleObject, IHasExtraProperties
     /// <summary>
     /// 发送人类型
     /// </summary>
-    public virtual ChatObjectTypeEnums? SenderObjectType { get; set; }
+    public virtual ChatObjectTypeEnums? SenderType { get; set; }
 
     /// <summary>
     /// 发送人单元
@@ -71,6 +71,11 @@ public class MessageInfo : ExtensibleObject, IHasExtraProperties
     /// </summary>
 
     public virtual long? ReceiverId { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public ChatObjectTypeEnums? ReceiverType { get; set; }
 
     /// <summary>
     /// 

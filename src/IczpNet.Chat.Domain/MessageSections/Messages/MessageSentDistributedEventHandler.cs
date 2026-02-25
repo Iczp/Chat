@@ -98,7 +98,6 @@ public class MessageSentDistributedEventHandler(
 
             Logger.LogWarning("After UOW: MessageId={Id}", eventData.Id);
 
-            //var message = await MessageManager.GetCacheAsync(eventData.Id);
             // 解决“事务提交可见性延迟”问题（即 onUnitOfWorkComplete 为 true 但数据库还没查到）
             var message = await GetMessageWithRetryAsync(eventData.Id, maxRetries: 10, delayMs: 500);
 
@@ -110,26 +109,28 @@ public class MessageSentDistributedEventHandler(
 
             Logger.LogWarning("MessageRepository.GetAsync: MessageId={Id}", message.Id);
 
+            var messageCacheItem = await MessageManager.GetCacheAsync(eventData.Id);
+
             //统计消息
-            await MeasureAsync($"{nameof(StatMessageAsync)}", () => StatMessageAsync(message));
+            await MeasureAsync($"{nameof(StatMessageAsync)}", () => StatMessageAsync(messageCacheItem));
 
             //缓存会话单元计数增量
-            await MeasureAsync($"{nameof(CachingUnitsAsync)}", () => CachingUnitsAsync(message));
+            await MeasureAsync($"{nameof(CachingUnitsAsync)}", () => CachingUnitsAsync(messageCacheItem));
 
             // 批量更新缓存中的会话单元计数
-            await MeasureAsync($"{nameof(BatchIncrementForCacheAsync)}", () => BatchIncrementForCacheAsync(message));
+            await MeasureAsync($"{nameof(BatchIncrementForCacheAsync)}", () => BatchIncrementForCacheAsync(messageCacheItem, eventData.ReminderIdList, eventData.FollowerIdList));
 
             // 后台任务:数据库会话单元计数增量
-            await MeasureAsync($"{nameof(EnqueueSessionUnitIncrementJobAsync)}", () => EnqueueSessionUnitIncrementJobAsync(message));
+            await MeasureAsync($"{nameof(EnqueueSessionUnitIncrementJobAsync)}", () => EnqueueSessionUnitIncrementJobAsync(messageCacheItem, eventData.ReminderIdList, eventData.FollowerIdList));
 
             // 后台任务:开发者
-            await MeasureAsync($"{nameof(EnqueueDeveloperJobAsync)}", () => EnqueueDeveloperJobAsync(message));
+            await MeasureAsync($"{nameof(EnqueueDeveloperJobAsync)}", () => EnqueueDeveloperJobAsync(messageCacheItem));
 
             // 后台任务:AI
-            await MeasureAsync($"{nameof(EnqueueAiJobAsync)}", () => EnqueueAiJobAsync(message));
+            await MeasureAsync($"{nameof(EnqueueAiJobAsync)}", () => EnqueueAiJobAsync(messageCacheItem));
 
             // 推送消息到客户端分布式事件
-            await MeasureAsync($"{nameof(PublishSendToClientDistributedAsync)}", () => PublishSendToClientDistributedAsync(message));
+            await MeasureAsync($"{nameof(PublishSendToClientDistributedAsync)}", () => PublishSendToClientDistributedAsync(messageCacheItem));
 
             var totalExecutedMilliseconds = ExecutedMilliseconds.Sum(x => x.Value);
 
@@ -141,7 +142,7 @@ public class MessageSentDistributedEventHandler(
         }
         catch (Exception ex)
         {
-            Logger.LogCritical(ex, "HandleEventAsync Failed for MessageId={Id}: {Error}", eventData.Id, ex.Message);
+            Logger.LogError(ex, "HandleEventAsync Failed for MessageId={Id}: {Error}", eventData.Id, ex.Message);
             throw;
         }
     }
@@ -182,7 +183,7 @@ public class MessageSentDistributedEventHandler(
         }
     }
 
-    protected virtual async Task<bool> StatMessageAsync(Message message)
+    protected virtual async Task<bool> StatMessageAsync(MessageCacheItem message)
     {
         await MessageReportManager.StatAsync(message);
 
@@ -194,19 +195,21 @@ public class MessageSentDistributedEventHandler(
     }
 
 
-    protected virtual async Task<IEnumerable<SessionUnitCacheItem>> CachingUnitsAsync(Message message)
+    protected virtual async Task<IEnumerable<SessionUnitCacheItem>> CachingUnitsAsync(MessageCacheItem message)
     {
-        return await SessionUnitManager.LoadMembersIfNotExistsAsync(message.SessionId.Value);
+        return await SessionUnitManager.LoadMembersIfNotExistsAsync(message.SessionId);
     }
 
     /// <summary>
     /// 批量更新缓存中的会话单元计数
     /// </summary>
     /// <param name="message"></param>
+    /// <param name="reminderIdList"></param>
+    /// <param name="followerIdList"></param>
     /// <returns></returns>
-    protected async Task<bool> BatchIncrementForCacheAsync(Message message)
+    protected async Task<bool> BatchIncrementForCacheAsync(MessageCacheItem message, List<Guid> reminderIdList, List<Guid> followerIdList)
     {
-        await SessionUnitCacheManager.BatchIncrementAsync(message);
+        await SessionUnitCacheManager.BatchIncrementAsync(message, reminderIds: reminderIdList, followerIds: followerIdList);
         return true;
     }
 
@@ -214,19 +217,24 @@ public class MessageSentDistributedEventHandler(
     /// 
     /// </summary>
     /// <param name="message"></param>
+    /// <param name="remindSessionUnitIdList"></param>
+    /// <param name="followingSessionUnitIdList"></param>
     /// <returns></returns>
-    protected async Task<bool> EnqueueSessionUnitIncrementJobAsync(Message message)
+    protected async Task<bool> EnqueueSessionUnitIncrementJobAsync(MessageCacheItem message, List<Guid> remindSessionUnitIdList, List<Guid> followingSessionUnitIdList)
     {
-        var isPrivateMessage = message.IsPrivateMessage();
+        var isPrivateMessage = message.IsPrivate;
+        //var remindSessionUnitIdList = message.MessageReminderList.Select(x => x.SessionUnitId).ToList();
+        //var remindSessionUnitIdList = new List<Guid>();
+        //var followingSessionUnitIdList = await FollowManager.GetFollowerIdListAsync(message.SenderSessionUnitId.Value);
         // Args
         var sessionUnitIncrementJobArgs = new SessionUnitIncrementJobArgs()
         {
-            SessionId = message.SessionId.Value,
+            SessionId = message.SessionId,
             OwnerId = message.SenderId.Value,
             SenderSessionUnitId = message.SenderSessionUnitId.Value,
-            RemindSessionUnitIdList = message.MessageReminderList.Select(x => x.SessionUnitId).ToList(),
+            RemindSessionUnitIdList = remindSessionUnitIdList,
             PrivateBadgeSessionUnitIdList = isPrivateMessage ? [message.ReceiverSessionUnitId.Value] : [],
-            FollowingSessionUnitIdList = !isPrivateMessage ? await FollowManager.GetFollowerIdListAsync(message.SenderSessionUnitId.Value) : [],
+            FollowingSessionUnitIdList = !isPrivateMessage ? followingSessionUnitIdList : [],
             LastMessageId = message.Id,
             IsRemindAll = message.IsRemindAll,
             MessageCreationTime = message.CreationTime
@@ -255,9 +263,9 @@ public class MessageSentDistributedEventHandler(
     /// </summary>
     /// <param name="message"></param>
     /// <returns></returns>
-    public async Task<bool> EnqueueDeveloperJobAsync(Message message)
+    public async Task<bool> EnqueueDeveloperJobAsync(MessageCacheItem message)
     {
-        var senderSessionUnit = await SessionUnitManager.GetAsync(message.SenderSessionUnitId.Value);
+        var senderSessionUnit = await SessionUnitManager.GetCacheAsync(message.SenderSessionUnitId.Value);
 
         if (message.SenderId == message.ReceiverId)
         {
@@ -286,6 +294,26 @@ public class MessageSentDistributedEventHandler(
         var jobId = await BackgroundJobManager.EnqueueAsync(developerJobArg);
 
         Logger.LogInformation($"Message is jobId:{jobId},{nameof(DeveloperJobArg)}:{developerJobArg}");
+
+        return true;
+    }
+
+    protected virtual async Task<bool> PublishSendToClientDistributedAsync(MessageCacheItem message)
+    {
+        var command = message.ForwardMessageId.HasValue ? CommandConsts.MessageForwarded : CommandConsts.MessageCreated;
+
+        var eventData = new SendMessageToClientDistributedEto()
+        {
+            Command = command.ToString(),
+            //CacheKey = cacheKey,
+            HostName = CurrentHosted.Name,
+            MessageId = message.Id,
+            Message = message
+        };
+
+        Logger.LogInformation($"PublishMessageDistributedEventAsync-eventData:{JsonSerializer.Serialize(eventData)}");
+
+        await DistributedEventBus.PublishAsync(eventData, onUnitOfWorkComplete: false);
 
         return true;
     }
@@ -335,7 +363,7 @@ public class MessageSentDistributedEventHandler(
     /// </summary>
     /// <param name="message"></param>
     /// <returns></returns>
-    protected virtual async Task<bool> EnqueueAiJobAsync(Message message)
+    protected virtual async Task<bool> EnqueueAiJobAsync(MessageCacheItem message)
     {
         if (message.SenderId == message.ReceiverId)
         {
@@ -343,7 +371,7 @@ public class MessageSentDistributedEventHandler(
             return false;
         }
 
-        var receiver = await ChatObjectManager.GetAsync(message.ReceiverId.Value);
+        var receiver = await ChatObjectManager.GetItemByCacheAsync(message.ReceiverId.Value);
 
         if (!AiResolver.HasProvider(receiver.Code))
         {
