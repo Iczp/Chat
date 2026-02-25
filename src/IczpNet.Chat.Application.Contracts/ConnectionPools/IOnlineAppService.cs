@@ -115,13 +115,12 @@ public interface IOnlineAppService
     /// <returns></returns>
     Task<long> GetOnlineFriendsCountAsync(long ownerId);
 
-    ///// <summary>
-    ///// 
-    ///// </summary>
-    ///// <param name="ownerId"></param>
-    ///// <param name="input"></param>
-    ///// <returns></returns>
-    //Task<PagedResultDto<SessionUnitElement>> GetOnlineFriendsAsync(long ownerId, OnlineFriendsGetListInput input);
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    Task<PagedResultDto<OnlineFriendDto>> GetOnlineFriendsAsync(OnlineFriendsGetListInput input);
 
     /// <summary>
     /// 强制断开连接

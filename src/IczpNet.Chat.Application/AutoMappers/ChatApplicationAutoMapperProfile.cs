@@ -274,6 +274,10 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<BoxUpdateInput, Box>(MemberList.None).IgnoreAllSourcePropertiesWithAnInaccessibleSetter();
 
 
+        CreateMap<OnlineFriendInfo, OnlineFriendDto>();
+        
+
+
         /*---------code-generator-mapper: Do not modify or delete this line of comments--------*/
     }
 }

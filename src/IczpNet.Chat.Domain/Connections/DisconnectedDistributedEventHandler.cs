@@ -25,7 +25,7 @@ public class DisconnectedDistributedEventHandler(
         //发布本地事件
         //await LocalEventBus.PublishAsync(eventData);
 
-        using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+        using var uow = UnitOfWorkManager.Begin();
 
         Logger.LogWarning($"{nameof(DisconnectedDistributedEventHandler)} 处理事件[{nameof(DisconnectedEto)}] Strat：{eventData.ConnectionId}");
 
