@@ -62,7 +62,7 @@ public class MessageReportManager(
         return $"{Prefix}{reportType}:{dateBucket}";
     }
 
-    protected virtual Task IncrementOneAsync(MessageReportTypes reportType, Message message)
+    protected virtual Task IncrementOneAsync(MessageReportTypes reportType, MessageCacheItem message)
     {
         var key = BuildKey(reportType);
         //SessionId:MessageType
@@ -79,7 +79,7 @@ public class MessageReportManager(
         await CompensateAsync();
     }
 
-    public async Task StatAsync(Message message)
+    public async Task StatAsync(MessageCacheItem message)
     {
         await IncrementOneAsync(MessageReportTypes.Day, message);
         await IncrementOneAsync(MessageReportTypes.Hour, message);

@@ -9,5 +9,5 @@ public class MessageCacheItem : MessageQuoteCacheItem
     /// 引用消息
     /// </summary>
     public virtual MessageQuoteCacheItem QuoteMessage { get; set; }
-
+    
 }

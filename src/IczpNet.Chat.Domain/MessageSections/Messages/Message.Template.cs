@@ -91,6 +91,11 @@ public partial class Message
     {
         var content = GetContentEntity();
 
+        if (content == null)
+        {
+            return null;
+        }
+
         var currentInstance = ProxyUtil.GetUnproxiedInstance(content);
 
         var currentType = ProxyUtil.GetUnproxiedType(content);
