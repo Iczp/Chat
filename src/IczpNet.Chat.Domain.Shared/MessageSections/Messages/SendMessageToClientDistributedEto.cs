@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
@@ -29,6 +30,10 @@ public class SendMessageToClientDistributedEto : ISendMessageToClientDistributed
     /// 消息
     /// </summary>
     public virtual MessageInfo<object> Message { get; set; }
+
+    public List<Guid> ReminderIdList { get; set; } = [];
+
+    public List<Guid> FollowerIdList { get; set; } = [];
 
     /// <summary>
     /// ToString()

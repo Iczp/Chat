@@ -130,7 +130,7 @@ public class MessageSentDistributedEventHandler(
             await MeasureAsync($"{nameof(EnqueueAiJobAsync)}", () => EnqueueAiJobAsync(messageCacheItem));
 
             // 推送消息到客户端分布式事件
-            await MeasureAsync($"{nameof(PublishSendToClientDistributedAsync)}", () => PublishSendToClientDistributedAsync(messageCacheItem));
+            await MeasureAsync($"{nameof(PublishSendToClientDistributedAsync)}", () => PublishSendToClientDistributedAsync(messageCacheItem, eventData.ReminderIdList, eventData.FollowerIdList));
 
             var totalExecutedMilliseconds = ExecutedMilliseconds.Sum(x => x.Value);
 
@@ -298,7 +298,7 @@ public class MessageSentDistributedEventHandler(
         return true;
     }
 
-    protected virtual async Task<bool> PublishSendToClientDistributedAsync(MessageCacheItem message)
+    protected virtual async Task<bool> PublishSendToClientDistributedAsync(MessageCacheItem message, List<Guid> remindSessionUnitIdList, List<Guid> followingSessionUnitIdList)
     {
         var command = message.ForwardMessageId.HasValue ? CommandConsts.MessageForwarded : CommandConsts.MessageCreated;
 
@@ -308,7 +308,9 @@ public class MessageSentDistributedEventHandler(
             //CacheKey = cacheKey,
             HostName = CurrentHosted.Name,
             MessageId = message.Id,
-            Message = message
+            Message = message,
+            ReminderIdList = remindSessionUnitIdList,
+            FollowerIdList = followingSessionUnitIdList,
         };
 
         Logger.LogInformation($"PublishMessageDistributedEventAsync-eventData:{JsonSerializer.Serialize(eventData)}");
@@ -318,45 +320,7 @@ public class MessageSentDistributedEventHandler(
         return true;
     }
 
-    /// <summary>
-    /// 推送消息到客户端分布式事件
-    /// </summary>
-    /// <param name="message"></param>
-    /// <returns></returns>
-    protected virtual async Task<bool> PublishSendToClientDistributedAsync(Message message)
-    {
-        var dbMessage = message;
-
-        var messageDto = ObjectMapper.Map<Message, MessageInfo<object>>(dbMessage);
-
-        //fix: 导航属性没有加载完全 改为手动转换Map
-        if (dbMessage.SenderSessionUnit == null && dbMessage.SenderSessionUnitId.HasValue)
-        {
-            var senderSessionUnit = await SessionUnitManager.GetAsync(dbMessage.SenderSessionUnitId.Value);
-            messageDto.SenderSessionUnit = ObjectMapper.Map<SessionUnit, SessionUnitSenderInfo>(senderSessionUnit);
-        }
-
-        messageDto.Content ??= message.GetContentDto();
-
-        var command = message.ForwardMessageId.HasValue ? CommandConsts.MessageForwarded : CommandConsts.MessageCreated;
-
-        var eventData = new SendMessageToClientDistributedEto()
-        {
-            Command = command.ToString(),
-            //CacheKey = cacheKey,
-            HostName = CurrentHosted.Name,
-            MessageId = message.Id,
-            Message = messageDto
-        };
-
-        Logger.LogInformation($"PublishMessageDistributedEventAsync-eventData:{JsonSerializer.Serialize(eventData)}");
-
-        //await SessionUnitManager.GetOrAddByMessageAsync(message);
-
-        await DistributedEventBus.PublishAsync(eventData, onUnitOfWorkComplete: false);
-
-        return true;
-    }
+   
 
     /// <summary>
     /// AI后台任务

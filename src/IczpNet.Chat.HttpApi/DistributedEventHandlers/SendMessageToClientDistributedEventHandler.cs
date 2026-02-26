@@ -3,6 +3,8 @@ using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Hosting;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionUnits;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.DependencyInjection;
@@ -28,6 +30,9 @@ public class SendMessageToClientDistributedEventHandler : SendToClientDistribute
     {
         var sessionId = eventData.Message.SessionId;
         var command = eventData.Command;
+        //var reminderIdList = eventData.ReminderIdList;
+        //var followerIdList = eventData.FollowerIdList;
+
         var connDict = await OnlineManager.GetConnectionsBySessionAsync(sessionId);
 
         var onlineOwnerIds = connDict.SelectMany(x => x.Value).Distinct().ToList();
@@ -41,13 +46,21 @@ public class SendMessageToClientDistributedEventHandler : SendToClientDistribute
         {
             var connectionId = item.Key;
             var chatObjectIdList = item.Value;
-
             var units = chatObjectIdList
-                .Select(chatObjectId => new CommandPayload.ScopeUnit
+                .Select(chatObjectId =>
                 {
-                    ChatObjectId = chatObjectId,
-                    //SessionUnitId = sessionUnitInfoList.Find(x => x.OwnerId == chatObjectId).Id
-                    SessionUnitId = ownerUnitDict[chatObjectId]
+                    var sessionUnitId = ownerUnitDict[chatObjectId];
+                    return new CommandPayload.ScopeUnit
+                    {
+                        ChatObjectId = chatObjectId,
+                        //SessionUnitId = sessionUnitInfoList.Find(x => x.OwnerId == chatObjectId).Id
+                        SessionUnitId = sessionUnitId,
+                        //Extra = new
+                        //{
+                        //    IsReminder = reminderIdList.Contains(sessionUnitId),
+                        //    IsFollowing = followerIdList.Contains(sessionUnitId),
+                        //}
+                    };
                 }).ToList();
 
             var commandPayload = new CommandPayload()

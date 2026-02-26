@@ -101,8 +101,6 @@ public partial class Message
         Size = size;
     }
 
-
-
     /// <summary>
     /// 撤回消息
     /// </summary>

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Volo.Abp.Data;
 
 namespace IczpNet.Chat.CommandPayloads;
 
@@ -25,5 +26,7 @@ public class CommandPayload<T>
         public long ChatObjectId { get; set; }
 
         public Guid? SessionUnitId { get; set; }
+
+        public object Extra { get; set; }
     }
 }

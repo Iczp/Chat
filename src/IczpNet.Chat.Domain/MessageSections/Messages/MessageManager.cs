@@ -176,10 +176,13 @@ public partial class MessageManager(
         //message.SetSessionUnitCount(sessionUnitCount);
 
         // Save
-        await Repository.InsertAsync(message, autoSave: true);
+        message = await Repository.InsertAsync(message, autoSave: true);
 
-        //// 重新获取一下，填充导航属性
-        //message = await Repository.GetAsync(message.MessageId);
+        // 重新获取一下，填充导航属性
+        message = await Repository.GetAsync(message.Id);
+
+        // 缓存消息
+        await SetCacheAsync(message, senderSessionUnit);
 
         // update Session LastMessage
         await SessionRepository.UpdateLastMessageIdAsync(sessionId, message.Id);
@@ -580,8 +583,9 @@ public partial class MessageManager(
             .ToList();
     }
 
-    public async Task<MessageCacheItem> SetCacheAsync(
+    public virtual async Task<MessageCacheItem> SetCacheAsync(
         Message message,
+        SessionUnit senderSessionUnit = null,
         DistributedCacheEntryOptions options = null,
         bool? hideErrors = null,
         bool considerUow = false,
@@ -592,7 +596,7 @@ public partial class MessageManager(
         //fix: 导航属性没有加载完全 改为手动转换Map
         if (message.SenderSessionUnit == null && message.SenderSessionUnitId.HasValue)
         {
-            var senderSessionUnit = await SessionUnitManager.GetAsync(message.SenderSessionUnitId.Value);
+            senderSessionUnit ??= await SessionUnitManager.GetAsync(message.SenderSessionUnitId.Value);
             messageInfo.SenderSessionUnit = ObjectMapper.Map<SessionUnit, SessionUnitSenderInfo>(senderSessionUnit);
         }
 

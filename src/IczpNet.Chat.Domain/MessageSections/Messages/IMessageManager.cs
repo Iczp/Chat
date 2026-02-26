@@ -92,6 +92,7 @@ public interface IMessageManager
     /// 缓存消息
     /// </summary>
     /// <param name="message"></param>
+    /// <param name="senderSessionUnit"></param>
     /// <param name="options"></param>
     /// <param name="hideErrors"></param>
     /// <param name="considerUow"></param>
@@ -99,6 +100,7 @@ public interface IMessageManager
     /// <returns></returns>
     Task<MessageCacheItem> SetCacheAsync(
         Message message,
+        SessionUnit senderSessionUnit = null,
         DistributedCacheEntryOptions options = null,
         bool? hideErrors = null,
         bool considerUow = false,
