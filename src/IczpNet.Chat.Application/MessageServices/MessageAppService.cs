@@ -201,9 +201,9 @@ public class MessageAppService(
 
         var friendMap = friendshipSessionUnits
             .Select(x => x.Value)
-            .Where(x => x.DestinationId.HasValue)
-            .DistinctBy(x => x.DestinationId.Value)
-            .ToDictionary(x => x.DestinationId.Value, x => x);
+            .Where(x => x != null && x.DestinationId.HasValue)
+            .DistinctBy(x => x!.DestinationId!.Value)
+            .ToDictionary(x => x!.DestinationId!.Value, x => x!);
 
         //var destnactions = await SessionUnitManager.FindManyAsync(ownerId, distnactionIds);
 
