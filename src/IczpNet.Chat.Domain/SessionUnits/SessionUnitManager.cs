@@ -497,7 +497,9 @@ public class SessionUnitManager(
         //推送同步到客户端
         await DistributedEventBus.PublishAsync(new SessionUnitChangedDistributedEto()
         {
-            SessionUnit = unit
+            ReadMessageId = lastMessageId,
+            SessionUnit = unit,
+            Score = FriendScore.Create(unit.Sorting, unit.Ticks),
         });
 
         return entity;

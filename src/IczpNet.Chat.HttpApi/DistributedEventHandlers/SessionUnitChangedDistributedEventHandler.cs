@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.SessionUnits;
+using Microsoft.AspNetCore.SignalR;
 using System.Threading.Tasks;
 using Volo.Abp.DependencyInjection;
 
@@ -22,25 +23,18 @@ public class SessionUnitChangedDistributedEventHandler : SendToClientDistributed
 
         var connIdList = await OnlineManager.GetConnectionIdsByOwnerAsync(unit.OwnerId);
 
-        foreach (var connectionId in connIdList)
+        var commandPayload = new CommandPayload()
         {
-            var scope = new CommandPayload.ScopeUnit
-            {
+            //AppUserId = item.UserId,
+            Scopes = [new CommandPayload.ScopeUnit{
                 ChatObjectId = unit.OwnerId,
-                //SessionUnitId = sessionUnitInfoList.Find(x => x.OwnerId == chatObjectId).Id
                 SessionUnitId = unit.Id
-            };
+            }],
+            Command = command,
+            Payload = eventData,
+        };
 
-            var commandPayload = new CommandPayload()
-            {
-                //AppUserId = item.UserId,
-                Scopes = [scope],
-                Command = command,
-                Payload = eventData,
-            };
-
-            await HubContext.Clients.Client(connectionId).ReceivedMessage(commandPayload);
-        }
+        await HubContext.Clients.Clients(connIdList).ReceivedMessage(commandPayload);
 
         return true;
     }
