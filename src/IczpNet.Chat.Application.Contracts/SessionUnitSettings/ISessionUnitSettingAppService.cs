@@ -38,7 +38,7 @@ public interface ISessionUnitSettingAppService
     /// <param name="isForce"></param>
     /// <param name="messageId"></param>
     /// <returns></returns>
-    Task<SessionUnitOwnerDto> SetReadMessageIdAsync(Guid sessionUnitId, bool isForce = false, long? messageId = null);
+    Task<SessionUnitOwnerDto> SetReadAsync(Guid sessionUnitId, bool isForce = false, long? messageId = null);
 
 
     /// <summary>

@@ -124,7 +124,7 @@ public class SessionUnitSettingAppService(
     [Obsolete("Move to 'SetReadMessageIdAsync'")]
     public virtual async Task<SessionUnitOwnerDto> SetReadedMessageIdAsync([Required] Guid sessionUnitId, bool isForce = false, long? messageId = null)
     {
-        return await SetReadMessageIdAsync(sessionUnitId,isForce,messageId);
+        return await SetReadAsync(sessionUnitId,isForce,messageId);
     }
 
     /// <summary>
@@ -135,7 +135,7 @@ public class SessionUnitSettingAppService(
     /// <param name="messageId">消息Id</param>
     /// <returns></returns>
     [HttpPost]
-    public virtual async Task<SessionUnitOwnerDto> SetReadMessageIdAsync([Required] Guid sessionUnitId, bool isForce = false, long? messageId = null)
+    public virtual async Task<SessionUnitOwnerDto> SetReadAsync([Required] Guid sessionUnitId, bool isForce = false, long? messageId = null)
     {
         var entity = await GetAndCheckPolicyAsync(SetReadedPolicyName, sessionUnitId);
 
