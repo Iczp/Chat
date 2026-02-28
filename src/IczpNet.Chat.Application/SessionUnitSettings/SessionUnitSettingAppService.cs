@@ -121,11 +121,25 @@ public class SessionUnitSettingAppService(
     /// <param name="messageId">消息Id</param>
     /// <returns></returns>
     [HttpPost]
+    [Obsolete("Move to 'SetReadMessageIdAsync'")]
     public virtual async Task<SessionUnitOwnerDto> SetReadedMessageIdAsync([Required] Guid sessionUnitId, bool isForce = false, long? messageId = null)
+    {
+        return await SetReadMessageIdAsync(sessionUnitId,isForce,messageId);
+    }
+
+    /// <summary>
+    /// 设置已读消息Id
+    /// </summary>
+    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <param name="isForce">是否强制</param>
+    /// <param name="messageId">消息Id</param>
+    /// <returns></returns>
+    [HttpPost]
+    public virtual async Task<SessionUnitOwnerDto> SetReadMessageIdAsync([Required] Guid sessionUnitId, bool isForce = false, long? messageId = null)
     {
         var entity = await GetAndCheckPolicyAsync(SetReadedPolicyName, sessionUnitId);
 
-        var sessionUnit = await SessionUnitManager.SetReadedMessageIdAsync(entity, isForce, messageId);
+        var sessionUnit = await SessionUnitManager.SetReadMessageIdAsync(entity, isForce, messageId);
 
         return await MapToDtoAsync(sessionUnit);
     }

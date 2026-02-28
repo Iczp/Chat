@@ -153,7 +153,7 @@ public class SessionUnitSettingManager(
     /// <inheritdoc />
     public virtual async Task<SessionUnitSetting> ClearMessageAsync(Guid sessionUnitId)
     {
-        await SessionUnitManager.SetReadedMessageIdAsync(sessionUnitId, false);
+        await SessionUnitManager.SetReadMessageIdAsync(sessionUnitId, false);
         return await SetEntityAsync(sessionUnitId, x => x.ClearMessage(Clock.Now));
     }
 

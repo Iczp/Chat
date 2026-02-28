@@ -151,7 +151,7 @@ public interface ISessionUnitManager
     /// <param name="isForce"></param>
     /// <param name="messageId"></param>
     /// <returns></returns>
-    Task<SessionUnit> SetReadedMessageIdAsync(SessionUnit entity, bool isForce = false, long? messageId = null);
+    Task<SessionUnit> SetReadMessageIdAsync(SessionUnit entity, bool isForce = false, long? messageId = null);
 
     /// <summary>
     /// 设置已读的消息Id
@@ -160,7 +160,7 @@ public interface ISessionUnitManager
     /// <param name="isForce"></param>
     /// <param name="messageId"></param>
     /// <returns></returns>
-    Task<SessionUnit> SetReadedMessageIdAsync(Guid sessionUnitId, bool isForce = false, long? messageId = null);
+    Task<SessionUnit> SetReadMessageIdAsync(Guid sessionUnitId, bool isForce = false, long? messageId = null);
 
     /// <summary>
     /// 获取聊天对象角标

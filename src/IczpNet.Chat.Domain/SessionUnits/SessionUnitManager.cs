@@ -441,14 +441,14 @@ public class SessionUnitManager(
         return result;
     }
     /// <inheritdoc />
-    public virtual async Task<SessionUnit> SetReadedMessageIdAsync(Guid sessionUnitId, bool isForce = false, long? messageId = null)
+    public virtual async Task<SessionUnit> SetReadMessageIdAsync(Guid sessionUnitId, bool isForce = false, long? messageId = null)
     {
         var entity = await GetAsync(sessionUnitId);
-        return await SetReadedMessageIdAsync(entity, isForce, messageId);
+        return await SetReadMessageIdAsync(entity, isForce, messageId);
     }
 
     /// <inheritdoc />
-    public virtual async Task<SessionUnit> SetReadedMessageIdAsync(SessionUnit entity, bool isForce = false, long? messageId = null)
+    public virtual async Task<SessionUnit> SetReadMessageIdAsync(SessionUnit entity, bool isForce = false, long? messageId = null)
     {
         var isNullOrZero = messageId == null || messageId == 0;
 
