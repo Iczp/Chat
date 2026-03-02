@@ -26,7 +26,9 @@ public interface ISessionUnitCacheAppService
 
     Task<SessionUnitFriendDto> GetAsync(Guid id);
 
-    Task<SessionUnitFriendDetailDto> GetDetailAsync(Guid id);
+    Task<SessionUnitFriendDetailDto> GetFriendAsync(Guid unitId);
+
+    Task<SessionUnitMemberDetailDto> GetMemberAsync(Guid unitId, SessionUnitGetMemberOptions options);
 
     Task<SessionUnitOwnerOverviewInfo> GetOverviewOwnerAsync(long ownerId);
 

@@ -13,7 +13,9 @@ using IczpNet.Chat.SessionUnits.Dtos;
 using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Pipelines.Sockets.Unofficial.Buffers;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
@@ -112,9 +114,14 @@ public class SessionUnitCacheAppService(
         return ObjectMapper.Map<SessionUnitCacheItem, SessionUnitFriendDto>(item);
     }
 
-    protected virtual SessionUnitFriendDetailDto MapToDetailDto(SessionUnitCacheItem item)
+    protected virtual SessionUnitFriendDetailDto MapToFriendDetailDto(SessionUnitCacheItem item)
     {
         return ObjectMapper.Map<SessionUnitCacheItem, SessionUnitFriendDetailDto>(item);
+    }
+
+    protected virtual SessionUnitMemberDetailDto MapToMemberDetailDto(SessionUnitCacheItem item)
+    {
+        return ObjectMapper.Map<SessionUnitCacheItem, SessionUnitMemberDetailDto>(item);
     }
 
     protected virtual async Task<IQueryable<SessionUnitFriendDto>> CreateQueryableAsync(SessionUnitCacheItemGetListInput input)
@@ -543,13 +550,13 @@ public class SessionUnitCacheAppService(
     }
 
     /// <summary>
-    /// 获取会话
+    /// 获取好友信息
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="unitId"></param>
     /// <returns></returns>
-    public async Task<SessionUnitFriendDetailDto> GetDetailAsync(Guid id)
+    public async Task<SessionUnitFriendDetailDto> GetFriendAsync(Guid unitId)
     {
-        var unit = await GetCacheAsync(id);
+        var unit = await GetCacheAsync(unitId);
 
         await CheckPolicyForUserAsync([unit.OwnerId], () => CheckPolicyAsync(GetListPolicyName));
 
@@ -562,9 +569,84 @@ public class SessionUnitCacheAppService(
         var chatObjectMap = (await ChatObjectManager.GetManyByCacheAsync(allIds))
             .ToDictionary(x => x.Id, x => x);
 
-        var item = MapToDetailDto(unit);
+        var item = MapToFriendDetailDto(unit);
+
+        //
+        await LoadMembersAsync(unit.SessionId.Value);
+
+        item.SessionUnitCount = await SessionUnitCacheManager.GetMembersCountAsync(unit.SessionId.Value);
         item.Owner = chatObjectMap.GetValueOrDefault(item.OwnerId);
         item.Destination = item.DestinationId.HasValue ? chatObjectMap.GetValueOrDefault(item.DestinationId.Value) : null;
+        item.Setting = await SessionUnitSettingManager.GetOrAddCacheAsync(unit.Id);
+
+        return item;
+    }
+
+    /// <summary>
+    /// 获取成员信息
+    /// </summary>
+    /// <param name="unitId"></param>
+    /// <param name="options"></param>
+    /// <param name="visitorId">访问者 sessionUnitId</param>
+    /// <returns></returns>
+    public async Task<SessionUnitMemberDetailDto> GetMemberAsync(Guid unitId, SessionUnitGetMemberOptions options)
+    {
+
+        var unitIdList = new List<Guid> { unitId };
+        if (options != null)
+        {
+            unitIdList.Add(options.VisitorId);
+        }
+        var unitList = await GetCacheManyAsync(unitIdList);
+        var memberUnit = unitList[0].Value;
+
+        var ownerId = memberUnit.OwnerId;
+
+        //await CheckPolicyForUserAsync([unit.OwnerId], () => CheckPolicyAsync(GetListPolicyName));
+
+        var allIds = new List<long?>() { ownerId, memberUnit.DestinationId }
+            .Where(x => x.HasValue)
+            .Select(x => x.Value)
+            .Distinct()
+            .ToList();
+
+        var chatObjectMap = (await ChatObjectManager.GetManyByCacheAsync(allIds))
+            .ToDictionary(x => x.Id, x => x);
+
+        var item = MapToMemberDetailDto(memberUnit);
+
+        item.Owner = chatObjectMap.GetValueOrDefault(item.OwnerId);
+        item.Destination = item.DestinationId.HasValue ? chatObjectMap.GetValueOrDefault(item.DestinationId.Value) : null;
+
+        if (options == null)
+        {
+            return item;
+        }
+
+        var visitor = unitList[1].Value;
+
+        Assert.If(memberUnit.SessionId != visitor.SessionId, "不在同一个会话");
+
+        // 加载好友
+        await LoadFriendsAsync(visitor.OwnerId);
+
+        var friendsMap = await SessionUnitManager.LoadFriendsMapAsync([visitor.OwnerId]);
+
+        var unitIdMap = friendsMap.GetOrDefault(visitor.OwnerId)?.ToDictionary(x => x.DestinationId, x => x.SessionUnitId);
+
+        var friendshipSessionUnits = await SessionUnitCacheManager.GetManyAsync([.. unitIdMap.Values]);
+
+        var friendMap = friendshipSessionUnits
+            .Select(x => x.Value)
+            .Where(x => x != null && x.DestinationId.HasValue)
+            .DistinctBy(x => x!.DestinationId!.Value)
+            .ToDictionary(x => x!.DestinationId!.Value, x => x!);
+
+        var friendshipSessionUnit = friendMap.GetValueOrDefault(memberUnit.OwnerId);
+
+        item.FriendshipSessionUnitId = friendshipSessionUnit?.Id;
+        item.IsFriendship = friendshipSessionUnit != null;
+        item.FriendshipName = friendshipSessionUnit?.Rename;
 
         return item;
     }

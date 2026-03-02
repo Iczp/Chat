@@ -5,6 +5,9 @@ namespace IczpNet.Chat.SessionUnits.Dtos;
 
 public class SessionUnitFriendDetailDto : SessionUnitCacheItem
 {
+
+    public virtual long SessionUnitCount{get;set;}
+
     public virtual ChatObjectInfo Destination { get; set; }
 
     public virtual ChatObjectInfo Owner { get; set; }

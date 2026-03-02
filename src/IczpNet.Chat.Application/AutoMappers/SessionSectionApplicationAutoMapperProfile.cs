@@ -66,6 +66,8 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
 
         CreateMap<SessionUnitCacheItem, SessionUnitFriendDetailDto>(MemberList.None);
 
+        CreateMap<SessionUnitCacheItem, SessionUnitMemberDetailDto>(MemberList.None);
+
         CreateMap<SessionUnitCacheItem, SessionUnitFriendDto>(MemberList.None);
 
         CreateMap<SessionUnitFriendDto, SessionUnitFriendDto>()
