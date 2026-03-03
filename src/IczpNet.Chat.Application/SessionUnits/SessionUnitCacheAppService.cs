@@ -1,9 +1,11 @@
 ﻿using CommunityToolkit.HighPerformance;
 using IczpNet.AbpCommons;
+using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.Clocks;
 using IczpNet.Chat.ConnectionPools;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.Permissions;
@@ -21,11 +23,14 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Dynamic.Core;
+using System.Reactive;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Caching;
+using Volo.Abp.Domain.Entities;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Users;
 
 namespace IczpNet.Chat.SessionUnits;
@@ -587,7 +592,6 @@ public class SessionUnitCacheAppService(
     /// </summary>
     /// <param name="unitId"></param>
     /// <param name="options"></param>
-    /// <param name="visitorId">访问者 sessionUnitId</param>
     /// <returns></returns>
     public async Task<SessionUnitMemberDetailDto> GetMemberAsync(Guid unitId, SessionUnitGetMemberOptions options)
     {
@@ -647,6 +651,12 @@ public class SessionUnitCacheAppService(
         item.FriendshipSessionUnitId = friendshipSessionUnit?.Id;
         item.IsFriendship = friendshipSessionUnit != null;
         item.FriendshipName = friendshipSessionUnit?.Rename;
+
+        // setting
+        var setting = await SessionUnitSettingManager.GetOrAddCacheAsync(unitId);
+        item.JoinWay = setting.JoinWay;
+        item.JoinTime = item.CreationTime;
+        item.JoinWayDescription = setting.JoinWay.GetDescription();
 
         return item;
     }
@@ -817,6 +827,69 @@ public class SessionUnitCacheAppService(
         // check owner
         await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
 
+        if (!string.IsNullOrWhiteSpace(input.Keyword))
+        {
+            return await GetSearchMembersAsync(sessionId, input);
+        }
+
+        return await GetMembersInternalAsync(sessionId, input);
+    }
+
+    /// <summary>
+    /// 搜索成员
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    protected virtual async Task<PagedResultDto<SessionUnitMemberDto>> GetSearchMembersAsync(Guid sessionId, SessionUnitMemberGetListInput input)
+    {
+        //var unit = await GetCacheAsync(input.SessionUnitId);
+        var query = (await SessionUnitRepository.GetQueryableAsync())
+            .Where(x => x.SessionId == sessionId && x.Setting.IsEnabled)
+            //.WhereIf(input.IsKilled.HasValue, x => x.Setting.IsKilled == input.IsKilled)
+            .WhereIf(input.IsStatic.HasValue, x => x.Setting.IsStatic == input.IsStatic)
+            .WhereIf(input.IsCreator.HasValue, x => x.Setting.IsCreator == input.IsCreator)
+            //.WhereIf(input.IsPublic.HasValue, x => x.Setting.IsPublic == input.IsPublic)
+            //.WhereIf(input.IsMuted == true, x => x.Setting.MuteExpireTime != null && x.Setting.MuteExpireTime <= Clock.Now)
+            //.WhereIf(input.IsMuted == false, x => x.Setting.MuteExpireTime == null || x.Setting.MuteExpireTime > Clock.Now)
+            //.WhereIf(input.OwnerIdList.IsAny(), x => input.OwnerIdList.Contains(x.OwnerId))
+            //.WhereIf(input.OwnerTypeList.IsAny(), x => input.OwnerTypeList.Contains(x.Owner.ObjectType.Value))
+            //.WhereIf(!input.TagId.IsEmpty(), x => x.SessionUnitTagList.Any(x => x.SessionTagId == input.TagId))
+            //.WhereIf(!input.RoleId.IsEmpty(), x => x.SessionUnitRoleList.Any(x => x.SessionRoleId == input.RoleId))
+            //.WhereIf(!input.JoinWay.IsEmpty(), x => x.Setting.JoinWay == input.JoinWay)
+            //.WhereIf(!input.InviterId.IsEmpty(), x => x.Setting.InviterId == input.InviterId)
+            //排除自已
+            //.WhereIf(unit.DestinationObjectType != ChatObjectTypeEnums.Room, x => x.Id != unit.Id)
+            //.WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Owner.Title.Contains(input.Keyword))
+            .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordOwnerSessionUnitSpecification(input.Keyword, await ChatObjectManager.SearchKeywordByCacheAsync(input.Keyword)))
+            ;
+
+        var totalCount = query.Count(); //kvs.Length
+        query = query
+           .OrderByDescending(x => x.Setting.IsCreator)
+           .ThenBy(x => x.CreationTime)
+           ;
+        // paged
+        query = query.Skip(input.SkipCount).Take(input.MaxResultCount);
+
+        var unitIds = query.Select(x => x.Id).ToList();
+
+        var list = await GetCacheManyAsync(unitIds);
+
+        var items = list
+            .Select(x => x.Value)
+            .Select(MapToMemberDto)
+            .ToList();
+
+        await FillOwnerAsync(items);
+
+        await FillSessionTagAsync(items);
+
+        return new PagedResultDto<SessionUnitMemberDto>(totalCount, items);
+    }
+
+    protected virtual async Task<PagedResultDto<SessionUnitMemberDto>> GetMembersInternalAsync(Guid sessionId,SessionUnitMemberGetListInput input)
+    {
         //加载全部
         await LoadMembersAsync(sessionId);
 
@@ -835,21 +908,17 @@ public class SessionUnitCacheAppService(
             .WhereIf(input.MaxScore > 0, x => x.CreationTime.ToUnixTimeMilliseconds() < input.MaxScore)
             ;
 
-        //search 
-        query = await ApplyMemberFilterAsync(query, sessionId, input.Keyword);
-
         if (query == null)
         {
             return new PagedResultDto<SessionUnitMemberDto>(0, []);
         }
 
         var totalCount = query.Count(); //kvs.Length
-        //var totalCount = await SessionUnitCacheManager.GetTotalCountByOwnerAsync(ownerId);
 
         // sorting
         query = query
             .OrderByDescending(x => x.IsCreator)
-            .ThenByDescending(x => x.CreationTime)
+            .ThenBy(x => x.CreationTime)
             ;
 
         // paged
@@ -887,8 +956,6 @@ public class SessionUnitCacheAppService(
             TotalCount = await SessionUnitCacheManager.GetMembersCountAsync(sessionId),
         };
     }
-
-
 
     /// <summary>
     /// 获取聊天对象角标信息列表

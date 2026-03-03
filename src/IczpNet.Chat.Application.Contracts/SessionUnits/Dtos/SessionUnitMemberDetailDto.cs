@@ -1,10 +1,20 @@
 ﻿using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.Enums;
 using System;
 
 namespace IczpNet.Chat.SessionUnits.Dtos;
 
 public class SessionUnitMemberDetailDto : SessionUnitCacheItem
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    public virtual ChatObjectInfo Destination { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public virtual ChatObjectInfo Owner { get; set; }
 
     /// <summary>
     /// 是否好友
@@ -22,14 +32,18 @@ public class SessionUnitMemberDetailDto : SessionUnitCacheItem
     public virtual Guid? FriendshipSessionUnitId { get; set; }
 
     /// <summary>
-    /// 
+    /// 加入方式
     /// </summary>
-    public virtual ChatObjectInfo Destination { get; set; }
+    public virtual JoinWays? JoinWay { get; set; }
 
     /// <summary>
-    /// 
+    /// 加入方式
     /// </summary>
-    public virtual ChatObjectInfo Owner { get; set; }
+    public virtual string? JoinWayDescription { get; set; }
 
+    /// <summary>
+    /// 加入时间
+    /// </summary>
+    public virtual DateTime? JoinTime { get; set; }
 
 }
