@@ -39,7 +39,7 @@ public class SessionUnitMemberDetailDto : SessionUnitCacheItem
     /// <summary>
     /// 加入方式
     /// </summary>
-    public virtual string? JoinWayDescription { get; set; }
+    public virtual string JoinWayDescription { get; set; }
 
     /// <summary>
     /// 加入时间

@@ -656,7 +656,7 @@ public class SessionUnitCacheAppService(
         var setting = await SessionUnitSettingManager.GetOrAddCacheAsync(unitId);
         item.JoinWay = setting.JoinWay;
         item.JoinTime = item.CreationTime;
-        item.JoinWayDescription = setting.JoinWay.GetDescription();
+        item.JoinWayDescription = setting.JoinWay?.GetDescription();
 
         return item;
     }
