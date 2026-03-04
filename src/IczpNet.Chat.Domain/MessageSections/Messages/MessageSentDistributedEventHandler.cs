@@ -99,7 +99,7 @@ public class MessageSentDistributedEventHandler(
             Logger.LogWarning("After UOW: MessageId={Id}", eventData.Id);
 
             // 解决“事务提交可见性延迟”问题（即 onUnitOfWorkComplete 为 true 但数据库还没查到）
-            var message = await GetMessageWithRetryAsync(eventData.Id, maxRetries: 10, delayMs: 500);
+            var message = await FindWithRetryAsync(eventData.Id, maxRetries: 10, delayMs: 500);
 
             if (message == null)
             {
@@ -150,14 +150,14 @@ public class MessageSentDistributedEventHandler(
     /// <summary>
     /// 带有重试逻辑的消息查询
     /// </summary>
-    private async Task<Message> GetMessageWithRetryAsync(long id, int maxRetries, int delayMs)
+    private async Task<Message> FindWithRetryAsync(long id, int maxRetries, int delayMs)
     {
         for (int i = 0; i < maxRetries; i++)
         {
-            var message = await MessageRepository.FindAsync(id);
-            if (message != null)
+            var entity = await MessageRepository.FindAsync(id);
+            if (entity != null)
             {
-                return message;
+                return entity;
             }
             Logger.LogWarning($"[Retry {i + 1}] MessageId={id} not found, waiting {delayMs}ms...");
             await Task.Delay(delayMs);
