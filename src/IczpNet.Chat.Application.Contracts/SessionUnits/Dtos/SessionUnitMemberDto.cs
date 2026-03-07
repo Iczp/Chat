@@ -55,6 +55,10 @@ public class SessionUnitMemberDto
     /// </summary>
     public virtual double Sorting { get; set; }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    public virtual DateTime CreationTime { get; set; }
 
     /// <summary>
     /// 
