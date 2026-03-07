@@ -338,7 +338,7 @@ public interface ISessionUnitManager
     /// <param name="batchSize"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task<List<SessionUnitCacheItem>> GetListByUserAsync(Guid userId, int? batchSize = null, CancellationToken cancellationToken = default);
+    Task<Dictionary<long, List<SessionUnitCacheItem>>> GetListByUserAsync(Guid userId, int? batchSize = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// 获取好友列表(我的好友)

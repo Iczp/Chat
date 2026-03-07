@@ -1,4 +1,5 @@
-﻿using Volo.Abp.Domain.Services;
+﻿using IczpNet.AbpCommons.Extensions;
+using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.SessionUnits;
 
@@ -8,9 +9,12 @@ public class SessionUnitFriendshipMapper : DomainService, ISessionUnitFriendship
     {
         return new SessionUnitFriendshipDto()
         {
+            SessionUnitId = source.Id,
+            ObjectType = source.OwnerObjectType,
+            ObjectTypeDescript = source.OwnerObjectType.GetDescription(),
             IsFriendship = true,
             DisplayName = source.Rename,
-            SessionUnitId = source.Id,
+            
         };
     }
 

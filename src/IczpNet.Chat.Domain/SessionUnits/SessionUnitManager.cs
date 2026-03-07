@@ -993,15 +993,22 @@ public class SessionUnitManager(
         return list;
     }
     /// <inheritdoc />
-    public virtual async Task<List<SessionUnitCacheItem>> GetListByUserAsync(Guid userId, int? batchSize = null, CancellationToken cancellationToken = default)
+    public virtual async Task<Dictionary<long, List<SessionUnitCacheItem>>> GetListByUserAsync(Guid userId, int? batchSize = null, CancellationToken cancellationToken = default)
     {
         var stopwatch = Stopwatch.StartNew();
 
         var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(userId);
 
-        var result = await BatchGetListAsync(queryable => queryable.Where(x => chatObjectIdList.Contains(x.OwnerId)), batchSize, cancellationToken);
+        var result = new Dictionary<long, List<SessionUnitCacheItem>>();
 
-        Logger.LogInformation($"{nameof(GetListByUserAsync)} userId:{userId}, [DB:{stopwatch.ElapsedMilliseconds}ms]");
+        foreach (var ownerId in chatObjectIdList)
+        {
+            var list = await GetFriendsAsync(ownerId, batchSize, cancellationToken: cancellationToken);
+            result.Add(ownerId, list);
+            Logger.LogInformation("{method} ownerId:{ownerId} userId:{userId}, [DB:{Elapsed}ms]", nameof(GetFriendsAsync), ownerId, userId, stopwatch.ElapsedMilliseconds);
+        }
+
+        Logger.LogInformation("{method} userId:{userId}, [DB:{stopwatch.ElapsedMilliseconds}ms]", nameof(GetListByUserAsync), userId, stopwatch.ElapsedMilliseconds);
 
         return result;
     }

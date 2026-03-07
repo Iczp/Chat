@@ -28,7 +28,11 @@ public class FriendsManager(
     /// <inheritdoc />
     public virtual Task<List<SessionUnitCacheItem>> GetFriendsAsync(Guid userId)
     {
-        return UserFriendsCache.GetOrAddAsync(userId, () => SessionUnitManager.GetListByUserAsync(userId));
+        return UserFriendsCache.GetOrAddAsync(userId, async () =>
+        {
+            var dic = await SessionUnitManager.GetListByUserAsync(userId);
+            return dic.SelectMany(x => x.Value).ToList();
+        });
     }
 
     /// <inheritdoc />
