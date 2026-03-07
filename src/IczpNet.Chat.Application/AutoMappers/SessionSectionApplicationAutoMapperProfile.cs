@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.Contacts.Dtos;
 using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.DeletedRecorders.Dtos;
@@ -55,11 +56,12 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
         CreateMap<SessionUnit, SessionUnitDestinationDetailDto>();
         CreateMap<SessionUnit, SessionUnitDestinationDto>();
         CreateMap<SessionUnit, SessionUnitWithDestinationDto>();
-        
+
         CreateMap<SessionUnit, SessionUnitSenderDto>()
-            .Ignore(x => x.IsFriendship)
-            .Ignore(x => x.FriendshipName)
-            .Ignore(x => x.FriendshipSessionUnitId)
+            .Ignore(x => x.Friendship)
+            //.Ignore(x => x.IsFriendship)
+            //.Ignore(x => x.FriendshipName)
+            //.Ignore(x => x.FriendshipSessionUnitId)
             ;
 
         CreateMap<SessionUnit, SessionUnitCacheItem>(MemberList.None);//.MapExtraProperties();
@@ -85,7 +87,12 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
         CreateMap<SessionUnitSetting, SessionUnitSettingSimpleDto>();
 
         CreateMap<SessionUnitSettingCacheItem, SessionUnitSettingSimpleDto>();
-        
+
+        CreateMap<SessionUnitSettingCacheItem, SessionUnitMemberSettingDto>(MemberList.None)
+            .ForMember(x => x.JoinWayDescription, opts => opts.Condition(x => x.JoinWay.HasValue))
+            .ForMember(x => x.JoinWayDescription, opts => opts.MapFrom(x => x.JoinWay.HasValue ? x.JoinWay.GetDescription() : null))
+            ;
+
 
         //SessionOrganization
         CreateMap<SessionOrganization, SessionOrganizationDto>();

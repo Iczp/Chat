@@ -246,6 +246,13 @@ public class SessionUnitSetting : BaseEntity, IHasCreationTime, IHasModification
     public virtual JoinWays? JoinWay { get; set; }
 
     /// <summary>
+    /// 加入时间
+    /// </summary>
+    [Comment("加入时间")]
+    [NotMapped]
+    public virtual DateTime? JoinTime => CreationTime;
+
+    /// <summary>
     /// 是否创建者（群主等）
     /// </summary>
     [Comment("是否创建者（群主等）")]

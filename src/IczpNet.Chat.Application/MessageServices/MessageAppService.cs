@@ -41,6 +41,7 @@ public class MessageAppService(
     ISessionUnitCacheManager sessionUnitCacheManager,
     ISessionUnitRepository sessionUnitRepository,
     ISessionUnitSettingManager sessionUnitSettingManager,
+    ISessionUnitFriendshipMapper sessionUnitFriendshipMapper,
     IMessageManager messageManager) : ChatAppService, IMessageAppService
 {
     public IDeletedRecorderManager DeletedRecorderManager { get; } = deletedRecorderManager;
@@ -52,6 +53,7 @@ public class MessageAppService(
     public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
     protected ISessionUnitRepository SessionUnitRepository { get; } = sessionUnitRepository;
     public ISessionUnitSettingManager SessionUnitSettingManager { get; } = sessionUnitSettingManager;
+    public ISessionUnitFriendshipMapper SessionUnitFriendshipMapper { get; } = sessionUnitFriendshipMapper;
     protected IMessageManager MessageManager { get; } = messageManager;
 
     /// <summary>
@@ -220,9 +222,20 @@ public class MessageAppService(
 
             var friendshipSessionUnit = friendMap.GetValueOrDefault(item.SenderSessionUnit.OwnerId);
 
-            item.SenderSessionUnit.IsFriendship = friendshipSessionUnit != null;
-            item.SenderSessionUnit.FriendshipSessionUnitId = friendshipSessionUnit?.Id;
-            item.SenderSessionUnit.FriendshipName = friendshipSessionUnit?.Rename;
+            if (friendshipSessionUnit != null)
+            {
+                item.SenderSessionUnit.Friendship = SessionUnitFriendshipMapper.Map(friendshipSessionUnit);
+
+                //item.SenderSessionUnit.Friendship = new SessionUnitFriendshipDto()
+                //{
+                //    DisplayName = friendshipSessionUnit.Rename,
+                //    SessionUnitId = friendshipSessionUnit.Id,
+                //};
+            }
+
+            //item.SenderSessionUnit.IsFriendship = friendshipSessionUnit != null;
+            //item.SenderSessionUnit.FriendshipSessionUnitId = friendshipSessionUnit?.Id;
+            //item.SenderSessionUnit.FriendshipName = friendshipSessionUnit?.Rename;
             //item.SenderSessionUnit.MemberName = friendshipSessionUnit?.MemberName;
         }
     }

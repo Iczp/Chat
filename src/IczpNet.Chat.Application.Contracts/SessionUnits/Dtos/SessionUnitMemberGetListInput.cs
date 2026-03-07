@@ -21,7 +21,7 @@ public class SessionUnitMemberGetListInput : GetListInput
     /// <summary>
     /// 是否非公开
     /// </summary>
-    public bool? IsPrivate { get; set; }
+    public bool? IsPrivate { get; set; } = false;
 
     /// <summary>
     /// 是否固定成员
