@@ -34,9 +34,9 @@ public class ChatObjectController(IChatObjectAppService chatObjectAppService) : 
 
         var portraitUrl = await GetFileUrlAsync(bigImgBlobId, file.ContentType);
 
-        var chatObjectDto = await ChatObjectAppService.UpdatePortraitAsync(id, thumbnailUrl, portraitUrl);
-
         await SavePortraitAsync(file, id, thumbnailBlobId, bigImgBlobId);
+
+        var chatObjectDto = await ChatObjectAppService.UpdatePortraitAsync(id, thumbnailUrl, portraitUrl);
 
         return chatObjectDto;
     }
