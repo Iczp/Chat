@@ -14,6 +14,7 @@ namespace IczpNet.Chat.Friends;
 public class FriendsManager(
     IDistributedCache<List<SessionUnitCacheItem>, long> friendsCache,
     IDistributedCache<List<SessionUnitCacheItem>, Guid> userFriendsCache,
+    IOnlineManager onlineManager,
     IConnectionPoolManager connectionPoolManager,
     ISessionUnitManager sessionUnitManager
     ) : DomainService, IFriendsManager
@@ -21,6 +22,7 @@ public class FriendsManager(
 
     public IDistributedCache<List<SessionUnitCacheItem>, long> FriendsCache { get; } = friendsCache;
     public IDistributedCache<List<SessionUnitCacheItem>, Guid> UserFriendsCache { get; } = userFriendsCache;
+    public IOnlineManager OnlineManager { get; } = onlineManager;
     public IConnectionPoolManager ConnectionPoolManager { get; } = connectionPoolManager;
     public ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
 

@@ -222,21 +222,7 @@ public class MessageAppService(
 
             var friendshipSessionUnit = friendMap.GetValueOrDefault(item.SenderSessionUnit.OwnerId);
 
-            if (friendshipSessionUnit != null)
-            {
-                item.SenderSessionUnit.Friendship = SessionUnitFriendshipMapper.Map(friendshipSessionUnit);
-
-                //item.SenderSessionUnit.Friendship = new SessionUnitFriendshipDto()
-                //{
-                //    DisplayName = friendshipSessionUnit.Rename,
-                //    SessionUnitId = friendshipSessionUnit.Id,
-                //};
-            }
-
-            //item.SenderSessionUnit.IsFriendship = friendshipSessionUnit != null;
-            //item.SenderSessionUnit.FriendshipSessionUnitId = friendshipSessionUnit?.Id;
-            //item.SenderSessionUnit.FriendshipName = friendshipSessionUnit?.Rename;
-            //item.SenderSessionUnit.MemberName = friendshipSessionUnit?.MemberName;
+            item.SenderSessionUnit.Friendship = friendshipSessionUnit != null? SessionUnitFriendshipMapper.Map(friendshipSessionUnit) : new SessionUnitFriendshipDto();
         }
     }
 

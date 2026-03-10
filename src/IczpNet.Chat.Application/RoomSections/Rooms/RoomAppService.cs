@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.AbpCommons.Extensions;
+using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjectCategories;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;

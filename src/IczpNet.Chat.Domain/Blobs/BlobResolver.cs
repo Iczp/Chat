@@ -17,10 +17,10 @@ public class BlobResolver : DomainService, IBlobResolver
         return directoryName;
     }
 
-    public virtual async Task<string> GetFileUrlAsync(Guid blobId)
+    public virtual async Task<string> GetFileUrlAsync(Guid blobId, string contentType)
     {
         await Task.Yield();
-        return $"/file?id={blobId}";
+        return $"/file?id={blobId}&contentType={contentType}";
     }
 
     public virtual async Task<string> GenerateFileNameAsync(string suffix)

@@ -18,12 +18,13 @@ public interface IBlobResolver
     /// <param name="context"></param>
     /// <returns></returns>
     Task<string> GetDirectoryNameAsync(BlobContext context);
-    
+
 
     /// <summary>
     /// 获取文件Url
     /// </summary>
     /// <param name="blobId"></param>
+    /// <param name="suffix"></param>
     /// <returns></returns>
-    Task<string> GetFileUrlAsync(Guid blobId);
+    Task<string> GetFileUrlAsync(Guid blobId, string suffix);
 }

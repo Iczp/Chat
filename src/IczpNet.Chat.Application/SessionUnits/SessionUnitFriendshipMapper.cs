@@ -11,10 +11,8 @@ public class SessionUnitFriendshipMapper : DomainService, ISessionUnitFriendship
         {
             SessionUnitId = source.Id,
             ObjectType = source.OwnerObjectType,
-            ObjectTypeDescript = source.OwnerObjectType.GetDescription(),
             IsFriendship = true,
             DisplayName = source.Rename,
-            
         };
     }
 

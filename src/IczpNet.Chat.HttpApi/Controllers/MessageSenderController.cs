@@ -97,7 +97,7 @@ public class MessageSenderController(
                 FileName = file.FileName,
                 Suffix = blob.Suffix,
                 //Url = $"/file?id={blob.Id}",
-                Url = await GetFileUrlAsync(blob.Id),
+                Url = await GetFileUrlAsync(blob.Id, file.ContentType),
                 BlobId = blob.Id,
             }
         });
@@ -225,7 +225,7 @@ public class MessageSenderController(
         var imageContent = new ImageContentInfo()
         {
             BlobId = thumbnailBlobId,
-            ThumbnailUrl = await GetFileUrlAsync(thumbnailBlobId),
+            ThumbnailUrl = await GetFileUrlAsync(thumbnailBlobId, file.ContentType),
             ContentType = file.ContentType,
             Suffix = suffix
         };
@@ -254,7 +254,7 @@ public class MessageSenderController(
 
             imageContent.Size = bytes.Length;
 
-            imageContent.Url = await GetFileUrlAsync(originalBlobId);
+            imageContent.Url = await GetFileUrlAsync(originalBlobId, file.ContentType);
 
             imageContent.Profile = GetImageProfileJson(image);
         }
@@ -279,7 +279,7 @@ public class MessageSenderController(
 
             imageContent.Size = blob.Bytes.Length;
 
-            imageContent.Url = await GetFileUrlAsync(bigImgBlobId);
+            imageContent.Url = await GetFileUrlAsync(bigImgBlobId, file.ContentType);
 
             imageContent.Profile = GetImageProfileJson(img);
         }
@@ -313,7 +313,7 @@ public class MessageSenderController(
             Size = file.Length,
             FileName = Path.GetFileName(file.FileName),
             Suffix = Path.GetExtension(file.FileName),
-            Url = await GetFileUrlAsync(soundBlob.Id),
+            Url = await GetFileUrlAsync(soundBlob.Id, file.ContentType),
             Time = duration.GetValueOrDefault(),
         };
 
@@ -356,7 +356,7 @@ public class MessageSenderController(
             FileName = Path.GetFileName(file.FileName),
             Suffix = Path.GetExtension(file.FileName),
             //Url = $"/file?id={videoBlob.Id}"
-            Url = await GetFileUrlAsync(videoBlob.Id)
+            Url = await GetFileUrlAsync(videoBlob.Id, file.ContentType)
         };
 
         if (MessageSetting.VideoSetting.IsGenerateSnapshot)
@@ -411,7 +411,7 @@ public class MessageSenderController(
             //Snapshot
             var snapBlob = await UploadToBlobStoreAsync(mediaInfo.ImageSnapshotPath, $"{videoFileName}.snapshot{suffix}");
 
-            content.SnapshotUrl = await GetFileUrlAsync(snapBlob.Id);
+            content.SnapshotUrl = await GetFileUrlAsync(snapBlob.Id, videoBlob.MimeType);
 
             // Actual width | height
             using Image snapshotImg = Image.Load(snapBlob.Bytes);
@@ -455,16 +455,15 @@ public class MessageSenderController(
                 Bytes = thumbnailResizedBytes
             });
 
-            content.SnapshotThumbnailUrl = await GetFileUrlAsync(snapshotThumbnailBlob.Id);
+            content.SnapshotThumbnailUrl = await GetFileUrlAsync(snapshotThumbnailBlob.Id, snapshotThumbnailBlob.MimeType);
         }
         //GifSnapshot
         if (!string.IsNullOrWhiteSpace(mediaInfo.GifSnapshotPath))
         {
             var gifBlob = await UploadToBlobStoreAsync(mediaInfo.GifSnapshotPath, $"{videoFileName}.snapshot.gif");
 
-            content.GifUrl = await GetFileUrlAsync(gifBlob.Id);
+            content.GifUrl = await GetFileUrlAsync(gifBlob.Id, gifBlob.MimeType);
         }
-
     }
 
 

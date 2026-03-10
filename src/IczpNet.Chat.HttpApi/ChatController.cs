@@ -45,10 +45,11 @@ public abstract class ChatController : AbpControllerBase
     /// 获取目录名称
     /// </summary>
     /// <param name="blobId"></param>
+    /// <param name="contentType"></param>
     /// <returns></returns>
-    protected virtual Task<string> GetFileUrlAsync(Guid blobId)
+    protected virtual Task<string> GetFileUrlAsync(Guid blobId, string contentType)
     {
-        return BlobResolver.GetFileUrlAsync(blobId);
+        return BlobResolver.GetFileUrlAsync(blobId, contentType);
     }
 
     protected virtual async Task CheckImageAsync(IFormFile file)

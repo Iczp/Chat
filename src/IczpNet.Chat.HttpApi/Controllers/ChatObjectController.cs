@@ -30,9 +30,9 @@ public class ChatObjectController(IChatObjectAppService chatObjectAppService) : 
 
         var thumbnailBlobId = GuidGenerator.Create();
 
-        var thumbnailUrl = await GetFileUrlAsync(thumbnailBlobId);
+        var thumbnailUrl = await GetFileUrlAsync(thumbnailBlobId, file.ContentType);
 
-        var portraitUrl = await GetFileUrlAsync(bigImgBlobId);
+        var portraitUrl = await GetFileUrlAsync(bigImgBlobId, file.ContentType);
 
         var chatObjectDto = await ChatObjectAppService.UpdatePortraitAsync(id, thumbnailUrl, portraitUrl);
 
