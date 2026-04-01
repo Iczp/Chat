@@ -94,6 +94,13 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     private RedisKey SessionPrivateHashKey(Guid sessionId) => $"{Prefix}Sessions:Private:{sessionId}";
 
     /// <summary>
+    /// 成员索引
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    private RedisKey SessionIndexedHashKey(Guid sessionId) => $"{Prefix}Sessions:Indexed:{sessionId}";
+
+    /// <summary>
     /// 固定的会话单元
     /// </summary>
     /// <param name="sessionId"></param>
@@ -201,6 +208,13 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     private RedisKey StatisticMapHashKey(long ownerId) => $"{Prefix}Owners:StatisticMap:{ownerId}";
 
     /// <summary>
+    /// 好友索引
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    private RedisKey OwnersIndexedHashKey(long ownerId) => $"{Prefix}Owners:Indexed:{ownerId}";
+
+    /// <summary>
     /// RedisKey： Element
     /// </summary>
     /// <param name="unit"></param>
@@ -216,6 +230,25 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     private static double GetFriendScore(double sorting, double ticks)
     {
         return FriendScore.Create(sorting, ticks);
+    }
+
+    public static string GetIndexKey(string str)
+    {
+        //var str = unit.RenameSpellingAbbreviation ?? unit.DestinationSpellingAbbreviation;
+
+        if (string.IsNullOrWhiteSpace(str))
+        {
+            return "#";
+        }
+
+        var first = char.ToUpper(str[0]);
+
+        if (first >= 'A' && first <= 'Z')
+        {
+            return first.ToString();
+        }
+
+        return "#";
     }
 
     #region Field names
@@ -324,6 +357,9 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
     private void SetOwnerFriendMap(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit, double score)
         => SortedSetIf(true, () => OwnerFriendsMapZsetKey(unit.OwnerId, unit.DestinationObjectType), element, score, batch: batch);
+
+    private void SetOwnerIndexed(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
+        => HashSetIf(true, () => OwnersIndexedHashKey(unit.OwnerId), element, GetIndexKey(unit.RenameSpellingAbbreviation ?? unit.DestinationSpellingAbbreviation), batch: batch);
 
     private void SetSessionPinnedSorting(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
         => HashSetIf(unit.Sorting > 0, () => SessionPinnedSortingHashKey(unit.SessionId.Value), element, unit.Sorting, batch: batch);
@@ -737,7 +773,13 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
     #region GetListByOwnerIdAsync (DB initial values + Redis merge)
 
-
+    /// <summary>
+    /// 角标累积统计
+    /// </summary>
+    /// <param name="unit"></param>
+    /// <param name="stat"></param>
+    /// <param name="statTypedMap"></param>
+    /// <param name="statBoxMap"></param>
     private static void AccumulateStatistics(SessionUnitCacheItem unit, SessionUnitStatistic stat, Dictionary<ChatObjectTypeEnums, long> statTypedMap, Dictionary<Guid, long> statBoxMap)
     {
         //Pinned
@@ -797,8 +839,13 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             // 刷新所有UnitKey过期时间
             _ = batch.KeyExpireAsync(UnitHashKey(unit.Id), CacheExpire);
 
+            // 设置所有者关系
             SetOwnerRelations(batch, element, unit, score);
 
+            // 设置索引
+            SetOwnerIndexed(batch, element, unit);
+
+            //累积统计角标
             AccumulateStatistics(unit, stat, statTypedMap, statBoxMap);
         }
 
@@ -806,7 +853,12 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         return new(stat, statTypedMap, statBoxMap);
     }
-
+    /// <summary>
+    /// 所有者统计
+    /// </summary>
+    /// <param name="batch"></param>
+    /// <param name="ownerId"></param>
+    /// <param name="context"></param>
     private void SetOwnerStatistics(IBatch batch, long ownerId, StatisticContext context)
     {
         // BoxBadge
@@ -817,6 +869,13 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         SetOwnerStatisticTypedMap(batch, ownerId, context.StatisticTypedMap);
     }
 
+    /// <summary>
+    /// 设置所有者关系
+    /// </summary>
+    /// <param name="batch"></param>
+    /// <param name="element"></param>
+    /// <param name="unit"></param>
+    /// <param name="score"></param>
     private void SetOwnerRelations(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit, double score)
     {
         // set Topping
@@ -831,6 +890,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         SetOwnerBoxFriends(batch, element, unit, score);
         SetOwnerCreator(batch, element, unit);
         SetOwnerHasBadge(batch, element, unit);
+
     }
 
     private async Task<(List<SessionUnitCacheItem> cached, List<SessionUnitCacheItem> uncached)> LoadCachedUnitsAsync(long ownerId, IEnumerable<SessionUnitCacheItem> units)
@@ -1015,6 +1075,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             isDescending);
     }
 
+
+
     public async Task<IEnumerable<FriendModel>> GetTypedFriendsAsync(
         FriendViews friendView,
         long ownerId,
@@ -1150,6 +1212,15 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         var result = unitIdList.Select(id => listMap[id]).ToList();
 
+        return result;
+    }
+
+    public async Task<IEnumerable<KeyValuePair<string, SessionUnitElement>>> GetFriendsIndexeAsync(long ownerId)
+    {
+        var entries = await Database.HashGetAllAsync(OwnersIndexedHashKey(ownerId));
+        var result = entries
+            .Select(x => new KeyValuePair<string, SessionUnitElement>(x.Value, SessionUnitElement.Parse(x.Name)))
+            ;
         return result;
     }
 

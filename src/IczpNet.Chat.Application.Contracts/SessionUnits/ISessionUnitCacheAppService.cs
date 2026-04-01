@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.BaseDtos;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.SessionUnits.Dtos;
 using System;
 using System.Collections.Generic;
@@ -17,6 +18,10 @@ public interface ISessionUnitCacheAppService
     Task<PagedResultDto<SessionUnitFriendDto>> GetChangesAsync(SessionUnitChangesGetListInput input);
 
     Task<ExtraPagedResultDto<SessionUnitFriendDto>> GetFriendsAsync(SessionUnitFirendGetListInput input);
+
+    Task<ExtraPagedResultDto<Guid>> GetFriendIdsAsync(SessionUnitFirendGetListInput input);
+
+    Task<Dictionary<string, List<Guid>>> GetFriendsIndexedAsync(long ownerId, ChatObjectTypeEnums? type);
 
     Task<FriendCountDto> GetFriendsCountAsync([Required] long ownerId);
 

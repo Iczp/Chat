@@ -17,6 +17,11 @@ public class SessionUnitCacheItem : SessionUnitInfoBase, ISessionUnit
     public virtual string Rename { get; set; }
 
     /// <summary>
+    /// 
+    /// </summary>
+    public string RenameSpellingAbbreviation { get; set; }
+
+    /// <summary>
     /// DestinationId
     /// </summary>
     public virtual long? DestinationId { get; set; }
@@ -82,6 +87,13 @@ public class SessionUnitCacheItem : SessionUnitInfoBase, ISessionUnit
     /// LastSendMessageId
     /// </summary>
     public virtual long? LastSendMessageId { get; set; }
+    public string OwnerName { get; set; }
+    public string OwnerNameSpellingAbbreviation { get; set; }
+    public string OwnerPortrait { get; set; }
+    public string DestinationName { get; set; }
+    public string DestinationSpellingAbbreviation { get; set; }
+    public string DestinationPortrait { get; set; }
+    
 
     //public virtual SessionUnitSettingCacheItem Setting { get; set; }
 }

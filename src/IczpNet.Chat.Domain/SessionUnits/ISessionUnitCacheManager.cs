@@ -302,6 +302,13 @@ public interface ISessionUnitCacheManager
     Task<Dictionary<ChatObjectTypeEnums, long>> GetFriendsCountMapAsync(long ownerId, IEnumerable<ChatObjectTypeEnums> types = null);
 
     /// <summary>
+    /// 获取好友索引
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    Task<IEnumerable<KeyValuePair<string, SessionUnitElement>>> GetFriendsIndexeAsync(long ownerId);
+
+    /// <summary>
     /// 获取会话单元(多个)
     /// </summary>
     /// <param name="unitIds"></param>

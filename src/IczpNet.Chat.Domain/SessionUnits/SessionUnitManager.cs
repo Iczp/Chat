@@ -154,6 +154,16 @@ public class SessionUnitManager(
                         CreationTime = x.CreationTime,
                         //ExtraProperties = x.ExtraProperties,
 
+                        // owner
+                        OwnerName = x.Owner.Name,
+                        OwnerNameSpellingAbbreviation = x.Owner.NameSpellingAbbreviation,
+                        OwnerPortrait = x.Owner.Portrait,
+
+                        // destination
+                        DestinationName = x.Destination.Name,
+                        DestinationSpellingAbbreviation = x.Destination.NameSpellingAbbreviation,
+                        DestinationPortrait = x.Destination.Portrait,
+
                         //ReadedMessageId = x.Setting.ReadedMessageId,
                         IsPublic = x.Setting.IsPublic,
                         IsStatic = x.Setting.IsStatic,
@@ -163,6 +173,7 @@ public class SessionUnitManager(
                         IsImmersed = x.Setting.IsImmersed,
                         IsCreator = x.Setting.IsCreator,
                         Rename = x.Setting.Rename,
+                        RenameSpellingAbbreviation = x.Setting.RenameSpellingAbbreviation,
                         MemberName = x.Setting.MemberName,
                         LastSendTime = x.Setting.LastSendTime,
                         LastSendMessageId = x.Setting.LastSendMessageId,

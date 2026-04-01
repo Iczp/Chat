@@ -151,6 +151,9 @@ public class RoomManager(
         //添加会话到连接池
         await AddUnitsToConnectionPoolsAsync(insertSessionUnitList);
 
+        //添加会话到缓存
+        await SessionUnitManager.AddUnitsToCacheAsync(insertSessionUnitList);
+
         // commit to db
         //await UnitOfWorkManager.Current.SaveChangesAsync();
 

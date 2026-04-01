@@ -13,6 +13,11 @@ public class ExtraPagedResultDto<T> : PagedResultDto<T>
     {
     }
 
+    public ExtraPagedResultDto(long totalCount, IReadOnlyList<T> items,object extra) : base(totalCount, items)
+    {
+        Extra = extra;
+    }
+
     public object Extra { get; set; }
 
 }

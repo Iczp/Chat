@@ -1,6 +1,7 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Enums.Dtos;
 using IczpNet.Chat.FavoritedRecorders;
@@ -24,6 +25,7 @@ using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.MessageServices;
@@ -222,8 +224,21 @@ public class MessageAppService(
 
             var friendshipSessionUnit = friendMap.GetValueOrDefault(item.SenderSessionUnit.OwnerId);
 
-            item.SenderSessionUnit.Friendship = friendshipSessionUnit != null? SessionUnitFriendshipMapper.Map(friendshipSessionUnit) : new SessionUnitFriendshipDto();
+            item.SenderSessionUnit.Friendship = friendshipSessionUnit != null ? SessionUnitFriendshipMapper.Map(friendshipSessionUnit) : new SessionUnitFriendshipDto();
         }
+    }
+
+    /// <summary>
+    /// 消息 - 总数量
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    public async Task<long> GetTotalCountAsync(MessageGetListInput input)
+    {
+        var sessionUnitId = input.SessionUnitId;
+        var entity = await GetAndCheckPolicyAsync(GetListPolicyName, sessionUnitId);
+        var query = await CreateQueryableAsync(entity, input);
+        return query.Count();
     }
 
     /// <summary>
@@ -255,25 +270,13 @@ public class MessageAppService(
         return result;
     }
 
-    /// <summary>
-    /// 消息 - 总数量
-    /// </summary>
-    /// <param name="input"></param>
-    /// <returns></returns>
-    public async Task<long> GetTotalCountAsync(MessageGetListInput input)
-    {
-        var sessionUnitId = input.SessionUnitId;
-        var entity = await GetAndCheckPolicyAsync(GetListPolicyName, sessionUnitId);
-        var query = await CreateQueryableAsync(entity, input);
-        return query.Count();
-    }
 
     /// <summary>
-    /// 历史消息
+    /// 消息列表
     /// </summary>
     /// <param name="input"></param>
     /// <returns></returns>
-    public async Task<PagedResultDto<MessageOwnerDto>> GetListFastAsync(MessageFastGetListInput input)
+    public async Task<ExtraPagedResultDto<MessageOwnerDto>> GetListFastAsync(MessageFastGetListInput input)
     {
         var sessionUnitId = input.SessionUnitId;
 
@@ -296,8 +299,11 @@ public class MessageAppService(
 
         var hasMore = ids.Count > pageSize;
 
+        long? nextCursorId = null;
+
         if (hasMore)
         {
+            nextCursorId = ids.Last();
             ids.RemoveAt(ids.Count - 1);
         }
 
@@ -310,9 +316,12 @@ public class MessageAppService(
         // 不统计真实数量，防止全表扫描
         var totalCount = input.IsRealTotalCount == true
             ? idQueryable.Count()
-            : skip + items.Count + (hasMore ? 1 : 0);
+            : skip + ids.Count + (hasMore ? 1 : 0);
 
-        var result = new PagedResultDto<MessageOwnerDto>(totalCount, items);
+        var result = new ExtraPagedResultDto<MessageOwnerDto>(totalCount, items, new
+        {
+            NextCursorId = nextCursorId,
+        });
 
         await FillStatisticsAsync(sessionUnitId, result);
         await FillFriendshipAsync(entity.OwnerId, result);
@@ -320,6 +329,91 @@ public class MessageAppService(
 
         return result;
     }
+
+    /// <summary>
+    /// 消息列表（Faster）
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    public async Task<PagedResultDto<MessageFastDto>> GetListFasterAsync(MessageFastGetListInput input)
+    {
+        var sessionUnitId = input.SessionUnitId;
+
+        var entity = await GetAndCheckPolicyAsync(GetListPolicyName, sessionUnitId);
+
+        var query = await CreateQueryableAsync(entity, input);
+
+        var idQueryable = query.Select(x => new
+        {
+            Id = x.Id,
+            QuoteId = x.QuoteMessageId,
+        });
+
+        var pageSize = input.MaxResultCount;
+
+        var skip = input.SkipCount;
+
+        var ids = await idQueryable
+            .OrderByDescending(x => x.Id)
+            .Skip(skip)
+            // 多取一条
+            .Take(pageSize + 1)
+            .ToListAsync();
+
+        var hasMore = ids.Count > pageSize;
+
+        if (hasMore)
+        {
+            ids.RemoveAt(ids.Count - 1);
+        }
+
+        // 不统计真实数量，防止全表扫描
+        var totalCount = input.IsRealTotalCount == true
+            ? idQueryable.Count()
+            : skip + ids.Count + (hasMore ? 1 : 0);
+
+        var messageIdList = ids.Select(x => x.Id).ToList();
+
+        var qouteIdList = ids.Where(x => x.QuoteId.HasValue).Select(x => x.QuoteId.Value).ToList();
+
+        var items = await MapToMessageFasterAsync(messageIdList, qouteIdList);
+
+        var result = new PagedResultDto<MessageFastDto>(totalCount, items);
+
+        return result;
+    }
+
+    protected virtual async Task<List<MessageFastDto>> MapToMessageFasterAsync(List<long> messageIdList, List<long> quoteIdList)
+    {
+        // 包含引用的消息Id
+        var allMessageIdList = messageIdList.Concat(quoteIdList).Distinct();
+
+        var allMessages = await MessageManager.GetOrAddManyCacheAsync(allMessageIdList);
+
+        var messageMap = allMessages.ToDictionary(x => x.Key.MessageId, x => x.Value);
+
+        var senderSessionUnitIdList = allMessages.Select(x => x.Value.SenderSessionUnitId).Where(x => x.HasValue).ToList();
+
+        var result = new List<MessageFastDto>();
+
+        foreach (var messageId in messageIdList)
+        {
+            var cache = messageMap.GetValueOrDefault(messageId);
+            var message = MapToMessage(cache);
+            result.Add(message);
+        }
+
+        var cacheItems = allMessages.Select(x => x.Value).ToList();
+
+        return result;
+    }
+
+    protected virtual MessageFastDto MapToMessage(MessageCacheItem cacheItem)
+    {
+        return ObjectMapper.Map<MessageCacheItem, MessageFastDto>(cacheItem);
+    }
+
+
 
     /// <summary>
     /// 获取消息列表
@@ -384,6 +478,7 @@ public class MessageAppService(
         await Task.Yield();
         return ObjectMapper.Map<List<MessageCacheItem>, List<MessageOwnerDto>>(messages);
     }
+
 
     /// <summary>
     /// 获取一条消息

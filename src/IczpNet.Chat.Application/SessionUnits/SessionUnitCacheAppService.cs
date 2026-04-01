@@ -1,10 +1,12 @@
 ﻿using CommunityToolkit.HighPerformance;
 using IczpNet.AbpCommons;
+using IczpNet.AbpCommons.Dtos;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.Clocks;
 using IczpNet.Chat.ConnectionPools;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.Permissions;
@@ -703,6 +705,55 @@ public class SessionUnitCacheAppService(
         return result;
     }
 
+    /// <summary>
+    /// 获取好友会话
+    /// </summary>
+    public async Task<ExtraPagedResultDto<Guid>> GetFriendIdsAsync(SessionUnitFirendGetListInput input)
+    {
+        // check owner
+        await CheckPolicyForUserAsync(input.OwnerId, () => CheckPolicyAsync(GetListPolicyName, input.OwnerId));
+
+        //加载全部
+        await LoadFriendsAsync(input.OwnerId);
+
+        var stopwatch = Stopwatch.StartNew();
+
+        var queryable = await SessionUnitCacheManager.GetTypedFriendsAsync(
+            input.View,
+            input.OwnerId,
+            input.BoxId,
+            //minScore: input.MinScore ?? double.NegativeInfinity,
+            //maxScore: input.MaxScore ?? double.PositiveInfinity,
+            //skip: input.SkipCount,
+            //take: input.MaxResultCount,
+            isDescending: true);
+
+        var query = queryable.AsQueryable();
+
+        var items = query.Select(x => x.Id).ToList();
+
+        var result = new ExtraPagedResultDto<Guid>(items.Count, items);
+
+        return result;
+    }
+
+    public async Task<Dictionary<string, List<Guid>>> GetFriendsIndexedAsync(long ownerId, ChatObjectTypeEnums? type)
+    {
+        // check owner
+        await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
+
+        //加载全部
+        await LoadFriendsAsync(ownerId);
+
+        var kv = await SessionUnitCacheManager.GetFriendsIndexeAsync(ownerId);
+
+        var result = kv
+            .WhereIf(type.HasValue, x => x.Value.DestinationObjectType == type)
+            .GroupBy(x => x.Key, g => g.Value)
+            .ToDictionary(x => x.Key, g => g.Select(x => x.SessionUnitId).ToList());
+
+        return result;
+    }
     private async Task<List<SessionUnitFriendDto>> GetManyWithScoreAsync(IEnumerable<FriendModel> query)
     {
         var stopwatch = Stopwatch.StartNew();
