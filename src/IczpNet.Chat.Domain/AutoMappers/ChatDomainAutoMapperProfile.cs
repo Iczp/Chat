@@ -22,7 +22,7 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap(typeof(TreeEntity<,>), typeof(TreeInfo<>));
 
         //SessionUnit
-        CreateMap<SessionUnit, SessionUnitCacheItem>();
+        CreateMap<SessionUnit, SessionUnitCacheItem>(MemberList.None);
 
         //ChatObject
         CreateMap<ChatObject, ChatObjectInfo>()
