@@ -753,7 +753,7 @@ public class SessionUnitCacheAppService(
                 {
                     Id = v.Key.SessionId,
                     Name = v.Value.Name,
-                    Abbreviation = v.Value.Abbreviation,
+                    Abbr = v.Value.Abbreviation,
                 }).OrderBy(d => d.Name).ToList()
             })
             .OrderBy(x => x.Index)
