@@ -64,7 +64,7 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
             //.Ignore(x => x.FriendshipSessionUnitId)
             ;
 
-        CreateMap<SessionUnit, SessionUnitCacheItem>(MemberList.None);//.MapExtraProperties();
+        //CreateMap<SessionUnit, SessionUnitCacheItem>(MemberList.None);//.MapExtraProperties();
 
         CreateMap<SessionUnitCacheItem, SessionUnitFriendDetailDto>(MemberList.None);
 

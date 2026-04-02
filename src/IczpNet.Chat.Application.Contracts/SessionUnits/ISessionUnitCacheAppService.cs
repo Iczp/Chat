@@ -21,7 +21,7 @@ public interface ISessionUnitCacheAppService
 
     Task<ExtraPagedResultDto<Guid>> GetFriendIdsAsync(SessionUnitFirendGetListInput input);
 
-    Task<Dictionary<string, List<Guid>>> GetFriendsIndexedAsync(long ownerId, ChatObjectTypeEnums? type);
+    Task<ExtraPagedResultDto<SessionUnitIndexDto>> GetFriendsIndexedAsync(long ownerId, ChatObjectTypeEnums? type);
 
     Task<FriendCountDto> GetFriendsCountAsync([Required] long ownerId);
 

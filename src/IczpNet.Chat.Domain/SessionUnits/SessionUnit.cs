@@ -327,6 +327,21 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     [NotMapped]
     public virtual DateTime? LastSendTime => Setting.LastSendTime;
 
+    [NotMapped]
+    public string RenameSpellingAbbreviation => Setting.RenameSpellingAbbreviation;
+    [NotMapped]
+    public string OwnerName => Owner.Name;
+    [NotMapped]
+    public string OwnerNameSpellingAbbreviation => Owner.NameSpellingAbbreviation;
+    [NotMapped]
+    public string OwnerPortrait => Owner.Portrait;
+    [NotMapped]
+    public string DestinationName => Destination.Name;
+    [NotMapped]
+    public string DestinationNameSpellingAbbreviation => Destination.NameSpellingAbbreviation;
+    [NotMapped]
+    public string DestinationPortrait => Destination.Portrait;
+
     protected SessionUnit() { }
 
     internal SessionUnit(ISessionUnitIdGenerator idGenerator,

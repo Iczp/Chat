@@ -359,7 +359,13 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         => SortedSetIf(true, () => OwnerFriendsMapZsetKey(unit.OwnerId, unit.DestinationObjectType), element, score, batch: batch);
 
     private void SetOwnerIndexed(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
-        => HashSetIf(true, () => OwnersIndexedHashKey(unit.OwnerId), element, GetIndexKey(unit.RenameSpellingAbbreviation ?? unit.DestinationSpellingAbbreviation), batch: batch);
+    {
+        var abbr = unit.RenameSpellingAbbreviation ?? unit.DestinationNameSpellingAbbreviation ?? string.Empty;
+        var index = GetIndexKey(abbr);
+        var name = unit.Rename ?? unit.DestinationName ?? string.Empty;
+        var firendName = new FriendName(index, abbr, name);
+        HashSetIf(true, () => OwnersIndexedHashKey(unit.OwnerId), element, firendName.ToString(), batch: batch);
+    }
 
     private void SetSessionPinnedSorting(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
         => HashSetIf(unit.Sorting > 0, () => SessionPinnedSortingHashKey(unit.SessionId.Value), element, unit.Sorting, batch: batch);
@@ -1215,11 +1221,11 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return result;
     }
 
-    public async Task<IEnumerable<KeyValuePair<string, SessionUnitElement>>> GetFriendsIndexeAsync(long ownerId)
+    public async Task<IEnumerable<KeyValuePair<SessionUnitElement, FriendName>>> GetFriendsIndexedAsync(long ownerId)
     {
         var entries = await Database.HashGetAllAsync(OwnersIndexedHashKey(ownerId));
         var result = entries
-            .Select(x => new KeyValuePair<string, SessionUnitElement>(x.Value, SessionUnitElement.Parse(x.Name)))
+            .Select(x => new KeyValuePair<SessionUnitElement, FriendName>(SessionUnitElement.Parse(x.Name), FriendName.Parse(x.Value)))
             ;
         return result;
     }

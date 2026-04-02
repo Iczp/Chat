@@ -91,7 +91,7 @@ public class SessionUnitCacheItem : SessionUnitInfoBase, ISessionUnit
     public string OwnerNameSpellingAbbreviation { get; set; }
     public string OwnerPortrait { get; set; }
     public string DestinationName { get; set; }
-    public string DestinationSpellingAbbreviation { get; set; }
+    public string DestinationNameSpellingAbbreviation { get; set; }
     public string DestinationPortrait { get; set; }
     
 

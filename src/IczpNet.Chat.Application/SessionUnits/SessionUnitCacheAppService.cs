@@ -1,7 +1,5 @@
 ﻿using CommunityToolkit.HighPerformance;
 using IczpNet.AbpCommons;
-using IczpNet.AbpCommons.Dtos;
-using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.Clocks;
@@ -17,15 +15,12 @@ using IczpNet.Chat.SessionUnitSettings;
 using IczpNet.Chat.SessionUnitSettings.Dtos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using NUglify;
-using Pipelines.Sockets.Unofficial.Buffers;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Dynamic.Core;
-using System.Reactive;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -737,7 +732,7 @@ public class SessionUnitCacheAppService(
         return result;
     }
 
-    public async Task<Dictionary<string, List<Guid>>> GetFriendsIndexedAsync(long ownerId, ChatObjectTypeEnums? type)
+    public async Task<ExtraPagedResultDto<SessionUnitIndexDto>> GetFriendsIndexedAsync(long ownerId, ChatObjectTypeEnums? type)
     {
         // check owner
         await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
@@ -745,14 +740,28 @@ public class SessionUnitCacheAppService(
         //加载全部
         await LoadFriendsAsync(ownerId);
 
-        var kv = await SessionUnitCacheManager.GetFriendsIndexeAsync(ownerId);
+        var kv = await SessionUnitCacheManager.GetFriendsIndexedAsync(ownerId);
 
-        var result = kv
-            .WhereIf(type.HasValue, x => x.Value.DestinationObjectType == type)
-            .GroupBy(x => x.Key, g => g.Value)
-            .ToDictionary(x => x.Key, g => g.Select(x => x.SessionUnitId).ToList());
+        var items = kv
+            .WhereIf(type.HasValue, x => x.Key.DestinationObjectType == type)
+            .GroupBy(x => x.Value.Index)
+            .Select(x => new SessionUnitIndexDto
+            {
+                Index = x.Key,
+                Count = x.Count(),
+                List = x.Select(v => new SessionUnitContactDto
+                {
+                    Id = v.Key.SessionId,
+                    Name = v.Value.Name,
+                    Abbreviation = v.Value.Abbreviation,
+                }).OrderBy(d => d.Name).ToList()
+            })
+            .OrderBy(x => x.Index)
+            .ToList();
 
-        return result;
+        var totalCount = items.Sum(x => x.Count);
+
+        return new ExtraPagedResultDto<SessionUnitIndexDto>(totalCount, items);
     }
     private async Task<List<SessionUnitFriendDto>> GetManyWithScoreAsync(IEnumerable<FriendModel> query)
     {

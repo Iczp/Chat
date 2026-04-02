@@ -306,7 +306,7 @@ public interface ISessionUnitCacheManager
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    Task<IEnumerable<KeyValuePair<string, SessionUnitElement>>> GetFriendsIndexeAsync(long ownerId);
+    Task<IEnumerable<KeyValuePair<SessionUnitElement, FriendName>>> GetFriendsIndexedAsync(long ownerId);
 
     /// <summary>
     /// 获取会话单元(多个)

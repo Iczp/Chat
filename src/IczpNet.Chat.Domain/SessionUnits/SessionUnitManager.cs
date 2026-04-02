@@ -161,7 +161,7 @@ public class SessionUnitManager(
 
                         // destination
                         DestinationName = x.Destination.Name,
-                        DestinationSpellingAbbreviation = x.Destination.NameSpellingAbbreviation,
+                        DestinationNameSpellingAbbreviation = x.Destination.NameSpellingAbbreviation,
                         DestinationPortrait = x.Destination.Portrait,
 
                         //ReadedMessageId = x.Setting.ReadedMessageId,
