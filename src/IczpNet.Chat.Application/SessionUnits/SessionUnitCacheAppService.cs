@@ -751,7 +751,7 @@ public class SessionUnitCacheAppService(
                 Count = x.Count(),
                 List = x.Select(v => new SessionUnitContactDto
                 {
-                    Id = v.Key.SessionId,
+                    Id = v.Key.SessionUnitId,
                     Name = v.Value.Name,
                     Abbr = v.Value.Abbreviation,
                 }).OrderBy(d => d.Name).ToList()
