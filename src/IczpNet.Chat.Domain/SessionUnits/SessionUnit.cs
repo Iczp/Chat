@@ -332,15 +332,23 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     [NotMapped]
     public string OwnerName => Owner.Name;
     [NotMapped]
+    public string OwnerNameSpelling => Owner.NameSpelling;
+    [NotMapped]
     public string OwnerNameSpellingAbbreviation => Owner.NameSpellingAbbreviation;
     [NotMapped]
     public string OwnerPortrait => Owner.Portrait;
     [NotMapped]
+    public string OwnerThumbnail => Owner.Thumbnail;
+    [NotMapped]
     public string DestinationName => Destination.Name;
+    [NotMapped]
+    public string DestinationNameSpelling => Destination.NameSpelling;
     [NotMapped]
     public string DestinationNameSpellingAbbreviation => Destination.NameSpellingAbbreviation;
     [NotMapped]
     public string DestinationPortrait => Destination.Portrait;
+    [NotMapped]
+    public string DestinationThumbnail => Destination.Thumbnail;
 
     protected SessionUnit() { }
 

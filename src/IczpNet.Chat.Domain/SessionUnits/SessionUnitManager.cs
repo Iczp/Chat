@@ -156,13 +156,17 @@ public class SessionUnitManager(
 
                         // owner
                         OwnerName = x.Owner.Name,
+                        OwnerNameSpelling = x.Owner.NameSpelling,
                         OwnerNameSpellingAbbreviation = x.Owner.NameSpellingAbbreviation,
                         OwnerPortrait = x.Owner.Portrait,
+                        OwnerThumbnail = x.Owner.Thumbnail,
 
                         // destination
                         DestinationName = x.Destination.Name,
+                        DestinationNameSpelling = x.Destination.NameSpelling,
                         DestinationNameSpellingAbbreviation = x.Destination.NameSpellingAbbreviation,
                         DestinationPortrait = x.Destination.Portrait,
+                        DestinationThumbnail = x.Destination.Thumbnail,
 
                         //ReadedMessageId = x.Setting.ReadedMessageId,
                         IsPublic = x.Setting.IsPublic,

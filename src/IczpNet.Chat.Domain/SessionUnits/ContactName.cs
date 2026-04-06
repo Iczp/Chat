@@ -1,17 +1,17 @@
 ﻿using System.Linq;
 namespace IczpNet.Chat.SessionUnits;
 
-public readonly struct FriendName(string index, string abbr, string name)
+public readonly struct ContactName(string index, string abbr, string name)
 {
     public string Index { get; } = NormalizeIndex(index);
     public string Abbreviation { get; } = NormalizeAbbr(abbr);
     public string Name { get; } = name ?? string.Empty;
 
     // Parse:  Z:ZS:张三
-    public static FriendName Parse(string input)
+    public static ContactName Parse(string input)
     {
         if (string.IsNullOrWhiteSpace(input))
-            return new FriendName("#", "", "");
+            return new ContactName("#", "", "");
 
         int p1 = input.IndexOf(':');
 
@@ -20,7 +20,7 @@ public readonly struct FriendName(string index, string abbr, string name)
         {
             var contact = input;
             var abbr = GetAbbr(contact);
-            return new FriendName(GetIndex(abbr), abbr, contact);
+            return new ContactName(GetIndex(abbr), abbr, contact);
         }
 
         int p2 = input.IndexOf(':', p1 + 1);
@@ -31,7 +31,7 @@ public readonly struct FriendName(string index, string abbr, string name)
             var index = input[..p1];
             var contact = input[(p1 + 1)..];
             var abbr = GetAbbr(contact);
-            return new FriendName(index, abbr, contact);
+            return new ContactName(index, abbr, contact);
         }
 
         // 标准三段
@@ -39,11 +39,11 @@ public readonly struct FriendName(string index, string abbr, string name)
         var ab = input[(p1 + 1)..p2];
         var name = input[(p2 + 1)..];
 
-        return new FriendName(idx, ab, name);
+        return new ContactName(idx, ab, name);
     }
 
     // TryParse
-    public static bool TryParse(string input, out FriendName result)
+    public static bool TryParse(string input, out ContactName result)
     {
         try
         {
@@ -70,10 +70,10 @@ public readonly struct FriendName(string index, string abbr, string name)
         => $"{Index}:{Abbreviation}:{Name}";
 
     // 隐式转换
-    public static implicit operator FriendName(string input)
+    public static implicit operator ContactName(string input)
         => Parse(input);
 
-    public static implicit operator string(FriendName f)
+    public static implicit operator string(ContactName f)
         => f.ToString();
 
     // ------------------------

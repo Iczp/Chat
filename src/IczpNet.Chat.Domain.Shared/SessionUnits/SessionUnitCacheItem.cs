@@ -88,12 +88,17 @@ public class SessionUnitCacheItem : SessionUnitInfoBase, ISessionUnit
     /// </summary>
     public virtual long? LastSendMessageId { get; set; }
     public string OwnerName { get; set; }
+    public string OwnerNameSpelling { get; set; }
     public string OwnerNameSpellingAbbreviation { get; set; }
     public string OwnerPortrait { get; set; }
+    public string OwnerThumbnail { get; set; }
+
     public string DestinationName { get; set; }
+    public string DestinationNameSpelling { get; set; }
     public string DestinationNameSpellingAbbreviation { get; set; }
     public string DestinationPortrait { get; set; }
-    
+    public string DestinationThumbnail { get; set; }
+
 
     //public virtual SessionUnitSettingCacheItem Setting { get; set; }
 }

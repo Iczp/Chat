@@ -13,6 +13,7 @@ using IczpNet.Chat.SessionTags;
 using IczpNet.Chat.SessionUnits.Dtos;
 using IczpNet.Chat.SessionUnitSettings;
 using IczpNet.Chat.SessionUnitSettings.Dtos;
+using IczpNet.Chat.UrlNormalizers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
@@ -21,6 +22,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Dynamic.Core;
+using System.Reactive;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,6 +37,7 @@ namespace IczpNet.Chat.SessionUnits;
 /// 会话单元
 /// </summary>
 public class SessionUnitCacheAppService(
+    IUrlNormalizer urlNormalizer,
     IMessageManager messageManager,
     IMessageRepository messageRepository,
     ISessionUnitSettingManager sessionUnitSettingManager,
@@ -47,7 +50,7 @@ public class SessionUnitCacheAppService(
     ISessionUnitFriendshipMapper sessionUnitFriendshipMapper,
     ISessionUnitCacheManager sessionUnitCacheManager) : ChatAppService, ISessionUnitCacheAppService
 {
-
+    public IUrlNormalizer UrlNormalizer { get; } = urlNormalizer;
 
     public IMessageManager MessageManager { get; } = messageManager;
     public IMessageRepository MessageRepository { get; } = messageRepository;
@@ -742,6 +745,8 @@ public class SessionUnitCacheAppService(
 
         var kv = await SessionUnitCacheManager.GetFriendsIndexedAsync(ownerId);
 
+
+
         var items = kv
             .WhereIf(type.HasValue, x => x.Key.DestinationObjectType == type)
             .GroupBy(x => x.Value.Index)
@@ -752,8 +757,16 @@ public class SessionUnitCacheAppService(
                 List = x.Select(v => new SessionUnitContactDto
                 {
                     Id = v.Key.SessionUnitId,
+                    OwnerId = v.Key.OwnerId,
+                    ObjectType = v.Key.DestinationObjectType,
+                    Rename = v.Value.Rename,
                     Name = v.Value.Name,
-                    Abbr = v.Value.Abbreviation,
+                    Mobile = v.Value.Mobile,
+                    Abbr = v.Value.Abbr,
+                    NameSpelling = v.Value.NameSpelling,
+                    Portrait = UrlNormalizer.Normalize(v.Value.Portrait),
+                    Thumbnail = UrlNormalizer.Normalize(v.Value.Thumbnail),
+                    IsFollowing = null,
                 }).OrderBy(d => d.Name).ToList()
             })
             .OrderBy(x => x.Index)

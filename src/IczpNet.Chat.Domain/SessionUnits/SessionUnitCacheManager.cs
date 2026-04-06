@@ -14,12 +14,14 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
+using Volo.Abp.Json;
 
 namespace IczpNet.Chat.SessionUnits;
 
 public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 {
     protected IOptions<SessionUnitOptions> SessionUnitOptions => LazyServiceProvider.LazyGetRequiredService<IOptions<SessionUnitOptions>>();
+    protected IJsonSerializer JsonSerializer => LazyServiceProvider.LazyGetRequiredService<IJsonSerializer>();
 
     protected SessionUnitOptions Config => SessionUnitOptions.Value;
 
@@ -362,9 +364,18 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     {
         var abbr = unit.RenameSpellingAbbreviation ?? unit.DestinationNameSpellingAbbreviation ?? string.Empty;
         var index = GetIndexKey(abbr);
-        var name = unit.Rename ?? unit.DestinationName ?? string.Empty;
-        var firendName = new FriendName(index, abbr, name);
-        HashSetIf(true, () => OwnersIndexedHashKey(unit.OwnerId), element, firendName.ToString(), batch: batch);
+        var contact = new ContactValue()
+        {
+            Index = index,
+            Abbr = abbr,
+            Rename = unit.Rename,
+            Name = unit.DestinationName,
+            NameSpelling = unit.RenameSpellingAbbreviation ?? unit.DestinationNameSpelling ?? string.Empty,
+            Portrait = unit.DestinationPortrait,
+            Thumbnail = unit.DestinationThumbnail,
+            Mobile = null,
+        };
+        HashSetIf(true, () => OwnersIndexedHashKey(unit.OwnerId), element, JsonSerializer.Serialize(contact), batch: batch);
     }
 
     private void SetSessionPinnedSorting(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
@@ -1221,11 +1232,11 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return result;
     }
 
-    public async Task<IEnumerable<KeyValuePair<SessionUnitElement, FriendName>>> GetFriendsIndexedAsync(long ownerId)
+    public async Task<IEnumerable<KeyValuePair<SessionUnitElement, ContactValue>>> GetFriendsIndexedAsync(long ownerId)
     {
         var entries = await Database.HashGetAllAsync(OwnersIndexedHashKey(ownerId));
         var result = entries
-            .Select(x => new KeyValuePair<SessionUnitElement, FriendName>(SessionUnitElement.Parse(x.Name), FriendName.Parse(x.Value)))
+            .Select(x => new KeyValuePair<SessionUnitElement, ContactValue>(SessionUnitElement.Parse(x.Name), JsonSerializer.Deserialize<ContactValue>(x.Value)))
             ;
         return result;
     }
