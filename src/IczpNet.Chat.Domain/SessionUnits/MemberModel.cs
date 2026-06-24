@@ -12,5 +12,13 @@ public class MemberModel: UnitModelBase
 
     public DateTime CreationTime { get; set; }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public bool IsCreator { get; set; }
+
+    /// <summary>
+    /// Member Score
+    /// </summary>
+    public double Score { get; internal set; }
 }

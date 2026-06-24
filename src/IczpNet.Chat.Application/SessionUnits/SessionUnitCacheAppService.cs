@@ -889,6 +889,9 @@ public class SessionUnitCacheAppService(
             Destination = memberUnit.DestinationId.HasValue ? chatObjectMap.GetValueOrDefault(memberUnit.DestinationId.Value) : null,
             DestinationId = memberUnit.DestinationId,
             DestinationObjectType = memberUnit.DestinationObjectType,
+            CreationTime = memberUnit.CreationTime,
+            Score = MemberScore.Create(memberUnit.IsCreator, memberUnit.CreationTime),
+            //TagList= memberUnit,
 
             // Setting
             Setting = settingDto,
@@ -989,6 +992,8 @@ public class SessionUnitCacheAppService(
                     IsVisible = x.IsVisible,
                     MemberName = x.MemberName,
                 },
+                CreationTime = x.CreationTime,
+                Score = MemberScore.Create(x.IsCreator, x.CreationTime),
             })
             .ToList();
 
@@ -1054,8 +1059,8 @@ public class SessionUnitCacheAppService(
             .WhereIf(input.IsCreator.HasValue, x => x.IsCreator == input.IsCreator.Value)
             .WhereIf(input.OwnerObjectType.HasValue, x => x.OwnerObjectType == input.OwnerObjectType.Value)
             .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId.Value)
-            .WhereIf(input.MinScore > 0, x => x.CreationTime.ToUnixTimeMilliseconds() > input.MinScore)
-            .WhereIf(input.MaxScore > 0, x => x.CreationTime.ToUnixTimeMilliseconds() < input.MaxScore)
+            .WhereIf(input.MinScore > 0, x => x.Score > input.MinScore)
+            .WhereIf(input.MaxScore > 0, x => x.Score < input.MaxScore)
             ;
 
         if (query == null)

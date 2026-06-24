@@ -758,7 +758,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
                     DestinationObjectType = element.DestinationObjectType,
                     Id = element.SessionUnitId,
                     CreationTime = score.CreationTime,
-                    IsCreator = score.IsCreator
+                    IsCreator = score.IsCreator,
+                    Score = score.Value,
                 };
             })
            ;

@@ -31,4 +31,9 @@ public class SessionUnitMemberDto : SessionUnitMemberSenderDto
     /// </summary>
     public virtual DateTime CreationTime { get; set; }
 
+    /// <summary>
+    /// Member Scrore
+    /// </summary>
+    public virtual double? Score { get; set; }
+
 }

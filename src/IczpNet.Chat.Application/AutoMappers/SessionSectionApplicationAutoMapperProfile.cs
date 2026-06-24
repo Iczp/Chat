@@ -66,11 +66,15 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
 
         //CreateMap<SessionUnit, SessionUnitCacheItem>(MemberList.None);//.MapExtraProperties();
 
-        CreateMap<SessionUnitCacheItem, SessionUnitFriendDetailDto>(MemberList.None);
+        CreateMap<SessionUnitCacheItem, SessionUnitFriendDetailDto>(MemberList.None)
+            //.Ignore(x => x.Score)
+            .ForMember(x => x.Score, opts => opts.MapFrom(x => FriendScore.Create(x.Sorting, x.Ticks)))
+            ;
 
-        CreateMap<SessionUnitCacheItem, SessionUnitMemberDetailDto>(MemberList.None);
-
-        CreateMap<SessionUnitCacheItem, SessionUnitFriendDto>(MemberList.None);
+        CreateMap<SessionUnitCacheItem, SessionUnitFriendDto>(MemberList.None)
+            //.Ignore(x => x.Score)
+            .ForMember(x => x.Score, opts => opts.MapFrom(x => FriendScore.Create(x.Sorting, x.Ticks)))
+            ;
 
         CreateMap<SessionUnitFriendDto, SessionUnitFriendDto>()
             .ForMember(x => x.Setting, opt => opt.MapFrom(y => y.Setting))
@@ -78,7 +82,15 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
             .PreserveReferences()
             .MaxDepth(3);
 
-        CreateMap<SessionUnitCacheItem, SessionUnitMemberDto>(MemberList.None);
+        CreateMap<SessionUnitCacheItem, SessionUnitMemberDetailDto>(MemberList.None)
+            //.Ignore(x => x.Score)
+            .ForMember(x => x.Score, opts => opts.MapFrom(x => MemberScore.Create(x.IsCreator, x.CreationTime)))
+            ;
+
+        CreateMap<SessionUnitCacheItem, SessionUnitMemberDto>(MemberList.None)
+            //.Ignore(x => x.Score)
+            .ForMember(x => x.Score, opts => opts.MapFrom(x => MemberScore.Create(x.IsCreator, x.CreationTime)))
+            ;
 
 
         //CreateMap<SessionUnitModel, SessionUnitOwnerDto>();
