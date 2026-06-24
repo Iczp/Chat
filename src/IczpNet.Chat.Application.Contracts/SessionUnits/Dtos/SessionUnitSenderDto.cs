@@ -1,4 +1,6 @@
-﻿namespace IczpNet.Chat.SessionUnits.Dtos;
+﻿using System;
+
+namespace IczpNet.Chat.SessionUnits.Dtos;
 
 /// <summary>
 /// 发送人会话单元
@@ -39,4 +41,9 @@ public class SessionUnitSenderDto : SessionUnitSenderInfo
     ///// 最后修改时间
     ///// </summary>
     //public DateTime? LastModificationTime { get; set; }
+
+    /// <summary>
+    /// Member Score
+    /// </summary>
+    public virtual double? Score { get; set; }
 }

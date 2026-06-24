@@ -59,6 +59,8 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
 
         CreateMap<SessionUnit, SessionUnitSenderDto>()
             .Ignore(x => x.Friendship)
+            .ForMember(x => x.Score, opt => opt.MapFrom(x => MemberScore.Create(x.IsCreator, x.CreationTime)))
+
             //.Ignore(x => x.IsFriendship)
             //.Ignore(x => x.FriendshipName)
             //.Ignore(x => x.FriendshipSessionUnitId)
