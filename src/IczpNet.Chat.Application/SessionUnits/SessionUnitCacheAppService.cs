@@ -1071,10 +1071,7 @@ public class SessionUnitCacheAppService(
         var totalCount = query.Count(); //kvs.Length
 
         // sorting
-        query = query
-            .OrderByDescending(x => x.IsCreator)
-            .ThenBy(x => x.CreationTime)
-            ;
+        query = query.OrderByDescending(x => x.Score).ThenByDescending(x => x.Id);
 
         // paged
         query = query.Skip(input.SkipCount).Take(input.MaxResultCount);
