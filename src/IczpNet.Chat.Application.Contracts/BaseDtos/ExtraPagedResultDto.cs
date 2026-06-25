@@ -13,7 +13,7 @@ public class ExtraPagedResultDto<T> : PagedResultDto<T>
     {
     }
 
-    public ExtraPagedResultDto(long totalCount, IReadOnlyList<T> items,object extra) : base(totalCount, items)
+    public ExtraPagedResultDto(long totalCount, IReadOnlyList<T> items, object extra) : base(totalCount, items)
     {
         Extra = extra;
     }

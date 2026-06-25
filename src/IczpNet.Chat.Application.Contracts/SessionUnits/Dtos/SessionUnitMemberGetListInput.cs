@@ -58,4 +58,8 @@ public class SessionUnitMemberGetListInput : GetListInput
     /// </summary>
     public double? MaxScore { get; set; }
 
+    /// <summary>
+    /// Guid CursorId 用 Next Item Id [SessionUnitId]
+    /// </summary>
+    public Guid? CursorId { get; set; }
 }

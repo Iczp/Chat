@@ -25,7 +25,7 @@ public interface ISessionUnitCacheAppService
 
     Task<FriendCountDto> GetFriendsCountAsync([Required] long ownerId);
 
-    Task<PagedResultDto<SessionUnitMemberDto>> GetMembersAsync(SessionUnitMemberGetListInput input);
+    Task<ExtraPagedResultDto<SessionUnitMemberDto>> GetMembersAsync(SessionUnitMemberGetListInput input);
 
     Task<MemberCountDto> GetMembersCountAsync(Guid sessionId);
 

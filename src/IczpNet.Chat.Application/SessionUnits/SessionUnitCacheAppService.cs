@@ -930,7 +930,7 @@ public class SessionUnitCacheAppService(
     /// </summary>
     /// <param name="input"></param>
     /// <returns></returns>
-    public async Task<PagedResultDto<SessionUnitMemberDto>> GetMembersAsync(SessionUnitMemberGetListInput input)
+    public async Task<ExtraPagedResultDto<SessionUnitMemberDto>> GetMembersAsync(SessionUnitMemberGetListInput input)
     {
         var unit = await GetCacheAsync(input.SessionUnitId);
         var ownerId = unit.OwnerId;
@@ -960,6 +960,10 @@ public class SessionUnitCacheAppService(
         var chatObjectMap = (await ChatObjectManager.GetManyByCacheAsync(allIds))
             .ToDictionary(x => x.Id, x => x);
 
+        var settings = await SessionUnitSettingManager.GetOrAddManyCacheAsync(unitIds);
+
+        var settingsMap = settings.ToDictionary(x => x.Key, x => ObjectMapper.Map<SessionUnitSettingCacheItem, SessionUnitMemberSettingDto>(x.Value));
+
         var items = list
             .Select(x => x.Value)
             //.Select(MapToMemberDto)
@@ -982,16 +986,17 @@ public class SessionUnitCacheAppService(
                 DestinationObjectType = x.DestinationObjectType,
 
                 // Setting
-                Setting = new SessionUnitMemberSettingDto()
-                {
-                    SessionUnitId = x.SessionId.GetValueOrDefault(),
-                    IsEnabled = x.IsEnabled,
-                    IsCreator = x.IsCreator,
-                    IsPublic = x.IsPublic,
-                    IsStatic = x.IsStatic,
-                    IsVisible = x.IsVisible,
-                    MemberName = x.MemberName,
-                },
+                Setting = settingsMap.GetValueOrDefault(x.Id),
+                //Setting = new SessionUnitMemberSettingDto()
+                //{
+                //    SessionUnitId = x.SessionId.GetValueOrDefault(),
+                //    IsEnabled = x.IsEnabled,
+                //    IsCreator = x.IsCreator,
+                //    IsPublic = x.IsPublic,
+                //    IsStatic = x.IsStatic,
+                //    IsVisible = x.IsVisible,
+                //    MemberName = x.MemberName,
+                //},
                 CreationTime = x.CreationTime,
                 Score = MemberScore.Create(x.IsCreator, x.CreationTime),
             })
@@ -1008,7 +1013,7 @@ public class SessionUnitCacheAppService(
     /// <param name="sessionId"></param>
     /// <param name="input"></param>
     /// <returns></returns>
-    protected virtual async Task<PagedResultDto<SessionUnitMemberDto>> GetSearchMembersAsync(Guid sessionId, SessionUnitMemberGetListInput input)
+    protected virtual async Task<ExtraPagedResultDto<SessionUnitMemberDto>> GetSearchMembersAsync(Guid sessionId, SessionUnitMemberGetListInput input)
     {
         //var unit = await GetCacheAsync(input.SessionUnitId);
         var query = (await SessionUnitRepository.GetQueryableAsync())
@@ -1034,7 +1039,7 @@ public class SessionUnitCacheAppService(
 
         var items = await GetMemberListAsync(unitIds);
 
-        return new PagedResultDto<SessionUnitMemberDto>(totalCount, items);
+        return new ExtraPagedResultDto<SessionUnitMemberDto>(totalCount, items);
     }
 
     /// <summary>
@@ -1043,7 +1048,7 @@ public class SessionUnitCacheAppService(
     /// <param name="sessionId"></param>
     /// <param name="input"></param>
     /// <returns></returns>
-    protected virtual async Task<PagedResultDto<SessionUnitMemberDto>> GetMembersInternalAsync(Guid sessionId, SessionUnitMemberGetListInput input)
+    protected virtual async Task<ExtraPagedResultDto<SessionUnitMemberDto>> GetMembersInternalAsync(Guid sessionId, SessionUnitMemberGetListInput input)
     {
         //加载全部
         await LoadMembersAsync(sessionId);
@@ -1060,12 +1065,16 @@ public class SessionUnitCacheAppService(
             .WhereIf(input.OwnerObjectType.HasValue, x => x.OwnerObjectType == input.OwnerObjectType.Value)
             .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId.Value)
             .WhereIf(input.MinScore > 0, x => x.Score > input.MinScore)
-            .WhereIf(input.MaxScore > 0, x => x.Score < input.MaxScore)
+            //.WhereIf(input.MaxScore > 0, x => x.Score < input.MaxScore)
+            .WhereIf(input.MaxScore > 0, x => x.Score < input.MaxScore || (
+                x.Score == input.MaxScore &&
+                x.Id.CompareTo(input.CursorId) < 0
+            ))
             ;
 
         if (query == null)
         {
-            return new PagedResultDto<SessionUnitMemberDto>(0, []);
+            return new ExtraPagedResultDto<SessionUnitMemberDto>(0, []);
         }
 
         var totalCount = query.Count(); //kvs.Length
@@ -1074,13 +1083,36 @@ public class SessionUnitCacheAppService(
         query = query.OrderByDescending(x => x.Score).ThenByDescending(x => x.Id);
 
         // paged
-        query = query.Skip(input.SkipCount).Take(input.MaxResultCount);
+        query = query.Skip(input.SkipCount)
+            // 多取一条
+            .Take(input.MaxResultCount + 1);
 
         var unitIds = query.Select(x => x.Id).ToList();
 
+        var hasMore = unitIds.Count > input.MaxResultCount;
+
+        if (hasMore)
+        {
+            unitIds.RemoveAt(unitIds.Count - 1);
+        }
+
         var items = await GetMemberListAsync(unitIds);
 
-        return new PagedResultDto<SessionUnitMemberDto>(totalCount, items);
+        // hasNextPage
+        var nextCursor = hasMore
+            ? new
+            {
+                CursorScore = items.Last().Score,
+                CursorId = items.Last().Id
+            }
+            : null;
+
+        return new ExtraPagedResultDto<SessionUnitMemberDto>(totalCount, items,
+            new
+            {
+                NextCursor = nextCursor,
+                HasMore = hasMore
+            });
     }
 
     /// <summary>
