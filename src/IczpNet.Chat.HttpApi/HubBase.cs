@@ -1,7 +1,9 @@
-﻿using IczpNet.Chat.ConnectionPools;
+﻿using DeviceDetectorNET.Class.Client;
+using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Devices;
 using IczpNet.Chat.Hosting;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.SignalR;
@@ -37,6 +39,14 @@ public abstract class HubBase<T, TConnPool> : AbpHub<T> where T : class
 
         var queryId = httpContext?.Request.Query["id"];
 
+        var brand = httpContext?.Request.Query["brand"];
+
+        var model = httpContext?.Request.Query["model"];
+
+        var platform = httpContext?.Request.Query["platform"];
+
+        var browser = httpContext?.Request.Query["browser"];
+
         Logger.LogWarning($"DeviceId:{deviceId}");
 
         var connectedEto = new TConnPool()
@@ -57,6 +67,10 @@ public abstract class HubBase<T, TConnPool> : AbpHub<T> where T : class
             BrowserInfo = WebClientInfoProvider.BrowserInfo,
             DeviceInfo = WebClientInfoProvider.DeviceInfo,
             CreationTime = Clock.Now,
+            Brand =brand,
+            Model = model,
+            Platform = platform,
+            Browser = browser,
         };
 
         return connectedEto;

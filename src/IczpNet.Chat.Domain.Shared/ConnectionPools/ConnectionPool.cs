@@ -89,6 +89,26 @@ public class ConnectionPool: IConnectionPool
     /// </summary>
     public virtual DateTime CreationTime { get; set; }
 
+    /// <summary>
+    /// Browser
+    /// </summary>
+    public virtual string Browser { get; set; }
+
+    /// <summary>
+    /// Brand
+    /// </summary>
+    public virtual string Brand { get; set; }
+
+    /// <summary>
+    /// Model
+    /// </summary>
+    public virtual string Model { get; set; }
+
+    /// <summary>
+    /// Platform
+    /// </summary>
+    public string Platform { get; set; }
+
     public override string ToString()
     {
         return $"{nameof(AppId)}={AppId},{nameof(ClientId)}={ClientId},{nameof(ConnectionId)}={ConnectionId},{nameof(UserId)}={UserId},{nameof(UserName)}={UserName},{nameof(DeviceId)}={DeviceId},{nameof(PushClientId)}={PushClientId}";

@@ -497,7 +497,7 @@ public class SessionUnitCacheAppService(
 
         var pagedList = await GetPagedListAsync(baseQuery, input);
 
-        // 分页后再按需加载 Setting & Destination
+        // 分页后再按需加载 Setting & Destinationon
         await FillSettingAsync(pagedList.Items);
 
         await FillDestinationAsync(pagedList.Items);
@@ -817,19 +817,23 @@ public class SessionUnitCacheAppService(
 
 
 
-    private static SessionUnitMemberSettingDto MapToSettingDto(SessionUnitCacheItem memberUnit, SessionUnitMemberSettingDto settingDto)
+    private static SessionUnitMemberSettingDto MergeSetting(SessionUnitMemberSettingDto dto, SessionUnitCacheItem unit)
     {
+        if (dto == null)
+        {
+            return null;
+        }
         // 更新为缓存的值（最新）
-        settingDto.LastSendMessageId = memberUnit.LastMessageId;
-        settingDto.LastSendTime = memberUnit.LastSendTime;
-        settingDto.IsCreator = memberUnit.IsCreator;
-        settingDto.IsPublic = memberUnit.IsPublic;
-        settingDto.IsStatic = memberUnit.IsStatic;
-        settingDto.IsEnabled = memberUnit.IsEnabled;
-        settingDto.IsVisible = memberUnit.IsVisible;
-        settingDto.MemberName = memberUnit.MemberName;
+        dto.LastSendMessageId = unit.LastMessageId;
+        dto.LastSendTime = unit.LastSendTime;
+        dto.IsCreator = unit.IsCreator;
+        dto.IsPublic = unit.IsPublic;
+        dto.IsStatic = unit.IsStatic;
+        dto.IsEnabled = unit.IsEnabled;
+        dto.IsVisible = unit.IsVisible;
+        dto.MemberName = unit.MemberName;
 
-        return settingDto;
+        return dto;
     }
 
     /// <summary>
@@ -866,11 +870,11 @@ public class SessionUnitCacheAppService(
         var chatObjectMap = (await ChatObjectManager.GetManyByCacheAsync(allIds))
             .ToDictionary(x => x.Id, x => x);
 
-        var setting = await SessionUnitSettingManager.GetOrAddCacheAsync(unitId);
+        var settingCache = await SessionUnitSettingManager.GetOrAddCacheAsync(unitId);
 
-        var settingDto = ObjectMapper.Map<SessionUnitSettingCacheItem, SessionUnitMemberSettingDto>(setting);
+        var settingDto = ObjectMapper.Map<SessionUnitSettingCacheItem, SessionUnitMemberSettingDto>(settingCache);
 
-        settingDto = MapToSettingDto(memberUnit, settingDto);
+        var setting = MergeSetting(settingDto, memberUnit);
 
         var item = new SessionUnitMemberDetailDto()
         {
@@ -894,7 +898,7 @@ public class SessionUnitCacheAppService(
             //TagList= memberUnit,
 
             // Setting
-            Setting = settingDto,
+            Setting = setting,
         };
 
         if (options == null)
@@ -923,6 +927,7 @@ public class SessionUnitCacheAppService(
 
         return item;
     }
+
 
 
     /// <summary>
@@ -986,17 +991,8 @@ public class SessionUnitCacheAppService(
                 DestinationObjectType = x.DestinationObjectType,
 
                 // Setting
-                Setting = settingsMap.GetValueOrDefault(x.Id),
-                //Setting = new SessionUnitMemberSettingDto()
-                //{
-                //    SessionUnitId = x.SessionId.GetValueOrDefault(),
-                //    IsEnabled = x.IsEnabled,
-                //    IsCreator = x.IsCreator,
-                //    IsPublic = x.IsPublic,
-                //    IsStatic = x.IsStatic,
-                //    IsVisible = x.IsVisible,
-                //    MemberName = x.MemberName,
-                //},
+                Setting = MergeSetting(settingsMap.GetValueOrDefault(x.Id), x),
+
                 CreationTime = x.CreationTime,
                 Score = MemberScore.Create(x.IsCreator, x.CreationTime),
             })
