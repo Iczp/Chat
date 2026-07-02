@@ -708,6 +708,13 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         return values.Select(x => x.ToString());
     }
 
+    public async Task<IEnumerable<ConnectionPoolCacheItem>> GetConnectionsByUserAsync(Guid userId, CancellationToken token = default)
+    {
+        var connIdList = await GetConnectionIdsByUserAsync(userId, token);
+        var connMap = (await GetManyAsync(connIdList, token)).ToDictionary();
+        return connMap.Select(x => x.Value);
+    }
+
     public async Task<long> GetCountByUserAsync(Guid userId, CancellationToken token = default)
     {
         return await Database.HashLengthAsync(UserConnKey(userId));

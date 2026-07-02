@@ -174,6 +174,14 @@ public interface IOnlineManager //: IConnectionPoolManager
     Task<IEnumerable<string>> GetConnectionIdsByUserAsync(Guid userId, CancellationToken token = default);
 
     /// <summary>
+    /// 获取连接(用户)
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<IEnumerable<ConnectionPoolCacheItem>> GetConnectionsByUserAsync(Guid userId, CancellationToken token = default);
+
+    /// <summary>
     /// 获取连接数量(聊天对象)
     /// </summary>
     /// <param name="ownertId"></param>
