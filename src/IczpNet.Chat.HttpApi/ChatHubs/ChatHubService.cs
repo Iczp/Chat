@@ -7,7 +7,6 @@ using IczpNet.Chat.Hosting;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using Pipelines.Sockets.Unofficial.Buffers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -101,8 +100,9 @@ public abstract class ChatHubService : DomainService
 
         var firendConnectionIdList = firendConnectionList.Select(x => x.ConnectionId).ToList();
 
-        Logger.LogInformation($"Send [{nameof(IChatClient.ReceivedMessage)}] FriendsCount:{firendConnectionIdList.Count},command={command}");
+        Logger.LogInformation($"SendToFriendsAsync [{nameof(IChatClient.ReceivedMessage)}] firendConnectionId Count:{firendConnectionIdList.Count},command={command}");
 
+        var num = 0;
         foreach (var firendsConnection in firendConnectionList)
         {
             var commandPayload = new CommandPayload
@@ -121,6 +121,8 @@ public abstract class ChatHubService : DomainService
 
             await HubContext.Clients.Client(firendsConnection.ConnectionId).ReceivedMessage(commandPayload);
 
+            num++;
+            Logger.LogInformation($"SendToFriendsAsync [{num}/{firendConnectionIdList.Count}] firendConnectionId:{firendsConnection},command={command}");
             //await HubContext.Clients.All.ReceivedMessage(commandPayload);
         }
     }
@@ -135,7 +137,7 @@ public abstract class ChatHubService : DomainService
     {
         var userConnectionIds = await GetUserConnectionIdsAsync(userId);
 
-        Logger.LogInformation($"Send [{nameof(IChatClient.ReceivedMessage)}] FriendsCount:{userConnectionIds.Count},commandPayload={JsonSerializer.Serialize(commandPayload)}");
+        Logger.LogInformation($"SendToUserAsync [{nameof(IChatClient.ReceivedMessage)}] userConnectionIds Count:{userConnectionIds.Count},commandPayload={JsonSerializer.Serialize(commandPayload)}");
 
         await HubContext.Clients.Clients(userConnectionIds).ReceivedMessage(commandPayload);
     }

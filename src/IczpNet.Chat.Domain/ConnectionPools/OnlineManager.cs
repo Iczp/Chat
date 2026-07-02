@@ -890,9 +890,9 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         // ownerId -> friends
         var friendsMap = await LoadFriendsMapAsync(ownerIds);
 
-        // 所有朋友 ownerId
+        // 所有朋友 这里应该 DestinationId 而不是 OwnerId
         var friendIds = friendsMap
-            .SelectMany(x => x.Value.Select(d => d.OwnerId))
+            .SelectMany(x => x.Value.Select(d => d.DestinationId))
             .Distinct()
             .ToList();
 
