@@ -205,10 +205,7 @@ return tonumber(newValue)
     }
     protected virtual void Expire(IBatch batch, string key, TimeSpan? expiry = null, ExpireWhen when = ExpireWhen.Always, CommandFlags flags = CommandFlags.None)
     {
-        if (CacheExpire.HasValue)
-        {
-            _ = batch.KeyExpireAsync(key, expiry ?? CacheExpire, when, flags);
-        }
+        _ = batch.KeyExpireAsync(key, expiry ?? CacheExpire, when, flags);
     }
     protected virtual void ExpireIf(bool condition, Func<RedisKey> redisKeyFunc, IBatch batch, ExpireWhen when = ExpireWhen.Always, CommandFlags flags = CommandFlags.None)
     {
@@ -216,10 +213,7 @@ return tonumber(newValue)
         {
             return;
         }
-        if (CacheExpire.HasValue)
-        {
-            _ = batch.KeyExpireAsync(redisKeyFunc(), CacheExpire, when, flags);
-        }
+        _ = batch.KeyExpireAsync(redisKeyFunc(), CacheExpire, when, flags);
     }
 
     protected void HashSetIf(bool condition, Func<RedisKey> redisKeyFunc, RedisValue field, RedisValue value, IBatch batch, TimeSpan? expire = null)
