@@ -342,6 +342,9 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         // session -> connection hash (session -> connId : owners joined)
         HashSetSessionConn(batch, connectionPool, friendsMap);
 
+        // 更新主机
+        SortedSetIf(true, () => AllHostZsetKey(), CurrentHosted.Name, Clock.Now.ToUnixTimeMilliseconds(), batch: batch);
+
         batch.Execute();
 
         Logger.LogInformation($"[CreateAsync] writeBatch.Execute()");
@@ -538,9 +541,9 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
 
             await DeleteByHostNameAsync(CurrentHosted.Name);
 
-            var batch = Database.CreateBatch();
-            SortedSetIf(true, () => AllHostZsetKey(), CurrentHosted.Name, Clock.Now.ToUnixTimeMilliseconds(), batch: batch);
-            batch.Execute();
+            //var batch = Database.CreateBatch();
+            //SortedSetIf(true, () => AllHostZsetKey(), CurrentHosted.Name, Clock.Now.ToUnixTimeMilliseconds(), batch: batch);
+            //batch.Execute();
 
             return true;
         });
