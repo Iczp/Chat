@@ -745,8 +745,6 @@ public class SessionUnitCacheAppService(
 
         var kv = await SessionUnitCacheManager.GetFriendsIndexedAsync(ownerId);
 
-
-
         var items = kv
             .WhereIf(type.HasValue, x => x.Key.DestinationObjectType == type)
             .GroupBy(x => x.Value.Index)
@@ -758,6 +756,7 @@ public class SessionUnitCacheAppService(
                 {
                     Id = v.Key.SessionUnitId,
                     OwnerId = v.Key.OwnerId,
+                    DestinationId = v.Key.DestinationId,
                     ObjectType = v.Key.DestinationObjectType,
                     Rename = v.Value.Rename,
                     Name = v.Value.Name,

@@ -16,12 +16,14 @@ public interface IMessageManager
     /// </summary>
     /// <param name="senderSessionUnit"></param>
     /// <param name="action"></param>
+    /// <param name="clientMessageId"></param>
     /// <param name="receiverSessionUnitId"></param>
     /// <param name="quoteMessageId"></param>
     /// <param name="remindList"></param>
     /// <returns></returns>
     Task<Message> CreateMessageAsync(SessionUnit senderSessionUnit,
         Func<Message, Task<IContentEntity>> action,
+        string clientMessageId = null,
         Guid? receiverSessionUnitId = null,
         long? quoteMessageId = null,
         List<Guid> remindList = null);

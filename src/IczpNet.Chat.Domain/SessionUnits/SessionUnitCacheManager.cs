@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reactive;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
@@ -866,8 +867,9 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             //累积统计角标
             AccumulateStatistics(unit, stat, statTypedMap, statBoxMap);
         }
-
-        _ = batch.KeyExpireAsync(ownerFriendsSetKey, CacheExpire);
+        Expire(batch, ownerFriendsSetKey, CacheExpire);
+        Expire(batch, OwnersIndexedHashKey(ownerId), CacheExpire);
+        //_ = batch.KeyExpireAsync(ownerFriendsSetKey, CacheExpire);
 
         return new(stat, statTypedMap, statBoxMap);
     }
@@ -908,7 +910,6 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         SetOwnerBoxFriends(batch, element, unit, score);
         SetOwnerCreator(batch, element, unit);
         SetOwnerHasBadge(batch, element, unit);
-
     }
 
     private async Task<(List<SessionUnitCacheItem> cached, List<SessionUnitCacheItem> uncached)> LoadCachedUnitsAsync(long ownerId, IEnumerable<SessionUnitCacheItem> units)

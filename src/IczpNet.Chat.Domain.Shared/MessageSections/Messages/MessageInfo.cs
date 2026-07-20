@@ -37,6 +37,11 @@ public class MessageInfo : ExtensibleObject, IHasExtraProperties
     public virtual long Id { get; set; }
 
     /// <summary>
+    /// 客户端消息Id
+    /// </summary>
+    public virtual string ClientMessageId { get; set; }
+
+    /// <summary>
     /// SessionId
     /// </summary>
     public virtual Guid SessionId { get; set; }

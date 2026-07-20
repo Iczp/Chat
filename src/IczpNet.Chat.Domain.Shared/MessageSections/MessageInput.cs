@@ -29,6 +29,11 @@ public class MessageInput : IMessageInput
     //public virtual string KeyValue { get; set; }
 
     /// <summary>
+    /// 客户端消息Id
+    /// </summary>
+    public virtual string ClientMessageId { get; set; }
+
+    /// <summary>
     /// 接收人会话单元ID（私有消息才有） SessionUnitId
     /// </summary>
     public virtual Guid? ReceiverSessionUnitId { get; set; }

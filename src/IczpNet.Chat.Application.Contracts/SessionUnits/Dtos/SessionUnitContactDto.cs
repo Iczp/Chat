@@ -7,6 +7,7 @@ public class SessionUnitContactDto //: ContactValue
 {
     public virtual Guid Id { get; set; }
     public long OwnerId { get; set; }
+    public long DestinationId { get; set; }
     public virtual string Name { get; set; }
     public string Rename { get; set; }
     public string Mobile { get; set; }

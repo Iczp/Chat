@@ -12,6 +12,7 @@ using IczpNet.Chat.Sessions;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
 using IczpNet.Chat.Settings;
+using IczpNet.Chat.Ulids;
 using IczpNet.Pusher.ShortIds;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
@@ -52,6 +53,7 @@ public partial class MessageManager(
     IFollowManager followManager,
     IDistributedCache<MessageCacheItem, MessageCacheKey> messageCache,
     IOptions<MessageOptions> options,
+    IUlidGenerator ulidGenerator,
     ISessionGenerator sessionGenerator) : DomainService, IMessageManager
 {
     protected IObjectMapper ObjectMapper { get; } = objectMapper;
@@ -69,6 +71,8 @@ public partial class MessageManager(
     public IFollowManager FollowManager { get; } = followManager;
     public IDistributedCache<MessageCacheItem, MessageCacheKey> MessageCache { get; } = messageCache;
     public IOptions<MessageOptions> Options { get; } = options;
+    public IUlidGenerator UlidGenerator { get; } = ulidGenerator;
+
     public MessageOptions Config => Options.Value;
     protected ISettingProvider SettingProvider { get; } = settingProvider;
     protected IJsonSerializer JsonSerializer { get; } = jsonSerializer;
@@ -91,6 +95,7 @@ public partial class MessageManager(
     public virtual async Task<Message> CreateMessageAsync(
         SessionUnit senderSessionUnit,
         Func<Message, Task<IContentEntity>> action,
+        string clientMessageId = null,
         Guid? receiverSessionUnitId = null,
         long? quoteMessageId = null,
         List<Guid> remindList = null)
@@ -118,11 +123,19 @@ public partial class MessageManager(
         //        return await SessionUnitManager.GetCacheListBySessionIdAsync(sessionId);
         //    });
 
+        if (string.IsNullOrWhiteSpace(clientMessageId))
+        {
+            clientMessageId = UlidGenerator.Generate();
+        }
+
         var message = new Message(senderSessionUnit)
         {
-            CreationTime = Clock.Now
+            CreationTime = Clock.Now,
+            ClientMessageId =  clientMessageId,
+
         };
         message.SetShortId(shortId: ShortIdGenerator.Create());
+
 
         //senderSessionUnit.Setting.SetLastSendMessage(message);//并发时可能导致锁表
 
@@ -150,6 +163,7 @@ public partial class MessageManager(
 
         //TryToSetOwnerId(messageContent, senderSessionUnit.SessionUnitId);
         messageContent.SetOwnerId(senderSessionUnit.OwnerId);
+
 
         if (messageContent.Id == Guid.Empty)
         {
@@ -450,6 +464,7 @@ public partial class MessageManager(
     {
         var message = await CreateMessageAsync(senderSessionUnit,
             async (entity) => await Task.FromResult(contentEntity),
+            clientMessageId: input.ClientMessageId,
             quoteMessageId: input.QuoteMessageId,
             remindList: input.RemindList,
             receiverSessionUnitId: input.ReceiverSessionUnitId);

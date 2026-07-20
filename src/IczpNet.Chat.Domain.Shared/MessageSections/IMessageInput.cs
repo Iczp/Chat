@@ -14,4 +14,9 @@ public interface IMessageInput
     //string KeyValue { get; set; }
 
     long? QuoteMessageId { get; set; }
+
+    /// <summary>
+    /// 客户端消息Id
+    /// </summary>
+    string ClientMessageId { get; set; }
 }

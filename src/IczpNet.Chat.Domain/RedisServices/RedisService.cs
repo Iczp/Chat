@@ -224,6 +224,8 @@ return tonumber(newValue)
         }
         var redisKey = redisKeyFunc();
         _ = batch.HashSetAsync(redisKey, field, value);
+
+        // 要移除
         _ = batch.KeyExpireAsync(redisKey, expire ?? CacheExpire);
     }
     protected void HashRemoveIf(bool condition, Func<RedisKey> redisKeyFunc, RedisValue field, IBatch batch, bool refreshExpire = false)
@@ -248,6 +250,7 @@ return tonumber(newValue)
         }
         var redisKey = redisKeyFunc();
         _ = batch.SortedSetAddAsync(redisKey, field, score);
+        // 要移除
         _ = batch.KeyExpireAsync(redisKey, expiry ?? CacheExpire);
     }
 

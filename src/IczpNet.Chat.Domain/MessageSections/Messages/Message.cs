@@ -33,6 +33,7 @@ namespace IczpNet.Chat.MessageSections.Messages;
 [Index(nameof(QuoteCount))]
 [Index(nameof(SenderSessionUnitId))]
 [Index(nameof(ReceiverSessionUnitId))]
+[Index(nameof(ClientMessageId))]
 [Index(nameof(SessionId), nameof(IsDeleted))]
 [Index(nameof(SessionId), nameof(Id), AllDescending = true)]
 [Index(nameof(SessionId), nameof(IsDeleted), nameof(IsPrivate), nameof(SenderId), nameof(ReceiverId), nameof(CreationTime), nameof(ForwardDepth), nameof(QuoteDepth))]
@@ -54,6 +55,10 @@ public partial class Message : BaseEntity<long>, ISessionId, IHasEntityVersion
     [StringLength(64)]
     [Comment(nameof(ShortId))]
     public virtual string ShortId { get; protected set; }
+
+    [StringLength(26)]
+    [Comment(nameof(ClientMessageId))]
+    public virtual string ClientMessageId { get; set; }
 
     /// <summary>
     /// SessionKey

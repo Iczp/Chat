@@ -12,6 +12,11 @@ public class MessageSimpleDto : ExtensibleEntityDto, IEntityDto<long>
     public virtual long Id { get; set; }
 
     /// <summary>
+    /// 客户端消息Id
+    /// </summary>
+    public virtual string ClientMessageId { get; set; }
+
+    /// <summary>
     /// 
     /// </summary>
     public virtual Guid SessionId { get; set; }
