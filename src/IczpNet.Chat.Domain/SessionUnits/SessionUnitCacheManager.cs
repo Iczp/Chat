@@ -42,6 +42,12 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     private RedisKey UnitHashKey(Guid unitId) => $"{Prefix}{UnitKeyPattern}{unitId}";
 
     /// <summary>
+    /// 变更的Units,用于同步到数据库
+    /// </summary>
+    /// <returns></returns>
+    private RedisKey DirtySetKey() => $"{Prefix}Dirty";
+
+    /// <summary>
     /// TryParse UnitId
     /// </summary>
     /// <param name="key"></param>
@@ -1339,6 +1345,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             var unitId = element.SessionUnitId;
             var ownerId = element.OwnerId;
             var unitKey = UnitHashKey(unitId);
+            
 
             var ownerStatisticSetKey = OwnerStatisticHashKey(ownerId);
             var isSender = unitId == message.SenderSessionUnitId;
@@ -1427,6 +1434,9 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
                 HashIncrementIfExist(batch, ownerStatisticSetKey, F_Total_Following, 1);
                 ZsetIncrementIfGuardKeyExist(batch, ownerStatisticSetKey, OwnerFollowingSetKey(ownerId), element, 1);
             }
+
+            //dirty
+            _ = batch.SortedSetAddAsync(DirtySetKey(), element, lastMessageId);
         }
         // SessionMembers
         _ = batch.KeyExpireAsync(SessionMembersSetKey(sessionId), expireTime);
