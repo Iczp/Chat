@@ -1345,7 +1345,6 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             var unitId = element.SessionUnitId;
             var ownerId = element.OwnerId;
             var unitKey = UnitHashKey(unitId);
-            
 
             var ownerStatisticSetKey = OwnerStatisticHashKey(ownerId);
             var isSender = unitId == message.SenderSessionUnitId;
@@ -1357,6 +1356,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
             // lastMessageId
             _ = batch.HashSetAsync(unitKey, F_LastMessageId, lastMessageId);
+            //dirty
+            _ = batch.SortedSetAddAsync(DirtySetKey(), element, lastMessageId);
             // ticks
             _ = batch.HashSetAsync(unitKey, F_Ticks, ticks);
             // expire
@@ -1435,8 +1436,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
                 ZsetIncrementIfGuardKeyExist(batch, ownerStatisticSetKey, OwnerFollowingSetKey(ownerId), element, 1);
             }
 
-            //dirty
-            _ = batch.SortedSetAddAsync(DirtySetKey(), element, lastMessageId);
+
         }
         // SessionMembers
         _ = batch.KeyExpireAsync(SessionMembersSetKey(sessionId), expireTime);
