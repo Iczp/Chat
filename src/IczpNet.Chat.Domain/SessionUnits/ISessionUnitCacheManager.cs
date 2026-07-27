@@ -467,4 +467,12 @@ public interface ISessionUnitCacheManager
     /// <param name="units"></param>
     /// <returns></returns>
     Task AddUnitsAsync(IEnumerable<SessionUnitCacheItem> units);
+
+    /// <summary>
+    /// 更新最新消息ID
+    /// </summary>
+    /// <param name="senderSessionUnit"></param>
+    /// <param name="message"></param>
+    /// <returns></returns>
+    Task UpdateLastMessageAsync(SessionUnitCacheItem senderSessionUnit, Message message);
 }
