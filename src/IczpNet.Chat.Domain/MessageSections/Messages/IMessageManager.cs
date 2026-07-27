@@ -21,7 +21,7 @@ public interface IMessageManager
     /// <param name="quoteMessageId"></param>
     /// <param name="remindList"></param>
     /// <returns></returns>
-    Task<Message> CreateMessageAsync(SessionUnit senderSessionUnit,
+    Task<Message> CreateMessageAsync(SessionUnitCacheItem senderSessionUnit,
         Func<Message, Task<IContentEntity>> action,
         string clientMessageId = null,
         Guid? receiverSessionUnitId = null,
@@ -37,7 +37,7 @@ public interface IMessageManager
     /// <param name="input"></param>
     /// <returns></returns>
     Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContentEntity>(
-        SessionUnit senderSessionUnit,
+        SessionUnitCacheItem senderSessionUnit,
         MessageInput<TContentInfo> input)
         where TContentInfo : IContentInfo
         where TContentEntity : IContentEntity;
@@ -52,7 +52,7 @@ public interface IMessageManager
     /// <param name="contentEntity"></param>
     /// <returns></returns>
     Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContentEntity>(
-        SessionUnit senderSessionUnit,
+        SessionUnitCacheItem senderSessionUnit,
         MessageInput input,
         TContentEntity contentEntity)
         where TContentInfo : IContentInfo
@@ -102,7 +102,7 @@ public interface IMessageManager
     /// <returns></returns>
     Task<MessageCacheItem> SetCacheAsync(
         Message message,
-        SessionUnit senderSessionUnit = null,
+        SessionUnitCacheItem senderSessionUnit = null,
         DistributedCacheEntryOptions options = null,
         bool? hideErrors = null,
         bool considerUow = false,

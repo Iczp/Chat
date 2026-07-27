@@ -571,7 +571,7 @@ public class SessionUnitAppService(
     {
         await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(FindPolicyName));
 
-        var entity = await SessionUnitManager.FindAsync(ownerId, destinactionId);
+        var entity = await SessionUnitManager.FindCacheAsync(ownerId, destinactionId);
 
         Assert.NotNull(entity, "No found!");
 

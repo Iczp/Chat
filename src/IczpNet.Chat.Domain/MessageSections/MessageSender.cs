@@ -39,57 +39,57 @@ public class MessageSender(
     //    return await MessageManager.SendMessageAsync<TextContentInfo>(input, async x => await Task.FromResult(redEnvelope));
     //}
 
-    public Task<MessageInfo<TextContentInfo>> SendTextAsync(SessionUnit senderSessionUnit, MessageInput<TextContentInfo> input)
+    public Task<MessageInfo<TextContentInfo>> SendTextAsync(SessionUnitCacheItem senderSessionUnit, MessageInput<TextContentInfo> input)
     {
         return MessageManager.SendAsync<TextContentInfo, TextContent>(senderSessionUnit, input);
     }
 
-    public Task<MessageInfo<CmdContentInfo>> SendCmdAsync(SessionUnit senderSessionUnit, MessageInput<CmdContentInfo> input)
+    public Task<MessageInfo<CmdContentInfo>> SendCmdAsync(SessionUnitCacheItem senderSessionUnit, MessageInput<CmdContentInfo> input)
     {
         return MessageManager.SendAsync<CmdContentInfo, CmdContent>(senderSessionUnit, input);
     }
 
-    public Task<MessageInfo<LinkContentInfo>> SendLinkAsync(SessionUnit senderSessionUnit, MessageInput<LinkContentInfo> input)
+    public Task<MessageInfo<LinkContentInfo>> SendLinkAsync(SessionUnitCacheItem senderSessionUnit, MessageInput<LinkContentInfo> input)
     {
         return MessageManager.SendAsync<LinkContentInfo, LinkContent>(senderSessionUnit, input);
     }
 
-    public virtual async Task<MessageInfo<HtmlContentInfo>> SendHtmlAsync(SessionUnit senderSessionUnit, MessageInput<HtmlContentInfo> input)
+    public virtual async Task<MessageInfo<HtmlContentInfo>> SendHtmlAsync(SessionUnitCacheItem senderSessionUnit, MessageInput<HtmlContentInfo> input)
     {
         return await MessageManager.SendAsync<HtmlContentInfo, HtmlContent>(senderSessionUnit, input);
     }
 
-    public virtual async Task<MessageInfo<ImageContentInfo>> SendImageAsync(SessionUnit senderSessionUnit, MessageInput<ImageContentInfo> input)
+    public virtual async Task<MessageInfo<ImageContentInfo>> SendImageAsync(SessionUnitCacheItem senderSessionUnit, MessageInput<ImageContentInfo> input)
     {
         return await MessageManager.SendAsync<ImageContentInfo, ImageContent>(senderSessionUnit, input);
     }
 
-    public virtual async Task<MessageInfo<SoundContentInfo>> SendSoundAsync(SessionUnit senderSessionUnit, MessageInput<SoundContentInfo> input)
+    public virtual async Task<MessageInfo<SoundContentInfo>> SendSoundAsync(SessionUnitCacheItem senderSessionUnit, MessageInput<SoundContentInfo> input)
     {
         return await MessageManager.SendAsync<SoundContentInfo, SoundContent>(senderSessionUnit, input);
     }
 
-    public virtual async Task<MessageInfo<VideoContentInfo>> SendVideoAsync(SessionUnit senderSessionUnit, MessageInput<VideoContentInfo> input)
+    public virtual async Task<MessageInfo<VideoContentInfo>> SendVideoAsync(SessionUnitCacheItem senderSessionUnit, MessageInput<VideoContentInfo> input)
     {
         return await MessageManager.SendAsync<VideoContentInfo, VideoContent>(senderSessionUnit, input);
     }
 
-    public virtual async Task<MessageInfo<FileContentInfo>> SendFileAsync(SessionUnit senderSessionUnit, MessageInput<FileContentInfo> input)
+    public virtual async Task<MessageInfo<FileContentInfo>> SendFileAsync(SessionUnitCacheItem senderSessionUnit, MessageInput<FileContentInfo> input)
     {
         return await MessageManager.SendAsync<FileContentInfo, FileContent>(senderSessionUnit, input);
     }
 
-    public virtual async Task<MessageInfo<LocationContentInfo>> SendLocationAsync(SessionUnit senderSessionUnit, MessageInput<LocationContentInfo> input)
+    public virtual async Task<MessageInfo<LocationContentInfo>> SendLocationAsync(SessionUnitCacheItem senderSessionUnit, MessageInput<LocationContentInfo> input)
     {
         return await MessageManager.SendAsync<LocationContentInfo, LocationContent>(senderSessionUnit, input);
     }
 
-    public virtual async Task<MessageInfo<ContactsContentInfo>> SendContactsAsync(SessionUnit senderSessionUnit, MessageInput<ContactsContentInfo> input)
+    public virtual async Task<MessageInfo<ContactsContentInfo>> SendContactsAsync(SessionUnitCacheItem senderSessionUnit, MessageInput<ContactsContentInfo> input)
     {
         return await MessageManager.SendAsync<ContactsContentInfo, ContactsContent>(senderSessionUnit, input);
     }
 
-    public virtual async Task<MessageInfo<HistoryContentOutput>> SendHistoryAsync(SessionUnit senderSessionUnit, MessageInput<HistoryContentInput> input)
+    public virtual async Task<MessageInfo<HistoryContentOutput>> SendHistoryAsync(SessionUnitCacheItem senderSessionUnit, MessageInput<HistoryContentInput> input)
     {
         var messageIdList = input.Content.MessageIdList;
 
@@ -132,7 +132,7 @@ public class MessageSender(
         await Task.Yield();
     }
 
-    public virtual async Task<MessageInfo<RedEnvelopeContentOutput>> SendRedEnvelopeAsync(SessionUnit senderSessionUnit, MessageInput<RedEnvelopeContentInput> input)
+    public virtual async Task<MessageInfo<RedEnvelopeContentOutput>> SendRedEnvelopeAsync(SessionUnitCacheItem senderSessionUnit, MessageInput<RedEnvelopeContentInput> input)
     {
         var redEnvelope = input.Content;
 

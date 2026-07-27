@@ -29,7 +29,7 @@ public abstract class AiProvider : DomainService, IAiProvider
             : (IObjectMapper)provider.GetRequiredService(typeof(IObjectMapper<>).MakeGenericType(ObjectMapperContext)));
     public abstract Task HandleAsync(long messageId);
 
-    protected async Task<MessageInfo<TextContentInfo>> SendTextAsync(SessionUnit replySessionUnit, long quoteMessageId, TextContentInfo content)
+    protected async Task<MessageInfo<TextContentInfo>> SendTextAsync(SessionUnitCacheItem replySessionUnit, long quoteMessageId, TextContentInfo content)
     {
         var dto = await MessageSender.SendTextAsync(replySessionUnit, new MessageInput<TextContentInfo>()
         {

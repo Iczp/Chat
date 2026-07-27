@@ -2,44 +2,36 @@
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
-using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.Sessions;
 using IczpNet.Chat.SessionUnits;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.OfficialSections.Officials;
 
-public class OfficialManager : DomainService, IOfficialManager
+public class OfficialManager(
+    IChatObjectRepository chatObjectRepository,
+    ISessionUnitManager sessionUnitManager,
+    IChatObjectManager chatObjectManager,
+    IUnitOfWorkManager unitOfWorkManager,
+    IMessageSender messageSender,
+    ISessionGenerator sessionGenerator,
+    ISessionUnitIdGenerator sessionUnitIdGenerator) : DomainService, IOfficialManager
 {
-    protected ISessionUnitManager SessionUnitManager { get; }
-    protected IChatObjectRepository ChatObjectRepository { get; }
-    protected IChatObjectManager ChatObjectManager { get; }
-    protected IUnitOfWorkManager UnitOfWorkManager { get; }
-    protected IMessageSender MessageSender { get; }
-    protected ISessionGenerator SessionGenerator { get; }
-    protected ISessionUnitIdGenerator SessionUnitIdGenerator { get; }
-    public OfficialManager(
-        IChatObjectRepository chatObjectRepository,
-        ISessionUnitManager sessionUnitManager,
-        IChatObjectManager chatObjectManager,
-        IUnitOfWorkManager unitOfWorkManager,
-        IMessageSender messageSender,
-        ISessionGenerator sessionGenerator,
-        ISessionUnitIdGenerator sessionUnitIdGenerator)
-    {
-        ChatObjectRepository = chatObjectRepository;
-        SessionUnitManager = sessionUnitManager;
-        ChatObjectManager = chatObjectManager;
-        UnitOfWorkManager = unitOfWorkManager;
-        MessageSender = messageSender;
-        SessionGenerator = sessionGenerator;
-        SessionUnitIdGenerator = sessionUnitIdGenerator;
-    }
+    protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
+    protected IChatObjectRepository ChatObjectRepository { get; } = chatObjectRepository;
+    protected IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
+    protected IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
+    protected IMessageSender MessageSender { get; } = messageSender;
+    protected ISessionGenerator SessionGenerator { get; } = sessionGenerator;
+    protected ISessionUnitIdGenerator SessionUnitIdGenerator { get; } = sessionUnitIdGenerator;
+
 
     protected virtual async Task CheckExistsByCreateAsync(ChatObject inputEntity)
     {
@@ -113,10 +105,9 @@ public class OfficialManager : DomainService, IOfficialManager
 
     private async Task SendMessageAsync(SessionUnit receiverSessionUnit, string text)
     {
-        var officialSessionUnit = await SessionUnitManager.FindAsync(receiverSessionUnit.DestinationId.Value, receiverSessionUnit.DestinationId.Value);
+        var officialSessionUnit = await SessionUnitManager.FindCacheAsync(receiverSessionUnit.DestinationId.Value, receiverSessionUnit.DestinationId.Value);
         await MessageSender.SendCmdAsync(
             senderSessionUnit: officialSessionUnit,
-
             input: new MessageInput<CmdContentInfo>()
             {
                 //ReceiverSessionUnitId = receiverSessionUnit.Id,

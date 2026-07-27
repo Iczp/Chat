@@ -173,6 +173,8 @@ public class SessionUnitManager(
                         IsStatic = x.Setting.IsStatic,
                         IsVisible = x.Setting.IsVisible,
                         IsEnabled = x.Setting.IsEnabled,
+                        IsInputEnabled = x.Setting.IsInputEnabled,
+                        MuteExpireTime = x.Setting.MuteExpireTime,
 
                         IsImmersed = x.Setting.IsImmersed,
                         IsCreator = x.Setting.IsCreator,
@@ -297,6 +299,51 @@ public class SessionUnitManager(
     public virtual Task<SessionUnit> FindAsync(long ownerId, long destinactionId)
     {
         return FindAsync(x => x.OwnerId == ownerId && x.DestinationId == destinactionId);
+    }
+
+    public virtual async Task<SessionUnitCacheItem> FindCacheAsync(long ownerId, long destinactionId)
+    {
+        var entity = await FindAsync(ownerId, destinactionId);
+        return await MapToCacheAsync(entity);
+    }
+
+    public virtual async Task<SessionUnitCacheItem> MapToCacheAsync(SessionUnit sessionUnit)
+    {
+        await Task.Yield();
+        return ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(sessionUnit);
+    }
+    public virtual async Task<List<SessionUnitSenderInfo>> MapToSenderAsync(List<SessionUnitCacheItem> unitList)
+    {
+        var ownerIdList = unitList.Select(x => x.OwnerId).Distinct().ToList();
+        var owners = await ChatObjectManager.GetManyByCacheAsync(ownerIdList);
+        var ownerMap = owners.ToDictionary(x => x.Id);
+
+        var list = unitList.Select(x => new SessionUnitSenderInfo()
+            {
+                Id = x.Id,
+                OwnerId = x.OwnerId,
+                OwnerObjectType = x.OwnerObjectType,
+                MemberName = x.MemberName,
+                IsCreator = x.IsCreator,
+                IsEnabled = x.IsEnabled,
+                IsPublic = x.IsPublic,
+                IsStatic = x.IsStatic,
+                IsVisible = x.IsVisible,
+                SessionId = x.SessionId,
+                CreationTime = x.CreationTime,
+                // 待赋值
+                TagList = [],
+                // owner
+                Owner = ownerMap.GetOrDefault(x.OwnerId)
+            })
+            .ToList();
+        return list;
+    }
+
+    public virtual async Task<SessionUnitSenderInfo> MapToSenderAsync(SessionUnitCacheItem senderSessionUnit)
+    {
+        var list = await MapToSenderAsync([senderSessionUnit]);
+        return list.FirstOrDefault();
     }
 
     /// <inheritdoc />
@@ -1309,7 +1356,7 @@ public class SessionUnitManager(
     [Obsolete($"Move to {nameof(ISessionUnitSettingManager.SetMuteExpireTimeAsync)}")]
     public virtual async Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime, SessionUnit setterSessionUnit, bool isSendMessage)
     {
-        Assert.If(muterSessionUnit.Setting.IsCreator, $"Creator can't be mute.");
+        Assert.If(muterSessionUnit.IsCreator, $"Creator can't be mute.");
 
         var allowList = new List<ChatObjectTypeEnums?> { ChatObjectTypeEnums.Room, ChatObjectTypeEnums.Square, ChatObjectTypeEnums.Official, ChatObjectTypeEnums.Subscription, };
 
@@ -1333,7 +1380,8 @@ public class SessionUnitManager(
         var isMuted = timeSpan.HasValue && timeSpan.Value.Milliseconds > 0;
 
         //sendMessage
-        await MessageSender.SendCmdAsync(setterSessionUnit, new MessageInput<CmdContentInfo>()
+        var unit = await GetCacheAsync(setterSessionUnit.Id);
+        await MessageSender.SendCmdAsync(unit, new MessageInput<CmdContentInfo>()
         {
             Content = new CmdContentInfo()
             {
@@ -1411,7 +1459,8 @@ public class SessionUnitManager(
         if (!isAny)
         {
             //第一次 才发送通知
-            await MessageSender.SendCmdAsync(notifySessionUnit, new MessageInput<CmdContentInfo>()
+            var unit = await GetCacheAsync(notifySessionUnit.Id);
+            await MessageSender.SendCmdAsync(unit, new MessageInput<CmdContentInfo>()
             {
                 Content = new CmdContentInfo()
                 {

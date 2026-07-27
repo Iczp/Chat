@@ -1,5 +1,6 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatPushers;
 using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.Enums;
@@ -46,6 +47,7 @@ public partial class MessageManager(
     ISessionUnitCacheManager sessionUnitCacheManager,
     IUnitOfWorkManager unitOfWorkManager,
     ISessionRepository sessionRepository,
+    IChatObjectRepository chatObjectRepository,
     ISettingProvider settingProvider,
     IJsonSerializer jsonSerializer,
     IRepository<MessageReminder> messageReminderRepository,
@@ -67,6 +69,7 @@ public partial class MessageManager(
     public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
     public ICurrentHosted CurrentHosted { get; } = currentHosted;
     protected ISessionRepository SessionRepository { get; } = sessionRepository;
+    public IChatObjectRepository ChatObjectRepository { get; } = chatObjectRepository;
     protected ISessionUnitSettingRepository SessionUnitSettingRepository { get; } = sessionUnitSettingRepository;
     public IFollowManager FollowManager { get; } = followManager;
     public IDistributedCache<MessageCacheItem, MessageCacheKey> MessageCache { get; } = messageCache;
@@ -81,19 +84,22 @@ public partial class MessageManager(
     protected virtual DistributedCacheEntryOptions CacheOptions => Config.CacheOptions;
 
     /// <inheritdoc />
-    public virtual async Task CreateSessionUnitByMessageAsync(SessionUnit senderSessionUnit)
+    public virtual async Task CreateSessionUnitByMessageAsync(SessionUnitCacheItem senderSessionUnit)
     {
         //ShopKeeper
         if (senderSessionUnit.DestinationObjectType == ChatObjectTypeEnums.ShopKeeper)
         {
-            await SessionGenerator.AddShopWaitersIfNotContains(senderSessionUnit.Session, senderSessionUnit.Owner, senderSessionUnit.DestinationId.Value);
+            //await SessionGenerator.AddShopWaitersIfNotContains(senderSessionUnit.Session, senderSessionUnit.Owner, senderSessionUnit.DestinationId.Value);
+            var session = await SessionRepository.GetAsync(senderSessionUnit.SessionId.Value);
+            var owner = await ChatObjectRepository.GetAsync(senderSessionUnit.OwnerId);
+            await SessionGenerator.AddShopWaitersIfNotContains(session, owner, senderSessionUnit.DestinationId.Value);
         }
         await Task.Yield();
     }
 
     /// <inheritdoc />
     public virtual async Task<Message> CreateMessageAsync(
-        SessionUnit senderSessionUnit,
+        SessionUnitCacheItem senderSessionUnit,
         Func<Message, Task<IContentEntity>> action,
         string clientMessageId = null,
         Guid? receiverSessionUnitId = null,
@@ -105,9 +111,9 @@ public partial class MessageManager(
 
         Assert.NotNull(senderSessionUnit, $"Unable to send message, senderSessionUnit is null");
 
-        Assert.If(!senderSessionUnit.Setting.IsInputEnabled, $"Unable to send message, input status is disabled,senderSessionUnitId:{senderSessionUnit.Id}");
+        Assert.If(!senderSessionUnit.IsInputEnabled, $"Unable to send message, input status is disabled,senderSessionUnitId:{senderSessionUnit.Id}");
 
-        Assert.If(senderSessionUnit.Setting.MuteExpireTime > Clock.Now, $"Unable to send message,sessionUnit has been muted.senderSessionUnitId:{senderSessionUnit.Id}");
+        Assert.If(senderSessionUnit.MuteExpireTime > Clock.Now, $"Unable to send message,sessionUnit has been muted.senderSessionUnitId:{senderSessionUnit.Id}");
 
         // Create SessionUnit By Message
         await CreateSessionUnitByMessageAsync(senderSessionUnit);
@@ -132,6 +138,7 @@ public partial class MessageManager(
         {
             CreationTime = Clock.Now,
             ClientMessageId =  clientMessageId,
+            //SessionKey = "",
 
         };
         message.SetShortId(shortId: ShortIdGenerator.Create());
@@ -199,6 +206,7 @@ public partial class MessageManager(
         await SetCacheAsync(message, senderSessionUnit);
 
         // update Session LastMessage
+        await SessionUnitCacheManager.UpdateLastMessageAsync(senderSessionUnit, message);
         await SessionRepository.UpdateLastMessageIdAsync(sessionId, message.Id);
 
         // update SessionUnitSetting LastSendMessageId
@@ -343,7 +351,7 @@ public partial class MessageManager(
     /// <param name="senderSessionUnit"></param>
     /// <param name="message"></param>
     /// <returns></returns>
-    protected virtual async Task<List<Guid>> ApplyReminderIdListForTextContentAsync(SessionUnit senderSessionUnit, Message message)
+    protected virtual async Task<List<Guid>> ApplyReminderIdListForTextContentAsync(SessionUnitCacheItem senderSessionUnit, Message message)
     {
         var unitIdList = new List<Guid>();
         //@XXX
@@ -402,7 +410,7 @@ public partial class MessageManager(
     /// <param name="message"></param>
     /// <param name="remindIdList"></param>
     /// <returns></returns>
-    protected virtual async Task<List<Guid>> ApplyRemindIdListAsync(SessionUnit senderSessionUnit, Message message, List<Guid> remindIdList)
+    protected virtual async Task<List<Guid>> ApplyRemindIdListAsync(SessionUnitCacheItem senderSessionUnit, Message message, List<Guid> remindIdList)
     {
         //私有消息不设置提醒
         if (message.IsPrivateMessage())
@@ -436,7 +444,7 @@ public partial class MessageManager(
     /// <param name="senderSessionUnit"></param>
     /// <param name="message"></param>
     /// <returns></returns>
-    protected virtual async Task<List<Guid>> ApplyMessageFollowersAsync(SessionUnit senderSessionUnit, Message message)
+    protected virtual async Task<List<Guid>> ApplyMessageFollowersAsync(SessionUnitCacheItem senderSessionUnit, Message message)
     {
         var followerIdList = await FollowManager.GetFollowerIdListAsync(senderSessionUnit.Id);
         message.SetFollowerIds(followerIdList);
@@ -445,7 +453,7 @@ public partial class MessageManager(
 
     /// <inheritdoc />
     public virtual async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContentEntity>(
-        SessionUnit senderSessionUnit,
+        SessionUnitCacheItem senderSessionUnit,
         MessageInput<TContentInfo> input)
         where TContentInfo : IContentInfo
         where TContentEntity : IContentEntity
@@ -456,7 +464,7 @@ public partial class MessageManager(
 
     /// <inheritdoc />
     public virtual async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContentEntity>(
-        SessionUnit senderSessionUnit,
+        SessionUnitCacheItem senderSessionUnit,
         MessageInput input,
         TContentEntity contentEntity)
         where TContentInfo : IContentInfo
@@ -472,11 +480,10 @@ public partial class MessageManager(
         //var output = ObjectMapper.Map<Message, MessageInfo<object>>(message);
         var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
         //var output = new MessageInfo<TContentInfo>() { MessageId = message.MessageId };
-        output.SenderSessionUnit ??= ObjectMapper.Map<SessionUnit, SessionUnitSenderInfo>(senderSessionUnit);
-
+        output.SenderSessionUnit ??= await SessionUnitManager.MapToSenderAsync(senderSessionUnit);
         if (message.IsPrivateMessage())
         {
-            var receiverSessionUnit = await SessionUnitManager.GetAsync(input.ReceiverSessionUnitId.Value);
+            var receiverSessionUnit = await SessionUnitManager.GetCacheAsync(input.ReceiverSessionUnitId.Value);
 
             Assert.If(receiverSessionUnit.SessionId != senderSessionUnit.SessionId, $"Fail ReceiverSessionUnitId:{input.ReceiverSessionUnitId}");
 
@@ -546,11 +553,11 @@ public partial class MessageManager(
 
         foreach (var targetSessionUnitId in targetSessionUnitIdList.Distinct())
         {
-            var targetSessionUnit = await SessionUnitManager.GetAsync(targetSessionUnitId);
+            var targetSessionUnit = await SessionUnitManager.GetCacheAsync(targetSessionUnitId);
 
-            Assert.If(!targetSessionUnit.Setting.IsEnabled, $"Target session unit disabled,key:{targetSessionUnit.Id}");
+            Assert.If(!targetSessionUnit.IsEnabled, $"Target session unit disabled,key:{targetSessionUnit.Id}");
 
-            Assert.If(!targetSessionUnit.Setting.IsInputEnabled, $"Target session unit input state is disabled,key:{targetSessionUnit.Id}");
+            Assert.If(!targetSessionUnit.IsInputEnabled, $"Target session unit input state is disabled,key:{targetSessionUnit.Id}");
 
             Assert.If(currentSessionUnit.OwnerId != targetSessionUnit.OwnerId, $"[TargetSessionUnitId:{targetSessionUnitId}] is fail.");
 
@@ -600,7 +607,7 @@ public partial class MessageManager(
 
     public virtual async Task<MessageCacheItem> SetCacheAsync(
         Message message,
-        SessionUnit senderSessionUnit = null,
+        SessionUnitCacheItem senderSessionUnit = null,
         DistributedCacheEntryOptions options = null,
         bool? hideErrors = null,
         bool considerUow = false,
@@ -611,8 +618,9 @@ public partial class MessageManager(
         //fix: 导航属性没有加载完全 改为手动转换Map
         if (message.SenderSessionUnit == null && message.SenderSessionUnitId.HasValue)
         {
-            senderSessionUnit ??= await SessionUnitManager.GetAsync(message.SenderSessionUnitId.Value);
-            messageInfo.SenderSessionUnit = ObjectMapper.Map<SessionUnit, SessionUnitSenderInfo>(senderSessionUnit);
+            senderSessionUnit ??= await SessionUnitManager.GetCacheAsync(message.SenderSessionUnitId.Value);
+            //messageInfo.SenderSessionUnit = ObjectMapper.Map<SessionUnit, SessionUnitSenderInfo>(senderSessionUnit);
+            messageInfo.SenderSessionUnit = await SessionUnitManager.MapToSenderAsync(senderSessionUnit);
         }
 
         messageInfo.Content ??= message.GetContentDto();

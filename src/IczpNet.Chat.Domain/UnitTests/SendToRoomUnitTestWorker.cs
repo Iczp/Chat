@@ -1,8 +1,8 @@
-﻿using AutoMapper.Internal;
+﻿
+using AutoMapper.Internal;
 using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections;
-using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
@@ -102,7 +102,8 @@ public class SendToRoomUnitTestWorker : AsyncPeriodicBackgroundWorkerBase
             text = $"@陈忠培 {text}";
         }
 
-        var sendResult = await MessageSender.SendTextAsync(sessionunit, new MessageInput<TextContentInfo>()
+        var unit = await SessionUnitManager.MapToCacheAsync(sessionunit);
+        var sendResult = await MessageSender.SendTextAsync(unit, new MessageInput<TextContentInfo>()
         {
             Content = new TextContentInfo()
             {

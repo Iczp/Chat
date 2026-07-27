@@ -25,7 +25,6 @@ using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.MessageServices;
@@ -224,7 +223,10 @@ public class MessageAppService(
 
             var friendshipSessionUnit = friendMap.GetValueOrDefault(item.SenderSessionUnit.OwnerId);
 
-            item.SenderSessionUnit.Friendship = friendshipSessionUnit != null ? SessionUnitFriendshipMapper.Map(friendshipSessionUnit) : new SessionUnitFriendshipDto();
+            if (friendshipSessionUnit != null)
+            {
+                item.SenderSessionUnit.Friendship = SessionUnitFriendshipMapper.Map(friendshipSessionUnit);
+            }
         }
     }
 
@@ -331,7 +333,7 @@ public class MessageAppService(
     }
 
     /// <summary>
-    /// 消息列表（Faster）
+    /// 消息列表（Pre:dev）
     /// </summary>
     /// <param name="input"></param>
     /// <returns></returns>
@@ -413,8 +415,6 @@ public class MessageAppService(
         return ObjectMapper.Map<MessageCacheItem, MessageFastDto>(cacheItem);
     }
 
-
-
     /// <summary>
     /// 获取消息列表
     /// </summary>
@@ -476,6 +476,7 @@ public class MessageAppService(
     protected virtual async Task<List<MessageOwnerDto>> MapToMessagesAsync(List<MessageCacheItem> messages)
     {
         await Task.Yield();
+        // 要改为从缓存取
         return ObjectMapper.Map<List<MessageCacheItem>, List<MessageOwnerDto>>(messages);
     }
 

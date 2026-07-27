@@ -50,5 +50,15 @@ public class MessageSectionApplicationAutoMapperProfile : Profile
         CreateMap<SessionUnitSenderInfo, SessionUnitSenderDto>(MemberList.None)
             .ForMember(x => x.Score, opt => opt.MapFrom(x => MemberScore.Create(x.IsCreator, x.CreationTime)))
             ;
+        CreateMap<SessionUnitCacheItem, SessionUnitSenderDto>(MemberList.None)
+            .ForMember(x => x.Score, opt => opt.MapFrom(x => MemberScore.Create(x.IsCreator, x.CreationTime)))
+            ;
+
+        CreateMap<MessageCacheItem, MessageFastDto>(MemberList.None).MapExtraProperties();
+        CreateMap<MessageQuoteCacheItem, MessageQuoteFastDto>(MemberList.None).MapExtraProperties();
+
+
+        
+        
     }
 }
