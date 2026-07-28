@@ -223,7 +223,17 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// <returns></returns>
     private RedisKey OwnersIndexedHashKey(long ownerId) => $"{SessionUnitsPrefix}Owners:Indexed:{ownerId}";
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
     private RedisKey SessionLastMessageSetKey() => $"{MessagesPrefix}SessionLastMessage";
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
+    private RedisKey SessionMessageSetKey(Guid sessionId) => $"{MessagesPrefix}SessionMessage:{sessionId}";
 
     /// <summary>
     /// RedisKey： Element
@@ -415,11 +425,6 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         {
             _ = batch.KeyExpireAsync(unitKey, CacheExpire);
         }
-    }
-
-    private void SetSessionLastMessage(IBatch batch, Guid SessionId, long MessageId)
-    {
-        _ = batch.SortedSetAddAsync(SessionLastMessageSetKey(), SessionId.ToString(), MessageId);
     }
 
     private string GetFriendTypeKey(FriendViews friendView, long ownerId, Guid? boxId = null)
@@ -2172,8 +2177,35 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         // session last message id
         if (sender.SessionId.HasValue)
         {
-            SetSessionLastMessage(batch, sender.SessionId.Value, lastMessageId);
+            var sessionId = sender.SessionId.Value;
+            _ = batch.SortedSetAddAsync(SessionLastMessageSetKey(), sessionId.ToString(), lastMessageId);
+
+            // message list
+            var sessionMessageListKey = SessionMessageSetKey(sessionId);
+            _ = batch.SortedSetAddAsync(sessionMessageListKey, message.Id, message.Id);
+            // 注意：不要每条消息都做 Trim， (目前是每次都删除，后期改为定时删除)。
+            _ = batch.SortedSetRemoveRangeByRankAsync(sessionMessageListKey, 0, -1001, CommandFlags.None);
         }
         batch.Execute();
+    }
+
+    public async Task<IEnumerable<long>> GetLatestMessagesBySessionAsync(
+        Guid sessionId,
+        long minMessageId = 0,
+        long maxMessageId = long.MaxValue,
+        long skip = 0,
+        long take = -1,
+        bool isDescending = true)
+    {
+        var redisZset = await Database.SortedSetRangeByScoreWithScoresAsync(
+            key: SessionMessageSetKey(sessionId),
+            start: minMessageId,
+            stop: maxMessageId,
+            // 不要排除首尾
+            exclude: Exclude.None,
+            skip: skip,
+            take: take,
+            order: isDescending ? Order.Descending : Order.Ascending);
+        return redisZset.Select(x => (long)x.Score); 
     }
 }

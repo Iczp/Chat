@@ -475,4 +475,22 @@ public interface ISessionUnitCacheManager
     /// <param name="message"></param>
     /// <returns></returns>
     Task UpdateLastMessageAsync(SessionUnitCacheItem senderSessionUnit, Message message);
+
+    /// <summary>
+    /// 获取会话最新消息
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="minMessageId"></param>
+    /// <param name="maxMessageId"></param>
+    /// <param name="skip"></param>
+    /// <param name="take"></param>
+    /// <param name="isDescending"></param>
+    /// <returns></returns>
+    Task<IEnumerable<long>> GetLatestMessagesBySessionAsync(
+        Guid sessionId,
+        long minMessageId = 0,
+        long maxMessageId = long.MaxValue,
+        long skip = 0,
+        long take = -1,
+        bool isDescending = true);
 }

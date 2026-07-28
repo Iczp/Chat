@@ -2,6 +2,7 @@
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.BaseDtos;
+using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Enums.Dtos;
 using IczpNet.Chat.FavoritedRecorders;
@@ -24,6 +25,7 @@ using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 
@@ -381,6 +383,114 @@ public class MessageAppService(
         var items = await MapToMessageFasterAsync(messageIdList, qouteIdList);
 
         var result = new PagedResultDto<MessageFastDto>(totalCount, items);
+
+        return result;
+    }
+
+
+    public async Task<List<long>> GetVisibleMessageIdsAsync(Guid sessionId, long minMessageId, List<long> invisibleMessageIds, int pageSize, int fetchSize = 100)
+    {
+        var result = new List<long>();
+        var cursor = minMessageId;
+        var invisibleSet = invisibleMessageIds.Count == 0    ? null    : invisibleMessageIds.ToHashSet();
+        while (result.Count <= pageSize)
+        {
+            var ids = (
+                await SessionUnitCacheManager.GetLatestMessagesBySessionAsync(
+                    sessionId,
+                    minMessageId: cursor,
+                    maxMessageId: long.MaxValue,
+                    skip: 0,
+                    take: fetchSize + 1,
+                    isDescending: false)
+            ).ToList();
+
+            if (ids.Count == 0)
+            {
+                break;
+            }
+
+            // 第一次需要排除 cursor 本身
+            if (ids[0] == cursor)
+            {
+                ids.RemoveAt(0);
+            }
+
+            if (ids.Count == 0)
+            {
+                break;
+            }
+
+            foreach (var id in ids)
+            {
+                if (invisibleSet == null || !invisibleSet.Contains(id))
+                {
+                    result.Add(id);
+
+                    if (result.Count > pageSize)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            // Redis 已经没有更多
+            if (ids.Count < fetchSize)
+            {
+                break;
+            }
+
+            // 下一批
+            cursor = ids[^1];
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// 最新消息(Cache)
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    public async Task<ExtraPagedResultDto<MessageFastDto>> GetLatestAsync(MessageGetLatestInput input)
+    {
+
+        var pageSize = input.MaxResultCount;
+
+        var sessionUnitId = input.SessionUnitId;
+
+        var unit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
+
+        // 要排除已删除的(待优化)
+        var deletedIdList = await DeletedRecorderManager.GetDeletedMessageIdListAsync(sessionUnitId);
+
+        var messageIdList = await GetVisibleMessageIdsAsync(unit.SessionId.Value, input.MinMessageId ?? 0, deletedIdList, pageSize + 1);
+
+        var totalCount = messageIdList.Count;
+
+        var hasMore = messageIdList.Count > pageSize;
+
+        long? nextCursorId = null;
+
+        if (hasMore)
+        {
+            nextCursorId = messageIdList.Last();
+            messageIdList.RemoveAt(messageIdList.Count - 1);
+        }
+
+        var messages = await MessageManager.GetOrAddManyCacheAsync(messageIdList);
+
+        var qouteIdList = messages.Where(x => x.Value.QuoteMessageId.HasValue).Select(x => x.Value.QuoteMessageId.Value).ToList();
+
+        var cacheItems = messages.Select(x => x.Value).ToList();
+
+        var items = await MapToMessageFasterAsync(messageIdList, qouteIdList);
+
+        var result = new ExtraPagedResultDto<MessageFastDto>(totalCount, items, new
+        {
+            NextCursorId = nextCursorId,
+            HasMore = hasMore,
+        });
 
         return result;
     }
