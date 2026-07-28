@@ -216,7 +216,7 @@ return tonumber(newValue)
         _ = batch.KeyExpireAsync(redisKeyFunc(), CacheExpire, when, flags);
     }
 
-    protected void HashSetIf(bool condition, Func<RedisKey> redisKeyFunc, RedisValue field, RedisValue value, IBatch batch, TimeSpan? expire = null)
+    protected void HashSetIf(bool condition, Func<RedisKey> redisKeyFunc, RedisValue field, RedisValue value, IBatch batch, TimeSpan? expiry = null)
     {
         if (!condition)
         {
@@ -225,8 +225,11 @@ return tonumber(newValue)
         var redisKey = redisKeyFunc();
         _ = batch.HashSetAsync(redisKey, field, value);
 
-        // 要移除
-        _ = batch.KeyExpireAsync(redisKey, expire ?? CacheExpire);
+        if (expiry != null)
+        {
+            _ = batch.KeyExpireAsync(redisKey, expiry);
+        }
+        
     }
     protected void HashRemoveIf(bool condition, Func<RedisKey> redisKeyFunc, RedisValue field, IBatch batch, bool refreshExpire = false)
     {
@@ -250,8 +253,10 @@ return tonumber(newValue)
         }
         var redisKey = redisKeyFunc();
         _ = batch.SortedSetAddAsync(redisKey, field, score);
-        // 要移除
-        _ = batch.KeyExpireAsync(redisKey, expiry ?? CacheExpire);
+        if (expiry != null)
+        {
+            _ = batch.KeyExpireAsync(redisKey, expiry);
+        }
     }
 
     protected void SortedRemoveIf(bool condition, Func<RedisKey> redisKeyFunc, RedisValue member, IBatch batch, bool refreshExpire = false)
@@ -277,7 +282,7 @@ return tonumber(newValue)
     {
         var stopwatch = Stopwatch.StartNew();
 
-        var keyList = keys as IList<RedisKey> ?? keys.ToList();
+        var keyList = keys as IList<RedisKey> ?? [.. keys];
         if (keyList.Count == 0)
         {
             return [];

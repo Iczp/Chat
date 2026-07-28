@@ -81,7 +81,6 @@ public class MessageAppService(
 
     private async Task<IQueryable<Message>> CreateQueryableAsync(SessionUnit entity, MessageGetListInput input)
     {
-
         var sessionId = entity.SessionId;
         var sessionUnitId = entity.Id;
         //var setting = entity.Setting;
@@ -387,12 +386,11 @@ public class MessageAppService(
         return result;
     }
 
-
-    public async Task<List<long>> GetVisibleMessageIdsAsync(Guid sessionId, long minMessageId, List<long> invisibleMessageIds, int pageSize, int fetchSize = 100)
+    // 加载消息Id
+    protected async Task<List<long>> GetVisibleMessageIdsAsync(Guid sessionId, long minMessageId, HashSet<long> invisibleMessageIdSet, int pageSize, int fetchSize = 100)
     {
         var result = new List<long>();
         var cursor = minMessageId;
-        var invisibleSet = invisibleMessageIds.Count == 0    ? null    : invisibleMessageIds.ToHashSet();
         while (result.Count <= pageSize)
         {
             var ids = (
@@ -423,7 +421,7 @@ public class MessageAppService(
 
             foreach (var id in ids)
             {
-                if (invisibleSet == null || !invisibleSet.Contains(id))
+                if (invisibleMessageIdSet == null || !invisibleMessageIdSet.Contains(id))
                 {
                     result.Add(id);
 
@@ -454,7 +452,6 @@ public class MessageAppService(
     /// <returns></returns>
     public async Task<ExtraPagedResultDto<MessageFastDto>> GetLatestAsync(MessageGetLatestInput input)
     {
-
         var pageSize = input.MaxResultCount;
 
         var sessionUnitId = input.SessionUnitId;
@@ -462,9 +459,9 @@ public class MessageAppService(
         var unit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
 
         // 要排除已删除的(待优化)
-        var deletedIdList = await DeletedRecorderManager.GetDeletedMessageIdListAsync(sessionUnitId);
+        var deletedIdSet = await DeletedRecorderManager.GetDeletedMessageIdListAsync(sessionUnitId);
 
-        var messageIdList = await GetVisibleMessageIdsAsync(unit.SessionId.Value, input.MinMessageId ?? 0, deletedIdList, pageSize + 1);
+        var messageIdList = await GetVisibleMessageIdsAsync(unit.SessionId.Value, input.MinMessageId ?? 0, deletedIdSet, pageSize + 1);
 
         var totalCount = messageIdList.Count;
 

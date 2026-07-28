@@ -126,23 +126,23 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
     }
 
     private void SortedSetHostConn(IBatch batch, ConnectionPoolCacheItem connectionPool)
-         => SortedSetIf(!string.IsNullOrWhiteSpace(connectionPool.Host), () => HostConnZsetKey(connectionPool.Host), connectionPool.ConnectionId, Clock.Now.ToUnixTimeMilliseconds(), batch: batch);
+         => SortedSetIf(!string.IsNullOrWhiteSpace(connectionPool.Host), () => HostConnZsetKey(connectionPool.Host), connectionPool.ConnectionId, Clock.Now.ToUnixTimeMilliseconds(), batch: batch, expiry: CacheExpire);
 
     private void HashSetUserConn(IBatch batch, ConnectionPoolCacheItem connectionPool)
-        => HashSetIf(connectionPool.UserId.HasValue, () => UserConnKey(connectionPool.UserId.Value), connectionPool.ConnectionId, JsonSerializer.Serialize(connectionPool.ChatObjectIdList ?? []), batch: batch);
+        => HashSetIf(connectionPool.UserId.HasValue, () => UserConnKey(connectionPool.UserId.Value), connectionPool.ConnectionId, JsonSerializer.Serialize(connectionPool.ChatObjectIdList ?? []), batch: batch, expiry: CacheExpire);
 
     private void SortedSetAppConn(IBatch batch, ConnectionPoolCacheItem connectionPool)
-        => SortedSetIf(!string.IsNullOrWhiteSpace(connectionPool.AppId), () => AppSetKey(connectionPool.AppId), connectionPool.ConnectionId, Clock.Now.ToUnixTimeMilliseconds(), batch: batch);
+        => SortedSetIf(!string.IsNullOrWhiteSpace(connectionPool.AppId), () => AppSetKey(connectionPool.AppId), connectionPool.ConnectionId, Clock.Now.ToUnixTimeMilliseconds(), batch: batch, expiry: CacheExpire);
 
     private void SortedSetClientConn(IBatch batch, ConnectionPoolCacheItem connectionPool)
-        => SortedSetIf(!string.IsNullOrWhiteSpace(connectionPool.ClientId), () => ClientSetKey(connectionPool.ClientId), connectionPool.ConnectionId, Clock.Now.ToUnixTimeMilliseconds(), batch: batch);
+        => SortedSetIf(!string.IsNullOrWhiteSpace(connectionPool.ClientId), () => ClientSetKey(connectionPool.ClientId), connectionPool.ConnectionId, Clock.Now.ToUnixTimeMilliseconds(), batch: batch, expiry: CacheExpire);
 
     private void HashSetDevice(IBatch batch, ConnectionPoolCacheItem connectionPool)
     {
         var ownerIds = connectionPool.ChatObjectIdList ?? [];
         foreach (var ownerId in ownerIds)
         {
-            HashSetIf(true, () => DeviceHashKey(ownerId), connectionPool.ConnectionId, $"{connectionPool.DeviceType}:{connectionPool.DeviceId}", batch: batch);
+            HashSetIf(true, () => DeviceHashKey(ownerId), connectionPool.ConnectionId, $"{connectionPool.DeviceType}:{connectionPool.DeviceId}", batch: batch, expiry: CacheExpire);
         }
 
     }
@@ -343,7 +343,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         HashSetSessionConn(batch, connectionPool, friendsMap);
 
         // 更新主机
-        SortedSetIf(true, () => AllHostZsetKey(), CurrentHosted.Name, Clock.Now.ToUnixTimeMilliseconds(), batch: batch);
+        SortedSetIf(true, () => AllHostZsetKey(), CurrentHosted.Name, Clock.Now.ToUnixTimeMilliseconds(), batch: batch, expiry: CacheExpire);
 
         batch.Execute();
 
@@ -398,7 +398,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         }
 
         // Host: update timestamp in sorted set
-        SortedSetIf(!string.IsNullOrWhiteSpace(connectionPool.Host), () => HostConnZsetKey(connectionPool.Host), connectionId, unixTime, batch: batch);
+        SortedSetIf(!string.IsNullOrWhiteSpace(connectionPool.Host), () => HostConnZsetKey(connectionPool.Host), connectionId, unixTime, batch: batch, expiry: CacheExpire);
 
         // User: update 
         ExpireIf(connectionPool.UserId.HasValue, () => UserConnKey(connectionPool.UserId.Value), batch: batch);
@@ -416,7 +416,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         RefreshSessionExpire(batch, friendsMap);
 
         // ActiveTime
-        HashSetIf(true, () => ConnHashKey(connectionId), nameof(ConnectionPoolCacheItem.ActiveTime), now.ToRedisValue(), batch: batch);
+        HashSetIf(true, () => ConnHashKey(connectionId), nameof(ConnectionPoolCacheItem.ActiveTime), now.ToRedisValue(), batch: batch, expiry: CacheExpire);
 
         Expire(batch, AllHostZsetKey());
 
