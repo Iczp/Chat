@@ -1,6 +1,7 @@
 ﻿using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.Enums.Dtos;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
@@ -16,6 +17,10 @@ public interface IMessageAppService
     Task<long> GetTotalCountAsync(MessageGetListInput input);
 
     Task<ExtraPagedResultDto<MessageOwnerDto>> GetListFastAsync(MessageFastGetListInput input);
+
+    Task<ExtraPagedResultDto<MessageFastDto>> GetLatestAsync(MessageGetLatestInput input);
+
+    Task<int> BuildCacheAsync(Guid sessionId, long? minMessageId, long? maxMessageId, int max = 5000, int batchSize = 1000);
 
     Task<MessageOwnerDto> GetItemAsync(MessageGetItemInput input);
 

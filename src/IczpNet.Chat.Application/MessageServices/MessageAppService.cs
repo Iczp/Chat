@@ -1,4 +1,5 @@
-﻿using IczpNet.AbpCommons;
+﻿using DeviceDetectorNET.Cache;
+using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.BaseDtos;
@@ -277,7 +278,6 @@ public class MessageAppService(
         return result;
     }
 
-
     /// <summary>
     /// 消息列表
     /// </summary>
@@ -338,59 +338,6 @@ public class MessageAppService(
     }
 
     /// <summary>
-    /// 消息列表（Pre:dev）
-    /// </summary>
-    /// <param name="input"></param>
-    /// <returns></returns>
-    public async Task<PagedResultDto<MessageFastDto>> GetListFasterAsync(MessageFastGetListInput input)
-    {
-        var sessionUnitId = input.SessionUnitId;
-
-        var entity = await GetAndCheckPolicyAsync(GetListPolicyName, sessionUnitId);
-
-        var query = await CreateQueryableAsync(entity, input);
-
-        var idQueryable = query.Select(x => new
-        {
-            Id = x.Id,
-            QuoteId = x.QuoteMessageId,
-        });
-
-        var pageSize = input.MaxResultCount;
-
-        var skip = input.SkipCount;
-
-        var ids = await idQueryable
-            .OrderByDescending(x => x.Id)
-            .Skip(skip)
-            // 多取一条
-            .Take(pageSize + 1)
-            .ToListAsync();
-
-        var hasMore = ids.Count > pageSize;
-
-        if (hasMore)
-        {
-            ids.RemoveAt(ids.Count - 1);
-        }
-
-        // 不统计真实数量，防止全表扫描
-        var totalCount = input.IsRealTotalCount == true
-            ? idQueryable.Count()
-            : skip + ids.Count + (hasMore ? 1 : 0);
-
-        var messageIdList = ids.Select(x => x.Id).ToList();
-
-        var qouteIdList = ids.Where(x => x.QuoteId.HasValue).Select(x => x.QuoteId.Value).ToList();
-
-        var items = await MapToMessageFasterAsync(messageIdList, qouteIdList);
-
-        var result = new PagedResultDto<MessageFastDto>(totalCount, items);
-
-        return result;
-    }
-
-    /// <summary>
     /// 加载到缓存
     /// </summary>
     /// <param name="sessionId"></param>
@@ -432,13 +379,7 @@ public class MessageAppService(
             totalCount = await MessageManager.GetSessionMessageTotalCountAsync(unit, input.MinMessageId, long.MaxValue);
         }
 
-        var messages = await MessageManager.GetOrAddManyCacheAsync(messageIdList);
-
-        var qouteIdList = messages.Where(x => x.Value.QuoteMessageId.HasValue).Select(x => x.Value.QuoteMessageId.Value).ToList();
-
-        var cacheItems = messages.Select(x => x.Value).ToList();
-
-        var items = await MapToMessageFasterAsync(messageIdList, qouteIdList);
+        var items = await MapToMessageFasterAsync(messageIdList);
 
         var result = new ExtraPagedResultDto<MessageFastDto>(totalCount, items, new
         {
@@ -449,27 +390,24 @@ public class MessageAppService(
         return result;
     }
 
-    protected virtual async Task<List<MessageFastDto>> MapToMessageFasterAsync(List<long> messageIdList, List<long> quoteIdList)
+    protected virtual async Task<List<MessageFastDto>> MapToMessageFasterAsync(List<long> messageIdList)
     {
-        // 包含引用的消息Id
-        var allMessageIdList = messageIdList.Concat(quoteIdList).Distinct();
+        var messages = await MessageManager.GetOrAddManyCacheAsync(messageIdList);
 
-        var allMessages = await MessageManager.GetOrAddManyCacheAsync(allMessageIdList);
+        var result = messages.Select(x => MapToMessage(x.Value)).ToList();
 
-        var messageMap = allMessages.ToDictionary(x => x.Key.MessageId, x => x.Value);
+        //// 引用的消息Id
+        //var quoteIdList = messages.Where(x => x.Value.QuoteMessageId.HasValue).Select(x => x.Value.QuoteMessageId.Value).ToList();
 
-        var senderSessionUnitIdList = allMessages.Select(x => x.Value.SenderSessionUnitId).Where(x => x.HasValue).ToList();
+        //var quoteMessageIdList = quoteIdList.Distinct().Except(messageIdList);
 
-        var result = new List<MessageFastDto>();
+        //var quoteMessages = await MessageManager.GetOrAddManyCacheAsync(quoteMessageIdList);
 
-        foreach (var messageId in messageIdList)
-        {
-            var cache = messageMap.GetValueOrDefault(messageId);
-            var message = MapToMessage(cache);
-            result.Add(message);
-        }
+        //var allMessages = messages.Concat(quoteMessages).DistinctBy(x => x.Value.Id);
 
-        var cacheItems = allMessages.Select(x => x.Value).ToList();
+        //var messageMap = allMessages.ToDictionary(x => x.Key.MessageId, x => x.Value);
+
+        //var senderSessionUnitIdList = allMessages.Select(x => x.Value.SenderSessionUnitId).Where(x => x.HasValue).ToList();
 
         return result;
     }
