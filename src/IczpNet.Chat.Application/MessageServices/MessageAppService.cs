@@ -18,14 +18,17 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Dynamic.Core;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
-using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 
@@ -58,6 +61,7 @@ public class MessageAppService(
     public ISessionUnitSettingManager SessionUnitSettingManager { get; } = sessionUnitSettingManager;
     public ISessionUnitFriendshipMapper SessionUnitFriendshipMapper { get; } = sessionUnitFriendshipMapper;
     protected IMessageManager MessageManager { get; } = messageManager;
+    //protected ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
     /// <summary>
     /// 获取禁止转发的消息类型
@@ -386,63 +390,19 @@ public class MessageAppService(
         return result;
     }
 
-    // 加载消息Id
-    protected async Task<List<long>> GetVisibleMessageIdsAsync(Guid sessionId, long minMessageId, HashSet<long> invisibleMessageIdSet, int pageSize, int fetchSize = 100)
+    /// <summary>
+    /// 加载到缓存
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="minMessageId"></param>
+    /// <param name="maxMessageId"></param>
+    /// <param name="max"></param>
+    /// <param name="batchSize"></param>
+    /// <returns></returns>
+    public async Task<int> BuildCacheAsync(Guid sessionId, long? minMessageId, long? maxMessageId, int max = 5000, int batchSize = 1000)
     {
-        var result = new List<long>();
-        var cursor = minMessageId;
-        while (result.Count <= pageSize)
-        {
-            var ids = (
-                await SessionUnitCacheManager.GetLatestMessagesBySessionAsync(
-                    sessionId,
-                    minMessageId: cursor,
-                    maxMessageId: long.MaxValue,
-                    skip: 0,
-                    take: fetchSize + 1,
-                    isDescending: false)
-            ).ToList();
-
-            if (ids.Count == 0)
-            {
-                break;
-            }
-
-            // 第一次需要排除 cursor 本身
-            if (ids[0] == cursor)
-            {
-                ids.RemoveAt(0);
-            }
-
-            if (ids.Count == 0)
-            {
-                break;
-            }
-
-            foreach (var id in ids)
-            {
-                if (invisibleMessageIdSet == null || !invisibleMessageIdSet.Contains(id))
-                {
-                    result.Add(id);
-
-                    if (result.Count > pageSize)
-                    {
-                        break;
-                    }
-                }
-            }
-
-            // Redis 已经没有更多
-            if (ids.Count < fetchSize)
-            {
-                break;
-            }
-
-            // 下一批
-            cursor = ids[^1];
-        }
-
-        return result;
+        var result = await MessageManager.BuildMessageCacheAsync(sessionId, minMessageId, maxMessageId, max, batchSize);
+        return result.Count;
     }
 
     /// <summary>
@@ -452,18 +412,14 @@ public class MessageAppService(
     /// <returns></returns>
     public async Task<ExtraPagedResultDto<MessageFastDto>> GetLatestAsync(MessageGetLatestInput input)
     {
+        var unit = await SessionUnitManager.GetCacheAsync(input.SessionUnitId);
+
         var pageSize = input.MaxResultCount;
 
-        var sessionUnitId = input.SessionUnitId;
+        // 多取一条
+        var messageIdList = await MessageManager.GetLatestAsync(unit, input.MinMessageId, pageSize + 1);
 
-        var unit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
-
-        // 要排除已删除的(待优化)
-        var deletedIdSet = await DeletedRecorderManager.GetDeletedMessageIdListAsync(sessionUnitId);
-
-        var messageIdList = await GetVisibleMessageIdsAsync(unit.SessionId.Value, input.MinMessageId ?? 0, deletedIdSet, pageSize + 1);
-
-        var totalCount = messageIdList.Count;
+        var totalCount = (long)messageIdList.Count;
 
         var hasMore = messageIdList.Count > pageSize;
 
@@ -471,8 +427,9 @@ public class MessageAppService(
 
         if (hasMore)
         {
-            nextCursorId = messageIdList.Last();
+            nextCursorId = messageIdList.LastOrDefault();
             messageIdList.RemoveAt(messageIdList.Count - 1);
+            totalCount = await MessageManager.GetSessionMessageTotalCountAsync(unit, input.MinMessageId, long.MaxValue);
         }
 
         var messages = await MessageManager.GetOrAddManyCacheAsync(messageIdList);
@@ -485,8 +442,8 @@ public class MessageAppService(
 
         var result = new ExtraPagedResultDto<MessageFastDto>(totalCount, items, new
         {
-            NextCursorId = nextCursorId,
             HasMore = hasMore,
+            NextCursorId = nextCursorId,
         });
 
         return result;

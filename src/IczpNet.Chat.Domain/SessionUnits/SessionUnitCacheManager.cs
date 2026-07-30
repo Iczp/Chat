@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
@@ -2187,7 +2188,19 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         batch.Execute();
     }
 
-    public async Task<IEnumerable<long>> GetLatestMessagesBySessionAsync(
+    public async Task AppendSessionMessagesAsync(Guid sessionId, List<long> messageIdList)
+    {
+        await Task.Yield();
+        var batch = Database.CreateBatch();
+        var sessionMessageListKey = SessionMessageSetKey(sessionId);
+        foreach (var messageId in messageIdList)
+        {
+            _ = batch.SortedSetAddAsync(sessionMessageListKey, messageId, messageId);
+        }
+        batch.Execute();
+    }
+
+    public async Task<IEnumerable<long>> GetSessionMessagesAsync(
         Guid sessionId,
         long minMessageId = 0,
         long maxMessageId = long.MaxValue,
@@ -2195,15 +2208,67 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         long take = -1,
         bool isDescending = true)
     {
+        var sessionMessageListKey = SessionMessageSetKey(sessionId);
         var redisZset = await Database.SortedSetRangeByScoreWithScoresAsync(
-            key: SessionMessageSetKey(sessionId),
+            key: sessionMessageListKey,
             start: minMessageId,
             stop: maxMessageId,
-            // 不要排除首尾
-            exclude: Exclude.None,
+            // 排除首尾
+            exclude: Exclude.Both,
             skip: skip,
             take: take,
             order: isDescending ? Order.Descending : Order.Ascending);
+
+        //await Database.SortedSetLengthByValueAsync(sessionMessageListKey, minMessageId, maxMessageId, Exclude.Both);
+
         return redisZset.Select(x => (long)x.Score);
     }
+
+    public async Task<long> GetSessionMessageTotalCountAsync(Guid sessionId, long minMessageId = 0, long maxMessageId = long.MaxValue)
+    {
+        return await Database.SortedSetLengthByValueAsync(SessionMessageSetKey(sessionId), minMessageId, maxMessageId, Exclude.Both);
+    }
+
+    public async Task<long?> GetMinMessageIdAsync(Guid sessionId)
+    {
+        var sessionMessageListKey = SessionMessageSetKey(sessionId);
+
+        var min = await Database.SortedSetRangeByRankAsync(sessionMessageListKey, 0, 0);
+
+        if (min.Length == 0)
+        {
+            return null;
+        }
+        return long.Parse(min[0]);
+    }
+
+    public async Task<long?> GetMaxMessageIdAsync(Guid sessionId)
+    {
+        var sessionMessageListKey = SessionMessageSetKey(sessionId);
+
+        var max = await Database.SortedSetRangeByRankAsync(sessionMessageListKey, -1, -1);
+
+        if (max.Length == 0)
+        {
+            return null;
+        }
+        return long.Parse(max[0]);
+    }
+
+    public async Task<(long Min, long Max)?> GetMessagesRangeAsync(Guid sessionId)
+    {
+        var sessionMessageListKey = SessionMessageSetKey(sessionId);
+
+        var min = await Database.SortedSetRangeByRankAsync(sessionMessageListKey, 0, 0);
+
+        if (min.Length == 0)
+        {
+            return null;
+        }
+
+        var max = await Database.SortedSetRangeByRankAsync(sessionMessageListKey, -1, -1);
+
+        return (long.Parse(min[0]), long.Parse(max[0]));
+    }
+
 }

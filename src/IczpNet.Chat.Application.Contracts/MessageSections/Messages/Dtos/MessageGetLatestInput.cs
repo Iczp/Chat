@@ -11,14 +11,13 @@ public class MessageGetLatestInput
     [Required]
     public virtual Guid SessionUnitId { get; set; }
 
-
     /// <summary>
     /// 
     /// </summary>
-    public virtual int MaxResultCount { get; set; }
+    public virtual int MaxResultCount { get; set; } = 20;
 
     /// <summary>
     /// 最小消息Id
     /// </summary>
-    public virtual long? MinMessageId { get; set; }
+    public virtual long MinMessageId { get; set; }
 }
