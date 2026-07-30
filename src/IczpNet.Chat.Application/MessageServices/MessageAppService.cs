@@ -387,7 +387,8 @@ public class MessageAppService(
         {
             nextCursorId = messageIdList.LastOrDefault();
             messageIdList.RemoveAt(messageIdList.Count - 1);
-            totalCount = await MessageManager.GetSessionMessageTotalCountAsync(unit, input.MinMessageId, long.MaxValue);
+            var cachedTotalCount = await MessageManager.GetSessionMessageTotalCountAsync(unit, input.MinMessageId, long.MaxValue);
+            totalCount = Math.Max(cachedTotalCount, totalCount);
         }
 
         var items = await MapToMessageFasterAsync(messageIdList);
@@ -425,7 +426,8 @@ public class MessageAppService(
         {
             nextCursorId = messageIdList.LastOrDefault();
             messageIdList.RemoveAt(messageIdList.Count - 1);
-            totalCount = await MessageManager.GetSessionMessageTotalCountAsync(unit, 0, input.MaxMessageId ?? long.MaxValue);
+            var cachedTotalCount = await MessageManager.GetSessionMessageTotalCountAsync(unit, 0, input.MaxMessageId ?? long.MaxValue);
+            totalCount = Math.Max(cachedTotalCount, totalCount);
         }
 
         var items = await MapToMessageFasterAsync(messageIdList);
