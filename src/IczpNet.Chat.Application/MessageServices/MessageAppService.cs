@@ -406,7 +406,7 @@ public class MessageAppService(
     /// </summary>
     /// <param name="input"></param>
     /// <returns></returns>
-    public async Task<ExtraPagedResultDto<long>> GetHisotryAsync(MessageGetHistoryInput input)
+    public async Task<ExtraPagedResultDto<MessageFastDto>> GetHisotryAsync(MessageGetHistoryInput input)
     {
         var unit = await SessionUnitManager.GetCacheAsync(input.SessionUnitId);
 
@@ -430,7 +430,7 @@ public class MessageAppService(
 
         var items = await MapToMessageFasterAsync(messageIdList);
 
-        var result = new ExtraPagedResultDto<long>(totalCount, messageIdList, new
+        var result = new ExtraPagedResultDto<MessageFastDto>(totalCount, items, new
         {
             HasMore = hasMore,
             NextCursorId = nextCursorId,
