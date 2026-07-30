@@ -2219,14 +2219,14 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             take: take,
             order: isDescending ? Order.Descending : Order.Ascending);
 
-        //await Database.SortedSetLengthByValueAsync(sessionMessageListKey, minMessageId, maxMessageId, Exclude.Both);
+        //await Database.SortedSetLengthAsync(sessionMessageListKey, minMessageId, maxMessageId, Exclude.Both);
 
         return redisZset.Select(x => (long)x.Score);
     }
 
     public async Task<long> GetSessionMessageTotalCountAsync(Guid sessionId, long minMessageId = 0, long maxMessageId = long.MaxValue)
     {
-        return await Database.SortedSetLengthByValueAsync(SessionMessageSetKey(sessionId), minMessageId, maxMessageId, Exclude.Both);
+        return await Database.SortedSetLengthAsync(SessionMessageSetKey(sessionId), minMessageId, maxMessageId, Exclude.Both);
     }
 
     public async Task<long?> GetMinMessageIdAsync(Guid sessionId)
