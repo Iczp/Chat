@@ -2271,4 +2271,14 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return (long.Parse(min[0]), long.Parse(max[0]));
     }
 
+    /// <summary>
+    /// 移除消息缓存
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    public async Task<bool> RemoveSessionMessagesAsync(Guid sessionId)
+    {
+        return await Database.KeyDeleteAsync(SessionMessageSetKey(sessionId));
+    }
+
 }

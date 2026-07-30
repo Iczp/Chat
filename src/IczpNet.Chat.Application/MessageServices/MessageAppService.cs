@@ -342,14 +342,23 @@ public class MessageAppService(
     /// </summary>
     /// <param name="sessionId"></param>
     /// <param name="minMessageId"></param>
-    /// <param name="maxMessageId"></param>
     /// <param name="max"></param>
     /// <param name="batchSize"></param>
     /// <returns></returns>
-    public async Task<int> BuildCacheAsync(Guid sessionId, long? minMessageId, long? maxMessageId, int max = 5000, int batchSize = 1000)
+    public async Task<int> BuildCacheAsync(Guid sessionId, long? minMessageId, int max = 5000, int batchSize = 1000)
     {
-        var result = await MessageManager.BuildMessageCacheAsync(sessionId, minMessageId, maxMessageId, max, batchSize);
+        var result = await MessageManager.BuildAllCacheAsync(sessionId, minMessageId,  max, batchSize);
         return result.Count;
+    }
+
+    /// <summary>
+    /// 移除消息缓存
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    public async Task<bool> RemoveCacheAsync(Guid sessionId)
+    {
+        return await MessageManager.RemoveCacheAsync(sessionId);
     }
 
     /// <summary>
@@ -359,6 +368,8 @@ public class MessageAppService(
     /// <returns></returns>
     public async Task<ExtraPagedResultDto<MessageFastDto>> GetLatestAsync(MessageGetLatestInput input)
     {
+        Assert.If(input.MinMessageId <= 0, $"参数 {nameof(input.MinMessageId)} 要大于 0");
+
         var unit = await SessionUnitManager.GetCacheAsync(input.SessionUnitId);
 
         var pageSize = input.MaxResultCount;
@@ -388,6 +399,45 @@ public class MessageAppService(
         });
 
         return result;
+    }
+
+    /// <summary>
+    ///  历史消息(Cache)
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    public async Task<ExtraPagedResultDto<long>> GetHisotryAsync(MessageGetHistoryInput input)
+    {
+        var unit = await SessionUnitManager.GetCacheAsync(input.SessionUnitId);
+
+        var pageSize = input.MaxResultCount;
+
+        // 多取一条
+        var messageIdList = await MessageManager.GetHistoryAsync(unit, input.MaxMessageId, pageSize + 1);
+
+        var totalCount = (long)messageIdList.Count;
+
+        var hasMore = messageIdList.Count > pageSize;
+
+        long? nextCursorId = null;
+
+        if (hasMore)
+        {
+            nextCursorId = messageIdList.LastOrDefault();
+            messageIdList.RemoveAt(messageIdList.Count - 1);
+            totalCount = await MessageManager.GetSessionMessageTotalCountAsync(unit, 0, input.MaxMessageId ?? long.MaxValue);
+        }
+
+        var items = await MapToMessageFasterAsync(messageIdList);
+
+        var result = new ExtraPagedResultDto<long>(totalCount, messageIdList, new
+        {
+            HasMore = hasMore,
+            NextCursorId = nextCursorId,
+        });
+
+        return result;
+
     }
 
     protected virtual async Task<List<MessageFastDto>> MapToMessageFasterAsync(List<long> messageIdList)

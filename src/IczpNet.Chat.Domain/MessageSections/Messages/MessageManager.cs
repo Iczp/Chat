@@ -3,6 +3,7 @@ using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatPushers;
 using IczpNet.Chat.CommandPayloads;
+using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
@@ -161,9 +162,9 @@ public partial class MessageManager(
         }
     }
 
-    public async Task<List<long>> BuildMessageCacheAsync(Guid sessionId, long? minMessageId, long? maxMessageId, int max = 5000, int batchSize = 1000)
+    public async Task<List<long>> BuildCacheAsync(Guid sessionId, long? minMessageId, long? maxMessageId, int max = 5000, int batchSize = 1000)
     {
-        var method = nameof(BuildMessageCacheAsync);
+        var method = nameof(BuildCacheAsync);
 
         Logger.LogInformation("[{method}] minMessageId:{maxMeminMessageIdssageId}, maxMessageId:{maxMessageId}", method, minMessageId, maxMessageId);
 
@@ -193,12 +194,133 @@ public partial class MessageManager(
         return result;
     }
 
-   
+    public async Task<List<long>> BuildAllCacheAsync(Guid sessionId, long? minMessageId, int max = 5000, int batchSize = 1000)
+    {
+        var loopIndex = 0;
+        var result = new List<long>();
+        while (loopIndex < 1e4)
+        {
+            var buildMaxId = await SessionUnitCacheManager.GetMinMessageIdAsync(sessionId);
+            var buildResult = await BuildCacheAsync(sessionId, minMessageId, maxMessageId: buildMaxId, max, batchSize);
+            if ((buildResult.Count == 0))
+            {
+                break;
+            }
+            result.AddRange(buildResult);
+            loopIndex++;
+        }
+        return result;
+    }
+
+    public async Task<bool> RemoveCacheAsync(Guid sessionId)
+    {
+        return await SessionUnitCacheManager.RemoveSessionMessagesAsync(sessionId);
+    }
+
+
+    public async Task<List<long>> GetHistoryAsync(SessionUnitCacheItem unit, long? maxMessageId, int maxResultCount = 20)
+    {
+        var sessionUnitId = unit.Id;
+
+        var sessionId = unit.SessionId.Value;
+
+        var queryMaxResultCount = maxResultCount;
+
+        var tackCount = queryMaxResultCount * 3;
+
+        var deletedIdSet = await DeletedRecorderManager.GetDeletedMessageIdListAsync(sessionUnitId);
+
+        var result = new List<long>();
+
+        var method = nameof(GetHistoryAsync);
+
+        long cursorMaxMessageId = maxMessageId.HasValue && maxMessageId.Value < long.MaxValue ? maxMessageId.Value  : long.MaxValue;
+
+        var loopIndex = 0;
+
+        while (true)
+        {
+            loopIndex++;
+
+            Logger.LogInformation(
+            "[{Method}] Loop={Loop}, resultCount={ResultCount}, cursorMaxMessageId={cursorMaxMessageId}",
+                method,
+                loopIndex,
+                result.Count,
+                cursorMaxMessageId);
+
+            var ids = await SessionUnitCacheManager.GetSessionMessagesAsync(
+                    sessionId,
+                    minMessageId: 0,
+                    maxMessageId: cursorMaxMessageId,
+                    skip: 0,
+                    take: tackCount,
+                    // 反序
+                    isDescending: true);
+
+            var cachedList = ids.ToList();
+
+            Logger.LogInformation("[{Method}] Cached Result Count={Count}, First={First}, Last={Last}, Values={Values}",
+                method,
+                cachedList.Count,
+                cachedList.FirstOrDefault(),
+                cachedList.LastOrDefault(),
+                string.Join(",", cachedList.Take(20)));
+
+            // 判断是否需要补缓存
+            if (cachedList.Count == 0)
+            {
+                // 拼接缓存,所以是取缓存里最小值
+                var buildMaxId = await SessionUnitCacheManager.GetMinMessageIdAsync(sessionId);
+
+                var buildResult = await BuildCacheAsync(sessionId, null, maxMessageId: buildMaxId, max: Math.Max(queryMaxResultCount, 5000), batchSize: 1000);
+
+                Logger.LogInformation("[{Method}] Build cache result count={Count}, ids=[{Ids}]", method, buildResult.Count, string.Join(",", buildResult.Take(20)));
+
+                // 数据库也没有
+                if (buildResult.Count == 0)
+                {
+                    break;
+                }
+
+                // Build后重新查Redis
+                continue;
+            }
+
+            foreach (var id in cachedList)
+            {
+                if (!deletedIdSet.Contains(id))
+                {
+                    result.Add(id);
+
+                    if (result.Count >= queryMaxResultCount)
+                    {
+                        break;
+                    }
+                }
+            }
+            Logger.LogInformation("[{Method}] Add result count={Count}, ids=[{Ids}]", method, result.Count, result.Take(20).JoinAsString(","));
+
+            // 已满足 || 缓存就没有了
+            if (result.Count >= queryMaxResultCount)
+            {
+                break;
+            }
+
+            // 下一页游标(反序，下一页的起始值 为 当前页的最小值)
+            cursorMaxMessageId = cachedList[^1] - 1;
+
+            /*
+             * Redis还有数据，但是过滤后不足
+             * 继续取 Loop
+             */
+        }
+
+        return result;
+    }
 
     public async Task<List<long>> GetLatestAsync(SessionUnitCacheItem unit, long minMessageId, int maxResultCount = 20)
     {
-        Assert.If(minMessageId <= 0, $"参数 {nameof(minMessageId)} 要大于 0");
-
         var sessionUnitId = unit.Id;
 
         var sessionId = unit.SessionId.Value;
@@ -260,7 +382,7 @@ public partial class MessageManager(
                     break;
                 }
 
-                var buildResult = await BuildMessageCacheAsync(sessionId, queryMinMessageId, maxMessageId: buildMaxId, max: 5000, batchSize: 1000);
+                var buildResult = await BuildCacheAsync(sessionId, queryMinMessageId, maxMessageId: buildMaxId, max: 5000, batchSize: 1000);
 
                 Logger.LogInformation("[{Method}] Build cache result count={Count}, ids=[{Ids}]", method, buildResult.Count, string.Join(",", buildResult.Take(20)));
 

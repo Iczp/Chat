@@ -20,7 +20,13 @@ public interface IMessageAppService
 
     Task<ExtraPagedResultDto<MessageFastDto>> GetLatestAsync(MessageGetLatestInput input);
 
-    Task<int> BuildCacheAsync(Guid sessionId, long? minMessageId, long? maxMessageId, int max = 5000, int batchSize = 1000);
+    Task<ExtraPagedResultDto<long>> GetHisotryAsync(MessageGetHistoryInput input);
+
+    Task<PagedResultDto<MessageByDateDto>> GetListByDateAsync(MessageGetListByDateInput input);
+
+    Task<int> BuildCacheAsync(Guid sessionId, long? minMessageId, int max = 5000, int batchSize = 1000);
+
+    Task<bool> RemoveCacheAsync(Guid sessionId);
 
     Task<MessageOwnerDto> GetItemAsync(MessageGetItemInput input);
 

@@ -521,4 +521,11 @@ public interface ISessionUnitCacheManager
     Task<long?> GetMinMessageIdAsync(Guid sessionId);
 
     Task<long?> GetMaxMessageIdAsync(Guid sessionId);
+
+    /// <summary>
+    /// 移除消息缓存
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    Task<bool> RemoveSessionMessagesAsync(Guid sessionId);
 }

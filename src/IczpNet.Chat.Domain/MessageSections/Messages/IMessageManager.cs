@@ -13,7 +13,7 @@ public interface IMessageManager
     IDistributedCache<MessageCacheItem, MessageCacheKey> MessageCache { get; }
 
     /// <summary>
-    /// 
+    /// 创建缓存
     /// </summary>
     /// <param name="sessionId"></param>
     /// <param name="minMessageId"></param>
@@ -21,7 +21,24 @@ public interface IMessageManager
     /// <param name="max"></param>
     /// <param name="batchSize"></param>
     /// <returns></returns>
-    Task<List<long>> BuildMessageCacheAsync(Guid sessionId, long? minMessageId, long? maxMessageId, int max = 5000, int batchSize = 1000);
+    Task<List<long>> BuildCacheAsync(Guid sessionId, long? minMessageId, long? maxMessageId, int max = 5000, int batchSize = 1000);
+
+    /// <summary>
+    /// 创建缓存(全部)
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="minMessageId"></param>
+    /// <param name="max"></param>
+    /// <param name="batchSize"></param>
+    /// <returns></returns>
+    Task<List<long>> BuildAllCacheAsync(Guid sessionId, long? minMessageId, int max = 5000, int batchSize = 1000);
+
+    /// <summary>
+    /// 移除消息缓存
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    Task<bool> RemoveCacheAsync(Guid sessionId);
 
     /// <summary>
     /// 
@@ -31,6 +48,15 @@ public interface IMessageManager
     /// <param name="maxResultCount"></param>
     /// <returns></returns>
     Task<List<long>> GetLatestAsync(SessionUnitCacheItem unit, long minMessageId, int maxResultCount = 20);
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="unit"></param>
+    /// <param name="maxMessageId"></param>
+    /// <param name="maxResultCount"></param>
+    /// <returns></returns>
+    Task<List<long>> GetHistoryAsync(SessionUnitCacheItem unit, long? maxMessageId, int maxResultCount = 20);
 
     /// <summary>
     /// 
