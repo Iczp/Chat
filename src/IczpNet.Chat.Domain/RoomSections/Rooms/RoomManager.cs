@@ -5,12 +5,12 @@ using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
-using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.Options;
 using IczpNet.Chat.Sessions;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.TextTemplates;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
@@ -18,6 +18,7 @@ using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.RoomSections.Rooms;
@@ -52,6 +53,11 @@ public class RoomManager(
     protected IMessageSender MessageSender { get; } = messageSender;
     protected IRoomCodeGenerator RoomCodeGenerator { get; } = roomCodeGenerator;
     protected ISessionUnitIdGenerator SessionUnitIdGenerator { get; } = sessionUnitIdGenerator;
+    protected Type ObjectMapperContext { get; set; }
+    protected IObjectMapper ObjectMapper => LazyServiceProvider.LazyGetService<IObjectMapper>(provider =>
+        ObjectMapperContext == null
+            ? provider.GetRequiredService<IObjectMapper>()
+            : (IObjectMapper)provider.GetRequiredService(typeof(IObjectMapper<>).MakeGenericType(ObjectMapperContext)));
 
     public virtual Task<bool> IsAllowJoinRoomAsync(ChatObjectTypeEnums objectType)
     {
@@ -296,7 +302,9 @@ public class RoomManager(
     {
         Assert.If(roomSessionUnit.OwnerObjectType != ChatObjectTypeEnums.Room, $"Fail ObjectType:{roomSessionUnit.OwnerObjectType}");
 
-        return MessageSender.SendCmdAsync(roomSessionUnit, new MessageInput<CmdContentInfo>()
+        var unit = ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(roomSessionUnit);
+
+        return MessageSender.SendCmdAsync(unit, new MessageInput<CmdContentInfo>()
         {
             Content = content
         });

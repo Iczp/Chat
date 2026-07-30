@@ -74,7 +74,7 @@ public class LocationAppService(
 
         foreach (var sessionUnitId in input.SessionUnitIdList)
         {
-            var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+            var sessionUnit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
 
             // 更新到会话
 

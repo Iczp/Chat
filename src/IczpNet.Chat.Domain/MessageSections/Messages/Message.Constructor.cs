@@ -13,7 +13,7 @@ public partial class Message
     public const string Delimiter = "/";
     protected Message() : base() { }
 
-    public Message(SessionUnit sessionUnit) : base()
+    public Message(SessionUnitCacheItem sessionUnit) : base()
     {
         //直接给导航属性赋值,可能导致意外更新实体: SenderSessionUnit
         //SenderSessionUnit = sessionUnit;
@@ -25,7 +25,7 @@ public partial class Message
         SenderSessionUnitId = sessionUnit.Id;
         SessionId = sessionUnit.SessionId;
         //Channel = sessionUnit.Session.Channel;
-        SessionKey = sessionUnit.Session.SessionKey;
+        //SessionKey = sessionUnit.Session.SessionKey;
     }
 
     /// <summary>

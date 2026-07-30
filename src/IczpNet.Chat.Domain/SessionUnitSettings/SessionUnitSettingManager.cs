@@ -243,7 +243,8 @@ public class SessionUnitSettingManager(
         var isMuted = timeSpan.HasValue && timeSpan.Value.Milliseconds > 0;
 
         //sendMessage
-        await MessageSender.SendCmdAsync(setterSessionUnit, new MessageInput<CmdContentInfo>()
+        var unit = await SessionUnitManager.MapToCacheAsync(setterSessionUnit);
+        await MessageSender.SendCmdAsync(unit, new MessageInput<CmdContentInfo>()
         {
             Content = new CmdContentInfo()
             {

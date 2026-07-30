@@ -2,7 +2,6 @@
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
-using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.ServiceStates;
 using IczpNet.Chat.Sessions;
@@ -17,30 +16,20 @@ using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.CallCenters;
 
-public class CallCenterManager : DomainService, ICallCenterManager
+public class CallCenterManager(ISessionUnitManager sessionUnitManager,
+    ISessionGenerator sessionGenerator,
+    ISessionUnitIdGenerator sessionUnitIdGenerator,
+    IChatObjectManager chatObjectManager,
+    IMessageSender messageSender,
+    IServiceStateManager serviceStateManager) : DomainService, ICallCenterManager
 {
-    protected ISessionUnitManager SessionUnitManager { get; }
-    protected ISessionGenerator SessionGenerator { get; }
-    protected ISessionUnitIdGenerator SessionUnitIdGenerator { get; }
-    protected IChatObjectManager ChatObjectManager { get; }
-    protected IMessageSender MessageSender { get; }
-    protected IServiceStateManager ServiceStateManager { get; }
-
-
-    public CallCenterManager(ISessionUnitManager sessionUnitManager,
-        ISessionGenerator sessionGenerator,
-        ISessionUnitIdGenerator sessionUnitIdGenerator,
-        IChatObjectManager chatObjectManager,
-        IMessageSender messageSender,
-        IServiceStateManager serviceStateManager)
-    {
-        SessionUnitManager = sessionUnitManager;
-        SessionGenerator = sessionGenerator;
-        SessionUnitIdGenerator = sessionUnitIdGenerator;
-        ChatObjectManager = chatObjectManager;
-        MessageSender = messageSender;
-        ServiceStateManager = serviceStateManager;
-    }
+    protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
+    protected ISessionGenerator SessionGenerator { get; } = sessionGenerator;
+    protected ISessionUnitIdGenerator SessionUnitIdGenerator { get; } = sessionUnitIdGenerator;
+    protected IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
+    protected IMessageSender MessageSender { get; } = messageSender;
+    protected IServiceStateManager ServiceStateManager { get; } = serviceStateManager;
+    protected Type ObjectMapperContext { get; set; }
 
     /// <inheritdoc/>
     public async Task<SessionUnit> TransferToAsync(Guid sessionUnitId, long waiterId, bool isNotice = true)
@@ -99,7 +88,8 @@ public class CallCenterManager : DomainService, ICallCenterManager
         //
         if (isNotice)
         {
-            var message = await MessageSender.SendCmdAsync(sessionUnit, new MessageInput<CmdContentInfo>()
+            var unit = await SessionUnitManager.MapToCacheAsync(sessionUnit);
+            var message = await MessageSender.SendCmdAsync(unit, new MessageInput<CmdContentInfo>()
             {
                 Content = new CmdContentInfo()
                 {

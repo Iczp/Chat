@@ -467,4 +467,58 @@ public interface ISessionUnitCacheManager
     /// <param name="units"></param>
     /// <returns></returns>
     Task AddUnitsAsync(IEnumerable<SessionUnitCacheItem> units);
+
+    /// <summary>
+    /// 更新最新消息ID
+    /// </summary>
+    /// <param name="senderSessionUnit"></param>
+    /// <param name="message"></param>
+    /// <returns></returns>
+    Task UpdateLastMessageAsync(SessionUnitCacheItem senderSessionUnit, Message message);
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="messageIdList"></param>
+    /// <returns></returns>
+    Task AppendSessionMessagesAsync(Guid sessionId, List<long> messageIdList);
+
+    /// <summary>
+    /// 获取会话最新消息
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="minMessageId"></param>
+    /// <param name="maxMessageId"></param>
+    /// <param name="skip"></param>
+    /// <param name="take"></param>
+    /// <param name="isDescending"></param>
+    /// <returns></returns>
+    Task<IEnumerable<long>> GetSessionMessagesAsync(
+        Guid sessionId,
+        long minMessageId = 0,
+        long maxMessageId = long.MaxValue,
+        long skip = 0,
+        long take = -1,
+        bool isDescending = true);
+
+    /// <summary>
+    /// 获取会话最新消息数量
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="minMessageId"></param>
+    /// <param name="maxMessageId"></param>
+    /// <returns></returns>
+    Task<long> GetSessionMessageTotalCountAsync(Guid sessionId, long minMessageId = 0, long maxMessageId = long.MaxValue);
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    Task<(long Min, long Max)?> GetMessagesRangeAsync(Guid sessionId);
+
+    Task<long?> GetMinMessageIdAsync(Guid sessionId);
+
+    Task<long?> GetMaxMessageIdAsync(Guid sessionId);
 }

@@ -2,6 +2,7 @@
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.BaseDtos;
+using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Enums.Dtos;
 using IczpNet.Chat.FavoritedRecorders;
@@ -17,15 +18,18 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Dynamic.Core;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.MessageServices;
@@ -57,6 +61,7 @@ public class MessageAppService(
     public ISessionUnitSettingManager SessionUnitSettingManager { get; } = sessionUnitSettingManager;
     public ISessionUnitFriendshipMapper SessionUnitFriendshipMapper { get; } = sessionUnitFriendshipMapper;
     protected IMessageManager MessageManager { get; } = messageManager;
+    //protected ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
     /// <summary>
     /// 获取禁止转发的消息类型
@@ -80,7 +85,6 @@ public class MessageAppService(
 
     private async Task<IQueryable<Message>> CreateQueryableAsync(SessionUnit entity, MessageGetListInput input)
     {
-
         var sessionId = entity.SessionId;
         var sessionUnitId = entity.Id;
         //var setting = entity.Setting;
@@ -224,7 +228,10 @@ public class MessageAppService(
 
             var friendshipSessionUnit = friendMap.GetValueOrDefault(item.SenderSessionUnit.OwnerId);
 
-            item.SenderSessionUnit.Friendship = friendshipSessionUnit != null ? SessionUnitFriendshipMapper.Map(friendshipSessionUnit) : new SessionUnitFriendshipDto();
+            if (friendshipSessionUnit != null)
+            {
+                item.SenderSessionUnit.Friendship = SessionUnitFriendshipMapper.Map(friendshipSessionUnit);
+            }
         }
     }
 
@@ -331,7 +338,7 @@ public class MessageAppService(
     }
 
     /// <summary>
-    /// 消息列表（Faster）
+    /// 消息列表（Pre:dev）
     /// </summary>
     /// <param name="input"></param>
     /// <returns></returns>
@@ -383,6 +390,65 @@ public class MessageAppService(
         return result;
     }
 
+    /// <summary>
+    /// 加载到缓存
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="minMessageId"></param>
+    /// <param name="maxMessageId"></param>
+    /// <param name="max"></param>
+    /// <param name="batchSize"></param>
+    /// <returns></returns>
+    public async Task<int> BuildCacheAsync(Guid sessionId, long? minMessageId, long? maxMessageId, int max = 5000, int batchSize = 1000)
+    {
+        var result = await MessageManager.BuildMessageCacheAsync(sessionId, minMessageId, maxMessageId, max, batchSize);
+        return result.Count;
+    }
+
+    /// <summary>
+    /// 最新消息(Cache)
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    public async Task<ExtraPagedResultDto<MessageFastDto>> GetLatestAsync(MessageGetLatestInput input)
+    {
+        var unit = await SessionUnitManager.GetCacheAsync(input.SessionUnitId);
+
+        var pageSize = input.MaxResultCount;
+
+        // 多取一条
+        var messageIdList = await MessageManager.GetLatestAsync(unit, input.MinMessageId, pageSize + 1);
+
+        var totalCount = (long)messageIdList.Count;
+
+        var hasMore = messageIdList.Count > pageSize;
+
+        long? nextCursorId = null;
+
+        if (hasMore)
+        {
+            nextCursorId = messageIdList.LastOrDefault();
+            messageIdList.RemoveAt(messageIdList.Count - 1);
+            totalCount = await MessageManager.GetSessionMessageTotalCountAsync(unit, input.MinMessageId, long.MaxValue);
+        }
+
+        var messages = await MessageManager.GetOrAddManyCacheAsync(messageIdList);
+
+        var qouteIdList = messages.Where(x => x.Value.QuoteMessageId.HasValue).Select(x => x.Value.QuoteMessageId.Value).ToList();
+
+        var cacheItems = messages.Select(x => x.Value).ToList();
+
+        var items = await MapToMessageFasterAsync(messageIdList, qouteIdList);
+
+        var result = new ExtraPagedResultDto<MessageFastDto>(totalCount, items, new
+        {
+            HasMore = hasMore,
+            NextCursorId = nextCursorId,
+        });
+
+        return result;
+    }
+
     protected virtual async Task<List<MessageFastDto>> MapToMessageFasterAsync(List<long> messageIdList, List<long> quoteIdList)
     {
         // 包含引用的消息Id
@@ -412,8 +478,6 @@ public class MessageAppService(
     {
         return ObjectMapper.Map<MessageCacheItem, MessageFastDto>(cacheItem);
     }
-
-
 
     /// <summary>
     /// 获取消息列表
@@ -476,6 +540,7 @@ public class MessageAppService(
     protected virtual async Task<List<MessageOwnerDto>> MapToMessagesAsync(List<MessageCacheItem> messages)
     {
         await Task.Yield();
+        // 要改为从缓存取
         return ObjectMapper.Map<List<MessageCacheItem>, List<MessageOwnerDto>>(messages);
     }
 

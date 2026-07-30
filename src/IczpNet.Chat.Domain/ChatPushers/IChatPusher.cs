@@ -14,5 +14,5 @@ public interface IChatPusher
 
     Task<Dictionary<string, long>> ExecuteBySessionIdAsync(Guid sessionId, object commandPayload, List<string> ignoreConnections = null);
 
-    Task<Dictionary<string, long>> ExecutePrivateAsync(List<SessionUnit> sessionUnitList, object commandPayload, List<string> ignoreConnections = null);
+    Task<Dictionary<string, long>> ExecutePrivateAsync(List<SessionUnitCacheItem> sessionUnitList, object commandPayload, List<string> ignoreConnections = null);
 }

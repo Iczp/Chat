@@ -58,6 +58,28 @@ public interface ISessionUnitManager
     /// <param name="destinactionId"></param>
     /// <returns></returns>
     Task<SessionUnit> FindAsync(long ownerId, long destinactionId);
+    /// <summary>
+    /// 查找会话单元
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <param name="destinactionId"></param>
+    /// <returns></returns>
+    Task<SessionUnitCacheItem> FindCacheAsync(long ownerId, long destinactionId);
+
+    /// <summary>
+    /// 转为CacheItem
+    /// </summary>
+    /// <param name="sessionUnit"></param>
+    /// <returns></returns>
+    Task<SessionUnitCacheItem> MapToCacheAsync(SessionUnit sessionUnit);
+
+    /// <summary>
+    /// 转发发送人
+    /// </summary>
+    /// <param name="senderSessionUnit"></param>
+    /// <returns></returns>
+    Task<SessionUnitSenderInfo> MapToSenderAsync(SessionUnitCacheItem senderSessionUnit);
+    Task<List<SessionUnitSenderInfo>> MapToSenderAsync(List<SessionUnitCacheItem> unitList);
 
     /// <summary>
     /// 查找会话单元
@@ -538,4 +560,5 @@ public interface ISessionUnitManager
     /// <param name="entities"></param>
     /// <returns></returns>
     Task<IEnumerable<SessionUnitCacheItem>> AddUnitsToCacheAsync(IEnumerable<SessionUnit> entities);
+    
 }

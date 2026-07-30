@@ -16,17 +16,20 @@ namespace IczpNet.Chat.MessageServices;
 /// 消息发送器
 /// </summary>
 public class MessageSenderAppService(
+    ISessionUnitCacheManager sessionUnitCacheManager,
     IMessageRepository repository,
     IMessageManager messageManager,
     IMessageSender messageSender) : ChatAppService, IMessageSenderAppService
 {
+    public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
     protected IMessageRepository Repository { get; } = repository;
     protected IMessageSender MessageSender { get; } = messageSender;
     protected IMessageManager MessageManager { get; } = messageManager;
 
-    protected virtual async Task<SessionUnit> GetAndCheckSessionUnitAsync(Guid sessionUnitId)
+    protected virtual async Task<SessionUnitCacheItem> GetAndCheckSessionUnitAsync(Guid sessionUnitId)
     {
-        var sessionunit = await SessionUnitManager.GetAsync(sessionUnitId);
+        //var sessionunit = await SessionUnitManager.GetAsync(sessionUnitId);
+        var sessionunit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
 
         return sessionunit;
     }

@@ -173,5 +173,8 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
 
         //DeletedRecorder
         CreateMap<DeletedRecorder, DeletedRecorderDto>();
+
+
+        CreateMap<SessionUnitSenderInfo, SessionUnitMemberSenderDto>(MemberList.None);
     }
 }

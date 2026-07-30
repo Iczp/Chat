@@ -178,7 +178,7 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
         {
             await SessionGenerator.MakeAsync(assistant, managerOrCretor);
 
-            var senderSessionUnit = await SessionUnitManager.FindAsync(assistant.Id, managerOrCretor.Id);
+            var senderSessionUnit = await SessionUnitManager.FindCacheAsync(assistant.Id, managerOrCretor.Id);
 
             await MessageSender.SendLinkAsync(senderSessionUnit, new MessageInput<LinkContentInfo>()
             {
@@ -200,7 +200,7 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
 
         await SessionGenerator.MakeAsync(assistant, receiver);
 
-        var sessionUnit = await SessionUnitManager.FindAsync(assistant.Id, receiver.Id);
+        var sessionUnit = await SessionUnitManager.FindCacheAsync(assistant.Id, receiver.Id);
 
         await MessageSender.SendLinkAsync(sessionUnit, new MessageInput<LinkContentInfo>()
         {
@@ -259,7 +259,9 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
                               x.JoinWay = JoinWays.Request;
                           });
 
-                    await MessageSender.SendCmdAsync(destinationSessionUnit, new MessageInput<CmdContentInfo>()
+                    var unit = await SessionUnitManager.MapToCacheAsync(destinationSessionUnit);
+
+                    await MessageSender.SendCmdAsync(unit, new MessageInput<CmdContentInfo>()
                     {
                         Content = new CmdContentInfo()
                         {
@@ -286,8 +288,8 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
                              {
                                  x.JoinWay = JoinWays.Request;
                              });
-
-                    await MessageSender.SendCmdAsync(roomOrSquareSessionUnit, new MessageInput<CmdContentInfo>()
+                    var roomUnit = await SessionUnitManager.MapToCacheAsync(roomOrSquareSessionUnit);
+                    await MessageSender.SendCmdAsync(roomUnit, new MessageInput<CmdContentInfo>()
                     {
                         Content = new CmdContentInfo()
                         {
@@ -331,7 +333,7 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
 
         await SessionGenerator.MakeAsync(assistant, sessionRequest.Owner);
 
-        var sessionUnit = await SessionUnitManager.FindAsync(assistant.Id, sessionRequest.Owner.Id);
+        var sessionUnit = await SessionUnitManager.FindCacheAsync(assistant.Id, sessionRequest.Owner.Id);
 
         await MessageSender.SendLinkAsync(sessionUnit, new MessageInput<LinkContentInfo>()
         {

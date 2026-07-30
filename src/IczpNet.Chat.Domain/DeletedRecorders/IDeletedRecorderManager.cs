@@ -7,7 +7,7 @@ namespace IczpNet.Chat.DeletedRecorders;
 
 public interface IDeletedRecorderManager : IRecorderManager<DeletedRecorder>
 {
-    Task<List<long>> GetDeletedMessageIdListAsync(Guid sessionUnitId);
+    Task<HashSet<long>> GetDeletedMessageIdListAsync(Guid sessionUnitId);
 
     Task RemoveCacheAsync(Guid sessionUnitId);
 }

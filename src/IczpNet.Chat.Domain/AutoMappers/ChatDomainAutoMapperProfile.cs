@@ -119,10 +119,11 @@ public class ChatApplicationAutoMapperProfile : Profile
 
         CreateMap<SessionUnit, SessionUnitSenderInfo>();
 
+        //CreateMap<SessionUnitCacheItem, SessionUnitSenderInfo>();
+
         CreateMap<SessionUnit, SessionUnitCacheItem>();
 
         CreateMap<SessionTag, SessionTagCacheItem>();
-
 
         //ConnectionPool
         CreateMap<ConnectionPoolCacheItem, DisconnectedEto>().ReverseMap();

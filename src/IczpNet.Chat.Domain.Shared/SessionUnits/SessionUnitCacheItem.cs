@@ -99,6 +99,10 @@ public class SessionUnitCacheItem : SessionUnitInfoBase, ISessionUnit
     public string DestinationPortrait { get; set; }
     public string DestinationThumbnail { get; set; }
 
+    public bool IsInputEnabled {  get; set; }
+
+    public DateTime? MuteExpireTime { get; set; }
+
 
     //public virtual SessionUnitSettingCacheItem Setting { get; set; }
 }
