@@ -3,6 +3,7 @@ using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Hosting;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionUnits;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.DependencyInjection;
@@ -24,6 +25,11 @@ public class SendMessageToClientDistributedEventHandler : SendToClientDistribute
         await MeasureAsync(nameof(SendToClientBySessionAsync), () => SendToClientBySessionAsync(eventData));
     }
 
+    /// <summary>
+    /// 推送消息（在线状的会话索引取连接信息 - 可能要移除）
+    /// </summary>
+    /// <param name="eventData"></param>
+    /// <returns></returns>
     protected async Task<bool> SendToClientBySessionAsync(SendMessageToClientDistributedEto eventData)
     {
         var sessionId = eventData.Message.SessionId;
@@ -36,7 +42,7 @@ public class SendMessageToClientDistributedEventHandler : SendToClientDistribute
         var onlineOwnerIds = connDict.SelectMany(x => x.Value).Distinct().ToList();
 
         var members = await SessionUnitCacheManager.GetMembersAsync(sessionId);
-        var ownerUnitDict = members.Where(x => onlineOwnerIds.Contains(x.OwnerId)).ToDictionary(x => x.OwnerId, x => x.Id);
+        var ownerUnitMap = members.Where(x => onlineOwnerIds.Contains(x.OwnerId)).ToDictionary(x => x.OwnerId, x => x.Id);
 
         //await HubContext.Clients.Group(sessionId.ToString()).ReceivedMessage(commandPayload);
 
@@ -47,10 +53,66 @@ public class SendMessageToClientDistributedEventHandler : SendToClientDistribute
             var units = chatObjectIdList
                 .Select(chatObjectId =>
                 {
-                    var sessionUnitId = ownerUnitDict[chatObjectId];
+                    var sessionUnitId = ownerUnitMap.GetOrDefault(chatObjectId);
                     return new CommandPayload.ScopeUnit
                     {
                         ChatObjectId = chatObjectId,
+                        //SessionUnitId = sessionUnitInfoList.Find(x => x.OwnerId == chatObjectId).Id
+                        SessionUnitId = sessionUnitId,
+                        //Extra = new
+                        //{
+                        //    IsReminder = reminderIdList.Contains(sessionUnitId),
+                        //    IsFollowing = followerIdList.Contains(sessionUnitId),
+                        //}
+                    };
+                }).ToList();
+
+            var commandPayload = new CommandPayload()
+            {
+                //AppUserId = item.UserId,
+                Scopes = units,
+                Command = command,
+                Payload = eventData,
+            };
+
+            await HubContext.Clients.Client(connectionId).ReceivedMessage(commandPayload);
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// 推送消息(从登录设备取连接信息)
+    /// </summary>
+    /// <param name="eventData"></param>
+    /// <returns></returns>
+    protected async Task<bool> SendToClientBySessionNewAsync(SendMessageToClientDistributedEto eventData)
+    {
+        var sessionId = eventData.Message.SessionId;
+
+        var command = eventData.Command;
+
+        var members = await SessionUnitCacheManager.GetMembersAsync(sessionId);
+
+        var ownerIds = members.Select(x => x.OwnerId).Distinct().ToList();
+
+        var ownerDevices = await OnlineManager.GetDevicesAsync(ownerIds);
+
+        var ownerUnitMap = members.DistinctBy(x => x.OwnerId).ToDictionary(x => x.OwnerId, x => x.Id);
+
+        var connMap = ownerDevices.SelectMany(x => x.Value).GroupBy(x => x.ConnectionId).ToDictionary(x => x.Key, x => x.ToList());
+
+        foreach (var item in connMap)
+        {
+            var connectionId = item.Key;
+            var devices = item.Value;
+            var units = devices
+                .Select(device =>
+                {
+                    var sessionUnitId = ownerUnitMap.GetOrDefault(device.OwnerId);
+                    return new CommandPayload.ScopeUnit
+                    {
+                        ChatObjectId = device.OwnerId,
                         //SessionUnitId = sessionUnitInfoList.Find(x => x.OwnerId == chatObjectId).Id
                         SessionUnitId = sessionUnitId,
                         //Extra = new
