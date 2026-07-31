@@ -20,7 +20,7 @@ public interface IMessageAppService
 
     Task<ExtraPagedResultDto<MessageFastDto>> GetLatestAsync(MessageGetLatestInput input);
 
-    Task<ExtraPagedResultDto<MessageFastDto>> GetHisotryAsync(MessageGetHistoryInput input);
+    Task<ExtraPagedResultDto<MessageFastDto>> GetHistoryAsync(MessageGetHistoryInput input);
 
     Task<PagedResultDto<MessageByDateDto>> GetListByDateAsync(MessageGetListByDateInput input);
 

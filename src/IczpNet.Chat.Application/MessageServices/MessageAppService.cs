@@ -407,7 +407,7 @@ public class MessageAppService(
     /// </summary>
     /// <param name="input"></param>
     /// <returns></returns>
-    public async Task<ExtraPagedResultDto<MessageFastDto>> GetHisotryAsync(MessageGetHistoryInput input)
+    public async Task<ExtraPagedResultDto<MessageFastDto>> GetHistoryAsync(MessageGetHistoryInput input)
     {
         var unit = await SessionUnitManager.GetCacheAsync(input.SessionUnitId);
 
