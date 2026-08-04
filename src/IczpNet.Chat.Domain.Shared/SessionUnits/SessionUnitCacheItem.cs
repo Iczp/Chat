@@ -87,6 +87,10 @@ public class SessionUnitCacheItem : SessionUnitInfoBase, ISessionUnit
     /// LastSendMessageId
     /// </summary>
     public virtual long? LastSendMessageId { get; set; }
+    public long? ReadMessageId { get; set; }
+    public long? PeerReadMessageId { get; set; }
+    public long? StartMessageId { get; set; }
+    public long? EndMessageId { get; set; }
     public string OwnerName { get; set; }
     public string OwnerNameSpelling { get; set; }
     public string OwnerNameSpellingAbbreviation { get; set; }
@@ -102,6 +106,8 @@ public class SessionUnitCacheItem : SessionUnitInfoBase, ISessionUnit
     public bool IsInputEnabled {  get; set; }
 
     public DateTime? MuteExpireTime { get; set; }
+
+
 
 
     //public virtual SessionUnitSettingCacheItem Setting { get; set; }

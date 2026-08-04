@@ -121,10 +121,10 @@ public class SessionUnitSettingAppService(
     /// <param name="messageId">消息Id</param>
     /// <returns></returns>
     [HttpPost]
-    [Obsolete("Move to 'SetReadMessageIdAsync'")]
+    [Obsolete("Move to SetReadMessageIdAsync")]
     public virtual async Task<SessionUnitOwnerDto> SetReadedMessageIdAsync([Required] Guid sessionUnitId, bool isForce = false, long? messageId = null)
     {
-        return await SetReadAsync(sessionUnitId,isForce,messageId);
+        return await SetReadAsync(sessionUnitId, isForce, messageId);
     }
 
     /// <summary>

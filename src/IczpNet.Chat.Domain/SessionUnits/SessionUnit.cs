@@ -311,6 +311,15 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     public virtual long? ReadMessageId => Setting.ReadMessageId;
 
     [NotMapped]
+    public virtual long? PeerReadMessageId => Setting.PeerReadMessageId;
+
+    [NotMapped]
+    public virtual long? StartMessageId => Setting.StartMessageId;
+
+    [NotMapped]
+    public virtual long? EndMessageId => Setting.EndMessageId;
+
+    [NotMapped]
     public virtual bool IsImmersed => Setting.IsImmersed;
 
     [NotMapped]
@@ -346,8 +355,6 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     public string DestinationPortrait => Destination.Portrait;
     [NotMapped]
     public string DestinationThumbnail => Destination.Thumbnail;
-
-
 
     protected SessionUnit() { }
 

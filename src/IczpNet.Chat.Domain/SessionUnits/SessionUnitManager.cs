@@ -168,7 +168,7 @@ public class SessionUnitManager(
                         DestinationPortrait = x.Destination.Portrait,
                         DestinationThumbnail = x.Destination.Thumbnail,
 
-                        //ReadMessageId = x.Setting.ReadMessageId,
+                        
                         IsPublic = x.Setting.IsPublic,
                         IsStatic = x.Setting.IsStatic,
                         IsVisible = x.Setting.IsVisible,
@@ -181,6 +181,11 @@ public class SessionUnitManager(
                         Rename = x.Setting.Rename,
                         RenameSpellingAbbreviation = x.Setting.RenameSpellingAbbreviation,
                         MemberName = x.Setting.MemberName,
+
+                        ReadMessageId = x.Setting.ReadMessageId,
+                        PeerReadMessageId = x.Setting.PeerReadMessageId,
+                        StartMessageId = x.Setting.StartMessageId,
+                        EndMessageId = x.Setting.EndMessageId,
                         LastSendTime = x.Setting.LastSendTime,
                         LastSendMessageId = x.Setting.LastSendMessageId,
                         //Setting = new SessionUnitSettingCacheItem()
