@@ -119,14 +119,6 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     /// </summary>
     public virtual ChatObjectTypeEnums? OwnerObjectType { get; protected set; }
 
-    ///// <summary>
-    ///// 已读的消息
-    ///// </summary>
-    //public virtual long? ReadedMessageId { get; protected set; }
-
-    //[ForeignKey(nameof(ReadedMessageId))]
-    //public virtual Message ReadedMessage { get; protected set; }
-
     /// <summary>
     /// 最后一条消息Id
     /// </summary>
@@ -316,7 +308,7 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     public virtual bool IsEnabled => Setting.IsEnabled;
 
     [NotMapped]
-    public virtual long? ReadedMessageId => Setting.ReadedMessageId;
+    public virtual long? ReadMessageId => Setting.ReadMessageId;
 
     [NotMapped]
     public virtual bool IsImmersed => Setting.IsImmersed;
@@ -404,7 +396,7 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
 
     internal virtual void UpdateCounter(SessionUnitCounterInfo counter)
     {
-        Setting.ReadedMessageId = counter.ReadedMessageId;
+        Setting.ReadMessageId = counter.ReadMessageId;
         PublicBadge = counter.PublicBadge;
         PrivateBadge = counter.PrivateBadge;
         RemindAllCount = counter.RemindAllCount;

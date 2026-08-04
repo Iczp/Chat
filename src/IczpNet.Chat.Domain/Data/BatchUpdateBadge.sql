@@ -10,7 +10,7 @@ set [dbo].[Chat_SessionUnit].PublicBadge = (
 	where 1=1
 	and x.Id!=m.SessionUnitId
 	and x.SessionId=m.SessionId
-	and (x.ReadedMessageId is null or m.Id > x.ReadedMessageId)
+	and (x.ReadMessageId is null or m.Id > x.ReadMessageId)
 	and x.OwnerId!=m.SenderId
 	and (x.HistoryFristTime is null or m.CreationTime> x.HistoryFristTime)
 	and (x.HistoryLastTime is null or m.CreationTime> x.HistoryLastTime)

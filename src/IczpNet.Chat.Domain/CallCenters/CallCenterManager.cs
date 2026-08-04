@@ -100,7 +100,7 @@ public class CallCenterManager(ISessionUnitManager sessionUnitManager,
                        .ToString(),
                 }
             });
-            sessionUnit.Setting.ReadedMessageId = message.Id;
+            sessionUnit.Setting.ReadMessageId = message.Id;
         }
         return waiterSessionUnit;
     }

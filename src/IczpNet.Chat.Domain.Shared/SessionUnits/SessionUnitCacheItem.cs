@@ -31,7 +31,7 @@ public class SessionUnitCacheItem : SessionUnitInfoBase, ISessionUnit
     /// </summary>
     public virtual ChatObjectTypeEnums? DestinationObjectType { get; set; }
 
-    //public virtual long? ReadedMessageId { get; set; }
+    //public virtual long? ReadMessageId { get; set; }
 
     /// <summary>
     /// 

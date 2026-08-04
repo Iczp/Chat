@@ -19,7 +19,7 @@ public class SessionUnitSettingCacheItem
     /// <summary>
     /// 已读的消息
     /// </summary>
-    public virtual long? ReadedMessageId { get; set; }
+    public virtual long? ReadMessageId { get; set; }
 
     /// <summary>
     /// 最后发言的消息

@@ -468,6 +468,8 @@ public partial class MessageManager(
 
         Assert.If(senderSessionUnit.MuteExpireTime > Clock.Now, $"Unable to send message,sessionUnit has been muted.senderSessionUnitId:{senderSessionUnit.Id}");
 
+        var sw = Stopwatch.StartNew();
+
         // Create SessionUnit By Message
         await CreateSessionUnitByMessageAsync(senderSessionUnit);
 
@@ -605,6 +607,8 @@ public partial class MessageManager(
         //    Logger.LogWarning($"BackgroundJobManager.IsAvailable():False");
         //    await SessionUnitManager.IncremenetAsync(sessionUnitIncrementJobArgs);
         //}
+
+        Logger.LogInformation("CreateMessageAsync {Elapsed}", sw.Elapsed);
 
         return message;
     }
@@ -834,21 +838,21 @@ public partial class MessageManager(
         var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
         //var output = new MessageInfo<TContentInfo>() { MessageId = message.MessageId };
         output.SenderSessionUnit ??= await SessionUnitManager.MapToSenderAsync(senderSessionUnit);
-        if (message.IsPrivateMessage())
-        {
-            var receiverSessionUnit = await SessionUnitManager.GetCacheAsync(input.ReceiverSessionUnitId.Value);
+        //if (message.IsPrivateMessage())
+        //{
+        //    var receiverSessionUnit = await SessionUnitManager.GetCacheAsync(input.ReceiverSessionUnitId.Value);
 
-            Assert.If(receiverSessionUnit.SessionId != senderSessionUnit.SessionId, $"Fail ReceiverSessionUnitId:{input.ReceiverSessionUnitId}");
+        //    Assert.If(receiverSessionUnit.SessionId != senderSessionUnit.SessionId, $"Fail ReceiverSessionUnitId:{input.ReceiverSessionUnitId}");
 
-            await ChatPusher.ExecutePrivateAsync(
-            [
-                senderSessionUnit, receiverSessionUnit
-            ], output, input.IgnoreConnections);
-        }
-        else
-        {
-            await ChatPusher.ExecuteBySessionIdAsync(message.SessionId.Value, output, input.IgnoreConnections);
-        }
+        //    await ChatPusher.ExecutePrivateAsync(
+        //    [
+        //        senderSessionUnit, receiverSessionUnit
+        //    ], output, input.IgnoreConnections);
+        //}
+        //else
+        //{
+        //    await ChatPusher.ExecuteBySessionIdAsync(message.SessionId.Value, output, input.IgnoreConnections);
+        //}
         return output;
     }
 

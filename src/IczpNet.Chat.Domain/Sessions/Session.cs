@@ -67,9 +67,26 @@ public class Session : BaseEntity<Guid>, IChatOwner<long?>, IIsEnabled
     public virtual bool IsEnabled { get; protected set; }
 
     /// <summary>
-    /// 
+    /// 第一条消息
+    /// </summary>
+    public virtual long? FirstMessageId { get; protected set; }
+
+    /// <summary>
+    /// 第一条消息
+    /// </summary>
+    [ForeignKey(nameof(FirstMessageId))]
+    public virtual Message FirstMessage { get; protected set; }
+
+    /// <summary>
+    /// 最新消息
     /// </summary>
     public virtual long? LastMessageId { get; protected set; }
+
+    /// <summary>
+    /// 最新消息
+    /// </summary>
+    [ForeignKey(nameof(LastMessageId))]
+    public virtual Message LastMessage { get; protected set; }
 
     /// <summary>
     /// 
@@ -89,19 +106,14 @@ public class Session : BaseEntity<Guid>, IChatOwner<long?>, IIsEnabled
     [Comment("更新消息总数量时间")]
     public virtual DateTime? MessageTotalCountUpdateTime { get; protected set; }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    [ForeignKey(nameof(LastMessageId))]
-    public virtual Message LastMessage { get; protected set; }
+    [InverseProperty(nameof(Message.Session))]
+    public virtual IList<Message> MessageList { get; internal set; } = [];
 
-    public virtual IList<Message> MessageList { get; internal set; } = new List<Message>();
+    public virtual IList<SessionUnit> UnitList { get; internal set; } = [];
 
-    public virtual IList<SessionUnit> UnitList { get; internal set; } = new List<SessionUnit>();
+    public virtual IList<SessionTag> TagList { get; protected set; } = [];
 
-    public virtual IList<SessionTag> TagList { get; protected set; } = new List<SessionTag>();
-
-    public virtual IList<SessionRole> RoleList { get; protected set; } = new List<SessionRole>();
+    public virtual IList<SessionRole> RoleList { get; protected set; } = [];
 
     [NotMapped]
     public virtual int? MemberCount { get; set; } //=> GetMemberCount();

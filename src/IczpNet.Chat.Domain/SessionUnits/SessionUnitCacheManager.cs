@@ -284,7 +284,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     //private static string F_IsPublic => nameof(SessionUnitCacheItem.IsPublic);
     //private static string F_IsVisible => nameof(SessionUnitCacheItem.IsVisible);
     //private static string F_IsEnabled => nameof(SessionUnitCacheItem.IsEnabled);
-    //private static string F_ReadedMessageId => nameof(SessionUnitCacheItem.ReadedMessageId);
+    //private static string F_ReadMessageId => nameof(SessionUnitCacheItem.ReadMessageId);
     private static string F_LastMessageId => nameof(SessionUnitCacheItem.LastMessageId);
     private static string F_LastSendMessageId => nameof(SessionUnitCacheItem.LastSendMessageId);
     private static string F_LastSendTime => nameof(SessionUnitCacheItem.LastSendTime);

@@ -6458,6 +6458,10 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("CreatorId");
 
+                    b.Property<long?>("EndMessageId")
+                        .HasColumnType("bigint")
+                        .HasComment("显示结束消息Id");
+
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
@@ -6579,7 +6583,11 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("datetime2")
                         .HasComment("禁言过期时间，为空则不禁言");
 
-                    b.Property<long?>("ReadedMessageId")
+                    b.Property<long?>("PeerReadMessageId")
+                        .HasColumnType("bigint")
+                        .HasComment("对方已读的消息");
+
+                    b.Property<long?>("ReadMessageId")
                         .HasColumnType("bigint")
                         .HasComment("已读的消息");
 
@@ -6610,7 +6618,13 @@ namespace IczpNet.Chat.Migrations
                     b.Property<Guid?>("SessionId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<long?>("StartMessageId")
+                        .HasColumnType("bigint")
+                        .HasComment("显示开始消息Id");
+
                     b.HasKey("SessionUnitId");
+
+                    b.HasIndex("EndMessageId");
 
                     b.HasIndex("InviterId");
 
@@ -6627,7 +6641,9 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("MuteExpireTime");
 
-                    b.HasIndex("ReadedMessageId")
+                    b.HasIndex("PeerReadMessageId");
+
+                    b.HasIndex("ReadMessageId")
                         .IsDescending();
 
                     b.HasIndex("Rename");
@@ -6637,6 +6653,8 @@ namespace IczpNet.Chat.Migrations
                     b.HasIndex("RenameSpellingAbbreviation");
 
                     b.HasIndex("SessionId");
+
+                    b.HasIndex("StartMessageId");
 
                     b.HasIndex("CreationTime", "SessionUnitId");
 
@@ -6916,6 +6934,9 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("ExtraProperties");
 
+                    b.Property<long?>("FirstMessageId")
+                        .HasColumnType("bigint");
+
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -6965,6 +6986,8 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("CreationTime")
                         .IsDescending();
+
+                    b.HasIndex("FirstMessageId");
 
                     b.HasIndex("LastMessageId")
                         .IsDescending();
@@ -8901,6 +8924,10 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.SessionUnitSettings.SessionUnitSetting", b =>
                 {
+                    b.HasOne("IczpNet.Chat.MessageSections.Messages.Message", "EndMessage")
+                        .WithMany("EndMessageSessionUnitSettingList")
+                        .HasForeignKey("EndMessageId");
+
                     b.HasOne("IczpNet.Chat.SessionUnits.SessionUnit", "Inviter")
                         .WithMany("InviterList")
                         .HasForeignKey("InviterId");
@@ -8910,12 +8937,16 @@ namespace IczpNet.Chat.Migrations
                         .HasForeignKey("KillerId");
 
                     b.HasOne("IczpNet.Chat.MessageSections.Messages.Message", "LastSendMessage")
-                        .WithMany()
+                        .WithMany("LastSendMessageSessionUnitSettingList")
                         .HasForeignKey("LastSendMessageId");
 
-                    b.HasOne("IczpNet.Chat.MessageSections.Messages.Message", "ReadedMessage")
-                        .WithMany("ReadedMessageSessionUnitList")
-                        .HasForeignKey("ReadedMessageId");
+                    b.HasOne("IczpNet.Chat.MessageSections.Messages.Message", "PeerReadMessage")
+                        .WithMany()
+                        .HasForeignKey("PeerReadMessageId");
+
+                    b.HasOne("IczpNet.Chat.MessageSections.Messages.Message", "ReadMessage")
+                        .WithMany("ReadMessageSessionUnitSettingList")
+                        .HasForeignKey("ReadMessageId");
 
                     b.HasOne("IczpNet.Chat.Sessions.Session", "Session")
                         .WithMany()
@@ -8925,17 +8956,27 @@ namespace IczpNet.Chat.Migrations
                         .WithOne("Setting")
                         .HasForeignKey("IczpNet.Chat.SessionUnitSettings.SessionUnitSetting", "SessionUnitId");
 
+                    b.HasOne("IczpNet.Chat.MessageSections.Messages.Message", "StartMessage")
+                        .WithMany("StartMessageSessionUnitSettingList")
+                        .HasForeignKey("StartMessageId");
+
+                    b.Navigation("EndMessage");
+
                     b.Navigation("Inviter");
 
                     b.Navigation("Killer");
 
                     b.Navigation("LastSendMessage");
 
-                    b.Navigation("ReadedMessage");
+                    b.Navigation("PeerReadMessage");
+
+                    b.Navigation("ReadMessage");
 
                     b.Navigation("Session");
 
                     b.Navigation("SessionUnit");
+
+                    b.Navigation("StartMessage");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.SessionUnitTags.SessionUnitTag", b =>
@@ -8995,6 +9036,10 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.Sessions.Session", b =>
                 {
+                    b.HasOne("IczpNet.Chat.MessageSections.Messages.Message", "FirstMessage")
+                        .WithMany()
+                        .HasForeignKey("FirstMessageId");
+
                     b.HasOne("IczpNet.Chat.MessageSections.Messages.Message", "LastMessage")
                         .WithMany("SessionList")
                         .HasForeignKey("LastMessageId");
@@ -9002,6 +9047,8 @@ namespace IczpNet.Chat.Migrations
                     b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
                         .WithMany("OwnerSessionList")
                         .HasForeignKey("OwnerId");
+
+                    b.Navigation("FirstMessage");
 
                     b.Navigation("LastMessage");
 
@@ -9353,6 +9400,8 @@ namespace IczpNet.Chat.Migrations
 
                     b.Navigation("DeletedList");
 
+                    b.Navigation("EndMessageSessionUnitSettingList");
+
                     b.Navigation("FavoriteList");
 
                     b.Navigation("FavoritedCounter");
@@ -9362,6 +9411,8 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("HistoryMessageList");
 
                     b.Navigation("LastMessageSessionUnitList");
+
+                    b.Navigation("LastSendMessageSessionUnitSettingList");
 
                     b.Navigation("MessageFollowerList");
 
@@ -9375,15 +9426,17 @@ namespace IczpNet.Chat.Migrations
 
                     b.Navigation("QuotedMessageList");
 
-                    b.Navigation("ReadedCounter");
+                    b.Navigation("ReadMessageSessionUnitSettingList");
 
-                    b.Navigation("ReadedMessageSessionUnitList");
+                    b.Navigation("ReadedCounter");
 
                     b.Navigation("ReadedRecorderList");
 
                     b.Navigation("ScopedList");
 
                     b.Navigation("SessionList");
+
+                    b.Navigation("StartMessageSessionUnitSettingList");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Templates.HistoryContent", b =>

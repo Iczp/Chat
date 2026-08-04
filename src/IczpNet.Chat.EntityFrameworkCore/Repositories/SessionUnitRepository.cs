@@ -240,9 +240,9 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
         //更新已读消息
         var count = await context.SessionUnitSetting
             .Where(x => x.SessionUnitId == info.Id)
-            .Where(x => x.ReadedMessageId < info.ReadedMessageId)
+            .Where(x => x.ReadMessageId < info.ReadMessageId)
             .ExecuteUpdateAsync(s => s
-                 .SetProperty(b => b.ReadedMessageId, b => info.ReadedMessageId)
+                 .SetProperty(b => b.ReadMessageId, b => info.ReadMessageId)
              );
 
         //更新角标

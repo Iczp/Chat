@@ -22,8 +22,8 @@ namespace IczpNet.Chat.SessionUnitSettings;
 //IsImmersed
 [Index(nameof(IsImmersed), AllDescending = true)]
 
-//ReadedMessageId
-[Index(nameof(ReadedMessageId), AllDescending = true)]
+//ReadMessageId
+[Index(nameof(ReadMessageId), AllDescending = true)]
 
 [Index(nameof(SessionUnitId), nameof(IsEnabled), nameof(IsKilled))]
 [Index(nameof(HistoryFristTime), nameof(HistoryLastTime), nameof(ClearTime))]
@@ -68,16 +68,29 @@ public class SessionUnitSetting : BaseEntity, IHasCreationTime, IHasModification
     /// 已读的消息
     /// </summary>
     [Comment("已读的消息")]
-    public virtual long? ReadedMessageId { get; set; }
+    public virtual long? ReadMessageId { get; set; }
 
     /// <summary>
     /// 已读的消息
     /// </summary>
     [Comment("已读的消息")]
-    [ForeignKey(nameof(ReadedMessageId))]
-    public virtual Message ReadedMessage { get; protected set; }
+    [ForeignKey(nameof(ReadMessageId))]
+    public virtual Message ReadMessage { get; protected set; }
 
     /// <summary>
+    /// 对方已读的消息
+    /// </summary>
+    [Comment("对方已读的消息")]
+    public virtual long? PeerReadMessageId { get; set; }
+
+    /// <summary>
+    /// 对方已读的消息
+    /// </summary>
+    [Comment("对方已读的消息")]
+    [ForeignKey(nameof(PeerReadMessageId))]
+    public virtual Message PeerReadMessage { get; protected set; }
+
+    /// <summary>   
     /// 最后发言的消息
     /// </summary>
     [Comment("最后发言的消息")]
@@ -89,6 +102,30 @@ public class SessionUnitSetting : BaseEntity, IHasCreationTime, IHasModification
     [Comment("最后发言的消息")]
     [ForeignKey(nameof(LastSendMessageId))]
     public virtual Message LastSendMessage { get; protected set; }
+
+    /// <summary>
+    /// 显示开始消息Id
+    /// </summary>
+    public virtual long? StartMessageId { get; protected set; }
+
+    /// <summary>
+    /// 显示开始消息Id
+    /// </summary>
+    [ForeignKey(nameof(StartMessageId))]
+    [Comment("显示开始消息Id")]
+    public virtual Message StartMessage { get; protected set; }
+
+    /// <summary>
+    /// 显示结束消息Id
+    /// </summary>
+    public virtual long? EndMessageId { get; protected set; }
+
+    /// <summary>
+    /// 显示结束消息Id
+    /// </summary>
+    [ForeignKey(nameof(EndMessageId))]
+    [Comment("显示结束消息Id")]
+    public virtual Message EndMessage { get; protected set; }
 
     /// <summary>
     /// 最后发言时间
@@ -364,11 +401,11 @@ public class SessionUnitSetting : BaseEntity, IHasCreationTime, IHasModification
     /// <param name="removeTime"></param>
     internal virtual void Remove(DateTime removeTime) => RemoveTime = removeTime;
 
-    //internal virtual void SetReadedMessageId(long lastMessageId, bool isForce = false)
+    //internal virtual void SetReadMessageId(long lastMessageId, bool isForce = false)
     //{
-    //    if (isForce || lastMessageId > ReadedMessageId.GetValueOrDefault())
+    //    if (isForce || lastMessageId > ReadMessageId.GetValueOrDefault())
     //    {
-    //        ReadedMessageId = lastMessageId;
+    //        ReadMessageId = lastMessageId;
     //    }
     //}
 

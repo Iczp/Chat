@@ -9,10 +9,10 @@ namespace IczpNet.Chat.Specifications;
 /// <summary>
 /// 我的未消息
 /// </summary>
-public class UnreadedMessageSpecification : Specification<Message>
+public class UnreadMessageSpecification : Specification<Message>
 {
     public virtual long OwnerId { get; }
-    public UnreadedMessageSpecification(long ownerId)
+    public UnreadMessageSpecification(long ownerId)
     {
         OwnerId = ownerId;
     }
@@ -21,7 +21,7 @@ public class UnreadedMessageSpecification : Specification<Message>
     {
         return x => x.Session.UnitList.Any(d => d.OwnerId == OwnerId 
         && (!d.Setting.HistoryFristTime.HasValue || d.Setting.HistoryFristTime <= x.CreationTime) 
-        && d.Setting.ReadedMessageId < x.Id 
+        && d.Setting.ReadMessageId < x.Id 
         && x.SenderId != d.OwnerId);
     }
 }

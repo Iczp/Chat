@@ -168,7 +168,7 @@ public class SessionUnitManager(
                         DestinationPortrait = x.Destination.Portrait,
                         DestinationThumbnail = x.Destination.Thumbnail,
 
-                        //ReadedMessageId = x.Setting.ReadedMessageId,
+                        //ReadMessageId = x.Setting.ReadMessageId,
                         IsPublic = x.Setting.IsPublic,
                         IsStatic = x.Setting.IsStatic,
                         IsVisible = x.Setting.IsVisible,
@@ -527,7 +527,7 @@ public class SessionUnitManager(
         {
             Id = entity.Id,
             OwnerId = entity.OwnerId,
-            ReadedMessageId = lastMessageId,
+            ReadMessageId = lastMessageId,
             PublicBadge = 0,
             PrivateBadge = 0,
             RemindAllCount = 0,
@@ -577,7 +577,7 @@ public class SessionUnitManager(
                 !d.IsPrivate &&
                 //!x.IsRollbacked &&
                 d.SenderId != x.OwnerId &&
-                (x.Setting.ReadedMessageId == null || d.Id > x.Setting.ReadedMessageId) &&
+                (x.Setting.ReadMessageId == null || d.Id > x.Setting.ReadMessageId) &&
                 (!x.Setting.HistoryFristTime.HasValue || d.CreationTime > x.Setting.HistoryFristTime) &&
                 (!x.Setting.HistoryLastTime.HasValue || d.CreationTime < x.Setting.HistoryLastTime) &&
                 (!x.Setting.ClearTime.HasValue || d.CreationTime > x.Setting.ClearTime)),
@@ -585,7 +585,7 @@ public class SessionUnitManager(
                 d.IsPrivate && d.ReceiverId == x.OwnerId &&
                 //!x.IsRollbacked &&
                 d.SenderId != x.OwnerId &&
-                (x.Setting.ReadedMessageId == null || d.Id > x.Setting.ReadedMessageId) &&
+                (x.Setting.ReadMessageId == null || d.Id > x.Setting.ReadMessageId) &&
                 (!x.Setting.HistoryFristTime.HasValue || d.CreationTime > x.Setting.HistoryFristTime) &&
                 (!x.Setting.HistoryLastTime.HasValue || d.CreationTime < x.Setting.HistoryLastTime) &&
                 (!x.Setting.ClearTime.HasValue || d.CreationTime > x.Setting.ClearTime)),
@@ -689,7 +689,7 @@ public class SessionUnitManager(
 
         var query = (await MessageReadOnlyRepository.GetQueryableAsync())
         .Where(x => x.SessionId == entity.SessionId)
-        .WhereIf(setting.ReadedMessageId.HasValue, x => x.Id > setting.ReadedMessageId)
+        .WhereIf(setting.ReadMessageId.HasValue, x => x.Id > setting.ReadMessageId)
         .WhereIf(setting.HistoryFristTime.HasValue, x => x.CreationTime >= setting.HistoryFristTime)
         .WhereIf(setting.HistoryLastTime.HasValue, x => x.CreationTime < setting.HistoryLastTime)
         .WhereIf(setting.ClearTime.HasValue, x => x.CreationTime > setting.ClearTime)
@@ -714,7 +714,7 @@ public class SessionUnitManager(
                 Messages = x.Session.MessageList.Where(d =>
                     d.Id > minMessageId &&
                     d.SenderId != x.OwnerId &&
-                    (x.Setting.ReadedMessageId == null || d.Id > x.Setting.ReadedMessageId) &&
+                    (x.Setting.ReadMessageId == null || d.Id > x.Setting.ReadMessageId) &&
                     (!x.Setting.HistoryFristTime.HasValue || d.CreationTime > x.Setting.HistoryFristTime) &&
                     (!x.Setting.HistoryLastTime.HasValue || d.CreationTime < x.Setting.HistoryLastTime) &&
                     (!x.Setting.ClearTime.HasValue || d.CreationTime > x.Setting.ClearTime))
@@ -739,11 +739,11 @@ public class SessionUnitManager(
 
         var setting = entity.Setting;
 
-        var readedMessageId = minMessageId == 0 ? setting.ReadedMessageId : minMessageId;
+        var readMessageId = minMessageId == 0 ? setting.ReadMessageId : minMessageId;
 
         var query = (await MessageReadOnlyRepository.GetQueryableAsync())
         .Where(x => x.SessionId == entity.SessionId)
-        .Where(x => x.Id > readedMessageId.GetValueOrDefault())
+        .Where(x => x.Id > readMessageId.GetValueOrDefault())
         .WhereIf(setting.HistoryFristTime.HasValue, x => x.CreationTime >= setting.HistoryFristTime)
         .WhereIf(setting.HistoryLastTime.HasValue, x => x.CreationTime < setting.HistoryFristTime)
         .WhereIf(setting.ClearTime.HasValue, x => x.CreationTime > setting.ClearTime)
@@ -754,7 +754,7 @@ public class SessionUnitManager(
         return new SessionUnitCounterInfo()
         {
             Id = entity.Id,
-            ReadedMessageId = readedMessageId,
+            ReadMessageId = readMessageId,
             PublicBadge = query.Count(),
             PrivateBadge = query.Where(x => x.IsPrivate).Count(),
             FollowingCount = query.Where(x => followingIdList.Contains(x.SenderSessionUnitId.Value)).Count(),
@@ -782,7 +782,7 @@ public class SessionUnitManager(
 
             var query = (await MessageReadOnlyRepository.GetQueryableAsync())
             .Where(x => x.SessionId == entity.SessionId)
-            .Where(x => x.Id > setting.ReadedMessageId)
+            .Where(x => x.Id > setting.ReadMessageId)
             .WhereIf(setting.HistoryFristTime.HasValue, x => x.CreationTime >= setting.HistoryFristTime)
             .WhereIf(setting.HistoryLastTime.HasValue, x => x.CreationTime < setting.HistoryFristTime)
             .WhereIf(setting.ClearTime.HasValue, x => x.CreationTime > setting.ClearTime)
@@ -815,7 +815,7 @@ public class SessionUnitManager(
                 Messages = x.Session.MessageList.Where(d =>
                     d.Id > minMessageId &&
                     d.SenderId != x.OwnerId &&
-                    (x.Setting.ReadedMessageId == null || d.Id > x.Setting.ReadedMessageId) &&
+                    (x.Setting.ReadMessageId == null || d.Id > x.Setting.ReadMessageId) &&
                     (!x.Setting.HistoryFristTime.HasValue || d.CreationTime > x.Setting.HistoryFristTime) &&
                     (!x.Setting.HistoryLastTime.HasValue || d.CreationTime < x.Setting.HistoryLastTime) &&
                     (!x.Setting.ClearTime.HasValue || d.CreationTime > x.Setting.ClearTime))
@@ -848,7 +848,7 @@ public class SessionUnitManager(
                 .Where(d => d.Id > minMessageId)
                 .Where(d =>
                     d.SenderId != x.OwnerId &&
-                    (x.Setting.ReadedMessageId == null || d.Id > x.Setting.ReadedMessageId) &&
+                    (x.Setting.ReadMessageId == null || d.Id > x.Setting.ReadMessageId) &&
                     (!x.Setting.HistoryFristTime.HasValue || d.CreationTime > x.Setting.HistoryFristTime) &&
                     (!x.Setting.HistoryLastTime.HasValue || d.CreationTime < x.Setting.HistoryLastTime) &&
                     (!x.Setting.ClearTime.HasValue || d.CreationTime > x.Setting.ClearTime)
@@ -859,7 +859,7 @@ public class SessionUnitManager(
                 .Where(d => d.Id > minMessageId)
                 .Where(d =>
                     d.SenderId != x.OwnerId &&
-                    (x.Setting.ReadedMessageId == null || d.Id > x.Setting.ReadedMessageId) &&
+                    (x.Setting.ReadMessageId == null || d.Id > x.Setting.ReadMessageId) &&
                     (!x.Setting.HistoryFristTime.HasValue || d.CreationTime > x.Setting.HistoryFristTime) &&
                     (!x.Setting.HistoryLastTime.HasValue || d.CreationTime < x.Setting.HistoryLastTime) &&
                     (!x.Setting.ClearTime.HasValue || d.CreationTime > x.Setting.ClearTime)
@@ -888,7 +888,7 @@ public class SessionUnitManager(
                 .Where(d => d.Id > minMessageId)
                 .Where(d =>
                     d.SenderId != x.OwnerId &&
-                    (x.Setting.ReadedMessageId == null || d.Id > x.Setting.ReadedMessageId) &&
+                    (x.Setting.ReadMessageId == null || d.Id > x.Setting.ReadMessageId) &&
                     (!x.Setting.HistoryFristTime.HasValue || d.CreationTime > x.Setting.HistoryFristTime) &&
                     (!x.Setting.HistoryLastTime.HasValue || d.CreationTime < x.Setting.HistoryLastTime) &&
                     (!x.Setting.ClearTime.HasValue || d.CreationTime > x.Setting.ClearTime)
