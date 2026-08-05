@@ -1,9 +1,7 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.ChatPushers;
-using IczpNet.Chat.CommandPayloads;
-using IczpNet.Chat.DataFilters;
+//using IczpNet.Chat.ChatPushers;
 using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
@@ -46,7 +44,7 @@ public partial class MessageManager(
     IShortIdGenerator shortIdGenerator,
     IObjectMapper objectMapper,
     IMessageValidator messageValidator,
-    IChatPusher chatPusher,
+    //IChatPusher chatPusher,
     IDistributedEventBus distributedEventBus,
     ICurrentHosted currentHosted,
     ISessionUnitManager sessionUnitManager,
@@ -73,7 +71,7 @@ public partial class MessageManager(
     protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
     public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
     protected IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
-    protected IChatPusher ChatPusher { get; } = chatPusher;
+    //protected IChatPusher ChatPusher { get; } = chatPusher;
     public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
     public ICurrentHosted CurrentHosted { get; } = currentHosted;
     protected ISessionRepository SessionRepository { get; } = sessionRepository;
@@ -498,7 +496,6 @@ public partial class MessageManager(
         };
         message.SetShortId(shortId: ShortIdGenerator.Create());
 
-
         //senderSessionUnit.Setting.SetLastSendMessage(message);//并发时可能导致锁表
 
         // 私有消息
@@ -562,6 +559,7 @@ public partial class MessageManager(
 
         // update Session LastMessage
         await SessionUnitCacheManager.UpdateLastMessageAsync(senderSessionUnit, message);
+
         await SessionRepository.UpdateLastMessageIdAsync(sessionId, message.Id);
 
         // update SessionUnitSetting LastSendMessageId
@@ -877,10 +875,12 @@ public partial class MessageManager(
         //await Repository.UpdateAsync(message, true);
         await UnitOfWorkManager.Current.SaveChangesAsync();
 
-        return await ChatPusher.ExecuteBySessionIdAsync(message.SessionId.Value, new RollbackMessageCommandPayload
-        {
-            MessageId = message.Id,
-        });
+        return new Dictionary<string, long>() { { "MessageId", message.Id } };
+
+        //return await ChatPusher.ExecuteBySessionIdAsync(message.SessionId.Value, new RollbackMessageCommandPayload
+        //{
+        //    MessageId = message.Id,
+        //});
     }
 
     /// <inheritdoc />
@@ -935,11 +935,11 @@ public partial class MessageManager(
             args.Add((newMessage.SessionId.Value, output));
         }
 
-        //push
-        foreach (var arg in args)
-        {
-            await ChatPusher.ExecuteBySessionIdAsync(arg.Item1, arg.Item2, null);
-        }
+        ////push
+        //foreach (var arg in args)
+        //{
+        //    await ChatPusher.ExecuteBySessionIdAsync(arg.Item1, arg.Item2, null);
+        //}
 
         return messageList;
     }

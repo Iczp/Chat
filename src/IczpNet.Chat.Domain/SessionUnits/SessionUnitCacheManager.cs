@@ -227,12 +227,6 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// 
     /// </summary>
     /// <returns></returns>
-    private RedisKey SessionLastMessageSetKey() => $"{MessagesPrefix}SessionLastMessage";
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <returns></returns>
     private RedisKey SessionMessageSetKey(Guid sessionId) => $"{MessagesPrefix}SessionMessage:{sessionId}";
 
     /// <summary>
@@ -2162,10 +2156,10 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
     public async Task UpdateLastMessageAsync(SessionUnitCacheItem sender, Message message)
     {
-        var unit = await GetAsync(sender.Id);
+        //var unit = await GetAsync(sender.Id);
         var batch = Database.CreateBatch();
         var lastMessageId = message.Id;
-        if (unit == null && lastMessageId > unit.LastSendMessageId)
+        if (sender == null && lastMessageId > sender.LastSendMessageId)
         {
             var unitKey = UnitHashKey(sender.Id);
             _ = batch.HashSetAsync(unitKey, F_LastMessageId, lastMessageId);
@@ -2176,8 +2170,6 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         if (sender.SessionId.HasValue)
         {
             var sessionId = sender.SessionId.Value;
-            _ = batch.SortedSetAddAsync(SessionLastMessageSetKey(), sessionId.ToString(), lastMessageId);
-
             // message list
             var sessionMessageListKey = SessionMessageSetKey(sessionId);
             _ = batch.SortedSetAddAsync(sessionMessageListKey, message.Id, message.Id);
