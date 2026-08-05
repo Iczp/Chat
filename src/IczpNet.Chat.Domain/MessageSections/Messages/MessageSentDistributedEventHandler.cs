@@ -121,7 +121,7 @@ public class MessageSentDistributedEventHandler(
             await MeasureAsync($"{nameof(BatchIncrementForCacheAsync)}", () => BatchIncrementForCacheAsync(messageCacheItem, eventData.ReminderIdList, eventData.FollowerIdList));
 
             // 后台任务:数据库会话单元计数增量
-            await MeasureAsync($"{nameof(EnqueueSessionUnitIncrementJobAsync)}", () => EnqueueSessionUnitIncrementJobAsync(messageCacheItem, eventData.ReminderIdList, eventData.FollowerIdList));
+            //await MeasureAsync($"{nameof(EnqueueSessionUnitIncrementJobAsync)}", () => EnqueueSessionUnitIncrementJobAsync(messageCacheItem, eventData.ReminderIdList, eventData.FollowerIdList));
 
             // 后台任务:开发者
             await MeasureAsync($"{nameof(EnqueueDeveloperJobAsync)}", () => EnqueueDeveloperJobAsync(messageCacheItem));

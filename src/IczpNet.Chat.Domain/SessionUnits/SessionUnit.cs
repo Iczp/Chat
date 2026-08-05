@@ -358,6 +358,28 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
 
     protected SessionUnit() { }
 
+    public SessionUnit(
+       Guid id,
+       long lastMessageId,
+       int publicBadge,
+       int privateBadge,
+       int followingCount,
+       int remindAllCount,
+       int remindMeCount,
+       double ticks,
+       double sorting)
+       : base(id)
+    {
+        LastMessageId = lastMessageId;
+        PublicBadge = publicBadge;
+        PrivateBadge = privateBadge;
+        FollowingCount = followingCount;
+        RemindAllCount = remindAllCount;
+        RemindMeCount = remindMeCount;
+        Ticks = ticks;
+        Sorting = sorting;
+    }
+
     internal SessionUnit(ISessionUnitIdGenerator idGenerator,
         [NotNull]
         Session session,

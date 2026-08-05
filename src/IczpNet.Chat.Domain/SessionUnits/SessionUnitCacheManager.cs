@@ -11,7 +11,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
@@ -395,7 +394,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             Thumbnail = unit.DestinationThumbnail,
             Mobile = null,
         };
-        HashSetIf(true, () => OwnersIndexedHashKey(unit.OwnerId), element, JsonSerializer.Serialize(contact), batch: batch, expiry: CacheExpire);
+        HashSetIf(true, () => OwnersIndexedHashKey(unit.OwnerId), element, JsonSerializer.Serialize(contact), batch: batch, expiry: null);
     }
 
     private void SetSessionPinnedSorting(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
@@ -2224,6 +2223,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return redisZset.Select(x => (long)x.Score);
     }
 
+
     public async Task<long> GetSessionMessageTotalCountAsync(Guid sessionId, long minMessageId = 0, long maxMessageId = long.MaxValue)
     {
         return await Database.SortedSetLengthAsync(SessionMessageSetKey(sessionId), minMessageId, maxMessageId, Exclude.Both);
@@ -2281,4 +2281,29 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return await Database.KeyDeleteAsync(SessionMessageSetKey(sessionId));
     }
 
+
+    public async Task<IEnumerable<KeyValuePair<SessionUnitElement, long>>> GetDirtyBatchAsync(int batchSize, bool isAscending = true, bool isDelete = true)
+    {
+        var dirtyKey = DirtySetKey();
+        var redisZset = await Database.SortedSetRangeByScoreWithScoresAsync(
+            key: dirtyKey,
+            start: 0,
+            stop: long.MaxValue,
+            exclude: Exclude.None,
+            skip: 0,
+            take: batchSize,
+            order: isAscending ? Order.Ascending : Order.Descending);
+
+        if (isDelete)
+        {
+            //立即删除
+            await Database.SortedSetRemoveAsync(dirtyKey, redisZset.Select(x => x.Element).ToArray());
+        }
+        return redisZset.Select(x => new KeyValuePair<SessionUnitElement, long>(SessionUnitElement.Parse(x.Element), (long)x.Score));
+    }
+
+    public async Task<long> GetDirtyCountAsync()
+    {
+        return await Database.SortedSetLengthAsync(DirtySetKey(), 0, long.MaxValue, Exclude.None);
+    }
 }

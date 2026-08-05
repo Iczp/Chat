@@ -13,4 +13,5 @@ public class SessionUnitOptions
     /// 缓存过期时间
     /// </summary>
     public TimeSpan? CacheExpire { get; set; } = TimeSpan.FromDays(1);
+
 }

@@ -168,7 +168,7 @@ public class SessionUnitManager(
                         DestinationPortrait = x.Destination.Portrait,
                         DestinationThumbnail = x.Destination.Thumbnail,
 
-                        
+
                         IsPublic = x.Setting.IsPublic,
                         IsStatic = x.Setting.IsStatic,
                         IsVisible = x.Setting.IsVisible,
@@ -324,23 +324,23 @@ public class SessionUnitManager(
         var ownerMap = owners.ToDictionary(x => x.Id);
 
         var list = unitList.Select(x => new SessionUnitSenderInfo()
-            {
-                Id = x.Id,
-                OwnerId = x.OwnerId,
-                OwnerObjectType = x.OwnerObjectType,
-                MemberName = x.MemberName,
-                IsCreator = x.IsCreator,
-                IsEnabled = x.IsEnabled,
-                IsPublic = x.IsPublic,
-                IsStatic = x.IsStatic,
-                IsVisible = x.IsVisible,
-                SessionId = x.SessionId,
-                CreationTime = x.CreationTime,
-                // 待赋值
-                TagList = [],
-                // owner
-                Owner = ownerMap.GetOrDefault(x.OwnerId)
-            })
+        {
+            Id = x.Id,
+            OwnerId = x.OwnerId,
+            OwnerObjectType = x.OwnerObjectType,
+            MemberName = x.MemberName,
+            IsCreator = x.IsCreator,
+            IsEnabled = x.IsEnabled,
+            IsPublic = x.IsPublic,
+            IsStatic = x.IsStatic,
+            IsVisible = x.IsVisible,
+            SessionId = x.SessionId,
+            CreationTime = x.CreationTime,
+            // 待赋值
+            TagList = [],
+            // owner
+            Owner = ownerMap.GetOrDefault(x.OwnerId)
+        })
             .ToList();
         return list;
     }
@@ -1602,5 +1602,52 @@ public class SessionUnitManager(
         var units = entities.Select(MapToCacheItem);
         await SessionUnitCacheManager.AddUnitsAsync(units);
         return units;
+    }
+
+    public async Task<FlushDirtyResult> FlushDirtyAsync(int batchSize)
+    {
+        var total = await SessionUnitCacheManager.GetDirtyCountAsync();
+
+        if(total == 0)
+        {
+            Logger.LogInformation("FlushDirtyAsync, total=0");
+            return new FlushDirtyResult { Total = 0 };
+        }
+
+        var list = await SessionUnitCacheManager.GetDirtyBatchAsync(batchSize, isAscending: true, isDelete: true);
+
+        var unitIdList = list.Select(x => x.Key.SessionUnitId).ToList();
+
+        var remaining = total - unitIdList.Count;
+
+        var stopwatch = Stopwatch.StartNew();
+
+        Logger.LogInformation("GetDirtyBatchAsync, Count={Count}, Elapsed={Elapsed}ms",
+            unitIdList.Count,
+            stopwatch.ElapsedMilliseconds);
+
+        var units = (await SessionUnitCacheManager.GetManyAsync(unitIdList))
+            .Select(x => x.Value)
+            .ToList();
+
+        Logger.LogInformation("GetManyAsync, Count={Count}, Elapsed={Elapsed}ms",
+            unitIdList.Count,
+            stopwatch.ElapsedMilliseconds);
+
+        var affect = await Repository.BatchUpdateAsync(units);
+
+        Logger.LogInformation("BatchUpdateAsync, Affect={Affect}, Elapsed={Elapsed}ms",
+            affect,
+            stopwatch.ElapsedMilliseconds);
+
+        var result = new FlushDirtyResult
+        {
+            Total = total,
+            Execute = unitIdList.Count,
+            Affect = affect,
+            Remaining = remaining - affect,
+            Elapsed = stopwatch.ElapsedMilliseconds,
+        };
+        return result;
     }
 }

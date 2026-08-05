@@ -30,7 +30,7 @@ public class SendMessageToClientDistributedEventHandler : SendToClientDistribute
     /// </summary>
     /// <param name="eventData"></param>
     /// <returns></returns>
-    protected async Task<bool> SendToClientBySessionAsync(SendMessageToClientDistributedEto eventData)
+    protected async Task<bool> SendToClientBySessionBackAsync(SendMessageToClientDistributedEto eventData)
     {
         var sessionId = eventData.Message.SessionId;
         var command = eventData.Command;
@@ -86,7 +86,7 @@ public class SendMessageToClientDistributedEventHandler : SendToClientDistribute
     /// </summary>
     /// <param name="eventData"></param>
     /// <returns></returns>
-    protected async Task<bool> SendToClientBySessionNewAsync(SendMessageToClientDistributedEto eventData)
+    protected async Task<bool> SendToClientBySessionAsync(SendMessageToClientDistributedEto eventData)
     {
         var sessionId = eventData.Message.SessionId;
 

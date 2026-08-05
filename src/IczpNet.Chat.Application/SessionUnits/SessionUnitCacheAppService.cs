@@ -1237,4 +1237,23 @@ public class SessionUnitCacheAppService(
         }));
     }
 
+    /// <summary>
+    /// 未处理的会话单元数量
+    /// </summary>
+    /// <returns></returns>
+    public async Task<long> GetDirtyCountAsync()
+    {
+        return await SessionUnitCacheManager.GetDirtyCountAsync();
+    }
+
+    /// <summary>
+    /// 刷新未处理的会话单元
+    /// </summary>
+    /// <param name="batchSize"></param>
+    /// <returns></returns>
+    public async Task<FlushDirtyResult> FlushDirtyAsync(int batchSize = 500)
+    {
+        return await SessionUnitManager.FlushDirtyAsync(batchSize);
+    }
+
 }

@@ -369,19 +369,40 @@ public static class ChatDbContextModelCreatingExtensions
                 b.HasOne(x => x.DeletedCounter).WithOne(x => x.Message).HasForeignKey<DeletedCounter>(x => x.MessageId).IsRequired(true);
 
                 //ChatGPT 优化 2025.11.20
-                b.HasIndex(x => new { x.SessionId, x.IsDeleted, x.IsPrivate }).HasDatabaseName("IX_ChatMessage_CountQuery").IncludeProperties(x => new { x.Id, x.SenderSessionUnitId, x.ReceiverSessionUnitId });
+                //b.HasIndex(x => new { x.SessionId, x.IsDeleted, x.IsPrivate }).HasDatabaseName("IX_ChatMessage_CountQuery").IncludeProperties(x => new { x.Id, x.SenderSessionUnitId, x.ReceiverSessionUnitId });
 
+                
                 // 优化 GetList COUNT 的关键索引
-                b.HasIndex(x => new
-                {
+                //b.HasIndex(x => new
+                //{
+                //    x.SessionId,
+                //    x.IsDeleted,
+                //    x.IsPrivate,
+                //    x.SenderSessionUnitId,
+                //    x.ReceiverSessionUnitId
+                //})
+                //.HasDatabaseName("IX_Message_Session_Count")
+                //.IncludeProperties(x => new { x.Id });
+
+                var indexBuilder1 = b.HasIndex(x => new { x.SessionId, x.IsDeleted, x.IsPrivate })
+                                     .HasDatabaseName("IX_ChatMessage_CountQuery");
+
+                SqlServerIndexBuilderExtensions.IncludeProperties(indexBuilder1, x => new {
+                    x.Id,
+                    x.SenderSessionUnitId,
+                    x.ReceiverSessionUnitId
+                });
+
+                var indexBuilder2 = b.HasIndex(x => new {
                     x.SessionId,
                     x.IsDeleted,
                     x.IsPrivate,
                     x.SenderSessionUnitId,
                     x.ReceiverSessionUnitId
                 })
-                .HasDatabaseName("IX_Message_Session_Count")
-                .IncludeProperties(x => new { x.Id });
+                .HasDatabaseName("IX_Message_Session_Count");
+
+                SqlServerIndexBuilderExtensions.IncludeProperties(indexBuilder2, x => new { x.Id });
 
             });
 

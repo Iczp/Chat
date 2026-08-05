@@ -1,8 +1,10 @@
-﻿using IczpNet.AbpCommons.Extensions;
+﻿using EFCore.BulkExtensions;
+using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.EntityFrameworkCore;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -10,6 +12,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
+using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -17,6 +20,17 @@ namespace IczpNet.Chat.Repositories;
 
 public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextProvider) : ChatRepositoryBase<SessionUnit, Guid>(dbContextProvider), ISessionUnitRepository
 {
+    protected virtual async Task<string> GetTableNameAsync(ChatDbContext context, Type typeofEntity)
+    {
+        return await GetTableNameForEntityAsync(context, typeofEntity);
+    }
+
+    protected virtual async Task<string> GetTableNameAsync(Type typeofEntity)
+    {
+        var context = await GetDbContextAsync();
+
+        return await GetTableNameAsync(context, typeofEntity);
+    }
     protected virtual Task<string> GetTableNameForEntityAsync(ChatDbContext context, Type typeofEntity)
     {
         var entityType = context.Model.FindEntityType(typeof(SessionUnit));
@@ -60,7 +74,7 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
     {
         var context = await GetDbContextAsync();
 
-        var table = await GetTableNameForEntityAsync(context, typeof(SessionUnit));
+        var table = await GetTableNameAsync(context, typeof(SessionUnit));
 
         var sql = @$"Update {table} set {nameof(SessionUnit.LastMessageId)}=@LastMessageId where {nameof(SessionUnit.SessionId)}=@SessionId and [{nameof(SessionUnit.IsDeleted)}]=@IsDeleted and {nameof(SessionUnit.LastMessageId)}<@LastMessageId";
 
@@ -309,5 +323,115 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
              );
         Logger.LogInformation("{method} boxId:{boxId},[END] Elapsed:{elapsed}ms", nameof(UpdateBoxAsync), boxId, stopwatch.ElapsedMilliseconds);
         return result;
+    }
+
+    public Task<int> BatchUpdateAsync(List<SessionUnitCacheItem> items)
+    {
+        return BatchUpdateBulkExtensionsAsync(items);
+        //return BatchUpdateSqlRawAsync(items);
+    }
+
+    protected virtual async Task<int> BatchUpdateSqlRawAsync(List<SessionUnitCacheItem> items)
+    {
+        if (items == null || items.Count == 0) return 0;
+
+        var context = await GetDbContextAsync();
+        var table = await GetTableNameAsync(context, typeof(SessionUnit));
+        int totalEffectedRows = 0;
+
+        // 每 200 条处理一次，防止参数超过 2100 个限制
+        foreach (var batch in items.Chunk(200))
+        {
+            var sqlBuilder = new StringBuilder();
+            var parameters = new List<SqlParameter>();
+            int i = 0;
+
+            foreach (var item in batch)
+            {
+                // 为每一行生成唯一的参数名
+                string id = $"@Id_{i}";
+                string lastMessageId = $"@LastMessageId_{i}";
+                string publicBadge = $"@PublicBadge_{i}";
+                string privateBadge = $"@PrivateBadge_{i}";
+                string followingCount = $"@FollowingCount_{i}";
+                string remindAllCount = $"@RemindAllCount_{i}";
+                string remindMeCount = $"@RemindMeCount_{i}";
+                var ticks = $"@Ticks_{i}";
+                var sorting = $"@Sorting_{i}";
+
+                sqlBuilder.AppendLine($@"
+                UPDATE {table} 
+                SET 
+                    [{nameof(SessionUnit.LastMessageId)}] = {lastMessageId},
+                    [{nameof(SessionUnit.PublicBadge)}] = {publicBadge},
+                    [{nameof(SessionUnit.PrivateBadge)}] = {privateBadge},
+                    [{nameof(SessionUnit.FollowingCount)}] = {followingCount},
+                    [{nameof(SessionUnit.RemindAllCount)}] = {remindAllCount},
+                    [{nameof(SessionUnit.RemindMeCount)}] = {remindMeCount},
+                    [{nameof(SessionUnit.Ticks)}] = {ticks},
+                    [{nameof(SessionUnit.Sorting)}] = {sorting}
+                WHERE [{nameof(SessionUnit.Id)}] = {id} AND [{nameof(SessionUnit.LastMessageId)}] <= {lastMessageId}");
+
+                parameters.Add(new SqlParameter(id, item.Id));
+                parameters.Add(new SqlParameter(lastMessageId, item.LastMessageId));
+                parameters.Add(new SqlParameter(publicBadge, item.PublicBadge));
+                parameters.Add(new SqlParameter(privateBadge, item.PrivateBadge));
+                parameters.Add(new SqlParameter(followingCount, item.FollowingCount));
+                parameters.Add(new SqlParameter(remindAllCount, item.RemindAllCount));
+                parameters.Add(new SqlParameter(remindMeCount, item.RemindMeCount));
+                parameters.Add(new SqlParameter(ticks, item.Ticks));
+                parameters.Add(new SqlParameter(sorting, item.Sorting));
+
+                i++;
+            }
+
+            // 一次性发送这 200 条 UPDATE 语句
+            totalEffectedRows += await context.Database.ExecuteSqlRawAsync(sqlBuilder.ToString(), parameters.ToArray());
+        }
+
+        return totalEffectedRows;
+    }
+    protected virtual async Task<int> BatchUpdateBulkExtensionsAsync(List<SessionUnitCacheItem> items)
+    {
+        if (items == null || items.Count == 0)
+            return 0;
+
+        var context =
+            await GetDbContextAsync();
+
+        var entities =
+            items.Select(x => new SessionUnit(
+            x.Id,
+            x.LastMessageId.Value,
+            x.PublicBadge,
+            x.PrivateBadge,
+            x.FollowingCount,
+            x.RemindAllCount,
+            x.RemindMeCount,
+            x.Ticks,
+            x.Sorting
+        ))
+            .ToList();
+
+        await context.BulkUpdateAsync(
+            entities,
+            new BulkConfig
+            {
+                BatchSize = 1000,
+                // 只更新指定字段
+                PropertiesToInclude =
+                [
+                    nameof(SessionUnit.LastMessageId),
+                    nameof(SessionUnit.PublicBadge),
+                    nameof(SessionUnit.PrivateBadge),
+                    nameof(SessionUnit.FollowingCount),
+                    nameof(SessionUnit.RemindAllCount),
+                    nameof(SessionUnit.RemindMeCount),
+                    nameof(SessionUnit.Ticks),
+                    nameof(SessionUnit.Sorting)
+                ]
+            });
+
+        return entities.Count;
     }
 }

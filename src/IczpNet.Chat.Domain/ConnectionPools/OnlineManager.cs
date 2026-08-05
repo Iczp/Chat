@@ -316,7 +316,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         var userId = connectionPool.UserId;
         Logger.LogInformation($"[CreateAsync] connectionId:{connectionId},userId:{userId},ownerIds:{ownerIds.JoinAsString(",")}");
 
-        var friendsMap = await LoadFriendsMapAsync(ownerIds);
+
 
         var batch = Database.CreateBatch();
 
@@ -333,17 +333,26 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         // connectionPool hash
         HashSetConn(batch, connectionPool);
 
-        //Friends Conns
-        HashSetAndRefreshFriendsConns(batch, ownerIds, friendsMap, connectionId);
-
         // chatObject -> connection hash (owner conn mapping)
         HashSetDevice(batch, connectionPool);
 
-        // session -> connection hash (session -> connId : owners joined)
-        HashSetSessionConn(batch, connectionPool, friendsMap);
-
         // 更新主机
         SortedSetIf(true, () => AllHostZsetKey(), CurrentHosted.Name, Clock.Now.ToUnixTimeMilliseconds(), batch: batch, expiry: CacheExpire);
+
+        if (Config.IsEnableExclusiveStatFriends || Config.IsEnableExclusiveStatSession)
+        {
+            // 预加载好友会话
+            var friendsMap = await LoadFriendsMapAsync(ownerIds);
+
+            //Friends Conns
+            HashSetAndRefreshFriendsConns(batch, ownerIds, friendsMap, connectionId);
+
+            if (!Config.IsEnableExclusiveStatSession)
+            {
+                // session -> connection hash (session -> connId : owners joined)
+                HashSetSessionConn(batch, connectionPool, friendsMap);
+            }
+        }
 
         batch.Execute();
 
@@ -378,7 +387,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
 
         var ownerIds = connectionPool.ChatObjectIdList;
 
-        var friendsMap = await LoadFriendsMapAsync(ownerIds);
+
 
         Logger.LogInformation("[RefreshExpireAsync] GetFriendsMapAsync ownerIds=[{ownerIds}], Elapsed: {Elapsed}ms", ownerIds.JoinAsString(","), stopwatch.ElapsedMilliseconds);
 
@@ -409,16 +418,23 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         // Client
         ExpireIf(!string.IsNullOrWhiteSpace(connectionPool.ClientId), () => ClientSetKey(connectionPool.ClientId), batch: batch);
 
-        // [key多:1] Friends 如果启用,这个Key较多
-        HashSetAndRefreshFriendsConns(batch, ownerIds, friendsMap, null);
-
-        // SessionConn
-        RefreshSessionExpire(batch, friendsMap);
-
         // ActiveTime
         HashSetIf(true, () => ConnHashKey(connectionId), nameof(ConnectionPoolCacheItem.ActiveTime), now.ToRedisValue(), batch: batch, expiry: CacheExpire);
 
         Expire(batch, AllHostZsetKey());
+
+        if (Config.IsEnableExclusiveStatSession || Config.IsEnableExclusiveStatFriends)
+        {
+            var friendsMap = await LoadFriendsMapAsync(ownerIds);
+            // [key多:1] Friends 如果启用,这个Key较多
+            HashSetAndRefreshFriendsConns(batch, ownerIds, friendsMap, null);
+
+            if (Config.IsEnableExclusiveStatSession)
+            {
+                // SessionConn
+                RefreshSessionExpire(batch, friendsMap);
+            }
+        }
 
         batch.Execute();
 
@@ -462,8 +478,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
 
         var ownerIds = connectionPool.ChatObjectIdList ?? [];
 
-        // Get sessions per owner (batched inside)
-        var friendsMap = await LoadFriendsMapAsync(ownerIds);
+        
 
         // OwnerDevice
         RemoveDevice(batch, connectionId, ownerIds);
@@ -480,11 +495,20 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         // ClientId
         SortedRemoveIf(!string.IsNullOrEmpty(connectionPool.ClientId), () => ClientSetKey(connectionPool.ClientId), connectionId, refreshExpire: true, batch: batch);
 
-        // Friends
-        RemoveFriendsConn(batch, ownerIds, friendsMap, connectionId);
+        if(Config.IsEnableExclusiveStatFriends || Config.IsEnableExclusiveStatSession)
+        {
+            // Get sessions per owner (batched inside)
+            var friendsMap = await LoadFriendsMapAsync(ownerIds);
 
-        // SessionConn
-        RemoveSessionConn(batch, connectionId, friendsMap);
+            // Friends
+            RemoveFriendsConn(batch, ownerIds, friendsMap, connectionId);
+
+            if (Config.IsEnableExclusiveStatSession)
+            {
+                // SessionConn
+                RemoveSessionConn(batch, connectionId, friendsMap);
+            }
+        }
 
         // Delete conn hash
         _ = batch.KeyDeleteAsync(ConnHashKey(connectionId));

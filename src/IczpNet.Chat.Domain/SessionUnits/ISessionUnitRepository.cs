@@ -26,6 +26,8 @@ public interface ISessionUnitRepository : IRepository<SessionUnit, Guid>
 
     Task<int> BatchUpdateAppUserIdAsync(long chatObjectId, Guid appUserId);
 
+    Task<int> BatchUpdateAsync(List<SessionUnitCacheItem> items);
+
     /// <summary>
     /// 更新记数器
     /// </summary>

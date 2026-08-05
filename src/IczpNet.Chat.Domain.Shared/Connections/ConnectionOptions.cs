@@ -27,4 +27,9 @@ public class ConnectionOptions
     /// </summary>
     public bool IsEnableExclusiveStatFriends { get; set; } = false;
 
+    /// <summary>
+    /// 是否启用 单独 会话在线状态统计（单独Key）-- 用于统计会话在线状态
+    /// </summary>
+    public bool IsEnableExclusiveStatSession{ get; set; } = false;
+
 }

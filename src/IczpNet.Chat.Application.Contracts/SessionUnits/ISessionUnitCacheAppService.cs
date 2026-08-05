@@ -45,4 +45,6 @@ public interface ISessionUnitCacheAppService
 
     Task<Dictionary<long, IEnumerable<SessionUnitStatInfo>>> GetBoxOverviewAsync(List<long> ownerIds);
 
+    Task<long> GetDirtyCountAsync();
+
 }

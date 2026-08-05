@@ -560,5 +560,12 @@ public interface ISessionUnitManager
     /// <param name="entities"></param>
     /// <returns></returns>
     Task<IEnumerable<SessionUnitCacheItem>> AddUnitsToCacheAsync(IEnumerable<SessionUnit> entities);
-    
+
+    /// <summary>
+    /// 处理脏数据，批量刷新到数据库
+    /// </summary>
+    /// <param name="batchSize"></param>
+    /// <returns></returns>
+    Task<FlushDirtyResult> FlushDirtyAsync(int batchSize);
+
 }

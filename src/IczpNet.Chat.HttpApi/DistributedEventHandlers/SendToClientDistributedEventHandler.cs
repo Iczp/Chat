@@ -23,7 +23,7 @@ public abstract class SendToClientDistributedEventHandler<T> : DomainService, ID
     {
         var sw = Stopwatch.StartNew();
         var result = await func();
-        Logger.LogInformation($"[{GetType().FullName}] [{name}] Elapsed Time: {sw.ElapsedMilliseconds} ms");
+        Logger.LogInformation("[{FullName}] [{name}] Elapsed Time: {ElapsedMilliseconds} ms", GetType().FullName, name, sw.ElapsedMilliseconds);
         sw.Stop();
         return result;
     }
