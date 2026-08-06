@@ -1257,4 +1257,13 @@ public class SessionUnitCacheAppService(
         return await SessionUnitManager.FlushDirtyAsync(scanSize, jobSize);
     }
 
+    /// <summary>
+    /// 获取刷新未处理的会话单元进度
+    /// </summary>
+    /// <param name="processingKey"></param>
+    /// <returns></returns>
+    public async Task<FlushDirtyProgress> GetFlushDirtyProgressAsync(string processingKey)
+    {
+        return await SessionUnitCacheManager.GetFlushDirtyProgressAsync(processingKey);
+    }
 }

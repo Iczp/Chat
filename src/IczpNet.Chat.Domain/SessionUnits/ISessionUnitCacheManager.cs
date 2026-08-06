@@ -537,6 +537,13 @@ public interface ISessionUnitCacheManager
 
     Task<long> GetProcessingDirtyCountAsync(string processingKey);
 
-    Task<string> RenameDirtyAsync();
-    Task DeleteDirtyAsync(string processingKey);
+    //Task<string> RenameDirtyAsync();
+
+    //Task DeleteDirtyAsync(string processingKey);
+
+    Task<List<FlushDirtyProcessingJobArgs>> FlushDirtyToJobsAsync(int scanSize = 5000, int jobSize = 1000);
+
+    Task UpdateFlushDirtyProgressAsync(string processingKey, int affect);
+
+    Task<FlushDirtyProgress> GetFlushDirtyProgressAsync(string processingKey);
 }

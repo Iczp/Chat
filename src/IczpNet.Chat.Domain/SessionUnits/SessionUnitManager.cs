@@ -1610,65 +1610,20 @@ public class SessionUnitManager(
 
     public async Task<FlushDirtyResult> FlushDirtyAsync(int scanSize = 5000, int jobSize = 1000)
     {
+        var jobs = await SessionUnitCacheManager.FlushDirtyToJobsAsync(scanSize, jobSize);
 
-
-        var total = await SessionUnitCacheManager.GetDirtyCountAsync();
-
-        if (total <= 0)
+        foreach (var job in jobs)
         {
-            return new FlushDirtyResult
-            {
-                Total = 0
-            };
+            await BackgroundJobManager.EnqueueAsync(job);
         }
 
-        var processingKey = await SessionUnitCacheManager.RenameDirtyAsync();
-
-        if (processingKey == null)
-        {
-            return new FlushDirtyResult();
-        }
-
-        var totalJobCount = (int)Math.Ceiling(    total / (double)jobSize);
-
-        var jobIndex = 0;
-
-        while (true)
-        {
-            var list = await SessionUnitCacheManager.GetAndRemoveProcessingDirtyAsync(processingKey, scanSize);
-
-            if (list.Count == 0)
-            {
-                break;
-            }
-
-            var ids = list.Select(x => x.Key.SessionUnitId).Distinct().ToList();
-
-            foreach (var batch in ids.Chunk(jobSize))
-            {
-                var sessionUnitIds = batch.ToList();
-                await BackgroundJobManager.EnqueueAsync(new FlushDirtyProcessingJobArgs
-                {
-                    ProcessingKey = processingKey,
-                    Count = sessionUnitIds.Count,
-                    ScanSize = scanSize,
-                    JobSize = jobSize,
-                    JobIndex = jobIndex,
-                    JobTotalCunt = totalJobCount,
-                    SessionUnitIds = sessionUnitIds,
-                });
-                jobIndex++;
-            }
-           
-        }
-        // 全部拆完
-        await SessionUnitCacheManager.DeleteDirtyAsync(processingKey);
+        var total = jobs.Sum(x => x.Count);
 
         return new FlushDirtyResult
         {
             Total = total,
-            ProcessingKey = processingKey,
+            JobCount = jobs.Count,
+            ProcessingKey = jobs.FirstOrDefault()?.ProcessingKey,
         };
     }
-
 }

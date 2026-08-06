@@ -1,5 +1,6 @@
 ﻿using AutoMapper.Internal;
 using IczpNet.AbpCommons.Extensions;
+using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.RedisMapping;
@@ -11,9 +12,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reactive;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Json;
 
 namespace IczpNet.Chat.SessionUnits;
@@ -2275,9 +2278,6 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return await Database.KeyDeleteAsync(SessionMessageSetKey(sessionId));
     }
 
-
-
-
     protected virtual async Task<SortedSetEntry[]> GetDirtyByKeyAsync(string dirtyKey, int batchSize, bool isAscending = true)
     {
         var redisZset = await Database.SortedSetRangeByScoreWithScoresAsync(
@@ -2326,17 +2326,17 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
     public async Task<string> RenameDirtyAsync()
     {
-        var oldKey = DirtySetKey();
+        var dirtyKey = DirtySetKey();
 
-        var count = await Database.KeyExistsAsync(oldKey);
+        var count = await Database.KeyExistsAsync(dirtyKey);
 
         if (!count)
         {
             return null;
         }
-        var processingKey = $"{oldKey}:Processing:{DateTime.Now:yyyyMMddHHmmss}";
+        var processingKey = $"{dirtyKey}:Processing:{DateTime.Now:yyyyMMddHHmmss}";
 
-        await Database.KeyRenameAsync(oldKey, processingKey);
+        await Database.KeyRenameAsync(dirtyKey, processingKey);
 
         return processingKey;
     }
@@ -2344,5 +2344,116 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     public async Task DeleteDirtyAsync(string processingKey)
     {
         await Database.KeyDeleteAsync(processingKey);
+    }
+
+    private static string ToProgressKey(string processingKey)
+    {
+        return processingKey.Replace("Processing", "Progress");
+    }
+
+    public async Task<List<FlushDirtyProcessingJobArgs>> FlushDirtyToJobsAsync(int scanSize = 5000, int jobSize = 1000)
+    {
+        var result = new List<FlushDirtyProcessingJobArgs>();
+
+        var totalCount = await GetDirtyCountAsync();
+
+        if (totalCount <= 0)
+        {
+            return [];
+        }
+
+        var processingKey = await RenameDirtyAsync();
+
+        if (processingKey == null)
+        {
+            return [];
+        }
+
+
+        var jobTotalCount = (int)Math.Ceiling(totalCount / (double)jobSize);
+
+        var jobIndex = 0;
+
+        while (true)
+        {
+            var list = await GetAndRemoveProcessingDirtyAsync(processingKey, scanSize);
+
+            if (list.Count == 0)
+            {
+                break;
+            }
+
+            var ids = list.Select(x => x.Key.SessionUnitId).Distinct().ToList();
+
+            foreach (var idList in ids.Chunk(jobSize))
+            {
+                var sessionUnitIds = idList.ToList();
+
+                result.Add(new FlushDirtyProcessingJobArgs
+                {
+                    ProcessingKey = processingKey,
+                    Count = sessionUnitIds.Count,
+                    ScanSize = scanSize,
+                    JobSize = jobSize,
+                    JobIndex = jobIndex,
+                    JobTotalCunt = jobTotalCount,
+                    SessionUnitIds = sessionUnitIds,
+                });
+
+                jobIndex++;
+            }
+
+        }
+        // 全部拆完
+        await DeleteDirtyAsync(processingKey);
+
+        //创建进度条
+        await CreateFlushDirtyProgressAsync(processingKey, new FlushDirtyProgress
+        {
+            TotalCount = totalCount,
+            JobCount = jobTotalCount,
+            Completed = 0
+        });
+
+        return result;
+    }
+
+    public async Task CreateFlushDirtyProgressAsync(string processingKey, FlushDirtyProgress flushDirtyProgress)
+    {
+        //创建进度条
+        var progressKey = ToProgressKey(processingKey);
+
+        var batch = Database.CreateBatch();
+
+        var entries = RedisMapper.ToHashEntries(flushDirtyProgress);
+
+        _ = batch.HashSetAsync(progressKey, entries);
+
+        _ = batch.KeyExpireAsync(progressKey, TimeSpan.FromHours(24));
+
+        batch.Execute();
+    }
+
+    public async Task UpdateFlushDirtyProgressAsync(string processingKey, int affect)
+    {
+        //创建进度条
+        var progressKey = ToProgressKey(processingKey);
+
+        var batch = Database.CreateBatch();
+        _= batch.HashIncrementAsync(progressKey, nameof(FlushDirtyProgress.JobCompleted), 1);
+        _ = batch.HashIncrementAsync(progressKey, nameof(FlushDirtyProgress.Completed), affect);
+        batch.Execute();
+    }
+
+    public async Task<FlushDirtyProgress> GetFlushDirtyProgressAsync(string processingKey)
+    {
+        //创建进度条
+        var progressKey = ToProgressKey(processingKey);
+
+        var kvs = await GetManyHashSetAsync<string, FlushDirtyProgress>([processingKey], (key) => ToProgressKey(key));
+
+        var progress = kvs.Select(x => x.Value).FirstOrDefault();
+
+        return progress;
     }
 }

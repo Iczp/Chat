@@ -26,7 +26,10 @@ public class FlushDirtyProcessingJob(
     public override async Task ExecuteAsync(FlushDirtyProcessingJobArgs args)
     {
         Logger.LogInformation("FlushDirtyProcessingJobArgs {args}", args.ToString());
-        await BatchUpdateAsync(args.SessionUnitIds);
+
+        var affect = await BatchUpdateAsync(args.SessionUnitIds);
+
+        await SessionUnitCacheManager.UpdateFlushDirtyProgressAsync(args.ProcessingKey, affect);
     }
     public async Task<int> BatchUpdateAsync(List<Guid> sessionUnitIds)
     {
