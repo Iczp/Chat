@@ -25,12 +25,14 @@ using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
+using static IdentityModel.ClaimComparer;
 
 
 namespace IczpNet.Chat.SessionUnits;
@@ -53,6 +55,7 @@ public class SessionUnitManager(
     ISessionManager sessionManager,
     IRepository<Box, Guid> boxRepository,
     IDistributedEventBus distributedEventBus,
+    IBackgroundJobManager backgroundJobManager,
     ISessionUnitIdGenerator idGenerator) : DomainService, ISessionUnitManager
 {
     public IOptions<SessionUnitOptions> Options { get; } = options;
@@ -83,6 +86,7 @@ public class SessionUnitManager(
     public ISessionManager SessionManager { get; } = sessionManager;
     public IRepository<Box, Guid> BoxRepository { get; } = boxRepository;
     public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
+    public IBackgroundJobManager BackgroundJobManager { get; } = backgroundJobManager;
     protected ISessionUnitIdGenerator IdGenerator { get; } = idGenerator;
 
     /// <summary>
@@ -1604,50 +1608,69 @@ public class SessionUnitManager(
         return units;
     }
 
-    public async Task<FlushDirtyResult> FlushDirtyAsync(int batchSize)
+
+    public async Task<FlushDirtyResult> FlushDirtyAsync(int scanSize = 5000, int jobSize = 1000)
     {
+        var swTotal = Stopwatch.StartNew();
+
         var total = await SessionUnitCacheManager.GetDirtyCountAsync();
 
-        if(total == 0)
+        if (total <= 0)
         {
-            Logger.LogInformation("FlushDirtyAsync, total=0");
-            return new FlushDirtyResult { Total = 0 };
+            return new FlushDirtyResult
+            {
+                Total = 0
+            };
         }
 
-        var list = await SessionUnitCacheManager.GetDirtyBatchAsync(batchSize, isAscending: true, isDelete: true);
+        int execute = 0;
 
-        var unitIdList = list.Select(x => x.Key.SessionUnitId).ToList();
+        int jobCount = 0;
 
-        var remaining = total - unitIdList.Count;
+        while (true)
+        {
+            var sw = Stopwatch.StartNew();
 
-        var stopwatch = Stopwatch.StartNew();
+            var dirty = (await SessionUnitCacheManager.GetDirtyBatchAsync(scanSize, isAscending: true, isDelete: true)).ToList();
 
-        Logger.LogInformation("GetDirtyBatchAsync, Count={Count}, Elapsed={Elapsed}ms",
-            unitIdList.Count,
-            stopwatch.ElapsedMilliseconds);
+            if (dirty.Count == 0)
+            {
+                break;
+            }
 
-        var units = (await SessionUnitCacheManager.GetManyAsync(unitIdList))
-            .Select(x => x.Value)
-            .ToList();
+            Logger.LogInformation("GetDirtyBatch Count={Count}, Cost={Cost}ms", dirty.Count, sw.ElapsedMilliseconds);
 
-        Logger.LogInformation("GetManyAsync, Count={Count}, Elapsed={Elapsed}ms",
-            unitIdList.Count,
-            stopwatch.ElapsedMilliseconds);
+            var ids = dirty.Select(x => x.Key.SessionUnitId).Distinct().ToList();
 
-        var affect = await Repository.BatchUpdateAsync(units);
+            execute += ids.Count;
 
-        Logger.LogInformation("BatchUpdateAsync, Affect={Affect}, Elapsed={Elapsed}ms",
-            affect,
-            stopwatch.ElapsedMilliseconds);
+            foreach (var batch in ids.Chunk(jobSize))
+            {
+                await BackgroundJobManager.EnqueueAsync(
+                    new FlushSessionUnitJobArgs
+                    {
+                        Count= batch.Length,
+                        SessionUnitIds = batch.ToList()
+                    });
 
-        var result = new FlushDirtyResult
+                jobCount++;
+            }
+
+            Logger.LogInformation("Enqueue Job Count={JobCount}, SessionUnit={Count}", jobCount, execute);
+
+            // 防止一次维护任务无限占用
+            if (ids.Count < scanSize)
+            {
+                break;
+            }
+        }
+
+        return new FlushDirtyResult
         {
             Total = total,
-            Execute = unitIdList.Count,
-            Affect = affect,
-            Remaining = remaining - affect,
-            Elapsed = stopwatch.ElapsedMilliseconds,
+            Execute = execute,
+            JobCount = jobCount,
+            Elapsed = swTotal.ElapsedMilliseconds
         };
-        return result;
     }
 }

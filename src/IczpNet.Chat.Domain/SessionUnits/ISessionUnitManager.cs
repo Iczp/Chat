@@ -564,8 +564,9 @@ public interface ISessionUnitManager
     /// <summary>
     /// 处理脏数据，批量刷新到数据库
     /// </summary>
-    /// <param name="batchSize"></param>
+    /// <param name="scanSize"></param>
+    /// <param name="jobSize"></param>
     /// <returns></returns>
-    Task<FlushDirtyResult> FlushDirtyAsync(int batchSize);
+    Task<FlushDirtyResult> FlushDirtyAsync(int scanSize = 5000, int jobSize = 1000);
 
 }

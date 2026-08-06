@@ -47,4 +47,6 @@ public interface ISessionUnitCacheAppService
 
     Task<long> GetDirtyCountAsync();
 
+    Task<FlushDirtyResult> FlushDirtyAsync(int scanSize = 5000, int jobSize = 1000);
+
 }

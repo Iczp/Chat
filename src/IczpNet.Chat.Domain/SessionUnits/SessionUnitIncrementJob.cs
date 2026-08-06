@@ -64,5 +64,7 @@ public class SessionUnitIncrementJob(
         {
             MessageId = args.LastMessageId
         });
+        await uow.CompleteAsync();
+
     }
 }

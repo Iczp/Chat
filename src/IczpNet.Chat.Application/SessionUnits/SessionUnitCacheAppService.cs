@@ -1249,11 +1249,12 @@ public class SessionUnitCacheAppService(
     /// <summary>
     /// 刷新未处理的会话单元
     /// </summary>
-    /// <param name="batchSize"></param>
+    /// <param name="scanSize"></param>
+    /// <param name="jobSize"></param>
     /// <returns></returns>
-    public async Task<FlushDirtyResult> FlushDirtyAsync(int batchSize = 500)
+    public async Task<FlushDirtyResult> FlushDirtyAsync(int scanSize = 5000, int jobSize = 1000)
     {
-        return await SessionUnitManager.FlushDirtyAsync(batchSize);
+        return await SessionUnitManager.FlushDirtyAsync(scanSize, jobSize);
     }
 
 }
