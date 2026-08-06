@@ -415,10 +415,10 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         var unitKey = UnitHashKey(unit.Id);
         var entries = MapToHashEntries(unit);
         _ = batch.HashSetAsync(unitKey, entries);
-        if (refreshExpire)
-        {
-            Expire(batch, unitKey, CacheExpire);
-        }
+        //if (refreshExpire)
+        //{
+        //    Expire(batch, unitKey, CacheExpire);
+        //}
     }
 
     private string GetFriendTypeKey(FriendViews friendView, long ownerId, Guid? boxId = null)
@@ -868,7 +868,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             _ = batch.SortedSetAddAsync(ownerFriendsSetKey, element, score);
 
             // 刷新所有UnitKey过期时间
-            Expire(batch, UnitHashKey(unit.Id), CacheExpire);
+            //Expire(batch, UnitHashKey(unit.Id), CacheExpire);
 
             // 设置所有者关系
             SetOwnerRelations(batch, element, unit, score);
@@ -880,7 +880,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             AccumulateStatistics(unit, stat, statTypedMap, statBoxMap);
         }
         Expire(batch, ownerFriendsSetKey, CacheExpire);
-        Expire(batch, OwnersIndexedHashKey(ownerId), CacheExpire);
+        //Expire(batch, OwnersIndexedHashKey(ownerId), CacheExpire);
         // Expire(batch,ownerFriendsSetKey, CacheExpire);
 
         return new(stat, statTypedMap, statBoxMap);
@@ -1365,7 +1365,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             // ticks
             _ = batch.HashSetAsync(unitKey, F_Ticks, ticks);
             // expire
-            Expire(batch, unitKey, CacheExpire);
+            //Expire(batch, unitKey, CacheExpire);
 
             SetOwnerFriends(batch, ownerId, element, score);
 
