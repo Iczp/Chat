@@ -1608,10 +1608,9 @@ public class SessionUnitManager(
         return units;
     }
 
-
     public async Task<FlushDirtyResult> FlushDirtyAsync(int scanSize = 5000, int jobSize = 1000)
     {
-        var swTotal = Stopwatch.StartNew();
+
 
         var total = await SessionUnitCacheManager.GetDirtyCountAsync();
 
@@ -1623,54 +1622,53 @@ public class SessionUnitManager(
             };
         }
 
-        int execute = 0;
+        var processingKey = await SessionUnitCacheManager.RenameDirtyAsync();
 
-        int jobCount = 0;
+        if (processingKey == null)
+        {
+            return new FlushDirtyResult();
+        }
+
+        var totalJobCount = (int)Math.Ceiling(    total / (double)jobSize);
+
+        var jobIndex = 0;
 
         while (true)
         {
-            var sw = Stopwatch.StartNew();
+            var list = await SessionUnitCacheManager.GetAndRemoveProcessingDirtyAsync(processingKey, scanSize);
 
-            var dirty = (await SessionUnitCacheManager.GetDirtyBatchAsync(scanSize, isAscending: true, isDelete: true)).ToList();
-
-            if (dirty.Count == 0)
+            if (list.Count == 0)
             {
                 break;
             }
 
-            Logger.LogInformation("GetDirtyBatch Count={Count}, Cost={Cost}ms", dirty.Count, sw.ElapsedMilliseconds);
-
-            var ids = dirty.Select(x => x.Key.SessionUnitId).Distinct().ToList();
-
-            execute += ids.Count;
+            var ids = list.Select(x => x.Key.SessionUnitId).Distinct().ToList();
 
             foreach (var batch in ids.Chunk(jobSize))
             {
-                await BackgroundJobManager.EnqueueAsync(
-                    new FlushSessionUnitJobArgs
-                    {
-                        Count= batch.Length,
-                        SessionUnitIds = batch.ToList()
-                    });
-
-                jobCount++;
+                var sessionUnitIds = batch.ToList();
+                await BackgroundJobManager.EnqueueAsync(new FlushDirtyProcessingJobArgs
+                {
+                    ProcessingKey = processingKey,
+                    Count = sessionUnitIds.Count,
+                    ScanSize = scanSize,
+                    JobSize = jobSize,
+                    JobIndex = jobIndex,
+                    JobTotalCunt = totalJobCount,
+                    SessionUnitIds = sessionUnitIds,
+                });
+                jobIndex++;
             }
-
-            Logger.LogInformation("Enqueue Job Count={JobCount}, SessionUnit={Count}", jobCount, execute);
-
-            // 防止一次维护任务无限占用
-            if (ids.Count < scanSize)
-            {
-                break;
-            }
+           
         }
+        // 全部拆完
+        await SessionUnitCacheManager.DeleteDirtyAsync(processingKey);
 
         return new FlushDirtyResult
         {
             Total = total,
-            Execute = execute,
-            JobCount = jobCount,
-            Elapsed = swTotal.ElapsedMilliseconds
+            ProcessingKey = processingKey,
         };
     }
+
 }

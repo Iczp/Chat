@@ -47,6 +47,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// <returns></returns>
     private RedisKey DirtySetKey() => $"{SessionUnitsPrefix}Dirty";
 
+    private RedisKey DirtyProcessingSetKey() => $"{SessionUnitsPrefix}Dirty:Processing:{DateTime.Now:yyyyMMddHHmmss}";
+
     /// <summary>
     /// TryParse UnitId
     /// </summary>
@@ -2274,9 +2276,10 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     }
 
 
-    public async Task<IEnumerable<KeyValuePair<SessionUnitElement, long>>> GetDirtyBatchAsync(int batchSize, bool isAscending = true, bool isDelete = true)
+
+
+    protected virtual async Task<SortedSetEntry[]> GetDirtyByKeyAsync(string dirtyKey, int batchSize, bool isAscending = true)
     {
-        var dirtyKey = DirtySetKey();
         var redisZset = await Database.SortedSetRangeByScoreWithScoresAsync(
             key: dirtyKey,
             start: 0,
@@ -2285,17 +2288,61 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             skip: 0,
             take: batchSize,
             order: isAscending ? Order.Ascending : Order.Descending);
+        return redisZset;
+    }
 
-        if (isDelete)
+    public async Task<List<KeyValuePair<SessionUnitElement, long>>> GetDirtyAsync(int batchSize, bool isAscending = true, bool isDelete = true)
+    {
+        var redisZset = await GetDirtyByKeyAsync(DirtySetKey(), batchSize, isAscending);
+
+        return redisZset.Select(x => new KeyValuePair<SessionUnitElement, long>(SessionUnitElement.Parse(x.Element), (long)x.Score)).ToList();
+    }
+
+    public async Task<List<KeyValuePair<SessionUnitElement, long>>> GetAndRemoveProcessingDirtyAsync(string processingKey, int batchSize, bool isAscending = true)
+    {
+        var redisZset = await GetDirtyByKeyAsync(processingKey, batchSize, isAscending);
+
+        if (redisZset.Length > 0)
         {
             //立即删除
-            await Database.SortedSetRemoveAsync(dirtyKey, redisZset.Select(x => x.Element).ToArray());
+            await Database.SortedSetRemoveAsync(processingKey, redisZset.Select(x => x.Element).ToArray());
         }
-        return redisZset.Select(x => new KeyValuePair<SessionUnitElement, long>(SessionUnitElement.Parse(x.Element), (long)x.Score));
+
+        var list = redisZset.Select(x => new KeyValuePair<SessionUnitElement, long>(SessionUnitElement.Parse(x.Element), (long)x.Score)).ToList();
+
+        return list;
+    }
+
+
+    public async Task<long> GetProcessingDirtyCountAsync(string processingKey)
+    {
+        return await Database.SortedSetLengthAsync(processingKey, 0, long.MaxValue, Exclude.None);
     }
 
     public async Task<long> GetDirtyCountAsync()
     {
         return await Database.SortedSetLengthAsync(DirtySetKey(), 0, long.MaxValue, Exclude.None);
+    }
+
+    public async Task<string> RenameDirtyAsync()
+    {
+        var oldKey = DirtySetKey();
+
+        var count = await Database.KeyExistsAsync(oldKey);
+
+        if (!count)
+        {
+            return null;
+        }
+        var processingKey = $"{oldKey}:Processing:{DateTime.Now:yyyyMMddHHmmss}";
+
+        await Database.KeyRenameAsync(oldKey, processingKey);
+
+        return processingKey;
+    }
+
+    public async Task DeleteDirtyAsync(string processingKey)
+    {
+        await Database.KeyDeleteAsync(processingKey);
     }
 }

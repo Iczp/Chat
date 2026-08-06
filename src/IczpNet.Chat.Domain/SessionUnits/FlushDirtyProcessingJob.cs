@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Castle.Core.Logging;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,27 +11,33 @@ using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.SessionUnits;
 
-public class FlushSessionUnitJob(
+public class FlushDirtyProcessingJob(
     ISessionUnitCacheManager cacheManager,
     ISessionUnitRepository repository,
     IUnitOfWorkManager unitOfWorkManager)
-        : AsyncBackgroundJob<FlushSessionUnitJobArgs>, ITransientDependency
+        : AsyncBackgroundJob<FlushDirtyProcessingJobArgs>, ITransientDependency
 {
     public ISessionUnitCacheManager SessionUnitCacheManager { get; set; } = cacheManager;
     public ISessionUnitRepository Repository { get; set; } = repository;
     public IUnitOfWorkManager UnitOfWorkManager { get; set; } = unitOfWorkManager;
 
     [UnitOfWork]
-    public override async Task ExecuteAsync(FlushSessionUnitJobArgs args)
+
+    public override async Task ExecuteAsync(FlushDirtyProcessingJobArgs args)
     {
-        if (args.SessionUnitIds.Count == 0)
+        Logger.LogInformation("FlushDirtyProcessingJobArgs {args}", args.ToString());
+        await BatchUpdateAsync(args.SessionUnitIds);
+    }
+    public async Task<int> BatchUpdateAsync(List<Guid> sessionUnitIds)
+    {
+        if (sessionUnitIds.Count == 0)
         {
-            return;
+            return 0;
         }
 
         var watch = Stopwatch.StartNew();
 
-        var caches = (await SessionUnitCacheManager.GetManyAsync(args.SessionUnitIds))
+        var caches = (await SessionUnitCacheManager.GetManyAsync(sessionUnitIds))
             .Select(x => x.Value)
             .ToList();
 
@@ -39,7 +48,7 @@ public class FlushSessionUnitJob(
 
         if (caches.Count == 0)
         {
-            return;
+            return 0;
         }
 
         watch.Restart();
@@ -55,5 +64,7 @@ public class FlushSessionUnitJob(
             watch.ElapsedMilliseconds);
 
         await uow.CompleteAsync();
+
+        return affect;
     }
 }

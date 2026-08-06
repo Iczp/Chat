@@ -529,7 +529,14 @@ public interface ISessionUnitCacheManager
     /// <returns></returns>
     Task<bool> RemoveSessionMessagesAsync(Guid sessionId);
 
-    Task<IEnumerable<KeyValuePair<SessionUnitElement, long>>> GetDirtyBatchAsync(int batchSize, bool isAscending = true, bool isDelete = true);
+    Task<List<KeyValuePair<SessionUnitElement, long>>> GetDirtyAsync(int batchSize, bool isAscending = true, bool isDelete = true);
+
+    Task<List<KeyValuePair<SessionUnitElement, long>>> GetAndRemoveProcessingDirtyAsync(string processingKey, int batchSize, bool isAscending = true);
 
     Task<long> GetDirtyCountAsync();
+
+    Task<long> GetProcessingDirtyCountAsync(string processingKey);
+
+    Task<string> RenameDirtyAsync();
+    Task DeleteDirtyAsync(string processingKey);
 }
