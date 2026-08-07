@@ -21,4 +21,14 @@ public class FlushDirtyProgress
     /// Job完成数量
     /// </summary>
     public int JobCompleted { get; set; }
+
+    /// <summary>
+    /// 创建时间
+    /// </summary>
+    public long CreationTime { get; set; }
+
+    /// <summary>
+    /// 最后修改时间
+    /// </summary>
+    public long? LastModificationTime { get; set; }
 }

@@ -2412,7 +2412,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         {
             TotalCount = totalCount,
             JobCount = jobTotalCount,
-            Completed = 0
+            Completed = 0,
+            CreationTime = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds(),
         });
 
         return result;
@@ -2440,8 +2441,9 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         var progressKey = ToProgressKey(processingKey);
 
         var batch = Database.CreateBatch();
-        _= batch.HashIncrementAsync(progressKey, nameof(FlushDirtyProgress.JobCompleted), 1);
+        _ = batch.HashIncrementAsync(progressKey, nameof(FlushDirtyProgress.JobCompleted), 1);
         _ = batch.HashIncrementAsync(progressKey, nameof(FlushDirtyProgress.Completed), affect);
+        _ = batch.HashSetAsync(progressKey, nameof(FlushDirtyProgress.LastModificationTime), new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds());
         batch.Execute();
     }
 
