@@ -122,9 +122,9 @@ public class SessionUnitCacheAppService(
         return ObjectMapper.Map<SessionUnitCacheItem, SessionUnitFriendDto>(item);
     }
 
-    protected virtual SessionUnitFriendDetailDto MapToFriendDetailDto(SessionUnitCacheItem item)
+    protected virtual SessionUnitFriendDetailDto MapToFriendDetailDto(SessionUnitFriendDto item)
     {
-        return ObjectMapper.Map<SessionUnitCacheItem, SessionUnitFriendDetailDto>(item);
+        return ObjectMapper.Map<SessionUnitFriendDto, SessionUnitFriendDetailDto>(item);
     }
 
     protected virtual SessionUnitMemberDetailDto MapToMemberDetailDto(SessionUnitCacheItem item)
@@ -239,6 +239,14 @@ public class SessionUnitCacheAppService(
             item.Destination = destMap.GetValueOrDefault(item.DestinationId.Value);
         }
     }
+
+    private async Task FillFriendAsync(SessionUnitFriendDto item)
+    {
+        await FillSettingAsync([item]);
+        await FillDestinationAsync([item]);
+        await FillLastMessageAsync([item]);
+    }
+
     private async Task FillOwnerAsync(IEnumerable<SessionUnitMemberDto> items)
     {
         // fill Destination
@@ -565,33 +573,23 @@ public class SessionUnitCacheAppService(
     {
         var unit = await GetCacheAsync(unitId);
 
-        await CheckPolicyForUserAsync([unit.OwnerId], () => CheckPolicyAsync(GetListPolicyName));
+        await CheckPolicyForUserAsync(unit.OwnerId, () => CheckPolicyAsync(GetListPolicyName, unit.OwnerId));
 
-        var allIds = new List<long?>() { unit.OwnerId, unit.DestinationId }
-            .Where(x => x.HasValue)
-            .Select(x => x.Value)
-            .Distinct()
-            .ToList();
+        // Keep the detail payload consistent with the list without enumerating the
+        // owner's entire friend index just to fetch one session unit.
+        var friend = MapToDto(unit);
+        await FillFriendAsync(friend);
 
-        var chatObjectMap = (await ChatObjectManager.GetManyByCacheAsync(allIds))
-            .ToDictionary(x => x.Id, x => x);
+        var item = MapToFriendDetailDto(friend);
 
-        var item = MapToFriendDetailDto(unit);
+        if (unit.SessionId.HasValue)
+        {
+            await LoadMembersAsync(unit.SessionId.Value);
+            item.SessionUnitCount = await SessionUnitCacheManager.GetMembersCountAsync(unit.SessionId.Value);
+        }
 
-        //
-        await LoadMembersAsync(unit.SessionId.Value);
-
-        item.SessionUnitCount = await SessionUnitCacheManager.GetMembersCountAsync(unit.SessionId.Value);
-
-        item.Owner = chatObjectMap.GetValueOrDefault(item.OwnerId);
-
-        item.Destination = item.DestinationId.HasValue ? chatObjectMap.GetValueOrDefault(item.DestinationId.Value) : null;
-
-        item.LastMessage = item.LastMessageId.HasValue 
-            ? (await MessageManager.GetOrAddManyCacheAsync([item.LastMessageId.Value])).FirstOrDefault().Value 
-            : null;
-
-        item.Setting = await SessionUnitSettingManager.GetOrAddCacheAsync(unit.Id);
+        item.Owner = (await ChatObjectManager.GetManyByCacheAsync([item.OwnerId]))
+            .FirstOrDefault(x => x.Id == item.OwnerId);
 
         return item;
     }

@@ -84,6 +84,8 @@ public class SessionSectionApplicationAutoMapperProfile : Profile
             .PreserveReferences()
             .MaxDepth(3);
 
+        CreateMap<SessionUnitFriendDto, SessionUnitFriendDetailDto>(MemberList.None);
+
         CreateMap<SessionUnitCacheItem, SessionUnitMemberDetailDto>(MemberList.None)
             //.Ignore(x => x.Score)
             .ForMember(x => x.Score, opts => opts.MapFrom(x => MemberScore.Create(x.IsCreator, x.CreationTime)))

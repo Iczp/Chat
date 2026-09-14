@@ -40,6 +40,22 @@ public class DeviceAppService(
             ;
     }
 
+    protected override IQueryable<Device> ApplySorting(IQueryable<Device> query, DeviceGetListInput input)
+    {
+        // Device is persisted independently from the transient SignalR connection
+        // cache, so it has no LastActiveTime column. Keep older clients working by
+        // using the closest durable timestamp for this legacy sort field.
+        if (!string.IsNullOrWhiteSpace(input.Sorting))
+        {
+            input.Sorting = input.Sorting.Replace(
+                "lastActiveTime",
+                nameof(Device.LastModificationTime),
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        return base.ApplySorting(query, input);
+    }
+
     protected async Task CheckExistAsync(List<Guid> groupIdList)
     {
         var existIds = (await DeviceGroupRepository.GetQueryableAsync()).Where(x => groupIdList.Contains(x.Id)).Select(x => x.Id).ToList();
