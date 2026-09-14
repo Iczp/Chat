@@ -2,6 +2,8 @@
 
 public class FlushDirtyProgress
 {
+    
+
     /// <summary>
     /// 总数量
     /// </summary>
@@ -31,4 +33,9 @@ public class FlushDirtyProgress
     /// 最后修改时间
     /// </summary>
     public long? LastModificationTime { get; set; }
+
+    /// <summary>
+    /// 总耗时
+    /// </summary>
+    public long Elapsed { get; set; }
 }

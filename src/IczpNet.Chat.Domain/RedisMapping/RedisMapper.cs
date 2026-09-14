@@ -42,7 +42,7 @@ public static class RedisMapper
     {
         if (obj == null) return Array.Empty<HashEntry>();
         var list = new List<HashEntry>();
-        FlattenObject("", obj, list);
+        FlattenCore("", obj, list);
         return list.ToArray();
     }
 
@@ -114,159 +114,6 @@ public static class RedisMapper
     #endregion
 
     #region Flatten (object -> HashEntry list)
-
-
-
-    private static void FlattenObject(string prefix, object obj, List<HashEntry> outList)
-    {
-        if (obj == null)
-        {
-            // nothing to flatten; but if caller expects writing null as empty string for a simple property,
-            // that should be performed at higher level when property exists.
-            return;
-        }
-
-        var type = obj.GetType();
-
-        if (IsSimpleEnumerable(type, out _))
-        {
-            outList.Add(new HashEntry(prefix.Trim('.'), JsonSerializer.Serialize(obj)));
-            return;
-        }
-
-        // If it's simple type, write under prefix (caller must provide a prefix)
-        if (IsSimpleType(type))
-        {
-            // for top-level simple types we expect prefix not empty, but handle gracefully
-            outList.Add(new HashEntry(prefix.Trim('.'), ConvertToRedisValue(obj, type)));
-            return;
-        }
-
-        // If it's IDictionary<string, T>
-        if (TryHandleDictionary(prefix, obj, out var handled)) { if (handled) return; }
-
-        // If it's IEnumerable (but not string), treat as list/array
-        if (TryHandleEnumerable(prefix, obj, out handled)) { if (handled) return; }
-
-        // It's a complex object -> iterate properties
-        var props = GetPropertiesCached(type);
-        foreach (var p in props)
-        {
-            var value = p.GetValue(obj);
-            var fieldName = string.IsNullOrEmpty(prefix) ? p.Name : $"{prefix}.{p.Name}";
-
-            if (value == null)
-            {
-                // write empty string for null according to your rule
-                outList.Add(new HashEntry(fieldName, RedisValue.EmptyString));
-                continue;
-            }
-
-            var pType = p.PropertyType;
-
-            if (IsSimpleType(pType))
-            {
-                outList.Add(new HashEntry(fieldName, ConvertToRedisValue(value, pType)));
-            }
-            else
-            {
-                // nested object / collection -> recurse
-                FlattenObject(fieldName, value, outList);
-            }
-        }
-    }
-
-    private static bool TryHandleEnumerable(string prefix, object obj, out bool handled)
-    {
-        handled = false;
-        if (obj is string) return false;
-        if (obj is IEnumerable enumerable)
-        {
-            // enumerate with index
-            int idx = 0;
-            foreach (var item in enumerable)
-            {
-                var elementPrefix = $"{prefix}[{idx}]";
-                if (item == null)
-                {
-                    // write empty string
-                    outAddOrCollect(elementPrefix, RedisValue.EmptyString);
-                }
-                else if (IsSimpleType(item.GetType()))
-                {
-                    outAddOrCollect(elementPrefix, ConvertToRedisValue(item, item.GetType()));
-                }
-                else
-                {
-                    // complex element: flatten its properties under elementPrefix.<Prop>
-                    FlattenObject(elementPrefix, item, _tempCollector);
-                }
-                idx++;
-            }
-            // flush tempCollector into outList
-            handled = true;
-            FlushTempCollectorToMain();
-            return true;
-        }
-        return false;
-    }
-
-    private static bool TryHandleDictionary(string prefix, object obj, out bool handled)
-    {
-        handled = false;
-        var type = obj.GetType();
-        // check IDictionary<string, T>
-        if (typeof(IDictionary).IsAssignableFrom(type))
-        {
-            var dict = (IDictionary)obj;
-            foreach (var key in dict.Keys)
-            {
-                var keyStr = key?.ToString() ?? "null";
-                var element = dict[key];
-                var elementPrefix = $"{prefix}[{keyStr}]";
-
-                if (element == null)
-                {
-                    outAddOrCollect(elementPrefix, RedisValue.EmptyString);
-                }
-                else if (IsSimpleType(element.GetType()))
-                {
-                    outAddOrCollect(elementPrefix, ConvertToRedisValue(element, element.GetType()));
-                }
-                else
-                {
-                    FlattenObject(elementPrefix, element, _tempCollector);
-                }
-            }
-            handled = true;
-            FlushTempCollectorToMain();
-            return true;
-        }
-        return false;
-    }
-
-    // We use a temp collector to avoid interleaving when recursing enumerable/dictionary
-    [ThreadStatic] private static List<HashEntry> _tempCollector;
-    private static void outAddOrCollect(string field, RedisValue value)
-    {
-        if (_tempCollector == null) _tempCollector = new List<HashEntry>();
-        _tempCollector.Add(new HashEntry(field, value));
-    }
-    private static void FlushTempCollectorToMain()
-    {
-        // find the caller stack to get current target outList is complex; instead we will reuse a global approach:
-        // the main FlattenObject always passes the final outList as a local variable. To keep code simple and correct,
-        // we'll append to a static global during recursion; but to avoid thread issues we used ThreadStatic collector.
-        // At the end of the high-level ToHashEntries we assume collector content should be appended to final outList.
-        // For simplicity in this implementation, after each TryHandle* we will append collector content to the primary out list
-        // by retrieving the last created list from a stack. To avoid complexity, instead of messing with stacks,
-        // we will create a simpler design: use a single global list for the entire ToHashEntries invocation.
-        // Thus ensure ToHashEntries calls InitializeGlobalCollector first.
-    }
-
-    #endregion
-
-    #region Implementation detail: a safer Flatten implementation (single global collector)
 
     private static void FlattenCore(string prefix, object obj, List<HashEntry> outList)
     {
@@ -423,6 +270,24 @@ public static class RedisMapper
                     // It's likely a collection or dictionary property. Attempt to populate.
                     if (IsDictionaryType(propType))
                     {
+                        // Compatibility with hashes written by the previous mapper, which
+                        // stored simple dictionaries as one JSON field.
+                        if (dict.TryGetValue(baseName, out var serializedValue) &&
+                            !serializedValue.IsNull &&
+                            serializedValue.ToString().TrimStart().StartsWith("{"))
+                        {
+                            try
+                            {
+                                var dictionary = JsonSerializer.Deserialize(serializedValue.ToString(), propType);
+                                prop.SetValue(obj, dictionary);
+                                continue;
+                            }
+                            catch (JsonException)
+                            {
+                                // Fall back to the flattened representation below.
+                            }
+                        }
+
                         // handle IDictionary<string, T>
                         var dictInstance = CreateDictionaryInstance(propType);
                         if (dictInstance != null)

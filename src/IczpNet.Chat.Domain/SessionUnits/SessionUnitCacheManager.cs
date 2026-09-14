@@ -2435,7 +2435,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         batch.Execute();
     }
 
-    public async Task UpdateFlushDirtyProgressAsync(string processingKey, int affect)
+    public async Task UpdateFlushDirtyProgressAsync(string processingKey, int affect, long elapsedMilliseconds)
     {
         //创建进度条
         var progressKey = ToProgressKey(processingKey);
@@ -2443,6 +2443,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         var batch = Database.CreateBatch();
         _ = batch.HashIncrementAsync(progressKey, nameof(FlushDirtyProgress.JobCompleted), 1);
         _ = batch.HashIncrementAsync(progressKey, nameof(FlushDirtyProgress.Completed), affect);
+        _ = batch.HashIncrementAsync(progressKey, nameof(FlushDirtyProgress.Elapsed), elapsedMilliseconds);
         _ = batch.HashSetAsync(progressKey, nameof(FlushDirtyProgress.LastModificationTime), new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds());
         batch.Execute();
     }

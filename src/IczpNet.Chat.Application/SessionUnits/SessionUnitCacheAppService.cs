@@ -582,8 +582,15 @@ public class SessionUnitCacheAppService(
         await LoadMembersAsync(unit.SessionId.Value);
 
         item.SessionUnitCount = await SessionUnitCacheManager.GetMembersCountAsync(unit.SessionId.Value);
+
         item.Owner = chatObjectMap.GetValueOrDefault(item.OwnerId);
+
         item.Destination = item.DestinationId.HasValue ? chatObjectMap.GetValueOrDefault(item.DestinationId.Value) : null;
+
+        item.LastMessage = item.LastMessageId.HasValue 
+            ? (await MessageManager.GetOrAddManyCacheAsync([item.LastMessageId.Value])).FirstOrDefault().Value 
+            : null;
+
         item.Setting = await SessionUnitSettingManager.GetOrAddCacheAsync(unit.Id);
 
         return item;

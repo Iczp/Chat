@@ -543,7 +543,7 @@ public interface ISessionUnitCacheManager
 
     Task<List<FlushDirtyProcessingJobArgs>> FlushDirtyToJobsAsync(int scanSize = 5000, int jobSize = 1000);
 
-    Task UpdateFlushDirtyProgressAsync(string processingKey, int affect);
+    Task UpdateFlushDirtyProgressAsync(string processingKey, int affect, long elapsedMilliseconds);
 
     Task<FlushDirtyProgress> GetFlushDirtyProgressAsync(string processingKey);
 }

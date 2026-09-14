@@ -27,9 +27,11 @@ public class FlushDirtyProcessingJob(
     {
         Logger.LogInformation("FlushDirtyProcessingJobArgs {args}", args.ToString());
 
+        var sw = Stopwatch.StartNew();
+
         var affect = await BatchUpdateAsync(args.SessionUnitIds);
 
-        await SessionUnitCacheManager.UpdateFlushDirtyProgressAsync(args.ProcessingKey, affect);
+        await SessionUnitCacheManager.UpdateFlushDirtyProgressAsync(args.ProcessingKey, affect, sw.ElapsedMilliseconds);
     }
     public async Task<int> BatchUpdateAsync(List<Guid> sessionUnitIds)
     {
@@ -38,7 +40,7 @@ public class FlushDirtyProcessingJob(
             return 0;
         }
 
-        var watch = Stopwatch.StartNew();
+        var sw = Stopwatch.StartNew();
 
         var caches = (await SessionUnitCacheManager.GetManyAsync(sessionUnitIds))
             .Select(x => x.Value)
@@ -47,14 +49,14 @@ public class FlushDirtyProcessingJob(
         Logger.LogInformation(
             "GetManyAsync Count={Count}, Cost={Elapsed}ms",
             caches.Count,
-            watch.ElapsedMilliseconds);
+            sw.ElapsedMilliseconds);
 
         if (caches.Count == 0)
         {
             return 0;
         }
 
-        watch.Restart();
+        sw.Restart();
 
         using var uow = UnitOfWorkManager.Begin();
 
@@ -64,7 +66,7 @@ public class FlushDirtyProcessingJob(
             "BatchUpdateAsync Affect={Affect}, Count={Count}, Cost={Elapsed}ms",
             affect,
             caches.Count,
-            watch.ElapsedMilliseconds);
+            sw.ElapsedMilliseconds);
 
         await uow.CompleteAsync();
 
