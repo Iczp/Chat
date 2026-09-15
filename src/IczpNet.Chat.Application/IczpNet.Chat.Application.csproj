@@ -62,6 +62,7 @@
 
   <ItemGroup>
     <Folder Include="UrlNormalizers\" />
+    <Folder Include="Ai\" />
   </ItemGroup>
 
 </Project>
