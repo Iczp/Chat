@@ -103,7 +103,6 @@ public class MessageReportManager(
 
         if (ReportOptions.Value.UseDistributedLock)
         {
-            //0. 分布式锁
             var lockerName = $"DistributedLock:{sourceKey}";
             await using var handle = await AbpDistributedLock.TryAcquireAsync(lockerName);
             Logger.LogInformation("Handle=={handle},LockerName={LockerName}", handle, lockerName);
@@ -112,10 +111,37 @@ public class MessageReportManager(
                 Logger.LogInformation("AbpDistributedLock Handle==null, {sourceKey} is processing", sourceKey);
                 return false;
             }
+
+            // Keep the lease until Redis has been swapped, SQL has committed,
+            // and the processing key is removed. Previously it was disposed at
+            // the end of this if-block, allowing overlapping MERGE operations.
+            return await FlushLockedAsync(reportType, dateBucket, sourceKey);
+        }
+
+        return await FlushLockedAsync(reportType, dateBucket, sourceKey);
+    }
+
+    private async Task<bool> FlushLockedAsync(MessageReportTypes reportType, long dateBucket, string sourceKey)
+    {
+        // Recheck after acquiring the lock: another worker may have completed
+        // this bucket while this worker was waiting for the lease.
+        if (!await Database.KeyExistsAsync(sourceKey))
+        {
+            return false;
         }
 
         // 1. 原子切换
         var processingKey = $"{sourceKey}:processing";
+
+        // A timeout is ambiguous: SQL Server may have committed even though
+        // the client did not receive the acknowledgement. Never overwrite a
+        // retained batch or retry it automatically, otherwise counts can be
+        // applied twice. The key is retained for a deliberate reconciliation.
+        if (await Database.KeyExistsAsync(processingKey))
+        {
+            Logger.LogError("Message report retained processing batch detected; source={SourceKey}, processing={ProcessingKey}. Automatic retry is blocked to prevent duplicate counts.", sourceKey, processingKey);
+            return false;
+        }
 
         await Database.KeyRenameAsync(sourceKey, processingKey);
 

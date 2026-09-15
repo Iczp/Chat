@@ -523,6 +523,16 @@ public class SessionUnitManager(
     {
         var isNullOrZero = messageId == null || messageId == 0;
 
+        // An empty session has no valid Message Id to store as its read
+        // cursor. Clearing an empty chat is a valid, idempotent operation;
+        // leave its counters/read cursor unchanged and let the caller persist
+        // the ClearTime setting.
+        if (isNullOrZero && !entity.LastMessageId.HasValue)
+        {
+            Logger.LogInformation("Skip setting read cursor for empty session unit {SessionUnitId}", entity.Id);
+            return entity;
+        }
+
         var lastMessageId = isNullOrZero ? entity.LastMessageId.Value : messageId.Value;
 
         if (!isNullOrZero)
