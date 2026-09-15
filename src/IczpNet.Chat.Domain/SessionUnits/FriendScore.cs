@@ -50,19 +50,17 @@ public readonly record struct FriendScore(double Value)
 
     public static FriendScore Parse(double score)
     {
-        var sorting = (double)(score % Multiplier);
-        var tick = (double)(score % Multiplier);
-        return Create(sorting, tick);
+        return new FriendScore(score);
     }
     public static bool TryParse(double value, out FriendScore field)
     {
-        field = default;
+        if (double.IsNaN(value) || double.IsInfinity(value))
+        {
+            field = default;
+            return false;
+        }
 
-        var sorting = (double)(value % Multiplier);
-        var tick = (double)(value % Multiplier);
-
-
-        field = Create(sorting, tick);
+        field = new FriendScore(value);
         return true;
     }
 }

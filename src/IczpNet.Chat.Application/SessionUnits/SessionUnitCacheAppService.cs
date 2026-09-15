@@ -578,6 +578,7 @@ public class SessionUnitCacheAppService(
         // Keep the detail payload consistent with the list without enumerating the
         // owner's entire friend index just to fetch one session unit.
         var friend = MapToDto(unit);
+        friend.Score = await SessionUnitCacheManager.GetFriendScoreAsync(unit);
         await FillFriendAsync(friend);
 
         var item = MapToFriendDetailDto(friend);

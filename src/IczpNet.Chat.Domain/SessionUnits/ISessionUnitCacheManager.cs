@@ -231,6 +231,13 @@ public interface ISessionUnitCacheManager
     Task<Dictionary<long, Dictionary<long, double?>>> FindFriendsAsync(List<SessionUnitElement> elements);
 
     /// <summary>
+    /// 获取一个好友会话单元在 OwnerFriends ZSET 中的实际排序分值。
+    /// </summary>
+    /// <param name="unit">好友会话单元</param>
+    /// <returns>不存在于好友索引时返回 null</returns>
+    Task<double?> GetFriendScoreAsync(SessionUnitCacheItem unit);
+
+    /// <summary>
     /// 获取好友会话单元(原始信息)
     /// </summary>
     /// <param name="ownerId"></param>

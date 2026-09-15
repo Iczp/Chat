@@ -1072,6 +1072,15 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return result;
     }
 
+    public Task<double?> GetFriendScoreAsync(SessionUnitCacheItem unit)
+    {
+        ArgumentNullException.ThrowIfNull(unit);
+
+        return Database.SortedSetScoreAsync(
+            OwnerFriendsSetKey(unit.OwnerId),
+            GetElement(unit));
+    }
+
     public async Task<IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>> GetRawFriendsAsync(long ownerId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
