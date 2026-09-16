@@ -41,6 +41,11 @@ public class AiStreamToClientDistributedEventHandler(
         var connectionIds = (await OnlineManager.GetConnectionIdsByOwnerAsync(requester.OwnerId)).ToList();
         if (connectionIds.Count == 0)
         {
+            Logger.LogInformation(
+                "AI stream event {Command} for run {RunId}, source message {SourceMessageId} has no online requester connection; Redis recovery remains available.",
+                eventData.Command,
+                eventData.RunId,
+                eventData.SourceMessageId);
             return true;
         }
 
@@ -57,6 +62,12 @@ public class AiStreamToClientDistributedEventHandler(
             Command = eventData.Command,
             Payload = eventData
         });
+        Logger.LogDebug(
+            "Delivered AI stream event {Command} for run {RunId}, source message {SourceMessageId} to {ConnectionCount} requester connections",
+            eventData.Command,
+            eventData.RunId,
+            eventData.SourceMessageId,
+            connectionIds.Count);
 
         return true;
     }

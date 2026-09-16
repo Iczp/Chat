@@ -3,6 +3,7 @@ using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Hosting;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionUnits;
+using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -102,6 +103,22 @@ public class SendMessageToClientDistributedEventHandler : SendToClientDistribute
 
         var connMap = ownerDevices.SelectMany(x => x.Value).GroupBy(x => x.ConnectionId).ToDictionary(x => x.Key, x => x.ToList());
 
+        Logger.LogInformation(
+            "Delivering IM event {Command} for message {MessageId} in session {SessionId}: owners={OwnerCount}, connections={ConnectionCount}",
+            command,
+            eventData.MessageId,
+            sessionId,
+            ownerIds.Count,
+            connMap.Count);
+
+        if (connMap.Count == 0)
+        {
+            Logger.LogInformation(
+                "IM event {Command} for message {MessageId} has no online recipient connection; clients must recover it from message history.",
+                command,
+                eventData.MessageId);
+        }
+
         foreach (var item in connMap)
         {
             var connectionId = item.Key;
@@ -132,6 +149,12 @@ public class SendMessageToClientDistributedEventHandler : SendToClientDistribute
             };
 
             await HubContext.Clients.Client(connectionId).ReceivedMessage(commandPayload);
+            Logger.LogDebug(
+                "Delivered IM event {Command} for message {MessageId} to connection {ConnectionId} with {ScopeCount} scopes",
+                command,
+                eventData.MessageId,
+                connectionId,
+                units.Count);
         }
 
         return true;

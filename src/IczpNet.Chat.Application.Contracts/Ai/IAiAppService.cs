@@ -8,5 +8,6 @@ namespace IczpNet.Chat.Ai;
 public interface IAiAppService : IApplicationService
 {
     Task<AiRunStateDto> GetActiveAsync(Guid sessionUnitId);
+    Task<List<AiActiveRunDto>> GetActiveBatchAsync(AiActiveRunBatchInput input);
     Task<List<AiRunStateDto>> GetRecentAsync(Guid sessionUnitId, int maxResultCount = 20);
 }
