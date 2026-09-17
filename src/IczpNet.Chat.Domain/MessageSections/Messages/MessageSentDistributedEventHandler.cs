@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.Ai;
+using IczpNet.Chat.Ai;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Commands;
 using IczpNet.Chat.Developers;
@@ -42,7 +42,9 @@ public class MessageSentDistributedEventHandler(
     IMessageRepository messageRepository,
     ISessionUnitCacheManager sessionUnitCacheManager,
     ICurrentHosted currentHosted,
-    IAbpDistributedLock distributedLock) :
+    IAbpDistributedLock distributedLock,
+    IAiRunManager aiRunManager,
+    Microsoft.Extensions.Options.IOptions<AiRunDispatcherOptions> aiRunDispatcherOptions) :
     DomainService,
     IDistributedEventHandler<MessageSentEto>,
     ITransientDependency
@@ -66,6 +68,8 @@ public class MessageSentDistributedEventHandler(
     public IMessageRepository MessageRepository { get; } = messageRepository;
     public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
     protected ICurrentHosted CurrentHosted { get; } = currentHosted;
+    public IAiRunManager AiRunManager { get; } = aiRunManager;
+    public Microsoft.Extensions.Options.IOptions<AiRunDispatcherOptions> AiRunDispatcherOptions { get; } = aiRunDispatcherOptions;
 
     private readonly ConcurrentDictionary<string, long> ExecutedMilliseconds = [];
 
@@ -341,6 +345,18 @@ public class MessageSentDistributedEventHandler(
         {
             Logger.LogInformation($"Not Ai provider:{receiver.Code}");
             return false;
+        }
+
+        if (AiRunDispatcherOptions.Value.Enabled)
+        {
+            var run = await AiRunManager.CreateAsync(
+                sourceMessageId: message.Id,
+                sessionId: message.SessionId,
+                requesterSessionUnitId: message.SenderSessionUnitId ?? Guid.Empty,
+                provider: receiver.Code);
+
+            Logger.LogInformation("AiRun created: RunId={RunId}, Provider={Provider}, MessageId={MessageId}", run.Id, receiver.Code, message.Id);
+            return true;
         }
 
         if (!BackgroundJobManager.IsAvailable())

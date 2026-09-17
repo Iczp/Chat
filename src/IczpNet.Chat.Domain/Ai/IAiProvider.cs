@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 
 namespace IczpNet.Chat.Ai;
 
@@ -19,5 +19,10 @@ public interface IAiProvider
     /// </summary>
     /// <returns></returns>
     Task HandleAsync(long messageId);
+
+    /// <summary>
+    /// 执行 AI 任务，携带运行上下文和取消令牌
+    /// </summary>
+    Task<AiRunExecutionResult> ExecuteAsync(AiRunContext context, System.Threading.CancellationToken cancellationToken = default);
 }
 

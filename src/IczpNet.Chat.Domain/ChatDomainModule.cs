@@ -1,5 +1,6 @@
 using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
+using IczpNet.Chat.Ai;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.HttpRequests;
 using IczpNet.Chat.ListSets;
@@ -81,9 +82,15 @@ public class ChatDomainModule : AbpModule
         });
 
         // Redis
-        var redisOptions = ConfigurationOptions.Parse(configuration["Redis:Configuration"]);
-        context.Services.TryAddSingleton<IConnectionMultiplexer>(provider => ConnectionMultiplexer.Connect(redisOptions));
+        var redisConfig = configuration["Redis:Configuration"];
+        if (!string.IsNullOrEmpty(redisConfig))
+        {
+            var redisOptions = ConfigurationOptions.Parse(redisConfig);
+            context.Services.TryAddSingleton<IConnectionMultiplexer>(provider => ConnectionMultiplexer.Connect(redisOptions));
+        }
 
+        Configure<AiRunDispatcherOptions>(configuration.GetSection("AiRunDispatcher"));
+        context.Services.AddHostedService<AiRunDispatcher>();
     }
 
     public override async Task OnPostApplicationInitializationAsync(ApplicationInitializationContext context)

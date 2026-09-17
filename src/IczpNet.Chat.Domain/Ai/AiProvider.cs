@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.DataFilters;
+using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
@@ -28,6 +28,12 @@ public abstract class AiProvider : DomainService, IAiProvider
             ? provider.GetRequiredService<IObjectMapper>()
             : (IObjectMapper)provider.GetRequiredService(typeof(IObjectMapper<>).MakeGenericType(ObjectMapperContext)));
     public abstract Task HandleAsync(long messageId);
+
+    public virtual async Task<AiRunExecutionResult> ExecuteAsync(AiRunContext context, System.Threading.CancellationToken cancellationToken = default)
+    {
+        await HandleAsync(context.SourceMessageId);
+        return AiRunExecutionResult.Ok();
+    }
 
     protected async Task<MessageInfo<TextContentInfo>> SendTextAsync(SessionUnitCacheItem replySessionUnit, long quoteMessageId, TextContentInfo content)
     {
