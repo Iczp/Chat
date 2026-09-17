@@ -180,6 +180,22 @@ public class AiRunManager(
         }
     }
 
+    [UnitOfWork]
+    public async Task<AiRun> RetryAsync(Guid runId, DateTime now)
+    {
+        var run = await AiRunRepository.GetAsync(runId);
+        run.ManualRetry(now);
+        return await AiRunRepository.UpdateAsync(run, autoSave: true);
+    }
+
+    [UnitOfWork]
+    public async Task<AiRun> CancelAsync(Guid runId, DateTime now, string reason = null)
+    {
+        var run = await AiRunRepository.GetAsync(runId);
+        run.Cancel(now, reason);
+        return await AiRunRepository.UpdateAsync(run, autoSave: true);
+    }
+
     public async Task<AiRun> FindBySourceMessageIdAsync(long sourceMessageId)
     {
         return await (await AiRunRepository.GetQueryableAsync())

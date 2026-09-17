@@ -1,4 +1,6 @@
-﻿using AutoMapper;
+using AutoMapper;
+using IczpNet.Chat.Ai;
+using IczpNet.Chat.AiRuns;
 using IczpNet.Chat.AppVersions;
 using IczpNet.Chat.Articles;
 using IczpNet.Chat.Articles.Dtos;
@@ -277,6 +279,18 @@ public class ChatApplicationAutoMapperProfile : Profile
         CreateMap<OnlineFriendInfo, OnlineFriendDto>();
         
 
+
+        // AiRun
+        CreateMap<AiRun, AiRunDto>();
+        CreateMap<AiRun, AiRunDetailDto>();
+        CreateMap<AiRunCreateInput, AiRun>(MemberList.None)
+            .IgnoreAuditedObjectProperties()
+            .IgnoreAllSourcePropertiesWithAnInaccessibleSetter()
+            .IgnoreAllPropertiesWithAnInaccessibleSetter();
+        CreateMap<AiRunUpdateInput, AiRun>(MemberList.None)
+            .IgnoreAuditedObjectProperties()
+            .IgnoreAllSourcePropertiesWithAnInaccessibleSetter()
+            .IgnoreAllPropertiesWithAnInaccessibleSetter();
 
         /*---------code-generator-mapper: Do not modify or delete this line of comments--------*/
     }

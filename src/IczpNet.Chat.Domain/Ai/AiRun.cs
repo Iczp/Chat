@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using Volo.Abp.Domain.Entities.Auditing;
 
@@ -68,6 +69,28 @@ public class AiRun : FullAuditedAggregateRoot<Guid>
         LastErrorMessage = "AI worker lease expired before the run completed.";
         Status = AttemptCount >= MaxAttempts ? AiRunStatus.Failed : AiRunStatus.RetryScheduled; NextAttemptAt = now;
         if (Status == AiRunStatus.Failed) CompletedTime = now;
+    }
+
+    public void ManualRetry(DateTime now)
+    {
+        Status = AiRunStatus.Queued;
+        NextAttemptAt = now;
+        LeaseOwner = null;
+        LeaseUntilTime = null;
+        LastErrorCode = null;
+        LastErrorMessage = null;
+        CompletedTime = null;
+        OutputMessageId = null;
+    }
+
+    public void Cancel(DateTime now, string? reason = null)
+    {
+        Status = AiRunStatus.Cancelled;
+        CompletedTime = now;
+        LeaseOwner = null;
+        LeaseUntilTime = null;
+        LastErrorCode = "cancelled";
+        LastErrorMessage = reason ?? "Cancelled manually.";
     }
 
     private void EnsureLeaseOwner(string workerId)

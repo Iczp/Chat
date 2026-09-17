@@ -37,6 +37,16 @@ public interface IAiRunManager
     Task RetryOrFailAsync(Guid runId, string workerId, string errorCode, string errorMessage, DateTime now, TimeSpan retryDelay);
 
     /// <summary>
+    /// 人工重新排队执行任务
+    /// </summary>
+    Task<AiRun> RetryAsync(Guid runId, DateTime now);
+
+    /// <summary>
+    /// 取消任务
+    /// </summary>
+    Task<AiRun> CancelAsync(Guid runId, DateTime now, string reason = null);
+
+    /// <summary>
     /// 根据源消息 ID 获取任务
     /// </summary>
     Task<AiRun> FindBySourceMessageIdAsync(long sourceMessageId);

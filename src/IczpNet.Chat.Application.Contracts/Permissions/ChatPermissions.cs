@@ -1,4 +1,4 @@
-﻿using Volo.Abp.Reflection;
+using Volo.Abp.Reflection;
 
 namespace IczpNet.Chat.Permissions;
 
@@ -309,6 +309,21 @@ public class ChatPermissions
         public const string SetIsEnabled = Default + ".SetIsEnabled";
     }
     
+
+    /// <summary>
+    /// AiRun
+    /// </summary>
+    public class AiRunPermissions
+    {
+        public const string Default = GroupName + $".{nameof(AiRunPermissions)}";
+        public const string GetItem = Default + ".GetItem";
+        public const string GetList = Default + ".GetList";
+        public const string Update = Default + ".Update";
+        public const string Create = Default + ".Create";
+        public const string Delete = Default + ".Delete";
+        public const string Retry = Default + ".Retry";
+        public const string Cancel = Default + ".Cancel";
+    }
 
     /*---------code-generator-permissions: Do not modify or delete this line of comments--------*/
 }
