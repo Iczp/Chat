@@ -1,8 +1,9 @@
 #nullable enable
+using IczpNet;
 using System;
 using Volo.Abp.Domain.Entities.Auditing;
 
-namespace IczpNet.Chat.Ai;
+namespace IczpNet.Chat.AiRuns;
 
 /// <summary>Durable lease-based AI execution; SQL is its source of truth.</summary>
 public class AiRun : FullAuditedAggregateRoot<Guid>

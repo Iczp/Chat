@@ -1,4 +1,3 @@
-using IczpNet.Chat.Ai;
 using IczpNet.Chat.BaseDtos;
 using System;
 using Volo.Abp.Auditing;

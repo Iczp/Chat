@@ -4,6 +4,7 @@ using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
+using IczpNet.Chat.AiRuns;
 
 namespace IczpNet.Chat.Ai;
 

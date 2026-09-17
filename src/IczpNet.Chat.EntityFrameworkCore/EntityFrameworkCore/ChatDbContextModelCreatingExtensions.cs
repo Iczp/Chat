@@ -1,4 +1,5 @@
 ﻿using IczpNet.AbpCommons.EntityFrameworkCore;
+using IczpNet.Chat.AiRuns;
 using IczpNet.Chat.AppVersionDeviceGroups;
 using IczpNet.Chat.AppVersionDevices;
 using IczpNet.Chat.AppVersions;
@@ -83,7 +84,7 @@ public static class ChatDbContextModelCreatingExtensions
 
         builder.ConfigEntities<ChatDomainModule>(ChatDbProperties.DbTablePrefix, ChatDbProperties.DbSchema);
 
-        builder.Entity<Ai.AiRun>(b =>
+        builder.Entity<AiRun>(b =>
         {
             //b.ToTable(ChatDbProperties.DbTablePrefix + "AiRuns", ChatDbProperties.DbSchema);
             b.Property(x => x.Provider).IsRequired().HasMaxLength(64);

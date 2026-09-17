@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.Ai;
+﻿using IczpNet.Chat.AiRuns;
 using IczpNet.Chat.AppVersionDeviceGroups;
 using IczpNet.Chat.AppVersionDevices;
 using IczpNet.Chat.AppVersions;

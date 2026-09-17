@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace IczpNet.Chat.Ai;
+namespace IczpNet.Chat.AiRuns;
 
 [Serializable]
 public class AiRunState

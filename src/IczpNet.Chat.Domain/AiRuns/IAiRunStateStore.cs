@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Volo.Abp.DependencyInjection;
 
-namespace IczpNet.Chat.Ai;
+namespace IczpNet.Chat.AiRuns;
 
 public interface IAiRunStateStore : ITransientDependency
 {

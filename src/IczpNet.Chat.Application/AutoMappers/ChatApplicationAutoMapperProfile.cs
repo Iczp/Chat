@@ -1,5 +1,4 @@
 using AutoMapper;
-using IczpNet.Chat.Ai;
 using IczpNet.Chat.AiRuns;
 using IczpNet.Chat.AppVersions;
 using IczpNet.Chat.Articles;

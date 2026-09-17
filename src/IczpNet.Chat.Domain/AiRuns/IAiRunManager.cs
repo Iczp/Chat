@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace IczpNet.Chat.Ai;
+namespace IczpNet.Chat.AiRuns;
 
 public interface IAiRunManager
 {

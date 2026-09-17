@@ -1,5 +1,4 @@
 using IczpNet.Chat.AppVersionDeviceGroups;
-using IczpNet.Chat.Ai;
 using IczpNet.Chat.AppVersionDevices;
 using IczpNet.Chat.AppVersions;
 using IczpNet.Chat.Articles;
@@ -68,6 +67,7 @@ using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.Identity.EntityFrameworkCore;
+using IczpNet.Chat.AiRuns;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 

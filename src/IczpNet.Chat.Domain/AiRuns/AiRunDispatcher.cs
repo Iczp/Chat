@@ -1,3 +1,4 @@
+using IczpNet.Chat.Ai;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -7,7 +8,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace IczpNet.Chat.Ai;
+namespace IczpNet.Chat.AiRuns;
 
 public class AiRunDispatcher : BackgroundService
 {

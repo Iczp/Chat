@@ -1,4 +1,4 @@
-namespace IczpNet.Chat.Ai;
+namespace IczpNet.Chat.AiRuns;
 
 public enum AiRunStatus
 {

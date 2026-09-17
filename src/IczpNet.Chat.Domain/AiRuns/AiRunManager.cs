@@ -9,7 +9,7 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Uow;
 
-namespace IczpNet.Chat.Ai;
+namespace IczpNet.Chat.AiRuns;
 
 public class AiRunManager(
     IRepository<AiRun, Guid> aiRunRepository,

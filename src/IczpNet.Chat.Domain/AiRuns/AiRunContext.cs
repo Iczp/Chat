@@ -1,6 +1,6 @@
 using System;
 
-namespace IczpNet.Chat.Ai;
+namespace IczpNet.Chat.AiRuns;
 
 public class AiRunContext
 {

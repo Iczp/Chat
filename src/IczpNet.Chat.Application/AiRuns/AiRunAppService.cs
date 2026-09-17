@@ -1,5 +1,4 @@
 using IczpNet.AbpCommons;
-using IczpNet.Chat.Ai;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Permissions;
 using Microsoft.EntityFrameworkCore;

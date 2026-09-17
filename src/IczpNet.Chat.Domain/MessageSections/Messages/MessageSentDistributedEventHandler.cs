@@ -1,4 +1,5 @@
 using IczpNet.Chat.Ai;
+using IczpNet.Chat.AiRuns;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Commands;
 using IczpNet.Chat.Developers;

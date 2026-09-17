@@ -1,6 +1,6 @@
 using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
-using IczpNet.Chat.Ai;
+using IczpNet.Chat.AiRuns;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.HttpRequests;
 using IczpNet.Chat.ListSets;

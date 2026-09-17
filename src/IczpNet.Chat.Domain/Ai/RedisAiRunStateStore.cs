@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IczpNet.Chat.RedisServices;
 using Volo.Abp.Caching;
+using IczpNet.Chat.AiRuns;
 
 namespace IczpNet.Chat.Ai;
 

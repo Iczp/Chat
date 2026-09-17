@@ -1,3 +1,4 @@
+using IczpNet.Chat.AiRuns;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.Ai;
