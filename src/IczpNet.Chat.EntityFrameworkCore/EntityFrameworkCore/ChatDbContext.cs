@@ -1,4 +1,5 @@
 using IczpNet.Chat.AppVersionDeviceGroups;
+using IczpNet.Chat.Ai;
 using IczpNet.Chat.AppVersionDevices;
 using IczpNet.Chat.AppVersions;
 using IczpNet.Chat.Articles;
@@ -79,6 +80,7 @@ public class ChatDbContext(DbContextOptions<ChatDbContext> options) : AbpDbConte
 
 
     public DbSet<DbTable> DbTable { get; set; }
+    public DbSet<AiRun> AiRun { get; set; }
 
     public DbSet<ChatObject> ChatObject { get; set; }
     public DbSet<ChatObjectCategory> ChatObjectCategory { get; set; }

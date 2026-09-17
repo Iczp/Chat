@@ -83,6 +83,19 @@ public static class ChatDbContextModelCreatingExtensions
 
         builder.ConfigEntities<ChatDomainModule>(ChatDbProperties.DbTablePrefix, ChatDbProperties.DbSchema);
 
+        builder.Entity<Ai.AiRun>(b =>
+        {
+            //b.ToTable(ChatDbProperties.DbTablePrefix + "AiRuns", ChatDbProperties.DbSchema);
+            b.Property(x => x.Provider).IsRequired().HasMaxLength(64);
+            b.Property(x => x.LeaseOwner).HasMaxLength(128);
+            b.Property(x => x.LastErrorCode).HasMaxLength(64);
+            b.Property(x => x.LastErrorMessage).HasMaxLength(2048);
+            b.HasIndex(x => x.SourceMessageId).IsUnique();
+            b.HasIndex(x => new { x.Status, x.NextAttemptAt });
+            b.HasIndex(x => new { x.SessionId, x.Status, x.CreationTime });
+            b.HasIndex(x => new { x.Status, x.LeaseUntilTime });
+        });
+
         ConfigMessageTemplateEntitys(builder);
         //ForEachEntitys(builder);
         //ConfigKeys(builder);

@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.AppVersionDeviceGroups;
+﻿using IczpNet.Chat.Ai;
+using IczpNet.Chat.AppVersionDeviceGroups;
 using IczpNet.Chat.AppVersionDevices;
 using IczpNet.Chat.AppVersions;
 using IczpNet.Chat.Articles;
@@ -74,6 +75,9 @@ public interface IChatDbContext : IEfCoreDbContext
     /* Add DbSet for each Aggregate Root here. Example:
      * DbSet<Question> Questions { get; }
      */
+
+    DbSet<AiRun> AiRun { get; }
+
 
     DbSet<ChatObject> ChatObject { get; }
     DbSet<ChatObjectCategory> ChatObjectCategory { get; }
