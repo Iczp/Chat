@@ -306,6 +306,46 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
     #endregion
 
+    // Message-created events can be delivered concurrently by separate hosts.
+    // Keep the unit hash and every list index on the same message version so a
+    // delayed event cannot leave a newer score paired with older hash fields.
+    private const string SetLastMessageStateScript = @"
+local currentLastMessageId = redis.call('HGET', KEYS[1], ARGV[2])
+if currentLastMessageId and tonumber(currentLastMessageId) > tonumber(ARGV[4]) then
+    return 0
+end
+
+redis.call('HSET', KEYS[1], ARGV[2], ARGV[4], ARGV[3], ARGV[5])
+redis.call('ZADD', KEYS[2], ARGV[6], ARGV[1])
+redis.call('ZADD', KEYS[3], ARGV[4], ARGV[1])
+
+if #KEYS > 3 then
+    redis.call('ZADD', KEYS[4], ARGV[6], ARGV[1])
+end
+
+return 1";
+
+    private static void SetLastMessageState(
+        IBatch batch,
+        RedisKey unitKey,
+        RedisKey ownerFriendsSetKey,
+        RedisKey dirtySetKey,
+        RedisKey ownerBoxFriendsSetKey,
+        SessionUnitElement element,
+        long lastMessageId,
+        long ticks,
+        double score)
+    {
+        var keys = ownerBoxFriendsSetKey.IsNull
+            ? new RedisKey[] { unitKey, ownerFriendsSetKey, dirtySetKey }
+            : new RedisKey[] { unitKey, ownerFriendsSetKey, dirtySetKey, ownerBoxFriendsSetKey };
+
+        _ = batch.ScriptEvaluateAsync(
+            SetLastMessageStateScript,
+            keys,
+            [element, F_LastMessageId, F_Ticks, lastMessageId, ticks, score]);
+    }
+
     #region Initialize / Ensure helpers
 
 
@@ -1372,16 +1412,27 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             var ticks = new DateTimeOffset(message.CreationTime).ToUnixTimeMilliseconds();
             var score = GetFriendScore(sorting, ticks);
 
-            // lastMessageId
-            _ = batch.HashSetAsync(unitKey, F_LastMessageId, lastMessageId);
-            //dirty
-            _ = batch.SortedSetAddAsync(DirtySetKey(), element, lastMessageId);
-            // ticks
-            _ = batch.HashSetAsync(unitKey, F_Ticks, ticks);
-            // expire
-            //Expire(batch, unitKey, CacheExpire);
+            var hasBox = boxMap.TryGetValue(element, out var boxId);
+            var ownerBoxFriendsSetKey = hasBox
+                ? OwnerBoxFriendsSetKey(ownerId, boxId)
+                : RedisKey.Null;
 
-            SetOwnerFriends(batch, ownerId, element, score);
+            SetLastMessageState(
+                batch,
+                unitKey,
+                OwnerFriendsSetKey(ownerId),
+                DirtySetKey(),
+                ownerBoxFriendsSetKey,
+                element,
+                lastMessageId,
+                ticks,
+                score);
+
+            Expire(batch, OwnerFriendsSetKey(ownerId), CacheExpire);
+            if (!ownerBoxFriendsSetKey.IsNull)
+            {
+                Expire(batch, ownerBoxFriendsSetKey, CacheExpire);
+            }
 
             // Sender
             if (isSender)
@@ -1394,9 +1445,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             }
 
             // 消息盒子 boxId
-            if (boxMap.TryGetValue(item.Key, out var boxId))
+            if (hasBox)
             {
-                SetOwnerBoxFriends(batch, ownerId, boxId, element, score);
                 ZsetIncrementIfGuardKeyExist(batch, ownerStatisticSetKey, OwnerBoxBadgeZsetKey(ownerId), boxId.ToString(), 1);
             }
 

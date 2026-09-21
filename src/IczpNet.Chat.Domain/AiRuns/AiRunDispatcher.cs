@@ -7,6 +7,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+using Volo.Abp.Timing;
 
 namespace IczpNet.Chat.AiRuns;
 
@@ -15,6 +16,7 @@ public class AiRunDispatcher : BackgroundService
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly IOptions<AiRunDispatcherOptions> _optionsAccessor;
     private readonly ILogger<AiRunDispatcher> _logger;
+    private readonly IClock _clock;
     private readonly string _workerId;
     private readonly ConcurrentDictionary<Guid, Task> _runningTasks = new();
     private SemaphoreSlim _semaphore;
@@ -22,11 +24,13 @@ public class AiRunDispatcher : BackgroundService
     public AiRunDispatcher(
         IServiceScopeFactory serviceScopeFactory,
         IOptions<AiRunDispatcherOptions> optionsAccessor,
-        ILogger<AiRunDispatcher> logger)
+        ILogger<AiRunDispatcher> logger,
+        IClock clock)
     {
         _serviceScopeFactory = serviceScopeFactory;
         _optionsAccessor = optionsAccessor;
         _logger = logger;
+        _clock = clock;
         _workerId = $"{Environment.MachineName}-{Environment.ProcessId}-{Guid.NewGuid():N}";
         _semaphore = new SemaphoreSlim(Options.MaxConcurrentRuns, Options.MaxConcurrentRuns);
     }
@@ -49,7 +53,7 @@ public class AiRunDispatcher : BackgroundService
                     continue;
                 }
 
-                var now = DateTime.UtcNow;
+                var now = _clock.Now;
 
                 // 定期（每 10 秒）回收超时租约
                 if ((now - lastReclaimTime).TotalSeconds >= 10)
@@ -132,7 +136,7 @@ public class AiRunDispatcher : BackgroundService
         using var runCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
         if (deadlineTime.HasValue)
         {
-            var remaining = deadlineTime.Value - DateTime.UtcNow;
+            var remaining = deadlineTime.Value - _clock.Now;
             if (remaining > TimeSpan.Zero)
             {
                 runCts.CancelAfter(remaining);
@@ -181,7 +185,7 @@ public class AiRunDispatcher : BackgroundService
 
             if (result != null && result.Success)
             {
-                await aiRunManager.CompleteAsync(runId, _workerId, result.OutputMessageId ?? 0, DateTime.UtcNow);
+                await aiRunManager.CompleteAsync(runId, _workerId, result.OutputMessageId ?? 0, _clock.Now);
                 _logger.LogInformation("AiRun {RunId} completed successfully. OutputMessageId={OutputMessageId}", runId, result.OutputMessageId);
             }
             else
@@ -189,7 +193,7 @@ public class AiRunDispatcher : BackgroundService
                 var errorCode = result?.ErrorCode ?? "execution-failed";
                 var errorMessage = result?.ErrorMessage ?? "AI execution failed without specific error message.";
                 var retryDelay = CalculateRetryDelay(attemptCount);
-                await aiRunManager.RetryOrFailAsync(runId, _workerId, errorCode, errorMessage, DateTime.UtcNow, retryDelay);
+                await aiRunManager.RetryOrFailAsync(runId, _workerId, errorCode, errorMessage, _clock.Now, retryDelay);
                 _logger.LogWarning("AiRun {RunId} reported failure: {ErrorCode} - {ErrorMessage}", runId, errorCode, errorMessage);
             }
         }
@@ -202,7 +206,7 @@ public class AiRunDispatcher : BackgroundService
                 using var scope = _serviceScopeFactory.CreateScope();
                 var aiRunManager = scope.ServiceProvider.GetRequiredService<IAiRunManager>();
                 var retryDelay = CalculateRetryDelay(attemptCount);
-                await aiRunManager.RetryOrFailAsync(runId, _workerId, "timeout", "AI execution timed out.", DateTime.UtcNow, retryDelay);
+                await aiRunManager.RetryOrFailAsync(runId, _workerId, "timeout", "AI execution timed out.", _clock.Now, retryDelay);
             }
             catch (Exception recordEx)
             {
@@ -218,7 +222,7 @@ public class AiRunDispatcher : BackgroundService
                 using var scope = _serviceScopeFactory.CreateScope();
                 var aiRunManager = scope.ServiceProvider.GetRequiredService<IAiRunManager>();
                 var retryDelay = CalculateRetryDelay(attemptCount);
-                await aiRunManager.RetryOrFailAsync(runId, _workerId, ex.GetType().Name, ex.Message, DateTime.UtcNow, retryDelay);
+                await aiRunManager.RetryOrFailAsync(runId, _workerId, ex.GetType().Name, ex.Message, _clock.Now, retryDelay);
             }
             catch (Exception recordEx)
             {
@@ -245,7 +249,7 @@ public class AiRunDispatcher : BackgroundService
                 await Task.Delay(interval, cancellationToken);
                 using var scope = _serviceScopeFactory.CreateScope();
                 var aiRunManager = scope.ServiceProvider.GetRequiredService<IAiRunManager>();
-                await aiRunManager.HeartbeatAsync(runId, _workerId, DateTime.UtcNow, leaseDuration);
+                await aiRunManager.HeartbeatAsync(runId, _workerId, _clock.Now, leaseDuration);
             }
         }
         catch (OperationCanceledException)

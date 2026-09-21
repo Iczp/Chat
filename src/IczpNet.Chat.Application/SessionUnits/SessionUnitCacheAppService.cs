@@ -785,17 +785,28 @@ public class SessionUnitCacheAppService(
     {
         var stopwatch = Stopwatch.StartNew();
 
-        var unitIdScoreMap = query.ToDictionary(x => x.Id, x => x.Score);
+        var friendMap = query.ToDictionary(x => x.Id);
 
-        var items = await GetManyAsync(unitIdScoreMap.Keys.ToList());
+        var items = await GetManyAsync(friendMap.Keys.ToList());
 
         foreach (var item in items)
         {
-            item.Score = unitIdScoreMap.GetValueOrDefault(item.Id);
+            var friend = friendMap.GetValueOrDefault(item.Id);
+            if (friend == null)
+            {
+                continue;
+            }
+
+            // The owner ZSET is the source of truth for list order.  Its score
+            // encodes both fields, so return the decoded pair together rather
+            // than combining a current score with a stale unit-hash Ticks value.
+            item.Sorting = (long)friend.Sorting;
+            item.Ticks = (long)friend.Ticks;
+            item.Score = friend.Score;
         }
 
         Logger.LogInformation("FillScoreAsync, ReturnedCount={ReturnedCount}, Elapsed={Elapsed}ms",
-            unitIdScoreMap.Count,
+            friendMap.Count,
             stopwatch.ElapsedMilliseconds);
 
         return items;

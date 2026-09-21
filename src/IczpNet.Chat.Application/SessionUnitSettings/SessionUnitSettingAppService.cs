@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.SessionUnitSettings;
@@ -31,6 +32,7 @@ public class SessionUnitSettingAppService(
     protected virtual string SetImmersedPolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.SetImmersed;
     protected virtual string SetIsContactsPolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.SetIsContacts;
     protected virtual string SetIsShowMemberNamePolicyName { get; set; } //= ChatPermissions.SessionUnitSettingPermissions.SetIsShowMemberName;
+    protected virtual string SetBackgroundImagePolicyName { get; set; }
 
 
     protected virtual string RemoveSessionPolicyName { get; set; } = ChatPermissions.SessionUnitSettingPermissions.RemoveSession;
@@ -200,6 +202,35 @@ public class SessionUnitSettingAppService(
         result.Setting = ObjectMapper.Map<SessionUnitSetting, SessionUnitSettingDto>(sessionUnitSetting);
 
         return result;
+    }
+
+    /// <summary>
+    /// 设置聊天背景图片
+    /// </summary>
+    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <param name="backgroundImage">背景图片地址，为 null 时清除背景图片</param>
+    /// <returns></returns>
+    [RemoteService(false)]
+    public async Task<SessionUnitOwnerDto> SetBackgroundImageAsync(
+        [Required] Guid sessionUnitId,
+        [StringLength(500)] string backgroundImage)
+    {
+        var entity = await GetAndCheckPolicyAsync(SetBackgroundImagePolicyName, sessionUnitId);
+
+        var sessionUnitSetting = await SessionUnitSettingManager.SetBackgroundImageAsync(sessionUnitId, backgroundImage);
+
+        var result = await MapToDtoAsync(entity);
+
+        result.Setting = ObjectMapper.Map<SessionUnitSetting, SessionUnitSettingDto>(sessionUnitSetting);
+
+        return result;
+    }
+
+    /// <inheritdoc />
+    [RemoteService(false)]
+    public async Task CheckSetBackgroundImageAsync(Guid sessionUnitId)
+    {
+        await GetAndCheckPolicyAsync(SetBackgroundImagePolicyName, sessionUnitId);
     }
 
     /// <summary>

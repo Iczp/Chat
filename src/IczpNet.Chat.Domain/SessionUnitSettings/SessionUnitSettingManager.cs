@@ -201,6 +201,12 @@ public class SessionUnitSettingManager(
     }
 
     /// <inheritdoc />
+    public virtual Task<SessionUnitSetting> SetBackgroundImageAsync(Guid sessionUnitId, string backgroundImage)
+    {
+        return SetEntityAsync(sessionUnitId, x => x.SetBackgroundImage(backgroundImage));
+    }
+
+    /// <inheritdoc />
     public virtual Task<SessionUnitSetting> SetMemberNameAsync(Guid sessionUnitId, string memberName)
     {
         return SetEntityAsync(sessionUnitId, x => x.SetMemberName(memberName));

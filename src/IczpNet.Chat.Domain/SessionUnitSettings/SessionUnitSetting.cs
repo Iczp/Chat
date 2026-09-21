@@ -439,6 +439,8 @@ public class SessionUnitSetting : BaseEntity, IHasCreationTime, IHasModification
 
     internal virtual void SetIsShowMemberName(bool isShowMemberName) => IsShowMemberName = isShowMemberName;
 
+    internal virtual void SetBackgroundImage(string backgroundImage) => BackgroundImage = backgroundImage;
+
     internal virtual void SetIsEnabled(bool v) => IsEnabled = v;
 
     internal virtual void SetLastSendMessage(Message message)

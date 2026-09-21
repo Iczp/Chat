@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using IczpNet.Chat.RedisServices;
@@ -49,13 +50,19 @@ local current = redis.call('HGET', KEYS[1], ARGV[1])
 local state
 if current then
     state = cjson.decode(current)
-    if tonumber(state.sequence or -1) >= tonumber(ARGV[11]) then
+    local curSeq = -1
+    if state and type(state.sequence) == 'number' then
+        curSeq = state.sequence
+    elseif state and type(state.sequence) == 'string' then
+        curSeq = tonumber(state.sequence) or -1
+    end
+    if curSeq >= tonumber(ARGV[11]) then
         return 0
     end
 else
     state = cjson.decode(ARGV[2])
 end
-if not state or state.runId ~= ARGV[1] then state = {} end
+if not state or type(state) ~= 'table' or state.runId ~= ARGV[1] then state = {} end
 state.runId = ARGV[1]
 state.sessionId = ARGV[3]
 state.requesterSessionUnitId = ARGV[4]
@@ -67,16 +74,20 @@ state.queueMilliseconds = tonumber(ARGV[9])
 state.elapsedMilliseconds = tonumber(ARGV[10])
 state.sequence = tonumber(ARGV[11])
 state.status = ARGV[12]
-if ARGV[14] ~= '' then
-    local preview = (state.previewText or '') .. ARGV[14]
-    if string.len(preview) > 2048 then preview = string.sub(preview, -2048) end
-    state.previewText = preview
-elseif not state.previewText then
-    state.previewText = ''
+
+local preview = ''
+if type(state.previewText) == 'string' then
+    preview = state.previewText
 end
-if ARGV[15] ~= '' then state.finalMessageId = tonumber(ARGV[15]) end
-if ARGV[16] ~= '' then state.error = ARGV[16] end
-if not state.timeline then state.timeline = {} end
+if ARGV[14] ~= '' then
+    preview = preview .. ARGV[14]
+    if string.len(preview) > 2048 then preview = string.sub(preview, -2048) end
+end
+state.previewText = preview
+
+if ARGV[15] ~= '' then state.finalMessageId = tonumber(ARGV[15]) elseif type(state.finalMessageId) ~= 'number' then state.finalMessageId = nil end
+if ARGV[16] ~= '' then state.error = ARGV[16] elseif type(state.error) ~= 'string' then state.error = nil end
+if type(state.timeline) ~= 'table' then state.timeline = {} end
 local detail = ARGV[16] ~= '' and ARGV[16] or (ARGV[14] ~= '' and ('delta:' .. string.len(ARGV[14]) .. ' chars') or (ARGV[15] ~= '' and ('finalMessageId:' .. ARGV[15]) or ''))
 table.insert(state.timeline, {
     occurredAt = ARGV[8], eventType = ARGV[13], status = ARGV[12],
@@ -97,7 +108,10 @@ redis.call('PEXPIRE', KEYS[1], ARGV[19])
 redis.call('PEXPIRE', KEYS[2], ARGV[19])
 return 1";
 
-    private static readonly JsonSerializerOptions StorageJsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions StorageJsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
 
     public async Task<AiRunState> GetAsync(Guid requesterSessionUnitId, CancellationToken cancellationToken = default)
         => (await GetRecentAsync(requesterSessionUnitId, MaximumRuns, cancellationToken))
