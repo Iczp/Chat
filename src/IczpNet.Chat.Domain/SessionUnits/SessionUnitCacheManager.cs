@@ -315,12 +315,18 @@ if currentLastMessageId and tonumber(currentLastMessageId) > tonumber(ARGV[4]) t
     return 0
 end
 
+local sorting = tonumber(redis.call('HGET', KEYS[1], ARGV[6]))
+if not sorting then
+    sorting = tonumber(ARGV[7])
+end
+local score = sorting * tonumber(ARGV[8]) + tonumber(ARGV[5])
+
 redis.call('HSET', KEYS[1], ARGV[2], ARGV[4], ARGV[3], ARGV[5])
-redis.call('ZADD', KEYS[2], ARGV[6], ARGV[1])
+redis.call('ZADD', KEYS[2], score, ARGV[1])
 redis.call('ZADD', KEYS[3], ARGV[4], ARGV[1])
 
 if #KEYS > 3 then
-    redis.call('ZADD', KEYS[4], ARGV[6], ARGV[1])
+    redis.call('ZADD', KEYS[4], score, ARGV[1])
 end
 
 return 1";
@@ -330,21 +336,49 @@ return 1";
         RedisKey unitKey,
         RedisKey ownerFriendsSetKey,
         RedisKey dirtySetKey,
-        RedisKey ownerBoxFriendsSetKey,
+        RedisKey? ownerBoxFriendsSetKey,
         SessionUnitElement element,
         long lastMessageId,
         long ticks,
-        double score)
+        long sorting)
     {
-        var keys = ownerBoxFriendsSetKey.IsNull
-            ? new RedisKey[] { unitKey, ownerFriendsSetKey, dirtySetKey }
-            : new RedisKey[] { unitKey, ownerFriendsSetKey, dirtySetKey, ownerBoxFriendsSetKey };
+        var keys = ownerBoxFriendsSetKey.HasValue
+            ? new RedisKey[] { unitKey, ownerFriendsSetKey, dirtySetKey, ownerBoxFriendsSetKey.Value }
+            : new RedisKey[] { unitKey, ownerFriendsSetKey, dirtySetKey };
 
         _ = batch.ScriptEvaluateAsync(
             SetLastMessageStateScript,
             keys,
-            [element, F_LastMessageId, F_Ticks, lastMessageId, ticks, score]);
+            [element, F_LastMessageId, F_Ticks, lastMessageId, ticks, F_Sorting, sorting, FriendScore.Multiplier]);
     }
+
+    private const string SetPinningScript = @"
+local oldScore = redis.call('ZSCORE', KEYS[2], ARGV[1])
+if not oldScore then
+    return 0
+end
+
+local multiplier = tonumber(ARGV[4])
+local ticks = tonumber(oldScore) - math.floor(tonumber(oldScore) / multiplier) * multiplier
+local score = tonumber(ARGV[3]) * multiplier + ticks
+
+if redis.call('EXISTS', KEYS[1]) == 1 then
+    redis.call('HSET', KEYS[1], ARGV[2], ARGV[3])
+end
+
+if tonumber(ARGV[3]) == 0 then
+    redis.call('ZREM', KEYS[3], ARGV[1])
+    redis.call('HDEL', KEYS[4], ARGV[1])
+else
+    redis.call('ZADD', KEYS[3], ARGV[5], ARGV[1])
+    redis.call('HSET', KEYS[4], ARGV[1], ARGV[3])
+end
+
+redis.call('ZADD', KEYS[2], score, ARGV[1])
+if #KEYS > 4 then
+    redis.call('ZADD', KEYS[5], score, ARGV[1])
+end
+return 1";
 
     #region Initialize / Ensure helpers
 
@@ -1410,12 +1444,11 @@ return 1";
             var isCreator = creatorMap.TryGetValue(element, out bool creator) && creator;
             var sorting = pinnedMap.TryGetValue(element, out var _sorting) ? _sorting : 0;
             var ticks = new DateTimeOffset(message.CreationTime).ToUnixTimeMilliseconds();
-            var score = GetFriendScore(sorting, ticks);
 
             var hasBox = boxMap.TryGetValue(element, out var boxId);
-            var ownerBoxFriendsSetKey = hasBox
+            RedisKey? ownerBoxFriendsSetKey = hasBox
                 ? OwnerBoxFriendsSetKey(ownerId, boxId)
-                : RedisKey.Null;
+                : (RedisKey?)null;
 
             SetLastMessageState(
                 batch,
@@ -1426,12 +1459,12 @@ return 1";
                 element,
                 lastMessageId,
                 ticks,
-                score);
+                sorting);
 
             Expire(batch, OwnerFriendsSetKey(ownerId), CacheExpire);
-            if (!ownerBoxFriendsSetKey.IsNull)
+            if (ownerBoxFriendsSetKey.HasValue)
             {
-                Expire(batch, ownerBoxFriendsSetKey, CacheExpire);
+                Expire(batch, ownerBoxFriendsSetKey.Value, CacheExpire);
             }
 
             // Sender
@@ -1756,67 +1789,53 @@ return 1";
 
     public async Task SetPinningAsync(Guid sessionId, Guid unitId, long ownerId, long sorting)
     {
-        var unitKey = UnitHashKey(unitId);
-
         var unit = await GetAsync(unitId);
-
-        // 1. 检查缓存项是否存在
-        var isExists = unit != null;
-
-        // 2. owner sortedset key
-        var ownerFriendsSetKey = OwnerFriendsSetKey(ownerId);
-
-        // 3. 先读取旧 score
-        var element = GetElement(unit);
-
-        double? oldScore = await Database.SortedSetScoreAsync(ownerFriendsSetKey, element);
-
-        if (oldScore is null)
+        if (unit == null)
         {
-            // 没有旧 score，说明该单元未加入 ownerSortedSet，不做置顶
+            Logger.LogWarning("Skip pinning cache update because unit {UnitId} is not cached", unitId);
             return;
         }
 
-        // 4. 解析旧的 ticks
-        var scoreObj = new FriendScore(oldScore.Value);
-
-        var ticks = scoreObj.Ticks;     // 低位 JS 毫秒
-                                        // 如果你担心 double 精度，可以加  Math.Round
-        ticks = Math.Round(ticks);
-
-        // 5. 新的 score = sorting * MULT + ticks
-        var newScore = GetFriendScore(sorting, ticks);
-
-        // 6. 批处理写入
-        var batch = Database.CreateBatch();
-
-        // 6.1 更新 unitKey 中的 Sorting 字段（如果你有该字段）
-        if (isExists)
-        {
-            _ = batch.HashSetAsync(unitKey, F_Sorting, sorting);
-        }
-
-        // 6.2 更新置顶表（ownerToppingSet）
+        var ownerFriendsSetKey = OwnerFriendsSetKey(ownerId);
         var ownerPinnedBadgeSetKey = OwnerPinnedBadgeSetKey(ownerId);
         var sessionPinnedSortingHashKey = SessionPinnedSortingHashKey(sessionId);
-        if (sorting == 0)
+        var element = GetElement(unit);
+        var keys = unit.BoxId.HasValue
+            ? new RedisKey[]
+            {
+                UnitHashKey(unitId), ownerFriendsSetKey, ownerPinnedBadgeSetKey,
+                sessionPinnedSortingHashKey, OwnerBoxFriendsSetKey(ownerId, unit.BoxId.Value)
+            }
+            : new RedisKey[]
+            {
+                UnitHashKey(unitId), ownerFriendsSetKey, ownerPinnedBadgeSetKey,
+                sessionPinnedSortingHashKey
+            };
+
+        // Read the current owner score and rewrite all affected indexes in one
+        // Redis operation. This prevents a concurrent message update from
+        // restoring a stale tick while pinning or unpinning the session.
+        var updated = await Database.ScriptEvaluateAsync(
+            SetPinningScript,
+            keys,
+            [element, F_Sorting, sorting, FriendScore.Multiplier, unit.PublicBadge]);
+
+        if ((int)updated == 0)
         {
-            _ = batch.SortedSetRemoveAsync(ownerPinnedBadgeSetKey, element);
-            _ = batch.HashDeleteAsync(sessionPinnedSortingHashKey, element);
+            return;
         }
-        else
+
+        var batch = Database.CreateBatch();
+        Expire(batch, ownerFriendsSetKey, CacheExpire);
+        if (unit.BoxId.HasValue)
         {
-            _ = batch.SortedSetAddAsync(ownerPinnedBadgeSetKey, element, unit?.PublicBadge ?? 0);
-            _ = batch.HashSetAsync(sessionPinnedSortingHashKey, element, sorting);
+            Expire(batch, OwnerBoxFriendsSetKey(ownerId, unit.BoxId.Value), CacheExpire);
+        }
+        if (sorting > 0)
+        {
             Expire(batch, ownerPinnedBadgeSetKey, CacheExpire);
             Expire(batch, sessionPinnedSortingHashKey, CacheExpire);
         }
-
-        // 6.3 更新 ownerSortedSet 的新 score
-        _ = batch.SortedSetAddAsync(ownerFriendsSetKey, element, newScore);
-        Expire(batch, ownerFriendsSetKey, CacheExpire);
-
-        // 7. 执行 batch
         batch.Execute();
     }
 
