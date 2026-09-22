@@ -321,7 +321,9 @@ if not sorting then
 end
 local score = sorting * tonumber(ARGV[8]) + tonumber(ARGV[5])
 
-redis.call('HSET', KEYS[1], ARGV[2], ARGV[4], ARGV[3], ARGV[5])
+-- Redis 3.2 only accepts one field/value pair per HSET command.
+redis.call('HSET', KEYS[1], ARGV[2], ARGV[4])
+redis.call('HSET', KEYS[1], ARGV[3], ARGV[5])
 redis.call('ZADD', KEYS[2], score, ARGV[1])
 redis.call('ZADD', KEYS[3], ARGV[4], ARGV[1])
 

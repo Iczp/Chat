@@ -1925,3 +1925,29 @@ dotnet test ...
 > 不要把 Chat 业务逻辑移动到 Rctea.IM Host。
 
 > 修改前先理解现有数据流，修改后必须检查完整数据流。
+
+------
+
+# 78. Redis 3.2 兼容性
+
+当前运行环境使用 Redis 3.2.x。编写 Redis 命令、Lua Script 或升级缓存实现时，必须按 Redis 3.2 能力设计，不能默认使用 Redis 4.0+、5.0+ 或更高版本的语法。
+
+特别注意：
+
+- `HSET` 一次只能写入一个 `field value` 对；禁止：
+
+```lua
+redis.call('HSET', key, 'FieldA', valueA, 'FieldB', valueB)
+```
+
+  必须拆为：
+
+```lua
+redis.call('HSET', key, 'FieldA', valueA)
+redis.call('HSET', key, 'FieldB', valueB)
+```
+
+- 新增 Lua Script 前，必须确认命令和参数形式在 Redis 3.2 可用；
+- 不要使用 Redis 3.2 后才引入的命令、选项或多参数变体；
+- Redis `IBatch` 中的 Lua Task 不应静默忽略。关键状态写入失败时必须能够被日志或调用链观测；
+- 部署前应在实际 Redis 3.2 实例验证关键脚本，不能只以新版本本地 Redis 的结果为准。
