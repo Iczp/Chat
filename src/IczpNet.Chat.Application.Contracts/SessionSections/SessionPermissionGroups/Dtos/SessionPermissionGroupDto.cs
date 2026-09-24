@@ -10,4 +10,6 @@ public class SessionPermissionGroupDto : SessionPermissionGroupInfo, IEntityDto<
 {
 
     public virtual string Description { get; set; }
+
+    public virtual string GetObjectKey() => $"{Id}";
 }

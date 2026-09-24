@@ -109,4 +109,6 @@ public class MessageSimpleDto : ExtensibleEntityDto, IEntityDto<long>
     /// 消息内容
     /// </summary>
     public virtual object Content { get; set; }
+
+    public virtual string GetObjectKey() => $"{Id}";
 }

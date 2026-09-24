@@ -57,6 +57,8 @@ if ([string]::IsNullOrWhiteSpace($ProjectsPath)) {
     $ProjectsPath = (Resolve-Path $ProjectsPath).Path
 }
 
+Set-Location $ProjectsPath
+
 Write-Host "==========================================================" -ForegroundColor Cyan
 Write-Host "          ABP 解决方案通用升级工具 (.NET 10)" -ForegroundColor Cyan
 Write-Host "==========================================================" -ForegroundColor Cyan

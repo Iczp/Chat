@@ -43,4 +43,6 @@ public class EntryNameDto : BaseTreeInfo<Guid>, IEntityDto<Guid>
     [MaxLength(200)]
     public virtual string ErrorMessage { get; set; }
 
+
+    public virtual string GetObjectKey() => $"{Id}";
 }

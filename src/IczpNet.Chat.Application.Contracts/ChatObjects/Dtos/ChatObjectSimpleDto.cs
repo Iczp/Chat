@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.Enums;
+using IczpNet.Chat.Enums;
 using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.ChatObjects.Dtos
@@ -14,5 +14,7 @@ namespace IczpNet.Chat.ChatObjects.Dtos
         /// 
         /// </summary>
         public virtual string VerificationMethodDescription { get; set; }
+
+        public virtual string GetObjectKey() => Id.ToString();
     }
 }

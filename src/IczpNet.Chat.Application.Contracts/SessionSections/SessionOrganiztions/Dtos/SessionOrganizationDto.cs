@@ -10,4 +10,6 @@ public class SessionOrganizationDto : SessionOrganizationInfo, IEntityDto<long>
 {
 
     public virtual string Description { get; set; }
+
+    public virtual string GetObjectKey() => $"{Id}";
 }

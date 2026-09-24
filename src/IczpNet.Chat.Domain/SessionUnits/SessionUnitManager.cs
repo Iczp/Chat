@@ -1,4 +1,4 @@
-ï»¿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
@@ -32,7 +32,6 @@ using Volo.Abp.Domain.Services;
 using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
-using static IdentityModel.ClaimComparer;
 
 
 namespace IczpNet.Chat.SessionUnits;
@@ -65,7 +64,7 @@ public class SessionUnitManager(
     public IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
     protected ISessionUnitRepository Repository { get; } = repository;
     /// <summary>
-    /// SessionUnit æ›´æ–°é¢‘ç¹ï¼Œä½¿ç”¨ ReadOnlyRepository é˜²æ­¢æ„å¤–æ›´æ–°åˆ°æ•°æ®åº“ï¼Œå¼•èµ·å¹¶å‘å†²çª --2025.03.19
+    /// SessionUnit ¸üĞÂÆµ·±£¬Ê¹ÓÃ ReadOnlyRepository ·ÀÖ¹ÒâÍâ¸üĞÂµ½Êı¾İ¿â£¬ÒıÆğ²¢·¢³åÍ» --2025.03.19
     /// </summary>
     public IReadOnlyRepository<SessionUnit, Guid> SessionUnitReadOnlyRepository { get; } = sessionUnitReadOnlyRepository;
     protected IReadOnlyRepository<Message, long> MessageReadOnlyRepository { get; } = messageReadOnlyRepository;
@@ -90,7 +89,7 @@ public class SessionUnitManager(
     protected ISessionUnitIdGenerator IdGenerator { get; } = idGenerator;
 
     /// <summary>
-    /// æ¸¸æ ‡æ¨¡å‹
+    /// ÓÎ±êÄ£ĞÍ
     /// </summary>
     /// <param name="CreationTime"></param>
     /// <param name="Id"></param>
@@ -99,7 +98,7 @@ public class SessionUnitManager(
         public static SessionUnitCursor Start => new(DateTime.MinValue, Guid.Empty);
     }
     /// <summary>
-    /// é€šç”¨æ¸¸æ ‡åˆ†ç‰‡å™¨ï¼ˆæ ¸å¿ƒï¼‰
+    /// Í¨ÓÃÓÎ±ê·ÖÆ¬Æ÷£¨ºËĞÄ£©
     /// </summary>
     /// <param name="baseQuery"></param>
     /// <param name="batchSize"></param>
@@ -233,7 +232,7 @@ public class SessionUnitManager(
                     swQuery.ElapsedMilliseconds);
 
                 var swMap = Stopwatch.StartNew();
-                // å–æ¶ˆ MapToCacheItemï¼Œæé«˜æ€§èƒ½--2026.01.30
+                // È¡Ïû MapToCacheItem£¬Ìá¸ßĞÔÄÜ--2026.01.30
                 //var list = batch.Select(MapToCacheItem).ToList();
                 var list = batch.ToList();
                 swMap.Stop();
@@ -340,7 +339,7 @@ public class SessionUnitManager(
             IsVisible = x.IsVisible,
             SessionId = x.SessionId,
             CreationTime = x.CreationTime,
-            // å¾…èµ‹å€¼
+            // ´ı¸³Öµ
             TagList = [],
             // owner
             Owner = ownerMap.GetOrDefault(x.OwnerId)
@@ -558,12 +557,12 @@ public class SessionUnitManager(
         {
             counter = await GetCounterAsync(entity.Id, lastMessageId);
         }
-        // æ›´æ–°Setting
+        // ¸üĞÂSetting
         await SetEntityAsync(entity, x => x.UpdateCounter(counter));
-        // æ›´æ–°è®°æ•°å™¨
+        // ¸üĞÂ¼ÇÊıÆ÷
         entity = await Repository.UpdateCountersync(counter);
 
-        // æ›´æ–°ç¼“å­˜
+        // ¸üĞÂ»º´æ
         var unit = await SessionUnitCacheManager.UpdateCounterAsync(
              counter,
              async (id) =>
@@ -572,10 +571,10 @@ public class SessionUnitManager(
                  return ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(entity);
              });
 
-        //// åˆ é™¤æ€»è®°æ•°ç¼“å­˜
+        //// É¾³ı×Ü¼ÇÊı»º´æ
         //await SessionUnitCacheManager.RemoveTotalBadgeAsync(entity.OwnerId);
 
-        //æ¨é€åŒæ­¥åˆ°å®¢æˆ·ç«¯
+        //ÍÆËÍÍ¬²½µ½¿Í»§¶Ë
         await DistributedEventBus.PublishAsync(new SessionUnitChangedDistributedEto()
         {
             ReadMessageId = lastMessageId,
@@ -1134,7 +1133,7 @@ public class SessionUnitManager(
     {
         var stopwatch = Stopwatch.StartNew();
 
-        //åå‘å¥½å‹ï¼šå¯¹æ–¹æŠŠè‡ªå·±åŠ ä¸ºå¥½å‹çš„ä¼šè¯å•å…ƒ
+        //·´ÏòºÃÓÑ£º¶Ô·½°Ñ×Ô¼º¼ÓÎªºÃÓÑµÄ»á»°µ¥Ôª
         var list = await BatchGetListAsync(queryable => queryable.Where(x => x.DestinationId == destinationId), batchSize, cancellationToken);
 
         Logger.LogInformation("{method} DestinationId:{destinationId}, [DB Elapsed:{elapsed}ms]", nameof(GetReverseFriendsAsync), destinationId, stopwatch.ElapsedMilliseconds);
@@ -1404,7 +1403,7 @@ public class SessionUnitManager(
         {
             Content = new CmdContentInfo()
             {
-                Text = new TextTemplate(isMuted ? "'{muteObject}' è¢«ç¦è¨€ {Minutes} åˆ†é’Ÿ" : "'{muteObject}' è¢«å–æ¶ˆç¦è¨€")
+                Text = new TextTemplate(isMuted ? "'{muteObject}' ±»½ûÑÔ {Minutes} ·ÖÖÓ" : "'{muteObject}' ±»È¡Ïû½ûÑÔ")
                         .WithData("muteObject", new SessionUnitTextTemplate(muterSessionUnit))
                         .WithData("minutes", timeSpan?.Minutes)
                         .ToString(),
@@ -1429,7 +1428,7 @@ public class SessionUnitManager(
 
         if (codeList.Contains(userChatObject.Code))
         {
-            Logger.LogWarning($"{nameof(GenerateDefaultSessionByChatObjectAsync)}:ä¸éœ€è¦åˆ›å»ºé»˜è®¤ä¼šè¯");
+            Logger.LogWarning($"{nameof(GenerateDefaultSessionByChatObjectAsync)}:²»ĞèÒª´´½¨Ä¬ÈÏ»á»°");
             return [];
         }
         var a = await GenerateNotifySessionAsync(userChatObject);
@@ -1441,11 +1440,11 @@ public class SessionUnitManager(
     {
         var notifyChatObject = await ChatObjectManager.GetOrAddNotifyAsync();
 
-        //åˆ›å»ºä¼šè¯
+        //´´½¨»á»°
         var session = await SessionGenerator.MakeAsync(notifyChatObject, userChatObject);
 
         session.SetOwner(notifyChatObject);
-        //åˆ›å»ºé€šçŸ¥å•å…ƒ
+        //´´½¨Í¨Öªµ¥Ôª
         var notifySessionUnit = await CreateIfNotContainsAsync(
                session: session,
                owner: notifyChatObject,
@@ -1461,7 +1460,7 @@ public class SessionUnitManager(
 
         var isAny = await IsAnyAsync(userChatObject.Id, notifyChatObject.Id);
 
-        //åˆ›å»ºç”¨æˆ·å•å…ƒ
+        //´´½¨ÓÃ»§µ¥Ôª
         var userSessionUnit = await CreateIfNotContainsAsync(
                 session: session,
                 owner: userChatObject,
@@ -1477,14 +1476,14 @@ public class SessionUnitManager(
 
         if (!isAny)
         {
-            //ç¬¬ä¸€æ¬¡ æ‰å‘é€é€šçŸ¥
+            //µÚÒ»´Î ²Å·¢ËÍÍ¨Öª
             var unit = await GetCacheAsync(notifySessionUnit.Id);
             await MessageSender.SendCmdAsync(unit, new MessageInput<CmdContentInfo>()
             {
                 Content = new CmdContentInfo()
                 {
                     Cmd = MessageKeyNames.CreatedUser,
-                    Text = new TextTemplate("æ¬¢è¿ {userSessionUnit} åŠ å…¥")
+                    Text = new TextTemplate("»¶Ó­ {userSessionUnit} ¼ÓÈë")
                             .WithData("userSessionUnit", new SessionUnitTextTemplate(userSessionUnit))
                             .ToString(),
                 }
@@ -1498,12 +1497,12 @@ public class SessionUnitManager(
     {
         var newsChatObject = await ChatObjectManager.GetOrAddNewsAsync();
 
-        //åˆ›å»ºæ–°é—»å•å…ƒ
+        //´´½¨ĞÂÎÅµ¥Ôª
         var newsSessionUnit = await FindAsync(newsChatObject.Id, newsChatObject.Id);
 
         if (newsSessionUnit == null)
         {
-            //åˆ›å»ºä¼šè¯
+            //´´½¨»á»°
             var session = await SessionGenerator.MakeAsync(newsChatObject, newsChatObject);
             newsSessionUnit = Generate(
                    session: session,
@@ -1519,7 +1518,7 @@ public class SessionUnitManager(
                    });
         }
 
-        //åˆ›å»ºç”¨æˆ·å•å…ƒ
+        //´´½¨ÓÃ»§µ¥Ôª
         var userSessionUnit = Generate(
                 session: newsSessionUnit.Session,
                 owner: userChatObject,
@@ -1561,7 +1560,7 @@ public class SessionUnitManager(
     }
 
     /// <summary>
-    /// è·å–å¥½å‹ä¼šè¯(è‡ªåŠ¨åŠ è½½)
+    /// »ñÈ¡ºÃÓÑ»á»°(×Ô¶¯¼ÓÔØ)
     /// key: ownerId
     /// value: SessionUnitElement[]
     /// </summary>

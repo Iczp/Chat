@@ -6,4 +6,6 @@ namespace IczpNet.Chat.Menus.Dtos;
 public class MenuSimpleDto : MenuInfo, IEntityDto<Guid>
 {
 
+
+    public virtual string GetObjectKey() => $"{Id}";
 }
