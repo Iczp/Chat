@@ -228,6 +228,21 @@ public class SessionUnitSettingAppService(
 
     /// <inheritdoc />
     [RemoteService(false)]
+    public async Task<SessionUnitOwnerDto> ClearBackgroundImageAsync([Required] Guid sessionUnitId)
+    {
+        var entity = await GetAndCheckPolicyAsync(SetBackgroundImagePolicyName, sessionUnitId);
+
+        var sessionUnitSetting = await SessionUnitSettingManager.SetBackgroundImageAsync(sessionUnitId, null);
+
+        var result = await MapToDtoAsync(entity);
+
+        result.Setting = ObjectMapper.Map<SessionUnitSetting, SessionUnitSettingDto>(sessionUnitSetting);
+
+        return result;
+    }
+
+    /// <inheritdoc />
+    [RemoteService(false)]
     public async Task CheckSetBackgroundImageAsync(Guid sessionUnitId)
     {
         await GetAndCheckPolicyAsync(SetBackgroundImagePolicyName, sessionUnitId);

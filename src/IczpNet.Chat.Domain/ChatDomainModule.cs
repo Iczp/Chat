@@ -90,7 +90,8 @@ public class ChatDomainModule : AbpModule
         }
 
         Configure<AiRunDispatcherOptions>(configuration.GetSection("AiRunDispatcher"));
-        context.Services.AddHostedService<AiRunDispatcher>();
+        //AiRunDispatcher
+        //context.Services.AddHostedService<AiRunDispatcher>();
     }
 
     public override async Task OnPostApplicationInitializationAsync(ApplicationInitializationContext context)

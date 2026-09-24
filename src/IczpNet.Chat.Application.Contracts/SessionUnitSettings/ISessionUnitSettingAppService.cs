@@ -74,6 +74,13 @@ public interface ISessionUnitSettingAppService
     Task<SessionUnitOwnerDto> SetBackgroundImageAsync(Guid sessionUnitId, string backgroundImage);
 
     /// <summary>
+    /// 清除聊天背景图片
+    /// </summary>
+    /// <param name="sessionUnitId"></param>
+    /// <returns></returns>
+    Task<SessionUnitOwnerDto> ClearBackgroundImageAsync(Guid sessionUnitId);
+
+    /// <summary>
     /// 校验当前用户是否可以设置聊天背景图片
     /// </summary>
     /// <param name="sessionUnitId"></param>

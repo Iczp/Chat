@@ -36,4 +36,15 @@ public class SessionUnitSettingController(
 
         return await SessionUnitSettingAppService.SetBackgroundImageAsync(sessionUnitId, backgroundImageUrl);
     }
+
+    /// <summary>
+    /// 清除聊天背景图片
+    /// </summary>
+    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <returns>更新后的会话单元</returns>
+    [HttpPost("clear-background-image/{sessionUnitId}")]
+    public Task<SessionUnitOwnerDto> ClearBackgroundImageAsync(Guid sessionUnitId)
+    {
+        return SessionUnitSettingAppService.ClearBackgroundImageAsync(sessionUnitId);
+    }
 }
