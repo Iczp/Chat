@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.AspNetCore.Http;
@@ -190,8 +190,8 @@ public class MessageSenderController(
             {
                 var resizeder = await ImageResizer.ResizeAsync(bytes, new ImageResizeArgs()
                 {
-                    Width = maxSize,
-                    Height = maxSize,
+                    Width = (uint)maxSize,
+                    Height = (uint)maxSize,
                     Mode = ImageResizeMode.Max
                 });
                 resizedBytes = resizeder.Result;
@@ -434,8 +434,8 @@ public class MessageSenderController(
 
             var resizeder = await ImageResizer.ResizeAsync(snapBlob.Bytes, new ImageResizeArgs()
             {
-                Width = thumbnailSize,
-                Height = thumbnailSize,
+                Width = (uint)thumbnailSize,
+                Height = (uint)thumbnailSize,
                 Mode = ImageResizeMode.Max
             });
 

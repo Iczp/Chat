@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.Blobs;
+using IczpNet.Chat.Blobs;
 using IczpNet.Chat.Localization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -137,8 +137,8 @@ public abstract class ChatController : AbpControllerBase
         {
             var resizedBytes = await ImageResizer.ResizeAsync(bytes, new ImageResizeArgs()
             {
-                Width = size,
-                Height = size,
+                Width = (uint)size,
+                Height = (uint)size,
                 Mode = ImageResizeMode.Crop
             });
 

@@ -1,4 +1,3 @@
-﻿using DeviceDetectorNET.Class.Client;
 using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Devices;
 using IczpNet.Chat.Hosting;

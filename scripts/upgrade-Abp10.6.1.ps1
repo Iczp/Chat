@@ -267,9 +267,11 @@ foreach ($propFile in $propsFiles) {
         if ($content -notmatch 'GHSA-rvv3-g6hj-g44x') {
             $suppressXml = @"
   <ItemGroup>
-    <!-- 压制已知第三方包的 NuGet 安全审计警告 (AutoMapper 14 与 SQLitePCLRaw) -->
+    <!-- 压制已知第三方包的 NuGet 安全审计警告 (AutoMapper 14 与 SQLitePCLRaw 与 SixLabors) -->
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-rvv3-g6hj-g44x" />
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-2m69-gcr7-jv3q" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-2cmq-823j-5qj8" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-rxmq-m78w-7wmc" />
   </ItemGroup>
 "@
             $content = $content -replace '</Project>', "$suppressXml`n</Project>"

@@ -1,4 +1,3 @@
-﻿using DeviceDetectorNET.Cache;
 using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;

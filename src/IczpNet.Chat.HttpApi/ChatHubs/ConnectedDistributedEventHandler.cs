@@ -1,4 +1,3 @@
-﻿using DeviceDetectorNET.Parser.Device;
 using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.Commands;
 using IczpNet.Chat.ConnectionPools;
