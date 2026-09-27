@@ -417,7 +417,16 @@ if ($abpCmd) {
 # -------------------------------------------------------------------------
 Write-Host "`n[步骤 4/6] 还原项目依赖 (dotnet restore)..." -ForegroundColor Cyan
 Set-Location $ProjectsPath
-dotnet restore
+
+$slnTarget = $null
+$slnFiles = Get-ChildItem -Path $ProjectsPath -Filter *.sln -File
+if ($slnFiles.Count -gt 0) {
+    $slnTarget = $slnFiles[0].FullName
+    Write-Host "检测到解决方案文件: $($slnFiles[0].Name)，将针对解决方案执行还原与构建..." -ForegroundColor Gray
+    dotnet restore "`"$slnTarget`""
+} else {
+    dotnet restore
+}
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "dotnet restore 失败，请检查 NuGet 配置。"
@@ -430,7 +439,11 @@ Write-Host "依赖还原成功。" -ForegroundColor Green
 # -------------------------------------------------------------------------
 Write-Host "`n[步骤 5/6] 编译项目进行严格验证 (dotnet build)..." -ForegroundColor Cyan
 
-dotnet build --configuration Release --no-incremental
+if ($slnTarget) {
+    dotnet build "`"$slnTarget`"" --configuration Release --no-incremental
+} else {
+    dotnet build --configuration Release --no-incremental
+}
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "`n==========================================================" -ForegroundColor Red
