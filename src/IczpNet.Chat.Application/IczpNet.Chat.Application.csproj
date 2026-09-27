@@ -38,7 +38,7 @@
   <ItemGroup>
 		<PackageReference Include="IczpNet.AbpCommons.Application" Version="0.10.0" />
 		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
-		<PackageReference Include="IczpNet.AbpTrees.Application" Version="9.0.1.903" />
+		<PackageReference Include="IczpNet.AbpTrees.Application" Version="10.0.0.1061" />
 		<PackageReference Include="IczpNet.Pusher.Application" Version="9.0.0.1" />
 		<PackageReference Include="Jieba.NETCore" Version="1.0.8" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />

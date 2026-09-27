@@ -32,7 +32,7 @@
 
   <ItemGroup>
 		<PackageReference Include="IczpNet.AbpCommons.Application.Contracts" Version="0.10.0" />
-		<PackageReference Include="IczpNet.AbpTrees.Application.Contracts" Version="9.0.1.903" />
+		<PackageReference Include="IczpNet.AbpTrees.Application.Contracts" Version="10.0.0.1061" />
 		<PackageReference Include="IczpNet.Pusher.Application.Contracts" Version="9.0.1.903" />
 		<PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
     <PackageReference Include="Volo.Abp.Ddd.Application.Contracts" Version="10.6.1" />
