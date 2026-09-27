@@ -31,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-		<PackageReference Include="IczpNet.AbpCommons.Domain" Version="0.9.1.903" />
+		<PackageReference Include="IczpNet.AbpCommons.Domain" Version="0.10.0" />
 		<PackageReference Include="IczpNet.AbpTrees.Domain" Version="9.0.1.903" />
 		<PackageReference Include="IczpNet.BizCrypts" Version="0.0.1" />
 		<PackageReference Include="IczpNet.Pusher.Domain" Version="9.0.1.903" />
@@ -63,8 +63,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="ConfigureAwait.Fody" Version="3.3.2" />
-    <PackageReference Update="Fody" Version="6.9.1">
+    <PackageReference Update="ConfigureAwait.Fody" Version="3.4.1" />
+    <PackageReference Update="Fody" Version="6.9.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
