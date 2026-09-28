@@ -19,7 +19,7 @@ namespace IczpNet.Chat.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("_Abp_DatabaseProvider", EfCoreDatabaseProvider.SqlServer)
-                .HasAnnotation("ProductVersion", "9.0.9")
+                .HasAnnotation("ProductVersion", "10.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -114,7 +114,7 @@ namespace IczpNet.Chat.Migrations
                     b.ToTable("Chat_Message_MapTo_HtmlContent", (string)null);
                 });
 
-            modelBuilder.Entity("IczpNet.Chat.Ai.AiRun", b =>
+            modelBuilder.Entity("IczpNet.Chat.AiRuns.AiRun", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
