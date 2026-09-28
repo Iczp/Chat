@@ -6,7 +6,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc;
 using IczpNet.AbpCommons;
-using IczpNet.Pusher.ShortIds;
+using IczpNet.Chat.ShortIds;
 using System;
 using Volo.Abp.Imaging;
 using System.Collections.Generic;

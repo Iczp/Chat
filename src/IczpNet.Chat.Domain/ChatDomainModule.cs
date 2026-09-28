@@ -8,8 +8,7 @@ using IczpNet.Chat.MessageReports;
 using IczpNet.Chat.Options;
 using IczpNet.Chat.ScanLogins;
 using IczpNet.Chat.SessionUnits;
-using IczpNet.Pusher;
-using IczpNet.Pusher.ShortIds;
+using IczpNet.Chat.ShortIds;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using StackExchange.Redis;
@@ -38,7 +37,7 @@ namespace IczpNet.Chat;
 [DependsOn(typeof(AbpTreesDomainModule))]
 //[DependsOn(typeof(AbpIdentityDomainModule))]
 [DependsOn(typeof(AbpPermissionManagementDomainIdentityModule))]
-[DependsOn(typeof(PusherDomainModule))]
+// PusherDomainModule retired: Chat uses SignalR plus Redis distributed events.
 [DependsOn(typeof(AbpBackgroundJobsAbstractionsModule))]
 
 [DependsOn(typeof(AbpBlobStoringModule))]

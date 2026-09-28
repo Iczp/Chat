@@ -31,10 +31,13 @@
   </ItemGroup>
 
   <ItemGroup>
+		<!-- Legacy Pusher transport source is retained but deliberately excluded. -->
+		<Compile Remove="ChatPushers\**" />
+		<Compile Remove="CommandHandlers\**" />
+		<Compile Remove="Pusher\**" />
 		<PackageReference Include="IczpNet.AbpCommons.Domain" Version="0.10.0" />
 		<PackageReference Include="IczpNet.AbpTrees.Domain" Version="10.0.0.1061" />
 		<PackageReference Include="IczpNet.BizCrypts" Version="0.0.1" />
-		<PackageReference Include="IczpNet.Pusher.Domain" Version="9.0.1.903" />
 		<PackageReference Include="Ulid" Version="1.4.1" />
 		<PackageReference Include="Volo.Abp.BackgroundJobs.Abstractions" Version="10.6.1" />
 		<PackageReference Include="Volo.Abp.BlobStoring" Version="10.6.1" />

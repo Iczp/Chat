@@ -1,6 +1,6 @@
 ﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.InvitationCodes.Dtos;
-using IczpNet.Pusher.ShortIds;
+using IczpNet.Chat.ShortIds;
 using System;
 using System.Linq;
 using System.Threading.Tasks;

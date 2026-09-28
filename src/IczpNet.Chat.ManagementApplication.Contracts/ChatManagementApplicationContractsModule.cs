@@ -4,7 +4,6 @@ using Volo.Abp.Authorization;
 using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
 using Volo.Abp.Identity;
-using IczpNet.Pusher;
 
 namespace IczpNet.Chat;
 [DependsOn(
@@ -15,7 +14,7 @@ namespace IczpNet.Chat;
 [DependsOn(typeof(AbpCommonsApplicationContractsModule))]
 [DependsOn(typeof(AbpTreesApplicationContractsModule))]
 [DependsOn(typeof(AbpIdentityApplicationContractsModule))]
-[DependsOn(typeof(PusherApplicationContractsModule))]
+// PusherApplicationContractsModule retired: SignalR payloads are Chat contracts.
 public class ChatManagementApplicationContractsModule : AbpModule
 {
 

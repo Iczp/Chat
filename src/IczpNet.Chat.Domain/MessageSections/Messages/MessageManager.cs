@@ -14,7 +14,7 @@ using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
 using IczpNet.Chat.Settings;
 using IczpNet.Chat.Ulids;
-using IczpNet.Pusher.ShortIds;
+using IczpNet.Chat.ShortIds;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;

@@ -1,6 +1,6 @@
 ﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Permissions;
-using IczpNet.Pusher.ShortIds;
+using IczpNet.Chat.ShortIds;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System;

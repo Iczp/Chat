@@ -2,7 +2,7 @@
 using IczpNet.Chat.EntityFrameworkCore;
 using IczpNet.Chat.Middlewares;
 using IczpNet.Chat.MultiTenancy;
-using IczpNet.Pusher.Options;
+using IczpNet.RedisDistributedEventBus;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -31,6 +31,7 @@ using Volo.Abp.Autofac;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.BlobStoring.FileSystem;
+using Volo.Abp.BlobStoring.Minio;
 using Volo.Abp.Caching;
 using Volo.Abp.Caching.StackExchangeRedis;
 using Volo.Abp.EntityFrameworkCore;
@@ -65,7 +66,8 @@ typeof(ChatApplicationModule),
 //[DependsOn(typeof(ChatManagementApplicationModule))]
 [DependsOn(typeof(AbpBackgroundJobsModule))]
 [DependsOn(typeof(AbpBlobStoringFileSystemModule))]
-//[DependsOn(typeof(AbpEventBusRebusModule))]
+[DependsOn(typeof(AbpBlobStoringMinioModule))]
+[DependsOn(typeof(RedisDistributedEventBusModule))]
 public class ChatHttpApiHostModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
@@ -96,11 +98,6 @@ public class ChatHttpApiHostModule : AbpModule
         Configure<AbpBackgroundJobWorkerOptions>(options =>
         {
             options.DefaultTimeout = 864000; //10 days (as seconds)
-        });
-
-        Configure<PusherOptions>(options =>
-        {
-            options.Redis = ConnectionMultiplexer.Connect(configuration["Redis:Configuration"]);
         });
 
         Configure<AbpExceptionHandlingOptions>(options =>
@@ -142,10 +139,25 @@ public class ChatHttpApiHostModule : AbpModule
         {
             options.Containers.ConfigureDefault(container =>
             {
-                container.UseFileSystem(filesystem =>
+                if (string.Equals(configuration["Blob:Provider"], "Minio", StringComparison.OrdinalIgnoreCase))
                 {
-                    filesystem.BasePath = configuration["Blob:FileSystem:BasePath"];
-                });
+                    container.UseMinio(minio =>
+                    {
+                        minio.EndPoint = configuration["Blob:Minio:EndPoint"] ?? throw new InvalidOperationException("Blob:Minio:EndPoint is required.");
+                        minio.AccessKey = configuration["Blob:Minio:AccessKey"] ?? throw new InvalidOperationException("Blob:Minio:AccessKey is required.");
+                        minio.SecretKey = configuration["Blob:Minio:SecretKey"] ?? throw new InvalidOperationException("Blob:Minio:SecretKey is required.");
+                        minio.WithSSL = configuration.GetValue<bool>("Blob:Minio:WithSSL");
+                        minio.CreateBucketIfNotExists = true;
+                    });
+                }
+                else if (string.IsNullOrWhiteSpace(configuration["Blob:Provider"]) || string.Equals(configuration["Blob:Provider"], "FileSystem", StringComparison.OrdinalIgnoreCase))
+                {
+                    container.UseFileSystem(filesystem => filesystem.BasePath = configuration["Blob:FileSystem:BasePath"]);
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Unsupported blob provider: {configuration["Blob:Provider"]}");
+                }
             });
         });
 

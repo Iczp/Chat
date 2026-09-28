@@ -6,7 +6,6 @@ using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
 using Volo.Abp.Identity;
 using Volo.Abp.FluentValidation;
-using IczpNet.Pusher;
 using Microsoft.AspNetCore.Authorization;
 
 namespace IczpNet.Chat;
@@ -20,7 +19,7 @@ namespace IczpNet.Chat;
 [DependsOn(typeof(AbpTreesApplicationModule))]
 [DependsOn(typeof(AbpIdentityApplicationModule))]
 [DependsOn(typeof(AbpFluentValidationModule))]
-[DependsOn(typeof(PusherApplicationModule))]
+// PusherApplicationModule retired: Chat uses SignalR plus Redis distributed events.
 
 public class ChatManagementApplicationModule : AbpModule
 {
