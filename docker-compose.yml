@@ -5,9 +5,10 @@ services:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: ${SQL_SA_PASSWORD:?Set SQL_SA_PASSWORD in .env}
     ports:
-      - "${SQL_PORT:-1433}:1433"
+      - "127.0.0.1:${SQL_PORT:-14333}:1433"
     volumes:
       - sqlserver-data:/var/opt/mssql
+      - D:/IczpNetChat/backup:/var/opt/mssql/backup:ro
     healthcheck:
       test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q 'SELECT 1' || exit 1"]
       interval: 10s
@@ -64,6 +65,28 @@ services:
       AuthServer__RequireHttpsMetadata: "false"
     ports:
       - "${CHAT_API_PORT:-51601}:8080"
+
+  chat-worker:
+    image: iczpnet/chat-worker:local
+    build:
+      context: .
+      dockerfile: host/IczpNet.Chat.BackgroundWorker/Dockerfile
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    environment:
+      ConnectionStrings__Default: Server=sqlserver;Initial Catalog=${CHAT_DEFAULT_DATABASE:-Chat_Main};User ID=sa;Password=${SQL_SA_PASSWORD:?Set SQL_SA_PASSWORD in .env};Encrypt=False;TrustServerCertificate=True
+      ConnectionStrings__Chat: Server=sqlserver;Initial Catalog=${CHAT_DATABASE:-Chat_Module_v3};User ID=sa;Password=${SQL_SA_PASSWORD:?Set SQL_SA_PASSWORD in .env};Encrypt=False;TrustServerCertificate=True
+      Redis__Configuration: redis:6379,password=${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
+      Blob__Minio__EndPoint: minio:9000
+      Blob__Minio__AccessKey: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER in .env}
+      Blob__Minio__SecretKey: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}
+      Blob__Minio__WithSSL: "false"
+      AiRunDispatcher__Enabled: "true"
 
 volumes:
   sqlserver-data:

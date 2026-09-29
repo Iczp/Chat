@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
@@ -29,6 +30,7 @@ using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.Autofac;
 using Volo.Abp.BackgroundJobs;
+using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.BlobStoring.FileSystem;
 using Volo.Abp.BlobStoring.Minio;
@@ -99,6 +101,9 @@ public class ChatHttpApiHostModule : AbpModule
         {
             options.DefaultTimeout = 864000; //10 days (as seconds)
         });
+        Configure<AbpBackgroundJobOptions>(options => options.IsJobExecutionEnabled = false);
+
+        Configure<AbpBackgroundWorkerOptions>(options => options.IsEnabled = false);
 
         Configure<AbpExceptionHandlingOptions>(options =>
         {

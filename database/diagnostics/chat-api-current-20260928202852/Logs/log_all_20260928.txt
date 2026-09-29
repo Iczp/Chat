@@ -1,0 +1,1701 @@
+2026-09-28 12:05:43.428 +00:00 [Information] Starting Iczp.Net.HttpApi.Host. HostName:1b68f2f8806e
+2026-09-28 12:05:57.798 +00:00 [Warning] RedisDistributedEventBus Initialize, totalCount:15.
+2026-09-28 12:05:57.828 +00:00 [Information] Subscribed to Redis channel. Event Name: "Volo.Abp.Identity.IdentityRoleEto.Deleted", Channel: "RedisDistributedEventBus:Volo.Abp.Identity.IdentityRoleEto.Deleted"
+2026-09-28 12:05:57.830 +00:00 [Information] Subscribed to Redis channel. Event Name: "Volo.Abp.Identity.IdentityRoleNameChangedEto", Channel: "RedisDistributedEventBus:Volo.Abp.Identity.IdentityRoleNameChangedEto"
+2026-09-28 12:05:57.831 +00:00 [Information] Subscribed to Redis channel. Event Name: "Volo.Abp.Users.User.Deleted", Channel: "RedisDistributedEventBus:Volo.Abp.Users.User.Deleted"
+2026-09-28 12:05:57.831 +00:00 [Information] Subscribed to Redis channel. Event Name: "IczpNet.Chat.MessageSections.Messages.MessageSentEto", Channel: "RedisDistributedEventBus:IczpNet.Chat.MessageSections.Messages.MessageSentEto"
+2026-09-28 12:05:57.831 +00:00 [Information] Subscribed to Redis channel. Event Name: "Volo.Abp.Users.User.Created", Channel: "RedisDistributedEventBus:Volo.Abp.Users.User.Created"
+2026-09-28 12:05:57.832 +00:00 [Information] Subscribed to Redis channel. Event Name: "IczpNet.Chat.ConnectionPools.ConnectedEto", Channel: "RedisDistributedEventBus:IczpNet.Chat.ConnectionPools.ConnectedEto"
+2026-09-28 12:05:57.832 +00:00 [Information] Subscribed to Redis channel. Event Name: "IczpNet.Chat.ConnectionPools.DisconnectedEto", Channel: "RedisDistributedEventBus:IczpNet.Chat.ConnectionPools.DisconnectedEto"
+2026-09-28 12:05:57.832 +00:00 [Information] Subscribed to Redis channel. Event Name: "Volo.Abp.Localization.LanguageChangedEto", Channel: "RedisDistributedEventBus:Volo.Abp.Localization.LanguageChangedEto"
+2026-09-28 12:05:57.832 +00:00 [Information] Subscribed to Redis channel. Event Name: "IczpNet.Chat.MessageSections.Messages.AiStreamToClientDistributedEto", Channel: "RedisDistributedEventBus:IczpNet.Chat.MessageSections.Messages.AiStreamToClientDistributedEto"
+2026-09-28 12:05:57.832 +00:00 [Information] Subscribed to Redis channel. Event Name: "IczpNet.Chat.MessageSections.Messages.SendMessageToClientDistributedEto", Channel: "RedisDistributedEventBus:IczpNet.Chat.MessageSections.Messages.SendMessageToClientDistributedEto"
+2026-09-28 12:05:57.832 +00:00 [Information] Subscribed to Redis channel. Event Name: "IczpNet.Chat.SessionUnits.SessionUnitChangedDistributedEto", Channel: "RedisDistributedEventBus:IczpNet.Chat.SessionUnits.SessionUnitChangedDistributedEto"
+2026-09-28 12:05:57.833 +00:00 [Information] Subscribed to Redis channel. Event Name: "IczpNet.Chat.ConnectionPools.AbortEto", Channel: "RedisDistributedEventBus:IczpNet.Chat.ConnectionPools.AbortEto"
+2026-09-28 12:05:57.833 +00:00 [Information] Subscribed to Redis channel. Event Name: "IczpNet.Chat.MessageSections.Templates.TextContentInfo", Channel: "RedisDistributedEventBus:IczpNet.Chat.MessageSections.Templates.TextContentInfo"
+2026-09-28 12:05:57.834 +00:00 [Warning] Subscribed Handler:Volo.Abp.PermissionManagement.Identity.RoleDeletedEventHandler
+2026-09-28 12:05:57.834 +00:00 [Warning] Subscribed Handler:Volo.Abp.PermissionManagement.Identity.RoleUpdateEventHandler
+2026-09-28 12:05:57.834 +00:00 [Warning] Subscribed Handler:Volo.Abp.PermissionManagement.Identity.UserDeletedEventHandler
+2026-09-28 12:05:57.834 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.MessageSections.Messages.MessageSentDistributedEventHandler
+2026-09-28 12:05:57.834 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.IdentityUsers.SeedDataByUserCreatedDistributedEventHandler
+2026-09-28 12:05:57.834 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.Connections.ConnectedDistributedEventHandler
+2026-09-28 12:05:57.834 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.Connections.DisconnectedDistributedEventHandler
+2026-09-28 12:05:57.834 +00:00 [Warning] Subscribed Handler:Microsoft.AspNetCore.RequestLocalization.DefaultAbpRequestLocalizationOptionsProvider
+2026-09-28 12:05:57.834 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.DistributedEventHandlers.AiStreamToClientDistributedEventHandler
+2026-09-28 12:05:57.834 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.DistributedEventHandlers.SendMessageToClientDistributedEventHandler
+2026-09-28 12:05:57.834 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.DistributedEventHandlers.SessionUnitChangedDistributedEventHandler
+2026-09-28 12:05:57.834 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.ChatHubs.AbortDistributedEventHandler
+2026-09-28 12:05:57.834 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.ChatHubs.ConnectedDistributedEventHandler
+2026-09-28 12:05:57.834 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.ChatHubs.DisconnectedDistributedEventHandler
+2026-09-28 12:05:57.834 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.EventBus.TextContentInfoHandler
+2026-09-28 12:05:59.298 +00:00 [Information] Initialized all ABP modules.
+2026-09-28 12:05:59.399 +00:00 [Warning] [App Start],HostName:1b68f2f8806e
+2026-09-28 12:06:10.229 +00:00 [Error] An error occurred using the connection to database '"Chat_Main"' on server '"sqlserver"'.
+2026-09-28 12:06:10.229 +00:00 [Error] An error occurred using the connection to database '"Chat_Main"' on server '"sqlserver"'.
+2026-09-28 12:06:10.255 +00:00 [Error] Cannot open database "Chat_Main" requested by the login. The login failed.
+Login failed for user 'sa'.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot open database "Chat_Main" requested by the login. The login failed.
+Login failed for user 'sa'.
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.WaitForPendingOpen()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.BeginTransactionAsync(IsolationLevel isolationLevel, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.BeginTransactionAsync(CancellationToken cancellationToken)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.CreateDbContextWithTransactionAsync(IUnitOfWork unitOfWork)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.CreateDbContextAsync(IUnitOfWork unitOfWork)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.CreateDbContextAsync(IUnitOfWork unitOfWork, String connectionStringName, String connectionString)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.GetDbContextAsync()
+   at Volo.Abp.Domain.Repositories.EntityFrameworkCore.EfCoreRepository`2.GetDbSetAsync()
+   at Volo.Abp.Domain.Repositories.EntityFrameworkCore.EfCoreRepository`2.GetQueryableAsync()
+   at Volo.Abp.Domain.Repositories.EntityFrameworkCore.EfCoreRepository`2.GetListAsync(Boolean includeDetails, CancellationToken cancellationToken)
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapterWithReturnValue`1.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.UpdateChangedPermissionGroupsAsync(IEnumerable`1 permissionGroupRecords)
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.PermissionDynamicInitializer.<>c__DisplayClass10_0.<<SaveStaticPermissionsToDatabaseAsync>b__1>d.MoveNext()
+ClientConnectionId:6a8f6097-b2ee-4936-a7bf-de50e22aeae4
+Error Number:4060,State:1,Class:11
+2026-09-28 12:06:10.256 +00:00 [Error] Cannot open database "Chat_Main" requested by the login. The login failed.
+Login failed for user 'sa'.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot open database "Chat_Main" requested by the login. The login failed.
+Login failed for user 'sa'.
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, SqlCommand command, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at Microsoft.Data.SqlClient.TdsParser.Run(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.CompleteLogin(Boolean enlistOK)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.AttemptOneLogin(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, TimeoutTimer timeout, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.LoginNoFailover(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString connectionOptions, SqlCredential credential, TimeoutTimer timeout)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.OpenLoginEnlist(TimeoutTimer timeout, SqlConnectionString connectionOptions, SqlCredential credential, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, Object providerInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, Boolean applyTransientFaultHandling, String accessToken, IDbConnectionPool pool, Func`3 accessTokenCallback)
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.CreateConnection(DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionPoolGroupProviderInfo poolGroupProviderInfo, IDbConnectionPool pool, DbConnection owningConnection, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.CreatePooledConnection(IDbConnectionPool pool, DbConnection owningObject, DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.CreateObject(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.UserCreateRequest(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.WaitForPendingOpen()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.BeginTransactionAsync(IsolationLevel isolationLevel, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.BeginTransactionAsync(CancellationToken cancellationToken)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.CreateDbContextWithTransactionAsync(IUnitOfWork unitOfWork)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.CreateDbContextAsync(IUnitOfWork unitOfWork)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.CreateDbContextAsync(IUnitOfWork unitOfWork, String connectionStringName, String connectionString)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.GetDbContextAsync()
+   at Volo.Abp.Domain.Repositories.EntityFrameworkCore.EfCoreRepository`2.GetDbSetAsync()
+   at Volo.Abp.Domain.Repositories.EntityFrameworkCore.EfCoreRepository`2.GetQueryableAsync()
+   at Volo.Abp.Domain.Repositories.EntityFrameworkCore.EfCoreRepository`2.GetListAsync(Boolean includeDetails, CancellationToken cancellationToken)
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapterWithReturnValue`1.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.SettingManagement.StaticSettingSaver.UpdateChangedSettingsAsync(List`1 SettingRecords)
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous(IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapter.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.SettingManagement.SettingDynamicInitializer.<>c__DisplayClass10_0.<<SaveStaticSettingsToDatabaseAsync>b__1>d.MoveNext()
+ClientConnectionId:6a8f6097-b2ee-4936-a7bf-de50e22aeae4
+Error Number:4060,State:1,Class:11
+2026-09-28 12:06:10.337 +00:00 [Error] ---------- Exception Data ----------
+HelpLink.ProdName = Microsoft SQL Server
+HelpLink.EvtSrc = MSSQLServer
+HelpLink.EvtID = 4060
+HelpLink.BaseHelpUrl = https://go.microsoft.com/fwlink
+HelpLink.LinkId = 20476
+
+2026-09-28 12:06:10.337 +00:00 [Error] ---------- Exception Data ----------
+HelpLink.ProdName = Microsoft SQL Server
+HelpLink.EvtSrc = MSSQLServer
+HelpLink.EvtID = 4060
+HelpLink.BaseHelpUrl = https://go.microsoft.com/fwlink
+HelpLink.LinkId = 20476
+
+2026-09-28 12:06:12.319 +00:00 [Error] An error occurred using the connection to database '"Chat_Module_v3"' on server '"sqlserver"'.
+2026-09-28 12:06:12.323 +00:00 [Error] Hosting failed to start
+Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot open database "Chat_Module_v3" requested by the login. The login failed.
+Login failed for user 'sa'.
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, SqlCommand command, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at Microsoft.Data.SqlClient.TdsParser.Run(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.CompleteLogin(Boolean enlistOK)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.AttemptOneLogin(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, TimeoutTimer timeout, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.LoginNoFailover(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString connectionOptions, SqlCredential credential, TimeoutTimer timeout)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.OpenLoginEnlist(TimeoutTimer timeout, SqlConnectionString connectionOptions, SqlCredential credential, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, Object providerInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, Boolean applyTransientFaultHandling, String accessToken, IDbConnectionPool pool, Func`3 accessTokenCallback)
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.CreateConnection(DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionPoolGroupProviderInfo poolGroupProviderInfo, IDbConnectionPool pool, DbConnection owningConnection, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.CreatePooledConnection(IDbConnectionPool pool, DbConnection owningObject, DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.CreateObject(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.UserCreateRequest(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.WaitForPendingOpen()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.BeginTransactionAsync(IsolationLevel isolationLevel, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.BeginTransactionAsync(CancellationToken cancellationToken)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.CreateDbContextWithTransactionAsync(IUnitOfWork unitOfWork)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.CreateDbContextAsync(IUnitOfWork unitOfWork)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.CreateDbContextAsync(IUnitOfWork unitOfWork, String connectionStringName, String connectionString)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.GetDbContextAsync()
+   at IczpNet.Chat.MessageReports.MessageReportRepositoryBase`1.EnsureMessageReportMergeTypeAsync() in /src/src/IczpNet.Chat.EntityFrameworkCore/MessageReports/MessageReportRepositoryBase.cs:line 173
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous(IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapter.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at IczpNet.Chat.MessageReports.MessageReportManager.InitializationAsync() in /src/src/IczpNet.Chat.Domain/MessageReports/MessageReportManager.cs:line 76
+   at IczpNet.Chat.ChatHostedService.StartAsync(CancellationToken cancellationToken) in /src/src/IczpNet.Chat.Domain/ChatHostedService.cs:line 31
+   at Microsoft.Extensions.Hosting.Internal.Host.<StartAsync>b__14_1(IHostedService service, CancellationToken token)
+   at Microsoft.Extensions.Hosting.Internal.Host.ForeachService[T](IEnumerable`1 services, CancellationToken token, Boolean concurrent, Boolean abortOnFirstException, List`1 exceptions, Func`3 operation)
+ClientConnectionId:2bcd4511-6fff-49b4-a082-acf4f4f46189
+Error Number:4060,State:1,Class:11
+2026-09-28 12:06:12.655 +00:00 [Fatal] Host terminated unexpectedly!
+Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot open database "Chat_Module_v3" requested by the login. The login failed.
+Login failed for user 'sa'.
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, SqlCommand command, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at Microsoft.Data.SqlClient.TdsParser.Run(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.CompleteLogin(Boolean enlistOK)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.AttemptOneLogin(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, TimeoutTimer timeout, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.LoginNoFailover(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString connectionOptions, SqlCredential credential, TimeoutTimer timeout)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.OpenLoginEnlist(TimeoutTimer timeout, SqlConnectionString connectionOptions, SqlCredential credential, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, Object providerInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, Boolean applyTransientFaultHandling, String accessToken, IDbConnectionPool pool, Func`3 accessTokenCallback)
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.CreateConnection(DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionPoolGroupProviderInfo poolGroupProviderInfo, IDbConnectionPool pool, DbConnection owningConnection, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.CreatePooledConnection(IDbConnectionPool pool, DbConnection owningObject, DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.CreateObject(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.UserCreateRequest(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.WaitForPendingOpen()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.BeginTransactionAsync(IsolationLevel isolationLevel, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.BeginTransactionAsync(CancellationToken cancellationToken)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.CreateDbContextWithTransactionAsync(IUnitOfWork unitOfWork)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.CreateDbContextAsync(IUnitOfWork unitOfWork)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.CreateDbContextAsync(IUnitOfWork unitOfWork, String connectionStringName, String connectionString)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.GetDbContextAsync()
+   at IczpNet.Chat.MessageReports.MessageReportRepositoryBase`1.EnsureMessageReportMergeTypeAsync() in /src/src/IczpNet.Chat.EntityFrameworkCore/MessageReports/MessageReportRepositoryBase.cs:line 173
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous(IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapter.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at IczpNet.Chat.MessageReports.MessageReportManager.InitializationAsync() in /src/src/IczpNet.Chat.Domain/MessageReports/MessageReportManager.cs:line 76
+   at IczpNet.Chat.ChatHostedService.StartAsync(CancellationToken cancellationToken) in /src/src/IczpNet.Chat.Domain/ChatHostedService.cs:line 31
+   at Microsoft.Extensions.Hosting.Internal.Host.<StartAsync>b__14_1(IHostedService service, CancellationToken token)
+   at Microsoft.Extensions.Hosting.Internal.Host.ForeachService[T](IEnumerable`1 services, CancellationToken token, Boolean concurrent, Boolean abortOnFirstException, List`1 exceptions, Func`3 operation)
+   at Microsoft.Extensions.Hosting.Internal.Host.StartAsync(CancellationToken cancellationToken)
+   at Microsoft.Extensions.Hosting.HostingAbstractionsHostExtensions.RunAsync(IHost host, CancellationToken token)
+   at Microsoft.Extensions.Hosting.HostingAbstractionsHostExtensions.RunAsync(IHost host, CancellationToken token)
+   at IczpNet.Chat.Program.Main(String[] args) in /src/host/IczpNet.Chat.HttpApi.Host/Program.cs:line 108
+ClientConnectionId:2bcd4511-6fff-49b4-a082-acf4f4f46189
+Error Number:4060,State:1,Class:11
+2026-09-28 12:06:37.469 +00:00 [Information] Starting Iczp.Net.HttpApi.Host. HostName:1b68f2f8806e
+2026-09-28 12:06:49.234 +00:00 [Warning] RedisDistributedEventBus Initialize, totalCount:15.
+2026-09-28 12:06:49.248 +00:00 [Information] Subscribed to Redis channel. Event Name: "Volo.Abp.Identity.IdentityRoleEto.Deleted", Channel: "RedisDistributedEventBus:Volo.Abp.Identity.IdentityRoleEto.Deleted"
+2026-09-28 12:06:49.249 +00:00 [Information] Subscribed to Redis channel. Event Name: "Volo.Abp.Identity.IdentityRoleNameChangedEto", Channel: "RedisDistributedEventBus:Volo.Abp.Identity.IdentityRoleNameChangedEto"
+2026-09-28 12:06:49.250 +00:00 [Information] Subscribed to Redis channel. Event Name: "Volo.Abp.Users.User.Deleted", Channel: "RedisDistributedEventBus:Volo.Abp.Users.User.Deleted"
+2026-09-28 12:06:49.250 +00:00 [Information] Subscribed to Redis channel. Event Name: "IczpNet.Chat.MessageSections.Messages.MessageSentEto", Channel: "RedisDistributedEventBus:IczpNet.Chat.MessageSections.Messages.MessageSentEto"
+2026-09-28 12:06:49.250 +00:00 [Information] Subscribed to Redis channel. Event Name: "Volo.Abp.Users.User.Created", Channel: "RedisDistributedEventBus:Volo.Abp.Users.User.Created"
+2026-09-28 12:06:49.250 +00:00 [Information] Subscribed to Redis channel. Event Name: "IczpNet.Chat.ConnectionPools.ConnectedEto", Channel: "RedisDistributedEventBus:IczpNet.Chat.ConnectionPools.ConnectedEto"
+2026-09-28 12:06:49.251 +00:00 [Information] Subscribed to Redis channel. Event Name: "IczpNet.Chat.ConnectionPools.DisconnectedEto", Channel: "RedisDistributedEventBus:IczpNet.Chat.ConnectionPools.DisconnectedEto"
+2026-09-28 12:06:49.251 +00:00 [Information] Subscribed to Redis channel. Event Name: "Volo.Abp.Localization.LanguageChangedEto", Channel: "RedisDistributedEventBus:Volo.Abp.Localization.LanguageChangedEto"
+2026-09-28 12:06:49.251 +00:00 [Information] Subscribed to Redis channel. Event Name: "IczpNet.Chat.MessageSections.Messages.AiStreamToClientDistributedEto", Channel: "RedisDistributedEventBus:IczpNet.Chat.MessageSections.Messages.AiStreamToClientDistributedEto"
+2026-09-28 12:06:49.251 +00:00 [Information] Subscribed to Redis channel. Event Name: "IczpNet.Chat.MessageSections.Messages.SendMessageToClientDistributedEto", Channel: "RedisDistributedEventBus:IczpNet.Chat.MessageSections.Messages.SendMessageToClientDistributedEto"
+2026-09-28 12:06:49.251 +00:00 [Information] Subscribed to Redis channel. Event Name: "IczpNet.Chat.SessionUnits.SessionUnitChangedDistributedEto", Channel: "RedisDistributedEventBus:IczpNet.Chat.SessionUnits.SessionUnitChangedDistributedEto"
+2026-09-28 12:06:49.251 +00:00 [Information] Subscribed to Redis channel. Event Name: "IczpNet.Chat.ConnectionPools.AbortEto", Channel: "RedisDistributedEventBus:IczpNet.Chat.ConnectionPools.AbortEto"
+2026-09-28 12:06:49.252 +00:00 [Information] Subscribed to Redis channel. Event Name: "IczpNet.Chat.MessageSections.Templates.TextContentInfo", Channel: "RedisDistributedEventBus:IczpNet.Chat.MessageSections.Templates.TextContentInfo"
+2026-09-28 12:06:49.252 +00:00 [Warning] Subscribed Handler:Volo.Abp.PermissionManagement.Identity.RoleDeletedEventHandler
+2026-09-28 12:06:49.252 +00:00 [Warning] Subscribed Handler:Volo.Abp.PermissionManagement.Identity.RoleUpdateEventHandler
+2026-09-28 12:06:49.252 +00:00 [Warning] Subscribed Handler:Volo.Abp.PermissionManagement.Identity.UserDeletedEventHandler
+2026-09-28 12:06:49.252 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.MessageSections.Messages.MessageSentDistributedEventHandler
+2026-09-28 12:06:49.252 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.IdentityUsers.SeedDataByUserCreatedDistributedEventHandler
+2026-09-28 12:06:49.252 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.Connections.ConnectedDistributedEventHandler
+2026-09-28 12:06:49.252 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.Connections.DisconnectedDistributedEventHandler
+2026-09-28 12:06:49.252 +00:00 [Warning] Subscribed Handler:Microsoft.AspNetCore.RequestLocalization.DefaultAbpRequestLocalizationOptionsProvider
+2026-09-28 12:06:49.252 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.DistributedEventHandlers.AiStreamToClientDistributedEventHandler
+2026-09-28 12:06:49.252 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.DistributedEventHandlers.SendMessageToClientDistributedEventHandler
+2026-09-28 12:06:49.253 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.DistributedEventHandlers.SessionUnitChangedDistributedEventHandler
+2026-09-28 12:06:49.253 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.ChatHubs.AbortDistributedEventHandler
+2026-09-28 12:06:49.253 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.ChatHubs.ConnectedDistributedEventHandler
+2026-09-28 12:06:49.253 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.ChatHubs.DisconnectedDistributedEventHandler
+2026-09-28 12:06:49.253 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.EventBus.TextContentInfoHandler
+2026-09-28 12:06:50.479 +00:00 [Information] Initialized all ABP modules.
+2026-09-28 12:06:50.567 +00:00 [Warning] [App Start],HostName:1b68f2f8806e
+2026-09-28 12:07:00.988 +00:00 [Error] An error occurred using the connection to database '"Chat_Main"' on server '"sqlserver"'.
+2026-09-28 12:07:00.988 +00:00 [Error] An error occurred using the connection to database '"Chat_Main"' on server '"sqlserver"'.
+2026-09-28 12:07:01.022 +00:00 [Error] Cannot open database "Chat_Main" requested by the login. The login failed.
+Login failed for user 'sa'.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot open database "Chat_Main" requested by the login. The login failed.
+Login failed for user 'sa'.
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.WaitForPendingOpen()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.BeginTransactionAsync(IsolationLevel isolationLevel, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.BeginTransactionAsync(CancellationToken cancellationToken)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.CreateDbContextWithTransactionAsync(IUnitOfWork unitOfWork)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.CreateDbContextAsync(IUnitOfWork unitOfWork)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.CreateDbContextAsync(IUnitOfWork unitOfWork, String connectionStringName, String connectionString)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.GetDbContextAsync()
+   at Volo.Abp.Domain.Repositories.EntityFrameworkCore.EfCoreRepository`2.GetDbSetAsync()
+   at Volo.Abp.Domain.Repositories.EntityFrameworkCore.EfCoreRepository`2.GetQueryableAsync()
+   at Volo.Abp.Domain.Repositories.EntityFrameworkCore.EfCoreRepository`2.GetListAsync(Boolean includeDetails, CancellationToken cancellationToken)
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapterWithReturnValue`1.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.UpdateChangedPermissionGroupsAsync(IEnumerable`1 permissionGroupRecords)
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.PermissionDynamicInitializer.<>c__DisplayClass10_0.<<SaveStaticPermissionsToDatabaseAsync>b__1>d.MoveNext()
+ClientConnectionId:90661cf5-f2bb-4a12-bcf1-6b8ac8d5cffe
+Error Number:4060,State:1,Class:11
+2026-09-28 12:07:01.023 +00:00 [Error] Cannot open database "Chat_Main" requested by the login. The login failed.
+Login failed for user 'sa'.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot open database "Chat_Main" requested by the login. The login failed.
+Login failed for user 'sa'.
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, SqlCommand command, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at Microsoft.Data.SqlClient.TdsParser.Run(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.CompleteLogin(Boolean enlistOK)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.AttemptOneLogin(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, TimeoutTimer timeout, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.LoginNoFailover(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString connectionOptions, SqlCredential credential, TimeoutTimer timeout)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.OpenLoginEnlist(TimeoutTimer timeout, SqlConnectionString connectionOptions, SqlCredential credential, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, Object providerInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, Boolean applyTransientFaultHandling, String accessToken, IDbConnectionPool pool, Func`3 accessTokenCallback)
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.CreateConnection(DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionPoolGroupProviderInfo poolGroupProviderInfo, IDbConnectionPool pool, DbConnection owningConnection, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.CreatePooledConnection(IDbConnectionPool pool, DbConnection owningObject, DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.CreateObject(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.UserCreateRequest(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.WaitForPendingOpen()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.BeginTransactionAsync(IsolationLevel isolationLevel, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.BeginTransactionAsync(CancellationToken cancellationToken)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.CreateDbContextWithTransactionAsync(IUnitOfWork unitOfWork)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.CreateDbContextAsync(IUnitOfWork unitOfWork)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.CreateDbContextAsync(IUnitOfWork unitOfWork, String connectionStringName, String connectionString)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.GetDbContextAsync()
+   at Volo.Abp.Domain.Repositories.EntityFrameworkCore.EfCoreRepository`2.GetDbSetAsync()
+   at Volo.Abp.Domain.Repositories.EntityFrameworkCore.EfCoreRepository`2.GetQueryableAsync()
+   at Volo.Abp.Domain.Repositories.EntityFrameworkCore.EfCoreRepository`2.GetListAsync(Boolean includeDetails, CancellationToken cancellationToken)
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapterWithReturnValue`1.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.SettingManagement.StaticSettingSaver.UpdateChangedSettingsAsync(List`1 SettingRecords)
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous(IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapter.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.SettingManagement.SettingDynamicInitializer.<>c__DisplayClass10_0.<<SaveStaticSettingsToDatabaseAsync>b__1>d.MoveNext()
+ClientConnectionId:90661cf5-f2bb-4a12-bcf1-6b8ac8d5cffe
+Error Number:4060,State:1,Class:11
+2026-09-28 12:07:01.035 +00:00 [Error] ---------- Exception Data ----------
+HelpLink.ProdName = Microsoft SQL Server
+HelpLink.EvtSrc = MSSQLServer
+HelpLink.EvtID = 4060
+HelpLink.BaseHelpUrl = https://go.microsoft.com/fwlink
+HelpLink.LinkId = 20476
+
+2026-09-28 12:07:01.035 +00:00 [Error] ---------- Exception Data ----------
+HelpLink.ProdName = Microsoft SQL Server
+HelpLink.EvtSrc = MSSQLServer
+HelpLink.EvtID = 4060
+HelpLink.BaseHelpUrl = https://go.microsoft.com/fwlink
+HelpLink.LinkId = 20476
+
+2026-09-28 12:07:03.393 +00:00 [Error] An error occurred using the connection to database '"Chat_Module_v3"' on server '"sqlserver"'.
+2026-09-28 12:07:03.396 +00:00 [Error] Hosting failed to start
+Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot open database "Chat_Module_v3" requested by the login. The login failed.
+Login failed for user 'sa'.
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, SqlCommand command, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at Microsoft.Data.SqlClient.TdsParser.Run(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.CompleteLogin(Boolean enlistOK)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.AttemptOneLogin(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, TimeoutTimer timeout, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.LoginNoFailover(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString connectionOptions, SqlCredential credential, TimeoutTimer timeout)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.OpenLoginEnlist(TimeoutTimer timeout, SqlConnectionString connectionOptions, SqlCredential credential, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, Object providerInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, Boolean applyTransientFaultHandling, String accessToken, IDbConnectionPool pool, Func`3 accessTokenCallback)
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.CreateConnection(DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionPoolGroupProviderInfo poolGroupProviderInfo, IDbConnectionPool pool, DbConnection owningConnection, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.CreatePooledConnection(IDbConnectionPool pool, DbConnection owningObject, DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.CreateObject(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.UserCreateRequest(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.WaitForPendingOpen()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.BeginTransactionAsync(IsolationLevel isolationLevel, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.BeginTransactionAsync(CancellationToken cancellationToken)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.CreateDbContextWithTransactionAsync(IUnitOfWork unitOfWork)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.CreateDbContextAsync(IUnitOfWork unitOfWork)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.CreateDbContextAsync(IUnitOfWork unitOfWork, String connectionStringName, String connectionString)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.GetDbContextAsync()
+   at IczpNet.Chat.MessageReports.MessageReportRepositoryBase`1.EnsureMessageReportMergeTypeAsync() in /src/src/IczpNet.Chat.EntityFrameworkCore/MessageReports/MessageReportRepositoryBase.cs:line 173
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous(IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapter.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at IczpNet.Chat.MessageReports.MessageReportManager.InitializationAsync() in /src/src/IczpNet.Chat.Domain/MessageReports/MessageReportManager.cs:line 76
+   at IczpNet.Chat.ChatHostedService.StartAsync(CancellationToken cancellationToken) in /src/src/IczpNet.Chat.Domain/ChatHostedService.cs:line 31
+   at Microsoft.Extensions.Hosting.Internal.Host.<StartAsync>b__14_1(IHostedService service, CancellationToken token)
+   at Microsoft.Extensions.Hosting.Internal.Host.ForeachService[T](IEnumerable`1 services, CancellationToken token, Boolean concurrent, Boolean abortOnFirstException, List`1 exceptions, Func`3 operation)
+ClientConnectionId:aa018e17-f849-45a6-9499-1881da421132
+Error Number:4060,State:1,Class:11
+2026-09-28 12:07:03.412 +00:00 [Fatal] Host terminated unexpectedly!
+Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot open database "Chat_Module_v3" requested by the login. The login failed.
+Login failed for user 'sa'.
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, SqlCommand command, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at Microsoft.Data.SqlClient.TdsParser.Run(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.CompleteLogin(Boolean enlistOK)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.AttemptOneLogin(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, TimeoutTimer timeout, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.LoginNoFailover(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString connectionOptions, SqlCredential credential, TimeoutTimer timeout)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.OpenLoginEnlist(TimeoutTimer timeout, SqlConnectionString connectionOptions, SqlCredential credential, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, Object providerInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, Boolean applyTransientFaultHandling, String accessToken, IDbConnectionPool pool, Func`3 accessTokenCallback)
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.CreateConnection(DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionPoolGroupProviderInfo poolGroupProviderInfo, IDbConnectionPool pool, DbConnection owningConnection, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.CreatePooledConnection(IDbConnectionPool pool, DbConnection owningObject, DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.CreateObject(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.UserCreateRequest(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.SqlClient.ConnectionPool.WaitHandleDbConnectionPool.WaitForPendingOpen()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.BeginTransactionAsync(IsolationLevel isolationLevel, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.BeginTransactionAsync(CancellationToken cancellationToken)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.CreateDbContextWithTransactionAsync(IUnitOfWork unitOfWork)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.CreateDbContextAsync(IUnitOfWork unitOfWork)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.CreateDbContextAsync(IUnitOfWork unitOfWork, String connectionStringName, String connectionString)
+   at Volo.Abp.Uow.EntityFrameworkCore.UnitOfWorkDbContextProvider`1.GetDbContextAsync()
+   at IczpNet.Chat.MessageReports.MessageReportRepositoryBase`1.EnsureMessageReportMergeTypeAsync() in /src/src/IczpNet.Chat.EntityFrameworkCore/MessageReports/MessageReportRepositoryBase.cs:line 173
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous(IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapter.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at IczpNet.Chat.MessageReports.MessageReportManager.InitializationAsync() in /src/src/IczpNet.Chat.Domain/MessageReports/MessageReportManager.cs:line 76
+   at IczpNet.Chat.ChatHostedService.StartAsync(CancellationToken cancellationToken) in /src/src/IczpNet.Chat.Domain/ChatHostedService.cs:line 31
+   at Microsoft.Extensions.Hosting.Internal.Host.<StartAsync>b__14_1(IHostedService service, CancellationToken token)
+   at Microsoft.Extensions.Hosting.Internal.Host.ForeachService[T](IEnumerable`1 services, CancellationToken token, Boolean concurrent, Boolean abortOnFirstException, List`1 exceptions, Func`3 operation)
+   at Microsoft.Extensions.Hosting.Internal.Host.StartAsync(CancellationToken cancellationToken)
+   at Microsoft.Extensions.Hosting.HostingAbstractionsHostExtensions.RunAsync(IHost host, CancellationToken token)
+   at Microsoft.Extensions.Hosting.HostingAbstractionsHostExtensions.RunAsync(IHost host, CancellationToken token)
+   at IczpNet.Chat.Program.Main(String[] args) in /src/host/IczpNet.Chat.HttpApi.Host/Program.cs:line 108
+ClientConnectionId:aa018e17-f849-45a6-9499-1881da421132
+Error Number:4060,State:1,Class:11
+2026-09-28 12:08:44.156 +00:00 [Information] Starting Iczp.Net.HttpApi.Host. HostName:1b68f2f8806e
+2026-09-28 12:08:55.183 +00:00 [Warning] RedisDistributedEventBus Initialize, totalCount:15.
+2026-09-28 12:08:55.198 +00:00 [Information] Subscribed to Redis channel. Event Name: "Volo.Abp.Identity.IdentityRoleEto.Deleted", Channel: "RedisDistributedEventBus:Volo.Abp.Identity.IdentityRoleEto.Deleted"
+2026-09-28 12:08:55.199 +00:00 [Information] Subscribed to Redis channel. Event Name: "Volo.Abp.Identity.IdentityRoleNameChangedEto", Channel: "RedisDistributedEventBus:Volo.Abp.Identity.IdentityRoleNameChangedEto"
+2026-09-28 12:08:55.200 +00:00 [Information] Subscribed to Redis channel. Event Name: "Volo.Abp.Users.User.Deleted", Channel: "RedisDistributedEventBus:Volo.Abp.Users.User.Deleted"
+2026-09-28 12:08:55.200 +00:00 [Information] Subscribed to Redis channel. Event Name: "IczpNet.Chat.MessageSections.Messages.MessageSentEto", Channel: "RedisDistributedEventBus:IczpNet.Chat.MessageSections.Messages.MessageSentEto"
+2026-09-28 12:08:55.201 +00:00 [Information] Subscribed to Redis channel. Event Name: "Volo.Abp.Users.User.Created", Channel: "RedisDistributedEventBus:Volo.Abp.Users.User.Created"
+2026-09-28 12:08:55.201 +00:00 [Information] Subscribed to Redis channel. Event Name: "IczpNet.Chat.ConnectionPools.ConnectedEto", Channel: "RedisDistributedEventBus:IczpNet.Chat.ConnectionPools.ConnectedEto"
+2026-09-28 12:08:55.201 +00:00 [Information] Subscribed to Redis channel. Event Name: "IczpNet.Chat.ConnectionPools.DisconnectedEto", Channel: "RedisDistributedEventBus:IczpNet.Chat.ConnectionPools.DisconnectedEto"
+2026-09-28 12:08:55.201 +00:00 [Information] Subscribed to Redis channel. Event Name: "Volo.Abp.Localization.LanguageChangedEto", Channel: "RedisDistributedEventBus:Volo.Abp.Localization.LanguageChangedEto"
+2026-09-28 12:08:55.201 +00:00 [Information] Subscribed to Redis channel. Event Name: "IczpNet.Chat.MessageSections.Messages.AiStreamToClientDistributedEto", Channel: "RedisDistributedEventBus:IczpNet.Chat.MessageSections.Messages.AiStreamToClientDistributedEto"
+2026-09-28 12:08:55.202 +00:00 [Information] Subscribed to Redis channel. Event Name: "IczpNet.Chat.MessageSections.Messages.SendMessageToClientDistributedEto", Channel: "RedisDistributedEventBus:IczpNet.Chat.MessageSections.Messages.SendMessageToClientDistributedEto"
+2026-09-28 12:08:55.202 +00:00 [Information] Subscribed to Redis channel. Event Name: "IczpNet.Chat.SessionUnits.SessionUnitChangedDistributedEto", Channel: "RedisDistributedEventBus:IczpNet.Chat.SessionUnits.SessionUnitChangedDistributedEto"
+2026-09-28 12:08:55.202 +00:00 [Information] Subscribed to Redis channel. Event Name: "IczpNet.Chat.ConnectionPools.AbortEto", Channel: "RedisDistributedEventBus:IczpNet.Chat.ConnectionPools.AbortEto"
+2026-09-28 12:08:55.203 +00:00 [Information] Subscribed to Redis channel. Event Name: "IczpNet.Chat.MessageSections.Templates.TextContentInfo", Channel: "RedisDistributedEventBus:IczpNet.Chat.MessageSections.Templates.TextContentInfo"
+2026-09-28 12:08:55.203 +00:00 [Warning] Subscribed Handler:Volo.Abp.PermissionManagement.Identity.RoleDeletedEventHandler
+2026-09-28 12:08:55.203 +00:00 [Warning] Subscribed Handler:Volo.Abp.PermissionManagement.Identity.RoleUpdateEventHandler
+2026-09-28 12:08:55.203 +00:00 [Warning] Subscribed Handler:Volo.Abp.PermissionManagement.Identity.UserDeletedEventHandler
+2026-09-28 12:08:55.203 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.MessageSections.Messages.MessageSentDistributedEventHandler
+2026-09-28 12:08:55.203 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.IdentityUsers.SeedDataByUserCreatedDistributedEventHandler
+2026-09-28 12:08:55.203 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.Connections.ConnectedDistributedEventHandler
+2026-09-28 12:08:55.203 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.Connections.DisconnectedDistributedEventHandler
+2026-09-28 12:08:55.203 +00:00 [Warning] Subscribed Handler:Microsoft.AspNetCore.RequestLocalization.DefaultAbpRequestLocalizationOptionsProvider
+2026-09-28 12:08:55.203 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.DistributedEventHandlers.AiStreamToClientDistributedEventHandler
+2026-09-28 12:08:55.203 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.DistributedEventHandlers.SendMessageToClientDistributedEventHandler
+2026-09-28 12:08:55.204 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.DistributedEventHandlers.SessionUnitChangedDistributedEventHandler
+2026-09-28 12:08:55.204 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.ChatHubs.AbortDistributedEventHandler
+2026-09-28 12:08:55.204 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.ChatHubs.ConnectedDistributedEventHandler
+2026-09-28 12:08:55.204 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.ChatHubs.DisconnectedDistributedEventHandler
+2026-09-28 12:08:55.204 +00:00 [Warning] Subscribed Handler:IczpNet.Chat.EventBus.TextContentInfoHandler
+2026-09-28 12:08:56.584 +00:00 [Information] Initialized all ABP modules.
+2026-09-28 12:08:56.658 +00:00 [Warning] [App Start],HostName:1b68f2f8806e
+2026-09-28 12:08:57.737 +00:00 [Error] Failed executing DbCommand ("212"ms) [Parameters=[""], CommandType='Text', CommandTimeout='60000']"
+""SELECT [a].[Id], [a].[DisplayName], [a].[ExtraProperties], [a].[Name]
+FROM [AbpPermissionGroups] AS [a]"
+2026-09-28 12:08:57.743 +00:00 [Error] Failed executing DbCommand ("212"ms) [Parameters=[""], CommandType='Text', CommandTimeout='60000']"
+""SELECT [a].[Id], [a].[DefaultValue], [a].[Description], [a].[DisplayName], [a].[ExtraProperties], [a].[IsEncrypted], [a].[IsInherited], [a].[IsVisibleToClients], [a].[Name], [a].[Providers]
+FROM [AbpSettingDefinitions] AS [a]"
+2026-09-28 12:08:57.812 +00:00 [Error] An exception occurred while iterating over the results of a query for context type '"Volo.Abp.SettingManagement.EntityFrameworkCore.SettingManagementDbContext"'."
+""Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettingDefinitions'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:5dd8d1c7-7909-4d15-ad3d-2a8e5710b76c
+Error Number:208,State:1,Class:16"
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettingDefinitions'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:5dd8d1c7-7909-4d15-ad3d-2a8e5710b76c
+Error Number:208,State:1,Class:16
+2026-09-28 12:08:57.812 +00:00 [Error] An exception occurred while iterating over the results of a query for context type '"Volo.Abp.PermissionManagement.EntityFrameworkCore.PermissionManagementDbContext"'."
+""Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpPermissionGroups'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:6c4f4ffc-e974-46dd-aba9-1495dc8346e2
+Error Number:208,State:1,Class:16"
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpPermissionGroups'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:6c4f4ffc-e974-46dd-aba9-1495dc8346e2
+Error Number:208,State:1,Class:16
+2026-09-28 12:08:57.850 +00:00 [Error] Invalid object name 'AbpPermissionGroups'.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpPermissionGroups'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Volo.Abp.Domain.Repositories.EntityFrameworkCore.EfCoreRepository`2.GetListAsync(Boolean includeDetails, CancellationToken cancellationToken)
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapterWithReturnValue`1.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.UpdateChangedPermissionGroupsAsync(IEnumerable`1 permissionGroupRecords)
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.PermissionDynamicInitializer.<>c__DisplayClass10_0.<<SaveStaticPermissionsToDatabaseAsync>b__1>d.MoveNext()
+ClientConnectionId:6c4f4ffc-e974-46dd-aba9-1495dc8346e2
+Error Number:208,State:1,Class:16
+2026-09-28 12:08:57.852 +00:00 [Error] Invalid object name 'AbpSettingDefinitions'.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettingDefinitions'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Volo.Abp.Domain.Repositories.EntityFrameworkCore.EfCoreRepository`2.GetListAsync(Boolean includeDetails, CancellationToken cancellationToken)
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapterWithReturnValue`1.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.SettingManagement.StaticSettingSaver.UpdateChangedSettingsAsync(List`1 SettingRecords)
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous(IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapter.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.SettingManagement.SettingDynamicInitializer.<>c__DisplayClass10_0.<<SaveStaticSettingsToDatabaseAsync>b__1>d.MoveNext()
+ClientConnectionId:5dd8d1c7-7909-4d15-ad3d-2a8e5710b76c
+Error Number:208,State:1,Class:16
+2026-09-28 12:08:57.855 +00:00 [Error] ---------- Exception Data ----------
+HelpLink.ProdName = Microsoft SQL Server
+HelpLink.ProdVer = 16.00.4295
+HelpLink.EvtSrc = MSSQLServer
+HelpLink.EvtID = 208
+HelpLink.BaseHelpUrl = https://go.microsoft.com/fwlink
+HelpLink.LinkId = 20476
+
+2026-09-28 12:08:57.855 +00:00 [Error] ---------- Exception Data ----------
+HelpLink.ProdName = Microsoft SQL Server
+HelpLink.ProdVer = 16.00.4295
+HelpLink.EvtSrc = MSSQLServer
+HelpLink.EvtID = 208
+HelpLink.BaseHelpUrl = https://go.microsoft.com/fwlink
+HelpLink.LinkId = 20476
+
+2026-09-28 12:09:00.236 +00:00 [Information] EnsureMessageReportMergeTypeAsync sql:"
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.types t
+    JOIN sys.schemas s ON t.schema_id = s.schema_id
+    WHERE t.name = 'MessageReportMergeType'
+      AND s.name = 'dbo'
+)
+BEGIN
+    CREATE TYPE dbo.MessageReportMergeType AS TABLE
+    (
+        SessionId   UNIQUEIDENTIFIER NOT NULL,
+        MessageType INT              NOT NULL,
+        DateBucket  BIGINT           NOT NULL,
+        Count       BIGINT           NOT NULL
+    );
+END
+"
+2026-09-28 12:09:01.474 +00:00 [Information] Executed DbCommand ("1,233"ms) [Parameters=[""], CommandType='Text', CommandTimeout='60000']"
+""
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.types t
+    JOIN sys.schemas s ON t.schema_id = s.schema_id
+    WHERE t.name = 'MessageReportMergeType'
+      AND s.name = 'dbo'
+)
+BEGIN
+    CREATE TYPE dbo.MessageReportMergeType AS TABLE
+    (
+        SessionId   UNIQUEIDENTIFIER NOT NULL,
+        MessageType INT              NOT NULL,
+        DateBucket  BIGINT           NOT NULL,
+        Count       BIGINT           NOT NULL
+    );
+END"
+2026-09-28 12:09:01.773 +00:00 [Information] CompensateAsync
+2026-09-28 12:09:01.777 +00:00 [Information] FlushAsync Hour, DataBucket:2026092812, isExists:False
+2026-09-28 12:09:01.779 +00:00 [Information] FlushAsync Hour, DataBucket:2026092811, isExists:False
+2026-09-28 12:09:01.779 +00:00 [Information] FlushAsync Hour, DataBucket:2026092810, isExists:False
+2026-09-28 12:09:01.780 +00:00 [Information] FlushAsync Hour, DataBucket:2026092809, isExists:False
+2026-09-28 12:09:01.780 +00:00 [Information] FlushAsync Hour, DataBucket:2026092808, isExists:False
+2026-09-28 12:09:01.781 +00:00 [Information] FlushAsync Hour, DataBucket:2026092807, isExists:False
+2026-09-28 12:09:01.781 +00:00 [Information] FlushAsync Hour, DataBucket:2026092806, isExists:False
+2026-09-28 12:09:01.782 +00:00 [Information] FlushAsync Hour, DataBucket:2026092805, isExists:False
+2026-09-28 12:09:01.782 +00:00 [Information] FlushAsync Hour, DataBucket:2026092804, isExists:False
+2026-09-28 12:09:01.783 +00:00 [Information] FlushAsync Hour, DataBucket:2026092803, isExists:False
+2026-09-28 12:09:01.783 +00:00 [Information] FlushAsync Hour, DataBucket:2026092802, isExists:False
+2026-09-28 12:09:01.784 +00:00 [Information] FlushAsync Hour, DataBucket:2026092801, isExists:False
+2026-09-28 12:09:01.784 +00:00 [Information] FlushAsync Hour, DataBucket:2026092812, isExists:False
+2026-09-28 12:09:01.785 +00:00 [Information] FlushAsync Hour, DataBucket:2026092711, isExists:False
+2026-09-28 12:09:01.785 +00:00 [Information] FlushAsync Hour, DataBucket:2026092710, isExists:False
+2026-09-28 12:09:01.786 +00:00 [Information] FlushAsync Hour, DataBucket:2026092709, isExists:False
+2026-09-28 12:09:01.787 +00:00 [Information] FlushAsync Hour, DataBucket:2026092708, isExists:False
+2026-09-28 12:09:01.787 +00:00 [Information] FlushAsync Hour, DataBucket:2026092707, isExists:False
+2026-09-28 12:09:01.788 +00:00 [Information] FlushAsync Hour, DataBucket:2026092706, isExists:False
+2026-09-28 12:09:01.788 +00:00 [Information] FlushAsync Hour, DataBucket:2026092705, isExists:False
+2026-09-28 12:09:01.789 +00:00 [Information] FlushAsync Hour, DataBucket:2026092704, isExists:False
+2026-09-28 12:09:01.790 +00:00 [Information] FlushAsync Hour, DataBucket:2026092703, isExists:False
+2026-09-28 12:09:01.790 +00:00 [Information] FlushAsync Hour, DataBucket:2026092702, isExists:False
+2026-09-28 12:09:01.791 +00:00 [Information] FlushAsync Hour, DataBucket:2026092701, isExists:False
+2026-09-28 12:09:01.792 +00:00 [Information] FlushAsync Hour, DataBucket:2026092712, isExists:False
+2026-09-28 12:09:01.792 +00:00 [Information] FlushAsync Hour, DataBucket:2026092711, isExists:False
+2026-09-28 12:09:01.793 +00:00 [Information] FlushAsync Hour, DataBucket:2026092710, isExists:False
+2026-09-28 12:09:01.794 +00:00 [Information] FlushAsync Hour, DataBucket:2026092709, isExists:False
+2026-09-28 12:09:01.794 +00:00 [Information] FlushAsync Hour, DataBucket:2026092708, isExists:False
+2026-09-28 12:09:01.795 +00:00 [Information] FlushAsync Hour, DataBucket:2026092707, isExists:False
+2026-09-28 12:09:01.796 +00:00 [Information] FlushAsync Hour, DataBucket:2026092706, isExists:False
+2026-09-28 12:09:01.796 +00:00 [Information] FlushAsync Hour, DataBucket:2026092705, isExists:False
+2026-09-28 12:09:01.797 +00:00 [Information] FlushAsync Hour, DataBucket:2026092704, isExists:False
+2026-09-28 12:09:01.798 +00:00 [Information] FlushAsync Hour, DataBucket:2026092703, isExists:False
+2026-09-28 12:09:01.798 +00:00 [Information] FlushAsync Hour, DataBucket:2026092702, isExists:False
+2026-09-28 12:09:01.799 +00:00 [Information] FlushAsync Hour, DataBucket:2026092701, isExists:False
+2026-09-28 12:09:01.800 +00:00 [Information] FlushAsync Hour, DataBucket:2026092712, isExists:False
+2026-09-28 12:09:01.800 +00:00 [Information] FlushAsync Hour, DataBucket:2026092611, isExists:False
+2026-09-28 12:09:01.801 +00:00 [Information] FlushAsync Hour, DataBucket:2026092610, isExists:False
+2026-09-28 12:09:01.801 +00:00 [Information] FlushAsync Hour, DataBucket:2026092609, isExists:False
+2026-09-28 12:09:01.802 +00:00 [Information] FlushAsync Hour, DataBucket:2026092608, isExists:False
+2026-09-28 12:09:01.803 +00:00 [Information] FlushAsync Hour, DataBucket:2026092607, isExists:False
+2026-09-28 12:09:01.803 +00:00 [Information] FlushAsync Hour, DataBucket:2026092606, isExists:False
+2026-09-28 12:09:01.804 +00:00 [Information] FlushAsync Hour, DataBucket:2026092605, isExists:False
+2026-09-28 12:09:01.805 +00:00 [Information] FlushAsync Hour, DataBucket:2026092604, isExists:False
+2026-09-28 12:09:01.805 +00:00 [Information] FlushAsync Hour, DataBucket:2026092603, isExists:False
+2026-09-28 12:09:01.806 +00:00 [Information] FlushAsync Hour, DataBucket:2026092602, isExists:False
+2026-09-28 12:09:01.807 +00:00 [Information] FlushAsync Hour, DataBucket:2026092601, isExists:False
+2026-09-28 12:09:01.808 +00:00 [Information] FlushAsync Hour, DataBucket:2026092612, isExists:False
+2026-09-28 12:09:01.809 +00:00 [Information] FlushAsync Hour, DataBucket:2026092611, isExists:False
+2026-09-28 12:09:01.809 +00:00 [Information] FlushAsync Hour, DataBucket:2026092610, isExists:False
+2026-09-28 12:09:01.810 +00:00 [Information] FlushAsync Hour, DataBucket:2026092609, isExists:False
+2026-09-28 12:09:01.811 +00:00 [Information] FlushAsync Hour, DataBucket:2026092608, isExists:False
+2026-09-28 12:09:01.812 +00:00 [Information] FlushAsync Hour, DataBucket:2026092607, isExists:False
+2026-09-28 12:09:01.812 +00:00 [Information] FlushAsync Hour, DataBucket:2026092606, isExists:False
+2026-09-28 12:09:01.813 +00:00 [Information] FlushAsync Hour, DataBucket:2026092605, isExists:False
+2026-09-28 12:09:01.813 +00:00 [Information] FlushAsync Hour, DataBucket:2026092604, isExists:False
+2026-09-28 12:09:01.814 +00:00 [Information] FlushAsync Hour, DataBucket:2026092603, isExists:False
+2026-09-28 12:09:01.815 +00:00 [Information] FlushAsync Hour, DataBucket:2026092602, isExists:False
+2026-09-28 12:09:01.815 +00:00 [Information] FlushAsync Hour, DataBucket:2026092601, isExists:False
+2026-09-28 12:09:01.816 +00:00 [Information] FlushAsync Hour, DataBucket:2026092612, isExists:False
+2026-09-28 12:09:01.816 +00:00 [Information] FlushAsync Hour, DataBucket:2026092511, isExists:False
+2026-09-28 12:09:01.817 +00:00 [Information] FlushAsync Hour, DataBucket:2026092510, isExists:False
+2026-09-28 12:09:01.817 +00:00 [Information] FlushAsync Hour, DataBucket:2026092509, isExists:False
+2026-09-28 12:09:01.818 +00:00 [Information] FlushAsync Hour, DataBucket:2026092508, isExists:False
+2026-09-28 12:09:01.818 +00:00 [Information] FlushAsync Hour, DataBucket:2026092507, isExists:False
+2026-09-28 12:09:01.819 +00:00 [Information] FlushAsync Hour, DataBucket:2026092506, isExists:False
+2026-09-28 12:09:01.819 +00:00 [Information] FlushAsync Hour, DataBucket:2026092505, isExists:False
+2026-09-28 12:09:01.820 +00:00 [Information] FlushAsync Hour, DataBucket:2026092504, isExists:False
+2026-09-28 12:09:01.820 +00:00 [Information] FlushAsync Hour, DataBucket:2026092503, isExists:False
+2026-09-28 12:09:01.821 +00:00 [Information] FlushAsync Hour, DataBucket:2026092502, isExists:False
+2026-09-28 12:09:01.821 +00:00 [Information] FlushAsync Hour, DataBucket:2026092501, isExists:False
+2026-09-28 12:09:01.822 +00:00 [Information] FlushAsync Day, DataBucket:20260928, isExists:False
+2026-09-28 12:09:01.823 +00:00 [Information] FlushAsync Day, DataBucket:20260927, isExists:False
+2026-09-28 12:09:01.823 +00:00 [Information] FlushAsync Day, DataBucket:20260926, isExists:False
+2026-09-28 12:09:01.824 +00:00 [Information] FlushAsync Day, DataBucket:20260925, isExists:False
+2026-09-28 12:09:01.824 +00:00 [Information] FlushAsync Month, DataBucket:202609, isExists:False
+2026-09-28 12:09:01.824 +00:00 [Information] FlushAsync Month, DataBucket:202608, isExists:False
+2026-09-28 12:09:01.825 +00:00 [Information] FlushAsync Month, DataBucket:202607, isExists:False
+2026-09-28 12:09:01.828 +00:00 [Warning] [App Start] DeleteByHostNameAsync,HostName:1b68f2f8806e
+2026-09-28 12:09:01.834 +00:00 [Information] ["IczpNet.Chat.ConnectionPools.OnlineManager"] ["StartAsync"] Elapsed Time: 7 ms
+2026-09-28 12:09:01.849 +00:00 [Information] Creating key {a9545efc-c744-4087-9097-d6aa42791a96} with creation date 2026-09-28 12:09:01Z, activation date 2026-09-28 12:09:01Z, and expiration date 2026-12-27 12:09:01Z.
+2026-09-28 12:09:01.893 +00:00 [Warning] No XML encryptor configured. Key {a9545efc-c744-4087-9097-d6aa42791a96} may be persisted to storage in unencrypted form.
+2026-09-28 12:09:01.960 +00:00 [Warning] Overriding HTTP_PORTS '"8080"' and HTTPS_PORTS '""'. Binding to values defined by URLS instead '"http://0.0.0.0:8080"'.
+2026-09-28 12:09:02.050 +00:00 [Information] Now listening on: "http://0.0.0.0:8080"
+2026-09-28 12:09:02.051 +00:00 [Information] Application started. Press Ctrl+C to shut down.
+2026-09-28 12:09:02.051 +00:00 [Information] Hosting environment: "Production"
+2026-09-28 12:09:02.051 +00:00 [Information] Content root path: "/app"
+2026-09-28 12:09:14.970 +00:00 [Error] Failed executing DbCommand ("2"ms) [Parameters=[""], CommandType='Text', CommandTimeout='60000']"
+""SELECT [a].[Id], [a].[DisplayName], [a].[ExtraProperties], [a].[Name]
+FROM [AbpPermissionGroups] AS [a]"
+2026-09-28 12:09:14.971 +00:00 [Error] An exception occurred while iterating over the results of a query for context type '"Volo.Abp.PermissionManagement.EntityFrameworkCore.PermissionManagementDbContext"'."
+""Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpPermissionGroups'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:5dd8d1c7-7909-4d15-ad3d-2a8e5710b76c
+Error Number:208,State:1,Class:16"
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpPermissionGroups'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:5dd8d1c7-7909-4d15-ad3d-2a8e5710b76c
+Error Number:208,State:1,Class:16
+2026-09-28 12:09:14.972 +00:00 [Error] Invalid object name 'AbpPermissionGroups'.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpPermissionGroups'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Volo.Abp.Domain.Repositories.EntityFrameworkCore.EfCoreRepository`2.GetListAsync(Boolean includeDetails, CancellationToken cancellationToken)
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapterWithReturnValue`1.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.UpdateChangedPermissionGroupsAsync(IEnumerable`1 permissionGroupRecords)
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.PermissionDynamicInitializer.<>c__DisplayClass10_0.<<SaveStaticPermissionsToDatabaseAsync>b__1>d.MoveNext()
+ClientConnectionId:5dd8d1c7-7909-4d15-ad3d-2a8e5710b76c
+Error Number:208,State:1,Class:16
+2026-09-28 12:09:14.973 +00:00 [Error] ---------- Exception Data ----------
+HelpLink.ProdName = Microsoft SQL Server
+HelpLink.ProdVer = 16.00.4295
+HelpLink.EvtSrc = MSSQLServer
+HelpLink.EvtID = 208
+HelpLink.BaseHelpUrl = https://go.microsoft.com/fwlink
+HelpLink.LinkId = 20476
+
+2026-09-28 12:09:17.869 +00:00 [Error] Failed executing DbCommand ("1"ms) [Parameters=[""], CommandType='Text', CommandTimeout='60000']"
+""SELECT [a].[Id], [a].[DefaultValue], [a].[Description], [a].[DisplayName], [a].[ExtraProperties], [a].[IsEncrypted], [a].[IsInherited], [a].[IsVisibleToClients], [a].[Name], [a].[Providers]
+FROM [AbpSettingDefinitions] AS [a]"
+2026-09-28 12:09:17.869 +00:00 [Error] An exception occurred while iterating over the results of a query for context type '"Volo.Abp.SettingManagement.EntityFrameworkCore.SettingManagementDbContext"'."
+""Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettingDefinitions'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:5dd8d1c7-7909-4d15-ad3d-2a8e5710b76c
+Error Number:208,State:1,Class:16"
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettingDefinitions'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:5dd8d1c7-7909-4d15-ad3d-2a8e5710b76c
+Error Number:208,State:1,Class:16
+2026-09-28 12:09:17.871 +00:00 [Error] Invalid object name 'AbpSettingDefinitions'.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettingDefinitions'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Volo.Abp.Domain.Repositories.EntityFrameworkCore.EfCoreRepository`2.GetListAsync(Boolean includeDetails, CancellationToken cancellationToken)
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapterWithReturnValue`1.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.SettingManagement.StaticSettingSaver.UpdateChangedSettingsAsync(List`1 SettingRecords)
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous(IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapter.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.SettingManagement.SettingDynamicInitializer.<>c__DisplayClass10_0.<<SaveStaticSettingsToDatabaseAsync>b__1>d.MoveNext()
+ClientConnectionId:5dd8d1c7-7909-4d15-ad3d-2a8e5710b76c
+Error Number:208,State:1,Class:16
+2026-09-28 12:09:17.872 +00:00 [Error] ---------- Exception Data ----------
+HelpLink.ProdName = Microsoft SQL Server
+HelpLink.ProdVer = 16.00.4295
+HelpLink.EvtSrc = MSSQLServer
+HelpLink.EvtID = 208
+HelpLink.BaseHelpUrl = https://go.microsoft.com/fwlink
+HelpLink.LinkId = 20476
+
+2026-09-28 12:09:53.880 +00:00 [Error] Failed executing DbCommand ("1"ms) [Parameters=[""], CommandType='Text', CommandTimeout='60000']"
+""SELECT [a].[Id], [a].[DefaultValue], [a].[Description], [a].[DisplayName], [a].[ExtraProperties], [a].[IsEncrypted], [a].[IsInherited], [a].[IsVisibleToClients], [a].[Name], [a].[Providers]
+FROM [AbpSettingDefinitions] AS [a]"
+2026-09-28 12:09:53.880 +00:00 [Error] An exception occurred while iterating over the results of a query for context type '"Volo.Abp.SettingManagement.EntityFrameworkCore.SettingManagementDbContext"'."
+""Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettingDefinitions'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:5dd8d1c7-7909-4d15-ad3d-2a8e5710b76c
+Error Number:208,State:1,Class:16"
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettingDefinitions'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:5dd8d1c7-7909-4d15-ad3d-2a8e5710b76c
+Error Number:208,State:1,Class:16
+2026-09-28 12:09:53.882 +00:00 [Error] Invalid object name 'AbpSettingDefinitions'.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettingDefinitions'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Volo.Abp.Domain.Repositories.EntityFrameworkCore.EfCoreRepository`2.GetListAsync(Boolean includeDetails, CancellationToken cancellationToken)
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapterWithReturnValue`1.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.SettingManagement.StaticSettingSaver.UpdateChangedSettingsAsync(List`1 SettingRecords)
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous(IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapter.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.SettingManagement.SettingDynamicInitializer.<>c__DisplayClass10_0.<<SaveStaticSettingsToDatabaseAsync>b__1>d.MoveNext()
+ClientConnectionId:5dd8d1c7-7909-4d15-ad3d-2a8e5710b76c
+Error Number:208,State:1,Class:16
+2026-09-28 12:09:53.883 +00:00 [Error] ---------- Exception Data ----------
+HelpLink.ProdName = Microsoft SQL Server
+HelpLink.ProdVer = 16.00.4295
+HelpLink.EvtSrc = MSSQLServer
+HelpLink.EvtID = 208
+HelpLink.BaseHelpUrl = https://go.microsoft.com/fwlink
+HelpLink.LinkId = 20476
+
+2026-09-28 12:09:53.982 +00:00 [Error] Failed executing DbCommand ("2"ms) [Parameters=[""], CommandType='Text', CommandTimeout='60000']"
+""SELECT [a].[Id], [a].[DisplayName], [a].[ExtraProperties], [a].[Name]
+FROM [AbpPermissionGroups] AS [a]"
+2026-09-28 12:09:53.990 +00:00 [Error] An exception occurred while iterating over the results of a query for context type '"Volo.Abp.PermissionManagement.EntityFrameworkCore.PermissionManagementDbContext"'."
+""Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpPermissionGroups'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:5dd8d1c7-7909-4d15-ad3d-2a8e5710b76c
+Error Number:208,State:1,Class:16"
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpPermissionGroups'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:5dd8d1c7-7909-4d15-ad3d-2a8e5710b76c
+Error Number:208,State:1,Class:16
+2026-09-28 12:09:53.992 +00:00 [Error] Invalid object name 'AbpPermissionGroups'.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpPermissionGroups'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Volo.Abp.Domain.Repositories.EntityFrameworkCore.EfCoreRepository`2.GetListAsync(Boolean includeDetails, CancellationToken cancellationToken)
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapterWithReturnValue`1.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.UpdateChangedPermissionGroupsAsync(IEnumerable`1 permissionGroupRecords)
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.PermissionDynamicInitializer.<>c__DisplayClass10_0.<<SaveStaticPermissionsToDatabaseAsync>b__1>d.MoveNext()
+ClientConnectionId:5dd8d1c7-7909-4d15-ad3d-2a8e5710b76c
+Error Number:208,State:1,Class:16
+2026-09-28 12:09:53.993 +00:00 [Error] ---------- Exception Data ----------
+HelpLink.ProdName = Microsoft SQL Server
+HelpLink.ProdVer = 16.00.4295
+HelpLink.EvtSrc = MSSQLServer
+HelpLink.EvtID = 208
+HelpLink.BaseHelpUrl = https://go.microsoft.com/fwlink
+HelpLink.LinkId = 20476
+
+2026-09-28 12:11:16.010 +00:00 [Error] Failed executing DbCommand ("2"ms) [Parameters=[""], CommandType='Text', CommandTimeout='60000']"
+""SELECT [a].[Id], [a].[DisplayName], [a].[ExtraProperties], [a].[Name]
+FROM [AbpPermissionGroups] AS [a]"
+2026-09-28 12:11:16.011 +00:00 [Error] An exception occurred while iterating over the results of a query for context type '"Volo.Abp.PermissionManagement.EntityFrameworkCore.PermissionManagementDbContext"'."
+""Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpPermissionGroups'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:5dd8d1c7-7909-4d15-ad3d-2a8e5710b76c
+Error Number:208,State:1,Class:16"
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpPermissionGroups'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:5dd8d1c7-7909-4d15-ad3d-2a8e5710b76c
+Error Number:208,State:1,Class:16
+2026-09-28 12:11:16.012 +00:00 [Error] Invalid object name 'AbpPermissionGroups'.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpPermissionGroups'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Volo.Abp.Domain.Repositories.EntityFrameworkCore.EfCoreRepository`2.GetListAsync(Boolean includeDetails, CancellationToken cancellationToken)
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapterWithReturnValue`1.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.UpdateChangedPermissionGroupsAsync(IEnumerable`1 permissionGroupRecords)
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.PermissionDynamicInitializer.<>c__DisplayClass10_0.<<SaveStaticPermissionsToDatabaseAsync>b__1>d.MoveNext()
+ClientConnectionId:5dd8d1c7-7909-4d15-ad3d-2a8e5710b76c
+Error Number:208,State:1,Class:16
+2026-09-28 12:11:16.014 +00:00 [Error] ---------- Exception Data ----------
+HelpLink.ProdName = Microsoft SQL Server
+HelpLink.ProdVer = 16.00.4295
+HelpLink.EvtSrc = MSSQLServer
+HelpLink.EvtID = 208
+HelpLink.BaseHelpUrl = https://go.microsoft.com/fwlink
+HelpLink.LinkId = 20476
+
+2026-09-28 12:11:18.888 +00:00 [Error] Failed executing DbCommand ("1"ms) [Parameters=[""], CommandType='Text', CommandTimeout='60000']"
+""SELECT [a].[Id], [a].[DefaultValue], [a].[Description], [a].[DisplayName], [a].[ExtraProperties], [a].[IsEncrypted], [a].[IsInherited], [a].[IsVisibleToClients], [a].[Name], [a].[Providers]
+FROM [AbpSettingDefinitions] AS [a]"
+2026-09-28 12:11:18.889 +00:00 [Error] An exception occurred while iterating over the results of a query for context type '"Volo.Abp.SettingManagement.EntityFrameworkCore.SettingManagementDbContext"'."
+""Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettingDefinitions'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:5dd8d1c7-7909-4d15-ad3d-2a8e5710b76c
+Error Number:208,State:1,Class:16"
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettingDefinitions'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:5dd8d1c7-7909-4d15-ad3d-2a8e5710b76c
+Error Number:208,State:1,Class:16
+2026-09-28 12:11:18.890 +00:00 [Error] Invalid object name 'AbpSettingDefinitions'.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettingDefinitions'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Volo.Abp.Domain.Repositories.EntityFrameworkCore.EfCoreRepository`2.GetListAsync(Boolean includeDetails, CancellationToken cancellationToken)
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapterWithReturnValue`1.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.SettingManagement.StaticSettingSaver.UpdateChangedSettingsAsync(List`1 SettingRecords)
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous(IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapter.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.SettingManagement.SettingDynamicInitializer.<>c__DisplayClass10_0.<<SaveStaticSettingsToDatabaseAsync>b__1>d.MoveNext()
+ClientConnectionId:5dd8d1c7-7909-4d15-ad3d-2a8e5710b76c
+Error Number:208,State:1,Class:16
+2026-09-28 12:11:18.891 +00:00 [Error] ---------- Exception Data ----------
+HelpLink.ProdName = Microsoft SQL Server
+HelpLink.ProdVer = 16.00.4295
+HelpLink.EvtSrc = MSSQLServer
+HelpLink.EvtID = 208
+HelpLink.BaseHelpUrl = https://go.microsoft.com/fwlink
+HelpLink.LinkId = 20476
+
+2026-09-28 12:13:41.892 +00:00 [Error] Failed executing DbCommand ("1"ms) [Parameters=[""], CommandType='Text', CommandTimeout='60000']"
+""SELECT [a].[Id], [a].[DefaultValue], [a].[Description], [a].[DisplayName], [a].[ExtraProperties], [a].[IsEncrypted], [a].[IsInherited], [a].[IsVisibleToClients], [a].[Name], [a].[Providers]
+FROM [AbpSettingDefinitions] AS [a]"
+2026-09-28 12:13:41.892 +00:00 [Error] An exception occurred while iterating over the results of a query for context type '"Volo.Abp.SettingManagement.EntityFrameworkCore.SettingManagementDbContext"'."
+""Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettingDefinitions'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:6c4f4ffc-e974-46dd-aba9-1495dc8346e2
+Error Number:208,State:1,Class:16"
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettingDefinitions'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:6c4f4ffc-e974-46dd-aba9-1495dc8346e2
+Error Number:208,State:1,Class:16
+2026-09-28 12:13:41.894 +00:00 [Error] Invalid object name 'AbpSettingDefinitions'.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettingDefinitions'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Volo.Abp.Domain.Repositories.EntityFrameworkCore.EfCoreRepository`2.GetListAsync(Boolean includeDetails, CancellationToken cancellationToken)
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapterWithReturnValue`1.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.SettingManagement.StaticSettingSaver.UpdateChangedSettingsAsync(List`1 SettingRecords)
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous(IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapter.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.SettingManagement.SettingDynamicInitializer.<>c__DisplayClass10_0.<<SaveStaticSettingsToDatabaseAsync>b__1>d.MoveNext()
+ClientConnectionId:6c4f4ffc-e974-46dd-aba9-1495dc8346e2
+Error Number:208,State:1,Class:16
+2026-09-28 12:13:41.895 +00:00 [Error] ---------- Exception Data ----------
+HelpLink.ProdName = Microsoft SQL Server
+HelpLink.ProdVer = 16.00.4295
+HelpLink.EvtSrc = MSSQLServer
+HelpLink.EvtID = 208
+HelpLink.BaseHelpUrl = https://go.microsoft.com/fwlink
+HelpLink.LinkId = 20476
+
+2026-09-28 12:13:44.019 +00:00 [Error] Failed executing DbCommand ("2"ms) [Parameters=[""], CommandType='Text', CommandTimeout='60000']"
+""SELECT [a].[Id], [a].[DisplayName], [a].[ExtraProperties], [a].[Name]
+FROM [AbpPermissionGroups] AS [a]"
+2026-09-28 12:13:44.020 +00:00 [Error] An exception occurred while iterating over the results of a query for context type '"Volo.Abp.PermissionManagement.EntityFrameworkCore.PermissionManagementDbContext"'."
+""Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpPermissionGroups'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:6c4f4ffc-e974-46dd-aba9-1495dc8346e2
+Error Number:208,State:1,Class:16"
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpPermissionGroups'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:6c4f4ffc-e974-46dd-aba9-1495dc8346e2
+Error Number:208,State:1,Class:16
+2026-09-28 12:13:44.021 +00:00 [Error] Invalid object name 'AbpPermissionGroups'.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpPermissionGroups'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Volo.Abp.Domain.Repositories.EntityFrameworkCore.EfCoreRepository`2.GetListAsync(Boolean includeDetails, CancellationToken cancellationToken)
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapterWithReturnValue`1.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.UpdateChangedPermissionGroupsAsync(IEnumerable`1 permissionGroupRecords)
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.PermissionDynamicInitializer.<>c__DisplayClass10_0.<<SaveStaticPermissionsToDatabaseAsync>b__1>d.MoveNext()
+ClientConnectionId:6c4f4ffc-e974-46dd-aba9-1495dc8346e2
+Error Number:208,State:1,Class:16
+2026-09-28 12:13:44.022 +00:00 [Error] ---------- Exception Data ----------
+HelpLink.ProdName = Microsoft SQL Server
+HelpLink.ProdVer = 16.00.4295
+HelpLink.EvtSrc = MSSQLServer
+HelpLink.EvtID = 208
+HelpLink.BaseHelpUrl = https://go.microsoft.com/fwlink
+HelpLink.LinkId = 20476
+
+2026-09-28 12:13:56.574 +00:00 [Information] FlushAsync Month, DataBucket:202609, isExists:False
+2026-09-28 12:13:56.575 +00:00 [Information] FlushAsync Day, DataBucket:20260928, isExists:False
+2026-09-28 12:13:56.576 +00:00 [Information] FlushAsync Hour, DataBucket:2026092812, isExists:False
+2026-09-28 12:13:56.576 +00:00 [Information] "MessageReportFlushWorker" Flush Elapsed:3ms
+2026-09-28 12:18:40.135 +00:00 [Error] Failed executing DbCommand ("1"ms) [Parameters=[""], CommandType='Text', CommandTimeout='60000']"
+""SELECT [a].[Id], [a].[DisplayName], [a].[ExtraProperties], [a].[Name]
+FROM [AbpPermissionGroups] AS [a]"
+2026-09-28 12:18:40.136 +00:00 [Error] An exception occurred while iterating over the results of a query for context type '"Volo.Abp.PermissionManagement.EntityFrameworkCore.PermissionManagementDbContext"'."
+""Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpPermissionGroups'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:33e1dcf9-292e-4938-9656-3ef5429a478a
+Error Number:208,State:1,Class:16"
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpPermissionGroups'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:33e1dcf9-292e-4938-9656-3ef5429a478a
+Error Number:208,State:1,Class:16
+2026-09-28 12:18:40.137 +00:00 [Error] Invalid object name 'AbpPermissionGroups'.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpPermissionGroups'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Volo.Abp.Domain.Repositories.EntityFrameworkCore.EfCoreRepository`2.GetListAsync(Boolean includeDetails, CancellationToken cancellationToken)
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapterWithReturnValue`1.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.UpdateChangedPermissionGroupsAsync(IEnumerable`1 permissionGroupRecords)
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.StaticPermissionSaver.SaveAsync()
+   at Volo.Abp.PermissionManagement.PermissionDynamicInitializer.<>c__DisplayClass10_0.<<SaveStaticPermissionsToDatabaseAsync>b__1>d.MoveNext()
+ClientConnectionId:33e1dcf9-292e-4938-9656-3ef5429a478a
+Error Number:208,State:1,Class:16
+2026-09-28 12:18:40.138 +00:00 [Error] ---------- Exception Data ----------
+HelpLink.ProdName = Microsoft SQL Server
+HelpLink.ProdVer = 16.00.4295
+HelpLink.EvtSrc = MSSQLServer
+HelpLink.EvtID = 208
+HelpLink.BaseHelpUrl = https://go.microsoft.com/fwlink
+HelpLink.LinkId = 20476
+
+2026-09-28 12:18:56.564 +00:00 [Information] FlushAsync Month, DataBucket:202609, isExists:False
+2026-09-28 12:18:56.565 +00:00 [Information] FlushAsync Day, DataBucket:20260928, isExists:False
+2026-09-28 12:18:56.566 +00:00 [Information] FlushAsync Hour, DataBucket:2026092812, isExists:False
+2026-09-28 12:18:56.566 +00:00 [Information] "MessageReportFlushWorker" Flush Elapsed:2ms
+2026-09-28 12:19:10.882 +00:00 [Error] Failed executing DbCommand ("1"ms) [Parameters=[""], CommandType='Text', CommandTimeout='60000']"
+""SELECT [a].[Id], [a].[DefaultValue], [a].[Description], [a].[DisplayName], [a].[ExtraProperties], [a].[IsEncrypted], [a].[IsInherited], [a].[IsVisibleToClients], [a].[Name], [a].[Providers]
+FROM [AbpSettingDefinitions] AS [a]"
+2026-09-28 12:19:10.882 +00:00 [Error] An exception occurred while iterating over the results of a query for context type '"Volo.Abp.SettingManagement.EntityFrameworkCore.SettingManagementDbContext"'."
+""Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettingDefinitions'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:33e1dcf9-292e-4938-9656-3ef5429a478a
+Error Number:208,State:1,Class:16"
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettingDefinitions'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:33e1dcf9-292e-4938-9656-3ef5429a478a
+Error Number:208,State:1,Class:16
+2026-09-28 12:19:10.884 +00:00 [Error] Invalid object name 'AbpSettingDefinitions'.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettingDefinitions'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Volo.Abp.Domain.Repositories.EntityFrameworkCore.EfCoreRepository`2.GetListAsync(Boolean includeDetails, CancellationToken cancellationToken)
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapterWithReturnValue`1.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.SettingManagement.StaticSettingSaver.UpdateChangedSettingsAsync(List`1 SettingRecords)
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous(IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapter.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.SettingManagement.SettingDynamicInitializer.<>c__DisplayClass10_0.<<SaveStaticSettingsToDatabaseAsync>b__1>d.MoveNext()
+ClientConnectionId:33e1dcf9-292e-4938-9656-3ef5429a478a
+Error Number:208,State:1,Class:16
+2026-09-28 12:19:10.885 +00:00 [Error] ---------- Exception Data ----------
+HelpLink.ProdName = Microsoft SQL Server
+HelpLink.ProdVer = 16.00.4295
+HelpLink.EvtSrc = MSSQLServer
+HelpLink.EvtID = 208
+HelpLink.BaseHelpUrl = https://go.microsoft.com/fwlink
+HelpLink.LinkId = 20476
+
+2026-09-28 12:23:56.549 +00:00 [Information] FlushAsync Month, DataBucket:202609, isExists:False
+2026-09-28 12:23:56.549 +00:00 [Information] FlushAsync Day, DataBucket:20260928, isExists:False
+2026-09-28 12:23:56.550 +00:00 [Information] FlushAsync Hour, DataBucket:2026092812, isExists:False
+2026-09-28 12:23:56.550 +00:00 [Information] "MessageReportFlushWorker" Flush Elapsed:2ms
+2026-09-28 12:28:09.950 +00:00 [Error] Failed executing DbCommand ("1"ms) [Parameters=[""], CommandType='Text', CommandTimeout='60000']"
+""SELECT [a].[Id], [a].[DefaultValue], [a].[Description], [a].[DisplayName], [a].[ExtraProperties], [a].[IsEncrypted], [a].[IsInherited], [a].[IsVisibleToClients], [a].[Name], [a].[Providers]
+FROM [AbpSettingDefinitions] AS [a]"
+2026-09-28 12:28:09.951 +00:00 [Error] An exception occurred while iterating over the results of a query for context type '"Volo.Abp.SettingManagement.EntityFrameworkCore.SettingManagementDbContext"'."
+""Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettingDefinitions'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:a341039a-c632-4fff-a558-57edc181e290
+Error Number:208,State:1,Class:16"
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettingDefinitions'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:a341039a-c632-4fff-a558-57edc181e290
+Error Number:208,State:1,Class:16
+2026-09-28 12:28:09.952 +00:00 [Error] Invalid object name 'AbpSettingDefinitions'.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettingDefinitions'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Volo.Abp.Domain.Repositories.EntityFrameworkCore.EfCoreRepository`2.GetListAsync(Boolean includeDetails, CancellationToken cancellationToken)
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapterWithReturnValue`1.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.SettingManagement.StaticSettingSaver.UpdateChangedSettingsAsync(List`1 SettingRecords)
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Volo.Abp.SettingManagement.StaticSettingSaver.SaveAsync()
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous(IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapter.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.SettingManagement.SettingDynamicInitializer.<>c__DisplayClass10_0.<<SaveStaticSettingsToDatabaseAsync>b__1>d.MoveNext()
+ClientConnectionId:a341039a-c632-4fff-a558-57edc181e290
+Error Number:208,State:1,Class:16
+2026-09-28 12:28:09.953 +00:00 [Error] ---------- Exception Data ----------
+HelpLink.ProdName = Microsoft SQL Server
+HelpLink.ProdVer = 16.00.4295
+HelpLink.EvtSrc = MSSQLServer
+HelpLink.EvtID = 208
+HelpLink.BaseHelpUrl = https://go.microsoft.com/fwlink
+HelpLink.LinkId = 20476
+
+2026-09-28 12:28:35.855 +00:00 [Information] Request starting "HTTP/1.1" "GET" "http"://"127.0.0.1:51601""""/swagger/index.html""" - null null
+2026-09-28 12:28:35.862 +00:00 [Information] The 'WebRootPath' is not set, The 'CheckLibs' feature not needed.
+2026-09-28 12:28:36.558 +00:00 [Error] Failed executing DbCommand ("66"ms) [Parameters=["@providerName='?' (Size = 64)"], CommandType='Text', CommandTimeout='60000']"
+""SELECT [a].[Id], [a].[Name], [a].[ProviderKey], [a].[ProviderName], [a].[Value]
+FROM [AbpSettings] AS [a]
+WHERE [a].[ProviderName] = @providerName AND [a].[ProviderKey] IS NULL"
+2026-09-28 12:28:36.559 +00:00 [Error] An exception occurred while iterating over the results of a query for context type '"Volo.Abp.SettingManagement.EntityFrameworkCore.SettingManagementDbContext"'."
+""Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettings'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:a341039a-c632-4fff-a558-57edc181e290
+Error Number:208,State:1,Class:16"
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettings'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:a341039a-c632-4fff-a558-57edc181e290
+Error Number:208,State:1,Class:16
+2026-09-28 12:28:36.567 +00:00 [Error] Connection id ""0HNOTBG26BNVM"", Request id ""0HNOTBG26BNVM:00000001"": An unhandled exception was thrown by the application.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettings'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Volo.Abp.SettingManagement.EntityFrameworkCore.EfCoreSettingRepository.GetListAsync(String providerName, String providerKey, CancellationToken cancellationToken)
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapterWithReturnValue`1.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.SettingManagement.SettingManagementStore.SetCacheItemsAsync(String providerName, String providerKey, String currentName, SettingCacheItem currentCacheItem)
+   at Volo.Abp.SettingManagement.SettingManagementStore.GetCacheItemAsync(String name, String providerName, String providerKey)
+   at Volo.Abp.SettingManagement.SettingManagementStore.GetOrNullAsync(String name, String providerName, String providerKey)
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapterWithReturnValue`1.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.Settings.TenantSettingValueProvider.GetOrNullAsync(SettingDefinition setting)
+   at Volo.Abp.Settings.SettingProvider.GetOrNullValueFromProvidersAsync(IEnumerable`1 providers, SettingDefinition setting)
+   at Volo.Abp.Settings.SettingProvider.GetOrNullAsync(String name)
+   at Microsoft.AspNetCore.RequestLocalization.DefaultAbpRequestLocalizationOptionsProvider.GetLocalizationOptionsAsync()
+   at Microsoft.AspNetCore.RequestLocalization.AbpRequestLocalizationMiddleware.InvokeAsync(HttpContext context, RequestDelegate next)
+   at Microsoft.AspNetCore.Builder.UseMiddlewareExtensions.InterfaceMiddlewareBinder.<>c__DisplayClass2_0.<<CreateMiddleware>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at Volo.Abp.AspNetCore.Tracing.AbpCorrelationIdMiddleware.InvokeAsync(HttpContext context, RequestDelegate next)
+   at Microsoft.AspNetCore.Builder.UseMiddlewareExtensions.InterfaceMiddlewareBinder.<>c__DisplayClass2_0.<<CreateMiddleware>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Volo.Abp.AspNetCore.Mvc.Libs.AbpMvcLibsService.<CheckLibs>b__1_0(HttpContext httpContext, RequestDelegate next)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ProcessRequests[TContext](IHttpApplication`1 application)
+ClientConnectionId:a341039a-c632-4fff-a558-57edc181e290
+Error Number:208,State:1,Class:16
+2026-09-28 12:28:36.574 +00:00 [Information] Request finished "HTTP/1.1" "GET" "http"://"127.0.0.1:51601""""/swagger/index.html""" - 500 0 null 720.0449ms
+2026-09-28 12:28:36.666 +00:00 [Information] Request starting "HTTP/1.1" "GET" "http"://"127.0.0.1:51601""""/swagger/v1/swagger.json""" - null null
+2026-09-28 12:28:36.676 +00:00 [Error] Failed executing DbCommand ("1"ms) [Parameters=["@providerName='?' (Size = 64)"], CommandType='Text', CommandTimeout='60000']"
+""SELECT [a].[Id], [a].[Name], [a].[ProviderKey], [a].[ProviderName], [a].[Value]
+FROM [AbpSettings] AS [a]
+WHERE [a].[ProviderName] = @providerName AND [a].[ProviderKey] IS NULL"
+2026-09-28 12:28:36.676 +00:00 [Error] An exception occurred while iterating over the results of a query for context type '"Volo.Abp.SettingManagement.EntityFrameworkCore.SettingManagementDbContext"'."
+""Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettings'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:a341039a-c632-4fff-a558-57edc181e290
+Error Number:208,State:1,Class:16"
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettings'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:a341039a-c632-4fff-a558-57edc181e290
+Error Number:208,State:1,Class:16
+2026-09-28 12:28:36.678 +00:00 [Error] Connection id ""0HNOTBG26BNVN"", Request id ""0HNOTBG26BNVN:00000001"": An unhandled exception was thrown by the application.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'AbpSettings'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SplitQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Volo.Abp.SettingManagement.EntityFrameworkCore.EfCoreSettingRepository.GetListAsync(String providerName, String providerKey, CancellationToken cancellationToken)
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapterWithReturnValue`1.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.SettingManagement.SettingManagementStore.SetCacheItemsAsync(String providerName, String providerKey, String currentName, SettingCacheItem currentCacheItem)
+   at Volo.Abp.SettingManagement.SettingManagementStore.GetCacheItemAsync(String name, String providerName, String providerKey)
+   at Volo.Abp.SettingManagement.SettingManagementStore.GetOrNullAsync(String name, String providerName, String providerKey)
+   at Castle.DynamicProxy.AsyncInterceptorBase.ProceedAsynchronous[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo)
+   at Volo.Abp.Castle.DynamicProxy.CastleAbpMethodInvocationAdapterWithReturnValue`1.ProceedAsync()
+   at Volo.Abp.Uow.UnitOfWorkInterceptor.InterceptAsync(IAbpMethodInvocation invocation)
+   at Volo.Abp.Castle.DynamicProxy.CastleAsyncAbpInterceptorAdapter`1.InterceptAsync[TResult](IInvocation invocation, IInvocationProceedInfo proceedInfo, Func`3 proceed)
+   at Volo.Abp.Settings.TenantSettingValueProvider.GetOrNullAsync(SettingDefinition setting)
+   at Volo.Abp.Settings.SettingProvider.GetOrNullValueFromProvidersAsync(IEnumerable`1 providers, SettingDefinition setting)
+   at Volo.Abp.Settings.SettingProvider.GetOrNullAsync(String name)
+   at Microsoft.AspNetCore.RequestLocalization.DefaultAbpRequestLocalizationOptionsProvider.GetLocalizationOptionsAsync()
+   at Microsoft.AspNetCore.RequestLocalization.AbpRequestLocalizationMiddleware.InvokeAsync(HttpContext context, RequestDelegate next)
+   at Microsoft.AspNetCore.Builder.UseMiddlewareExtensions.InterfaceMiddlewareBinder.<>c__DisplayClass2_0.<<CreateMiddleware>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at Volo.Abp.AspNetCore.Tracing.AbpCorrelationIdMiddleware.InvokeAsync(HttpContext context, RequestDelegate next)
+   at Microsoft.AspNetCore.Builder.UseMiddlewareExtensions.InterfaceMiddlewareBinder.<>c__DisplayClass2_0.<<CreateMiddleware>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Volo.Abp.AspNetCore.Mvc.Libs.AbpMvcLibsService.<CheckLibs>b__1_0(HttpContext httpContext, RequestDelegate next)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ProcessRequests[TContext](IHttpApplication`1 application)
+ClientConnectionId:a341039a-c632-4fff-a558-57edc181e290
+Error Number:208,State:1,Class:16
+2026-09-28 12:28:36.679 +00:00 [Information] Request finished "HTTP/1.1" "GET" "http"://"127.0.0.1:51601""""/swagger/v1/swagger.json""" - 500 0 null 13.862ms

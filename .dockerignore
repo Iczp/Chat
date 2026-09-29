@@ -14,6 +14,9 @@
 
 **/logs/
 
+# Local database volumes, backups, and deployment logs are runtime state.
+database/
+
 *.log
 
 # 忽略临时文件
