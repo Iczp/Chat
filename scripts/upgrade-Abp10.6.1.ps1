@@ -31,7 +31,7 @@ param (
     [string]$ProjectsPath = "",
     [string]$AbpVersion = "10.6.1",
     [string]$TargetFramework = "net10.0",
-    [string]$DotNetVersion = "10.0.9",
+    [string]$DotNetVersion = "10.0.12",
     [string]$MigrationName = "",
     [switch]$SkipGitCheck = $false,
     [switch]$AutoConfirm = $false
@@ -306,10 +306,28 @@ foreach ($cs in $allCsFiles) {
         $csText = $csText -replace 'OpenIddictConstants\.Permissions\.Endpoints\.Device(?!\w)', 'OpenIddictConstants.Permissions.Endpoints.DeviceAuthorization'
     }
 
+    # 适配 ABP 10 LanguageInfo 构造函数（移除已废弃的第 4 个参数）
+    # 例如：new LanguageInfo("hi", "hi", "Hindi", "in") -> new LanguageInfo("hi", "hi", "Hindi")
+    if ($csText -match 'new\s+LanguageInfo\s*\(\s*"[^"]+"\s*,\s*"[^"]+"\s*,\s*"[^"]+"\s*,\s*"[^"]+"\s*\)') {
+        $csText = [System.Text.RegularExpressions.Regex]::Replace(
+            $csText,
+            'new\s+LanguageInfo\s*\(\s*("[^"]+"\s*,\s*"[^"]+"\s*,\s*"[^"]+")\s*,\s*"[^"]+"\s*\)',
+            'new LanguageInfo($1)'
+        )
+    }
+
     # 通用清理无用多余的 using IdentityModel;（若移除后该文件并未引用任何 IdentityModel 类型）
     if ($csText -match 'using\s+IdentityModel;\r?\n?') {
         $strippedText = [System.Text.RegularExpressions.Regex]::Replace($csText, 'using\s+IdentityModel;\r?\n?', '')
         if ($strippedText -notmatch '\bIdentityModel\b') {
+            $csText = $strippedText
+        }
+    }
+
+    # 通用清理无用多余的 using DeviceDetectorNET.*;（若移除后该文件并未引用任何相关类型）
+    if ($csText -match 'using\s+DeviceDetectorNET[^;]*;\r?\n?') {
+        $strippedText = [System.Text.RegularExpressions.Regex]::Replace($csText, 'using\s+DeviceDetectorNET[^;]*;\r?\n?', '')
+        if ($strippedText -notmatch '\bDeviceDetector\b') {
             $csText = $strippedText
         }
     }
@@ -320,7 +338,26 @@ foreach ($cs in $allCsFiles) {
     }
 }
 
-# 2.3 更新所有 .csproj 文件
+# 2.3 清理 EF Core 10 下废弃的 SetPropertyCallsExtensions.cs（若其未被任何代码使用）
+$setPropertyExtFiles = Get-ChildItem -Path $ProjectsPath -Recurse -Filter "SetPropertyCallsExtensions.cs" -File -ErrorAction SilentlyContinue
+foreach ($extFile in $setPropertyExtFiles) {
+    $hasUsage = $false
+    foreach ($cs in $allCsFiles) {
+        if ($cs.FullName -ne $extFile.FullName) {
+            $c = Get-Content $cs.FullName -Raw -Encoding utf8 -ErrorAction SilentlyContinue
+            if ($c -match '\bSetPropertyIf\b') {
+                $hasUsage = $true
+                break
+            }
+        }
+    }
+    if (-not $hasUsage) {
+        Remove-Item $extFile.FullName -Force
+        Write-Host "  已清理废弃且未引用的 EF Core 扩展: $($extFile.Name)" -ForegroundColor Yellow
+    }
+}
+
+# 2.4 更新所有 .csproj 文件
 foreach ($proj in $csprojFiles) {
     $file = $proj.FullName
     $content = Get-Content $file -Raw -Encoding utf8
@@ -342,11 +379,18 @@ foreach ($proj in $csprojFiles) {
         $content = [System.Text.RegularExpressions.Regex]::Replace($content, '<Version>.*?</Version>', "<Version>$newVersion</Version>")
     }
 
-    # 替换 Volo.Abp.*
+    # 替换 Volo.Abp.* (排除具有独立版本周期的包，如 LeptonXLite)
     $content = [System.Text.RegularExpressions.Regex]::Replace(
         $content,
-        '(<PackageReference\s+Include="Volo\.Abp[^"]*"\s+Version=")[^"]*(")',
+        '(<PackageReference\s+Include="Volo\.Abp(?!\.AspNetCore\.Mvc\.UI\.Theme\.LeptonXLite)[^"]*"\s+Version=")[^"]*(")',
         "`${1}$AbpVersion`${2}"
+    )
+
+    # 针对 LeptonXLite，升级到与 ABP 10 兼容的 5.6.1 版本（或纠正误填的 10.x 版本）
+    $content = [System.Text.RegularExpressions.Regex]::Replace(
+        $content,
+        '(<PackageReference\s+Include="Volo\.Abp\.AspNetCore\.Mvc\.UI\.Theme\.LeptonXLite"\s+Version=")[^"]*(")',
+        "`${1}5.6.1`${2}"
     )
 
     # 替换 Microsoft.EntityFrameworkCore.*
@@ -376,6 +420,13 @@ foreach ($proj in $csprojFiles) {
         '(<PackageReference\s+Include="(?:Microsoft\.IdentityModel|System\.IdentityModel\.Tokens\.Jwt)[^"]*"\s+Version=")(?:[1-7]\.|8\.[0-9]\.)[^"]*(")',
         "`${1}8.16.0`${2}"
     )
+
+    # 自动为测试客户端工程或依赖 Volo.Abp.Http.Client.IdentityModel 的工程补充 IdentityModel 7.0.0
+    if ($proj.Name -match 'ConsoleTestApp' -or ($content -match 'Volo\.Abp\.Http\.Client\.IdentityModel')) {
+        if ($content -notmatch '<PackageReference\s+Include="IdentityModel"') {
+            $content = $content -replace '(<PackageReference\s+Include="Volo\.Abp\.Http\.Client\.IdentityModel"[^>]*/>)', "`$1`n    <PackageReference Include=`"IdentityModel`" Version=`"7.0.0`" />"
+        }
+    }
 
     # 纠正 SixLabors.ImageSharp.Drawing 版本 (必须与 ABP 10.6.1 的 ImageSharp 3.x 对齐，Drawing 3.x 依赖 ImageSharp 4.x 且有破坏性改动和收费 License 检查)
     $content = [System.Text.RegularExpressions.Regex]::Replace(
