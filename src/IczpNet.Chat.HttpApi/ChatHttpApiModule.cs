@@ -15,7 +15,7 @@ namespace IczpNet.Chat;
     typeof(AbpAspNetCoreMvcModule))]
 //[DependsOn(typeof(AbpCommonsHttpApiModule))]
 [DependsOn(typeof(AbpIdentityHttpApiModule))]
-[DependsOn(typeof(AbpImagingImageSharpModule))]
+[DependsOn(typeof(IczpNet.AbpCommons.AbpCommonsDomainModule))]
 [DependsOn(typeof(AbpAspNetCoreSignalRModule))]
 public class ChatHttpApiModule : AbpModule
 {

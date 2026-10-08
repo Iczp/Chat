@@ -5,7 +5,7 @@
     <RootNamespace>IczpNet.Chat</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="IczpNet.AbpCommons.Host.Shared" Version="0.10.0" />
+    <ProjectReference Include="..\..\..\IczpNet.AbpCommons\host\IczpNet.AbpCommons.Host.Shared\IczpNet.AbpCommons.Host.Shared.csproj" />
     <PackageReference Include="Volo.Abp.Account.Web" Version="10.6.1" />
     <PackageReference Include="Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic" Version="10.6.1" />
     <PackageReference Include="Volo.Abp.BackgroundWorkers.Quartz" Version="10.6.1" />

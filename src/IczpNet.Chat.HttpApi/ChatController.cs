@@ -141,6 +141,8 @@ public abstract class ChatController : AbpControllerBase
                 Height = (uint)size,
                 Mode = ImageResizeMode.Crop
             });
+            if (resizedBytes.State == ImageProcessState.Unsupported)
+                throw new Volo.Abp.UserFriendlyException("Unsupported image format.");
 
             var entity = await BlobManager.CreateAsync(new Blob(blobId, PortraitsContainer)
             {

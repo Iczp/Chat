@@ -9,11 +9,11 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Imaging;
 using System.IO;
-using Image = SixLabors.ImageSharp.Image;
+using Image = ImageMagick.MagickImage;
 using System.Linq;
 using IczpNet.Chat.Options;
 using Microsoft.Extensions.Options;
-using SixLabors.ImageSharp.Metadata.Profiles.Exif;
+using ImageMagick;
 using Volo.Abp.Json;
 using IczpNet.Chat.Medias;
 using Microsoft.CodeAnalysis;
@@ -111,25 +111,14 @@ public class MessageSenderController(
     /// <returns></returns>
     protected virtual (int width, int height) GetImageActualDimensions(Image image)
     {
-        int width = image.Width;
+        int width = checked((int)image.Width);
 
-        int height = image.Height;
+        int height = checked((int)image.Height);
 
-        // Check if image has Exif metadata
-        if (image.Metadata.ExifProfile != null)
+        if (image.Orientation is OrientationType.LeftTop or OrientationType.RightTop or
+            OrientationType.RightBottom or OrientationType.LeftBottom)
         {
-            var item = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == ExifTag.Orientation);
-
-            if (item != null)
-            {
-                var orientation = (ushort)item.GetValue();
-
-                if (orientation == 6 || orientation == 8) // 6: Rotate 90 degrees CW, 8: Rotate 90 degrees CCW
-                {
-                    // Swap width and height if rotated 90 or 270 degrees
-                    (height, width) = (width, height);
-                }
-            }
+            (height, width) = (width, height);
         }
         return (width, height);
     }
@@ -138,9 +127,10 @@ public class MessageSenderController(
     {
         var items = new List<ImageProfileEntry>();
 
-        if (image.Metadata.ExifProfile != null)
+        var profile = image.GetExifProfile();
+        if (profile != null)
         {
-            foreach (var exifValue in image.Metadata.ExifProfile.Values)
+            foreach (var exifValue in profile.Values)
             {
                 items.Add(new ImageProfileEntry()
                 {
@@ -194,6 +184,8 @@ public class MessageSenderController(
                     Height = (uint)maxSize,
                     Mode = ImageResizeMode.Max
                 });
+                if (resizeder.State == ImageProcessState.Unsupported)
+                    throw new Volo.Abp.UserFriendlyException("Unsupported image format.");
                 resizedBytes = resizeder.Result;
             }
 
@@ -236,11 +228,11 @@ public class MessageSenderController(
 
         if (isOriginal)
         {
-            using Image image = Image.Load(bytes);
+            using Image image = new(bytes);
             //original
             var originalBlobId = GuidGenerator.Create();
 
-            var maxSize = new List<int> { image.Width, image.Height }.Max();
+            var maxSize = checked((int)Math.Max(image.Width, image.Height));
 
             await SaveImageAsync(originalBlobId, bytes, $"{directoryName}/{filename}_original{suffix}", maxSize, false);
 
@@ -265,7 +257,7 @@ public class MessageSenderController(
 
             var blob = await SaveImageAsync(bigImgBlobId, bytes, $"{directoryName}/{filename}_{bigImageSize}{suffix}", bigImageSize, true);
 
-            using Image img = Image.Load(blob.Bytes);
+            using Image img = new(blob.Bytes);
 
             (int width, int height) = GetImageActualDimensions(img);
 
@@ -414,11 +406,11 @@ public class MessageSenderController(
             content.SnapshotUrl = await GetFileUrlAsync(snapBlob.Id, videoBlob.MimeType);
 
             // Actual width | height
-            using Image snapshotImg = Image.Load(snapBlob.Bytes);
+            using Image snapshotImg = new(snapBlob.Bytes);
 
-            content.ImageWidth = snapshotImg.Width;
+            content.ImageWidth = checked((int)snapshotImg.Width);
 
-            content.ImageHeight = snapshotImg.Height;
+            content.ImageHeight = checked((int)snapshotImg.Height);
 
             (int width, int height) = GetImageActualDimensions(snapshotImg);
 
@@ -439,6 +431,8 @@ public class MessageSenderController(
                 Mode = ImageResizeMode.Max
             });
 
+            if (resizeder.State == ImageProcessState.Unsupported)
+                throw new Volo.Abp.UserFriendlyException("Unsupported image format.");
             var thumbnailResizedBytes = resizeder.Result;
 
             var snapshotThumbnailBlobId = GuidGenerator.Create();
