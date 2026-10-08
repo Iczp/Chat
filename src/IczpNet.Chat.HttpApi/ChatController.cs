@@ -34,6 +34,7 @@ public abstract class ChatController : AbpControllerBase
     protected ChatController()
     {
         LocalizationResource = typeof(ChatResource);
+        ObjectMapperContext = typeof(ChatApplicationModule);
     }
 
     /// <summary>

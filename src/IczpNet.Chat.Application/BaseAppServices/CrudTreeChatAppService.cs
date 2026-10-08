@@ -90,7 +90,7 @@ public abstract class CrudTreeChatAppService<
         IRepository<TEntity, TKey> repository,
         ITreeManager<TEntity, TKey, TTreeInfo> treeManager) : base(repository, treeManager)
     {
-
+        ObjectMapperContext = typeof(ChatApplicationModule);
     }
 
     protected virtual async Task<PagedResultDto<TOuputDto>> GetPagedListAsync<T, TOuputDto>(

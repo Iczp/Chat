@@ -1,6 +1,8 @@
 ﻿using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.EntityFrameworkCore;
+using IczpNet.Chat.IdentityUsers;
 using IczpNet.Chat.Middlewares;
+using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MultiTenancy;
 using IczpNet.RedisDistributedEventBus;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -29,6 +31,7 @@ using Volo.Abp.AspNetCore.Mvc.UI.MultiTenancy;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.Autofac;
+using Volo.Abp.AutoMapper;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.BlobStoring;
@@ -38,6 +41,7 @@ using Volo.Abp.Caching;
 using Volo.Abp.Caching.StackExchangeRedis;
 using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.SqlServer;
+using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.Json;
 using Volo.Abp.Json.SystemTextJson;
 using Volo.Abp.Localization;
@@ -85,6 +89,7 @@ public class ChatHttpApiHostModule : AbpModule
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        context.Services.AddAutoMapperObjectMapper();
         context.Services.AddSingleton<Medallion.Threading.IDistributedLockProvider>(provider =>
             new Medallion.Threading.Redis.RedisDistributedSynchronizationProvider(
                 provider.GetRequiredService<IConnectionMultiplexer>().GetDatabase()));
@@ -108,6 +113,14 @@ public class ChatHttpApiHostModule : AbpModule
         Configure<AbpBackgroundJobOptions>(options => options.IsJobExecutionEnabled = false);
 
         Configure<AbpBackgroundWorkerOptions>(options => options.IsEnabled = false);
+
+        // During the staged deployment the main IM API owns message post-processing
+        // (including its AI providers). This host only serves Chat HTTP and SignalR.
+        PostConfigure<AbpDistributedEventBusOptions>(options =>
+        {
+            options.Handlers.Remove(typeof(MessageSentDistributedEventHandler));
+            options.Handlers.Remove(typeof(SeedDataByUserCreatedDistributedEventHandler));
+        });
 
         Configure<AbpExceptionHandlingOptions>(options =>
         {
@@ -201,7 +214,7 @@ public class ChatHttpApiHostModule : AbpModule
             configuration["AuthServer:Authority"],
             new Dictionary<string, string>
             {
-                {"Chat", "Chat API"}
+                {configuration["AuthServer:Scope"] ?? "Chat", "Chat API"}
             },
             options =>
             {
@@ -294,7 +307,7 @@ public class ChatHttpApiHostModule : AbpModule
             {
                 options.Authority = configuration["AuthServer:Authority"];
                 options.RequireHttpsMetadata = Convert.ToBoolean(configuration["AuthServer:RequireHttpsMetadata"]);
-                options.Audience = "Chat";
+                options.Audience = configuration["AuthServer:Audience"] ?? "Chat";
 
                 // We have to hook the OnMessageReceived event in order to
                 // allow the JWT authentication handler to read the access
@@ -329,6 +342,9 @@ public class ChatHttpApiHostModule : AbpModule
                     ValidateAudience = true,
                     ValidateLifetime = true, // 确保 ValidateLifetime 为 true
                     ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = string.IsNullOrWhiteSpace(configuration["OpenIddict:SigningKey"])
+                        ? null
+                        : new SymmetricSecurityKey(Encoding.ASCII.GetBytes(configuration["OpenIddict:SigningKey"])),
                     //ValidIssuer = configuration["Jwt:Issuer"],
                     //ValidAudience = configuration["Jwt:Audience"],
                     //IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"])),
@@ -339,7 +355,7 @@ public class ChatHttpApiHostModule : AbpModule
 
         Configure<AbpDistributedCacheOptions>(options =>
         {
-            options.KeyPrefix = "Chat:";
+            options.KeyPrefix = configuration["Cache:KeyPrefix"] ?? "Chat:";
         });
 
         var dataProtectionBuilder = context.Services.AddDataProtection().SetApplicationName("Chat");
@@ -416,7 +432,7 @@ public class ChatHttpApiHostModule : AbpModule
             options.EnablePersistAuthorization();
             var configuration = context.GetConfiguration();
             options.OAuthClientId(configuration["AuthServer:SwaggerClientId"]);
-            options.OAuthScopes("Chat");
+            options.OAuthScopes(configuration["AuthServer:Scope"] ?? "Chat");
         });
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();

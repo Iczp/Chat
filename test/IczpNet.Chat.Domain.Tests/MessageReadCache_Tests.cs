@@ -250,7 +250,15 @@ public class MessageReadCache_Tests
         var uows = Substitute.For<IUnitOfWorkManager>();
         uows.Current.Returns(uow);
         lazy.LazyGetRequiredService<IUnitOfWorkManager>().Returns(uows);
-        return new MessageCacheManager { LazyServiceProvider = lazy };
+        var cache = new MessageCacheManager { LazyServiceProvider = lazy };
+        var services = Substitute.For<IServiceProvider>();
+        services.GetService(typeof(IMessageCacheManager)).Returns(cache);
+        var scope = Substitute.For<Microsoft.Extensions.DependencyInjection.IServiceScope>();
+        scope.ServiceProvider.Returns(services);
+        var scopeFactory = Substitute.For<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
+        scopeFactory.CreateScope().Returns(scope);
+        lazy.LazyGetRequiredService<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>().Returns(scopeFactory);
+        return cache;
     }
 
     [RedisReviewFact]

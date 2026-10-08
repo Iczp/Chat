@@ -28,7 +28,13 @@ public class ConnectedDistributedEventHandler(
     //[UnitOfWork]
     public async Task HandleEventAsync(ConnectedEto eventData)
     {
-        var lockerName = $"{HandlerName}-messageId-{eventData.ConnectionId}";
+        // Only the host that owns this SignalR connection may claim its event.
+        if (eventData.Host != CurrentHosted.Name)
+        {
+            return;
+        }
+
+        var lockerName = $"{HandlerName}-host-{CurrentHosted.Name}-connectionId-{eventData.ConnectionId}";
 
         await using var handle = await AbpDistributedLock.TryAcquireAsync(lockerName);
 
@@ -40,12 +46,6 @@ public class ConnectedDistributedEventHandler(
             return;
         }
         //await ConnectionPoolManager.AddAsync(eventData);
-
-        if (eventData.Host!= CurrentHosted.Name)
-        {
-            Logger.LogInformation($"{nameof(ConnectedDistributedEventHandler)} 不在同一主机，不处理，CurrentHosted.Name={CurrentHosted.Name}");
-            return;
-        }
 
         // 分布式事件要开启工作单元
         using var uow = UnitOfWorkManager.Begin();

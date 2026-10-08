@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Options;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.Domain.Entities.Events;
 using Volo.Abp.EventBus;
 using Volo.Abp.Uow;
@@ -120,17 +121,23 @@ return 1", [DeletedVersionKey(sessionUnitId), DeletedKey(sessionUnitId)], argume
         return deleted;
     }
 
-    private void AfterCommit(Func<Task> action)
+    private void AfterCommit(Func<MessageCacheManager, Task> action)
     {
         var uow = LazyServiceProvider.LazyGetRequiredService<IUnitOfWorkManager>().Current;
         if (uow == null) throw new InvalidOperationException("Message read cache mutation requires a unit of work.");
-        uow.OnCompleted(action);
+        var scopeFactory = LazyServiceProvider.LazyGetRequiredService<IServiceScopeFactory>();
+        uow.OnCompleted(async () =>
+        {
+            using var scope = scopeFactory.CreateScope();
+            var manager = (MessageCacheManager)scope.ServiceProvider.GetRequiredService<IMessageCacheManager>();
+            await action(manager);
+        });
     }
 
     public Task HandleEventAsync(EntityCreatedEventData<Message> eventData)
     {
         // Local entity events run before the transaction commits; update certified windows only after commit.
-        AfterCommit(() => AppendCommittedAsync(eventData.Entity));
+        AfterCommit(manager => manager.AppendCommittedAsync(eventData.Entity));
         return Task.CompletedTask;
     }
 
@@ -194,7 +201,7 @@ return 1", [VersionKey(sessionId), RecentKey(sessionId), HistoryKey(sessionId)],
     {
         if (!message.SessionId.HasValue) return;
         await InvalidateWindowsAsync(message.SessionId.Value);
-        AfterCommit(() => InvalidateWindowsAsync(message.SessionId.Value));
+        AfterCommit(manager => manager.InvalidateWindowsAsync(message.SessionId.Value));
     }
 
     public Task HandleEventAsync(EntityUpdatedEventData<Message> eventData) => MessageChangedAsync(eventData.Entity);
@@ -203,7 +210,7 @@ return 1", [VersionKey(sessionId), RecentKey(sessionId), HistoryKey(sessionId)],
     private async Task DeletedChangedAsync(DeletedRecorder recorder)
     {
         await InvalidateDeletedAsync(recorder.SessionUnitId);
-        AfterCommit(() => InvalidateDeletedAsync(recorder.SessionUnitId));
+        AfterCommit(manager => manager.InvalidateDeletedAsync(recorder.SessionUnitId));
     }
 
     private async Task InvalidateDeletedAsync(Guid sessionUnitId)
@@ -226,7 +233,7 @@ return 1", [SettingsVersionKey(sessionUnitId), SettingsKey(sessionUnitId)], [Gui
     private async Task SettingsChangedAsync(SessionUnitSetting settings)
     {
         await InvalidateSettingsAsync(settings.SessionUnitId);
-        AfterCommit(() => InvalidateSettingsAsync(settings.SessionUnitId));
+        AfterCommit(manager => manager.InvalidateSettingsAsync(settings.SessionUnitId));
     }
 
     public Task HandleEventAsync(EntityUpdatedEventData<SessionUnitSetting> eventData) => SettingsChangedAsync(eventData.Entity);
