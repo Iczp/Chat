@@ -13,6 +13,7 @@ using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.SessionUnits;
+using IczpNet.Chat.Specifications;
 using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -97,6 +98,7 @@ public class MessageAppService(
 
         var query = (await Repository.GetQueryableAsync())
             .Where(x => x.SessionId == sessionId)
+            .Where(new OwnerMessageSpecification(entity.OwnerId, entity.Id).ToExpression())
             //排除已删除的消息
             .Where(x => !x.DeletedList.Any(d => d.SessionUnitId == sessionUnitId && d.MessageId == x.Id))
             //排除已删除的消息 -- 删除数据量大小，不稳定
@@ -369,6 +371,7 @@ public class MessageAppService(
     {
         Assert.If(input.MinMessageId <= 0, $"参数 {nameof(input.MinMessageId)} 要大于 0");
 
+        await GetAndCheckPolicyAsync(GetListPolicyName, input.SessionUnitId);
         var unit = await SessionUnitManager.GetCacheAsync(input.SessionUnitId);
 
         var pageSize = input.MaxResultCount;
@@ -384,8 +387,8 @@ public class MessageAppService(
 
         if (hasMore)
         {
-            nextCursorId = messageIdList.LastOrDefault();
             messageIdList.RemoveAt(messageIdList.Count - 1);
+            nextCursorId = messageIdList.LastOrDefault();
             var cachedTotalCount = await MessageManager.GetSessionMessageTotalCountAsync(unit, input.MinMessageId, long.MaxValue);
             totalCount = Math.Max(cachedTotalCount, totalCount);
         }
@@ -408,6 +411,7 @@ public class MessageAppService(
     /// <returns></returns>
     public async Task<ExtraPagedResultDto<MessageFastDto>> GetHistoryAsync(MessageGetHistoryInput input)
     {
+        await GetAndCheckPolicyAsync(GetListPolicyName, input.SessionUnitId);
         var unit = await SessionUnitManager.GetCacheAsync(input.SessionUnitId);
 
         var pageSize = input.MaxResultCount;
@@ -423,8 +427,8 @@ public class MessageAppService(
 
         if (hasMore)
         {
-            nextCursorId = messageIdList.LastOrDefault();
             messageIdList.RemoveAt(messageIdList.Count - 1);
+            nextCursorId = messageIdList.LastOrDefault();
             var cachedTotalCount = await MessageManager.GetSessionMessageTotalCountAsync(unit, 0, input.MaxMessageId ?? long.MaxValue);
             totalCount = Math.Max(cachedTotalCount, totalCount);
         }
@@ -554,25 +558,7 @@ public class MessageAppService(
 
         Assert.If(message.IsRollbacked, "消息已撤回!");
 
-        var isSameSession = await IsInSameSessionAsync(message.SessionId.Value, entity.OwnerId);
-
-        if (isSameSession)
-        {
-            return message;
-        }
-
-        var isInQuoteSession = await Repository.AnyAsync(x => x.QuotedMessageList.Any(d => d.Id == messageId));
-        //...是否包含在哪个聊天记录里，是否包含在引用消息里
-        //...以下待测试...
-
-        var isCanRead = (await Repository.GetQueryableAsync())
-            //本条消息 || 引用这个消息的 || 包含在聊天记录里的
-            .Where(x => x.Id == messageId || x.QuotedMessageList.Any(d => d.Id == messageId) || x.HistoryMessageList.Any(x => x.MessageId == messageId))
-            .Select(x => x.Session)
-            .Any(x => x.UnitList.Any(d => d.OwnerId == entity.OwnerId))
-            ;
-
-        Assert.If(!isCanRead, "非法访问!");
+        Assert.If(!await Repository.CanReadAsync(entity.Id, messageId, includeReferences: true), "Message is not visible.");
 
         return message;
     }

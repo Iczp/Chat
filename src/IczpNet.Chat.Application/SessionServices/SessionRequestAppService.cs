@@ -60,7 +60,10 @@ public class SessionRequestAppService
 
     protected override async Task CheckGetListPolicyAsync(SessionRequestGetListInput input)
     {
-        await CheckPolicyForUserAsync(new[] { input.OwnerId, input.DestinationId }, () => base.CheckGetListPolicyAsync(input));
+        // OwnerId and DestinationId are alternative participants, not a batch
+        // of resources being read. An owned bound filter permits self-service.
+        if (await IsAnyCurrentUserAsync(new[] { input.OwnerId, input.DestinationId })) return;
+        await base.CheckGetListPolicyAsync(input);
     }
 
     protected override SessionRequest MapToEntity(SessionRequestCreateInput createInput)

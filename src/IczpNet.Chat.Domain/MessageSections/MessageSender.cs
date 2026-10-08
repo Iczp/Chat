@@ -91,20 +91,25 @@ public class MessageSender(
 
     public virtual async Task<MessageInfo<HistoryContentOutput>> SendHistoryAsync(SessionUnitCacheItem senderSessionUnit, MessageInput<HistoryContentInput> input)
     {
-        var messageIdList = input.Content.MessageIdList;
+        var messageIdList = input.Content.MessageIdList.Distinct().ToList();
+        Assert.If(messageIdList.Count == 0 || messageIdList.Count > 100, "Select between 1 and 100 messages.");
 
         var selectedMessageList = (await Repository.GetQueryableAsync())
             .Where(x => messageIdList.Contains(x.Id))
+            .Where(new IczpNet.Chat.Specifications.OwnerMessageSpecification(senderSessionUnit.OwnerId).ToExpression())
+            .Where(x => !x.IsPrivate)
             .Where(x => !x.IsRollbacked)
             .OrderBy(x => x.Id)
         //.Select(x => x.Id)
             .ToList();
+        Assert.If(selectedMessageList.Count != messageIdList.Count, "Some selected messages are not visible or cannot be forwarded.");
         var description = selectedMessageList.Take(3)
             .Select(x => $"{x.Sender?.Name}:{x.GetTypedContentEntity()?.GetBody()}")
             .ToArray()
             .JoinAsString("\n");
 
         var messageContent = new HistoryContent(GuidGenerator.Create(), $"聊天记录({selectedMessageList.Count})", description);
+        messageContent.SetHistoryMessageList(selectedMessageList.Select(x => new HistoryMessage(messageContent, x)).ToList());
 
         return await MessageManager.SendAsync<HistoryContentOutput, HistoryContent>(senderSessionUnit, input, messageContent);
     }

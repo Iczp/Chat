@@ -14,7 +14,8 @@ namespace IczpNet.Chat.SessionUnits;
 public class FlushDirtyProcessingJob(
     ISessionUnitCacheManager cacheManager,
     ISessionUnitRepository repository,
-    IUnitOfWorkManager unitOfWorkManager)
+    IUnitOfWorkManager unitOfWorkManager,
+    Volo.Abp.DistributedLocking.IAbpDistributedLock distributedLock)
         : AsyncBackgroundJob<FlushDirtyProcessingJobArgs>, ITransientDependency
 {
     public ISessionUnitCacheManager SessionUnitCacheManager { get; set; } = cacheManager;
@@ -25,13 +26,24 @@ public class FlushDirtyProcessingJob(
 
     public override async Task ExecuteAsync(FlushDirtyProcessingJobArgs args)
     {
+        // Serialize persistence readers, not message sends, to prevent an older
+        // cache snapshot from committing after a newer persistence batch.
+        if (distributedLock is Volo.Abp.DistributedLocking.NullAbpDistributedLock)
+            throw new InvalidOperationException("Dirty persistence requires a distributed lock provider.");
+        await using var handle = await distributedLock.TryAcquireAsync("Chat:DirtyPersistence", TimeSpan.FromSeconds(10));
+        if (handle == null) throw new InvalidOperationException("Dirty persistence is busy; retry this job.");
+        if (args.DirtyVersions != null &&
+            !await SessionUnitCacheManager.HasPendingDirtyAsync(args)) return;
         Logger.LogInformation("FlushDirtyProcessingJobArgs {args}", args.ToString());
 
         var sw = Stopwatch.StartNew();
 
         var affect = await BatchUpdateAsync(args.SessionUnitIds);
 
-        await SessionUnitCacheManager.UpdateFlushDirtyProgressAsync(args.ProcessingKey, affect, sw.ElapsedMilliseconds);
+        var acknowledged = await SessionUnitCacheManager.AcknowledgeDirtyAsync(args);
+        if (args.DirtyVersions == null || acknowledged > 0)
+            await SessionUnitCacheManager.UpdateFlushDirtyProgressAsync(args.ProcessingKey,
+                args.DirtyVersions == null ? affect : acknowledged, sw.ElapsedMilliseconds);
     }
     public async Task<int> BatchUpdateAsync(List<Guid> sessionUnitIds)
     {
@@ -46,6 +58,9 @@ public class FlushDirtyProcessingJob(
             .Select(x => x.Value)
             .ToList();
 
+        if (caches.Count != sessionUnitIds.Count || caches.Any(x => x == null))
+            throw new InvalidOperationException("Missing dirty cache state. Retaining processing records for recovery.");
+
         Logger.LogInformation(
             "GetManyAsync Count={Count}, Cost={Elapsed}ms",
             caches.Count,
@@ -58,7 +73,7 @@ public class FlushDirtyProcessingJob(
 
         sw.Restart();
 
-        using var uow = UnitOfWorkManager.Begin();
+        using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
 
         var affect = await Repository.BatchUpdateAsync(caches);
 

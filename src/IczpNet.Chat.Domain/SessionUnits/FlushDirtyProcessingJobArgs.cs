@@ -15,6 +15,7 @@ public class FlushDirtyProcessingJobArgs
     public int JobIndex { get; set; }
     public int JobTotalCunt { get; set; }
     public List<Guid> SessionUnitIds { get; set; }
+    public Dictionary<string, long> DirtyVersions { get; set; }
 
     public override string ToString()
     {

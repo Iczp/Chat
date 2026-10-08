@@ -30,7 +30,8 @@ public class MessageSenderAppService(
     {
         //var sessionunit = await SessionUnitManager.GetAsync(sessionUnitId);
         var sessionunit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
-
+        await CheckPolicyForUserAsync(sessionunit.OwnerId);
+        IczpNet.AbpCommons.Assert.If(!sessionunit.IsEnabled, "Session unit disabled.");
         return sessionunit;
     }
 
@@ -221,6 +222,7 @@ public class MessageSenderAppService(
     [HttpPost]
     public async Task<List<MessageDto>> ForwardAsync(Guid sessionUnitId, long messageId, List<Guid> targets)
     {
+        await GetAndCheckSessionUnitAsync(sessionUnitId);
         var messageList = await MessageManager.ForwardAsync(sessionUnitId, messageId, targets);
 
         return ObjectMapper.Map<List<Message>, List<MessageDto>>(messageList);
@@ -236,6 +238,7 @@ public class MessageSenderAppService(
     public async Task<Dictionary<string, long>> RollbackAsync(long messageId)
     {
         var message = await Repository.GetAsync(messageId);
+        await CheckPolicyForUserAsync(message.SenderId);
         return await MessageManager.RollbackAsync(message);
     }
 }

@@ -9,6 +9,11 @@ namespace IczpNet.Chat.SessionUnits;
 
 public interface ISessionUnitCacheManager
 {
+    Task<List<FriendModel>> GetChangedFriendsAsync(long ownerId, double? minTicks, double? maxTicks,
+        Guid? cursorId, int take, int skip = 0, Func<FriendModel, bool> filter = null, CancellationToken cancellationToken = default);
+
+    Task<int> AcknowledgeDirtyAsync(FlushDirtyProcessingJobArgs args);
+    Task<bool> HasPendingDirtyAsync(FlushDirtyProcessingJobArgs args);
     /// <summary>
     /// 设置会话成员
     /// </summary>

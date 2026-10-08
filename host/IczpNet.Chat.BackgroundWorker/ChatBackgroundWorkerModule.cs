@@ -25,11 +25,19 @@ namespace IczpNet.Chat;
     typeof(AbpEntityFrameworkCoreSqlServerModule), typeof(AbpPermissionManagementEntityFrameworkCoreModule),
     typeof(AbpSettingManagementEntityFrameworkCoreModule),
     typeof(AbpBlobStoringMinioModule), typeof(RedisDistributedEventBusModule),
-    typeof(AbpAspNetCoreSerilogModule))]
+    typeof(AbpAspNetCoreSerilogModule), typeof(Volo.Abp.DistributedLocking.AbpDistributedLockingModule))]
 public class ChatBackgroundWorkerModule : AbpModule
 {
+    public override async System.Threading.Tasks.Task OnPostApplicationInitializationAsync(ApplicationInitializationContext context)
+    {
+        await context.AddBackgroundWorkerAsync<IczpNet.Chat.SessionUnits.SessionUnitFlushWorker>();
+    }
+
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        context.Services.AddSingleton<Medallion.Threading.IDistributedLockProvider>(provider =>
+            new Medallion.Threading.Redis.RedisDistributedSynchronizationProvider(
+                provider.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>().GetDatabase()));
         var configuration = context.Services.GetConfiguration();
         Configure<AbpBackgroundJobWorkerOptions>(options => options.DefaultTimeout = 864000);
         Configure<AbpBackgroundJobOptions>(options => options.IsJobExecutionEnabled = true);

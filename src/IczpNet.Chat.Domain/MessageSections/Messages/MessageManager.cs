@@ -216,222 +216,22 @@ public partial class MessageManager(
     }
 
 
-    public async Task<List<long>> GetHistoryAsync(SessionUnitCacheItem unit, long? maxMessageId, int maxResultCount = 20)
+    public Task<List<long>> GetHistoryAsync(SessionUnitCacheItem unit, long? maxMessageId, int maxResultCount = 20)
     {
-        var sessionUnitId = unit.Id;
-
-        var sessionId = unit.SessionId.Value;
-
-        var queryMaxResultCount = maxResultCount;
-
-        var tackCount = queryMaxResultCount * 3;
-
-        var deletedIdSet = await DeletedRecorderManager.GetDeletedMessageIdListAsync(sessionUnitId);
-
-        var result = new List<long>();
-
-        var method = nameof(GetHistoryAsync);
-
-        long cursorMaxMessageId = maxMessageId.HasValue && maxMessageId.Value < long.MaxValue ? maxMessageId.Value  : long.MaxValue;
-
-        var loopIndex = 0;
-
-        while (true)
-        {
-            loopIndex++;
-
-            Logger.LogInformation(
-            "[{Method}] Loop={Loop}, resultCount={ResultCount}, cursorMaxMessageId={cursorMaxMessageId}",
-                method,
-                loopIndex,
-                result.Count,
-                cursorMaxMessageId);
-
-            var ids = await SessionUnitCacheManager.GetSessionMessagesAsync(
-                    sessionId,
-                    minMessageId: 0,
-                    maxMessageId: cursorMaxMessageId,
-                    skip: 0,
-                    take: tackCount,
-                    // 反序
-                    isDescending: true);
-
-            var cachedList = ids.ToList();
-
-            Logger.LogInformation("[{Method}] Cached Result Count={Count}, First={First}, Last={Last}, Values={Values}",
-                method,
-                cachedList.Count,
-                cachedList.FirstOrDefault(),
-                cachedList.LastOrDefault(),
-                string.Join(",", cachedList.Take(20)));
-
-            // 判断是否需要补缓存
-            if (cachedList.Count == 0)
-            {
-                // 拼接缓存,所以是取缓存里最小值
-                var buildMaxId = await SessionUnitCacheManager.GetMinMessageIdAsync(sessionId);
-
-                var buildResult = await BuildCacheAsync(sessionId, null, maxMessageId: buildMaxId, max: Math.Max(queryMaxResultCount, 5000), batchSize: 1000);
-
-                Logger.LogInformation("[{Method}] Build cache result count={Count}, ids=[{Ids}]", method, buildResult.Count, string.Join(",", buildResult.Take(20)));
-
-                // 数据库也没有
-                if (buildResult.Count == 0)
-                {
-                    break;
-                }
-
-                // Build后重新查Redis
-                continue;
-            }
-
-            foreach (var id in cachedList)
-            {
-                if (!deletedIdSet.Contains(id))
-                {
-                    result.Add(id);
-
-                    if (result.Count >= queryMaxResultCount)
-                    {
-                        break;
-                    }
-                }
-            }
-            Logger.LogInformation("[{Method}] Add result count={Count}, ids=[{Ids}]", method, result.Count, result.Take(20).JoinAsString(","));
-
-            // 已满足 || 缓存就没有了
-            if (result.Count >= queryMaxResultCount)
-            {
-                break;
-            }
-
-            // 下一页游标(反序，下一页的起始值 为 当前页的最小值)
-            cursorMaxMessageId = cachedList[^1] - 1;
-
-            /*
-             * Redis还有数据，但是过滤后不足
-             * 继续取 Loop
-             */
-        }
-
-        return result;
+        return Repository.GetVisibleIdsAsync(unit.Id, null, maxMessageId, maxResultCount, true,
+            LazyServiceProvider.LazyGetRequiredService<Volo.Abp.Threading.ICancellationTokenProvider>().Token);
     }
 
-    public async Task<List<long>> GetLatestAsync(SessionUnitCacheItem unit, long minMessageId, int maxResultCount = 20)
+    public Task<List<long>> GetLatestAsync(SessionUnitCacheItem unit, long minMessageId, int maxResultCount = 20)
     {
-        var sessionUnitId = unit.Id;
-
-        var sessionId = unit.SessionId.Value;
-
-        var queryMinMessageId = minMessageId - 1;
-
-        var queryMaxResultCount = maxResultCount + 1;
-
-        var deletedIdSet = await DeletedRecorderManager.GetDeletedMessageIdListAsync(sessionUnitId);
-
-        var result = new List<long>();
-
-        var method = nameof(GetLatestAsync);
-
-        var loopIndex = 0;
-
-        long cursorMaxMessageId = long.MaxValue;
-
-        while (true)
-        {
-            loopIndex++;
-
-            Logger.LogInformation(
-            "[{Method}] Loop={Loop}, resultCount={ResultCount}, cursor={Cursor}, minMessageId={MinMessageId}",
-                method,
-                loopIndex,
-                result.Count,
-                cursorMaxMessageId,
-                minMessageId);
-
-            // 当前缓存查询
-            var ids = await SessionUnitCacheManager.GetSessionMessagesAsync(
-                sessionId,
-                // 包含自己 minMessageId
-                minMessageId: queryMinMessageId,
-                maxMessageId: cursorMaxMessageId,
-                skip: 0,
-                take: queryMaxResultCount * 3,
-                // 正序
-                isDescending: false);
-
-            var cachedList = ids.ToList();
-
-            Logger.LogInformation("[{Method}] Cached Result Count={Count}, First={First}, Last={Last}, Values={Values}",
-                method,
-                cachedList.Count,
-                cachedList.FirstOrDefault(),
-                cachedList.LastOrDefault(),
-                string.Join(",", cachedList.Take(20)));
-
-            // 判断是否需要补缓存
-            if (cachedList.FirstOrDefault() != minMessageId)
-            {
-                // 拼接缓存,所以是取缓存里最小值
-                var buildMaxId = await SessionUnitCacheManager.GetMinMessageIdAsync(sessionId);
-
-                if (buildMaxId.HasValue && buildMaxId.Value < minMessageId)
-                {
-                    break;
-                }
-
-                var buildResult = await BuildCacheAsync(sessionId, queryMinMessageId, maxMessageId: buildMaxId, max: 5000, batchSize: 1000);
-
-                Logger.LogInformation("[{Method}] Build cache result count={Count}, ids=[{Ids}]", method, buildResult.Count, string.Join(",", buildResult.Take(20)));
-
-                // 数据库也没有
-                if (buildResult.Count == 0)
-                {
-                    break;
-                }
-
-                // Build后重新查Redis
-                continue;
-            }
-
-            foreach (var id in cachedList)
-            {
-                if (!deletedIdSet.Contains(id))
-                {
-                    result.Add(id);
-
-                    if (result.Count >= queryMaxResultCount)
-                    {
-                        break;
-                    }
-                }
-            }
-            Logger.LogInformation("[{Method}] Add result count={Count}, ids=[{Ids}]", method, result.Count, result.Take(20).JoinAsString(","));
-
-            // 已满足 || 缓存就没有了
-            if (result.Count >= queryMaxResultCount || cachedList.Count < queryMaxResultCount)
-            {
-                break;
-            }
-
-            // 下一页游标(正序，下一页的起始值 为 当前页的最小值)
-            cursorMaxMessageId = cachedList[0] - 1;
-
-            /*
-             * Redis还有数据，但是过滤后不足
-             * 继续取 Loop
-             */
-        }
-
-        // 移除多取一条
-        result.Remove(minMessageId);
-
-        return result;
+        return Repository.GetVisibleIdsAsync(unit.Id, minMessageId, null, maxResultCount, false,
+            LazyServiceProvider.LazyGetRequiredService<Volo.Abp.Threading.ICancellationTokenProvider>().Token);
     }
 
-    public async Task<long> GetSessionMessageTotalCountAsync(SessionUnitCacheItem unit, long minMessageId = 0, long maxMessageId = long.MaxValue)
+    public Task<long> GetSessionMessageTotalCountAsync(SessionUnitCacheItem unit, long minMessageId = 0, long maxMessageId = long.MaxValue)
     {
-        return await SessionUnitCacheManager.GetSessionMessageTotalCountAsync(unit.SessionId.Value, minMessageId, maxMessageId);
+        return Repository.CountVisibleAsync(unit.Id, minMessageId, maxMessageId,
+            LazyServiceProvider.LazyGetRequiredService<Volo.Abp.Threading.ICancellationTokenProvider>().Token);
     }
 
     /// <inheritdoc />
@@ -450,6 +250,41 @@ public partial class MessageManager(
 
     /// <inheritdoc />
     public virtual async Task<Message> CreateMessageAsync(
+        SessionUnitCacheItem senderSessionUnit,
+        Func<Message, Task<IContentEntity>> action,
+        string clientMessageId = null,
+        Guid? receiverSessionUnitId = null,
+        long? quoteMessageId = null,
+        List<Guid> remindList = null)
+    {
+        // Hold the existing distributed lock through the independent transaction commit.
+        Assert.NotNull(senderSessionUnit, "Sender session unit required.");
+        clientMessageId = string.IsNullOrWhiteSpace(clientMessageId) ? UlidGenerator.Generate() : clientMessageId;
+        var digest = System.Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+            System.Text.Encoding.UTF8.GetBytes(clientMessageId)));
+        var lockName = $"Chat:Send:{senderSessionUnit.Id}:{digest}";
+        var cancellationToken = LazyServiceProvider.LazyGetRequiredService<Volo.Abp.Threading.ICancellationTokenProvider>().Token;
+        var distributedLock = LazyServiceProvider.LazyGetRequiredService<Volo.Abp.DistributedLocking.IAbpDistributedLock>();
+        if (distributedLock is Volo.Abp.DistributedLocking.NullAbpDistributedLock)
+            throw new InvalidOperationException("Chat message sending requires a distributed lock provider.");
+        await using var handle = await distributedLock.TryAcquireAsync(lockName, TimeSpan.FromSeconds(10), cancellationToken);
+        if (handle == null) throw new Volo.Abp.UserFriendlyException("Message is being processed. Retry with the same ClientMessageId.");
+
+        using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
+        var existing = await Repository.FindAsync(x => x.SenderSessionUnitId == senderSessionUnit.Id &&
+            x.ClientMessageId == clientMessageId, cancellationToken: cancellationToken);
+        if (existing != null)
+        {
+            await uow.CompleteAsync(cancellationToken);
+            return existing;
+        }
+        var message = await CreateMessageCoreAsync(senderSessionUnit, action, clientMessageId,
+            receiverSessionUnitId, quoteMessageId, remindList);
+        await uow.CompleteAsync(cancellationToken);
+        return message;
+    }
+
+    private async Task<Message> CreateMessageCoreAsync(
         SessionUnitCacheItem senderSessionUnit,
         Func<Message, Task<IContentEntity>> action,
         string clientMessageId = null,
@@ -501,13 +336,21 @@ public partial class MessageManager(
         // 私有消息
         if (receiverSessionUnitId.HasValue)
         {
+            var receiver = await SessionUnitManager.GetCacheAsync(receiverSessionUnitId.Value);
+            Assert.If(receiver.SessionId != senderSessionUnit.SessionId || !receiver.IsEnabled, "Invalid private message receiver.");
             message.SetPrivateMessage(receiverSessionUnitId.Value);
         }
 
         //quote message
         if (quoteMessageId.HasValue && quoteMessageId.Value > 0)
         {
+            Assert.If(!await Repository.CanReadAsync(senderSessionUnit.Id, quoteMessageId.Value), "Quoted message is not visible.");
             var quoteMessage = await Repository.GetAsync(quoteMessageId.Value);
+
+            Assert.If(quoteMessage.IsPrivate && (!receiverSessionUnitId.HasValue ||
+                !((quoteMessage.SenderSessionUnitId == senderSessionUnit.Id && quoteMessage.ReceiverSessionUnitId == receiverSessionUnitId) ||
+                  (quoteMessage.ReceiverSessionUnitId == senderSessionUnit.Id && quoteMessage.SenderSessionUnitId == receiverSessionUnitId))),
+                "Private message quotes must stay between the original participants.");
 
             Assert.If(quoteMessage.SessionId != senderSessionUnit.SessionId, $"QuoteMessageId:{quoteMessageId.Value} not in same session");
 
@@ -890,6 +733,7 @@ public partial class MessageManager(
 
         Assert.If(!currentSessionUnit.Setting.IsEnabled, $"Current session unit disabled.", nameof(currentSessionUnit.Setting.IsEnabled));
 
+        Assert.If(!await Repository.CanReadAsync(sessionUnitId, sourceMessageId), "Source message is not visible.");
         var sourceMessage = await Repository.GetAsync(sourceMessageId);
 
         Assert.If(sourceMessage.IsRollbackMessage(), $"message already rollback：{sourceMessageId}", nameof(currentSessionUnit.Setting.IsEnabled));

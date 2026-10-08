@@ -53,7 +53,7 @@ public class SessionUnitFirendGetListInput : SessionUnitChangesGetListInput
     /// <summary>
     /// Guid CursorId 用 Last Item Id [SessionUnitId]
     /// </summary>
-    public Guid? CursorId { get; set; }
+    public override Guid? CursorId { get; set; }
 
     /// <summary>
     /// 最小Score(Sorting * 1e13 + Ticks)

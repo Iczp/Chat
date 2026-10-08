@@ -606,22 +606,27 @@ public class SessionUnitCacheAppService(
         // check owner
         await CheckPolicyForUserAsync(input.OwnerId, () => CheckPolicyAsync(GetListPolicyName, input.OwnerId));
 
-        Assert.If(input.MaxResultCount > 100, $"params:{nameof(input.MaxResultCount)} max value: 100");
+        Assert.If(input.MaxResultCount <= 0 || input.MaxResultCount > 100 || input.SkipCount > 10000,
+            "Invalid change page size or offset.");
 
-        var queryable = await SessionUnitCacheManager.GetFriendsAsync(
-            input.OwnerId,
-            //minScore: input.MinTicks ?? 0,
-            skip: input.SkipCount,
-            take: Math.Min(input.MaxResultCount, 100));
+        await LoadFriendsAsync(input.OwnerId);
 
-        var query = queryable
-            .WhereIf(input.MinTicks > 0, x => x.Ticks > input.MinTicks)
-            .WhereIf(input.MaxTicks > 0, x => x.Ticks < input.MaxTicks)
-            .OrderByDescending(x => x.Ticks);
-
-        var items = await GetManyWithScoreAsync(query);
-
-        return new PagedResultDto<SessionUnitFriendDto>(items.Count, items);
+        var friends = await SessionUnitCacheManager.GetChangedFriendsAsync(input.OwnerId,
+            input.MinTicks, input.MaxTicks, input.CursorId, input.MaxResultCount + 1, input.SkipCount,
+            x => (!input.DestinationId.HasValue || x.DestinationId == input.DestinationId) &&
+                 (!input.SessionId.HasValue || x.SessionId == input.SessionId) &&
+                 (!input.SessionUnitId.HasValue || x.Id == input.SessionUnitId),
+            LazyServiceProvider.LazyGetRequiredService<Volo.Abp.Threading.ICancellationTokenProvider>().Token);
+        var hasMore = friends.Count > input.MaxResultCount;
+        var page = friends.Take(input.MaxResultCount).ToList();
+        var items = await GetManyWithScoreAsync(page);
+        var last = page.LastOrDefault();
+        return new ExtraPagedResultDto<SessionUnitFriendDto>(items.Count, items, new
+        {
+            HasMore = hasMore,
+            NextCursorTicks = last?.Ticks,
+            NextCursorId = last?.Id
+        });
     }
 
     /// <summary>
@@ -872,6 +877,9 @@ public class SessionUnitCacheAppService(
         var ownerId = memberUnit.OwnerId;
 
         var visitor = unitList.Length == 2 ? unitList[1].Value : null;
+
+        Assert.NotNull(visitor, "Visitor session unit required.");
+        await CheckPolicyForUserAsync(visitor.OwnerId);
 
         Assert.If(memberUnit.SessionId != visitor?.SessionId, "不在同一个会话");
 

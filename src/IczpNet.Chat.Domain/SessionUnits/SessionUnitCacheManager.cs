@@ -50,7 +50,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// <returns></returns>
     private RedisKey DirtySetKey() => $"{SessionUnitsPrefix}Dirty";
 
-    private RedisKey DirtyProcessingSetKey() => $"{SessionUnitsPrefix}Dirty:Processing:{DateTime.Now:yyyyMMddHHmmss}";
+    private RedisKey DirtyProcessingRegistryKey() => $"{SessionUnitsPrefix}Dirty:ProcessingKeys";
 
     /// <summary>
     /// TryParse UnitId
@@ -1841,6 +1841,56 @@ return 1";
         batch.Execute();
     }
 
+    private const string SnapshotFriendsScript = @"
+redis.call('ZUNIONSTORE', KEYS[2], 1, KEYS[1])
+redis.call('PEXPIRE', KEYS[2], 120000)
+return 1";
+
+    public async Task<List<FriendModel>> GetChangedFriendsAsync(long ownerId, double? minTicks, double? maxTicks,
+        Guid? cursorId, int take, int skip = 0, Func<FriendModel, bool> filter = null, CancellationToken cancellationToken = default)
+    {
+        // Pinning is part of the existing score. Snapshot before scanning ranks
+        // so concurrent score updates cannot move entries across scan batches.
+        var snapshotKey = $"{OwnerFriendsSetKey(ownerId)}:Changes:{Guid.NewGuid():N}";
+        await Database.ScriptEvaluateAsync(SnapshotFriendsScript, [OwnerFriendsSetKey(ownerId), snapshotKey]);
+        try
+        {
+            var candidates = new List<FriendModel>();
+            for (var offset = 0; ; offset += 500)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var entries = await Database.SortedSetRangeByRankWithScoresAsync(snapshotKey, offset, offset + 499);
+                if (entries.Length > 0)
+                    await Database.KeyExpireAsync(snapshotKey, TimeSpan.FromMinutes(2));
+                foreach (var entry in entries)
+                {
+                    var element = SessionUnitElement.Parse(entry.Element);
+                    var score = new FriendScore(entry.Score);
+                    var friend = new FriendModel
+                    {
+                        Id = element.SessionUnitId, OwnerId = element.OwnerId,
+                        OwnerObjectType = element.OwnerObjectType, DestinationId = element.DestinationId,
+                        DestinationObjectType = element.DestinationObjectType, SessionId = element.SessionId,
+                        Sorting = score.Sorting, Ticks = score.Ticks, Score = entry.Score
+                    };
+                    if ((!minTicks.HasValue || friend.Ticks > minTicks ||
+                        (cursorId.HasValue && friend.Ticks == minTicks &&
+                         StringComparer.Ordinal.Compare(friend.Id.ToString(), cursorId.Value.ToString()) > 0)) &&
+                        (!maxTicks.HasValue || friend.Ticks < maxTicks) && (filter == null || filter(friend)))
+                        candidates.Add(friend);
+                }
+                candidates = candidates.OrderBy(x => x.Ticks)
+                    .ThenBy(x => x.Id.ToString(), StringComparer.Ordinal).Take(skip + take).ToList();
+                if (entries.Length < 500) break;
+            }
+            return candidates.Skip(skip).Take(take).ToList();
+        }
+        finally
+        {
+            await Database.KeyDeleteAsync(snapshotKey);
+        }
+    }
+
     public async Task ChangeImmersedAsync(Guid unitId, bool isImmersed)
     {
 
@@ -2378,21 +2428,13 @@ return 1";
         return redisZset.Select(x => new KeyValuePair<SessionUnitElement, long>(SessionUnitElement.Parse(x.Element), (long)x.Score)).ToList();
     }
 
+    // Compatibility entry point: taking a snapshot must not acknowledge persistence.
     public async Task<List<KeyValuePair<SessionUnitElement, long>>> GetAndRemoveProcessingDirtyAsync(string processingKey, int batchSize, bool isAscending = true)
     {
-        var redisZset = await GetDirtyByKeyAsync(processingKey, batchSize, isAscending);
-
-        if (redisZset.Length > 0)
-        {
-            //立即删除
-            await Database.SortedSetRemoveAsync(processingKey, redisZset.Select(x => x.Element).ToArray());
-        }
-
-        var list = redisZset.Select(x => new KeyValuePair<SessionUnitElement, long>(SessionUnitElement.Parse(x.Element), (long)x.Score)).ToList();
-
-        return list;
+        var entries = await GetDirtyByKeyAsync(processingKey, batchSize, isAscending);
+        return entries.Select(x => new KeyValuePair<SessionUnitElement, long>(
+            SessionUnitElement.Parse(x.Element), (long)x.Score)).ToList();
     }
-
 
     public async Task<long> GetProcessingDirtyCountAsync(string processingKey)
     {
@@ -2404,21 +2446,20 @@ return 1";
         return await Database.SortedSetLengthAsync(DirtySetKey(), 0, long.MaxValue, Exclude.None);
     }
 
+    private const string RenameDirtyScript = @"
+if redis.call('EXISTS', KEYS[1]) == 0 then return 0 end
+if redis.call('EXISTS', KEYS[2]) == 1 then return 0 end
+redis.call('RENAME', KEYS[1], KEYS[2])
+redis.call('PERSIST', KEYS[2])
+redis.call('ZADD', KEYS[3], 0, KEYS[2])
+return 1";
+
     public async Task<string> RenameDirtyAsync()
     {
-        var dirtyKey = DirtySetKey();
-
-        var count = await Database.KeyExistsAsync(dirtyKey);
-
-        if (!count)
-        {
-            return null;
-        }
-        var processingKey = $"{dirtyKey}:Processing:{DateTime.Now:yyyyMMddHHmmss}";
-
-        await Database.KeyRenameAsync(dirtyKey, processingKey);
-
-        return processingKey;
+        var processingKey = $"{DirtySetKey()}:Processing:{Guid.NewGuid():N}";
+        var renamed = (long)await Database.ScriptEvaluateAsync(RenameDirtyScript,
+            [DirtySetKey(), processingKey, DirtyProcessingRegistryKey()]);
+        return renamed == 1 ? processingKey : null;
     }
 
     public async Task DeleteDirtyAsync(string processingKey)
@@ -2433,70 +2474,102 @@ return 1";
 
     public async Task<List<FlushDirtyProcessingJobArgs>> FlushDirtyToJobsAsync(int scanSize = 5000, int jobSize = 1000)
     {
+        if (scanSize <= 0 || scanSize > 5000 || jobSize <= 0 || jobSize > scanSize)
+            throw new ArgumentOutOfRangeException(nameof(scanSize));
+        var distributedLock = LazyServiceProvider.LazyGetRequiredService<Volo.Abp.DistributedLocking.IAbpDistributedLock>();
+        if (distributedLock is Volo.Abp.DistributedLocking.NullAbpDistributedLock)
+            throw new InvalidOperationException("Dirty dispatch requires a distributed lock provider.");
+        await using var handle = await distributedLock.TryAcquireAsync($"Chat:DirtyDispatch:{DirtySetKey()}");
+        if (handle == null) return [];
+
+        // Resume durable processing records before detaching another Dirty generation.
+        var registered = await Database.SortedSetRangeByRankWithScoresAsync(DirtyProcessingRegistryKey(), 0, 0);
+        var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        string processingKey;
+        if (registered.Length > 0)
+        {
+            if (registered[0].Score > now) return [];
+            processingKey = registered[0].Element.ToString();
+        }
+        else
+        {
+            processingKey = await RenameDirtyAsync();
+            if (processingKey == null) return [];
+        }
+
+        var entries = await Database.SortedSetRangeByRankWithScoresAsync(processingKey, 0, scanSize - 1);
+        if (entries.Length == 0)
+        {
+            await Database.SortedSetRemoveAsync(DirtyProcessingRegistryKey(), processingKey);
+            return [];
+        }
+        // A crash or enqueue failure can retry this retained snapshot after one minute.
+        await Database.SortedSetAddAsync(DirtyProcessingRegistryKey(), processingKey, now + 60000);
+        var totalCount = await GetProcessingDirtyCountAsync(processingKey);
         var result = new List<FlushDirtyProcessingJobArgs>();
-
-        var totalCount = await GetDirtyCountAsync();
-
-        if (totalCount <= 0)
+        foreach (var chunk in entries.Chunk(jobSize))
         {
-            return [];
-        }
-
-        var processingKey = await RenameDirtyAsync();
-
-        if (processingKey == null)
-        {
-            return [];
-        }
-
-
-        var jobTotalCount = (int)Math.Ceiling(totalCount / (double)jobSize);
-
-        var jobIndex = 0;
-
-        while (true)
-        {
-            var list = await GetAndRemoveProcessingDirtyAsync(processingKey, scanSize);
-
-            if (list.Count == 0)
+            var versions = chunk.ToDictionary(x => x.Element.ToString(), x => (long)x.Score);
+            result.Add(new FlushDirtyProcessingJobArgs
             {
-                break;
-            }
-
-            var ids = list.Select(x => x.Key.SessionUnitId).Distinct().ToList();
-
-            foreach (var idList in ids.Chunk(jobSize))
-            {
-                var sessionUnitIds = idList.ToList();
-
-                result.Add(new FlushDirtyProcessingJobArgs
-                {
-                    ProcessingKey = processingKey,
-                    Count = sessionUnitIds.Count,
-                    ScanSize = scanSize,
-                    JobSize = jobSize,
-                    JobIndex = jobIndex,
-                    JobTotalCunt = jobTotalCount,
-                    SessionUnitIds = sessionUnitIds,
-                });
-
-                jobIndex++;
-            }
-
+                ProcessingKey = processingKey,
+                Count = chunk.Length,
+                ScanSize = scanSize,
+                JobSize = jobSize,
+                JobIndex = result.Count,
+                JobTotalCunt = (int)Math.Ceiling(totalCount / (double)jobSize),
+                SessionUnitIds = chunk.Select(x => SessionUnitElement.Parse(x.Element).SessionUnitId).Distinct().ToList(),
+                DirtyVersions = versions
+            });
         }
-        // 全部拆完
-        await DeleteDirtyAsync(processingKey);
-
-        //创建进度条
-        await CreateFlushDirtyProgressAsync(processingKey, new FlushDirtyProgress
+        if (!await Database.KeyExistsAsync(ToProgressKey(processingKey)))
         {
-            TotalCount = totalCount,
-            JobCount = jobTotalCount,
-            Completed = 0,
-            CreationTime = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds(),
-        });
-
+            await CreateFlushDirtyProgressAsync(processingKey, new FlushDirtyProgress
+            {
+                TotalCount = totalCount,
+                JobCount = (int)Math.Ceiling(totalCount / (double)jobSize),
+                CreationTime = now
+            });
+        }
         return result;
+    }
+
+    private const string AcknowledgeDirtyScript = @"
+local removed = 0
+for i = 1, #ARGV, 2 do
+    local score = redis.call('ZSCORE', KEYS[1], ARGV[i])
+    if score and tonumber(score) == tonumber(ARGV[i + 1]) then
+        removed = removed + redis.call('ZREM', KEYS[1], ARGV[i])
+    end
+end
+if redis.call('ZCARD', KEYS[1]) == 0 then
+    redis.call('DEL', KEYS[1])
+    redis.call('ZREM', KEYS[2], KEYS[1])
+elseif removed > 0 then
+    redis.call('ZADD', KEYS[2], 0, KEYS[1])
+end
+return removed";
+
+    private const string HasPendingDirtyScript = @"
+for i = 1, #ARGV, 2 do
+    local score = redis.call('ZSCORE', KEYS[1], ARGV[i])
+    if score and tonumber(score) == tonumber(ARGV[i + 1]) then return 1 end
+end
+return 0";
+
+    public async Task<bool> HasPendingDirtyAsync(FlushDirtyProcessingJobArgs args)
+    {
+        if (args.DirtyVersions == null || args.DirtyVersions.Count == 0) return false;
+        var values = args.DirtyVersions.SelectMany(x => new RedisValue[] { x.Key, x.Value }).ToArray();
+        return (int)await Database.ScriptEvaluateAsync(HasPendingDirtyScript, [args.ProcessingKey], values) == 1;
+    }
+
+    public async Task<int> AcknowledgeDirtyAsync(FlushDirtyProcessingJobArgs args)
+    {
+        if (args.DirtyVersions == null || args.DirtyVersions.Count == 0) return 0;
+        var values = args.DirtyVersions.SelectMany(x => new RedisValue[] { x.Key, x.Value }).ToArray();
+        return (int)await Database.ScriptEvaluateAsync(AcknowledgeDirtyScript,
+            [args.ProcessingKey, DirtyProcessingRegistryKey()], values);
     }
 
     public async Task CreateFlushDirtyProgressAsync(string processingKey, FlushDirtyProgress flushDirtyProgress)
@@ -2508,11 +2581,10 @@ return 1";
 
         var entries = RedisMapper.ToHashEntries(flushDirtyProgress);
 
-        _ = batch.HashSetAsync(progressKey, entries);
-
-        _ = batch.KeyExpireAsync(progressKey, TimeSpan.FromHours(24));
-
+        var save = batch.HashSetAsync(progressKey, entries);
+        var expire = batch.KeyExpireAsync(progressKey, TimeSpan.FromHours(24));
         batch.Execute();
+        await Task.WhenAll(save, expire);
     }
 
     public async Task UpdateFlushDirtyProgressAsync(string processingKey, int affect, long elapsedMilliseconds)
@@ -2521,11 +2593,12 @@ return 1";
         var progressKey = ToProgressKey(processingKey);
 
         var batch = Database.CreateBatch();
-        _ = batch.HashIncrementAsync(progressKey, nameof(FlushDirtyProgress.JobCompleted), 1);
-        _ = batch.HashIncrementAsync(progressKey, nameof(FlushDirtyProgress.Completed), affect);
-        _ = batch.HashIncrementAsync(progressKey, nameof(FlushDirtyProgress.Elapsed), elapsedMilliseconds);
-        _ = batch.HashSetAsync(progressKey, nameof(FlushDirtyProgress.LastModificationTime), new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds());
+        var completed = batch.HashIncrementAsync(progressKey, nameof(FlushDirtyProgress.JobCompleted), 1);
+        var affected = batch.HashIncrementAsync(progressKey, nameof(FlushDirtyProgress.Completed), affect);
+        var elapsed = batch.HashIncrementAsync(progressKey, nameof(FlushDirtyProgress.Elapsed), elapsedMilliseconds);
+        var modified = batch.HashSetAsync(progressKey, nameof(FlushDirtyProgress.LastModificationTime), DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         batch.Execute();
+        await Task.WhenAll(completed, affected, elapsed, modified);
     }
 
     public async Task<FlushDirtyProgress> GetFlushDirtyProgressAsync(string processingKey)

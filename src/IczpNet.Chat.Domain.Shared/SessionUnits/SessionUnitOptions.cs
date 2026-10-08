@@ -4,6 +4,8 @@ namespace IczpNet.Chat.SessionUnits;
 
 public class SessionUnitOptions
 {
+    public bool AutoFlushDirtyEnabled { get; set; } = true;
+    public int FlushDirtyPeriodSeconds { get; set; } = 10;
     /// <summary>
     /// 批量加载大小
     /// </summary>

@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Auditing;
+using Volo.Abp.Authorization;
 using Volo.Abp.Users;
 
 namespace IczpNet.Chat.BaseAppServices;
@@ -89,20 +90,22 @@ public abstract class ChatAppService : AbpCommonsAppService
 
     protected virtual async Task CheckPolicyForUserAsync(IEnumerable<long?> ownerIdList, Func<Task> func = null)
     {
-        //if (await IsAnyCurrentUserAsync(ownerIdList))
-        //{
-        //    return;
-        //}
+        if (!CurrentUser.Id.HasValue)
+        {
+            throw new AbpAuthorizationException("Authentication required.");
+        }
 
-        Assert.If(!CurrentUser.Id.HasValue, $"请先登录");
+        var requestedIds = ownerIdList.ToList();
+        var ownedIds = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+        if (requestedIds.Any(x => !x.HasValue || !ownedIds.Contains(x.Value)))
+        {
+            throw new AbpAuthorizationException("The current user does not own the requested chat objects.");
+        }
 
-        var currentUserId = CurrentUser.GetId();
-
-        var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
-
-        //Assert.If(!await IsAnyCurrentUserAsync(ownerIdList), $"Fail ownerIds [{ownerIdList.JoinAsString(",")}], current user's chatObjectIdList:[{chatObjectIdList.JoinAsString(",")}]");
-
-        await func?.Invoke();
+        if (func != null)
+        {
+            await func();
+        }
     }
 
     protected virtual Task CheckPolicyForUserAsync(long? ownerId, Func<Task> func = null)

@@ -6,6 +6,14 @@ namespace IczpNet.Chat.MessageSections.Messages;
 
 public interface IMessageRepository : IRepository<Message, long>
 {
+    Task<List<long>> GetVisibleIdsAsync(System.Guid sessionUnitId, long? minMessageId, long? maxMessageId,
+        int maxResultCount, bool isDescending, System.Threading.CancellationToken cancellationToken = default);
+
+    Task<long> CountVisibleAsync(System.Guid sessionUnitId, long? minMessageId, long? maxMessageId,
+        System.Threading.CancellationToken cancellationToken = default);
+
+    Task<bool> CanReadAsync(System.Guid sessionUnitId, long messageId, bool includeReferences = false,
+        System.Threading.CancellationToken cancellationToken = default);
     /// <summary>
     /// 增加已读次数 +1
     /// </summary>

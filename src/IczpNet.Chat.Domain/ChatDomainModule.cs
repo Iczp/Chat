@@ -39,6 +39,7 @@ namespace IczpNet.Chat;
 [DependsOn(typeof(AbpPermissionManagementDomainIdentityModule))]
 // PusherDomainModule retired: Chat uses SignalR plus Redis distributed events.
 [DependsOn(typeof(AbpBackgroundJobsAbstractionsModule))]
+[DependsOn(typeof(Volo.Abp.DistributedLocking.AbpDistributedLockingAbstractionsModule))]
 
 [DependsOn(typeof(AbpBlobStoringModule))]
 //[DependsOn(typeof(AbpBlobStoringMinioModule))] //minio
@@ -89,6 +90,7 @@ public class ChatDomainModule : AbpModule
         }
 
         Configure<AiRunDispatcherOptions>(configuration.GetSection("AiRunDispatcher"));
+        Configure<SessionUnitOptions>(configuration.GetSection("Chat:SessionUnits"));
         //AiRunDispatcher
         //context.Services.AddHostedService<AiRunDispatcher>();
     }

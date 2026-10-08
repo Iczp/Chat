@@ -70,6 +70,7 @@ typeof(ChatApplicationModule),
 [DependsOn(typeof(AbpBlobStoringFileSystemModule))]
 [DependsOn(typeof(AbpBlobStoringMinioModule))]
 [DependsOn(typeof(RedisDistributedEventBusModule))]
+[DependsOn(typeof(Volo.Abp.DistributedLocking.AbpDistributedLockingModule))]
 public class ChatHttpApiHostModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
@@ -84,6 +85,9 @@ public class ChatHttpApiHostModule : AbpModule
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        context.Services.AddSingleton<Medallion.Threading.IDistributedLockProvider>(provider =>
+            new Medallion.Threading.Redis.RedisDistributedSynchronizationProvider(
+                provider.GetRequiredService<IConnectionMultiplexer>().GetDatabase()));
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
 
