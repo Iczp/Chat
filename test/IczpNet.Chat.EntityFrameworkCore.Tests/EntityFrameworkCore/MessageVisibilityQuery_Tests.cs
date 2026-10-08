@@ -70,6 +70,16 @@ public class MessageVisibilityQuery_Tests : ChatTestBase<MessageQueryReviewTestM
             foreach (var id in new long[] { 90, 101, 102, 103, 104, 110 })
                 await InsertAsync<Message>(context, new() { ["Id"] = id, ["SessionId"] = sessionId, ["IsPrivate"] = false });
             var repository = ServiceProvider.GetRequiredService<IMessageRepository>();
+            // Shared raw windows certify open intervals without assuming consecutive global Ids.
+            var recent = await repository.GetReadWindowAsync(sessionId, 0, long.MaxValue, 2, true);
+            Assert.Equal(new long[] { 104, 110 }, recent.Items.Select(x => x.Id));
+            Assert.Equal(103, recent.MinMessageId);
+            var forward = await repository.GetReadWindowAsync(sessionId, 100, long.MaxValue, 2, false);
+            Assert.Equal(new long[] { 101, 102 }, forward.Items.Select(x => x.Id));
+            Assert.Equal(103, forward.MaxMessageId);
+            var tail = await repository.GetReadWindowAsync(sessionId, 102, long.MaxValue, 10, false);
+            Assert.Equal(new long[] { 103, 104, 110 }, tail.Items.Select(x => x.Id));
+            Assert.Equal(long.MaxValue, tail.MaxMessageId);
             Assert.Equal(new long[] { 103, 102 }, await repository.GetVisibleIdsAsync(unitId, null, 104, 2, true));
             Assert.Equal(new long[] { 101, 90 }, await repository.GetVisibleIdsAsync(unitId, null, 102, 2, true));
             Assert.Equal(new long[] { 101, 102, 103 }, await repository.GetVisibleIdsAsync(unitId, 100, null, 3, false));

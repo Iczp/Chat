@@ -11,6 +11,7 @@ using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.ShortIds;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Configuration;
 using StackExchange.Redis;
 using System;
 using System.Threading.Tasks;
@@ -91,6 +92,13 @@ public class ChatDomainModule : AbpModule
 
         Configure<AiRunDispatcherOptions>(configuration.GetSection("AiRunDispatcher"));
         Configure<SessionUnitOptions>(configuration.GetSection("Chat:SessionUnits"));
+        Configure<MessageOptions>(options =>
+        {
+            var messages = configuration.GetSection(nameof(MessageOptions));
+            options.ReadCacheBatchSize = messages.GetValue(nameof(MessageOptions.ReadCacheBatchSize), options.ReadCacheBatchSize);
+            options.ReadCacheMaxBatches = messages.GetValue(nameof(MessageOptions.ReadCacheMaxBatches), options.ReadCacheMaxBatches);
+            options.ReadCacheExpiration = messages.GetValue(nameof(MessageOptions.ReadCacheExpiration), options.ReadCacheExpiration);
+        });
         //AiRunDispatcher
         //context.Services.AddHostedService<AiRunDispatcher>();
     }

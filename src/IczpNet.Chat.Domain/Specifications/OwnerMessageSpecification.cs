@@ -3,6 +3,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using Volo.Abp.Specifications;
+using IczpNet.Chat.SessionUnitSettings;
 
 namespace IczpNet.Chat.Specifications;
 
@@ -32,4 +33,13 @@ public class OwnerMessageSpecification : Specification<Message>
             (!d.Setting.ClearTime.HasValue || x.CreationTime > d.Setting.ClearTime) &&
             !x.DeletedList.Any(r => r.SessionUnitId == d.Id));
     }
+
+    public static bool IsVisible(SessionMessageWindowCacheItem.Entry message, Guid sessionUnitId, SessionUnitSettingCacheItem setting)
+        => setting.IsKilled == false &&
+            (!message.IsPrivate || message.SenderSessionUnitId == sessionUnitId || message.ReceiverSessionUnitId == sessionUnitId) &&
+            (!setting.StartMessageId.HasValue || message.Id > setting.StartMessageId.Value) &&
+            (!setting.EndMessageId.HasValue || message.Id <= setting.EndMessageId.Value) &&
+            (!setting.HistoryFristTime.HasValue || message.CreationTime >= setting.HistoryFristTime.Value) &&
+            (!setting.HistoryLastTime.HasValue || message.CreationTime < setting.HistoryLastTime.Value) &&
+            (!setting.ClearTime.HasValue || message.CreationTime > setting.ClearTime.Value);
 }

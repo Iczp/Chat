@@ -363,7 +363,7 @@ public class MessageAppService(
     }
 
     /// <summary>
-    /// 最新消息(Cache)
+    /// 最新消息(Redis 优先)
     /// </summary>
     /// <param name="input"></param>
     /// <returns></returns>
@@ -371,8 +371,8 @@ public class MessageAppService(
     {
         Assert.If(input.MinMessageId <= 0, $"参数 {nameof(input.MinMessageId)} 要大于 0");
 
-        await GetAndCheckPolicyAsync(GetListPolicyName, input.SessionUnitId);
         var unit = await SessionUnitManager.GetCacheAsync(input.SessionUnitId);
+        await CheckPolicyForUserAsync(unit.OwnerId, () => CheckPolicyAsync(GetListPolicyName));
 
         var pageSize = input.MaxResultCount;
 
@@ -389,8 +389,7 @@ public class MessageAppService(
         {
             messageIdList.RemoveAt(messageIdList.Count - 1);
             nextCursorId = messageIdList.LastOrDefault();
-            var cachedTotalCount = await MessageManager.GetSessionMessageTotalCountAsync(unit, input.MinMessageId, long.MaxValue);
-            totalCount = Math.Max(cachedTotalCount, totalCount);
+            // A lower bound; HasMore and NextCursorId drive pagination without a large-table COUNT.
         }
 
         var items = await MapToMessageFasterAsync(messageIdList);
@@ -405,14 +404,14 @@ public class MessageAppService(
     }
 
     /// <summary>
-    ///  历史消息(Cache)
+    /// 历史消息(Redis 优先)
     /// </summary>
     /// <param name="input"></param>
     /// <returns></returns>
     public async Task<ExtraPagedResultDto<MessageFastDto>> GetHistoryAsync(MessageGetHistoryInput input)
     {
-        await GetAndCheckPolicyAsync(GetListPolicyName, input.SessionUnitId);
         var unit = await SessionUnitManager.GetCacheAsync(input.SessionUnitId);
+        await CheckPolicyForUserAsync(unit.OwnerId, () => CheckPolicyAsync(GetListPolicyName));
 
         var pageSize = input.MaxResultCount;
 
@@ -429,8 +428,7 @@ public class MessageAppService(
         {
             messageIdList.RemoveAt(messageIdList.Count - 1);
             nextCursorId = messageIdList.LastOrDefault();
-            var cachedTotalCount = await MessageManager.GetSessionMessageTotalCountAsync(unit, 0, input.MaxMessageId ?? long.MaxValue);
-            totalCount = Math.Max(cachedTotalCount, totalCount);
+            // A lower bound; HasMore and NextCursorId drive pagination without a large-table COUNT.
         }
 
         var items = await MapToMessageFasterAsync(messageIdList);

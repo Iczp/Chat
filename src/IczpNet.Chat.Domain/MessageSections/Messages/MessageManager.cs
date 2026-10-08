@@ -15,6 +15,8 @@ using IczpNet.Chat.SessionUnitSettings;
 using IczpNet.Chat.Settings;
 using IczpNet.Chat.Ulids;
 using IczpNet.Chat.ShortIds;
+using IczpNet.Chat.Specifications;
+using StackExchange.Redis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
@@ -34,6 +36,7 @@ using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.Json;
 using Volo.Abp.ObjectMapping;
 using Volo.Abp.Settings;
+using Volo.Abp.Threading;
 using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.MessageSections.Messages;
@@ -59,6 +62,8 @@ public partial class MessageManager(
     IFollowManager followManager,
     IDistributedCache<SessionMaxMessageIdCacheItem, SessionMaxMessageIdCacheKey> sessionMaxMessageIdCache,
     IDistributedCache<MessageCacheItem, MessageCacheKey> messageCache,
+    IMessageCacheManager messageCacheManager,
+    ICancellationTokenProvider cancellationTokenProvider,
     IOptions<MessageOptions> options,
     IUlidGenerator ulidGenerator,
     ISessionGenerator sessionGenerator) : DomainService, IMessageManager
@@ -80,6 +85,7 @@ public partial class MessageManager(
     public IFollowManager FollowManager { get; } = followManager;
     public IDistributedCache<SessionMaxMessageIdCacheItem, SessionMaxMessageIdCacheKey> SessionMaxMessageIdCache { get; } = sessionMaxMessageIdCache;
     public IDistributedCache<MessageCacheItem, MessageCacheKey> MessageCache { get; } = messageCache;
+    protected IMessageCacheManager MessageCacheManager { get; } = messageCacheManager;
     public IOptions<MessageOptions> Options { get; } = options;
     public IUlidGenerator UlidGenerator { get; } = ulidGenerator;
 
@@ -218,20 +224,120 @@ public partial class MessageManager(
 
     public Task<List<long>> GetHistoryAsync(SessionUnitCacheItem unit, long? maxMessageId, int maxResultCount = 20)
     {
-        return Repository.GetVisibleIdsAsync(unit.Id, null, maxMessageId, maxResultCount, true,
-            LazyServiceProvider.LazyGetRequiredService<Volo.Abp.Threading.ICancellationTokenProvider>().Token);
+        return GetReadIdsAsync(unit, null, maxMessageId, maxResultCount, true);
     }
 
     public Task<List<long>> GetLatestAsync(SessionUnitCacheItem unit, long minMessageId, int maxResultCount = 20)
     {
-        return Repository.GetVisibleIdsAsync(unit.Id, minMessageId, null, maxResultCount, false,
-            LazyServiceProvider.LazyGetRequiredService<Volo.Abp.Threading.ICancellationTokenProvider>().Token);
+        return GetReadIdsAsync(unit, minMessageId, null, maxResultCount, false);
+    }
+
+    private async Task<List<long>> GetReadIdsAsync(SessionUnitCacheItem unit, long? minMessageId,
+        long? maxMessageId, int maxResultCount, bool isDescending)
+    {
+        if (maxResultCount <= 0) return [];
+        var token = cancellationTokenProvider.Token;
+        var cache = MessageCacheManager;
+        SessionUnitSettingCacheItem settings;
+        (SessionMessageWindowCacheItem Recent, SessionMessageWindowCacheItem History, string Version) snapshot;
+        try
+        {
+            var settingsTask = cache.GetReadSettingsAsync(unit.Id, async () => ObjectMapper.Map<SessionUnitSetting, SessionUnitSettingCacheItem>(
+                await SessionUnitSettingRepository.GetAsync(x => x.SessionUnitId == unit.Id, cancellationToken: token)), token);
+            var windowsTask = cache.GetReadWindowsAsync(unit.SessionId.Value, token);
+            await Task.WhenAll(settingsTask, windowsTask);
+            settings = await settingsTask;
+            snapshot = await windowsTask;
+        }
+        catch (RedisException)
+        {
+            return await Repository.GetVisibleIdsAsync(unit.Id, minMessageId, maxMessageId, maxResultCount, isDescending, token);
+        }
+        Assert.If(settings.IsKilled == true, "已经删除的会话单元!");
+        var lower = Math.Max(minMessageId ?? 0, settings.StartMessageId ?? 0);
+        var upper = maxMessageId ?? long.MaxValue;
+        if (settings.EndMessageId.HasValue && settings.EndMessageId.Value < long.MaxValue)
+            upper = Math.Min(upper, settings.EndMessageId.Value + 1);
+        var result = new List<long>(maxResultCount);
+        var batchSize = Math.Clamp(Config.ReadCacheBatchSize, 16, 512);
+        var batches = Math.Clamp(Config.ReadCacheMaxBatches, 1, 16);
+        try
+        {
+            for (var batch = 0; batch < batches && lower < upper; batch++)
+            {
+                token.ThrowIfCancellationRequested();
+                if (batch > 0) snapshot = await cache.GetReadWindowsAsync(unit.SessionId.Value, token);
+                var window = SelectReadWindow(snapshot.Recent, snapshot.History, lower, upper, isDescending);
+                var candidates = GetReadCandidates(window, lower, upper, isDescending);
+                if (window == null || (candidates.Count == 0 &&
+                    (isDescending ? window.MinMessageId > lower : window.MaxMessageId < upper)))
+                {
+                    // Only cold windows are locked; warm reads never acquire a lock or query Message SQL.
+                    var distributedLock = LazyServiceProvider.LazyGetRequiredService<Volo.Abp.DistributedLocking.IAbpDistributedLock>();
+                    await using var handle = await distributedLock.TryAcquireAsync(
+                        $"Chat:ReadWindow:{unit.SessionId}:{isDescending}:{lower}:{upper}", TimeSpan.FromSeconds(2), token);
+                    if (handle == null) break;
+                    snapshot = await cache.GetReadWindowsAsync(unit.SessionId.Value, token);
+                    window = SelectReadWindow(snapshot.Recent, snapshot.History, lower, upper, isDescending);
+                    candidates = GetReadCandidates(window, lower, upper, isDescending);
+                    if (window == null || (candidates.Count == 0 &&
+                        (isDescending ? window.MinMessageId > lower : window.MaxMessageId < upper)))
+                    {
+                        window = await Repository.GetReadWindowAsync(unit.SessionId.Value, lower, upper, batchSize, isDescending, token);
+                        await cache.StoreReadWindowAsync(unit.SessionId.Value, window, snapshot.Version, token);
+                        candidates = GetReadCandidates(window, lower, upper, isDescending);
+                    }
+                }
+                var eligible = candidates.Where(x => OwnerMessageSpecification.IsVisible(x, unit.Id, settings)).ToList();
+                var deleted = await cache.GetDeletedIdsAsync(unit.Id, eligible.Select(x => x.Id).ToList(),
+                    ids => DeletedRecorderManager.GetRecorderMessageIdListAsync(unit.Id, ids), token);
+                foreach (var candidate in eligible)
+                {
+                    if (!deleted.Contains(candidate.Id))
+                    {
+                        result.Add(candidate.Id);
+                        if (result.Count == maxResultCount) return result;
+                    }
+                }
+                // Continue from the last scanned candidate, never subtract/add one and never skip the extra boundary Id.
+                if (isDescending ? window.MinMessageId <= lower : window.MaxMessageId >= upper) return result;
+                if (candidates.Count == 0) break;
+                if (isDescending) upper = candidates[^1].Id;
+                else lower = candidates[^1].Id;
+            }
+        }
+        catch (RedisException)
+        {
+            // Preserve visibility and bounded work if Redis is unavailable.
+        }
+        if (lower < upper && result.Count < maxResultCount)
+            result.AddRange(await Repository.GetVisibleIdsAsync(unit.Id, lower, upper,
+                maxResultCount - result.Count, isDescending, token));
+        return result;
+    }
+
+    private static SessionMessageWindowCacheItem SelectReadWindow(SessionMessageWindowCacheItem recent,
+        SessionMessageWindowCacheItem history, long lower, long upper, bool descending)
+    {
+        bool Covers(SessionMessageWindowCacheItem window) => window != null &&
+            (descending ? upper <= window.MaxMessageId && upper > window.MinMessageId
+                        : lower >= window.MinMessageId && lower < window.MaxMessageId);
+        return Covers(recent) ? recent : Covers(history) ? history : null;
+    }
+
+    private static List<SessionMessageWindowCacheItem.Entry> GetReadCandidates(SessionMessageWindowCacheItem window,
+        long lower, long upper, bool descending)
+    {
+        if (window == null) return [];
+        var query = window.Items.Where(x => x.Id > lower && x.Id < upper);
+        // Certified windows are already ascending; avoid sorting each high-frequency request.
+        return (descending ? query.Reverse() : query).ToList();
     }
 
     public Task<long> GetSessionMessageTotalCountAsync(SessionUnitCacheItem unit, long minMessageId = 0, long maxMessageId = long.MaxValue)
     {
         return Repository.CountVisibleAsync(unit.Id, minMessageId, maxMessageId,
-            LazyServiceProvider.LazyGetRequiredService<Volo.Abp.Threading.ICancellationTokenProvider>().Token);
+            cancellationTokenProvider.Token);
     }
 
     /// <inheritdoc />
@@ -263,7 +369,7 @@ public partial class MessageManager(
         var digest = System.Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
             System.Text.Encoding.UTF8.GetBytes(clientMessageId)));
         var lockName = $"Chat:Send:{senderSessionUnit.Id}:{digest}";
-        var cancellationToken = LazyServiceProvider.LazyGetRequiredService<Volo.Abp.Threading.ICancellationTokenProvider>().Token;
+        var cancellationToken = cancellationTokenProvider.Token;
         var distributedLock = LazyServiceProvider.LazyGetRequiredService<Volo.Abp.DistributedLocking.IAbpDistributedLock>();
         if (distributedLock is Volo.Abp.DistributedLocking.NullAbpDistributedLock)
             throw new InvalidOperationException("Chat message sending requires a distributed lock provider.");

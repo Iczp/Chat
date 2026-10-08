@@ -5,6 +5,10 @@ namespace IczpNet.Chat.Options;
 
 public class MessageOptions
 {
+    public int ReadCacheBatchSize { get; set; } = 128;
+    public int ReadCacheMaxBatches { get; set; } = 4;
+    public TimeSpan ReadCacheExpiration { get; set; } = TimeSpan.FromMinutes(5);
+
     public string OutputTempPath { get; set; } = "/media_temp";
 
     public DistributedCacheEntryOptions CacheOptions { get; set; } = new()

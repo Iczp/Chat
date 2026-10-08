@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System;
 
+#nullable enable
+
 namespace IczpNet.Chat.Ulids;
 
 public class UlidToStringConverter(ConverterMappingHints? mappingHints) : ValueConverter<Ulid, string>(

@@ -6,6 +6,9 @@ namespace IczpNet.Chat.MessageSections.Messages;
 
 public interface IMessageRepository : IRepository<Message, long>
 {
+    Task<SessionMessageWindowCacheItem> GetReadWindowAsync(System.Guid sessionId, long minMessageId,
+        long maxMessageId, int batchSize, bool isDescending, System.Threading.CancellationToken cancellationToken = default);
+
     Task<List<long>> GetVisibleIdsAsync(System.Guid sessionUnitId, long? minMessageId, long? maxMessageId,
         int maxResultCount, bool isDescending, System.Threading.CancellationToken cancellationToken = default);
 

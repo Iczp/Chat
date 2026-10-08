@@ -13,6 +13,29 @@ namespace IczpNet.Chat.Repositories;
 
 public class MessageRepository(IDbContextProvider<ChatDbContext> dbContextProvider) : ChatRepositoryBase<Message, long>(dbContextProvider), IMessageRepository
 {
+    public async Task<SessionMessageWindowCacheItem> GetReadWindowAsync(Guid sessionId, long minMessageId,
+        long maxMessageId, int batchSize, bool isDescending, CancellationToken cancellationToken = default)
+    {
+        var context = await GetDbContextAsync();
+        var query = context.Message.AsNoTracking().Where(x => x.SessionId == sessionId &&
+            x.Id > minMessageId && x.Id < maxMessageId);
+        query = isDescending ? query.OrderByDescending(x => x.Id) : query.OrderBy(x => x.Id);
+        var items = await query.Select(x => new SessionMessageWindowCacheItem.Entry
+        {
+            Id = x.Id, IsPrivate = x.IsPrivate, SenderSessionUnitId = x.SenderSessionUnitId,
+            ReceiverSessionUnitId = x.ReceiverSessionUnitId, CreationTime = x.CreationTime
+        }).Take(batchSize + 1).ToListAsync(cancellationToken);
+        var result = new SessionMessageWindowCacheItem { MinMessageId = minMessageId, MaxMessageId = maxMessageId };
+        if (items.Count > batchSize)
+        {
+            if (isDescending) result.MinMessageId = items[^1].Id;
+            else result.MaxMessageId = items[^1].Id;
+            items.RemoveAt(items.Count - 1);
+        }
+        result.Items = items.OrderBy(x => x.Id).ToList();
+        return result;
+    }
+
     private async Task<IQueryable<Message>> GetVisibleQueryAsync(Guid sessionUnitId, CancellationToken cancellationToken)
     {
         var context = await GetDbContextAsync();

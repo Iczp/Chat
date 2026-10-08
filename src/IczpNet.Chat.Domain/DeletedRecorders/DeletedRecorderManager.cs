@@ -71,6 +71,15 @@ public class DeletedRecorderManager(
         });
     }
 
+    public override async Task<List<long>> GetRecorderMessageIdListAsync(Guid sessionUnitId, List<long> messageIdList)
+    {
+        if (messageIdList == null || messageIdList.Count == 0) return [];
+        var token = LazyServiceProvider.LazyGetRequiredService<Volo.Abp.Threading.ICancellationTokenProvider>().Token;
+        var query = (await Repository.GetQueryableAsync()).Where(x => x.SessionUnitId == sessionUnitId &&
+            messageIdList.Contains(x.MessageId)).Select(x => x.MessageId);
+        return await AsyncExecuter.ToListAsync(query, token);
+    }
+
     public virtual async Task RemoveCacheAsync(Guid sessionUnitId)
     {
          await DeletedRecorderDistributedCache.RemoveAsync(new DeletedRecorderCacheKey(sessionUnitId));
