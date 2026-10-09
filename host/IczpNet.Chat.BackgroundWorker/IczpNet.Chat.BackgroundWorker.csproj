@@ -29,5 +29,6 @@
     <ProjectReference Include="..\..\src\IczpNet.Chat.Application\IczpNet.Chat.Application.csproj" />
     <ProjectReference Include="..\..\src\IczpNet.Chat.EntityFrameworkCore\IczpNet.Chat.EntityFrameworkCore.csproj" />
     <ProjectReference Include="..\IczpNet.Chat.Host.Shared\IczpNet.Chat.Host.Shared.csproj" />
+    <ProjectReference Include="..\IczpNet.Chat.AiProviders\IczpNet.Chat.AiProviders.csproj" />
   </ItemGroup>
 </Project>

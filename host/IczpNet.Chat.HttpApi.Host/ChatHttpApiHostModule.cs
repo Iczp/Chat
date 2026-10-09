@@ -3,6 +3,8 @@ using IczpNet.Chat.EntityFrameworkCore;
 using IczpNet.Chat.IdentityUsers;
 using IczpNet.Chat.Middlewares;
 using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.Medias;
+using IczpNet.Chat.Options;
 using IczpNet.Chat.MultiTenancy;
 using IczpNet.RedisDistributedEventBus;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -13,6 +15,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -74,6 +77,7 @@ typeof(ChatApplicationModule),
 [DependsOn(typeof(AbpBlobStoringFileSystemModule))]
 [DependsOn(typeof(AbpBlobStoringMinioModule))]
 [DependsOn(typeof(RedisDistributedEventBusModule))]
+[DependsOn(typeof(ChatBackgroundJobsModule))]
 [DependsOn(typeof(Volo.Abp.DistributedLocking.AbpDistributedLockingModule))]
 public class ChatHttpApiHostModule : AbpModule
 {
@@ -89,12 +93,27 @@ public class ChatHttpApiHostModule : AbpModule
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        context.Services.Replace(ServiceDescriptor.Transient<IDistributedCacheKeyNormalizer, SharedPermissionCacheKeyNormalizer>());
+        context.Services.Replace(ServiceDescriptor.Transient<IMediaResolver, FFMpegCoreMediaResolver>());
         context.Services.AddAutoMapperObjectMapper();
         context.Services.AddSingleton<Medallion.Threading.IDistributedLockProvider>(provider =>
             new Medallion.Threading.Redis.RedisDistributedSynchronizationProvider(
                 provider.GetRequiredService<IConnectionMultiplexer>().GetDatabase()));
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
+        Configure<MessageOptions>(options =>
+        {
+            var section = configuration.GetSection("MessageOptions");
+            options.OutputTempPath = section["OutputTempPath"] ?? options.OutputTempPath;
+            options.ImageSetting.ThumbnailSize = section.GetValue("ImageSetting:ThumbnailSize", options.ImageSetting.ThumbnailSize);
+            options.ImageSetting.BigSize = section.GetValue("ImageSetting:BigSize", options.ImageSetting.BigSize);
+            options.VideoSetting.IsGenerateSnapshot = section.GetValue("VideoSetting:IsGenerateSnapshot", options.VideoSetting.IsGenerateSnapshot);
+            options.VideoSetting.ImgCaptureSeconds = section.GetValue("VideoSetting:ImgCaptureSeconds", options.VideoSetting.ImgCaptureSeconds);
+            options.VideoSetting.GifSeconds = section.GetValue("VideoSetting:GifSeconds", options.VideoSetting.GifSeconds);
+            options.VideoSetting.SnapshotThumbnailSize = section.GetValue("VideoSetting:SnapshotThumbnailSize", options.VideoSetting.SnapshotThumbnailSize);
+            options.VideoSetting.ImgSnapshotSize = ParseSize(section["VideoSetting:ImgSnapshotSize"], options.VideoSetting.ImgSnapshotSize);
+            options.VideoSetting.GifSnapshotSize = ParseSize(section["VideoSetting:GifSnapshotSize"], options.VideoSetting.GifSnapshotSize);
+        });
 
         //SameSiteCookiePolicy
         context.Services.AddSameSiteCookiePolicy();
@@ -385,6 +404,15 @@ public class ChatHttpApiHostModule : AbpModule
         });
 
 
+    }
+
+    private static (int Width, int Height) ParseSize(string value, (int Width, int Height) fallback)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return fallback;
+        var parts = value.Split(',');
+        if (parts.Length != 2 || !int.TryParse(parts[0], out var width) || !int.TryParse(parts[1], out var height))
+            throw new InvalidOperationException("MessageOptions video size must contain two comma-separated integers.");
+        return (width, height);
     }
 
     public override void OnApplicationInitialization(ApplicationInitializationContext context)

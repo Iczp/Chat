@@ -81,9 +81,9 @@ public class Program
 
             .Enrich.FromLogContext()
             .WriteTo.Logger(fileLogger => fileLogger.WriteTo.Async(c => c.File($"Logs/log_all_.txt", outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] {Message}{NewLine}{Exception}", rollingInterval: RollingInterval.Day, rollOnFileSizeLimit: true)))
+            .WriteTo.Async(c => c.Console(outputTemplate: outputTemplate))
             //.WriteTo.Async(c => c.File("Logs/logs.txt"))
 #if DEBUG
-            .WriteTo.Async(c => c.Console(outputTemplate: outputTemplate))
             .WriteTo.Async(c => c.Udp("127.0.0.1", 8899, System.Net.Sockets.AddressFamily.InterNetwork, outputTemplate: outputTemplate))
 #else
                 //.WriteTo.Async(c => c.Udp("host.docker.internal", 19999, System.Net.Sockets.AddressFamily.InterNetwork))

@@ -16,7 +16,9 @@ public class BlobManager(
 
     public virtual async Task<Blob> CreateAsync(Blob blob)
     {
-        var entity = await Repository.InsertAsync(blob);
+        // Attachment content can be saved in a later application-service UOW.
+        // Flush metadata first so its BlobId FK exists before the message content insert.
+        var entity = await Repository.InsertAsync(blob, autoSave: true);
         await SaveBytesAsync(entity.Container, entity.Name, entity.Bytes);
         return entity;
     }

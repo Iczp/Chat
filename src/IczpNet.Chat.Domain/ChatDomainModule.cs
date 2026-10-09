@@ -113,7 +113,9 @@ public class ChatDomainModule : AbpModule
         //await context.AddBackgroundWorkerAsync<SessionUnitRequestUnitTestWorker>();
         //await context.AddBackgroundWorkerAsync<RecorderUnitTestWorker>();
 
-        await context.AddBackgroundWorkerAsync<MessageReportFlushWorker>();
+        if (context.ServiceProvider.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>()
+            .GetValue("Chat:Workers:EnablePeriodic", true))
+            await context.AddBackgroundWorkerAsync<MessageReportFlushWorker>();
 
         await base.OnPostApplicationInitializationAsync(context);
     }

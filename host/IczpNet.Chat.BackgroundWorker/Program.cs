@@ -21,7 +21,7 @@ public class Program
         try
         {
             var builder = WebApplication.CreateBuilder(args);
-            builder.Host.UseAutofac();
+            builder.Host.AddAppSettingsSecretsJson().UseAutofac();
             builder.Host.UseSerilog();
             await builder.AddApplicationAsync<ChatBackgroundWorkerModule>();
             var app = builder.Build();
