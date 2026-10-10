@@ -23,7 +23,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="10.0.12" />
     <ProjectReference Include="..\..\..\IczpNet.AbpCommons\src\IczpNet.AbpCommons.Domain.Shared\IczpNet.AbpCommons.Domain.Shared.csproj" />
-    <PackageReference Include="IczpNet.AbpTrees.Domain.Shared" Version="10.0.0.1061" />
+    <!--<PackageReference Include="IczpNet.AbpTrees.Domain.Shared" Version="10.0.0.1061" />-->
+    <ProjectReference Include="..\..\..\IczpNet.AbpTrees\src\IczpNet.AbpTrees.Domain.Shared\IczpNet.AbpTrees.Domain.Shared.csproj" />
     <PackageReference Include="Volo.Abp.Identity.Domain.Shared" Version="10.6.1" />
     <PackageReference Include="Volo.Abp.Validation" Version="10.6.1" />
   </ItemGroup>

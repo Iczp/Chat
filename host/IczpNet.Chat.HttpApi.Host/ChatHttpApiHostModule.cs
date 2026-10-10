@@ -420,7 +420,7 @@ public class ChatHttpApiHostModule : AbpModule
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
 
-        app.ApplicationServices.UseStaticAutoMapper();
+        app.ApplicationServices.UseStaticObjectMapper();
         //app.UseUrlAuthorization();
 
         //app.UsePusherSubscriber();

@@ -102,6 +102,6 @@ public partial class Message
 
         var outputType = ContentOuputAttribute.GetOuputType(currentType);
 
-        return AutoMapperExtensions.MapTo(currentInstance, currentType, outputType);
+        return ObjectMapperExtensions.MapTo(currentInstance, currentType, outputType);
     }
 }

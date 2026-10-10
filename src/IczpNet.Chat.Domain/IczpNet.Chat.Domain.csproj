@@ -36,7 +36,7 @@
 		<Compile Remove="CommandHandlers\**" />
 		<Compile Remove="Pusher\**" />
 		<ProjectReference Include="..\..\..\IczpNet.AbpCommons\src\IczpNet.AbpCommons.Domain\IczpNet.AbpCommons.Domain.csproj" />
-		<PackageReference Include="IczpNet.AbpTrees.Domain" Version="10.0.0.1061" />
+		<!--<PackageReference Include="IczpNet.AbpTrees.Domain" Version="10.0.0.1061" />-->
 		<PackageReference Include="IczpNet.BizCrypts" Version="0.0.1" />
 		<PackageReference Include="Ulid" Version="1.4.1" />
 		<PackageReference Include="Volo.Abp.BackgroundJobs.Abstractions" Version="10.6.1" />
@@ -47,9 +47,11 @@
     <PackageReference Include="Volo.Abp.Ddd.Domain" Version="10.6.1" />
 		<PackageReference Include="Volo.Abp.EntityFrameworkCore" Version="10.6.1" />
 		<PackageReference Include="Volo.Abp.Imaging.Abstractions" Version="10.6.1" />
+		<PackageReference Include="Volo.Abp.AutoMapper" Version="10.6.1" />
+		<PackageReference Include="Volo.Abp.Mapperly" Version="10.6.1" />
     <PackageReference Include="Volo.Abp.PermissionManagement.Domain.Identity" Version="10.6.1" />
 		<PackageReference Include="Volo.Abp.Caching.StackExchangeRedis" Version="10.6.1" />
-    <!--<ProjectReference Include="..\..\..\IczpNet.AbpTrees\src\IczpNet.AbpTrees.Domain\IczpNet.AbpTrees.Domain.csproj" />-->
+    <ProjectReference Include="..\..\..\IczpNet.AbpTrees\src\IczpNet.AbpTrees.Domain\IczpNet.AbpTrees.Domain.csproj" />
     <ProjectReference Include="..\IczpNet.Chat.Domain.Shared\IczpNet.Chat.Domain.Shared.csproj" />
   </ItemGroup>
 
