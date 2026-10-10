@@ -1,5 +1,5 @@
-using Microsoft.Extensions.DependencyInjection;
-using Volo.Abp.AutoMapper;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Volo.Abp.Mapperly;
 using Volo.Abp.Modularity;
 using Volo.Abp.Application;
 using IczpNet.AbpCommons;
@@ -15,7 +15,7 @@ using System.Linq;
 
 namespace IczpNet.Chat;
 
-[DependsOn(typeof(ChatDomainModule), typeof(ChatApplicationContractsModule), typeof(AbpDddApplicationModule), typeof(AbpAutoMapperModule))]
+[DependsOn(typeof(ChatDomainModule), typeof(ChatApplicationContractsModule), typeof(AbpDddApplicationModule), typeof(AbpMapperlyModule))]
 [DependsOn(typeof(AbpCommonsApplicationModule))]
 [DependsOn(typeof(AbpTreesApplicationModule))]
 [DependsOn(typeof(AbpIdentityApplicationModule))]
@@ -31,10 +31,9 @@ public class ChatApplicationModule : AbpModule
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
-        context.Services.AddAutoMapperObjectMapper<ChatApplicationModule>();
+        context.Services.AddMapperlyObjectMapper<ChatApplicationModule>();
         Configure<PermissionManagementOptions>(options => { });
-        Configure<AbpAutoMapperOptions>(options => options.AddMaps<ChatApplicationModule>(validate: true));
-        Configure<AuthorizationOptions>(options =>
+                Configure<AuthorizationOptions>(options =>
         {
             foreach (var item in SessionPermissionDefinitionConsts.GetAll()) options.AddPolicy(item, policy => policy.Requirements.Add(new SessionUnitPermissionRequirement(item)));
             foreach (var item in ChatObjectPermissionDefinitionConsts.GetAll()) options.AddPolicy(item, policy => policy.Requirements.Add(new ChatObjectRequirement(item)));

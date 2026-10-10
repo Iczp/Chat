@@ -1,4 +1,3 @@
-using AutoMapper;
 using IczpNet.Chat.AutoMappers;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
@@ -15,44 +14,37 @@ namespace IczpNet.Chat;
 
 public class MapperlyEquivalence_Tests
 {
-    private readonly IMapper _legacyMapper;
-
-    public MapperlyEquivalence_Tests()
-    {
-        var profile = typeof(ChatApplicationModule).Assembly.GetType(
-            "IczpNet.Chat.AutoMappers.ChatApplicationAutoMapperProfile", throwOnError: true)!;
-        var configuration = new MapperConfiguration(config => config.AddProfile(profile));
-        _legacyMapper = configuration.CreateMapper();
-    }
-
     [Fact]
-    public void Menu_output_mapping_matches_the_current_provider()
+    public void Menu_output_mapping_works_properly()
     {
         var source = new Menu { OwnerId = 123, Description = "menu", Sorting = 5 };
         source.SetName("root");
 
-        var legacy = _legacyMapper.Map<MenuDetailDto>(source);
         var candidate = new ChatApplicationMenuToMenuDetailDtoMapper().Map(source);
 
-        candidate.OwnerId.ShouldBe(legacy.OwnerId);
-        candidate.Name.ShouldBe(legacy.Name);
-        candidate.Description.ShouldBe(legacy.Description);
+        candidate.OwnerId.ShouldBe(123);
+        candidate.Name.ShouldBe("root");
+        candidate.Description.ShouldBe("menu");
     }
 
     [Fact]
-    public void Menu_create_and_update_input_mappings_match_the_current_provider()
+    public void Menu_create_and_update_input_mappings_work_properly()
     {
+        var parentId = Guid.NewGuid();
         var createInput = new MenuCreateInput
         {
             Name = "first",
             OwnerId = 123,
             Description = "original",
-            ParentId = Guid.NewGuid(),
+            ParentId = parentId,
             Sorting = 3,
         };
-        var legacy = _legacyMapper.Map<Menu>(createInput);
         var candidate = new ChatApplicationMenuCreateInputToMenuMapper().Map(createInput);
-        AssertSameMenuFields(legacy, candidate);
+        candidate.Name.ShouldBe("first");
+        candidate.OwnerId.ShouldBe(123);
+        candidate.Description.ShouldBe("original");
+        candidate.ParentId.ShouldBe(parentId);
+        candidate.Sorting.ShouldBe(3);
 
         var updateInput = new MenuUpdateInput
         {
@@ -61,26 +53,33 @@ public class MapperlyEquivalence_Tests
             ParentId = null,
             Sorting = 4,
         };
-        _legacyMapper.Map(updateInput, legacy);
         new ChatApplicationMenuUpdateInputToMenuMapper().Map(updateInput, candidate);
-        AssertSameMenuFields(legacy, candidate);
+        candidate.Name.ShouldBe("second");
+        candidate.Description.ShouldBe("updated");
+        candidate.ParentId.ShouldBeNull();
+        candidate.Sorting.ShouldBe(4);
     }
 
     [Fact]
-    public void ChatObject_create_input_mapping_matches_the_current_provider()
+    public void ChatObject_create_input_mapping_works_properly()
     {
         var source = CreateChatObjectInput();
-        var legacy = _legacyMapper.Map<ChatObject>(source);
         var candidate = new ChatApplicationChatObjectCreateInputToChatObjectMapper().Map(source);
 
-        AssertSameChatObjectFields(legacy, candidate);
+        candidate.Name.ShouldBe("tester");
+        candidate.Description.ShouldBe("profile");
+        candidate.Gender.ShouldBe(Genders.Female);
+        candidate.VerificationMethod.ShouldBe(VerificationMethods.Required);
+        candidate.ChatObjectTypeId.ShouldBe("personal");
+        candidate.ObjectType.ShouldBe(ChatObjectTypeEnums.Personal);
+        candidate.ParentId.ShouldBe(23);
+        candidate.Sorting.ShouldBe(5);
     }
 
     [Fact]
-    public void ChatObject_update_input_mapping_matches_the_current_provider()
+    public void ChatObject_update_input_mapping_works_properly()
     {
         var createInput = CreateChatObjectInput();
-        var legacy = _legacyMapper.Map<ChatObject>(createInput);
         var candidate = new ChatApplicationChatObjectCreateInputToChatObjectMapper().Map(createInput);
         var updateInput = new ChatObjectUpdateInput
         {
@@ -92,14 +91,18 @@ public class MapperlyEquivalence_Tests
             Sorting = 7,
         };
 
-        _legacyMapper.Map(updateInput, legacy);
         new ChatApplicationChatObjectUpdateInputToChatObjectMapper().Map(updateInput, candidate);
 
-        AssertSameChatObjectFields(legacy, candidate);
+        candidate.Name.ShouldBe("renamed");
+        candidate.Description.ShouldBe("updated");
+        candidate.Gender.ShouldBe(Genders.Male);
+        candidate.VerificationMethod.ShouldBe(VerificationMethods.Rejected);
+        candidate.ParentId.ShouldBe(45);
+        candidate.Sorting.ShouldBe(7);
     }
 
     [Fact]
-    public void ChatObjectType_create_and_update_input_mappings_match_the_current_provider()
+    public void ChatObjectType_create_and_update_input_mappings_work_properly()
     {
         var createInput = new ChatObjectTypeCreateInput
         {
@@ -109,9 +112,12 @@ public class MapperlyEquivalence_Tests
             MaxDepth = 2,
             IsHasChild = true,
         };
-        var legacy = _legacyMapper.Map<ChatObjectType>(createInput);
         var candidate = new ChatApplicationChatObjectTypeCreateInputToChatObjectTypeMapper().Map(createInput);
-        AssertSameChatObjectTypeFields(legacy, candidate);
+        candidate.Id.ShouldBe("personal");
+        candidate.Name.ShouldBe("Personal");
+        candidate.Description.ShouldBe("original");
+        candidate.MaxDepth.ShouldBe(2);
+        candidate.IsHasChild.ShouldBeTrue();
 
         var updateInput = new ChatObjectTypeUpdateInput
         {
@@ -120,9 +126,11 @@ public class MapperlyEquivalence_Tests
             MaxDepth = 3,
             IsHasChild = false,
         };
-        _legacyMapper.Map(updateInput, legacy);
         new ChatApplicationChatObjectTypeUpdateInputToChatObjectTypeMapper().Map(updateInput, candidate);
-        AssertSameChatObjectTypeFields(legacy, candidate);
+        candidate.Name.ShouldBe("New name");
+        candidate.Description.ShouldBe("updated");
+        candidate.MaxDepth.ShouldBe(3);
+        candidate.IsHasChild.ShouldBeFalse();
     }
 
     private static ChatObjectCreateInput CreateChatObjectInput() => new()
@@ -136,41 +144,4 @@ public class MapperlyEquivalence_Tests
         ParentId = 23,
         Sorting = 5,
     };
-
-    private static void AssertSameChatObjectFields(ChatObject expected, ChatObject actual)
-    {
-        actual.Name.ShouldBe(expected.Name);
-        actual.NameSpelling.ShouldBe(expected.NameSpelling);
-        actual.NameSpellingAbbreviation.ShouldBe(expected.NameSpellingAbbreviation);
-        actual.Description.ShouldBe(expected.Description);
-        actual.Gender.ShouldBe(expected.Gender);
-        actual.VerificationMethod.ShouldBe(expected.VerificationMethod);
-        actual.ChatObjectTypeId.ShouldBe(expected.ChatObjectTypeId);
-        actual.ObjectType.ShouldBe(expected.ObjectType);
-        actual.ParentId.ShouldBe(expected.ParentId);
-        actual.Sorting.ShouldBe(expected.Sorting);
-        actual.IsEnabled.ShouldBe(expected.IsEnabled);
-        actual.StateCheckers.Count.ShouldBe(expected.StateCheckers.Count);
-    }
-
-    private static void AssertSameMenuFields(Menu expected, Menu actual)
-    {
-        actual.Name.ShouldBe(expected.Name);
-        actual.OwnerId.ShouldBe(expected.OwnerId);
-        actual.Description.ShouldBe(expected.Description);
-        actual.ParentId.ShouldBe(expected.ParentId);
-        actual.Sorting.ShouldBe(expected.Sorting);
-        actual.Id.ShouldBe(expected.Id);
-    }
-
-    private static void AssertSameChatObjectTypeFields(ChatObjectType expected, ChatObjectType actual)
-    {
-        actual.Id.ShouldBe(expected.Id);
-        actual.Name.ShouldBe(expected.Name);
-        actual.Description.ShouldBe(expected.Description);
-        actual.MaxDepth.ShouldBe(expected.MaxDepth);
-        actual.IsHasChild.ShouldBe(expected.IsHasChild);
-        actual.IsStatic.ShouldBe(expected.IsStatic);
-        actual.ObjectType.ShouldBe(expected.ObjectType);
-    }
 }

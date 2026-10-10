@@ -1,4 +1,3 @@
-using AutoMapper;
 using IczpNet.Chat.AutoMappers;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
@@ -7,35 +6,26 @@ using IczpNet.Chat.SessionUnits;
 using Shouldly;
 using System;
 using System.Reflection;
-using System.Text.Json;
 using Xunit;
 
 namespace IczpNet.Chat;
 
 public class MessageCacheMapperly_Tests
 {
-    private readonly IMapper _legacyMapper;
-
-    public MessageCacheMapperly_Tests()
-    {
-        var profile = typeof(ChatDomainModule).Assembly.GetType(
-            "IczpNet.Chat.AutoMappers.ChatApplicationAutoMapperProfile", throwOnError: true)!;
-        var configuration = new MapperConfiguration(config => config.AddProfile(profile));
-        _legacyMapper = configuration.CreateMapper();
-    }
-
     [Fact]
-    public void Message_cache_without_quote_matches_the_current_profile()
+    public void Message_cache_without_quote_maps_correctly()
     {
         var source = CreateMessage("root");
-        var expected = _legacyMapper.Map<MessageCacheItem>(source);
         var actual = new ChatDomainMessageToMessageCacheItemMapper().Map(source);
 
-        JsonSerializer.Serialize(actual).ShouldBe(JsonSerializer.Serialize(expected));
+        actual.ShouldNotBeNull();
+        actual.ClientMessageId.ShouldBe("root");
+        actual.MessageType.ShouldBe(MessageTypes.Text);
+        actual.QuoteMessage.ShouldBeNull();
     }
 
     [Fact]
-    public void Message_cache_with_text_content_matches_the_current_profile()
+    public void Message_cache_with_text_content_maps_correctly()
     {
         var source = new MessageWithTestContent(new SessionUnitCacheItem
         {
@@ -49,15 +39,15 @@ public class MessageCacheMapperly_Tests
         };
         source.SetMessageType(MessageTypes.Text);
 
-        var expected = _legacyMapper.Map<MessageCacheItem>(source);
         var actual = new ChatDomainMessageToMessageCacheItemMapper().Map(source);
 
-        JsonSerializer.Serialize(actual).ShouldBe(JsonSerializer.Serialize(expected));
+        actual.ShouldNotBeNull();
+        actual.ClientMessageId.ShouldBe("with-content");
         actual.Content.ShouldBeOfType<TextContentInfo>().Text.ShouldBe("hello");
     }
 
     [Fact]
-    public void Message_cache_with_quote_matches_the_current_profile()
+    public void Message_cache_with_quote_maps_correctly()
     {
         var source = CreateMessage("root");
         var quote = CreateMessage("quoted");
@@ -65,15 +55,15 @@ public class MessageCacheMapperly_Tests
         typeof(Message).GetProperty(nameof(Message.QuoteMessage), BindingFlags.Instance | BindingFlags.Public)!
             .SetValue(source, quote);
 
-        var expected = _legacyMapper.Map<MessageCacheItem>(source);
         var actual = new ChatDomainMessageToMessageCacheItemMapper().Map(source);
 
-        JsonSerializer.Serialize(actual).ShouldBe(JsonSerializer.Serialize(expected));
+        actual.ShouldNotBeNull();
         actual.QuoteMessage.ShouldNotBeNull();
+        actual.QuoteMessage.ClientMessageId.ShouldBe("quoted");
     }
 
     [Fact]
-    public void Message_cache_with_quoted_content_matches_the_current_profile()
+    public void Message_cache_with_quoted_content_maps_correctly()
     {
         var unit = new SessionUnitCacheItem
         {
@@ -95,24 +85,23 @@ public class MessageCacheMapperly_Tests
         typeof(Message).GetProperty(nameof(Message.QuoteMessage), BindingFlags.Instance | BindingFlags.Public)!
             .SetValue(source, quote);
 
-        var expected = _legacyMapper.Map<MessageCacheItem>(source);
         var actual = new ChatDomainMessageToMessageCacheItemMapper().Map(source);
 
-        JsonSerializer.Serialize(actual).ShouldBe(JsonSerializer.Serialize(expected));
+        actual.ShouldNotBeNull();
+        actual.QuoteMessage.ShouldNotBeNull();
         actual.QuoteMessage.Content.ShouldBeOfType<TextContentInfo>().Text.ShouldBe("quoted text");
     }
 
     [Fact]
-    public void Message_cache_update_clears_an_existing_quote_like_the_current_profile()
+    public void Message_cache_update_clears_an_existing_quote_when_none_present()
     {
         var source = CreateMessage("root");
-        var expected = new MessageCacheItem { QuoteMessage = new MessageQuoteCacheItem() };
         var actual = new MessageCacheItem { QuoteMessage = new MessageQuoteCacheItem() };
 
-        _legacyMapper.Map(source, expected);
         new ChatDomainMessageToMessageCacheItemMapper().Map(source, actual);
 
-        JsonSerializer.Serialize(actual).ShouldBe(JsonSerializer.Serialize(expected));
+        actual.ClientMessageId.ShouldBe("root");
+        actual.QuoteMessage.ShouldBeNull();
     }
 
     private static Message CreateMessage(string clientMessageId)

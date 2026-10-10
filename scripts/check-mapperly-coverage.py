@@ -1,11 +1,12 @@
-"""Report legacy Chat mapping pairs that lack a source-generated or custom mapper.
+"""Report legacy Chat mapping pairs without a Mapperly/custom replacement.
 
-This is a migration gate, not an automatic converter. Run it before removing
-the AutoMapper profiles; it exits nonzero while declared mappings are missing.
+Deleted profiles are read from the Git baseline so removing them cannot make
+the migration gate report a false success.
 """
 
 from pathlib import Path
 import re
+import subprocess
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -14,6 +15,27 @@ PROJECTS = (
     "IczpNet.Chat.Application",
     "IczpNet.Chat.ManagementApplication",
 )
+
+
+def baseline_profiles(project: str):
+    result = subprocess.run(
+        ["git", "ls-tree", "-r", "--name-only", "HEAD", "--", f"src/{project}"],
+        cwd=ROOT, capture_output=True, text=True, check=True,
+    )
+    paths = [path for path in result.stdout.splitlines()
+             if path.endswith("AutoMapperProfile.cs")]
+    if not paths:
+        raise RuntimeError(f"No baseline AutoMapper profiles found for {project}")
+    for path in paths:
+        current = ROOT / path
+        if current.is_file():
+            yield current.name, current.read_text(encoding="utf-8-sig", errors="replace")
+        else:
+            original = subprocess.run(
+                ["git", "show", f"HEAD:{path}"], cwd=ROOT,
+                capture_output=True, check=True,
+            )
+            yield current.name, original.stdout.decode("utf-8-sig", errors="replace")
 
 
 def type_arguments(text: str, start: int):
@@ -44,15 +66,12 @@ for project in PROJECTS:
     project_dir = ROOT / "src" / project
     declared = set()
     open_generic = []
-    for profile in project_dir.rglob("*AutoMapperProfile.cs"):
-        if "obj" in profile.parts or "bin" in profile.parts:
-            continue
-        source = profile.read_text(encoding="utf-8-sig", errors="replace")
+    for profile_name, source in baseline_profiles(project):
         for line in source.splitlines():
             if not re.match(r"^\s*CreateMap", line):
                 continue
             if "CreateMap(typeof(" in line:
-                open_generic.append((profile.name, line.strip()))
+                open_generic.append((profile_name, line.strip()))
                 continue
             match = re.search(r"CreateMap<", line)
             if match:

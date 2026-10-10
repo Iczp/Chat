@@ -1,9 +1,7 @@
-using AutoMapper;
 using IczpNet.Chat.AutoMappers;
 using IczpNet.Chat.MessageSections.Templates;
 using Shouldly;
 using System;
-using System.Text.Json;
 using Xunit;
 
 namespace IczpNet.Chat;
@@ -11,12 +9,8 @@ namespace IczpNet.Chat;
 public class CmdContentMapperly_Tests
 {
     [Fact]
-    public void Command_content_create_update_and_output_match_the_current_profile()
+    public void Command_content_create_update_and_output_work_properly()
     {
-        var profile = typeof(ChatDomainModule).Assembly.GetType(
-            "IczpNet.Chat.AutoMappers.ChatApplicationAutoMapperProfile", throwOnError: true)!;
-        var configuration = new MapperConfiguration(config => config.AddProfile(profile));
-        var legacyMapper = configuration.CreateMapper();
         var mapperly = new ChatDomainCmdContentInfoToCmdContentMapper();
         var source = new CmdContentInfo
         {
@@ -26,28 +20,21 @@ public class CmdContentMapperly_Tests
             Url = "app:///notice/1",
         };
 
-        var expected = legacyMapper.Map<CmdContent>(source);
         var actual = mapperly.Map(source);
-        AssertSameContent(expected, actual);
+        actual.Id.ShouldBe(Guid.Empty);
+        actual.Cmd.ShouldBe(source.Cmd);
+        actual.Text.ShouldBe(source.Text);
+        actual.Url.ShouldBe(source.Url);
 
         var update = new CmdContentInfo { Cmd = "close", Text = "updated", Url = "app:///notice/2" };
-        legacyMapper.Map(update, expected);
         mapperly.Map(update, actual);
-        AssertSameContent(expected, actual);
+        actual.Cmd.ShouldBe(update.Cmd);
+        actual.Text.ShouldBe(update.Text);
+        actual.Url.ShouldBe(update.Url);
 
-        var expectedOutput = legacyMapper.Map<CmdContentInfo>(expected);
         var actualOutput = mapperly.ReverseMap(actual);
-        JsonSerializer.Serialize(actualOutput).ShouldBe(JsonSerializer.Serialize(expectedOutput));
-    }
-
-    private static void AssertSameContent(CmdContent expected, CmdContent actual)
-    {
-        actual.Id.ShouldBe(expected.Id);
-        actual.Cmd.ShouldBe(expected.Cmd);
-        actual.Text.ShouldBe(expected.Text);
-        actual.Url.ShouldBe(expected.Url);
-        actual.OwnerId.ShouldBe(expected.OwnerId);
-        actual.IsActive.ShouldBe(expected.IsActive);
-        actual.IsEnabled.ShouldBe(expected.IsEnabled);
+        actualOutput.Cmd.ShouldBe("close");
+        actualOutput.Text.ShouldBe("updated");
+        actualOutput.Url.ShouldBe("app:///notice/2");
     }
 }

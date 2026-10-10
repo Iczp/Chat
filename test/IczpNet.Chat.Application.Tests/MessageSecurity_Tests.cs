@@ -20,7 +20,8 @@ namespace IczpNet.Chat;
 
 public class MessageSecurity_Tests
 {
-    private sealed class Probe : ChatAppService
+    [DisableConventionalRegistration]
+    public class Probe : ChatAppService
     {
         public Task Check(params long?[] owners) => CheckPolicyForUserAsync(owners);
     }

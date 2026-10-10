@@ -34,7 +34,7 @@ using Volo.Abp.AspNetCore.Mvc.UI.MultiTenancy;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.Autofac;
-using Volo.Abp.AutoMapper;
+using Volo.Abp.Mapperly;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.BlobStoring;
@@ -95,7 +95,7 @@ public class ChatHttpApiHostModule : AbpModule
     {
         context.Services.Replace(ServiceDescriptor.Transient<IDistributedCacheKeyNormalizer, SharedPermissionCacheKeyNormalizer>());
         context.Services.Replace(ServiceDescriptor.Transient<IMediaResolver, FFMpegCoreMediaResolver>());
-        context.Services.AddAutoMapperObjectMapper();
+        context.Services.AddMapperlyObjectMapper();
         context.Services.AddSingleton<Medallion.Threading.IDistributedLockProvider>(provider =>
             new Medallion.Threading.Redis.RedisDistributedSynchronizationProvider(
                 provider.GetRequiredService<IConnectionMultiplexer>().GetDatabase()));

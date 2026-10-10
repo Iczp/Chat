@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.MessageSections.Messages;
 using System;
 using Volo.Abp.Application.Dtos;
 
@@ -25,5 +25,7 @@ namespace IczpNet.Chat.Management.MessageSections.Messages.Dtos
         /// 引用层级 0:不是引用
         /// </summary>
         public virtual long QuoteDepth { get; set; }
+
+        public virtual string GetObjectKey() => $"{Id}";
     }
 }

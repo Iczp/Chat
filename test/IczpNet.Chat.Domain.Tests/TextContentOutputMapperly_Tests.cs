@@ -1,4 +1,3 @@
-using AutoMapper;
 using IczpNet.Chat.AutoMappers;
 using IczpNet.Chat.MessageSections.Templates;
 using Shouldly;
@@ -10,18 +9,14 @@ namespace IczpNet.Chat;
 public class TextContentOutputMapperly_Tests
 {
     [Fact]
-    public void Persisted_text_content_maps_like_the_existing_profile()
+    public void Persisted_text_content_maps_correctly()
     {
-        var profile = typeof(ChatDomainModule).Assembly.GetType(
-            "IczpNet.Chat.AutoMappers.ChatApplicationAutoMapperProfile", throwOnError: true)!;
-        var configuration = new MapperConfiguration(config => config.AddProfile(profile));
-        var oldMapper = configuration.CreateMapper();
-        var source = new TextContent(Guid.NewGuid()) { Text = "hello" };
+        var id = Guid.NewGuid();
+        var source = new TextContent(id) { Text = "hello" };
 
-        var expected = oldMapper.Map<TextContentInfo>(source);
         var actual = new ChatDomainTextContentToTextContentInfoMapper().Map(source);
 
-        actual.Id.ShouldBe(expected.Id);
-        actual.Text.ShouldBe(expected.Text);
+        actual.Id.ShouldBe(id);
+        actual.Text.ShouldBe("hello");
     }
 }

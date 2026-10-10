@@ -1,4 +1,4 @@
-using IczpNet.AbpCommons;
+﻿using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
 using IczpNet.Chat.AiRuns;
 using IczpNet.Chat.ChatObjects;
@@ -16,7 +16,7 @@ using StackExchange.Redis;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp;
-using Volo.Abp.AutoMapper;
+using Volo.Abp.Mapperly;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.BlobStoring;
@@ -31,7 +31,7 @@ namespace IczpNet.Chat;
 [DependsOn(
     typeof(AbpDddDomainModule),
     typeof(ChatDomainSharedModule),
-    typeof(AbpAutoMapperModule)
+    typeof(AbpMapperlyModule)
 )]
 
 [DependsOn(typeof(AbpCommonsDomainModule))]
@@ -51,7 +51,7 @@ public class ChatDomainModule : AbpModule
     {
         var configuration = context.Services.GetConfiguration();
 
-        context.Services.AddAutoMapperObjectMapper<ChatDomainModule>();
+        context.Services.AddMapperlyObjectMapper<ChatDomainModule>();
 
         context.Services.AddHttpClient(HttpRequest.ClientName);
 
@@ -61,10 +61,6 @@ public class ChatDomainModule : AbpModule
         //context.Services.ConfigureByConvention<MessageReportOptions>();
         //context.Services.ConfigureByConvention<ScanLoginOptions>();
 
-        Configure<AbpAutoMapperOptions>(options =>
-        {
-            options.AddMaps<ChatDomainModule>(validate: true);
-        });
 
         Configure<ShortIdOptions>(options =>
         {

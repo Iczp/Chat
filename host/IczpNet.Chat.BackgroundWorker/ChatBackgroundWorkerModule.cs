@@ -1,15 +1,16 @@
-using IczpNet.Chat.AiRuns;
+﻿using IczpNet.Chat.AiRuns;
 using IczpNet.Chat.AiProviders;
 using IczpNet.Chat.IdentityUsers;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.EntityFrameworkCore;
 using IczpNet.RedisDistributedEventBus;
+using IczpNet.AbpCommons.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using Volo.Abp;
 using Volo.Abp.Autofac;
-using Volo.Abp.AutoMapper;
+using Volo.Abp.Mapperly;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.BackgroundWorkers;
@@ -35,6 +36,11 @@ namespace IczpNet.Chat;
     typeof(AbpAspNetCoreSerilogModule), typeof(Volo.Abp.DistributedLocking.AbpDistributedLockingModule))]
 public class ChatBackgroundWorkerModule : AbpModule
 {
+    public override void OnApplicationInitialization(ApplicationInitializationContext context)
+    {
+        context.ServiceProvider.UseStaticObjectMapper();
+    }
+
     public override async System.Threading.Tasks.Task OnPostApplicationInitializationAsync(ApplicationInitializationContext context)
     {
         if (context.ServiceProvider.GetRequiredService<IConfiguration>().GetValue("Chat:Workers:EnablePeriodic", true))
@@ -43,7 +49,7 @@ public class ChatBackgroundWorkerModule : AbpModule
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
-        context.Services.AddAutoMapperObjectMapper();
+        context.Services.AddMapperlyObjectMapper();
         context.Services.AddSingleton<Medallion.Threading.IDistributedLockProvider>(provider =>
             new Medallion.Threading.Redis.RedisDistributedSynchronizationProvider(
                 provider.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>().GetDatabase()));

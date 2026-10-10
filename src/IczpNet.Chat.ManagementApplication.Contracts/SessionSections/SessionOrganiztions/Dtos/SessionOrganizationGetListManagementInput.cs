@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.SessionSections;
+using IczpNet.Chat.Sessions;
 using System;
 
 namespace IczpNet.Chat.Management.SessionSections.SessionOrganiztions.Dtos;

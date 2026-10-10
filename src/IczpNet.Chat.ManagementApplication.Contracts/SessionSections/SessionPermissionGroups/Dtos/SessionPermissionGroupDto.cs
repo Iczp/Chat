@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.SessionSections.SessionPermissionGroups;
+using IczpNet.Chat.SessionPermissionGroups;
 using System;
 using Volo.Abp.Application.Dtos;
 namespace IczpNet.Chat.Management.SessionSections.SessionOrganiztions.Dtos;
@@ -10,4 +10,6 @@ public class SessionPermissionGroupDto : SessionPermissionGroupInfo, IEntityDto<
 {
 
     public virtual string Description { get; set; }
+
+    public virtual string GetObjectKey() => $"{Id}";
 }

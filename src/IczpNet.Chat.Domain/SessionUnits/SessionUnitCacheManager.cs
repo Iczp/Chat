@@ -1,5 +1,4 @@
-﻿using AutoMapper.Internal;
-using IczpNet.AbpCommons.Extensions;
+﻿using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;

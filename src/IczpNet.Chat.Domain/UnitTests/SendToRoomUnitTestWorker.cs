@@ -1,5 +1,4 @@
 ﻿
-using AutoMapper.Internal;
 using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections;
@@ -92,7 +91,11 @@ public class SendToRoomUnitTestWorker : AsyncPeriodicBackgroundWorkerBase
 
         for (int i = 0; i < new Random().Next(1, 10); i++)
         {
-            remindList.TryAdd(items[new Random().Next(0, items.Count - 1)]);
+            var candidate = items[new Random().Next(0, items.Count - 1)];
+            if (!remindList.Contains(candidate))
+            {
+                remindList.Add(candidate);
+            }
         }
 
         var text = $"RoomId:{RoomId}, sessionunitId:{sessionunitId}, remindCount:{remindList.Count}";

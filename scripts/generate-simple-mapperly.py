@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECTS = (
     "IczpNet.Chat.Domain",
     "IczpNet.Chat.Application",
+    "IczpNet.Chat.ManagementApplication",
 )
 MANUAL_MAPPINGS = {
     ("SessionUnit", "SessionUnitDestinationDetailDto"),

@@ -1,5 +1,5 @@
-﻿using IczpNet.Chat.Management.SessionSections.SessionPermissions.Dtos;
-using IczpNet.Chat.SessionSections.SessionPermissions;
+using IczpNet.Chat.Management.SessionSections.SessionPermissions.Dtos;
+using IczpNet.Chat.SessionPermissions;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
