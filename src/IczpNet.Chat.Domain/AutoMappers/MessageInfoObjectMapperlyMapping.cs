@@ -10,7 +10,21 @@ namespace IczpNet.Chat.AutoMappers;
 public partial class ChatDomainMessageToMessageInfoObjectMapper
     : MapperBase<Message, MessageInfo<object>>
 {
-    public override partial MessageInfo<object> Map(Message source);
+    public override MessageInfo<object> Map(Message source)
+    {
+        if (source is null) return default!;
+        var destination = new MessageInfo<object>();
+        Map(source, destination);
+        return destination;
+    }
 
-    public override partial void Map(Message source, MessageInfo<object> destination);
+    public override void Map(Message source, MessageInfo<object> destination)
+    {
+        if (source is null || destination is null) return;
+        MapFields(source, destination);
+        destination.Content = source.Content;
+    }
+
+    [MapperIgnoreTarget(nameof(MessageInfo<object>.Content))]
+    private partial void MapFields(Message source, MessageInfo<object> destination);
 }

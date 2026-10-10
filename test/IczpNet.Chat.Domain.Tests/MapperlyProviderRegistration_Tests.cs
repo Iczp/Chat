@@ -76,11 +76,51 @@ public class MapperlyProviderRegistration_Tests : AbpIntegratedTest<MapperlyProv
             result.ShouldNotBeNull($"Missing Mapperly mapping for {contentType.Name}");
             resultType.GetProperty(nameof(MessageInfo<object>.Content))!.GetValue(result)
                 .ShouldBeSameAs(content, $"Incorrect content mapping for {contentType.Name}");
+            message.ReadCount.ShouldBe(1, $"Content was evaluated repeatedly for {contentType.Name}");
+        }
+    }
+
+    [Fact]
+    public void Cache_and_job_message_maps_read_content_once()
+    {
+        var root = ServiceProvider.GetRequiredService<IObjectMapper>();
+        var message = new CountingMessage(new SessionUnitCacheItem
+        {
+            Id = Guid.NewGuid(),
+            SessionId = Guid.NewGuid(),
+            OwnerId = 123,
+        });
+
+        root.Map<Message, MessageCacheItem>(message).Content.ShouldBeSameAs(message.ExpectedContent);
+        message.ReadCount.ShouldBe(1);
+
+        root.Map<Message, MessageQuoteCacheItem>(message).Content.ShouldBeSameAs(message.ExpectedContent);
+        message.ReadCount.ShouldBe(2);
+
+        root.Map<Message, MessageInfo<object>>(message).Content.ShouldBeSameAs(message.ExpectedContent);
+        message.ReadCount.ShouldBe(3);
+    }
+
+    private sealed class CountingMessage(SessionUnitCacheItem unit) : Message(unit)
+    {
+        public object ExpectedContent { get; } = new();
+        public int ReadCount { get; private set; }
+
+        public override object GetContentDto()
+        {
+            ReadCount++;
+            return ExpectedContent;
         }
     }
 
     private sealed class MessageWithTestContent(SessionUnitCacheItem unit, object content) : Message(unit)
     {
-        public override object GetContentDto() => content;
+        public int ReadCount { get; private set; }
+
+        public override object GetContentDto()
+        {
+            ReadCount++;
+            return content;
+        }
     }
 }

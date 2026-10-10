@@ -10,9 +10,23 @@ namespace IczpNet.Chat.AutoMappers;
 public partial class ChatDomainMessageToMessageQuoteCacheItemMapper
     : MapperBase<Message, MessageQuoteCacheItem>
 {
-    public override partial MessageQuoteCacheItem Map(Message source);
+    public override MessageQuoteCacheItem Map(Message source)
+    {
+        if (source is null) return default!;
+        var destination = new MessageQuoteCacheItem();
+        Map(source, destination);
+        return destination;
+    }
 
-    public override partial void Map(Message source, MessageQuoteCacheItem destination);
+    public override void Map(Message source, MessageQuoteCacheItem destination)
+    {
+        if (source is null || destination is null) return;
+        MapFields(source, destination);
+        destination.Content = source.Content;
+    }
+
+    [MapperIgnoreTarget(nameof(MessageQuoteCacheItem.Content))]
+    private partial void MapFields(Message source, MessageQuoteCacheItem destination);
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
@@ -31,13 +45,15 @@ public partial class ChatDomainMessageToMessageCacheItemMapper
 
     public override void Map(Message source, MessageCacheItem destination)
     {
-        if (source is null) return;
+        if (source is null || destination is null) return;
         MapFields(source, destination);
+        destination.Content = source.Content;
         destination.QuoteMessage = source.QuoteMessage is null
             ? null!
             : _quoteMapper.Map(source.QuoteMessage);
     }
 
     [MapperIgnoreTarget(nameof(MessageCacheItem.QuoteMessage))]
+    [MapperIgnoreTarget(nameof(MessageCacheItem.Content))]
     private partial void MapFields(Message source, MessageCacheItem destination);
 }

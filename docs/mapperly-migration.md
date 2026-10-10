@@ -1,5 +1,61 @@
 # Chat AutoMapper → Mapperly migration
 
+## Current state (2026-10-10)
+
+The `mapperly` branch now registers ABP Mapperly in Chat Domain, Application,
+ManagementApplication, the API Host, and the standalone BackgroundWorker.
+The old AutoMapper profiles and direct package references are removed from the
+working tree. `dotnet build IczpNet.Chat.sln --no-restore` succeeds. This is a
+**compile milestone, not a behavior-parity or production-release sign-off**.
+
+`python scripts/check-mapperly-coverage.py` compares the current replacement
+classes against the most recent Git revision retaining each old profile. It
+reports 34/34 Domain, 192/192 Application, and 77/77 Management closed pairs,
+but still exits nonzero for the three old open-generic declarations. The
+closed-pair count is structural and does not verify custom actions, resolvers,
+null behavior, or nested mapping behavior.
+
+Known runtime parity issues to resolve before release:
+
+1. Generated `Message → MessageInfo<T>` mappings originally evaluated the
+   computed `Message.Content` property twice when non-null. The cache,
+   concrete `MessageInfo<object>`, `MessageAnyInfo`, and currently registered
+   closed `MessageInfo<T>` mappings now read it once and are regression-tested.
+   Future message output mappers must preserve this rule.
+2. Generated nested `SessionUnit.Owner → ChatObjectInfo` mappings directly copy
+   `Thumbnail`, `Portrait`, and `DeviceTypes`. The old configured ChatObject
+   mapping normalized URLs and obtained device types through
+   `IConnectionPoolManager`. The direct `SessionUnit → SessionUnitSenderInfo`
+   mapping and message mappings that include a sender unit need a behavioral
+   equivalent, preferably covered by a focused regression test.
+3. The old message profiles used `MaxDepth(3)`. The generated nested mappings
+   have no equivalent depth policy; verify quote and sender-unit graphs do not
+   recurse or overfetch in the actual API paths.
+4. The new `ChatObject → ChatObjectInfo` mapper still waits synchronously on
+   `GetDeviceTypesAsync` (`.Result`), preserving the old behavior but also its
+   high-concurrency thread-blocking risk. Any redesign should be explicit and
+   benchmarked, not hidden in a mapper substitution.
+5. Several old-vs-new parity tests were changed to Mapperly-only assertions.
+   Keep representative golden-output tests for custom URL, nested content,
+   create/update, null, and open-generic cases.
+6. `MessageInfo<dynamic>` and `MessageInfo<object>` are the same CLR closed
+   generic type. Separate mapper classes for both create duplicate provider
+   registrations; consolidate them after confirming all callers, rather than
+   relying on registration order.
+
+The BackgroundWorker now calls `UseStaticObjectMapper()` during initialization;
+`Message.GetContentDto()` requires that static bridge for runtime content-type
+dispatch. The API Host already initialized it.
+
+Current full test runs: Domain 68 passed / 14 skipped / 3 failed; Application
+18 passed / 2 failed. The five failures all occur while initializing the
+existing test Host because `DynamicPermissionDefinitionStore` cannot resolve
+`IPermissionGroupDefinitionRecordRepository`; they are not mapper assertions.
+The targeted Mapperly tests pass (Domain 15/15, Application 6/6). No migration
+or database update was generated or executed.
+
+## Earlier migration plan (historical; not the current runtime state)
+
 This migration is intentionally staged. Do not replace `AddAutoMapperObjectMapper`
 in the Chat modules or hosts until every active map has an equivalent and the
 message/content regression tests pass. The currently generated Mapperly classes

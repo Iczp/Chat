@@ -18,21 +18,31 @@ PROJECTS = (
 
 
 def baseline_profiles(project: str):
-    result = subprocess.run(
-        ["git", "ls-tree", "-r", "--name-only", "HEAD", "--", f"src/{project}"],
+    commits = subprocess.run(
+        ["git", "rev-list", "HEAD", "--", f"src/{project}"],
         cwd=ROOT, capture_output=True, text=True, check=True,
-    )
-    paths = [path for path in result.stdout.splitlines()
-             if path.endswith("AutoMapperProfile.cs")]
-    if not paths:
-        raise RuntimeError(f"No baseline AutoMapper profiles found for {project}")
+    ).stdout.splitlines()
+    baseline = None
+    paths = []
+    for commit in commits:
+        result = subprocess.run(
+            ["git", "ls-tree", "-r", "--name-only", commit, "--", f"src/{project}"],
+            cwd=ROOT, capture_output=True, text=True, check=True,
+        )
+        paths = [path for path in result.stdout.splitlines()
+                 if path.endswith("AutoMapperProfile.cs")]
+        if paths:
+            baseline = commit
+            break
+    if baseline is None:
+        raise RuntimeError(f"No historic AutoMapper profiles found for {project}")
     for path in paths:
         current = ROOT / path
         if current.is_file():
             yield current.name, current.read_text(encoding="utf-8-sig", errors="replace")
         else:
             original = subprocess.run(
-                ["git", "show", f"HEAD:{path}"], cwd=ROOT,
+                ["git", "show", f"{baseline}:{path}"], cwd=ROOT,
                 capture_output=True, check=True,
             )
             yield current.name, original.stdout.decode("utf-8-sig", errors="replace")
