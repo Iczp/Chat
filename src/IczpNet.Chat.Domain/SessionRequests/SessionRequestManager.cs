@@ -96,7 +96,7 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
 
         var entity = (await Repository.GetQueryableAsync())
             .Where(x => !x.IsHandled && x.IsEnabled)
-            .Where(x => x.ExpirationTime == null || x.ExpirationTime > DateTime.Now)
+            .Where(x => x.ExpirationTime == null || x.ExpirationTime > Clock.Now)
             .Where(x => x.OwnerId == ownerId && x.DestinationId == destinationId)
             .FirstOrDefault();
 
@@ -108,7 +108,7 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
         {
             entity.RequestMessage = requestMessage;
 
-            entity.SetExpirationTime(expiractionHours);
+            entity.SetExpirationTime(expiractionHours, Clock.Now);
 
             await Repository.UpdateAsync(entity, autoSave: true);
         }
@@ -118,7 +118,7 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
 
             entity = new SessionRequest(GuidGenerator.Create(), owner, destination, requestMessage);
 
-            entity.SetExpirationTime(expiractionHours);
+            entity.SetExpirationTime(expiractionHours, Clock.Now);
 
             entity = await Repository.InsertAsync(entity, autoSave: true);
         }
@@ -232,6 +232,7 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
             await CheckMaxSessionUnitCountAsync(sessionRequest.DestinationId.Value);
 
             sessionRequest.AgreeRequest(handlMessage, handlerSessionUnitId);
+            sessionRequest.SetHandleTime(Clock.Now);
 
             var session = await SessionGenerator.MakeAsync(sessionRequest.Owner, sessionRequest.Destination);
 
@@ -299,6 +300,7 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
             if (ownerSessionUnit == null)
             {
                 sessionRequest.DisagreeRequest(handlMessage, handlerSessionUnitId);
+                sessionRequest.SetHandleTime(Clock.Now);
 
                 await QueueNotificationAsync(sessionRequest.Id, SessionRequestNotificationKind.Declined);
             }

@@ -79,7 +79,7 @@ public class SessionRequest : BaseSessionEntity<Guid>, IDeviceId, IIsEnabled
         IsHandled = true;
         HandleMessage = handlMessage;
         HandlerId = handleSessionUnitId;
-        HandleTime = DateTime.Now;
+        HandleTime = DateTime.UtcNow;
     }
 
     public virtual void DisagreeRequest(string handlMessage, Guid? handleSessionUnitId)
@@ -97,13 +97,18 @@ public class SessionRequest : BaseSessionEntity<Guid>, IDeviceId, IIsEnabled
         IsEnabled = v;
     }
 
-    public virtual bool IsExpiredTime()
+    internal void SetHandleTime(DateTime handledAt)
     {
-        return !ExpirationTime.HasValue || ExpirationTime.Value < DateTime.Now;
+        HandleTime = handledAt;
     }
 
-    internal void SetExpirationTime(int hours)
+    public virtual bool IsExpiredTime()
     {
-        ExpirationTime = DateTime.Now.AddHours(hours);
+        return !ExpirationTime.HasValue || ExpirationTime.Value < DateTime.UtcNow;
+    }
+
+    internal void SetExpirationTime(int hours, DateTime currentTime)
+    {
+        ExpirationTime = currentTime.AddHours(hours);
     }
 }

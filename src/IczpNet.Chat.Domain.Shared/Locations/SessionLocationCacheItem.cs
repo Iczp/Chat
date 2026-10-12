@@ -23,6 +23,6 @@ public class SessionLocationCacheItem
     /// <summary>
     /// 最近活动时间
     /// </summary>
-    public DateTime ActiveTime { get; set; } = DateTime.Now;
+    public DateTime ActiveTime { get; set; } = DateTime.UtcNow;
 
 }

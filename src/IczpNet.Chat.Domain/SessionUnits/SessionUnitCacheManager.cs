@@ -2483,7 +2483,7 @@ return 1";
 
         // Resume durable processing records before detaching another Dirty generation.
         var registered = await Database.SortedSetRangeByRankWithScoresAsync(DirtyProcessingRegistryKey(), 0, 0);
-        var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var now = new DateTimeOffset(Clock.Now).ToUnixTimeMilliseconds();
         string processingKey;
         if (registered.Length > 0)
         {
@@ -2595,7 +2595,7 @@ return 0";
         var completed = batch.HashIncrementAsync(progressKey, nameof(FlushDirtyProgress.JobCompleted), 1);
         var affected = batch.HashIncrementAsync(progressKey, nameof(FlushDirtyProgress.Completed), affect);
         var elapsed = batch.HashIncrementAsync(progressKey, nameof(FlushDirtyProgress.Elapsed), elapsedMilliseconds);
-        var modified = batch.HashSetAsync(progressKey, nameof(FlushDirtyProgress.LastModificationTime), DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        var modified = batch.HashSetAsync(progressKey, nameof(FlushDirtyProgress.LastModificationTime), new DateTimeOffset(Clock.Now).ToUnixTimeMilliseconds());
         batch.Execute();
         await Task.WhenAll(completed, affected, elapsed, modified);
     }

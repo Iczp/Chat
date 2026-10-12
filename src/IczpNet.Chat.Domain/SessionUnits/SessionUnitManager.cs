@@ -1296,7 +1296,7 @@ public class SessionUnitManager(
         return (await SessionUnitReadOnlyRepository.GetQueryableAsync())
             .Where(x => x.SessionId == sessionId)
             .Where(x => nameList.Contains(x.Setting.MemberName) || chatObjectIds.Contains(x.OwnerId))
-            .Where(SessionUnit.GetActivePredicate(null))
+            .Where(SessionUnit.GetActivePredicate(Clock.Now))
             .Select(x => x.Id)
             .ToList();
     }

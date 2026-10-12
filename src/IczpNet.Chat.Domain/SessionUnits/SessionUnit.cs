@@ -412,7 +412,7 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     /// <returns></returns>
     public static Expression<Func<SessionUnit, bool>> GetActivePredicate(DateTime? messageCreationTime = null)
     {
-        var creationTime = messageCreationTime ?? DateTime.Now;
+        var creationTime = messageCreationTime ?? DateTime.UtcNow;
         return x =>
             !x.IsDeleted &&
             !x.Setting.IsKilled &&

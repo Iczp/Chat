@@ -25,7 +25,7 @@ public class ServiceStatusCacheItem : IHasExtraProperties
         ChatObjectId = chatObjectId;
         Status = status;
         DeviceId = deviceId;
-        ActiveTime = DateTime.Now;
+        ActiveTime = DateTime.UtcNow;
         ExtraProperties = extra;
     }
 

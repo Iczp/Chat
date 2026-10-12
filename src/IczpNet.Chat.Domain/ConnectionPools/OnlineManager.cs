@@ -628,7 +628,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
                 OwnerId = ownertId,
                 DeviceId = element.DeviceId,
                 DeviceType = element.DeviceType,
-                LastTime = x.Score.ToLocalDateTime(),
+                LastTime = x.Score.ToUtcDateTime(),
             };
         });
     }
@@ -826,7 +826,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
     public async Task<Dictionary<string, DateTime?>> GetAllHostsAsync()
     {
         var allHost = await Database.SortedSetRangeByRankWithScoresAsync(AllHostZsetKey(), order: Order.Ascending);
-        return allHost.ToDictionary(x => x.Element.ToString(), x => x.Score.ToLocalDateTime());
+        return allHost.ToDictionary(x => x.Element.ToString(), x => x.Score.ToUtcDateTime());
     }
 
     public async Task<long> GetTotalCountAsync()

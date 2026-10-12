@@ -52,6 +52,7 @@ public class ChatBackgroundWorkerModule : AbpModule
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        context.Services.AddUnifiedAbpTiming();
         // UrlNormalizer is used by nested ChatObject mappings in this non-HTTP host.
         context.Services.AddHttpContextAccessor();
         context.Services.AddMapperlyObjectMapper();

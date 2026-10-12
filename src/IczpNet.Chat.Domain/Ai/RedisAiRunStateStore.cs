@@ -201,7 +201,7 @@ return 1";
         var expiry = state.Status is "completed" or "failed" or "cancelled" ? TerminalExpiry : RunningExpiry;
         // Unix milliseconds plus a bounded sequence preserves stream ordering
         // while staying inside Redis double's exact integer range.
-        var updatedAt = state.UpdatedAt == default ? DateTime.UtcNow : state.UpdatedAt.ToUniversalTime();
+        var updatedAt = Clock.Normalize(state.UpdatedAt == default ? Clock.Now : state.UpdatedAt);
         var unixMilliseconds = new DateTimeOffset(updatedAt).ToUnixTimeMilliseconds();
         var score = unixMilliseconds * 1000d + Math.Clamp(state.Sequence, 0, 999);
         await Database.ScriptEvaluateAsync(UpsertScript,
@@ -215,7 +215,7 @@ return 1";
         if (string.IsNullOrWhiteSpace(runEvent.RunId)) throw new ArgumentException("RunId is required.", nameof(runEvent));
         cancellationToken.ThrowIfCancellationRequested();
 
-        var occurredAt = runEvent.OccurredAt == default ? DateTime.UtcNow : runEvent.OccurredAt.ToUniversalTime();
+        var occurredAt = Clock.Normalize(runEvent.OccurredAt == default ? Clock.Now : runEvent.OccurredAt);
         var unixMilliseconds = new DateTimeOffset(occurredAt).ToUnixTimeMilliseconds();
         var score = unixMilliseconds * 1000d + Math.Clamp(runEvent.Sequence, 0, 999);
         var expiry = runEvent.Status is "completed" or "failed" or "cancelled" ? TerminalExpiry : RunningExpiry;
@@ -223,7 +223,7 @@ return 1";
         await Database.ScriptEvaluateAsync(ApplyEventScript,
             [RunsKey(runEvent.RequesterSessionUnitId), IndexKey(runEvent.RequesterSessionUnitId)],
             [runEvent.RunId, JsonSerializer.Serialize(seed, StorageJsonOptions), runEvent.SessionId.ToString(), runEvent.RequesterSessionUnitId.ToString(),
-                runEvent.SourceMessageId, runEvent.RequestedAt.ToUniversalTime().ToString("O"), runEvent.StartedAt.ToUniversalTime().ToString("O"), occurredAt.ToString("O"),
+                runEvent.SourceMessageId, Clock.Normalize(runEvent.RequestedAt).ToString("O"), Clock.Normalize(runEvent.StartedAt).ToString("O"), occurredAt.ToString("O"),
                 runEvent.QueueMilliseconds, runEvent.ElapsedMilliseconds, runEvent.Sequence, runEvent.Status ?? string.Empty, runEvent.EventType ?? string.Empty,
                 runEvent.Delta ?? string.Empty, runEvent.FinalMessageId?.ToString() ?? string.Empty, runEvent.Error ?? string.Empty,
                 score, MaximumRuns, (long)expiry.TotalMilliseconds]);

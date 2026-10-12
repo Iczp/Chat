@@ -40,7 +40,7 @@ public class InvitationCodeAppService(IRepository<InvitationCode, Guid> reposito
 
         entity.SetCode(code);
 
-        entity.SetExpirationTime(DateTime.Now.AddDays(7));
+        entity.SetExpirationTime(Clock.Now.AddDays(7));
 
         await base.SetCreateEntityAsync(entity, input);
     }

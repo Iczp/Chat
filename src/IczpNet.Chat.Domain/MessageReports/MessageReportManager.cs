@@ -7,6 +7,8 @@ using StackExchange.Redis;
 using System;
 using System.Data;
 using System.Diagnostics;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.DistributedLocking;
 
@@ -35,36 +37,23 @@ public class MessageReportManager(
     {
         var sessionId = message.SessionId.Value;
         var messageType = message.MessageType;
-        await MessageReportMonthRepository.IncrementAsync(sessionId, messageType, "yyyyMM");
-        await MessageReportDayRepository.IncrementAsync(sessionId, messageType, "yyyyMMdd");
-        await MessageReportHourRepository.IncrementAsync(sessionId, messageType, "yyyyMMddHH");
+        await MessageReportMonthRepository.IncrementAsync(sessionId, messageType, "yyyyMM", message.CreationTime);
+        await MessageReportDayRepository.IncrementAsync(sessionId, messageType, "yyyyMMdd", message.CreationTime);
+        await MessageReportHourRepository.IncrementAsync(sessionId, messageType, "yyyyMMddHH", message.CreationTime);
     }
 
-    protected long BuildDateBucket(MessageReportTypes reportType)
+    protected async Task<long> BuildDateBucketAsync(MessageReportTypes reportType)
     {
-        var format = reportType switch
-        {
-            MessageReportTypes.Day => "yyyyMMdd",
-            MessageReportTypes.Hour => "yyyyMMddHH",
-            MessageReportTypes.Month => "yyyyMM",
-            _ => throw new NotImplementedException()
-        };
-        return DateBucket.Create(Clock.Now, format);
+        return DateBucket.Create(await DateBucket.GetBusinessTimeAsync(Clock.Now), reportType);
     }
 
     protected string BuildKey(MessageReportTypes reportType, long dateBucket)
     {
         return $"{Prefix}{reportType}:{dateBucket}";
     }
-    protected string BuildKey(MessageReportTypes reportType)
+    protected virtual Task IncrementOneAsync(MessageReportTypes reportType, MessageCacheItem message, DateTime businessTime)
     {
-        var dateBucket = BuildDateBucket(reportType);
-        return $"{Prefix}{reportType}:{dateBucket}";
-    }
-
-    protected virtual Task IncrementOneAsync(MessageReportTypes reportType, MessageCacheItem message)
-    {
-        var key = BuildKey(reportType);
+        var key = BuildKey(reportType, DateBucket.Create(businessTime, reportType));
         //SessionId:MessageType
         var field = $"{message.SessionId}:{message.MessageType}";
         return Database.HashIncrementAsync(key, field, 1);
@@ -72,6 +61,9 @@ public class MessageReportManager(
 
     public async Task InitializationAsync()
     {
+        // Validate and resolve the platform calendar before handling messages.
+        await DateBucket.GetBusinessTimeAsync(Clock.Now);
+
         //创建Sql数据结构
         await MessageReportDayRepository.EnsureMessageReportMergeTypeAsync();
 
@@ -81,14 +73,33 @@ public class MessageReportManager(
 
     public async Task StatAsync(MessageCacheItem message)
     {
-        await IncrementOneAsync(MessageReportTypes.Day, message);
-        await IncrementOneAsync(MessageReportTypes.Hour, message);
-        await IncrementOneAsync(MessageReportTypes.Month, message);
+        var businessTime = await DateBucket.GetBusinessTimeAsync(message.CreationTime);
+        await IncrementOneAsync(MessageReportTypes.Day, message, businessTime);
+        await IncrementOneAsync(MessageReportTypes.Hour, message, businessTime);
+        await IncrementOneAsync(MessageReportTypes.Month, message, businessTime);
+
+        // Normal traffic is handled by the bounded periodic compensation window.
+        // Rare older events must flush their original buckets instead of leaving
+        // counts in Redis until another event happens to target the same bucket.
+        var now = await DateBucket.GetBusinessTimeAsync(Clock.Now);
+        foreach (var (type, oldest) in new[]
+        {
+            (MessageReportTypes.Hour, now.AddHours(-71)),
+            (MessageReportTypes.Day, now.Date.AddDays(-3)),
+            (MessageReportTypes.Month, now.AddMonths(-2))
+        })
+        {
+            var bucket = DateBucket.Create(businessTime, type);
+            if (bucket < DateBucket.Create(oldest, type))
+            {
+                await FlushAsync(type, bucket);
+            }
+        }
     }
 
     public async Task<bool> FlushAsync(MessageReportTypes reportType, long? dateBucketInput = null)
     {
-        var dateBucket = dateBucketInput ?? BuildDateBucket(reportType);
+        var dateBucket = dateBucketInput ?? await BuildDateBucketAsync(reportType);
 
         var sourceKey = BuildKey(reportType, dateBucket);
 
@@ -236,27 +247,39 @@ public class MessageReportManager(
     {
         Logger.LogInformation("CompensateAsync");
 
-        var now = Clock.Now;
+        var now = await DateBucket.GetBusinessTimeAsync(Clock.Now);
+        var buckets = new List<(MessageReportTypes Type, long Bucket)>();
 
         // hour（一天 24 个）
         for (int h = 0; h < 72; h++)
         {
             var hour = now.AddHours(-h);
-            await FlushAsync(MessageReportTypes.Hour, DateBucket.Create(hour, MessageReportTypes.Hour));
+            buckets.Add((MessageReportTypes.Hour, DateBucket.Create(hour, MessageReportTypes.Hour)));
         }
 
         for (int i = 0; i <= 3; i++)
         {
             var day = now.Date.AddDays(-i);
             // day
-            await FlushAsync(MessageReportTypes.Day, DateBucket.Create(day, MessageReportTypes.Day));
+            buckets.Add((MessageReportTypes.Day, DateBucket.Create(day, MessageReportTypes.Day)));
         }
 
         // month（一般只需要补 1～2 个月）
         for (int i = 0; i <= 2; i++)
         {
             var month = now.AddMonths(-i);
-            await FlushAsync(MessageReportTypes.Month, DateBucket.Create(month, MessageReportTypes.Month));
+            buckets.Add((MessageReportTypes.Month, DateBucket.Create(month, MessageReportTypes.Month)));
+        }
+
+        // Delayed events retain their occurrence bucket. Check the bounded compensation
+        // window in one pipeline so periodic flushing also picks up previous buckets.
+        var batch = Database.CreateBatch();
+        var pending = buckets.Select(bucket => (bucket, exists: batch.KeyExistsAsync(BuildKey(bucket.Type, bucket.Bucket)))).ToList();
+        batch.Execute();
+        await Task.WhenAll(pending.Select(x => x.exists));
+        foreach (var item in pending.Where(x => x.exists.Result))
+        {
+            await FlushAsync(item.bucket.Type, item.bucket.Bucket);
         }
     }
 }

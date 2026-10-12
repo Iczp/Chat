@@ -45,7 +45,7 @@ public class ConnectionAppService(
             .WhereIf(!input.DeviceId.IsEmpty(), x => x.DeviceId == input.DeviceId)
             .WhereIf(!input.ServerHostId.IsEmpty(), x => x.ServerHostId == input.ServerHostId)
             .WhereIf(!input.IpAddress.IsEmpty(), x => x.IpAddress == input.IpAddress)
-            .WhereIf(input.IsOnline == true, x => x.ActiveTime > DateTime.Now.AddSeconds(-config.InactiveSeconds))
+            .WhereIf(input.IsOnline == true, x => x.ActiveTime > Clock.Now.AddSeconds(-config.InactiveSeconds))
             ;
     }
 

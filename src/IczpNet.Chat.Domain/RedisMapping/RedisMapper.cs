@@ -561,6 +561,32 @@ public static class RedisMapper
         return defaultValue;
     }
 
+    public static DateTime? ToUtcDateTime(this RedisValue rv, DateTime? defaultValue = null)
+    {
+        if (rv.IsNull || string.IsNullOrWhiteSpace(rv.ToString())) return defaultValue;
+        var value = rv.ToString();
+        if (long.TryParse(value, out var milliseconds))
+        {
+            try { return DateTimeOffset.FromUnixTimeMilliseconds(milliseconds).UtcDateTime; }
+            catch (ArgumentOutOfRangeException) { return defaultValue; }
+        }
+
+        // UTC/offset values represent instants; legacy offset-free values follow
+        // the UTC clock contract, never the time zone of the current machine.
+        if (DateTime.TryParse(value, Invariant, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var parsed))
+        {
+            return parsed;
+        }
+
+        return defaultValue;
+    }
+
+    public static DateTime? ToUtcDateTime(this double score, DateTime? defaultValue = null)
+    {
+        try { return DateTimeOffset.FromUnixTimeMilliseconds((long)score).UtcDateTime; }
+        catch (ArgumentOutOfRangeException) { return defaultValue; }
+    }
+
     public static DateTime? ToLocalDateTime(this RedisValue rv, DateTime? defaultValue = null)
     {
         if (rv.IsNull) return DateTime.MinValue;
@@ -672,7 +698,7 @@ public static class RedisMapper
         }
         if (underlying == typeof(DateTime))
         {
-            return rv.ToLocalDateTime();
+            return rv.ToUtcDateTime();
         }
         if (underlying == typeof(TimeSpan))
         {

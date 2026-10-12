@@ -48,7 +48,7 @@ public class MenuManager : TreeManager<Menu, Guid, MenuInfo>, IMenuManager
     {
         var bizCrypt = new BizCrypt(developer.Token, developer.EncodingAesKey, developer.OwnerId.ToString());
 
-        var timeStamp = DateTime.Now.Ticks.ToString();
+        var timeStamp = Clock.Now.Ticks.ToString();
 
         var nonce = BizCrypt.CreateRandCode(10, "123456789");
 

@@ -8,11 +8,13 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
+using Volo.Abp.Timing;
 
 namespace IczpNet.Chat.Repositories;
 
 public class SessionUnitCounterRepository : EfCoreRepository<ChatDbContext, SessionUnitCounter>, ISessionUnitCounterRepository
 {
+    protected IClock Clock => LazyServiceProvider.LazyGetRequiredService<IClock>();
 
 
     public SessionUnitCounterRepository(IDbContextProvider<ChatDbContext> dbContextProvider) : base(dbContextProvider)
@@ -23,7 +25,7 @@ public class SessionUnitCounterRepository : EfCoreRepository<ChatDbContext, Sess
     {
         var context = await GetDbContextAsync();
 
-        var creationTime = messageCreationTime ?? DateTime.Now;
+        var creationTime = messageCreationTime ?? Clock.Now;
 
         Expression<Func<SessionUnitCounter, bool>> predicate = x =>
             x.SessionUnit.SessionId == sessionId &&
@@ -47,7 +49,7 @@ public class SessionUnitCounterRepository : EfCoreRepository<ChatDbContext, Sess
         {
             return await query.Where(x => x.SessionUnitId != senderSessionUnitId)
                 .ExecuteUpdateAsync(s => s
-                    .SetProperty(b => b.LastModificationTime, b => DateTime.Now)
+                    .SetProperty(b => b.LastModificationTime, b => Clock.Now)
                     .SetProperty(b => b.PublicBadge, b => b.PublicBadge + 1)
                     .SetProperty(b => b.LastMessageId, b => lastMessageId)
                     .SetProperty(b => b.RemindAllCount, b => b.RemindAllCount + 1)
@@ -56,20 +58,20 @@ public class SessionUnitCounterRepository : EfCoreRepository<ChatDbContext, Sess
 
         return await query.Where(x => x.SessionUnitId != senderSessionUnitId)
             .ExecuteUpdateAsync(s => s
-                .SetProperty(b => b.LastModificationTime, b => DateTime.Now)
+                .SetProperty(b => b.LastModificationTime, b => Clock.Now)
                 .SetProperty(b => b.PublicBadge, b => b.PublicBadge + 1)
                 .SetProperty(b => b.LastMessageId, b => lastMessageId)
             );
     }
 
-    private static async Task<int> UpdateSenderLastMessageIdAsync(IQueryable<SessionUnitCounter> query, Guid senderSessionUnitId, long lastMessageId)
+    private async Task<int> UpdateSenderLastMessageIdAsync(IQueryable<SessionUnitCounter> query, Guid senderSessionUnitId, long lastMessageId)
     {
         //
         return await query
              .Where(x => x.SessionUnitId == senderSessionUnitId)
              .Where(x => x.LastMessageId != lastMessageId)
              .ExecuteUpdateAsync(s => s
-                 .SetProperty(b => b.LastModificationTime, b => DateTime.Now)
+                 .SetProperty(b => b.LastModificationTime, b => Clock.Now)
                  .SetProperty(b => b.LastMessageId, b => lastMessageId)
              );
     }
@@ -83,7 +85,7 @@ public class SessionUnitCounterRepository : EfCoreRepository<ChatDbContext, Sess
         return await query
             .Where(x => destinationSessionUnitIdList.Contains(x.SessionUnitId))
             .ExecuteUpdateAsync(s => s
-                .SetProperty(b => b.LastModificationTime, b => DateTime.Now)
+                .SetProperty(b => b.LastModificationTime, b => Clock.Now)
                 .SetProperty(b => b.PrivateBadge, b => b.PrivateBadge + 1)
                 .SetProperty(b => b.LastMessageId, b => lastMessageId)
             );

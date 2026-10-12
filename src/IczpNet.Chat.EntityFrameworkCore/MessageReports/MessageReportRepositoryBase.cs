@@ -34,8 +34,14 @@ public abstract class MessageReportRepositoryBase<T>(
         string dateBucketFormat = "yyyyMMdd")
     {
         var now = Clock.Now;
-        var dateBucket = DataBucket.Create(now, dateBucketFormat);
+        var dateBucket = await DataBucket.CreateAsync(now, dateBucketFormat);
         await IncrementSqlAsync(sessionId, messageType, dateBucket, now);
+    }
+
+    public virtual async Task IncrementAsync(Guid sessionId, MessageTypes messageType, string dateBucketFormat, DateTime occurredAt)
+    {
+        var dateBucket = await DataBucket.CreateAsync(occurredAt, dateBucketFormat);
+        await IncrementSqlAsync(sessionId, messageType, dateBucket, Clock.Now);
     }
 
     /// <summary>
@@ -48,7 +54,7 @@ public abstract class MessageReportRepositoryBase<T>(
     {
         var context = await GetDbContextAsync();
         var now = Clock.Now;
-        var dateBucket = DataBucket.Create(now, dateBucketFormat);
+        var dateBucket = await DataBucket.CreateAsync(now, dateBucketFormat);
 
         async Task<long> UpdateAsync()
         {

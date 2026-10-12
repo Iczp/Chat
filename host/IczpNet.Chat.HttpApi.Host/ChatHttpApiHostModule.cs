@@ -93,6 +93,7 @@ public class ChatHttpApiHostModule : AbpModule
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        context.Services.AddUnifiedAbpTiming();
         context.Services.Replace(ServiceDescriptor.Transient<IDistributedCacheKeyNormalizer, SharedPermissionCacheKeyNormalizer>());
         context.Services.Replace(ServiceDescriptor.Transient<IMediaResolver, FFMpegCoreMediaResolver>());
         context.Services.AddMapperlyObjectMapper();
@@ -446,6 +447,7 @@ public class ChatHttpApiHostModule : AbpModule
             app.UseMultiTenancy();
         }
         app.UseAbpRequestLocalization();
+        app.UseAbpTimeZone();
         app.UseAuthorization();
         app.UseSwagger(x => x.RouteTemplate = "swagger/{documentName}/swagger.json");
         //app.UseSwagger();

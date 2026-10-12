@@ -46,6 +46,7 @@ public class ConnectionManager(
 
         var entity = await Repository.FindAsync(connection.Id, cancellationToken: token);
 
+        connection.SetActiveTime(Clock.Now);
         entity ??= await Repository.InsertAsync(connection, autoSave: true, cancellationToken: token);
 
         //await UnitOfWorkManager.Current.SaveChangesAsync(token);

@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.MultiTenancy;
+﻿using Volo.Abp.Timing;
+using IczpNet.Chat.MultiTenancy;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.DataProtection;
@@ -107,6 +108,7 @@ public class ChatAuthServerModule : AbpModule
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        Configure<AbpClockOptions>(options => options.Kind = DateTimeKind.Utc);
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
 
@@ -239,6 +241,7 @@ public class ChatAuthServerModule : AbpModule
 
         app.UseAbpRequestLocalization();
         app.UseCookiePolicy();
+        app.UseAbpTimeZone();
         app.UseAuthorization();
         app.UseSwagger();
         app.UseAbpSwaggerUI(options =>
