@@ -2,6 +2,19 @@
 
 ## Current state (2026-10-10)
 
+Runtime follow-up (2026-10-12): Docker API logs identified an unregistered
+`SessionUnitSettingCacheItem → SessionUnitMemberSettingDto` pair in member
+list/detail queries, plus identity mapping of an already projected
+`List<ConnectionPoolDto>` in online queries. The member mapper is now explicit;
+the shared `AbpCommons.Application` paging helper returns same-type rows
+directly and retains the object mapper for different source/output types.
+Focused provider tests cover both cases. No Redis keys or database schema
+changes are involved.
+
+The standalone Chat API and Worker now share daily all-level and per-level
+file logging with the IM Worker, through `AbpCommons.Host.Shared`. Configuration
+and Docker mount/query examples are in `Rctea.IM/deploy/MICROSERVICES.md`.
+
 The `mapperly` branch uses ABP Mapperly in Chat Domain, Application,
 ManagementApplication, the API Host, and the standalone BackgroundWorker. The
 old AutoMapper profiles and direct package references are removed. The API and

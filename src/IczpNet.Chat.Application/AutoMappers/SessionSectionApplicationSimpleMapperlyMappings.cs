@@ -116,6 +116,19 @@ public partial class SessionSectionApplicationSessionUnitSettingCacheItemToSessi
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
+public partial class SessionSectionApplicationSessionUnitSettingCacheItemToSessionUnitMemberSettingDtoMapper : MapperBase<SessionUnitSettingCacheItem, SessionUnitMemberSettingDto>
+{
+    // The settings cache has no join timestamp or description.
+    [MapperIgnoreTarget(nameof(SessionUnitMemberSettingDto.JoinTime))]
+    [MapperIgnoreTarget(nameof(SessionUnitMemberSettingDto.JoinWayDescription))]
+    public override partial SessionUnitMemberSettingDto Map(SessionUnitSettingCacheItem source);
+
+    [MapperIgnoreTarget(nameof(SessionUnitMemberSettingDto.JoinTime))]
+    [MapperIgnoreTarget(nameof(SessionUnitMemberSettingDto.JoinWayDescription))]
+    public override partial void Map(SessionUnitSettingCacheItem source, SessionUnitMemberSettingDto destination);
+}
+
+[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
 public partial class SessionSectionApplicationSessionOrganizationToSessionOrganizationDtoMapper : MapperBase<SessionOrganization, SessionOrganizationDto>
 {
     public override partial SessionOrganizationDto Map(SessionOrganization source);

@@ -1,4 +1,5 @@
 using Serilog;
+using IczpNet.AbpCommons;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -22,11 +23,18 @@ public class Program
         {
             var builder = WebApplication.CreateBuilder(args);
             builder.Host.AddAppSettingsSecretsJson().UseAutofac();
+            Log.Logger = new LoggerConfiguration().WithDailyLogFiles(builder.Configuration).CreateLogger();
             builder.Host.UseSerilog();
+            Log.Information("Starting IczpNet.Chat.BackgroundWorker");
             await builder.AddApplicationAsync<ChatBackgroundWorkerModule>();
             var app = builder.Build();
             await app.InitializeApplicationAsync();
             await app.RunAsync();
+        }
+        catch (Exception exception)
+        {
+            Log.Fatal(exception, "IczpNet.Chat.BackgroundWorker terminated unexpectedly");
+            throw;
         }
         finally { await Log.CloseAndFlushAsync(); }
     }
