@@ -25,8 +25,11 @@ public partial class ChatDomainHistoryContentToHistoryContentOutputMapper : Mapp
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
-public partial class ChatDomainSessionUnitToSessionUnitSenderInfoMapper : MapperBase<SessionUnit, SessionUnitSenderInfo>
+public partial class ChatDomainSessionUnitToSessionUnitSenderInfoMapper(ChatDomainChatObjectToChatObjectInfoMapper chatObjectMapper) : MapperBase<SessionUnit, SessionUnitSenderInfo>
 {
+    [UseMapper]
+    private readonly ChatDomainChatObjectToChatObjectInfoMapper _chatObjectMapper = chatObjectMapper;
+
     public override partial SessionUnitSenderInfo Map(SessionUnit source);
 
     public override partial void Map(SessionUnit source, SessionUnitSenderInfo destination);

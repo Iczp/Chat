@@ -26,7 +26,9 @@ public class MessageInfoObjectMapperly_Tests
         source.SetMessageType(MessageTypes.Text);
         source.SetKey("source", "value");
 
-        var mapperly = new ChatDomainMessageToMessageInfoObjectMapper();
+        // This job-output case intentionally has no SenderSessionUnit.
+        var mapperly = new ChatDomainMessageToMessageInfoObjectMapper(
+            new ChatDomainSessionUnitToSessionUnitSenderInfoMapper(null!));
         var actual = mapperly.Map(source);
 
         actual.ShouldNotBeNull();

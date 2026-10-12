@@ -10,6 +10,7 @@ using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.SessionOrganizations;
 using IczpNet.Chat.SessionPermissionGroups;
+using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.UrlNormalizers;
 using Riok.Mapperly.Abstractions;
 using System;
@@ -90,17 +91,23 @@ public partial class ChatDomainRedEnvelopeContentToRedEnvelopeContentOutputMappe
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatDomainMessageToMessageInfoMapper
+public partial class ChatDomainMessageToMessageInfoMapper(ChatDomainSessionUnitToSessionUnitSenderInfoMapper senderMapper)
     : MapperBase<Message, MessageInfo>
 {
+    [UseMapper]
+    private readonly ChatDomainSessionUnitToSessionUnitSenderInfoMapper _senderMapper = senderMapper;
+
     public override partial MessageInfo Map(Message source);
     public override partial void Map(Message source, MessageInfo destination);
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatDomainMessageToMessageAnyInfoMapper
+public partial class ChatDomainMessageToMessageAnyInfoMapper(ChatDomainSessionUnitToSessionUnitSenderInfoMapper senderMapper)
     : MapperBase<Message, MessageAnyInfo>
 {
+    [UseMapper]
+    private readonly ChatDomainSessionUnitToSessionUnitSenderInfoMapper _senderMapper = senderMapper;
+
     public override MessageAnyInfo Map(Message source)
     {
         if (source is null) return default!;
@@ -121,9 +128,12 @@ public partial class ChatDomainMessageToMessageAnyInfoMapper
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatDomainMessageToMessageInfoIContentInfoMapper
+public partial class ChatDomainMessageToMessageInfoIContentInfoMapper(ChatDomainSessionUnitToSessionUnitSenderInfoMapper senderMapper)
     : MapperBase<Message, MessageInfo<IContentInfo>>
 {
+    [UseMapper]
+    private readonly ChatDomainSessionUnitToSessionUnitSenderInfoMapper _senderMapper = senderMapper;
+
     public override MessageInfo<IContentInfo> Map(Message source)
     {
         if (source is null) return default!;
@@ -145,42 +155,24 @@ public partial class ChatDomainMessageToMessageInfoIContentInfoMapper
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatDomainMessageToMessageInfoDynamicMapper
-    : MapperBase<Message, MessageInfo<dynamic>>
-{
-    public override MessageInfo<dynamic> Map(Message source)
-    {
-        if (source is null) return default!;
-        var destination = new MessageInfo<dynamic>();
-        Map(source, destination);
-        return destination;
-    }
-
-    public override void Map(Message source, MessageInfo<dynamic> destination)
-    {
-        if (source is null || destination is null) return;
-        MapFields(source, destination);
-        var content = source.Content;
-        destination.Content = content is null ? default! : (dynamic)content;
-    }
-
-    [MapperIgnoreTarget(nameof(MessageInfo<dynamic>.Content))]
-    private partial void MapFields(Message source, MessageInfo<dynamic> destination);
-}
-
-[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatDomainMessageToMessageWithQuoteInfoMapper
+public partial class ChatDomainMessageToMessageWithQuoteInfoMapper(ChatDomainSessionUnitToSessionUnitSenderInfoMapper senderMapper)
     : MapperBase<Message, MessageWithQuoteInfo>
 {
+    [UseMapper]
+    private readonly ChatDomainSessionUnitToSessionUnitSenderInfoMapper _senderMapper = senderMapper;
+
     public override partial MessageWithQuoteInfo Map(Message source);
     public override partial void Map(Message source, MessageWithQuoteInfo destination);
 }
 
 // Concrete generic Message mappings for all active content types
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatDomainMessageToMessageInfoTextContentInfoMapper
+public partial class ChatDomainMessageToMessageInfoTextContentInfoMapper(ChatDomainSessionUnitToSessionUnitSenderInfoMapper senderMapper)
     : MapperBase<Message, MessageInfo<TextContentInfo>>
 {
+    [UseMapper]
+    private readonly ChatDomainSessionUnitToSessionUnitSenderInfoMapper _senderMapper = senderMapper;
+
     public override MessageInfo<TextContentInfo> Map(Message source)
     {
         if (source is null) return default!;
@@ -202,9 +194,12 @@ public partial class ChatDomainMessageToMessageInfoTextContentInfoMapper
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatDomainMessageToMessageInfoImageContentInfoMapper
+public partial class ChatDomainMessageToMessageInfoImageContentInfoMapper(ChatDomainSessionUnitToSessionUnitSenderInfoMapper senderMapper)
     : MapperBase<Message, MessageInfo<ImageContentInfo>>
 {
+    [UseMapper]
+    private readonly ChatDomainSessionUnitToSessionUnitSenderInfoMapper _senderMapper = senderMapper;
+
     public override MessageInfo<ImageContentInfo> Map(Message source)
     {
         if (source is null) return default!;
@@ -226,9 +221,12 @@ public partial class ChatDomainMessageToMessageInfoImageContentInfoMapper
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatDomainMessageToMessageInfoSoundContentInfoMapper
+public partial class ChatDomainMessageToMessageInfoSoundContentInfoMapper(ChatDomainSessionUnitToSessionUnitSenderInfoMapper senderMapper)
     : MapperBase<Message, MessageInfo<SoundContentInfo>>
 {
+    [UseMapper]
+    private readonly ChatDomainSessionUnitToSessionUnitSenderInfoMapper _senderMapper = senderMapper;
+
     public override MessageInfo<SoundContentInfo> Map(Message source)
     {
         if (source is null) return default!;
@@ -250,9 +248,12 @@ public partial class ChatDomainMessageToMessageInfoSoundContentInfoMapper
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatDomainMessageToMessageInfoVideoContentInfoMapper
+public partial class ChatDomainMessageToMessageInfoVideoContentInfoMapper(ChatDomainSessionUnitToSessionUnitSenderInfoMapper senderMapper)
     : MapperBase<Message, MessageInfo<VideoContentInfo>>
 {
+    [UseMapper]
+    private readonly ChatDomainSessionUnitToSessionUnitSenderInfoMapper _senderMapper = senderMapper;
+
     public override MessageInfo<VideoContentInfo> Map(Message source)
     {
         if (source is null) return default!;
@@ -274,9 +275,12 @@ public partial class ChatDomainMessageToMessageInfoVideoContentInfoMapper
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatDomainMessageToMessageInfoFileContentInfoMapper
+public partial class ChatDomainMessageToMessageInfoFileContentInfoMapper(ChatDomainSessionUnitToSessionUnitSenderInfoMapper senderMapper)
     : MapperBase<Message, MessageInfo<FileContentInfo>>
 {
+    [UseMapper]
+    private readonly ChatDomainSessionUnitToSessionUnitSenderInfoMapper _senderMapper = senderMapper;
+
     public override MessageInfo<FileContentInfo> Map(Message source)
     {
         if (source is null) return default!;
@@ -298,9 +302,12 @@ public partial class ChatDomainMessageToMessageInfoFileContentInfoMapper
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatDomainMessageToMessageInfoLocationContentInfoMapper
+public partial class ChatDomainMessageToMessageInfoLocationContentInfoMapper(ChatDomainSessionUnitToSessionUnitSenderInfoMapper senderMapper)
     : MapperBase<Message, MessageInfo<LocationContentInfo>>
 {
+    [UseMapper]
+    private readonly ChatDomainSessionUnitToSessionUnitSenderInfoMapper _senderMapper = senderMapper;
+
     public override MessageInfo<LocationContentInfo> Map(Message source)
     {
         if (source is null) return default!;
@@ -322,9 +329,12 @@ public partial class ChatDomainMessageToMessageInfoLocationContentInfoMapper
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatDomainMessageToMessageInfoContactsContentInfoMapper
+public partial class ChatDomainMessageToMessageInfoContactsContentInfoMapper(ChatDomainSessionUnitToSessionUnitSenderInfoMapper senderMapper)
     : MapperBase<Message, MessageInfo<ContactsContentInfo>>
 {
+    [UseMapper]
+    private readonly ChatDomainSessionUnitToSessionUnitSenderInfoMapper _senderMapper = senderMapper;
+
     public override MessageInfo<ContactsContentInfo> Map(Message source)
     {
         if (source is null) return default!;
@@ -346,9 +356,12 @@ public partial class ChatDomainMessageToMessageInfoContactsContentInfoMapper
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatDomainMessageToMessageInfoLinkContentInfoMapper
+public partial class ChatDomainMessageToMessageInfoLinkContentInfoMapper(ChatDomainSessionUnitToSessionUnitSenderInfoMapper senderMapper)
     : MapperBase<Message, MessageInfo<LinkContentInfo>>
 {
+    [UseMapper]
+    private readonly ChatDomainSessionUnitToSessionUnitSenderInfoMapper _senderMapper = senderMapper;
+
     public override MessageInfo<LinkContentInfo> Map(Message source)
     {
         if (source is null) return default!;
@@ -370,9 +383,12 @@ public partial class ChatDomainMessageToMessageInfoLinkContentInfoMapper
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatDomainMessageToMessageInfoHistoryContentOutputMapper
+public partial class ChatDomainMessageToMessageInfoHistoryContentOutputMapper(ChatDomainSessionUnitToSessionUnitSenderInfoMapper senderMapper)
     : MapperBase<Message, MessageInfo<HistoryContentOutput>>
 {
+    [UseMapper]
+    private readonly ChatDomainSessionUnitToSessionUnitSenderInfoMapper _senderMapper = senderMapper;
+
     public override MessageInfo<HistoryContentOutput> Map(Message source)
     {
         if (source is null) return default!;
@@ -394,9 +410,12 @@ public partial class ChatDomainMessageToMessageInfoHistoryContentOutputMapper
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatDomainMessageToMessageInfoRedEnvelopeContentOutputMapper
+public partial class ChatDomainMessageToMessageInfoRedEnvelopeContentOutputMapper(ChatDomainSessionUnitToSessionUnitSenderInfoMapper senderMapper)
     : MapperBase<Message, MessageInfo<RedEnvelopeContentOutput>>
 {
+    [UseMapper]
+    private readonly ChatDomainSessionUnitToSessionUnitSenderInfoMapper _senderMapper = senderMapper;
+
     public override MessageInfo<RedEnvelopeContentOutput> Map(Message source)
     {
         if (source is null) return default!;
@@ -418,9 +437,12 @@ public partial class ChatDomainMessageToMessageInfoRedEnvelopeContentOutputMappe
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatDomainMessageToMessageInfoCmdContentInfoMapper
+public partial class ChatDomainMessageToMessageInfoCmdContentInfoMapper(ChatDomainSessionUnitToSessionUnitSenderInfoMapper senderMapper)
     : MapperBase<Message, MessageInfo<CmdContentInfo>>
 {
+    [UseMapper]
+    private readonly ChatDomainSessionUnitToSessionUnitSenderInfoMapper _senderMapper = senderMapper;
+
     public override MessageInfo<CmdContentInfo> Map(Message source)
     {
         if (source is null) return default!;
@@ -442,9 +464,12 @@ public partial class ChatDomainMessageToMessageInfoCmdContentInfoMapper
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatDomainMessageToMessageInfoHtmlContentInfoMapper
+public partial class ChatDomainMessageToMessageInfoHtmlContentInfoMapper(ChatDomainSessionUnitToSessionUnitSenderInfoMapper senderMapper)
     : MapperBase<Message, MessageInfo<HtmlContentInfo>>
 {
+    [UseMapper]
+    private readonly ChatDomainSessionUnitToSessionUnitSenderInfoMapper _senderMapper = senderMapper;
+
     public override MessageInfo<HtmlContentInfo> Map(Message source)
     {
         if (source is null) return default!;
@@ -466,9 +491,12 @@ public partial class ChatDomainMessageToMessageInfoHtmlContentInfoMapper
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatDomainMessageToMessageInfoNoticeContentInfoMapper
+public partial class ChatDomainMessageToMessageInfoNoticeContentInfoMapper(ChatDomainSessionUnitToSessionUnitSenderInfoMapper senderMapper)
     : MapperBase<Message, MessageInfo<NoticeContentInfo>>
 {
+    [UseMapper]
+    private readonly ChatDomainSessionUnitToSessionUnitSenderInfoMapper _senderMapper = senderMapper;
+
     public override MessageInfo<NoticeContentInfo> Map(Message source)
     {
         if (source is null) return default!;

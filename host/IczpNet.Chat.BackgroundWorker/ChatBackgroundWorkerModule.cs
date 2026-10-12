@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using Volo.Abp;
 using Volo.Abp.Autofac;
+using Volo.Abp.AspNetCore;
 using Volo.Abp.Mapperly;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.BackgroundJobs;
@@ -38,7 +39,9 @@ public class ChatBackgroundWorkerModule : AbpModule
 {
     public override void OnApplicationInitialization(ApplicationInitializationContext context)
     {
-        context.ServiceProvider.UseStaticObjectMapper();
+        // The initialization scope is disposed after startup. Entity mapping in
+        // Quartz jobs must use the application's root provider instead.
+        context.GetApplicationBuilder().ApplicationServices.UseStaticObjectMapper();
     }
 
     public override async System.Threading.Tasks.Task OnPostApplicationInitializationAsync(ApplicationInitializationContext context)
@@ -49,6 +52,8 @@ public class ChatBackgroundWorkerModule : AbpModule
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        // UrlNormalizer is used by nested ChatObject mappings in this non-HTTP host.
+        context.Services.AddHttpContextAccessor();
         context.Services.AddMapperlyObjectMapper();
         context.Services.AddSingleton<Medallion.Threading.IDistributedLockProvider>(provider =>
             new Medallion.Threading.Redis.RedisDistributedSynchronizationProvider(

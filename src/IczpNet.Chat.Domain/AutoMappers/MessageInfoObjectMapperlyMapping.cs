@@ -4,12 +4,15 @@ using Volo.Abp.Mapperly;
 
 namespace IczpNet.Chat.AutoMappers;
 
-// This concrete closed mapping is used by message jobs. The legacy open-generic
-// mapping still needs separate treatment for MessageInfo<TContent> callers.
+// MessageInfo<dynamic> is MessageInfo<object> at runtime; register one mapper
+// for both forms. Other active content types have their own closed mappers.
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
-public partial class ChatDomainMessageToMessageInfoObjectMapper
+public partial class ChatDomainMessageToMessageInfoObjectMapper(ChatDomainSessionUnitToSessionUnitSenderInfoMapper senderMapper)
     : MapperBase<Message, MessageInfo<object>>
 {
+    [UseMapper]
+    private readonly ChatDomainSessionUnitToSessionUnitSenderInfoMapper _senderMapper = senderMapper;
+
     public override MessageInfo<object> Map(Message source)
     {
         if (source is null) return default!;

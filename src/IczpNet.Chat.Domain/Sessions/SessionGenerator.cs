@@ -38,7 +38,7 @@ public class SessionGenerator : DomainService, ISessionGenerator
         return objectTypes.Contains(input);
     }
 
-    private async void ResolveShopWaiterId(ChatObject sender, ChatObject receiver, Func<long, Task> matchAction)
+    private async Task ResolveShopWaiterId(ChatObject sender, ChatObject receiver, Func<long, Task> matchAction)
     {
         if (IsObjectType(receiver.ObjectType.Value, ChatObjectTypeEnums.ShopWaiter))
         {
@@ -54,7 +54,7 @@ public class SessionGenerator : DomainService, ISessionGenerator
         }
     }
 
-    private async void ResolveSenderIsRobot(ChatObject sender, Func<Task> matchAction)
+    private async Task ResolveSenderIsRobot(ChatObject sender, Func<Task> matchAction)
     {
         if (IsObjectType(sender.ObjectType.Value, ChatObjectTypeEnums.Robot))
         {
@@ -80,13 +80,13 @@ public class SessionGenerator : DomainService, ISessionGenerator
             return senderId.ToString();
         }
 
-        ResolveShopWaiterId(sender, receiver, async (v) =>
+        await ResolveShopWaiterId(sender, receiver, async (v) =>
         {
             receiverId = v;
             await Task.Yield();
         });
 
-        ResolveShopWaiterId(receiver, sender, async (v) =>
+        await ResolveShopWaiterId(receiver, sender, async (v) =>
         {
             senderId = v;
             await Task.Yield();
@@ -121,7 +121,7 @@ public class SessionGenerator : DomainService, ISessionGenerator
 
         session = new Session(sessionId, sessionKey, channel);
 
-        ResolveSenderIsRobot(sender, async () =>
+        await ResolveSenderIsRobot(sender, async () =>
         {
             //add robot
             SessionUnitManager.Create(session: session,
@@ -144,7 +144,7 @@ public class SessionGenerator : DomainService, ISessionGenerator
             await Task.Yield();
         });
 
-        ResolveShopWaiterId(sender, receiver, async (shopKeeperId) =>
+        await ResolveShopWaiterId(sender, receiver, async (shopKeeperId) =>
         {
             var shopKeeper = await ChatObjectManager.GetAsync(shopKeeperId);
             //add sender

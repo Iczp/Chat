@@ -4,6 +4,7 @@ using Volo.Abp.Authorization;
 using Volo.Abp.Autofac;
 using Volo.Abp.Data;
 using Volo.Abp.Modularity;
+using Volo.Abp.PermissionManagement;
 using Volo.Abp.Threading;
 
 namespace IczpNet.Chat;
@@ -23,7 +24,12 @@ public class ChatTestBaseModule : AbpModule
 
     public override void OnApplicationInitialization(ApplicationInitializationContext context)
     {
-        SeedTestData(context);
+        // Domain-only test hosts do not register a permission definition store.
+        // Running the global seeder there fails before any test assertion can run.
+        if (context.ServiceProvider.GetService<IPermissionGroupDefinitionRecordRepository>() is not null)
+        {
+            SeedTestData(context);
+        }
     }
 
     private static void SeedTestData(ApplicationInitializationContext context)

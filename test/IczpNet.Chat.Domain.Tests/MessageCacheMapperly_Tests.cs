@@ -16,7 +16,7 @@ public class MessageCacheMapperly_Tests
     public void Message_cache_without_quote_maps_correctly()
     {
         var source = CreateMessage("root");
-        var actual = new ChatDomainMessageToMessageCacheItemMapper().Map(source);
+        var actual = CreateMapper().Map(source);
 
         actual.ShouldNotBeNull();
         actual.ClientMessageId.ShouldBe("root");
@@ -39,7 +39,7 @@ public class MessageCacheMapperly_Tests
         };
         source.SetMessageType(MessageTypes.Text);
 
-        var actual = new ChatDomainMessageToMessageCacheItemMapper().Map(source);
+        var actual = CreateMapper().Map(source);
 
         actual.ShouldNotBeNull();
         actual.ClientMessageId.ShouldBe("with-content");
@@ -55,7 +55,7 @@ public class MessageCacheMapperly_Tests
         typeof(Message).GetProperty(nameof(Message.QuoteMessage), BindingFlags.Instance | BindingFlags.Public)!
             .SetValue(source, quote);
 
-        var actual = new ChatDomainMessageToMessageCacheItemMapper().Map(source);
+        var actual = CreateMapper().Map(source);
 
         actual.ShouldNotBeNull();
         actual.QuoteMessage.ShouldNotBeNull();
@@ -85,7 +85,7 @@ public class MessageCacheMapperly_Tests
         typeof(Message).GetProperty(nameof(Message.QuoteMessage), BindingFlags.Instance | BindingFlags.Public)!
             .SetValue(source, quote);
 
-        var actual = new ChatDomainMessageToMessageCacheItemMapper().Map(source);
+        var actual = CreateMapper().Map(source);
 
         actual.ShouldNotBeNull();
         actual.QuoteMessage.ShouldNotBeNull();
@@ -98,11 +98,15 @@ public class MessageCacheMapperly_Tests
         var source = CreateMessage("root");
         var actual = new MessageCacheItem { QuoteMessage = new MessageQuoteCacheItem() };
 
-        new ChatDomainMessageToMessageCacheItemMapper().Map(source, actual);
+        CreateMapper().Map(source, actual);
 
         actual.ClientMessageId.ShouldBe("root");
         actual.QuoteMessage.ShouldBeNull();
     }
+
+    // These cache-shape cases intentionally have no SenderSessionUnit.
+    private static ChatDomainMessageToMessageCacheItemMapper CreateMapper() =>
+        new(new ChatDomainSessionUnitToSessionUnitSenderInfoMapper(null!));
 
     private static Message CreateMessage(string clientMessageId)
     {

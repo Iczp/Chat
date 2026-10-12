@@ -2,57 +2,52 @@
 
 ## Current state (2026-10-10)
 
-The `mapperly` branch now registers ABP Mapperly in Chat Domain, Application,
-ManagementApplication, the API Host, and the standalone BackgroundWorker.
-The old AutoMapper profiles and direct package references are removed from the
-working tree. `dotnet build IczpNet.Chat.sln --no-restore` succeeds. This is a
-**compile milestone, not a behavior-parity or production-release sign-off**.
+The `mapperly` branch uses ABP Mapperly in Chat Domain, Application,
+ManagementApplication, the API Host, and the standalone BackgroundWorker. The
+old AutoMapper profiles and direct package references are removed. The API and
+Worker images were rebuilt and deployed to the local Docker Compose stack.
 
-`python scripts/check-mapperly-coverage.py` compares the current replacement
-classes against the most recent Git revision retaining each old profile. It
-reports 34/34 Domain, 192/192 Application, and 77/77 Management closed pairs,
-but still exits nonzero for the three old open-generic declarations. The
-closed-pair count is structural and does not verify custom actions, resolvers,
-null behavior, or nested mapping behavior.
+The nested `SessionUnit.Owner` mapping now composes the existing custom
+`ChatObject → ChatObjectInfo` Mapperly mapper using `[UseMapper]`, preserving
+URL normalization and connection-derived device types for direct sender,
+message, cache, and quote output paths. A focused test covers those paths.
+`MessageInfo<dynamic>` and `MessageInfo<object>` are the same CLR type, so only
+the object mapper is registered. Active closed `MessageInfo<T>` and TreeManager
+uses are checked by `scripts/check-mapperly-coverage.py`; the old
+`MessageWithQuoteInfo<>` open-generic declaration has no production caller,
+and the checker rejects a newly introduced caller. The computed
+`Message.Content` property is read once in the message output mappers.
 
-Known runtime parity issues to resolve before release:
+Full solution build and test completed: Domain 75 passed / 14 skipped / 0
+failed; Application 18 passed / 2 skipped / 0 failed; EF Core 3 passed;
+MongoDB 1 passed. The two skipped Application tests are obsolete template
+`SampleAppService` tests with no implementation. One pre-existing xUnit2031
+analyzer warning remains in `MessageReadCache_Tests.cs`. The structural
+coverage checker exits 0: Domain 33/33, Application 192/192, Management 77/77,
+six active TreeManager pairs, and 13 active message output pairs.
 
-1. Generated `Message → MessageInfo<T>` mappings originally evaluated the
-   computed `Message.Content` property twice when non-null. The cache,
-   concrete `MessageInfo<object>`, `MessageAnyInfo`, and currently registered
-   closed `MessageInfo<T>` mappings now read it once and are regression-tested.
-   Future message output mappers must preserve this rule.
-2. Generated nested `SessionUnit.Owner → ChatObjectInfo` mappings directly copy
-   `Thumbnail`, `Portrait`, and `DeviceTypes`. The old configured ChatObject
-   mapping normalized URLs and obtained device types through
-   `IConnectionPoolManager`. The direct `SessionUnit → SessionUnitSenderInfo`
-   mapping and message mappings that include a sender unit need a behavioral
-   equivalent, preferably covered by a focused regression test.
-3. The old message profiles used `MaxDepth(3)`. The generated nested mappings
-   have no equivalent depth policy; verify quote and sender-unit graphs do not
-   recurse or overfetch in the actual API paths.
-4. The new `ChatObject → ChatObjectInfo` mapper still waits synchronously on
-   `GetDeviceTypesAsync` (`.Result`), preserving the old behavior but also its
-   high-concurrency thread-blocking risk. Any redesign should be explicit and
-   benchmarked, not hidden in a mapper substitution.
-5. Several old-vs-new parity tests were changed to Mapperly-only assertions.
-   Keep representative golden-output tests for custom URL, nested content,
-   create/update, null, and open-generic cases.
-6. `MessageInfo<dynamic>` and `MessageInfo<object>` are the same CLR closed
-   generic type. Separate mapper classes for both create duplicate provider
-   registrations; consolidate them after confirming all callers, rather than
-   relying on registration order.
+Local Docker smoke tests through the gateway passed: token login, Chat object
+and session queries, message history, text send, quoted-message history,
+file upload and download via MinIO, and authenticated SignalR negotiation.
+Chat API and Worker are up;
+the Worker logs show Quartz scheduler startup, `MessageReportFlushWorker`, and
+AI dispatcher startup. The Chat containers join both the application and
+infrastructure networks; MinIO is reached as `minio:9000` via
+`CHAT_MINIO_ENDPOINT`. The earlier `host.docker.internal:9000` setting returned
+a non-MinIO response from inside Docker Desktop. No migration was generated or
+database schema update executed. Test messages, one small test blob, and test
+chat objects/requests remain in the development database/storage. New-session
+notifications also passed automatic acceptance, pending request, manual
+acceptance, and decline regression. The remaining Quartz/outbox reliability
+limit is described in the deployment guide.
 
-The BackgroundWorker now calls `UseStaticObjectMapper()` during initialization;
-`Message.GetContentDto()` requires that static bridge for runtime content-type
-dispatch. The API Host already initialized it.
-
-Current full test runs: Domain 68 passed / 14 skipped / 3 failed; Application
-18 passed / 2 failed. The five failures all occur while initializing the
-existing test Host because `DynamicPermissionDefinitionStore` cannot resolve
-`IPermissionGroupDefinitionRecordRepository`; they are not mapper assertions.
-The targeted Mapperly tests pass (Domain 15/15, Application 6/6). No migration
-or database update was generated or executed.
+Remaining caution for production sign-off: the custom ChatObject mapper
+retains the old synchronous wait on `GetDeviceTypesAsync`, which may block
+threads under load. The former `MaxDepth(3)` rule has no direct Mapperly
+equivalent; the exercised message/history paths did not recurse, but deeper
+quote/forward graph and sustained-load testing remain advisable. These are
+separate performance and graph-depth investigations, not part of this
+behavior-preserving migration.
 
 ## Earlier migration plan (historical; not the current runtime state)
 
@@ -61,7 +56,7 @@ in the Chat modules or hosts until every active map has an equivalent and the
 message/content regression tests pass. The currently generated Mapperly classes
 are compile-checked candidates; the existing profiles remain the runtime source.
 
-## Current inventory
+## Historical inventory (superseded)
 
 | Project | Active `CreateMap<T, U>` declarations | Compile-checked Mapperly candidates |
 | --- | ---: | ---: |
@@ -141,7 +136,7 @@ mappings are still needed.
 
 No database migration or deployment is part of this mapping change.
 
-## Verification snapshot
+## Historical verification snapshot (superseded)
 
 - Chat API Host and Chat BackgroundWorker build with no warnings or errors.
 - Domain Mapperly parity tests: 7 passed. Application parity tests: 5 passed.
@@ -163,10 +158,9 @@ This includes the shared, domain, application, contracts, management, admin,
 and installer projects. The local checkout must therefore exist beside Chat
 when building or publishing Chat from source.
 
-The Chat Domain still needs an explicit `Volo.Abp.AutoMapper` reference while
-its existing profiles are active; the old AbpTrees NuGet package previously
-provided that dependency transitively. Do not remove it until the remaining
-Chat profiles are converted and tested.
+At that earlier stage Chat Domain needed an explicit `Volo.Abp.AutoMapper`
+reference while its profiles were active. Those profiles and the direct
+package reference have since been removed.
 
 Before switching back to NuGet, publish the changed AbpTrees projects under
 new package versions, update *all* commented versions consistently, then

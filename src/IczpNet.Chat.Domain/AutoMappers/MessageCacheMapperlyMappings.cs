@@ -7,9 +7,12 @@ namespace IczpNet.Chat.AutoMappers;
 // MessageQuoteCacheItem intentionally has no nested quote member. This keeps
 // the cached quote to one level, as in the existing AutoMapper DTO shape.
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
-public partial class ChatDomainMessageToMessageQuoteCacheItemMapper
+public partial class ChatDomainMessageToMessageQuoteCacheItemMapper(ChatDomainSessionUnitToSessionUnitSenderInfoMapper senderMapper)
     : MapperBase<Message, MessageQuoteCacheItem>
 {
+    [UseMapper]
+    private readonly ChatDomainSessionUnitToSessionUnitSenderInfoMapper _senderMapper = senderMapper;
+
     public override MessageQuoteCacheItem Map(Message source)
     {
         if (source is null) return default!;
@@ -30,10 +33,12 @@ public partial class ChatDomainMessageToMessageQuoteCacheItemMapper
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
-public partial class ChatDomainMessageToMessageCacheItemMapper
+public partial class ChatDomainMessageToMessageCacheItemMapper(ChatDomainSessionUnitToSessionUnitSenderInfoMapper senderMapper)
     : MapperBase<Message, MessageCacheItem>
 {
-    private readonly ChatDomainMessageToMessageQuoteCacheItemMapper _quoteMapper = new();
+    [UseMapper]
+    private readonly ChatDomainSessionUnitToSessionUnitSenderInfoMapper _senderMapper = senderMapper;
+    private readonly ChatDomainMessageToMessageQuoteCacheItemMapper _quoteMapper = new(senderMapper);
 
     public override MessageCacheItem Map(Message source)
     {
