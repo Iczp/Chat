@@ -35,6 +35,15 @@ public class MessageSenderAppService(
         return sessionunit;
     }
 
+    [HttpPost("/api/chat/message-sender/send-article-content-message/{sessionUnitId}")]
+    public async Task<MessageInfo<ArticleContentInfo>> SendArticleContentMessageAsync(Guid sessionUnitId, MessageInput<ArticleContentInput> input)
+    {
+        var unit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
+        await CheckArticleManagementOrOwnerAsync(unit.OwnerId);
+        IczpNet.AbpCommons.Assert.If(!unit.IsEnabled, "Session unit disabled.");
+        return await MessageSender.SendArticleContentMessageAsync(unit, input);
+    }
+
     /// <summary>
     /// 发[文本]消息
     /// </summary>
@@ -238,7 +247,10 @@ public class MessageSenderAppService(
     public async Task<Dictionary<string, long>> RollbackAsync(long messageId)
     {
         var message = await Repository.GetAsync(messageId);
-        await CheckPolicyForUserAsync(message.SenderId);
+        if (message.MessageType == IczpNet.Chat.Enums.MessageTypes.Article)
+            await CheckArticleManagementOrOwnerAsync(message.SenderId);
+        else
+            await CheckPolicyForUserAsync(message.SenderId);
         return await MessageManager.RollbackAsync(message);
     }
 }

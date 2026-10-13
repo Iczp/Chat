@@ -2,6 +2,7 @@
   "culture": "en",
   "texts": {
     "MyAccount": "My account",
+    "ChatPermissions.MessageSenderPermission.ManageArticle": "Manage official/subscription article messages",
     "SamplePageMessage": "A sample page for the Chat module",
 
     "code-generator-localization": "Do not modify or delete this line of comments"

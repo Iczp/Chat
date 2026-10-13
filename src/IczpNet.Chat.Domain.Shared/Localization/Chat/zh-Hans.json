@@ -54,6 +54,7 @@
     "ChatPermissions.RoomManagementPermission.SetIsEnabled": "设置开启/禁用",
 
     "ChatPermissions.MessageSenderPermission": "消息发送权限",
+    "ChatPermissions.MessageSenderPermission.ManageArticle": "管理公众号／服务号文章消息（发送、历史、撤回及定时任务）",
     "ChatPermissions.MessageSenderPermission.SendCommand": "发【命令】消息",
     "ChatPermissions.MessageSenderPermission.SendText": "发【文本】消息",
     "ChatPermissions.MessageSenderPermission.SendLink": "发【链接】消息",

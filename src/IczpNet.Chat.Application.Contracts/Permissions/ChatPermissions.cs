@@ -65,6 +65,7 @@ public class ChatPermissions
 
     public class MessageSenderPermission
     {
+        public const string ManageArticle = IczpNet.Chat.MessageSections.ArticleMessagePermissions.Manage;
         public const string Default = GroupName + "." + nameof(MessageSenderPermission);
         
         public const string SendCommand = Default + "." + nameof(SendCommand);

@@ -25,6 +25,7 @@ using IczpNet.Chat.InvitationCodes;
 using IczpNet.Chat.Menus;
 using IczpNet.Chat.MessageReports;
 using IczpNet.Chat.MessageSections.Counters;
+using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.MessageContents;
 using IczpNet.Chat.MessageSections.MessageFollowers;
 using IczpNet.Chat.MessageSections.MessageReminders;
@@ -81,6 +82,7 @@ public class ChatDbContext(DbContextOptions<ChatDbContext> options) : AbpDbConte
 
     public DbSet<DbTable> DbTable { get; set; }
     public DbSet<AiRun> AiRun { get; set; }
+    public DbSet<ScheduledArticleMessage> ScheduledArticleMessage { get; set; }
 
     public DbSet<ChatObject> ChatObject { get; set; }
     public DbSet<ChatObjectCategory> ChatObjectCategory { get; set; }

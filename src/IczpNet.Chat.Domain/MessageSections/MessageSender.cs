@@ -4,6 +4,7 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.SessionUnits;
+using IczpNet.Chat.ChatObjects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -52,6 +53,17 @@ public class MessageSender(
     public Task<MessageInfo<LinkContentInfo>> SendLinkAsync(SessionUnitCacheItem senderSessionUnit, MessageInput<LinkContentInfo> input)
     {
         return MessageManager.SendAsync<LinkContentInfo, LinkContent>(senderSessionUnit, input);
+    }
+
+    public async Task<MessageInfo<ArticleContentInfo>> SendArticleContentMessageAsync(SessionUnitCacheItem senderSessionUnit, MessageInput<ArticleContentInput> input)
+    {
+        Assert.If(senderSessionUnit.OwnerObjectType != ChatObjectTypeEnums.Official && senderSessionUnit.OwnerObjectType != ChatObjectTypeEnums.Subscription,
+            "Article messages require an official or subscription account.");
+        var content = ArticleContent.Create(input?.Content);
+        var account = await LazyServiceProvider.LazyGetRequiredService<IChatObjectManager>().GetItemByCacheAsync(senderSessionUnit.OwnerId);
+        Assert.If(account == null || !account.IsEnabled || (account.ObjectType != ChatObjectTypeEnums.Official && account.ObjectType != ChatObjectTypeEnums.Subscription),
+            "The article sender account is disabled or invalid.");
+        return await MessageManager.SendAsync<ArticleContentInfo, ArticleContent>(senderSessionUnit, input, content);
     }
 
     public virtual async Task<MessageInfo<HtmlContentInfo>> SendHtmlAsync(SessionUnitCacheItem senderSessionUnit, MessageInput<HtmlContentInfo> input)

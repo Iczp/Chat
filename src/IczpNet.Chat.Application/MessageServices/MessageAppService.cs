@@ -411,7 +411,7 @@ public class MessageAppService(
     public async Task<ExtraPagedResultDto<MessageFastDto>> GetHistoryAsync(MessageGetHistoryInput input)
     {
         var unit = await SessionUnitManager.GetCacheAsync(input.SessionUnitId);
-        await CheckPolicyForUserAsync(unit.OwnerId, () => CheckPolicyAsync(GetListPolicyName));
+        await CheckArticleManagementOrOwnerAsync(unit.OwnerId, () => CheckPolicyAsync(GetListPolicyName));
 
         var pageSize = input.MaxResultCount;
 

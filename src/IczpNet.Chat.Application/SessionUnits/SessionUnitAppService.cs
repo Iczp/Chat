@@ -128,7 +128,7 @@ public class SessionUnitAppService(
     [UnitOfWork(true, IsolationLevel.ReadCommitted)]
     public virtual async Task<PagedResultDto<SessionUnitOwnerDto>> GetListAsync(SessionUnitGetListInput input)
     {
-        await CheckPolicyForUserAsync(input.OwnerId, () => CheckPolicyAsync(GetListPolicyName));
+        await CheckArticleManagementOrOwnerAsync(input.OwnerId, () => CheckPolicyAsync(GetListPolicyName));
 
         var query = await CreateQueryAsync(input);
 

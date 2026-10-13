@@ -84,6 +84,14 @@ public static class ChatDbContextModelCreatingExtensions
 
         builder.ConfigEntities<ChatDomainModule>(ChatDbProperties.DbTablePrefix, ChatDbProperties.DbSchema);
 
+        builder.Entity<ScheduledArticleMessage>(b =>
+        {
+            b.Property(x => x.InputJson).IsRequired();
+            b.Property(x => x.LastError).HasMaxLength(512);
+            b.HasIndex(x => new { x.Status, x.ScheduledAt, x.LeaseUntil });
+            b.HasIndex(x => new { x.SenderSessionUnitId, x.CreationTime });
+        });
+
         builder.Entity<AiRun>(b =>
         {
             //b.ToTable(ChatDbProperties.DbTablePrefix + "AiRuns", ChatDbProperties.DbSchema);

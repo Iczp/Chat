@@ -111,7 +111,12 @@ public class ChatDomainModule : AbpModule
 
         if (context.ServiceProvider.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>()
             .GetValue("Chat:Workers:EnablePeriodic", true))
+        {
             await context.AddBackgroundWorkerAsync<MessageReportFlushWorker>();
+            if (context.ServiceProvider.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>()
+                .GetValue("Chat:ArticleSchedules:Enabled", false))
+                await context.AddBackgroundWorkerAsync<IczpNet.Chat.MessageSections.ArticleScheduleRecoveryWorker>();
+        }
 
         await base.OnPostApplicationInitializationAsync(context);
     }

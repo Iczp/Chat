@@ -150,10 +150,12 @@ public class ChatHttpApiHostModule : AbpModule
 
         Configure<AbpJsonOptions>(options =>
         {
-            options.OutputDateTimeFormat = "yyyy-MM-dd hh:mm:ss";
-            options.InputDateTimeFormats = new List<string>() {
-            "yyyy-MM-dd hh:mm:ss","yyyy-MM-dd"
-
+            // Keep ABP's ISO 8601 output, including the UTC marker. These options
+            // also serialize distributed caches; an offset-free value is read
+            // back in the request's timezone and changes the message instant.
+            options.InputDateTimeFormats = new List<string>
+            {
+                "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd"
             };
         });
         Configure<AbpSystemTextJsonSerializerOptions>(options =>

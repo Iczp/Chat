@@ -8,6 +8,7 @@ namespace IczpNet.Chat.MessageSections.Messages
 {
     public interface IMessageSenderAppService
     {
+        Task<MessageInfo<ArticleContentInfo>> SendArticleContentMessageAsync(Guid sessionUnitId, MessageInput<ArticleContentInput> input);
         Task<MessageInfo<TextContentInfo>> SendTextAsync(Guid sessionUnitId, MessageInput<TextContentInfo> input);
         Task<MessageInfo<CmdContentInfo>> SendCmdAsync(Guid sessionUnitId, MessageInput<CmdContentInfo> input);
         Task<MessageInfo<LinkContentInfo>> SendLinkAsync(Guid sessionUnitId, MessageInput<LinkContentInfo> input);

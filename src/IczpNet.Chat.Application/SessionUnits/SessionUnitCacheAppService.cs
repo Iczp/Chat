@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.HighPerformance;
+using CommunityToolkit.HighPerformance;
 using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.BaseDtos;
@@ -1083,7 +1083,11 @@ public class SessionUnitCacheAppService(
         var query = queryable.AsQueryable()
             .WhereIf(input.IsCreator.HasValue, x => x.IsCreator == input.IsCreator.Value)
             .WhereIf(input.OwnerObjectType.HasValue, x => x.OwnerObjectType == input.OwnerObjectType.Value)
-            .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId.Value)
+            .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId.Value);
+
+        var totalCount = await SessionUnitCacheManager.GetMembersCountAsync(sessionId);
+
+        query = query
             .WhereIf(input.MinScore > 0, x => x.Score > input.MinScore)
             //.WhereIf(input.MaxScore > 0, x => x.Score < input.MaxScore)
             .WhereIf(input.MaxScore > 0, x => x.Score < input.MaxScore || (
@@ -1097,13 +1101,14 @@ public class SessionUnitCacheAppService(
             return new ExtraPagedResultDto<SessionUnitMemberDto>(0, []);
         }
 
-        var totalCount = query.Count(); //kvs.Length
+
 
         // sorting
         query = query.OrderByDescending(x => x.Score).ThenByDescending(x => x.Id);
 
         // paged
-        query = query.Skip(input.SkipCount)
+        var skipCount = (input.MaxScore > 0) ? 0 : input.SkipCount;
+        query = query.Skip(skipCount)
             // 多取一条
             .Take(input.MaxResultCount + 1);
 

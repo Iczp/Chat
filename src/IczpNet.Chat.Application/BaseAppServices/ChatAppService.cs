@@ -113,6 +113,21 @@ public abstract class ChatAppService : AbpCommonsAppService
         return CheckPolicyForUserAsync([ownerId], func);
     }
 
+    // Account delegation is limited to article management and public account types.
+    protected async Task CheckArticleManagementOrOwnerAsync(long? ownerId, Func<Task> ownerPolicy = null)
+    {
+        if (CurrentUser.Id.HasValue && ownerId.HasValue &&
+            await AuthorizationService.IsGrantedAsync(IczpNet.Chat.MessageSections.ArticleMessagePermissions.Manage))
+        {
+            var repository = LazyServiceProvider.LazyGetRequiredService<Volo.Abp.Domain.Repositories.IRepository<ChatObject, long>>();
+            var account = await repository.GetAsync(ownerId.Value);
+            if (account.ObjectType == IczpNet.Chat.Enums.ChatObjectTypeEnums.Official ||
+                account.ObjectType == IczpNet.Chat.Enums.ChatObjectTypeEnums.Subscription)
+                return;
+        }
+        await CheckPolicyForUserAsync(ownerId, ownerPolicy);
+    }
+
     protected virtual Task CheckPolicyForUserAsync(IEnumerable<long> ownerIdList, Func<Task> func = null)
     {
         return CheckPolicyForUserAsync(ownerIdList.Select(x => (long?)x), func);
