@@ -94,6 +94,7 @@ public class ChatHttpApiHostModule : AbpModule
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         context.Services.AddUnifiedAbpTiming();
+        context.Services.AddUnifiedAbpAntiforgery("Chat");
         context.Services.Replace(ServiceDescriptor.Transient<IDistributedCacheKeyNormalizer, SharedPermissionCacheKeyNormalizer>());
         context.Services.Replace(ServiceDescriptor.Transient<IMediaResolver, FFMpegCoreMediaResolver>());
         context.Services.AddMapperlyObjectMapper();
