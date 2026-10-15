@@ -12,7 +12,7 @@ using Volo.Abp.Application.Dtos;
 namespace IczpNet.Chat.Devices;
 
 /// <inheritdoc />
-public class DeviceAppService(
+public partial class DeviceAppService(
     IDeviceGroupRepository deviceGroupRepository,
     IDeviceRepository repository) : CrudChatAppService<Device, DeviceDetailDto, DeviceDto, Guid, DeviceGetListInput, DeviceCreateInput, DeviceUpdateInput>(repository), IDeviceAppService
 {
@@ -66,9 +66,11 @@ public class DeviceAppService(
         Assert.If(missingIds.Count != 0, $"以下 GroupId 不存在: {string.Join(", ", missingIds)}");
     }
 
-    public async Task<int> SetGroupsAsync(Guid id, List<Guid> groupIdList)
+    public virtual async Task<int> SetGroupsAsync(Guid id, List<Guid> groupIdList)
     {
+        EnsureDeviceWritable();
         await CheckPolicyAsync(SetSetGroupsPolicyName);
+        if (UseAppDevice) return await SetAppDeviceGroupsAsync(id, groupIdList);
 
         await CheckExistAsync(groupIdList);
 
@@ -82,9 +84,12 @@ public class DeviceAppService(
     /// <param name="input"></param>
     /// <returns></returns>
     //[AllowAnonymous]
-    public async Task<DeviceDetailDto> RegisterAsync(DeviceCreateOrUpdateInput input)
+    [Volo.Abp.Auditing.DisableAuditing]
+    public virtual async Task<DeviceDetailDto> RegisterAsync(DeviceCreateOrUpdateInput input)
     {
+        EnsureDeviceWritable();
 
+        if (UseAppDevice) return await RegisterAppDeviceAsync(input);
         var entity = await Repository.FindAsync(x => x.DeviceId == input.DeviceId);
 
         if (entity == null)
@@ -103,13 +108,13 @@ public class DeviceAppService(
     /// 当前用户登录设备
     /// </summary>
     /// <returns></returns>
-    public Task<PagedResultDto<DeviceDto>> GetListByCurrentUserAsync()
+    public virtual Task<PagedResultDto<DeviceDto>> GetListByCurrentUserAsync()
     {
         Assert.If(!CurrentUser.Id.HasValue, "未登录");
 
         return GetListAsync(new DeviceGetListInput()
         {
-            UserId = CurrentUser.Id,
+            UserId = UseAppDevice ? DeviceUser() ?? throw new Volo.Abp.BusinessException("AppDevice:InvalidIdentity") : CurrentUser.Id,
             MaxResultCount = 999
         });
     }
@@ -119,8 +124,9 @@ public class DeviceAppService(
     /// </summary>
     /// <param name="deivceId"></param>
     /// <returns></returns>
-    public async Task<DeviceDetailDto> GetByDeviceIdAsync(string deivceId)
+    public virtual async Task<DeviceDetailDto> GetByDeviceIdAsync(string deivceId)
     {
+        if (UseAppDevice) return await GetAppDeviceByRawIdAsync(deivceId);
         var entity = await Repository.GetAsync(x => x.DeviceId == deivceId);
 
         return await MapToGetOutputDtoAsync(await Repository.GetAsync(x => x.DeviceId == deivceId));

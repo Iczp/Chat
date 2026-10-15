@@ -9,6 +9,10 @@ namespace IczpNet.Chat.Devices;
 [Serializable]
 public class DeviceCreateOrUpdateInput : DeviceUpdateInput, IEntityDto<Guid?>
 {
+    [System.ComponentModel.DataAnnotations.MaxLength(256)]
+    [Volo.Abp.Auditing.DisableAuditing]
+    public string RegistrationProof { get; set; }
+
     /// <summary>
     /// 
     /// </summary>

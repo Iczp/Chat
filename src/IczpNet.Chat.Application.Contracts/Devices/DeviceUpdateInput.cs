@@ -7,5 +7,8 @@ namespace IczpNet.Chat.Devices;
 [Serializable]
 public class DeviceUpdateInput : DeviceCreateInput
 {
+    [System.ComponentModel.DataAnnotations.MaxLength(64)]
+    public string ConcurrencyStamp { get; set; }
+
 
 }

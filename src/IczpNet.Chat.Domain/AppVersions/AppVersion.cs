@@ -117,7 +117,7 @@ public class AppVersion : BaseEntity<Guid>, IIsEnabled, IIsPublic
     /// 
     /// </summary>
     [NotMapped]
-    public virtual IList<DeviceGroup> Groups => AppVersionDeviceGroupList.Where(x => !x.DeviceGroup.IsDeleted).Select(x => x.DeviceGroup).ToList();
+    public virtual IList<DeviceGroup> Groups => AppVersionDeviceGroupList.Where(x => x.DeviceGroup != null && !x.DeviceGroup.IsDeleted).Select(x => x.DeviceGroup).ToList();
 
     /// <summary>
     /// 

@@ -2,6 +2,10 @@
 
 public class DeviceOptions
 {
+    public bool UseAppDevice { get; set; }
+    public bool MigrationReadOnly { get; set; }
+    public string DefaultAppId { get; set; }
+
 
 
     /// <summary>

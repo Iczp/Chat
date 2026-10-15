@@ -9,6 +9,7 @@ namespace IczpNet.Chat.Devices;
 public class DeviceCreateInput
 {
 
+
     /// <summary>
     /// 显示名称
     /// </summary>

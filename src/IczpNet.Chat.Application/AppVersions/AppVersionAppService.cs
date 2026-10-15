@@ -14,7 +14,7 @@ using Volo.Abp.ObjectMapping;
 namespace IczpNet.Chat.AppVersions;
 
 /// <inheritdoc />
-public class AppVersionAppService(
+public partial class AppVersionAppService(
     IDeviceGroupRepository deviceGroupRepository,
     IAppVersionRepository repository) : CrudChatAppService<AppVersion, AppVersionDetailDto, AppVersionDto, Guid, AppVersionGetListInput, AppVersionCreateInput, AppVersionUpdateInput>(repository), IAppVersionAppService
 {
@@ -56,15 +56,15 @@ public class AppVersionAppService(
     {
         await CheckPolicyAsync(SetSetGroupsPolicyName);
 
-        await CheckExistAsync(groupIdList);
-
         var entity = await Repository.GetAsync(id);
+        await CheckExistAsync(groupIdList,entity.AppId);
 
         return entity.SetGroups(groupIdList);
     }
 
-    protected async Task CheckExistAsync(List<Guid> groupIdList)
+    protected async Task CheckExistAsync(List<Guid> groupIdList,string appId=null)
     {
+        if(UseAppDevice){await CheckAppDeviceGroupsAsync(appId,groupIdList);return;}
         var existIds = (await DeviceGroupRepository.GetQueryableAsync()).Where(x => groupIdList.Contains(x.Id)).Select(x => x.Id).ToList();
 
         // 差集：找出数据库中不存在的 ID
@@ -75,7 +75,7 @@ public class AppVersionAppService(
 
     protected override async Task<AppVersion> MapToEntityAsync(AppVersionCreateInput createInput)
     {
-        await CheckExistAsync(createInput.DeviceGroupIdList);
+        await CheckExistAsync(createInput.DeviceGroupIdList,createInput.AppId);
 
         var entity = await base.MapToEntityAsync(createInput);
 
@@ -93,21 +93,15 @@ public class AppVersionAppService(
     {
         var query = await Repository.GetQueryableAsync();
 
+        var allowedGroups=await VersionGroupsForDeviceAsync(input.AppId,input.DeviceId);
         var latest = await query
             .Where(x => x.IsEnabled)
             .WhereIf(!string.IsNullOrWhiteSpace(input.AppId), x => x.AppId == input.AppId)
             .WhereIf(!string.IsNullOrWhiteSpace(input.Platform), x => x.Platform == input.Platform)
             .WhereIf(input.VersionCode >= 0, x => x.VersionCode > input.VersionCode)
-            .Where(x =>
-                x.IsPublic ||
-                x.AppVersionDeviceGroupList.Any(d =>
-                    d.DeviceGroup.DeviceGroupMapList.Any(f =>
-                        f.Device.DeviceId == input.DeviceId
-                    )
-                )
-            )
+            .Where(x=>x.IsPublic || x.AppVersionDeviceGroupList.Any(g=>allowedGroups.Contains(g.DeviceGroupId)))
             .OrderByDescending(x => x.VersionCode)
             .FirstOrDefaultAsync();   // <-- 非常重要
-        return ObjectMapper.Map<AppVersion, AppVersionDetailDto>(latest);
+        return latest==null ? null : await MapToGetOutputDtoAsync(latest);
     }
 }

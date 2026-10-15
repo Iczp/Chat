@@ -6,8 +6,10 @@ namespace IczpNet.Chat.SchemaMigrator;
 
 public static class Program
 {
-    public static async Task<int> Main()
+    public static async Task<int> Main(string[] args)
     {
+        if(args.Contains("--import-devices"))return await DeviceImportCommand.RunAsync(args);
+        if(args.Length>0){Console.Error.WriteLine("Unknown migration mode. Device import: --import-devices [--apply] (--host | --tenant=<guid>).");return 2;}
         try
         {
             var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__Chat")

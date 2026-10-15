@@ -12,6 +12,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../../../IczpNet.AppDevice/src/IczpNet.AppDevice.EntityFrameworkCore/IczpNet.AppDevice.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="../../../IczpNet.AppDevice/src/IczpNet.AppDevice.Caching/IczpNet.AppDevice.Caching.csproj" />
+
 
 
 

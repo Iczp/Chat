@@ -416,8 +416,10 @@ public partial class ChatApplicationAppVersionToAppVersionDetailDtoMapper : Mapp
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
 public partial class ChatApplicationDeviceGroupToDeviceGroupDtoMapper : MapperBase<DeviceGroup, DeviceGroupDto>
 {
+    [MapperIgnoreTarget("AppId")]
     public override partial DeviceGroupDto Map(DeviceGroup source);
 
+    [MapperIgnoreTarget("AppId")]
     public override partial void Map(DeviceGroup source, DeviceGroupDto destination);
 }
 
@@ -432,8 +434,10 @@ public partial class ChatApplicationDeviceGroupToDeviceGroupSampleDtoMapper : Ma
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
 public partial class ChatApplicationDeviceGroupToDeviceGroupDetailDtoMapper : MapperBase<DeviceGroup, DeviceGroupDetailDto>
 {
+    [MapperIgnoreTarget("AppId")]
     public override partial DeviceGroupDetailDto Map(DeviceGroup source);
 
+    [MapperIgnoreTarget("AppId")]
     public override partial void Map(DeviceGroup source, DeviceGroupDetailDto destination);
 }
 
@@ -456,8 +460,10 @@ public partial class ChatApplicationDeviceToDeviceSampleDtoMapper : MapperBase<D
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
 public partial class ChatApplicationDeviceToDeviceDetailDtoMapper : MapperBase<Device, DeviceDetailDto>
 {
+    [MapperIgnoreTarget("RegistrationProof")]
     public override partial DeviceDetailDto Map(Device source);
 
+    [MapperIgnoreTarget("RegistrationProof")]
     public override partial void Map(Device source, DeviceDetailDto destination);
 }
 

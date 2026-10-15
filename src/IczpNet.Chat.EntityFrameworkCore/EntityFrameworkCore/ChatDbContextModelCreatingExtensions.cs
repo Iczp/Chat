@@ -13,6 +13,7 @@ using IczpNet.Chat.Connections;
 using IczpNet.Chat.DbTables;
 using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Developers;
+using IczpNet.Chat.DeviceGroups;
 using IczpNet.Chat.DeviceGroupMaps;
 using IczpNet.Chat.Devices;
 using IczpNet.Chat.FavoritedRecorders;
@@ -541,13 +542,15 @@ public static class ChatDbContextModelCreatingExtensions
         {
             b.HasKey(x => new { x.AppVersionId, x.DeviceId });
             b.HasOne(x => x.AppVersion).WithMany(x => x.VersionDeviceList).HasForeignKey(x => x.AppVersionId).IsRequired(false);
-            b.HasOne(x => x.Device).WithMany(x => x.AppVersionDeviceList).HasForeignKey(x => x.DeviceId).IsRequired(false);
+            b.Ignore(x => x.Device);
+            builder.Entity<Device>().Ignore(x => x.AppVersionDeviceList);
         });
 
         builder.Entity<AppVersionDeviceGroup>(b =>
         {
             b.HasKey(x => new { x.AppVersionId, x.DeviceGroupId });
-            b.HasOne(x => x.DeviceGroup).WithMany(x => x.AppVersionDeviceGroupList).HasForeignKey(x => x.DeviceGroupId).IsRequired(false);
+            b.Ignore(x => x.DeviceGroup);
+            builder.Entity<IczpNet.Chat.DeviceGroups.DeviceGroup>().Ignore(x => x.AppVersionDeviceGroupList);
         });
 
         builder.Entity<AppVersion>(b =>

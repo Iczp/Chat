@@ -8,6 +8,9 @@ namespace IczpNet.Chat.DeviceGroups;
 [Serializable]
 public class DeviceGroupCreateInput
 {
+    public string AppId { get; set; }
+    public string ConcurrencyStamp { get; set; }
+
 
     ///<summary>
     /// 名称 

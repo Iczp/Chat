@@ -7,6 +7,8 @@ namespace IczpNet.Chat.DeviceGroups;
 [Serializable]
 public class DeviceGroupDto : DeviceGroupSampleDto
 {
+    public string AppId { get; set; }
+    public string ConcurrencyStamp { get; set; }
 
     ///<summary>
     /// 说明 

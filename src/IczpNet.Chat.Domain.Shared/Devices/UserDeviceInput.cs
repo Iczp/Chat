@@ -4,6 +4,10 @@ using System.ComponentModel.DataAnnotations;
 namespace IczpNet.Chat.Devices;
 public class UserDeviceInput
 {
+    [MaxLength(256)]
+    [Volo.Abp.Auditing.DisableAuditing]
+    public string RegistrationProof { get; set; }
+
     /// <summary>
     /// 
     /// </summary>

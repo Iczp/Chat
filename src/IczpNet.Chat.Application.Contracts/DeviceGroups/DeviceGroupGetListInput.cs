@@ -9,5 +9,7 @@ namespace IczpNet.Chat.DeviceGroups;
 [Serializable]
 public class DeviceGroupGetListInput : GetListInput
 {
+    public string AppId { get; set; }
+
 
 }

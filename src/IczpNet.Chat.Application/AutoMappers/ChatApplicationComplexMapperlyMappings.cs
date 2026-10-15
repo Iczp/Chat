@@ -673,6 +673,7 @@ public partial class ChatApplicationDeviceUpdateInputToDeviceMapper
         MapPublicProperties(source, destination);
     }
 
+    [MapperIgnoreTarget(nameof(Device.ConcurrencyStamp))]
     private partial void MapPublicProperties(DeviceUpdateInput source, Device destination);
 }
 
@@ -694,6 +695,7 @@ public partial class ChatApplicationDeviceGroupCreateInputToDeviceGroupMapper
         MapPublicProperties(source, destination);
     }
 
+    [MapperIgnoreTarget(nameof(DeviceGroup.ConcurrencyStamp))]
     private partial void MapPublicProperties(DeviceGroupCreateInput source, DeviceGroup destination);
 }
 
@@ -715,6 +717,7 @@ public partial class ChatApplicationDeviceGroupUpdateInputToDeviceGroupMapper
         MapPublicProperties(source, destination);
     }
 
+    [MapperIgnoreTarget(nameof(DeviceGroup.ConcurrencyStamp))]
     private partial void MapPublicProperties(DeviceGroupUpdateInput source, DeviceGroup destination);
 }
 

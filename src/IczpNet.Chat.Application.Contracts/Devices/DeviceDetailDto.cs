@@ -5,6 +5,10 @@ namespace IczpNet.Chat.Devices;
 ///</summary>
 [Serializable] 
 public class DeviceDetailDto : DeviceDto {
+    [Volo.Abp.Auditing.DisableAuditing]
+    public string RegistrationProof { get; set; }
+    public string ConcurrencyStamp { get; set; }
+
 
 
     /// <summary>

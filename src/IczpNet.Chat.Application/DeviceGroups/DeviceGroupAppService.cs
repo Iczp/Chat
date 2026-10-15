@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace IczpNet.Chat.DeviceGroups;
 
 /// <inheritdoc />
-public class DeviceGroupAppService(
+public partial class DeviceGroupAppService(
     IDeviceRepository deviceRepository,
     IDeviceGroupRepository repository) : CrudChatAppService<DeviceGroup, DeviceGroupDetailDto, DeviceGroupDto, Guid, DeviceGroupGetListInput, DeviceGroupCreateInput, DeviceGroupUpdateInput>(repository), IDeviceGroupAppService
 {
@@ -31,9 +31,11 @@ public class DeviceGroupAppService(
             ;
     }
 
-    public async Task<int> SetDevicesAsync(Guid id, List<Guid> deviceIdList)
+    public virtual async Task<int> SetDevicesAsync(Guid id, List<Guid> deviceIdList)
     {
+        EnsureDeviceWritable();
         await CheckPolicyAsync(SetDevicesPolicyName);
+        if(UseAppDevice)return await SetAppDeviceMembersAsync(id,deviceIdList);
         var entity = await Repository.GetAsync(id);
         return entity.SetDevices(deviceIdList);
     }

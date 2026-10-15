@@ -31,7 +31,7 @@ namespace IczpNet.Chat;
 [DependsOn(
     typeof(AbpDddDomainModule),
     typeof(ChatDomainSharedModule),
-    typeof(IczpNet.AppDevice.AppDeviceDomainSharedModule),
+    typeof(IczpNet.AppDevice.AppDeviceDomainModule),
     typeof(AbpMapperlyModule)
 )]
 
@@ -51,6 +51,8 @@ public class ChatDomainModule : AbpModule
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         var configuration = context.Services.GetConfiguration();
+
+        Configure<IczpNet.Chat.Devices.DeviceOptions>(configuration.GetSection("Device"));
 
         context.Services.AddMapperlyObjectMapper<ChatDomainModule>();
 
