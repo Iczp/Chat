@@ -2,8 +2,10 @@ using IczpNet.Chat.Security;
 using IczpNet.Chat.Security.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Threading.Tasks;
 using Volo.Abp;
+using Volo.Abp.Application.Dtos;
 
 namespace IczpNet.Chat.Controllers;
 
@@ -46,5 +48,85 @@ public class SecurityController(IUrlSecurityAppService urlSecurityAppService) : 
     public virtual Task RefreshCacheAsync()
     {
         return UrlSecurityAppService.RefreshCacheAsync();
+    }
+
+    /// <summary>
+    /// 分页查询 URL 安全规则列表
+    /// </summary>
+    [HttpGet]
+    [Route("rules")]
+    public virtual Task<PagedResultDto<UrlSecurityRuleDto>> GetRulesAsync([FromQuery] UrlSecurityRuleGetListInput input)
+    {
+        return UrlSecurityAppService.GetRulesAsync(input);
+    }
+
+    /// <summary>
+    /// 获取单个 URL 安全规则
+    /// </summary>
+    [HttpGet]
+    [Route("rule/{id}")]
+    public virtual Task<UrlSecurityRuleDto> GetRuleAsync(Guid id)
+    {
+        return UrlSecurityAppService.GetRuleAsync(id);
+    }
+
+    /// <summary>
+    /// 创建 URL 安全规则
+    /// </summary>
+    [HttpPost]
+    [Route("rule")]
+    public virtual Task<UrlSecurityRuleDto> CreateRuleAsync(UrlSecurityRuleCreateInput input)
+    {
+        return UrlSecurityAppService.CreateRuleAsync(input);
+    }
+
+    /// <summary>
+    /// 更新 URL 安全规则
+    /// </summary>
+    [HttpPut]
+    [Route("rule/{id}")]
+    public virtual Task<UrlSecurityRuleDto> UpdateRuleAsync(Guid id, UrlSecurityRuleUpdateInput input)
+    {
+        return UrlSecurityAppService.UpdateRuleAsync(id, input);
+    }
+
+    /// <summary>
+    /// 删除 URL 安全规则
+    /// </summary>
+    [HttpDelete]
+    [Route("rule/{id}")]
+    public virtual Task DeleteRuleAsync(Guid id)
+    {
+        return UrlSecurityAppService.DeleteRuleAsync(id);
+    }
+
+    /// <summary>
+    /// 启停 URL 安全规则
+    /// </summary>
+    [HttpPost]
+    [Route("rule/{id}/set-enabled")]
+    public virtual Task SetRuleEnabledAsync(Guid id, [FromQuery] bool isEnabled)
+    {
+        return UrlSecurityAppService.SetRuleEnabledAsync(id, isEnabled);
+    }
+
+    /// <summary>
+    /// 分页查询安全举报记录列表
+    /// </summary>
+    [HttpGet]
+    [Route("reports")]
+    public virtual Task<PagedResultDto<SecurityReportDto>> GetReportsAsync([FromQuery] SecurityReportGetListInput input)
+    {
+        return UrlSecurityAppService.GetReportsAsync(input);
+    }
+
+    /// <summary>
+    /// 审核处理安全举报记录
+    /// </summary>
+    [HttpPost]
+    [Route("report/{id}/handle")]
+    public virtual Task<SecurityReportDto> HandleReportAsync(Guid id, SecurityReportHandleInput input)
+    {
+        return UrlSecurityAppService.HandleReportAsync(id, input);
     }
 }

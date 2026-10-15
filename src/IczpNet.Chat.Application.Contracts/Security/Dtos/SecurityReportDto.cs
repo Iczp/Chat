@@ -16,5 +16,6 @@ public class SecurityReportDto : EntityDto<Guid>
     public long? ReporterChatObjectId { get; set; }
     public Guid? ReporterSessionUnitId { get; set; }
     public int Status { get; set; }
+    public string AuditRemark { get; set; }
     public DateTime CreationTime { get; set; }
 }
