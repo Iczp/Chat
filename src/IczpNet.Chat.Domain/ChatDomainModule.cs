@@ -91,6 +91,7 @@ public class ChatDomainModule : AbpModule
         Configure<MessageOptions>(options =>
         {
             var messages = configuration.GetSection(nameof(MessageOptions));
+            options.ChangeSyncEnabled = messages.GetValue(nameof(MessageOptions.ChangeSyncEnabled), options.ChangeSyncEnabled);
             options.ReadCacheBatchSize = messages.GetValue(nameof(MessageOptions.ReadCacheBatchSize), options.ReadCacheBatchSize);
             options.ReadCacheMaxBatches = messages.GetValue(nameof(MessageOptions.ReadCacheMaxBatches), options.ReadCacheMaxBatches);
             options.ReadCacheExpiration = messages.GetValue(nameof(MessageOptions.ReadCacheExpiration), options.ReadCacheExpiration);

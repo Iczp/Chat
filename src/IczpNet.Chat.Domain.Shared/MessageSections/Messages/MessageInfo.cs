@@ -30,6 +30,7 @@ public class MessageInfo<T> : MessageInfo
 [Command(CommandConsts.Chat)]
 public class MessageInfo : ExtensibleObject, IHasExtraProperties
 {
+    public virtual long SyncVersion { get; set; }
     /// <summary>
     /// 消息Id
     /// </summary>

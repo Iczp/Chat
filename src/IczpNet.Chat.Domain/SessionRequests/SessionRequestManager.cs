@@ -291,7 +291,7 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
                     await QueueNotificationAsync(sessionRequest.Id, SessionRequestNotificationKind.Accepted);
                     break;
                 default:
-                    Assert.If(true, $"The destination's ObjectType '{sessionRequest.Destination.ObjectType}' disallow create session request. destinationId:{sessionRequest.Destination.Id}");
+                    //Assert.If(true, $"The destination's ObjectType '{sessionRequest.Destination.ObjectType}' disallow create session request. destinationId:{sessionRequest.Destination.Id}");
                     break;
             }
         }

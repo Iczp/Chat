@@ -6,6 +6,7 @@ namespace IczpNet.Chat.MessageSections.Messages.Dtos;
 
 public class MessageSimpleDto : ExtensibleEntityDto, IEntityDto<long>
 {
+    public virtual long SyncVersion { get; set; }
     /// <summary>
     /// 消息Id
     /// </summary>

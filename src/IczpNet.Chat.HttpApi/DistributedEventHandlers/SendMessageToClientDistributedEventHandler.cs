@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.ConnectionPools;
+using IczpNet.Chat.Commands;
 using IczpNet.Chat.Hosting;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionUnits;
@@ -93,7 +94,10 @@ public class SendMessageToClientDistributedEventHandler : SendToClientDistribute
 
         var command = eventData.Command;
 
-        var members = await SessionUnitCacheManager.GetMembersAsync(sessionId);
+        var members = (await SessionUnitCacheManager.GetMembersAsync(sessionId))
+            .Where(unit => command != CommandConsts.MessageRollbacked || !eventData.Message.IsPrivate ||
+                unit.Id == eventData.Message.SenderSessionUnitId || unit.Id == eventData.Message.ReceiverSessionUnitId)
+            .ToList();
 
         var ownerIds = members.Select(x => x.OwnerId).Distinct().ToList();
 

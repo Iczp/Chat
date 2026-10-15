@@ -17,7 +17,7 @@ using IczpNet.Chat.SessionUnitSettings;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
-public class MessageCacheManager : RedisService, IMessageCacheManager,
+public partial class MessageCacheManager : RedisService, IMessageCacheManager,
     ILocalEventHandler<EntityCreatedEventData<Message>>,
     ILocalEventHandler<EntityUpdatedEventData<Message>>,
     ILocalEventHandler<EntityDeletedEventData<Message>>,

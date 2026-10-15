@@ -67,7 +67,9 @@ public class ArticleScheduleExecution_Tests
         Assert.Equal(ArticleScheduleStatus.Failed, task.Status);
         await manager.ExecuteAsync(args);
         await manager.ExecuteAsync(args);
-        Assert.Equal(new[] { $"article-schedule:{task.Id:N}", $"article-schedule:{task.Id:N}" }, keys);
+        Assert.Equal(new[] { new Ulid(task.Id).ToString(), new Ulid(task.Id).ToString() }, keys);
+        Assert.All(keys, key => Assert.Equal(26, key.Length));
+        Assert.Equal(task.Id, Ulid.Parse(keys[0]).ToGuid());
         Assert.Equal(42, task.MessageId);
         Assert.Equal(ArticleScheduleStatus.Sent, task.Status);
         Assert.Equal(2, task.Attempts);

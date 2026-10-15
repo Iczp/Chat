@@ -88,7 +88,7 @@ public class ArticleScheduleManager(
             using (principalAccessor.Change(principal))
             {
                 var input = JsonSerializer.Deserialize<MessageInput<ArticleContentInput>>(task.InputJson);
-                input.ClientMessageId = $"article-schedule:{task.Id:N}";
+                input.ClientMessageId = new Ulid(task.Id).ToString();
                 var result = await sender.SendArticleContentMessageAsync(unit, input);
                 using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
                 var current = await repository.GetAsync(task.Id);

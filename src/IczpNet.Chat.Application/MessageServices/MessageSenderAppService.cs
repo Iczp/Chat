@@ -244,6 +244,7 @@ public class MessageSenderAppService(
     /// <param name="messageId"> 消息Id</param>
     /// <returns></returns>
     [HttpPost]
+    [Volo.Abp.Uow.UnitOfWork(isTransactional: true)]
     public async Task<Dictionary<string, long>> RollbackAsync(long messageId)
     {
         var message = await Repository.GetAsync(messageId);

@@ -38,7 +38,7 @@ namespace IczpNet.Chat.MessageServices;
 /// <summary>
 /// 消息管理器
 /// </summary>
-public class MessageAppService(
+public partial class MessageAppService(
     IDeletedRecorderManager deletedRecorderManager,
     IMessageRepository repository,
     IReadedRecorderManager readedRecorderManager,

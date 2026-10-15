@@ -3639,6 +3639,69 @@ namespace IczpNet.Chat.Migrations
                     b.ToTable("Chat_Message", (string)null);
                 });
 
+            modelBuilder.Entity("IczpNet.Chat.MessageSections.Messages.MessageChange", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("ChangeType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsPrivate")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("MessageCreationTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long>("MessageId")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid?>("ReceiverSessionUnitId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("SenderSessionUnitId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChangedAt");
+
+                    b.HasIndex("SessionId", "Version")
+                        .IsUnique();
+
+                    b.ToTable("Chat_MessageChange", (string)null);
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.MessageSections.Messages.SessionMessageChangeState", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("Epoch")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long>("MinVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Chat_SessionMessageChangeState", (string)null);
+                });
+
             modelBuilder.Entity("IczpNet.Chat.MessageSections.ScheduledArticleMessage", b =>
                 {
                     b.Property<Guid>("Id")

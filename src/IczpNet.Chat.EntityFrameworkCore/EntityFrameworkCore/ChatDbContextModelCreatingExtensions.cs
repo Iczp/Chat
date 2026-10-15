@@ -363,6 +363,18 @@ public static class ChatDbContextModelCreatingExtensions
 
 
 
+        builder.Entity<SessionMessageChangeState>(b =>
+        {
+            b.ToTable($"{ChatDbProperties.DbTablePrefix}_SessionMessageChangeState", ChatDbProperties.DbSchema);
+            b.HasKey(x => x.Id);
+        });
+        builder.Entity<MessageChange>(b =>
+        {
+            b.ToTable($"{ChatDbProperties.DbTablePrefix}_MessageChange", ChatDbProperties.DbSchema);
+            b.HasKey(x => x.Id);
+            b.HasIndex(x => new { x.SessionId, x.Version }).IsUnique();
+            b.HasIndex(x => x.ChangedAt);
+        });
         builder.Entity<Message>(b =>
             {
                 var _prefix = $"{ChatDbProperties.DbTablePrefix}_{nameof(Message)}_MapTo";

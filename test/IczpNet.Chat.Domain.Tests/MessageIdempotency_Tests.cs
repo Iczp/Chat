@@ -1,9 +1,12 @@
 using System;
 using System.Linq;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.SessionUnits;
 using NSubstitute;
 using Volo.Abp.DependencyInjection;
@@ -16,6 +19,39 @@ namespace IczpNet.Chat;
 
 public class MessageIdempotency_Tests
 {
+    [Theory]
+    [InlineData(null, true)]
+    [InlineData(26, true)]
+    [InlineData(27, false)]
+    [InlineData(44, false)]
+    public void Client_id_contract_matches_the_existing_database_limit(int? length, bool valid)
+    {
+        var input = new MessageInput { ClientMessageId = length.HasValue ? new string('a', length.Value) : null };
+        var errors = new List<ValidationResult>();
+        Assert.Equal(valid, Validator.TryValidateObject(input, new ValidationContext(input), errors, true));
+        if (!valid) Assert.Contains(errors, error => error.MemberNames.Contains(nameof(MessageInput.ClientMessageId)));
+    }
+
+    [Fact]
+    public async Task Oversized_client_id_is_rejected_before_lock_database_or_content_work()
+    {
+        var constructor = typeof(MessageManager).GetConstructors().Single();
+        var arguments = constructor.GetParameters().Select(x => Substitute.For([x.ParameterType], [])).ToArray();
+        var manager = (MessageManager)constructor.Invoke(arguments);
+        var repository = (IMessageRepository)arguments.Single(x => x is IMessageRepository);
+        var unitsOfWork = (IUnitOfWorkManager)arguments.Single(x => x is IUnitOfWorkManager);
+        var lazy = Substitute.For<IAbpLazyServiceProvider>();
+        manager.LazyServiceProvider = lazy;
+        var exception = await Assert.ThrowsAsync<Volo.Abp.UserFriendlyException>(() => manager.CreateMessageAsync(
+            new SessionUnitCacheItem { Id = Guid.NewGuid() },
+            _ => throw new InvalidOperationException("Invalid input must not create content."),
+            $"article:{Guid.NewGuid()}"));
+        Assert.Contains("26", exception.Message);
+        Assert.Empty(repository.ReceivedCalls());
+        Assert.Empty(unitsOfWork.ReceivedCalls());
+        Assert.Empty(lazy.ReceivedCalls());
+    }
+
     [Fact]
     public async Task Retried_client_id_returns_original_message_without_content_side_effects_and_commits_before_unlock()
     {

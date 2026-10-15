@@ -5,6 +5,8 @@ namespace IczpNet.Chat.Options;
 
 public class MessageOptions
 {
+    // Enable only after the MessageChange schema has been deployed.
+    public bool ChangeSyncEnabled { get; set; }
     public int ReadCacheBatchSize { get; set; } = 128;
     public int ReadCacheMaxBatches { get; set; } = 4;
     public TimeSpan ReadCacheExpiration { get; set; } = TimeSpan.FromMinutes(5);

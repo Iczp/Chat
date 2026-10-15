@@ -40,6 +40,10 @@ namespace IczpNet.Chat.MessageSections.Messages;
 [Index(nameof(SessionId), nameof(IsDeleted), nameof(IsPrivate), nameof(SenderSessionUnitId), nameof(ReceiverSessionUnitId), nameof(CreationTime), nameof(ForwardDepth), nameof(QuoteDepth))]
 public partial class Message : BaseEntity<long>, ISessionId, IHasEntityVersion
 {
+    [NotMapped]
+    public virtual long SyncVersion => ExtraProperties.TryGetValue(nameof(SyncVersion), out var value) &&
+        long.TryParse(value?.ToString(), out var version) ? version : 0;
+    internal void SetSyncVersion(long version) => ExtraProperties[nameof(SyncVersion)] = version;
     /// <summary>
     /// 实体版本
     /// </summary>

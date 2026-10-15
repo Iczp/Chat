@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.MessageSections;
 
@@ -31,6 +32,7 @@ public class MessageInput : IMessageInput
     /// <summary>
     /// 客户端消息Id
     /// </summary>
+    [StringLength(26, ErrorMessage = "客户端消息Id最多26个字符。")]
     public virtual string ClientMessageId { get; set; }
 
     /// <summary>

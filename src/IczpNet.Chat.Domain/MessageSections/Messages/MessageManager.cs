@@ -366,6 +366,8 @@ public partial class MessageManager(
         // Hold the existing distributed lock through the independent transaction commit.
         Assert.NotNull(senderSessionUnit, "Sender session unit required.");
         clientMessageId = string.IsNullOrWhiteSpace(clientMessageId) ? UlidGenerator.Generate() : clientMessageId;
+        if (clientMessageId.Length > 26)
+            throw new Volo.Abp.UserFriendlyException("客户端消息Id最多26个字符。");
         var digest = System.Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
             System.Text.Encoding.UTF8.GetBytes(clientMessageId)));
         var lockName = $"Chat:Send:{senderSessionUnit.Id}:{digest}";
@@ -816,7 +818,19 @@ public partial class MessageManager(
 
         Assert.If(nowTime > message.CreationTime.AddHours(allowRollbackHours), $"超过{allowRollbackHours}小时的消息不能被撤回！");
 
-        message.Rollback(nowTime);
+        if (Config.ChangeSyncEnabled)
+        {
+            var change = await LazyServiceProvider.LazyGetRequiredService<IMessageChangeRepository>()
+                .AppendRollbackAsync(message, nowTime, cancellationTokenProvider.Token);
+            if (change.AlreadyApplied)
+                return new Dictionary<string, long> { { "MessageId", message.Id } };
+            message.Rollback(change.ChangedAt);
+            message.SetSyncVersion(change.Version);
+        }
+        else
+        {
+            message.Rollback(nowTime);
+        }
 
         //(移动到本地事伯 MessageCreated)
         //await PublishDistributedEventAsync(message, Command.Rollback);

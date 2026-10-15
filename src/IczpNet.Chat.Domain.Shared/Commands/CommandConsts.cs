@@ -29,6 +29,8 @@ public class CommandConsts
     /// </summary>
     public static string MessageUpdated { get; set; } = "updated@message";
 
+    public const string MessageRollbacked = "rollbacked@message";
+
     /// <summary>
     /// 转发消息 default: forwarded@message
     /// </summary>

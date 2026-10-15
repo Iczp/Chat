@@ -10,6 +10,8 @@ namespace IczpNet.Chat.MessageSections.Messages;
 
 public interface IMessageAppService
 {
+    Task<List<MessageChangePageDto>> QueryChangesAsync(MessageChangesInput input);
+    Task<List<MessageSyncItem>> SyncItemsAsync(MessageSyncItemsInput input);
     Task<List<EnumDto>> GetDisabledForwardListAsync();
 
     Task<PagedResultDto<MessageOwnerDto>> GetListAsync(MessageGetListInput input);
