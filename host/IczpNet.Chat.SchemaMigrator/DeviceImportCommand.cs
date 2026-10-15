@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;
+using Volo.Abp.ExceptionHandling;
 using Volo.Abp.Autofac;
 using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.EntityFrameworkCore;
@@ -32,6 +33,8 @@ public static class DeviceImportCommand
     {
         try
         {
+            if(args.Any(x=>x is not ("--import-devices" or "--apply" or "--host") && !x.StartsWith("--tenant=",StringComparison.Ordinal)) || args.Distinct().Count()!=args.Length)
+                throw new InvalidOperationException("Unknown or duplicated device import arguments.");
             var config=new ConfigurationBuilder().AddEnvironmentVariables().Build();
             var source=Guard(config.GetConnectionString("Chat"),config["DeviceImport:ExpectedSourceDatabase"]);
             var target=Guard(config.GetConnectionString("AppDevice"),config["AppDevice:ExpectedDatabase"]);
@@ -45,6 +48,7 @@ public static class DeviceImportCommand
             if(apply && !config.GetValue("DeviceImport:SourceFrozen",false))throw new InvalidOperationException("Explicit SourceFrozen=true is required for apply/resume.");
             var fingerprint=Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new{source.DataSource,source.InitialCatalog,TargetServer=target.DataSource,TargetDb=target.InitialCatalog,tenant,app}))));
             var checkpoint=config["DeviceImport:CheckpointFile"] ?? Path.Combine(Path.GetTempPath(),"AppDeviceImports",fingerprint+".json");
+            using var checkpointLock=apply ? OpenCheckpointLock(checkpoint) : null;
             var totals=new Dictionary<string,long>();
             // Always preflight the complete source, including on resume. Never log proofs or profile payloads.
             await CheckOrphansAsync(source.ConnectionString);
@@ -90,6 +94,11 @@ public static class DeviceImportCommand
             Console.Error.WriteLine($"Device import stopped: {error.GetType().Name}; code={(error as IHasErrorCode)?.Code ?? "ConfigurationOrSourceValidation"}. No source writes were executed.");return 1;
         }
     }
+    private static FileStream OpenCheckpointLock(string path)
+    {
+        var absolute=Path.GetFullPath(path)+".lock";Directory.CreateDirectory(Path.GetDirectoryName(absolute)!);
+        return new FileStream(absolute,FileMode.OpenOrCreate,FileAccess.ReadWrite,FileShare.None);
+    }
     private static SqlConnectionStringBuilder Guard(string? value,string? expected)
     {
         if(string.IsNullOrWhiteSpace(value)||string.IsNullOrWhiteSpace(expected))throw new InvalidOperationException("Explicit connection and expected catalog are required.");
@@ -109,16 +118,26 @@ public static class DeviceImportCommand
         using var change=s.GetRequiredService<Volo.Abp.MultiTenancy.ICurrentTenant>().Change(tenant);
         using var unit=s.GetRequiredService<IUnitOfWorkManager>().Begin(requiresNew:true,isTransactional:true);
         var importer=s.GetRequiredService<LegacyDeviceImport>();
+        var notices=new Dictionary<string,List<(Guid Id,string Raw)>>();
         foreach(var row in rows)
         {
             Validate(row);
             switch(row.Phase)
             {
-                case "devices":await importer.DeviceAsync(tenant,row.App,row.Device!);break;
+                case "devices":
+                    var id=await importer.DeviceAsync(tenant,row.App,row.Device!);
+                    if(!notices.TryGetValue(row.App,out var list))notices[row.App]=list=[];
+                    list.Add((id,row.Device!.DeviceId));break;
                 case "groups":await importer.GroupAsync(tenant,row.App,row.Key1,row.Name!,row.Description,row.Deleted);break;
                 case "bindings":await importer.BindingAsync(tenant,row.App,row.Key1,row.User!.Value,row.BoundAt!.Value);break;
                 case "members":await importer.MemberAsync(tenant,row.App,row.Group!.Value,row.Key1);break;
             }
+        }
+        foreach(var app in rows.Select(x=>x.App).Distinct())
+        {
+            var records=notices.GetValueOrDefault(app) ?? [];
+            var notice=new DeviceChangedEto(tenant,app,records.Select(x=>x.Id).Distinct().ToArray(),records.Count>0?"Profile":"Group",records.Select(x=>x.Raw).Distinct().ToArray());
+            await s.GetRequiredService<Volo.Abp.EventBus.Distributed.IDistributedEventBus>().PublishAsync(notice);
         }
         await unit.CompleteAsync();
     }

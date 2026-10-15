@@ -8371,13 +8371,7 @@ namespace IczpNet.Chat.Migrations
                         .HasForeignKey("AppVersionId")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("IczpNet.Chat.DeviceGroups.DeviceGroup", "DeviceGroup")
-                        .WithMany("AppVersionDeviceGroupList")
-                        .HasForeignKey("DeviceGroupId");
-
                     b.Navigation("AppVersion");
-
-                    b.Navigation("DeviceGroup");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.AppVersionDevices.AppVersionDevice", b =>
@@ -8386,13 +8380,7 @@ namespace IczpNet.Chat.Migrations
                         .WithMany("VersionDeviceList")
                         .HasForeignKey("AppVersionId");
 
-                    b.HasOne("IczpNet.Chat.Devices.Device", "Device")
-                        .WithMany("AppVersionDeviceList")
-                        .HasForeignKey("DeviceId");
-
                     b.Navigation("AppVersion");
-
-                    b.Navigation("Device");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.Articles.ArticleMessage", b =>
@@ -9832,15 +9820,11 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.DeviceGroups.DeviceGroup", b =>
                 {
-                    b.Navigation("AppVersionDeviceGroupList");
-
                     b.Navigation("DeviceGroupMapList");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.Devices.Device", b =>
                 {
-                    b.Navigation("AppVersionDeviceList");
-
                     b.Navigation("DeviceGroupMapList");
 
                     b.Navigation("UserDeviceList");

@@ -30,7 +30,7 @@ public partial class AppVersionAppService(
     /// <inheritdoc />
     protected override async Task<IQueryable<AppVersion>> CreateFilteredQueryAsync(AppVersionGetListInput input)
     {
-        return (await base.CreateFilteredQueryAsync(input))
+        return (await base.CreateFilteredQueryAsync(input)).Include(x=>x.AppVersionDeviceGroupList)
 
             //.WhereIf(!string.IsNullOrWhiteSpace(input.Keyword), x => x.Name.Contains(input.Keyword))
             .WhereIf(input.IsEnabled.HasValue, x => x.IsEnabled == input.IsEnabled)
@@ -91,7 +91,7 @@ public partial class AppVersionAppService(
     /// <exception cref="NotImplementedException"></exception>
     public virtual async Task<AppVersionDetailDto> GetLatest(GetLatestInput input)
     {
-        var query = await Repository.GetQueryableAsync();
+        var query = (await Repository.GetQueryableAsync()).Include(x=>x.AppVersionDeviceGroupList);
 
         var allowedGroups=await VersionGroupsForDeviceAsync(input.AppId,input.DeviceId);
         var latest = await query

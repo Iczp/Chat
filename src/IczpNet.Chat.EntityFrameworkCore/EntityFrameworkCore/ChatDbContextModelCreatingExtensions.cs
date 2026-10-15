@@ -543,6 +543,7 @@ public static class ChatDbContextModelCreatingExtensions
             b.HasKey(x => new { x.AppVersionId, x.DeviceId });
             b.HasOne(x => x.AppVersion).WithMany(x => x.VersionDeviceList).HasForeignKey(x => x.AppVersionId).IsRequired(false);
             b.Ignore(x => x.Device);
+            b.HasIndex(x => x.DeviceId);
             builder.Entity<Device>().Ignore(x => x.AppVersionDeviceList);
         });
 
@@ -550,6 +551,7 @@ public static class ChatDbContextModelCreatingExtensions
         {
             b.HasKey(x => new { x.AppVersionId, x.DeviceGroupId });
             b.Ignore(x => x.DeviceGroup);
+            b.HasIndex(x => x.DeviceGroupId);
             builder.Entity<IczpNet.Chat.DeviceGroups.DeviceGroup>().Ignore(x => x.AppVersionDeviceGroupList);
         });
 
