@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.AiRuns;
+using IczpNet.Chat.AiRuns;
 using IczpNet.Chat.AppVersionDeviceGroups;
 using IczpNet.Chat.AppVersionDevices;
 using IczpNet.Chat.AppVersions;
@@ -38,6 +38,7 @@ using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.ScanCodes;
 using IczpNet.Chat.Scopeds;
+using IczpNet.Chat.Security;
 using IczpNet.Chat.ServerHosts;
 using IczpNet.Chat.SessionBoxes;
 using IczpNet.Chat.SessionOrganizations;
@@ -202,6 +203,8 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<ScanCode> ScanCode { get; }
 
     DbSet<ScanHandler> ScanHandler { get; }
+    DbSet<UrlSecurityRule> UrlSecurityRule { get; }
+    DbSet<SecurityReport> SecurityReport { get; }
 
 
 }

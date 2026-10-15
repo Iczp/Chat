@@ -1,4 +1,4 @@
-﻿using IczpNet.AbpCommons.EntityFrameworkCore;
+using IczpNet.AbpCommons.EntityFrameworkCore;
 using IczpNet.Chat.AiRuns;
 using IczpNet.Chat.AppVersionDeviceGroups;
 using IczpNet.Chat.AppVersionDevices;
@@ -29,6 +29,7 @@ using IczpNet.Chat.MessageWords;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.RedEnvelopes;
+using IczpNet.Chat.Security;
 using IczpNet.Chat.Scopeds;
 using IczpNet.Chat.SessionPermissionRoleGrants;
 using IczpNet.Chat.SessionPermissionUnitGrants;
@@ -103,6 +104,27 @@ public static class ChatDbContextModelCreatingExtensions
             b.HasIndex(x => new { x.Status, x.NextAttemptAt });
             b.HasIndex(x => new { x.SessionId, x.Status, x.CreationTime });
             b.HasIndex(x => new { x.Status, x.LeaseUntilTime });
+        });
+
+        builder.Entity<UrlSecurityRule>(b =>
+        {
+            b.Property(x => x.Host).IsRequired().HasMaxLength(256);
+            b.Property(x => x.Reason).HasMaxLength(512);
+            b.HasIndex(x => x.Host);
+            b.HasIndex(x => new { x.Host, x.IsEnabled });
+            b.HasIndex(x => x.Level);
+        });
+
+        builder.Entity<SecurityReport>(b =>
+        {
+            b.Property(x => x.TargetType).IsRequired().HasMaxLength(64);
+            b.Property(x => x.TargetContent).IsRequired().HasMaxLength(1024);
+            b.Property(x => x.Reason).IsRequired().HasMaxLength(128);
+            b.Property(x => x.Description).HasMaxLength(2000);
+            b.Property(x => x.AuditRemark).HasMaxLength(1024);
+            b.HasIndex(x => x.TargetContent);
+            b.HasIndex(x => x.Status);
+            b.HasIndex(x => x.CreationTime);
         });
 
         ConfigMessageTemplateEntitys(builder);

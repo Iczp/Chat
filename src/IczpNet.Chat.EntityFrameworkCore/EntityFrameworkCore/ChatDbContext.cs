@@ -38,6 +38,7 @@ using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.ScanCodes;
 using IczpNet.Chat.Scopeds;
+using IczpNet.Chat.Security;
 using IczpNet.Chat.ServerHosts;
 using IczpNet.Chat.SessionBoxes;
 using IczpNet.Chat.SessionOrganizations;
@@ -218,6 +219,8 @@ public class ChatDbContext(DbContextOptions<ChatDbContext> options) : AbpDbConte
     public DbSet<ScanCode> ScanCode { get; set; }
 
     public DbSet<ScanHandler> ScanHandler { get; set; }
+    public DbSet<UrlSecurityRule> UrlSecurityRule { get; set; }
+    public DbSet<SecurityReport> SecurityReport { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

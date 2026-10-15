@@ -5591,6 +5591,210 @@ namespace IczpNet.Chat.Migrations
                     b.ToTable("Chat_Scoped", (string)null);
                 });
 
+            modelBuilder.Entity("IczpNet.Chat.Security.SecurityReport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AuditRemark")
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)")
+                        .HasComment("审核意见");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)")
+                        .HasComment("详细描述");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<long?>("MessageId")
+                        .HasColumnType("bigint")
+                        .HasComment("关联消息ID");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)")
+                        .HasComment("投诉原因");
+
+                    b.Property<long?>("ReporterChatObjectId")
+                        .HasColumnType("bigint")
+                        .HasComment("举报人 ChatObjectId");
+
+                    b.Property<Guid?>("ReporterSessionUnitId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasComment("举报人 SessionUnitId");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int")
+                        .HasComment("处理状态：0=待审核, 1=已确认并封禁, 2=驳回/忽略");
+
+                    b.Property<string>("TargetContent")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)")
+                        .HasComment("投诉目标内容");
+
+                    b.Property<string>("TargetType")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("投诉目标类型：url / message / user");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreationTime")
+                        .IsDescending();
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("TargetContent");
+
+                    b.HasIndex("TargetType");
+
+                    b.ToTable("Chat_SecurityReport", null, t =>
+                        {
+                            t.HasComment("违规投诉举报记录表");
+                        });
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.Security.UrlSecurityRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("int")
+                        .HasComment("风险分类");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<DateTime?>("ExpireTime")
+                        .HasColumnType("datetime2")
+                        .HasComment("规则有效期至");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<long>("HitCount")
+                        .HasColumnType("bigint")
+                        .HasComment("命中计数");
+
+                    b.Property<string>("Host")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)")
+                        .HasComment("域名模式");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("bit")
+                        .HasComment("是否启用");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("int")
+                        .HasComment("安全级别");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)")
+                        .HasComment("拦截或放行原因说明");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Host");
+
+                    b.HasIndex("IsEnabled");
+
+                    b.HasIndex("Level");
+
+                    b.HasIndex("Host", "IsEnabled");
+
+                    b.ToTable("Chat_UrlSecurityRule", null, t =>
+                        {
+                            t.HasComment("URL 域名安全风控规则表");
+                        });
+                });
+
             modelBuilder.Entity("IczpNet.Chat.ServerHosts.ServerHost", b =>
                 {
                     b.Property<string>("Id")
