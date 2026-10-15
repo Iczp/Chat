@@ -31,6 +31,7 @@ namespace IczpNet.Chat;
 [DependsOn(
     typeof(AbpDddDomainModule),
     typeof(ChatDomainSharedModule),
+    typeof(IczpNet.AppDevice.AppDeviceDomainSharedModule),
     typeof(AbpMapperlyModule)
 )]
 

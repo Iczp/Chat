@@ -1,125 +1,45 @@
-﻿using Microsoft.AspNetCore.Http;
+using IczpNet.AppDevice.Devices;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
+using System;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.Devices;
 
+// Compatibility contract for existing Chat consumers; device values come from AppDevice.
 public class DeviceResolver(
     IOptions<DeviceOptions> option,
-    IHttpContextAccessor httpContextAccessor) : DomainService, IDeviceResolver
+    IHttpContextAccessor httpContextAccessor,
+    ICurrentDevice currentDevice) : DomainService, IDeviceResolver
 {
-    protected IHttpContextAccessor HttpContextAccessor { get; } = httpContextAccessor;
+    protected DeviceOptions Config => option.Value;
 
-    protected IOptions<DeviceOptions> Options { get; } = option;
-
-    protected DeviceOptions Config => Options.Value ?? new DeviceOptions();
-
-    protected virtual HttpContext GetHttpContext()
-    {
-        return HttpContextAccessor.HttpContext;
-    }
-
-    /// <summary>
-    ///  headers | Request.Query
-    /// </summary>
-    /// <param name="key"></param>
-    /// <returns></returns>
     public virtual string GetParameter(string key)
     {
-        var httpContext = GetHttpContext();
-
-        if (httpContext == null)
-        {
-            return null;
-        }
-
-        var headers = httpContext?.Request.Headers;
-
-        if (!string.IsNullOrEmpty(headers[key]))
-        {
-            return headers[key];
-        }
-
-        if (!string.IsNullOrEmpty(httpContext?.Request.Query[key]))
-        {
-            return httpContext?.Request.Query[key];
-        }
-
-        return null;
-    }
-    public virtual string GetDeviceIdKey()
-    {
-        return Config.RequestDeviceIdKey;
+        if (string.Equals(key, Config.RequestDeviceIdKey, StringComparison.OrdinalIgnoreCase)) return GetDeviceId();
+        if (string.Equals(key, Config.RequestDeviceTypeKey, StringComparison.OrdinalIgnoreCase)) return GetDeviceType();
+        if (string.Equals(key, Config.RequestAppIdKey, StringComparison.OrdinalIgnoreCase)) return GetAppId();
+        if (string.Equals(key, Config.RequestAppVersionKey, StringComparison.OrdinalIgnoreCase)) return GetAppVersion();
+        // Preserve the legacy general-purpose accessor for external callers.
+        var request = httpContextAccessor.HttpContext?.Request;
+        var header = request?.Headers[key].ToString();
+        return !string.IsNullOrEmpty(header) ? header : request?.Query[key].ToString();
     }
 
-    public virtual string GetDeviceId()
-    {
-        return GetParameter(Config.RequestDeviceIdKey);
-    }
-    public virtual async Task<string> GetDeviceIdAsync()
-    {
-        await Task.Yield();
-        return GetDeviceId();
-    }
-
-
-
-    public virtual string GetDeviceTypeKey()
-    {
-        return Config.RequestDeviceTypeKey;
-    }
-
-    public virtual string GetDeviceType()
-    {
-        return GetParameter(Config.RequestDeviceTypeKey);
-    }
-
-    public virtual async Task<string> GetDeviceTypeAsync()
-    {
-        await Task.Yield();
-        return GetDeviceType();
-    }
-
-    public virtual string GetAppIdKey()
-    {
-        return Config.RequestAppIdKey;
-    }
-
-    public virtual string GetAppId()
-    {
-        return GetParameter(Config.RequestAppIdKey);
-    }
-
-    public virtual async Task<string> GetAppIdAsync()
-    {
-        await Task.Yield();
-        return GetAppId();
-    }
-
-    public virtual string GetAppVersionKey()
-    {
-        return Config.RequestAppVersionKey;
-    }
-
-    public virtual string GetAppVersion()
-    {
-        return GetParameter(Config.RequestAppVersionKey);
-    }
-
-    public virtual async Task<string> GetAppVersionAsync()
-    {
-        await Task.Yield();
-        return GetAppVersion();
-    }
-
-    public virtual async Task<bool> IsEqualsAsync(string inputDeviceId)
-    {
-        await Task.Yield();
-        return GetDeviceId().Equals(inputDeviceId);
-    }
-
-
-
-
+    public virtual string GetDeviceIdKey() => Config.RequestDeviceIdKey;
+    public virtual string GetDeviceId() => EmptyToNull(currentDevice.Get().DeviceId);
+    public virtual Task<string> GetDeviceIdAsync() => Task.FromResult(GetDeviceId());
+    public virtual string GetDeviceTypeKey() => Config.RequestDeviceTypeKey;
+    public virtual string GetDeviceType() => currentDevice.Get().DeviceType;
+    public virtual Task<string> GetDeviceTypeAsync() => Task.FromResult(GetDeviceType());
+    public virtual string GetAppIdKey() => Config.RequestAppIdKey;
+    public virtual string GetAppId() => currentDevice.Get().AppId;
+    public virtual Task<string> GetAppIdAsync() => Task.FromResult(GetAppId());
+    public virtual string GetAppVersionKey() => Config.RequestAppVersionKey;
+    public virtual string GetAppVersion() => currentDevice.Get().AppVersion;
+    public virtual Task<string> GetAppVersionAsync() => Task.FromResult(GetAppVersion());
+    public virtual Task<bool> IsEqualsAsync(string inputDeviceId)
+        => Task.FromResult(!string.IsNullOrWhiteSpace(inputDeviceId) && string.Equals(GetDeviceId(), inputDeviceId, StringComparison.Ordinal));
+    private static string EmptyToNull(string value) => string.IsNullOrEmpty(value) ? null : value;
 }
