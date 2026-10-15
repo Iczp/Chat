@@ -996,6 +996,20 @@ public partial class MessageManager(
 
         }, optionsFactory ?? (() => CacheOptions), hideErrors, considerUow, token);
 
+        // Cold/older cache rows may lack navigation-derived sender snapshots.
+        // Resolve the distinct members and owners through the existing batch
+        // caches; do not turn a history page into one lookup per message.
+        var messages = list.Where(x => x.Value != null).Select(x => (MessageInfo<object>)x.Value)
+            .Concat(list.Where(x => x.Value?.QuoteMessage != null).Select(x => x.Value.QuoteMessage)).ToList();
+        var incomplete = messages.Where(x => x.SenderSessionUnitId.HasValue && x.SenderSessionUnit?.Owner == null).ToList();
+        if (incomplete.Count > 0)
+        {
+            var units = await SessionUnitManager.GetCacheManyAsync(incomplete.Select(x => x.SenderSessionUnitId!.Value).Distinct().ToList());
+            var senders = (await SessionUnitManager.MapToSenderAsync(units.Where(x => x.Value != null).Select(x => x.Value).ToList()))
+                .ToDictionary(x => x.Id);
+            foreach (var message in incomplete)
+                if (senders.TryGetValue(message.SenderSessionUnitId!.Value, out var sender)) message.SenderSessionUnit = sender;
+        }
         return list;
 
     }

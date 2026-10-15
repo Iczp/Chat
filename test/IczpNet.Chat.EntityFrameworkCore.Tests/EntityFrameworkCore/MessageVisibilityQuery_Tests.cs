@@ -7,6 +7,7 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.Sessions;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
+using IczpNet.Chat.DeletedRecorders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -88,6 +89,45 @@ public class MessageVisibilityQuery_Tests : ChatTestBase<MessageQueryReviewTestM
                 ["SenderSessionUnitId"] = Guid.NewGuid(), ["ReceiverSessionUnitId"] = Guid.NewGuid() });
             Assert.False(await repository.CanReadAsync(unitId, 111));
             Assert.Equal(6, await repository.CountVisibleAsync(unitId, null, null));
+        });
+    }
+
+    [Fact]
+    public async Task Calibration_returns_explicit_member_deletions_without_exposing_private_messages_to_other_members()
+    {
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var context = await ServiceProvider.GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            await context.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys=OFF");
+            var session = Guid.NewGuid();
+            var first = Guid.NewGuid();
+            var second = Guid.NewGuid();
+            await InsertAsync<Session>(context, new() { ["Id"] = session });
+            foreach (var member in new[] { (first, 1L), (second, 2L) })
+            {
+                await InsertAsync<SessionUnit>(context, new() { ["Id"] = member.Item1, ["SessionId"] = session, ["OwnerId"] = member.Item2 });
+                await InsertAsync<SessionUnitSetting>(context, new() { ["SessionUnitId"] = member.Item1, ["SessionId"] = session });
+            }
+            await InsertAsync<Message>(context, new() { ["Id"] = 105L, ["SessionId"] = session, ["ExtraProperties"] = new ExtraPropertyDictionary() });
+            await InsertAsync<Message>(context, new() { ["Id"] = 106L, ["SessionId"] = session, ["ExtraProperties"] = new ExtraPropertyDictionary(),
+                ["IsPrivate"] = true, ["SenderSessionUnitId"] = first, ["ReceiverSessionUnitId"] = Guid.NewGuid() });
+            await InsertAsync<DeletedRecorder>(context, new() { ["SessionUnitId"] = first, ["MessageId"] = 105L });
+            await InsertAsync<SessionMessageChangeState>(context, new() { ["Id"] = session, ["Epoch"] = session, ["Version"] = 7L });
+            var message = new Message(new SessionUnitCacheItem { Id = first, SessionId = session, OwnerId = 1 });
+            typeof(Message).GetProperty(nameof(Message.Id))!.SetValue(message, 105L);
+            context.Set<MessageChange>().Add(new MessageChange(Guid.NewGuid(), message, 7, DateTime.UtcNow, first));
+            await context.SaveChangesAsync();
+            var changes = ServiceProvider.GetRequiredService<IMessageChangeRepository>();
+            var own = await changes.ReadSyncItemsAsync(first, [105, 106, 999]);
+            Assert.True(own.Single(x => x.MessageId == 105).IsDeleted);
+            Assert.Equal(7, own.Single(x => x.MessageId == 105).SyncVersion);
+            var peer = await changes.ReadSyncItemsAsync(second, [105, 106, 999]);
+            Assert.False(Assert.Single(peer).IsDeleted);
+            Assert.Equal(105, peer[0].MessageId);
+            Assert.Equal(0, peer[0].SyncVersion);
+            var query = ServiceProvider.GetRequiredService<IMessageRepository>();
+            Assert.False(await query.CanReadAsync(first, 105));
+            Assert.True(await query.CanReadAsync(second, 105));
         });
     }
 

@@ -95,6 +95,7 @@ public class SendMessageToClientDistributedEventHandler : SendToClientDistribute
         var command = eventData.Command;
 
         var members = (await SessionUnitCacheManager.GetMembersAsync(sessionId))
+            .Where(unit => command != CommandConsts.MessageDeleted || unit.Id == eventData.TargetSessionUnitId)
             .Where(unit => command != CommandConsts.MessageRollbacked || !eventData.Message.IsPrivate ||
                 unit.Id == eventData.Message.SenderSessionUnitId || unit.Id == eventData.Message.ReceiverSessionUnitId)
             .ToList();

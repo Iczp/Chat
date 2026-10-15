@@ -84,13 +84,16 @@ public partial class MessageAppService
             var entries = await cache.GetChangeWindowAsync(unit.SessionId.Value, head.Epoch, cursor.Version, upper,
                 perScope, () => ChangeRepository.ReadChangesAsync(unit.SessionId.Value, cursor.Version, upper, perScope, token), token);
             var setting = await SessionUnitSettingManager.GetOrAddCacheAsync(unit.Id);
-            var eligible = entries.Where(x => OwnerMessageSpecification.IsVisible(new SessionMessageWindowCacheItem.Entry
+            var eligible = entries.Where(x => x.ChangeType == MessageChangeKind.Delete
+                ? x.ReceiverSessionUnitId == unit.Id
+                : OwnerMessageSpecification.IsVisible(new SessionMessageWindowCacheItem.Entry
             { Id = x.MessageId, CreationTime = x.CreationTime, IsPrivate = x.IsPrivate,
                 SenderSessionUnitId = x.SenderSessionUnitId, ReceiverSessionUnitId = x.ReceiverSessionUnitId }, unit.Id, setting)).ToList();
             var deleted = (await DeletedRecorderManager.GetRecorderMessageIdListAsync(unit.Id, eligible.Select(x => x.MessageId).ToList())).ToHashSet();
-            result.Items = eligible.Where(x => !deleted.Contains(x.MessageId)).Select(x => new MessageSyncChangeDto
+            result.Items = eligible.Where(x => x.ChangeType == MessageChangeKind.Delete || !deleted.Contains(x.MessageId)).Select(x => new MessageSyncChangeDto
             { MessageId = x.MessageId, SyncVersion = x.Version, ChangeType = x.ChangeType,
                 ChangedAt = x.ChangedAt, IsRollbacked = x.ChangeType == MessageChangeKind.Rollback,
+                IsDeleted = x.ChangeType == MessageChangeKind.Delete,
                 RollbackTime = x.ChangeType == MessageChangeKind.Rollback ? x.ChangedAt : null }).ToList();
             // Advance by scanned entries, including ones not visible to this member.
             var next = entries.Count == perScope ? entries[^1].Version : upper;

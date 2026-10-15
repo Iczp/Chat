@@ -27,6 +27,15 @@ public class MessageChange : Entity<Guid>
         SenderSessionUnitId = message.SenderSessionUnitId;
         ReceiverSessionUnitId = message.ReceiverSessionUnitId;
     }
+
+    // For Delete, ReceiverSessionUnitId is the affected member, not the
+    // original message recipient. This scope survives without a source row.
+    public MessageChange(Guid id, Message message, long version, DateTime time, Guid deletedFor)
+        : this(id, message, version, time)
+    {
+        ChangeType = MessageChangeKind.Delete;
+        ReceiverSessionUnitId = deletedFor;
+    }
 }
 
 /// <summary>Serializes change commits without locking the hot Session row.</summary>

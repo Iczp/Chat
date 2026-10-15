@@ -10,6 +10,7 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.MessageServices;
 using IczpNet.Chat.SessionUnits;
+using IczpNet.Chat.SessionUnitSettings;
 using NSubstitute;
 using Volo.Abp.Authorization;
 using Volo.Abp.DependencyInjection;
@@ -46,6 +47,31 @@ public class MessageSecurity_Tests
         await service.Check(1);
         await Assert.ThrowsAsync<AbpAuthorizationException>(() => service.Check(1, 2));
         await Assert.ThrowsAsync<AbpAuthorizationException>(() => service.Check((long?)null));
+    }
+
+    [Fact]
+    public async Task Foreign_session_cannot_delete_messages()
+    {
+        var manager = Substitute.For<ISessionUnitSettingManager>();
+        var service = new SessionUnitSettingAppService(manager, Substitute.For<ISessionUnitRepository>(),
+            Substitute.For<Volo.Abp.Domain.Repositories.IRepository<IczpNet.Chat.ContactTags.ContactTag, Guid>>())
+            { LazyServiceProvider = OwnerServices(1) };
+        var unit = (SessionUnit)Activator.CreateInstance(typeof(SessionUnit), true);
+        typeof(SessionUnit).GetProperty(nameof(unit.Id))!.SetValue(unit, Guid.NewGuid());
+        typeof(SessionUnit).GetProperty(nameof(unit.OwnerId))!.SetValue(unit, 2L);
+        typeof(SessionUnit).GetProperty(nameof(unit.Setting))!.SetValue(unit, Activator.CreateInstance(typeof(SessionUnitSetting), true));
+        var units = Substitute.For<ISessionUnitManager>();
+        units.GetAsync(unit.Id).Returns(unit);
+        service.LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>().Returns(units);
+        await Assert.ThrowsAsync<AbpAuthorizationException>(() => service.DeleteMessageAsync(unit.Id, 105));
+        await manager.DidNotReceiveWithAnyArgs().DeleteMessageAsync(default, default);
+        var legacyManager = Substitute.For<IczpNet.Chat.DeletedRecorders.IDeletedRecorderManager>();
+        var legacy = new IczpNet.Chat.DeletedRecorders.DeletedRecorderAppService(legacyManager,
+            Substitute.For<Volo.Abp.Domain.Repositories.IRepository<IczpNet.Chat.DeletedRecorders.DeletedRecorder>>(),
+            Substitute.For<IczpNet.Chat.Devices.IDeviceResolver>()) { LazyServiceProvider = service.LazyServiceProvider };
+        await Assert.ThrowsAsync<AbpAuthorizationException>(() => legacy.SetDeletedAsync(new()
+            { SessionUnitId = unit.Id, MessageId = 105 }));
+        await legacyManager.DidNotReceiveWithAnyArgs().CreateIfNotContainsAsync(default, default, default);
     }
 
     [Fact]

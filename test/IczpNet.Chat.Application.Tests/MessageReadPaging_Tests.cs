@@ -9,6 +9,7 @@ using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.MessageServices;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.AspNetCore.Authorization;
 using NSubstitute;
 using Volo.Abp.Authorization;
 using Volo.Abp.DependencyInjection;
@@ -37,6 +38,9 @@ public class MessageReadPaging_Tests
             Unit = new SessionUnitCacheItem { Id = Guid.NewGuid(), SessionId = Guid.NewGuid(), OwnerId = ownerId };
 
             var lazy = Substitute.For<IAbpLazyServiceProvider>();
+            var authorization = Substitute.For<IAbpAuthorizationService>();
+            authorization.AuthorizeAsync(Arg.Any<object>(), Arg.Any<string>()).Returns(AuthorizationResult.Failed());
+            lazy.LazyGetRequiredService<IAuthorizationService>().Returns(authorization);
             var currentUser = Substitute.For<ICurrentUser>();
             var userId = Guid.NewGuid();
             currentUser.Id.Returns(userId);

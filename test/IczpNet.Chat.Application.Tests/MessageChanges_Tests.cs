@@ -110,6 +110,28 @@ public class MessageChanges_Tests
     }
 
     [Fact]
+    public async Task Deletion_is_returned_only_to_its_member_even_when_the_message_is_already_filtered_out()
+    {
+        var service = new Probe();
+        var baseline = Assert.Single(await service.Query());
+        service.Head = service.Head with { Version = 2 };
+        service.Entries.AddRange([
+            new() { MessageId = 5, Version = 1, ChangeType = MessageChangeKind.Delete,
+                IsPrivate = true, ReceiverSessionUnitId = service.Unit.Id },
+            new() { MessageId = 5, Version = 2, ChangeType = MessageChangeKind.Delete,
+                ReceiverSessionUnitId = Guid.NewGuid() }]);
+        service.DeletedRecorderManager.GetRecorderMessageIdListAsync(service.Unit.Id, Arg.Any<List<long>>()).Returns([5]);
+        service.SessionUnitSettingManager.GetOrAddCacheAsync(service.Unit.Id)
+            .Returns(new SessionUnitSettingCacheItem { IsKilled = true, ClearTime = DateTime.UtcNow });
+        var page = Assert.Single(await service.Query(baseline.NextCursor));
+        Assert.True(Assert.Single(page.Items).IsDeleted);
+        Assert.False(page.Items[0].IsRollbacked);
+        var other = Assert.Single(await service.Query(page.NextCursor, page.SnapshotCursor));
+        Assert.Empty(other.Items);
+        Assert.False(other.HasMore);
+    }
+
+    [Fact]
     public async Task Unowned_scope_is_not_queried_or_disclosed()
     {
         var service = new Probe();

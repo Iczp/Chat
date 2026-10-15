@@ -14,10 +14,17 @@ public class OwnerMessageSpecification : Specification<Message>
 {
     public virtual long OwnerId { get; }
     public Guid? SessionUnitId { get; }
+    public bool IncludeDeleted { get; }
     public OwnerMessageSpecification(long ownerId, Guid? sessionUnitId = null)
+        : this(ownerId, sessionUnitId, false)
+    {
+    }
+
+    public OwnerMessageSpecification(long ownerId, Guid? sessionUnitId, bool includeDeleted)
     {
         OwnerId = ownerId;
         SessionUnitId = sessionUnitId;
+        IncludeDeleted = includeDeleted;
     }
 
     public override Expression<Func<Message, bool>> ToExpression()
@@ -31,7 +38,7 @@ public class OwnerMessageSpecification : Specification<Message>
             (!d.Setting.HistoryFristTime.HasValue || x.CreationTime >= d.Setting.HistoryFristTime) &&
             (!d.Setting.HistoryLastTime.HasValue || x.CreationTime < d.Setting.HistoryLastTime) &&
             (!d.Setting.ClearTime.HasValue || x.CreationTime > d.Setting.ClearTime) &&
-            !x.DeletedList.Any(r => r.SessionUnitId == d.Id));
+            (IncludeDeleted || !x.DeletedList.Any(r => r.SessionUnitId == d.Id)));
     }
 
     public static bool IsVisible(SessionMessageWindowCacheItem.Entry message, Guid sessionUnitId, SessionUnitSettingCacheItem setting)

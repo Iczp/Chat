@@ -331,11 +331,12 @@ public class SessionUnitSettingAppService(
     /// <param name="messageId">消息Id</param>
     /// <returns></returns>
     [HttpPost]
+    [Volo.Abp.Uow.UnitOfWork(isTransactional: true)]
     public virtual async Task DeleteMessageAsync([Required] Guid sessionUnitId, long messageId)
     {
         var entity = await GetAndCheckPolicyAsync(DeleteMessagePolicyName, sessionUnitId);
 
-        throw new NotImplementedException();
+        await SessionUnitSettingManager.DeleteMessageAsync(entity.Id, messageId);
     }
 
     /// <summary>

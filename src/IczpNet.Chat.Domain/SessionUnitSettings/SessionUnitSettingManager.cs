@@ -16,6 +16,16 @@ using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.ObjectMapping;
+using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.Options;
+using IczpNet.Chat.Commands;
+using IczpNet.Chat.Hosting;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.DependencyInjection;
+using Volo.Abp;
+using Volo.Abp.Uow;
+using Volo.Abp.Threading;
+using Volo.Abp.EventBus.Distributed;
 
 
 namespace IczpNet.Chat.SessionUnitSettings;
@@ -158,9 +168,35 @@ public class SessionUnitSettingManager(
     }
 
     /// <inheritdoc />
-    public virtual Task<SessionUnitSetting> DeleteMessageAsync(Guid sessionUnitId, long messageId)
+    public virtual async Task<SessionUnitSetting> DeleteMessageAsync(Guid sessionUnitId, long messageId)
     {
-        throw new NotImplementedException();
+        if (!LazyServiceProvider.LazyGetRequiredService<IOptions<MessageOptions>>().Value.ChangeSyncEnabled)
+            throw new BusinessException("Chat:MessageChangeSyncDisabled");
+        if (messageId <= 0) throw new BusinessException("Chat:MessageUnavailable");
+        var change = await LazyServiceProvider.LazyGetRequiredService<IMessageChangeRepository>()
+            .AppendDeleteAsync(sessionUnitId, messageId, Clock.Now,
+                LazyServiceProvider.LazyGetRequiredService<ICancellationTokenProvider>().Token);
+        var uow = LazyServiceProvider.LazyGetRequiredService<IUnitOfWorkManager>().Current
+            ?? throw new InvalidOperationException("Message deletion requires a unit of work.");
+        if (!change.AlreadyApplied)
+        {
+            var factory = LazyServiceProvider.LazyGetRequiredService<IServiceScopeFactory>();
+            var notification = new SendMessageToClientDistributedEto
+            {
+                Command = CommandConsts.MessageDeleted, TargetSessionUnitId = sessionUnitId,
+                HostName = LazyServiceProvider.LazyGetRequiredService<ICurrentHosted>().Name,
+                MessageId = messageId,
+                Message = new MessageInfo<object> { Id = messageId, SessionId = change.SessionId, SyncVersion = change.Version },
+            };
+            uow.OnCompleted(async () =>
+            {
+                using var scope = factory.CreateScope();
+                await scope.ServiceProvider.GetRequiredService<IDistributedEventBus>()
+                    .PublishAsync(notification, onUnitOfWorkComplete: false, useOutbox: false);
+            });
+        }
+        await uow.SaveChangesAsync();
+        return await GetAsync(sessionUnitId);
     }
 
     /// <inheritdoc />
