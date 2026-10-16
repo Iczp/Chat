@@ -19,11 +19,14 @@ public class DeviceManager(
     {
         if (options.Value.UseAppDevice)
         {
-            var target = await LazyServiceProvider.LazyGetRequiredService<IczpNet.AppDevice.Devices.DeviceManager>()
-                .BindAuthenticatedAsync(CurrentTenant.Id, input.AppId ?? options.Value.DefaultAppId, input.RawDeviceId,
-                    new(DeviceType: input.RawDeviceType), input.UserId, input.RegistrationProof);
-            return new UserDevice { AppId = target.AppId, DeviceId = target.Id, UserId = input.UserId,
-                UserName = input.UserName, RawDeviceId = target.DeviceId, RawDeviceType = target.DeviceType };
+            var target = await LazyServiceProvider.LazyGetRequiredService<IczpNet.AppDevice.Devices.IDeviceManager>()
+                .BindUserDeviceAsync(new IczpNet.AppDevice.Devices.UserDeviceInput
+                {
+                    AppId = input.AppId ?? options.Value.DefaultAppId, RawDeviceId = input.RawDeviceId,
+                    RawDeviceType = input.RawDeviceType, UserId = input.UserId, UserName = input.UserName
+                });
+            return new UserDevice(target.UserId, target.DeviceRecordId, target.RawDeviceId, target.RawDeviceType, target.CreationTime)
+            { AppId = target.AppId, UserName = target.UserName, LastModificationTime = target.LastModificationTime };
         }
         if(options.Value.MigrationReadOnly)throw new Volo.Abp.BusinessException("AppDevice:MigrationReadOnly");
         var device = await DeviceRepository.FindAsync(x => x.DeviceId == input.RawDeviceId);

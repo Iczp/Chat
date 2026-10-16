@@ -11,7 +11,7 @@ namespace IczpNet.Chat;
 public class DeviceResolver_Tests
 {
     [Fact]
-    public async Task Chat_uses_shared_signed_identity_and_request_snapshot()
+    public async Task Chat_uses_client_identity_and_request_snapshot()
     {
         var http = new DefaultHttpContext();
         http.User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim("device_id", "signed") }, "test"));
@@ -21,15 +21,15 @@ public class DeviceResolver_Tests
         var accessor = new HttpContextAccessor { HttpContext = http };
         var current = new HttpCurrentDevice(accessor, Microsoft.Extensions.Options.Options.Create(new DeviceParsingOptions()));
         var resolver = new DeviceResolver(Microsoft.Extensions.Options.Options.Create(new DeviceOptions()), accessor, current);
-        Assert.Equal("signed", await resolver.GetDeviceIdAsync());
+        Assert.Equal("header", await resolver.GetDeviceIdAsync());
         Assert.Equal("phone", resolver.GetDeviceType());
         Assert.Equal("GotoIM", resolver.GetAppId());
-        Assert.True(current.Get().HasConflict);
+        Assert.False(current.Get().HasConflict);
         http.Request.Headers["App-Device-Id"] = "changed";
-        Assert.Equal("signed", resolver.GetParameter(resolver.GetDeviceIdKey()));
-        Assert.Equal("signed", resolver.GetParameter("app-device-id"));
-        Assert.True(await resolver.IsEqualsAsync("signed"));
-        Assert.False(await resolver.IsEqualsAsync("SIGNED"));
+        Assert.Equal("header", resolver.GetParameter(resolver.GetDeviceIdKey()));
+        Assert.Equal("header", resolver.GetParameter("app-device-id"));
+        Assert.True(await resolver.IsEqualsAsync("header"));
+        Assert.False(await resolver.IsEqualsAsync("HEADER"));
     }
 
     [Theory]

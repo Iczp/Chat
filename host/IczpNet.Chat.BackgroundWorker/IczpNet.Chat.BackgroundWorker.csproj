@@ -36,6 +36,7 @@
     <PackageReference Include="IczpNet.RedisDistributedEventBus" Version="0.0.10" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\IczpNet.AppDevice\src\IczpNet.AppDevice.EntityFrameworkCore\IczpNet.AppDevice.EntityFrameworkCore.csproj" />
     <ProjectReference Include="..\..\src\IczpNet.Chat.Application\IczpNet.Chat.Application.csproj" />
     <ProjectReference Include="..\..\src\IczpNet.Chat.EntityFrameworkCore\IczpNet.Chat.EntityFrameworkCore.csproj" />
     <ProjectReference Include="..\IczpNet.Chat.Host.Shared\IczpNet.Chat.Host.Shared.csproj" />

@@ -82,6 +82,12 @@ public class UserDevice : BaseEntity
         RawDeviceType = rawDeviceType;
     }
 
+    public UserDevice(Guid userId, Guid deviceId, string rawDeviceId, string rawDeviceType, DateTime creationTime)
+        : this(userId, deviceId, rawDeviceId, rawDeviceType)
+    {
+        CreationTime = creationTime;
+    }
+
     public override object[] GetKeys()
     {
         return [UserId, DeviceId];

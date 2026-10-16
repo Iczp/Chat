@@ -26,7 +26,10 @@ public class Program
             Log.Logger = new LoggerConfiguration().WithDailyLogFiles(builder.Configuration).CreateLogger();
             builder.Host.UseSerilog();
             Log.Information("Starting IczpNet.Chat.BackgroundWorker");
-            await builder.AddApplicationAsync<ChatBackgroundWorkerModule>();
+            if (builder.Configuration.GetValue("Device:UseAppDevice", false))
+                await builder.AddApplicationAsync<ChatAppDeviceBackgroundWorkerModule>();
+            else
+                await builder.AddApplicationAsync<ChatBackgroundWorkerModule>();
             var app = builder.Build();
             await app.InitializeApplicationAsync();
             await app.RunAsync();

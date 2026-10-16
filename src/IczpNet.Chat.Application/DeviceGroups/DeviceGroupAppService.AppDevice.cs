@@ -4,11 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using IczpNet.AppDevice.Devices;
 using IczpNet.Chat.Devices;
+using DeviceOptions = IczpNet.Chat.Devices.DeviceOptions;
 using Microsoft.Extensions.Options;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Security.Claims;
-using TargetManager=IczpNet.AppDevice.Devices.DeviceManager;
+using TargetManager=IczpNet.AppDevice.Devices.IDeviceManager;
 using TargetRepository=IczpNet.AppDevice.Devices.IDeviceRepository;
 
 namespace IczpNet.Chat.DeviceGroups;
@@ -22,17 +23,17 @@ public partial class DeviceGroupAppService
     }
     private bool UseAppDevice=>LazyServiceProvider.LazyGetRequiredService<IOptions<DeviceOptions>>().Value.UseAppDevice;
     private TargetRepository Store=>LazyServiceProvider.LazyGetRequiredService<TargetRepository>();
-    private TargetManager Rules=>LazyServiceProvider.LazyGetRequiredService<TargetManager>();
+    private IczpNet.AppDevice.DeviceGroups.IDeviceGroupManager Rules=>LazyServiceProvider.LazyGetRequiredService<IczpNet.AppDevice.DeviceGroups.IDeviceGroupManager>();
     private async Task<T> InDeviceScope<T>(string requested,Func<Guid?,string,Task<T>> action)
     {
         var app=IczpNet.AppDevice.Devices.Device.NormalizeIdentity(requested ?? LazyServiceProvider.LazyGetRequiredService<ICurrentDevice>().Get().AppId ??
             LazyServiceProvider.LazyGetRequiredService<IOptions<DeviceOptions>>().Value.DefaultAppId,64);
         var principal=LazyServiceProvider.LazyGetRequiredService<ICurrentPrincipalAccessor>().Principal;
-        Rules.RequireClientApp(principal.FindFirst("client_id")?.Value ?? principal.FindFirst("azp")?.Value,app);
-        using var scope=CurrentTenant.Change(TargetManager.ResolveTenantId(principal.Claims));return await action(CurrentTenant.Id,app);
+        LazyServiceProvider.LazyGetRequiredService<TargetManager>().RequireClientApp(principal.FindFirst("client_id")?.Value ?? principal.FindFirst("azp")?.Value,app);
+        using var scope=CurrentTenant.Change(IczpNet.AppDevice.Devices.DeviceManager.ResolveTenantId(principal.Claims));return await action(CurrentTenant.Id,app);
     }
     private async Task<Guid> TargetId(Guid? t,string a,Guid id)=>(await Store.FindLegacyAsync(t,a,LegacyDeviceImport.ChatSource,"Group",id))?.TargetId ?? id;
-    private async Task<List<DeviceGroupDetailDto>> Details(Guid? t,string a,IReadOnlyList<IczpNet.AppDevice.Devices.DeviceGroup> groups)
+    private async Task<List<DeviceGroupDetailDto>> Details(Guid? t,string a,IReadOnlyList<IczpNet.AppDevice.DeviceGroups.DeviceGroup> groups)
     {
         var ids=groups.Select(x=>x.Id).ToArray();
         var aliases=(await Store.LegacyTargetsAsync(t,a,LegacyDeviceImport.ChatSource,"Group",ids)).GroupBy(x=>x.TargetId).ToDictionary(x=>x.Key,x=>x.First().LegacyId);

@@ -1,6 +1,6 @@
 """SQL Server acceptance for the explicit device data importer.
 Creates two new disposable catalogs, never uses running business databases.
-Requires local Docker SQL and previously built Debug schema migrators.
+Requires local Docker SQL and built Release schema migrators.
 Credentials are inherited in child env only; no credential files are written.
 """
 import json, os, pathlib, subprocess, tempfile, uuid
@@ -27,7 +27,7 @@ def execute(command,env,expected=0):
 sql('CREATE DATABASE ['+SOURCE+']; CREATE DATABASE ['+TARGET+'];')
 print('Dedicated fixtures:',SOURCE,TARGET)
 settings=os.environ.copy();settings.update({'ConnectionStrings__AppDevice':connect(TARGET),'AppDevice__ExpectedDatabase':TARGET})
-execute(['dotnet',str(DEVICE/'host/IczpNet.AppDevice.SchemaMigrator/bin/Debug/net10.0/IczpNet.AppDevice.SchemaMigrator.dll')],settings)
+execute(['dotnet',str(DEVICE/'host/IczpNet.AppDevice.SchemaMigrator/bin/Release/net10.0/IczpNet.AppDevice.SchemaMigrator.dll')],settings)
 main=str(uuid.uuid4());duplicate=str(uuid.uuid4());group=str(uuid.uuid4());owner=str(uuid.uuid4());second=str(uuid.uuid4())
 sql("""
 CREATE TABLE Chat_Device(Id uniqueidentifier PRIMARY KEY,AppId nvarchar(64),DeviceId nvarchar(128),Name nvarchar(128),Platform nvarchar(64),DeviceType nvarchar(64),DeviceBrand nvarchar(128),Brand nvarchar(128),DeviceModel nvarchar(128),Model nvarchar(128),OsVersion nvarchar(128),AppVersion nvarchar(64),CreationTime datetime2,IsEnabled bit,IsDeleted bit);
@@ -40,12 +40,26 @@ INSERT Chat_UserDevice VALUES('%s','%s',N'app','2021-01-01'),('%s','%s',N'app','
 INSERT Chat_DeviceGroup VALUES('%s',N'import-team',N'original',0);
 INSERT Chat_DeviceGroupMap VALUES('%s','%s');
 """%(main,duplicate,main,owner,duplicate,owner,main,second,group,main,group),SOURCE)
+sql("""
+ALTER TABLE Chat_Device ADD CreatorId uniqueidentifier,LastModificationTime datetime2,ExtraProperties nvarchar(max);
+ALTER TABLE Chat_UserDevice ADD UserName nvarchar(64),CreatorId uniqueidentifier,ExtraProperties nvarchar(max),RawDeviceId nvarchar(128),RawDeviceType nvarchar(64);
+ALTER TABLE Chat_DeviceGroup ADD CreationTime datetime2,CreatorId uniqueidentifier,ExtraProperties nvarchar(max);
+GO
+UPDATE Chat_Device SET CreatorId='%s',LastModificationTime='2022-01-01',ExtraProperties=N'{"fixture":true}';
+UPDATE Chat_UserDevice SET UserName=N'historical-owner',RawDeviceId=N'legacy-recorded-id',RawDeviceType=N'legacy-phone',CreatorId='%s',ExtraProperties=N'{"binding":true}';
+UPDATE Chat_DeviceGroup SET CreationTime='2019-01-01',CreatorId='%s',ExtraProperties=N'{"group":true}';
+CREATE TABLE Chat_AppVersion(Id uniqueidentifier PRIMARY KEY,AppId nvarchar(64));
+CREATE TABLE Chat_AppVersionDevice(AppVersionId uniqueidentifier,DeviceId uniqueidentifier);
+CREATE TABLE Chat_AppVersionDeviceGroup(AppVersionId uniqueidentifier,DeviceGroupId uniqueidentifier);
+INSERT Chat_AppVersion VALUES('%s',N'version-app');
+INSERT Chat_AppVersionDeviceGroup VALUES('%s','%s');
+"""%(owner,owner,owner,second,second,group),SOURCE)
 # Remember a source digest; no importer may mutate source tables.
 digest=lambda:sql("SELECT CONCAT((SELECT CHECKSUM_AGG(BINARY_CHECKSUM(*)) FROM Chat_Device),':',(SELECT CHECKSUM_AGG(BINARY_CHECKSUM(*)) FROM Chat_UserDevice),':',(SELECT CHECKSUM_AGG(BINARY_CHECKSUM(*)) FROM Chat_DeviceGroup),':',(SELECT CHECKSUM_AGG(BINARY_CHECKSUM(*)) FROM Chat_DeviceGroupMap));",SOURCE)
 before=digest()
 checkpoint=pathlib.Path(tempfile.gettempdir())/('appdevice-import-'+SUFFIX+'.json')
 settings.update({'ConnectionStrings__Chat':connect(SOURCE),'DeviceImport__ExpectedSourceDatabase':SOURCE,'DeviceImport__DefaultAppId':'app','DeviceImport__CheckpointFile':str(checkpoint)})
-command=['dotnet',str(ROOT/'host/IczpNet.Chat.SchemaMigrator/bin/Debug/net10.0/IczpNet.Chat.SchemaMigrator.dll'),'--import-devices','--host']
+command=['dotnet',str(ROOT/'host/IczpNet.Chat.SchemaMigrator/bin/Release/net10.0/IczpNet.Chat.SchemaMigrator.dll'),'--import-devices','--host']
 assert 'Plan completed' in execute(command,settings)
 assert sql('SELECT COUNT(*) FROM AppDevice_Device;',TARGET)=='0'
 assert not checkpoint.exists()
@@ -60,24 +74,28 @@ sql("INSERT AppDevice_Group(Id,TenantId,AppId,Name,NormalizedName,Description,Co
 output=execute(command+['--apply'],settings,1)
 assert 'LegacyGroupConflict' in output
 cursor=json.loads(checkpoint.read_text());assert cursor['Phase']=='groups'
-assert sql('SELECT COUNT(*) FROM AppDevice_LegacyLink;',TARGET)=='204'
+assert sql('SELECT COUNT(*) FROM AppDevice_LegacyLink;',TARGET)=='205'
 assert sql('SELECT COUNT(*) FROM AppDevice_UserDevice;',TARGET)=='0'
 # Remove only the fixture conflict; source remains frozen and unchanged.
 sql("DELETE AppDevice_Group WHERE Id='%s';"%conflict,TARGET)
 assert 'completed' in execute(command+['--apply'],settings)
 assert json.loads(checkpoint.read_text())['Phase']=='done'
-assert sql('SELECT COUNT(*) FROM AppDevice_Device;',TARGET)=='203'
-assert sql('SELECT COUNT(*) FROM AppDevice_LegacyLink;',TARGET)=='206'
+assert sql('SELECT COUNT(*) FROM AppDevice_Device;',TARGET)=='204'
+assert sql('SELECT COUNT(*) FROM AppDevice_LegacyLink;',TARGET)=='208'
 assert sql('SELECT COUNT(*) FROM AppDevice_UserDevice;',TARGET)=='2'
-assert sql('SELECT COUNT(*) FROM AppDevice_GroupMember;',TARGET)=='2'
+assert sql('SELECT COUNT(*) FROM AppDevice_DeviceGroupMap;',TARGET)=='3'
 assert sql("SELECT COUNT(DISTINCT TargetId) FROM AppDevice_LegacyLink WHERE Kind=N'Device' AND AppId=N'app' AND LegacyId IN('%s','%s');"%(main,duplicate),TARGET)=='1'
 assert sql("SELECT COUNT(*) FROM AppDevice_Device WHERE RegistrationProofHash<>N'';",TARGET)=='0'
+assert sql("SELECT COUNT(*) FROM AppDevice_UserDevice WHERE UserName=N'historical-owner' AND RawDeviceId=N'legacy-recorded-id' AND RawDeviceType=N'legacy-phone' AND CreationTime='2021-01-01' AND CreatorId='%s';"%owner,TARGET)=='2'
+assert sql("SELECT COUNT(*) FROM AppDevice_Device WHERE CreatorId='%s' AND LastModificationTime='2022-01-01';"%owner,TARGET)=='204'
+assert sql("SELECT COUNT(*) FROM AppDevice_Group WHERE CreationTime='2019-01-01' AND CreatorId='%s';"%owner,TARGET)=='3'
+assert sql("SELECT COUNT(*) FROM AppDevice_Device d JOIN AppDevice_DeviceGroupMap m ON m.DeviceId=d.Id JOIN AppDevice_Group g ON g.Id=m.DeviceGroupId WHERE d.AppId=N'version-app' AND g.AppId=N'version-app';",TARGET)=='1'
 assert 'Checkpoint is complete' in execute(command+['--apply'],settings)
 # Explicit replay with another checkpoint remains idempotent and retains target state.
 sql("UPDATE AppDevice_Device SET Name=N'changed' WHERE DeviceId=N'historical' AND AppId=N'app';",TARGET)
 settings['DeviceImport__CheckpointFile']=str(checkpoint)+'.replay'
 execute(command+['--apply'],settings)
-assert sql('SELECT COUNT(*) FROM AppDevice_Device;',TARGET)=='203'
+assert sql('SELECT COUNT(*) FROM AppDevice_Device;',TARGET)=='204'
 assert sql("SELECT COUNT(*) FROM AppDevice_Device WHERE DeviceId=N'historical' AND AppId=N'app' AND Name=N'changed';",TARGET)=='1'
 assert before==digest()
 assert sql("SELECT COUNT(*) FROM sys.tables WHERE name LIKE 'Chat[_]%';",TARGET)=='0'
@@ -87,11 +105,9 @@ if ddl_path:
     ddl=pathlib.Path(ddl_path).read_text(encoding='utf-8-sig')
     assert ddl.count('DROP CONSTRAINT')==2 and 'DROP INDEX' not in ddl and 'DROP TABLE' not in ddl and 'DROP COLUMN' not in ddl
     sql("""
-CREATE TABLE Chat_AppVersionDevice(AppVersionId uniqueidentifier,DeviceId uniqueidentifier,
- CONSTRAINT FK_Chat_AppVersionDevice_Chat_Device_DeviceId FOREIGN KEY(DeviceId) REFERENCES Chat_Device(Id));
+ALTER TABLE Chat_AppVersionDevice ADD CONSTRAINT FK_Chat_AppVersionDevice_Chat_Device_DeviceId FOREIGN KEY(DeviceId) REFERENCES Chat_Device(Id);
 CREATE INDEX IX_Chat_AppVersionDevice_DeviceId ON Chat_AppVersionDevice(DeviceId);
-CREATE TABLE Chat_AppVersionDeviceGroup(AppVersionId uniqueidentifier,DeviceGroupId uniqueidentifier,
- CONSTRAINT FK_Chat_AppVersionDeviceGroup_Chat_DeviceGroup_DeviceGroupId FOREIGN KEY(DeviceGroupId) REFERENCES Chat_DeviceGroup(Id));
+ALTER TABLE Chat_AppVersionDeviceGroup ADD CONSTRAINT FK_Chat_AppVersionDeviceGroup_Chat_DeviceGroup_DeviceGroupId FOREIGN KEY(DeviceGroupId) REFERENCES Chat_DeviceGroup(Id);
 CREATE INDEX IX_Chat_AppVersionDeviceGroup_DeviceGroupId ON Chat_AppVersionDeviceGroup(DeviceGroupId);
 CREATE TABLE __EFMigrationsHistory(MigrationId nvarchar(150) PRIMARY KEY,ProductVersion nvarchar(32));
 """,SOURCE)

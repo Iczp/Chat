@@ -5,11 +5,12 @@ using System.Threading.Tasks;
 using IczpNet.AppDevice.Devices;
 using IczpNet.Chat.DeviceGroups;
 using IczpNet.Chat.Devices;
+using DeviceOptions = IczpNet.Chat.Devices.DeviceOptions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Volo.Abp;
 using Volo.Abp.Security.Claims;
-using TargetManager=IczpNet.AppDevice.Devices.DeviceManager;
+using TargetManager=IczpNet.AppDevice.Devices.IDeviceManager;
 using TargetRepository=IczpNet.AppDevice.Devices.IDeviceRepository;
 
 namespace IczpNet.Chat.AppVersions;
@@ -22,7 +23,7 @@ public partial class AppVersionAppService
     {
         var principal=LazyServiceProvider.LazyGetRequiredService<ICurrentPrincipalAccessor>().Principal;
         LazyServiceProvider.LazyGetRequiredService<TargetManager>().RequireClientApp(principal.FindFirst("client_id")?.Value ?? principal.FindFirst("azp")?.Value,app);
-        return TargetManager.ResolveTenantId(principal.Claims);
+        return IczpNet.AppDevice.Devices.DeviceManager.ResolveTenantId(principal.Claims);
     }
     private async Task CheckAppDeviceGroupsAsync(string app,List<Guid> ids)
     {

@@ -10,7 +10,7 @@ using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Security.Claims;
 using TargetDevice = IczpNet.AppDevice.Devices.Device;
-using TargetManager = IczpNet.AppDevice.Devices.DeviceManager;
+using TargetManager = IczpNet.AppDevice.Devices.IDeviceManager;
 using TargetRepository = IczpNet.AppDevice.Devices.IDeviceRepository;
 
 namespace IczpNet.Chat.Devices;
@@ -25,6 +25,7 @@ public partial class DeviceAppService
     private bool UseAppDevice => LazyServiceProvider.LazyGetRequiredService<IOptions<DeviceOptions>>().Value.UseAppDevice;
     private TargetRepository DeviceStore => LazyServiceProvider.LazyGetRequiredService<TargetRepository>();
     private TargetManager DeviceRules => LazyServiceProvider.LazyGetRequiredService<TargetManager>();
+    private IczpNet.AppDevice.DeviceGroups.IDeviceGroupManager GroupRules => LazyServiceProvider.LazyGetRequiredService<IczpNet.AppDevice.DeviceGroups.IDeviceGroupManager>();
     private string App(string requested = null) => TargetDevice.NormalizeIdentity(requested ??
         LazyServiceProvider.LazyGetRequiredService<ICurrentDevice>().Get().AppId ??
         LazyServiceProvider.LazyGetRequiredService<IOptions<DeviceOptions>>().Value.DefaultAppId, 64);
@@ -32,7 +33,7 @@ public partial class DeviceAppService
     {
         var principal = LazyServiceProvider.LazyGetRequiredService<ICurrentPrincipalAccessor>().Principal;
         DeviceRules.RequireClientApp(principal.FindFirst("client_id")?.Value ?? principal.FindFirst("azp")?.Value, app);
-        using var scope = CurrentTenant.Change(TargetManager.ResolveTenantId(principal.Claims));
+        using var scope = CurrentTenant.Change(IczpNet.AppDevice.Devices.DeviceManager.ResolveTenantId(principal.Claims));
         return await action(CurrentTenant.Id, app);
     }
     private Guid? DeviceUser()
@@ -71,11 +72,13 @@ public partial class DeviceAppService
             foreach(var snapshot in batch)
             {
                 var entity=entities[snapshot.Id];
-                var dto=entity.LegacyProfileJson==null ? new DeviceDetailDto() : JsonSerializer.Deserialize<DeviceDetailDto>(entity.LegacyProfileJson);
+                var dto=entity.LegacyProfileJson==null ? new DeviceDetailDto() : JsonSerializer.Deserialize<DeviceDetailDto>(entity.LegacyProfileJson,new JsonSerializerOptions { PropertyNameCaseInsensitive=true });
                 dto.Id=aliases.GetValueOrDefault(entity.Id,entity.Id);dto.AppId=app;dto.DeviceId=entity.DeviceId;dto.Name=entity.Name;dto.Platform=entity.Platform;
-                dto.DeviceType=entity.DeviceType;dto.Brand=entity.Brand;dto.DeviceBrand=entity.Brand;dto.Model=entity.Model;dto.DeviceModel=entity.Model;
+                dto.DeviceType=entity.DeviceType;dto.Brand=entity.Brand;dto.DeviceBrand=snapshot.Profile.DeviceBrand ?? entity.Brand;dto.Model=entity.Model;dto.DeviceModel=snapshot.Profile.DeviceModel ?? entity.Model;
                 dto.AppVersion=entity.AppVersion;dto.OsVersion=entity.OsVersion;dto.IsEnabled=entity.IsEnabled;dto.ConcurrencyStamp=entity.ConcurrencyStamp;
-                dto.RegistrationProof=null;dto.LastModificationTime=entity.LastModificationTime;
+                dto.RegistrationProof=null;dto.LastModificationTime=snapshot.LastModificationTime;
+                dto.CreationTime=snapshot.CreationTime;dto.CreatorId=snapshot.CreatorId;
+                if(snapshot.ExtraProperties!=null)foreach(var property in snapshot.ExtraProperties)dto.ExtraProperties[property.Key]=property.Value;
                 dto.Groups=snapshot.GroupIds.Where(groups.ContainsKey).Select(x=>groups[x]).ToList();result.Add(dto);
             }
         }
@@ -171,6 +174,6 @@ public partial class DeviceAppService
             if(groups.Count>200)throw new BusinessException("AppDevice:BatchLimit");
             var target=await TargetId(t,a,id);
             var wanted=(await DeviceStore.ResolveLegacyIdsAsync(t,a,LegacyDeviceImport.ChatSource,"Group",groups)).Values.Distinct().ToArray();
-            return await DeviceRules.ReplaceGroupsAsync(t,a,target,wanted);
+            return await GroupRules.ReplaceGroupsAsync(t,a,target,wanted);
         });
 }
