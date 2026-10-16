@@ -17,6 +17,15 @@ namespace IczpNet.Chat.Devices;
 
 public partial class DeviceAppService
 {
+    public virtual async Task<DeviceLogoutResult> LogoutAsync(IczpNet.AppDevice.DeviceLogoutInput input)
+    {
+        if (!UseAppDevice) throw new BusinessException("AppDevice:Unavailable");
+        if (input.AllUsers) await CheckPolicyAsync(IczpNet.Chat.Permissions.ChatPermissions.DevicePermissions.Delete);
+        var user = DeviceUser() ?? throw new Volo.Abp.Authorization.AbpAuthorizationException();
+        return await InDeviceScope(App(input.AppId), (tenant, app) =>
+            DeviceRules.LogoutAsync(tenant, app, input.DeviceId, input.AllUsers ? null : user, input.Reason));
+    }
+
     private void EnsureDeviceWritable()
     {
         if(!UseAppDevice && LazyServiceProvider.LazyGetRequiredService<IOptions<DeviceOptions>>().Value.MigrationReadOnly)

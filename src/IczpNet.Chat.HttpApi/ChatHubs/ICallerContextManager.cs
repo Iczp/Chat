@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.ConnectionPools;
+using IczpNet.Chat.ConnectionPools;
 using Microsoft.AspNetCore.SignalR;
 using System.Threading.Tasks;
 
@@ -11,6 +11,8 @@ public interface ICallerContextManager
     Task<CallerContext> ConnectedAsync(HubCallerContext context, ConnectedEto connectedEto);
 
     Task<bool> DisconnectedAsyncAsync(string connectionId);
+
+    Task AbortDeviceSessionsAsync(IczpNet.AppDevice.Devices.DeviceChangedEto notice);
 
     Task AbortAsync(string connectionId, string reason);
 }

@@ -1,4 +1,6 @@
 using IczpNet.Chat.Localization;
+using Microsoft.AspNetCore.SignalR;
+using IczpNet.Chat.ChatHubs;
 using Localization.Resources.AbpUi;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
@@ -31,6 +33,8 @@ public class ChatHttpApiModule : AbpModule
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        context.Services.AddTransient<DeviceSessionHubFilter>();
+        Configure<HubOptions<ChatHub>>(options => options.AddFilter<DeviceSessionHubFilter>());
         Configure<IczpNet.AppDevice.DeviceParsingOptions>(options =>
         {
             // Browser SignalR clients send device metadata in the hub query string.
