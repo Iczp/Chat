@@ -8,6 +8,8 @@ using System.Linq;
 using System;
 using IczpNet.AppDevice.Devices;
 using System.Threading.Tasks;
+using System.Security.Claims;
+using IczpNet.OpenIddict.Tokens;
 
 namespace IczpNet.Chat.ChatHubs;
 
@@ -38,6 +40,23 @@ public class CallerContextManager : ChatHubService, ICallerContextManager
         var result = ConnectionIdToContextMap.TryRemove(connectionId, out _);
 
         return Task.FromResult(result);
+    }
+
+    public async Task AbortRevokedTokensAsync(TokenRevokedEto notice)
+    {
+        foreach (var caller in ConnectionIdToContextMap.Values)
+        {
+            var principal = caller.Context.User;
+            if (principal == null) continue;
+            var matches = notice.All || (!string.IsNullOrEmpty(notice.TokenId) && principal.FindFirst(TokenRevocationKeys.TokenIdClaim)?.Value == notice.TokenId)
+                || (!string.IsNullOrEmpty(notice.AuthorizationId) && principal.FindFirst(TokenRevocationKeys.AuthorizationIdClaim)?.Value == notice.AuthorizationId)
+                || (!string.IsNullOrEmpty(notice.Subject) &&
+                    (principal.FindFirst("sub")?.Value ?? principal.FindFirst(ClaimTypes.NameIdentifier)?.Value) == notice.Subject);
+            // A delayed subject event must not kick a fresh login created after the revocation.
+            if (matches && !await LazyServiceProvider.LazyGetRequiredService<ITokenRevocationChecker>()
+                .IsTokenValidAsync(principal))
+                await AbortAsync(caller.Context.ConnectionId, "登录凭据已撤销，请重新登录。");
+        }
     }
 
     public async Task AbortDeviceSessionsAsync(DeviceChangedEto notice)

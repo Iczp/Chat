@@ -13,6 +13,7 @@ public interface ICallerContextManager
     Task<bool> DisconnectedAsyncAsync(string connectionId);
 
     Task AbortDeviceSessionsAsync(IczpNet.AppDevice.Devices.DeviceChangedEto notice);
+    Task AbortRevokedTokensAsync(IczpNet.OpenIddict.Tokens.TokenRevokedEto notice);
 
     Task AbortAsync(string connectionId, string reason);
 }

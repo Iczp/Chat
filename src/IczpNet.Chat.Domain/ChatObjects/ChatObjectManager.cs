@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Users;
+using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.ChatObjects;
 
@@ -191,6 +192,7 @@ public class ChatObjectManager(IChatObjectRepository repository) : TreeManager<C
         return await Repository.GetListAsync(x => x.AppUserId == userId);
     }
 
+    [UnitOfWork(isTransactional: false)]
     public virtual async Task<List<long>> GetIdListByUserIdAsync(Guid userId)
     {
         //return (await Repository.GetQueryableAsync())
@@ -199,10 +201,10 @@ public class ChatObjectManager(IChatObjectRepository repository) : TreeManager<C
         //    .ToList();
         return await UserChatObjectCache.GetOrAddAsync(userId, async () =>
         {
-            return (await Repository.GetQueryableAsync())
-            .Where(x => x.AppUserId == userId)
-            .Select(x => x.Id)
-            .ToList();
+            var query = (await Repository.GetQueryableAsync())
+                .Where(x => x.AppUserId == userId)
+                .Select(x => x.Id);
+            return await AsyncExecuter.ToListAsync(query);
         });
     }
 

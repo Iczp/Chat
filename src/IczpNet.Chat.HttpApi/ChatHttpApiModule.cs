@@ -15,6 +15,7 @@ namespace IczpNet.Chat;
 
 [DependsOn(
     typeof(ChatApplicationContractsModule),
+    typeof(IczpNet.OpenIddict.OpenIddictAspNetCoreModule),
     typeof(IczpNet.AppDevice.AppDeviceAspNetCoreModule),
     typeof(AbpAspNetCoreMvcModule))]
 //[DependsOn(typeof(AbpCommonsHttpApiModule))]

@@ -31,6 +31,7 @@
 
 	<ItemGroup>
         <ProjectReference Include="../../../IczpNet.AppDevice/src/IczpNet.AppDevice.AspNetCore/IczpNet.AppDevice.AspNetCore.csproj" />
+    <ProjectReference Include="../../../IczpNet.OpenIddict/src/IczpNet.OpenIddict.AspNetCore/IczpNet.OpenIddict.AspNetCore.csproj" />
 		<ProjectReference Include="..\..\..\IczpNet.AbpCommons\src\IczpNet.AbpCommons.HttpApi\IczpNet.AbpCommons.HttpApi.csproj" />
 		<PackageReference Include="System.Drawing.Common" Version="10.0.12" />
 		<PackageReference Include="Volo.Abp.AspNetCore.Mvc" Version="10.6.1" />

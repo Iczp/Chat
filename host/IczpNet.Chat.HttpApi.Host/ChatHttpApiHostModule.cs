@@ -59,6 +59,7 @@ using Volo.Abp.VirtualFileSystem;
 namespace IczpNet.Chat;
 [DependsOn(
 typeof(ChatApplicationModule),
+    typeof(IczpNet.OpenIddict.OpenIddictAspNetCoreModule),
     typeof(ChatEntityFrameworkCoreModule),
     typeof(ChatHttpApiModule),
     typeof(AbpAspNetCoreMvcUiMultiTenancyModule),
