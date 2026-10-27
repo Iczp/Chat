@@ -1,4 +1,4 @@
-﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
 using IczpNet.Chat.AiRuns;
 using IczpNet.Chat.ChatObjects;
@@ -6,7 +6,6 @@ using IczpNet.Chat.HttpRequests;
 using IczpNet.Chat.ListSets;
 using IczpNet.Chat.MessageReports;
 using IczpNet.Chat.Options;
-using IczpNet.Chat.ScanLogins;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.ShortIds;
 using Microsoft.Extensions.DependencyInjection;

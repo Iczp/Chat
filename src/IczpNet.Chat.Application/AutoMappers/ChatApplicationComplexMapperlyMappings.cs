@@ -26,7 +26,6 @@ using IczpNet.Chat.InvitationCodes;
 using IczpNet.Chat.InvitationCodes.Dtos;
 using IczpNet.Chat.Mottos;
 using IczpNet.Chat.Mottos.Dtos;
-using IczpNet.Chat.ScanLogins;
 using IczpNet.Chat.SessionBoxes;
 using IczpNet.Chat.ShopKeepers.Dtos;
 using IczpNet.Chat.ShopWaiters.Dtos;
@@ -672,24 +671,6 @@ public partial class ChatApplicationEntryValueUpdateInputToEntryValueMapper
     }
 
     private partial void MapPublicProperties(EntryValueUpdateInput source, EntryValue destination);
-}
-
-[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatApplicationGenerateInfoToGeneratedDtoMapper
-    : TwoWayMapperBase<GenerateInfo, GeneratedDto>
-{
-    public override partial GeneratedDto Map(GenerateInfo source);
-    public override partial void Map(GenerateInfo source, GeneratedDto destination);
-    public override partial GenerateInfo ReverseMap(GeneratedDto source);
-    public override partial void ReverseMap(GeneratedDto source, GenerateInfo destination);
-}
-
-[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatApplicationGenerateInfoToScannedDtoMapper
-    : MapperBase<GenerateInfo, ScannedDto>
-{
-    public override partial ScannedDto Map(GenerateInfo source);
-    public override partial void Map(GenerateInfo source, ScannedDto destination);
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]

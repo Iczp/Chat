@@ -1,6 +1,5 @@
 using IczpNet.Chat.ChatObjects;
 using IczpNet.AppDevice.Devices;
-using IczpNet.Chat.ScanLogins;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -17,7 +16,6 @@ namespace IczpNet.Chat.Controllers;
 [Route("internal/chat-auth")]
 public class InternalChatAuthController(
     IConfiguration configuration,
-    IScanLoginManager scanLoginManager,
     IChatObjectManager chatObjectManager,
     IDeviceManager deviceManager) : ControllerBase
 {
@@ -33,22 +31,6 @@ public class InternalChatAuthController(
         return CryptographicOperations.FixedTimeEquals(
             SHA256.HashData(Encoding.UTF8.GetBytes(expected)),
             SHA256.HashData(Encoding.UTF8.GetBytes(provided)));
-    }
-
-    [HttpGet("scan/{scanToken:guid}")]
-    public async Task<IActionResult> GetScanGrantAsync(Guid scanToken)
-    {
-        if (!IsAuthorized()) return Unauthorized();
-        var grant = await scanLoginManager.GetGrantedInfoAsync(scanToken);
-        return grant == null ? NotFound() : Ok(grant);
-    }
-
-    [HttpDelete("scan/{scanToken:guid}")]
-    public async Task<IActionResult> DeleteScanGrantAsync(Guid scanToken)
-    {
-        if (!IsAuthorized()) return Unauthorized();
-        await scanLoginManager.DeleteGrantedInfoAsync(scanToken);
-        return NoContent();
     }
 
     [HttpPost("personal-chat-object")]
