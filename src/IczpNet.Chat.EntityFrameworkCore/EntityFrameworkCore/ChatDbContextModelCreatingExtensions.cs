@@ -1,8 +1,5 @@
 using IczpNet.AbpCommons.EntityFrameworkCore;
 using IczpNet.Chat.AiRuns;
-using IczpNet.Chat.AppVersionDeviceGroups;
-using IczpNet.Chat.AppVersionDevices;
-using IczpNet.Chat.AppVersions;
 using IczpNet.Chat.Articles;
 using IczpNet.Chat.Attributes;
 using IczpNet.Chat.Blobs;
@@ -13,9 +10,6 @@ using IczpNet.Chat.Connections;
 using IczpNet.Chat.DbTables;
 using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Developers;
-using IczpNet.Chat.DeviceGroups;
-using IczpNet.Chat.DeviceGroupMaps;
-using IczpNet.Chat.Devices;
 using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.HttpRequests;
@@ -428,7 +422,7 @@ public static class ChatDbContextModelCreatingExtensions
                 //ChatGPT 优化 2025.11.20
                 //b.HasIndex(x => new { x.SessionId, x.IsDeleted, x.IsPrivate }).HasDatabaseName("IX_ChatMessage_CountQuery").IncludeProperties(x => new { x.Id, x.SenderSessionUnitId, x.ReceiverSessionUnitId });
 
-                
+
                 // 优化 GetList COUNT 的关键索引
                 //b.HasIndex(x => new
                 //{
@@ -525,47 +519,7 @@ public static class ChatDbContextModelCreatingExtensions
             //b.Property(x => x.MessageType).HasConversion<string>().HasMaxLength(32);
         });
 
-        builder.Entity<UserDevice>(b =>
-        {
-            b.HasKey(x => new { x.UserId, x.DeviceId });
-            b.HasOne(x => x.Device).WithMany(x => x.UserDeviceList).HasForeignKey(x => x.DeviceId).IsRequired(false);
-        });
 
-        builder.Entity<DeviceGroupMap>(b =>
-        {
-            b.HasKey(x => new { x.DeviceGroupId, x.DeviceId });
-            b.HasOne(x => x.Device).WithMany(x => x.DeviceGroupMapList).HasForeignKey(x => x.DeviceId).IsRequired(false);
-            b.HasOne(x => x.DeviceGroup).WithMany(x => x.DeviceGroupMapList).HasForeignKey(x => x.DeviceGroupId).IsRequired(false);
-        });
-
-        builder.Entity<AppVersionDevice>(b =>
-        {
-            b.HasKey(x => new { x.AppVersionId, x.DeviceId });
-            b.HasOne(x => x.AppVersion).WithMany(x => x.VersionDeviceList).HasForeignKey(x => x.AppVersionId).IsRequired(false);
-            b.Ignore(x => x.Device);
-            b.HasIndex(x => x.DeviceId);
-            builder.Entity<Device>().Ignore(x => x.AppVersionDeviceList);
-        });
-
-        builder.Entity<AppVersionDeviceGroup>(b =>
-        {
-            b.HasKey(x => new { x.AppVersionId, x.DeviceGroupId });
-            b.Ignore(x => x.DeviceGroup);
-            b.HasIndex(x => x.DeviceGroupId);
-            builder.Entity<IczpNet.Chat.DeviceGroups.DeviceGroup>().Ignore(x => x.AppVersionDeviceGroupList);
-        });
-
-        builder.Entity<AppVersion>(b =>
-        {
-            b.HasIndex(x => new { x.AppId, x.Platform, x.VersionCode }).IsDescending([false, false, true]).IsUnique();
-            b.HasIndex(x => x.VersionCode).IsDescending(true);
-            b.HasMany(x => x.AppVersionDeviceGroupList)
-                .WithOne(x => x.AppVersion)
-                .HasForeignKey(x => x.AppVersionId)
-                .OnDelete(DeleteBehavior.NoAction)
-                .IsRequired(false);
-
-        });
     }
 
     public static void ForEachEntitys(this ModelBuilder builder)

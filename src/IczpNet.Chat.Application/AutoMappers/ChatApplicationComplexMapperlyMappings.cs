@@ -1,5 +1,6 @@
 using IczpNet.Chat.AiRuns;
 using IczpNet.Chat.AppVersions;
+using TargetAppVersion = IczpNet.AppDevice.AppVersions.AppVersion;
 using IczpNet.Chat.Articles;
 using IczpNet.Chat.Blobs;
 using IczpNet.Chat.Blobs.Dtos;
@@ -85,44 +86,44 @@ public partial class ChatApplicationAiRunUpdateInputToAiRunMapper
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
 public partial class ChatApplicationAppVersionCreateInputToAppVersionMapper
-    : MapperBase<AppVersionCreateInput, AppVersion>
+    : MapperBase<AppVersionCreateInput, TargetAppVersion>
 {
-    public override AppVersion Map(AppVersionCreateInput source)
+    public override TargetAppVersion Map(AppVersionCreateInput source)
     {
         if (source is null) return default!;
-        var destination = new AppVersion();
+        var destination = new TargetAppVersion(System.Guid.NewGuid(), null);
         Map(source, destination);
         return destination;
     }
 
-    public override void Map(AppVersionCreateInput source, AppVersion destination)
+    public override void Map(AppVersionCreateInput source, TargetAppVersion destination)
     {
         if (source is null || destination is null) return;
         MapPublicProperties(source, destination);
     }
 
-    private partial void MapPublicProperties(AppVersionCreateInput source, AppVersion destination);
+    private partial void MapPublicProperties(AppVersionCreateInput source, TargetAppVersion destination);
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
 public partial class ChatApplicationAppVersionUpdateInputToAppVersionMapper
-    : MapperBase<AppVersionUpdateInput, AppVersion>
+    : MapperBase<AppVersionUpdateInput, TargetAppVersion>
 {
-    public override AppVersion Map(AppVersionUpdateInput source)
+    public override TargetAppVersion Map(AppVersionUpdateInput source)
     {
         if (source is null) return default!;
-        var destination = new AppVersion();
+        var destination = new TargetAppVersion(System.Guid.NewGuid(), null);
         Map(source, destination);
         return destination;
     }
 
-    public override void Map(AppVersionUpdateInput source, AppVersion destination)
+    public override void Map(AppVersionUpdateInput source, TargetAppVersion destination)
     {
         if (source is null || destination is null) return;
         MapPublicProperties(source, destination);
     }
 
-    private partial void MapPublicProperties(AppVersionUpdateInput source, AppVersion destination);
+    private partial void MapPublicProperties(AppVersionUpdateInput source, TargetAppVersion destination);
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
@@ -632,93 +633,6 @@ public partial class ChatApplicationDeveloperToDeveloperDtoMapper
     public override partial void Map(Developer source, DeveloperDto destination);
     public override partial Developer ReverseMap(DeveloperDto source);
     public override partial void ReverseMap(DeveloperDto source, Developer destination);
-}
-
-[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatApplicationDeviceCreateInputToDeviceMapper
-    : MapperBase<DeviceCreateInput, Device>
-{
-    public override Device Map(DeviceCreateInput source)
-    {
-        if (source is null) return default!;
-        var destination = new Device();
-        Map(source, destination);
-        return destination;
-    }
-
-    public override void Map(DeviceCreateInput source, Device destination)
-    {
-        if (source is null || destination is null) return;
-        MapPublicProperties(source, destination);
-    }
-
-    private partial void MapPublicProperties(DeviceCreateInput source, Device destination);
-}
-
-[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatApplicationDeviceUpdateInputToDeviceMapper
-    : MapperBase<DeviceUpdateInput, Device>
-{
-    public override Device Map(DeviceUpdateInput source)
-    {
-        if (source is null) return default!;
-        var destination = new Device();
-        Map(source, destination);
-        return destination;
-    }
-
-    public override void Map(DeviceUpdateInput source, Device destination)
-    {
-        if (source is null || destination is null) return;
-        MapPublicProperties(source, destination);
-    }
-
-    [MapperIgnoreTarget(nameof(Device.ConcurrencyStamp))]
-    private partial void MapPublicProperties(DeviceUpdateInput source, Device destination);
-}
-
-[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatApplicationDeviceGroupCreateInputToDeviceGroupMapper
-    : MapperBase<DeviceGroupCreateInput, DeviceGroup>
-{
-    public override DeviceGroup Map(DeviceGroupCreateInput source)
-    {
-        if (source is null) return default!;
-        var destination = new DeviceGroup();
-        Map(source, destination);
-        return destination;
-    }
-
-    public override void Map(DeviceGroupCreateInput source, DeviceGroup destination)
-    {
-        if (source is null || destination is null) return;
-        MapPublicProperties(source, destination);
-    }
-
-    [MapperIgnoreTarget(nameof(DeviceGroup.ConcurrencyStamp))]
-    private partial void MapPublicProperties(DeviceGroupCreateInput source, DeviceGroup destination);
-}
-
-[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatApplicationDeviceGroupUpdateInputToDeviceGroupMapper
-    : MapperBase<DeviceGroupUpdateInput, DeviceGroup>
-{
-    public override DeviceGroup Map(DeviceGroupUpdateInput source)
-    {
-        if (source is null) return default!;
-        var destination = new DeviceGroup();
-        Map(source, destination);
-        return destination;
-    }
-
-    public override void Map(DeviceGroupUpdateInput source, DeviceGroup destination)
-    {
-        if (source is null || destination is null) return;
-        MapPublicProperties(source, destination);
-    }
-
-    [MapperIgnoreTarget(nameof(DeviceGroup.ConcurrencyStamp))]
-    private partial void MapPublicProperties(DeviceGroupUpdateInput source, DeviceGroup destination);
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]

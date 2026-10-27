@@ -16,7 +16,7 @@ public sealed class DeviceSessionHubFilter(IDeviceManager devices, IConfiguratio
             context.Abort();
             throw new HubException("登录凭据已撤销，请重新登录。");
         }
-        if (!configuration.GetValue("Device:UseAppDevice", false) || context.User == null) return;
+        if (context.User == null) return;
         var ticket = DeviceSessionTicket.Read(context.User);
         if (ticket == null || await devices.IsSessionValidAsync(ticket, context.ConnectionAborted)) return;
         context.Abort();

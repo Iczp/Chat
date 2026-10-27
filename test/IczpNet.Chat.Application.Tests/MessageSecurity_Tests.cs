@@ -68,7 +68,7 @@ public class MessageSecurity_Tests
         var legacyManager = Substitute.For<IczpNet.Chat.DeletedRecorders.IDeletedRecorderManager>();
         var legacy = new IczpNet.Chat.DeletedRecorders.DeletedRecorderAppService(legacyManager,
             Substitute.For<Volo.Abp.Domain.Repositories.IRepository<IczpNet.Chat.DeletedRecorders.DeletedRecorder>>(),
-            Substitute.For<IczpNet.Chat.Devices.IDeviceResolver>()) { LazyServiceProvider = service.LazyServiceProvider };
+            Substitute.For<IczpNet.AppDevice.Devices.IDeviceResolver>()) { LazyServiceProvider = service.LazyServiceProvider };
         await Assert.ThrowsAsync<AbpAuthorizationException>(() => legacy.SetDeletedAsync(new()
             { SessionUnitId = unit.Id, MessageId = 105 }));
         await legacyManager.DidNotReceiveWithAnyArgs().CreateIfNotContainsAsync(default, default, default);

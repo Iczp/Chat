@@ -13,8 +13,7 @@ namespace IczpNet.Chat.Devices;
 
 /// <inheritdoc />
 public partial class DeviceAppService(
-    IDeviceGroupRepository deviceGroupRepository,
-    IDeviceRepository repository) : CrudChatAppService<Device, DeviceDetailDto, DeviceDto, Guid, DeviceGetListInput, DeviceCreateInput, DeviceUpdateInput>(repository), IDeviceAppService
+    IczpNet.AppDevice.Devices.IDeviceRepository repository) : CrudChatAppService<IczpNet.AppDevice.Devices.Device, DeviceDetailDto, DeviceDto, Guid, DeviceGetListInput, DeviceCreateInput, DeviceUpdateInput>(repository), IDeviceAppService
 {
     protected override string GetPolicyName { get; set; } = ChatPermissions.DevicePermissions.GetItem;
     protected override string GetListPolicyName { get; set; } = ChatPermissions.DevicePermissions.GetList;
@@ -24,59 +23,10 @@ public partial class DeviceAppService(
     protected virtual string SetIsEnabledPolicyName { get; set; } = ChatPermissions.DevicePermissions.SetIsEnabled;
     protected virtual string SetSetGroupsPolicyName { get; set; } = ChatPermissions.DevicePermissions.SetGroups;
 
-    public IDeviceGroupRepository DeviceGroupRepository { get; } = deviceGroupRepository;
-
-    /// <inheritdoc />
-    protected override async Task<IQueryable<Device>> CreateFilteredQueryAsync(DeviceGetListInput input)
-    {
-        return (await base.CreateFilteredQueryAsync(input))
-            //.WhereIf(!string.IsNullOrWhiteSpace(input.Keyword), x => x.Name.Contains(input.Keyword))
-            .WhereIf(input.IsEnabled.HasValue, x => x.IsEnabled == input.IsEnabled)
-            .WhereIf(input.UserId.HasValue, x => x.UserDeviceList.Any(d => d.UserId == input.UserId))
-            .WhereIf(input.DeviceGroupId.HasValue, x => x.DeviceGroupMapList.Any(d => d.DeviceGroupId == input.DeviceGroupId))
-            .WhereIf(!string.IsNullOrEmpty(input.DeviceId), x => x.DeviceId == input.DeviceId)
-            .WhereIf(!string.IsNullOrEmpty(input.Platform), x => x.Platform == input.Platform)
-            .WhereIf(!string.IsNullOrEmpty(input.AppId), x => x.AppId == input.AppId)
-            ;
-    }
-
-    protected override IQueryable<Device> ApplySorting(IQueryable<Device> query, DeviceGetListInput input)
-    {
-        // Device is persisted independently from the transient SignalR connection
-        // cache, so it has no LastActiveTime column. Keep older clients working by
-        // using the closest durable timestamp for this legacy sort field.
-        if (!string.IsNullOrWhiteSpace(input.Sorting))
-        {
-            input.Sorting = input.Sorting.Replace(
-                "lastActiveTime",
-                nameof(Device.LastModificationTime),
-                StringComparison.OrdinalIgnoreCase);
-        }
-
-        return base.ApplySorting(query, input);
-    }
-
-    protected async Task CheckExistAsync(List<Guid> groupIdList)
-    {
-        var existIds = (await DeviceGroupRepository.GetQueryableAsync()).Where(x => groupIdList.Contains(x.Id)).Select(x => x.Id).ToList();
-
-        // 差集：找出数据库中不存在的 ID
-        var missingIds = groupIdList.Except(existIds).ToList();
-
-        Assert.If(missingIds.Count != 0, $"以下 GroupId 不存在: {string.Join(", ", missingIds)}");
-    }
-
     public virtual async Task<int> SetGroupsAsync(Guid id, List<Guid> groupIdList)
     {
-        EnsureDeviceWritable();
         await CheckPolicyAsync(SetSetGroupsPolicyName);
-        if (UseAppDevice) return await SetAppDeviceGroupsAsync(id, groupIdList);
-
-        await CheckExistAsync(groupIdList);
-
-        var entity = await Repository.GetAsync(id);
-
-        return entity.SetGroups(groupIdList);
+        return await SetAppDeviceGroupsAsync(id, groupIdList);
     }
     /// <summary>
     /// 注册设备
@@ -87,21 +37,8 @@ public partial class DeviceAppService(
     [Volo.Abp.Auditing.DisableAuditing]
     public virtual async Task<DeviceDetailDto> RegisterAsync(DeviceCreateOrUpdateInput input)
     {
-        EnsureDeviceWritable();
 
-        if (UseAppDevice) return await RegisterAppDeviceAsync(input);
-        var entity = await Repository.FindAsync(x => x.DeviceId == input.DeviceId);
-
-        if (entity == null)
-        {
-            // create
-            CreatePolicyName = string.Empty;
-            return await base.CreateAsync(input);
-        }
-
-        //upadte
-        UpdatePolicyName = string.Empty;
-        return await base.UpdateAsync(entity.Id, input);
+        return await RegisterAppDeviceAsync(input);
     }
 
     /// <summary>
@@ -114,7 +51,7 @@ public partial class DeviceAppService(
 
         return GetListAsync(new DeviceGetListInput()
         {
-            UserId = UseAppDevice ? DeviceUser() ?? throw new Volo.Abp.BusinessException("AppDevice:InvalidIdentity") : CurrentUser.Id,
+            UserId = DeviceUser() ?? throw new Volo.Abp.BusinessException("AppDevice:InvalidIdentity"),
             MaxResultCount = 999
         });
     }
@@ -126,9 +63,6 @@ public partial class DeviceAppService(
     /// <returns></returns>
     public virtual async Task<DeviceDetailDto> GetByDeviceIdAsync(string deivceId)
     {
-        if (UseAppDevice) return await GetAppDeviceByRawIdAsync(deivceId);
-        var entity = await Repository.GetAsync(x => x.DeviceId == deivceId);
-
-        return await MapToGetOutputDtoAsync(await Repository.GetAsync(x => x.DeviceId == deivceId));
+        return await GetAppDeviceByRawIdAsync(deivceId);
     }
 }

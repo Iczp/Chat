@@ -27,10 +27,7 @@ public class Program
                 .CreateLogger();
             builder.Host.UseSerilog();
             Log.Information("Starting IczpNet.Chat.HttpApi.Host. HostName:{HostName}", Dns.GetHostName());
-            if(builder.Configuration.GetValue("Device:UseAppDevice",false))
-                await builder.AddApplicationAsync<ChatAppDeviceHttpApiHostModule>();
-            else
-                await builder.AddApplicationAsync<ChatHttpApiHostModule>();
+            await builder.AddApplicationAsync<ChatAppDeviceHttpApiHostModule>();
             var app = builder.Build();
             await app.InitializeApplicationAsync();
             await app.RunAsync();

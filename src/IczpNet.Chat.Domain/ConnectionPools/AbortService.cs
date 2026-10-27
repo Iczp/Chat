@@ -24,12 +24,11 @@ public class AbortService(IDistributedEventBus distributedEventBus) : DomainServ
     [UnitOfWork(isTransactional: true)]
     public virtual async Task AbortAsync(List<string> connectionIdList, string reason)
     {
-        if (LazyServiceProvider.LazyGetRequiredService<IOptions<IczpNet.Chat.Devices.DeviceOptions>>().Value.UseAppDevice)
         {
             var devices = LazyServiceProvider.LazyGetRequiredService<IczpNet.AppDevice.Devices.IDeviceManager>();
             var principal = LazyServiceProvider.LazyGetRequiredService<ICurrentPrincipalAccessor>().Principal;
             var connections = await LazyServiceProvider.LazyGetRequiredService<IOnlineManager>().GetManyAsync(connectionIdList);
-            using var tenant = CurrentTenant.Change(DeviceManager.ResolveTenantId(principal.Claims));
+            using var tenant = CurrentTenant.Change(DeviceExtensions.ResolveTenantId(principal.Claims));
             foreach (var target in connections.Select(x => x.Value).Where(x => x?.UserId != null &&
                 !string.IsNullOrWhiteSpace(x.AppId) && !string.IsNullOrWhiteSpace(x.DeviceId))
                 .DistinctBy(x => (x.UserId, x.AppId, x.DeviceId))

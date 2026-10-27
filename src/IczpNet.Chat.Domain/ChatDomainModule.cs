@@ -52,7 +52,7 @@ public class ChatDomainModule : AbpModule
     {
         var configuration = context.Services.GetConfiguration();
 
-        Configure<IczpNet.Chat.Devices.DeviceOptions>(configuration.GetSection("Device"));
+
 
         context.Services.AddMapperlyObjectMapper<ChatDomainModule>();
 

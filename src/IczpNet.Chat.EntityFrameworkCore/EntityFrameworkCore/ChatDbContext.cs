@@ -1,6 +1,3 @@
-using IczpNet.Chat.AppVersionDeviceGroups;
-using IczpNet.Chat.AppVersionDevices;
-using IczpNet.Chat.AppVersions;
 using IczpNet.Chat.Articles;
 using IczpNet.Chat.Blobs;
 using IczpNet.Chat.ChatObjectCategories;
@@ -13,9 +10,6 @@ using IczpNet.Chat.ContactTags;
 using IczpNet.Chat.DbTables;
 using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Developers;
-using IczpNet.Chat.DeviceGroupMaps;
-using IczpNet.Chat.DeviceGroups;
-using IczpNet.Chat.Devices;
 using IczpNet.Chat.EntryNames;
 using IczpNet.Chat.EntryValues;
 using IczpNet.Chat.FavoritedRecorders;
@@ -182,7 +176,7 @@ public class ChatDbContext(DbContextOptions<ChatDbContext> options) : AbpDbConte
     public DbSet<WalletOrder> WalletOrder { get; set; }
 
     public DbSet<WalletRecorder> WalletRecorder { get; set; }
-    
+
     public DbSet<WalletBusiness> WalletBusiness { get; set; }
     public DbSet<PaymentPlatform> PaymentPlatform { get; set; }
     public DbSet<WalletRequest> RechargeRequest { get; set; }
@@ -201,19 +195,8 @@ public class ChatDbContext(DbContextOptions<ChatDbContext> options) : AbpDbConte
 
     public DbSet<ClientConfig> ClientConfig { get; set; }
 
-    public DbSet<Device> Device { get; set; }
 
-    public DbSet<DeviceGroup> DeviceGroup { get; set; }
 
-    public DbSet<DeviceGroupMap> DeviceGroupMap { get; set; }
-
-    public DbSet<UserDevice> UserDevice { get; set; }
-
-    public DbSet<AppVersion> AppVersion { get; set; }
-
-    public DbSet<AppVersionDevice> AppVersionDevice { get; set; }
-
-    public DbSet<AppVersionDeviceGroup> AppVersionDeviceGroup { get; set; }
 
 
     public DbSet<ScanCode> ScanCode { get; set; }

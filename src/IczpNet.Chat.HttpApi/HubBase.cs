@@ -1,5 +1,5 @@
 using IczpNet.Chat.ConnectionPools;
-using IczpNet.Chat.Devices;
+using IczpNet.AppDevice.Devices;
 using IczpNet.Chat.Hosting;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.CodeAnalysis;

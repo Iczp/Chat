@@ -1,6 +1,6 @@
 ﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.DeletedRecorders.Dtos;
-using IczpNet.Chat.Devices;
+using IczpNet.AppDevice.Devices;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
 using Microsoft.AspNetCore.Mvc;

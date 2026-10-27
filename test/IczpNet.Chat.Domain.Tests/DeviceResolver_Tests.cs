@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using System.Threading.Tasks;
 using IczpNet.AppDevice;
-using IczpNet.Chat.Devices;
+using IczpNet.AppDevice.Devices;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -19,8 +19,8 @@ public class DeviceResolver_Tests
         http.Request.Headers["App-DeviceType"] = "phone";
         http.Request.Headers["App-Id"] = "GotoIM";
         var accessor = new HttpContextAccessor { HttpContext = http };
-        var current = new HttpCurrentDevice(accessor, Microsoft.Extensions.Options.Options.Create(new DeviceParsingOptions()));
-        var resolver = new DeviceResolver(Microsoft.Extensions.Options.Options.Create(new DeviceOptions()), accessor, current);
+        var resolver = new DeviceResolver(Microsoft.Extensions.Options.Options.Create(new DeviceOptions()), accessor);
+        var current = resolver;
         Assert.Equal("header", await resolver.GetDeviceIdAsync());
         Assert.Equal("phone", resolver.GetDeviceType());
         Assert.Equal("GotoIM", resolver.GetAppId());
@@ -40,8 +40,7 @@ public class DeviceResolver_Tests
     {
         var http = new DefaultHttpContext(); http.Request.Path = path; http.Request.QueryString = new QueryString(query);
         var accessor = new HttpContextAccessor { HttpContext = http };
-        var resolver = new DeviceResolver(Microsoft.Extensions.Options.Options.Create(new DeviceOptions()), accessor,
-            new HttpCurrentDevice(accessor, Microsoft.Extensions.Options.Options.Create(new DeviceParsingOptions { AllowQuery = true })));
+        var resolver = new DeviceResolver(Microsoft.Extensions.Options.Options.Create(new DeviceOptions { AllowQuery = true }), accessor);
         Assert.Equal(expected, resolver.GetDeviceId());
     }
 
@@ -49,8 +48,7 @@ public class DeviceResolver_Tests
     public async Task Missing_device_in_background_context_is_safe()
     {
         var accessor = new HttpContextAccessor();
-        var resolver = new DeviceResolver(Microsoft.Extensions.Options.Options.Create(new DeviceOptions()), accessor,
-            new HttpCurrentDevice(accessor, Microsoft.Extensions.Options.Options.Create(new DeviceParsingOptions())));
+        var resolver = new DeviceResolver(Microsoft.Extensions.Options.Options.Create(new DeviceOptions()), accessor);
         Assert.Null(resolver.GetDeviceId());
         Assert.False(await resolver.IsEqualsAsync("missing"));
     }

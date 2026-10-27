@@ -1,6 +1,6 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.DataFilters;
-using IczpNet.Chat.Devices;
+using IczpNet.AppDevice.Devices;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionUnits;
 using System;

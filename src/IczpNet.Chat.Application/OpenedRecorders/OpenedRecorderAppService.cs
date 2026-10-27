@@ -1,5 +1,5 @@
 ﻿using IczpNet.Chat.BaseAppServices;
-using IczpNet.Chat.Devices;
+using IczpNet.AppDevice.Devices;
 using IczpNet.Chat.OpenedRecorders.Dtos;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;

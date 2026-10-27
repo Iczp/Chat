@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using IczpNet.AppDevice;
 using IczpNet.AppDevice.Devices;
+using IczpNet.AppDevice.AppVersions;
 using IczpNet.AppDevice.EntityFrameworkCore;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -24,9 +25,11 @@ namespace IczpNet.Chat.SchemaMigrator;
 public static class DeviceImportCommand
 {
     private record Cursor(string Phase,Guid? Key1,Guid? Key2,string? App,string Fingerprint);
-    private sealed record Row(string Phase,Guid Key1,Guid? Key2,string App,LegacyDeviceRecord? Device=null,
-        string? Name=null,string? Description=null,bool Deleted=false,Guid? User=null,Guid? Group=null,DateTime? BoundAt=null,Dictionary<string,object?>? Metadata=null);
-    private static readonly string[] Phases=["devices","groups","bindings","members"];
+    internal sealed record Row(string Phase,Guid Key1,Guid? Key2,string App,LegacyDeviceRecord? Device=null,
+        string? Name=null,string? Description=null,bool Deleted=false,Guid? User=null,Guid? Group=null,DateTime? BoundAt=null,Dictionary<string,object?>? Metadata=null,VersionData? Version=null);
+    internal sealed record VersionData(string Version,long VersionCode,string Platform,string Title,string? Content,string? Features,string? PageUrl,string PkgUrl,string? IssueDate,bool IsForce,bool IsWidget,bool IsPublic,bool IsEnabled);
+    private static readonly string[] DevicePhases=["devices","groups","bindings","members"];
+    private static readonly string[] VersionPhases=["versions","version-devices","version-groups"];
     private static readonly HashSet<string> ImportedMetadataFields = new(StringComparer.OrdinalIgnoreCase)
         { "CreationTime", "CreatorId", "LastModificationTime", "LastModifierId", "DeletionTime", "DeleterId", "ExtraProperties", "RawDeviceId", "RawDeviceType" };
     private static readonly HashSet<string> ProfileFields=typeof(IczpNet.Chat.Devices.DeviceDetailDto).GetProperties()
@@ -35,8 +38,11 @@ public static class DeviceImportCommand
     {
         try
         {
-            if(args.Any(x=>x is not ("--import-devices" or "--apply" or "--host") && !x.StartsWith("--tenant=",StringComparison.Ordinal)) || args.Distinct().Count()!=args.Length)
+            if(args.Any(x=>x is not ("--import-devices" or "--import-app-versions" or "--apply" or "--host") && !x.StartsWith("--tenant=",StringComparison.Ordinal)) || args.Distinct().Count()!=args.Length)
                 throw new InvalidOperationException("Unknown or duplicated device import arguments.");
+            var versions=args.Contains("--import-app-versions");
+            if(versions==args.Contains("--import-devices"))throw new InvalidOperationException("Choose exactly one import mode.");
+            var phases=versions ? VersionPhases : DevicePhases;
             var config=new ConfigurationBuilder().AddEnvironmentVariables().Build();
             var source=Guard(config.GetConnectionString("Chat"),config["DeviceImport:ExpectedSourceDatabase"]);
             var target=Guard(config.GetConnectionString("AppDevice"),config["AppDevice:ExpectedDatabase"]);
@@ -48,13 +54,17 @@ public static class DeviceImportCommand
             var app=IczpNet.AppDevice.Devices.Device.NormalizeIdentity(config["DeviceImport:DefaultAppId"],64);
             var apply=args.Contains("--apply");
             if(apply && !config.GetValue("DeviceImport:SourceFrozen",false))throw new InvalidOperationException("Explicit SourceFrozen=true is required for apply/resume.");
-            var fingerprint=Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new{source.DataSource,source.InitialCatalog,TargetServer=target.DataSource,TargetDb=target.InitialCatalog,tenant,app}))));
-            var checkpoint=config["DeviceImport:CheckpointFile"] ?? Path.Combine(Path.GetTempPath(),"AppDeviceImports",fingerprint+".json");
+            if(versions && apply && !config.GetValue("DeviceImport:TargetFrozen",false))throw new InvalidOperationException("Explicit TargetFrozen=true is required for version import apply/resume.");
+            var fingerprintInput=versions
+                ? JsonSerializer.Serialize(new{source.DataSource,source.InitialCatalog,TargetServer=target.DataSource,TargetDb=target.InitialCatalog,tenant,app,Mode="versions"})
+                : JsonSerializer.Serialize(new{source.DataSource,source.InitialCatalog,TargetServer=target.DataSource,TargetDb=target.InitialCatalog,tenant,app});
+            var fingerprint=Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(fingerprintInput)));
+            var checkpoint=config[versions ? "DeviceImport:VersionCheckpointFile" : "DeviceImport:CheckpointFile"] ?? Path.Combine(Path.GetTempPath(),"AppDeviceImports",fingerprint+".json");
             using var checkpointLock=apply ? OpenCheckpointLock(checkpoint) : null;
             var totals=new Dictionary<string,long>();
             // Always preflight the complete source, including on resume. Never log proofs or profile payloads.
             await CheckOrphansAsync(source.ConnectionString);
-            foreach(var phase in Phases)
+            foreach(var phase in phases)
             {
                 long count=0;await foreach(var row in ReadAsync(source.ConnectionString,app,new(phase,null,null,null,fingerprint)))
                 {Validate(row);count++;}
@@ -68,13 +78,13 @@ public static class DeviceImportCommand
                 using(var sql=new SqlConnection(target.ConnectionString))
                 {
                     await sql.OpenAsync();using var cmd=sql.CreateCommand();
-                    cmd.CommandText="SELECT CASE WHEN OBJECT_ID(N'AppDevice_LegacyLink') IS NOT NULL AND COL_LENGTH(N'AppDevice_Device',N'LegacyProfileJson') IS NOT NULL THEN 1 ELSE 0 END";
+                    cmd.CommandText=versions ? "SELECT CASE WHEN OBJECT_ID(N'AppDevice_AppVersion') IS NOT NULL AND OBJECT_ID(N'AppDevice_AppVersionDevice') IS NOT NULL AND OBJECT_ID(N'AppDevice_AppVersionDeviceGroup') IS NOT NULL AND OBJECT_ID(N'AppDevice_LegacyLink') IS NOT NULL THEN 1 ELSE 0 END" : "SELECT CASE WHEN OBJECT_ID(N'AppDevice_LegacyLink') IS NOT NULL AND COL_LENGTH(N'AppDevice_Device',N'LegacyProfileJson') IS NOT NULL THEN 1 ELSE 0 END";
                     if(Convert.ToInt32(await cmd.ExecuteScalarAsync())!=1)throw new InvalidOperationException("Run the dedicated device schema migrator first.");
                 }
-                var cursor=File.Exists(checkpoint)?JsonSerializer.Deserialize<Cursor>(await File.ReadAllTextAsync(checkpoint))!:new Cursor(Phases[0],null,null,null,fingerprint);
-                if(cursor.Fingerprint!=fingerprint || (!Phases.Contains(cursor.Phase) && cursor.Phase!="done"))throw new InvalidOperationException("Checkpoint source/target/scope mismatch.");
+                var cursor=File.Exists(checkpoint)?JsonSerializer.Deserialize<Cursor>(await File.ReadAllTextAsync(checkpoint))!:new Cursor(phases[0],null,null,null,fingerprint);
+                if(cursor.Fingerprint!=fingerprint || (!phases.Contains(cursor.Phase) && cursor.Phase!="done"))throw new InvalidOperationException("Checkpoint source/target/scope mismatch.");
                 if(cursor.Phase=="done"){Console.WriteLine("Checkpoint is complete. Use a new checkpoint for an explicit full recheck/import.");return 0;}
-                foreach(var phase in Phases.Skip(Array.IndexOf(Phases,cursor.Phase)))
+                foreach(var phase in phases.Skip(Array.IndexOf(phases,cursor.Phase)))
                 {
                     var batch=new List<Row>(200);
                     await foreach(var row in ReadAsync(source.ConnectionString,app,cursor with{Phase=phase}))
@@ -84,7 +94,7 @@ public static class DeviceImportCommand
                         await Checkpoint(checkpoint,cursor);Console.WriteLine($"Applied {phase}: batch {batch.Count}.");batch.Clear();
                     }
                     if(batch.Count>0){await ApplyAsync(application.ServiceProvider,tenant,batch);var last=batch[^1];cursor=new(phase,last.Key1,last.Key2,last.App,fingerprint);await Checkpoint(checkpoint,cursor);}
-                    var next=Array.IndexOf(Phases,phase)+1;cursor=new(next<Phases.Length?Phases[next]:"done",null,null,null,fingerprint);
+                    var next=Array.IndexOf(phases,phase)+1;cursor=new(next<phases.Length?phases[next]:"done",null,null,null,fingerprint);
                     await Checkpoint(checkpoint,cursor);
                 }
                 Console.WriteLine("Device import completed. Source tables were not changed. Keep device writers frozen until cutover verification completes.");return 0;
@@ -114,7 +124,7 @@ public static class DeviceImportCommand
         var absolute=Path.GetFullPath(path);Directory.CreateDirectory(Path.GetDirectoryName(absolute)!);
         var pending=absolute+".tmp";await File.WriteAllTextAsync(pending,JsonSerializer.Serialize(cursor));File.Move(pending,absolute,true);
     }
-    private static async Task ApplyAsync(IServiceProvider root,Guid? tenant,List<Row> rows)
+    internal static async Task ApplyAsync(IServiceProvider root,Guid? tenant,List<Row> rows)
     {
         using var scope=root.CreateScope();var s=scope.ServiceProvider;
         using var change=s.GetRequiredService<Volo.Abp.MultiTenancy.ICurrentTenant>().Change(tenant);
@@ -156,9 +166,50 @@ public static class DeviceImportCommand
                     }
                     break;
                 case "members":await importer.MemberAsync(tenant,row.App,row.Group!.Value,row.Key1);break;
+                case "versions":
+                    var data=row.Version!;
+                    var deviceRepository=s.GetRequiredService<IDeviceRepository>();
+                    await deviceRepository.LockAsync($"app-version:{tenant}:{row.Key1}");
+                    var existingLink=await deviceRepository.FindLegacyAsync(tenant,row.App,LegacyDeviceImport.ChatSource,"Version",row.Key1);
+                    if(existingLink!=null)
+                    {
+                        if(existingLink.TargetId!=row.Key1 || !await db.AppVersions.IgnoreQueryFilters().AnyAsync(x=>x.Id==existingLink.TargetId && x.TenantId==tenant && x.AppId==row.App))
+                            throw new BusinessException("AppDevice:LegacyMappingRequired");
+                        break;
+                    }
+                    if(await db.AppVersions.IgnoreQueryFilters().AnyAsync(x=>x.Id==row.Key1))
+                        throw new BusinessException("AppDevice:LegacyIdentityConflict");
+                    await deviceRepository.LockAsync($"version:{tenant}:{row.App}:{data.Platform}:{data.VersionCode}");
+                    if(await db.AppVersions.IgnoreQueryFilters().AnyAsync(x=>x.TenantId==tenant && x.AppId==row.App && x.Platform==data.Platform && x.VersionCode==data.VersionCode))
+                        throw new BusinessException("AppDevice:LegacyIdentityConflict");
+                    var version=new AppVersion(row.Key1,tenant){AppId=row.App,Version=data.Version,VersionCode=data.VersionCode,
+                        Platform=data.Platform,Title=data.Title,Content=data.Content,Features=data.Features,PageUrl=data.PageUrl,
+                        PkgUrl=data.PkgUrl,IssueDate=data.IssueDate,IsForce=data.IsForce,IsWidget=data.IsWidget,
+                        IsPublic=data.IsPublic,IsEnabled=data.IsEnabled};
+                    db.AppVersions.Add(version);
+                    RestoreImportedMetadata(db,version,row);
+                    db.Entry(version).Property(x=>x.IsDeleted).CurrentValue=row.Deleted;
+                    await deviceRepository.AddLegacyAsync(new LegacyDeviceLink(Guid.NewGuid(),tenant,row.App,LegacyDeviceImport.ChatSource,"Version",row.Key1,row.Key1));
+                    break;
+                case "version-devices":
+                case "version-groups":
+                    var versionId=await importer.ResolveAsync(tenant,row.App,"Version",row.Key1);
+                    var kind=row.Phase=="version-devices" ? "Device" : "Group";
+                    var targetId=await importer.ResolveAsync(tenant,row.App,kind,row.Key2!.Value);
+                    await s.GetRequiredService<IDeviceRepository>().LockAsync($"app-version:{tenant}:{versionId}");
+                    if(row.Phase=="version-devices")
+                    {
+                        if(!db.AppVersionDevices.Local.Any(x=>x.AppVersionId==versionId && x.DeviceId==targetId) &&
+                           !await db.AppVersionDevices.IgnoreQueryFilters().AnyAsync(x=>x.AppVersionId==versionId && x.DeviceId==targetId))
+                            db.AppVersionDevices.Add(new AppVersionDevice(tenant,versionId,targetId));
+                    }
+                    else if(!db.AppVersionDeviceGroups.Local.Any(x=>x.AppVersionId==versionId && x.DeviceGroupId==targetId) &&
+                            !await db.AppVersionDeviceGroups.IgnoreQueryFilters().AnyAsync(x=>x.AppVersionId==versionId && x.DeviceGroupId==targetId))
+                        db.AppVersionDeviceGroups.Add(new AppVersionDeviceGroup(tenant,versionId,targetId));
+                    break;
             }
         }
-        foreach(var app in rows.Select(x=>x.App).Distinct())
+        foreach(var app in rows.Where(x=>DevicePhases.Contains(x.Phase)).Select(x=>x.App).Distinct())
         {
             var records=notices.GetValueOrDefault(app) ?? [];
             var notice=new DeviceChangedEto(tenant,app,records.Select(x=>x.Id).Distinct().ToArray(),records.Count>0?"Profile":"Group",records.Select(x=>x.Raw).Distinct().ToArray());
@@ -187,6 +238,10 @@ public static class DeviceImportCommand
         if(row.Phase=="groups")new IczpNet.AppDevice.DeviceGroups.DeviceGroup(row.Key1,null,row.App,row.Name!,row.Description);
         if(row.Phase=="bindings" && (row.Name?.Length>64 || row.Name?.Any(char.IsControl)==true))throw new InvalidOperationException("Invalid historical user name.");
         if(row.Phase=="bindings" && row.User==Guid.Empty)throw new InvalidOperationException("Empty historical user.");
+        if(row.Version is { } v && (string.IsNullOrWhiteSpace(v.Version) || v.Version.Length>50 || string.IsNullOrWhiteSpace(v.Platform) || v.Platform.Length>50 || string.IsNullOrWhiteSpace(v.Title) || v.Title.Length>200 || string.IsNullOrWhiteSpace(v.PkgUrl) || v.PkgUrl.Length>500 || v.Content?.Length>5000 || v.Features?.Length>500 || v.PageUrl?.Length>500 || v.IssueDate?.Length>100 || row.App.Length>50))
+            throw new InvalidOperationException("Invalid historical version.");
+        if((row.Phase is "version-devices" or "version-groups") && (!row.Key2.HasValue || row.Key2==Guid.Empty))
+            throw new InvalidOperationException("Empty version target ID.");
     }
     private const string Scopes="""
         WITH Scopes AS (
@@ -215,6 +270,9 @@ public static class DeviceImportCommand
             "groups"=>"SELECT g.Id AS __Key1,CAST(NULL AS uniqueidentifier) AS __Key2,COALESCE(s.AppId,@DefaultApp) AS __Scope,g.* FROM Chat_DeviceGroup g LEFT JOIN GroupScopes s ON s.DeviceGroupId=g.Id",
             "bindings"=>"SELECT b.DeviceId AS __Key1,b.UserId AS __Key2,COALESCE(NULLIF(LTRIM(RTRIM(b.AppId)),N''),NULLIF(LTRIM(RTRIM(d.AppId)),N''),@DefaultApp) COLLATE Latin1_General_100_BIN2 AS __Scope,b.* FROM Chat_UserDevice b JOIN Chat_Device d ON d.Id=b.DeviceId",
             "members"=>"SELECT m.DeviceId AS __Key1,m.DeviceGroupId AS __Key2,s.AppId AS __Scope FROM Chat_DeviceGroupMap m JOIN Scopes s ON s.DeviceId=m.DeviceId",
+            "versions"=>"SELECT a.Id AS __Key1,CAST(NULL AS uniqueidentifier) AS __Key2,COALESCE(NULLIF(LTRIM(RTRIM(a.AppId)),N''),@DefaultApp) COLLATE Latin1_General_100_BIN2 AS __Scope,a.* FROM Chat_AppVersion a",
+            "version-devices"=>"SELECT v.AppVersionId AS __Key1,v.DeviceId AS __Key2,COALESCE(NULLIF(LTRIM(RTRIM(a.AppId)),N''),@DefaultApp) COLLATE Latin1_General_100_BIN2 AS __Scope FROM Chat_AppVersionDevice v JOIN Chat_AppVersion a ON a.Id=v.AppVersionId",
+            "version-groups"=>"SELECT v.AppVersionId AS __Key1,v.DeviceGroupId AS __Key2,COALESCE(NULLIF(LTRIM(RTRIM(a.AppId)),N''),@DefaultApp) COLLATE Latin1_General_100_BIN2 AS __Scope FROM Chat_AppVersionDeviceGroup v JOIN Chat_AppVersion a ON a.Id=v.AppVersionId",
             _=>throw new InvalidOperationException("Unknown import phase.")
         };
         await using var sql=new SqlConnection(connection);await sql.OpenAsync();await using var command=sql.CreateCommand();
@@ -234,7 +292,7 @@ public static class DeviceImportCommand
             var app=reader.GetString(reader.GetOrdinal("__Scope"));
             string? Text(string n)=>reader[n] is DBNull?null:Convert.ToString(reader[n]);
             var audit=new Dictionary<string,object?>();
-            for(var i=0;i<reader.FieldCount;i++)if(ImportedMetadataFields.Contains(reader.GetName(i)))
+            for(var i=0;i<reader.FieldCount;i++)if(ImportedMetadataFields.Contains(reader.GetName(i)) || (cursor.Phase=="versions" && reader.GetName(i)=="ConcurrencyStamp"))
                 audit[reader.GetName(i)]=reader.IsDBNull(i)?null:reader.GetValue(i);
             if(cursor.Phase=="devices")
             {
@@ -242,6 +300,8 @@ public static class DeviceImportCommand
                 var profile=new DeviceProfile(Text("Name"),Text("Platform"),Text("DeviceType"),Text("Brand")??Text("DeviceBrand"),Text("Model")??Text("DeviceModel"),Text("OsVersion"),Text("AppVersion"));
                 yield return new(cursor.Phase,id,k2,app,new(id,Text("DeviceId")??"",profile,Convert.ToDateTime(reader["CreationTime"]),Convert.ToBoolean(reader["IsEnabled"]),Convert.ToBoolean(reader["IsDeleted"]),JsonSerializer.Serialize(json),AllowMissingIdentity:string.IsNullOrWhiteSpace(Text("DeviceId"))),Metadata:audit);
             }
+            else if(cursor.Phase=="versions")yield return new(cursor.Phase,id,k2,app,Deleted:Convert.ToBoolean(reader["IsDeleted"]),Metadata:audit,
+                Version:new(Text("Version")!,Convert.ToInt64(reader["VersionCode"]),Text("Platform")!,Text("Title")!,Text("Content"),Text("Features"),Text("PageUrl"),Text("PkgUrl")!,Text("IssueDate"),Convert.ToBoolean(reader["IsForce"]),Convert.ToBoolean(reader["IsWidget"]),Convert.ToBoolean(reader["IsPublic"]),Convert.ToBoolean(reader["IsEnabled"])));
             else if(cursor.Phase=="groups")yield return new(cursor.Phase,id,k2,app,Name:Text("Name"),Description:Text("Description"),Deleted:Convert.ToBoolean(reader["IsDeleted"]),Metadata:audit);
             else if(cursor.Phase=="bindings")yield return new(cursor.Phase,id,k2,app,Name:Text("UserName"),User:k2,BoundAt:Convert.ToDateTime(reader["CreationTime"]),Metadata:audit);
             else yield return new(cursor.Phase,id,k2,app,Group:k2);

@@ -1,6 +1,7 @@
 // Generated from conventional CreateMap declarations. Keep complex maps in the profile until migrated.
 using IczpNet.Chat.AiRuns;
 using IczpNet.Chat.AppVersions;
+using TargetAppVersion = IczpNet.AppDevice.AppVersions.AppVersion;
 using IczpNet.Chat.Articles;
 using IczpNet.Chat.Articles.Dtos;
 using IczpNet.Chat.Blobs;
@@ -390,81 +391,31 @@ public partial class ChatApplicationScanHandlerToScanHandlerResultDtoMapper : Ma
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
-public partial class ChatApplicationAppVersionToAppVersionDtoMapper : MapperBase<AppVersion, AppVersionDto>
+public partial class ChatApplicationAppVersionToAppVersionDtoMapper : MapperBase<TargetAppVersion, AppVersionDto>
 {
-    public override partial AppVersionDto Map(AppVersion source);
+    [MapperIgnoreTarget(nameof(AppVersionDto.Groups))]
+    public override partial AppVersionDto Map(TargetAppVersion source);
 
-    public override partial void Map(AppVersion source, AppVersionDto destination);
+    [MapperIgnoreTarget(nameof(AppVersionDto.Groups))]
+    public override partial void Map(TargetAppVersion source, AppVersionDto destination);
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
-public partial class ChatApplicationAppVersionToAppVersionSampleDtoMapper : MapperBase<AppVersion, AppVersionSampleDto>
+public partial class ChatApplicationAppVersionToAppVersionSampleDtoMapper : MapperBase<TargetAppVersion, AppVersionSampleDto>
 {
-    public override partial AppVersionSampleDto Map(AppVersion source);
+    public override partial AppVersionSampleDto Map(TargetAppVersion source);
 
-    public override partial void Map(AppVersion source, AppVersionSampleDto destination);
+    public override partial void Map(TargetAppVersion source, AppVersionSampleDto destination);
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
-public partial class ChatApplicationAppVersionToAppVersionDetailDtoMapper : MapperBase<AppVersion, AppVersionDetailDto>
+public partial class ChatApplicationAppVersionToAppVersionDetailDtoMapper : MapperBase<TargetAppVersion, AppVersionDetailDto>
 {
-    public override partial AppVersionDetailDto Map(AppVersion source);
+    [MapperIgnoreTarget(nameof(AppVersionDto.Groups))]
+    public override partial AppVersionDetailDto Map(TargetAppVersion source);
 
-    public override partial void Map(AppVersion source, AppVersionDetailDto destination);
-}
-
-[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
-public partial class ChatApplicationDeviceGroupToDeviceGroupDtoMapper : MapperBase<DeviceGroup, DeviceGroupDto>
-{
-    [MapperIgnoreTarget("AppId")]
-    public override partial DeviceGroupDto Map(DeviceGroup source);
-
-    [MapperIgnoreTarget("AppId")]
-    public override partial void Map(DeviceGroup source, DeviceGroupDto destination);
-}
-
-[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
-public partial class ChatApplicationDeviceGroupToDeviceGroupSampleDtoMapper : MapperBase<DeviceGroup, DeviceGroupSampleDto>
-{
-    public override partial DeviceGroupSampleDto Map(DeviceGroup source);
-
-    public override partial void Map(DeviceGroup source, DeviceGroupSampleDto destination);
-}
-
-[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
-public partial class ChatApplicationDeviceGroupToDeviceGroupDetailDtoMapper : MapperBase<DeviceGroup, DeviceGroupDetailDto>
-{
-    [MapperIgnoreTarget("AppId")]
-    public override partial DeviceGroupDetailDto Map(DeviceGroup source);
-
-    [MapperIgnoreTarget("AppId")]
-    public override partial void Map(DeviceGroup source, DeviceGroupDetailDto destination);
-}
-
-[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
-public partial class ChatApplicationDeviceToDeviceDtoMapper : MapperBase<Device, DeviceDto>
-{
-    public override partial DeviceDto Map(Device source);
-
-    public override partial void Map(Device source, DeviceDto destination);
-}
-
-[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
-public partial class ChatApplicationDeviceToDeviceSampleDtoMapper : MapperBase<Device, DeviceSampleDto>
-{
-    public override partial DeviceSampleDto Map(Device source);
-
-    public override partial void Map(Device source, DeviceSampleDto destination);
-}
-
-[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
-public partial class ChatApplicationDeviceToDeviceDetailDtoMapper : MapperBase<Device, DeviceDetailDto>
-{
-    [MapperIgnoreTarget("RegistrationProof")]
-    public override partial DeviceDetailDto Map(Device source);
-
-    [MapperIgnoreTarget("RegistrationProof")]
-    public override partial void Map(Device source, DeviceDetailDto destination);
+    [MapperIgnoreTarget(nameof(AppVersionDto.Groups))]
+    public override partial void Map(TargetAppVersion source, AppVersionDetailDto destination);
 }
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]

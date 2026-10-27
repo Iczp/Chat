@@ -94,7 +94,6 @@ public class ChatHttpApiHostModule : AbpModule
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
-        Configure<Volo.Abp.AspNetCore.ExceptionHandling.AbpExceptionHttpStatusCodeOptions>(o=>o.Map("AppDevice:MigrationReadOnly",System.Net.HttpStatusCode.ServiceUnavailable));
         context.Services.AddUnifiedAbpTiming();
         context.Services.AddUnifiedAbpAntiforgery("Chat");
         context.Services.Replace(ServiceDescriptor.Transient<IDistributedCacheKeyNormalizer, SharedPermissionCacheKeyNormalizer>());

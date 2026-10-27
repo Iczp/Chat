@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using IczpNet.AppDevice.Devices;
 using IczpNet.Chat.DeviceGroups;
+using DeviceOptions = IczpNet.AppDevice.Devices.DeviceOptions;
 using Microsoft.Extensions.Options;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -19,19 +20,12 @@ public partial class DeviceAppService
 {
     public virtual async Task<DeviceLogoutResult> LogoutAsync(IczpNet.AppDevice.DeviceLogoutInput input)
     {
-        if (!UseAppDevice) throw new BusinessException("AppDevice:Unavailable");
         if (input.AllUsers) await CheckPolicyAsync(IczpNet.Chat.Permissions.ChatPermissions.DevicePermissions.Delete);
         var user = DeviceUser() ?? throw new Volo.Abp.Authorization.AbpAuthorizationException();
         return await InDeviceScope(App(input.AppId), (tenant, app) =>
             DeviceRules.LogoutAsync(tenant, app, input.DeviceId, input.AllUsers ? null : user, input.Reason));
     }
 
-    private void EnsureDeviceWritable()
-    {
-        if(!UseAppDevice && LazyServiceProvider.LazyGetRequiredService<IOptions<DeviceOptions>>().Value.MigrationReadOnly)
-            throw new BusinessException("AppDevice:MigrationReadOnly");
-    }
-    private bool UseAppDevice => LazyServiceProvider.LazyGetRequiredService<IOptions<DeviceOptions>>().Value.UseAppDevice;
     private TargetRepository DeviceStore => LazyServiceProvider.LazyGetRequiredService<TargetRepository>();
     private TargetManager DeviceRules => LazyServiceProvider.LazyGetRequiredService<TargetManager>();
     private IczpNet.AppDevice.DeviceGroups.IDeviceGroupManager GroupRules => LazyServiceProvider.LazyGetRequiredService<IczpNet.AppDevice.DeviceGroups.IDeviceGroupManager>();
@@ -42,7 +36,7 @@ public partial class DeviceAppService
     {
         var principal = LazyServiceProvider.LazyGetRequiredService<ICurrentPrincipalAccessor>().Principal;
         DeviceRules.RequireClientApp(principal.FindFirst("client_id")?.Value ?? principal.FindFirst("azp")?.Value, app);
-        using var scope = CurrentTenant.Change(IczpNet.AppDevice.Devices.DeviceManager.ResolveTenantId(principal.Claims));
+        using var scope = CurrentTenant.Change(IczpNet.AppDevice.Devices.DeviceExtensions.ResolveTenantId(principal.Claims));
         return await action(CurrentTenant.Id, app);
     }
     private Guid? DeviceUser()
@@ -113,12 +107,12 @@ public partial class DeviceAppService
         });
     public override async Task<DeviceDetailDto> GetAsync(Guid id)
     {
-        if(!UseAppDevice)return await base.GetAsync(id);await CheckGetPolicyAsync(id);
+        await CheckGetPolicyAsync(id);
         return await InDeviceScope(App(),async(t,a)=>await Detail(t,a,await TargetId(t,a,id)));
     }
     public override async Task<List<DeviceDetailDto>> GetManyAsync(List<Guid> ids)
     {
-        if(!UseAppDevice)return await base.GetManyAsync(ids);
+        
         if(ids.Count>200)throw new BusinessException("AppDevice:BatchLimit");
         await CheckGetPolicyAsync();
         return await InDeviceScope(App(),async(t,a)=>
@@ -129,7 +123,7 @@ public partial class DeviceAppService
     }
     public override async Task<PagedResultDto<DeviceDto>> GetListAsync(DeviceGetListInput input)
     {
-        if(!UseAppDevice)return await base.GetListAsync(input);await CheckGetListPolicyAsync(input);
+        await CheckGetListPolicyAsync(input);
         return await InDeviceScope(App(input.AppId),async(t,a)=>
         {
             Guid? group=input.DeviceGroupId.HasValue ? await TargetId(t,a,input.DeviceGroupId.Value,"Group") : null;
@@ -143,8 +137,7 @@ public partial class DeviceAppService
     }
     public override async Task<DeviceDetailDto> CreateAsync(DeviceCreateInput input)
     {
-        EnsureDeviceWritable();
-        if(!UseAppDevice)return await base.CreateAsync(input);await CheckCreatePolicyAsync();
+        await CheckCreatePolicyAsync();
         return await InDeviceScope(App(input.AppId),async(t,a)=>
         {
             var result=await DeviceRules.RegisterAsync(t,a,input.DeviceId,Profile(input),null,null,false);
@@ -154,8 +147,7 @@ public partial class DeviceAppService
     }
     public override async Task<DeviceDetailDto> UpdateAsync(Guid id,DeviceUpdateInput input)
     {
-        EnsureDeviceWritable();
-        if(!UseAppDevice)return await base.UpdateAsync(id,input);await CheckUpdatePolicyAsync();
+        await CheckUpdatePolicyAsync();
         return await InDeviceScope(App(input.AppId),async(t,a)=>
         {
             var target=await TargetId(t,a,id);
@@ -166,15 +158,13 @@ public partial class DeviceAppService
     }
     public override async Task DeleteAsync(Guid id)
     {
-        EnsureDeviceWritable();
-        if(!UseAppDevice){await base.DeleteAsync(id);return;}await CheckDeletePolicyAsync();
+        await CheckDeletePolicyAsync();
         await InDeviceScope(App(),async(t,a)=>{var target=await TargetId(t,a,id);var item=await DeviceStore.GetScopedAsync(t,a,target);
             await DeviceRules.EditAsync(t,a,target,item.ConcurrencyStamp,null,null,delete:true);return true;});
     }
     public override async Task DeleteManyAsync(List<Guid> ids)
     {
-        EnsureDeviceWritable();
-        if(!UseAppDevice){await base.DeleteManyAsync(ids);return;}if(ids.Count>200)throw new BusinessException("AppDevice:BatchLimit");
+        if(ids.Count>200)throw new BusinessException("AppDevice:BatchLimit");
         foreach(var id in ids)await DeleteAsync(id);
     }
     private Task<int> SetAppDeviceGroupsAsync(Guid id,List<Guid> groups)

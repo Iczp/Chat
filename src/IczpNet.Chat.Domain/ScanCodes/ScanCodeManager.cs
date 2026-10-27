@@ -1,5 +1,5 @@
 ﻿using IczpNet.AbpCommons;
-using IczpNet.Chat.Devices;
+using IczpNet.AppDevice.Devices;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;

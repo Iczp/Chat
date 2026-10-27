@@ -1,5 +1,5 @@
 using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.Devices;
+using IczpNet.AppDevice.Devices;
 using IczpNet.Chat.ScanLogins;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;

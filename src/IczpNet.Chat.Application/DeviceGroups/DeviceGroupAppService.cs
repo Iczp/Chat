@@ -11,8 +11,7 @@ namespace IczpNet.Chat.DeviceGroups;
 
 /// <inheritdoc />
 public partial class DeviceGroupAppService(
-    IDeviceRepository deviceRepository,
-    IDeviceGroupRepository repository) : CrudChatAppService<DeviceGroup, DeviceGroupDetailDto, DeviceGroupDto, Guid, DeviceGroupGetListInput, DeviceGroupCreateInput, DeviceGroupUpdateInput>(repository), IDeviceGroupAppService
+    IczpNet.AppDevice.DeviceGroups.IDeviceGroupRepository repository) : CrudChatAppService<IczpNet.AppDevice.DeviceGroups.DeviceGroup, DeviceGroupDetailDto, DeviceGroupDto, Guid, DeviceGroupGetListInput, DeviceGroupCreateInput, DeviceGroupUpdateInput>(repository), IDeviceGroupAppService
 {
     protected override string GetPolicyName { get; set; } = ChatPermissions.DeviceGroupPermissions.GetItem;
     protected override string GetListPolicyName { get; set; } = ChatPermissions.DeviceGroupPermissions.GetList;
@@ -21,32 +20,10 @@ public partial class DeviceGroupAppService(
     protected override string DeletePolicyName { get; set; } = ChatPermissions.DeviceGroupPermissions.Delete;
     protected virtual string SetIsEnabledPolicyName { get; set; } = ChatPermissions.DeviceGroupPermissions.SetIsEnabled;
     protected virtual string SetDevicesPolicyName { get; set; } = ChatPermissions.DeviceGroupPermissions.SetDevices;
-    public IDeviceRepository DeviceRepository { get; } = deviceRepository;
-
-    /// <inheritdoc />
-    protected override async Task<IQueryable<DeviceGroup>> CreateFilteredQueryAsync(DeviceGroupGetListInput input)
-    {
-        return (await base.CreateFilteredQueryAsync(input))
-            //.WhereIf(!string.IsNullOrWhiteSpace(input.Keyword), x => x.Name.Contains(input.Keyword))
-            ;
-    }
-
     public virtual async Task<int> SetDevicesAsync(Guid id, List<Guid> deviceIdList)
     {
-        EnsureDeviceWritable();
         await CheckPolicyAsync(SetDevicesPolicyName);
-        if(UseAppDevice)return await SetAppDeviceMembersAsync(id,deviceIdList);
-        var entity = await Repository.GetAsync(id);
-        return entity.SetDevices(deviceIdList);
+        return await SetAppDeviceMembersAsync(id,deviceIdList);
     }
 
-    protected async Task CheckExistAsync(List<Guid> deviceIdList)
-    {
-        var existIds = (await DeviceRepository.GetQueryableAsync()).Where(x => deviceIdList.Contains(x.Id)).Select(x => x.Id).ToList();
-
-        // 差集：找出数据库中不存在的 ID
-        var missingIds = deviceIdList.Except(existIds).ToList();
-
-        Assert.If(missingIds.Count != 0, $"以下 deviceId 不存在: {string.Join(", ", missingIds)}");
-    }
 }
