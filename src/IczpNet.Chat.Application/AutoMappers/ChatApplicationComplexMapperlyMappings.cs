@@ -1,6 +1,4 @@
 using IczpNet.Chat.AiRuns;
-using IczpNet.Chat.AppVersions;
-using TargetAppVersion = IczpNet.AppDevice.AppVersions.AppVersion;
 using IczpNet.Chat.Articles;
 using IczpNet.Chat.Blobs;
 using IczpNet.Chat.Blobs.Dtos;
@@ -19,8 +17,6 @@ using IczpNet.Chat.Articles.Dtos;
 using IczpNet.Chat.ContactTags.Dtos;
 using IczpNet.Chat.Developers;
 using IczpNet.Chat.Developers.Dtos;
-using IczpNet.Chat.DeviceGroups;
-using IczpNet.Chat.Devices;
 using IczpNet.Chat.Entries.Dtos;
 using IczpNet.Chat.EntryNames;
 using IczpNet.Chat.EntryNames.Dtos;
@@ -84,47 +80,6 @@ public partial class ChatApplicationAiRunUpdateInputToAiRunMapper
     private partial void MapPublicProperties(AiRunUpdateInput source, AiRun destination);
 }
 
-[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatApplicationAppVersionCreateInputToAppVersionMapper
-    : MapperBase<AppVersionCreateInput, TargetAppVersion>
-{
-    public override TargetAppVersion Map(AppVersionCreateInput source)
-    {
-        if (source is null) return default!;
-        var destination = new TargetAppVersion(System.Guid.NewGuid(), null);
-        Map(source, destination);
-        return destination;
-    }
-
-    public override void Map(AppVersionCreateInput source, TargetAppVersion destination)
-    {
-        if (source is null || destination is null) return;
-        MapPublicProperties(source, destination);
-    }
-
-    private partial void MapPublicProperties(AppVersionCreateInput source, TargetAppVersion destination);
-}
-
-[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatApplicationAppVersionUpdateInputToAppVersionMapper
-    : MapperBase<AppVersionUpdateInput, TargetAppVersion>
-{
-    public override TargetAppVersion Map(AppVersionUpdateInput source)
-    {
-        if (source is null) return default!;
-        var destination = new TargetAppVersion(System.Guid.NewGuid(), null);
-        Map(source, destination);
-        return destination;
-    }
-
-    public override void Map(AppVersionUpdateInput source, TargetAppVersion destination)
-    {
-        if (source is null || destination is null) return;
-        MapPublicProperties(source, destination);
-    }
-
-    private partial void MapPublicProperties(AppVersionUpdateInput source, TargetAppVersion destination);
-}
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
 public partial class ChatApplicationArticleCreateInputToArticleMapper

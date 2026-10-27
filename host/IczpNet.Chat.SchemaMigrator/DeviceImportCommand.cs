@@ -32,8 +32,18 @@ public static class DeviceImportCommand
     private static readonly string[] VersionPhases=["versions","version-devices","version-groups"];
     private static readonly HashSet<string> ImportedMetadataFields = new(StringComparer.OrdinalIgnoreCase)
         { "CreationTime", "CreatorId", "LastModificationTime", "LastModifierId", "DeletionTime", "DeleterId", "ExtraProperties", "RawDeviceId", "RawDeviceType" };
-    private static readonly HashSet<string> ProfileFields=typeof(IczpNet.Chat.Devices.DeviceDetailDto).GetProperties()
-        .Select(x=>x.Name).Where(x=>x is not ("RegistrationProof" or "ConcurrencyStamp" or "IsEnabled")).ToHashSet(StringComparer.OrdinalIgnoreCase);
+    // Historical source columns are intentionally independent of the removed Chat DTOs.
+    private static readonly HashSet<string> ProfileFields = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Name", "DeviceId", "Platform", "AppId", "Brand", "DeviceBrand", "DeviceModel", "DeviceType", "Model", "System", "Remarks",
+        "App", "AppLanguage", "AppName", "AppVersion", "AppVersionCode", "AppWgtVersion", "SDKVersion", "WindowTop", "WindowBottom",
+        "BrowserName", "BrowserVersion", "DevicePixelRatio", "DeviceOrientation", "FontSizeSetting", "Host", "HostFontSizeSetting",
+        "HostSDKVersion", "HostName", "HostVersion", "HostLanguage", "HostTheme", "HostPackageName", "Language", "OsName", "OsVersion",
+        "OsLanguage", "OsTheme", "PixelRatio", "ScreenWidth", "ScreenHeight", "StatusBarHeight", "Storage", "SwanNativeVersion",
+        "BluetoothEnabled", "LocationEnabled", "WifiEnabled", "CacheLocation", "Theme", "SafeArea", "SafeAreaInsets", "Ua",
+        "UniCompileVersion", "UniPlatform", "UniRuntimeVersion", "Version", "RomName", "RomVersion", "WindowWidth", "WindowHeight",
+        "NavigationBarHeight", "TitleBarHeight", "AppPlatform", "Id", "CreationTime", "CreatorId", "ExtraProperties", "LastModificationTime"
+    };
     public static async Task<int> RunAsync(string[] args)
     {
         try
@@ -201,11 +211,19 @@ public static class DeviceImportCommand
                     {
                         if(!db.AppVersionDevices.Local.Any(x=>x.AppVersionId==versionId && x.DeviceId==targetId) &&
                            !await db.AppVersionDevices.IgnoreQueryFilters().AnyAsync(x=>x.AppVersionId==versionId && x.DeviceId==targetId))
-                            db.AppVersionDevices.Add(new AppVersionDevice(tenant,versionId,targetId));
+                        {
+                            var relation = new AppVersionDevice(tenant,versionId,targetId);
+                            db.AppVersionDevices.Add(relation);
+                            RestoreImportedMetadata(db,relation,row);
+                        }
                     }
                     else if(!db.AppVersionDeviceGroups.Local.Any(x=>x.AppVersionId==versionId && x.DeviceGroupId==targetId) &&
                             !await db.AppVersionDeviceGroups.IgnoreQueryFilters().AnyAsync(x=>x.AppVersionId==versionId && x.DeviceGroupId==targetId))
-                        db.AppVersionDeviceGroups.Add(new AppVersionDeviceGroup(tenant,versionId,targetId));
+                    {
+                        var relation = new AppVersionDeviceGroup(tenant,versionId,targetId);
+                        db.AppVersionDeviceGroups.Add(relation);
+                        RestoreImportedMetadata(db,relation,row);
+                    }
                     break;
             }
         }
@@ -271,8 +289,8 @@ public static class DeviceImportCommand
             "bindings"=>"SELECT b.DeviceId AS __Key1,b.UserId AS __Key2,COALESCE(NULLIF(LTRIM(RTRIM(b.AppId)),N''),NULLIF(LTRIM(RTRIM(d.AppId)),N''),@DefaultApp) COLLATE Latin1_General_100_BIN2 AS __Scope,b.* FROM Chat_UserDevice b JOIN Chat_Device d ON d.Id=b.DeviceId",
             "members"=>"SELECT m.DeviceId AS __Key1,m.DeviceGroupId AS __Key2,s.AppId AS __Scope FROM Chat_DeviceGroupMap m JOIN Scopes s ON s.DeviceId=m.DeviceId",
             "versions"=>"SELECT a.Id AS __Key1,CAST(NULL AS uniqueidentifier) AS __Key2,COALESCE(NULLIF(LTRIM(RTRIM(a.AppId)),N''),@DefaultApp) COLLATE Latin1_General_100_BIN2 AS __Scope,a.* FROM Chat_AppVersion a",
-            "version-devices"=>"SELECT v.AppVersionId AS __Key1,v.DeviceId AS __Key2,COALESCE(NULLIF(LTRIM(RTRIM(a.AppId)),N''),@DefaultApp) COLLATE Latin1_General_100_BIN2 AS __Scope FROM Chat_AppVersionDevice v JOIN Chat_AppVersion a ON a.Id=v.AppVersionId",
-            "version-groups"=>"SELECT v.AppVersionId AS __Key1,v.DeviceGroupId AS __Key2,COALESCE(NULLIF(LTRIM(RTRIM(a.AppId)),N''),@DefaultApp) COLLATE Latin1_General_100_BIN2 AS __Scope FROM Chat_AppVersionDeviceGroup v JOIN Chat_AppVersion a ON a.Id=v.AppVersionId",
+            "version-devices"=>"SELECT v.AppVersionId AS __Key1,v.DeviceId AS __Key2,COALESCE(NULLIF(LTRIM(RTRIM(a.AppId)),N''),@DefaultApp) COLLATE Latin1_General_100_BIN2 AS __Scope,v.* FROM Chat_AppVersionDevice v JOIN Chat_AppVersion a ON a.Id=v.AppVersionId",
+            "version-groups"=>"SELECT v.AppVersionId AS __Key1,v.DeviceGroupId AS __Key2,COALESCE(NULLIF(LTRIM(RTRIM(a.AppId)),N''),@DefaultApp) COLLATE Latin1_General_100_BIN2 AS __Scope,v.* FROM Chat_AppVersionDeviceGroup v JOIN Chat_AppVersion a ON a.Id=v.AppVersionId",
             _=>throw new InvalidOperationException("Unknown import phase.")
         };
         await using var sql=new SqlConnection(connection);await sql.OpenAsync();await using var command=sql.CreateCommand();
@@ -292,7 +310,7 @@ public static class DeviceImportCommand
             var app=reader.GetString(reader.GetOrdinal("__Scope"));
             string? Text(string n)=>reader[n] is DBNull?null:Convert.ToString(reader[n]);
             var audit=new Dictionary<string,object?>();
-            for(var i=0;i<reader.FieldCount;i++)if(ImportedMetadataFields.Contains(reader.GetName(i)) || (cursor.Phase=="versions" && reader.GetName(i)=="ConcurrencyStamp"))
+            for(var i=0;i<reader.FieldCount;i++)if(ImportedMetadataFields.Contains(reader.GetName(i)) || (VersionPhases.Contains(cursor.Phase) && reader.GetName(i)=="ConcurrencyStamp"))
                 audit[reader.GetName(i)]=reader.IsDBNull(i)?null:reader.GetValue(i);
             if(cursor.Phase=="devices")
             {
@@ -304,7 +322,7 @@ public static class DeviceImportCommand
                 Version:new(Text("Version")!,Convert.ToInt64(reader["VersionCode"]),Text("Platform")!,Text("Title")!,Text("Content"),Text("Features"),Text("PageUrl"),Text("PkgUrl")!,Text("IssueDate"),Convert.ToBoolean(reader["IsForce"]),Convert.ToBoolean(reader["IsWidget"]),Convert.ToBoolean(reader["IsPublic"]),Convert.ToBoolean(reader["IsEnabled"])));
             else if(cursor.Phase=="groups")yield return new(cursor.Phase,id,k2,app,Name:Text("Name"),Description:Text("Description"),Deleted:Convert.ToBoolean(reader["IsDeleted"]),Metadata:audit);
             else if(cursor.Phase=="bindings")yield return new(cursor.Phase,id,k2,app,Name:Text("UserName"),User:k2,BoundAt:Convert.ToDateTime(reader["CreationTime"]),Metadata:audit);
-            else yield return new(cursor.Phase,id,k2,app,Group:k2);
+            else yield return new(cursor.Phase,id,k2,app,Group:k2,Metadata:audit);
         }
     }
     private static async Task CheckOrphansAsync(string connection)

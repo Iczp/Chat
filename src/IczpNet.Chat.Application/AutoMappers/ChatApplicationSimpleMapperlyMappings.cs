@@ -1,18 +1,12 @@
 // Generated from conventional CreateMap declarations. Keep complex maps in the profile until migrated.
 using IczpNet.Chat.AiRuns;
-using IczpNet.Chat.AppVersions;
-using TargetAppVersion = IczpNet.AppDevice.AppVersions.AppVersion;
 using IczpNet.Chat.Articles;
 using IczpNet.Chat.Articles.Dtos;
 using IczpNet.Chat.Blobs;
 using IczpNet.Chat.Blobs.Dtos;
 using IczpNet.Chat.ChatObjectCategories;
 using IczpNet.Chat.ChatObjectCategories.Dtos;
-using IczpNet.Chat.ChatObjectEntryValues;
 using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.ChatObjects.Dtos;
-using IczpNet.Chat.ChatObjectTypes;
-using IczpNet.Chat.ChatObjectTypes.Dtos;
 using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.ConnectionPools.Dtos;
 using IczpNet.Chat.Connections;
@@ -21,11 +15,6 @@ using IczpNet.Chat.ContactTags;
 using IczpNet.Chat.ContactTags.Dtos;
 using IczpNet.Chat.Dashboards.Dtos;
 using IczpNet.Chat.DbTables;
-using IczpNet.Chat.Developers;
-using IczpNet.Chat.Developers.Dtos;
-using IczpNet.Chat.DeviceGroups;
-using IczpNet.Chat.Devices;
-using IczpNet.Chat.Entries.Dtos;
 using IczpNet.Chat.EntryNames;
 using IczpNet.Chat.EntryNames.Dtos;
 using IczpNet.Chat.EntryValues;
@@ -40,15 +29,10 @@ using IczpNet.Chat.Mottos;
 using IczpNet.Chat.Mottos.Dtos;
 using IczpNet.Chat.Robots.Dtos;
 using IczpNet.Chat.ScanCodes;
-using IczpNet.Chat.ScanLogins;
-using IczpNet.Chat.ShopKeepers.Dtos;
-using IczpNet.Chat.ShopWaiters.Dtos;
 using IczpNet.Chat.Squares.Dtos;
 using IczpNet.Chat.Words;
 using IczpNet.Chat.Words.Dtos;
 using IczpNet.Chat.SessionBoxes;
-using IczpNet.Chat.SessionUnitEntryValues;
-using IczpNet.Chat.UrlNormalizers;
 using Riok.Mapperly.Abstractions;
 using Volo.Abp.Mapperly;
 
@@ -390,49 +374,6 @@ public partial class ChatApplicationScanHandlerToScanHandlerResultDtoMapper : Ma
     public override partial void Map(ScanHandler source, ScanHandlerResultDto destination);
 }
 
-[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
-public partial class ChatApplicationAppVersionToAppVersionDtoMapper : MapperBase<TargetAppVersion, AppVersionDto>
-{
-    [MapperIgnoreTarget(nameof(AppVersionDto.Groups))]
-    public override partial AppVersionDto Map(TargetAppVersion source);
-
-    [MapperIgnoreTarget(nameof(AppVersionDto.Groups))]
-    public override partial void Map(TargetAppVersion source, AppVersionDto destination);
-}
-
-[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
-public partial class ChatApplicationAppVersionToAppVersionSampleDtoMapper : MapperBase<TargetAppVersion, AppVersionSampleDto>
-{
-    public override partial AppVersionSampleDto Map(TargetAppVersion source);
-
-    public override partial void Map(TargetAppVersion source, AppVersionSampleDto destination);
-}
-
-[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
-public partial class ChatApplicationAppVersionToAppVersionDetailDtoMapper : MapperBase<TargetAppVersion, AppVersionDetailDto>
-{
-    [MapperIgnoreTarget(nameof(AppVersionDto.Groups))]
-    public override partial AppVersionDetailDto Map(TargetAppVersion source);
-
-    [MapperIgnoreTarget(nameof(AppVersionDto.Groups))]
-    public override partial void Map(TargetAppVersion source, AppVersionDetailDto destination);
-}
-
-[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
-public partial class ChatApplicationDeviceCreateOrUpdateInputToDeviceCreateInputMapper : MapperBase<DeviceCreateOrUpdateInput, DeviceCreateInput>
-{
-    public override partial DeviceCreateInput Map(DeviceCreateOrUpdateInput source);
-
-    public override partial void Map(DeviceCreateOrUpdateInput source, DeviceCreateInput destination);
-}
-
-[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
-public partial class ChatApplicationDeviceCreateOrUpdateInputToDeviceUpdateInputMapper : MapperBase<DeviceCreateOrUpdateInput, DeviceUpdateInput>
-{
-    public override partial DeviceUpdateInput Map(DeviceCreateOrUpdateInput source);
-
-    public override partial void Map(DeviceCreateOrUpdateInput source, DeviceUpdateInput destination);
-}
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
 public partial class ChatApplicationMessageReportBaseToMessageReportDtoMapper : MapperBase<MessageReportBase, MessageReportDto>
