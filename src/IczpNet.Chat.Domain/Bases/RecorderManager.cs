@@ -1,6 +1,6 @@
-﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons;
 using IczpNet.Chat.DataFilters;
-using IczpNet.AppDevice.Devices;
+using IczpNet.Chat;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionUnits;
 using System;
@@ -21,7 +21,7 @@ public abstract class RecorderManager<TEntity>(IRepository<TEntity> repository) 
     protected virtual IReadOnlyRepository<Message, long> MessageRepository => LazyServiceProvider.LazyGetService<IReadOnlyRepository<Message, long>>();
     protected virtual IReadOnlyRepository<SessionUnit, Guid> SessionUnitRepository => LazyServiceProvider.LazyGetService<IReadOnlyRepository<SessionUnit, Guid>>();
     protected IBackgroundJobManager BackgroundJobManager => LazyServiceProvider.LazyGetService<IBackgroundJobManager>();
-    protected IDeviceResolver DeviceIdResolver => LazyServiceProvider.LazyGetService<IDeviceResolver>();
+    protected IChatDeviceContext DeviceIdResolver => LazyServiceProvider.LazyGetService<IChatDeviceContext>();
     protected ISettingProvider SettingProvider => LazyServiceProvider.LazyGetService<ISettingProvider>();
     protected abstract TEntity CreateEntity(SessionUnit sessionUnit, Message message, string deviceId);
     protected abstract TEntity CreateEntity(Guid sessionUnitId, long messageId);

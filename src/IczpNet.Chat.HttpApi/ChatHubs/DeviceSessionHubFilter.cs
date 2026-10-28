@@ -1,11 +1,9 @@
 using System;
 using System.Threading.Tasks;
-using IczpNet.AppDevice.Devices;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Configuration;
 namespace IczpNet.Chat.ChatHubs;
 
-public sealed class DeviceSessionHubFilter(IDeviceManager devices, IConfiguration configuration,
+public sealed class DeviceSessionHubFilter(IChatDeviceSessionValidator devices,
     IczpNet.OpenIddict.Tokens.ITokenRevocationChecker tokens, ICallerContextManager callers) : IHubFilter
 {
     private async Task Validate(HubCallerContext context)
@@ -17,8 +15,7 @@ public sealed class DeviceSessionHubFilter(IDeviceManager devices, IConfiguratio
             throw new HubException("登录凭据已撤销，请重新登录。");
         }
         if (context.User == null) return;
-        var ticket = DeviceSessionTicket.Read(context.User);
-        if (ticket == null || await devices.IsSessionValidAsync(ticket, context.ConnectionAborted)) return;
+        if (await devices.IsValidAsync(context.User, context.ConnectionAborted)) return;
         context.Abort();
         throw new HubException("该设备的登录已退出，请重新登录。");
     }

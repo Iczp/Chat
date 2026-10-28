@@ -8,7 +8,7 @@ using Volo.Abp.Modularity;
 namespace IczpNet.Chat;
 
 [DependsOn(typeof(ChatDomainSharedModule), typeof(AbpDddApplicationContractsModule), typeof(AbpAuthorizationModule))]
-[DependsOn(typeof(AbpCommonsApplicationContractsModule), typeof(IczpNet.AppDevice.AppDeviceApplicationContractsModule))]
+[DependsOn(typeof(AbpCommonsApplicationContractsModule))]
 [DependsOn(typeof(AbpTreesApplicationContractsModule))]
 [DependsOn(typeof(AbpIdentityApplicationContractsModule))]
 // PusherApplicationContractsModule retired: SignalR payloads are Chat contracts.

@@ -1,5 +1,5 @@
-﻿using IczpNet.AbpCommons;
-using IczpNet.AppDevice.Devices;
+using IczpNet.AbpCommons;
+using IczpNet.Chat;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -16,13 +16,13 @@ namespace IczpNet.Chat.ScanCodes;
 public class ScanCodeManager(
     ICurrentClient currentClient,
     ICurrentUser currentUser,
-    IDeviceResolver deviceResolver,
+    IChatDeviceContext deviceResolver,
     IRepository<ScanCode, Guid> repository,
     IEnumerable<IScanCodeHandler> scanCodeHandlers) : DomainService, IScanCodeManager
 {
     public ICurrentClient CurrentClient { get; } = currentClient;
     public ICurrentUser CurrentUser { get; } = currentUser;
-    public IDeviceResolver DeviceResolver { get; } = deviceResolver;
+    public IChatDeviceContext DeviceResolver { get; } = deviceResolver;
     public IRepository<ScanCode, Guid> Repository { get; } = repository;
     public IEnumerable<IScanCodeHandler> ScanCodeHandlers { get; } = scanCodeHandlers;
 

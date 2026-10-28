@@ -1,5 +1,4 @@
 using IczpNet.Chat.ConnectionPools;
-using IczpNet.AppDevice.Devices;
 using IczpNet.Chat.Hosting;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.CodeAnalysis;
@@ -8,6 +7,7 @@ using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.SignalR;
 using Volo.Abp.AspNetCore.WebClientInfo;
 using Volo.Abp.Clients;
+using Volo.Abp.Users;
 
 namespace IczpNet.Chat;
 
@@ -26,15 +26,15 @@ public abstract class HubBase<T, TConnPool> : AbpHub<T> where T : class
 
         var httpContext = Context.GetHttpContext();
 
-        var appId = CurrentUser.GetAppId() ?? httpContext?.Request.Query["appId"];
+        var appId = CurrentUser.FindClaimValue("app_id") ?? httpContext?.Request.Query["appId"];
 
         var appName = httpContext?.Request.Query["appName"];
 
-        var deviceId = CurrentUser.GetDeviceId() ?? httpContext?.Request.Query["deviceId"];
+        var deviceId = CurrentUser.FindClaimValue("device_id") ?? httpContext?.Request.Query["deviceId"];
 
         var pushClientId = httpContext?.Request.Query["pushClientId"];
 
-        var deviceType = CurrentUser.GetDeviceType() ?? httpContext?.Request.Query["deviceType"];
+        var deviceType = CurrentUser.FindClaimValue("device_type") ?? httpContext?.Request.Query["deviceType"];
 
         var queryId = httpContext?.Request.Query["id"];
 

@@ -6,7 +6,7 @@ using Volo.Abp.Modularity;
 
 namespace IczpNet.Chat;
 
-[DependsOn(typeof(ChatHttpApiHostModule),typeof(AppDeviceEntityFrameworkCoreModule))]
+[DependsOn(typeof(ChatHttpApiHostModule),typeof(IczpNet.Chat.AppDevice.ChatAppDeviceModule),typeof(AppDeviceEntityFrameworkCoreModule))]
 public class ChatAppDeviceHttpApiHostModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)

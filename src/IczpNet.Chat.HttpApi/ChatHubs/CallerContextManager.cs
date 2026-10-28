@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Linq;
 using System;
-using IczpNet.AppDevice.Devices;
 using System.Threading.Tasks;
 using System.Security.Claims;
 using IczpNet.OpenIddict.Tokens;
@@ -59,22 +58,13 @@ public class CallerContextManager : ChatHubService, ICallerContextManager
         }
     }
 
-    public async Task AbortDeviceSessionsAsync(DeviceChangedEto notice)
+    public async Task AbortDeviceSessionsAsync(Func<ClaimsPrincipal, bool> matches, string reason)
     {
-        if (notice.Kind != "Logout" || notice.RevokedSessions == null) return;
-        // The distributed event reaches every host. Each host only aborts its own live handles.
         foreach (var caller in ConnectionIdToContextMap.Values)
         {
             var principal = caller.Context.User;
-            if (principal == null) continue;
-            var ticket = DeviceSessionTicket.Read(principal);
-            if (ticket == null || ticket.TenantId != notice.TenantId || ticket.AppId != notice.AppId ||
-                notice.DeviceKeys?.Contains(ticket.DeviceId) != true) continue;
-            if (!notice.RevokedSessions.Any(x => x.UserId == ticket.UserId &&
-                (ticket.SessionId.HasValue ? x.SessionId == ticket.SessionId :
-                    notice.RevokedAt.HasValue && ticket.IssuedAt.HasValue && ticket.IssuedAt <=
-                        new DateTimeOffset(notice.RevokedAt.Value.ToUniversalTime()).ToUnixTimeSeconds()))) continue;
-            await AbortAsync(caller.Context.ConnectionId, notice.Reason ?? "该设备的登录已退出，请重新登录。");
+            if (principal != null && matches(principal))
+                await AbortAsync(caller.Context.ConnectionId, reason);
         }
     }
 

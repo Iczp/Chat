@@ -30,7 +30,6 @@ namespace IczpNet.Chat;
 [DependsOn(
     typeof(AbpDddDomainModule),
     typeof(ChatDomainSharedModule),
-    typeof(IczpNet.AppDevice.AppDeviceDomainModule),
     typeof(AbpMapperlyModule)
 )]
 
@@ -61,7 +60,6 @@ public class ChatDomainModule : AbpModule
 
         //context.Services.ConfigureConventionModuleOptions<ChatDomainModule>();
         //context.Services.ConfigureByConvention<MessageReportOptions>();
-        //context.Services.ConfigureByConvention<ScanLoginOptions>();
 
 
         Configure<ShortIdOptions>(options =>

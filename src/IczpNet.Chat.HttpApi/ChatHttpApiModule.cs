@@ -16,7 +16,6 @@ namespace IczpNet.Chat;
 [DependsOn(
     typeof(ChatApplicationContractsModule),
     typeof(IczpNet.OpenIddict.OpenIddictAspNetCoreModule),
-    typeof(IczpNet.AppDevice.AppDeviceAspNetCoreModule),
     typeof(AbpAspNetCoreMvcModule))]
 //[DependsOn(typeof(AbpCommonsHttpApiModule))]
 [DependsOn(typeof(AbpIdentityHttpApiModule))]
@@ -36,11 +35,6 @@ public class ChatHttpApiModule : AbpModule
     {
         context.Services.AddTransient<DeviceSessionHubFilter>();
         Configure<HubOptions<ChatHub>>(options => options.AddFilter<DeviceSessionHubFilter>());
-        Configure<IczpNet.AppDevice.DeviceParsingOptions>(options =>
-        {
-            // Browser SignalR clients send device metadata in the hub query string.
-            options.AllowQuery = context.Services.GetConfiguration().GetValue("AppDevice:Parsing:AllowQuery", true);
-        });
         Configure<AbpLocalizationOptions>(options =>
         {
             options.Resources
