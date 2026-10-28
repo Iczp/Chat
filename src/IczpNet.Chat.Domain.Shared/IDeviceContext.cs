@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 
 namespace IczpNet.Chat;
 
-public interface IChatDeviceContext
+public interface IDeviceContext
 {
     Task<string> GetDeviceIdAsync();
 }

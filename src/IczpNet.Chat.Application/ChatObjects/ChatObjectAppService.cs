@@ -38,7 +38,7 @@ public class ChatObjectAppService(
     IFavoritedRecorderManager favoritedRecorderManager,
     IFollowManager followManager,
     IdentityUserManager identityUserManager,
-    IChatDeviceContext deviceResolver)
+    IDeviceContext deviceContext)
         : CrudTreeChatAppService<
         ChatObject,
         long,
@@ -62,7 +62,7 @@ public class ChatObjectAppService(
     protected IFavoritedRecorderManager FavoritedRecorderManager { get; } = favoritedRecorderManager;
     protected IFollowManager FollowManager { get; } = followManager;
     public IdentityUserManager IdentityUserManager { get; } = identityUserManager;
-    protected IChatDeviceContext DeviceResolver { get; } = deviceResolver;
+    protected IDeviceContext DeviceContext { get; } = deviceContext;
 
     protected override async Task<IQueryable<ChatObject>> CreateFilteredQueryAsync(ChatObjectGetListInput input)
     {
@@ -315,7 +315,7 @@ public class ChatObjectAppService(
     [HttpPost]
     public virtual async Task<List<ServiceStatusCacheItem>> SetServiceStatusAsync(long id, ServiceStatus status)
     {
-        var deviceId = await DeviceResolver.GetDeviceIdAsync();
+        var deviceId = await DeviceContext.GetDeviceIdAsync();
 
         if (deviceId == null)
         {

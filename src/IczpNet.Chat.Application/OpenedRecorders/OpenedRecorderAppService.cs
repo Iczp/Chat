@@ -19,7 +19,7 @@ namespace IczpNet.Chat.OpenedRecorders;
 public class OpenedRecorderAppService(
     IOpenedRecorderManager openedRecorderManager,
     IRepository<OpenedRecorder> repository,
-    IChatDeviceContext deviceResolver) : ChatAppService, IOpenedRecorderAppService
+    IDeviceContext deviceContext) : ChatAppService, IOpenedRecorderAppService
 {
     protected virtual string SetReadedPolicyName { get; set; }
 
@@ -27,7 +27,7 @@ public class OpenedRecorderAppService(
 
     protected IOpenedRecorderManager OpenedRecorderManager { get; } = openedRecorderManager;
 
-    protected IChatDeviceContext DeviceIdResolver { get; } = deviceResolver;
+    protected IDeviceContext DeviceContext { get; } = deviceContext;
 
     /// <summary>
     /// 获取消息【已打开】的数量

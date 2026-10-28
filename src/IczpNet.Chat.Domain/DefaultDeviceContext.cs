@@ -3,8 +3,8 @@ using Volo.Abp.DependencyInjection;
 
 namespace IczpNet.Chat;
 
-[ExposeServices(typeof(IChatDeviceContext))]
-public class DefaultChatDeviceContext : IChatDeviceContext, ITransientDependency
+[ExposeServices(typeof(IDeviceContext))]
+public class DefaultDeviceContext : IDeviceContext, ITransientDependency
 {
     public Task<string> GetDeviceIdAsync() => Task.FromResult<string>(null);
 }

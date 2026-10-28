@@ -26,4 +26,8 @@
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-rvv3-g6hj-g44x" />
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-2m69-gcr7-jv3q" />
   </ItemGroup>
+  <!-- Pin vulnerable transitive cryptography packages to the .NET 10 security fixes. -->
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'IczpNet.Chat.HttpApi.Host' Or '$(MSBuildProjectName)' == 'IczpNet.Chat.SchemaMigrator' Or '$(MSBuildProjectName)' == 'IczpNet.Chat.EntityFrameworkCore'">
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+  </ItemGroup>
 </Project>

@@ -21,7 +21,7 @@ namespace IczpNet.Chat.DeletedRecorders;
 public class DeletedRecorderAppService(
     IDeletedRecorderManager openedRecorderManager,
     IRepository<DeletedRecorder> repository,
-    IChatDeviceContext deviceResolver) : ChatAppService, IDeletedRecorderAppService
+    IDeviceContext deviceContext) : ChatAppService, IDeletedRecorderAppService
 {
     protected virtual string SetReadedPolicyName { get; set; }
 
@@ -29,7 +29,7 @@ public class DeletedRecorderAppService(
 
     protected IDeletedRecorderManager DeletedRecorderManager { get; } = openedRecorderManager;
 
-    protected IChatDeviceContext DeviceResolver { get; } = deviceResolver;
+    protected IDeviceContext DeviceContext { get; } = deviceContext;
 
     /// <summary>
     /// 获取消息【已删除】的数量

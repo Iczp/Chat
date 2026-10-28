@@ -16,13 +16,13 @@ namespace IczpNet.Chat.ScanCodes;
 public class ScanCodeManager(
     ICurrentClient currentClient,
     ICurrentUser currentUser,
-    IChatDeviceContext deviceResolver,
+    IDeviceContext deviceContext,
     IRepository<ScanCode, Guid> repository,
     IEnumerable<IScanCodeHandler> scanCodeHandlers) : DomainService, IScanCodeManager
 {
     public ICurrentClient CurrentClient { get; } = currentClient;
     public ICurrentUser CurrentUser { get; } = currentUser;
-    public IChatDeviceContext DeviceResolver { get; } = deviceResolver;
+    public IDeviceContext DeviceContext { get; } = deviceContext;
     public IRepository<ScanCode, Guid> Repository { get; } = repository;
     public IEnumerable<IScanCodeHandler> ScanCodeHandlers { get; } = scanCodeHandlers;
 
@@ -41,7 +41,7 @@ public class ScanCodeManager(
             Content = content,
             ClientId = CurrentClient.Id,
             UserId = CurrentUser.Id,
-            DeviceId = await DeviceResolver.GetDeviceIdAsync()
+            DeviceId = await DeviceContext.GetDeviceIdAsync()
         };
 
         return scanCode;
