@@ -15,7 +15,7 @@ using Volo.Abp.EventBus.Distributed;
 
 namespace IczpNet.Chat.AppDevice;
 
-public sealed class AppDeviceChatDeviceContext(IDeviceResolver resolver) : IChatDeviceContext
+public sealed class AppDeviceChatDeviceContext(IDeviceResolver resolver) : IDeviceContext
 {
     public Task<string?> GetDeviceIdAsync() => resolver.GetDeviceIdAsync();
 }

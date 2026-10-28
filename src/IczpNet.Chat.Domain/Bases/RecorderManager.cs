@@ -187,7 +187,7 @@ public abstract class RecorderManager<TEntity>(IRepository<TEntity> repository) 
     {
         Assert.If(!allowEmpty && string.IsNullOrWhiteSpace(inputDeviceId), $"Fail DeviceId(Empty):{inputDeviceId}");
 
-        var deviceId = await DeviceIdResolver.GetDeviceIdAsync();
+        var deviceId = await DeviceContext.GetDeviceIdAsync();
 
         if (string.IsNullOrWhiteSpace(deviceId))
         {
