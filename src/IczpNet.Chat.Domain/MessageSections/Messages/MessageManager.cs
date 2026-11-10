@@ -430,6 +430,7 @@ public partial class MessageManager(
             clientMessageId = UlidGenerator.Generate();
         }
 
+
         var message = new Message(senderSessionUnit)
         {
             CreationTime = Clock.Now,
@@ -437,6 +438,7 @@ public partial class MessageManager(
             //SessionKey = "",
 
         };
+
         message.SetShortId(shortId: ShortIdGenerator.Create());
 
         //senderSessionUnit.Setting.SetLastSendMessage(message);//并发时可能导致锁表
@@ -498,6 +500,10 @@ public partial class MessageManager(
         //var sessionUnitCount = message.IsPrivateMessage() ? 2 : unitCacheList.Count();
 
         //message.SetSessionUnitCount(sessionUnitCount);
+
+        // Allocate as late as possible to avoid holding the session row lock during validation.
+        var sessionSeq = await SessionRepository.UpdateLastMessageSeqAsync(sessionId, cancellationTokenProvider.Token);
+        message.SetSessionSeq(sessionSeq);
 
         // Save
         message = await Repository.InsertAsync(message, autoSave: true);
@@ -953,22 +959,26 @@ public partial class MessageManager(
         return messageInfo;
     }
 
-    public Task<MessageCacheItem> GetCacheAsync(
+    public async Task<MessageCacheItem> GetCacheAsync(
         long messageId,
         bool? hideErrors = null,
         bool considerUow = false,
         CancellationToken token = default)
     {
-        return MessageCache.GetAsync(new MessageCacheKey(messageId), hideErrors, considerUow, token);
+        var item = await MessageCache.GetAsync(new MessageCacheKey(messageId), hideErrors, considerUow, token);
+        await PopulateSessionSeqAsync(item == null ? [] : [item], token);
+        return item;
     }
 
-    public Task<KeyValuePair<MessageCacheKey, MessageCacheItem>[]> GetManyCacheAsync(
+    public async Task<KeyValuePair<MessageCacheKey, MessageCacheItem>[]> GetManyCacheAsync(
         IEnumerable<long> messageIds,
         bool? hideErrors = null,
         bool considerUow = false,
         CancellationToken token = default)
     {
-        return MessageCache.GetManyAsync(messageIds.Select(x => new MessageCacheKey(x)), hideErrors, considerUow, token);
+        var items = await MessageCache.GetManyAsync(messageIds.Select(x => new MessageCacheKey(x)), hideErrors, considerUow, token);
+        await PopulateSessionSeqAsync(items.Where(x => x.Value != null).Select(x => x.Value), token);
+        return items;
     }
 
     public async Task<KeyValuePair<MessageCacheKey, MessageCacheItem>[]> GetOrAddManyCacheAsync(
@@ -996,6 +1006,8 @@ public partial class MessageManager(
 
         }, optionsFactory ?? (() => CacheOptions), hideErrors, considerUow, token);
 
+        await PopulateSessionSeqAsync(list.Where(x => x.Value != null).Select(x => x.Value), token);
+
         // Cold/older cache rows may lack navigation-derived sender snapshots.
         // Resolve the distinct members and owners through the existing batch
         // caches; do not turn a history page into one lookup per message.
@@ -1012,6 +1024,24 @@ public partial class MessageManager(
         }
         return list;
 
+    }
+
+    private async Task PopulateSessionSeqAsync(IEnumerable<MessageCacheItem> items, CancellationToken token)
+    {
+        var entries = items.SelectMany(x => x.QuoteMessage == null
+            ? new MessageInfo[] { x }
+            : [x, x.QuoteMessage]).Where(x => x.SessionSeq <= 0 && x.Id > 0).ToList();
+        if (entries.Count == 0) return;
+
+        var entriesById = entries.ToLookup(x => x.Id);
+        var query = await Repository.GetQueryableAsync();
+        foreach (var ids in entriesById.Select(x => x.Key).Chunk(500))
+        {
+            var values = await query.Where(x => ids.Contains(x.Id))
+                .Select(x => new { x.Id, x.SessionSeq }).ToListAsync(token);
+            foreach (var value in values)
+                foreach (var entry in entriesById[value.Id]) entry.SessionSeq = value.SessionSeq;
+        }
     }
 
     public async Task<long> GetMaxMessageIdAsync(Guid sessionId)

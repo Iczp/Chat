@@ -38,6 +38,7 @@ public class MessageUpdatedLocalEventHandler(
                 SyncVersion = message.SyncVersion,
                 ClientMessageId = message.ClientMessageId,
                 SessionId = message.SessionId.Value,
+                SessionSeq = message.SessionSeq,
                 SenderId = message.SenderId,
                 SenderSessionUnitId = message.SenderSessionUnitId,
                 ReceiverId = message.ReceiverId,

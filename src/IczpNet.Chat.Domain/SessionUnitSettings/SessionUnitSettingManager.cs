@@ -186,7 +186,7 @@ public class SessionUnitSettingManager(
                 Command = CommandConsts.MessageDeleted, TargetSessionUnitId = sessionUnitId,
                 HostName = LazyServiceProvider.LazyGetRequiredService<ICurrentHosted>().Name,
                 MessageId = messageId,
-                Message = new MessageInfo<object> { Id = messageId, SessionId = change.SessionId, SyncVersion = change.Version },
+                Message = new MessageInfo<object> { Id = messageId, SessionId = change.SessionId, SessionSeq = change.SessionSeq, SyncVersion = change.Version },
             };
             uow.OnCompleted(async () =>
             {

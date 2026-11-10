@@ -394,6 +394,7 @@ public static class ChatDbContextModelCreatingExtensions
         });
         builder.Entity<Message>(b =>
             {
+                b.HasIndex(x => new { x.SessionId, x.SessionSeq }).IsUnique().HasFilter(null);
                 var _prefix = $"{ChatDbProperties.DbTablePrefix}_{nameof(Message)}_MapTo";
                 b.HasMany(x => x.CmdContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(CmdContent)}", ChatDbProperties.DbSchema));
                 b.HasMany(x => x.TextContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(TextContent)}", ChatDbProperties.DbSchema));

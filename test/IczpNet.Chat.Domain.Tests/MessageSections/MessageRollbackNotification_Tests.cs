@@ -28,6 +28,7 @@ public class MessageRollbackNotification_Tests
         hosted.Name.Returns("Chat");
         var unit = new SessionUnitCacheItem { Id = Guid.NewGuid(), SessionId = Guid.NewGuid(), OwnerId = 7 };
         var message = new Message(unit) { ClientMessageId = "original-client-id" };
+        message.SetSessionSeq(73);
         typeof(Message).GetProperty(nameof(Message.Id))!.SetValue(message, 7307873L);
         var rollbackTime = new DateTime(2026, 10, 14, 1, 0, 0, DateTimeKind.Utc);
         typeof(Message).GetMethod("Rollback", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(message, [rollbackTime]);
@@ -45,6 +46,7 @@ public class MessageRollbackNotification_Tests
         Assert.Equal(CommandConsts.MessageRollbacked, published.Command);
         Assert.Equal(message.Id, published.MessageId);
         Assert.Equal(unit.SessionId, published.Message.SessionId);
+        Assert.Equal(73, published.Message.SessionSeq);
         Assert.Equal(unit.Id, published.Message.SenderSessionUnitId);
         Assert.True(published.Message.IsRollbacked);
         Assert.Equal(rollbackTime, published.Message.RollbackTime);

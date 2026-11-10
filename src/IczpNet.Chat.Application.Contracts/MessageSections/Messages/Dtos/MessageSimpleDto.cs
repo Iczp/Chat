@@ -22,6 +22,9 @@ public class MessageSimpleDto : ExtensibleEntityDto, IEntityDto<long>
     /// </summary>
     public virtual Guid SessionId { get; set; }
 
+    /// <summary>当前消息在会话内的序号。</summary>
+    public virtual long SessionSeq { get; set; }
+
     /// <summary>
     /// 发送人
     /// </summary>

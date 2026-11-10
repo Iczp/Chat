@@ -19,12 +19,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Boxes\**" />
     <Compile Remove="GotRecorders\**" />
     <Compile Remove="Personals\**" />
     <Compile Remove="RedPackets\**" />
+    <EmbeddedResource Remove="Boxes\**" />
     <EmbeddedResource Remove="GotRecorders\**" />
     <EmbeddedResource Remove="Personals\**" />
     <EmbeddedResource Remove="RedPackets\**" />
+    <None Remove="Boxes\**" />
     <None Remove="GotRecorders\**" />
     <None Remove="Personals\**" />
     <None Remove="RedPackets\**" />
@@ -74,7 +77,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Boxes\" />
     <Folder Include="Commands\" />
     <Folder Include="ShortIds\" />
   </ItemGroup>

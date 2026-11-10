@@ -8,8 +8,11 @@ public static class Program
 {
     public static async Task<int> Main(string[] args)
     {
+        if (args.Contains("--backfill-message-session-seq")) return await MessageSessionSeqBackfill.RunAsync(args);
         if(args.Contains("--import-devices") || args.Contains("--import-app-versions"))return await DeviceImportCommand.RunAsync(args);
-        if(args.Length>0){Console.Error.WriteLine("Unknown migration mode. Import: (--import-devices | --import-app-versions) [--apply] (--host | --tenant=<guid>).");return 2;}
+        var indexOnly = args.Length == 2 && args.Contains("--apply-session-seq-index") && args.Contains("--source-frozen");
+        if(args.Length>0 && !indexOnly){Console.Error.WriteLine("Unknown migration mode. Import: (--import-devices | --import-app-versions) [--apply] (--host | --tenant=<guid>).");return 2;}
+        if (indexOnly && await MessageSessionSeqBackfill.RunAsync(["--backfill-message-session-seq", "--verify"]) != 0) return 1;
         try
         {
             var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__Chat")
@@ -35,7 +38,8 @@ public static class Program
 
             var options = new DbContextOptionsBuilder<ChatHttpApiHostMigrationsDbContext>()
                 .UseSqlServer(connectionString, sql =>
-                    sql.MigrationsAssembly(typeof(ChatHttpApiHostMigrationsDbContext).Assembly.GetName().Name))
+                    sql.MigrationsAssembly(typeof(ChatHttpApiHostMigrationsDbContext).Assembly.GetName().Name)
+                        .CommandTimeout(indexOnly ? 1800 : 30))
                 .Options;
 
             await using var context = new ChatHttpApiHostMigrationsDbContext(options);
@@ -46,6 +50,8 @@ public static class Program
             }
 
             var pending = (await context.Database.GetPendingMigrationsAsync()).ToArray();
+            if (indexOnly && (pending.Length != 1 || pending[0] != "20261109112254_AddMessageSessionSeqUniqueIndex"))
+                throw new InvalidOperationException("The expected SessionSeq index migration must be the only pending migration.");
             Console.WriteLine($"Chat database '{target.InitialCatalog}': {pending.Length} pending migration(s).");
 
             foreach (var migration in pending)

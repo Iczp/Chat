@@ -1,6 +1,5 @@
 ﻿using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Localization;
-using IczpNet.Chat.SessionSections.SessionUnits;
 using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
@@ -65,13 +64,4 @@ public abstract class ChatManagementAppService : ApplicationService
         await AuthorizationService.CheckAsync(owner, policyName);
     }
 
-    protected virtual async Task CheckPolicyAsync(string policyName, SessionUnit sessionUnit)
-    {
-        if (string.IsNullOrEmpty(policyName))
-        {
-            return;
-        }
-
-        await AuthorizationService.CheckAsync(sessionUnit, policyName);
-    }
 }

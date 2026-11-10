@@ -72,7 +72,7 @@ public class MessageChangeDeletion_Tests
         var unit = Guid.NewGuid();
         var session = Guid.NewGuid();
         test.Changes.AppendDeleteAsync(unit, 5, Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
-            .Returns(new MessageChangeEntry { SessionId = session, MessageId = 5, Version = 7 });
+            .Returns(new MessageChangeEntry { SessionId = session, MessageId = 5, Version = 7, SessionSeq = 13 });
         SendMessageToClientDistributedEto published = null;
         test.Bus.PublishAsync(Arg.Do<SendMessageToClientDistributedEto>(x => published = x), false, false).Returns(Task.CompletedTask);
         await test.Manager.DeleteMessageAsync(unit, 5);
@@ -82,6 +82,7 @@ public class MessageChangeDeletion_Tests
         Assert.Equal(CommandConsts.MessageDeleted, published.Command);
         Assert.Equal(unit, published.TargetSessionUnitId);
         Assert.Equal(session, published.Message.SessionId);
+        Assert.Equal(13, published.Message.SessionSeq);
         Assert.Equal(7, published.Message.SyncVersion);
         Assert.Null(published.Message.Content);
     }

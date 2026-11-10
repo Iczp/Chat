@@ -10,6 +10,7 @@ public class MessageChangeEntry
 {
     public Guid SessionId { get; set; }
     [JsonIgnore] public bool AlreadyApplied { get; set; }
+    [JsonIgnore] public long SessionSeq { get; set; }
     [JsonNumberHandling(JsonNumberHandling.WriteAsString | JsonNumberHandling.AllowReadingFromString)]
     public long MessageId { get; set; }
     [JsonNumberHandling(JsonNumberHandling.WriteAsString | JsonNumberHandling.AllowReadingFromString)]

@@ -90,6 +90,20 @@ public class RoomManager(
 
     public virtual async Task<ChatObject> CreateAsync(string name, List<long> memberIdList, long? ownerId)
     {
+        var current = UnitOfWorkManager.Current;
+        if (current?.Options.IsTransactional != true)
+        {
+            using var transactional = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
+            var created = await CreateInTransactionAsync(name, memberIdList, ownerId, transactional);
+            await transactional.CompleteAsync();
+            return created;
+        }
+
+        return await CreateInTransactionAsync(name, memberIdList, ownerId, current);
+    }
+
+    private async Task<ChatObject> CreateInTransactionAsync(string name, List<long> memberIdList, long? ownerId, IUnitOfWork uow)
+    {
         var allList = memberIdList;
 
         if (ownerId != null && !allList.Contains(ownerId.Value))
@@ -154,15 +168,6 @@ public class RoomManager(
 
         await SessionUnitRepository.InsertManyAsync(insertSessionUnitList, autoSave: true);
 
-        //添加会话到连接池
-        await AddUnitsToConnectionPoolsAsync(insertSessionUnitList);
-
-        //添加会话到缓存
-        await SessionUnitManager.AddUnitsToCacheAsync(insertSessionUnitList);
-
-        // commit to db
-        //await UnitOfWorkManager.Current.SaveChangesAsync();
-
         var members = await ChatObjectManager.GetManyByCacheAsync(_memberIdList.Take(3).ToList());
 
         var membersJoinText = members
@@ -181,7 +186,7 @@ public class RoomManager(
                 .ToString();
         }
 
-        await SendRoomMessageAsync(roomSessionUnit, new CmdContentInfo()
+        var content = new CmdContentInfo()
         {
             //Text = $"{roomOwner?.Name} 创建群聊'{room.Name}',{vtext}等 {_memberIdList.Count} 人加入群聊。",
             Cmd = MessageKeyNames.JoinRoom,
@@ -190,9 +195,30 @@ public class RoomManager(
                         .WithData("membersJoinText", membersJoinText)
                         .WithData("count", _memberIdList.Count)
                         .ToString(),
-        });
+        };
+
+        // Capture data while the creating scope is alive; publish only after SQL commits.
+        var units = insertSessionUnitList.Select(x => ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(x)).ToList();
+        var roomUnit = units.Single(x => x.Id == roomSessionUnit.Id);
+        RegisterCreatedRoomCompletion(uow, units, roomUnit, content, session.Id);
 
         return room;
+    }
+
+    private void RegisterCreatedRoomCompletion(IUnitOfWork uow, List<SessionUnitCacheItem> units,
+        SessionUnitCacheItem roomUnit, CmdContentInfo content, Guid sessionId)
+    {
+        var scopeFactory = LazyServiceProvider.LazyGetRequiredService<IServiceScopeFactory>();
+        var clientMessageId = "RC" + Convert.ToBase64String(sessionId.ToByteArray()).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+        uow.OnCompleted(async () =>
+        {
+            using var scope = scopeFactory.CreateScope();
+            await scope.ServiceProvider.GetRequiredService<ISessionUnitCacheManager>().AddUnitsAsync(units);
+            await scope.ServiceProvider.GetRequiredService<IOnlineManager>().AddSessionAsync(
+                units.Select(x => (x.SessionId!.Value, x.OwnerId)).ToList());
+            await scope.ServiceProvider.GetRequiredService<IMessageSender>().SendCmdAsync(roomUnit,
+                new MessageInput<CmdContentInfo> { ClientMessageId = clientMessageId, Content = content });
+        });
     }
 
     public virtual async Task<List<SessionUnit>> InviteAsync(InviteInput input, bool autoSendMessage = true)

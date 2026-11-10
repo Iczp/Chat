@@ -51,6 +51,8 @@ public class MessageCacheMapperly_Tests
     {
         var source = CreateMessage("root");
         var quote = CreateMessage("quoted");
+        source.SetSessionSeq(42);
+        quote.SetSessionSeq(17);
         source.SetQuoteMessage(quote);
         typeof(Message).GetProperty(nameof(Message.QuoteMessage), BindingFlags.Instance | BindingFlags.Public)!
             .SetValue(source, quote);
@@ -60,6 +62,8 @@ public class MessageCacheMapperly_Tests
         actual.ShouldNotBeNull();
         actual.QuoteMessage.ShouldNotBeNull();
         actual.QuoteMessage.ClientMessageId.ShouldBe("quoted");
+        actual.SessionSeq.ShouldBe(42);
+        actual.QuoteMessage.SessionSeq.ShouldBe(17);
     }
 
     [Fact]

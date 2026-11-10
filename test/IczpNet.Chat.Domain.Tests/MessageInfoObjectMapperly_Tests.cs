@@ -24,6 +24,7 @@ public class MessageInfoObjectMapperly_Tests
             ClientMessageId = "client-1",
         };
         source.SetMessageType(MessageTypes.Text);
+        source.SetSessionSeq(42);
         source.SetKey("source", "value");
 
         // This job-output case intentionally has no SenderSessionUnit.
@@ -34,10 +35,12 @@ public class MessageInfoObjectMapperly_Tests
         actual.ShouldNotBeNull();
         actual.ClientMessageId.ShouldBe("client-1");
         actual.MessageType.ShouldBe(MessageTypes.Text);
+        actual.SessionSeq.ShouldBe(42);
 
         var actualExisting = new MessageInfo<object> { ClientMessageId = "previous" };
         mapperly.Map(source, actualExisting);
         actualExisting.ClientMessageId.ShouldBe("client-1");
         actualExisting.MessageType.ShouldBe(MessageTypes.Text);
+        actualExisting.SessionSeq.ShouldBe(42);
     }
 }

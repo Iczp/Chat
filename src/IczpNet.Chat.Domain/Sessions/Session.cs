@@ -89,6 +89,12 @@ public class Session : BaseEntity<Guid>, IChatOwner<long?>, IIsEnabled
     public virtual Message LastMessage { get; protected set; }
 
     /// <summary>
+    /// 当前会话最后分配的消息序号 SessionSequence
+    /// </summary>
+    [Comment("当前会话最后分配的消息序号")]
+    public virtual long LastMessageSeq { get; protected set; }
+
+    /// <summary>
     /// 
     /// </summary>
     [Comment("是否可以设置为'免打扰'")]

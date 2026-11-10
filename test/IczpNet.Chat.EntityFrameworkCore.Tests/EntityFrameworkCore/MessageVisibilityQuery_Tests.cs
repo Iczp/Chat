@@ -29,7 +29,7 @@ public class MessageQueryReviewTestModule : AbpModule
 
 public class MessageVisibilityQuery_Tests : ChatTestBase<MessageQueryReviewTestModule>
 {
-    private static async Task InsertAsync<T>(ChatDbContext context, Dictionary<string, object> values)
+    internal static async Task InsertAsync<T>(ChatDbContext context, Dictionary<string, object> values)
     {
         var entity = context.Model.FindEntityType(typeof(T));
         var table = entity.GetTableName();
@@ -68,8 +68,9 @@ public class MessageVisibilityQuery_Tests : ChatTestBase<MessageQueryReviewTestM
             await InsertAsync<Session>(context, new() { ["Id"] = sessionId });
             await InsertAsync<SessionUnit>(context, new() { ["Id"] = unitId, ["SessionId"] = sessionId, ["OwnerId"] = 1L });
             await InsertAsync<SessionUnitSetting>(context, new() { ["SessionUnitId"] = unitId, ["SessionId"] = sessionId });
+            long sessionSeq = 0;
             foreach (var id in new long[] { 90, 101, 102, 103, 104, 110 })
-                await InsertAsync<Message>(context, new() { ["Id"] = id, ["SessionId"] = sessionId, ["IsPrivate"] = false });
+                await InsertAsync<Message>(context, new() { ["Id"] = id, ["SessionId"] = sessionId, ["SessionSeq"] = ++sessionSeq, ["IsPrivate"] = false });
             var repository = ServiceProvider.GetRequiredService<IMessageRepository>();
             // Shared raw windows certify open intervals without assuming consecutive global Ids.
             var recent = await repository.GetReadWindowAsync(sessionId, 0, long.MaxValue, 2, true);
@@ -85,7 +86,7 @@ public class MessageVisibilityQuery_Tests : ChatTestBase<MessageQueryReviewTestM
             Assert.Equal(new long[] { 101, 90 }, await repository.GetVisibleIdsAsync(unitId, null, 102, 2, true));
             Assert.Equal(new long[] { 101, 102, 103 }, await repository.GetVisibleIdsAsync(unitId, 100, null, 3, false));
             Assert.Equal(new long[] { 104, 110 }, await repository.GetVisibleIdsAsync(unitId, 103, null, 3, false));
-            await InsertAsync<Message>(context, new() { ["Id"] = 111L, ["SessionId"] = sessionId, ["IsPrivate"] = true,
+            await InsertAsync<Message>(context, new() { ["Id"] = 111L, ["SessionId"] = sessionId, ["SessionSeq"] = ++sessionSeq, ["IsPrivate"] = true,
                 ["SenderSessionUnitId"] = Guid.NewGuid(), ["ReceiverSessionUnitId"] = Guid.NewGuid() });
             Assert.False(await repository.CanReadAsync(unitId, 111));
             Assert.Equal(6, await repository.CountVisibleAsync(unitId, null, null));
@@ -108,8 +109,8 @@ public class MessageVisibilityQuery_Tests : ChatTestBase<MessageQueryReviewTestM
                 await InsertAsync<SessionUnit>(context, new() { ["Id"] = member.Item1, ["SessionId"] = session, ["OwnerId"] = member.Item2 });
                 await InsertAsync<SessionUnitSetting>(context, new() { ["SessionUnitId"] = member.Item1, ["SessionId"] = session });
             }
-            await InsertAsync<Message>(context, new() { ["Id"] = 105L, ["SessionId"] = session, ["ExtraProperties"] = new ExtraPropertyDictionary() });
-            await InsertAsync<Message>(context, new() { ["Id"] = 106L, ["SessionId"] = session, ["ExtraProperties"] = new ExtraPropertyDictionary(),
+            await InsertAsync<Message>(context, new() { ["Id"] = 105L, ["SessionId"] = session, ["SessionSeq"] = 1L, ["ExtraProperties"] = new ExtraPropertyDictionary() });
+            await InsertAsync<Message>(context, new() { ["Id"] = 106L, ["SessionId"] = session, ["SessionSeq"] = 2L, ["ExtraProperties"] = new ExtraPropertyDictionary(),
                 ["IsPrivate"] = true, ["SenderSessionUnitId"] = first, ["ReceiverSessionUnitId"] = Guid.NewGuid() });
             await InsertAsync<DeletedRecorder>(context, new() { ["SessionUnitId"] = first, ["MessageId"] = 105L });
             await InsertAsync<SessionMessageChangeState>(context, new() { ["Id"] = session, ["Epoch"] = session, ["Version"] = 7L });

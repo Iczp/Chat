@@ -71,7 +71,7 @@ public class MessageChangeRepository(IDbContextProvider<ChatDbContext> provider)
         // DeletedRecorder entity event invalidates member visibility caches.
         db.Set<DeletedRecorder>().Add(new DeletedRecorder(unit, messageId, null));
         db.Set<MessageChange>().Add(new MessageChange(Guid.NewGuid(), message, version, time, sessionUnitId));
-        return new MessageChangeEntry { SessionId = unit.SessionId.Value, MessageId = messageId,
+        return new MessageChangeEntry { SessionId = unit.SessionId.Value, MessageId = messageId, SessionSeq = message.SessionSeq,
             Version = version, ChangeType = MessageChangeKind.Delete, ChangedAt = time, ReceiverSessionUnitId = sessionUnitId };
     }
 

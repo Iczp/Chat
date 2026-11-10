@@ -35,6 +35,7 @@ namespace IczpNet.Chat.MessageSections.Messages;
 [Index(nameof(ReceiverSessionUnitId))]
 [Index(nameof(ClientMessageId))]
 [Index(nameof(SessionId), nameof(IsDeleted))]
+[Index(nameof(SessionId), nameof(Id), IsUnique = false)] // IsUnique = true
 [Index(nameof(SessionId), nameof(Id), AllDescending = true)]
 [Index(nameof(SessionId), nameof(IsDeleted), nameof(IsPrivate), nameof(SenderId), nameof(ReceiverId), nameof(CreationTime), nameof(ForwardDepth), nameof(QuoteDepth))]
 [Index(nameof(SessionId), nameof(IsDeleted), nameof(IsPrivate), nameof(SenderSessionUnitId), nameof(ReceiverSessionUnitId), nameof(CreationTime), nameof(ForwardDepth), nameof(QuoteDepth))]
@@ -76,6 +77,10 @@ public partial class Message : BaseEntity<long>, ISessionId, IHasEntityVersion
     /// </summary>
     [Comment("会话Id")]
     public virtual Guid? SessionId { get; protected set; }
+
+    // 当前消息在会话内的序号
+    [Comment("当前消息在会话内的序号")]
+    public virtual long SessionSeq { get; protected set; }
 
     /// <summary>
     /// 接收人会话单元Id(私有消息)

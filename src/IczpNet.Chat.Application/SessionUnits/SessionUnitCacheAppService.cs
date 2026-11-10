@@ -157,7 +157,7 @@ public class SessionUnitCacheAppService(
 
             var allDestList = await ChatObjectManager.GetManyByCacheAsync(allDestIds);
 
-            var destMap = allDestList.ToDictionary(x => x.Id, x => x);
+            var destMap = allDestList.Where(x => x != null).ToDictionary(x => x.Id, x => x);
 
             //  提前填充
             foreach (var item in result)
@@ -232,6 +232,7 @@ public class SessionUnitCacheAppService(
         }
         var destIds = nulltems.Select(x => x.DestinationId.Value).Distinct().ToList();
         var destMap = (await ChatObjectManager.GetManyByCacheAsync(destIds))
+            .Where(x => x != null)
             .ToDictionary(x => x.Id, x => x);
 
         foreach (var item in nulltems)
@@ -259,6 +260,7 @@ public class SessionUnitCacheAppService(
         }
         var idlist = nulltems.Select(x => x.OwnerId).Distinct().ToList();
         var destMap = (await ChatObjectManager.GetManyByCacheAsync(idlist))
+            .Where(x => x != null)
             .ToDictionary(x => x.Id, x => x);
 
         foreach (var item in nulltems)
@@ -590,7 +592,7 @@ public class SessionUnitCacheAppService(
         }
 
         item.Owner = (await ChatObjectManager.GetManyByCacheAsync([item.OwnerId]))
-            .FirstOrDefault(x => x.Id == item.OwnerId);
+            .FirstOrDefault(x => x != null && x.Id == item.OwnerId);
 
         return item;
     }
@@ -892,6 +894,7 @@ public class SessionUnitCacheAppService(
             .ToList();
 
         var chatObjectMap = (await ChatObjectManager.GetManyByCacheAsync(allIds))
+            .Where(x => x != null)
             .ToDictionary(x => x.Id, x => x);
 
         var settingCache = await SessionUnitSettingManager.GetOrAddCacheAsync(unitId);
@@ -987,6 +990,7 @@ public class SessionUnitCacheAppService(
         var allIds = list.Select(x => x.Value).Select(x => x.OwnerId).Distinct().ToList();
 
         var chatObjectMap = (await ChatObjectManager.GetManyByCacheAsync(allIds))
+            .Where(x => x != null)
             .ToDictionary(x => x.Id, x => x);
 
         var settings = await SessionUnitSettingManager.GetOrAddManyCacheAsync(unitIds);
