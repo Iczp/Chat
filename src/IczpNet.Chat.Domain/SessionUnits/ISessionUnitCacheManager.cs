@@ -479,6 +479,7 @@ public interface ISessionUnitCacheManager
     /// <param name="units"></param>
     /// <returns></returns>
     Task AddUnitsAsync(IEnumerable<SessionUnitCacheItem> units);
+    Task RemoveNewUnitsAsync(IEnumerable<SessionUnitCacheItem> units);
 
     /// <summary>
     /// 更新最新消息ID

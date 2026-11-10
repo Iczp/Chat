@@ -793,11 +793,11 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
             );
 
         var batch = Database.CreateBatch();
+        var writes = new List<Task>();
 
         foreach (var (sessionId, units) in sessionDict)
         {
             var sessionConnKey = SessionConnHashKey(sessionId);
-            Expire(batch, sessionConnKey);
 
             // 1. 当前 session 关联的 ownerIds
             var sessionOwnerIds = units.Select(x => x.OwnerId).Distinct().ToHashSet();
@@ -815,12 +815,15 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
 
                 // 3. 写入到 Redis
                 var ownerIdStr = ToJson(relatedOwnerIds);
-                _ = batch.HashSetAsync(sessionConnKey, connectionId, ownerIdStr);
+                writes.Add(batch.HashSetAsync(sessionConnKey, connectionId, ownerIdStr));
 
                 Logger.LogInformation($"HashSetAsync: sessionConnKey={sessionConnKey}, connectionId={connectionId}, ownerIdStr={ownerIdStr}");
             }
+            if (CacheExpire.HasValue)
+                writes.Add(batch.KeyExpireAsync(sessionConnKey, CacheExpire));
         }
         batch.Execute();
+        await Task.WhenAll(writes);
     }
 
     public async Task<Dictionary<string, DateTime?>> GetAllHostsAsync()

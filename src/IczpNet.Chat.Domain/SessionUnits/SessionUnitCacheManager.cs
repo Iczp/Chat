@@ -2265,40 +2265,116 @@ return 1";
     /// <returns></returns>
     public async Task AddUnitsAsync(IEnumerable<SessionUnitCacheItem> units)
     {
-        await Task.Yield();
+        ArgumentNullException.ThrowIfNull(units);
         var batch = Database.CreateBatch();
+        var writes = new List<Task>();
+        var expiry = CacheExpire;
+        var expiryKeys = new HashSet<RedisKey>();
+        void ExpireKey(RedisKey key)
+        {
+            if (expiry.HasValue) expiryKeys.Add(key);
+        }
+        void AddSorted(bool condition, RedisKey key, RedisValue member, double score)
+        {
+            if (!condition) return;
+            writes.Add(batch.SortedSetAddAsync(key, member, score));
+            ExpireKey(key);
+        }
+        void AddHash(bool condition, RedisKey key, RedisValue field, RedisValue value, bool expire = true)
+        {
+            if (!condition) return;
+            writes.Add(batch.HashSetAsync(key, field, value));
+            if (expire) ExpireKey(key);
+        }
 
-        //unit
         foreach (var unit in units)
         {
-            SetUnit(batch, unit, refreshExpire: true);
+            writes.Add(batch.HashSetAsync(UnitHashKey(unit.Id), MapToHashEntries(unit)));
+            var element = GetElement(unit);
+            var score = GetFriendScore(unit.Sorting, unit.Ticks);
+            var ownerId = unit.OwnerId;
+            AddSorted(true, OwnerFriendsSetKey(ownerId), element, score);
+            AddSorted(unit.Sorting > 0, OwnerPinnedBadgeSetKey(ownerId), element, unit.PublicBadge);
+            AddSorted(unit.PublicBadge > 0, OwnerHasBadgeSetKey(ownerId), element, unit.PublicBadge);
+            AddSorted(unit.IsImmersed, OwnerImmersedSetKey(ownerId), element, unit.PublicBadge);
+            AddSorted(unit.FollowingCount > 0, OwnerFollowingSetKey(ownerId), element, unit.FollowingCount);
+            AddSorted(unit.RemindAllCount > 0, OwnerRemindAllSetKey(ownerId), element, unit.RemindAllCount);
+            AddSorted(unit.RemindMeCount > 0, OwnerRemindMeSetKey(ownerId), element, unit.RemindMeCount);
+            AddSorted(unit.IsCreator, OwnerCreatorSetKey(ownerId), element, unit.PublicBadge);
+            if (unit.BoxId.HasValue) AddSorted(true, OwnerBoxFriendsSetKey(ownerId, unit.BoxId.Value), element, score);
+            AddSorted(true, OwnerFriendsMapZsetKey(ownerId, unit.DestinationObjectType), element, score);
+            var abbr = unit.RenameSpellingAbbreviation ?? unit.DestinationNameSpellingAbbreviation ?? string.Empty;
+            var contact = new ContactValue
+            {
+                Index = GetIndexKey(abbr), Abbr = abbr, Rename = unit.Rename,
+                Name = unit.DestinationName,
+                NameSpelling = unit.RenameSpellingAbbreviation ?? unit.DestinationNameSpelling ?? string.Empty,
+                Portrait = unit.DestinationPortrait, Thumbnail = unit.DestinationThumbnail, Mobile = null
+            };
+            AddHash(true, OwnersIndexedHashKey(ownerId), element, JsonSerializer.Serialize(contact), expire: false);
+            if (!unit.SessionId.HasValue) continue;
+            var sessionId = unit.SessionId.Value;
+            AddSorted(true, SessionMembersSetKey(sessionId), element, MemberScore.Create(unit.IsCreator, unit.CreationTime));
+            AddHash(unit.Sorting > 0, SessionPinnedSortingHashKey(sessionId), element, unit.Sorting);
+            AddHash(unit.IsImmersed, SessionImmersedHashKey(sessionId), element, unit.IsImmersed);
+            AddHash(unit.IsCreator, SessionImmersedHashKey(sessionId), element, unit.IsCreator);
+            AddHash(!unit.IsPublic, SessionPrivateHashKey(sessionId), element, !unit.IsPublic);
+            AddHash(unit.IsStatic, SessionStaticHashKey(sessionId), element, unit.IsStatic);
+            AddHash(unit.BoxId.HasValue, SessionBoxHashKey(sessionId), element, unit.BoxId.ToString());
         }
+        foreach (var key in expiryKeys) writes.Add(batch.KeyExpireAsync(key, expiry));
+        batch.Execute();
+        await Task.WhenAll(writes);
+    }
 
-        // owner
-        foreach (var items in units.GroupBy(x => x.OwnerId))
+    /// <summary>Remove only the supplied new units from shared session and owner indexes.</summary>
+    public async Task RemoveNewUnitsAsync(IEnumerable<SessionUnitCacheItem> units)
+    {
+        ArgumentNullException.ThrowIfNull(units);
+        var batch = Database.CreateBatch();
+        var writes = new List<Task>();
+        foreach (var unit in units)
         {
-            var ctx = BuildOwnerStatistics(batch, items.Key, items);
-        }
-
-        //session 
-        foreach (var items in units.Where(x => x.SessionId.HasValue).GroupBy(x => x.SessionId))
-        {
-            BuildSessionMembers(batch, items.Key.Value, items.ToList());
+            var element = GetElement(unit);
+            var owner = unit.OwnerId;
+            writes.Add(batch.KeyDeleteAsync(UnitHashKey(unit.Id)));
+            writes.Add(batch.SortedSetRemoveAsync(OwnerFriendsSetKey(owner), element));
+            writes.Add(batch.SortedSetRemoveAsync(OwnerPinnedBadgeSetKey(owner), element));
+            writes.Add(batch.SortedSetRemoveAsync(OwnerHasBadgeSetKey(owner), element));
+            writes.Add(batch.SortedSetRemoveAsync(OwnerImmersedSetKey(owner), element));
+            writes.Add(batch.SortedSetRemoveAsync(OwnerFollowingSetKey(owner), element));
+            writes.Add(batch.SortedSetRemoveAsync(OwnerRemindAllSetKey(owner), element));
+            writes.Add(batch.SortedSetRemoveAsync(OwnerRemindMeSetKey(owner), element));
+            writes.Add(batch.SortedSetRemoveAsync(OwnerCreatorSetKey(owner), element));
+            writes.Add(batch.SortedSetRemoveAsync(OwnerFriendsMapZsetKey(owner, unit.DestinationObjectType), element));
+            if (unit.BoxId.HasValue)
+                writes.Add(batch.SortedSetRemoveAsync(OwnerBoxFriendsSetKey(owner, unit.BoxId.Value), element));
+            writes.Add(batch.HashDeleteAsync(OwnersIndexedHashKey(owner), element));
+            if (!unit.SessionId.HasValue) continue;
+            var sessionId = unit.SessionId.Value;
+            writes.Add(batch.SortedSetRemoveAsync(SessionMembersSetKey(sessionId), element));
+            writes.Add(batch.HashDeleteAsync(SessionPinnedSortingHashKey(sessionId), element));
+            writes.Add(batch.HashDeleteAsync(SessionImmersedHashKey(sessionId), element));
+            writes.Add(batch.HashDeleteAsync(SessionPrivateHashKey(sessionId), element));
+            writes.Add(batch.HashDeleteAsync(SessionStaticHashKey(sessionId), element));
+            writes.Add(batch.HashDeleteAsync(SessionBoxHashKey(sessionId), element));
         }
         batch.Execute();
+        await Task.WhenAll(writes);
     }
 
     public async Task UpdateLastMessageAsync(SessionUnitCacheItem sender, Message message)
     {
         //var unit = await GetAsync(sender.Id);
         var batch = Database.CreateBatch();
+        var writes = new List<Task>();
         var lastMessageId = message.Id;
         if (sender == null && lastMessageId > sender.LastSendMessageId)
         {
             var unitKey = UnitHashKey(sender.Id);
-            _ = batch.HashSetAsync(unitKey, F_LastMessageId, lastMessageId);
-            _ = batch.HashSetAsync(unitKey, F_LastSendMessageId, lastMessageId);
-            _ = batch.HashSetAsync(unitKey, F_LastSendTime, message.CreationTime.ToRedisValue());
+            writes.Add(batch.HashSetAsync(unitKey, F_LastMessageId, lastMessageId));
+            writes.Add(batch.HashSetAsync(unitKey, F_LastSendMessageId, lastMessageId));
+            writes.Add(batch.HashSetAsync(unitKey, F_LastSendTime, message.CreationTime.ToRedisValue()));
         }
         // session last message id
         if (sender.SessionId.HasValue)
@@ -2306,11 +2382,12 @@ return 1";
             var sessionId = sender.SessionId.Value;
             // message list
             var sessionMessageListKey = SessionMessageSetKey(sessionId);
-            _ = batch.SortedSetAddAsync(sessionMessageListKey, message.Id, message.Id);
+            writes.Add(batch.SortedSetAddAsync(sessionMessageListKey, message.Id, message.Id));
             // 注意：不要每条消息都做 Trim， (目前是每次都删除，后期改为定时删除)。
             //_ = batch.SortedSetRemoveRangeByRankAsync(sessionMessageListKey, 0, -1001, CommandFlags.None);
         }
         batch.Execute();
+        await Task.WhenAll(writes);
     }
 
     public async Task AppendSessionMessagesAsync(Guid sessionId, List<long> messageIdList)

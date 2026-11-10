@@ -138,6 +138,48 @@ public class RoomCreationCommit_Tests
 public class RoomCreationRollback_Tests : ChatDomainTestBase
 {
     [Fact]
+    public async Task Pre_commit_failure_rolls_back_flushed_sql()
+    {
+        var sessionId = Guid.NewGuid();
+        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var uows = scope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>();
+            using var uow = uows.Begin(new AbpUnitOfWorkOptions { IsTransactional = true }, requiresNew: true);
+            var db = await scope.ServiceProvider.GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            db.Set<Session>().Add(new Session(sessionId, Guid.NewGuid().ToString(), default));
+            await db.SaveChangesAsync();
+            throw new InvalidOperationException("redis unavailable");
+        });
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var db = await ServiceProvider.GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            Assert.False(await db.Set<Session>().AnyAsync(x => x.Id == sessionId));
+        });
+    }
+
+    [Fact]
+    public async Task Post_commit_failure_cannot_roll_back_committed_sql()
+    {
+        var sessionId = Guid.NewGuid();
+        using (var scope = ServiceProvider.CreateScope())
+        {
+            var uows = scope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>();
+            using var uow = uows.Begin(new AbpUnitOfWorkOptions { IsTransactional = true }, requiresNew: true);
+            var db = await scope.ServiceProvider.GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            db.Set<Session>().Add(new Session(sessionId, Guid.NewGuid().ToString(), default));
+            await db.SaveChangesAsync();
+            uow.OnCompleted(() => Task.FromException(new InvalidOperationException("redis unavailable")));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => uow.CompleteAsync());
+        }
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var db = await ServiceProvider.GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            Assert.True(await db.Set<Session>().AnyAsync(x => x.Id == sessionId));
+        });
+    }
+
+    [Fact]
     public async Task Rolled_back_transaction_does_not_publish_cache_or_announcement()
     {
         var constructor = typeof(RoomManager).GetConstructors().Single();
