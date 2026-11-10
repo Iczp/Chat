@@ -223,6 +223,20 @@ public class RoomManager(
 
     public virtual async Task<List<SessionUnit>> InviteAsync(InviteInput input, bool autoSendMessage = true)
     {
+        var current = UnitOfWorkManager.Current;
+        if (current?.Options.IsTransactional != true)
+        {
+            using var transactional = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
+            var invited = await InviteInTransactionAsync(input, autoSendMessage, transactional);
+            await transactional.CompleteAsync();
+            return invited;
+        }
+
+        return await InviteInTransactionAsync(input, autoSendMessage, current);
+    }
+
+    private async Task<List<SessionUnit>> InviteInTransactionAsync(InviteInput input, bool autoSendMessage, IUnitOfWork uow)
+    {
         //var room = await GetWalletAsync(roomId);
 
         var session = await SessionManager.GetByOwnerIdAsync(input.RoomId);
@@ -271,57 +285,66 @@ public class RoomManager(
 
         await SessionUnitRepository.InsertManyAsync(joinMemberSessionUnitList, autoSave: true);
 
-        //添加会话到缓存
-        await SessionUnitManager.AddUnitsToCacheAsync(joinMemberSessionUnitList);
-
-        //添加会话到连接池
-        await AddUnitsToConnectionPoolsAsync(joinMemberSessionUnitList);
-
-        //await UnitOfWorkManager.Current.SaveChangesAsync();
-
-        if (!autoSendMessage)
+        var units = joinMemberSessionUnitList.Select(x => ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(x)).ToList();
+        SessionUnitCacheItem roomUnit = null;
+        CmdContentInfo content = null;
+        if (autoSendMessage)
         {
-            return joinMemberSessionUnitList;
+            var inviterText = string.Empty;
+
+            if (input.InviterId != null)
+            {
+                var inviter = await ChatObjectManager.GetAsync(input.InviterId.Value);
+
+                inviterText = new TextTemplate("{inviterObject} 邀请 ")
+                                .WithData("inviterObject", new SessionUnitTextTemplate(inviterSessionUnit))
+                                .ToString();
+            }
+
+            var membersJoinText = joinMemberSessionUnitList.Take(3)
+                                .Select(x => new SessionUnitTextTemplate(x.Id, joinMembers.FirstOrDefault(d => d.Id == x.OwnerId)?.Name).ToString())
+                                .JoinAsString("、");
+
+            content = new CmdContentInfo()
+            {
+                Cmd = MessageKeyNames.JoinRoom,
+                //Text = $"{inviterText}{joinMembers.Select(x => x.Name).JoinAsString("、")}等 {joinMembers.Count} 人加入群聊。",
+                Text = new TextTemplate("{inviterText} {membersJoinText} 等 {count} 人加入群聊")
+                            .WithData("inviterText", inviterText)
+                            .WithData("membersJoinText", membersJoinText)
+                            .WithData("count", joinMembers.Count)
+                            .ToString(),
+            };
+            var senderUnit = await SessionUnitManager.FindAsync(room.Id, room.Id);
+            if (senderUnit == null)
+            {
+                senderUnit = AddRoomSessionUnit(session, room);
+                await uow.SaveChangesAsync();
+            }
+            roomUnit = ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(senderUnit);
         }
 
-        var inviterText = string.Empty;
-
-        if (input.InviterId != null)
-        {
-            var inviter = await ChatObjectManager.GetAsync(input.InviterId.Value);
-
-            inviterText = new TextTemplate("{inviterObject} 邀请 ")
-                            .WithData("inviterObject", new SessionUnitTextTemplate(inviterSessionUnit))
-                            .ToString();
-        }
-
-        var membersJoinText = joinMemberSessionUnitList.Take(3)
-                            .Select(x => new SessionUnitTextTemplate(x.Id, joinMembers.FirstOrDefault(d => d.Id == x.OwnerId)?.Name).ToString())
-                            .JoinAsString("、");
-
-        await SendRoomMessageAsync(room, new CmdContentInfo()
-        {
-            Cmd = MessageKeyNames.JoinRoom,
-            //Text = $"{inviterText}{joinMembers.Select(x => x.Name).JoinAsString("、")}等 {joinMembers.Count} 人加入群聊。",
-            Text = new TextTemplate("{inviterText} {membersJoinText} 等 {count} 人加入群聊")
-                        .WithData("inviterText", inviterText)
-                        .WithData("membersJoinText", membersJoinText)
-                        .WithData("count", joinMembers.Count)
-                        .ToString(),
-        });
-
+        RegisterInvitedRoomCompletion(uow, units, roomUnit, content);
         return joinMemberSessionUnitList;
     }
 
-    /// <summary>
-    /// 添加会话到连接池
-    /// </summary>
-    /// <param name="joinMemberSessionUnitList"></param>
-    /// <returns></returns>
-    private async Task AddUnitsToConnectionPoolsAsync(List<SessionUnit> joinMemberSessionUnitList)
+    private void RegisterInvitedRoomCompletion(IUnitOfWork uow, List<SessionUnitCacheItem> units,
+        SessionUnitCacheItem roomUnit, CmdContentInfo content)
     {
-        var units = joinMemberSessionUnitList.Select(x => (SessionId: x.SessionId.Value, x.OwnerId)).ToList();
-        await OnlineManager.AddSessionAsync(units);
+        var scopeFactory = LazyServiceProvider.LazyGetRequiredService<IServiceScopeFactory>();
+        var clientMessageId = "RI" + Convert.ToBase64String(units[0].Id.ToByteArray()).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+        uow.OnCompleted(async () =>
+        {
+            using var scope = scopeFactory.CreateScope();
+            await scope.ServiceProvider.GetRequiredService<ISessionUnitCacheManager>().AddUnitsAsync(units);
+            await scope.ServiceProvider.GetRequiredService<IOnlineManager>().AddSessionAsync(
+                units.Select(x => (x.SessionId!.Value, x.OwnerId)).ToList());
+            if (content != null)
+            {
+                await scope.ServiceProvider.GetRequiredService<IMessageSender>().SendCmdAsync(roomUnit,
+                    new MessageInput<CmdContentInfo> { ClientMessageId = clientMessageId, Content = content });
+            }
+        });
     }
 
     protected virtual Task SendRoomMessageAsync(SessionUnit roomSessionUnit, CmdContentInfo content)
@@ -343,7 +366,7 @@ public class RoomManager(
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <param name="room"></param>
     /// <param name="func"></param>

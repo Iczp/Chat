@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -50,6 +50,49 @@ public class RoomCreationCommit_Tests
         await Assert.ThrowsAsync<InvalidOperationException>(() => manager.CreateAsync("test", [], null));
         uows.Received(1).Begin(Arg.Is<AbpUnitOfWorkOptions>(x => x.IsTransactional), true);
         transaction.Received(1).Dispose();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Invitation_side_effects_are_deferred_until_commit(bool sendMessage)
+    {
+        var constructor = typeof(RoomManager).GetConstructors().Single();
+        var args = constructor.GetParameters().Select(x => Substitute.For([x.ParameterType], [])).ToArray();
+        ((IOptions<RoomOptions>)args.Single(x => x is IOptions<RoomOptions>)).Value.Returns(new RoomOptions());
+        var manager = (RoomManager)constructor.Invoke(args);
+        var cache = Substitute.For<ISessionUnitCacheManager>();
+        var online = Substitute.For<IOnlineManager>();
+        var sender = Substitute.For<IMessageSender>();
+        var provider = Substitute.For<IServiceProvider>();
+        provider.GetService(typeof(ISessionUnitCacheManager)).Returns(cache);
+        provider.GetService(typeof(IOnlineManager)).Returns(online);
+        provider.GetService(typeof(IMessageSender)).Returns(sender);
+        var scope = Substitute.For<IServiceScope>();
+        scope.ServiceProvider.Returns(provider);
+        var factory = Substitute.For<IServiceScopeFactory>();
+        factory.CreateScope().Returns(scope);
+        var lazy = Substitute.For<IAbpLazyServiceProvider>();
+        lazy.LazyGetRequiredService<IServiceScopeFactory>().Returns(factory);
+        manager.LazyServiceProvider = lazy;
+        var callbacks = new List<Func<Task>>();
+        var uow = Substitute.For<IUnitOfWork>();
+        uow.When(x => x.OnCompleted(Arg.Any<Func<Task>>())).Do(x => callbacks.Add(x.Arg<Func<Task>>()));
+        var unit = new SessionUnitCacheItem { Id = Guid.NewGuid(), SessionId = Guid.NewGuid(), OwnerId = 10 };
+        var content = sendMessage ? new CmdContentInfo { Text = "invited" } : null;
+        var method = typeof(RoomManager).GetMethod("RegisterInvitedRoomCompletion", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        method.Invoke(manager, [uow, new List<SessionUnitCacheItem> { unit }, unit, content]);
+
+        Assert.Empty(cache.ReceivedCalls());
+        Assert.Empty(online.ReceivedCalls());
+        Assert.Empty(sender.ReceivedCalls());
+        await Assert.Single(callbacks)();
+        await cache.Received(1).AddUnitsAsync(Arg.Is<IEnumerable<SessionUnitCacheItem>>(x => x.Single().Id == unit.Id));
+        await online.Received(1).AddSessionAsync(Arg.Any<List<(Guid SessionId, long OwnerId)>>());
+        if (sendMessage)
+            await sender.Received(1).SendCmdAsync(unit, Arg.Is<MessageInput<CmdContentInfo>>(x => x.Content == content && x.ClientMessageId.Length <= 26 && x.ClientMessageId.StartsWith("RI")));
+        else
+            Assert.Empty(sender.ReceivedCalls());
     }
 
     [Fact]
