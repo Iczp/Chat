@@ -12,6 +12,9 @@ public interface IMessageAppService
 {
     Task<List<MessageChangePageDto>> QueryChangesAsync(MessageChangesInput input);
     Task<List<MessageSyncItem>> SyncItemsAsync(MessageSyncItemsInput input);
+    Task<MessageChangeHeadsDto> GetChangeHeadsAsync(MessageChangeHeadsInput input);
+    Task<MessageChangeIncrementalDto> GetIncrementalChangesAsync(MessageChangeIncrementalInput input);
+    Task<MessageByIdsDto> GetByIdsAsync(MessageByIdsInput input);
     Task<List<EnumDto>> GetDisabledForwardListAsync();
 
     Task<PagedResultDto<MessageOwnerDto>> GetListAsync(MessageGetListInput input);

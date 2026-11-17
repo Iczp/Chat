@@ -45,6 +45,15 @@ public partial class Message : BaseEntity<long>, ISessionId, IHasEntityVersion
     public virtual long SyncVersion => ExtraProperties.TryGetValue(nameof(SyncVersion), out var value) &&
         long.TryParse(value?.ToString(), out var version) ? version : 0;
     internal void SetSyncVersion(long version) => ExtraProperties[nameof(SyncVersion)] = version;
+
+    /// <summary>Latest committed message change in the session's change stream.</summary>
+    public virtual long? ChangeSeq { get; protected set; }
+
+    internal void SetChangeSeq(long version)
+    {
+        SetSyncVersion(version);
+        ChangeSeq = version;
+    }
     /// <summary>
     /// 实体版本
     /// </summary>

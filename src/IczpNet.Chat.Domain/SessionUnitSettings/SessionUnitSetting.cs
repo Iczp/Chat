@@ -151,6 +151,8 @@ public class SessionUnitSetting : BaseEntity, IHasCreationTime, IHasModification
     [Comment("清除历史消息最后时间,为null时则不限")]
     public virtual DateTime? ClearTime { get; protected set; }
 
+    public virtual long? ClearChangeSeq { get; protected set; }
+
     /// <summary>
     /// 不显示消息会话(不退群,不删除消息
     /// </summary>
@@ -431,7 +433,12 @@ public class SessionUnitSetting : BaseEntity, IHasCreationTime, IHasModification
     /// 清空消息，不退群 
     /// </summary>
     /// <param name="clearTime"></param>
-    internal virtual void ClearMessage(DateTime? clearTime) => ClearTime = clearTime;
+    /// <param name="changeSeq">会话变更序号。</param>
+    internal virtual void ClearMessage(DateTime? clearTime, long? changeSeq = null)
+    {
+        ClearTime = clearTime;
+        ClearChangeSeq = changeSeq;
+    }
 
     internal virtual void SetImmersed(bool isImmersed) => IsImmersed = isImmersed;
 

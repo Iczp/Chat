@@ -480,6 +480,7 @@ public interface ISessionUnitCacheManager
     /// <returns></returns>
     Task AddUnitsAsync(IEnumerable<SessionUnitCacheItem> units);
     Task RemoveNewUnitsAsync(IEnumerable<SessionUnitCacheItem> units);
+    Task RemoveSessionMessageAsync(Guid sessionId, long messageId);
 
     /// <summary>
     /// 更新最新消息ID

@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Options;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.Domain.Entities.Events;
 using Volo.Abp.EventBus;
@@ -32,6 +33,8 @@ public partial class MessageCacheManager : RedisService, IMessageCacheManager,
     private RedisKey VersionKey(Guid id) => $"{MessagesPrefix}ReadWindow:{id}:Version";
     private RedisKey RecentKey(Guid id) => $"{MessagesPrefix}ReadWindow:{id}:Recent";
     private RedisKey HistoryKey(Guid id) => $"{MessagesPrefix}ReadWindow:{id}:History";
+    private RedisKey PendingRoomWriteKey(Guid id) => $"{MessagesPrefix}ReadWindow:{id}:PendingRoomWrite";
+    private static string RoomWriteItemKey(Guid id) => $"RoomReadFence:{id:N}";
     private RedisKey DeletedKey(Guid id) => $"{MessagesPrefix}ReadDeleted:{id}";
     private RedisKey DeletedVersionKey(Guid id) => $"{MessagesPrefix}ReadDeleted:{id}:Version";
     private RedisKey SettingsKey(Guid id) => $"{MessagesPrefix}ReadSettings:{id}";
@@ -46,9 +49,12 @@ public partial class MessageCacheManager : RedisService, IMessageCacheManager,
         GetReadWindowsAsync(Guid sessionId, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        // MGET returns both windows and their generation from the same Redis snapshot (one RTT).
-        var values = await Database.StringGetAsync([RecentKey(sessionId), HistoryKey(sessionId), VersionKey(sessionId)]);
-        return (Deserialize(values[0]), Deserialize(values[1]), values[2].ToString());
+        // Check the fence and read all window values in one atomic Redis operation.
+        var values = (RedisResult[])await Database.ScriptEvaluateAsync(@"
+if redis.call('EXISTS', KEYS[4]) ~= 0 then return {false, false, redis.call('GET', KEYS[3]) or ''} end
+return redis.call('MGET', KEYS[1], KEYS[2], KEYS[3])",
+            [RecentKey(sessionId), HistoryKey(sessionId), VersionKey(sessionId), PendingRoomWriteKey(sessionId)]);
+        return (Deserialize((RedisValue)values[0]), Deserialize((RedisValue)values[1]), ((RedisValue)values[2]).ToString());
     }
 
     private static SessionMessageWindowCacheItem Deserialize(RedisValue value)
@@ -77,9 +83,10 @@ return 1", [SettingsVersionKey(sessionUnitId), SettingsKey(sessionUnitId)],
         if (!CanPublishReadSnapshot) return false;
         var key = window.MaxMessageId == long.MaxValue ? RecentKey(sessionId) : HistoryKey(sessionId);
         var result = await Database.ScriptEvaluateAsync(@"
+if redis.call('EXISTS', KEYS[3]) ~= 0 then return 0 end
 if (redis.call('GET', KEYS[1]) or '') ~= ARGV[1] then return 0 end
 redis.call('SET', KEYS[2], ARGV[2], 'PX', ARGV[3])
-return 1", [VersionKey(sessionId), key], [version ?? "", JsonSerializer.Serialize(window), ExpiryMilliseconds]);
+return 1", [VersionKey(sessionId), key, PendingRoomWriteKey(sessionId)], [version ?? "", JsonSerializer.Serialize(window), ExpiryMilliseconds]);
         return (long)result == 1;
     }
 
@@ -134,8 +141,54 @@ return 1", [DeletedVersionKey(sessionUnitId), DeletedKey(sessionUnitId)], argume
         });
     }
 
+    public async Task PrepareRoomMessageWriteAsync(Guid sessionId)
+    {
+        var uow = LazyServiceProvider.LazyGetRequiredService<IUnitOfWorkManager>().Current;
+        if (uow?.Options.IsTransactional != true)
+            throw new InvalidOperationException("A room message read fence requires a transactional unit of work.");
+        var itemKey = RoomWriteItemKey(sessionId);
+        if (uow.Items.ContainsKey(itemKey)) return;
+        var token = Guid.NewGuid().ToString("N");
+        uow.Items[itemKey] = token;
+        var database = Database;
+        var keys = new RedisKey[] { PendingRoomWriteKey(sessionId), VersionKey(sessionId), RecentKey(sessionId), HistoryKey(sessionId) };
+        const string finishScript = @"
+if redis.call('GET', KEYS[1]) ~= ARGV[1] then return 0 end
+redis.call('SET', KEYS[2], ARGV[2])
+redis.call('DEL', KEYS[3], KEYS[4], KEYS[1])
+return 1";
+        async Task FinishAsync()
+        {
+            await database.ScriptEvaluateAsync(finishScript, keys, [token, Guid.NewGuid().ToString("N")]);
+        }
+        uow.Failed += (_, _) =>
+        {
+            if (uow.IsCompleted) return;
+            try { FinishAsync().GetAwaiter().GetResult(); }
+            catch (Exception ex) { Logger.LogError(ex, "Failed to clear rolled-back room read fence for session {SessionId}", sessionId); }
+        };
+        uow.OnCompleted(async () =>
+        {
+            // If Redis is unavailable after commit the fence remains, so readers fall back to SQL.
+            try { await FinishAsync(); }
+            catch (Exception ex) { Logger.LogError(ex, "Failed to clear committed room read fence for session {SessionId}", sessionId); }
+        });
+        await database.ScriptEvaluateAsync(@"
+-- Validate existing windows before changing any key; a wrong type fails the SQL transaction.
+redis.call('GET', KEYS[2]); redis.call('GET', KEYS[3]); redis.call('GET', KEYS[4])
+redis.call('SET', KEYS[1], ARGV[1], 'EX', ARGV[3])
+redis.call('SET', KEYS[2], ARGV[2])
+redis.call('DEL', KEYS[3], KEYS[4])
+return 1", keys, [token, Guid.NewGuid().ToString("N"), 86400]);
+    }
+
     public Task HandleEventAsync(EntityCreatedEventData<Message> eventData)
     {
+        // Room message writes use a read fence and invalidate the windows on completion.
+        var sessionId = eventData.Entity.SessionId;
+        var uow = LazyServiceProvider.LazyGetRequiredService<IUnitOfWorkManager>().Current;
+        if (sessionId.HasValue && uow?.Items?.ContainsKey(RoomWriteItemKey(sessionId.Value)) == true)
+            return Task.CompletedTask;
         // Local entity events run before the transaction commits; update certified windows only after commit.
         AfterCommit(manager => manager.AppendCommittedAsync(eventData.Entity));
         return Task.CompletedTask;

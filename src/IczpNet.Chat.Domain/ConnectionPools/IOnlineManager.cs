@@ -212,6 +212,8 @@ public interface IOnlineManager //: IConnectionPoolManager
     /// <returns></returns>
     Task AddSessionAsync(List<(Guid SessionId, long OwnerId)> ownerSessions);
 
+    Task AddSessionInTransactionAsync(List<(Guid SessionId, long OwnerId)> ownerSessions, Volo.Abp.Uow.IUnitOfWork uow);
+
     /// <summary>
     /// 获取主机最后在线时间
     /// </summary>

@@ -109,6 +109,7 @@ public interface ISessionUnitSettingManager
     /// <param name="messageId"></param>
     /// <returns></returns>
     Task<SessionUnitSetting> DeleteMessageAsync(Guid sessionUnitId, long messageId);
+    Task<SessionUnitSetting> DeleteMessageAsync(Guid sessionUnitId, long messageId, string deviceId);
 
     /// <summary>
     /// 禁言过期时间，为空则不禁言

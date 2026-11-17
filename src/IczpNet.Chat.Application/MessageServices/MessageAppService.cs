@@ -369,8 +369,13 @@ public partial class MessageAppService(
     /// <returns></returns>
     public async Task<ExtraPagedResultDto<MessageFastDto>> GetLatestAsync(MessageGetLatestInput input)
     {
-        Assert.If(input.MinMessageId <= 0, $"参数 {nameof(input.MinMessageId)} 要大于 0");
+        if (input.Authoritative)
+        {
+            Assert.If(input.MinMessageId < 0, $"参数 {nameof(input.MinMessageId)} 不能小于 0");
+            return await GetAuthoritativeWindowAsync(input.SessionUnitId, input.MaxResultCount, input.MinMessageId, null, descending: false);
+        }
 
+        Assert.If(input.MinMessageId <= 0, $"参数 {nameof(input.MinMessageId)} 要大于 0");
         var unit = await SessionUnitManager.GetCacheAsync(input.SessionUnitId);
         await CheckPolicyForUserAsync(unit.OwnerId, () => CheckPolicyAsync(GetListPolicyName));
 
@@ -410,6 +415,9 @@ public partial class MessageAppService(
     /// <returns></returns>
     public async Task<ExtraPagedResultDto<MessageFastDto>> GetHistoryAsync(MessageGetHistoryInput input)
     {
+        if (input.Authoritative)
+            return await GetAuthoritativeWindowAsync(input.SessionUnitId, input.MaxResultCount, null, input.MaxMessageId, descending: true);
+
         var unit = await SessionUnitManager.GetCacheAsync(input.SessionUnitId);
         await CheckArticleManagementOrOwnerAsync(unit.OwnerId, () => CheckPolicyAsync(GetListPolicyName));
 

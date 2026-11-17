@@ -2,6 +2,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.Specifications;
 using IczpNet.Chat.DeletedRecorders;
+using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -10,13 +11,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp;
 
 namespace IczpNet.Chat.Repositories;
 
-public class MessageChangeRepository(IDbContextProvider<ChatDbContext> provider) : IMessageChangeRepository, ITransientDependency
+public partial class MessageChangeRepository(IDbContextProvider<ChatDbContext> provider,
+    IDataFilter<ISoftDelete> softDeleteFilter) : IMessageChangeRepository, ITransientDependency
 {
     public async Task<MessageChangeEntry> AppendRollbackAsync(Message message, DateTime time, CancellationToken cancellationToken = default)
     {
@@ -31,10 +34,7 @@ public class MessageChangeRepository(IDbContextProvider<ChatDbContext> provider)
         if (existing.IsRollbacked || existing.RollbackTime.HasValue)
             return new MessageChangeEntry { AlreadyApplied = true, MessageId = message.Id, Version = existing.SyncVersion,
                 ChangeType = MessageChangeKind.Rollback, ChangedAt = existing.RollbackTime ?? time };
-        await db.Set<SessionMessageChangeState>().Where(x => x.Id == sessionId)
-            .ExecuteUpdateAsync(s => s.SetProperty(x => x.Version, x => x.Version + 1), cancellationToken);
-        var version = await db.Set<SessionMessageChangeState>().Where(x => x.Id == sessionId)
-            .Select(x => x.Version).SingleAsync(cancellationToken);
+        var version = await AllocateVersionAsync(db, sessionId, cancellationToken);
         db.Set<MessageChange>().Add(new MessageChange(Guid.NewGuid(), message, version, time));
         return new MessageChangeEntry { MessageId = message.Id, Version = version,
             ChangeType = MessageChangeKind.Rollback, ChangedAt = time };
@@ -50,8 +50,19 @@ public class MessageChangeRepository(IDbContextProvider<ChatDbContext> provider)
         await db.Database.ExecuteSqlRawAsync(command, new object[] { sessionId, sessionId }, token);
     }
 
-    public async Task<MessageChangeEntry> AppendDeleteAsync(Guid sessionUnitId, long messageId, DateTime time,
+    private static async Task<long> AllocateVersionAsync(ChatDbContext db, Guid sessionId, CancellationToken token)
+    {
+        var state = db.Set<SessionMessageChangeState>().Where(x => x.Id == sessionId);
+        await state.ExecuteUpdateAsync(s => s.SetProperty(x => x.Version, x => x.Version + 1), token);
+        return await state.Select(x => x.Version).SingleAsync(token);
+    }
+
+    public Task<MessageChangeEntry> AppendDeleteAsync(Guid sessionUnitId, long messageId, DateTime time,
         CancellationToken cancellationToken = default)
+        => AppendDeleteAsync(sessionUnitId, messageId, time, null, cancellationToken);
+
+    public async Task<MessageChangeEntry> AppendDeleteAsync(Guid sessionUnitId, long messageId, DateTime time,
+        string deviceId, CancellationToken cancellationToken)
     {
         var db = await provider.GetDbContextAsync();
         var unit = await db.SessionUnit.AsNoTracking().SingleAsync(x => x.Id == sessionUnitId, cancellationToken);
@@ -63,16 +74,38 @@ public class MessageChangeRepository(IDbContextProvider<ChatDbContext> provider)
             .Where(new OwnerMessageSpecification(unit.OwnerId, sessionUnitId).ToExpression())
             .SingleOrDefaultAsync(cancellationToken);
         if (message == null) throw new BusinessException("Chat:MessageUnavailable");
-        await db.Set<SessionMessageChangeState>().Where(x => x.Id == unit.SessionId.Value)
-            .ExecuteUpdateAsync(s => s.SetProperty(x => x.Version, x => x.Version + 1), cancellationToken);
-        var version = await db.Set<SessionMessageChangeState>().Where(x => x.Id == unit.SessionId.Value)
-            .Select(x => x.Version).SingleAsync(cancellationToken);
+        var version = await AllocateVersionAsync(db, unit.SessionId.Value, cancellationToken);
         // Both rows are saved by the same outer transaction. The existing
         // DeletedRecorder entity event invalidates member visibility caches.
-        db.Set<DeletedRecorder>().Add(new DeletedRecorder(unit, messageId, null));
+        db.Set<DeletedRecorder>().Add(new DeletedRecorder(unit, messageId, deviceId, version));
         db.Set<MessageChange>().Add(new MessageChange(Guid.NewGuid(), message, version, time, sessionUnitId));
         return new MessageChangeEntry { SessionId = unit.SessionId.Value, MessageId = messageId, SessionSeq = message.SessionSeq,
             Version = version, ChangeType = MessageChangeKind.Delete, ChangedAt = time, ReceiverSessionUnitId = sessionUnitId };
+    }
+
+    public async Task<MessageChangeEntry> AllocateClearVersionAsync(Guid sessionUnitId, DateTime clearTime,
+        CancellationToken cancellationToken = default)
+    {
+        var db = await provider.GetDbContextAsync();
+        var sessionId = await db.SessionUnit.Where(x => x.Id == sessionUnitId)
+            .Select(x => x.SessionId!.Value).SingleAsync(cancellationToken);
+        await LockStateAsync(db, sessionId, cancellationToken);
+        var previous = await db.Set<SessionUnitSetting>().Where(x => x.SessionUnitId == sessionUnitId)
+            .Select(x => new { x.ClearTime, x.ClearChangeSeq }).SingleAsync(cancellationToken);
+        if (previous.ClearTime >= clearTime)
+        {
+            return new MessageChangeEntry
+            {
+                SessionId = sessionId, ReceiverSessionUnitId = sessionUnitId, ChangeType = MessageChangeKind.Clear,
+                ChangedAt = previous.ClearTime.Value, Version = previous.ClearChangeSeq.GetValueOrDefault(), AlreadyApplied = true
+            };
+        }
+
+        return new MessageChangeEntry
+        {
+            SessionId = sessionId, ReceiverSessionUnitId = sessionUnitId, ChangeType = MessageChangeKind.Clear,
+            ChangedAt = clearTime, Version = await AllocateVersionAsync(db, sessionId, cancellationToken)
+        };
     }
 
     public async Task<MessageChangeCheckpoint> GetCheckpointAsync(Guid sessionId, CancellationToken cancellationToken = default)
@@ -81,6 +114,31 @@ public class MessageChangeRepository(IDbContextProvider<ChatDbContext> provider)
         return await db.Set<SessionMessageChangeState>().AsNoTracking().Where(x => x.Id == sessionId)
             .Select(x => new MessageChangeCheckpoint(x.Epoch, x.Version, x.MinVersion))
             .SingleOrDefaultAsync(cancellationToken) ?? new MessageChangeCheckpoint(sessionId, 0, 0);
+    }
+
+    public async Task<List<Guid>> GetRollbackRecipientsAsync(Guid sessionId, long messageId, List<Guid> candidateUnitIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (candidateUnitIds.Count == 0)
+            return [];
+
+        var db = await provider.GetDbContextAsync();
+        var eligible = from message in db.Message
+                      where message.Id == messageId && message.SessionId == sessionId
+                      from unit in message.Session.UnitList
+                      where !unit.Setting.IsKilled &&
+                            (!message.IsPrivate || message.SenderSessionUnitId == unit.Id || message.ReceiverSessionUnitId == unit.Id) &&
+                            (!unit.Setting.StartMessageId.HasValue || message.Id > unit.Setting.StartMessageId) &&
+                            (!unit.Setting.EndMessageId.HasValue || message.Id <= unit.Setting.EndMessageId) &&
+                            (!unit.Setting.HistoryFristTime.HasValue || message.CreationTime >= unit.Setting.HistoryFristTime) &&
+                            (!unit.Setting.HistoryLastTime.HasValue || message.CreationTime < unit.Setting.HistoryLastTime) &&
+                            (!unit.Setting.ClearTime.HasValue || message.CreationTime > unit.Setting.ClearTime) &&
+                            !message.DeletedList.Any(recorder => recorder.SessionUnitId == unit.Id)
+                      select unit.Id;
+        var recipients = new List<Guid>();
+        foreach (var batch in candidateUnitIds.Distinct().Chunk(500))
+            recipients.AddRange(await eligible.Where(id => batch.Contains(id)).ToListAsync(cancellationToken));
+        return recipients;
     }
 
     public async Task<List<MessageChangeEntry>> ReadChangesAsync(Guid sessionId, long after, long through, int take, CancellationToken cancellationToken = default)

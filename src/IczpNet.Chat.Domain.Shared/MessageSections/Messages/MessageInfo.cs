@@ -31,6 +31,9 @@ public class MessageInfo<T> : MessageInfo
 public class MessageInfo : ExtensibleObject, IHasExtraProperties
 {
     public virtual long SyncVersion { get; set; }
+
+    [System.Text.Json.Serialization.JsonNumberHandling(System.Text.Json.Serialization.JsonNumberHandling.WriteAsString | System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString)]
+    public virtual long? ChangeSeq { get; set; }
     /// <summary>
     /// 消息Id
     /// </summary>

@@ -8,6 +8,7 @@ using IczpNet.Chat.SessionUnitSettings;
 
 public interface IMessageCacheManager
 {
+    Task PrepareRoomMessageWriteAsync(Guid sessionId);
     Task<List<MessageChangeEntry>> GetChangeWindowAsync(Guid sessionId, Guid epoch, long after, long through,
         int take, Func<Task<List<MessageChangeEntry>>> fetch, CancellationToken cancellationToken = default);
     Task<SessionUnitSettingCacheItem> GetReadSettingsAsync(Guid sessionUnitId,

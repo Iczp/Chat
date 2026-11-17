@@ -20,4 +20,7 @@ public class MessageGetLatestInput
     /// 最小消息Id
     /// </summary>
     public virtual long MinMessageId { get; set; }
+
+    /// <summary>Read committed SQL visibility and state for a V2 page.</summary>
+    public bool Authoritative { get; set; }
 }

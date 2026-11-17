@@ -76,7 +76,7 @@ public class DeletedRecorderAppService(
         if (LazyServiceProvider.LazyGetRequiredService<IOptions<MessageOptions>>().Value.ChangeSyncEnabled)
         {
             await LazyServiceProvider.LazyGetRequiredService<IczpNet.Chat.SessionUnitSettings.ISessionUnitSettingManager>()
-                .DeleteMessageAsync(sessionUnit.Id, input.MessageId);
+                .DeleteMessageAsync(sessionUnit.Id, input.MessageId, deviceId);
             entity = await Repository.GetAsync(x => x.SessionUnitId == sessionUnit.Id && x.MessageId == input.MessageId);
         }
         else

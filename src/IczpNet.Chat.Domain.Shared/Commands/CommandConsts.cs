@@ -45,6 +45,7 @@ public class CommandConsts
     /// 删除消息 default: deleted@message
     /// </summary>
     public static string MessageDeleted { get; set; } = "deleted@message";
+    public const string MessageCleared = "cleared@message";
 
     // Transient AI events are deliberately separate from persisted message
     // commands. Clients render them in memory and only sync the final reply.

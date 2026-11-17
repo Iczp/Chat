@@ -10,6 +10,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Json;
+using Volo.Abp.Threading;
+using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.DistributedEventHandlers;
 
@@ -22,6 +24,7 @@ public class SendMessageToClientDistributedEventHandler : SendToClientDistribute
     public ICurrentHosted CurrentHosted => LazyServiceProvider.LazyGetRequiredService<ICurrentHosted>();
     public IJsonSerializer JsonSerializer => LazyServiceProvider.LazyGetRequiredService<IJsonSerializer>();
 
+    [UnitOfWork(isTransactional: false)]
     public override async Task HandleEventAsync(SendMessageToClientDistributedEto eventData)
     {
         await MeasureAsync(nameof(SendToClientBySessionAsync), () => SendToClientBySessionAsync(eventData));
@@ -95,7 +98,8 @@ public class SendMessageToClientDistributedEventHandler : SendToClientDistribute
         var command = eventData.Command;
 
         var members = (await SessionUnitCacheManager.GetMembersAsync(sessionId))
-            .Where(unit => command != CommandConsts.MessageDeleted || unit.Id == eventData.TargetSessionUnitId)
+            .Where(unit => (command != CommandConsts.MessageDeleted && command != CommandConsts.MessageCleared) ||
+                unit.Id == eventData.TargetSessionUnitId)
             .Where(unit => command != CommandConsts.MessageRollbacked || !eventData.Message.IsPrivate ||
                 unit.Id == eventData.Message.SenderSessionUnitId || unit.Id == eventData.Message.ReceiverSessionUnitId)
             .ToList();
@@ -104,9 +108,19 @@ public class SendMessageToClientDistributedEventHandler : SendToClientDistribute
 
         var ownerDevices = await OnlineManager.GetDevicesAsync(ownerIds);
 
+        if (command == CommandConsts.MessageRollbacked)
+        {
+            var candidates = members.Where(unit => ownerDevices.ContainsKey(unit.OwnerId)).Select(unit => unit.Id).ToList();
+            var repo = LazyServiceProvider.LazyGetRequiredService<IMessageChangeRepository>();
+            var token = LazyServiceProvider.LazyGetRequiredService<ICancellationTokenProvider>().Token;
+            var recipients = (await repo.GetRollbackRecipientsAsync(sessionId, eventData.MessageId, candidates, token)).ToHashSet();
+            members.RemoveAll(unit => !recipients.Contains(unit.Id));
+        }
+
         var ownerUnitMap = members.DistinctBy(x => x.OwnerId).ToDictionary(x => x.OwnerId, x => x.Id);
 
-        var connMap = ownerDevices.SelectMany(x => x.Value).GroupBy(x => x.ConnectionId).ToDictionary(x => x.Key, x => x.ToList());
+        var connMap = ownerDevices.Where(x => ownerUnitMap.ContainsKey(x.Key))
+            .SelectMany(x => x.Value).GroupBy(x => x.ConnectionId).ToDictionary(x => x.Key, x => x.ToList());
 
         Logger.LogInformation(
             "Delivering IM event {Command} for message {MessageId} in session {SessionId}: owners={OwnerCount}, connections={ConnectionCount}",

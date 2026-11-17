@@ -6,8 +6,11 @@ namespace IczpNet.Chat.MessageSections.Messages;
 [Serializable]
 public class SendMessageToClientDistributedEto : ISendMessageToClientDistributedEto
 {
-    /// <summary>Required recipient scope for a member-only deletion.</summary>
+    /// <summary>Required recipient scope for a member-only deletion or clear.</summary>
     public Guid? TargetSessionUnitId { get; set; }
+    public Guid? SessionId { get; set; }
+    public string LatestChangeSeq { get; set; }
+    public string ChangeScope { get; set; }
     /// <summary>
     /// Command
     /// </summary>

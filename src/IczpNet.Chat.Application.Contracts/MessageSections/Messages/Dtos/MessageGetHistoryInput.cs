@@ -20,4 +20,7 @@ public class MessageGetHistoryInput
     /// 最小消息Id
     /// </summary>
     public virtual long? MaxMessageId { get; set; }
+
+    /// <summary>Read the committed SQL view for a V2 baseline.</summary>
+    public bool Authoritative { get; set; }
 }

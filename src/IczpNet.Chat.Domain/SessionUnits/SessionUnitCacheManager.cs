@@ -2363,6 +2363,11 @@ return 1";
         await Task.WhenAll(writes);
     }
 
+    public async Task RemoveSessionMessageAsync(Guid sessionId, long messageId)
+    {
+        await Database.SortedSetRemoveAsync(SessionMessageSetKey(sessionId), messageId);
+    }
+
     public async Task UpdateLastMessageAsync(SessionUnitCacheItem sender, Message message)
     {
         //var unit = await GetAsync(sender.Id);

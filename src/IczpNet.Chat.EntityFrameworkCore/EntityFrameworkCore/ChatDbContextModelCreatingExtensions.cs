@@ -295,6 +295,10 @@ public static class ChatDbContextModelCreatingExtensions
         {
 
             b.HasKey(x => new { x.SessionUnitId, x.MessageId });
+            b.HasIndex(x => new { x.SessionUnitId, x.ChangeSeq })
+                .HasDatabaseName("IX_Chat_DeletedRecorder_ChangeSeq")
+                .HasFilter("[ChangeSeq] IS NOT NULL")
+                .IncludeProperties(x => x.MessageId);
             b.HasOne(x => x.Message).WithMany(x => x.DeletedList).HasForeignKey(x => x.MessageId).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
             b.HasOne(x => x.SessionUnit).WithMany(x => x.DeletedRecorderList).HasForeignKey(x => x.SessionUnitId).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
 
@@ -395,6 +399,10 @@ public static class ChatDbContextModelCreatingExtensions
         builder.Entity<Message>(b =>
             {
                 b.HasIndex(x => new { x.SessionId, x.SessionSeq }).IsUnique().HasFilter(null);
+                b.HasIndex(x => new { x.SessionId, x.ChangeSeq })
+                    .HasDatabaseName("IX_Chat_Message_ChangeSeq")
+                    .HasFilter("[ChangeSeq] IS NOT NULL")
+                    .IncludeProperties(x => x.Id);
                 var _prefix = $"{ChatDbProperties.DbTablePrefix}_{nameof(Message)}_MapTo";
                 b.HasMany(x => x.CmdContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(CmdContent)}", ChatDbProperties.DbSchema));
                 b.HasMany(x => x.TextContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(TextContent)}", ChatDbProperties.DbSchema));

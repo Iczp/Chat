@@ -311,6 +311,7 @@ public class SessionUnitSettingAppService(
     /// <param name="sessionUnitId">会话单元Id</param>
     /// <returns></returns>
     [HttpPost]
+    [Volo.Abp.Uow.UnitOfWork(isTransactional: true)]
     public virtual async Task<SessionUnitOwnerDto> ClearMessageAsync([Required] Guid sessionUnitId)
     {
         var entity = await GetAndCheckPolicyAsync(ClearMessagePolicyName, sessionUnitId);
@@ -336,7 +337,8 @@ public class SessionUnitSettingAppService(
     {
         var entity = await GetAndCheckPolicyAsync(DeleteMessagePolicyName, sessionUnitId);
 
-        await SessionUnitSettingManager.DeleteMessageAsync(entity.Id, messageId);
+        var deviceId = await LazyServiceProvider.LazyGetRequiredService<IDeviceContext>().GetDeviceIdAsync();
+        await SessionUnitSettingManager.DeleteMessageAsync(entity.Id, messageId, deviceId);
     }
 
     /// <summary>

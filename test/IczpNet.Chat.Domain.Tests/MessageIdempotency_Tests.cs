@@ -19,6 +19,21 @@ namespace IczpNet.Chat;
 
 public class MessageIdempotency_Tests
 {
+    [Fact]
+    public async Task Room_command_requires_a_transactional_work_unit()
+    {
+        var constructor = typeof(MessageManager).GetConstructors().Single();
+        var arguments = constructor.GetParameters().Select(x => Substitute.For([x.ParameterType], [])).ToArray();
+        var manager = (MessageManager)constructor.Invoke(arguments);
+        var unitsOfWork = (IUnitOfWorkManager)arguments.Single(x => x is IUnitOfWorkManager);
+        var current = Substitute.For<IUnitOfWork>();
+        current.Options.Returns(new AbpUnitOfWorkOptions { IsTransactional = false });
+        unitsOfWork.Current.Returns(current);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => manager.CreateRoomCommandInCurrentTransactionAsync(
+            new SessionUnitCacheItem { Id = Guid.NewGuid() }, new IczpNet.Chat.MessageSections.Templates.CmdContentInfo(), "id"));
+        unitsOfWork.DidNotReceiveWithAnyArgs().Begin(default, default);
+    }
+
     [Theory]
     [InlineData(null, true)]
     [InlineData(26, true)]

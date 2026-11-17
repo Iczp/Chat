@@ -392,13 +392,27 @@ public partial class MessageManager(
         return message;
     }
 
+    public async Task<Message> CreateRoomCommandInCurrentTransactionAsync(
+        SessionUnitCacheItem senderSessionUnit, CmdContentInfo content, string clientMessageId)
+    {
+        var uow = UnitOfWorkManager.Current;
+        if (uow?.Options.IsTransactional != true)
+            throw new InvalidOperationException("Room commands require the current transactional unit of work.");
+        if (string.IsNullOrWhiteSpace(clientMessageId) || clientMessageId.Length > 26)
+            throw new ArgumentException("A stable client message ID of at most 26 characters is required.", nameof(clientMessageId));
+        var entity = ObjectMapper.Map<CmdContentInfo, CmdContent>(content);
+        return await CreateMessageCoreAsync(senderSessionUnit, _ => Task.FromResult<IContentEntity>(entity),
+            clientMessageId, cleanupOnRollback: true);
+    }
+
     private async Task<Message> CreateMessageCoreAsync(
         SessionUnitCacheItem senderSessionUnit,
         Func<Message, Task<IContentEntity>> action,
         string clientMessageId = null,
         Guid? receiverSessionUnitId = null,
         long? quoteMessageId = null,
-        List<Guid> remindList = null)
+        List<Guid> remindList = null,
+        bool cleanupOnRollback = false)
     {
 
         Assert.If(!await SettingProvider.IsTrueAsync(ChatSettings.IsMessageSenderEnabled), $"MessageSender main switch is off.");
@@ -505,14 +519,39 @@ public partial class MessageManager(
         var sessionSeq = await SessionRepository.UpdateLastMessageSeqAsync(sessionId, cancellationTokenProvider.Token);
         message.SetSessionSeq(sessionSeq);
 
+        if (cleanupOnRollback)
+            await MessageCacheManager.PrepareRoomMessageWriteAsync(sessionId);
+
         // Save
         message = await Repository.InsertAsync(message, autoSave: true);
+
+        if (cleanupOnRollback)
+        {
+            var transaction = UnitOfWorkManager.Current;
+            var rollbackMessageId = message.Id;
+            transaction.Failed += (_, _) =>
+            {
+                if (transaction.IsCompleted) return;
+                try
+                {
+                    Task.WhenAll(
+                        MessageCache.RemoveAsync(new MessageCacheKey(rollbackMessageId), hideErrors: false, considerUow: false),
+                        SessionMaxMessageIdCache.RemoveAsync(new SessionMaxMessageIdCacheKey(sessionId), hideErrors: false, considerUow: false),
+                        SessionUnitCacheManager.RemoveSessionMessageAsync(sessionId, rollbackMessageId))
+                        .GetAwaiter().GetResult();
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Failed to clean rolled-back room message cache {MessageId}", rollbackMessageId);
+                }
+            };
+        }
 
         // 重新获取一下，填充导航属性
         message = await Repository.GetAsync(message.Id);
 
         // 缓存消息
-        await SetCacheAsync(message, senderSessionUnit);
+        await SetCacheAsync(message, senderSessionUnit, hideErrors: cleanupOnRollback ? false : null);
 
         // update Session LastMessage
         await SessionUnitCacheManager.UpdateLastMessageAsync(senderSessionUnit, message);
@@ -814,6 +853,9 @@ public partial class MessageManager(
     /// <inheritdoc />
     public virtual async Task<Dictionary<string, long>> RollbackAsync(Message message)
     {
+        if (message.IsRollbackMessage())
+            return new Dictionary<string, long> { { "MessageId", message.Id } };
+
         int allowRollbackHours = await SettingProvider.GetAsync<int>(ChatSettings.AllowRollbackHours);
 
         var nowTime = Clock.Now;
@@ -831,7 +873,7 @@ public partial class MessageManager(
             if (change.AlreadyApplied)
                 return new Dictionary<string, long> { { "MessageId", message.Id } };
             message.Rollback(change.ChangedAt);
-            message.SetSyncVersion(change.Version);
+            message.SetChangeSeq(change.Version);
         }
         else
         {
@@ -940,7 +982,8 @@ public partial class MessageManager(
         bool considerUow = false,
         CancellationToken token = default)
     {
-        await SetMaxMessageIdAsync(message.SessionId.Value, message.Id);
+        await SessionMaxMessageIdCache.SetAsync(new SessionMaxMessageIdCacheKey(message.SessionId.Value),
+            new SessionMaxMessageIdCacheItem { MaxMessageId = message.Id }, hideErrors: hideErrors);
 
         var messageInfo = ObjectMapper.Map<Message, MessageCacheItem>(message);
 

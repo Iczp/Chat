@@ -765,6 +765,88 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         return await Database.HashLengthAsync(SessionConnHashKey(sessionId));
     }
 
+    // Decimal strings preserve Int64 owner IDs without Lua double precision loss.
+    private const string AddTransactionalSessionScript = @"
+local existing = redis.call('HGET', KEYS[1], ARGV[1]) or '[]'
+if not string.match(existing, '^%s*%[[%d,%-%s]*%]%s*$') then return redis.error_reply('Invalid session connection owner list') end
+local values, present, added = {}, {}, {}
+for value in string.gmatch(existing, '%-?%d+') do
+    if not present[value] then present[value] = true; values[#values+1] = value end
+end
+if redis.call('EXISTS', KEYS[2]) == 1 then return 0 end
+for i=4,#ARGV do
+    local value = ARGV[i]
+    if not present[value] then present[value] = true; values[#values+1] = value; added[#added+1] = value end
+end
+redis.call('SET', KEYS[2], table.concat(added, ','), 'EX', ARGV[3])
+if #added > 0 then
+    redis.call('HSET', KEYS[1], ARGV[1], '[' .. table.concat(values, ',') .. ']')
+    if tonumber(ARGV[2]) > 0 then redis.call('EXPIRE', KEYS[1], ARGV[2]) end
+end
+return #added";
+
+    private const string RollbackTransactionalSessionScript = @"
+local added = redis.call('GET', KEYS[2])
+if not added then return 0 end
+local existing = redis.call('HGET', KEYS[1], ARGV[1])
+if existing then
+    if not string.match(existing, '^%s*%[[%d,%-%s]*%]%s*$') then return redis.error_reply('Invalid session connection owner list') end
+    local remove, remaining = {}, {}
+    for value in string.gmatch(added, '%-?%d+') do remove[value] = true end
+    for value in string.gmatch(existing, '%-?%d+') do if not remove[value] then remaining[#remaining+1] = value end end
+    if #remaining == 0 then redis.call('HDEL', KEYS[1], ARGV[1])
+    else redis.call('HSET', KEYS[1], ARGV[1], '[' .. table.concat(remaining, ',') .. ']') end
+end
+redis.call('DEL', KEYS[2])
+return 1";
+
+    public async Task AddSessionInTransactionAsync(List<(Guid SessionId, long OwnerId)> ownerSessions, Volo.Abp.Uow.IUnitOfWork uow)
+    {
+        ArgumentNullException.ThrowIfNull(ownerSessions);
+        if (uow?.Options.IsTransactional != true)
+            throw new InvalidOperationException("Transactional session connection updates require a SQL transaction.");
+        if (ownerSessions.Count == 0) return;
+        var devices = await GetDevicesAsync(ownerSessions.Select(x => x.OwnerId).Distinct().ToList());
+        var plans = ownerSessions.Where(x => devices.ContainsKey(x.OwnerId))
+            .SelectMany(x => devices[x.OwnerId].Select(d => (x.SessionId, x.OwnerId, d.ConnectionId)))
+            .GroupBy(x => (x.SessionId, x.ConnectionId))
+            .Select(g => (Key: SessionConnHashKey(g.Key.SessionId), Connection: g.Key.ConnectionId,
+                Owners: g.Select(x => x.OwnerId).Distinct().ToArray(),
+                Marker: (RedisKey)$"{Prefix}RoomPending:{uow.Id:N}:{Guid.NewGuid():N}"))
+            .ToList();
+        if (plans.Count == 0) return;
+        var database = Database;
+        uow.Failed += (_, _) =>
+        {
+            if (uow.IsCompleted) return;
+            try
+            {
+                Task.WhenAll(plans.Select(p => database.ScriptEvaluateAsync(RollbackTransactionalSessionScript,
+                    [p.Key, p.Marker], [p.Connection]))).GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to roll back room connection pool updates for unit of work {UnitOfWorkId}", uow.Id);
+            }
+        };
+        uow.OnCompleted(async () =>
+        {
+            try { await database.KeyDeleteAsync(plans.Select(p => p.Marker).ToArray()); }
+            catch (Exception ex) { Logger.LogWarning(ex, "Failed to remove committed room connection markers for unit of work {UnitOfWorkId}", uow.Id); }
+        });
+        var expiry = Math.Max(1, (long)(CacheExpire?.TotalSeconds ?? 300));
+        var markerExpiry = Math.Max(expiry, 86400);
+        var batch = database.CreateBatch();
+        var writes = plans.Select(p =>
+        {
+            var args = new List<RedisValue> { p.Connection, expiry, markerExpiry };
+            args.AddRange(p.Owners.Select(x => (RedisValue)x));
+            return batch.ScriptEvaluateAsync(AddTransactionalSessionScript, [p.Key, p.Marker], args.ToArray());
+        }).ToArray();
+        batch.Execute();
+        await Task.WhenAll(writes);
+    }
+
     public async Task AddSessionAsync(List<(Guid SessionId, long OwnerId)> ownerSessions)
     {
         Logger.LogInformation("AddUnitsAsync");

@@ -5,6 +5,7 @@ using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
+using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.Options;
 using IczpNet.Chat.Sessions;
@@ -12,6 +13,7 @@ using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.TextTemplates;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -200,25 +202,35 @@ public class RoomManager(
         // Capture data while the creating scope is alive; publish only after SQL commits.
         var units = insertSessionUnitList.Select(x => ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(x)).ToList();
         var roomUnit = units.Single(x => x.Id == roomSessionUnit.Id);
-        RegisterCreatedRoomCompletion(uow, units, roomUnit, content, session.Id);
+        await PrepareUnitCachesAsync(uow, units);
+        await OnlineManager.AddSessionInTransactionAsync(units.Select(x => (x.SessionId!.Value, x.OwnerId)).ToList(), uow);
+        var clientMessageId = "RC" + Convert.ToBase64String(session.Id.ToByteArray()).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+        await LazyServiceProvider.LazyGetRequiredService<IMessageManager>()
+            .CreateRoomCommandInCurrentTransactionAsync(roomUnit, content, clientMessageId);
 
         return room;
     }
 
-    private void RegisterCreatedRoomCompletion(IUnitOfWork uow, List<SessionUnitCacheItem> units,
-        SessionUnitCacheItem roomUnit, CmdContentInfo content, Guid sessionId)
+    private async Task PrepareUnitCachesAsync(IUnitOfWork uow, List<SessionUnitCacheItem> units)
     {
         var scopeFactory = LazyServiceProvider.LazyGetRequiredService<IServiceScopeFactory>();
-        var clientMessageId = "RC" + Convert.ToBase64String(sessionId.ToByteArray()).TrimEnd('=').Replace('+', '-').Replace('/', '_');
-        uow.OnCompleted(async () =>
+        // Failed is synchronous and is raised on disposal after the transaction is disposed.
+        // A post-commit callback can fail too; never remove cache for a committed unit of work.
+        uow.Failed += (_, _) =>
         {
-            using var scope = scopeFactory.CreateScope();
-            await scope.ServiceProvider.GetRequiredService<ISessionUnitCacheManager>().AddUnitsAsync(units);
-            await scope.ServiceProvider.GetRequiredService<IOnlineManager>().AddSessionAsync(
-                units.Select(x => (x.SessionId!.Value, x.OwnerId)).ToList());
-            await scope.ServiceProvider.GetRequiredService<IMessageSender>().SendCmdAsync(roomUnit,
-                new MessageInput<CmdContentInfo> { ClientMessageId = clientMessageId, Content = content });
-        });
+            if (uow.IsCompleted) return;
+            try
+            {
+                using var scope = scopeFactory.CreateScope();
+                scope.ServiceProvider.GetRequiredService<ISessionUnitCacheManager>()
+                    .RemoveNewUnitsAsync(units).GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to remove rolled-back room unit caches for session {SessionId}", units.FirstOrDefault()?.SessionId);
+            }
+        };
+        await SessionUnitCacheManager.AddUnitsAsync(units);
     }
 
     public virtual async Task<List<SessionUnit>> InviteAsync(InviteInput input, bool autoSendMessage = true)
@@ -324,27 +336,15 @@ public class RoomManager(
             roomUnit = ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(senderUnit);
         }
 
-        RegisterInvitedRoomCompletion(uow, units, roomUnit, content);
-        return joinMemberSessionUnitList;
-    }
-
-    private void RegisterInvitedRoomCompletion(IUnitOfWork uow, List<SessionUnitCacheItem> units,
-        SessionUnitCacheItem roomUnit, CmdContentInfo content)
-    {
-        var scopeFactory = LazyServiceProvider.LazyGetRequiredService<IServiceScopeFactory>();
-        var clientMessageId = "RI" + Convert.ToBase64String(units[0].Id.ToByteArray()).TrimEnd('=').Replace('+', '-').Replace('/', '_');
-        uow.OnCompleted(async () =>
+        await PrepareUnitCachesAsync(uow, units);
+        await OnlineManager.AddSessionInTransactionAsync(units.Select(x => (x.SessionId!.Value, x.OwnerId)).ToList(), uow);
+        if (content != null)
         {
-            using var scope = scopeFactory.CreateScope();
-            await scope.ServiceProvider.GetRequiredService<ISessionUnitCacheManager>().AddUnitsAsync(units);
-            await scope.ServiceProvider.GetRequiredService<IOnlineManager>().AddSessionAsync(
-                units.Select(x => (x.SessionId!.Value, x.OwnerId)).ToList());
-            if (content != null)
-            {
-                await scope.ServiceProvider.GetRequiredService<IMessageSender>().SendCmdAsync(roomUnit,
-                    new MessageInput<CmdContentInfo> { ClientMessageId = clientMessageId, Content = content });
-            }
-        });
+            var clientMessageId = "RI" + Convert.ToBase64String(units[0].Id.ToByteArray()).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+            await LazyServiceProvider.LazyGetRequiredService<IMessageManager>()
+                .CreateRoomCommandInCurrentTransactionAsync(roomUnit, content, clientMessageId);
+        }
+        return joinMemberSessionUnitList;
     }
 
     protected virtual Task SendRoomMessageAsync(SessionUnit roomSessionUnit, CmdContentInfo content)

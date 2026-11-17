@@ -7,6 +7,9 @@ public class MessageOptions
 {
     // Enable only after the MessageChange schema has been deployed.
     public bool ChangeSyncEnabled { get; set; }
+    // Enable only when every host allocates the latest-state projections.
+    public bool ChangeSyncV2Enabled { get; set; }
+    public string ChangeSyncV2Generation { get; set; } = "1";
     public int ReadCacheBatchSize { get; set; } = 128;
     public int ReadCacheMaxBatches { get; set; } = 4;
     public TimeSpan ReadCacheExpiration { get; set; } = TimeSpan.FromMinutes(5);

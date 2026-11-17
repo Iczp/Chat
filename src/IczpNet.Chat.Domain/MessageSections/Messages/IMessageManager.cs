@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.SessionUnits;
+﻿using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.SessionUnits;
 using Microsoft.Extensions.Caching.Distributed;
 using System;
 using System.Collections.Generic;
@@ -83,6 +84,8 @@ public interface IMessageManager
         Guid? receiverSessionUnitId = null,
         long? quoteMessageId = null,
         List<Guid> remindList = null);
+
+    Task<Message> CreateRoomCommandInCurrentTransactionAsync(SessionUnitCacheItem senderSessionUnit, CmdContentInfo content, string clientMessageId);
 
     /// <summary>
     /// 发送消息

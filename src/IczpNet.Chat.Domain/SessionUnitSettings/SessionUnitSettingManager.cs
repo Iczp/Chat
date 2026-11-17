@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -161,42 +162,87 @@ public class SessionUnitSettingManager(
     }
 
     /// <inheritdoc />
+    [UnitOfWork(isTransactional: true)]
     public virtual async Task<SessionUnitSetting> ClearMessageAsync(Guid sessionUnitId)
     {
+        if (!LazyServiceProvider.LazyGetRequiredService<IOptions<MessageOptions>>().Value.ChangeSyncEnabled)
+        {
+            await SessionUnitManager.SetReadMessageIdAsync(sessionUnitId, false);
+            return await SetEntityAsync(sessionUnitId, x => x.ClearMessage(Clock.Now));
+        }
+
+        var uow = LazyServiceProvider.LazyGetRequiredService<IUnitOfWorkManager>().Current
+            ?? throw new InvalidOperationException("Clearing messages requires a unit of work.");
+        var change = await LazyServiceProvider.LazyGetRequiredService<IMessageChangeRepository>()
+            .AllocateClearVersionAsync(sessionUnitId, Clock.Now,
+                LazyServiceProvider.LazyGetRequiredService<ICancellationTokenProvider>().Token);
+        if (change.AlreadyApplied)
+            return await GetAsync(sessionUnitId);
+
         await SessionUnitManager.SetReadMessageIdAsync(sessionUnitId, false);
-        return await SetEntityAsync(sessionUnitId, x => x.ClearMessage(Clock.Now));
+        var setting = await GetAsync(sessionUnitId);
+        setting.ClearMessage(change.ChangedAt, change.Version);
+        await uow.SaveChangesAsync();
+
+        NotifyMessageChangeOnCommit(uow, change, sessionUnitId, CommandConsts.MessageCleared, "Clear");
+        return setting;
     }
 
     /// <inheritdoc />
-    public virtual async Task<SessionUnitSetting> DeleteMessageAsync(Guid sessionUnitId, long messageId)
+    [UnitOfWork(isTransactional: true)]
+    public virtual Task<SessionUnitSetting> DeleteMessageAsync(Guid sessionUnitId, long messageId)
+        => DeleteMessageAsync(sessionUnitId, messageId, null);
+
+    /// <inheritdoc />
+    [UnitOfWork(isTransactional: true)]
+    public virtual async Task<SessionUnitSetting> DeleteMessageAsync(Guid sessionUnitId, long messageId, string deviceId)
     {
         if (!LazyServiceProvider.LazyGetRequiredService<IOptions<MessageOptions>>().Value.ChangeSyncEnabled)
             throw new BusinessException("Chat:MessageChangeSyncDisabled");
         if (messageId <= 0) throw new BusinessException("Chat:MessageUnavailable");
-        var change = await LazyServiceProvider.LazyGetRequiredService<IMessageChangeRepository>()
-            .AppendDeleteAsync(sessionUnitId, messageId, Clock.Now,
-                LazyServiceProvider.LazyGetRequiredService<ICancellationTokenProvider>().Token);
+        var repository = LazyServiceProvider.LazyGetRequiredService<IMessageChangeRepository>();
+        var token = LazyServiceProvider.LazyGetRequiredService<ICancellationTokenProvider>().Token;
+        var change = deviceId == null
+            ? await repository.AppendDeleteAsync(sessionUnitId, messageId, Clock.Now, token)
+            : await repository.AppendDeleteAsync(sessionUnitId, messageId, Clock.Now, deviceId, token);
         var uow = LazyServiceProvider.LazyGetRequiredService<IUnitOfWorkManager>().Current
             ?? throw new InvalidOperationException("Message deletion requires a unit of work.");
         if (!change.AlreadyApplied)
-        {
-            var factory = LazyServiceProvider.LazyGetRequiredService<IServiceScopeFactory>();
-            var notification = new SendMessageToClientDistributedEto
-            {
-                Command = CommandConsts.MessageDeleted, TargetSessionUnitId = sessionUnitId,
-                HostName = LazyServiceProvider.LazyGetRequiredService<ICurrentHosted>().Name,
-                MessageId = messageId,
-                Message = new MessageInfo<object> { Id = messageId, SessionId = change.SessionId, SessionSeq = change.SessionSeq, SyncVersion = change.Version },
-            };
-            uow.OnCompleted(async () =>
-            {
-                using var scope = factory.CreateScope();
-                await scope.ServiceProvider.GetRequiredService<IDistributedEventBus>()
-                    .PublishAsync(notification, onUnitOfWorkComplete: false, useOutbox: false);
-            });
-        }
+            NotifyMessageChangeOnCommit(uow, change, sessionUnitId, CommandConsts.MessageDeleted, "Private");
         await uow.SaveChangesAsync();
         return await GetAsync(sessionUnitId);
+    }
+
+    private void NotifyMessageChangeOnCommit(IUnitOfWork uow, MessageChangeEntry change, Guid sessionUnitId,
+        string command, string changeScope)
+    {
+        var factory = LazyServiceProvider.LazyGetRequiredService<IServiceScopeFactory>();
+        var notification = new SendMessageToClientDistributedEto
+        {
+            Command = command,
+            TargetSessionUnitId = sessionUnitId,
+            SessionId = change.SessionId,
+            LatestChangeSeq = change.Version.ToString(CultureInfo.InvariantCulture),
+            ChangeScope = changeScope,
+            HostName = LazyServiceProvider.LazyGetRequiredService<ICurrentHosted>().Name,
+            MessageId = change.MessageId,
+            Message = new MessageInfo<object>
+            {
+                Id = change.MessageId, SessionId = change.SessionId,
+                SessionSeq = change.SessionSeq, SyncVersion = change.Version
+            },
+        };
+        uow.OnCompleted(async () =>
+        {
+            using var scope = factory.CreateScope();
+            if (command == CommandConsts.MessageCleared)
+            {
+                await scope.ServiceProvider.GetRequiredService<IDistributedCache<SessionUnitSettingCacheItem, Guid>>()
+                    .RemoveAsync(sessionUnitId, considerUow: false);
+            }
+            await scope.ServiceProvider.GetRequiredService<IDistributedEventBus>()
+                .PublishAsync(notification, onUnitOfWorkComplete: false, useOutbox: false);
+        });
     }
 
     /// <inheritdoc />

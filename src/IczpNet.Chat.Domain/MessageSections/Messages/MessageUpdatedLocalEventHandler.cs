@@ -2,6 +2,7 @@
 using IczpNet.Chat.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Globalization;
 using System.Threading.Tasks;
 using Volo.Abp.Caching;
 using Volo.Abp.DependencyInjection;
@@ -32,6 +33,9 @@ public class MessageUpdatedLocalEventHandler(
             Command = CommandConsts.MessageRollbacked,
             HostName = currentHosted.Name,
             MessageId = message.Id,
+            SessionId = message.SessionId,
+            LatestChangeSeq = message.ChangeSeq?.ToString(CultureInfo.InvariantCulture),
+            ChangeScope = message.IsPrivate ? "Private" : "Shared",
             Message = new MessageInfo<object>
             {
                 Id = message.Id,
