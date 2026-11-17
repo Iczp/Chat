@@ -25,22 +25,25 @@ namespace IczpNet.Chat.MessageServices;
 
 public partial class MessageAppService
 {
+    private IMessageChangeRepository ChangeRepository =>
+        LazyServiceProvider.LazyGetRequiredService<IMessageChangeRepository>();
+
     private CancellationToken ChangeCancellationToken =>
         LazyServiceProvider.LazyGetRequiredService<ICancellationTokenProvider>().Token;
 
     private MessageOptions GetV2Options()
     {
         var options = LazyServiceProvider.LazyGetRequiredService<IOptions<MessageOptions>>().Value;
-        if (!options.ChangeSyncEnabled || !options.ChangeSyncV2Enabled)
-            throw new EntityNotFoundException("Message Change Sync V2 is disabled.");
+        if (!options.ChangeSyncEnabled)
+            throw new EntityNotFoundException("Message Change Sync is disabled.");
         return options;
     }
 
     private static string ToSeq(long version) => version.ToString(CultureInfo.InvariantCulture);
 
-    private static string GetV2Epoch(MessageChangeWriteGateState gate, MessageOptions options)
+    private static string GetV2Epoch(MessageOptions options)
     {
-        var value = $"Chat.MessageChanges.v2:{gate.Epoch:D}:{options.ChangeSyncV2Generation}";
+        var value = $"Chat.MessageChanges:{options.ChangeSyncV2Generation}";
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
     }
 
@@ -53,11 +56,11 @@ public partial class MessageAppService
         var userId = CurrentUser.GetId();
         await CheckPolicyForUserAsync(input.ChatObjectId, () => CheckPolicyAsync(GetListPolicyName));
         var token = ChangeCancellationToken;
-        var gate = await ChangeRepository.GetWriteGateAsync(token);
+        var headChangeId = await ChangeRepository.GetHeadChangeIdAsync(token);
         var cursor = await ChangeRepository.GetCursorAsync(CurrentTenant.Id, userId, input.ChatObjectId, input.DeviceId.Trim(), token);
         return new MessageChangeHeadV2Dto(
-            GetV2Epoch(gate, options),
-            ToSeq(gate.LastCommittedChangeId),
+            GetV2Epoch(options),
+            ToSeq(headChangeId),
             ToSeq(cursor?.LastAppliedMessageChangeId ?? 0),
             cursor?.IsInitialized ?? false);
     }
@@ -74,13 +77,13 @@ public partial class MessageAppService
 
         await CheckPolicyForUserAsync(input.ChatObjectId, () => CheckPolicyAsync(GetListPolicyName));
         var token = ChangeCancellationToken;
-        var gate = await ChangeRepository.GetWriteGateAsync(token);
-        var epoch = GetV2Epoch(gate, options);
-        if (!string.Equals(input.Epoch, epoch, StringComparison.OrdinalIgnoreCase) || after > gate.LastCommittedChangeId)
+        var headChangeId = await ChangeRepository.GetHeadChangeIdAsync(token);
+        var epoch = GetV2Epoch(options);
+        if (!string.Equals(input.Epoch, epoch, StringComparison.OrdinalIgnoreCase) || after > headChangeId)
         {
             return new MessageChangePullDto(
                 epoch,
-                ToSeq(gate.LastCommittedChangeId),
+                ToSeq(headChangeId),
                 input.AfterMessageChangeId,
                 HasMore: false,
                 ResetRequired: true,
@@ -90,18 +93,16 @@ public partial class MessageAppService
         var page = await ChangeRepository.PullChangesAsync(
             input.ChatObjectId,
             after,
-            gate.LastCommittedChangeId,
+            headChangeId,
             input.MaxResultCount,
             token);
 
-        var verified = await ChangeRepository.GetWriteGateAsync(token);
-        var verifiedEpoch = GetV2Epoch(verified, options);
-        if (!string.Equals(verifiedEpoch, epoch, StringComparison.OrdinalIgnoreCase) ||
-            verified.LastCommittedChangeId < gate.LastCommittedChangeId)
+        var verifiedHead = await ChangeRepository.GetHeadChangeIdAsync(token);
+        if (verifiedHead < headChangeId)
         {
             return new MessageChangePullDto(
-                verifiedEpoch,
-                ToSeq(verified.LastCommittedChangeId),
+                epoch,
+                ToSeq(verifiedHead),
                 input.AfterMessageChangeId,
                 HasMore: false,
                 ResetRequired: true,
@@ -122,7 +123,7 @@ public partial class MessageAppService
 
         return new MessageChangePullDto(
             epoch,
-            ToSeq(gate.LastCommittedChangeId),
+            ToSeq(headChangeId),
             ToSeq(page.NextCursor),
             page.HasMore,
             ResetRequired: false,
@@ -141,20 +142,20 @@ public partial class MessageAppService
         var userId = CurrentUser.GetId();
         await CheckPolicyForUserAsync(input.ChatObjectId, () => CheckPolicyAsync(GetListPolicyName));
         var token = ChangeCancellationToken;
-        var gate = await ChangeRepository.GetWriteGateAsync(token);
-        var epoch = GetV2Epoch(gate, options);
+        var headChangeId = await ChangeRepository.GetHeadChangeIdAsync(token);
+        var epoch = GetV2Epoch(options);
         if (!string.Equals(input.Epoch, epoch, StringComparison.OrdinalIgnoreCase))
         {
             var existing = await ChangeRepository.GetCursorAsync(CurrentTenant.Id, userId, input.ChatObjectId, input.DeviceId.Trim(), token);
             return new MessageChangeAckDto(
                 epoch,
-                ToSeq(gate.LastCommittedChangeId),
+                ToSeq(headChangeId),
                 ToSeq(existing?.LastAppliedMessageChangeId ?? 0),
                 existing?.IsInitialized ?? false,
                 ResetRequired: true);
         }
 
-        if (ackId > gate.LastCommittedChangeId)
+        if (ackId > headChangeId)
             throw new UserFriendlyException("确认游标不能超过服务端当前已提交的变更位置。");
 
         var cursor = await ChangeRepository.UpsertCursorAsync(
@@ -169,7 +170,7 @@ public partial class MessageAppService
 
         return new MessageChangeAckDto(
             epoch,
-            ToSeq(gate.LastCommittedChangeId),
+            ToSeq(headChangeId),
             ToSeq(cursor.LastAppliedMessageChangeId),
             cursor.IsInitialized,
             ResetRequired: false);

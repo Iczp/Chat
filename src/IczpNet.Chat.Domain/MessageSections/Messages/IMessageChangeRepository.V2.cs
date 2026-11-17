@@ -10,9 +10,6 @@ public partial interface IMessageChangeRepository
     Task<List<MessageChangeUnitScope>> GetV2ScopesAsync(long ownerId, List<Guid> sessionUnitIds,
         CancellationToken cancellationToken = default);
 
-    Task<List<MessageChangeV2Entry>> ReadV2ChangesAsync(MessageChangeUnitScope scope,
-        long after, long through, int take, CancellationToken cancellationToken = default);
-
     Task<List<MessageChangeV2State>> ReadV2ItemsAsync(MessageChangeUnitScope scope,
         List<long> ids, CancellationToken cancellationToken = default);
 
@@ -22,9 +19,7 @@ public partial interface IMessageChangeRepository
     Task<List<Message>> ReadV2WindowAsync(MessageChangeUnitScope scope,
         long? minId, long? maxId, int take, bool descending, CancellationToken cancellationToken = default);
 
-    Task<MessageChangeWriteGateState> GetWriteGateAsync(CancellationToken cancellationToken = default);
-
-    Task<MessageChangeWriteGateState> RotateWriteGateEpochAsync(CancellationToken cancellationToken = default);
+    Task<long> GetHeadChangeIdAsync(CancellationToken cancellationToken = default);
 
     Task<MessageChangeCursor> GetCursorAsync(Guid? tenantId, Guid userId, long chatObjectId, string deviceId,
         CancellationToken cancellationToken = default);
@@ -37,15 +32,11 @@ public partial interface IMessageChangeRepository
         int maxResultCount, CancellationToken cancellationToken = default);
 }
 
-public record MessageChangeWriteGateState(Guid Epoch, long Revision, long LastCommittedChangeId);
+public record MessageChangeUnitScope(Guid UnitId, Guid SessionId, long OwnerId, DateTime? ClearTime);
+
+public record MessageChangeV2State(Message Message, bool IsDeleted, long? DeleteChangeSeq);
 
 public record MessageChangePullRow(long MessageChangeId, Guid SessionId, Guid SessionUnitId, long MessageId,
     MessageChangeKind ChangeType, DateTime CreationTime);
 
 public record MessageChangePullResult(long NextCursor, bool HasMore, List<MessageChangePullRow> Items);
-
-public record MessageChangeUnitScope(Guid UnitId, Guid SessionId, long OwnerId, DateTime? ClearTime);
-
-public record MessageChangeV2Entry(long Version, long? MessageId, MessageChangeKind Kind, DateTime? Time);
-
-public record MessageChangeV2State(Message Message, bool IsDeleted, long? DeleteChangeSeq);

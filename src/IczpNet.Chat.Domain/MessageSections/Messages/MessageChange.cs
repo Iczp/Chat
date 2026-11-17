@@ -81,34 +81,3 @@ public class MessageChangeCursor : AggregateRoot<Guid>, IMultiTenant
         LastSyncTime = syncTime;
     }
 }
-
-/// <summary>Global write gate serializing MessageChange IDENTITY commits.</summary>
-public class MessageChangeWriteGate : Entity<int>
-{
-    public const int DefaultId = 1;
-    public static readonly Guid InitialEpoch = new("11111111-1111-1111-1111-111111111111");
-
-    public virtual long Revision { get; protected set; }
-
-    public virtual Guid Epoch { get; protected set; }
-
-    public virtual long LastCommittedChangeId { get; protected set; }
-
-    protected MessageChangeWriteGate() { }
-
-    public MessageChangeWriteGate(int id, Guid epoch, long revision = 0, long lastCommittedChangeId = 0) : base(id)
-    {
-        Epoch = epoch;
-        Revision = revision;
-        LastCommittedChangeId = lastCommittedChangeId;
-    }
-}
-
-/// <summary>Serializes per-session private delete/clear commits without locking the hot Session row.</summary>
-public class SessionMessageChangeState : Entity<Guid>
-{
-    public virtual Guid Epoch { get; protected set; }
-    public virtual long Version { get; protected set; }
-    public virtual long MinVersion { get; protected set; }
-    protected SessionMessageChangeState() { }
-}

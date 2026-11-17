@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.BaseDtos;
+using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.Enums.Dtos;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
 using System;
@@ -10,8 +10,6 @@ namespace IczpNet.Chat.MessageSections.Messages;
 
 public interface IMessageAppService
 {
-    Task<List<MessageChangePageDto>> QueryChangesAsync(MessageChangesInput input);
-    Task<List<MessageSyncItem>> SyncItemsAsync(MessageSyncItemsInput input);
     Task<MessageChangeHeadV2Dto> GetChangeHeadAsync(MessageChangeHeadInput input);
     Task<MessageChangePullDto> PullChangesAsync(MessageChangePullInput input);
     Task<MessageChangeAckDto> AckChangesAsync(MessageChangeAckInput input);

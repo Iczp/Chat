@@ -42,10 +42,11 @@ public class MessageChanges_Tests
         public IMessageChangeRepository Changes { get; } = Substitute.For<IMessageChangeRepository>();
         public IObjectMapper<ChatDomainModule> DomainMapper { get; } = Substitute.For<IObjectMapper<ChatDomainModule>>();
         public IMessageManager Messages => MessageManager;
-        public MessageChangeWriteGateState Gate { get; set; } = new(MessageChangeWriteGate.InitialEpoch, 1, 0);
+        public long HeadChangeId { get; set; }
+        public int Generation { get; set; } = 1;
         public MessageChangeCursor Cursor { get; set; }
 
-        public Probe(bool enabled = true, bool enabledV2 = true) : base(
+        public Probe(bool enabled = true) : base(
             Substitute.For<IDeletedRecorderManager>(),
             Substitute.For<IMessageRepository>(),
             Substitute.For<IReadedRecorderManager>(),
@@ -69,7 +70,7 @@ public class MessageChanges_Tests
             clock.Now.Returns(new DateTime(2026, 11, 17, 10, 0, 0, DateTimeKind.Utc));
 
             lazy.LazyGetRequiredService<IOptions<MessageOptions>>().Returns(
-                Microsoft.Extensions.Options.Options.Create(new MessageOptions { ChangeSyncEnabled = enabled, ChangeSyncV2Enabled = enabledV2 }));
+                _ => Microsoft.Extensions.Options.Options.Create(new MessageOptions { ChangeSyncEnabled = enabled, ChangeSyncV2Generation = Generation.ToString() }));
             lazy.LazyGetRequiredService<IMessageChangeRepository>().Returns(Changes);
             lazy.LazyGetRequiredService<IObjectMapper<ChatDomainModule>>().Returns(DomainMapper);
             lazy.LazyGetRequiredService<ICancellationTokenProvider>().Returns(Substitute.For<ICancellationTokenProvider>());
@@ -77,7 +78,7 @@ public class MessageChanges_Tests
             lazy.LazyGetRequiredService<ICurrentTenant>().Returns(currentTenant);
             lazy.LazyGetRequiredService<IClock>().Returns(clock);
 
-            Changes.GetWriteGateAsync(Arg.Any<CancellationToken>()).Returns(_ => Gate);
+            Changes.GetHeadChangeIdAsync(Arg.Any<CancellationToken>()).Returns(_ => HeadChangeId);
             Changes.GetCursorAsync(Arg.Any<Guid?>(), UserId, 1L, "DEVICE_001", Arg.Any<CancellationToken>())
                 .Returns(_ => Cursor);
             Changes.UpsertCursorAsync(Arg.Any<Guid?>(), UserId, 1L, "DEVICE_001", Arg.Any<long>(), Arg.Any<DateTime>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
@@ -122,20 +123,10 @@ public class MessageChanges_Tests
     }
 
     [Fact]
-    public async Task V1_query_and_sync_items_are_disabled()
+    public async Task Head_returns_global_epoch_head_and_device_cursor()
     {
         var service = new Probe();
-        await Assert.ThrowsAsync<EntityNotFoundException>(() =>
-            service.QueryChangesAsync(new() { MaxResultCount = 10, Sessions = [new() { SessionUnitId = service.Unit.Id }] }));
-        await Assert.ThrowsAsync<EntityNotFoundException>(() =>
-            service.SyncItemsAsync(new() { SessionUnitId = service.Unit.Id, MessageIds = [1] }));
-    }
-
-    [Fact]
-    public async Task V2_head_returns_global_epoch_head_and_device_cursor()
-    {
-        var service = new Probe();
-        service.Gate = new MessageChangeWriteGateState(Guid.NewGuid(), 5, 9007199254740993L);
+        service.HeadChangeId = 9007199254740993L;
 
         var initial = await service.GetChangeHeadAsync(new() { ChatObjectId = 1, DeviceId = "DEVICE_001" });
         Assert.False(initial.Initialized);
@@ -148,10 +139,10 @@ public class MessageChanges_Tests
     }
 
     [Fact]
-    public async Task V2_pull_paginates_advances_over_empty_ranges_and_detects_epoch_rotation()
+    public async Task Pull_paginates_advances_over_empty_ranges_and_detects_epoch_rotation()
     {
         var service = new Probe();
-        service.Gate = new MessageChangeWriteGateState(Guid.NewGuid(), 10, 150);
+        service.HeadChangeId = 150;
         var head = await service.GetChangeHeadAsync(new() { ChatObjectId = 1, DeviceId = "DEVICE_001" });
 
         service.Changes.PullChangesAsync(1L, 100L, 150L, 1, Arg.Any<CancellationToken>())
@@ -192,7 +183,7 @@ public class MessageChanges_Tests
         Assert.Empty(second.Items);
 
         // Epoch rotation triggers ResetRequired.
-        service.Gate = service.Gate with { Epoch = Guid.NewGuid() };
+        service.Generation = 2;
         var reset = await service.PullChangesAsync(new()
         {
             ChatObjectId = 1,
@@ -206,10 +197,10 @@ public class MessageChanges_Tests
     }
 
     [Fact]
-    public async Task V2_ack_advances_monotonically_and_rejects_ahead_of_head()
+    public async Task Ack_advances_monotonically_and_rejects_ahead_of_head()
     {
         var service = new Probe();
-        service.Gate = new MessageChangeWriteGateState(Guid.NewGuid(), 10, 150);
+        service.HeadChangeId = 150;
         var head = await service.GetChangeHeadAsync(new() { ChatObjectId = 1, DeviceId = "DEVICE_001" });
 
         var ack125 = await service.AckChangesAsync(new()
@@ -244,9 +235,9 @@ public class MessageChanges_Tests
     }
 
     [Fact]
-    public async Task V2_rejects_disabled_features_before_reading_the_schema()
+    public async Task Disabled_sync_rejects_before_reading_the_schema()
     {
-        var service = new Probe(enabledV2: false);
+        var service = new Probe(enabled: false);
         await Assert.ThrowsAsync<EntityNotFoundException>(() =>
             service.GetChangeHeadAsync(new() { ChatObjectId = 1, DeviceId = "DEVICE_001" }));
         Assert.Empty(service.Changes.ReceivedCalls());

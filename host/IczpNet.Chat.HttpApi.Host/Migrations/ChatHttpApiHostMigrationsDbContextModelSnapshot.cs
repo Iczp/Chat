@@ -2999,54 +2999,6 @@ namespace IczpNet.Chat.Migrations
                     b.ToTable("Chat_MessageChangeCursor", (string)null);
                 });
 
-            modelBuilder.Entity("IczpNet.Chat.MessageSections.Messages.MessageChangeWriteGate", b =>
-                {
-                    b.Property<int>("Id")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("Epoch")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<long>("LastCommittedChangeId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("Revision")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Chat_MessageChangeWriteGate", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Epoch = new Guid("11111111-1111-1111-1111-111111111111"),
-                            LastCommittedChangeId = 0L,
-                            Revision = 0L
-                        });
-                });
-
-            modelBuilder.Entity("IczpNet.Chat.MessageSections.Messages.SessionMessageChangeState", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("Epoch")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<long>("MinVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("Version")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Chat_SessionMessageChangeState", (string)null);
-                });
-
             modelBuilder.Entity("IczpNet.Chat.MessageSections.ScheduledArticleMessage", b =>
                 {
                     b.Property<Guid>("Id")

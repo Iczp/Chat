@@ -384,11 +384,6 @@ public static class ChatDbContextModelCreatingExtensions
 
 
 
-        builder.Entity<SessionMessageChangeState>(b =>
-        {
-            b.ToTable($"{ChatDbProperties.DbTablePrefix}_SessionMessageChangeState", ChatDbProperties.DbSchema);
-            b.HasKey(x => x.Id);
-        });
         builder.Entity<MessageChange>(b =>
         {
             b.ToTable($"{ChatDbProperties.DbTablePrefix}_MessageChange", ChatDbProperties.DbSchema);
@@ -404,15 +399,6 @@ public static class ChatDbContextModelCreatingExtensions
             b.HasIndex(x => new { x.TenantId, x.UserId, x.ChatObjectId, x.DeviceId })
                 .IsUnique()
                 .HasFilter(null);
-        });
-        builder.Entity<MessageChangeWriteGate>(b =>
-        {
-            b.ToTable($"{ChatDbProperties.DbTablePrefix}_MessageChangeWriteGate", ChatDbProperties.DbSchema);
-            b.HasKey(x => x.Id);
-            b.Property(x => x.Id).ValueGeneratedNever();
-            b.HasData(new MessageChangeWriteGate(
-                MessageChangeWriteGate.DefaultId,
-                MessageChangeWriteGate.InitialEpoch));
         });
         builder.Entity<Message>(b =>
             {
