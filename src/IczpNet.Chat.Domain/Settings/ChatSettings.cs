@@ -65,4 +65,10 @@ public static class ChatSettings
 
     [DefaultValue(540)]
     public const string PortraitBigSize = $"{GroupName}:{nameof(PortraitBigSize)}";
+
+    /// <summary>
+    /// 已软删除的消息变更历史记录保留天数，默认 30 天
+    /// </summary>
+    [DefaultValue(30)]
+    public const string MessageChangeRetentionDays = $"{GroupName}:{nameof(MessageChangeRetentionDays)}";
 }

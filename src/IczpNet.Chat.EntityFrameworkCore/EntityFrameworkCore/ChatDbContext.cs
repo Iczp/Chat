@@ -146,6 +146,8 @@ public class ChatDbContext(DbContextOptions<ChatDbContext> options) : AbpDbConte
 
 
     public DbSet<Message> Message { get; set; }
+    public DbSet<MessageChange> MessageChange { get; set; }
+    public DbSet<MessageChangeCursor> MessageChangeCursor { get; set; }
 
     public DbSet<MessageWord> MessageWord { get; set; }
 

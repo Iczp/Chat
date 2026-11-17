@@ -18,11 +18,11 @@ namespace IczpNet.Chat.Repositories;
 
 public class MessageChangeRepository(
     IDbContextProvider<ChatDbContext> provider,
-    IDataFilter<ISoftDelete> softDeleteFilter) : IMessageChangeRepository, ITransientDependency
+    IDataFilter<ISoftDelete> softDeleteFilter) : ChatRepositoryBase<MessageChange, long>(provider), IMessageChangeRepository, ITransientDependency
 {
     public async Task<MessageChangeEntry> AppendRollbackAsync(Message message, DateTime time, CancellationToken cancellationToken = default)
     {
-        var db = await provider.GetDbContextAsync();
+        var db = await GetDbContextAsync();
         if (db.Database.CurrentTransaction == null)
             throw new InvalidOperationException("Message changes require a transactional unit of work.");
 
@@ -41,10 +41,12 @@ public class MessageChangeRepository(
             };
         }
 
+        // 先软删该 MessageId 现有的未删除记录并立即保存，释放唯一过滤索引 [IsDeleted] = 0
+        await SoftDeleteExistingActiveChangesAsync(db, message.Id, time, cancellationToken);
+
         var sessionId = message.SessionId!.Value;
         var change = new MessageChange(sessionId, message.Id, MessageChangeKind.Rollback, time);
-        db.Set<MessageChange>().Add(change);
-        await db.SaveChangesAsync(cancellationToken);
+        await InsertAsync(change, autoSave: true, cancellationToken: cancellationToken);
 
         return new MessageChangeEntry
         {
@@ -59,7 +61,7 @@ public class MessageChangeRepository(
 
     public async Task<MessageChangeEntry> AppendUpdateAsync(Message message, DateTime time, CancellationToken cancellationToken = default)
     {
-        var db = await provider.GetDbContextAsync();
+        var db = await GetDbContextAsync();
         if (db.Database.CurrentTransaction == null)
             throw new InvalidOperationException("Message changes require a transactional unit of work.");
 
@@ -69,10 +71,12 @@ public class MessageChangeRepository(
         if (!exists)
             throw new BusinessException("Chat:MessageUnavailable");
 
+        // 先软删该 MessageId 现有的未删除记录并立即保存，释放唯一过滤索引 [IsDeleted] = 0
+        await SoftDeleteExistingActiveChangesAsync(db, message.Id, time, cancellationToken);
+
         var sessionId = message.SessionId!.Value;
         var change = new MessageChange(sessionId, message.Id, MessageChangeKind.Update, time);
-        db.Set<MessageChange>().Add(change);
-        await db.SaveChangesAsync(cancellationToken);
+        await InsertAsync(change, autoSave: true, cancellationToken: cancellationToken);
 
         return new MessageChangeEntry
         {
@@ -83,6 +87,32 @@ public class MessageChangeRepository(
             ChangeType = MessageChangeKind.Update,
             ChangedAt = time
         };
+    }
+
+    private async Task SoftDeleteExistingActiveChangesAsync(ChatDbContext db, long messageId, DateTime deletionTime, CancellationToken cancellationToken)
+    {
+        var activeChanges = await db.Set<MessageChange>()
+            .Where(x => x.MessageId == messageId && !x.IsDeleted)
+            .ToListAsync(cancellationToken);
+
+        if (activeChanges.Count == 0)
+            return;
+
+        await DeleteManyAsync(activeChanges, autoSave: true, cancellationToken: cancellationToken);
+        var updatedDeletionTime = false;
+        foreach (var item in activeChanges)
+        {
+            if (!item.DeletionTime.HasValue)
+            {
+                db.Entry(item).Property(x => x.DeletionTime).CurrentValue = deletionTime;
+                updatedDeletionTime = true;
+            }
+        }
+
+        if (updatedDeletionTime)
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
     }
 
     private static async Task AcquireTransactionWriteLockAsync(ChatDbContext db, CancellationToken token)
@@ -103,7 +133,7 @@ public class MessageChangeRepository(
     public async Task<MessageChangeEntry> AppendDeleteAsync(Guid sessionUnitId, long messageId, DateTime time,
         string deviceId, CancellationToken cancellationToken)
     {
-        var db = await provider.GetDbContextAsync();
+        var db = await GetDbContextAsync();
         var unit = await db.SessionUnit.AsNoTracking().SingleAsync(x => x.Id == sessionUnitId, cancellationToken);
         if (await db.Set<DeletedRecorder>().AnyAsync(x => x.SessionUnitId == sessionUnitId && x.MessageId == messageId, cancellationToken))
             return new MessageChangeEntry { AlreadyApplied = true, MessageId = messageId, SessionId = unit.SessionId!.Value };
@@ -131,7 +161,7 @@ public class MessageChangeRepository(
     public async Task<MessageChangeEntry> AllocateClearVersionAsync(Guid sessionUnitId, DateTime clearTime,
         CancellationToken cancellationToken = default)
     {
-        var db = await provider.GetDbContextAsync();
+        var db = await GetDbContextAsync();
         var sessionId = await db.SessionUnit.Where(x => x.Id == sessionUnitId)
             .Select(x => x.SessionId!.Value).SingleAsync(cancellationToken);
         var previousClearTime = await db.Set<SessionUnitSetting>().Where(x => x.SessionUnitId == sessionUnitId)
@@ -165,19 +195,19 @@ public class MessageChangeRepository(
         if (candidateUnitIds.Count == 0)
             return [];
 
-        var db = await provider.GetDbContextAsync();
+        var db = await GetDbContextAsync();
         var eligible = from message in db.Message
-                      where message.Id == messageId && message.SessionId == sessionId
-                      from unit in message.Session.UnitList
-                      where !unit.Setting.IsKilled &&
-                            (!message.IsPrivate || message.SenderSessionUnitId == unit.Id || message.ReceiverSessionUnitId == unit.Id) &&
-                            (!unit.Setting.StartMessageId.HasValue || message.Id > unit.Setting.StartMessageId) &&
-                            (!unit.Setting.EndMessageId.HasValue || message.Id <= unit.Setting.EndMessageId) &&
-                            (!unit.Setting.HistoryFristTime.HasValue || message.CreationTime >= unit.Setting.HistoryFristTime) &&
-                            (!unit.Setting.HistoryLastTime.HasValue || message.CreationTime < unit.Setting.HistoryLastTime) &&
-                            (!unit.Setting.ClearTime.HasValue || message.CreationTime > unit.Setting.ClearTime) &&
-                            !message.DeletedList.Any(recorder => recorder.SessionUnitId == unit.Id)
-                      select unit.Id;
+                       where message.Id == messageId && message.SessionId == sessionId
+                       from unit in message.Session.UnitList
+                       where !unit.Setting.IsKilled &&
+                             (!message.IsPrivate || message.SenderSessionUnitId == unit.Id || message.ReceiverSessionUnitId == unit.Id) &&
+                             (!unit.Setting.StartMessageId.HasValue || message.Id > unit.Setting.StartMessageId) &&
+                             (!unit.Setting.EndMessageId.HasValue || message.Id <= unit.Setting.EndMessageId) &&
+                             (!unit.Setting.HistoryFristTime.HasValue || message.CreationTime >= unit.Setting.HistoryFristTime) &&
+                             (!unit.Setting.HistoryLastTime.HasValue || message.CreationTime < unit.Setting.HistoryLastTime) &&
+                             (!unit.Setting.ClearTime.HasValue || message.CreationTime > unit.Setting.ClearTime) &&
+                             !message.DeletedList.Any(recorder => recorder.SessionUnitId == unit.Id)
+                       select unit.Id;
         var recipients = new List<Guid>();
         foreach (var batch in candidateUnitIds.Distinct().Chunk(500))
             recipients.AddRange(await eligible.Where(id => batch.Contains(id)).ToListAsync(cancellationToken));
@@ -187,7 +217,7 @@ public class MessageChangeRepository(
     public async Task<List<MessageChangeUnitScope>> GetScopesAsync(long ownerId, List<Guid> sessionUnitIds,
         CancellationToken cancellationToken = default)
     {
-        var db = await provider.GetDbContextAsync();
+        var db = await GetDbContextAsync();
         return await db.SessionUnit.AsNoTracking()
             .Where(x => sessionUnitIds.Contains(x.Id) && x.OwnerId == ownerId && x.SessionId.HasValue && !x.Setting.IsKilled)
             .Select(x => new MessageChangeUnitScope(x.Id, x.SessionId.Value, x.OwnerId, x.Setting.ClearTime))
@@ -197,7 +227,7 @@ public class MessageChangeRepository(
     public async Task<List<MessageChangeItemState>> ReadItemsAsync(MessageChangeUnitScope scope,
         List<long> ids, CancellationToken cancellationToken = default)
     {
-        var db = await provider.GetDbContextAsync();
+        var db = await GetDbContextAsync();
         return await db.Message.AsNoTracking()
             .Where(x => x.SessionId == scope.SessionId && ids.Contains(x.Id))
             .Where(new OwnerMessageSpecification(scope.OwnerId, scope.UnitId, includeDeleted: true).ToExpression())
@@ -208,7 +238,7 @@ public class MessageChangeRepository(
     public async Task<List<long>> ReadSoftDeletedIdsAsync(MessageChangeUnitScope scope,
         List<long> ids, CancellationToken cancellationToken = default)
     {
-        var db = await provider.GetDbContextAsync();
+        var db = await GetDbContextAsync();
         using var filter = softDeleteFilter.Disable();
         return await db.Message.AsNoTracking()
             .Where(x => x.IsDeleted && x.SessionId == scope.SessionId && ids.Contains(x.Id) && !x.Session.IsDeleted)
@@ -220,7 +250,7 @@ public class MessageChangeRepository(
     public async Task<List<Message>> ReadWindowAsync(MessageChangeUnitScope scope,
         long? minId, long? maxId, int take, bool descending, CancellationToken cancellationToken = default)
     {
-        var db = await provider.GetDbContextAsync();
+        var db = await GetDbContextAsync();
         var query = db.Message.AsNoTracking().Where(x => x.SessionId == scope.SessionId)
             .Where(new OwnerMessageSpecification(scope.OwnerId, scope.UnitId).ToExpression());
         if (minId.HasValue) query = query.Where(x => x.Id > minId.Value);
@@ -231,7 +261,7 @@ public class MessageChangeRepository(
 
     public async Task<long> GetHeadChangeIdAsync(CancellationToken cancellationToken = default)
     {
-        var db = await provider.GetDbContextAsync();
+        var db = await GetDbContextAsync();
         return await db.Set<MessageChange>().AsNoTracking()
             .MaxAsync(x => (long?)x.Id, cancellationToken) ?? 0L;
     }
@@ -239,7 +269,7 @@ public class MessageChangeRepository(
     public async Task<MessageChangeCursor> GetCursorAsync(Guid? tenantId, Guid userId, long chatObjectId, string deviceId,
         CancellationToken cancellationToken = default)
     {
-        var db = await provider.GetDbContextAsync();
+        var db = await GetDbContextAsync();
         return await db.Set<MessageChangeCursor>().AsNoTracking()
             .Where(x => x.TenantId == tenantId && x.UserId == userId && x.ChatObjectId == chatObjectId && x.DeviceId == deviceId)
             .SingleOrDefaultAsync(cancellationToken);
@@ -249,7 +279,7 @@ public class MessageChangeRepository(
         long lastAppliedMessageChangeId, DateTime syncTime, bool reset = false,
         CancellationToken cancellationToken = default)
     {
-        var db = await provider.GetDbContextAsync();
+        var db = await GetDbContextAsync();
         var existing = await db.Set<MessageChangeCursor>()
             .Where(x => x.TenantId == tenantId && x.UserId == userId && x.ChatObjectId == chatObjectId && x.DeviceId == deviceId)
             .SingleOrDefaultAsync(cancellationToken);
@@ -283,7 +313,7 @@ public class MessageChangeRepository(
         if (afterMessageChangeId >= headChangeId)
             return new MessageChangePullResult(headChangeId, false, []);
 
-        var db = await provider.GetDbContextAsync();
+        var db = await GetDbContextAsync();
         var scanLimit = Math.Max(maxResultCount * 5, 500);
         var windowIds = await db.Set<MessageChange>().AsNoTracking()
             .Where(c => c.Id > afterMessageChangeId && c.Id <= headChangeId)
@@ -305,7 +335,6 @@ public class MessageChangeRepository(
             join m in db.Message.AsNoTracking() on c.MessageId equals m.Id
             join u in db.SessionUnit.AsNoTracking() on c.SessionId equals u.SessionId
             where c.Id > afterMessageChangeId && c.Id <= windowEnd
-                  && m.MessageChangeId == c.Id
                   && u.OwnerId == chatObjectId && !u.IsDeleted && !u.Setting.IsKilled
                   && (!m.IsPrivate || m.SenderSessionUnitId == u.Id || m.ReceiverSessionUnitId == u.Id)
                   && (!u.Setting.StartMessageId.HasValue || m.Id > u.Setting.StartMessageId)

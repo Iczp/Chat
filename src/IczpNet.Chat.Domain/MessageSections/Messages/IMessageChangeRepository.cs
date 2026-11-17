@@ -2,10 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
-public interface IMessageChangeRepository
+public interface IMessageChangeRepository : IRepository<MessageChange, long>
 {
     Task<MessageChangeEntry> AppendRollbackAsync(Message message, DateTime time, CancellationToken cancellationToken = default);
     Task<MessageChangeEntry> AppendUpdateAsync(Message message, DateTime time, CancellationToken cancellationToken = default);

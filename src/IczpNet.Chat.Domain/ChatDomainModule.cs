@@ -116,6 +116,7 @@ public class ChatDomainModule : AbpModule
             .GetValue("Chat:Workers:EnablePeriodic", true))
         {
             await context.AddBackgroundWorkerAsync<MessageReportFlushWorker>();
+            await context.AddBackgroundWorkerAsync<IczpNet.Chat.MessageSections.Messages.MessageChangeCleanupWorker>();
             if (context.ServiceProvider.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>()
                 .GetValue("Chat:ArticleSchedules:Enabled", false))
                 await context.AddBackgroundWorkerAsync<IczpNet.Chat.MessageSections.ArticleScheduleRecoveryWorker>();

@@ -46,6 +46,7 @@ using System.Linq;
 using System.Reflection;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities;
+using Volo.Abp.EntityFrameworkCore.Modeling;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -383,13 +384,19 @@ public static class ChatDbContextModelCreatingExtensions
         builder.Entity<MessageChange>(b =>
         {
             b.ToTable($"{ChatDbProperties.DbTablePrefix}_MessageChange", ChatDbProperties.DbSchema);
+            b.ConfigureByConvention();
             b.HasKey(x => x.Id);
             b.Property(x => x.Id).ValueGeneratedOnAdd();
+            b.HasIndex(x => x.MessageId)
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
             b.HasIndex(x => new { x.SessionId, x.Id });
+            b.HasIndex(x => new { x.IsDeleted, x.DeletionTime });
         });
         builder.Entity<MessageChangeCursor>(b =>
         {
             b.ToTable($"{ChatDbProperties.DbTablePrefix}_MessageChangeCursor", ChatDbProperties.DbSchema);
+            b.ConfigureByConvention();
             b.HasKey(x => x.Id);
             b.Property(x => x.DeviceId).IsRequired().HasMaxLength(200);
             b.HasIndex(x => new { x.TenantId, x.UserId, x.ChatObjectId, x.DeviceId })

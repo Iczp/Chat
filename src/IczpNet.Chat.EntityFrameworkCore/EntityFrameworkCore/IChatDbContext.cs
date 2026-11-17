@@ -139,6 +139,8 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<ServerHost> ServerHost { get; }
 
     DbSet<Message> Message { get; }
+    DbSet<MessageChange> MessageChange { get; }
+    DbSet<MessageChangeCursor> MessageChangeCursor { get; }
     DbSet<MessageWord> MessageWord { get; }
     DbSet<MessageContent> MessageContent { get; }
 

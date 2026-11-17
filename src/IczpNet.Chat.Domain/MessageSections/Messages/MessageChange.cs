@@ -1,10 +1,10 @@
 using System;
-using Volo.Abp.Domain.Entities;
+using Volo.Abp.Domain.Entities.Auditing;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
-/// <summary>Append-only shared message change log (Edit / Recall) scoped by SessionId.</summary>
-public class MessageChange : Entity<long>
+/// <summary>Shared message change log (Edit / Recall) scoped by SessionId, supporting soft-delete and full auditing.</summary>
+public class MessageChange : FullAuditedEntity<long>
 {
     public override long Id { get; protected set; }
 
@@ -13,8 +13,6 @@ public class MessageChange : Entity<long>
     public virtual long MessageId { get; protected set; }
 
     public virtual MessageChangeKind ChangeType { get; protected set; }
-
-    public virtual DateTime CreationTime { get; protected set; }
 
     protected MessageChange() { }
 
