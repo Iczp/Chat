@@ -738,62 +738,25 @@ Epoch
 
 # 七、API 契约
 
-优先扩展现有：
+消息变更采用独立实体应用服务：
 
 ```
-MessageAppService
-IMessageAppService
+MessageChangeAppService
+IMessageChangeAppService
 ```
 
-遵守 ABP 自动 API、Application.Contracts 和 DTO 规范。
+遵守 ABP 自动 API、Application.Contracts 和 DTO 规范，自动生成 `/api/chat/message-change/` 路由前缀。
 
-如果项目已有同名接口，需要检查后复用。
+## TASK-07：首次与重置基线获取
 
-## TASK-07：获取同步 Head
-
-候选接口：
-
-```
-POST /api/chat/message/changes/head
-```
-
-请求：
-
-```
-{
-  "chatObjectId": "CHAT_OBJECT_A",
-  "deviceId": "DEVICE_001"
-}
-```
-
-响应：
-
-```
-{
-  "epoch": "CURRENT_EPOCH",
-  "headChangeId": "150",
-  "lastAppliedChangeId": "120",
-  "initialized": true
-}
-```
-
-说明：
-
-- `headChangeId`：服务端安全提交的全局变更位置。
-- `lastAppliedChangeId`：MessageChangeCursor 记录的服务器确认位置。
-- `initialized`：服务端该设备身份是否已有确认记录。
-- `epoch`：变更流的当前纪元。
-
-注意：返回服务器已确认的120，不代表客户端当前 SQLite 一定有120对应的数据。
-
-不能直接使用服务端游标覆盖客户端真实进度。
+首次同步或纪元变化时，直接通过 `POST /api/chat/message-change/pull` 传入空 `epoch` 获取当前 `epoch` 与 `headChangeId`（`resetRequired: true`），无需单独的 `/head` 接口。
 
 ## TASK-08：增量获取共享消息变更
 
-候选接口：
+接口（由 `MessageChangeAppService.PullAsync` 自动生成）：
 
 ```
-POST /api/chat/message/changes/pull
+POST /api/chat/message-change/pull
 ```
 
 请求：
@@ -884,10 +847,10 @@ POST /api/chat/message/by-ids
 
 ## TASK-10：确认设备同步进度
 
-候选接口：
+接口（由 `MessageChangeAppService.AckAsync` 自动生成）：
 
 ```
-POST /api/chat/message/changes/ack
+POST /api/chat/message-change/ack
 ```
 
 请求：

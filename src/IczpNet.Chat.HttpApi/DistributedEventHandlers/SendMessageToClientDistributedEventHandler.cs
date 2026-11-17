@@ -100,7 +100,7 @@ public class SendMessageToClientDistributedEventHandler : SendToClientDistribute
         var members = (await SessionUnitCacheManager.GetMembersAsync(sessionId))
             .Where(unit => (command != CommandConsts.MessageDeleted && command != CommandConsts.MessageCleared) ||
                 unit.Id == eventData.TargetSessionUnitId)
-            .Where(unit => command != CommandConsts.MessageRollbacked || !eventData.Message.IsPrivate ||
+            .Where(unit => (command != CommandConsts.MessageRollbacked && command != CommandConsts.MessageUpdated) || !eventData.Message.IsPrivate ||
                 unit.Id == eventData.Message.SenderSessionUnitId || unit.Id == eventData.Message.ReceiverSessionUnitId)
             .ToList();
 
@@ -108,7 +108,7 @@ public class SendMessageToClientDistributedEventHandler : SendToClientDistribute
 
         var ownerDevices = await OnlineManager.GetDevicesAsync(ownerIds);
 
-        if (command == CommandConsts.MessageRollbacked)
+        if (command == CommandConsts.MessageRollbacked || command == CommandConsts.MessageUpdated)
         {
             var candidates = members.Where(unit => ownerDevices.ContainsKey(unit.OwnerId)).Select(unit => unit.Id).ToList();
             var repo = LazyServiceProvider.LazyGetRequiredService<IMessageChangeRepository>();

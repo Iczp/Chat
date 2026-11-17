@@ -26,7 +26,7 @@ public class MessageChangesMvcTestModule : AbpModule
 public class MessageChangesMvc_Tests
 {
     [Fact]
-    public async Task ABP_conventions_register_the_explicit_V2_routes_and_existing_V1_routes()
+    public async Task ABP_conventions_register_message_change_auto_api_routes_and_message_by_ids()
     {
         var builder = WebApplication.CreateBuilder();
         builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
@@ -35,14 +35,29 @@ public class MessageChangesMvc_Tests
         await app.InitializeApplicationAsync();
         app.MapControllers();
 
-        var endpoints = ((IEndpointRouteBuilder)app).DataSources.SelectMany(source => source.Endpoints)
+        var allEndpoints = ((IEndpointRouteBuilder)app).DataSources.SelectMany(source => source.Endpoints)
             .OfType<RouteEndpoint>()
-            .Where(endpoint => endpoint.Metadata.GetMetadata<ControllerActionDescriptor>()?.ControllerTypeInfo.AsType()
-                == typeof(MessageAppService)).ToList();
+            .ToList();
 
-        foreach (var route in new[] { "changes/pull", "changes/ack", "by-ids" })
-            Assert.Contains(endpoints, endpoint =>
-                endpoint.RoutePattern.RawText?.TrimStart('/') == "api/chat/message/" + route &&
+        var changeEndpoints = allEndpoints
+            .Where(endpoint => endpoint.Metadata.GetMetadata<ControllerActionDescriptor>()?.ControllerTypeInfo.AsType()
+                == typeof(MessageChangeAppService))
+            .ToList();
+
+        foreach (var route in new[] { "pull", "ack" })
+        {
+            Assert.Contains(changeEndpoints, endpoint =>
+                endpoint.RoutePattern.RawText?.TrimStart('/') == "api/chat/message-change/" + route &&
                 endpoint.Metadata.GetMetadata<IHttpMethodMetadata>()?.HttpMethods.Contains("POST") == true);
+        }
+
+        var messageEndpoints = allEndpoints
+            .Where(endpoint => endpoint.Metadata.GetMetadata<ControllerActionDescriptor>()?.ControllerTypeInfo.AsType()
+                == typeof(MessageAppService))
+            .ToList();
+
+        Assert.Contains(messageEndpoints, endpoint =>
+            endpoint.RoutePattern.RawText?.TrimStart('/') == "api/chat/message/by-ids" &&
+            endpoint.Metadata.GetMetadata<IHttpMethodMetadata>()?.HttpMethods.Contains("POST") == true);
     }
 }

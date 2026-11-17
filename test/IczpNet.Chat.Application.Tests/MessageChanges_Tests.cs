@@ -35,29 +35,16 @@ namespace IczpNet.Chat;
 public class MessageChanges_Tests
 {
     [DisableConventionalRegistration]
-    public class Probe : MessageAppService
+    public class ChangeProbe : MessageChangeAppService
     {
         public Guid UserId { get; } = Guid.NewGuid();
         public SessionUnit Unit { get; } = (SessionUnit)Activator.CreateInstance(typeof(SessionUnit), true)!;
         public IMessageChangeRepository Changes { get; } = Substitute.For<IMessageChangeRepository>();
-        public IObjectMapper<ChatDomainModule> DomainMapper { get; } = Substitute.For<IObjectMapper<ChatDomainModule>>();
-        public IMessageManager Messages => MessageManager;
         public long HeadChangeId { get; set; }
         public int Generation { get; set; } = 1;
         public MessageChangeCursor Cursor { get; set; }
 
-        public Probe(bool enabled = true) : base(
-            Substitute.For<IDeletedRecorderManager>(),
-            Substitute.For<IMessageRepository>(),
-            Substitute.For<IReadedRecorderManager>(),
-            Substitute.For<IOpenedRecorderManager>(),
-            Substitute.For<IFavoritedRecorderManager>(),
-            Substitute.For<IFollowManager>(),
-            Substitute.For<ISessionUnitCacheManager>(),
-            Substitute.For<ISessionUnitRepository>(),
-            Substitute.For<ISessionUnitSettingManager>(),
-            Substitute.For<ISessionUnitFriendshipMapper>(),
-            Substitute.For<IMessageManager>())
+        public ChangeProbe(bool enabled = true)
         {
             typeof(SessionUnit).GetProperty(nameof(Unit.Id))!.SetValue(Unit, Guid.NewGuid());
             typeof(SessionUnit).GetProperty(nameof(Unit.SessionId))!.SetValue(Unit, Guid.NewGuid());
@@ -72,7 +59,6 @@ public class MessageChanges_Tests
             lazy.LazyGetRequiredService<IOptions<MessageOptions>>().Returns(
                 _ => Microsoft.Extensions.Options.Options.Create(new MessageOptions { ChangeSyncEnabled = enabled, ChangeSyncV2Generation = Generation.ToString() }));
             lazy.LazyGetRequiredService<IMessageChangeRepository>().Returns(Changes);
-            lazy.LazyGetRequiredService<IObjectMapper<ChatDomainModule>>().Returns(DomainMapper);
             lazy.LazyGetRequiredService<ICancellationTokenProvider>().Returns(Substitute.For<ICancellationTokenProvider>());
             lazy.LazyGetRequiredService<ICurrentUser>().Returns(currentUser);
             lazy.LazyGetRequiredService<ICurrentTenant>().Returns(currentTenant);
@@ -100,6 +86,50 @@ public class MessageChanges_Tests
                     }
                     return Cursor;
                 });
+        }
+
+        protected override Task CheckPolicyForUserAsync(long? ownerId, Func<Task> func)
+            => ownerId == 1 ? Task.CompletedTask : throw new AbpAuthorizationException();
+
+        private sealed class FakePrincipalAccessor(Guid userId) : ICurrentPrincipalAccessor
+        {
+            public ClaimsPrincipal Principal { get; } = new(new ClaimsIdentity([new Claim(AbpClaimTypes.UserId, userId.ToString())]));
+            public IDisposable Change(ClaimsPrincipal principal) => throw new NotSupportedException();
+        }
+    }
+
+    [DisableConventionalRegistration]
+    public class MessageProbe : MessageAppService
+    {
+        public Guid UserId { get; } = Guid.NewGuid();
+        public SessionUnit Unit { get; } = (SessionUnit)Activator.CreateInstance(typeof(SessionUnit), true)!;
+        public IMessageChangeRepository Changes { get; } = Substitute.For<IMessageChangeRepository>();
+        public IObjectMapper<ChatDomainModule> DomainMapper { get; } = Substitute.For<IObjectMapper<ChatDomainModule>>();
+        public IMessageManager Messages => MessageManager;
+
+        public MessageProbe(bool enabled = true) : base(
+            Substitute.For<IDeletedRecorderManager>(),
+            Substitute.For<IMessageRepository>(),
+            Substitute.For<IReadedRecorderManager>(),
+            Substitute.For<IOpenedRecorderManager>(),
+            Substitute.For<IFavoritedRecorderManager>(),
+            Substitute.For<IFollowManager>(),
+            Substitute.For<ISessionUnitCacheManager>(),
+            Substitute.For<ISessionUnitRepository>(),
+            Substitute.For<ISessionUnitSettingManager>(),
+            Substitute.For<ISessionUnitFriendshipMapper>(),
+            Substitute.For<IMessageManager>())
+        {
+            typeof(SessionUnit).GetProperty(nameof(Unit.Id))!.SetValue(Unit, Guid.NewGuid());
+            typeof(SessionUnit).GetProperty(nameof(Unit.SessionId))!.SetValue(Unit, Guid.NewGuid());
+            var lazy = Substitute.For<IAbpLazyServiceProvider>();
+            LazyServiceProvider = lazy;
+
+            lazy.LazyGetRequiredService<IOptions<MessageOptions>>().Returns(
+                _ => Microsoft.Extensions.Options.Options.Create(new MessageOptions { ChangeSyncEnabled = enabled }));
+            lazy.LazyGetRequiredService<IMessageChangeRepository>().Returns(Changes);
+            lazy.LazyGetRequiredService<IObjectMapper<ChatDomainModule>>().Returns(DomainMapper);
+            lazy.LazyGetRequiredService<ICancellationTokenProvider>().Returns(Substitute.For<ICancellationTokenProvider>());
 
             Changes.GetScopesAsync(1, Arg.Any<List<Guid>>(), Arg.Any<CancellationToken>())
                 .Returns(call => call.Arg<List<Guid>>().Contains(Unit.Id)
@@ -114,42 +144,36 @@ public class MessageChanges_Tests
         {
             Id = item.Id, Content = item.Content, MessageChangeId = item.SyncVersion, IsRollbacked = item.IsRollbacked, RollbackTime = item.RollbackTime
         };
-
-        private sealed class FakePrincipalAccessor(Guid userId) : ICurrentPrincipalAccessor
-        {
-            public ClaimsPrincipal Principal { get; } = new(new ClaimsIdentity([new Claim(AbpClaimTypes.UserId, userId.ToString())]));
-            public IDisposable Change(ClaimsPrincipal principal) => throw new NotSupportedException();
-        }
     }
 
     [Fact]
     public async Task Pull_initializes_epoch_and_head_when_epoch_is_empty()
     {
-        var service = new Probe();
+        var service = new ChangeProbe();
         service.HeadChangeId = 9007199254740993L;
 
-        var initial = await service.PullChangesAsync(new() { ChatObjectId = 1, DeviceId = "DEVICE_001", Epoch = "", AfterMessageChangeId = "0" });
+        var initial = await service.PullAsync(new() { ChatObjectId = 1, DeviceId = "DEVICE_001", Epoch = "", AfterMessageChangeId = "0" });
         Assert.True(initial.ResetRequired);
         Assert.Equal("9007199254740993", initial.HeadChangeId);
         Assert.Equal(64, initial.Epoch.Length);
 
         await Assert.ThrowsAsync<AbpAuthorizationException>(() =>
-            service.PullChangesAsync(new() { ChatObjectId = 2, DeviceId = "DEVICE_001", Epoch = "", AfterMessageChangeId = "0" }));
+            service.PullAsync(new() { ChatObjectId = 2, DeviceId = "DEVICE_001", Epoch = "", AfterMessageChangeId = "0" }));
     }
 
     [Fact]
     public async Task Pull_paginates_advances_over_empty_ranges_and_detects_epoch_rotation()
     {
-        var service = new Probe();
+        var service = new ChangeProbe();
         service.HeadChangeId = 150;
-        var head = await service.PullChangesAsync(new() { ChatObjectId = 1, DeviceId = "DEVICE_001", Epoch = "", AfterMessageChangeId = "0" });
+        var head = await service.PullAsync(new() { ChatObjectId = 1, DeviceId = "DEVICE_001", Epoch = "", AfterMessageChangeId = "0" });
 
         service.Changes.PullChangesAsync(1L, 100L, 150L, 1, Arg.Any<CancellationToken>())
             .Returns(new MessageChangePullResult(130L, true, [
                 new(130L, service.Unit.SessionId.Value, service.Unit.Id, 9007199254740993L, MessageChangeKind.Rollback, DateTime.UtcNow)
             ]));
 
-        var first = await service.PullChangesAsync(new()
+        var first = await service.PullAsync(new()
         {
             ChatObjectId = 1,
             DeviceId = "DEVICE_001",
@@ -169,7 +193,7 @@ public class MessageChanges_Tests
         // Empty visible page still advances cursor to 150.
         service.Changes.PullChangesAsync(1L, 130L, 150L, 10, Arg.Any<CancellationToken>())
             .Returns(new MessageChangePullResult(150L, false, []));
-        var second = await service.PullChangesAsync(new()
+        var second = await service.PullAsync(new()
         {
             ChatObjectId = 1,
             DeviceId = "DEVICE_001",
@@ -183,7 +207,7 @@ public class MessageChanges_Tests
 
         // Epoch rotation triggers ResetRequired.
         service.Generation = 2;
-        var reset = await service.PullChangesAsync(new()
+        var reset = await service.PullAsync(new()
         {
             ChatObjectId = 1,
             DeviceId = "DEVICE_001",
@@ -198,11 +222,11 @@ public class MessageChanges_Tests
     [Fact]
     public async Task Ack_advances_monotonically_and_rejects_ahead_of_head()
     {
-        var service = new Probe();
+        var service = new ChangeProbe();
         service.HeadChangeId = 150;
-        var head = await service.PullChangesAsync(new() { ChatObjectId = 1, DeviceId = "DEVICE_001", Epoch = "", AfterMessageChangeId = "0" });
+        var head = await service.PullAsync(new() { ChatObjectId = 1, DeviceId = "DEVICE_001", Epoch = "", AfterMessageChangeId = "0" });
 
-        var ack125 = await service.AckChangesAsync(new()
+        var ack125 = await service.AckAsync(new()
         {
             ChatObjectId = 1,
             DeviceId = "DEVICE_001",
@@ -214,7 +238,7 @@ public class MessageChanges_Tests
         Assert.Equal("125", ack125.LastAppliedChangeId);
 
         // Smaller ACK keeps 125.
-        var ack110 = await service.AckChangesAsync(new()
+        var ack110 = await service.AckAsync(new()
         {
             ChatObjectId = 1,
             DeviceId = "DEVICE_001",
@@ -224,7 +248,7 @@ public class MessageChanges_Tests
         Assert.Equal("125", ack110.LastAppliedChangeId);
 
         // ACK beyond HeadChangeId throws.
-        await Assert.ThrowsAsync<UserFriendlyException>(() => service.AckChangesAsync(new()
+        await Assert.ThrowsAsync<UserFriendlyException>(() => service.AckAsync(new()
         {
             ChatObjectId = 1,
             DeviceId = "DEVICE_001",
@@ -236,9 +260,9 @@ public class MessageChanges_Tests
     [Fact]
     public async Task Disabled_sync_rejects_before_reading_the_schema()
     {
-        var service = new Probe(enabled: false);
+        var service = new ChangeProbe(enabled: false);
         await Assert.ThrowsAsync<EntityNotFoundException>(() =>
-            service.PullChangesAsync(new() { ChatObjectId = 1, DeviceId = "DEVICE_001", Epoch = "", AfterMessageChangeId = "0" }));
+            service.PullAsync(new() { ChatObjectId = 1, DeviceId = "DEVICE_001", Epoch = "", AfterMessageChangeId = "0" }));
         Assert.Empty(service.Changes.ReceivedCalls());
     }
 
@@ -255,7 +279,7 @@ public class MessageChanges_Tests
     [Fact]
     public async Task V2_by_ids_never_returns_stale_cached_body_or_body_for_unavailable_states()
     {
-        var service = new Probe();
+        var service = new MessageProbe();
         var sender = new SessionUnitCacheItem { Id = service.Unit.Id, SessionId = service.Unit.SessionId.Value, OwnerId = 1 };
         var updated = new Message(sender);
         var recalled = new Message(sender);

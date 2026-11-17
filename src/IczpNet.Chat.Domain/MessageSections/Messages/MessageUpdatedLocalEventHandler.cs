@@ -28,16 +28,17 @@ public class MessageUpdatedLocalEventHandler(
         var messageId = message.Id;
 
         // Reuse multi-instance delivery without rebroadcasting message content.
-        var notification = !message.IsRollbackMessage() || !message.SessionId.HasValue ? null : new SendMessageToClientDistributedEto
+        var hasSharedChange = message.IsRollbackMessage() || message.MessageChangeId.HasValue;
+        var notification = !hasSharedChange || !message.SessionId.HasValue ? null : new SendMessageToClientDistributedEto
         {
-            Command = CommandConsts.MessageRollbacked,
+            Command = message.IsRollbackMessage() ? CommandConsts.MessageRollbacked : CommandConsts.MessageUpdated,
             HostName = currentHosted.Name,
             MessageId = message.Id,
             SessionId = message.SessionId,
             LatestChangeSeq = message.MessageChangeId?.ToString(CultureInfo.InvariantCulture),
             MessageChangeId = message.MessageChangeId?.ToString(CultureInfo.InvariantCulture),
             ChangeType = message.IsRollbackMessage() ? "Recalled" : "Updated",
-            ChangeScope = message.IsPrivate ? "Private" : "Shared",
+            ChangeScope = "Shared",
             Message = new MessageInfo<object>
             {
                 Id = message.Id,
@@ -52,7 +53,7 @@ public class MessageUpdatedLocalEventHandler(
                 MessageType = message.MessageType,
                 CreationTime = message.CreationTime,
                 IsPrivate = message.IsPrivate,
-                IsRollbacked = true,
+                IsRollbacked = message.IsRollbackMessage(),
                 RollbackTime = message.RollbackTime,
             },
         };
