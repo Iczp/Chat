@@ -393,8 +393,26 @@ public static class ChatDbContextModelCreatingExtensions
         {
             b.ToTable($"{ChatDbProperties.DbTablePrefix}_MessageChange", ChatDbProperties.DbSchema);
             b.HasKey(x => x.Id);
-            b.HasIndex(x => new { x.SessionId, x.Version }).IsUnique();
-            b.HasIndex(x => x.ChangedAt);
+            b.Property(x => x.Id).ValueGeneratedOnAdd();
+            b.HasIndex(x => new { x.SessionId, x.Id });
+        });
+        builder.Entity<MessageChangeCursor>(b =>
+        {
+            b.ToTable($"{ChatDbProperties.DbTablePrefix}_MessageChangeCursor", ChatDbProperties.DbSchema);
+            b.HasKey(x => x.Id);
+            b.Property(x => x.DeviceId).IsRequired().HasMaxLength(200);
+            b.HasIndex(x => new { x.TenantId, x.UserId, x.ChatObjectId, x.DeviceId })
+                .IsUnique()
+                .HasFilter(null);
+        });
+        builder.Entity<MessageChangeWriteGate>(b =>
+        {
+            b.ToTable($"{ChatDbProperties.DbTablePrefix}_MessageChangeWriteGate", ChatDbProperties.DbSchema);
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Id).ValueGeneratedNever();
+            b.HasData(new MessageChangeWriteGate(
+                MessageChangeWriteGate.DefaultId,
+                MessageChangeWriteGate.InitialEpoch));
         });
         builder.Entity<Message>(b =>
             {
@@ -403,6 +421,11 @@ public static class ChatDbContextModelCreatingExtensions
                     .HasDatabaseName("IX_Chat_Message_ChangeSeq")
                     .HasFilter("[ChangeSeq] IS NOT NULL")
                     .IncludeProperties(x => x.Id);
+                b.HasOne<MessageChange>()
+                    .WithMany()
+                    .HasForeignKey(x => x.MessageChangeId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                b.HasIndex(x => x.MessageChangeId);
                 var _prefix = $"{ChatDbProperties.DbTablePrefix}_{nameof(Message)}_MapTo";
                 b.HasMany(x => x.CmdContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(CmdContent)}", ChatDbProperties.DbSchema));
                 b.HasMany(x => x.TextContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(TextContent)}", ChatDbProperties.DbSchema));

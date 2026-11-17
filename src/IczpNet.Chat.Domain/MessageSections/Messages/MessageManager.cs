@@ -1,4 +1,4 @@
-﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.ChatObjects;
 //using IczpNet.Chat.ChatPushers;
@@ -873,6 +873,7 @@ public partial class MessageManager(
             if (change.AlreadyApplied)
                 return new Dictionary<string, long> { { "MessageId", message.Id } };
             message.Rollback(change.ChangedAt);
+            message.SetMessageChangeId(change.Version);
             message.SetChangeSeq(change.Version);
         }
         else
@@ -887,12 +888,26 @@ public partial class MessageManager(
         await UnitOfWorkManager.Current.SaveChangesAsync();
 
         return new Dictionary<string, long>() { { "MessageId", message.Id } };
+    }
+
+    /// <summary>Records a shared message update change in the current transactional unit of work.</summary>
+    public virtual async Task<long?> RecordMessageUpdatedAsync(Message message, DateTime? time = null)
+    {
+        if (!Config.ChangeSyncEnabled)
+            return null;
+
+        var change = await LazyServiceProvider.LazyGetRequiredService<IMessageChangeRepository>()
+            .AppendUpdateAsync(message, time ?? Clock.Now, cancellationTokenProvider.Token);
+        message.SetMessageChangeId(change.Version);
+        message.SetChangeSeq(change.Version);
+        await UnitOfWorkManager.Current.SaveChangesAsync();
+        return change.Version;
+    }
 
         //return await ChatPusher.ExecuteBySessionIdAsync(message.SessionId.Value, new RollbackMessageCommandPayload
         //{
         //    MessageId = message.Id,
         //});
-    }
 
     /// <inheritdoc />
     public virtual async Task<List<Message>> ForwardAsync(Guid sessionUnitId, long sourceMessageId, List<Guid> targetSessionUnitIdList)

@@ -49,6 +49,14 @@ public partial class Message : BaseEntity<long>, ISessionId, IHasEntityVersion
     /// <summary>Latest committed message change in the session's change stream.</summary>
     public virtual long? ChangeSeq { get; protected set; }
 
+    /// <summary>Latest committed shared message change Id.</summary>
+    public virtual long? MessageChangeId { get; protected set; }
+
+    internal void SetMessageChangeId(long changeId)
+    {
+        MessageChangeId = changeId;
+    }
+
     internal void SetChangeSeq(long version)
     {
         SetSyncVersion(version);

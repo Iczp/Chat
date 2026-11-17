@@ -115,13 +115,8 @@ public partial class MessageAppService
 
     [HttpPost("/api/chat/message/sync-items")]
     [UnitOfWork(isTransactional: false)]
-    public async Task<List<MessageSyncItem>> SyncItemsAsync(MessageSyncItemsInput input)
+    public Task<List<MessageSyncItem>> SyncItemsAsync(MessageSyncItemsInput input)
     {
-        CheckChangeSync();
-        if (input.MessageIds == null || input.MessageIds.Count is < 1 or > 200 || input.MessageIds.Any(x => x <= 0))
-            throw new UserFriendlyException("消息校准每批需要 1～200 个有效消息 ID。");
-        await GetAndCheckPolicyAsync(GetListPolicyName, input.SessionUnitId);
-        return await ChangeRepository.ReadSyncItemsAsync(input.SessionUnitId, input.MessageIds.Distinct().ToList(),
-            LazyServiceProvider.LazyGetRequiredService<ICancellationTokenProvider>().Token);
+        throw new EntityNotFoundException("Message Sync Items V1 (/api/chat/message/sync-items) is disabled. Please use Message Change Sync V2 (/api/chat/message/by-ids).");
     }
 }

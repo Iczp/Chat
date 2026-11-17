@@ -5,62 +5,115 @@ using System.Text.Json.Serialization;
 
 namespace IczpNet.Chat.MessageSections.Messages.Dtos;
 
-public class MessageChangeHeadsInput
+public class MessageChangeHeadInput
 {
     [Range(1, long.MaxValue)]
     [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
     public long ChatObjectId { get; set; }
 
-    [StringLength(200)]
+    [Required, StringLength(200)]
     public string DeviceId { get; set; }
-
-    [Required, MinLength(1), MaxLength(200)]
-    public List<Guid> SessionUnitIds { get; set; }
 }
 
-public class MessageChangeV2ScopeInput
+public record MessageChangeHeadV2Dto(
+    string Epoch,
+    string HeadChangeId,
+    string LastAppliedChangeId,
+    bool Initialized);
+
+public class MessageChangePullInput
 {
     [Range(1, long.MaxValue)]
     [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
     public long ChatObjectId { get; set; }
 
-    [StringLength(200)]
+    [Required, StringLength(200)]
     public string DeviceId { get; set; }
 
-    public Guid SessionUnitId { get; set; }
-}
-
-public class MessageChangeIncrementalInput : MessageChangeV2ScopeInput
-{
     [Required, StringLength(64)]
     public string Epoch { get; set; }
 
     [Required, RegularExpression("^[0-9]{1,19}$")]
-    public string ChangeSeq { get; set; }
+    public string AfterMessageChangeId { get; set; }
 
     [Range(1, 200)]
     public int MaxResultCount { get; set; } = 100;
 }
 
-public class MessageByIdsInput : MessageChangeV2ScopeInput
+public record MessageChangePullItemDto(
+    string MessageChangeId,
+    Guid SessionId,
+    Guid SessionUnitId,
+    string MessageId,
+    string ChangeType);
+
+public record MessageChangePullDto(
+    string Epoch,
+    string HeadChangeId,
+    string NextCursor,
+    bool HasMore,
+    bool ResetRequired,
+    List<MessageChangePullItemDto> Items);
+
+public class MessageChangeAckInput
 {
-    [Required, MinLength(1), MaxLength(200)]
+    [Range(1, long.MaxValue)]
     [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
-    public List<long> MessageIds { get; set; }
+    public long ChatObjectId { get; set; }
+
+    [Required, StringLength(200)]
+    public string DeviceId { get; set; }
+
+    [Required, StringLength(64)]
+    public string Epoch { get; set; }
+
+    [Required, RegularExpression("^[0-9]{1,19}$")]
+    public string LastAppliedMessageChangeId { get; set; }
+
+    public bool Reset { get; set; }
 }
 
-public record MessageChangeHeadDto(Guid SessionUnitId, string Epoch, string HeadSeq, string MinSeq,
-    DateTime? ClearTime, string ErrorCode = null);
+public record MessageChangeAckDto(
+    string Epoch,
+    string HeadChangeId,
+    string LastAppliedChangeId,
+    bool Initialized,
+    bool ResetRequired);
 
-public record MessageChangeHeadsDto(List<MessageChangeHeadDto> Items);
+public class MessageByIdsScopeRequest
+{
+    public Guid SessionUnitId { get; set; }
 
-public record MessageChangeV2ItemDto(string MessageId, string ChangeSeq, string ChangeType,
-    DateTime? ClearTime, DateTime? RollbackTime);
+    [Required, MinLength(1), MaxLength(200)]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public List<long> MessageIds { get; set; } = [];
+}
 
-public record MessageChangeIncrementalDto(string Epoch, string HeadSeq, string MinSeq, string NextSeq,
-    bool HasMore, bool ResetRequired, List<MessageChangeV2ItemDto> Items);
+public class MessageByIdsInput
+{
+    [Range(1, long.MaxValue)]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public long ChatObjectId { get; set; }
 
-public record MessageByIdDto(string MessageId, string Status, string ChangeSeq, MessageFastDto Message,
+    [StringLength(200)]
+    public string DeviceId { get; set; }
+
+    public Guid? SessionUnitId { get; set; }
+
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public List<long> MessageIds { get; set; }
+
+    public List<MessageByIdsScopeRequest> Requests { get; set; }
+}
+
+public record MessageByIdDto(
+    Guid SessionUnitId,
+    string MessageId,
+    string Status,
+    string MessageChangeId,
+    int? EntityVersion,
+    string ChangeSeq,
+    MessageFastDto Message,
     DateTime? RollbackTime);
 
 public record MessageByIdsDto(List<MessageByIdDto> Items);

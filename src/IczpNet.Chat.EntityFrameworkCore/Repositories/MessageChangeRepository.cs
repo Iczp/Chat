@@ -26,19 +26,89 @@ public partial class MessageChangeRepository(IDbContextProvider<ChatDbContext> p
         var db = await provider.GetDbContextAsync();
         if (db.Database.CurrentTransaction == null)
             throw new InvalidOperationException("Message changes require a transactional unit of work.");
-        var sessionId = message.SessionId!.Value;
-        // HOLDLOCK protects the absent-key case as well. Every change writer takes
-        // this lock before changing a Message, and holds it until the outer commit.
-        await LockStateAsync(db, sessionId, cancellationToken);
+
+        // Acquire the global write gate lock via EF Core ExecuteUpdateAsync so
+        // MessageChange IDENTITY ids are allocated strictly in commit order.
+        await AcquireWriteGateLockAsync(db, cancellationToken);
+
         var existing = await db.Message.AsNoTracking().SingleAsync(x => x.Id == message.Id, cancellationToken);
         if (existing.IsRollbacked || existing.RollbackTime.HasValue)
-            return new MessageChangeEntry { AlreadyApplied = true, MessageId = message.Id, Version = existing.SyncVersion,
-                ChangeType = MessageChangeKind.Rollback, ChangedAt = existing.RollbackTime ?? time };
-        var version = await AllocateVersionAsync(db, sessionId, cancellationToken);
-        db.Set<MessageChange>().Add(new MessageChange(Guid.NewGuid(), message, version, time));
-        return new MessageChangeEntry { MessageId = message.Id, Version = version,
-            ChangeType = MessageChangeKind.Rollback, ChangedAt = time };
+        {
+            return new MessageChangeEntry
+            {
+                AlreadyApplied = true,
+                MessageId = message.Id,
+                Version = existing.MessageChangeId ?? existing.SyncVersion,
+                ChangeType = MessageChangeKind.Rollback,
+                ChangedAt = existing.RollbackTime ?? time
+            };
+        }
+
+        var sessionId = message.SessionId!.Value;
+        var change = new MessageChange(sessionId, message.Id, MessageChangeKind.Rollback, time);
+        db.Set<MessageChange>().Add(change);
+        await db.SaveChangesAsync(cancellationToken);
+
+        await CommitWriteGatePositionAsync(db, change.Id, cancellationToken);
+        return new MessageChangeEntry
+        {
+            SessionId = sessionId,
+            MessageId = message.Id,
+            SessionSeq = message.SessionSeq,
+            Version = change.Id,
+            ChangeType = MessageChangeKind.Rollback,
+            ChangedAt = time
+        };
     }
+
+    public async Task<MessageChangeEntry> AppendUpdateAsync(Message message, DateTime time, CancellationToken cancellationToken = default)
+    {
+        var db = await provider.GetDbContextAsync();
+        if (db.Database.CurrentTransaction == null)
+            throw new InvalidOperationException("Message changes require a transactional unit of work.");
+
+        await AcquireWriteGateLockAsync(db, cancellationToken);
+
+        var exists = await db.Message.AsNoTracking().AnyAsync(x => x.Id == message.Id, cancellationToken);
+        if (!exists)
+            throw new BusinessException("Chat:MessageUnavailable");
+
+        var sessionId = message.SessionId!.Value;
+        var change = new MessageChange(sessionId, message.Id, MessageChangeKind.Update, time);
+        db.Set<MessageChange>().Add(change);
+        await db.SaveChangesAsync(cancellationToken);
+
+        await CommitWriteGatePositionAsync(db, change.Id, cancellationToken);
+        return new MessageChangeEntry
+        {
+            SessionId = sessionId,
+            MessageId = message.Id,
+            SessionSeq = message.SessionSeq,
+            Version = change.Id,
+            ChangeType = MessageChangeKind.Update,
+            ChangedAt = time
+        };
+    }
+
+    private static async Task AcquireWriteGateLockAsync(ChatDbContext db, CancellationToken token)
+    {
+        var affected = await db.Set<MessageChangeWriteGate>()
+            .Where(x => x.Id == MessageChangeWriteGate.DefaultId)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.Revision, x => x.Revision + 1), token);
+        if (affected == 0)
+        {
+            db.Set<MessageChangeWriteGate>().Add(new MessageChangeWriteGate(
+                MessageChangeWriteGate.DefaultId,
+                MessageChangeWriteGate.InitialEpoch,
+                revision: 1));
+            await db.SaveChangesAsync(token);
+        }
+    }
+
+    private static Task CommitWriteGatePositionAsync(ChatDbContext db, long changeId, CancellationToken token)
+        => db.Set<MessageChangeWriteGate>()
+            .Where(x => x.Id == MessageChangeWriteGate.DefaultId)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.LastCommittedChangeId, changeId), token);
 
     private static async Task LockStateAsync(ChatDbContext db, Guid sessionId, CancellationToken token)
     {
@@ -78,7 +148,6 @@ public partial class MessageChangeRepository(IDbContextProvider<ChatDbContext> p
         // Both rows are saved by the same outer transaction. The existing
         // DeletedRecorder entity event invalidates member visibility caches.
         db.Set<DeletedRecorder>().Add(new DeletedRecorder(unit, messageId, deviceId, version));
-        db.Set<MessageChange>().Add(new MessageChange(Guid.NewGuid(), message, version, time, sessionUnitId));
         return new MessageChangeEntry { SessionId = unit.SessionId.Value, MessageId = messageId, SessionSeq = message.SessionSeq,
             Version = version, ChangeType = MessageChangeKind.Delete, ChangedAt = time, ReceiverSessionUnitId = sessionUnitId };
     }
@@ -141,18 +210,8 @@ public partial class MessageChangeRepository(IDbContextProvider<ChatDbContext> p
         return recipients;
     }
 
-    public async Task<List<MessageChangeEntry>> ReadChangesAsync(Guid sessionId, long after, long through, int take, CancellationToken cancellationToken = default)
-    {
-        var db = await provider.GetDbContextAsync();
-        return await db.Set<MessageChange>().AsNoTracking()
-            .Where(x => x.SessionId == sessionId && x.Version > after && x.Version <= through)
-            .OrderBy(x => x.Version).Take(take).Select(x => new MessageChangeEntry
-            {
-                SessionId = x.SessionId, MessageId = x.MessageId, Version = x.Version, ChangeType = x.ChangeType,
-                ChangedAt = x.ChangedAt, CreationTime = x.MessageCreationTime, IsPrivate = x.IsPrivate,
-                SenderSessionUnitId = x.SenderSessionUnitId, ReceiverSessionUnitId = x.ReceiverSessionUnitId
-            }).ToListAsync(cancellationToken);
-    }
+    public Task<List<MessageChangeEntry>> ReadChangesAsync(Guid sessionId, long after, long through, int take, CancellationToken cancellationToken = default)
+        => Task.FromResult<List<MessageChangeEntry>>([]);
 
     public async Task<Dictionary<Guid, MessageChangeCheckpoint>> GetCheckpointsAsync(List<Guid> sessionIds, CancellationToken cancellationToken = default)
     {

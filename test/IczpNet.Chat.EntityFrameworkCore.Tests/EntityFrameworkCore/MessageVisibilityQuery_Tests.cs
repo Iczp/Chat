@@ -112,11 +112,8 @@ public class MessageVisibilityQuery_Tests : ChatTestBase<MessageQueryReviewTestM
             await InsertAsync<Message>(context, new() { ["Id"] = 105L, ["SessionId"] = session, ["SessionSeq"] = 1L, ["ExtraProperties"] = new ExtraPropertyDictionary() });
             await InsertAsync<Message>(context, new() { ["Id"] = 106L, ["SessionId"] = session, ["SessionSeq"] = 2L, ["ExtraProperties"] = new ExtraPropertyDictionary(),
                 ["IsPrivate"] = true, ["SenderSessionUnitId"] = first, ["ReceiverSessionUnitId"] = Guid.NewGuid() });
-            await InsertAsync<DeletedRecorder>(context, new() { ["SessionUnitId"] = first, ["MessageId"] = 105L });
+            await InsertAsync<DeletedRecorder>(context, new() { ["SessionUnitId"] = first, ["MessageId"] = 105L, ["ChangeSeq"] = 7L });
             await InsertAsync<SessionMessageChangeState>(context, new() { ["Id"] = session, ["Epoch"] = session, ["Version"] = 7L });
-            var message = new Message(new SessionUnitCacheItem { Id = first, SessionId = session, OwnerId = 1 });
-            typeof(Message).GetProperty(nameof(Message.Id))!.SetValue(message, 105L);
-            context.Set<MessageChange>().Add(new MessageChange(Guid.NewGuid(), message, 7, DateTime.UtcNow, first));
             await context.SaveChangesAsync();
             var changes = ServiceProvider.GetRequiredService<IMessageChangeRepository>();
             var own = await changes.ReadSyncItemsAsync(first, [105, 106, 999]);

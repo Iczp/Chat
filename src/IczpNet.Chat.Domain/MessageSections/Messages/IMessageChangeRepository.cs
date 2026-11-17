@@ -8,6 +8,7 @@ namespace IczpNet.Chat.MessageSections.Messages;
 public partial interface IMessageChangeRepository
 {
     Task<MessageChangeEntry> AppendRollbackAsync(Message message, DateTime time, CancellationToken cancellationToken = default);
+    Task<MessageChangeEntry> AppendUpdateAsync(Message message, DateTime time, CancellationToken cancellationToken = default);
     Task<MessageChangeEntry> AppendDeleteAsync(Guid sessionUnitId, long messageId, DateTime time, CancellationToken cancellationToken = default);
     Task<MessageChangeEntry> AppendDeleteAsync(Guid sessionUnitId, long messageId, DateTime time, string deviceId,
         CancellationToken cancellationToken);

@@ -40,7 +40,7 @@ public class MessageChangesMvc_Tests
             .Where(endpoint => endpoint.Metadata.GetMetadata<ControllerActionDescriptor>()?.ControllerTypeInfo.AsType()
                 == typeof(MessageAppService)).ToList();
 
-        foreach (var route in new[] { "changes/query", "sync-items", "changes/heads", "changes/incremental", "by-ids" })
+        foreach (var route in new[] { "changes/query", "sync-items", "changes/head", "changes/pull", "changes/ack", "by-ids" })
             Assert.Contains(endpoints, endpoint =>
                 endpoint.RoutePattern.RawText?.TrimStart('/') == "api/chat/message/" + route &&
                 endpoint.Metadata.GetMetadata<IHttpMethodMetadata>()?.HttpMethods.Contains("POST") == true);

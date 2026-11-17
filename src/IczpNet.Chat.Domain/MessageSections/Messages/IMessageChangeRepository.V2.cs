@@ -21,7 +21,28 @@ public partial interface IMessageChangeRepository
 
     Task<List<Message>> ReadV2WindowAsync(MessageChangeUnitScope scope,
         long? minId, long? maxId, int take, bool descending, CancellationToken cancellationToken = default);
+
+    Task<MessageChangeWriteGateState> GetWriteGateAsync(CancellationToken cancellationToken = default);
+
+    Task<MessageChangeWriteGateState> RotateWriteGateEpochAsync(CancellationToken cancellationToken = default);
+
+    Task<MessageChangeCursor> GetCursorAsync(Guid? tenantId, Guid userId, long chatObjectId, string deviceId,
+        CancellationToken cancellationToken = default);
+
+    Task<MessageChangeCursor> UpsertCursorAsync(Guid? tenantId, Guid userId, long chatObjectId, string deviceId,
+        long lastAppliedMessageChangeId, DateTime syncTime, bool reset = false,
+        CancellationToken cancellationToken = default);
+
+    Task<MessageChangePullResult> PullChangesAsync(long chatObjectId, long afterMessageChangeId, long headChangeId,
+        int maxResultCount, CancellationToken cancellationToken = default);
 }
+
+public record MessageChangeWriteGateState(Guid Epoch, long Revision, long LastCommittedChangeId);
+
+public record MessageChangePullRow(long MessageChangeId, Guid SessionId, Guid SessionUnitId, long MessageId,
+    MessageChangeKind ChangeType, DateTime CreationTime);
+
+public record MessageChangePullResult(long NextCursor, bool HasMore, List<MessageChangePullRow> Items);
 
 public record MessageChangeUnitScope(Guid UnitId, Guid SessionId, long OwnerId, DateTime? ClearTime);
 

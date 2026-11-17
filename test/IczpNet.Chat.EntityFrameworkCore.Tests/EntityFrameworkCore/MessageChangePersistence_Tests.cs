@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionUnits;
@@ -11,64 +10,79 @@ using Xunit;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
+[Collection("MessageQueryReview")]
 public class MessageChangePersistence_Tests : ChatTestBase<MessageQueryReviewTestModule>
 {
     [Fact]
-    public async Task Change_log_is_independent_of_message_rows_and_reads_by_change_version()
+    public async Task MessageChange_uses_identity_id_and_Message_MessageChangeId_points_to_latest()
     {
         await WithUnitOfWorkAsync(async () =>
         {
             var db = await ServiceProvider.GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            await db.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys=OFF");
             var session = Guid.NewGuid();
-            var unit = new SessionUnitCacheItem { Id = Guid.NewGuid(), SessionId = session, OwnerId = 1 };
-            var oldMessage = new Message(unit);
-            typeof(Message).GetProperty(nameof(Message.Id))!.SetValue(oldMessage, 5L);
-            var newerMessage = new Message(unit);
-            typeof(Message).GetProperty(nameof(Message.Id))!.SetValue(newerMessage, 700L);
-            var time = new DateTime(2026, 10, 14, 2, 0, 0, DateTimeKind.Utc);
-            db.Set<MessageChange>().Add(new MessageChange(Guid.NewGuid(), newerMessage, 1, time));
-            db.Set<MessageChange>().Add(new MessageChange(Guid.NewGuid(), oldMessage, 2, time));
+            await MessageVisibilityQuery_Tests.InsertAsync<Message>(db, new()
+            {
+                ["Id"] = 5001L,
+                ["SessionId"] = session,
+                ["SessionSeq"] = 1L,
+                ["ExtraProperties"] = new Volo.Abp.Data.ExtraPropertyDictionary()
+            });
+
+            var time = new DateTime(2026, 11, 17, 9, 0, 0, DateTimeKind.Utc);
+            var firstChange = new MessageChange(session, 5001L, MessageChangeKind.Update, time);
+            var secondChange = new MessageChange(session, 5001L, MessageChangeKind.Rollback, time.AddSeconds(5));
+            db.Set<MessageChange>().Add(firstChange);
+            db.Set<MessageChange>().Add(secondChange);
             await db.SaveChangesAsync();
+
+            Assert.True(firstChange.Id > 0);
+            Assert.True(secondChange.Id > firstChange.Id);
+
+            await db.Message.Where(x => x.Id == 5001L)
+                .ExecuteUpdateAsync(s => s.SetProperty(x => x.MessageChangeId, secondChange.Id));
             db.ChangeTracker.Clear();
-            var repository = ServiceProvider.GetRequiredService<IMessageChangeRepository>();
-            var empty = await repository.GetCheckpointAsync(session);
-            Assert.Equal(session, empty.Epoch);
-            Assert.Equal(0, empty.Version);
-            Assert.Equal(empty, (await repository.GetCheckpointsAsync([session]))[session]);
-            var first = await repository.ReadChangesAsync(session, 0, 2, 1);
-            Assert.Equal(700, Assert.Single(first).MessageId);
-            var second = await repository.ReadChangesAsync(session, 1, 2, 1);
-            Assert.Equal(5, Assert.Single(second).MessageId);
-            Assert.Empty(await repository.ReadChangesAsync(Guid.NewGuid(), 0, 2, 10));
-            // No FK requires the source message to survive physical deletion.
+
+            var persisted = await db.Message.AsNoTracking().SingleAsync(x => x.Id == 5001L);
+            Assert.Equal(secondChange.Id, persisted.MessageChangeId);
+
+            // Message.MessageChangeId has FK to MessageChange.Id; MessageChange.MessageId has no FK to Message.
+            Assert.Contains(db.Model.FindEntityType(typeof(Message))!.GetForeignKeys(),
+                key => key.PrincipalEntityType.ClrType == typeof(MessageChange));
             Assert.DoesNotContain(db.Model.FindEntityType(typeof(MessageChange))!.GetForeignKeys(),
                 key => key.PrincipalEntityType.ClrType == typeof(Message));
             Assert.Contains(db.Model.FindEntityType(typeof(MessageChange))!.GetIndexes(),
-                index => index.IsUnique && index.Properties.Select(x => x.Name).SequenceEqual(new[] { "SessionId", "Version" }));
+                index => index.Properties.Select(x => x.Name).SequenceEqual(new[] { "SessionId", "Id" }));
         });
     }
 
     [Fact]
-    public async Task Checkpoint_and_message_revision_do_not_change_the_hot_message_schema()
+    public async Task MessageChangeCursor_enforces_user_chatObject_device_uniqueness_and_monotonic_advance()
     {
         await WithUnitOfWorkAsync(async () =>
         {
             var db = await ServiceProvider.GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
-            var state = (SessionMessageChangeState)Activator.CreateInstance(typeof(SessionMessageChangeState), true)!;
-            var id = Guid.NewGuid();
-            var epoch = Guid.NewGuid();
-            typeof(SessionMessageChangeState).GetProperty(nameof(state.Id))!.SetValue(state, id);
-            typeof(SessionMessageChangeState).GetProperty(nameof(state.Epoch))!.SetValue(state, epoch);
-            typeof(SessionMessageChangeState).GetProperty(nameof(state.Version))!.SetValue(state, 7L);
-            db.Set<SessionMessageChangeState>().Add(state);
-            await db.SaveChangesAsync();
-            var head = await ServiceProvider.GetRequiredService<IMessageChangeRepository>().GetCheckpointAsync(id);
-            Assert.Equal(epoch, head.Epoch);
-            Assert.Equal(7, head.Version);
-            Assert.Null(db.Model.FindEntityType(typeof(Message))!.FindProperty(nameof(Message.SyncVersion)));
-            var message = new Message(new SessionUnitCacheItem { Id = Guid.NewGuid(), SessionId = id });
-            typeof(Message).GetMethod("SetSyncVersion", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(message, [7L]);
-            Assert.Equal(7L, message.ExtraProperties[nameof(Message.SyncVersion)]);
+            var userId = Guid.NewGuid();
+            var repository = ServiceProvider.GetRequiredService<IMessageChangeRepository>();
+
+            var cursor = await repository.UpsertCursorAsync(null, userId, 13L, "DEVICE_001", 120L, DateTime.UtcNow);
+            Assert.Equal(120L, cursor.LastAppliedMessageChangeId);
+            Assert.True(cursor.IsInitialized);
+
+            // Regressing ACK must keep 120.
+            var same = await repository.UpsertCursorAsync(null, userId, 13L, "DEVICE_001", 90L, DateTime.UtcNow);
+            Assert.Equal(120L, same.LastAppliedMessageChangeId);
+
+            // Advancing ACK must update to 125.
+            var advanced = await repository.UpsertCursorAsync(null, userId, 13L, "DEVICE_001", 125L, DateTime.UtcNow);
+            Assert.Equal(125L, advanced.LastAppliedMessageChangeId);
+
+            // Different ChatObject on same device & user gets independent cursor.
+            var otherChatObject = await repository.UpsertCursorAsync(null, userId, 14L, "DEVICE_001", 40L, DateTime.UtcNow);
+            Assert.Equal(40L, otherChatObject.LastAppliedMessageChangeId);
+
+            Assert.Contains(db.Model.FindEntityType(typeof(MessageChangeCursor))!.GetIndexes(),
+                index => index.IsUnique && index.Properties.Select(x => x.Name).SequenceEqual(new[] { "TenantId", "UserId", "ChatObjectId", "DeviceId" }));
         });
     }
 }

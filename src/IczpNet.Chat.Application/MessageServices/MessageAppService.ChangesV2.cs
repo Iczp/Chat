@@ -19,6 +19,7 @@ using Volo.Abp.Domain.Entities;
 using Volo.Abp.ObjectMapping;
 using Volo.Abp.Threading;
 using Volo.Abp.Uow;
+using Volo.Abp.Users;
 
 namespace IczpNet.Chat.MessageServices;
 
@@ -37,86 +38,141 @@ public partial class MessageAppService
 
     private static string ToSeq(long version) => version.ToString(CultureInfo.InvariantCulture);
 
-    private static string GetV2Epoch(MessageChangeCheckpoint checkpoint, Guid unitId, MessageOptions options)
+    private static string GetV2Epoch(MessageChangeWriteGateState gate, MessageOptions options)
     {
-        var value = $"Chat.MessageChanges.v2:{checkpoint.Epoch:D}:{unitId:D}:{options.ChangeSyncV2Generation}";
+        var value = $"Chat.MessageChanges.v2:{gate.Epoch:D}:{options.ChangeSyncV2Generation}";
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
     }
 
     [Authorize]
-    [HttpPost("/api/chat/message/changes/heads")]
+    [HttpPost("/api/chat/message/changes/head")]
     [UnitOfWork(isTransactional: false)]
-    public async Task<MessageChangeHeadsDto> GetChangeHeadsAsync(MessageChangeHeadsInput input)
+    public async Task<MessageChangeHeadV2Dto> GetChangeHeadAsync(MessageChangeHeadInput input)
     {
         var options = GetV2Options();
-        if (input.SessionUnitIds == null || input.SessionUnitIds.Count is < 1 or > 200)
-            throw new UserFriendlyException("消息同步请求超过批次限制。");
+        var userId = CurrentUser.GetId();
         await CheckPolicyForUserAsync(input.ChatObjectId, () => CheckPolicyAsync(GetListPolicyName));
-        var requested = input.SessionUnitIds.Distinct().ToList();
         var token = ChangeCancellationToken;
-        var scopes = (await ChangeRepository.GetV2ScopesAsync(input.ChatObjectId, requested, token))
-            .ToDictionary(x => x.UnitId);
-        var heads = scopes.Count > 0
-            ? await ChangeRepository.GetCheckpointsAsync(scopes.Values.Select(x => x.SessionId).Distinct().ToList(), token)
-            : [];
-        // The clear boundary used during initialization must be from a read
-        // after the head. A clear committed after that head is also safe to replay.
-        var scopedBoundaries = scopes.Count == 0 ? scopes :
-            (await ChangeRepository.GetV2ScopesAsync(input.ChatObjectId, scopes.Keys.ToList(), token))
-            .ToDictionary(x => x.UnitId);
-        return new(requested.Select(id =>
-        {
-            if (!scopedBoundaries.TryGetValue(id, out var scope) || !heads.TryGetValue(scope.SessionId, out var head))
-                return new MessageChangeHeadDto(id, null, null, null, null, "Unavailable");
-            // The shared head exposes aggregate activity only. Private change
-            // identities and content are scoped by the current session unit.
-            return new MessageChangeHeadDto(id, GetV2Epoch(head, id, options), ToSeq(head.Version), "0", scope.ClearTime);
-        }).ToList());
+        var gate = await ChangeRepository.GetWriteGateAsync(token);
+        var cursor = await ChangeRepository.GetCursorAsync(CurrentTenant.Id, userId, input.ChatObjectId, input.DeviceId.Trim(), token);
+        return new MessageChangeHeadV2Dto(
+            GetV2Epoch(gate, options),
+            ToSeq(gate.LastCommittedChangeId),
+            ToSeq(cursor?.LastAppliedMessageChangeId ?? 0),
+            cursor?.IsInitialized ?? false);
     }
 
     [Authorize]
-    [HttpPost("/api/chat/message/changes/incremental")]
+    [HttpPost("/api/chat/message/changes/pull")]
     [UnitOfWork(isTransactional: false)]
-    public async Task<MessageChangeIncrementalDto> GetIncrementalChangesAsync(MessageChangeIncrementalInput input)
+    public async Task<MessageChangePullDto> PullChangesAsync(MessageChangePullInput input)
     {
         var options = GetV2Options();
         if (input.MaxResultCount is < 1 or > 200 ||
-            !long.TryParse(input.ChangeSeq, NumberStyles.None, CultureInfo.InvariantCulture, out var after) || after < 0)
+            !long.TryParse(input.AfterMessageChangeId, NumberStyles.None, CultureInfo.InvariantCulture, out var after) || after < 0)
             throw new UserFriendlyException("消息同步游标或批次大小无效。");
 
+        await CheckPolicyForUserAsync(input.ChatObjectId, () => CheckPolicyAsync(GetListPolicyName));
         var token = ChangeCancellationToken;
-        var scope = await GetV2ScopeAsync(input.ChatObjectId, input.SessionUnitId, token);
-        var head = await ChangeRepository.GetCheckpointAsync(scope.SessionId, token);
-        var epoch = GetV2Epoch(head, scope.UnitId, options);
-        // V1 MinVersion is a log retention boundary. V2 reads latest
-        // projections which remain available even when old log rows expire.
-        if (input.Epoch != epoch || after > head.Version)
-            return new(epoch, ToSeq(head.Version), "0", input.ChangeSeq, false, true, []);
+        var gate = await ChangeRepository.GetWriteGateAsync(token);
+        var epoch = GetV2Epoch(gate, options);
+        if (!string.Equals(input.Epoch, epoch, StringComparison.OrdinalIgnoreCase) || after > gate.LastCommittedChangeId)
+        {
+            return new MessageChangePullDto(
+                epoch,
+                ToSeq(gate.LastCommittedChangeId),
+                input.AfterMessageChangeId,
+                HasMore: false,
+                ResetRequired: true,
+                Items: []);
+        }
 
-        var rows = await ChangeRepository.ReadV2ChangesAsync(scope, after, head.Version, input.MaxResultCount + 1, token);
-        var verified = await ChangeRepository.GetCheckpointAsync(scope.SessionId, token);
-        var verifiedEpoch = GetV2Epoch(verified, scope.UnitId, options);
-        if (verifiedEpoch != epoch || verified.Version < head.Version)
-            return new(verifiedEpoch, ToSeq(verified.Version), "0", input.ChangeSeq, false, true, []);
+        var page = await ChangeRepository.PullChangesAsync(
+            input.ChatObjectId,
+            after,
+            gate.LastCommittedChangeId,
+            input.MaxResultCount,
+            token);
 
-        var hasMore = rows.Count > input.MaxResultCount;
-        if (hasMore) rows.RemoveAt(rows.Count - 1);
-        // All visible positions through the captured head were scanned when
-        // there is no next row. A row moved to a higher version is picked up
-        // after this head, even if it disappeared from the current page.
-        var next = hasMore ? rows[^1].Version : head.Version;
-        return new(epoch, ToSeq(head.Version), "0", ToSeq(next), hasMore, false, rows.Select(row =>
-            new MessageChangeV2ItemDto(row.MessageId.HasValue ? ToSeq(row.MessageId.Value) : null, ToSeq(row.Version),
-                row.Kind switch
-                {
-                    MessageChangeKind.Update => "Updated",
-                    MessageChangeKind.Rollback => "Recalled",
-                    MessageChangeKind.Delete => "DeletedForMe",
-                    MessageChangeKind.Clear => "Clear",
-                    _ => throw new InvalidOperationException("Unknown message change projection.")
-                },
-                row.Kind == MessageChangeKind.Clear ? row.Time : null,
-                row.Kind == MessageChangeKind.Rollback ? row.Time : null)).ToList());
+        var verified = await ChangeRepository.GetWriteGateAsync(token);
+        var verifiedEpoch = GetV2Epoch(verified, options);
+        if (!string.Equals(verifiedEpoch, epoch, StringComparison.OrdinalIgnoreCase) ||
+            verified.LastCommittedChangeId < gate.LastCommittedChangeId)
+        {
+            return new MessageChangePullDto(
+                verifiedEpoch,
+                ToSeq(verified.LastCommittedChangeId),
+                input.AfterMessageChangeId,
+                HasMore: false,
+                ResetRequired: true,
+                Items: []);
+        }
+
+        var items = page.Items.Select(row => new MessageChangePullItemDto(
+            ToSeq(row.MessageChangeId),
+            row.SessionId,
+            row.SessionUnitId,
+            ToSeq(row.MessageId),
+            row.ChangeType switch
+            {
+                MessageChangeKind.Update => "Updated",
+                MessageChangeKind.Rollback => "Recalled",
+                _ => throw new InvalidOperationException($"Unsupported shared message change kind: {row.ChangeType}.")
+            })).ToList();
+
+        return new MessageChangePullDto(
+            epoch,
+            ToSeq(gate.LastCommittedChangeId),
+            ToSeq(page.NextCursor),
+            page.HasMore,
+            ResetRequired: false,
+            Items: items);
+    }
+
+    [Authorize]
+    [HttpPost("/api/chat/message/changes/ack")]
+    [UnitOfWork(isTransactional: true)]
+    public async Task<MessageChangeAckDto> AckChangesAsync(MessageChangeAckInput input)
+    {
+        var options = GetV2Options();
+        if (!long.TryParse(input.LastAppliedMessageChangeId, NumberStyles.None, CultureInfo.InvariantCulture, out var ackId) || ackId < 0)
+            throw new UserFriendlyException("消息同步确认游标无效。");
+
+        var userId = CurrentUser.GetId();
+        await CheckPolicyForUserAsync(input.ChatObjectId, () => CheckPolicyAsync(GetListPolicyName));
+        var token = ChangeCancellationToken;
+        var gate = await ChangeRepository.GetWriteGateAsync(token);
+        var epoch = GetV2Epoch(gate, options);
+        if (!string.Equals(input.Epoch, epoch, StringComparison.OrdinalIgnoreCase))
+        {
+            var existing = await ChangeRepository.GetCursorAsync(CurrentTenant.Id, userId, input.ChatObjectId, input.DeviceId.Trim(), token);
+            return new MessageChangeAckDto(
+                epoch,
+                ToSeq(gate.LastCommittedChangeId),
+                ToSeq(existing?.LastAppliedMessageChangeId ?? 0),
+                existing?.IsInitialized ?? false,
+                ResetRequired: true);
+        }
+
+        if (ackId > gate.LastCommittedChangeId)
+            throw new UserFriendlyException("确认游标不能超过服务端当前已提交的变更位置。");
+
+        var cursor = await ChangeRepository.UpsertCursorAsync(
+            CurrentTenant.Id,
+            userId,
+            input.ChatObjectId,
+            input.DeviceId.Trim(),
+            ackId,
+            Clock.Now,
+            input.Reset,
+            token);
+
+        return new MessageChangeAckDto(
+            epoch,
+            ToSeq(gate.LastCommittedChangeId),
+            ToSeq(cursor.LastAppliedMessageChangeId),
+            cursor.IsInitialized,
+            ResetRequired: false);
     }
 
     [Authorize]
@@ -125,32 +181,124 @@ public partial class MessageAppService
     public async Task<MessageByIdsDto> GetByIdsAsync(MessageByIdsInput input)
     {
         GetV2Options();
-        if (input.MessageIds == null || input.MessageIds.Count is < 1 or > 200 || input.MessageIds.Any(x => x <= 0))
-            throw new UserFriendlyException("每批需要 1～200 个有效消息 ID。");
-        var token = ChangeCancellationToken;
-        var scope = await GetV2ScopeAsync(input.ChatObjectId, input.SessionUnitId, token);
-        var ids = input.MessageIds.Distinct().ToList();
-        var states = (await ChangeRepository.ReadV2ItemsAsync(scope, ids, token)).ToDictionary(x => x.Message.Id);
-        var unresolved = ids.Where(id => !states.ContainsKey(id)).ToList();
-        var softDeleted = unresolved.Count == 0 ? [] :
-            (await ChangeRepository.ReadV2SoftDeletedIdsAsync(scope, unresolved, token)).ToHashSet();
-        var bodies = (await MapV2MessagesAsync(states.Values
-            .Where(x => !x.IsDeleted && !x.Message.IsRollbacked && !x.Message.RollbackTime.HasValue)
-            .Select(x => x.Message).ToList(), token)).ToDictionary(x => x.Id);
+        var scopesInput = ResolveByIdsRequests(input);
+        if (scopesInput.Count == 0 || scopesInput.Sum(x => x.MessageIds.Count) > 500)
+            throw new UserFriendlyException("每批需要有效的会话和消息 ID（总计不超过 500 条）。");
 
-        return new(ids.Select(id =>
+        var token = ChangeCancellationToken;
+        await CheckPolicyForUserAsync(input.ChatObjectId, () => CheckPolicyAsync(GetListPolicyName));
+
+        var unitIds = scopesInput.Select(x => x.SessionUnitId).Distinct().ToList();
+        var scopes = (await ChangeRepository.GetV2ScopesAsync(input.ChatObjectId, unitIds, token))
+            .ToDictionary(x => x.UnitId);
+
+        var results = new List<MessageByIdDto>();
+        foreach (var req in scopesInput)
         {
-            if (!states.TryGetValue(id, out var state))
-                return new MessageByIdDto(ToSeq(id), softDeleted.Contains(id) ? "NotFound" : "NotAccessible", null, null, null);
-            var message = state.Message;
-            if (state.IsDeleted)
-                return new MessageByIdDto(ToSeq(id), "DeletedForMe",
-                    state.DeleteChangeSeq.HasValue ? ToSeq(state.DeleteChangeSeq.Value) : null, null, null);
-            var seq = message.ChangeSeq.HasValue ? ToSeq(message.ChangeSeq.Value) : null;
-            if (message.IsRollbacked || message.RollbackTime.HasValue)
-                return new MessageByIdDto(ToSeq(id), "Recalled", seq, null, message.RollbackTime);
-            return new MessageByIdDto(ToSeq(id), "Visible", seq, bodies[id], null);
-        }).ToList());
+            var ids = req.MessageIds.Distinct().ToList();
+            if (!scopes.TryGetValue(req.SessionUnitId, out var scope))
+            {
+                foreach (var id in ids)
+                    results.Add(new MessageByIdDto(req.SessionUnitId, ToSeq(id), "NotAccessible", null, null, null, null, null));
+                continue;
+            }
+
+            var states = (await ChangeRepository.ReadV2ItemsAsync(scope, ids, token)).ToDictionary(x => x.Message.Id);
+            var unresolved = ids.Where(id => !states.ContainsKey(id)).ToList();
+            var softDeleted = unresolved.Count == 0 ? [] :
+                (await ChangeRepository.ReadV2SoftDeletedIdsAsync(scope, unresolved, token)).ToHashSet();
+            var bodies = (await MapV2MessagesAsync(states.Values
+                .Where(x => !x.IsDeleted && !x.Message.IsRollbacked && !x.Message.RollbackTime.HasValue)
+                .Select(x => x.Message).ToList(), token)).ToDictionary(x => x.Id);
+
+            foreach (var id in ids)
+            {
+                if (!states.TryGetValue(id, out var state))
+                {
+                    results.Add(new MessageByIdDto(
+                        req.SessionUnitId,
+                        ToSeq(id),
+                        softDeleted.Contains(id) ? "NotFound" : "NotAccessible",
+                        null,
+                        null,
+                        null,
+                        null,
+                        null));
+                    continue;
+                }
+
+                var message = state.Message;
+                var msgChangeId = message.MessageChangeId.HasValue ? ToSeq(message.MessageChangeId.Value) : null;
+                if (state.IsDeleted)
+                {
+                    results.Add(new MessageByIdDto(
+                        req.SessionUnitId,
+                        ToSeq(id),
+                        "DeletedForMe",
+                        msgChangeId,
+                        message.EntityVersion,
+                        state.DeleteChangeSeq.HasValue ? ToSeq(state.DeleteChangeSeq.Value) : null,
+                        null,
+                        null));
+                    continue;
+                }
+
+                var seq = message.ChangeSeq.HasValue ? ToSeq(message.ChangeSeq.Value) : null;
+                if (message.IsRollbacked || message.RollbackTime.HasValue)
+                {
+                    results.Add(new MessageByIdDto(
+                        req.SessionUnitId,
+                        ToSeq(id),
+                        "Recalled",
+                        msgChangeId,
+                        message.EntityVersion,
+                        seq,
+                        null,
+                        message.RollbackTime));
+                    continue;
+                }
+
+                results.Add(new MessageByIdDto(
+                    req.SessionUnitId,
+                    ToSeq(id),
+                    "Visible",
+                    msgChangeId,
+                    message.EntityVersion,
+                    seq,
+                    bodies[id],
+                    null));
+            }
+        }
+
+        return new MessageByIdsDto(results);
+    }
+
+    private static List<MessageByIdsScopeRequest> ResolveByIdsRequests(MessageByIdsInput input)
+    {
+        if (input.Requests != null && input.Requests.Count > 0)
+        {
+            foreach (var r in input.Requests)
+            {
+                if (r.MessageIds == null || r.MessageIds.Count is < 1 or > 200 || r.MessageIds.Any(x => x <= 0))
+                    throw new UserFriendlyException("每批需要 1～200 个有效消息 ID。");
+            }
+            return input.Requests;
+        }
+
+        if (input.SessionUnitId.HasValue && input.MessageIds != null && input.MessageIds.Count is >= 1 and <= 200 &&
+            !input.MessageIds.Any(x => x <= 0))
+        {
+            return
+            [
+                new MessageByIdsScopeRequest
+                {
+                    SessionUnitId = input.SessionUnitId.Value,
+                    MessageIds = input.MessageIds
+                }
+            ];
+        }
+
+        throw new UserFriendlyException("每批需要 1～200 个有效消息 ID。");
     }
 
     private async Task<ExtraPagedResultDto<MessageFastDto>> GetAuthoritativeWindowAsync(Guid sessionUnitId, int maxResultCount,

@@ -2744,6 +2744,9 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("LastModifierId");
 
+                    b.Property<long?>("MessageChangeId")
+                        .HasColumnType("bigint");
+
                     b.Property<Guid?>("MessageContentId")
                         .HasColumnType("uniqueidentifier");
 
@@ -2858,6 +2861,8 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("IsPrivate");
 
+                    b.HasIndex("MessageChangeId");
+
                     b.HasIndex("MessageContentId");
 
                     b.HasIndex("MessageType");
@@ -2919,45 +2924,107 @@ namespace IczpNet.Chat.Migrations
 
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Messages.MessageChange", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
                     b.Property<int>("ChangeType")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("ChangedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsPrivate")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime>("MessageCreationTime")
+                    b.Property<DateTime>("CreationTime")
                         .HasColumnType("datetime2");
 
                     b.Property<long>("MessageId")
                         .HasColumnType("bigint");
 
-                    b.Property<Guid?>("ReceiverSessionUnitId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("SenderSessionUnitId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid>("SessionId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<long>("Version")
+                    b.HasKey("Id");
+
+                    b.HasIndex("SessionId", "Id");
+
+                    b.ToTable("Chat_MessageChange", (string)null);
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.MessageSections.Messages.MessageChangeCursor", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long>("ChatObjectId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<string>("DeviceId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsInitialized")
+                        .HasColumnType("bit");
+
+                    b.Property<long>("LastAppliedMessageChangeId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("LastSyncTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "UserId", "ChatObjectId", "DeviceId")
+                        .IsUnique();
+
+                    b.ToTable("Chat_MessageChangeCursor", (string)null);
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.MessageSections.Messages.MessageChangeWriteGate", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("Epoch")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long>("LastCommittedChangeId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("Revision")
                         .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ChangedAt");
+                    b.ToTable("Chat_MessageChangeWriteGate", (string)null);
 
-                    b.HasIndex("SessionId", "Version")
-                        .IsUnique();
-
-                    b.ToTable("Chat_MessageChange", (string)null);
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Epoch = new Guid("11111111-1111-1111-1111-111111111111"),
+                            LastCommittedChangeId = 0L,
+                            Revision = 0L
+                        });
                 });
 
             modelBuilder.Entity("IczpNet.Chat.MessageSections.Messages.SessionMessageChangeState", b =>
@@ -8059,6 +8126,11 @@ namespace IczpNet.Chat.Migrations
                     b.HasOne("IczpNet.Chat.MessageSections.Messages.Message", "ForwardMessage")
                         .WithMany("ForwardedMessageList")
                         .HasForeignKey("ForwardMessageId");
+
+                    b.HasOne("IczpNet.Chat.MessageSections.Messages.MessageChange", null)
+                        .WithMany()
+                        .HasForeignKey("MessageChangeId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("IczpNet.Chat.MessageSections.MessageContents.MessageContent", "MessageContent")
                         .WithMany("MessageList")

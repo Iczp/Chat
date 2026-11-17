@@ -10,6 +10,8 @@ public class SendMessageToClientDistributedEto : ISendMessageToClientDistributed
     public Guid? TargetSessionUnitId { get; set; }
     public Guid? SessionId { get; set; }
     public string LatestChangeSeq { get; set; }
+    public string MessageChangeId { get; set; }
+    public string ChangeType { get; set; }
     public string ChangeScope { get; set; }
     /// <summary>
     /// Command
