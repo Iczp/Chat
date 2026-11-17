@@ -34,7 +34,7 @@ public class MessageUpdatedLocalEventHandler(
             HostName = currentHosted.Name,
             MessageId = message.Id,
             SessionId = message.SessionId,
-            LatestChangeSeq = (message.MessageChangeId ?? message.ChangeSeq)?.ToString(CultureInfo.InvariantCulture),
+            LatestChangeSeq = message.MessageChangeId?.ToString(CultureInfo.InvariantCulture),
             MessageChangeId = message.MessageChangeId?.ToString(CultureInfo.InvariantCulture),
             ChangeType = message.IsRollbackMessage() ? "Recalled" : "Updated",
             ChangeScope = message.IsPrivate ? "Private" : "Shared",

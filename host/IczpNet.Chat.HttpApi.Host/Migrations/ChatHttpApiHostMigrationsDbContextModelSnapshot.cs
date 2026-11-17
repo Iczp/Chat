@@ -1263,9 +1263,6 @@ namespace IczpNet.Chat.Migrations
                     b.Property<long>("MessageId")
                         .HasColumnType("bigint");
 
-                    b.Property<long?>("ChangeSeq")
-                        .HasColumnType("bigint");
-
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -1311,12 +1308,6 @@ namespace IczpNet.Chat.Migrations
                     b.HasIndex("MessageId");
 
                     b.HasIndex("OwnerId");
-
-                    b.HasIndex("SessionUnitId", "ChangeSeq")
-                        .HasDatabaseName("IX_Chat_DeletedRecorder_ChangeSeq")
-                        .HasFilter("[ChangeSeq] IS NOT NULL");
-
-                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("SessionUnitId", "ChangeSeq"), new[] { "MessageId" });
 
                     b.ToTable("Chat_DeletedRecorder", (string)null);
                 });
@@ -2634,9 +2625,6 @@ namespace IczpNet.Chat.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
-                    b.Property<long?>("ChangeSeq")
-                        .HasColumnType("bigint");
-
                     b.Property<int>("Channel")
                         .HasColumnType("int")
                         .HasComment("消息通道");
@@ -2886,12 +2874,6 @@ namespace IczpNet.Chat.Migrations
                     b.HasIndex("SessionUnitCount");
 
                     b.HasIndex("ShortId");
-
-                    b.HasIndex("SessionId", "ChangeSeq")
-                        .HasDatabaseName("IX_Chat_Message_ChangeSeq")
-                        .HasFilter("[ChangeSeq] IS NOT NULL");
-
-                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("SessionId", "ChangeSeq"), new[] { "Id" });
 
                     b.HasIndex("SessionId", "Id")
                         .IsDescending();
@@ -6217,9 +6199,6 @@ namespace IczpNet.Chat.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)")
                         .HasComment("聊天背景，默认为 null");
-
-                    b.Property<long?>("ClearChangeSeq")
-                        .HasColumnType("bigint");
 
                     b.Property<DateTime?>("ClearTime")
                         .HasColumnType("datetime2")

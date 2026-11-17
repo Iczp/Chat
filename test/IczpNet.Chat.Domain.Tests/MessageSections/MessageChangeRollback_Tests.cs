@@ -53,7 +53,7 @@ public class MessageChangeRollback_Tests
         await manager.RollbackAsync(message);
         Assert.True(message.IsRollbacked);
         Assert.Equal(7, message.SyncVersion);
-        Assert.Equal(7, message.ChangeSeq);
+        Assert.Equal(7, message.MessageChangeId);
         await uow.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
@@ -65,7 +65,7 @@ public class MessageChangeRollback_Tests
             .Returns(new MessageChangeEntry { AlreadyApplied = true, Version = 7 });
         await manager.RollbackAsync(message);
         Assert.False(message.IsRollbacked);
-        Assert.Null(message.ChangeSeq);
+        Assert.Null(message.MessageChangeId);
         await uow.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
@@ -77,7 +77,7 @@ public class MessageChangeRollback_Tests
             .Returns<Task<MessageChangeEntry>>(_ => throw new InvalidOperationException("storage failed"));
         await Assert.ThrowsAsync<InvalidOperationException>(() => manager.RollbackAsync(message));
         Assert.False(message.IsRollbacked);
-        Assert.Null(message.ChangeSeq);
+        Assert.Null(message.MessageChangeId);
         await uow.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 }

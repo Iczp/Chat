@@ -874,7 +874,6 @@ public partial class MessageManager(
                 return new Dictionary<string, long> { { "MessageId", message.Id } };
             message.Rollback(change.ChangedAt);
             message.SetMessageChangeId(change.Version);
-            message.SetChangeSeq(change.Version);
         }
         else
         {
@@ -899,7 +898,6 @@ public partial class MessageManager(
         var change = await LazyServiceProvider.LazyGetRequiredService<IMessageChangeRepository>()
             .AppendUpdateAsync(message, time ?? Clock.Now, cancellationTokenProvider.Token);
         message.SetMessageChangeId(change.Version);
-        message.SetChangeSeq(change.Version);
         await UnitOfWorkManager.Current.SaveChangesAsync();
         return change.Version;
     }

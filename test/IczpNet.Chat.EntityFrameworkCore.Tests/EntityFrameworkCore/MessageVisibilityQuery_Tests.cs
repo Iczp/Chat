@@ -112,14 +112,14 @@ public class MessageVisibilityQuery_Tests : ChatTestBase<MessageQueryReviewTestM
             await InsertAsync<Message>(context, new() { ["Id"] = 105L, ["SessionId"] = session, ["SessionSeq"] = 1L, ["ExtraProperties"] = new ExtraPropertyDictionary() });
             await InsertAsync<Message>(context, new() { ["Id"] = 106L, ["SessionId"] = session, ["SessionSeq"] = 2L, ["ExtraProperties"] = new ExtraPropertyDictionary(),
                 ["IsPrivate"] = true, ["SenderSessionUnitId"] = first, ["ReceiverSessionUnitId"] = Guid.NewGuid() });
-            await InsertAsync<DeletedRecorder>(context, new() { ["SessionUnitId"] = first, ["MessageId"] = 105L, ["ChangeSeq"] = 7L });
+            await InsertAsync<DeletedRecorder>(context, new() { ["SessionUnitId"] = first, ["MessageId"] = 105L });
             await context.SaveChangesAsync();
             var changes = ServiceProvider.GetRequiredService<IMessageChangeRepository>();
-            var ownScope = Assert.Single(await changes.GetV2ScopesAsync(1, [first]));
-            var own = await changes.ReadV2ItemsAsync(ownScope, [105, 106, 999]);
+            var ownScope = Assert.Single(await changes.GetScopesAsync(1, [first]));
+            var own = await changes.ReadItemsAsync(ownScope, [105, 106, 999]);
             Assert.True(own.Single(x => x.Message.Id == 105).IsDeleted);
-            var peerScope = Assert.Single(await changes.GetV2ScopesAsync(2, [second]));
-            var peer = await changes.ReadV2ItemsAsync(peerScope, [105, 106, 999]);
+            var peerScope = Assert.Single(await changes.GetScopesAsync(2, [second]));
+            var peer = await changes.ReadItemsAsync(peerScope, [105, 106, 999]);
             Assert.False(Assert.Single(peer).IsDeleted);
             Assert.Equal(105, peer[0].Message.Id);
             var query = ServiceProvider.GetRequiredService<IMessageRepository>();

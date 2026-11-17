@@ -48,12 +48,12 @@ public class MessageChangeV2Persistence_Tests : ChatTestBase<MessageQueryReviewT
             }
 
             var repository = ServiceProvider.GetRequiredService<IMessageChangeRepository>();
-            var scope = Assert.Single(await repository.GetV2ScopesAsync(1, [unit]));
-            Assert.Equal(101L, Assert.Single(await repository.ReadV2SoftDeletedIdsAsync(scope, [101, 102, 103, 104])));
-            Assert.Empty(await repository.ReadV2ItemsAsync(scope, [101, 102, 103, 104]));
+            var scope = Assert.Single(await repository.GetScopesAsync(1, [unit]));
+            Assert.Equal(101L, Assert.Single(await repository.ReadSoftDeletedIdsAsync(scope, [101, 102, 103, 104])));
+            Assert.Empty(await repository.ReadItemsAsync(scope, [101, 102, 103, 104]));
             await context.SessionUnit.Where(x => x.Id == unit)
                 .ExecuteUpdateAsync(row => row.SetProperty(x => x.IsDeleted, true));
-            Assert.Empty(await repository.ReadV2SoftDeletedIdsAsync(scope, [101]));
+            Assert.Empty(await repository.ReadSoftDeletedIdsAsync(scope, [101]));
         });
     }
 

@@ -126,7 +126,6 @@ public class MessageChangeDeletion_Tests
         var result = await test.Manager.ClearMessageAsync(unit);
 
         Assert.Equal(boundary, result.ClearTime);
-        Assert.Equal(8, result.ClearChangeSeq);
         await test.Uow.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
         Assert.Null(published);
         await Assert.Single(test.Completions)();

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
-public partial interface IMessageChangeRepository
+public interface IMessageChangeRepository
 {
     Task<MessageChangeEntry> AppendRollbackAsync(Message message, DateTime time, CancellationToken cancellationToken = default);
     Task<MessageChangeEntry> AppendUpdateAsync(Message message, DateTime time, CancellationToken cancellationToken = default);
@@ -16,4 +16,20 @@ public partial interface IMessageChangeRepository
         CancellationToken cancellationToken = default);
     Task<List<Guid>> GetRollbackRecipientsAsync(Guid sessionId, long messageId, List<Guid> candidateUnitIds,
         CancellationToken cancellationToken = default);
+    Task<List<MessageChangeUnitScope>> GetScopesAsync(long ownerId, List<Guid> sessionUnitIds,
+        CancellationToken cancellationToken = default);
+    Task<List<MessageChangeItemState>> ReadItemsAsync(MessageChangeUnitScope scope,
+        List<long> ids, CancellationToken cancellationToken = default);
+    Task<List<long>> ReadSoftDeletedIdsAsync(MessageChangeUnitScope scope, List<long> ids,
+        CancellationToken cancellationToken = default);
+    Task<List<Message>> ReadWindowAsync(MessageChangeUnitScope scope,
+        long? minId, long? maxId, int take, bool descending, CancellationToken cancellationToken = default);
+    Task<long> GetHeadChangeIdAsync(CancellationToken cancellationToken = default);
+    Task<MessageChangeCursor> GetCursorAsync(Guid? tenantId, Guid userId, long chatObjectId, string deviceId,
+        CancellationToken cancellationToken = default);
+    Task<MessageChangeCursor> UpsertCursorAsync(Guid? tenantId, Guid userId, long chatObjectId, string deviceId,
+        long lastAppliedMessageChangeId, DateTime syncTime, bool reset = false,
+        CancellationToken cancellationToken = default);
+    Task<MessageChangePullResult> PullChangesAsync(long chatObjectId, long afterMessageChangeId, long headChangeId,
+        int maxResultCount, CancellationToken cancellationToken = default);
 }

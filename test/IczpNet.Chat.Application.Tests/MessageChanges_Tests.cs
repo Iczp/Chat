@@ -101,7 +101,7 @@ public class MessageChanges_Tests
                     return Cursor;
                 });
 
-            Changes.GetV2ScopesAsync(1, Arg.Any<List<Guid>>(), Arg.Any<CancellationToken>())
+            Changes.GetScopesAsync(1, Arg.Any<List<Guid>>(), Arg.Any<CancellationToken>())
                 .Returns(call => call.Arg<List<Guid>>().Contains(Unit.Id)
                     ? [new(Unit.Id, Unit.SessionId.Value, 1, null)]
                     : []);
@@ -112,7 +112,7 @@ public class MessageChanges_Tests
 
         protected override MessageFastDto MapToMessage(MessageCacheItem item) => new()
         {
-            Id = item.Id, Content = item.Content, ChangeSeq = item.ChangeSeq, IsRollbacked = item.IsRollbacked, RollbackTime = item.RollbackTime
+            Id = item.Id, Content = item.Content, MessageChangeId = item.SyncVersion, IsRollbacked = item.IsRollbacked, RollbackTime = item.RollbackTime
         };
 
         private sealed class FakePrincipalAccessor(Guid userId) : ICurrentPrincipalAccessor
@@ -123,19 +123,18 @@ public class MessageChanges_Tests
     }
 
     [Fact]
-    public async Task Head_returns_global_epoch_head_and_device_cursor()
+    public async Task Pull_initializes_epoch_and_head_when_epoch_is_empty()
     {
         var service = new Probe();
         service.HeadChangeId = 9007199254740993L;
 
-        var initial = await service.GetChangeHeadAsync(new() { ChatObjectId = 1, DeviceId = "DEVICE_001" });
-        Assert.False(initial.Initialized);
-        Assert.Equal("0", initial.LastAppliedChangeId);
+        var initial = await service.PullChangesAsync(new() { ChatObjectId = 1, DeviceId = "DEVICE_001", Epoch = "", AfterMessageChangeId = "0" });
+        Assert.True(initial.ResetRequired);
         Assert.Equal("9007199254740993", initial.HeadChangeId);
         Assert.Equal(64, initial.Epoch.Length);
 
         await Assert.ThrowsAsync<AbpAuthorizationException>(() =>
-            service.GetChangeHeadAsync(new() { ChatObjectId = 2, DeviceId = "DEVICE_001" }));
+            service.PullChangesAsync(new() { ChatObjectId = 2, DeviceId = "DEVICE_001", Epoch = "", AfterMessageChangeId = "0" }));
     }
 
     [Fact]
@@ -143,7 +142,7 @@ public class MessageChanges_Tests
     {
         var service = new Probe();
         service.HeadChangeId = 150;
-        var head = await service.GetChangeHeadAsync(new() { ChatObjectId = 1, DeviceId = "DEVICE_001" });
+        var head = await service.PullChangesAsync(new() { ChatObjectId = 1, DeviceId = "DEVICE_001", Epoch = "", AfterMessageChangeId = "0" });
 
         service.Changes.PullChangesAsync(1L, 100L, 150L, 1, Arg.Any<CancellationToken>())
             .Returns(new MessageChangePullResult(130L, true, [
@@ -201,7 +200,7 @@ public class MessageChanges_Tests
     {
         var service = new Probe();
         service.HeadChangeId = 150;
-        var head = await service.GetChangeHeadAsync(new() { ChatObjectId = 1, DeviceId = "DEVICE_001" });
+        var head = await service.PullChangesAsync(new() { ChatObjectId = 1, DeviceId = "DEVICE_001", Epoch = "", AfterMessageChangeId = "0" });
 
         var ack125 = await service.AckChangesAsync(new()
         {
@@ -239,7 +238,7 @@ public class MessageChanges_Tests
     {
         var service = new Probe(enabled: false);
         await Assert.ThrowsAsync<EntityNotFoundException>(() =>
-            service.GetChangeHeadAsync(new() { ChatObjectId = 1, DeviceId = "DEVICE_001" }));
+            service.PullChangesAsync(new() { ChatObjectId = 1, DeviceId = "DEVICE_001", Epoch = "", AfterMessageChangeId = "0" }));
         Assert.Empty(service.Changes.ReceivedCalls());
     }
 
@@ -264,20 +263,20 @@ public class MessageChanges_Tests
         typeof(Message).GetProperty(nameof(Message.Id))!.SetValue(updated, 10L);
         typeof(Message).GetProperty(nameof(Message.Id))!.SetValue(recalled, 12L);
         typeof(Message).GetProperty(nameof(Message.Id))!.SetValue(deleted, 13L);
-        typeof(Message).GetProperty(nameof(Message.ChangeSeq))!.SetValue(updated, 9L);
-        typeof(Message).GetProperty(nameof(Message.MessageChangeId))!.SetValue(updated, 209L);
+        typeof(Message).GetMethod("SetMessageChangeId", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .Invoke(updated, [209L]);
         typeof(Message).GetProperty(nameof(Message.IsRollbacked))!.SetValue(recalled, true);
 
-        service.Changes.ReadV2ItemsAsync(Arg.Any<MessageChangeUnitScope>(), Arg.Any<List<long>>(), Arg.Any<CancellationToken>())
-            .Returns([new(updated, false, null), new(recalled, false, null), new(deleted, true, 11)]);
+        service.Changes.ReadItemsAsync(Arg.Any<MessageChangeUnitScope>(), Arg.Any<List<long>>(), Arg.Any<CancellationToken>())
+            .Returns([new(updated, false), new(recalled, false), new(deleted, true)]);
         service.Messages.GetManyCacheAsync(Arg.Any<IEnumerable<long>>(), true, false, Arg.Any<CancellationToken>())
-            .Returns([new(new MessageCacheKey(10), new() { Id = 10, Content = "old", ChangeSeq = 7 })]);
+            .Returns([new(new MessageCacheKey(10), new() { Id = 10, Content = "old", SyncVersion = 7 })]);
         service.DomainMapper.Map<Message, MessageCacheItem>(updated).Returns(new MessageCacheItem
         {
-            Id = 10, Content = "current", ChangeSeq = 9
+            Id = 10, Content = "current", SyncVersion = 209
         });
 
-        service.Changes.ReadV2SoftDeletedIdsAsync(Arg.Any<MessageChangeUnitScope>(), Arg.Is<List<long>>(ids => ids.SequenceEqual(new long[] { 14, 15 })),
+        service.Changes.ReadSoftDeletedIdsAsync(Arg.Any<MessageChangeUnitScope>(), Arg.Is<List<long>>(ids => ids.SequenceEqual(new long[] { 14, 15 })),
             Arg.Any<CancellationToken>()).Returns([14]);
         var result = await service.GetByIdsAsync(new()
         {
@@ -288,10 +287,8 @@ public class MessageChanges_Tests
         Assert.Equal("Visible", result.Items[0].Status);
         Assert.Equal("current", result.Items[0].Message.Content);
         Assert.Equal("209", result.Items[0].MessageChangeId);
-        Assert.Equal("9", result.Items[0].ChangeSeq);
         Assert.Equal("Recalled", result.Items[1].Status);
         Assert.Equal("DeletedForMe", result.Items[2].Status);
-        Assert.Equal("11", result.Items[2].ChangeSeq);
         Assert.Equal("NotFound", result.Items[3].Status);
         Assert.Equal("NotAccessible", result.Items[4].Status);
         Assert.All(result.Items.Skip(1), x => Assert.Null(x.Message));

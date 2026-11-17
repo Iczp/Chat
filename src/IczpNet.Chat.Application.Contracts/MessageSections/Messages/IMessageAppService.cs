@@ -10,7 +10,6 @@ namespace IczpNet.Chat.MessageSections.Messages;
 
 public interface IMessageAppService
 {
-    Task<MessageChangeHeadV2Dto> GetChangeHeadAsync(MessageChangeHeadInput input);
     Task<MessageChangePullDto> PullChangesAsync(MessageChangePullInput input);
     Task<MessageChangeAckDto> AckChangesAsync(MessageChangeAckInput input);
     Task<MessageByIdsDto> GetByIdsAsync(MessageByIdsInput input);
