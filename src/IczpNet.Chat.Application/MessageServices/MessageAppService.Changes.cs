@@ -45,6 +45,8 @@ public partial class MessageAppService
     [UnitOfWork(isTransactional: false)]
     public async Task<List<MessageChangePageDto>> QueryChangesAsync(MessageChangesInput input)
     {
+        throw new EntityNotFoundException("Message Change Sync V1 (/api/chat/message/changes/query) is disabled. Please use Message Change Sync V2.");
+#pragma warning disable CS0162 // Unreachable code detected
         CheckChangeSync();
         if (input.Sessions == null || input.Sessions.Count is < 1 or > 20 || input.MaxResultCount is < 1 or > 200 || input.MaxResultCount < input.Sessions.Count)
             throw new UserFriendlyException("消息同步请求超过批次限制。");
