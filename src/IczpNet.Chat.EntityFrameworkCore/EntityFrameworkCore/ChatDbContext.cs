@@ -28,6 +28,7 @@ using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.MessageWords;
 using IczpNet.Chat.Mottos;
 using IczpNet.Chat.OpenedRecorders;
+using IczpNet.Chat.QrCodes;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.ScanCodes;
@@ -194,6 +195,8 @@ public class ChatDbContext(DbContextOptions<ChatDbContext> options) : AbpDbConte
     public DbSet<BlobContent> BlobContent { get; set; }
 
     public DbSet<InvitationCode> InvitationCode { get; set; }
+
+    public DbSet<QrCode> QrCode { get; set; }
 
     public DbSet<ClientConfig> ClientConfig { get; set; }
 

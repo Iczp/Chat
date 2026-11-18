@@ -290,7 +290,7 @@ public class RoomManager(
                 destination: room,
                 x =>
                 {
-                    x.JoinWay = JoinWays.Invitation;
+                    x.JoinWay = input.JoinWay ?? JoinWays.Invitation;
                     x.InviterId = inviterSessionUnit?.Id;
                 }))
             .ToList();

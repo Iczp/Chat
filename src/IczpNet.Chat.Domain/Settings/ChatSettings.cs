@@ -71,4 +71,28 @@ public static class ChatSettings
     /// </summary>
     [DefaultValue(30)]
     public const string MessageChangeRetentionDays = $"{GroupName}:{nameof(MessageChangeRetentionDays)}";
+
+    /// <summary>
+    /// 临时名片二维码默认有效天数，默认 7 天
+    /// </summary>
+    [DefaultValue(7)]
+    public const string QrCodeDefaultExpireDays = $"{GroupName}:{nameof(QrCodeDefaultExpireDays)}";
+
+    /// <summary>
+    /// 群聊二维码默认有效天数，默认 7 天
+    /// </summary>
+    [DefaultValue(7)]
+    public const string QrCodeGroupExpireDays = $"{GroupName}:{nameof(QrCodeGroupExpireDays)}";
+
+    /// <summary>
+    /// 二维码允许设置的最大有效天数，默认 365 天
+    /// </summary>
+    [DefaultValue(365)]
+    public const string QrCodeMaxExpireDays = $"{GroupName}:{nameof(QrCodeMaxExpireDays)}";
+
+    /// <summary>
+    /// 二维码默认内容模板
+    /// </summary>
+    [DefaultValue("gotoim://qr/{code}")]
+    public const string QrCodeContentTemplate = $"{GroupName}:{nameof(QrCodeContentTemplate)}";
 }

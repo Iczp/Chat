@@ -244,6 +244,17 @@ public class ChatPermissions
         public const string Delete = Default + "." + nameof(Delete);
     }
 
+    public class QrCodePermissions
+    {
+        public const string Default = GroupName + "." + nameof(QrCodePermissions);
+        public const string GetItem = Default + "." + nameof(GetItem);
+        public const string GetList = Default + "." + nameof(GetList);
+        public const string Generate = Default + "." + nameof(Generate);
+        public const string Reset = Default + "." + nameof(Reset);
+        public const string Apply = Default + "." + nameof(Apply);
+        public const string Delete = Default + "." + nameof(Delete);
+    }
+
     
     /// <summary>
     /// AppVersion

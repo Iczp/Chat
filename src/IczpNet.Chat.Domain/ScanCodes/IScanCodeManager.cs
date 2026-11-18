@@ -5,5 +5,5 @@ namespace IczpNet.Chat.ScanCodes;
 public interface IScanCodeManager
 {
 
-    Task<ScanCode> ScanCodeAsync(string type, string code);
+    Task<ScanCode> ScanCodeAsync(string type, string code, long? currentChatObjectId = null);
 }

@@ -6,6 +6,7 @@ using IczpNet.Chat.HttpRequests;
 using IczpNet.Chat.ListSets;
 using IczpNet.Chat.MessageReports;
 using IczpNet.Chat.Options;
+using IczpNet.Chat.QrCodes;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.ShortIds;
 using Microsoft.Extensions.DependencyInjection;
@@ -87,6 +88,7 @@ public class ChatDomainModule : AbpModule
         }
 
         Configure<AiRunDispatcherOptions>(configuration.GetSection("AiRunDispatcher"));
+        Configure<QrCodeOptions>(configuration.GetSection("Chat:QrCodes"));
         Configure<SessionUnitOptions>(configuration.GetSection("Chat:SessionUnits"));
         Configure<MessageOptions>(options =>
         {

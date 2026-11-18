@@ -122,6 +122,19 @@
     "SessionPermissionDefinitionConsts.SessionOrganizationPermission.Update": "修改",
     "SessionPermissionDefinitionConsts.SessionOrganizationPermission.Delete": "删除",
 
+    "ChatPermissions.QrCodePermissions": "二维码名片管理",
+    "ChatPermissions.QrCodePermissions.GetItem": "查看详情",
+    "ChatPermissions.QrCodePermissions.GetList": "查看列表",
+    "ChatPermissions.QrCodePermissions.Generate": "生成二维码",
+    "ChatPermissions.QrCodePermissions.Reset": "重置二维码",
+    "ChatPermissions.QrCodePermissions.Apply": "扫码添加/入群",
+    "ChatPermissions.QrCodePermissions.Delete": "删除二维码",
+
+    "ChatSettings:QrCodeDefaultExpireDays": "临时名片二维码默认有效天数",
+    "ChatSettings:QrCodeGroupExpireDays": "群聊二维码默认有效天数",
+    "ChatSettings:QrCodeMaxExpireDays": "二维码最大有效天数",
+    "ChatSettings:QrCodeContentTemplate": "二维码内容模板",
+
     "code-generator-localization": "Do not modify or delete this line of comments"
   }
 }

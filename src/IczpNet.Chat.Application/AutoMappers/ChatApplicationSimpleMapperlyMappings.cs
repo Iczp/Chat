@@ -27,6 +27,8 @@ using IczpNet.Chat.Menus.Dtos;
 using IczpNet.Chat.MessageReports;
 using IczpNet.Chat.Mottos;
 using IczpNet.Chat.Mottos.Dtos;
+using IczpNet.Chat.QrCodes;
+using IczpNet.Chat.QrCodes.Dtos;
 using IczpNet.Chat.Robots.Dtos;
 using IczpNet.Chat.ScanCodes;
 using IczpNet.Chat.Squares.Dtos;
@@ -429,4 +431,40 @@ public partial class ChatApplicationAiRunToAiRunDetailDtoMapper : MapperBase<AiR
     public override partial AiRunDetailDto Map(AiRun source);
 
     public override partial void Map(AiRun source, AiRunDetailDto destination);
+}
+
+[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
+public partial class ChatApplicationQrCodeToQrCodeDtoMapper : MapperBase<QrCode, QrCodeDto>
+{
+    public override partial QrCodeDto Map(QrCode source);
+
+    public override partial void Map(QrCode source, QrCodeDto destination);
+}
+
+[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
+public partial class ChatApplicationQrCodeToQrCodeDetailDtoMapper : MapperBase<QrCode, QrCodeDetailDto>
+{
+    [MapperIgnoreTarget(nameof(QrCodeDetailDto.IsExpired))]
+    [MapperIgnoreTarget(nameof(QrCodeDetailDto.OwnerName))]
+    [MapperIgnoreTarget(nameof(QrCodeDetailDto.OwnerCode))]
+    [MapperIgnoreTarget(nameof(QrCodeDetailDto.OwnerPortrait))]
+    [MapperIgnoreTarget(nameof(QrCodeDetailDto.OwnerThumbnail))]
+    [MapperIgnoreTarget(nameof(QrCodeDetailDto.InviterName))]
+    public override partial QrCodeDetailDto Map(QrCode source);
+
+    [MapperIgnoreTarget(nameof(QrCodeDetailDto.IsExpired))]
+    [MapperIgnoreTarget(nameof(QrCodeDetailDto.OwnerName))]
+    [MapperIgnoreTarget(nameof(QrCodeDetailDto.OwnerCode))]
+    [MapperIgnoreTarget(nameof(QrCodeDetailDto.OwnerPortrait))]
+    [MapperIgnoreTarget(nameof(QrCodeDetailDto.OwnerThumbnail))]
+    [MapperIgnoreTarget(nameof(QrCodeDetailDto.InviterName))]
+    public override partial void Map(QrCode source, QrCodeDetailDto destination);
+}
+
+[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
+public partial class ChatApplicationQrCodeApplyResultToQrCodeApplyOutputMapper : MapperBase<QrCodeApplyResult, QrCodeApplyOutput>
+{
+    public override partial QrCodeApplyOutput Map(QrCodeApplyResult source);
+
+    public override partial void Map(QrCodeApplyResult source, QrCodeApplyOutput destination);
 }

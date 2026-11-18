@@ -22,6 +22,7 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.MessageWords;
 using IczpNet.Chat.OpenedRecorders;
+using IczpNet.Chat.QrCodes;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.Security;
@@ -121,6 +122,27 @@ public static class ChatDbContextModelCreatingExtensions
             b.HasIndex(x => x.TargetContent);
             b.HasIndex(x => x.Status);
             b.HasIndex(x => x.CreationTime);
+        });
+
+        builder.Entity<QrCode>(b =>
+        {
+            b.Property(x => x.Code).IsRequired().HasMaxLength(64);
+            b.Property(x => x.Title).HasMaxLength(200);
+            b.Property(x => x.Content).HasMaxLength(1024);
+            b.Property(x => x.PayloadJson).HasMaxLength(2000);
+            b.HasIndex(x => x.Code).IsUnique();
+            b.HasIndex(x => new { x.OwnerId, x.Scene, x.IsPermanent, x.IsEnabled });
+            b.HasIndex(x => x.ExpirationTime);
+            b.HasOne(x => x.Owner)
+                .WithMany()
+                .HasForeignKey(x => x.OwnerId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
+            b.HasOne(x => x.Inviter)
+                .WithMany()
+                .HasForeignKey(x => x.InviterId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
         });
 
         ConfigMessageTemplateEntitys(builder);

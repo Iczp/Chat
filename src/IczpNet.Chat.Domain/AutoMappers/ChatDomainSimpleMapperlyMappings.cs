@@ -5,6 +5,7 @@ using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.QrCodes;
 using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.SessionBoxes;
 using IczpNet.Chat.SessionTags;
@@ -137,4 +138,12 @@ public partial class ChatDomainBoxToBoxInfoMapper : MapperBase<Box, BoxInfo>
     public override partial BoxInfo Map(Box source);
 
     public override partial void Map(Box source, BoxInfo destination);
+}
+
+[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
+public partial class ChatDomainQrCodeToQrCodeCacheItemMapper : MapperBase<QrCode, QrCodeCacheItem>
+{
+    public override partial QrCodeCacheItem Map(QrCode source);
+
+    public override partial void Map(QrCode source, QrCodeCacheItem destination);
 }

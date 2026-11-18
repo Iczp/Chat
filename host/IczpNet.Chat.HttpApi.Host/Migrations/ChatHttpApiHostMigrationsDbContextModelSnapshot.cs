@@ -4465,6 +4465,129 @@ namespace IczpNet.Chat.Migrations
                     b.ToTable("Chat_OpenedRecorder", (string)null);
                 });
 
+            modelBuilder.Entity("IczpNet.Chat.QrCodes.QrCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasComment("唯一短码");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<string>("Content")
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)")
+                        .HasComment("二维码内容");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<DateTime?>("ExpirationTime")
+                        .HasColumnType("datetime2")
+                        .HasComment("过期时间");
+
+                    b.Property<int?>("ExpireDays")
+                        .HasColumnType("int")
+                        .HasComment("有效天数");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<long?>("InviterId")
+                        .HasColumnType("bigint")
+                        .HasComment("邀请人聊天对象Id");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("bit")
+                        .HasComment("是否可用");
+
+                    b.Property<bool>("IsPermanent")
+                        .HasColumnType("bit")
+                        .HasComment("是否永久有效");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<int?>("MaxUseCount")
+                        .HasColumnType("int")
+                        .HasComment("最大使用次数");
+
+                    b.Property<long?>("OwnerId")
+                        .HasColumnType("bigint")
+                        .HasComment("所属聊天对象Id");
+
+                    b.Property<int?>("OwnerObjectType")
+                        .HasColumnType("int")
+                        .HasComment("所属聊天对象类型");
+
+                    b.Property<string>("PayloadJson")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)")
+                        .HasComment("扩展业务载荷JSON");
+
+                    b.Property<int>("Scene")
+                        .HasColumnType("int")
+                        .HasComment("二维码场景类型");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasComment("标题");
+
+                    b.Property<int>("UsedCount")
+                        .HasColumnType("int")
+                        .HasComment("已使用次数");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("ExpirationTime");
+
+                    b.HasIndex("InviterId");
+
+                    b.HasIndex("OwnerId", "Scene", "IsPermanent", "IsEnabled");
+
+                    b.ToTable("Chat_QrCode", (string)null);
+                });
+
             modelBuilder.Entity("IczpNet.Chat.ReadedRecorders.ReadedRecorder", b =>
                 {
                     b.Property<Guid>("SessionUnitId")
@@ -8353,6 +8476,23 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("Owner");
 
                     b.Navigation("SessionUnit");
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.QrCodes.QrCode", b =>
+                {
+                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Inviter")
+                        .WithMany()
+                        .HasForeignKey("InviterId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Inviter");
+
+                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.ReadedRecorders.ReadedRecorder", b =>

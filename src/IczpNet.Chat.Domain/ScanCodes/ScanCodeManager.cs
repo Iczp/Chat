@@ -20,6 +20,8 @@ public class ScanCodeManager(
     IRepository<ScanCode, Guid> repository,
     IEnumerable<IScanCodeHandler> scanCodeHandlers) : DomainService, IScanCodeManager
 {
+    public const string CurrentChatObjectIdProperty = "CurrentChatObjectId";
+
     public ICurrentClient CurrentClient { get; } = currentClient;
     public ICurrentUser CurrentUser { get; } = currentUser;
     public IDeviceContext DeviceContext { get; } = deviceContext;
@@ -27,7 +29,7 @@ public class ScanCodeManager(
     public IEnumerable<IScanCodeHandler> ScanCodeHandlers { get; } = scanCodeHandlers;
 
 
-    protected virtual async Task<ScanCode> BuildScanCodeAsync(string type, string content)
+    protected virtual async Task<ScanCode> BuildScanCodeAsync(string type, string content, long? currentChatObjectId = null)
     {
         await Task.Yield();
 
@@ -44,16 +46,22 @@ public class ScanCodeManager(
             DeviceId = await DeviceContext.GetDeviceIdAsync()
         };
 
+        if (currentChatObjectId.HasValue)
+        {
+            scanCode.ExtraProperties[CurrentChatObjectIdProperty] = currentChatObjectId.Value;
+        }
+
         return scanCode;
 
     }
-    public async Task<ScanCode> ScanCodeAsync(string type, string code)
+    public async Task<ScanCode> ScanCodeAsync(string type, string code, long? currentChatObjectId = null)
     {
-        var scanCode = await BuildScanCodeAsync(type, code);
+        var scanCode = await BuildScanCodeAsync(type, code, currentChatObjectId);
 
-        scanCode.HandlerCount = ScanCodeHandlers.Count();
+        var handlers = ScanCodeHandlers.ToList();
+        scanCode.HandlerCount = handlers.Count;
 
-        var handlerTasks = ScanCodeHandlers.Select(async handler =>
+        foreach (var handler in handlers)
         {
             var sw = Stopwatch.StartNew();
 
@@ -62,12 +70,13 @@ public class ScanCodeManager(
                 Handler = handler.GetType().Name,
                 HandlerFullName = handler.GetType().FullName,
             };
+            Volo.Abp.Domain.Entities.EntityHelper.TrySetId(hander, () => GuidGenerator.Create());
 
             try
             {
                 var result = await handler.HandleAsync(scanCode);
                 hander.Action = result.Action;
-                hander.Success = true;
+                hander.Success = result.Success;
                 hander.Execution = sw.Elapsed.TotalMilliseconds;
                 hander.Result = result.Data;
                 hander.Message = result.Message;
@@ -80,11 +89,10 @@ public class ScanCodeManager(
                 hander.Success = false;
                 hander.Message = ex.Message;
                 hander.Result = ex.StackTrace;
-                Logger.LogError($"处理器 {hander.HandlerFullName} 异常", ex);
+                Logger.LogError(ex, $"处理器 {hander.HandlerFullName} 异常");
             }
             scanCode.ScanHandlerList.Add(hander);
-        });
-        await Task.WhenAll(handlerTasks);
+        }
 
         scanCode.Execution = scanCode.ScanHandlerList.Sum(x => x.Execution);
 
