@@ -182,7 +182,7 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
 
             await MessageSender.SendLinkAsync(senderSessionUnit, new MessageInput<LinkContentInfo>()
             {
-                ClientMessageId = SessionRequestNotificationArgs.GetClientMessageId(sessionRequest.Id, SessionRequestNotificationKind.Requested),
+                ClientMessageId = $"{SessionRequestNotificationArgs.GetClientMessageId(sessionRequest.Id, SessionRequestNotificationKind.Requested)}:{notificationDestinationId}",
                 Content = new LinkContentInfo()
                 {
                     Title = new TextTemplate("{owner} 加入 '{destination}'")
@@ -297,6 +297,13 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
         }
         else
         {
+            if (sessionRequest.Destination?.ObjectType is ChatObjectTypeEnums.Room or ChatObjectTypeEnums.Square
+                && handlerSessionUnitId.HasValue)
+            {
+                var handlerSessionUnit = await SessionUnitManager.GetAsync(handlerSessionUnitId.Value);
+                await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.SessionRequestPermission.Handle, handlerSessionUnit);
+            }
+
             if (ownerSessionUnit == null)
             {
                 sessionRequest.DisagreeRequest(handlMessage, handlerSessionUnitId);
@@ -359,10 +366,12 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
                         : owner.ObjectType == ChatObjectTypeEnums.ShopWaiter && owner.ParentId.HasValue
                             ? owner.ParentId.Value : owner.Id);
                 var text = "添加好友成功";
+                Guid? joinedUnitId = null;
                 if (destination.ObjectType is ChatObjectTypeEnums.Room or ChatObjectTypeEnums.Square)
                 {
                     var ownerUnit = await SessionUnitManager.FindAsync(owner.Id, destination.Id)
                         ?? throw new InvalidOperationException($"Owner session unit for request {args.RequestId} is not committed yet.");
+                    joinedUnitId = ownerUnit.Id;
                     text = new TextTemplate("欢迎 '{owner}' 加入 '{destination}'")
                         .WithData("owner", new SessionUnitTextTemplate(ownerUnit.Id, owner.Name))
                         .WithData("destination", new ChatObjectTextTemplate(destination))
@@ -378,6 +387,10 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
                         Text = text,
                     }
                 });
+                if (destination.ObjectType is ChatObjectTypeEnums.Room or ChatObjectTypeEnums.Square)
+                {
+                    await SendAcceptedToRequesterAsync(owner, destination, sessionRequest, joinedUnitId);
+                }
                 break;
             case SessionRequestNotificationKind.Declined:
                 await SendForRequesterAsync(owner, destination, sessionRequest);
@@ -422,6 +435,32 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
         var item = await SessionUnitManager.MapToCacheAsync(unit);
         await uow.CompleteAsync();
         return item;
+    }
+
+    protected virtual async Task SendAcceptedToRequesterAsync(
+        ChatObject owner,
+        ChatObject destination,
+        SessionRequest sessionRequest,
+        Guid? joinedSessionUnitId)
+    {
+        var (assistant, notificationDestinationId) = await EnsureAssistantSessionCommittedAsync(owner);
+
+        var sessionUnit = await GetSenderUnitAsync(assistant.Id, notificationDestinationId);
+
+        await MessageSender.SendLinkAsync(sessionUnit, new MessageInput<LinkContentInfo>()
+        {
+            ClientMessageId = $"{SessionRequestNotificationArgs.GetClientMessageId(sessionRequest.Id, SessionRequestNotificationKind.Accepted)}:requester:{notificationDestinationId}",
+            Content = new LinkContentInfo()
+            {
+                Title = new TextTemplate("'{destination}' 已同意 '{owner}' 加入群聊")
+                    .WithData("destination", new ChatObjectTextTemplate(destination))
+                    .WithData("owner", new ChatObjectTextTemplate(owner))
+                    .ToString(),
+                Url = joinedSessionUnitId.HasValue
+                    ? $"app://sesson-request/detail?id={sessionRequest.Id}&sessionUnitId={joinedSessionUnitId}"
+                    : $"app://sesson-request/detail?id={sessionRequest.Id}"
+            }
+        });
     }
 
     protected virtual async Task SendForRequesterAsync(ChatObject owner, ChatObject destination, SessionRequest sessionRequest)
