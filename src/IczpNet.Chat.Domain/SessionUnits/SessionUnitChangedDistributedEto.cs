@@ -21,6 +21,16 @@ public class SessionUnitChangedDistributedEto
     public SessionUnitCacheItem SessionUnit { get; set; }
 
     /// <summary>
+    /// FriendScore
+    /// </summary>
+    public FriendScore Score { get; set; } 
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public long ReadMessageId { get; set; }
+
+    /// <summary>
     /// ToString()
     /// </summary>
     /// <returns></returns>

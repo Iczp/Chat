@@ -32,6 +32,9 @@ public class SessionUnitChangesGetListInput : GetListInput
     /// </summary>
     public virtual double? MinTicks { get; set; }
 
+    /// <summary>Last returned ID at MinTicks; orders ties by canonical GUID text.</summary>
+    public virtual Guid? CursorId { get; set; }
+
     /// <summary>
     /// 最大Ticks
     /// </summary>

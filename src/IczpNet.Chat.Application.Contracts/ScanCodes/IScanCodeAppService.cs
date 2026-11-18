@@ -11,6 +11,6 @@ public interface IScanCodeAppService : ICrudChatAppService<
         ScanCodeGetListInput>
 {
 
-    Task<ScanCodeResultDto> ScanAsync(string type,string content);
+    Task<ScanCodeResultDto> ScanAsync(string type, string content, long? currentChatObjectId = null);
 
 }

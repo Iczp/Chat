@@ -9,4 +9,6 @@ public class ChatObjectCategoryDto : ChatObjectCategoryInfo, IEntityDto<Guid>
 {
 
     public virtual string Description { get; set; }
+
+    public virtual string GetObjectKey() => $"{Id}";
 }

@@ -3,8 +3,8 @@
 	<Import Project="..\..\common.props" />
 
 	<PropertyGroup>
-		<TargetFramework>net9.0</TargetFramework>
-		<Version>0.2.1.903</Version>
+		<TargetFramework>net10.0</TargetFramework>
+		<Version>0.1.0</Version>
 		<Nullable>disable</Nullable>
 		<RootNamespace>IczpNet.Chat</RootNamespace>
 		<Authors>IczpNet</Authors>
@@ -19,6 +19,15 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="ConnectionPools\**" />
+	  <Compile Remove="Models\**" />
+	  <EmbeddedResource Remove="ConnectionPools\**" />
+	  <EmbeddedResource Remove="Models\**" />
+	  <None Remove="ConnectionPools\**" />
+	  <None Remove="Models\**" />
+	</ItemGroup>
+
+	<ItemGroup>
 	  <None Include="..\..\IczpNet.jpg" Link="IczpNet.jpg">
 	    <PackagePath>\</PackagePath>
 	    <Pack>True</Pack>
@@ -30,12 +39,12 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="IczpNet.AbpCommons.HttpApi" Version="0.9.1.903" />
-		<PackageReference Include="System.Drawing.Common" Version="9.0.0" />
-		<PackageReference Include="Volo.Abp.AspNetCore.Mvc" Version="9.0.3" />
-		<PackageReference Include="Volo.Abp.AspNetCore.SignalR" Version="9.0.3" />
-		<PackageReference Include="Volo.Abp.Identity.HttpApi" Version="9.0.3" />
-		<PackageReference Include="Volo.Abp.Imaging.ImageSharp" Version="9.0.3" />
+    <ProjectReference Include="../../../IczpNet.OpenIddict/src/IczpNet.OpenIddict.AspNetCore/IczpNet.OpenIddict.AspNetCore.csproj" />
+		<ProjectReference Include="..\..\..\IczpNet.AbpCommons\src\IczpNet.AbpCommons.HttpApi\IczpNet.AbpCommons.HttpApi.csproj" />
+		<PackageReference Include="System.Drawing.Common" Version="10.0.12" />
+		<PackageReference Include="Volo.Abp.AspNetCore.Mvc" Version="10.6.1" />
+		<PackageReference Include="Volo.Abp.AspNetCore.SignalR" Version="10.6.1" />
+		<PackageReference Include="Volo.Abp.Identity.HttpApi" Version="10.6.1" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -43,16 +52,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <PackageReference Update="ConfigureAwait.Fody" Version="3.3.2" />
-	  <PackageReference Update="Fody" Version="6.9.1">
+	  <PackageReference Update="ConfigureAwait.Fody" Version="3.4.1" />
+	  <PackageReference Update="Fody" Version="6.9.3">
 	    <PrivateAssets>all</PrivateAssets>
 	    <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 	  </PackageReference>
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="ConnectionPools\" />
-	  <Folder Include="Models\" />
 	</ItemGroup>
 
 </Project>

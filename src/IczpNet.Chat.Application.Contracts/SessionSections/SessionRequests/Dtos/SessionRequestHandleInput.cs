@@ -21,4 +21,9 @@ public class SessionRequestHandleInput
     /// 处理消息
     /// </summary>
     public virtual string HandleMessage { get; set; }
+
+    /// <summary>
+    /// 处理人所在群会话单元Id（群主/管理员处理入群申请时可选传入，不传则自动匹配）
+    /// </summary>
+    public virtual Guid? HandlerSessionUnitId { get; set; }
 }

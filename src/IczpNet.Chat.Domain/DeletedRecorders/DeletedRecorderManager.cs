@@ -13,10 +13,10 @@ using Volo.Abp.Domain.Repositories;
 namespace IczpNet.Chat.DeletedRecorders;
 
 public class DeletedRecorderManager(
-    IDistributedCache<List<long>, DeletedRecorderCacheKey> deletedRecorderDistributedCache,
+    IDistributedCache<HashSet<long>, DeletedRecorderCacheKey> deletedRecorderDistributedCache,
     IRepository<DeletedRecorder> repository) : RecorderManager<DeletedRecorder>(repository), IDeletedRecorderManager
 {
-    public IDistributedCache<List<long>, DeletedRecorderCacheKey> DeletedRecorderDistributedCache { get; } = deletedRecorderDistributedCache;
+    public IDistributedCache<HashSet<long>, DeletedRecorderCacheKey> DeletedRecorderDistributedCache { get; } = deletedRecorderDistributedCache;
 
     protected override DeletedRecorder CreateEntity(SessionUnit entity, Message message, string deviceId)
     {
@@ -58,7 +58,7 @@ public class DeletedRecorderManager(
         });
     }
 
-    public virtual async Task<List<long>> GetDeletedMessageIdListAsync(Guid sessionUnitId)
+    public virtual async Task<HashSet<long>> GetDeletedMessageIdListAsync(Guid sessionUnitId)
     {
         return await DeletedRecorderDistributedCache.GetOrAddAsync(new DeletedRecorderCacheKey(sessionUnitId), async () =>
         {
@@ -67,8 +67,17 @@ public class DeletedRecorderManager(
                 .Where(x => x.SessionUnitId == sessionUnitId)
                 .Select(x => x.MessageId)
                 .ToListAsync();
-            return deletedIds;
+            return deletedIds.ToHashSet();
         });
+    }
+
+    public override async Task<List<long>> GetRecorderMessageIdListAsync(Guid sessionUnitId, List<long> messageIdList)
+    {
+        if (messageIdList == null || messageIdList.Count == 0) return [];
+        var token = LazyServiceProvider.LazyGetRequiredService<Volo.Abp.Threading.ICancellationTokenProvider>().Token;
+        var query = (await Repository.GetQueryableAsync()).Where(x => x.SessionUnitId == sessionUnitId &&
+            messageIdList.Contains(x.MessageId)).Select(x => x.MessageId);
+        return await AsyncExecuter.ToListAsync(query, token);
     }
 
     public virtual async Task RemoveCacheAsync(Guid sessionUnitId)

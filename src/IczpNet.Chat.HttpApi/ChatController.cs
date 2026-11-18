@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.Blobs;
+using IczpNet.Chat.Blobs;
 using IczpNet.Chat.Localization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -6,7 +6,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc;
 using IczpNet.AbpCommons;
-using IczpNet.Pusher.ShortIds;
+using IczpNet.Chat.ShortIds;
 using System;
 using Volo.Abp.Imaging;
 using System.Collections.Generic;
@@ -34,6 +34,7 @@ public abstract class ChatController : AbpControllerBase
     protected ChatController()
     {
         LocalizationResource = typeof(ChatResource);
+        ObjectMapperContext = typeof(ChatApplicationModule);
     }
 
     /// <summary>
@@ -45,10 +46,11 @@ public abstract class ChatController : AbpControllerBase
     /// 获取目录名称
     /// </summary>
     /// <param name="blobId"></param>
+    /// <param name="contentType"></param>
     /// <returns></returns>
-    protected virtual Task<string> GetFileUrlAsync(Guid blobId)
+    protected virtual Task<string> GetFileUrlAsync(Guid blobId, string contentType)
     {
-        return BlobResolver.GetFileUrlAsync(blobId);
+        return BlobResolver.GetFileUrlAsync(blobId, contentType);
     }
 
     protected virtual async Task CheckImageAsync(IFormFile file)
@@ -136,10 +138,12 @@ public abstract class ChatController : AbpControllerBase
         {
             var resizedBytes = await ImageResizer.ResizeAsync(bytes, new ImageResizeArgs()
             {
-                Width = size,
-                Height = size,
+                Width = (uint)size,
+                Height = (uint)size,
                 Mode = ImageResizeMode.Crop
             });
+            if (resizedBytes.State == ImageProcessState.Unsupported)
+                throw new Volo.Abp.UserFriendlyException("Unsupported image format.");
 
             var entity = await BlobManager.CreateAsync(new Blob(blobId, PortraitsContainer)
             {

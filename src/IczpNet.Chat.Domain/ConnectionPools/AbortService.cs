@@ -1,4 +1,10 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Extensions.Options;
+using Volo.Abp;
+using Volo.Abp.Uow;
+using Volo.Abp.Security.Claims;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.EventBus.Distributed;
@@ -14,9 +20,11 @@ public class AbortService(IDistributedEventBus distributedEventBus) : DomainServ
         return AbortAsync([connectionId], reason);
     }
 
-    public Task AbortAsync(List<string> connectionIdList, string reason)
+    [UnitOfWork(isTransactional: true)]
+    public virtual async Task AbortAsync(List<string> connectionIdList, string reason)
     {
-      return  DistributedEventBus.PublishAsync(new AbortEto()
+        await LazyServiceProvider.LazyGetRequiredService<IChatDeviceLogout>().LogoutConnectionsAsync(connectionIdList, reason);
+        await DistributedEventBus.PublishAsync(new AbortEto()
         {
             ConnectionIdList = connectionIdList,
             Reason = reason,

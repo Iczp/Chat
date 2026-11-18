@@ -28,9 +28,7 @@ public class MessageReportFlushWorker : AsyncPeriodicBackgroundWorkerBase
     {
         var stopwatch = Stopwatch.StartNew();
 
-        await MessageReportManager.FlushMonthAsync();
-        await MessageReportManager.FlushDayAsync();
-        await MessageReportManager.FlushHourAsync();
+        await MessageReportManager.CompensateAsync();
 
         Logger.LogInformation("{handler} Flush Elapsed:{elapsed}ms", nameof(MessageReportFlushWorker), stopwatch.ElapsedMilliseconds);
     }

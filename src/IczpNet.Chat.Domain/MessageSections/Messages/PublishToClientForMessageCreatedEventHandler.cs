@@ -62,13 +62,11 @@ public class PublishToClientForMessageCreatedEventHandler(
 
         var messageDto = ObjectMapper.Map<Message, MessageCacheItem>(dbMessage);
 
-
-
         //fix: 导航属性没有加载完全 改为手动转换Map
         if (dbMessage.SenderSessionUnit == null && dbMessage.SenderSessionUnitId.HasValue)
         {
-            var senderSessionUnit = await SessionUnitManager.GetAsync(dbMessage.SenderSessionUnitId.Value);
-            messageDto.SenderSessionUnit = ObjectMapper.Map<SessionUnit, SessionUnitSenderInfo>(senderSessionUnit);
+            var senderSessionUnit = await SessionUnitManager.GetCacheAsync(dbMessage.SenderSessionUnitId.Value);
+            messageDto.SenderSessionUnit = await SessionUnitManager.MapToSenderAsync(senderSessionUnit);
         }
 
         messageDto.Content ??= message.GetContentDto();

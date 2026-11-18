@@ -1,7 +1,8 @@
-﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
-using IczpNet.Chat.ChatPushers;
-using IczpNet.Chat.CommandPayloads;
+using IczpNet.Chat.ChatObjects;
+//using IczpNet.Chat.ChatPushers;
+using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.Hosting;
@@ -12,13 +13,19 @@ using IczpNet.Chat.Sessions;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
 using IczpNet.Chat.Settings;
-using IczpNet.Pusher.ShortIds;
+using IczpNet.Chat.Ulids;
+using IczpNet.Chat.ShortIds;
+using IczpNet.Chat.Specifications;
+using StackExchange.Redis;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,46 +36,59 @@ using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.Json;
 using Volo.Abp.ObjectMapping;
 using Volo.Abp.Settings;
+using Volo.Abp.Threading;
 using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
 public partial class MessageManager(
+    IDeletedRecorderManager deletedRecorderManager,
     IMessageRepository repository,
     IShortIdGenerator shortIdGenerator,
     IObjectMapper objectMapper,
     IMessageValidator messageValidator,
-    IChatPusher chatPusher,
+    //IChatPusher chatPusher,
     IDistributedEventBus distributedEventBus,
     ICurrentHosted currentHosted,
     ISessionUnitManager sessionUnitManager,
     ISessionUnitCacheManager sessionUnitCacheManager,
     IUnitOfWorkManager unitOfWorkManager,
     ISessionRepository sessionRepository,
+    IChatObjectRepository chatObjectRepository,
     ISettingProvider settingProvider,
     IJsonSerializer jsonSerializer,
     IRepository<MessageReminder> messageReminderRepository,
     ISessionUnitSettingRepository sessionUnitSettingRepository,
     IFollowManager followManager,
+    IDistributedCache<SessionMaxMessageIdCacheItem, SessionMaxMessageIdCacheKey> sessionMaxMessageIdCache,
     IDistributedCache<MessageCacheItem, MessageCacheKey> messageCache,
+    IMessageCacheManager messageCacheManager,
+    ICancellationTokenProvider cancellationTokenProvider,
     IOptions<MessageOptions> options,
+    IUlidGenerator ulidGenerator,
     ISessionGenerator sessionGenerator) : DomainService, IMessageManager
 {
     protected IObjectMapper ObjectMapper { get; } = objectMapper;
+    public IDeletedRecorderManager DeletedRecorderManager { get; } = deletedRecorderManager;
     protected IMessageRepository Repository { get; } = repository;
     public IShortIdGenerator ShortIdGenerator { get; } = shortIdGenerator;
     protected IMessageValidator MessageValidator { get; } = messageValidator;
     protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
     public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
     protected IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
-    protected IChatPusher ChatPusher { get; } = chatPusher;
+    //protected IChatPusher ChatPusher { get; } = chatPusher;
     public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
     public ICurrentHosted CurrentHosted { get; } = currentHosted;
     protected ISessionRepository SessionRepository { get; } = sessionRepository;
+    public IChatObjectRepository ChatObjectRepository { get; } = chatObjectRepository;
     protected ISessionUnitSettingRepository SessionUnitSettingRepository { get; } = sessionUnitSettingRepository;
     public IFollowManager FollowManager { get; } = followManager;
+    public IDistributedCache<SessionMaxMessageIdCacheItem, SessionMaxMessageIdCacheKey> SessionMaxMessageIdCache { get; } = sessionMaxMessageIdCache;
     public IDistributedCache<MessageCacheItem, MessageCacheKey> MessageCache { get; } = messageCache;
+    protected IMessageCacheManager MessageCacheManager { get; } = messageCacheManager;
     public IOptions<MessageOptions> Options { get; } = options;
+    public IUlidGenerator UlidGenerator { get; } = ulidGenerator;
+
     public MessageOptions Config => Options.Value;
     protected ISettingProvider SettingProvider { get; } = settingProvider;
     protected IJsonSerializer JsonSerializer { get; } = jsonSerializer;
@@ -76,33 +96,334 @@ public partial class MessageManager(
     protected ISessionGenerator SessionGenerator { get; } = sessionGenerator;
     protected virtual DistributedCacheEntryOptions CacheOptions => Config.CacheOptions;
 
+    /// <summary>
+    /// 通用游标分片器
+    /// </summary>
+    /// <param name="baseQuery"></param>
+    /// <param name="minMessageId"></param>
+    /// <param name="maxMessageId"></param>
+    /// <param name="batchSize"></param>
+    /// <param name="max"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    private async IAsyncEnumerable<List<long>> LoadMessageIdsAsync(IQueryable<Message> baseQuery, long? minMessageId = null, long? maxMessageId = null, int batchSize = 1000, int max = int.MaxValue, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        long? cursor = maxMessageId;
+        var total = 0;
+        var batchIndex = 0;
+        var totalSw = Stopwatch.StartNew();
+        var method = nameof(LoadMessageIdsAsync);
+        while (total < max)
+        {
+            batchIndex++;
+
+            var swQuery = Stopwatch.StartNew();
+
+            var takeSize = Math.Min(batchSize, max - total);
+
+            var batch = await baseQuery
+                .AsNoTracking()
+                .WhereIf(cursor.HasValue, x => x.Id < cursor.Value)
+                //  不包含 minMessageId
+                .WhereIf(minMessageId.HasValue, x => x.Id > minMessageId.Value)
+                //倒序
+                .OrderByDescending(x => x.Id)
+                .Select(x => x.Id)
+                .Take(takeSize)
+                .ToListAsync(cancellationToken);
+            swQuery.Stop();
+
+            if (batch.Count == 0)
+            {
+                Logger.LogInformation(
+                       "{Method} finished. batches={BatchIndex}, total={TotalCount}, elapsed={Elapsed}ms",
+                       method,
+                       batchIndex - 1,
+                       total,
+                       totalSw.ElapsedMilliseconds);
+                yield break;
+            }
+
+            Logger.LogInformation(
+                    "{Method} batchSize={batchSize}, batch#{BatchIndex} batch count={Count} rows in Elapsed={Elapsed}ms",
+                    method,
+                    batchSize,
+                    batchIndex,
+                    batch.Count,
+                    swQuery.ElapsedMilliseconds);
+
+            cursor = batch[^1];
+
+            total += batch.Count;
+
+            yield return batch;
+
+            // 已经达到最大数量
+            if (total >= max)
+            {
+                yield break;
+            }
+        }
+    }
+
+    public async Task<List<long>> BuildCacheAsync(Guid sessionId, long? minMessageId, long? maxMessageId, int max = 5000, int batchSize = 1000)
+    {
+        var method = nameof(BuildCacheAsync);
+
+        Logger.LogInformation("[{method}] minMessageId:{maxMeminMessageIdssageId}, maxMessageId:{maxMessageId}", method, minMessageId, maxMessageId);
+
+        var queryable = (await Repository.GetQueryableAsync())
+            .Where(x => x.SessionId == sessionId);
+
+        var result = new List<long>();
+
+        var batchIndex = 0;
+
+        await foreach (var batch in LoadMessageIdsAsync(
+            queryable,
+            minMessageId: minMessageId,
+            maxMessageId: maxMessageId,
+            max: max,
+            batchSize: batchSize))
+        {
+            // 处理
+            var ids = batch;
+            Logger.LogInformation("[{method}] batchIndex:{batchIndex},count:{count},ids: [{start},...,{end}]", method, batchIndex, ids.Count, ids.FirstOrDefault(), ids.LastOrDefault());
+            // 写入redis 倒序 保证会话消息连续性
+            await SessionUnitCacheManager.AppendSessionMessagesAsync(sessionId, ids);
+            batchIndex++;
+            result.AddRange(ids);
+        }
+
+        return result;
+    }
+
+    public async Task<List<long>> BuildAllCacheAsync(Guid sessionId, long? minMessageId, int max = 5000, int batchSize = 1000)
+    {
+        var loopIndex = 0;
+        var result = new List<long>();
+        while (loopIndex < 1e4)
+        {
+            var buildMaxId = await SessionUnitCacheManager.GetMinMessageIdAsync(sessionId);
+            var buildResult = await BuildCacheAsync(sessionId, minMessageId, maxMessageId: buildMaxId, max, batchSize);
+            if ((buildResult.Count == 0))
+            {
+                break;
+            }
+            result.AddRange(buildResult);
+            loopIndex++;
+        }
+        return result;
+    }
+
+    public async Task<bool> RemoveCacheAsync(Guid sessionId)
+    {
+        return await SessionUnitCacheManager.RemoveSessionMessagesAsync(sessionId);
+    }
+
+
+    public Task<List<long>> GetHistoryAsync(SessionUnitCacheItem unit, long? maxMessageId, int maxResultCount = 20)
+    {
+        return GetReadIdsAsync(unit, null, maxMessageId, maxResultCount, true);
+    }
+
+    public Task<List<long>> GetLatestAsync(SessionUnitCacheItem unit, long minMessageId, int maxResultCount = 20)
+    {
+        return GetReadIdsAsync(unit, minMessageId, null, maxResultCount, false);
+    }
+
+    private async Task<List<long>> GetReadIdsAsync(SessionUnitCacheItem unit, long? minMessageId,
+        long? maxMessageId, int maxResultCount, bool isDescending)
+    {
+        if (maxResultCount <= 0) return [];
+        var token = cancellationTokenProvider.Token;
+        var cache = MessageCacheManager;
+        SessionUnitSettingCacheItem settings;
+        (SessionMessageWindowCacheItem Recent, SessionMessageWindowCacheItem History, string Version) snapshot;
+        try
+        {
+            var settingsTask = cache.GetReadSettingsAsync(unit.Id, async () => ObjectMapper.Map<SessionUnitSetting, SessionUnitSettingCacheItem>(
+                await SessionUnitSettingRepository.GetAsync(x => x.SessionUnitId == unit.Id, cancellationToken: token)), token);
+            var windowsTask = cache.GetReadWindowsAsync(unit.SessionId.Value, token);
+            await Task.WhenAll(settingsTask, windowsTask);
+            settings = await settingsTask;
+            snapshot = await windowsTask;
+        }
+        catch (RedisException)
+        {
+            return await Repository.GetVisibleIdsAsync(unit.Id, minMessageId, maxMessageId, maxResultCount, isDescending, token);
+        }
+        Assert.If(settings.IsKilled == true, "已经删除的会话单元!");
+        var lower = Math.Max(minMessageId ?? 0, settings.StartMessageId ?? 0);
+        var upper = maxMessageId ?? long.MaxValue;
+        if (settings.EndMessageId.HasValue && settings.EndMessageId.Value < long.MaxValue)
+            upper = Math.Min(upper, settings.EndMessageId.Value + 1);
+        var result = new List<long>(maxResultCount);
+        var batchSize = Math.Clamp(Config.ReadCacheBatchSize, 16, 512);
+        var batches = Math.Clamp(Config.ReadCacheMaxBatches, 1, 16);
+        try
+        {
+            for (var batch = 0; batch < batches && lower < upper; batch++)
+            {
+                token.ThrowIfCancellationRequested();
+                if (batch > 0) snapshot = await cache.GetReadWindowsAsync(unit.SessionId.Value, token);
+                var window = SelectReadWindow(snapshot.Recent, snapshot.History, lower, upper, isDescending);
+                var candidates = GetReadCandidates(window, lower, upper, isDescending);
+                if (window == null || (candidates.Count == 0 &&
+                    (isDescending ? window.MinMessageId > lower : window.MaxMessageId < upper)))
+                {
+                    // Only cold windows are locked; warm reads never acquire a lock or query Message SQL.
+                    var distributedLock = LazyServiceProvider.LazyGetRequiredService<Volo.Abp.DistributedLocking.IAbpDistributedLock>();
+                    await using var handle = await distributedLock.TryAcquireAsync(
+                        $"Chat:ReadWindow:{unit.SessionId}:{isDescending}:{lower}:{upper}", TimeSpan.FromSeconds(2), token);
+                    if (handle == null) break;
+                    snapshot = await cache.GetReadWindowsAsync(unit.SessionId.Value, token);
+                    window = SelectReadWindow(snapshot.Recent, snapshot.History, lower, upper, isDescending);
+                    candidates = GetReadCandidates(window, lower, upper, isDescending);
+                    if (window == null || (candidates.Count == 0 &&
+                        (isDescending ? window.MinMessageId > lower : window.MaxMessageId < upper)))
+                    {
+                        window = await Repository.GetReadWindowAsync(unit.SessionId.Value, lower, upper, batchSize, isDescending, token);
+                        await cache.StoreReadWindowAsync(unit.SessionId.Value, window, snapshot.Version, token);
+                        candidates = GetReadCandidates(window, lower, upper, isDescending);
+                    }
+                }
+                var eligible = candidates.Where(x => OwnerMessageSpecification.IsVisible(x, unit.Id, settings)).ToList();
+                var deleted = await cache.GetDeletedIdsAsync(unit.Id, eligible.Select(x => x.Id).ToList(),
+                    ids => DeletedRecorderManager.GetRecorderMessageIdListAsync(unit.Id, ids), token);
+                foreach (var candidate in eligible)
+                {
+                    if (!deleted.Contains(candidate.Id))
+                    {
+                        result.Add(candidate.Id);
+                        if (result.Count == maxResultCount) return result;
+                    }
+                }
+                // Continue from the last scanned candidate, never subtract/add one and never skip the extra boundary Id.
+                if (isDescending ? window.MinMessageId <= lower : window.MaxMessageId >= upper) return result;
+                if (candidates.Count == 0) break;
+                if (isDescending) upper = candidates[^1].Id;
+                else lower = candidates[^1].Id;
+            }
+        }
+        catch (RedisException)
+        {
+            // Preserve visibility and bounded work if Redis is unavailable.
+        }
+        if (lower < upper && result.Count < maxResultCount)
+            result.AddRange(await Repository.GetVisibleIdsAsync(unit.Id, lower, upper,
+                maxResultCount - result.Count, isDescending, token));
+        return result;
+    }
+
+    private static SessionMessageWindowCacheItem SelectReadWindow(SessionMessageWindowCacheItem recent,
+        SessionMessageWindowCacheItem history, long lower, long upper, bool descending)
+    {
+        bool Covers(SessionMessageWindowCacheItem window) => window != null &&
+            (descending ? upper <= window.MaxMessageId && upper > window.MinMessageId
+                        : lower >= window.MinMessageId && lower < window.MaxMessageId);
+        return Covers(recent) ? recent : Covers(history) ? history : null;
+    }
+
+    private static List<SessionMessageWindowCacheItem.Entry> GetReadCandidates(SessionMessageWindowCacheItem window,
+        long lower, long upper, bool descending)
+    {
+        if (window == null) return [];
+        var query = window.Items.Where(x => x.Id > lower && x.Id < upper);
+        // Certified windows are already ascending; avoid sorting each high-frequency request.
+        return (descending ? query.Reverse() : query).ToList();
+    }
+
+    public Task<long> GetSessionMessageTotalCountAsync(SessionUnitCacheItem unit, long minMessageId = 0, long maxMessageId = long.MaxValue)
+    {
+        return Repository.CountVisibleAsync(unit.Id, minMessageId, maxMessageId,
+            cancellationTokenProvider.Token);
+    }
+
     /// <inheritdoc />
-    public virtual async Task CreateSessionUnitByMessageAsync(SessionUnit senderSessionUnit)
+    public virtual async Task CreateSessionUnitByMessageAsync(SessionUnitCacheItem senderSessionUnit)
     {
         //ShopKeeper
         if (senderSessionUnit.DestinationObjectType == ChatObjectTypeEnums.ShopKeeper)
         {
-            await SessionGenerator.AddShopWaitersIfNotContains(senderSessionUnit.Session, senderSessionUnit.Owner, senderSessionUnit.DestinationId.Value);
+            //await SessionGenerator.AddShopWaitersIfNotContains(senderSessionUnit.Session, senderSessionUnit.Owner, senderSessionUnit.DestinationId.Value);
+            var session = await SessionRepository.GetAsync(senderSessionUnit.SessionId.Value);
+            var owner = await ChatObjectRepository.GetAsync(senderSessionUnit.OwnerId);
+            await SessionGenerator.AddShopWaitersIfNotContains(session, owner, senderSessionUnit.DestinationId.Value);
         }
         await Task.Yield();
     }
 
     /// <inheritdoc />
     public virtual async Task<Message> CreateMessageAsync(
-        SessionUnit senderSessionUnit,
+        SessionUnitCacheItem senderSessionUnit,
         Func<Message, Task<IContentEntity>> action,
+        string clientMessageId = null,
         Guid? receiverSessionUnitId = null,
         long? quoteMessageId = null,
         List<Guid> remindList = null)
+    {
+        // Hold the existing distributed lock through the independent transaction commit.
+        Assert.NotNull(senderSessionUnit, "Sender session unit required.");
+        clientMessageId = string.IsNullOrWhiteSpace(clientMessageId) ? UlidGenerator.Generate() : clientMessageId;
+        if (clientMessageId.Length > 26)
+            throw new Volo.Abp.UserFriendlyException("客户端消息Id最多26个字符。");
+        var digest = System.Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+            System.Text.Encoding.UTF8.GetBytes(clientMessageId)));
+        var lockName = $"Chat:Send:{senderSessionUnit.Id}:{digest}";
+        var cancellationToken = cancellationTokenProvider.Token;
+        var distributedLock = LazyServiceProvider.LazyGetRequiredService<Volo.Abp.DistributedLocking.IAbpDistributedLock>();
+        if (distributedLock is Volo.Abp.DistributedLocking.NullAbpDistributedLock)
+            throw new InvalidOperationException("Chat message sending requires a distributed lock provider.");
+        await using var handle = await distributedLock.TryAcquireAsync(lockName, TimeSpan.FromSeconds(10), cancellationToken);
+        if (handle == null) throw new Volo.Abp.UserFriendlyException("Message is being processed. Retry with the same ClientMessageId.");
+
+        using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
+        var existing = await Repository.FindAsync(x => x.SenderSessionUnitId == senderSessionUnit.Id &&
+            x.ClientMessageId == clientMessageId, cancellationToken: cancellationToken);
+        if (existing != null)
+        {
+            await uow.CompleteAsync(cancellationToken);
+            return existing;
+        }
+        var message = await CreateMessageCoreAsync(senderSessionUnit, action, clientMessageId,
+            receiverSessionUnitId, quoteMessageId, remindList);
+        await uow.CompleteAsync(cancellationToken);
+        return message;
+    }
+
+    public async Task<Message> CreateRoomCommandInCurrentTransactionAsync(
+        SessionUnitCacheItem senderSessionUnit, CmdContentInfo content, string clientMessageId)
+    {
+        var uow = UnitOfWorkManager.Current;
+        if (uow?.Options.IsTransactional != true)
+            throw new InvalidOperationException("Room commands require the current transactional unit of work.");
+        if (string.IsNullOrWhiteSpace(clientMessageId) || clientMessageId.Length > 26)
+            throw new ArgumentException("A stable client message ID of at most 26 characters is required.", nameof(clientMessageId));
+        var entity = ObjectMapper.Map<CmdContentInfo, CmdContent>(content);
+        return await CreateMessageCoreAsync(senderSessionUnit, _ => Task.FromResult<IContentEntity>(entity),
+            clientMessageId, cleanupOnRollback: true);
+    }
+
+    private async Task<Message> CreateMessageCoreAsync(
+        SessionUnitCacheItem senderSessionUnit,
+        Func<Message, Task<IContentEntity>> action,
+        string clientMessageId = null,
+        Guid? receiverSessionUnitId = null,
+        long? quoteMessageId = null,
+        List<Guid> remindList = null,
+        bool cleanupOnRollback = false)
     {
 
         Assert.If(!await SettingProvider.IsTrueAsync(ChatSettings.IsMessageSenderEnabled), $"MessageSender main switch is off.");
 
         Assert.NotNull(senderSessionUnit, $"Unable to send message, senderSessionUnit is null");
 
-        Assert.If(!senderSessionUnit.Setting.IsInputEnabled, $"Unable to send message, input status is disabled,senderSessionUnitId:{senderSessionUnit.Id}");
+        Assert.If(!senderSessionUnit.IsInputEnabled, $"Unable to send message, input status is disabled,senderSessionUnitId:{senderSessionUnit.Id}");
 
-        Assert.If(senderSessionUnit.Setting.MuteExpireTime > Clock.Now, $"Unable to send message,sessionUnit has been muted.senderSessionUnitId:{senderSessionUnit.Id}");
+        Assert.If(senderSessionUnit.MuteExpireTime > Clock.Now, $"Unable to send message,sessionUnit has been muted.senderSessionUnitId:{senderSessionUnit.Id}");
+
+        var sw = Stopwatch.StartNew();
 
         // Create SessionUnit By Message
         await CreateSessionUnitByMessageAsync(senderSessionUnit);
@@ -118,10 +439,20 @@ public partial class MessageManager(
         //        return await SessionUnitManager.GetCacheListBySessionIdAsync(sessionId);
         //    });
 
+        if (string.IsNullOrWhiteSpace(clientMessageId))
+        {
+            clientMessageId = UlidGenerator.Generate();
+        }
+
+
         var message = new Message(senderSessionUnit)
         {
-            CreationTime = Clock.Now
+            CreationTime = Clock.Now,
+            ClientMessageId = clientMessageId,
+            //SessionKey = "",
+
         };
+
         message.SetShortId(shortId: ShortIdGenerator.Create());
 
         //senderSessionUnit.Setting.SetLastSendMessage(message);//并发时可能导致锁表
@@ -129,13 +460,21 @@ public partial class MessageManager(
         // 私有消息
         if (receiverSessionUnitId.HasValue)
         {
+            var receiver = await SessionUnitManager.GetCacheAsync(receiverSessionUnitId.Value);
+            Assert.If(receiver.SessionId != senderSessionUnit.SessionId || !receiver.IsEnabled, "Invalid private message receiver.");
             message.SetPrivateMessage(receiverSessionUnitId.Value);
         }
 
         //quote message
         if (quoteMessageId.HasValue && quoteMessageId.Value > 0)
         {
+            Assert.If(!await Repository.CanReadAsync(senderSessionUnit.Id, quoteMessageId.Value), "Quoted message is not visible.");
             var quoteMessage = await Repository.GetAsync(quoteMessageId.Value);
+
+            Assert.If(quoteMessage.IsPrivate && (!receiverSessionUnitId.HasValue ||
+                !((quoteMessage.SenderSessionUnitId == senderSessionUnit.Id && quoteMessage.ReceiverSessionUnitId == receiverSessionUnitId) ||
+                  (quoteMessage.ReceiverSessionUnitId == senderSessionUnit.Id && quoteMessage.SenderSessionUnitId == receiverSessionUnitId))),
+                "Private message quotes must stay between the original participants.");
 
             Assert.If(quoteMessage.SessionId != senderSessionUnit.SessionId, $"QuoteMessageId:{quoteMessageId.Value} not in same session");
 
@@ -150,6 +489,7 @@ public partial class MessageManager(
 
         //TryToSetOwnerId(messageContent, senderSessionUnit.SessionUnitId);
         messageContent.SetOwnerId(senderSessionUnit.OwnerId);
+
 
         if (messageContent.Id == Guid.Empty)
         {
@@ -175,13 +515,47 @@ public partial class MessageManager(
 
         //message.SetSessionUnitCount(sessionUnitCount);
 
-        // Save
-        await Repository.InsertAsync(message, autoSave: true);
+        // Allocate as late as possible to avoid holding the session row lock during validation.
+        var sessionSeq = await SessionRepository.UpdateLastMessageSeqAsync(sessionId, cancellationTokenProvider.Token);
+        message.SetSessionSeq(sessionSeq);
 
-        //// 重新获取一下，填充导航属性
-        //message = await Repository.GetAsync(message.MessageId);
+        if (cleanupOnRollback)
+            await MessageCacheManager.PrepareRoomMessageWriteAsync(sessionId);
+
+        // Save
+        message = await Repository.InsertAsync(message, autoSave: true);
+
+        if (cleanupOnRollback)
+        {
+            var transaction = UnitOfWorkManager.Current;
+            var rollbackMessageId = message.Id;
+            transaction.Failed += (_, _) =>
+            {
+                if (transaction.IsCompleted) return;
+                try
+                {
+                    Task.WhenAll(
+                        MessageCache.RemoveAsync(new MessageCacheKey(rollbackMessageId), hideErrors: false, considerUow: false),
+                        SessionMaxMessageIdCache.RemoveAsync(new SessionMaxMessageIdCacheKey(sessionId), hideErrors: false, considerUow: false),
+                        SessionUnitCacheManager.RemoveSessionMessageAsync(sessionId, rollbackMessageId))
+                        .GetAwaiter().GetResult();
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Failed to clean rolled-back room message cache {MessageId}", rollbackMessageId);
+                }
+            };
+        }
+
+        // 重新获取一下，填充导航属性
+        message = await Repository.GetAsync(message.Id);
+
+        // 缓存消息
+        await SetCacheAsync(message, senderSessionUnit, hideErrors: cleanupOnRollback ? false : null);
 
         // update Session LastMessage
+        await SessionUnitCacheManager.UpdateLastMessageAsync(senderSessionUnit, message);
+
         await SessionRepository.UpdateLastMessageIdAsync(sessionId, message.Id);
 
         // update SessionUnitSetting LastSendMessageId
@@ -227,6 +601,8 @@ public partial class MessageManager(
         //    Logger.LogWarning($"BackgroundJobManager.IsAvailable():False");
         //    await SessionUnitManager.IncremenetAsync(sessionUnitIncrementJobArgs);
         //}
+
+        Logger.LogInformation("CreateMessageAsync {Elapsed}", sw.Elapsed);
 
         return message;
     }
@@ -326,7 +702,7 @@ public partial class MessageManager(
     /// <param name="senderSessionUnit"></param>
     /// <param name="message"></param>
     /// <returns></returns>
-    protected virtual async Task<List<Guid>> ApplyReminderIdListForTextContentAsync(SessionUnit senderSessionUnit, Message message)
+    protected virtual async Task<List<Guid>> ApplyReminderIdListForTextContentAsync(SessionUnitCacheItem senderSessionUnit, Message message)
     {
         var unitIdList = new List<Guid>();
         //@XXX
@@ -385,7 +761,7 @@ public partial class MessageManager(
     /// <param name="message"></param>
     /// <param name="remindIdList"></param>
     /// <returns></returns>
-    protected virtual async Task<List<Guid>> ApplyRemindIdListAsync(SessionUnit senderSessionUnit, Message message, List<Guid> remindIdList)
+    protected virtual async Task<List<Guid>> ApplyRemindIdListAsync(SessionUnitCacheItem senderSessionUnit, Message message, List<Guid> remindIdList)
     {
         //私有消息不设置提醒
         if (message.IsPrivateMessage())
@@ -419,7 +795,7 @@ public partial class MessageManager(
     /// <param name="senderSessionUnit"></param>
     /// <param name="message"></param>
     /// <returns></returns>
-    protected virtual async Task<List<Guid>> ApplyMessageFollowersAsync(SessionUnit senderSessionUnit, Message message)
+    protected virtual async Task<List<Guid>> ApplyMessageFollowersAsync(SessionUnitCacheItem senderSessionUnit, Message message)
     {
         var followerIdList = await FollowManager.GetFollowerIdListAsync(senderSessionUnit.Id);
         message.SetFollowerIds(followerIdList);
@@ -428,7 +804,7 @@ public partial class MessageManager(
 
     /// <inheritdoc />
     public virtual async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContentEntity>(
-        SessionUnit senderSessionUnit,
+        SessionUnitCacheItem senderSessionUnit,
         MessageInput<TContentInfo> input)
         where TContentInfo : IContentInfo
         where TContentEntity : IContentEntity
@@ -439,7 +815,7 @@ public partial class MessageManager(
 
     /// <inheritdoc />
     public virtual async Task<MessageInfo<TContentInfo>> SendAsync<TContentInfo, TContentEntity>(
-        SessionUnit senderSessionUnit,
+        SessionUnitCacheItem senderSessionUnit,
         MessageInput input,
         TContentEntity contentEntity)
         where TContentInfo : IContentInfo
@@ -447,6 +823,7 @@ public partial class MessageManager(
     {
         var message = await CreateMessageAsync(senderSessionUnit,
             async (entity) => await Task.FromResult(contentEntity),
+            clientMessageId: input.ClientMessageId,
             quoteMessageId: input.QuoteMessageId,
             remindList: input.RemindList,
             receiverSessionUnitId: input.ReceiverSessionUnitId);
@@ -454,29 +831,31 @@ public partial class MessageManager(
         //var output = ObjectMapper.Map<Message, MessageInfo<object>>(message);
         var output = ObjectMapper.Map<Message, MessageInfo<TContentInfo>>(message);
         //var output = new MessageInfo<TContentInfo>() { MessageId = message.MessageId };
-        output.SenderSessionUnit ??= ObjectMapper.Map<SessionUnit, SessionUnitSenderInfo>(senderSessionUnit);
+        output.SenderSessionUnit ??= await SessionUnitManager.MapToSenderAsync(senderSessionUnit);
+        //if (message.IsPrivateMessage())
+        //{
+        //    var receiverSessionUnit = await SessionUnitManager.GetCacheAsync(input.ReceiverSessionUnitId.Value);
 
-        if (message.IsPrivateMessage())
-        {
-            var receiverSessionUnit = await SessionUnitManager.GetAsync(input.ReceiverSessionUnitId.Value);
+        //    Assert.If(receiverSessionUnit.SessionId != senderSessionUnit.SessionId, $"Fail ReceiverSessionUnitId:{input.ReceiverSessionUnitId}");
 
-            Assert.If(receiverSessionUnit.SessionId != senderSessionUnit.SessionId, $"Fail ReceiverSessionUnitId:{input.ReceiverSessionUnitId}");
-
-            await ChatPusher.ExecutePrivateAsync(
-            [
-                senderSessionUnit, receiverSessionUnit
-            ], output, input.IgnoreConnections);
-        }
-        else
-        {
-            await ChatPusher.ExecuteBySessionIdAsync(message.SessionId.Value, output, input.IgnoreConnections);
-        }
+        //    await ChatPusher.ExecutePrivateAsync(
+        //    [
+        //        senderSessionUnit, receiverSessionUnit
+        //    ], output, input.IgnoreConnections);
+        //}
+        //else
+        //{
+        //    await ChatPusher.ExecuteBySessionIdAsync(message.SessionId.Value, output, input.IgnoreConnections);
+        //}
         return output;
     }
 
     /// <inheritdoc />
     public virtual async Task<Dictionary<string, long>> RollbackAsync(Message message)
     {
+        if (message.IsRollbackMessage())
+            return new Dictionary<string, long> { { "MessageId", message.Id } };
+
         int allowRollbackHours = await SettingProvider.GetAsync<int>(ChatSettings.AllowRollbackHours);
 
         var nowTime = Clock.Now;
@@ -487,7 +866,19 @@ public partial class MessageManager(
 
         Assert.If(nowTime > message.CreationTime.AddHours(allowRollbackHours), $"超过{allowRollbackHours}小时的消息不能被撤回！");
 
-        message.Rollback(nowTime);
+        if (Config.ChangeSyncEnabled)
+        {
+            var change = await LazyServiceProvider.LazyGetRequiredService<IMessageChangeRepository>()
+                .AppendRollbackAsync(message, nowTime, cancellationTokenProvider.Token);
+            if (change.AlreadyApplied)
+                return new Dictionary<string, long> { { "MessageId", message.Id } };
+            message.Rollback(change.ChangedAt);
+            message.SetMessageChangeId(change.Version);
+        }
+        else
+        {
+            message.Rollback(nowTime);
+        }
 
         //(移动到本地事伯 MessageCreated)
         //await PublishDistributedEventAsync(message, Command.Rollback);
@@ -495,11 +886,26 @@ public partial class MessageManager(
         //await Repository.UpdateAsync(message, true);
         await UnitOfWorkManager.Current.SaveChangesAsync();
 
-        return await ChatPusher.ExecuteBySessionIdAsync(message.SessionId.Value, new RollbackMessageCommandPayload
-        {
-            MessageId = message.Id,
-        });
+        return new Dictionary<string, long>() { { "MessageId", message.Id } };
     }
+
+    /// <summary>Records a shared message update change in the current transactional unit of work.</summary>
+    public virtual async Task<long?> RecordMessageUpdatedAsync(Message message, DateTime? time = null)
+    {
+        if (!Config.ChangeSyncEnabled)
+            return null;
+
+        var change = await LazyServiceProvider.LazyGetRequiredService<IMessageChangeRepository>()
+            .AppendUpdateAsync(message, time ?? Clock.Now, cancellationTokenProvider.Token);
+        message.SetMessageChangeId(change.Version);
+        await UnitOfWorkManager.Current.SaveChangesAsync();
+        return change.Version;
+    }
+
+        //return await ChatPusher.ExecuteBySessionIdAsync(message.SessionId.Value, new RollbackMessageCommandPayload
+        //{
+        //    MessageId = message.Id,
+        //});
 
     /// <inheritdoc />
     public virtual async Task<List<Message>> ForwardAsync(Guid sessionUnitId, long sourceMessageId, List<Guid> targetSessionUnitIdList)
@@ -508,6 +914,7 @@ public partial class MessageManager(
 
         Assert.If(!currentSessionUnit.Setting.IsEnabled, $"Current session unit disabled.", nameof(currentSessionUnit.Setting.IsEnabled));
 
+        Assert.If(!await Repository.CanReadAsync(sessionUnitId, sourceMessageId), "Source message is not visible.");
         var sourceMessage = await Repository.GetAsync(sourceMessageId);
 
         Assert.If(sourceMessage.IsRollbackMessage(), $"message already rollback：{sourceMessageId}", nameof(currentSessionUnit.Setting.IsEnabled));
@@ -528,11 +935,11 @@ public partial class MessageManager(
 
         foreach (var targetSessionUnitId in targetSessionUnitIdList.Distinct())
         {
-            var targetSessionUnit = await SessionUnitManager.GetAsync(targetSessionUnitId);
+            var targetSessionUnit = await SessionUnitManager.GetCacheAsync(targetSessionUnitId);
 
-            Assert.If(!targetSessionUnit.Setting.IsEnabled, $"Target session unit disabled,key:{targetSessionUnit.Id}");
+            Assert.If(!targetSessionUnit.IsEnabled, $"Target session unit disabled,key:{targetSessionUnit.Id}");
 
-            Assert.If(!targetSessionUnit.Setting.IsInputEnabled, $"Target session unit input state is disabled,key:{targetSessionUnit.Id}");
+            Assert.If(!targetSessionUnit.IsInputEnabled, $"Target session unit input state is disabled,key:{targetSessionUnit.Id}");
 
             Assert.If(currentSessionUnit.OwnerId != targetSessionUnit.OwnerId, $"[TargetSessionUnitId:{targetSessionUnitId}] is fail.");
 
@@ -553,11 +960,11 @@ public partial class MessageManager(
             args.Add((newMessage.SessionId.Value, output));
         }
 
-        //push
-        foreach (var arg in args)
-        {
-            await ChatPusher.ExecuteBySessionIdAsync(arg.Item1, arg.Item2, null);
-        }
+        ////push
+        //foreach (var arg in args)
+        //{
+        //    await ChatPusher.ExecuteBySessionIdAsync(arg.Item1, arg.Item2, null);
+        //}
 
         return messageList;
     }
@@ -580,20 +987,25 @@ public partial class MessageManager(
             .ToList();
     }
 
-    public async Task<MessageCacheItem> SetCacheAsync(
+    public virtual async Task<MessageCacheItem> SetCacheAsync(
         Message message,
+        SessionUnitCacheItem senderSessionUnit = null,
         DistributedCacheEntryOptions options = null,
         bool? hideErrors = null,
         bool considerUow = false,
         CancellationToken token = default)
     {
+        await SessionMaxMessageIdCache.SetAsync(new SessionMaxMessageIdCacheKey(message.SessionId.Value),
+            new SessionMaxMessageIdCacheItem { MaxMessageId = message.Id }, hideErrors: hideErrors);
+
         var messageInfo = ObjectMapper.Map<Message, MessageCacheItem>(message);
 
         //fix: 导航属性没有加载完全 改为手动转换Map
         if (message.SenderSessionUnit == null && message.SenderSessionUnitId.HasValue)
         {
-            var senderSessionUnit = await SessionUnitManager.GetAsync(message.SenderSessionUnitId.Value);
-            messageInfo.SenderSessionUnit = ObjectMapper.Map<SessionUnit, SessionUnitSenderInfo>(senderSessionUnit);
+            senderSessionUnit ??= await SessionUnitManager.GetCacheAsync(message.SenderSessionUnitId.Value);
+            //messageInfo.SenderSessionUnit = ObjectMapper.Map<SessionUnit, SessionUnitSenderInfo>(senderSessionUnit);
+            messageInfo.SenderSessionUnit = await SessionUnitManager.MapToSenderAsync(senderSessionUnit);
         }
 
         messageInfo.Content ??= message.GetContentDto();
@@ -603,22 +1015,26 @@ public partial class MessageManager(
         return messageInfo;
     }
 
-    public Task<MessageCacheItem> GetCacheAsync(
+    public async Task<MessageCacheItem> GetCacheAsync(
         long messageId,
         bool? hideErrors = null,
         bool considerUow = false,
         CancellationToken token = default)
     {
-        return MessageCache.GetAsync(new MessageCacheKey(messageId), hideErrors, considerUow, token);
+        var item = await MessageCache.GetAsync(new MessageCacheKey(messageId), hideErrors, considerUow, token);
+        await PopulateSessionSeqAsync(item == null ? [] : [item], token);
+        return item;
     }
 
-    public Task<KeyValuePair<MessageCacheKey, MessageCacheItem>[]> GetManyCacheAsync(
+    public async Task<KeyValuePair<MessageCacheKey, MessageCacheItem>[]> GetManyCacheAsync(
         IEnumerable<long> messageIds,
         bool? hideErrors = null,
         bool considerUow = false,
         CancellationToken token = default)
     {
-        return MessageCache.GetManyAsync(messageIds.Select(x => new MessageCacheKey(x)), hideErrors, considerUow, token);
+        var items = await MessageCache.GetManyAsync(messageIds.Select(x => new MessageCacheKey(x)), hideErrors, considerUow, token);
+        await PopulateSessionSeqAsync(items.Where(x => x.Value != null).Select(x => x.Value), token);
+        return items;
     }
 
     public async Task<KeyValuePair<MessageCacheKey, MessageCacheItem>[]> GetOrAddManyCacheAsync(
@@ -646,7 +1062,73 @@ public partial class MessageManager(
 
         }, optionsFactory ?? (() => CacheOptions), hideErrors, considerUow, token);
 
+        await PopulateSessionSeqAsync(list.Where(x => x.Value != null).Select(x => x.Value), token);
+
+        // Cold/older cache rows may lack navigation-derived sender snapshots.
+        // Resolve the distinct members and owners through the existing batch
+        // caches; do not turn a history page into one lookup per message.
+        var messages = list.Where(x => x.Value != null).Select(x => (MessageInfo<object>)x.Value)
+            .Concat(list.Where(x => x.Value?.QuoteMessage != null).Select(x => x.Value.QuoteMessage)).ToList();
+        var incomplete = messages.Where(x => x.SenderSessionUnitId.HasValue && x.SenderSessionUnit?.Owner == null).ToList();
+        if (incomplete.Count > 0)
+        {
+            var units = await SessionUnitManager.GetCacheManyAsync(incomplete.Select(x => x.SenderSessionUnitId!.Value).Distinct().ToList());
+            var senders = (await SessionUnitManager.MapToSenderAsync(units.Where(x => x.Value != null).Select(x => x.Value).ToList()))
+                .ToDictionary(x => x.Id);
+            foreach (var message in incomplete)
+                if (senders.TryGetValue(message.SenderSessionUnitId!.Value, out var sender)) message.SenderSessionUnit = sender;
+        }
         return list;
 
+    }
+
+    private async Task PopulateSessionSeqAsync(IEnumerable<MessageCacheItem> items, CancellationToken token)
+    {
+        var entries = items.SelectMany(x => x.QuoteMessage == null
+            ? new MessageInfo[] { x }
+            : [x, x.QuoteMessage]).Where(x => x.SessionSeq <= 0 && x.Id > 0).ToList();
+        if (entries.Count == 0) return;
+
+        var entriesById = entries.ToLookup(x => x.Id);
+        var query = await Repository.GetQueryableAsync();
+        foreach (var ids in entriesById.Select(x => x.Key).Chunk(500))
+        {
+            var values = await query.Where(x => ids.Contains(x.Id))
+                .Select(x => new { x.Id, x.SessionSeq }).ToListAsync(token);
+            foreach (var value in values)
+                foreach (var entry in entriesById[value.Id]) entry.SessionSeq = value.SessionSeq;
+        }
+    }
+
+    public async Task<long> GetMaxMessageIdAsync(Guid sessionId)
+    {
+        var cache = await SessionMaxMessageIdCache.GetOrAddAsync(new SessionMaxMessageIdCacheKey(sessionId), async () =>
+        {
+            var queryable = await Repository.GetQueryableAsync();
+
+            var list = await queryable
+                .Where(x => x.SessionId == sessionId)
+                .OrderByDescending(x => x.Id)
+                .Select(x => x.Id)
+                .Take(1)
+                .ToListAsync();
+
+            var maxMessageId = list.FirstOrDefault();
+
+            return new SessionMaxMessageIdCacheItem()
+            {
+                MaxMessageId = maxMessageId
+            };
+        }, () => CacheOptions);
+
+        return cache.MaxMessageId;
+    }
+
+    public async Task SetMaxMessageIdAsync(Guid sessionId, long messageId)
+    {
+        await SessionMaxMessageIdCache.SetAsync(new SessionMaxMessageIdCacheKey(sessionId), new SessionMaxMessageIdCacheItem()
+        {
+            MaxMessageId = messageId
+        });
     }
 }

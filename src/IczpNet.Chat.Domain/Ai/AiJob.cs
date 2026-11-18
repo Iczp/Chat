@@ -3,7 +3,10 @@ using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionUnits;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
@@ -21,7 +24,8 @@ public class AiJob(
     IMessageRepository messageRepository,
     IJsonSerializer jsonSerializer,
     IBackgroundJobManager backgroundJobManager,
-    IChatObjectManager chatObjectManager) : DomainService, IAsyncBackgroundJob<AiJobArg>, ITransientDependency
+    IChatObjectManager chatObjectManager,
+    IConfiguration configuration) : DomainService, IAsyncBackgroundJob<AiJobArg>, ITransientDependency
 {
     protected IAiResolver AiResolver { get; } = aiResolver;
     protected IMessageSender MessageSender { get; } = messageSender;
@@ -32,6 +36,7 @@ public class AiJob(
 
     protected IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
     protected IMessageRepository MessageRepository { get; } = messageRepository;
+    protected IConfiguration Configuration { get; } = configuration;
 
     protected virtual IAiProvider GetProvider(string providerName)
     {
@@ -56,7 +61,30 @@ public class AiJob(
 
         Logger.LogInformation($"AiProvider={aiProvider.GetProviderName()},Model={aiProvider.GetModel()}");
 
-        await aiProvider.HandleAsync(args.MessageId);
+        // This is the final queue-protection boundary. Provider implementations
+        // should honour their own cancellation tokens, but a missed token in a
+        // network, event-bus, or database call must never keep ABP's serial
+        // worker and its distributed lock forever.
+        var timeoutSeconds = Math.Max(10, Configuration.GetValue("Ai:JobExecutionTimeoutSeconds", 330));
+        var providerTask = aiProvider.HandleAsync(args.MessageId);
+        var timeoutTask = Task.Delay(TimeSpan.FromSeconds(timeoutSeconds));
 
+        if (await Task.WhenAny(providerTask, timeoutTask) != providerTask)
+        {
+            ObserveLateProviderFailure(providerTask, args);
+            throw new TimeoutException($"AI background job exceeded its {timeoutSeconds}s execution budget. Provider={args.Provider}; MessageId={args.MessageId}.");
+        }
+
+        await providerTask;
+
+    }
+
+    private void ObserveLateProviderFailure(Task providerTask, AiJobArg args)
+    {
+        _ = providerTask.ContinueWith(
+            task => Logger.LogError(task.Exception, "AI provider completed with an error after its job execution budget expired. Provider={Provider}; MessageId={MessageId}", args.Provider, args.MessageId),
+            CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted,
+            TaskScheduler.Default);
     }
 }

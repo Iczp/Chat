@@ -79,7 +79,7 @@ public class Connection : BaseEntity<string>, IDeviceId
     /// <summary>
     /// 
     /// </summary>
-    public virtual DateTime ActiveTime { get; protected set; } = DateTime.Now;
+    public virtual DateTime ActiveTime { get; protected set; } = DateTime.UtcNow;
 
     /// <summary>
     /// 

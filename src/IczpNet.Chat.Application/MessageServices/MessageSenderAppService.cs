@@ -16,19 +16,32 @@ namespace IczpNet.Chat.MessageServices;
 /// 消息发送器
 /// </summary>
 public class MessageSenderAppService(
+    ISessionUnitCacheManager sessionUnitCacheManager,
     IMessageRepository repository,
     IMessageManager messageManager,
     IMessageSender messageSender) : ChatAppService, IMessageSenderAppService
 {
+    public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
     protected IMessageRepository Repository { get; } = repository;
     protected IMessageSender MessageSender { get; } = messageSender;
     protected IMessageManager MessageManager { get; } = messageManager;
 
-    protected virtual async Task<SessionUnit> GetAndCheckSessionUnitAsync(Guid sessionUnitId)
+    protected virtual async Task<SessionUnitCacheItem> GetAndCheckSessionUnitAsync(Guid sessionUnitId)
     {
-        var sessionunit = await SessionUnitManager.GetAsync(sessionUnitId);
-
+        //var sessionunit = await SessionUnitManager.GetAsync(sessionUnitId);
+        var sessionunit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
+        await CheckPolicyForUserAsync(sessionunit.OwnerId);
+        IczpNet.AbpCommons.Assert.If(!sessionunit.IsEnabled, "Session unit disabled.");
         return sessionunit;
+    }
+
+    [HttpPost("/api/chat/message-sender/send-article-content-message/{sessionUnitId}")]
+    public async Task<MessageInfo<ArticleContentInfo>> SendArticleContentMessageAsync(Guid sessionUnitId, MessageInput<ArticleContentInput> input)
+    {
+        var unit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
+        await CheckArticleManagementOrOwnerAsync(unit.OwnerId);
+        IczpNet.AbpCommons.Assert.If(!unit.IsEnabled, "Session unit disabled.");
+        return await MessageSender.SendArticleContentMessageAsync(unit, input);
     }
 
     /// <summary>
@@ -218,6 +231,7 @@ public class MessageSenderAppService(
     [HttpPost]
     public async Task<List<MessageDto>> ForwardAsync(Guid sessionUnitId, long messageId, List<Guid> targets)
     {
+        await GetAndCheckSessionUnitAsync(sessionUnitId);
         var messageList = await MessageManager.ForwardAsync(sessionUnitId, messageId, targets);
 
         return ObjectMapper.Map<List<Message>, List<MessageDto>>(messageList);
@@ -230,9 +244,14 @@ public class MessageSenderAppService(
     /// <param name="messageId"> 消息Id</param>
     /// <returns></returns>
     [HttpPost]
+    [Volo.Abp.Uow.UnitOfWork(isTransactional: true)]
     public async Task<Dictionary<string, long>> RollbackAsync(long messageId)
     {
         var message = await Repository.GetAsync(messageId);
+        if (message.MessageType == IczpNet.Chat.Enums.MessageTypes.Article)
+            await CheckArticleManagementOrOwnerAsync(message.SenderId);
+        else
+            await CheckPolicyForUserAsync(message.SenderId);
         return await MessageManager.RollbackAsync(message);
     }
 }

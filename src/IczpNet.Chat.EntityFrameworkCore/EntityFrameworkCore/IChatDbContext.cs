@@ -1,6 +1,4 @@
-﻿using IczpNet.Chat.AppVersionDeviceGroups;
-using IczpNet.Chat.AppVersionDevices;
-using IczpNet.Chat.AppVersions;
+using IczpNet.Chat.AiRuns;
 using IczpNet.Chat.Articles;
 using IczpNet.Chat.Blobs;
 using IczpNet.Chat.ChatObjectCategories;
@@ -12,9 +10,6 @@ using IczpNet.Chat.Connections;
 using IczpNet.Chat.ContactTags;
 using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Developers;
-using IczpNet.Chat.DeviceGroupMaps;
-using IczpNet.Chat.DeviceGroups;
-using IczpNet.Chat.Devices;
 using IczpNet.Chat.EntryNames;
 using IczpNet.Chat.EntryValues;
 using IczpNet.Chat.FavoritedRecorders;
@@ -24,6 +19,7 @@ using IczpNet.Chat.InvitationCodes;
 using IczpNet.Chat.Menus;
 using IczpNet.Chat.MessageReports;
 using IczpNet.Chat.MessageSections.Counters;
+using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.MessageContents;
 using IczpNet.Chat.MessageSections.MessageFollowers;
 using IczpNet.Chat.MessageSections.MessageReminders;
@@ -32,10 +28,12 @@ using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.MessageWords;
 using IczpNet.Chat.Mottos;
 using IczpNet.Chat.OpenedRecorders;
+using IczpNet.Chat.QrCodes;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.ScanCodes;
 using IczpNet.Chat.Scopeds;
+using IczpNet.Chat.Security;
 using IczpNet.Chat.ServerHosts;
 using IczpNet.Chat.SessionBoxes;
 using IczpNet.Chat.SessionOrganizations;
@@ -74,6 +72,10 @@ public interface IChatDbContext : IEfCoreDbContext
     /* Add DbSet for each Aggregate Root here. Example:
      * DbSet<Question> Questions { get; }
      */
+
+    DbSet<AiRun> AiRun { get; }
+    DbSet<ScheduledArticleMessage> ScheduledArticleMessage { get; }
+
 
     DbSet<ChatObject> ChatObject { get; }
     DbSet<ChatObjectCategory> ChatObjectCategory { get; }
@@ -138,6 +140,8 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<ServerHost> ServerHost { get; }
 
     DbSet<Message> Message { get; }
+    DbSet<MessageChange> MessageChange { get; }
+    DbSet<MessageChangeCursor> MessageChangeCursor { get; }
     DbSet<MessageWord> MessageWord { get; }
     DbSet<MessageContent> MessageContent { get; }
 
@@ -174,28 +178,22 @@ public interface IChatDbContext : IEfCoreDbContext
 
     DbSet<Blob> Blob { get; }
     DbSet<BlobContent> BlobContent { get; }
+    DbSet<BlobMessageRef> BlobMessageRef { get; }
 
     DbSet<InvitationCode> InvitationCode { get; }
 
+    DbSet<QrCode> QrCode { get; }
+
     DbSet<ClientConfig> ClientConfig { get; }
 
-    DbSet<Device> Device { get; set; }
 
-    DbSet<DeviceGroup> DeviceGroup { get; }
 
-    DbSet<DeviceGroupMap> DeviceGroupMap { get; }
-
-    DbSet<UserDevice> UserDevice { get; }
-
-    DbSet<AppVersion> AppVersion { get; }
-
-    DbSet<AppVersionDevice> AppVersionDevice { get; }
-
-    DbSet<AppVersionDeviceGroup> AppVersionDeviceGroup { get; }
 
     DbSet<ScanCode> ScanCode { get; }
 
     DbSet<ScanHandler> ScanHandler { get; }
+    DbSet<UrlSecurityRule> UrlSecurityRule { get; }
+    DbSet<SecurityReport> SecurityReport { get; }
 
 
 }

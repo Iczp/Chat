@@ -6,15 +6,24 @@ namespace IczpNet.Chat.MessageSections.Messages.Dtos;
 
 public class MessageSimpleDto : ExtensibleEntityDto, IEntityDto<long>
 {
+    public virtual long SyncVersion { get; set; }
     /// <summary>
     /// 消息Id
     /// </summary>
     public virtual long Id { get; set; }
 
     /// <summary>
+    /// 客户端消息Id
+    /// </summary>
+    public virtual string ClientMessageId { get; set; }
+
+    /// <summary>
     /// 
     /// </summary>
     public virtual Guid SessionId { get; set; }
+
+    /// <summary>当前消息在会话内的序号。</summary>
+    public virtual long SessionSeq { get; set; }
 
     /// <summary>
     /// 发送人
@@ -104,4 +113,6 @@ public class MessageSimpleDto : ExtensibleEntityDto, IEntityDto<long>
     /// 消息内容
     /// </summary>
     public virtual object Content { get; set; }
+
+    public virtual string GetObjectKey() => $"{Id}";
 }

@@ -1,18 +1,24 @@
-using IczpNet.AbpCommons.Extensions;
+﻿using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.EntityFrameworkCore;
+using IczpNet.Chat.IdentityUsers;
 using IczpNet.Chat.Middlewares;
+using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.Medias;
+using IczpNet.Chat.Options;
 using IczpNet.Chat.MultiTenancy;
-using IczpNet.Pusher.Options;
+using IczpNet.RedisDistributedEventBus;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
@@ -28,13 +34,17 @@ using Volo.Abp.AspNetCore.Mvc.UI.MultiTenancy;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.Autofac;
+using Volo.Abp.Mapperly;
 using Volo.Abp.BackgroundJobs;
+using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.BlobStoring.FileSystem;
+using Volo.Abp.BlobStoring.Minio;
 using Volo.Abp.Caching;
 using Volo.Abp.Caching.StackExchangeRedis;
 using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.SqlServer;
+using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.Json;
 using Volo.Abp.Json.SystemTextJson;
 using Volo.Abp.Localization;
@@ -49,6 +59,7 @@ using Volo.Abp.VirtualFileSystem;
 namespace IczpNet.Chat;
 [DependsOn(
 typeof(ChatApplicationModule),
+    typeof(IczpNet.OpenIddict.OpenIddictAspNetCoreModule),
     typeof(ChatEntityFrameworkCoreModule),
     typeof(ChatHttpApiModule),
     typeof(AbpAspNetCoreMvcUiMultiTenancyModule),
@@ -65,7 +76,10 @@ typeof(ChatApplicationModule),
 //[DependsOn(typeof(ChatManagementApplicationModule))]
 [DependsOn(typeof(AbpBackgroundJobsModule))]
 [DependsOn(typeof(AbpBlobStoringFileSystemModule))]
-//[DependsOn(typeof(AbpEventBusRebusModule))]
+[DependsOn(typeof(AbpBlobStoringMinioModule))]
+[DependsOn(typeof(RedisDistributedEventBusModule))]
+[DependsOn(typeof(ChatBackgroundJobsModule))]
+[DependsOn(typeof(Volo.Abp.DistributedLocking.AbpDistributedLockingModule))]
 public class ChatHttpApiHostModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
@@ -80,8 +94,29 @@ public class ChatHttpApiHostModule : AbpModule
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        context.Services.AddUnifiedAbpTiming();
+        context.Services.AddUnifiedAbpAntiforgery("Chat");
+        context.Services.Replace(ServiceDescriptor.Transient<IDistributedCacheKeyNormalizer, SharedPermissionCacheKeyNormalizer>());
+        context.Services.Replace(ServiceDescriptor.Transient<IMediaResolver, FFMpegCoreMediaResolver>());
+        context.Services.AddMapperlyObjectMapper();
+        context.Services.AddSingleton<Medallion.Threading.IDistributedLockProvider>(provider =>
+            new Medallion.Threading.Redis.RedisDistributedSynchronizationProvider(
+                provider.GetRequiredService<IConnectionMultiplexer>().GetDatabase()));
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
+        Configure<MessageOptions>(options =>
+        {
+            var section = configuration.GetSection("MessageOptions");
+            options.OutputTempPath = section["OutputTempPath"] ?? options.OutputTempPath;
+            options.ImageSetting.ThumbnailSize = section.GetValue("ImageSetting:ThumbnailSize", options.ImageSetting.ThumbnailSize);
+            options.ImageSetting.BigSize = section.GetValue("ImageSetting:BigSize", options.ImageSetting.BigSize);
+            options.VideoSetting.IsGenerateSnapshot = section.GetValue("VideoSetting:IsGenerateSnapshot", options.VideoSetting.IsGenerateSnapshot);
+            options.VideoSetting.ImgCaptureSeconds = section.GetValue("VideoSetting:ImgCaptureSeconds", options.VideoSetting.ImgCaptureSeconds);
+            options.VideoSetting.GifSeconds = section.GetValue("VideoSetting:GifSeconds", options.VideoSetting.GifSeconds);
+            options.VideoSetting.SnapshotThumbnailSize = section.GetValue("VideoSetting:SnapshotThumbnailSize", options.VideoSetting.SnapshotThumbnailSize);
+            options.VideoSetting.ImgSnapshotSize = ParseSize(section["VideoSetting:ImgSnapshotSize"], options.VideoSetting.ImgSnapshotSize);
+            options.VideoSetting.GifSnapshotSize = ParseSize(section["VideoSetting:GifSnapshotSize"], options.VideoSetting.GifSnapshotSize);
+        });
 
         //SameSiteCookiePolicy
         context.Services.AddSameSiteCookiePolicy();
@@ -97,10 +132,16 @@ public class ChatHttpApiHostModule : AbpModule
         {
             options.DefaultTimeout = 864000; //10 days (as seconds)
         });
+        Configure<AbpBackgroundJobOptions>(options => options.IsJobExecutionEnabled = false);
 
-        Configure<PusherOptions>(options =>
+        Configure<AbpBackgroundWorkerOptions>(options => options.IsEnabled = false);
+
+        // During the staged deployment the main IM API owns message post-processing
+        // (including its AI providers). This host only serves Chat HTTP and SignalR.
+        PostConfigure<AbpDistributedEventBusOptions>(options =>
         {
-            options.Redis = ConnectionMultiplexer.Connect(configuration["Redis:Configuration"]);
+            options.Handlers.Remove(typeof(MessageSentDistributedEventHandler));
+            options.Handlers.Remove(typeof(SeedDataByUserCreatedDistributedEventHandler));
         });
 
         Configure<AbpExceptionHandlingOptions>(options =>
@@ -111,10 +152,12 @@ public class ChatHttpApiHostModule : AbpModule
 
         Configure<AbpJsonOptions>(options =>
         {
-            options.OutputDateTimeFormat = "yyyy-MM-dd hh:mm:ss";
-            options.InputDateTimeFormats = new List<string>() {
-            "yyyy-MM-dd hh:mm:ss","yyyy-MM-dd"
-
+            // Keep ABP's ISO 8601 output, including the UTC marker. These options
+            // also serialize distributed caches; an offset-free value is read
+            // back in the request's timezone and changes the message instant.
+            options.InputDateTimeFormats = new List<string>
+            {
+                "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd"
             };
         });
         Configure<AbpSystemTextJsonSerializerOptions>(options =>
@@ -142,10 +185,25 @@ public class ChatHttpApiHostModule : AbpModule
         {
             options.Containers.ConfigureDefault(container =>
             {
-                container.UseFileSystem(filesystem =>
+                if (string.Equals(configuration["Blob:Provider"], "Minio", StringComparison.OrdinalIgnoreCase))
                 {
-                    filesystem.BasePath = configuration["Blob:FileSystem:BasePath"];
-                });
+                    container.UseMinio(minio =>
+                    {
+                        minio.EndPoint = configuration["Blob:Minio:EndPoint"] ?? throw new InvalidOperationException("Blob:Minio:EndPoint is required.");
+                        minio.AccessKey = configuration["Blob:Minio:AccessKey"] ?? throw new InvalidOperationException("Blob:Minio:AccessKey is required.");
+                        minio.SecretKey = configuration["Blob:Minio:SecretKey"] ?? throw new InvalidOperationException("Blob:Minio:SecretKey is required.");
+                        minio.WithSSL = configuration.GetValue<bool>("Blob:Minio:WithSSL");
+                        minio.CreateBucketIfNotExists = true;
+                    });
+                }
+                else if (string.IsNullOrWhiteSpace(configuration["Blob:Provider"]) || string.Equals(configuration["Blob:Provider"], "FileSystem", StringComparison.OrdinalIgnoreCase))
+                {
+                    container.UseFileSystem(filesystem => filesystem.BasePath = configuration["Blob:FileSystem:BasePath"]);
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Unsupported blob provider: {configuration["Blob:Provider"]}");
+                }
             });
         });
 
@@ -180,7 +238,7 @@ public class ChatHttpApiHostModule : AbpModule
             configuration["AuthServer:Authority"],
             new Dictionary<string, string>
             {
-                {"Chat", "Chat API"}
+                {configuration["AuthServer:Scope"] ?? "Chat", "Chat API"}
             },
             options =>
             {
@@ -273,7 +331,7 @@ public class ChatHttpApiHostModule : AbpModule
             {
                 options.Authority = configuration["AuthServer:Authority"];
                 options.RequireHttpsMetadata = Convert.ToBoolean(configuration["AuthServer:RequireHttpsMetadata"]);
-                options.Audience = "Chat";
+                options.Audience = configuration["AuthServer:Audience"] ?? "Chat";
 
                 // We have to hook the OnMessageReceived event in order to
                 // allow the JWT authentication handler to read the access
@@ -308,6 +366,9 @@ public class ChatHttpApiHostModule : AbpModule
                     ValidateAudience = true,
                     ValidateLifetime = true, // 确保 ValidateLifetime 为 true
                     ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = string.IsNullOrWhiteSpace(configuration["OpenIddict:SigningKey"])
+                        ? null
+                        : new SymmetricSecurityKey(Encoding.ASCII.GetBytes(configuration["OpenIddict:SigningKey"])),
                     //ValidIssuer = configuration["Jwt:Issuer"],
                     //ValidAudience = configuration["Jwt:Audience"],
                     //IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"])),
@@ -318,7 +379,7 @@ public class ChatHttpApiHostModule : AbpModule
 
         Configure<AbpDistributedCacheOptions>(options =>
         {
-            options.KeyPrefix = "Chat:";
+            options.KeyPrefix = configuration["Cache:KeyPrefix"] ?? "Chat:";
         });
 
         var dataProtectionBuilder = context.Services.AddDataProtection().SetApplicationName("Chat");
@@ -350,12 +411,21 @@ public class ChatHttpApiHostModule : AbpModule
 
     }
 
+    private static (int Width, int Height) ParseSize(string value, (int Width, int Height) fallback)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return fallback;
+        var parts = value.Split(',');
+        if (parts.Length != 2 || !int.TryParse(parts[0], out var width) || !int.TryParse(parts[1], out var height))
+            throw new InvalidOperationException("MessageOptions video size must contain two comma-separated integers.");
+        return (width, height);
+    }
+
     public override void OnApplicationInitialization(ApplicationInitializationContext context)
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
 
-        app.ApplicationServices.UseStaticAutoMapper();
+        app.ApplicationServices.UseStaticObjectMapper();
         //app.UseUrlAuthorization();
 
         //app.UsePusherSubscriber();
@@ -381,6 +451,7 @@ public class ChatHttpApiHostModule : AbpModule
             app.UseMultiTenancy();
         }
         app.UseAbpRequestLocalization();
+        app.UseAbpTimeZone();
         app.UseAuthorization();
         app.UseSwagger(x => x.RouteTemplate = "swagger/{documentName}/swagger.json");
         //app.UseSwagger();
@@ -395,7 +466,7 @@ public class ChatHttpApiHostModule : AbpModule
             options.EnablePersistAuthorization();
             var configuration = context.GetConfiguration();
             options.OAuthClientId(configuration["AuthServer:SwaggerClientId"]);
-            options.OAuthScopes("Chat");
+            options.OAuthScopes(configuration["AuthServer:Scope"] ?? "Chat");
         });
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();

@@ -1,10 +1,27 @@
-﻿namespace IczpNet.Chat.MessageSections.Templates;
+﻿using System;
+
+namespace IczpNet.Chat.MessageSections.Templates;
 
 /// <summary>
 /// 图片消息
 /// </summary>
 public class ImageContentInfo : MessageContentAttachmentsInfoBase, IContentInfo
 {
+    /// <summary>
+    /// 缩略图 BlobId
+    /// </summary>
+    public virtual Guid? ThumbnailBlobId { get; set; }
+
+    /// <summary>
+    /// 原图 BlobId
+    /// </summary>
+    public virtual Guid? OriginalBlobId { get; set; }
+
+    /// <summary>
+    /// 原图地址
+    /// </summary>
+    public virtual string OriginalUrl { get; set; }
+
     /// <summary>
     /// 图片地址
     /// </summary>

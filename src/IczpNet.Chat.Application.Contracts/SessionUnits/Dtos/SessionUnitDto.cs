@@ -21,7 +21,7 @@ public class SessionUnitDto
 
     //public virtual string RenameSpellingAbbreviation { get; set; }
 
-    //public virtual long ReadedMessageId { get; set; }
+    //public virtual long ReadMessageId { get; set; }
 
     //public virtual double Sorting { get; set; }
 

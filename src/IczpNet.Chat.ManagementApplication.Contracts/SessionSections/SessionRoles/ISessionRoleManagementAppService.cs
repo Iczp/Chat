@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using IczpNet.Chat.Management.SessionSections.SessionRoles.Dtos;
-using IczpNet.Chat.SessionSections.SessionPermissions;
+using IczpNet.Chat.SessionPermissions;
 using Volo.Abp.Application.Services;
 
 namespace IczpNet.Chat.Management.SessionSections.SessionRoles;

@@ -5,7 +5,7 @@ public class SessionUnitSettingDto : SessionUnitSettingSimpleDto
     ///// <summary>
     ///// 
     ///// </summary>
-    //public virtual long? ReadedMessageId { get; set; }
+    //public virtual long? ReadMessageId { get; set; }
 
     ///// <summary>
     ///// 

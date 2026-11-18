@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.AspNetCore.Http;
@@ -9,11 +9,11 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Imaging;
 using System.IO;
-using Image = SixLabors.ImageSharp.Image;
+using Image = ImageMagick.MagickImage;
 using System.Linq;
 using IczpNet.Chat.Options;
 using Microsoft.Extensions.Options;
-using SixLabors.ImageSharp.Metadata.Profiles.Exif;
+using ImageMagick;
 using Volo.Abp.Json;
 using IczpNet.Chat.Medias;
 using Microsoft.CodeAnalysis;
@@ -22,6 +22,7 @@ using Blob = IczpNet.Chat.Blobs.Blob;
 using Microsoft.Extensions.Logging;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.Blobs;
+using Volo.Abp.Uow;
 namespace IczpNet.Chat.Controllers;
 
 [Route($"/api/{ChatRemoteServiceConsts.ModuleName}/message-sender")]
@@ -72,6 +73,7 @@ public class MessageSenderController(
     /// <returns></returns>
     [HttpPost]
     [Route("send-upload-file/{sessionUnitId}")]
+    [UnitOfWork(false)]
     public async Task<IActionResult> SendUploadFileAsync(Guid sessionUnitId, IFormFile file, long quoteMessageId, List<Guid> remindList)
     {
         var sessionUnit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
@@ -97,7 +99,7 @@ public class MessageSenderController(
                 FileName = file.FileName,
                 Suffix = blob.Suffix,
                 //Url = $"/file?id={blob.Id}",
-                Url = await GetFileUrlAsync(blob.Id),
+                Url = await GetFileUrlAsync(blob.Id, file.ContentType),
                 BlobId = blob.Id,
             }
         });
@@ -111,25 +113,14 @@ public class MessageSenderController(
     /// <returns></returns>
     protected virtual (int width, int height) GetImageActualDimensions(Image image)
     {
-        int width = image.Width;
+        int width = checked((int)image.Width);
 
-        int height = image.Height;
+        int height = checked((int)image.Height);
 
-        // Check if image has Exif metadata
-        if (image.Metadata.ExifProfile != null)
+        if (image.Orientation is OrientationType.LeftTop or OrientationType.RightTop or
+            OrientationType.RightBottom or OrientationType.LeftBottom)
         {
-            var item = image.Metadata.ExifProfile.Values.FirstOrDefault(x => x.Tag == ExifTag.Orientation);
-
-            if (item != null)
-            {
-                var orientation = (ushort)item.GetValue();
-
-                if (orientation == 6 || orientation == 8) // 6: Rotate 90 degrees CW, 8: Rotate 90 degrees CCW
-                {
-                    // Swap width and height if rotated 90 or 270 degrees
-                    (height, width) = (width, height);
-                }
-            }
+            (height, width) = (width, height);
         }
         return (width, height);
     }
@@ -138,9 +129,10 @@ public class MessageSenderController(
     {
         var items = new List<ImageProfileEntry>();
 
-        if (image.Metadata.ExifProfile != null)
+        var profile = image.GetExifProfile();
+        if (profile != null)
         {
-            foreach (var exifValue in image.Metadata.ExifProfile.Values)
+            foreach (var exifValue in profile.Values)
             {
                 items.Add(new ImageProfileEntry()
                 {
@@ -175,6 +167,7 @@ public class MessageSenderController(
     /// <returns></returns>
     [HttpPost]
     [Route("send-upload-image/{sessionUnitId}")]
+    [UnitOfWork(false)]
     public async Task<IActionResult> SendUploadImageAsync(Guid sessionUnitId, IFormFile file, long quoteMessageId, List<Guid> remindList, bool isOriginal)
     {
         var bytes = await file.GetAllBytesAsync();
@@ -190,10 +183,12 @@ public class MessageSenderController(
             {
                 var resizeder = await ImageResizer.ResizeAsync(bytes, new ImageResizeArgs()
                 {
-                    Width = maxSize,
-                    Height = maxSize,
+                    Width = (uint)maxSize,
+                    Height = (uint)maxSize,
                     Mode = ImageResizeMode.Max
                 });
+                if (resizeder.State == ImageProcessState.Unsupported)
+                    throw new Volo.Abp.UserFriendlyException("Unsupported image format.");
                 resizedBytes = resizeder.Result;
             }
 
@@ -225,7 +220,7 @@ public class MessageSenderController(
         var imageContent = new ImageContentInfo()
         {
             BlobId = thumbnailBlobId,
-            ThumbnailUrl = await GetFileUrlAsync(thumbnailBlobId),
+            ThumbnailUrl = await GetFileUrlAsync(thumbnailBlobId, file.ContentType),
             ContentType = file.ContentType,
             Suffix = suffix
         };
@@ -236,11 +231,11 @@ public class MessageSenderController(
 
         if (isOriginal)
         {
-            using Image image = Image.Load(bytes);
+            using Image image = new(bytes);
             //original
             var originalBlobId = GuidGenerator.Create();
 
-            var maxSize = new List<int> { image.Width, image.Height }.Max();
+            var maxSize = checked((int)Math.Max(image.Width, image.Height));
 
             await SaveImageAsync(originalBlobId, bytes, $"{directoryName}/{filename}_original{suffix}", maxSize, false);
 
@@ -254,7 +249,7 @@ public class MessageSenderController(
 
             imageContent.Size = bytes.Length;
 
-            imageContent.Url = await GetFileUrlAsync(originalBlobId);
+            imageContent.Url = await GetFileUrlAsync(originalBlobId, file.ContentType);
 
             imageContent.Profile = GetImageProfileJson(image);
         }
@@ -265,7 +260,7 @@ public class MessageSenderController(
 
             var blob = await SaveImageAsync(bigImgBlobId, bytes, $"{directoryName}/{filename}_{bigImageSize}{suffix}", bigImageSize, true);
 
-            using Image img = Image.Load(blob.Bytes);
+            using Image img = new(blob.Bytes);
 
             (int width, int height) = GetImageActualDimensions(img);
 
@@ -279,7 +274,7 @@ public class MessageSenderController(
 
             imageContent.Size = blob.Bytes.Length;
 
-            imageContent.Url = await GetFileUrlAsync(bigImgBlobId);
+            imageContent.Url = await GetFileUrlAsync(bigImgBlobId, file.ContentType);
 
             imageContent.Profile = GetImageProfileJson(img);
         }
@@ -296,6 +291,7 @@ public class MessageSenderController(
 
     [HttpPost]
     [Route("send-upload-sound/{sessionUnitId}")]
+    [UnitOfWork(false)]
     public async Task<IActionResult> SendUploadSoundAsync(Guid sessionUnitId, IFormFile file, long quoteMessageId, List<Guid> remindList, [FromForm] int? duration)
     {
         var sessionUnit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
@@ -313,7 +309,7 @@ public class MessageSenderController(
             Size = file.Length,
             FileName = Path.GetFileName(file.FileName),
             Suffix = Path.GetExtension(file.FileName),
-            Url = await GetFileUrlAsync(soundBlob.Id),
+            Url = await GetFileUrlAsync(soundBlob.Id, file.ContentType),
             Time = duration.GetValueOrDefault(),
         };
 
@@ -338,6 +334,7 @@ public class MessageSenderController(
 
     [HttpPost]
     [Route("send-upload-video/{sessionUnitId}")]
+    [UnitOfWork(false)]
     public async Task<IActionResult> SendUploadVideoAsync(Guid sessionUnitId, IFormFile file, long quoteMessageId, List<Guid> remindList, bool isOriginal)
     {
         var sessionUnit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
@@ -356,7 +353,7 @@ public class MessageSenderController(
             FileName = Path.GetFileName(file.FileName),
             Suffix = Path.GetExtension(file.FileName),
             //Url = $"/file?id={videoBlob.Id}"
-            Url = await GetFileUrlAsync(videoBlob.Id)
+            Url = await GetFileUrlAsync(videoBlob.Id, file.ContentType)
         };
 
         if (MessageSetting.VideoSetting.IsGenerateSnapshot)
@@ -393,78 +390,89 @@ public class MessageSenderController(
             Logger.LogWarning($"GetVideoInfoAsync:videoBlobId:{videoBlob.Id} is null");
             return;
         }
-        content.Width = mediaInfo.Width.GetValueOrDefault();
 
-        content.Height = mediaInfo.Height.GetValueOrDefault();
-
-        //Duration
-        if (mediaInfo.Duration != null)
+        try
         {
-            content.Duration = mediaInfo.Duration.Value.TotalSeconds;
-        }
+            content.Width = mediaInfo.Width.GetValueOrDefault();
+            content.Height = mediaInfo.Height.GetValueOrDefault();
 
-        //Snapshot
-        if (!string.IsNullOrWhiteSpace(mediaInfo.ImageSnapshotPath))
-        {
-            var suffix = Path.GetExtension(mediaInfo.ImageSnapshotPath);
+            if (mediaInfo.Duration != null)
+                content.Duration = mediaInfo.Duration.Value.TotalSeconds;
 
-            //Snapshot
-            var snapBlob = await UploadToBlobStoreAsync(mediaInfo.ImageSnapshotPath, $"{videoFileName}.snapshot{suffix}");
-
-            content.SnapshotUrl = await GetFileUrlAsync(snapBlob.Id);
-
-            // Actual width | height
-            using Image snapshotImg = Image.Load(snapBlob.Bytes);
-
-            content.ImageWidth = snapshotImg.Width;
-
-            content.ImageHeight = snapshotImg.Height;
-
-            (int width, int height) = GetImageActualDimensions(snapshotImg);
-
-            // reset video width/height 重设视频的宽高
-            if (width > 0 && height > 0)
+            if (!string.IsNullOrWhiteSpace(mediaInfo.ImageSnapshotPath))
             {
-                content.Width = width;
-                content.Height = height;
+                var suffix = Path.GetExtension(mediaInfo.ImageSnapshotPath);
+                var snapBlob = await UploadToBlobStoreAsync(mediaInfo.ImageSnapshotPath, $"{videoFileName}.snapshot{suffix}");
+                content.SnapshotUrl = await GetFileUrlAsync(snapBlob.Id, videoBlob.MimeType);
+
+                using Image snapshotImg = new(snapBlob.Bytes);
+                content.ImageWidth = checked((int)snapshotImg.Width);
+                content.ImageHeight = checked((int)snapshotImg.Height);
+
+                (int width, int height) = GetImageActualDimensions(snapshotImg);
+                if (width > 0 && height > 0)
+                {
+                    content.Width = width;
+                    content.Height = height;
+                }
+
+                var thumbnailSize = MessageSetting.VideoSetting.SnapshotThumbnailSize;
+                var resizeder = await ImageResizer.ResizeAsync(snapBlob.Bytes, new ImageResizeArgs()
+                {
+                    Width = (uint)thumbnailSize,
+                    Height = (uint)thumbnailSize,
+                    Mode = ImageResizeMode.Max
+                });
+
+                if (resizeder.State == ImageProcessState.Unsupported)
+                    throw new Volo.Abp.UserFriendlyException("Unsupported image format.");
+                var thumbnailResizedBytes = resizeder.Result;
+
+                var snapshotThumbnailBlobId = GuidGenerator.Create();
+                var snapshotThumbnailBlob = await BlobManager.CreateAsync(new Blob(snapshotThumbnailBlobId, ChatFilesContainer)
+                {
+                    IsPublic = true,
+                    FileSize = thumbnailResizedBytes.Length,
+                    MimeType = MimeTypes.GetByExtension(suffix),
+                    FileName = $"{videoBlob.FileName}",
+                    Name = $"{videoFileName}.thumbnail{suffix}",
+                    Suffix = suffix,
+                    Bytes = thumbnailResizedBytes
+                });
+
+                content.SnapshotThumbnailUrl = await GetFileUrlAsync(snapshotThumbnailBlob.Id, snapshotThumbnailBlob.MimeType);
             }
 
-            //Snapshot thumbnail Size
-            var thumbnailSize = MessageSetting.VideoSetting.SnapshotThumbnailSize;
-
-            var resizeder = await ImageResizer.ResizeAsync(snapBlob.Bytes, new ImageResizeArgs()
+            if (!string.IsNullOrWhiteSpace(mediaInfo.GifSnapshotPath))
             {
-                Width = thumbnailSize,
-                Height = thumbnailSize,
-                Mode = ImageResizeMode.Max
-            });
-
-            var thumbnailResizedBytes = resizeder.Result;
-
-            var snapshotThumbnailBlobId = GuidGenerator.Create();
-
-            //snapshotThumbnailBlob
-            var snapshotThumbnailBlob = await BlobManager.CreateAsync(new Blob(snapshotThumbnailBlobId, ChatFilesContainer)
-            {
-                IsPublic = true,
-                FileSize = thumbnailResizedBytes.Length,
-                MimeType = MimeTypes.GetByExtension(suffix),
-                FileName = $"{videoBlob.FileName}",
-                Name = $"{videoFileName}.thumbnail{suffix}",
-                Suffix = suffix,
-                Bytes = thumbnailResizedBytes
-            });
-
-            content.SnapshotThumbnailUrl = await GetFileUrlAsync(snapshotThumbnailBlob.Id);
+                var gifBlob = await UploadToBlobStoreAsync(mediaInfo.GifSnapshotPath, $"{videoFileName}.snapshot.gif");
+                content.GifUrl = await GetFileUrlAsync(gifBlob.Id, gifBlob.MimeType);
+            }
         }
-        //GifSnapshot
-        if (!string.IsNullOrWhiteSpace(mediaInfo.GifSnapshotPath))
+        finally
         {
-            var gifBlob = await UploadToBlobStoreAsync(mediaInfo.GifSnapshotPath, $"{videoFileName}.snapshot.gif");
-
-            content.GifUrl = await GetFileUrlAsync(gifBlob.Id);
+            DeleteGeneratedMediaFile(mediaInfo.ImageSnapshotPath);
+            DeleteGeneratedMediaFile(mediaInfo.GifSnapshotPath);
+            DeleteGeneratedMediaFile(mediaInfo.TempVideoPath);
         }
+    }
 
+    private void DeleteGeneratedMediaFile(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return;
+
+        try
+        {
+            var root = Path.GetFullPath(MessageSetting.OutputTempPath)
+                .TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            var fullPath = Path.GetFullPath(path);
+            if (fullPath.StartsWith(root, StringComparison.Ordinal))
+                System.IO.File.Delete(fullPath);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            Logger.LogWarning(exception, "Could not delete generated Chat media file {Path}", path);
+        }
     }
 
 

@@ -73,7 +73,7 @@ public class ServiceStateManager(
 
         if (items == null)
         {
-            items = [new ServiceStatusCacheItem(chatObjectId, deviceId, status)];
+            items = [new ServiceStatusCacheItem(chatObjectId, deviceId, status) { ActiveTime = Clock.Now }];
         }
         else
         {
@@ -86,7 +86,7 @@ public class ServiceStateManager(
             }
             else
             {
-                items.Add(new ServiceStatusCacheItem(chatObjectId, deviceId, status));
+                items.Add(new ServiceStatusCacheItem(chatObjectId, deviceId, status) { ActiveTime = Clock.Now });
             }
         }
         await Cache.SetAsync(chatObjectId, items, DistributedCacheEntryOptions);

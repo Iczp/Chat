@@ -5,6 +5,11 @@ namespace IczpNet.Chat.SessionUnitSettings;
 
 public class SessionUnitSettingCacheItem
 {
+    // Fail closed when serialized visibility data lacks the killed-state field.
+    public bool? IsKilled { get; set; }
+    public long? StartMessageId { get; set; }
+    public long? EndMessageId { get; set; }
+
     /// <summary>
     /// 会话单元Id
     /// </summary>
@@ -19,7 +24,7 @@ public class SessionUnitSettingCacheItem
     /// <summary>
     /// 已读的消息
     /// </summary>
-    public virtual long? ReadedMessageId { get; set; }
+    public virtual long? ReadMessageId { get; set; }
 
     /// <summary>
     /// 最后发言的消息

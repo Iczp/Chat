@@ -1,11 +1,11 @@
-﻿using Castle.Components.DictionaryAdapter.Xml;
+using Castle.Components.DictionaryAdapter.Xml;
 using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.ChatObjectCategories;
 using IczpNet.Chat.ChatObjects.Dtos;
-using IczpNet.Chat.Devices;
+using IczpNet.Chat;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
@@ -38,7 +38,7 @@ public class ChatObjectAppService(
     IFavoritedRecorderManager favoritedRecorderManager,
     IFollowManager followManager,
     IdentityUserManager identityUserManager,
-    IDeviceResolver deviceResolver)
+    IDeviceContext deviceContext)
         : CrudTreeChatAppService<
         ChatObject,
         long,
@@ -62,7 +62,7 @@ public class ChatObjectAppService(
     protected IFavoritedRecorderManager FavoritedRecorderManager { get; } = favoritedRecorderManager;
     protected IFollowManager FollowManager { get; } = followManager;
     public IdentityUserManager IdentityUserManager { get; } = identityUserManager;
-    protected IDeviceResolver DeviceResolver { get; } = deviceResolver;
+    protected IDeviceContext DeviceContext { get; } = deviceContext;
 
     protected override async Task<IQueryable<ChatObject>> CreateFilteredQueryAsync(ChatObjectGetListInput input)
     {
@@ -315,7 +315,7 @@ public class ChatObjectAppService(
     [HttpPost]
     public virtual async Task<List<ServiceStatusCacheItem>> SetServiceStatusAsync(long id, ServiceStatus status)
     {
-        var deviceId = await DeviceResolver.GetDeviceIdAsync();
+        var deviceId = await DeviceContext.GetDeviceIdAsync();
 
         if (deviceId == null)
         {

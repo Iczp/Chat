@@ -1,0 +1,14 @@
+2026-09-28 17:55:02.742 +08:00 [Information] Starting Iczp.Net.HttpApi.Host. HostName:IczpNet
+2026-09-28 17:55:30.095 +08:00 [Fatal] Host terminated unexpectedly!
+Volo.Abp.AbpInitializationException: An error occurred during ConfigureServicesAsync phase of the module IczpNet.Chat.ChatHttpApiHostModule, IczpNet.Chat.HttpApi.Host, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null. See the inner exception for details.
+ ---> System.NullReferenceException: Object reference not set to an instance of an object.
+   at Microsoft.Extensions.DependencyInjection.AbpSwaggerGenServiceCollectionExtensions.AddAbpSwaggerGenWithOAuth(IServiceCollection services, String authority, Dictionary`2 scopes, Action`1 setupAction, String authorizationEndpoint, String tokenEndpoint)
+   at IczpNet.Chat.ChatHttpApiHostModule.ConfigureServices(ServiceConfigurationContext context) in F:\Dev\abpvnext\IczpNet.Chat\host\IczpNet.Chat.HttpApi.Host\ChatHttpApiHostModule.cs:line 179
+   at Volo.Abp.Modularity.AbpModule.ConfigureServicesAsync(ServiceConfigurationContext context)
+   at Volo.Abp.AbpApplicationBase.ConfigureServicesAsync()
+   --- End of inner exception stack trace ---
+   at Volo.Abp.AbpApplicationBase.ConfigureServicesAsync()
+   at Volo.Abp.AbpApplicationFactory.CreateAsync[TStartupModule](IServiceCollection services, Action`1 optionsAction)
+   at Microsoft.Extensions.DependencyInjection.ServiceCollectionApplicationExtensions.AddApplicationAsync[TStartupModule](IServiceCollection services, Action`1 optionsAction)
+   at Microsoft.Extensions.DependencyInjection.WebApplicationBuilderExtensions.AddApplicationAsync[TStartupModule](WebApplicationBuilder builder, Action`1 optionsAction)
+   at IczpNet.Chat.Program.Main(String[] args) in F:\Dev\abpvnext\IczpNet.Chat\host\IczpNet.Chat.HttpApi.Host\Program.cs:line 105

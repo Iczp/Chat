@@ -128,7 +128,7 @@ public class SessionUnitAppService(
     [UnitOfWork(true, IsolationLevel.ReadCommitted)]
     public virtual async Task<PagedResultDto<SessionUnitOwnerDto>> GetListAsync(SessionUnitGetListInput input)
     {
-        await CheckPolicyForUserAsync(input.OwnerId, () => CheckPolicyAsync(GetListPolicyName));
+        await CheckArticleManagementOrOwnerAsync(input.OwnerId, () => CheckPolicyAsync(GetListPolicyName));
 
         var query = await CreateQueryAsync(input);
 
@@ -385,7 +385,7 @@ public class SessionUnitAppService(
     [HttpGet]
     public async Task<PagedResultDto<SessionUnitDto>> GetListSameDestinationAsync(SessionUnitGetListSameDestinationInput input)
     {
-        await CheckPolicyForUserAsync(new[] { input.SourceId, input.TargetId }, () => CheckPolicyAsync(GetListForSameSessionPolicyName));
+        await CheckPolicyForUserAsync(input.SourceId, () => CheckPolicyAsync(GetListForSameSessionPolicyName));
 
         var query = (await SessionUnitManager.GetSameDestinationQeuryableAsync(input.SourceId, input.TargetId, input.ObjectTypeList))
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Destination.Name.Contains(input.Keyword))
@@ -401,7 +401,7 @@ public class SessionUnitAppService(
     [HttpGet]
     public async Task<PagedResultDto<SessionUnitDto>> GetListSameSessionAsync(SessionUnitGetListSameSessionInput input)
     {
-        await CheckPolicyForUserAsync(new[] { input.SourceId, input.TargetId }, () => CheckPolicyAsync(GetListForSameSessionPolicyName));
+        await CheckPolicyForUserAsync(input.SourceId, () => CheckPolicyAsync(GetListForSameSessionPolicyName));
 
         var query = (await SessionUnitManager.GetSameSessionQeuryableAsync(input.SourceId, input.TargetId, input.ObjectTypeList))
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.Destination.Name.Contains(input.Keyword))
@@ -419,7 +419,7 @@ public class SessionUnitAppService(
     [HttpGet]
     public async Task<int> GetSameSessionCountAsync([Required] long sourceId, [Required] long targetId, List<ChatObjectTypeEnums> objectTypeList)
     {
-        await CheckPolicyForUserAsync(new[] { sourceId, targetId }, () => CheckPolicyAsync(GetListForSameSessionPolicyName));
+        await CheckPolicyForUserAsync(sourceId, () => CheckPolicyAsync(GetListForSameSessionPolicyName));
 
         return await SessionUnitManager.GetSameSessionCountAsync(sourceId, targetId, objectTypeList);
     }
@@ -434,7 +434,7 @@ public class SessionUnitAppService(
     [HttpGet]
     public async Task<int> GetSameDestinationCountAsync([Required] long sourceId, [Required] long targetId, List<ChatObjectTypeEnums> objectTypeList)
     {
-        await CheckPolicyForUserAsync(new[] { sourceId, targetId }, () => CheckPolicyAsync(GetListForSameSessionPolicyName));
+        await CheckPolicyForUserAsync(sourceId, () => CheckPolicyAsync(GetListForSameSessionPolicyName));
 
         return await SessionUnitManager.GetSameDestinationCountAsync(sourceId, targetId, objectTypeList);
     }
@@ -571,7 +571,7 @@ public class SessionUnitAppService(
     {
         await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(FindPolicyName));
 
-        var entity = await SessionUnitManager.FindAsync(ownerId, destinactionId);
+        var entity = await SessionUnitManager.FindCacheAsync(ownerId, destinactionId);
 
         Assert.NotNull(entity, "No found!");
 

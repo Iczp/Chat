@@ -126,23 +126,23 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
     }
 
     private void SortedSetHostConn(IBatch batch, ConnectionPoolCacheItem connectionPool)
-         => SortedSetIf(!string.IsNullOrWhiteSpace(connectionPool.Host), () => HostConnZsetKey(connectionPool.Host), connectionPool.ConnectionId, Clock.Now.ToUnixTimeMilliseconds(), batch: batch);
+         => SortedSetIf(!string.IsNullOrWhiteSpace(connectionPool.Host), () => HostConnZsetKey(connectionPool.Host), connectionPool.ConnectionId, Clock.Now.ToUnixTimeMilliseconds(), batch: batch, expiry: CacheExpire);
 
     private void HashSetUserConn(IBatch batch, ConnectionPoolCacheItem connectionPool)
-        => HashSetIf(connectionPool.UserId.HasValue, () => UserConnKey(connectionPool.UserId.Value), connectionPool.ConnectionId, JsonSerializer.Serialize(connectionPool.ChatObjectIdList ?? []), batch: batch);
+        => HashSetIf(connectionPool.UserId.HasValue, () => UserConnKey(connectionPool.UserId.Value), connectionPool.ConnectionId, JsonSerializer.Serialize(connectionPool.ChatObjectIdList ?? []), batch: batch, expiry: CacheExpire);
 
     private void SortedSetAppConn(IBatch batch, ConnectionPoolCacheItem connectionPool)
-        => SortedSetIf(!string.IsNullOrWhiteSpace(connectionPool.AppId), () => AppSetKey(connectionPool.AppId), connectionPool.ConnectionId, Clock.Now.ToUnixTimeMilliseconds(), batch: batch);
+        => SortedSetIf(!string.IsNullOrWhiteSpace(connectionPool.AppId), () => AppSetKey(connectionPool.AppId), connectionPool.ConnectionId, Clock.Now.ToUnixTimeMilliseconds(), batch: batch, expiry: CacheExpire);
 
     private void SortedSetClientConn(IBatch batch, ConnectionPoolCacheItem connectionPool)
-        => SortedSetIf(!string.IsNullOrWhiteSpace(connectionPool.ClientId), () => ClientSetKey(connectionPool.ClientId), connectionPool.ConnectionId, Clock.Now.ToUnixTimeMilliseconds(), batch: batch);
+        => SortedSetIf(!string.IsNullOrWhiteSpace(connectionPool.ClientId), () => ClientSetKey(connectionPool.ClientId), connectionPool.ConnectionId, Clock.Now.ToUnixTimeMilliseconds(), batch: batch, expiry: CacheExpire);
 
     private void HashSetDevice(IBatch batch, ConnectionPoolCacheItem connectionPool)
     {
         var ownerIds = connectionPool.ChatObjectIdList ?? [];
         foreach (var ownerId in ownerIds)
         {
-            HashSetIf(true, () => DeviceHashKey(ownerId), connectionPool.ConnectionId, $"{connectionPool.DeviceType}:{connectionPool.DeviceId}", batch: batch);
+            HashSetIf(true, () => DeviceHashKey(ownerId), connectionPool.ConnectionId, $"{connectionPool.DeviceType}:{connectionPool.DeviceId}", batch: batch, expiry: CacheExpire);
         }
 
     }
@@ -316,7 +316,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         var userId = connectionPool.UserId;
         Logger.LogInformation($"[CreateAsync] connectionId:{connectionId},userId:{userId},ownerIds:{ownerIds.JoinAsString(",")}");
 
-        var friendsMap = await LoadFriendsMapAsync(ownerIds);
+
 
         var batch = Database.CreateBatch();
 
@@ -333,14 +333,26 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         // connectionPool hash
         HashSetConn(batch, connectionPool);
 
-        //Friends Conns
-        HashSetAndRefreshFriendsConns(batch, ownerIds, friendsMap, connectionId);
-
         // chatObject -> connection hash (owner conn mapping)
         HashSetDevice(batch, connectionPool);
 
-        // session -> connection hash (session -> connId : owners joined)
-        HashSetSessionConn(batch, connectionPool, friendsMap);
+        // 更新主机
+        SortedSetIf(true, () => AllHostZsetKey(), CurrentHosted.Name, Clock.Now.ToUnixTimeMilliseconds(), batch: batch, expiry: CacheExpire);
+
+        if (Config.IsEnableExclusiveStatFriends || Config.IsEnableExclusiveStatSession)
+        {
+            // 预加载好友会话
+            var friendsMap = await LoadFriendsMapAsync(ownerIds);
+
+            //Friends Conns
+            HashSetAndRefreshFriendsConns(batch, ownerIds, friendsMap, connectionId);
+
+            if (!Config.IsEnableExclusiveStatSession)
+            {
+                // session -> connection hash (session -> connId : owners joined)
+                HashSetSessionConn(batch, connectionPool, friendsMap);
+            }
+        }
 
         batch.Execute();
 
@@ -375,7 +387,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
 
         var ownerIds = connectionPool.ChatObjectIdList;
 
-        var friendsMap = await LoadFriendsMapAsync(ownerIds);
+
 
         Logger.LogInformation("[RefreshExpireAsync] GetFriendsMapAsync ownerIds=[{ownerIds}], Elapsed: {Elapsed}ms", ownerIds.JoinAsString(","), stopwatch.ElapsedMilliseconds);
 
@@ -395,7 +407,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         }
 
         // Host: update timestamp in sorted set
-        SortedSetIf(!string.IsNullOrWhiteSpace(connectionPool.Host), () => HostConnZsetKey(connectionPool.Host), connectionId, unixTime, batch: batch);
+        SortedSetIf(!string.IsNullOrWhiteSpace(connectionPool.Host), () => HostConnZsetKey(connectionPool.Host), connectionId, unixTime, batch: batch, expiry: CacheExpire);
 
         // User: update 
         ExpireIf(connectionPool.UserId.HasValue, () => UserConnKey(connectionPool.UserId.Value), batch: batch);
@@ -406,16 +418,23 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         // Client
         ExpireIf(!string.IsNullOrWhiteSpace(connectionPool.ClientId), () => ClientSetKey(connectionPool.ClientId), batch: batch);
 
-        // [key多:1] Friends 如果启用,这个Key较多
-        HashSetAndRefreshFriendsConns(batch, ownerIds, friendsMap, null);
-
-        // SessionConn
-        RefreshSessionExpire(batch, friendsMap);
-
         // ActiveTime
-        HashSetIf(true, () => ConnHashKey(connectionId), nameof(ConnectionPoolCacheItem.ActiveTime), now.ToRedisValue(), batch: batch);
+        HashSetIf(true, () => ConnHashKey(connectionId), nameof(ConnectionPoolCacheItem.ActiveTime), now.ToRedisValue(), batch: batch, expiry: CacheExpire);
 
         Expire(batch, AllHostZsetKey());
+
+        if (Config.IsEnableExclusiveStatSession || Config.IsEnableExclusiveStatFriends)
+        {
+            var friendsMap = await LoadFriendsMapAsync(ownerIds);
+            // [key多:1] Friends 如果启用,这个Key较多
+            HashSetAndRefreshFriendsConns(batch, ownerIds, friendsMap, null);
+
+            if (Config.IsEnableExclusiveStatSession)
+            {
+                // SessionConn
+                RefreshSessionExpire(batch, friendsMap);
+            }
+        }
 
         batch.Execute();
 
@@ -459,8 +478,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
 
         var ownerIds = connectionPool.ChatObjectIdList ?? [];
 
-        // Get sessions per owner (batched inside)
-        var friendsMap = await LoadFriendsMapAsync(ownerIds);
+        
 
         // OwnerDevice
         RemoveDevice(batch, connectionId, ownerIds);
@@ -477,11 +495,20 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         // ClientId
         SortedRemoveIf(!string.IsNullOrEmpty(connectionPool.ClientId), () => ClientSetKey(connectionPool.ClientId), connectionId, refreshExpire: true, batch: batch);
 
-        // Friends
-        RemoveFriendsConn(batch, ownerIds, friendsMap, connectionId);
+        if(Config.IsEnableExclusiveStatFriends || Config.IsEnableExclusiveStatSession)
+        {
+            // Get sessions per owner (batched inside)
+            var friendsMap = await LoadFriendsMapAsync(ownerIds);
 
-        // SessionConn
-        RemoveSessionConn(batch, connectionId, friendsMap);
+            // Friends
+            RemoveFriendsConn(batch, ownerIds, friendsMap, connectionId);
+
+            if (Config.IsEnableExclusiveStatSession)
+            {
+                // SessionConn
+                RemoveSessionConn(batch, connectionId, friendsMap);
+            }
+        }
 
         // Delete conn hash
         _ = batch.KeyDeleteAsync(ConnHashKey(connectionId));
@@ -538,9 +565,9 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
 
             await DeleteByHostNameAsync(CurrentHosted.Name);
 
-            var batch = Database.CreateBatch();
-            SortedSetIf(true, () => AllHostZsetKey(), CurrentHosted.Name, Clock.Now.ToUnixTimeMilliseconds(), batch: batch);
-            batch.Execute();
+            //var batch = Database.CreateBatch();
+            //SortedSetIf(true, () => AllHostZsetKey(), CurrentHosted.Name, Clock.Now.ToUnixTimeMilliseconds(), batch: batch);
+            //batch.Execute();
 
             return true;
         });
@@ -601,7 +628,7 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
                 OwnerId = ownertId,
                 DeviceId = element.DeviceId,
                 DeviceType = element.DeviceType,
-                LastTime = x.Score.ToLocalDateTime(),
+                LastTime = x.Score.ToUtcDateTime(),
             };
         });
     }
@@ -708,6 +735,13 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         return values.Select(x => x.ToString());
     }
 
+    public async Task<IEnumerable<ConnectionPoolCacheItem>> GetConnectionsByUserAsync(Guid userId, CancellationToken token = default)
+    {
+        var connIdList = await GetConnectionIdsByUserAsync(userId, token);
+        var connMap = (await GetManyAsync(connIdList, token)).ToDictionary();
+        return connMap.Select(x => x.Value);
+    }
+
     public async Task<long> GetCountByUserAsync(Guid userId, CancellationToken token = default)
     {
         return await Database.HashLengthAsync(UserConnKey(userId));
@@ -729,6 +763,88 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
     public async Task<long> GetCountBySessionAsync(Guid sessionId, CancellationToken token = default)
     {
         return await Database.HashLengthAsync(SessionConnHashKey(sessionId));
+    }
+
+    // Decimal strings preserve Int64 owner IDs without Lua double precision loss.
+    private const string AddTransactionalSessionScript = @"
+local existing = redis.call('HGET', KEYS[1], ARGV[1]) or '[]'
+if not string.match(existing, '^%s*%[[%d,%-%s]*%]%s*$') then return redis.error_reply('Invalid session connection owner list') end
+local values, present, added = {}, {}, {}
+for value in string.gmatch(existing, '%-?%d+') do
+    if not present[value] then present[value] = true; values[#values+1] = value end
+end
+if redis.call('EXISTS', KEYS[2]) == 1 then return 0 end
+for i=4,#ARGV do
+    local value = ARGV[i]
+    if not present[value] then present[value] = true; values[#values+1] = value; added[#added+1] = value end
+end
+redis.call('SET', KEYS[2], table.concat(added, ','), 'EX', ARGV[3])
+if #added > 0 then
+    redis.call('HSET', KEYS[1], ARGV[1], '[' .. table.concat(values, ',') .. ']')
+    if tonumber(ARGV[2]) > 0 then redis.call('EXPIRE', KEYS[1], ARGV[2]) end
+end
+return #added";
+
+    private const string RollbackTransactionalSessionScript = @"
+local added = redis.call('GET', KEYS[2])
+if not added then return 0 end
+local existing = redis.call('HGET', KEYS[1], ARGV[1])
+if existing then
+    if not string.match(existing, '^%s*%[[%d,%-%s]*%]%s*$') then return redis.error_reply('Invalid session connection owner list') end
+    local remove, remaining = {}, {}
+    for value in string.gmatch(added, '%-?%d+') do remove[value] = true end
+    for value in string.gmatch(existing, '%-?%d+') do if not remove[value] then remaining[#remaining+1] = value end end
+    if #remaining == 0 then redis.call('HDEL', KEYS[1], ARGV[1])
+    else redis.call('HSET', KEYS[1], ARGV[1], '[' .. table.concat(remaining, ',') .. ']') end
+end
+redis.call('DEL', KEYS[2])
+return 1";
+
+    public async Task AddSessionInTransactionAsync(List<(Guid SessionId, long OwnerId)> ownerSessions, Volo.Abp.Uow.IUnitOfWork uow)
+    {
+        ArgumentNullException.ThrowIfNull(ownerSessions);
+        if (uow?.Options.IsTransactional != true)
+            throw new InvalidOperationException("Transactional session connection updates require a SQL transaction.");
+        if (ownerSessions.Count == 0) return;
+        var devices = await GetDevicesAsync(ownerSessions.Select(x => x.OwnerId).Distinct().ToList());
+        var plans = ownerSessions.Where(x => devices.ContainsKey(x.OwnerId))
+            .SelectMany(x => devices[x.OwnerId].Select(d => (x.SessionId, x.OwnerId, d.ConnectionId)))
+            .GroupBy(x => (x.SessionId, x.ConnectionId))
+            .Select(g => (Key: SessionConnHashKey(g.Key.SessionId), Connection: g.Key.ConnectionId,
+                Owners: g.Select(x => x.OwnerId).Distinct().ToArray(),
+                Marker: (RedisKey)$"{Prefix}RoomPending:{uow.Id:N}:{Guid.NewGuid():N}"))
+            .ToList();
+        if (plans.Count == 0) return;
+        var database = Database;
+        uow.Failed += (_, _) =>
+        {
+            if (uow.IsCompleted) return;
+            try
+            {
+                Task.WhenAll(plans.Select(p => database.ScriptEvaluateAsync(RollbackTransactionalSessionScript,
+                    [p.Key, p.Marker], [p.Connection]))).GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to roll back room connection pool updates for unit of work {UnitOfWorkId}", uow.Id);
+            }
+        };
+        uow.OnCompleted(async () =>
+        {
+            try { await database.KeyDeleteAsync(plans.Select(p => p.Marker).ToArray()); }
+            catch (Exception ex) { Logger.LogWarning(ex, "Failed to remove committed room connection markers for unit of work {UnitOfWorkId}", uow.Id); }
+        });
+        var expiry = Math.Max(1, (long)(CacheExpire?.TotalSeconds ?? 300));
+        var markerExpiry = Math.Max(expiry, 86400);
+        var batch = database.CreateBatch();
+        var writes = plans.Select(p =>
+        {
+            var args = new List<RedisValue> { p.Connection, expiry, markerExpiry };
+            args.AddRange(p.Owners.Select(x => (RedisValue)x));
+            return batch.ScriptEvaluateAsync(AddTransactionalSessionScript, [p.Key, p.Marker], args.ToArray());
+        }).ToArray();
+        batch.Execute();
+        await Task.WhenAll(writes);
     }
 
     public async Task AddSessionAsync(List<(Guid SessionId, long OwnerId)> ownerSessions)
@@ -759,11 +875,11 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
             );
 
         var batch = Database.CreateBatch();
+        var writes = new List<Task>();
 
         foreach (var (sessionId, units) in sessionDict)
         {
             var sessionConnKey = SessionConnHashKey(sessionId);
-            Expire(batch, sessionConnKey);
 
             // 1. 当前 session 关联的 ownerIds
             var sessionOwnerIds = units.Select(x => x.OwnerId).Distinct().ToHashSet();
@@ -781,18 +897,21 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
 
                 // 3. 写入到 Redis
                 var ownerIdStr = ToJson(relatedOwnerIds);
-                _ = batch.HashSetAsync(sessionConnKey, connectionId, ownerIdStr);
+                writes.Add(batch.HashSetAsync(sessionConnKey, connectionId, ownerIdStr));
 
                 Logger.LogInformation($"HashSetAsync: sessionConnKey={sessionConnKey}, connectionId={connectionId}, ownerIdStr={ownerIdStr}");
             }
+            if (CacheExpire.HasValue)
+                writes.Add(batch.KeyExpireAsync(sessionConnKey, CacheExpire));
         }
         batch.Execute();
+        await Task.WhenAll(writes);
     }
 
     public async Task<Dictionary<string, DateTime?>> GetAllHostsAsync()
     {
         var allHost = await Database.SortedSetRangeByRankWithScoresAsync(AllHostZsetKey(), order: Order.Ascending);
-        return allHost.ToDictionary(x => x.Element.ToString(), x => x.Score.ToLocalDateTime());
+        return allHost.ToDictionary(x => x.Element.ToString(), x => x.Score.ToUtcDateTime());
     }
 
     public async Task<long> GetTotalCountAsync()
@@ -890,9 +1009,9 @@ public class OnlineManager : RedisService, IOnlineManager//, IHostedService
         // ownerId -> friends
         var friendsMap = await LoadFriendsMapAsync(ownerIds);
 
-        // 所有朋友 ownerId
+        // 所有朋友 这里应该 DestinationId 而不是 OwnerId
         var friendIds = friendsMap
-            .SelectMany(x => x.Value.Select(d => d.OwnerId))
+            .SelectMany(x => x.Value.Select(d => d.DestinationId))
             .Distinct()
             .ToList();
 

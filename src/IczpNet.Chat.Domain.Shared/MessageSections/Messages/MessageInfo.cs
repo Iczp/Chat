@@ -1,7 +1,6 @@
 ﻿using IczpNet.Chat.Commands;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.SessionUnits;
-using IczpNet.Pusher.Commands;
 using System;
 using Volo.Abp.Data;
 using Volo.Abp.ObjectExtending;
@@ -31,15 +30,27 @@ public class MessageInfo<T> : MessageInfo
 [Command(CommandConsts.Chat)]
 public class MessageInfo : ExtensibleObject, IHasExtraProperties
 {
+    public virtual long SyncVersion { get; set; }
+
+    [System.Text.Json.Serialization.JsonNumberHandling(System.Text.Json.Serialization.JsonNumberHandling.WriteAsString | System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString)]
+    public virtual long? MessageChangeId { get; set; }
     /// <summary>
     /// 消息Id
     /// </summary>
     public virtual long Id { get; set; }
 
     /// <summary>
+    /// 客户端消息Id
+    /// </summary>
+    public virtual string ClientMessageId { get; set; }
+
+    /// <summary>
     /// SessionId
     /// </summary>
     public virtual Guid SessionId { get; set; }
+
+    /// <summary>当前消息在会话内的序号。</summary>
+    public virtual long SessionSeq { get; set; }
 
     /// <summary>
     /// 发送人

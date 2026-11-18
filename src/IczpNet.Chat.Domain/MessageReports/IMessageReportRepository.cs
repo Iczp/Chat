@@ -9,6 +9,8 @@ public interface IMessageReportRepository
 {
     Task IncrementAsync(Guid sessionId, MessageTypes messageType, string dateBucketFormat = "yyyyMMdd");
 
+    Task IncrementAsync(Guid sessionId, MessageTypes messageType, string dateBucketFormat, DateTime occurredAt);
+
 
     Task FlushToDbAsync(DataTable dataTable);
 

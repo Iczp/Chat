@@ -4,6 +4,12 @@ namespace IczpNet.Chat.MessageSections.Messages.Dtos;
 
 public class MessageFastDto : MessageQuoteFastDto, IEntityDto<long>
 {
+    [System.Text.Json.Serialization.JsonNumberHandling(System.Text.Json.Serialization.JsonNumberHandling.WriteAsString)]
+    public long? MessageChangeId { get; set; }
+
+    public string IdText => Id.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    public string SessionSeqText => SessionSeq.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
     ///// <summary>
     ///// 朋友Id
     ///// </summary>

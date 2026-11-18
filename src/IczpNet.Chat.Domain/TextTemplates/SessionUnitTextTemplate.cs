@@ -38,6 +38,13 @@ public class SessionUnitTextTemplate : TextTemplate
         SetData();
     }
 
+    public SessionUnitTextTemplate(SessionUnitCacheItem sessionUnit)
+    {
+        SessionUnitIds = [sessionUnit.Id];
+        ChatObjectName = !sessionUnit.MemberName.IsNullOrWhiteSpace() ? sessionUnit.MemberName : sessionUnit.OwnerName;
+        SetData();
+    }
+
     private void SetData()
     {
         Data[nameof(SessionUnitIds)] = SessionUnitIds.JoinAsString(",");

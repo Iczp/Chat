@@ -45,5 +45,5 @@ public class UserLocationCacheItem
     /// <summary>
     /// 最近活动时间
     /// </summary>
-    public virtual DateTime ActiveTime { get; set; } = DateTime.Now;
+    public virtual DateTime ActiveTime { get; set; } = DateTime.UtcNow;
 }

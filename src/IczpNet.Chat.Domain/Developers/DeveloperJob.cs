@@ -1,16 +1,20 @@
-﻿using IczpNet.Chat.ChatObjects;
+﻿
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionUnits;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Threading.Tasks;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Json;
+using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.Developers;
@@ -33,6 +37,11 @@ public class DeveloperJob(
     protected IDeveloperManager DeveloperManager { get; } = developerManager;
     protected IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
     protected IMessageRepository MessageRepository { get; } = messageRepository;
+    protected Type ObjectMapperContext { get; set; }
+    protected IObjectMapper ObjectMapper => LazyServiceProvider.LazyGetService<IObjectMapper>(provider =>
+        ObjectMapperContext == null
+            ? provider.GetRequiredService<IObjectMapper>()
+            : (IObjectMapper)provider.GetRequiredService(typeof(IObjectMapper<>).MakeGenericType(ObjectMapperContext)));
 
     [UnitOfWork]
     public async Task ExecuteAsync(DeveloperJobArg args)
@@ -52,24 +61,20 @@ public class DeveloperJob(
         if (receiverCode == "Gemini")
         {
 
-
         }
 
         if (message.MessageType == MessageTypes.Text)
         {
 
-
         }
 
-
-        var replySessionUnit = await SessionUnitManager.FindAsync(message.ReceiverId.Value, message.SenderId.Value);
+        var replySessionUnit = await SessionUnitManager.FindCacheAsync(message.ReceiverId.Value, message.SenderId.Value);
 
         if (replySessionUnit == null)
         {
             Logger.LogInformation($"replySessionUnit is null,[{message.ReceiverId},{message.SenderId}]");
             return;
         }
-
         await MessageSender.SendHtmlAsync(replySessionUnit, new MessageInput<HtmlContentInfo>()
         {
             QuoteMessageId = message.Id,

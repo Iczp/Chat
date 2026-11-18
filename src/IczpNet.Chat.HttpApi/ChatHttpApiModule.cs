@@ -1,4 +1,6 @@
 using IczpNet.Chat.Localization;
+using Microsoft.AspNetCore.SignalR;
+using IczpNet.Chat.ChatHubs;
 using Localization.Resources.AbpUi;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.AspNetCore.Mvc;
@@ -12,10 +14,11 @@ namespace IczpNet.Chat;
 
 [DependsOn(
     typeof(ChatApplicationContractsModule),
+    typeof(IczpNet.OpenIddict.OpenIddictAspNetCoreModule),
     typeof(AbpAspNetCoreMvcModule))]
 //[DependsOn(typeof(AbpCommonsHttpApiModule))]
 [DependsOn(typeof(AbpIdentityHttpApiModule))]
-[DependsOn(typeof(AbpImagingImageSharpModule))]
+[DependsOn(typeof(IczpNet.AbpCommons.AbpCommonsDomainModule))]
 [DependsOn(typeof(AbpAspNetCoreSignalRModule))]
 public class ChatHttpApiModule : AbpModule
 {
@@ -29,6 +32,8 @@ public class ChatHttpApiModule : AbpModule
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        context.Services.AddTransient<DeviceSessionHubFilter>();
+        Configure<HubOptions<ChatHub>>(options => options.AddFilter<DeviceSessionHubFilter>());
         Configure<AbpLocalizationOptions>(options =>
         {
             options.Resources

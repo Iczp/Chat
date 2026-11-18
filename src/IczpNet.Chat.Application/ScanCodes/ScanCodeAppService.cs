@@ -30,9 +30,9 @@ public class ScanCodeAppService(
         ;
     }
 
-    public async Task<ScanCodeResultDto> ScanAsync(string type, string content)
+    public async Task<ScanCodeResultDto> ScanAsync(string type, string content, long? currentChatObjectId = null)
     {
-        var entity = await ScanCodeManager.ScanCodeAsync(type, content);
+        var entity = await ScanCodeManager.ScanCodeAsync(type, content, currentChatObjectId);
 
         var output = ObjectMapper.Map<ScanCode, ScanCodeResultDto>(entity);
 

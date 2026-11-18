@@ -20,13 +20,13 @@ public class SessionUnitMessageSpecification : Specification<Message>
     public override Expression<Func<Message, bool>> ToExpression()
     {
         //d.SenderId != x.SessionUnitId &&
-        //    (x.ReadedMessageId == null || d.Id > x.ReadedMessageId) &&
+        //    (x.ReadMessageId == null || d.Id > x.ReadMessageId) &&
         //    (!x.HistoryFristTime.HasValue || d.CreationTime > x.HistoryFristTime) &&
         //    (!x.HistoryLastTime.HasValue || d.CreationTime < x.HistoryLastTime) &&
         //    (!x.ClearTime.HasValue || d.CreationTime > x.ClearTime))
         return x =>
             //!x.IsRollbacked &&
-            (SessionUnit.Setting.ReadedMessageId == null || x.Id > SessionUnit.Setting.ReadedMessageId) &&
+            (SessionUnit.Setting.ReadMessageId == null || x.Id > SessionUnit.Setting.ReadMessageId) &&
             x.SenderId != SessionUnit.OwnerId &&
             (!SessionUnit.Setting.HistoryFristTime.HasValue || x.CreationTime > SessionUnit.Setting.HistoryFristTime) &&
             (!SessionUnit.Setting.HistoryLastTime.HasValue || x.CreationTime < SessionUnit.Setting.HistoryLastTime) &&

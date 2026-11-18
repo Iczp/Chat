@@ -1,5 +1,5 @@
-﻿using AutoMapper.Internal;
-using IczpNet.AbpCommons.Extensions;
+﻿using IczpNet.AbpCommons.Extensions;
+using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.RedisMapping;
@@ -11,15 +11,19 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reactive;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
+using Volo.Abp.BackgroundJobs;
+using Volo.Abp.Json;
 
 namespace IczpNet.Chat.SessionUnits;
 
 public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 {
     protected IOptions<SessionUnitOptions> SessionUnitOptions => LazyServiceProvider.LazyGetRequiredService<IOptions<SessionUnitOptions>>();
+    protected IJsonSerializer JsonSerializer => LazyServiceProvider.LazyGetRequiredService<IJsonSerializer>();
 
     protected SessionUnitOptions Config => SessionUnitOptions.Value;
 
@@ -27,7 +31,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
     private delegate Task SessionMemberLoader(Guid sessionId, IBatch batch, MemberMaps maps);
 
-    protected string Prefix => $"{Options.Value.KeyPrefix}SessionUnits:";
+    protected string SessionUnitsPrefix => $"{Options.Value.KeyPrefix}SessionUnits:";
+    protected string MessagesPrefix => $"{Options.Value.KeyPrefix}Messages:";
 
     private const string UnitKeyPattern = "Units:";
 
@@ -36,7 +41,15 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// </summary>
     /// <param name="unitId"></param>
     /// <returns></returns>
-    private RedisKey UnitHashKey(Guid unitId) => $"{Prefix}{UnitKeyPattern}{unitId}";
+    private RedisKey UnitHashKey(Guid unitId) => $"{SessionUnitsPrefix}{UnitKeyPattern}{unitId}";
+
+    /// <summary>
+    /// 变更的Units,用于同步到数据库
+    /// </summary>
+    /// <returns></returns>
+    private RedisKey DirtySetKey() => $"{SessionUnitsPrefix}Dirty";
+
+    private RedisKey DirtyProcessingRegistryKey() => $"{SessionUnitsPrefix}Dirty:ProcessingKeys";
 
     /// <summary>
     /// TryParse UnitId
@@ -50,10 +63,10 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         unitId = Guid.Empty;
 
-        if (!keyStr.StartsWith(Prefix + UnitKeyPattern))
+        if (!keyStr.StartsWith(SessionUnitsPrefix + UnitKeyPattern))
             return false;
 
-        var guidPart = keyStr[(Prefix.Length + UnitKeyPattern.Length)..];
+        var guidPart = keyStr[(SessionUnitsPrefix.Length + UnitKeyPattern.Length)..];
 
         return Guid.TryParse(guidPart, out unitId);
     }
@@ -63,56 +76,63 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    private RedisKey SessionMembersSetKey(Guid sessionId) => $"{Prefix}Sessions:Members:{sessionId}";
+    private RedisKey SessionMembersSetKey(Guid sessionId) => $"{SessionUnitsPrefix}Sessions:Members:{sessionId}";
 
     /// <summary>
     /// 置顶的会话单元
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    private RedisKey SessionPinnedSortingHashKey(Guid sessionId) => $"{Prefix}Sessions:PinnedSorting:{sessionId}";
+    private RedisKey SessionPinnedSortingHashKey(Guid sessionId) => $"{SessionUnitsPrefix}Sessions:PinnedSorting:{sessionId}";
 
     /// <summary>
     /// 静默会话单元
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    private RedisKey SessionImmersedHashKey(Guid sessionId) => $"{Prefix}Sessions:Immersed:{sessionId}";
+    private RedisKey SessionImmersedHashKey(Guid sessionId) => $"{SessionUnitsPrefix}Sessions:Immersed:{sessionId}";
 
     /// <summary>
     /// 创建人
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    private RedisKey SessionCreatorHashKey(Guid sessionId) => $"{Prefix}Sessions:Creator:{sessionId}";
+    private RedisKey SessionCreatorHashKey(Guid sessionId) => $"{SessionUnitsPrefix}Sessions:Creator:{sessionId}";
 
     /// <summary>
     /// 非公开会话单元
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    private RedisKey SessionPrivateHashKey(Guid sessionId) => $"{Prefix}Sessions:Private:{sessionId}";
+    private RedisKey SessionPrivateHashKey(Guid sessionId) => $"{SessionUnitsPrefix}Sessions:Private:{sessionId}";
+
+    /// <summary>
+    /// 成员索引
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    private RedisKey SessionIndexedHashKey(Guid sessionId) => $"{SessionUnitsPrefix}Sessions:Indexed:{sessionId}";
 
     /// <summary>
     /// 固定的会话单元
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    private RedisKey SessionStaticHashKey(Guid sessionId) => $"{Prefix}Sessions:Static:{sessionId}";
+    private RedisKey SessionStaticHashKey(Guid sessionId) => $"{SessionUnitsPrefix}Sessions:Static:{sessionId}";
 
     /// <summary>
     /// 创建人
     /// </summary>
     /// <param name="sessionId"></param>
     /// <returns></returns>
-    private RedisKey SessionBoxHashKey(Guid sessionId) => $"{Prefix}Sessions:Box:{sessionId}";
+    private RedisKey SessionBoxHashKey(Guid sessionId) => $"{SessionUnitsPrefix}Sessions:Box:{sessionId}";
 
     /// <summary>
     /// 好友会话单元
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerFriendsSetKey(long ownerId) => $"{Prefix}Owners:Friends:{ownerId}";
+    private RedisKey OwnerFriendsSetKey(long ownerId) => $"{SessionUnitsPrefix}Owners:Friends:{ownerId}";
 
     /// <summary>
     /// 好友分类
@@ -120,56 +140,56 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// <param name="friendType"></param>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerFriendsMapZsetKey(long ownerId, ChatObjectTypeEnums? friendType) => $"{Prefix}Owners:FriendsMap:{friendType}:{ownerId}";
+    private RedisKey OwnerFriendsMapZsetKey(long ownerId, ChatObjectTypeEnums? friendType) => $"{SessionUnitsPrefix}Owners:FriendsMap:{friendType}:{ownerId}";
 
     /// <summary>
     /// 置顶的会话单元
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerPinnedBadgeSetKey(long ownerId) => $"{Prefix}Owners:PinnedBadge:{ownerId}";
+    private RedisKey OwnerPinnedBadgeSetKey(long ownerId) => $"{SessionUnitsPrefix}Owners:PinnedBadge:{ownerId}";
 
     /// <summary>
     /// 有未读消息的会话单元
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerHasBadgeSetKey(long ownerId) => $"{Prefix}Owners:HasBadge:{ownerId}";
+    private RedisKey OwnerHasBadgeSetKey(long ownerId) => $"{SessionUnitsPrefix}Owners:HasBadge:{ownerId}";
 
     /// <summary>
     /// 静默会话单元
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerImmersedSetKey(long ownerId) => $"{Prefix}Owners:Immersed:{ownerId}";
+    private RedisKey OwnerImmersedSetKey(long ownerId) => $"{SessionUnitsPrefix}Owners:Immersed:{ownerId}";
 
     /// <summary>
     /// 关注会话单元
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerFollowingSetKey(long ownerId) => $"{Prefix}Owners:Following:{ownerId}";
+    private RedisKey OwnerFollowingSetKey(long ownerId) => $"{SessionUnitsPrefix}Owners:Following:{ownerId}";
 
     /// <summary>
     /// @所有人 会话单元
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerRemindAllSetKey(long ownerId) => $"{Prefix}Owners:RemindAll:{ownerId}";
+    private RedisKey OwnerRemindAllSetKey(long ownerId) => $"{SessionUnitsPrefix}Owners:RemindAll:{ownerId}";
 
     /// <summary>
     /// @所有人 会话单元
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerRemindMeSetKey(long ownerId) => $"{Prefix}Owners:RemindMe:{ownerId}";
+    private RedisKey OwnerRemindMeSetKey(long ownerId) => $"{SessionUnitsPrefix}Owners:RemindMe:{ownerId}";
 
     /// <summary>
     /// 创建人 会话单元
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerCreatorSetKey(long ownerId) => $"{Prefix}Owners:Creator:{ownerId}";
+    private RedisKey OwnerCreatorSetKey(long ownerId) => $"{SessionUnitsPrefix}Owners:Creator:{ownerId}";
 
     /// <summary>
     /// 消息盒子
@@ -177,28 +197,41 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// <param name="ownerId"></param>
     /// <param name="boxId"></param>
     /// <returns></returns>
-    private RedisKey OwnerBoxFriendsSetKey(long ownerId, Guid boxId) => $"{Prefix}Owners:BoxFriends:{ownerId}:{boxId}";
+    private RedisKey OwnerBoxFriendsSetKey(long ownerId, Guid boxId) => $"{SessionUnitsPrefix}Owners:BoxFriends:{ownerId}:{boxId}";
 
     /// <summary>
     /// 消息盒子角标统计
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerBoxBadgeZsetKey(long ownerId) => $"{Prefix}Owners:BoxBadge:{ownerId}";
+    private RedisKey OwnerBoxBadgeZsetKey(long ownerId) => $"{SessionUnitsPrefix}Owners:BoxBadge:{ownerId}";
 
     /// <summary>
     /// 消息统计
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey OwnerStatisticHashKey(long ownerId) => $"{Prefix}Owners:Statistic:{ownerId}";
+    private RedisKey OwnerStatisticHashKey(long ownerId) => $"{SessionUnitsPrefix}Owners:Statistic:{ownerId}";
 
     /// <summary>
     /// 消息统计(分类)
     /// </summary>
     /// <param name="ownerId"></param>
     /// <returns></returns>
-    private RedisKey StatisticMapHashKey(long ownerId) => $"{Prefix}Owners:StatisticMap:{ownerId}";
+    private RedisKey StatisticMapHashKey(long ownerId) => $"{SessionUnitsPrefix}Owners:StatisticMap:{ownerId}";
+
+    /// <summary>
+    /// 好友索引
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    private RedisKey OwnersIndexedHashKey(long ownerId) => $"{SessionUnitsPrefix}Owners:Indexed:{ownerId}";
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
+    private RedisKey SessionMessageSetKey(Guid sessionId) => $"{MessagesPrefix}SessionMessage:{sessionId}";
 
     /// <summary>
     /// RedisKey： Element
@@ -218,6 +251,25 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return FriendScore.Create(sorting, ticks);
     }
 
+    public static string GetIndexKey(string str)
+    {
+        //var str = unit.RenameSpellingAbbreviation ?? unit.DestinationSpellingAbbreviation;
+
+        if (string.IsNullOrWhiteSpace(str))
+        {
+            return "#";
+        }
+
+        var first = char.ToUpper(str[0]);
+
+        if (first >= 'A' && first <= 'Z')
+        {
+            return first.ToString();
+        }
+
+        return "#";
+    }
+
     #region Field names
     //private static string F_Id => nameof(SessionUnitCacheItem.Id);
     //private static string F_SessionId => nameof(SessionUnitCacheItem.SessionId);
@@ -229,7 +281,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     //private static string F_IsPublic => nameof(SessionUnitCacheItem.IsPublic);
     //private static string F_IsVisible => nameof(SessionUnitCacheItem.IsVisible);
     //private static string F_IsEnabled => nameof(SessionUnitCacheItem.IsEnabled);
-    //private static string F_ReadedMessageId => nameof(SessionUnitCacheItem.ReadedMessageId);
+    //private static string F_ReadMessageId => nameof(SessionUnitCacheItem.ReadMessageId);
     private static string F_LastMessageId => nameof(SessionUnitCacheItem.LastMessageId);
     private static string F_LastSendMessageId => nameof(SessionUnitCacheItem.LastSendMessageId);
     private static string F_LastSendTime => nameof(SessionUnitCacheItem.LastSendTime);
@@ -253,6 +305,82 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
     #endregion
 
+    // Message-created events can be delivered concurrently by separate hosts.
+    // Keep the unit hash and every list index on the same message version so a
+    // delayed event cannot leave a newer score paired with older hash fields.
+    private const string SetLastMessageStateScript = @"
+local currentLastMessageId = redis.call('HGET', KEYS[1], ARGV[2])
+if currentLastMessageId and tonumber(currentLastMessageId) > tonumber(ARGV[4]) then
+    return 0
+end
+
+local sorting = tonumber(redis.call('HGET', KEYS[1], ARGV[6]))
+if not sorting then
+    sorting = tonumber(ARGV[7])
+end
+local score = sorting * tonumber(ARGV[8]) + tonumber(ARGV[5])
+
+-- Redis 3.2 only accepts one field/value pair per HSET command.
+redis.call('HSET', KEYS[1], ARGV[2], ARGV[4])
+redis.call('HSET', KEYS[1], ARGV[3], ARGV[5])
+redis.call('ZADD', KEYS[2], score, ARGV[1])
+redis.call('ZADD', KEYS[3], ARGV[4], ARGV[1])
+
+if #KEYS > 3 then
+    redis.call('ZADD', KEYS[4], score, ARGV[1])
+end
+
+return 1";
+
+    private static void SetLastMessageState(
+        IBatch batch,
+        RedisKey unitKey,
+        RedisKey ownerFriendsSetKey,
+        RedisKey dirtySetKey,
+        RedisKey? ownerBoxFriendsSetKey,
+        SessionUnitElement element,
+        long lastMessageId,
+        long ticks,
+        long sorting)
+    {
+        var keys = ownerBoxFriendsSetKey.HasValue
+            ? new RedisKey[] { unitKey, ownerFriendsSetKey, dirtySetKey, ownerBoxFriendsSetKey.Value }
+            : new RedisKey[] { unitKey, ownerFriendsSetKey, dirtySetKey };
+
+        _ = batch.ScriptEvaluateAsync(
+            SetLastMessageStateScript,
+            keys,
+            [element, F_LastMessageId, F_Ticks, lastMessageId, ticks, F_Sorting, sorting, FriendScore.Multiplier]);
+    }
+
+    private const string SetPinningScript = @"
+local oldScore = redis.call('ZSCORE', KEYS[2], ARGV[1])
+if not oldScore then
+    return 0
+end
+
+local multiplier = tonumber(ARGV[4])
+local ticks = tonumber(oldScore) - math.floor(tonumber(oldScore) / multiplier) * multiplier
+local score = tonumber(ARGV[3]) * multiplier + ticks
+
+if redis.call('EXISTS', KEYS[1]) == 1 then
+    redis.call('HSET', KEYS[1], ARGV[2], ARGV[3])
+end
+
+if tonumber(ARGV[3]) == 0 then
+    redis.call('ZREM', KEYS[3], ARGV[1])
+    redis.call('HDEL', KEYS[4], ARGV[1])
+else
+    redis.call('ZADD', KEYS[3], ARGV[5], ARGV[1])
+    redis.call('HSET', KEYS[4], ARGV[1], ARGV[3])
+end
+
+redis.call('ZADD', KEYS[2], score, ARGV[1])
+if #KEYS > 4 then
+    redis.call('ZADD', KEYS[5], score, ARGV[1])
+end
+return 1";
+
     #region Initialize / Ensure helpers
 
 
@@ -266,7 +394,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         var ownerStatisticSetKey = OwnerStatisticHashKey(ownerId);
         var entries = RedisMapper.ToHashEntries(statistic);
         _ = batch.HashSetAsync(ownerStatisticSetKey, entries);
-        _ = batch.KeyExpireAsync(ownerStatisticSetKey, CacheExpire);
+        Expire(batch, ownerStatisticSetKey, CacheExpire);
     }
 
     private void SetOwnerStatisticTypedMap(IBatch batch, long ownerId, Dictionary<ChatObjectTypeEnums, long> statTypedMap)
@@ -277,7 +405,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         {
             _ = batch.HashSetAsync(statisticTypedSetKey, item.Key.ToString(), item.Value);
         }
-        _ = batch.KeyExpireAsync(statisticTypedSetKey, CacheExpire);
+        Expire(batch, statisticTypedSetKey, CacheExpire);
     }
 
     private void SetOwnerBoxBadge(IBatch batch, long ownerId, Dictionary<Guid, long> statBoxMap)
@@ -288,60 +416,78 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             var boxId = item.Key;
             _ = batch.SortedSetAddAsync(ownerBoxBadgeZsetKey, boxId.ToString(), statBoxMap.GetValueOrDefault(boxId));
         }
-        _ = batch.KeyExpireAsync(ownerBoxBadgeZsetKey, CacheExpire);
+        Expire(batch, ownerBoxBadgeZsetKey, CacheExpire);
     }
 
 
     private void SetOwnerPinning(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
-        => SortedSetIf(unit.Sorting > 0, () => OwnerPinnedBadgeSetKey(unit.OwnerId), element, unit.PublicBadge, batch: batch);
+        => SortedSetIf(unit.Sorting > 0, () => OwnerPinnedBadgeSetKey(unit.OwnerId), element, unit.PublicBadge, batch: batch, expiry: CacheExpire);
 
     private void SetOwnerHasBadge(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
-        => SortedSetIf(unit.PublicBadge > 0, () => OwnerHasBadgeSetKey(unit.OwnerId), element, unit.PublicBadge, batch: batch);
+        => SortedSetIf(unit.PublicBadge > 0, () => OwnerHasBadgeSetKey(unit.OwnerId), element, unit.PublicBadge, batch: batch, expiry: CacheExpire);
 
     private void SetOwnerImmersed(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
-        => SortedSetIf(unit.IsImmersed, () => OwnerImmersedSetKey(unit.OwnerId), element, unit.PublicBadge, batch: batch);
+        => SortedSetIf(unit.IsImmersed, () => OwnerImmersedSetKey(unit.OwnerId), element, unit.PublicBadge, batch: batch, expiry: CacheExpire);
 
     private void SetOwnerFollowing(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
-        => SortedSetIf(unit.FollowingCount > 0, () => OwnerFollowingSetKey(unit.OwnerId), element, unit.FollowingCount, batch: batch);
+        => SortedSetIf(unit.FollowingCount > 0, () => OwnerFollowingSetKey(unit.OwnerId), element, unit.FollowingCount, batch: batch, expiry: CacheExpire);
 
     private void SetOwnerRemindAll(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
-        => SortedSetIf(unit.RemindAllCount > 0, () => OwnerRemindAllSetKey(unit.OwnerId), element, unit.RemindAllCount, batch: batch);
+        => SortedSetIf(unit.RemindAllCount > 0, () => OwnerRemindAllSetKey(unit.OwnerId), element, unit.RemindAllCount, batch: batch, expiry: CacheExpire);
 
     private void SetOwnerRemindMe(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
-        => SortedSetIf(unit.RemindMeCount > 0, () => OwnerRemindMeSetKey(unit.OwnerId), element, unit.RemindMeCount, batch: batch);
+        => SortedSetIf(unit.RemindMeCount > 0, () => OwnerRemindMeSetKey(unit.OwnerId), element, unit.RemindMeCount, batch: batch, expiry: CacheExpire);
 
     private void SetOwnerCreator(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
-        => SortedSetIf(unit.IsCreator, () => OwnerCreatorSetKey(unit.OwnerId), element, unit.PublicBadge, batch: batch);
+        => SortedSetIf(unit.IsCreator, () => OwnerCreatorSetKey(unit.OwnerId), element, unit.PublicBadge, batch: batch, expiry: CacheExpire);
 
     private void SetOwnerBoxFriends(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit, double score)
-         => SortedSetIf(unit.BoxId.HasValue, () => OwnerBoxFriendsSetKey(unit.OwnerId, unit.BoxId.Value), element, score, batch: batch);
+         => SortedSetIf(unit.BoxId.HasValue, () => OwnerBoxFriendsSetKey(unit.OwnerId, unit.BoxId.Value), element, score, batch: batch, expiry: CacheExpire);
 
     private void SetOwnerBoxFriends(IBatch batch, long ownerId, Guid? boxId, SessionUnitElement element, double score)
-         => SortedSetIf(boxId.HasValue, () => OwnerBoxFriendsSetKey(ownerId, boxId.Value), element, score, batch: batch);
+         => SortedSetIf(boxId.HasValue, () => OwnerBoxFriendsSetKey(ownerId, boxId.Value), element, score, batch: batch, expiry: CacheExpire);
 
     private void SetOwnerFriends(IBatch batch, long ownerId, SessionUnitElement element, double score)
-        => SortedSetIf(true, () => OwnerFriendsSetKey(ownerId), element, score, batch: batch);
+        => SortedSetIf(true, () => OwnerFriendsSetKey(ownerId), element, score, batch: batch, expiry: CacheExpire);
 
     private void SetOwnerFriendMap(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit, double score)
-        => SortedSetIf(true, () => OwnerFriendsMapZsetKey(unit.OwnerId, unit.DestinationObjectType), element, score, batch: batch);
+        => SortedSetIf(true, () => OwnerFriendsMapZsetKey(unit.OwnerId, unit.DestinationObjectType), element, score, batch: batch, expiry: CacheExpire);
+
+    private void SetOwnerIndexed(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
+    {
+        var abbr = unit.RenameSpellingAbbreviation ?? unit.DestinationNameSpellingAbbreviation ?? string.Empty;
+        var index = GetIndexKey(abbr);
+        var contact = new ContactValue()
+        {
+            Index = index,
+            Abbr = abbr,
+            Rename = unit.Rename,
+            Name = unit.DestinationName,
+            NameSpelling = unit.RenameSpellingAbbreviation ?? unit.DestinationNameSpelling ?? string.Empty,
+            Portrait = unit.DestinationPortrait,
+            Thumbnail = unit.DestinationThumbnail,
+            Mobile = null,
+        };
+        HashSetIf(true, () => OwnersIndexedHashKey(unit.OwnerId), element, JsonSerializer.Serialize(contact), batch: batch, expiry: null);
+    }
 
     private void SetSessionPinnedSorting(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
-        => HashSetIf(unit.Sorting > 0, () => SessionPinnedSortingHashKey(unit.SessionId.Value), element, unit.Sorting, batch: batch);
+        => HashSetIf(unit.Sorting > 0, () => SessionPinnedSortingHashKey(unit.SessionId.Value), element, unit.Sorting, batch: batch, expiry: CacheExpire);
 
     private void SetSessionImmersed(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
-        => HashSetIf(unit.IsImmersed, () => SessionImmersedHashKey(unit.SessionId.Value), element, unit.IsImmersed, batch: batch);
+        => HashSetIf(unit.IsImmersed, () => SessionImmersedHashKey(unit.SessionId.Value), element, unit.IsImmersed, batch: batch, expiry: CacheExpire);
 
     private void SetSessionCreator(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
-        => HashSetIf(unit.IsCreator, () => SessionImmersedHashKey(unit.SessionId.Value), element, unit.IsCreator, batch: batch);
+        => HashSetIf(unit.IsCreator, () => SessionImmersedHashKey(unit.SessionId.Value), element, unit.IsCreator, batch: batch, expiry: CacheExpire);
 
     private void SetSessionPrivate(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
-        => HashSetIf(!unit.IsPublic, () => SessionPrivateHashKey(unit.SessionId.Value), element, !unit.IsPublic, batch: batch);
+        => HashSetIf(!unit.IsPublic, () => SessionPrivateHashKey(unit.SessionId.Value), element, !unit.IsPublic, batch: batch, expiry: CacheExpire);
 
     private void SetSessionStatic(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
-        => HashSetIf(unit.IsStatic, () => SessionStaticHashKey(unit.SessionId.Value), element, unit.IsStatic, batch: batch);
+        => HashSetIf(unit.IsStatic, () => SessionStaticHashKey(unit.SessionId.Value), element, unit.IsStatic, batch: batch, expiry: CacheExpire);
 
     private void SetSessionBox(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit)
-        => HashSetIf(unit.BoxId.HasValue, () => SessionBoxHashKey(unit.SessionId.Value), element, unit.BoxId.ToString(), batch: batch);
+        => HashSetIf(unit.BoxId.HasValue, () => SessionBoxHashKey(unit.SessionId.Value), element, unit.BoxId.ToString(), batch: batch, expiry: CacheExpire);
 
 
     private void SetUnit(IBatch batch, SessionUnitCacheItem unit, bool refreshExpire)
@@ -349,10 +495,10 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         var unitKey = UnitHashKey(unit.Id);
         var entries = MapToHashEntries(unit);
         _ = batch.HashSetAsync(unitKey, entries);
-        if (refreshExpire)
-        {
-            _ = batch.KeyExpireAsync(unitKey, CacheExpire);
-        }
+        //if (refreshExpire)
+        //{
+        //    Expire(batch, unitKey, CacheExpire);
+        //}
     }
 
     private string GetFriendTypeKey(FriendViews friendView, long ownerId, Guid? boxId = null)
@@ -458,7 +604,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             // set session relations
             SetSessionRelations(batch, sessionMembersSetKey, unit);
         }
-        _ = batch.KeyExpireAsync(sessionMembersSetKey, CacheExpire);
+        Expire(batch, sessionMembersSetKey, CacheExpire);
     }
 
     private void SetSessionRelations(IBatch batch, RedisKey sessionMembersSetKey, SessionUnitCacheItem unit)
@@ -705,7 +851,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
                     DestinationObjectType = element.DestinationObjectType,
                     Id = element.SessionUnitId,
                     CreationTime = score.CreationTime,
-                    IsCreator = score.IsCreator
+                    IsCreator = score.IsCreator,
+                    Score = score.Value,
                 };
             })
            ;
@@ -737,7 +884,13 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
     #region GetListByOwnerIdAsync (DB initial values + Redis merge)
 
-
+    /// <summary>
+    /// 角标累积统计
+    /// </summary>
+    /// <param name="unit"></param>
+    /// <param name="stat"></param>
+    /// <param name="statTypedMap"></param>
+    /// <param name="statBoxMap"></param>
     private static void AccumulateStatistics(SessionUnitCacheItem unit, SessionUnitStatistic stat, Dictionary<ChatObjectTypeEnums, long> statTypedMap, Dictionary<Guid, long> statBoxMap)
     {
         //Pinned
@@ -795,18 +948,29 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             _ = batch.SortedSetAddAsync(ownerFriendsSetKey, element, score);
 
             // 刷新所有UnitKey过期时间
-            _ = batch.KeyExpireAsync(UnitHashKey(unit.Id), CacheExpire);
+            //Expire(batch, UnitHashKey(unit.Id), CacheExpire);
 
+            // 设置所有者关系
             SetOwnerRelations(batch, element, unit, score);
 
+            // 设置索引
+            SetOwnerIndexed(batch, element, unit);
+
+            //累积统计角标
             AccumulateStatistics(unit, stat, statTypedMap, statBoxMap);
         }
-
-        _ = batch.KeyExpireAsync(ownerFriendsSetKey, CacheExpire);
+        Expire(batch, ownerFriendsSetKey, CacheExpire);
+        //Expire(batch, OwnersIndexedHashKey(ownerId), CacheExpire);
+        // Expire(batch,ownerFriendsSetKey, CacheExpire);
 
         return new(stat, statTypedMap, statBoxMap);
     }
-
+    /// <summary>
+    /// 所有者统计
+    /// </summary>
+    /// <param name="batch"></param>
+    /// <param name="ownerId"></param>
+    /// <param name="context"></param>
     private void SetOwnerStatistics(IBatch batch, long ownerId, StatisticContext context)
     {
         // BoxBadge
@@ -817,6 +981,13 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         SetOwnerStatisticTypedMap(batch, ownerId, context.StatisticTypedMap);
     }
 
+    /// <summary>
+    /// 设置所有者关系
+    /// </summary>
+    /// <param name="batch"></param>
+    /// <param name="element"></param>
+    /// <param name="unit"></param>
+    /// <param name="score"></param>
     private void SetOwnerRelations(IBatch batch, SessionUnitElement element, SessionUnitCacheItem unit, double score)
     {
         // set Topping
@@ -976,6 +1147,15 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return result;
     }
 
+    public Task<double?> GetFriendScoreAsync(SessionUnitCacheItem unit)
+    {
+        ArgumentNullException.ThrowIfNull(unit);
+
+        return Database.SortedSetScoreAsync(
+            OwnerFriendsSetKey(unit.OwnerId),
+            GetElement(unit));
+    }
+
     public async Task<IEnumerable<KeyValuePair<SessionUnitElement, FriendScore>>> GetRawFriendsAsync(long ownerId,
         double minScore = double.NegativeInfinity,
         double maxScore = double.PositiveInfinity,
@@ -1014,6 +1194,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             take: take,
             isDescending);
     }
+
+
 
     public async Task<IEnumerable<FriendModel>> GetTypedFriendsAsync(
         FriendViews friendView,
@@ -1153,6 +1335,15 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         return result;
     }
 
+    public async Task<IEnumerable<KeyValuePair<SessionUnitElement, ContactValue>>> GetFriendsIndexedAsync(long ownerId)
+    {
+        var entries = await Database.HashGetAllAsync(OwnersIndexedHashKey(ownerId));
+        var result = entries
+            .Select(x => new KeyValuePair<SessionUnitElement, ContactValue>(SessionUnitElement.Parse(x.Name), JsonSerializer.Deserialize<ContactValue>(x.Value)))
+            ;
+        return result;
+    }
+
     #endregion
 
     #region Map / GetMany
@@ -1241,8 +1432,6 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
         var batch = Database.CreateBatch();
 
-        var expireTime = CacheExpire;
-
         foreach (var item in members)
         {
             var element = item.Key;
@@ -1256,16 +1445,28 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             var isCreator = creatorMap.TryGetValue(element, out bool creator) && creator;
             var sorting = pinnedMap.TryGetValue(element, out var _sorting) ? _sorting : 0;
             var ticks = new DateTimeOffset(message.CreationTime).ToUnixTimeMilliseconds();
-            var score = GetFriendScore(sorting, ticks);
 
-            // lastMessageId
-            _ = batch.HashSetAsync(unitKey, F_LastMessageId, lastMessageId);
-            // ticks
-            _ = batch.HashSetAsync(unitKey, F_Ticks, ticks);
-            // expire
-            _ = batch.KeyExpireAsync(unitKey, expireTime);
+            var hasBox = boxMap.TryGetValue(element, out var boxId);
+            RedisKey? ownerBoxFriendsSetKey = hasBox
+                ? OwnerBoxFriendsSetKey(ownerId, boxId)
+                : (RedisKey?)null;
 
-            SetOwnerFriends(batch, ownerId, element, score);
+            SetLastMessageState(
+                batch,
+                unitKey,
+                OwnerFriendsSetKey(ownerId),
+                DirtySetKey(),
+                ownerBoxFriendsSetKey,
+                element,
+                lastMessageId,
+                ticks,
+                sorting);
+
+            Expire(batch, OwnerFriendsSetKey(ownerId), CacheExpire);
+            if (ownerBoxFriendsSetKey.HasValue)
+            {
+                Expire(batch, ownerBoxFriendsSetKey.Value, CacheExpire);
+            }
 
             // Sender
             if (isSender)
@@ -1278,9 +1479,8 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
             }
 
             // 消息盒子 boxId
-            if (boxMap.TryGetValue(item.Key, out var boxId))
+            if (hasBox)
             {
-                SetOwnerBoxFriends(batch, ownerId, boxId, element, score);
                 ZsetIncrementIfGuardKeyExist(batch, ownerStatisticSetKey, OwnerBoxBadgeZsetKey(ownerId), boxId.ToString(), 1);
             }
 
@@ -1337,9 +1537,11 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
                 HashIncrementIfExist(batch, ownerStatisticSetKey, F_Total_Following, 1);
                 ZsetIncrementIfGuardKeyExist(batch, ownerStatisticSetKey, OwnerFollowingSetKey(ownerId), element, 1);
             }
+
+
         }
         // SessionMembers
-        _ = batch.KeyExpireAsync(SessionMembersSetKey(sessionId), expireTime);
+        Expire(batch, SessionMembersSetKey(sessionId), CacheExpire);
 
         batch.Execute();
 
@@ -1588,68 +1790,104 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
 
     public async Task SetPinningAsync(Guid sessionId, Guid unitId, long ownerId, long sorting)
     {
-        var unitKey = UnitHashKey(unitId);
-
         var unit = await GetAsync(unitId);
-
-        // 1. 检查缓存项是否存在
-        var isExists = unit != null;
-
-        // 2. owner sortedset key
-        var ownerFriendsSetKey = OwnerFriendsSetKey(ownerId);
-
-        // 3. 先读取旧 score
-        var element = GetElement(unit);
-
-        double? oldScore = await Database.SortedSetScoreAsync(ownerFriendsSetKey, element);
-
-        if (oldScore is null)
+        if (unit == null)
         {
-            // 没有旧 score，说明该单元未加入 ownerSortedSet，不做置顶
+            Logger.LogWarning("Skip pinning cache update because unit {UnitId} is not cached", unitId);
             return;
         }
 
-        // 4. 解析旧的 ticks
-        var scoreObj = new FriendScore(oldScore.Value);
-
-        var ticks = scoreObj.Ticks;     // 低位 JS 毫秒
-                                        // 如果你担心 double 精度，可以加  Math.Round
-        ticks = Math.Round(ticks);
-
-        // 5. 新的 score = sorting * MULT + ticks
-        var newScore = GetFriendScore(sorting, ticks);
-
-        // 6. 批处理写入
-        var batch = Database.CreateBatch();
-
-        // 6.1 更新 unitKey 中的 Sorting 字段（如果你有该字段）
-        if (isExists)
-        {
-            _ = batch.HashSetAsync(unitKey, F_Sorting, sorting);
-        }
-
-        // 6.2 更新置顶表（ownerToppingSet）
+        var ownerFriendsSetKey = OwnerFriendsSetKey(ownerId);
         var ownerPinnedBadgeSetKey = OwnerPinnedBadgeSetKey(ownerId);
         var sessionPinnedSortingHashKey = SessionPinnedSortingHashKey(sessionId);
-        if (sorting == 0)
+        var element = GetElement(unit);
+        var keys = unit.BoxId.HasValue
+            ? new RedisKey[]
+            {
+                UnitHashKey(unitId), ownerFriendsSetKey, ownerPinnedBadgeSetKey,
+                sessionPinnedSortingHashKey, OwnerBoxFriendsSetKey(ownerId, unit.BoxId.Value)
+            }
+            : new RedisKey[]
+            {
+                UnitHashKey(unitId), ownerFriendsSetKey, ownerPinnedBadgeSetKey,
+                sessionPinnedSortingHashKey
+            };
+
+        // Read the current owner score and rewrite all affected indexes in one
+        // Redis operation. This prevents a concurrent message update from
+        // restoring a stale tick while pinning or unpinning the session.
+        var updated = await Database.ScriptEvaluateAsync(
+            SetPinningScript,
+            keys,
+            [element, F_Sorting, sorting, FriendScore.Multiplier, unit.PublicBadge]);
+
+        if ((int)updated == 0)
         {
-            _ = batch.SortedSetRemoveAsync(ownerPinnedBadgeSetKey, element);
-            _ = batch.HashDeleteAsync(sessionPinnedSortingHashKey, element);
-        }
-        else
-        {
-            _ = batch.SortedSetAddAsync(ownerPinnedBadgeSetKey, element, unit?.PublicBadge ?? 0);
-            _ = batch.HashSetAsync(sessionPinnedSortingHashKey, element, sorting);
-            _ = batch.KeyExpireAsync(ownerPinnedBadgeSetKey, CacheExpire);
-            _ = batch.KeyExpireAsync(sessionPinnedSortingHashKey, CacheExpire);
+            return;
         }
 
-        // 6.3 更新 ownerSortedSet 的新 score
-        _ = batch.SortedSetAddAsync(ownerFriendsSetKey, element, newScore);
-        _ = batch.KeyExpireAsync(ownerFriendsSetKey, CacheExpire);
-
-        // 7. 执行 batch
+        var batch = Database.CreateBatch();
+        Expire(batch, ownerFriendsSetKey, CacheExpire);
+        if (unit.BoxId.HasValue)
+        {
+            Expire(batch, OwnerBoxFriendsSetKey(ownerId, unit.BoxId.Value), CacheExpire);
+        }
+        if (sorting > 0)
+        {
+            Expire(batch, ownerPinnedBadgeSetKey, CacheExpire);
+            Expire(batch, sessionPinnedSortingHashKey, CacheExpire);
+        }
         batch.Execute();
+    }
+
+    private const string SnapshotFriendsScript = @"
+redis.call('ZUNIONSTORE', KEYS[2], 1, KEYS[1])
+redis.call('PEXPIRE', KEYS[2], 120000)
+return 1";
+
+    public async Task<List<FriendModel>> GetChangedFriendsAsync(long ownerId, double? minTicks, double? maxTicks,
+        Guid? cursorId, int take, int skip = 0, Func<FriendModel, bool> filter = null, CancellationToken cancellationToken = default)
+    {
+        // Pinning is part of the existing score. Snapshot before scanning ranks
+        // so concurrent score updates cannot move entries across scan batches.
+        var snapshotKey = $"{OwnerFriendsSetKey(ownerId)}:Changes:{Guid.NewGuid():N}";
+        await Database.ScriptEvaluateAsync(SnapshotFriendsScript, [OwnerFriendsSetKey(ownerId), snapshotKey]);
+        try
+        {
+            var candidates = new List<FriendModel>();
+            for (var offset = 0; ; offset += 500)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var entries = await Database.SortedSetRangeByRankWithScoresAsync(snapshotKey, offset, offset + 499);
+                if (entries.Length > 0)
+                    await Database.KeyExpireAsync(snapshotKey, TimeSpan.FromMinutes(2));
+                foreach (var entry in entries)
+                {
+                    var element = SessionUnitElement.Parse(entry.Element);
+                    var score = new FriendScore(entry.Score);
+                    var friend = new FriendModel
+                    {
+                        Id = element.SessionUnitId, OwnerId = element.OwnerId,
+                        OwnerObjectType = element.OwnerObjectType, DestinationId = element.DestinationId,
+                        DestinationObjectType = element.DestinationObjectType, SessionId = element.SessionId,
+                        Sorting = score.Sorting, Ticks = score.Ticks, Score = entry.Score
+                    };
+                    if ((!minTicks.HasValue || friend.Ticks > minTicks ||
+                        (cursorId.HasValue && friend.Ticks == minTicks &&
+                         StringComparer.Ordinal.Compare(friend.Id.ToString(), cursorId.Value.ToString()) > 0)) &&
+                        (!maxTicks.HasValue || friend.Ticks < maxTicks) && (filter == null || filter(friend)))
+                        candidates.Add(friend);
+                }
+                candidates = candidates.OrderBy(x => x.Ticks)
+                    .ThenBy(x => x.Id.ToString(), StringComparer.Ordinal).Take(skip + take).ToList();
+                if (entries.Length < 500) break;
+            }
+            return candidates.Skip(skip).Take(take).ToList();
+        }
+        finally
+        {
+            await Database.KeyDeleteAsync(snapshotKey);
+        }
     }
 
     public async Task ChangeImmersedAsync(Guid unitId, bool isImmersed)
@@ -1860,7 +2098,7 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
         _ = HashSetIfFieldExistsAsync(batch, ownerStatisticHashKey, F_Total_Following, 0);
         _ = HashSetIfFieldExistsAsync(batch, ownerStatisticHashKey, F_Total_Immersed, 0);
         _ = HashSetIfFieldExistsAsync(batch, ownerStatisticHashKey, F_Total_Pinned, 0);
-        _ = batch.KeyExpireAsync(ownerStatisticHashKey, CacheExpire, when: ExpireWhen.Always);
+        Expire(batch, ownerStatisticHashKey, CacheExpire, when: ExpireWhen.Always);
 
         // StatisticMap
         var statisticMapHashKey = StatisticMapHashKey(ownerId);
@@ -2027,26 +2265,432 @@ public class SessionUnitCacheManager : RedisService, ISessionUnitCacheManager
     /// <returns></returns>
     public async Task AddUnitsAsync(IEnumerable<SessionUnitCacheItem> units)
     {
-        await Task.Yield();
+        ArgumentNullException.ThrowIfNull(units);
         var batch = Database.CreateBatch();
+        var writes = new List<Task>();
+        var expiry = CacheExpire;
+        var expiryKeys = new HashSet<RedisKey>();
+        void ExpireKey(RedisKey key)
+        {
+            if (expiry.HasValue) expiryKeys.Add(key);
+        }
+        void AddSorted(bool condition, RedisKey key, RedisValue member, double score)
+        {
+            if (!condition) return;
+            writes.Add(batch.SortedSetAddAsync(key, member, score));
+            ExpireKey(key);
+        }
+        void AddHash(bool condition, RedisKey key, RedisValue field, RedisValue value, bool expire = true)
+        {
+            if (!condition) return;
+            writes.Add(batch.HashSetAsync(key, field, value));
+            if (expire) ExpireKey(key);
+        }
 
-        //unit
         foreach (var unit in units)
         {
-            SetUnit(batch, unit, refreshExpire: true);
+            writes.Add(batch.HashSetAsync(UnitHashKey(unit.Id), MapToHashEntries(unit)));
+            var element = GetElement(unit);
+            var score = GetFriendScore(unit.Sorting, unit.Ticks);
+            var ownerId = unit.OwnerId;
+            AddSorted(true, OwnerFriendsSetKey(ownerId), element, score);
+            AddSorted(unit.Sorting > 0, OwnerPinnedBadgeSetKey(ownerId), element, unit.PublicBadge);
+            AddSorted(unit.PublicBadge > 0, OwnerHasBadgeSetKey(ownerId), element, unit.PublicBadge);
+            AddSorted(unit.IsImmersed, OwnerImmersedSetKey(ownerId), element, unit.PublicBadge);
+            AddSorted(unit.FollowingCount > 0, OwnerFollowingSetKey(ownerId), element, unit.FollowingCount);
+            AddSorted(unit.RemindAllCount > 0, OwnerRemindAllSetKey(ownerId), element, unit.RemindAllCount);
+            AddSorted(unit.RemindMeCount > 0, OwnerRemindMeSetKey(ownerId), element, unit.RemindMeCount);
+            AddSorted(unit.IsCreator, OwnerCreatorSetKey(ownerId), element, unit.PublicBadge);
+            if (unit.BoxId.HasValue) AddSorted(true, OwnerBoxFriendsSetKey(ownerId, unit.BoxId.Value), element, score);
+            AddSorted(true, OwnerFriendsMapZsetKey(ownerId, unit.DestinationObjectType), element, score);
+            var abbr = unit.RenameSpellingAbbreviation ?? unit.DestinationNameSpellingAbbreviation ?? string.Empty;
+            var contact = new ContactValue
+            {
+                Index = GetIndexKey(abbr), Abbr = abbr, Rename = unit.Rename,
+                Name = unit.DestinationName,
+                NameSpelling = unit.RenameSpellingAbbreviation ?? unit.DestinationNameSpelling ?? string.Empty,
+                Portrait = unit.DestinationPortrait, Thumbnail = unit.DestinationThumbnail, Mobile = null
+            };
+            AddHash(true, OwnersIndexedHashKey(ownerId), element, JsonSerializer.Serialize(contact), expire: false);
+            if (!unit.SessionId.HasValue) continue;
+            var sessionId = unit.SessionId.Value;
+            AddSorted(true, SessionMembersSetKey(sessionId), element, MemberScore.Create(unit.IsCreator, unit.CreationTime));
+            AddHash(unit.Sorting > 0, SessionPinnedSortingHashKey(sessionId), element, unit.Sorting);
+            AddHash(unit.IsImmersed, SessionImmersedHashKey(sessionId), element, unit.IsImmersed);
+            AddHash(unit.IsCreator, SessionImmersedHashKey(sessionId), element, unit.IsCreator);
+            AddHash(!unit.IsPublic, SessionPrivateHashKey(sessionId), element, !unit.IsPublic);
+            AddHash(unit.IsStatic, SessionStaticHashKey(sessionId), element, unit.IsStatic);
+            AddHash(unit.BoxId.HasValue, SessionBoxHashKey(sessionId), element, unit.BoxId.ToString());
         }
+        foreach (var key in expiryKeys) writes.Add(batch.KeyExpireAsync(key, expiry));
+        batch.Execute();
+        await Task.WhenAll(writes);
+    }
 
-        // owner
-        foreach (var items in units.GroupBy(x => x.OwnerId))
+    /// <summary>Remove only the supplied new units from shared session and owner indexes.</summary>
+    public async Task RemoveNewUnitsAsync(IEnumerable<SessionUnitCacheItem> units)
+    {
+        ArgumentNullException.ThrowIfNull(units);
+        var batch = Database.CreateBatch();
+        var writes = new List<Task>();
+        foreach (var unit in units)
         {
-            var ctx = BuildOwnerStatistics(batch, items.Key, items);
-        }
-
-        //session 
-        foreach (var items in units.Where(x => x.SessionId.HasValue).GroupBy(x => x.SessionId))
-        {
-            BuildSessionMembers(batch, items.Key.Value, items.ToList());
+            var element = GetElement(unit);
+            var owner = unit.OwnerId;
+            writes.Add(batch.KeyDeleteAsync(UnitHashKey(unit.Id)));
+            writes.Add(batch.SortedSetRemoveAsync(OwnerFriendsSetKey(owner), element));
+            writes.Add(batch.SortedSetRemoveAsync(OwnerPinnedBadgeSetKey(owner), element));
+            writes.Add(batch.SortedSetRemoveAsync(OwnerHasBadgeSetKey(owner), element));
+            writes.Add(batch.SortedSetRemoveAsync(OwnerImmersedSetKey(owner), element));
+            writes.Add(batch.SortedSetRemoveAsync(OwnerFollowingSetKey(owner), element));
+            writes.Add(batch.SortedSetRemoveAsync(OwnerRemindAllSetKey(owner), element));
+            writes.Add(batch.SortedSetRemoveAsync(OwnerRemindMeSetKey(owner), element));
+            writes.Add(batch.SortedSetRemoveAsync(OwnerCreatorSetKey(owner), element));
+            writes.Add(batch.SortedSetRemoveAsync(OwnerFriendsMapZsetKey(owner, unit.DestinationObjectType), element));
+            if (unit.BoxId.HasValue)
+                writes.Add(batch.SortedSetRemoveAsync(OwnerBoxFriendsSetKey(owner, unit.BoxId.Value), element));
+            writes.Add(batch.HashDeleteAsync(OwnersIndexedHashKey(owner), element));
+            if (!unit.SessionId.HasValue) continue;
+            var sessionId = unit.SessionId.Value;
+            writes.Add(batch.SortedSetRemoveAsync(SessionMembersSetKey(sessionId), element));
+            writes.Add(batch.HashDeleteAsync(SessionPinnedSortingHashKey(sessionId), element));
+            writes.Add(batch.HashDeleteAsync(SessionImmersedHashKey(sessionId), element));
+            writes.Add(batch.HashDeleteAsync(SessionPrivateHashKey(sessionId), element));
+            writes.Add(batch.HashDeleteAsync(SessionStaticHashKey(sessionId), element));
+            writes.Add(batch.HashDeleteAsync(SessionBoxHashKey(sessionId), element));
         }
         batch.Execute();
+        await Task.WhenAll(writes);
+    }
+
+    public async Task RemoveSessionMessageAsync(Guid sessionId, long messageId)
+    {
+        await Database.SortedSetRemoveAsync(SessionMessageSetKey(sessionId), messageId);
+    }
+
+    public async Task UpdateLastMessageAsync(SessionUnitCacheItem sender, Message message)
+    {
+        //var unit = await GetAsync(sender.Id);
+        var batch = Database.CreateBatch();
+        var writes = new List<Task>();
+        var lastMessageId = message.Id;
+        if (sender == null && lastMessageId > sender.LastSendMessageId)
+        {
+            var unitKey = UnitHashKey(sender.Id);
+            writes.Add(batch.HashSetAsync(unitKey, F_LastMessageId, lastMessageId));
+            writes.Add(batch.HashSetAsync(unitKey, F_LastSendMessageId, lastMessageId));
+            writes.Add(batch.HashSetAsync(unitKey, F_LastSendTime, message.CreationTime.ToRedisValue()));
+        }
+        // session last message id
+        if (sender.SessionId.HasValue)
+        {
+            var sessionId = sender.SessionId.Value;
+            // message list
+            var sessionMessageListKey = SessionMessageSetKey(sessionId);
+            writes.Add(batch.SortedSetAddAsync(sessionMessageListKey, message.Id, message.Id));
+            // 注意：不要每条消息都做 Trim， (目前是每次都删除，后期改为定时删除)。
+            //_ = batch.SortedSetRemoveRangeByRankAsync(sessionMessageListKey, 0, -1001, CommandFlags.None);
+        }
+        batch.Execute();
+        await Task.WhenAll(writes);
+    }
+
+    public async Task AppendSessionMessagesAsync(Guid sessionId, List<long> messageIdList)
+    {
+        await Task.Yield();
+        var batch = Database.CreateBatch();
+        var sessionMessageListKey = SessionMessageSetKey(sessionId);
+        foreach (var messageId in messageIdList)
+        {
+            _ = batch.SortedSetAddAsync(sessionMessageListKey, messageId, messageId);
+        }
+        batch.Execute();
+    }
+
+    public async Task<IEnumerable<long>> GetSessionMessagesAsync(
+        Guid sessionId,
+        long minMessageId = 0,
+        long maxMessageId = long.MaxValue,
+        long skip = 0,
+        long take = -1,
+        bool isDescending = true)
+    {
+        var sessionMessageListKey = SessionMessageSetKey(sessionId);
+        var redisZset = await Database.SortedSetRangeByScoreWithScoresAsync(
+            key: sessionMessageListKey,
+            start: minMessageId,
+            stop: maxMessageId,
+            // 排除首尾
+            exclude: Exclude.Both,
+            skip: skip,
+            take: take,
+            order: isDescending ? Order.Descending : Order.Ascending);
+
+        //await Database.SortedSetLengthAsync(sessionMessageListKey, minMessageId, maxMessageId, Exclude.Both);
+
+        return redisZset.Select(x => (long)x.Score);
+    }
+
+
+    public async Task<long> GetSessionMessageTotalCountAsync(Guid sessionId, long minMessageId = 0, long maxMessageId = long.MaxValue)
+    {
+        return await Database.SortedSetLengthAsync(SessionMessageSetKey(sessionId), minMessageId, maxMessageId, Exclude.Both);
+    }
+
+    public async Task<long?> GetMinMessageIdAsync(Guid sessionId)
+    {
+        var sessionMessageListKey = SessionMessageSetKey(sessionId);
+
+        var min = await Database.SortedSetRangeByRankAsync(sessionMessageListKey, 0, 0);
+
+        if (min.Length == 0)
+        {
+            return null;
+        }
+        return long.Parse(min[0]);
+    }
+
+    public async Task<long?> GetMaxMessageIdAsync(Guid sessionId)
+    {
+        var sessionMessageListKey = SessionMessageSetKey(sessionId);
+
+        var max = await Database.SortedSetRangeByRankAsync(sessionMessageListKey, -1, -1);
+
+        if (max.Length == 0)
+        {
+            return null;
+        }
+        return long.Parse(max[0]);
+    }
+
+    public async Task<(long Min, long Max)?> GetMessagesRangeAsync(Guid sessionId)
+    {
+        var sessionMessageListKey = SessionMessageSetKey(sessionId);
+
+        var min = await Database.SortedSetRangeByRankAsync(sessionMessageListKey, 0, 0);
+
+        if (min.Length == 0)
+        {
+            return null;
+        }
+
+        var max = await Database.SortedSetRangeByRankAsync(sessionMessageListKey, -1, -1);
+
+        return (long.Parse(min[0]), long.Parse(max[0]));
+    }
+
+    /// <summary>
+    /// 移除消息缓存
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    public async Task<bool> RemoveSessionMessagesAsync(Guid sessionId)
+    {
+        return await Database.KeyDeleteAsync(SessionMessageSetKey(sessionId));
+    }
+
+    protected virtual async Task<SortedSetEntry[]> GetDirtyByKeyAsync(string dirtyKey, int batchSize, bool isAscending = true)
+    {
+        var redisZset = await Database.SortedSetRangeByScoreWithScoresAsync(
+            key: dirtyKey,
+            start: 0,
+            stop: long.MaxValue,
+            exclude: Exclude.None,
+            skip: 0,
+            take: batchSize,
+            order: isAscending ? Order.Ascending : Order.Descending);
+        return redisZset;
+    }
+
+    public async Task<List<KeyValuePair<SessionUnitElement, long>>> GetDirtyAsync(int batchSize, bool isAscending = true, bool isDelete = true)
+    {
+        var redisZset = await GetDirtyByKeyAsync(DirtySetKey(), batchSize, isAscending);
+
+        return redisZset.Select(x => new KeyValuePair<SessionUnitElement, long>(SessionUnitElement.Parse(x.Element), (long)x.Score)).ToList();
+    }
+
+    // Compatibility entry point: taking a snapshot must not acknowledge persistence.
+    public async Task<List<KeyValuePair<SessionUnitElement, long>>> GetAndRemoveProcessingDirtyAsync(string processingKey, int batchSize, bool isAscending = true)
+    {
+        var entries = await GetDirtyByKeyAsync(processingKey, batchSize, isAscending);
+        return entries.Select(x => new KeyValuePair<SessionUnitElement, long>(
+            SessionUnitElement.Parse(x.Element), (long)x.Score)).ToList();
+    }
+
+    public async Task<long> GetProcessingDirtyCountAsync(string processingKey)
+    {
+        return await Database.SortedSetLengthAsync(processingKey, 0, long.MaxValue, Exclude.None);
+    }
+
+    public async Task<long> GetDirtyCountAsync()
+    {
+        return await Database.SortedSetLengthAsync(DirtySetKey(), 0, long.MaxValue, Exclude.None);
+    }
+
+    private const string RenameDirtyScript = @"
+if redis.call('EXISTS', KEYS[1]) == 0 then return 0 end
+if redis.call('EXISTS', KEYS[2]) == 1 then return 0 end
+redis.call('RENAME', KEYS[1], KEYS[2])
+redis.call('PERSIST', KEYS[2])
+redis.call('ZADD', KEYS[3], 0, KEYS[2])
+return 1";
+
+    public async Task<string> RenameDirtyAsync()
+    {
+        var processingKey = $"{DirtySetKey()}:Processing:{Guid.NewGuid():N}";
+        var renamed = (long)await Database.ScriptEvaluateAsync(RenameDirtyScript,
+            [DirtySetKey(), processingKey, DirtyProcessingRegistryKey()]);
+        return renamed == 1 ? processingKey : null;
+    }
+
+    public async Task DeleteDirtyAsync(string processingKey)
+    {
+        await Database.KeyDeleteAsync(processingKey);
+    }
+
+    private static string ToProgressKey(string processingKey)
+    {
+        return processingKey.Replace("Processing", "Progress");
+    }
+
+    public async Task<List<FlushDirtyProcessingJobArgs>> FlushDirtyToJobsAsync(int scanSize = 5000, int jobSize = 1000)
+    {
+        if (scanSize <= 0 || scanSize > 5000 || jobSize <= 0 || jobSize > scanSize)
+            throw new ArgumentOutOfRangeException(nameof(scanSize));
+        var distributedLock = LazyServiceProvider.LazyGetRequiredService<Volo.Abp.DistributedLocking.IAbpDistributedLock>();
+        if (distributedLock is Volo.Abp.DistributedLocking.NullAbpDistributedLock)
+            throw new InvalidOperationException("Dirty dispatch requires a distributed lock provider.");
+        await using var handle = await distributedLock.TryAcquireAsync($"Chat:DirtyDispatch:{DirtySetKey()}");
+        if (handle == null) return [];
+
+        // Resume durable processing records before detaching another Dirty generation.
+        var registered = await Database.SortedSetRangeByRankWithScoresAsync(DirtyProcessingRegistryKey(), 0, 0);
+        var now = new DateTimeOffset(Clock.Now).ToUnixTimeMilliseconds();
+        string processingKey;
+        if (registered.Length > 0)
+        {
+            if (registered[0].Score > now) return [];
+            processingKey = registered[0].Element.ToString();
+        }
+        else
+        {
+            processingKey = await RenameDirtyAsync();
+            if (processingKey == null) return [];
+        }
+
+        var entries = await Database.SortedSetRangeByRankWithScoresAsync(processingKey, 0, scanSize - 1);
+        if (entries.Length == 0)
+        {
+            await Database.SortedSetRemoveAsync(DirtyProcessingRegistryKey(), processingKey);
+            return [];
+        }
+        // A crash or enqueue failure can retry this retained snapshot after one minute.
+        await Database.SortedSetAddAsync(DirtyProcessingRegistryKey(), processingKey, now + 60000);
+        var totalCount = await GetProcessingDirtyCountAsync(processingKey);
+        var result = new List<FlushDirtyProcessingJobArgs>();
+        foreach (var chunk in entries.Chunk(jobSize))
+        {
+            var versions = chunk.ToDictionary(x => x.Element.ToString(), x => (long)x.Score);
+            result.Add(new FlushDirtyProcessingJobArgs
+            {
+                ProcessingKey = processingKey,
+                Count = chunk.Length,
+                ScanSize = scanSize,
+                JobSize = jobSize,
+                JobIndex = result.Count,
+                JobTotalCunt = (int)Math.Ceiling(totalCount / (double)jobSize),
+                SessionUnitIds = chunk.Select(x => SessionUnitElement.Parse(x.Element).SessionUnitId).Distinct().ToList(),
+                DirtyVersions = versions
+            });
+        }
+        if (!await Database.KeyExistsAsync(ToProgressKey(processingKey)))
+        {
+            await CreateFlushDirtyProgressAsync(processingKey, new FlushDirtyProgress
+            {
+                TotalCount = totalCount,
+                JobCount = (int)Math.Ceiling(totalCount / (double)jobSize),
+                CreationTime = now
+            });
+        }
+        return result;
+    }
+
+    private const string AcknowledgeDirtyScript = @"
+local removed = 0
+for i = 1, #ARGV, 2 do
+    local score = redis.call('ZSCORE', KEYS[1], ARGV[i])
+    if score and tonumber(score) == tonumber(ARGV[i + 1]) then
+        removed = removed + redis.call('ZREM', KEYS[1], ARGV[i])
+    end
+end
+if redis.call('ZCARD', KEYS[1]) == 0 then
+    redis.call('DEL', KEYS[1])
+    redis.call('ZREM', KEYS[2], KEYS[1])
+elseif removed > 0 then
+    redis.call('ZADD', KEYS[2], 0, KEYS[1])
+end
+return removed";
+
+    private const string HasPendingDirtyScript = @"
+for i = 1, #ARGV, 2 do
+    local score = redis.call('ZSCORE', KEYS[1], ARGV[i])
+    if score and tonumber(score) == tonumber(ARGV[i + 1]) then return 1 end
+end
+return 0";
+
+    public async Task<bool> HasPendingDirtyAsync(FlushDirtyProcessingJobArgs args)
+    {
+        if (args.DirtyVersions == null || args.DirtyVersions.Count == 0) return false;
+        var values = args.DirtyVersions.SelectMany(x => new RedisValue[] { x.Key, x.Value }).ToArray();
+        return (int)await Database.ScriptEvaluateAsync(HasPendingDirtyScript, [args.ProcessingKey], values) == 1;
+    }
+
+    public async Task<int> AcknowledgeDirtyAsync(FlushDirtyProcessingJobArgs args)
+    {
+        if (args.DirtyVersions == null || args.DirtyVersions.Count == 0) return 0;
+        var values = args.DirtyVersions.SelectMany(x => new RedisValue[] { x.Key, x.Value }).ToArray();
+        return (int)await Database.ScriptEvaluateAsync(AcknowledgeDirtyScript,
+            [args.ProcessingKey, DirtyProcessingRegistryKey()], values);
+    }
+
+    public async Task CreateFlushDirtyProgressAsync(string processingKey, FlushDirtyProgress flushDirtyProgress)
+    {
+        //创建进度条
+        var progressKey = ToProgressKey(processingKey);
+
+        var batch = Database.CreateBatch();
+
+        var entries = RedisMapper.ToHashEntries(flushDirtyProgress);
+
+        var save = batch.HashSetAsync(progressKey, entries);
+        var expire = batch.KeyExpireAsync(progressKey, TimeSpan.FromHours(24));
+        batch.Execute();
+        await Task.WhenAll(save, expire);
+    }
+
+    public async Task UpdateFlushDirtyProgressAsync(string processingKey, int affect, long elapsedMilliseconds)
+    {
+        //创建进度条
+        var progressKey = ToProgressKey(processingKey);
+
+        var batch = Database.CreateBatch();
+        var completed = batch.HashIncrementAsync(progressKey, nameof(FlushDirtyProgress.JobCompleted), 1);
+        var affected = batch.HashIncrementAsync(progressKey, nameof(FlushDirtyProgress.Completed), affect);
+        var elapsed = batch.HashIncrementAsync(progressKey, nameof(FlushDirtyProgress.Elapsed), elapsedMilliseconds);
+        var modified = batch.HashSetAsync(progressKey, nameof(FlushDirtyProgress.LastModificationTime), new DateTimeOffset(Clock.Now).ToUnixTimeMilliseconds());
+        batch.Execute();
+        await Task.WhenAll(completed, affected, elapsed, modified);
+    }
+
+    public async Task<FlushDirtyProgress> GetFlushDirtyProgressAsync(string processingKey)
+    {
+        //创建进度条
+        var progressKey = ToProgressKey(processingKey);
+
+        var kvs = await GetManyHashSetAsync<string, FlushDirtyProgress>([processingKey], (key) => ToProgressKey(key));
+
+        var progress = kvs.Select(x => x.Value).FirstOrDefault();
+
+        return progress;
     }
 }

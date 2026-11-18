@@ -14,6 +14,7 @@ namespace IczpNet.Chat.Friends;
 public class FriendsManager(
     IDistributedCache<List<SessionUnitCacheItem>, long> friendsCache,
     IDistributedCache<List<SessionUnitCacheItem>, Guid> userFriendsCache,
+    IOnlineManager onlineManager,
     IConnectionPoolManager connectionPoolManager,
     ISessionUnitManager sessionUnitManager
     ) : DomainService, IFriendsManager
@@ -21,6 +22,7 @@ public class FriendsManager(
 
     public IDistributedCache<List<SessionUnitCacheItem>, long> FriendsCache { get; } = friendsCache;
     public IDistributedCache<List<SessionUnitCacheItem>, Guid> UserFriendsCache { get; } = userFriendsCache;
+    public IOnlineManager OnlineManager { get; } = onlineManager;
     public IConnectionPoolManager ConnectionPoolManager { get; } = connectionPoolManager;
     public ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
 
@@ -28,7 +30,11 @@ public class FriendsManager(
     /// <inheritdoc />
     public virtual Task<List<SessionUnitCacheItem>> GetFriendsAsync(Guid userId)
     {
-        return UserFriendsCache.GetOrAddAsync(userId, () => SessionUnitManager.GetListByUserAsync(userId));
+        return UserFriendsCache.GetOrAddAsync(userId, async () =>
+        {
+            var dic = await SessionUnitManager.GetListByUserAsync(userId);
+            return dic.SelectMany(x => x.Value).ToList();
+        });
     }
 
     /// <inheritdoc />

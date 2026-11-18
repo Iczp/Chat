@@ -1,12 +1,17 @@
 ﻿using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.ConnectionPools;
+using IczpNet.Chat.Commands;
 using IczpNet.Chat.Hosting;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionUnits;
+using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Json;
+using Volo.Abp.Threading;
+using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.DistributedEventHandlers;
 
@@ -19,21 +24,30 @@ public class SendMessageToClientDistributedEventHandler : SendToClientDistribute
     public ICurrentHosted CurrentHosted => LazyServiceProvider.LazyGetRequiredService<ICurrentHosted>();
     public IJsonSerializer JsonSerializer => LazyServiceProvider.LazyGetRequiredService<IJsonSerializer>();
 
+    [UnitOfWork(isTransactional: false)]
     public override async Task HandleEventAsync(SendMessageToClientDistributedEto eventData)
     {
         await MeasureAsync(nameof(SendToClientBySessionAsync), () => SendToClientBySessionAsync(eventData));
     }
 
-    protected async Task<bool> SendToClientBySessionAsync(SendMessageToClientDistributedEto eventData)
+    /// <summary>
+    /// 推送消息（在线状的会话索引取连接信息 - 可能要移除）
+    /// </summary>
+    /// <param name="eventData"></param>
+    /// <returns></returns>
+    protected async Task<bool> SendToClientBySessionBackAsync(SendMessageToClientDistributedEto eventData)
     {
         var sessionId = eventData.Message.SessionId;
         var command = eventData.Command;
+        //var reminderIdList = eventData.ReminderIdList;
+        //var followerIdList = eventData.FollowerIdList;
+
         var connDict = await OnlineManager.GetConnectionsBySessionAsync(sessionId);
 
         var onlineOwnerIds = connDict.SelectMany(x => x.Value).Distinct().ToList();
 
         var members = await SessionUnitCacheManager.GetMembersAsync(sessionId);
-        var ownerUnitDict = members.Where(x => onlineOwnerIds.Contains(x.OwnerId)).ToDictionary(x => x.OwnerId, x => x.Id);
+        var ownerUnitMap = members.Where(x => onlineOwnerIds.Contains(x.OwnerId)).ToDictionary(x => x.OwnerId, x => x.Id);
 
         //await HubContext.Clients.Group(sessionId.ToString()).ReceivedMessage(commandPayload);
 
@@ -41,13 +55,21 @@ public class SendMessageToClientDistributedEventHandler : SendToClientDistribute
         {
             var connectionId = item.Key;
             var chatObjectIdList = item.Value;
-
             var units = chatObjectIdList
-                .Select(chatObjectId => new CommandPayload.ScopeUnit
+                .Select(chatObjectId =>
                 {
-                    ChatObjectId = chatObjectId,
-                    //SessionUnitId = sessionUnitInfoList.Find(x => x.OwnerId == chatObjectId).Id
-                    SessionUnitId = ownerUnitDict[chatObjectId]
+                    var sessionUnitId = ownerUnitMap.GetOrDefault(chatObjectId);
+                    return new CommandPayload.ScopeUnit
+                    {
+                        ChatObjectId = chatObjectId,
+                        //SessionUnitId = sessionUnitInfoList.Find(x => x.OwnerId == chatObjectId).Id
+                        SessionUnitId = sessionUnitId,
+                        //Extra = new
+                        //{
+                        //    IsReminder = reminderIdList.Contains(sessionUnitId),
+                        //    IsFollowing = followerIdList.Contains(sessionUnitId),
+                        //}
+                    };
                 }).ToList();
 
             var commandPayload = new CommandPayload()
@@ -59,6 +81,99 @@ public class SendMessageToClientDistributedEventHandler : SendToClientDistribute
             };
 
             await HubContext.Clients.Client(connectionId).ReceivedMessage(commandPayload);
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// 推送消息(从登录设备取连接信息)
+    /// </summary>
+    /// <param name="eventData"></param>
+    /// <returns></returns>
+    protected async Task<bool> SendToClientBySessionAsync(SendMessageToClientDistributedEto eventData)
+    {
+        var sessionId = eventData.Message.SessionId;
+
+        var command = eventData.Command;
+
+        var members = (await SessionUnitCacheManager.GetMembersAsync(sessionId))
+            .Where(unit => (command != CommandConsts.MessageDeleted && command != CommandConsts.MessageCleared) ||
+                unit.Id == eventData.TargetSessionUnitId)
+            .Where(unit => (command != CommandConsts.MessageRollbacked && command != CommandConsts.MessageUpdated) || !eventData.Message.IsPrivate ||
+                unit.Id == eventData.Message.SenderSessionUnitId || unit.Id == eventData.Message.ReceiverSessionUnitId)
+            .ToList();
+
+        var ownerIds = members.Select(x => x.OwnerId).Distinct().ToList();
+
+        var ownerDevices = await OnlineManager.GetDevicesAsync(ownerIds);
+
+        if (command == CommandConsts.MessageRollbacked || command == CommandConsts.MessageUpdated)
+        {
+            var candidates = members.Where(unit => ownerDevices.ContainsKey(unit.OwnerId)).Select(unit => unit.Id).ToList();
+            var repo = LazyServiceProvider.LazyGetRequiredService<IMessageChangeRepository>();
+            var token = LazyServiceProvider.LazyGetRequiredService<ICancellationTokenProvider>().Token;
+            var recipients = (await repo.GetRollbackRecipientsAsync(sessionId, eventData.MessageId, candidates, token)).ToHashSet();
+            members.RemoveAll(unit => !recipients.Contains(unit.Id));
+        }
+
+        var ownerUnitMap = members.DistinctBy(x => x.OwnerId).ToDictionary(x => x.OwnerId, x => x.Id);
+
+        var connMap = ownerDevices.Where(x => ownerUnitMap.ContainsKey(x.Key))
+            .SelectMany(x => x.Value).GroupBy(x => x.ConnectionId).ToDictionary(x => x.Key, x => x.ToList());
+
+        Logger.LogInformation(
+            "Delivering IM event {Command} for message {MessageId} in session {SessionId}: owners={OwnerCount}, connections={ConnectionCount}",
+            command,
+            eventData.MessageId,
+            sessionId,
+            ownerIds.Count,
+            connMap.Count);
+
+        if (connMap.Count == 0)
+        {
+            Logger.LogInformation(
+                "IM event {Command} for message {MessageId} has no online recipient connection; clients must recover it from message history.",
+                command,
+                eventData.MessageId);
+        }
+
+        foreach (var item in connMap)
+        {
+            var connectionId = item.Key;
+            var devices = item.Value;
+            var units = devices
+                .Select(device =>
+                {
+                    var sessionUnitId = ownerUnitMap.GetOrDefault(device.OwnerId);
+                    return new CommandPayload.ScopeUnit
+                    {
+                        ChatObjectId = device.OwnerId,
+                        //SessionUnitId = sessionUnitInfoList.Find(x => x.OwnerId == chatObjectId).Id
+                        SessionUnitId = sessionUnitId,
+                        //Extra = new
+                        //{
+                        //    IsReminder = reminderIdList.Contains(sessionUnitId),
+                        //    IsFollowing = followerIdList.Contains(sessionUnitId),
+                        //}
+                    };
+                }).ToList();
+
+            var commandPayload = new CommandPayload()
+            {
+                //AppUserId = item.UserId,
+                Scopes = units,
+                Command = command,
+                Payload = eventData,
+            };
+
+            await HubContext.Clients.Client(connectionId).ReceivedMessage(commandPayload);
+            Logger.LogDebug(
+                "Delivered IM event {Command} for message {MessageId} to connection {ConnectionId} with {ScopeCount} scopes",
+                command,
+                eventData.MessageId,
+                connectionId,
+                units.Count);
         }
 
         return true;

@@ -1,4 +1,4 @@
-﻿using IczpNet.Pusher.ShortIds;
+using IczpNet.Chat.ShortIds;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.DependencyInjection;
@@ -12,10 +12,7 @@ public class RoomCodeGenerator(IShortIdGenerator shortIdGenerator) : IRoomCodeGe
     public static string Prefix { get; set; } = "G_";
     public IShortIdGenerator ShortIdGenerator { get; } = shortIdGenerator;
 
-    public string Make()
-    {
-        return $"{Prefix}{GenerateCode(Length - Prefix.Length)}";
-    }
+    public string Make() => $"{Prefix}{GenerateCode(Length - Prefix.Length)}";
 
     public async Task<string> MakeAsync()
     {
@@ -26,10 +23,6 @@ public class RoomCodeGenerator(IShortIdGenerator shortIdGenerator) : IRoomCodeGe
     protected virtual string GenerateCode(int length)
     {
         var shortId = ShortIdGenerator.Create() + ShortIdGenerator.Create();
-
         return shortId.Substring(0, Math.Min(length, shortId.Length));
-        //var random = new Random();
-        //return new string(Enumerable.Repeat(StaticCode, length)
-        //    .Select(s => s[random.Next(s.Length)]).ToArray());
     }
 }

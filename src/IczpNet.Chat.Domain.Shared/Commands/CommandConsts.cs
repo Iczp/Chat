@@ -29,6 +29,8 @@ public class CommandConsts
     /// </summary>
     public static string MessageUpdated { get; set; } = "updated@message";
 
+    public const string MessageRollbacked = "rollbacked@message";
+
     /// <summary>
     /// 转发消息 default: forwarded@message
     /// </summary>
@@ -43,6 +45,14 @@ public class CommandConsts
     /// 删除消息 default: deleted@message
     /// </summary>
     public static string MessageDeleted { get; set; } = "deleted@message";
+    public const string MessageCleared = "cleared@message";
+
+    // Transient AI events are deliberately separate from persisted message
+    // commands. Clients render them in memory and only sync the final reply.
+    public const string AiStreamStarted = "started@ai";
+    public const string AiStreamDelta = "delta@ai";
+    public const string AiStreamCompleted = "completed@ai";
+    public const string AiStreamFailed = "failed@ai";
 
     /// <summary>
     /// 我上线了 default: online@me

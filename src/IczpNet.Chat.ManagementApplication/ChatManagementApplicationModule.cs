@@ -1,12 +1,11 @@
-using Microsoft.Extensions.DependencyInjection;
-using Volo.Abp.AutoMapper;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Volo.Abp.Mapperly;
 using Volo.Abp.Modularity;
 using Volo.Abp.Application;
 using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
 using Volo.Abp.Identity;
 using Volo.Abp.FluentValidation;
-using IczpNet.Pusher;
 using Microsoft.AspNetCore.Authorization;
 
 namespace IczpNet.Chat;
@@ -14,23 +13,19 @@ namespace IczpNet.Chat;
     typeof(ChatDomainModule),
     typeof(ChatManagementApplicationContractsModule),
     typeof(AbpDddApplicationModule),
-    typeof(AbpAutoMapperModule)
+    typeof(AbpMapperlyModule)
     )]
 [DependsOn(typeof(AbpCommonsApplicationModule))]
 [DependsOn(typeof(AbpTreesApplicationModule))]
 [DependsOn(typeof(AbpIdentityApplicationModule))]
 [DependsOn(typeof(AbpFluentValidationModule))]
-[DependsOn(typeof(PusherApplicationModule))]
+// PusherApplicationModule retired: Chat uses SignalR plus Redis distributed events.
 
 public class ChatManagementApplicationModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
-        context.Services.AddAutoMapperObjectMapper<ChatManagementApplicationModule>();
-        Configure<AbpAutoMapperOptions>(options =>
-        {
-            options.AddMaps<ChatManagementApplicationModule>(validate: true);
-        });
+        context.Services.AddMapperlyObjectMapper<ChatManagementApplicationModule>();
         Configure<AuthorizationOptions>(options =>
         {
             //TODO: Rename UpdatePolicy/DeletePolicy since it's candidate to conflicts with other modules!

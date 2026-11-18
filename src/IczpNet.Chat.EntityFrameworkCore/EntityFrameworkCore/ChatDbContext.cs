@@ -1,6 +1,3 @@
-using IczpNet.Chat.AppVersionDeviceGroups;
-using IczpNet.Chat.AppVersionDevices;
-using IczpNet.Chat.AppVersions;
 using IczpNet.Chat.Articles;
 using IczpNet.Chat.Blobs;
 using IczpNet.Chat.ChatObjectCategories;
@@ -13,9 +10,6 @@ using IczpNet.Chat.ContactTags;
 using IczpNet.Chat.DbTables;
 using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Developers;
-using IczpNet.Chat.DeviceGroupMaps;
-using IczpNet.Chat.DeviceGroups;
-using IczpNet.Chat.Devices;
 using IczpNet.Chat.EntryNames;
 using IczpNet.Chat.EntryValues;
 using IczpNet.Chat.FavoritedRecorders;
@@ -25,6 +19,7 @@ using IczpNet.Chat.InvitationCodes;
 using IczpNet.Chat.Menus;
 using IczpNet.Chat.MessageReports;
 using IczpNet.Chat.MessageSections.Counters;
+using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.MessageContents;
 using IczpNet.Chat.MessageSections.MessageFollowers;
 using IczpNet.Chat.MessageSections.MessageReminders;
@@ -33,10 +28,12 @@ using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.MessageWords;
 using IczpNet.Chat.Mottos;
 using IczpNet.Chat.OpenedRecorders;
+using IczpNet.Chat.QrCodes;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.ScanCodes;
 using IczpNet.Chat.Scopeds;
+using IczpNet.Chat.Security;
 using IczpNet.Chat.ServerHosts;
 using IczpNet.Chat.SessionBoxes;
 using IczpNet.Chat.SessionOrganizations;
@@ -67,6 +64,7 @@ using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.Identity.EntityFrameworkCore;
+using IczpNet.Chat.AiRuns;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -79,6 +77,8 @@ public class ChatDbContext(DbContextOptions<ChatDbContext> options) : AbpDbConte
 
 
     public DbSet<DbTable> DbTable { get; set; }
+    public DbSet<AiRun> AiRun { get; set; }
+    public DbSet<ScheduledArticleMessage> ScheduledArticleMessage { get; set; }
 
     public DbSet<ChatObject> ChatObject { get; set; }
     public DbSet<ChatObjectCategory> ChatObjectCategory { get; set; }
@@ -147,6 +147,8 @@ public class ChatDbContext(DbContextOptions<ChatDbContext> options) : AbpDbConte
 
 
     public DbSet<Message> Message { get; set; }
+    public DbSet<MessageChange> MessageChange { get; set; }
+    public DbSet<MessageChangeCursor> MessageChangeCursor { get; set; }
 
     public DbSet<MessageWord> MessageWord { get; set; }
 
@@ -177,7 +179,7 @@ public class ChatDbContext(DbContextOptions<ChatDbContext> options) : AbpDbConte
     public DbSet<WalletOrder> WalletOrder { get; set; }
 
     public DbSet<WalletRecorder> WalletRecorder { get; set; }
-    
+
     public DbSet<WalletBusiness> WalletBusiness { get; set; }
     public DbSet<PaymentPlatform> PaymentPlatform { get; set; }
     public DbSet<WalletRequest> RechargeRequest { get; set; }
@@ -191,29 +193,23 @@ public class ChatDbContext(DbContextOptions<ChatDbContext> options) : AbpDbConte
 
     public DbSet<Blob> Blob { get; set; }
     public DbSet<BlobContent> BlobContent { get; set; }
+    public DbSet<BlobMessageRef> BlobMessageRef { get; set; }
 
     public DbSet<InvitationCode> InvitationCode { get; set; }
 
+    public DbSet<QrCode> QrCode { get; set; }
+
     public DbSet<ClientConfig> ClientConfig { get; set; }
 
-    public DbSet<Device> Device { get; set; }
 
-    public DbSet<DeviceGroup> DeviceGroup { get; set; }
 
-    public DbSet<DeviceGroupMap> DeviceGroupMap { get; set; }
-
-    public DbSet<UserDevice> UserDevice { get; set; }
-
-    public DbSet<AppVersion> AppVersion { get; set; }
-
-    public DbSet<AppVersionDevice> AppVersionDevice { get; set; }
-
-    public DbSet<AppVersionDeviceGroup> AppVersionDeviceGroup { get; set; }
 
 
     public DbSet<ScanCode> ScanCode { get; set; }
 
     public DbSet<ScanHandler> ScanHandler { get; set; }
+    public DbSet<UrlSecurityRule> UrlSecurityRule { get; set; }
+    public DbSet<SecurityReport> SecurityReport { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

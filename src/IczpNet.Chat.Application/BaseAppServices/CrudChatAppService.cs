@@ -131,12 +131,14 @@ public abstract class CrudChatAppService<
 
     protected virtual async Task CheckPolicyForUserAsync(IEnumerable<long?> ownerIdList, Func<Task> func = null)
     {
-        if (await IsAnyCurrentUserAsync(ownerIdList))
+        if (!CurrentUser.Id.HasValue)
         {
-            return;
+            throw new Volo.Abp.Authorization.AbpAuthorizationException("Authentication required.");
         }
-
-        await func?.Invoke();
+        var ownedIds = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+        if (ownerIdList.Any(x => !x.HasValue || !ownedIds.Contains(x.Value)))
+            throw new Volo.Abp.Authorization.AbpAuthorizationException("The current user does not own the requested chat objects.");
+        // Owned resources keep the existing self-service permission behavior.
     }
 
     protected virtual Task CheckPolicyForUserAsync(long? ownerId, Func<Task> func = null)

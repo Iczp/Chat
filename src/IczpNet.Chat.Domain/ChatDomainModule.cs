@@ -1,21 +1,22 @@
 using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
+using IczpNet.Chat.AiRuns;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.HttpRequests;
 using IczpNet.Chat.ListSets;
 using IczpNet.Chat.MessageReports;
 using IczpNet.Chat.Options;
-using IczpNet.Chat.ScanLogins;
+using IczpNet.Chat.QrCodes;
 using IczpNet.Chat.SessionUnits;
-using IczpNet.Pusher;
-using IczpNet.Pusher.ShortIds;
+using IczpNet.Chat.ShortIds;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Configuration;
 using StackExchange.Redis;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp;
-using Volo.Abp.AutoMapper;
+using Volo.Abp.Mapperly;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.BlobStoring;
@@ -30,15 +31,16 @@ namespace IczpNet.Chat;
 [DependsOn(
     typeof(AbpDddDomainModule),
     typeof(ChatDomainSharedModule),
-    typeof(AbpAutoMapperModule)
+    typeof(AbpMapperlyModule)
 )]
 
 [DependsOn(typeof(AbpCommonsDomainModule))]
 [DependsOn(typeof(AbpTreesDomainModule))]
 //[DependsOn(typeof(AbpIdentityDomainModule))]
 [DependsOn(typeof(AbpPermissionManagementDomainIdentityModule))]
-[DependsOn(typeof(PusherDomainModule))]
+// PusherDomainModule retired: Chat uses SignalR plus Redis distributed events.
 [DependsOn(typeof(AbpBackgroundJobsAbstractionsModule))]
+[DependsOn(typeof(Volo.Abp.DistributedLocking.AbpDistributedLockingAbstractionsModule))]
 
 [DependsOn(typeof(AbpBlobStoringModule))]
 //[DependsOn(typeof(AbpBlobStoringMinioModule))] //minio
@@ -49,7 +51,9 @@ public class ChatDomainModule : AbpModule
     {
         var configuration = context.Services.GetConfiguration();
 
-        context.Services.AddAutoMapperObjectMapper<ChatDomainModule>();
+
+
+        context.Services.AddMapperlyObjectMapper<ChatDomainModule>();
 
         context.Services.AddHttpClient(HttpRequest.ClientName);
 
@@ -57,12 +61,7 @@ public class ChatDomainModule : AbpModule
 
         //context.Services.ConfigureConventionModuleOptions<ChatDomainModule>();
         //context.Services.ConfigureByConvention<MessageReportOptions>();
-        //context.Services.ConfigureByConvention<ScanLoginOptions>();
 
-        Configure<AbpAutoMapperOptions>(options =>
-        {
-            options.AddMaps<ChatDomainModule>(validate: true);
-        });
 
         Configure<ShortIdOptions>(options =>
         {
@@ -81,9 +80,28 @@ public class ChatDomainModule : AbpModule
         });
 
         // Redis
-        var redisOptions = ConfigurationOptions.Parse(configuration["Redis:Configuration"]);
-        context.Services.TryAddSingleton<IConnectionMultiplexer>(provider => ConnectionMultiplexer.Connect(redisOptions));
+        var redisConfig = configuration["Redis:Configuration"];
+        if (!string.IsNullOrEmpty(redisConfig))
+        {
+            var redisOptions = ConfigurationOptions.Parse(redisConfig);
+            context.Services.TryAddSingleton<IConnectionMultiplexer>(provider => ConnectionMultiplexer.Connect(redisOptions));
+        }
 
+        Configure<AiRunDispatcherOptions>(configuration.GetSection("AiRunDispatcher"));
+        Configure<QrCodeOptions>(configuration.GetSection("Chat:QrCodes"));
+        Configure<SessionUnitOptions>(configuration.GetSection("Chat:SessionUnits"));
+        Configure<MessageOptions>(options =>
+        {
+            var messages = configuration.GetSection(nameof(MessageOptions));
+            options.ChangeSyncEnabled = messages.GetValue(nameof(MessageOptions.ChangeSyncEnabled), options.ChangeSyncEnabled);
+            options.ChangeSyncV2Enabled = messages.GetValue(nameof(MessageOptions.ChangeSyncV2Enabled), options.ChangeSyncV2Enabled);
+            options.ChangeSyncV2Generation = messages[nameof(MessageOptions.ChangeSyncV2Generation)] ?? options.ChangeSyncV2Generation;
+            options.ReadCacheBatchSize = messages.GetValue(nameof(MessageOptions.ReadCacheBatchSize), options.ReadCacheBatchSize);
+            options.ReadCacheMaxBatches = messages.GetValue(nameof(MessageOptions.ReadCacheMaxBatches), options.ReadCacheMaxBatches);
+            options.ReadCacheExpiration = messages.GetValue(nameof(MessageOptions.ReadCacheExpiration), options.ReadCacheExpiration);
+        });
+        //AiRunDispatcher
+        //context.Services.AddHostedService<AiRunDispatcher>();
     }
 
     public override async Task OnPostApplicationInitializationAsync(ApplicationInitializationContext context)
@@ -96,7 +114,16 @@ public class ChatDomainModule : AbpModule
         //await context.AddBackgroundWorkerAsync<SessionUnitRequestUnitTestWorker>();
         //await context.AddBackgroundWorkerAsync<RecorderUnitTestWorker>();
 
-        await context.AddBackgroundWorkerAsync<MessageReportFlushWorker>();
+        if (context.ServiceProvider.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>()
+            .GetValue("Chat:Workers:EnablePeriodic", true))
+        {
+            await context.AddBackgroundWorkerAsync<MessageReportFlushWorker>();
+            await context.AddBackgroundWorkerAsync<IczpNet.Chat.MessageSections.Messages.MessageChangeCleanupWorker>();
+            await context.AddBackgroundWorkerAsync<IczpNet.Chat.QrCodes.QrCodeCleanupWorker>();
+            if (context.ServiceProvider.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>()
+                .GetValue("Chat:ArticleSchedules:Enabled", false))
+                await context.AddBackgroundWorkerAsync<IczpNet.Chat.MessageSections.ArticleScheduleRecoveryWorker>();
+        }
 
         await base.OnPostApplicationInitializationAsync(context);
     }

@@ -1,4 +1,4 @@
-﻿using Volo.Abp.Reflection;
+using Volo.Abp.Reflection;
 
 namespace IczpNet.Chat.Permissions;
 
@@ -65,6 +65,7 @@ public class ChatPermissions
 
     public class MessageSenderPermission
     {
+        public const string ManageArticle = IczpNet.Chat.MessageSections.ArticleMessagePermissions.Manage;
         public const string Default = GroupName + "." + nameof(MessageSenderPermission);
         
         public const string SendCommand = Default + "." + nameof(SendCommand);
@@ -243,6 +244,17 @@ public class ChatPermissions
         public const string Delete = Default + "." + nameof(Delete);
     }
 
+    public class QrCodePermissions
+    {
+        public const string Default = GroupName + "." + nameof(QrCodePermissions);
+        public const string GetItem = Default + "." + nameof(GetItem);
+        public const string GetList = Default + "." + nameof(GetList);
+        public const string Generate = Default + "." + nameof(Generate);
+        public const string Reset = Default + "." + nameof(Reset);
+        public const string Apply = Default + "." + nameof(Apply);
+        public const string Delete = Default + "." + nameof(Delete);
+    }
+
     
     /// <summary>
     /// AppVersion
@@ -309,6 +321,21 @@ public class ChatPermissions
         public const string SetIsEnabled = Default + ".SetIsEnabled";
     }
     
+
+    /// <summary>
+    /// AiRun
+    /// </summary>
+    public class AiRunPermissions
+    {
+        public const string Default = GroupName + $".{nameof(AiRunPermissions)}";
+        public const string GetItem = Default + ".GetItem";
+        public const string GetList = Default + ".GetList";
+        public const string Update = Default + ".Update";
+        public const string Create = Default + ".Create";
+        public const string Delete = Default + ".Delete";
+        public const string Retry = Default + ".Retry";
+        public const string Cancel = Default + ".Cancel";
+    }
 
     /*---------code-generator-permissions: Do not modify or delete this line of comments--------*/
 }

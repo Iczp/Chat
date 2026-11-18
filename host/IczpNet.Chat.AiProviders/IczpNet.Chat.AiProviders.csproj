@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\common.props" />
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>IczpNet.Chat</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\IczpNet.Chat.Domain\IczpNet.Chat.Domain.csproj" />
+    <ProjectReference Include="..\..\..\IczpNet.Ai\src\IczpNet.Ai.Domain\IczpNet.Ai.Domain.csproj" />
+    <ProjectReference Include="..\..\..\..\ai-operating-platform\connector-sdk\dotnet\Aurora.AiConnector.csproj" />
+  </ItemGroup>
+</Project>

@@ -11,6 +11,9 @@ namespace IczpNet.Chat.Blobs;
 [Index(nameof(Name))]
 [Index(nameof(MimeType))]
 [Index(nameof(Suffix))]
+[Index(nameof(UploaderChatObjectId))]
+[Index(nameof(ParentBlobId))]
+[Index(nameof(Status), nameof(ExpireTime))]
 public class Blob : BaseEntity<Guid>, IIsPublic, IIsStatic
 {
     /// <summary>
@@ -58,6 +61,46 @@ public class Blob : BaseEntity<Guid>, IIsPublic, IIsStatic
     /// IsStatic
     /// </summary>
     public virtual bool IsStatic { get; set; }
+
+    /// <summary>
+    /// 上传者 ChatObjectId（由 SessionUnitId 解析）
+    /// </summary>
+    public virtual long? UploaderChatObjectId { get; set; }
+
+    /// <summary>
+    /// 上传时的 SessionUnitId（仅用于审计溯源）
+    /// </summary>
+    public virtual Guid? UploadSessionUnitId { get; set; }
+
+    /// <summary>
+    /// 上传时的 SessionId（仅用于审计溯源）
+    /// </summary>
+    public virtual Guid? UploadSessionId { get; set; }
+
+    /// <summary>
+    /// 父级 BlobId（衍生文件指向主文件）
+    /// </summary>
+    public virtual Guid? ParentBlobId { get; set; }
+
+    /// <summary>
+    /// 在附件组中的角色
+    /// </summary>
+    public virtual BlobRoles Role { get; set; }
+
+    /// <summary>
+    /// 生命周期状态
+    /// </summary>
+    public virtual BlobStatus Status { get; set; }
+
+    /// <summary>
+    /// 临时草稿过期时间
+    /// </summary>
+    public virtual DateTime? ExpireTime { get; set; }
+
+    /// <summary>
+    /// 消息引用计数
+    /// </summary>
+    public virtual int RefCount { get; set; }
 
     /// <summary>
     /// 内容

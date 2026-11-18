@@ -9,6 +9,7 @@ using Volo.Abp;
 namespace IczpNet.Chat.Controllers;
 
 [Area(ChatRemoteServiceConsts.ModuleName)]
+[NonController]
 [RemoteService(Name = ChatRemoteServiceConsts.RemoteServiceName)]
 [Route($"/api/{ChatRemoteServiceConsts.ModuleName}/signalr")]
 public class SignalRController(IHubContext<ChatHub, IChatClient> hubContext) : ChatController

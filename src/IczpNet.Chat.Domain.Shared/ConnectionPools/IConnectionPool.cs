@@ -75,6 +75,25 @@ public interface IConnectionPool
     string BrowserInfo { get; set; }
 
     /// <summary>
+    /// Browser
+    /// </summary>
+    string Browser { get; set; }
+
+    /// <summary>
+    /// Platform
+    /// </summary>
+    string Platform { get; set; }
+    /// <summary>
+    /// Brand
+    /// </summary>
+    string Brand { get; set; }
+
+    /// <summary>
+    /// Model
+    /// </summary>
+    string Model { get; set; }
+
+    /// <summary>
     /// DeviceInfo
     /// </summary>
     string DeviceInfo { get; set; }

@@ -26,7 +26,7 @@ public class AiResolver : DomainService, IAiResolver, ISingletonDependency
 
         // 1. 获取所有已加载的程序集
         var typeList = AppDomain.CurrentDomain.GetAssemblies()
-            .SelectMany(x => x.GetExportedTypes())
+            .SelectMany(GetLoadableExportedTypes)
             .Where(t => !t.IsAbstract && t.GetInterfaces().Any(x => typeof(IAiProvider).IsAssignableFrom(x)))
             .ToList();
 
@@ -45,6 +45,32 @@ public class AiResolver : DomainService, IAiResolver, ISingletonDependency
         }
 
         return dictionary;
+    }
+
+    /// <summary>
+    /// Returns exported types without allowing framework-generated proxy assemblies
+    /// to break provider discovery. Castle adds <c>DynamicProxyGenAssembly2</c> at
+    /// runtime; it is dynamic and may contain incomplete proxy types.
+    /// </summary>
+    private static IEnumerable<Type> GetLoadableExportedTypes(Assembly assembly)
+    {
+        if (assembly.IsDynamic)
+        {
+            return [];
+        }
+
+        try
+        {
+            return assembly.GetExportedTypes();
+        }
+        catch (ReflectionTypeLoadException exception)
+        {
+            return exception.Types.OfType<Type>();
+        }
+        catch (TypeLoadException)
+        {
+            return [];
+        }
     }
 
     public Type GetProvider(string name)

@@ -1,7 +1,5 @@
-﻿using IczpNet.AbpCommons.EntityFrameworkCore;
-using IczpNet.Chat.AppVersionDeviceGroups;
-using IczpNet.Chat.AppVersionDevices;
-using IczpNet.Chat.AppVersions;
+using IczpNet.AbpCommons.EntityFrameworkCore;
+using IczpNet.Chat.AiRuns;
 using IczpNet.Chat.Articles;
 using IczpNet.Chat.Attributes;
 using IczpNet.Chat.Blobs;
@@ -12,8 +10,6 @@ using IczpNet.Chat.Connections;
 using IczpNet.Chat.DbTables;
 using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Developers;
-using IczpNet.Chat.DeviceGroupMaps;
-using IczpNet.Chat.Devices;
 using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.HttpRequests;
@@ -26,8 +22,10 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.MessageWords;
 using IczpNet.Chat.OpenedRecorders;
+using IczpNet.Chat.QrCodes;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.RedEnvelopes;
+using IczpNet.Chat.Security;
 using IczpNet.Chat.Scopeds;
 using IczpNet.Chat.SessionPermissionRoleGrants;
 using IczpNet.Chat.SessionPermissionUnitGrants;
@@ -49,6 +47,7 @@ using System.Linq;
 using System.Reflection;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities;
+using Volo.Abp.EntityFrameworkCore.Modeling;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
 
@@ -82,6 +81,69 @@ public static class ChatDbContextModelCreatingExtensions
 
 
         builder.ConfigEntities<ChatDomainModule>(ChatDbProperties.DbTablePrefix, ChatDbProperties.DbSchema);
+
+        builder.Entity<ScheduledArticleMessage>(b =>
+        {
+            b.Property(x => x.InputJson).IsRequired();
+            b.Property(x => x.LastError).HasMaxLength(512);
+            b.HasIndex(x => new { x.Status, x.ScheduledAt, x.LeaseUntil });
+            b.HasIndex(x => new { x.SenderSessionUnitId, x.CreationTime });
+        });
+
+        builder.Entity<AiRun>(b =>
+        {
+            //b.ToTable(ChatDbProperties.DbTablePrefix + "AiRuns", ChatDbProperties.DbSchema);
+            b.Property(x => x.Provider).IsRequired().HasMaxLength(64);
+            b.Property(x => x.LeaseOwner).HasMaxLength(128);
+            b.Property(x => x.LastErrorCode).HasMaxLength(64);
+            b.Property(x => x.LastErrorMessage).HasMaxLength(2048);
+            b.HasIndex(x => x.SourceMessageId).IsUnique();
+            b.HasIndex(x => new { x.Status, x.NextAttemptAt });
+            b.HasIndex(x => new { x.SessionId, x.Status, x.CreationTime });
+            b.HasIndex(x => new { x.Status, x.LeaseUntilTime });
+        });
+
+        builder.Entity<UrlSecurityRule>(b =>
+        {
+            b.Property(x => x.Host).IsRequired().HasMaxLength(256);
+            b.Property(x => x.Reason).HasMaxLength(512);
+            b.HasIndex(x => x.Host);
+            b.HasIndex(x => new { x.Host, x.IsEnabled });
+            b.HasIndex(x => x.Level);
+        });
+
+        builder.Entity<SecurityReport>(b =>
+        {
+            b.Property(x => x.TargetType).IsRequired().HasMaxLength(64);
+            b.Property(x => x.TargetContent).IsRequired().HasMaxLength(1024);
+            b.Property(x => x.Reason).IsRequired().HasMaxLength(128);
+            b.Property(x => x.Description).HasMaxLength(2000);
+            b.Property(x => x.AuditRemark).HasMaxLength(1024);
+            b.HasIndex(x => x.TargetContent);
+            b.HasIndex(x => x.Status);
+            b.HasIndex(x => x.CreationTime);
+        });
+
+        builder.Entity<QrCode>(b =>
+        {
+            b.Property(x => x.Code).IsRequired().HasMaxLength(64);
+            b.Property(x => x.Title).HasMaxLength(200);
+            b.Property(x => x.Content).HasMaxLength(1024);
+            b.Property(x => x.PayloadJson).HasMaxLength(2000);
+            b.HasIndex(x => x.Code).IsUnique();
+            b.HasIndex(x => new { x.OwnerId, x.Scene, x.IsPermanent, x.IsEnabled });
+            b.HasIndex(x => x.ExpirationTime);
+            b.HasOne(x => x.Owner)
+                .WithMany()
+                .HasForeignKey(x => x.OwnerId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
+            b.HasOne(x => x.Inviter)
+                .WithMany()
+                .HasForeignKey(x => x.InviterId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
+        });
 
         ConfigMessageTemplateEntitys(builder);
         //ForEachEntitys(builder);
@@ -339,10 +401,46 @@ public static class ChatDbContextModelCreatingExtensions
             b.HasOne(x => x.Blob).WithOne(x => x.Content).HasForeignKey<BlobContent>(x => x.BlobId).OnDelete(DeleteBehavior.NoAction).IsRequired(false);
         });
 
+        builder.Entity<BlobMessageRef>(b =>
+        {
+            b.ToTable($"{ChatDbProperties.DbTablePrefix}_{nameof(BlobMessageRef)}", ChatDbProperties.DbSchema);
+            b.ConfigureByConvention();
+            b.HasOne(x => x.Blob).WithMany().HasForeignKey(x => x.BlobId).OnDelete(DeleteBehavior.NoAction);
+            b.HasOne(x => x.Message).WithMany().HasForeignKey(x => x.MessageId).OnDelete(DeleteBehavior.NoAction);
+        });
 
 
+
+        builder.Entity<MessageChange>(b =>
+        {
+            b.ToTable($"{ChatDbProperties.DbTablePrefix}_MessageChange", ChatDbProperties.DbSchema);
+            b.ConfigureByConvention();
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Id).ValueGeneratedOnAdd();
+            b.HasIndex(x => x.MessageId)
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
+            b.HasIndex(x => new { x.SessionId, x.Id });
+            b.HasIndex(x => new { x.IsDeleted, x.DeletionTime });
+        });
+        builder.Entity<MessageChangeCursor>(b =>
+        {
+            b.ToTable($"{ChatDbProperties.DbTablePrefix}_MessageChangeCursor", ChatDbProperties.DbSchema);
+            b.ConfigureByConvention();
+            b.HasKey(x => x.Id);
+            b.Property(x => x.DeviceId).IsRequired().HasMaxLength(200);
+            b.HasIndex(x => new { x.TenantId, x.UserId, x.ChatObjectId, x.DeviceId })
+                .IsUnique()
+                .HasFilter(null);
+        });
         builder.Entity<Message>(b =>
             {
+                b.HasIndex(x => new { x.SessionId, x.SessionSeq }).IsUnique().HasFilter(null);
+                b.HasOne<MessageChange>()
+                    .WithMany()
+                    .HasForeignKey(x => x.MessageChangeId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                b.HasIndex(x => x.MessageChangeId);
                 var _prefix = $"{ChatDbProperties.DbTablePrefix}_{nameof(Message)}_MapTo";
                 b.HasMany(x => x.CmdContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(CmdContent)}", ChatDbProperties.DbSchema));
                 b.HasMany(x => x.TextContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(TextContent)}", ChatDbProperties.DbSchema));
@@ -369,19 +467,40 @@ public static class ChatDbContextModelCreatingExtensions
                 b.HasOne(x => x.DeletedCounter).WithOne(x => x.Message).HasForeignKey<DeletedCounter>(x => x.MessageId).IsRequired(true);
 
                 //ChatGPT 优化 2025.11.20
-                b.HasIndex(x => new { x.SessionId, x.IsDeleted, x.IsPrivate }).HasDatabaseName("IX_ChatMessage_CountQuery").IncludeProperties(x => new { x.Id, x.SenderSessionUnitId, x.ReceiverSessionUnitId });
+                //b.HasIndex(x => new { x.SessionId, x.IsDeleted, x.IsPrivate }).HasDatabaseName("IX_ChatMessage_CountQuery").IncludeProperties(x => new { x.Id, x.SenderSessionUnitId, x.ReceiverSessionUnitId });
+
 
                 // 优化 GetList COUNT 的关键索引
-                b.HasIndex(x => new
-                {
+                //b.HasIndex(x => new
+                //{
+                //    x.SessionId,
+                //    x.IsDeleted,
+                //    x.IsPrivate,
+                //    x.SenderSessionUnitId,
+                //    x.ReceiverSessionUnitId
+                //})
+                //.HasDatabaseName("IX_Message_Session_Count")
+                //.IncludeProperties(x => new { x.Id });
+
+                var indexBuilder1 = b.HasIndex(x => new { x.SessionId, x.IsDeleted, x.IsPrivate })
+                                     .HasDatabaseName("IX_ChatMessage_CountQuery");
+
+                SqlServerIndexBuilderExtensions.IncludeProperties(indexBuilder1, x => new {
+                    x.Id,
+                    x.SenderSessionUnitId,
+                    x.ReceiverSessionUnitId
+                });
+
+                var indexBuilder2 = b.HasIndex(x => new {
                     x.SessionId,
                     x.IsDeleted,
                     x.IsPrivate,
                     x.SenderSessionUnitId,
                     x.ReceiverSessionUnitId
                 })
-                .HasDatabaseName("IX_Message_Session_Count")
-                .IncludeProperties(x => new { x.Id });
+                .HasDatabaseName("IX_Message_Session_Count");
+
+                SqlServerIndexBuilderExtensions.IncludeProperties(indexBuilder2, x => new { x.Id });
 
             });
 
@@ -447,43 +566,7 @@ public static class ChatDbContextModelCreatingExtensions
             //b.Property(x => x.MessageType).HasConversion<string>().HasMaxLength(32);
         });
 
-        builder.Entity<UserDevice>(b =>
-        {
-            b.HasKey(x => new { x.UserId, x.DeviceId });
-            b.HasOne(x => x.Device).WithMany(x => x.UserDeviceList).HasForeignKey(x => x.DeviceId).IsRequired(false);
-        });
 
-        builder.Entity<DeviceGroupMap>(b =>
-        {
-            b.HasKey(x => new { x.DeviceGroupId, x.DeviceId });
-            b.HasOne(x => x.Device).WithMany(x => x.DeviceGroupMapList).HasForeignKey(x => x.DeviceId).IsRequired(false);
-            b.HasOne(x => x.DeviceGroup).WithMany(x => x.DeviceGroupMapList).HasForeignKey(x => x.DeviceGroupId).IsRequired(false);
-        });
-
-        builder.Entity<AppVersionDevice>(b =>
-        {
-            b.HasKey(x => new { x.AppVersionId, x.DeviceId });
-            b.HasOne(x => x.AppVersion).WithMany(x => x.VersionDeviceList).HasForeignKey(x => x.AppVersionId).IsRequired(false);
-            b.HasOne(x => x.Device).WithMany(x => x.AppVersionDeviceList).HasForeignKey(x => x.DeviceId).IsRequired(false);
-        });
-
-        builder.Entity<AppVersionDeviceGroup>(b =>
-        {
-            b.HasKey(x => new { x.AppVersionId, x.DeviceGroupId });
-            b.HasOne(x => x.DeviceGroup).WithMany(x => x.AppVersionDeviceGroupList).HasForeignKey(x => x.DeviceGroupId).IsRequired(false);
-        });
-
-        builder.Entity<AppVersion>(b =>
-        {
-            b.HasIndex(x => new { x.AppId, x.Platform, x.VersionCode }).IsDescending([false, false, true]).IsUnique();
-            b.HasIndex(x => x.VersionCode).IsDescending(true);
-            b.HasMany(x => x.AppVersionDeviceGroupList)
-                .WithOne(x => x.AppVersion)
-                .HasForeignKey(x => x.AppVersionId)
-                .OnDelete(DeleteBehavior.NoAction)
-                .IsRequired(false);
-
-        });
     }
 
     public static void ForEachEntitys(this ModelBuilder builder)

@@ -9,6 +9,11 @@ namespace IczpNet.Chat.SessionUnits;
 
 public interface ISessionUnitCacheManager
 {
+    Task<List<FriendModel>> GetChangedFriendsAsync(long ownerId, double? minTicks, double? maxTicks,
+        Guid? cursorId, int take, int skip = 0, Func<FriendModel, bool> filter = null, CancellationToken cancellationToken = default);
+
+    Task<int> AcknowledgeDirtyAsync(FlushDirtyProcessingJobArgs args);
+    Task<bool> HasPendingDirtyAsync(FlushDirtyProcessingJobArgs args);
     /// <summary>
     /// 设置会话成员
     /// </summary>
@@ -231,6 +236,13 @@ public interface ISessionUnitCacheManager
     Task<Dictionary<long, Dictionary<long, double?>>> FindFriendsAsync(List<SessionUnitElement> elements);
 
     /// <summary>
+    /// 获取一个好友会话单元在 OwnerFriends ZSET 中的实际排序分值。
+    /// </summary>
+    /// <param name="unit">好友会话单元</param>
+    /// <returns>不存在于好友索引时返回 null</returns>
+    Task<double?> GetFriendScoreAsync(SessionUnitCacheItem unit);
+
+    /// <summary>
     /// 获取好友会话单元(原始信息)
     /// </summary>
     /// <param name="ownerId"></param>
@@ -300,6 +312,13 @@ public interface ISessionUnitCacheManager
     /// <param name="types">为null时，获取全部</param>
     /// <returns></returns>
     Task<Dictionary<ChatObjectTypeEnums, long>> GetFriendsCountMapAsync(long ownerId, IEnumerable<ChatObjectTypeEnums> types = null);
+
+    /// <summary>
+    /// 获取好友索引
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <returns></returns>
+    Task<IEnumerable<KeyValuePair<SessionUnitElement, ContactValue>>> GetFriendsIndexedAsync(long ownerId);
 
     /// <summary>
     /// 获取会话单元(多个)
@@ -460,4 +479,85 @@ public interface ISessionUnitCacheManager
     /// <param name="units"></param>
     /// <returns></returns>
     Task AddUnitsAsync(IEnumerable<SessionUnitCacheItem> units);
+    Task RemoveNewUnitsAsync(IEnumerable<SessionUnitCacheItem> units);
+    Task RemoveSessionMessageAsync(Guid sessionId, long messageId);
+
+    /// <summary>
+    /// 更新最新消息ID
+    /// </summary>
+    /// <param name="senderSessionUnit"></param>
+    /// <param name="message"></param>
+    /// <returns></returns>
+    Task UpdateLastMessageAsync(SessionUnitCacheItem senderSessionUnit, Message message);
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="messageIdList"></param>
+    /// <returns></returns>
+    Task AppendSessionMessagesAsync(Guid sessionId, List<long> messageIdList);
+
+    /// <summary>
+    /// 获取会话最新消息
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="minMessageId"></param>
+    /// <param name="maxMessageId"></param>
+    /// <param name="skip"></param>
+    /// <param name="take"></param>
+    /// <param name="isDescending"></param>
+    /// <returns></returns>
+    Task<IEnumerable<long>> GetSessionMessagesAsync(
+        Guid sessionId,
+        long minMessageId = 0,
+        long maxMessageId = long.MaxValue,
+        long skip = 0,
+        long take = -1,
+        bool isDescending = true);
+
+    /// <summary>
+    /// 获取会话最新消息数量
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="minMessageId"></param>
+    /// <param name="maxMessageId"></param>
+    /// <returns></returns>
+    Task<long> GetSessionMessageTotalCountAsync(Guid sessionId, long minMessageId = 0, long maxMessageId = long.MaxValue);
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    Task<(long Min, long Max)?> GetMessagesRangeAsync(Guid sessionId);
+
+    Task<long?> GetMinMessageIdAsync(Guid sessionId);
+
+    Task<long?> GetMaxMessageIdAsync(Guid sessionId);
+
+    /// <summary>
+    /// 移除消息缓存
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    Task<bool> RemoveSessionMessagesAsync(Guid sessionId);
+
+    Task<List<KeyValuePair<SessionUnitElement, long>>> GetDirtyAsync(int batchSize, bool isAscending = true, bool isDelete = true);
+
+    Task<List<KeyValuePair<SessionUnitElement, long>>> GetAndRemoveProcessingDirtyAsync(string processingKey, int batchSize, bool isAscending = true);
+
+    Task<long> GetDirtyCountAsync();
+
+    Task<long> GetProcessingDirtyCountAsync(string processingKey);
+
+    //Task<string> RenameDirtyAsync();
+
+    //Task DeleteDirtyAsync(string processingKey);
+
+    Task<List<FlushDirtyProcessingJobArgs>> FlushDirtyToJobsAsync(int scanSize = 5000, int jobSize = 1000);
+
+    Task UpdateFlushDirtyProgressAsync(string processingKey, int affect, long elapsedMilliseconds);
+
+    Task<FlushDirtyProgress> GetFlushDirtyProgressAsync(string processingKey);
 }

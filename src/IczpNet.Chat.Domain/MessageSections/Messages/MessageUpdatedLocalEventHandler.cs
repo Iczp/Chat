@@ -1,36 +1,76 @@
-﻿using IczpNet.Chat.Developers;
-using IczpNet.Chat.Follows;
-using IczpNet.Chat.SessionUnits;
-using Microsoft.Extensions.Logging;
+﻿using IczpNet.Chat.Commands;
+using IczpNet.Chat.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Globalization;
 using System.Threading.Tasks;
-using Volo.Abp.BackgroundJobs;
+using Volo.Abp.Caching;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities.Events;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.EventBus;
-using Volo.Abp.Json;
+using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
 public class MessageUpdatedLocalEventHandler(
-    ISessionUnitManager sessionUnitManager,
-    IFollowManager followManager,
-    IJsonSerializer jsonSerializer,
-    IBackgroundJobManager backgroundJobManager,
-    IDeveloperManager developerManager) : DomainService, ILocalEventHandler<EntityUpdatedEventData<Message>>, ITransientDependency
+    IUnitOfWorkManager unitOfWorkManager,
+    IServiceScopeFactory serviceScopeFactory,
+    ICurrentHosted currentHosted) : DomainService, ILocalEventHandler<EntityUpdatedEventData<Message>>, ITransientDependency
 {
-    protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
-    protected IFollowManager FollowManager { get; } = followManager;
-    protected IJsonSerializer JsonSerializer { get; } = jsonSerializer;
-    public IBackgroundJobManager BackgroundJobManager { get; } = backgroundJobManager;
-    protected IDeveloperManager DeveloperManager { get; } = developerManager;
 
     [UnitOfWork]
-    public async Task HandleEventAsync(EntityUpdatedEventData<Message> eventData)
+    public Task HandleEventAsync(EntityUpdatedEventData<Message> eventData)
     {
-        await Task.Yield();
         var message = eventData.Entity;
-        Logger.LogInformation($"Message is updated:{message}");
+        var unitOfWork = unitOfWorkManager.Current ?? throw new InvalidOperationException("Message updates require a unit of work.");
+        var messageId = message.Id;
+
+        // Reuse multi-instance delivery without rebroadcasting message content.
+        var hasSharedChange = message.IsRollbackMessage() || message.MessageChangeId.HasValue;
+        var notification = !hasSharedChange || !message.SessionId.HasValue ? null : new SendMessageToClientDistributedEto
+        {
+            Command = message.IsRollbackMessage() ? CommandConsts.MessageRollbacked : CommandConsts.MessageUpdated,
+            HostName = currentHosted.Name,
+            MessageId = message.Id,
+            SessionId = message.SessionId,
+            LatestChangeSeq = message.MessageChangeId?.ToString(CultureInfo.InvariantCulture),
+            MessageChangeId = message.MessageChangeId?.ToString(CultureInfo.InvariantCulture),
+            ChangeType = message.IsRollbackMessage() ? "Recalled" : "Updated",
+            ChangeScope = "Shared",
+            Message = new MessageInfo<object>
+            {
+                Id = message.Id,
+                SyncVersion = message.SyncVersion,
+                ClientMessageId = message.ClientMessageId,
+                SessionId = message.SessionId.Value,
+                SessionSeq = message.SessionSeq,
+                SenderId = message.SenderId,
+                SenderSessionUnitId = message.SenderSessionUnitId,
+                ReceiverId = message.ReceiverId,
+                ReceiverSessionUnitId = message.ReceiverSessionUnitId,
+                MessageType = message.MessageType,
+                CreationTime = message.CreationTime,
+                IsPrivate = message.IsPrivate,
+                IsRollbacked = message.IsRollbackMessage(),
+                RollbackTime = message.RollbackTime,
+            },
+        };
+        // Redis Pub/Sub has no durable outbox in every Host. Do not publish
+        // before SQL commits. Use the same fresh-scope completion pattern as
+        // MessageCacheManager so handler-scoped services cannot be disposed.
+        unitOfWork.OnCompleted(async () =>
+        {
+            using var scope = serviceScopeFactory.CreateScope();
+            var cache = scope.ServiceProvider.GetRequiredService<IDistributedCache<MessageCacheItem, MessageCacheKey>>();
+            await cache.RemoveAsync(new MessageCacheKey(messageId), hideErrors: false, considerUow: false);
+            if (notification != null)
+            {
+                var bus = scope.ServiceProvider.GetRequiredService<IDistributedEventBus>();
+                await bus.PublishAsync(notification, onUnitOfWorkComplete: false, useOutbox: false);
+            }
+        });
+        return Task.CompletedTask;
     }
 }

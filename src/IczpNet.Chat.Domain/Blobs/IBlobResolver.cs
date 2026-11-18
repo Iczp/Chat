@@ -18,12 +18,20 @@ public interface IBlobResolver
     /// <param name="context"></param>
     /// <returns></returns>
     Task<string> GetDirectoryNameAsync(BlobContext context);
-    
 
     /// <summary>
     /// 获取文件Url
     /// </summary>
     /// <param name="blobId"></param>
+    /// <param name="suffix"></param>
     /// <returns></returns>
-    Task<string> GetFileUrlAsync(Guid blobId);
+    Task<string> GetFileUrlAsync(Guid blobId, string suffix);
+
+    /// <summary>
+    /// 从业务或历史文件 Url 中解析 BlobId
+    /// </summary>
+    /// <param name="url"></param>
+    /// <param name="blobId"></param>
+    /// <returns></returns>
+    bool TryParseBlobId(string url, out Guid blobId);
 }

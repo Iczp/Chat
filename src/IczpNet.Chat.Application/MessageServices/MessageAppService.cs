@@ -1,6 +1,8 @@
-﻿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.BaseDtos;
+using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.DeletedRecorders;
 using IczpNet.Chat.Enums.Dtos;
 using IczpNet.Chat.FavoritedRecorders;
@@ -11,17 +13,21 @@ using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
 using IczpNet.Chat.SessionUnits;
+using IczpNet.Chat.Specifications;
 using IczpNet.Chat.SessionUnitSettings;
-using IczpNet.Chat.SessionUnitSettings.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Dynamic.Core;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
@@ -32,7 +38,7 @@ namespace IczpNet.Chat.MessageServices;
 /// <summary>
 /// 消息管理器
 /// </summary>
-public class MessageAppService(
+public partial class MessageAppService(
     IDeletedRecorderManager deletedRecorderManager,
     IMessageRepository repository,
     IReadedRecorderManager readedRecorderManager,
@@ -42,6 +48,7 @@ public class MessageAppService(
     ISessionUnitCacheManager sessionUnitCacheManager,
     ISessionUnitRepository sessionUnitRepository,
     ISessionUnitSettingManager sessionUnitSettingManager,
+    ISessionUnitFriendshipMapper sessionUnitFriendshipMapper,
     IMessageManager messageManager) : ChatAppService, IMessageAppService
 {
     public IDeletedRecorderManager DeletedRecorderManager { get; } = deletedRecorderManager;
@@ -53,7 +60,9 @@ public class MessageAppService(
     public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
     protected ISessionUnitRepository SessionUnitRepository { get; } = sessionUnitRepository;
     public ISessionUnitSettingManager SessionUnitSettingManager { get; } = sessionUnitSettingManager;
+    public ISessionUnitFriendshipMapper SessionUnitFriendshipMapper { get; } = sessionUnitFriendshipMapper;
     protected IMessageManager MessageManager { get; } = messageManager;
+    //protected ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
     /// <summary>
     /// 获取禁止转发的消息类型
@@ -77,7 +86,6 @@ public class MessageAppService(
 
     private async Task<IQueryable<Message>> CreateQueryableAsync(SessionUnit entity, MessageGetListInput input)
     {
-
         var sessionId = entity.SessionId;
         var sessionUnitId = entity.Id;
         //var setting = entity.Setting;
@@ -90,6 +98,7 @@ public class MessageAppService(
 
         var query = (await Repository.GetQueryableAsync())
             .Where(x => x.SessionId == sessionId)
+            .Where(new OwnerMessageSpecification(entity.OwnerId, entity.Id).ToExpression())
             //排除已删除的消息
             .Where(x => !x.DeletedList.Any(d => d.SessionUnitId == sessionUnitId && d.MessageId == x.Id))
             //排除已删除的消息 -- 删除数据量大小，不稳定
@@ -201,9 +210,9 @@ public class MessageAppService(
 
         var friendMap = friendshipSessionUnits
             .Select(x => x.Value)
-            .Where(x => x.DestinationId.HasValue)
-            .DistinctBy(x => x.DestinationId.Value)
-            .ToDictionary(x => x.DestinationId.Value, x => x);
+            .Where(x => x != null && x.DestinationId.HasValue)
+            .DistinctBy(x => x!.DestinationId!.Value)
+            .ToDictionary(x => x!.DestinationId!.Value, x => x!);
 
         //var destnactions = await SessionUnitManager.FindManyAsync(ownerId, distnactionIds);
 
@@ -221,11 +230,24 @@ public class MessageAppService(
 
             var friendshipSessionUnit = friendMap.GetValueOrDefault(item.SenderSessionUnit.OwnerId);
 
-            item.SenderSessionUnit.IsFriendship = friendshipSessionUnit != null;
-            item.SenderSessionUnit.FriendshipSessionUnitId = friendshipSessionUnit?.Id;
-            item.SenderSessionUnit.FriendshipName = friendshipSessionUnit?.Rename;
-            //item.SenderSessionUnit.MemberName = friendshipSessionUnit?.MemberName;
+            if (friendshipSessionUnit != null)
+            {
+                item.SenderSessionUnit.Friendship = SessionUnitFriendshipMapper.Map(friendshipSessionUnit);
+            }
         }
+    }
+
+    /// <summary>
+    /// 消息 - 总数量
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    public async Task<long> GetTotalCountAsync(MessageGetListInput input)
+    {
+        var sessionUnitId = input.SessionUnitId;
+        var entity = await GetAndCheckPolicyAsync(GetListPolicyName, sessionUnitId);
+        var query = await CreateQueryableAsync(entity, input);
+        return query.Count();
     }
 
     /// <summary>
@@ -258,24 +280,11 @@ public class MessageAppService(
     }
 
     /// <summary>
-    /// 消息 - 总数量
+    /// 消息列表
     /// </summary>
     /// <param name="input"></param>
     /// <returns></returns>
-    public async Task<long> GetTotalCountAsync(MessageGetListInput input)
-    {
-        var sessionUnitId = input.SessionUnitId;
-        var entity = await GetAndCheckPolicyAsync(GetListPolicyName, sessionUnitId);
-        var query = await CreateQueryableAsync(entity, input);
-        return query.Count();
-    }
-
-    /// <summary>
-    /// 历史消息
-    /// </summary>
-    /// <param name="input"></param>
-    /// <returns></returns>
-    public async Task<PagedResultDto<MessageOwnerDto>> GetListFastAsync(MessageFastGetListInput input)
+    public async Task<ExtraPagedResultDto<MessageOwnerDto>> GetListFastAsync(MessageFastGetListInput input)
     {
         var sessionUnitId = input.SessionUnitId;
 
@@ -298,8 +307,11 @@ public class MessageAppService(
 
         var hasMore = ids.Count > pageSize;
 
+        long? nextCursorId = null;
+
         if (hasMore)
         {
+            nextCursorId = ids.Last();
             ids.RemoveAt(ids.Count - 1);
         }
 
@@ -312,15 +324,158 @@ public class MessageAppService(
         // 不统计真实数量，防止全表扫描
         var totalCount = input.IsRealTotalCount == true
             ? idQueryable.Count()
-            : skip + items.Count + (hasMore ? 1 : 0);
+            : skip + ids.Count + (hasMore ? 1 : 0);
 
-        var result = new PagedResultDto<MessageOwnerDto>(totalCount, items);
+        var result = new ExtraPagedResultDto<MessageOwnerDto>(totalCount, items, new
+        {
+            NextCursorId = nextCursorId,
+        });
 
         await FillStatisticsAsync(sessionUnitId, result);
         await FillFriendshipAsync(entity.OwnerId, result);
         //await FillSettingsAsync(result);
 
         return result;
+    }
+
+    /// <summary>
+    /// 加载到缓存
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="minMessageId"></param>
+    /// <param name="max"></param>
+    /// <param name="batchSize"></param>
+    /// <returns></returns>
+    public async Task<int> BuildCacheAsync(Guid sessionId, long? minMessageId, int max = 5000, int batchSize = 1000)
+    {
+        var result = await MessageManager.BuildAllCacheAsync(sessionId, minMessageId,  max, batchSize);
+        return result.Count;
+    }
+
+    /// <summary>
+    /// 移除消息缓存
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    public async Task<bool> RemoveCacheAsync(Guid sessionId)
+    {
+        return await MessageManager.RemoveCacheAsync(sessionId);
+    }
+
+    /// <summary>
+    /// 最新消息(Redis 优先)
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    public async Task<ExtraPagedResultDto<MessageFastDto>> GetLatestAsync(MessageGetLatestInput input)
+    {
+        if (input.Authoritative)
+        {
+            Assert.If(input.MinMessageId < 0, $"参数 {nameof(input.MinMessageId)} 不能小于 0");
+            return await GetAuthoritativeWindowAsync(input.SessionUnitId, input.MaxResultCount, input.MinMessageId, null, descending: false);
+        }
+
+        Assert.If(input.MinMessageId <= 0, $"参数 {nameof(input.MinMessageId)} 要大于 0");
+        var unit = await SessionUnitManager.GetCacheAsync(input.SessionUnitId);
+        await CheckPolicyForUserAsync(unit.OwnerId, () => CheckPolicyAsync(GetListPolicyName));
+
+        var pageSize = input.MaxResultCount;
+
+        // 多取一条
+        var messageIdList = await MessageManager.GetLatestAsync(unit, input.MinMessageId, pageSize + 1);
+
+        var totalCount = (long)messageIdList.Count;
+
+        var hasMore = messageIdList.Count > pageSize;
+
+        long? nextCursorId = null;
+
+        if (hasMore)
+        {
+            messageIdList.RemoveAt(messageIdList.Count - 1);
+            nextCursorId = messageIdList.LastOrDefault();
+            // A lower bound; HasMore and NextCursorId drive pagination without a large-table COUNT.
+        }
+
+        var items = await MapToMessageFasterAsync(messageIdList);
+
+        var result = new ExtraPagedResultDto<MessageFastDto>(totalCount, items, new
+        {
+            HasMore = hasMore,
+            NextCursorId = nextCursorId,
+        });
+
+        return result;
+    }
+
+    /// <summary>
+    /// 历史消息(Redis 优先)
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    public async Task<ExtraPagedResultDto<MessageFastDto>> GetHistoryAsync(MessageGetHistoryInput input)
+    {
+        if (input.Authoritative)
+            return await GetAuthoritativeWindowAsync(input.SessionUnitId, input.MaxResultCount, null, input.MaxMessageId, descending: true);
+
+        var unit = await SessionUnitManager.GetCacheAsync(input.SessionUnitId);
+        await CheckArticleManagementOrOwnerAsync(unit.OwnerId, () => CheckPolicyAsync(GetListPolicyName));
+
+        var pageSize = input.MaxResultCount;
+
+        // 多取一条
+        var messageIdList = await MessageManager.GetHistoryAsync(unit, input.MaxMessageId, pageSize + 1);
+
+        var totalCount = (long)messageIdList.Count;
+
+        var hasMore = messageIdList.Count > pageSize;
+
+        long? nextCursorId = null;
+
+        if (hasMore)
+        {
+            messageIdList.RemoveAt(messageIdList.Count - 1);
+            nextCursorId = messageIdList.LastOrDefault();
+            // A lower bound; HasMore and NextCursorId drive pagination without a large-table COUNT.
+        }
+
+        var items = await MapToMessageFasterAsync(messageIdList);
+
+        var result = new ExtraPagedResultDto<MessageFastDto>(totalCount, items, new
+        {
+            HasMore = hasMore,
+            NextCursorId = nextCursorId,
+        });
+
+        return result;
+
+    }
+
+    protected virtual async Task<List<MessageFastDto>> MapToMessageFasterAsync(List<long> messageIdList)
+    {
+        var messages = await MessageManager.GetOrAddManyCacheAsync(messageIdList);
+
+        var result = messages.Select(x => MapToMessage(x.Value)).ToList();
+
+        //// 引用的消息Id
+        //var quoteIdList = messages.Where(x => x.Value.QuoteMessageId.HasValue).Select(x => x.Value.QuoteMessageId.Value).ToList();
+
+        //var quoteMessageIdList = quoteIdList.Distinct().Except(messageIdList);
+
+        //var quoteMessages = await MessageManager.GetOrAddManyCacheAsync(quoteMessageIdList);
+
+        //var allMessages = messages.Concat(quoteMessages).DistinctBy(x => x.Value.Id);
+
+        //var messageMap = allMessages.ToDictionary(x => x.Key.MessageId, x => x.Value);
+
+        //var senderSessionUnitIdList = allMessages.Select(x => x.Value.SenderSessionUnitId).Where(x => x.HasValue).ToList();
+
+        return result;
+    }
+
+    protected virtual MessageFastDto MapToMessage(MessageCacheItem cacheItem)
+    {
+        return ObjectMapper.Map<MessageCacheItem, MessageFastDto>(cacheItem);
     }
 
     /// <summary>
@@ -384,8 +539,10 @@ public class MessageAppService(
     protected virtual async Task<List<MessageOwnerDto>> MapToMessagesAsync(List<MessageCacheItem> messages)
     {
         await Task.Yield();
+        // 要改为从缓存取
         return ObjectMapper.Map<List<MessageCacheItem>, List<MessageOwnerDto>>(messages);
     }
+
 
     /// <summary>
     /// 获取一条消息
@@ -407,25 +564,7 @@ public class MessageAppService(
 
         Assert.If(message.IsRollbacked, "消息已撤回!");
 
-        var isSameSession = await IsInSameSessionAsync(message.SessionId.Value, entity.OwnerId);
-
-        if (isSameSession)
-        {
-            return message;
-        }
-
-        var isInQuoteSession = await Repository.AnyAsync(x => x.QuotedMessageList.Any(d => d.Id == messageId));
-        //...是否包含在哪个聊天记录里，是否包含在引用消息里
-        //...以下待测试...
-
-        var isCanRead = (await Repository.GetQueryableAsync())
-            //本条消息 || 引用这个消息的 || 包含在聊天记录里的
-            .Where(x => x.Id == messageId || x.QuotedMessageList.Any(d => d.Id == messageId) || x.HistoryMessageList.Any(x => x.MessageId == messageId))
-            .Select(x => x.Session)
-            .Any(x => x.UnitList.Any(d => d.OwnerId == entity.OwnerId))
-            ;
-
-        Assert.If(!isCanRead, "非法访问!");
+        Assert.If(!await Repository.CanReadAsync(entity.Id, messageId, includeReferences: true), "Message is not visible.");
 
         return message;
     }

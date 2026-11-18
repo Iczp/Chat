@@ -1,6 +1,6 @@
 ﻿using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.InvitationCodes.Dtos;
-using IczpNet.Pusher.ShortIds;
+using IczpNet.Chat.ShortIds;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -40,7 +40,7 @@ public class InvitationCodeAppService(IRepository<InvitationCode, Guid> reposito
 
         entity.SetCode(code);
 
-        entity.SetExpirationTime(DateTime.Now.AddDays(7));
+        entity.SetExpirationTime(Clock.Now.AddDays(7));
 
         await base.SetCreateEntityAsync(entity, input);
     }

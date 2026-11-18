@@ -33,12 +33,36 @@ namespace IczpNet.Chat.MessageSections.Messages;
 [Index(nameof(QuoteCount))]
 [Index(nameof(SenderSessionUnitId))]
 [Index(nameof(ReceiverSessionUnitId))]
+[Index(nameof(ClientMessageId))]
 [Index(nameof(SessionId), nameof(IsDeleted))]
+[Index(nameof(SessionId), nameof(Id), IsUnique = false)] // IsUnique = true
 [Index(nameof(SessionId), nameof(Id), AllDescending = true)]
 [Index(nameof(SessionId), nameof(IsDeleted), nameof(IsPrivate), nameof(SenderId), nameof(ReceiverId), nameof(CreationTime), nameof(ForwardDepth), nameof(QuoteDepth))]
 [Index(nameof(SessionId), nameof(IsDeleted), nameof(IsPrivate), nameof(SenderSessionUnitId), nameof(ReceiverSessionUnitId), nameof(CreationTime), nameof(ForwardDepth), nameof(QuoteDepth))]
 public partial class Message : BaseEntity<long>, ISessionId, IHasEntityVersion
 {
+    [NotMapped]
+    public virtual long SyncVersion => ExtraProperties.TryGetValue(nameof(SyncVersion), out var value) &&
+        long.TryParse(value?.ToString(), out var version) ? version : 0;
+    internal void SetSyncVersion(long version) => ExtraProperties[nameof(SyncVersion)] = version;
+
+    /// <summary>Latest committed message change in the session's change stream.</summary>
+
+
+    /// <summary>Latest committed shared message change Id.</summary>
+    public virtual long? MessageChangeId { get; protected set; }
+
+    internal void SetMessageChangeId(long changeId)
+    {
+        SetSyncVersion(changeId);
+        MessageChangeId = changeId;
+    }
+
+    internal void SetChangeSeq(long version)
+    {
+        SetSyncVersion(version);
+        SetSyncVersion(version);
+    }
     /// <summary>
     /// 实体版本
     /// </summary>
@@ -55,6 +79,10 @@ public partial class Message : BaseEntity<long>, ISessionId, IHasEntityVersion
     [Comment(nameof(ShortId))]
     public virtual string ShortId { get; protected set; }
 
+    [StringLength(26)]
+    [Comment(nameof(ClientMessageId))]
+    public virtual string ClientMessageId { get; set; }
+
     /// <summary>
     /// SessionKey
     /// </summary>
@@ -67,6 +95,10 @@ public partial class Message : BaseEntity<long>, ISessionId, IHasEntityVersion
     /// </summary>
     [Comment("会话Id")]
     public virtual Guid? SessionId { get; protected set; }
+
+    // 当前消息在会话内的序号
+    [Comment("当前消息在会话内的序号")]
+    public virtual long SessionSeq { get; protected set; }
 
     /// <summary>
     /// 接收人会话单元Id(私有消息)

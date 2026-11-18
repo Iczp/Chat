@@ -2,10 +2,12 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.Threading;
 using Volo.Abp.Uow;
+using Volo.Abp.Timing;
 
 namespace IczpNet.Chat.Connections;
 
@@ -25,13 +27,13 @@ public class ConnectionWorker : AsyncPeriodicBackgroundWorkerBase
     [UnitOfWork]
     protected override async Task DoWorkAsync(PeriodicBackgroundWorkerContext workerContext)
     {
-        var startTicks = DateTime.Now.Ticks;
+        var stopwatch = Stopwatch.StartNew();
 
-        Logger.LogInformation($"ConnectionWorker running:{DateTime.Now}, Timer.Period:{Timer.Period}ms");
+        Logger.LogInformation($"ConnectionWorker running:{workerContext.ServiceProvider.GetRequiredService<IClock>().Now}, Timer.Period:{Timer.Period}ms");
 
         var count = await ConnectionManager.ClearUnactiveAsync();
 
-        double ticks = (DateTime.Now.Ticks - startTicks); // 10000;
+        double ticks = stopwatch.Elapsed.Ticks;
 
         Logger.LogInformation($"ConnectionWorker delete inactive connection count:{count},run ticks:{ticks}");
     }

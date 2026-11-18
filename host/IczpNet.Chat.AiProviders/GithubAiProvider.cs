@@ -1,0 +1,48 @@
+using IczpNet.Chat.Ai;
+using IczpNet.Chat.Blobs;
+using IczpNet.Chat.MessageSections.Templates;
+using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
+using Volo.Abp.Uow;
+
+namespace IczpNet.Chat.AiProviders;
+
+[Ai("Github")]
+public class GithubAiProvider(
+    IBlobManager blobManager) : AiProvider
+{
+    public IBlobManager BlobManager { get; } = blobManager;
+
+    public override string GetModel() => "Github";
+
+    [UnitOfWork]
+    public override async Task HandleAsync(long messageId)
+    {
+        var message = await MessageRepository.GetAsync(messageId);
+
+        if (message.IsRollbackMessage())
+        {
+            Logger.LogInformation($"Message is rollback:{message}");
+            return;
+        }
+
+        var replySessionUnit = await SessionUnitManager.FindCacheAsync(message.ReceiverId.Value, message.SenderId.Value);
+
+        if (replySessionUnit == null)
+        {
+            Logger.LogWarning($"会话不存在:[{message.ReceiverId},{message.SenderId}]");
+            return;
+        }
+
+        var body = message.GetTypedContentEntity()?.GetBody();
+
+        Logger.LogInformation($"收到消息：{body}");
+
+        string result = $"我是Github机器人,\n我在正开发中...\n,收到消息：{body}";
+
+        await SendTextAsync(replySessionUnit, messageId, new TextContentInfo()
+        {
+            Text = result,
+        });
+    }
+}

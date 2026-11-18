@@ -7,6 +7,7 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.Enums.Dtos;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.RoomSections.Rooms.Dtos;
+using IczpNet.Chat.SessionPermissionDefinitions;
 using IczpNet.Chat.SessionPermissions;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
@@ -132,6 +133,35 @@ public class RoomAppService(IRoomManager roomManager,
         var entity = await RoomManager.UpdatePortraitAsync(sessionUnit, thubmnail, portrait);
 
         return await MapToChatObjectDtoAsync(entity);
+    }
+
+    /// <summary>
+    /// 设置加群验证方式（群主或具备申请审批权限的管理员）
+    /// </summary>
+    [HttpPost]
+    public virtual async Task<ChatObjectDto> SetVerificationMethodAsync(Guid sessionUnitId, VerificationMethods verificationMethod)
+    {
+        var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+
+        if (CurrentUser.Id.HasValue)
+        {
+            var ownedIds = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+            if (!ownedIds.Contains(sessionUnit.OwnerId))
+            {
+                throw new Volo.Abp.Authorization.AbpAuthorizationException("无权操作该群会话设置");
+            }
+        }
+
+        await SessionPermissionChecker.CheckAsync(
+            SessionPermissionDefinitionConsts.SessionRequestPermission.Handle,
+            sessionUnit);
+
+        var room = await ChatObjectManager.GetAsync(sessionUnit.DestinationId!.Value);
+        room.SetVerificationMethod(verificationMethod);
+        var chatObjectRepository = LazyServiceProvider.LazyGetRequiredService<IChatObjectRepository>();
+        await chatObjectRepository.UpdateAsync(room, autoSave: true);
+
+        return await MapToChatObjectDtoAsync(room);
     }
 
     /// <summary>

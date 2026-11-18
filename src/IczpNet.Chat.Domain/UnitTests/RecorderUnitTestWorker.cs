@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.Threading;
 using Volo.Abp.Uow;
+using Volo.Abp.Timing;
 
 namespace IczpNet.Chat.UnitTests;
 
@@ -72,7 +73,7 @@ public class RecorderUnitTestWorker : AsyncPeriodicBackgroundWorkerBase
 
         Logger.LogInformation($" ------------------- RecorderUnitTestWorker Starting ------------------- ");
 
-        RoomId ??= (await RoomManager.CreateByAllUsersAsync($"Auto-create:{DateTime.Now}")).Id;
+        RoomId ??= (await RoomManager.CreateByAllUsersAsync($"Auto-create:{workerContext.ServiceProvider.GetRequiredService<IClock>().Now}")).Id;
 
         var items = await GetSessionIdListAsync(RoomId.Value);
 

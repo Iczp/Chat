@@ -1,35 +1,39 @@
-﻿using IczpNet.Chat.ChatObjects;
-using IczpNet.Chat.SessionTags;
+﻿using IczpNet.Chat.Enums;
 using System;
-using System.Collections.Generic;
 
 namespace IczpNet.Chat.SessionUnits.Dtos;
 
-public class SessionUnitMemberDto : SessionUnitInfoBase //SessionUnitSenderInfo //: SessionUnitCacheItem SessionUnitInfoBase
+public class SessionUnitMemberDto : SessionUnitMemberSenderDto
 {
     /// <summary>
-    /// 最后发送时间
+    /// DestinationId
     /// </summary>
-    public DateTime? LastSendTime { get; set; }
+    public virtual long? DestinationId { get; set; }
 
     /// <summary>
-    /// 最后发送消息Id
+    /// DestinationType
     /// </summary>
-    public virtual long? LastSendMessageId { get; set; }
+    public virtual ChatObjectTypeEnums? DestinationObjectType { get; set; }
 
-    ///// <summary>
-    ///// 最后发送的消息
-    ///// </summary>
-    //public virtual MessageSimpleDto LastSendMessage { get; set; }
+
+    /// <summary>
+    /// Ticks
+    /// </summary>
+    public virtual double Ticks { get; set; }
+
+    /// <summary>
+    /// Sorting
+    /// </summary>
+    public virtual double Sorting { get; set; }
 
     /// <summary>
     /// 
     /// </summary>
-    public virtual ChatObjectInfo Owner { get; set; }
+    public virtual DateTime CreationTime { get; set; }
 
     /// <summary>
-    /// 
+    /// Member Scrore
     /// </summary>
-    public virtual List<SessionTagCacheItem> TagList { get; set; }
+    public virtual double? Score { get; set; }
 
 }

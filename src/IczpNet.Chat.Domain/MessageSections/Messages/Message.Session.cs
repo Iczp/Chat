@@ -69,10 +69,28 @@ public partial class Message
     public virtual List<SessionUnit> LastMessageSessionUnitList { get; protected set; }
 
     /// <summary>
-    /// last message list
+    /// last read message session unit setting list
     /// </summary>
-    [InverseProperty(nameof(SessionUnitSetting.ReadedMessage))]
-    public virtual List<SessionUnitSetting> ReadedMessageSessionUnitList { get; protected set; }
+    [InverseProperty(nameof(SessionUnitSetting.ReadMessage))]
+    public virtual List<SessionUnitSetting> ReadMessageSessionUnitSettingList { get; protected set; }
+
+    /// <summary>
+    /// start message message session unit setting list
+    /// </summary>
+    [InverseProperty(nameof(SessionUnitSetting.StartMessage))]
+    public virtual List<SessionUnitSetting> StartMessageSessionUnitSettingList { get; protected set; }
+
+    /// <summary>
+    /// end message session unit setting list
+    /// </summary>
+    [InverseProperty(nameof(SessionUnitSetting.EndMessage))]
+    public virtual List<SessionUnitSetting> EndMessageSessionUnitSettingList { get; protected set; }
+
+    /// <summary>
+    /// last send message session unit setting list
+    /// </summary>
+    [InverseProperty(nameof(SessionUnitSetting.LastSendMessage))]
+    public virtual List<SessionUnitSetting> LastSendMessageSessionUnitSettingList { get; protected set; }
 
     /// <summary>
     /// 已读计数器

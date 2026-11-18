@@ -1,6 +1,6 @@
-﻿using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.DeletedRecorders.Dtos;
-using IczpNet.Chat.Devices;
+using IczpNet.Chat;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +10,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
+using Microsoft.Extensions.Options;
+using IczpNet.Chat.Options;
 
 namespace IczpNet.Chat.DeletedRecorders;
 
@@ -19,7 +21,7 @@ namespace IczpNet.Chat.DeletedRecorders;
 public class DeletedRecorderAppService(
     IDeletedRecorderManager openedRecorderManager,
     IRepository<DeletedRecorder> repository,
-    IDeviceResolver deviceResolver) : ChatAppService, IDeletedRecorderAppService
+    IDeviceContext deviceContext) : ChatAppService, IDeletedRecorderAppService
 {
     protected virtual string SetReadedPolicyName { get; set; }
 
@@ -27,7 +29,7 @@ public class DeletedRecorderAppService(
 
     protected IDeletedRecorderManager DeletedRecorderManager { get; } = openedRecorderManager;
 
-    protected IDeviceResolver DeviceResolver { get; } = deviceResolver;
+    protected IDeviceContext DeviceContext { get; } = deviceContext;
 
     /// <summary>
     /// 获取消息【已删除】的数量
@@ -63,15 +65,25 @@ public class DeletedRecorderAppService(
     /// <param name="input"></param>
     /// <returns></returns>
     [HttpPost]
+    [Volo.Abp.Uow.UnitOfWork(isTransactional: true)]
     public virtual async Task<DeletedRecorderDto> SetDeletedAsync([FromQuery] DeletedRecorderInput input)
     {
         var deviceId = await DeletedRecorderManager.CheckDeviceIdAsync(input.DeviceId);
 
-        await CheckPolicyAsync(SetReadedPolicyName);
-
-        var sessionUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
-
-        var entity = await DeletedRecorderManager.CreateIfNotContainsAsync(sessionUnit, input.MessageId, deviceId);
+        var sessionUnit = await GetAndCheckPolicyAsync(
+            IczpNet.Chat.Permissions.ChatPermissions.SessionUnitSettingPermissions.DeleteMessage, input.SessionUnitId);
+        DeletedRecorder entity;
+        if (LazyServiceProvider.LazyGetRequiredService<IOptions<MessageOptions>>().Value.ChangeSyncEnabled)
+        {
+            await LazyServiceProvider.LazyGetRequiredService<IczpNet.Chat.SessionUnitSettings.ISessionUnitSettingManager>()
+                .DeleteMessageAsync(sessionUnit.Id, input.MessageId, deviceId);
+            entity = await Repository.GetAsync(x => x.SessionUnitId == sessionUnit.Id && x.MessageId == input.MessageId);
+        }
+        else
+        {
+            // Preserve the legacy endpoint in environments without the journal schema.
+            entity = await DeletedRecorderManager.CreateIfNotContainsAsync(sessionUnit, input.MessageId, deviceId);
+        }
 
         return await MapToDtoAsync(entity);
     }

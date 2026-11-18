@@ -52,6 +52,6 @@ public class WalletRequest : BaseEntity<Guid>, IChatOwner<long>
     {
         WalletRecorder = walletRecorder;
         IsPosting = true;
-        PostDate = DateTime.Now;
+        PostDate = DateTime.UtcNow;
     }
 }

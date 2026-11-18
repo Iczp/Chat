@@ -1,5 +1,4 @@
-﻿using IczpNet.Chat.SessionUnitSettings.Dtos;
-using System;
+﻿using System;
 
 namespace IczpNet.Chat.SessionUnits.Dtos;
 
@@ -9,19 +8,24 @@ namespace IczpNet.Chat.SessionUnits.Dtos;
 public class SessionUnitSenderDto : SessionUnitSenderInfo
 {
     /// <summary>
-    /// 是否好友
+    /// 好友关系
     /// </summary>
-    public virtual bool? IsFriendship { get; set; }
+    public virtual SessionUnitFriendshipDto Friendship { get; set; }
 
-    /// <summary>
-    /// 好友名称
-    /// </summary>
-    public virtual string FriendshipName { get; set; }
+    ///// <summary>
+    ///// 是否好友
+    ///// </summary>
+    //public virtual bool? IsFriendship { get; set; }
 
-    /// <summary>
-    /// 好友会话Id
-    /// </summary>
-    public virtual Guid? FriendshipSessionUnitId { get; set; }
+    ///// <summary>
+    ///// 好友名称
+    ///// </summary>
+    //public virtual string FriendshipName { get; set; }
+
+    ///// <summary>
+    ///// 好友会话Id
+    ///// </summary>
+    //public virtual Guid? FriendshipSessionUnitId { get; set; }
 
     ///// <summary>
     ///// 发送人设置
@@ -37,4 +41,9 @@ public class SessionUnitSenderDto : SessionUnitSenderInfo
     ///// 最后修改时间
     ///// </summary>
     //public DateTime? LastModificationTime { get; set; }
+
+    /// <summary>
+    /// Member Score
+    /// </summary>
+    public virtual double? Score { get; set; }
 }

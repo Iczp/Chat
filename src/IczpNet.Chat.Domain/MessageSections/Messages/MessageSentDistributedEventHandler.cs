@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.Ai;
+using IczpNet.Chat.Ai;
+using IczpNet.Chat.AiRuns;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Commands;
 using IczpNet.Chat.Developers;
@@ -42,7 +43,9 @@ public class MessageSentDistributedEventHandler(
     IMessageRepository messageRepository,
     ISessionUnitCacheManager sessionUnitCacheManager,
     ICurrentHosted currentHosted,
-    IAbpDistributedLock distributedLock) :
+    IAbpDistributedLock distributedLock,
+    IAiRunManager aiRunManager,
+    Microsoft.Extensions.Options.IOptions<AiRunDispatcherOptions> aiRunDispatcherOptions) :
     DomainService,
     IDistributedEventHandler<MessageSentEto>,
     ITransientDependency
@@ -66,6 +69,8 @@ public class MessageSentDistributedEventHandler(
     public IMessageRepository MessageRepository { get; } = messageRepository;
     public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
     protected ICurrentHosted CurrentHosted { get; } = currentHosted;
+    public IAiRunManager AiRunManager { get; } = aiRunManager;
+    public Microsoft.Extensions.Options.IOptions<AiRunDispatcherOptions> AiRunDispatcherOptions { get; } = aiRunDispatcherOptions;
 
     private readonly ConcurrentDictionary<string, long> ExecutedMilliseconds = [];
 
@@ -99,7 +104,7 @@ public class MessageSentDistributedEventHandler(
             Logger.LogWarning("After UOW: MessageId={Id}", eventData.Id);
 
             // 解决“事务提交可见性延迟”问题（即 onUnitOfWorkComplete 为 true 但数据库还没查到）
-            var message = await GetMessageWithRetryAsync(eventData.Id, maxRetries: 10, delayMs: 500);
+            var message = await FindWithRetryAsync(eventData.Id);
 
             if (message == null)
             {
@@ -117,11 +122,11 @@ public class MessageSentDistributedEventHandler(
             //缓存会话单元计数增量
             await MeasureAsync($"{nameof(CachingUnitsAsync)}", () => CachingUnitsAsync(messageCacheItem));
 
-            // 批量更新缓存中的会话单元计数
+            //// 批量更新缓存中的会话单元计数
             await MeasureAsync($"{nameof(BatchIncrementForCacheAsync)}", () => BatchIncrementForCacheAsync(messageCacheItem, eventData.ReminderIdList, eventData.FollowerIdList));
 
             // 后台任务:数据库会话单元计数增量
-            await MeasureAsync($"{nameof(EnqueueSessionUnitIncrementJobAsync)}", () => EnqueueSessionUnitIncrementJobAsync(messageCacheItem, eventData.ReminderIdList, eventData.FollowerIdList));
+            //await MeasureAsync($"{nameof(EnqueueSessionUnitIncrementJobAsync)}", () => EnqueueSessionUnitIncrementJobAsync(messageCacheItem, eventData.ReminderIdList, eventData.FollowerIdList));
 
             // 后台任务:开发者
             await MeasureAsync($"{nameof(EnqueueDeveloperJobAsync)}", () => EnqueueDeveloperJobAsync(messageCacheItem));
@@ -130,7 +135,7 @@ public class MessageSentDistributedEventHandler(
             await MeasureAsync($"{nameof(EnqueueAiJobAsync)}", () => EnqueueAiJobAsync(messageCacheItem));
 
             // 推送消息到客户端分布式事件
-            await MeasureAsync($"{nameof(PublishSendToClientDistributedAsync)}", () => PublishSendToClientDistributedAsync(messageCacheItem));
+            await MeasureAsync($"{nameof(PublishSendToClientDistributedAsync)}", () => PublishSendToClientDistributedAsync(messageCacheItem, eventData.ReminderIdList, eventData.FollowerIdList));
 
             var totalExecutedMilliseconds = ExecutedMilliseconds.Sum(x => x.Value);
 
@@ -150,16 +155,16 @@ public class MessageSentDistributedEventHandler(
     /// <summary>
     /// 带有重试逻辑的消息查询
     /// </summary>
-    private async Task<Message> GetMessageWithRetryAsync(long id, int maxRetries, int delayMs)
+    private async Task<Message> FindWithRetryAsync(long id, int maxRetries = 10, int delayMs = 500)
     {
         for (int i = 0; i < maxRetries; i++)
         {
-            var message = await MessageRepository.FindAsync(id);
-            if (message != null)
+            var entity = await MessageRepository.FindAsync(id);
+            if (entity != null)
             {
-                return message;
+                return entity;
             }
-            Logger.LogWarning($"[Retry {i + 1}] MessageId={id} not found, waiting {delayMs}ms...");
+            Logger.LogWarning($"FindWithRetryAsync [Retry {i + 1}] MessageId={id} not found, waiting {delayMs}ms...");
             await Task.Delay(delayMs);
         }
         return null;
@@ -298,7 +303,7 @@ public class MessageSentDistributedEventHandler(
         return true;
     }
 
-    protected virtual async Task<bool> PublishSendToClientDistributedAsync(MessageCacheItem message)
+    protected virtual async Task<bool> PublishSendToClientDistributedAsync(MessageCacheItem message, List<Guid> remindSessionUnitIdList, List<Guid> followingSessionUnitIdList)
     {
         var command = message.ForwardMessageId.HasValue ? CommandConsts.MessageForwarded : CommandConsts.MessageCreated;
 
@@ -308,7 +313,9 @@ public class MessageSentDistributedEventHandler(
             //CacheKey = cacheKey,
             HostName = CurrentHosted.Name,
             MessageId = message.Id,
-            Message = message
+            Message = message,
+            ReminderIdList = remindSessionUnitIdList,
+            FollowerIdList = followingSessionUnitIdList,
         };
 
         Logger.LogInformation($"PublishMessageDistributedEventAsync-eventData:{JsonSerializer.Serialize(eventData)}");
@@ -318,45 +325,7 @@ public class MessageSentDistributedEventHandler(
         return true;
     }
 
-    /// <summary>
-    /// 推送消息到客户端分布式事件
-    /// </summary>
-    /// <param name="message"></param>
-    /// <returns></returns>
-    protected virtual async Task<bool> PublishSendToClientDistributedAsync(Message message)
-    {
-        var dbMessage = message;
 
-        var messageDto = ObjectMapper.Map<Message, MessageInfo<object>>(dbMessage);
-
-        //fix: 导航属性没有加载完全 改为手动转换Map
-        if (dbMessage.SenderSessionUnit == null && dbMessage.SenderSessionUnitId.HasValue)
-        {
-            var senderSessionUnit = await SessionUnitManager.GetAsync(dbMessage.SenderSessionUnitId.Value);
-            messageDto.SenderSessionUnit = ObjectMapper.Map<SessionUnit, SessionUnitSenderInfo>(senderSessionUnit);
-        }
-
-        messageDto.Content ??= message.GetContentDto();
-
-        var command = message.ForwardMessageId.HasValue ? CommandConsts.MessageForwarded : CommandConsts.MessageCreated;
-
-        var eventData = new SendMessageToClientDistributedEto()
-        {
-            Command = command.ToString(),
-            //CacheKey = cacheKey,
-            HostName = CurrentHosted.Name,
-            MessageId = message.Id,
-            Message = messageDto
-        };
-
-        Logger.LogInformation($"PublishMessageDistributedEventAsync-eventData:{JsonSerializer.Serialize(eventData)}");
-
-        //await SessionUnitManager.GetOrAddByMessageAsync(message);
-
-        await DistributedEventBus.PublishAsync(eventData, onUnitOfWorkComplete: false);
-
-        return true;
-    }
 
     /// <summary>
     /// AI后台任务
@@ -377,6 +346,18 @@ public class MessageSentDistributedEventHandler(
         {
             Logger.LogInformation($"Not Ai provider:{receiver.Code}");
             return false;
+        }
+
+        if (AiRunDispatcherOptions.Value.Enabled)
+        {
+            var run = await AiRunManager.CreateAsync(
+                sourceMessageId: message.Id,
+                sessionId: message.SessionId,
+                requesterSessionUnitId: message.SenderSessionUnitId ?? Guid.Empty,
+                provider: receiver.Code);
+
+            Logger.LogInformation("AiRun created: RunId={RunId}, Provider={Provider}, MessageId={MessageId}", run.Id, receiver.Code, message.Id);
+            return true;
         }
 
         if (!BackgroundJobManager.IsAvailable())

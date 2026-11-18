@@ -58,6 +58,28 @@ public interface ISessionUnitManager
     /// <param name="destinactionId"></param>
     /// <returns></returns>
     Task<SessionUnit> FindAsync(long ownerId, long destinactionId);
+    /// <summary>
+    /// 查找会话单元
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <param name="destinactionId"></param>
+    /// <returns></returns>
+    Task<SessionUnitCacheItem> FindCacheAsync(long ownerId, long destinactionId);
+
+    /// <summary>
+    /// 转为CacheItem
+    /// </summary>
+    /// <param name="sessionUnit"></param>
+    /// <returns></returns>
+    Task<SessionUnitCacheItem> MapToCacheAsync(SessionUnit sessionUnit);
+
+    /// <summary>
+    /// 转发发送人
+    /// </summary>
+    /// <param name="senderSessionUnit"></param>
+    /// <returns></returns>
+    Task<SessionUnitSenderInfo> MapToSenderAsync(SessionUnitCacheItem senderSessionUnit);
+    Task<List<SessionUnitSenderInfo>> MapToSenderAsync(List<SessionUnitCacheItem> unitList);
 
     /// <summary>
     /// 查找会话单元
@@ -151,7 +173,7 @@ public interface ISessionUnitManager
     /// <param name="isForce"></param>
     /// <param name="messageId"></param>
     /// <returns></returns>
-    Task<SessionUnit> SetReadedMessageIdAsync(SessionUnit entity, bool isForce = false, long? messageId = null);
+    Task<SessionUnit> SetReadMessageIdAsync(SessionUnit entity, bool isForce = false, long? messageId = null);
 
     /// <summary>
     /// 设置已读的消息Id
@@ -160,7 +182,7 @@ public interface ISessionUnitManager
     /// <param name="isForce"></param>
     /// <param name="messageId"></param>
     /// <returns></returns>
-    Task<SessionUnit> SetReadedMessageIdAsync(Guid sessionUnitId, bool isForce = false, long? messageId = null);
+    Task<SessionUnit> SetReadMessageIdAsync(Guid sessionUnitId, bool isForce = false, long? messageId = null);
 
     /// <summary>
     /// 获取聊天对象角标
@@ -338,7 +360,7 @@ public interface ISessionUnitManager
     /// <param name="batchSize"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task<List<SessionUnitCacheItem>> GetListByUserAsync(Guid userId, int? batchSize = null, CancellationToken cancellationToken = default);
+    Task<Dictionary<long, List<SessionUnitCacheItem>>> GetListByUserAsync(Guid userId, int? batchSize = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// 获取好友列表(我的好友)
@@ -538,4 +560,13 @@ public interface ISessionUnitManager
     /// <param name="entities"></param>
     /// <returns></returns>
     Task<IEnumerable<SessionUnitCacheItem>> AddUnitsToCacheAsync(IEnumerable<SessionUnit> entities);
+
+    /// <summary>
+    /// 处理脏数据，批量刷新到数据库
+    /// </summary>
+    /// <param name="scanSize"></param>
+    /// <param name="jobSize"></param>
+    /// <returns></returns>
+    Task<FlushDirtyResult> FlushDirtyAsync(int scanSize = 5000, int jobSize = 1000);
+
 }

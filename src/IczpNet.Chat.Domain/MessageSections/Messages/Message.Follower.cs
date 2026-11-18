@@ -97,4 +97,9 @@ public partial class Message
 
         return validGuids;
     }
+
+    public void SetSessionSeq(long sessionSeq)
+    {
+        SessionSeq = sessionSeq;
+    }
 }

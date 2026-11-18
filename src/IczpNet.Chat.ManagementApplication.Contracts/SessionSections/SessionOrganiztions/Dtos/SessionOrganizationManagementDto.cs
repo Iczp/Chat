@@ -1,4 +1,4 @@
-﻿using IczpNet.Chat.SessionSections.SessionOrganizations;
+using IczpNet.Chat.SessionOrganizations;
 using System;
 using Volo.Abp.Application.Dtos;
 namespace IczpNet.Chat.Management.SessionSections.SessionOrganiztions.Dtos;
@@ -10,4 +10,6 @@ public class SessionOrganizationManagementDto : SessionOrganizationInfo, IEntity
 {
 
     public virtual string Description { get; set; }
+
+    public virtual string GetObjectKey() => $"{Id}";
 }

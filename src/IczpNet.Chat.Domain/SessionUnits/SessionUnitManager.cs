@@ -1,4 +1,4 @@
-ï»¿using IczpNet.AbpCommons;
+using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
@@ -25,6 +25,7 @@ using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
@@ -53,6 +54,7 @@ public class SessionUnitManager(
     ISessionManager sessionManager,
     IRepository<Box, Guid> boxRepository,
     IDistributedEventBus distributedEventBus,
+    IBackgroundJobManager backgroundJobManager,
     ISessionUnitIdGenerator idGenerator) : DomainService, ISessionUnitManager
 {
     public IOptions<SessionUnitOptions> Options { get; } = options;
@@ -62,7 +64,7 @@ public class SessionUnitManager(
     public IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
     protected ISessionUnitRepository Repository { get; } = repository;
     /// <summary>
-    /// SessionUnit æ›´æ–°é¢‘ç¹ï¼Œä½¿ç”¨ ReadOnlyRepository é˜²æ­¢æ„å¤–æ›´æ–°åˆ°æ•°æ®åº“ï¼Œå¼•èµ·å¹¶å‘å†²çª --2025.03.19
+    /// SessionUnit ¸üĞÂÆµ·±£¬Ê¹ÓÃ ReadOnlyRepository ·ÀÖ¹ÒâÍâ¸üĞÂµ½Êı¾İ¿â£¬ÒıÆğ²¢·¢³åÍ» --2025.03.19
     /// </summary>
     public IReadOnlyRepository<SessionUnit, Guid> SessionUnitReadOnlyRepository { get; } = sessionUnitReadOnlyRepository;
     protected IReadOnlyRepository<Message, long> MessageReadOnlyRepository { get; } = messageReadOnlyRepository;
@@ -83,10 +85,11 @@ public class SessionUnitManager(
     public ISessionManager SessionManager { get; } = sessionManager;
     public IRepository<Box, Guid> BoxRepository { get; } = boxRepository;
     public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
+    public IBackgroundJobManager BackgroundJobManager { get; } = backgroundJobManager;
     protected ISessionUnitIdGenerator IdGenerator { get; } = idGenerator;
 
     /// <summary>
-    /// æ¸¸æ ‡æ¨¡å‹
+    /// ÓÎ±êÄ£ĞÍ
     /// </summary>
     /// <param name="CreationTime"></param>
     /// <param name="Id"></param>
@@ -95,7 +98,7 @@ public class SessionUnitManager(
         public static SessionUnitCursor Start => new(DateTime.MinValue, Guid.Empty);
     }
     /// <summary>
-    /// é€šç”¨æ¸¸æ ‡åˆ†ç‰‡å™¨ï¼ˆæ ¸å¿ƒï¼‰
+    /// Í¨ÓÃÓÎ±ê·ÖÆ¬Æ÷£¨ºËĞÄ£©
     /// </summary>
     /// <param name="baseQuery"></param>
     /// <param name="batchSize"></param>
@@ -154,16 +157,38 @@ public class SessionUnitManager(
                         CreationTime = x.CreationTime,
                         //ExtraProperties = x.ExtraProperties,
 
-                        //ReadedMessageId = x.Setting.ReadedMessageId,
+                        // owner
+                        OwnerName = x.Owner.Name,
+                        OwnerNameSpelling = x.Owner.NameSpelling,
+                        OwnerNameSpellingAbbreviation = x.Owner.NameSpellingAbbreviation,
+                        OwnerPortrait = x.Owner.Portrait,
+                        OwnerThumbnail = x.Owner.Thumbnail,
+
+                        // destination
+                        DestinationName = x.Destination.Name,
+                        DestinationNameSpelling = x.Destination.NameSpelling,
+                        DestinationNameSpellingAbbreviation = x.Destination.NameSpellingAbbreviation,
+                        DestinationPortrait = x.Destination.Portrait,
+                        DestinationThumbnail = x.Destination.Thumbnail,
+
+
                         IsPublic = x.Setting.IsPublic,
                         IsStatic = x.Setting.IsStatic,
                         IsVisible = x.Setting.IsVisible,
                         IsEnabled = x.Setting.IsEnabled,
+                        IsInputEnabled = x.Setting.IsInputEnabled,
+                        MuteExpireTime = x.Setting.MuteExpireTime,
 
                         IsImmersed = x.Setting.IsImmersed,
                         IsCreator = x.Setting.IsCreator,
                         Rename = x.Setting.Rename,
+                        RenameSpellingAbbreviation = x.Setting.RenameSpellingAbbreviation,
                         MemberName = x.Setting.MemberName,
+
+                        ReadMessageId = x.Setting.ReadMessageId,
+                        PeerReadMessageId = x.Setting.PeerReadMessageId,
+                        StartMessageId = x.Setting.StartMessageId,
+                        EndMessageId = x.Setting.EndMessageId,
                         LastSendTime = x.Setting.LastSendTime,
                         LastSendMessageId = x.Setting.LastSendMessageId,
                         //Setting = new SessionUnitSettingCacheItem()
@@ -207,7 +232,7 @@ public class SessionUnitManager(
                     swQuery.ElapsedMilliseconds);
 
                 var swMap = Stopwatch.StartNew();
-                // å–æ¶ˆ MapToCacheItemï¼Œæé«˜æ€§èƒ½--2026.01.30
+                // È¡Ïû MapToCacheItem£¬Ìá¸ßĞÔÄÜ--2026.01.30
                 //var list = batch.Select(MapToCacheItem).ToList();
                 var list = batch.ToList();
                 swMap.Stop();
@@ -282,6 +307,51 @@ public class SessionUnitManager(
     public virtual Task<SessionUnit> FindAsync(long ownerId, long destinactionId)
     {
         return FindAsync(x => x.OwnerId == ownerId && x.DestinationId == destinactionId);
+    }
+
+    public virtual async Task<SessionUnitCacheItem> FindCacheAsync(long ownerId, long destinactionId)
+    {
+        var entity = await FindAsync(ownerId, destinactionId);
+        return await MapToCacheAsync(entity);
+    }
+
+    public virtual async Task<SessionUnitCacheItem> MapToCacheAsync(SessionUnit sessionUnit)
+    {
+        await Task.Yield();
+        return ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(sessionUnit);
+    }
+    public virtual async Task<List<SessionUnitSenderInfo>> MapToSenderAsync(List<SessionUnitCacheItem> unitList)
+    {
+        var ownerIdList = unitList.Select(x => x.OwnerId).Distinct().ToList();
+        var owners = await ChatObjectManager.GetManyByCacheAsync(ownerIdList);
+        var ownerMap = owners.ToDictionary(x => x.Id);
+
+        var list = unitList.Select(x => new SessionUnitSenderInfo()
+        {
+            Id = x.Id,
+            OwnerId = x.OwnerId,
+            OwnerObjectType = x.OwnerObjectType,
+            MemberName = x.MemberName,
+            IsCreator = x.IsCreator,
+            IsEnabled = x.IsEnabled,
+            IsPublic = x.IsPublic,
+            IsStatic = x.IsStatic,
+            IsVisible = x.IsVisible,
+            SessionId = x.SessionId,
+            CreationTime = x.CreationTime,
+            // ´ı¸³Öµ
+            TagList = [],
+            // owner
+            Owner = ownerMap.GetOrDefault(x.OwnerId)
+        })
+            .ToList();
+        return list;
+    }
+
+    public virtual async Task<SessionUnitSenderInfo> MapToSenderAsync(SessionUnitCacheItem senderSessionUnit)
+    {
+        var list = await MapToSenderAsync([senderSessionUnit]);
+        return list.FirstOrDefault();
     }
 
     /// <inheritdoc />
@@ -441,16 +511,26 @@ public class SessionUnitManager(
         return result;
     }
     /// <inheritdoc />
-    public virtual async Task<SessionUnit> SetReadedMessageIdAsync(Guid sessionUnitId, bool isForce = false, long? messageId = null)
+    public virtual async Task<SessionUnit> SetReadMessageIdAsync(Guid sessionUnitId, bool isForce = false, long? messageId = null)
     {
         var entity = await GetAsync(sessionUnitId);
-        return await SetReadedMessageIdAsync(entity, isForce, messageId);
+        return await SetReadMessageIdAsync(entity, isForce, messageId);
     }
 
     /// <inheritdoc />
-    public virtual async Task<SessionUnit> SetReadedMessageIdAsync(SessionUnit entity, bool isForce = false, long? messageId = null)
+    public virtual async Task<SessionUnit> SetReadMessageIdAsync(SessionUnit entity, bool isForce = false, long? messageId = null)
     {
         var isNullOrZero = messageId == null || messageId == 0;
+
+        // An empty session has no valid Message Id to store as its read
+        // cursor. Clearing an empty chat is a valid, idempotent operation;
+        // leave its counters/read cursor unchanged and let the caller persist
+        // the ClearTime setting.
+        if (isNullOrZero && !entity.LastMessageId.HasValue)
+        {
+            Logger.LogInformation("Skip setting read cursor for empty session unit {SessionUnitId}", entity.Id);
+            return entity;
+        }
 
         var lastMessageId = isNullOrZero ? entity.LastMessageId.Value : messageId.Value;
 
@@ -465,7 +545,7 @@ public class SessionUnitManager(
         {
             Id = entity.Id,
             OwnerId = entity.OwnerId,
-            ReadedMessageId = lastMessageId,
+            ReadMessageId = lastMessageId,
             PublicBadge = 0,
             PrivateBadge = 0,
             RemindAllCount = 0,
@@ -477,12 +557,12 @@ public class SessionUnitManager(
         {
             counter = await GetCounterAsync(entity.Id, lastMessageId);
         }
-        // æ›´æ–°Setting
+        // ¸üĞÂSetting
         await SetEntityAsync(entity, x => x.UpdateCounter(counter));
-        // æ›´æ–°è®°æ•°å™¨
+        // ¸üĞÂ¼ÇÊıÆ÷
         entity = await Repository.UpdateCountersync(counter);
 
-        // æ›´æ–°ç¼“å­˜
+        // ¸üĞÂ»º´æ
         var unit = await SessionUnitCacheManager.UpdateCounterAsync(
              counter,
              async (id) =>
@@ -491,13 +571,15 @@ public class SessionUnitManager(
                  return ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(entity);
              });
 
-        //// åˆ é™¤æ€»è®°æ•°ç¼“å­˜
+        //// É¾³ı×Ü¼ÇÊı»º´æ
         //await SessionUnitCacheManager.RemoveTotalBadgeAsync(entity.OwnerId);
 
-        //æ¨é€åŒæ­¥åˆ°å®¢æˆ·ç«¯
+        //ÍÆËÍÍ¬²½µ½¿Í»§¶Ë
         await DistributedEventBus.PublishAsync(new SessionUnitChangedDistributedEto()
         {
-            SessionUnit = unit
+            ReadMessageId = lastMessageId,
+            SessionUnit = unit,
+            Score = FriendScore.Create(unit.Sorting, unit.Ticks),
         });
 
         return entity;
@@ -513,7 +595,7 @@ public class SessionUnitManager(
                 !d.IsPrivate &&
                 //!x.IsRollbacked &&
                 d.SenderId != x.OwnerId &&
-                (x.Setting.ReadedMessageId == null || d.Id > x.Setting.ReadedMessageId) &&
+                (x.Setting.ReadMessageId == null || d.Id > x.Setting.ReadMessageId) &&
                 (!x.Setting.HistoryFristTime.HasValue || d.CreationTime > x.Setting.HistoryFristTime) &&
                 (!x.Setting.HistoryLastTime.HasValue || d.CreationTime < x.Setting.HistoryLastTime) &&
                 (!x.Setting.ClearTime.HasValue || d.CreationTime > x.Setting.ClearTime)),
@@ -521,7 +603,7 @@ public class SessionUnitManager(
                 d.IsPrivate && d.ReceiverId == x.OwnerId &&
                 //!x.IsRollbacked &&
                 d.SenderId != x.OwnerId &&
-                (x.Setting.ReadedMessageId == null || d.Id > x.Setting.ReadedMessageId) &&
+                (x.Setting.ReadMessageId == null || d.Id > x.Setting.ReadMessageId) &&
                 (!x.Setting.HistoryFristTime.HasValue || d.CreationTime > x.Setting.HistoryFristTime) &&
                 (!x.Setting.HistoryLastTime.HasValue || d.CreationTime < x.Setting.HistoryLastTime) &&
                 (!x.Setting.ClearTime.HasValue || d.CreationTime > x.Setting.ClearTime)),
@@ -625,7 +707,7 @@ public class SessionUnitManager(
 
         var query = (await MessageReadOnlyRepository.GetQueryableAsync())
         .Where(x => x.SessionId == entity.SessionId)
-        .WhereIf(setting.ReadedMessageId.HasValue, x => x.Id > setting.ReadedMessageId)
+        .WhereIf(setting.ReadMessageId.HasValue, x => x.Id > setting.ReadMessageId)
         .WhereIf(setting.HistoryFristTime.HasValue, x => x.CreationTime >= setting.HistoryFristTime)
         .WhereIf(setting.HistoryLastTime.HasValue, x => x.CreationTime < setting.HistoryLastTime)
         .WhereIf(setting.ClearTime.HasValue, x => x.CreationTime > setting.ClearTime)
@@ -650,7 +732,7 @@ public class SessionUnitManager(
                 Messages = x.Session.MessageList.Where(d =>
                     d.Id > minMessageId &&
                     d.SenderId != x.OwnerId &&
-                    (x.Setting.ReadedMessageId == null || d.Id > x.Setting.ReadedMessageId) &&
+                    (x.Setting.ReadMessageId == null || d.Id > x.Setting.ReadMessageId) &&
                     (!x.Setting.HistoryFristTime.HasValue || d.CreationTime > x.Setting.HistoryFristTime) &&
                     (!x.Setting.HistoryLastTime.HasValue || d.CreationTime < x.Setting.HistoryLastTime) &&
                     (!x.Setting.ClearTime.HasValue || d.CreationTime > x.Setting.ClearTime))
@@ -675,11 +757,11 @@ public class SessionUnitManager(
 
         var setting = entity.Setting;
 
-        var readedMessageId = minMessageId == 0 ? setting.ReadedMessageId : minMessageId;
+        var readMessageId = minMessageId == 0 ? setting.ReadMessageId : minMessageId;
 
         var query = (await MessageReadOnlyRepository.GetQueryableAsync())
         .Where(x => x.SessionId == entity.SessionId)
-        .Where(x => x.Id > readedMessageId.GetValueOrDefault())
+        .Where(x => x.Id > readMessageId.GetValueOrDefault())
         .WhereIf(setting.HistoryFristTime.HasValue, x => x.CreationTime >= setting.HistoryFristTime)
         .WhereIf(setting.HistoryLastTime.HasValue, x => x.CreationTime < setting.HistoryFristTime)
         .WhereIf(setting.ClearTime.HasValue, x => x.CreationTime > setting.ClearTime)
@@ -690,7 +772,7 @@ public class SessionUnitManager(
         return new SessionUnitCounterInfo()
         {
             Id = entity.Id,
-            ReadedMessageId = readedMessageId,
+            ReadMessageId = readMessageId,
             PublicBadge = query.Count(),
             PrivateBadge = query.Where(x => x.IsPrivate).Count(),
             FollowingCount = query.Where(x => followingIdList.Contains(x.SenderSessionUnitId.Value)).Count(),
@@ -718,7 +800,7 @@ public class SessionUnitManager(
 
             var query = (await MessageReadOnlyRepository.GetQueryableAsync())
             .Where(x => x.SessionId == entity.SessionId)
-            .Where(x => x.Id > setting.ReadedMessageId)
+            .Where(x => x.Id > setting.ReadMessageId)
             .WhereIf(setting.HistoryFristTime.HasValue, x => x.CreationTime >= setting.HistoryFristTime)
             .WhereIf(setting.HistoryLastTime.HasValue, x => x.CreationTime < setting.HistoryFristTime)
             .WhereIf(setting.ClearTime.HasValue, x => x.CreationTime > setting.ClearTime)
@@ -751,7 +833,7 @@ public class SessionUnitManager(
                 Messages = x.Session.MessageList.Where(d =>
                     d.Id > minMessageId &&
                     d.SenderId != x.OwnerId &&
-                    (x.Setting.ReadedMessageId == null || d.Id > x.Setting.ReadedMessageId) &&
+                    (x.Setting.ReadMessageId == null || d.Id > x.Setting.ReadMessageId) &&
                     (!x.Setting.HistoryFristTime.HasValue || d.CreationTime > x.Setting.HistoryFristTime) &&
                     (!x.Setting.HistoryLastTime.HasValue || d.CreationTime < x.Setting.HistoryLastTime) &&
                     (!x.Setting.ClearTime.HasValue || d.CreationTime > x.Setting.ClearTime))
@@ -784,7 +866,7 @@ public class SessionUnitManager(
                 .Where(d => d.Id > minMessageId)
                 .Where(d =>
                     d.SenderId != x.OwnerId &&
-                    (x.Setting.ReadedMessageId == null || d.Id > x.Setting.ReadedMessageId) &&
+                    (x.Setting.ReadMessageId == null || d.Id > x.Setting.ReadMessageId) &&
                     (!x.Setting.HistoryFristTime.HasValue || d.CreationTime > x.Setting.HistoryFristTime) &&
                     (!x.Setting.HistoryLastTime.HasValue || d.CreationTime < x.Setting.HistoryLastTime) &&
                     (!x.Setting.ClearTime.HasValue || d.CreationTime > x.Setting.ClearTime)
@@ -795,7 +877,7 @@ public class SessionUnitManager(
                 .Where(d => d.Id > minMessageId)
                 .Where(d =>
                     d.SenderId != x.OwnerId &&
-                    (x.Setting.ReadedMessageId == null || d.Id > x.Setting.ReadedMessageId) &&
+                    (x.Setting.ReadMessageId == null || d.Id > x.Setting.ReadMessageId) &&
                     (!x.Setting.HistoryFristTime.HasValue || d.CreationTime > x.Setting.HistoryFristTime) &&
                     (!x.Setting.HistoryLastTime.HasValue || d.CreationTime < x.Setting.HistoryLastTime) &&
                     (!x.Setting.ClearTime.HasValue || d.CreationTime > x.Setting.ClearTime)
@@ -824,7 +906,7 @@ public class SessionUnitManager(
                 .Where(d => d.Id > minMessageId)
                 .Where(d =>
                     d.SenderId != x.OwnerId &&
-                    (x.Setting.ReadedMessageId == null || d.Id > x.Setting.ReadedMessageId) &&
+                    (x.Setting.ReadMessageId == null || d.Id > x.Setting.ReadMessageId) &&
                     (!x.Setting.HistoryFristTime.HasValue || d.CreationTime > x.Setting.HistoryFristTime) &&
                     (!x.Setting.HistoryLastTime.HasValue || d.CreationTime < x.Setting.HistoryLastTime) &&
                     (!x.Setting.ClearTime.HasValue || d.CreationTime > x.Setting.ClearTime)
@@ -991,15 +1073,22 @@ public class SessionUnitManager(
         return list;
     }
     /// <inheritdoc />
-    public virtual async Task<List<SessionUnitCacheItem>> GetListByUserAsync(Guid userId, int? batchSize = null, CancellationToken cancellationToken = default)
+    public virtual async Task<Dictionary<long, List<SessionUnitCacheItem>>> GetListByUserAsync(Guid userId, int? batchSize = null, CancellationToken cancellationToken = default)
     {
         var stopwatch = Stopwatch.StartNew();
 
         var chatObjectIdList = await ChatObjectManager.GetIdListByUserIdAsync(userId);
 
-        var result = await BatchGetListAsync(queryable => queryable.Where(x => chatObjectIdList.Contains(x.OwnerId)), batchSize, cancellationToken);
+        var result = new Dictionary<long, List<SessionUnitCacheItem>>();
 
-        Logger.LogInformation($"{nameof(GetListByUserAsync)} userId:{userId}, [DB:{stopwatch.ElapsedMilliseconds}ms]");
+        foreach (var ownerId in chatObjectIdList)
+        {
+            var list = await GetFriendsAsync(ownerId, batchSize, cancellationToken: cancellationToken);
+            result.Add(ownerId, list);
+            Logger.LogInformation("{method} ownerId:{ownerId} userId:{userId}, [DB:{Elapsed}ms]", nameof(GetFriendsAsync), ownerId, userId, stopwatch.ElapsedMilliseconds);
+        }
+
+        Logger.LogInformation("{method} userId:{userId}, [DB:{stopwatch.ElapsedMilliseconds}ms]", nameof(GetListByUserAsync), userId, stopwatch.ElapsedMilliseconds);
 
         return result;
     }
@@ -1044,7 +1133,7 @@ public class SessionUnitManager(
     {
         var stopwatch = Stopwatch.StartNew();
 
-        //åå‘å¥½å‹ï¼šå¯¹æ–¹æŠŠè‡ªå·±åŠ ä¸ºå¥½å‹çš„ä¼šè¯å•å…ƒ
+        //·´ÏòºÃÓÑ£º¶Ô·½°Ñ×Ô¼º¼ÓÎªºÃÓÑµÄ»á»°µ¥Ôª
         var list = await BatchGetListAsync(queryable => queryable.Where(x => x.DestinationId == destinationId), batchSize, cancellationToken);
 
         Logger.LogInformation("{method} DestinationId:{destinationId}, [DB Elapsed:{elapsed}ms]", nameof(GetReverseFriendsAsync), destinationId, stopwatch.ElapsedMilliseconds);
@@ -1207,7 +1296,7 @@ public class SessionUnitManager(
         return (await SessionUnitReadOnlyRepository.GetQueryableAsync())
             .Where(x => x.SessionId == sessionId)
             .Where(x => nameList.Contains(x.Setting.MemberName) || chatObjectIds.Contains(x.OwnerId))
-            .Where(SessionUnit.GetActivePredicate(null))
+            .Where(SessionUnit.GetActivePredicate(Clock.Now))
             .Select(x => x.Id)
             .ToList();
     }
@@ -1285,7 +1374,7 @@ public class SessionUnitManager(
     [Obsolete($"Move to {nameof(ISessionUnitSettingManager.SetMuteExpireTimeAsync)}")]
     public virtual async Task<DateTime?> SetMuteExpireTimeAsync(SessionUnit muterSessionUnit, DateTime? muteExpireTime, SessionUnit setterSessionUnit, bool isSendMessage)
     {
-        Assert.If(muterSessionUnit.Setting.IsCreator, $"Creator can't be mute.");
+        Assert.If(muterSessionUnit.IsCreator, $"Creator can't be mute.");
 
         var allowList = new List<ChatObjectTypeEnums?> { ChatObjectTypeEnums.Room, ChatObjectTypeEnums.Square, ChatObjectTypeEnums.Official, ChatObjectTypeEnums.Subscription, };
 
@@ -1309,11 +1398,12 @@ public class SessionUnitManager(
         var isMuted = timeSpan.HasValue && timeSpan.Value.Milliseconds > 0;
 
         //sendMessage
-        await MessageSender.SendCmdAsync(setterSessionUnit, new MessageInput<CmdContentInfo>()
+        var unit = await GetCacheAsync(setterSessionUnit.Id);
+        await MessageSender.SendCmdAsync(unit, new MessageInput<CmdContentInfo>()
         {
             Content = new CmdContentInfo()
             {
-                Text = new TextTemplate(isMuted ? "'{muteObject}' è¢«ç¦è¨€ {Minutes} åˆ†é’Ÿ" : "'{muteObject}' è¢«å–æ¶ˆç¦è¨€")
+                Text = new TextTemplate(isMuted ? "'{muteObject}' ±»½ûÑÔ {Minutes} ·ÖÖÓ" : "'{muteObject}' ±»È¡Ïû½ûÑÔ")
                         .WithData("muteObject", new SessionUnitTextTemplate(muterSessionUnit))
                         .WithData("minutes", timeSpan?.Minutes)
                         .ToString(),
@@ -1338,7 +1428,7 @@ public class SessionUnitManager(
 
         if (codeList.Contains(userChatObject.Code))
         {
-            Logger.LogWarning($"{nameof(GenerateDefaultSessionByChatObjectAsync)}:ä¸éœ€è¦åˆ›å»ºé»˜è®¤ä¼šè¯");
+            Logger.LogWarning($"{nameof(GenerateDefaultSessionByChatObjectAsync)}:²»ĞèÒª´´½¨Ä¬ÈÏ»á»°");
             return [];
         }
         var a = await GenerateNotifySessionAsync(userChatObject);
@@ -1350,11 +1440,11 @@ public class SessionUnitManager(
     {
         var notifyChatObject = await ChatObjectManager.GetOrAddNotifyAsync();
 
-        //åˆ›å»ºä¼šè¯
+        //´´½¨»á»°
         var session = await SessionGenerator.MakeAsync(notifyChatObject, userChatObject);
 
         session.SetOwner(notifyChatObject);
-        //åˆ›å»ºé€šçŸ¥å•å…ƒ
+        //´´½¨Í¨Öªµ¥Ôª
         var notifySessionUnit = await CreateIfNotContainsAsync(
                session: session,
                owner: notifyChatObject,
@@ -1370,7 +1460,7 @@ public class SessionUnitManager(
 
         var isAny = await IsAnyAsync(userChatObject.Id, notifyChatObject.Id);
 
-        //åˆ›å»ºç”¨æˆ·å•å…ƒ
+        //´´½¨ÓÃ»§µ¥Ôª
         var userSessionUnit = await CreateIfNotContainsAsync(
                 session: session,
                 owner: userChatObject,
@@ -1386,13 +1476,14 @@ public class SessionUnitManager(
 
         if (!isAny)
         {
-            //ç¬¬ä¸€æ¬¡ æ‰å‘é€é€šçŸ¥
-            await MessageSender.SendCmdAsync(notifySessionUnit, new MessageInput<CmdContentInfo>()
+            //µÚÒ»´Î ²Å·¢ËÍÍ¨Öª
+            var unit = await GetCacheAsync(notifySessionUnit.Id);
+            await MessageSender.SendCmdAsync(unit, new MessageInput<CmdContentInfo>()
             {
                 Content = new CmdContentInfo()
                 {
                     Cmd = MessageKeyNames.CreatedUser,
-                    Text = new TextTemplate("æ¬¢è¿ {userSessionUnit} åŠ å…¥")
+                    Text = new TextTemplate("»¶Ó­ {userSessionUnit} ¼ÓÈë")
                             .WithData("userSessionUnit", new SessionUnitTextTemplate(userSessionUnit))
                             .ToString(),
                 }
@@ -1406,12 +1497,12 @@ public class SessionUnitManager(
     {
         var newsChatObject = await ChatObjectManager.GetOrAddNewsAsync();
 
-        //åˆ›å»ºæ–°é—»å•å…ƒ
+        //´´½¨ĞÂÎÅµ¥Ôª
         var newsSessionUnit = await FindAsync(newsChatObject.Id, newsChatObject.Id);
 
         if (newsSessionUnit == null)
         {
-            //åˆ›å»ºä¼šè¯
+            //´´½¨»á»°
             var session = await SessionGenerator.MakeAsync(newsChatObject, newsChatObject);
             newsSessionUnit = Generate(
                    session: session,
@@ -1427,7 +1518,7 @@ public class SessionUnitManager(
                    });
         }
 
-        //åˆ›å»ºç”¨æˆ·å•å…ƒ
+        //´´½¨ÓÃ»§µ¥Ôª
         var userSessionUnit = Generate(
                 session: newsSessionUnit.Session,
                 owner: userChatObject,
@@ -1469,7 +1560,7 @@ public class SessionUnitManager(
     }
 
     /// <summary>
-    /// è·å–å¥½å‹ä¼šè¯(è‡ªåŠ¨åŠ è½½)
+    /// »ñÈ¡ºÃÓÑ»á»°(×Ô¶¯¼ÓÔØ)
     /// key: ownerId
     /// value: SessionUnitElement[]
     /// </summary>
@@ -1524,5 +1615,24 @@ public class SessionUnitManager(
         var units = entities.Select(MapToCacheItem);
         await SessionUnitCacheManager.AddUnitsAsync(units);
         return units;
+    }
+
+    public async Task<FlushDirtyResult> FlushDirtyAsync(int scanSize = 5000, int jobSize = 1000)
+    {
+        var jobs = await SessionUnitCacheManager.FlushDirtyToJobsAsync(scanSize, jobSize);
+
+        foreach (var job in jobs)
+        {
+            await BackgroundJobManager.EnqueueAsync(job);
+        }
+
+        var total = jobs.Sum(x => x.Count);
+
+        return new FlushDirtyResult
+        {
+            Total = total,
+            JobCount = jobs.Count,
+            ProcessingKey = jobs.FirstOrDefault()?.ProcessingKey,
+        };
     }
 }

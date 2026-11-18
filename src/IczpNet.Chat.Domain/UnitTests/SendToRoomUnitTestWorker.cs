@@ -1,8 +1,7 @@
-﻿using AutoMapper.Internal;
+﻿
 using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections;
-using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.ReadedRecorders;
@@ -19,6 +18,7 @@ using System.Threading.Tasks;
 using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.Threading;
 using Volo.Abp.Uow;
+using Volo.Abp.Timing;
 
 namespace IczpNet.Chat.UnitTests;
 
@@ -73,7 +73,7 @@ public class SendToRoomUnitTestWorker : AsyncPeriodicBackgroundWorkerBase
 
         Logger.LogInformation($" ------------------- SendToRoomUnitTestWorker Starting ------------------- ");
 
-        RoomId ??= (await RoomManager.CreateByAllUsersAsync($"Auto-create:{DateTime.Now}")).Id;
+        RoomId ??= (await RoomManager.CreateByAllUsersAsync($"Auto-create:{workerContext.ServiceProvider.GetRequiredService<IClock>().Now}")).Id;
 
         var items = await GetSessionIdListAsync(RoomId.Value);
 
@@ -92,7 +92,11 @@ public class SendToRoomUnitTestWorker : AsyncPeriodicBackgroundWorkerBase
 
         for (int i = 0; i < new Random().Next(1, 10); i++)
         {
-            remindList.TryAdd(items[new Random().Next(0, items.Count - 1)]);
+            var candidate = items[new Random().Next(0, items.Count - 1)];
+            if (!remindList.Contains(candidate))
+            {
+                remindList.Add(candidate);
+            }
         }
 
         var text = $"RoomId:{RoomId}, sessionunitId:{sessionunitId}, remindCount:{remindList.Count}";
@@ -102,7 +106,8 @@ public class SendToRoomUnitTestWorker : AsyncPeriodicBackgroundWorkerBase
             text = $"@陈忠培 {text}";
         }
 
-        var sendResult = await MessageSender.SendTextAsync(sessionunit, new MessageInput<TextContentInfo>()
+        var unit = await SessionUnitManager.MapToCacheAsync(sessionunit);
+        var sendResult = await MessageSender.SendTextAsync(unit, new MessageInput<TextContentInfo>()
         {
             Content = new TextContentInfo()
             {

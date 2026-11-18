@@ -157,16 +157,9 @@ public class ChatHub(
         await base.OnDisconnectedAsync(exception);
     }
 
-    public async Task SendMessageAsync(string targetUserName, string message)
-    {
-        var all = await ConnectionPoolManager.CreateQueryableAsync();
-
-        await Clients.All.ReceivedMessage(new CommandPayload()
-        {
-            Command = message,
-            Payload = all.ToList(),
-        });
-    }
+    // Retained for old clients, but client calls cannot issue server commands.
+    public Task SendMessageAsync(string targetUserName, string message)
+        => throw new HubException("Client command broadcasting is disabled.");
 
     public async Task<long> Heartbeat(long ticks)
     {

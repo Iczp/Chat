@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations.Schema;
 using Volo.Abp.Domain.Entities;
 
 namespace IczpNet.Chat.DbTables;
@@ -11,6 +11,8 @@ public class DbTable : IEntity
     public virtual long RowCount { get; set; }
 
     protected DbTable() { }
+
+    public virtual string GetObjectKey() => TableName;
 
     public object[] GetKeys()
     {

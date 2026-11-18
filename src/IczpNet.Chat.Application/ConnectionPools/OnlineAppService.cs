@@ -1,4 +1,4 @@
-﻿using IczpNet.AbpCommons.Dtos;
+using IczpNet.AbpCommons.Dtos;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ConnectionPools.Dtos;
@@ -270,6 +270,12 @@ public class OnlineAppService(
     /// <returns></returns>
     public async Task AbortAsync(AbortInput input)
     {
+        if (input.ConnectionIdList == null || input.ConnectionIdList.Count is < 1 or > 100)
+            throw new Volo.Abp.BusinessException("Chat:InvalidConnectionList");
+        var targets = await OnlineManager.GetManyAsync(input.ConnectionIdList);
+        if (!CurrentUser.Id.HasValue || targets.Length != input.ConnectionIdList.Distinct().Count() ||
+            targets.Any(x => x.Value == null || x.Value.UserId != CurrentUser.Id))
+            await CheckDeletePolicyAsync();
         await AbortService.AbortAsync(input.ConnectionIdList, input.Reason);
     }
 

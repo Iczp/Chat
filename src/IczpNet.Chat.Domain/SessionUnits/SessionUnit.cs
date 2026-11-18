@@ -119,14 +119,6 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     /// </summary>
     public virtual ChatObjectTypeEnums? OwnerObjectType { get; protected set; }
 
-    ///// <summary>
-    ///// 已读的消息
-    ///// </summary>
-    //public virtual long? ReadedMessageId { get; protected set; }
-
-    //[ForeignKey(nameof(ReadedMessageId))]
-    //public virtual Message ReadedMessage { get; protected set; }
-
     /// <summary>
     /// 最后一条消息Id
     /// </summary>
@@ -316,7 +308,16 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     public virtual bool IsEnabled => Setting.IsEnabled;
 
     [NotMapped]
-    public virtual long? ReadedMessageId => Setting.ReadedMessageId;
+    public virtual long? ReadMessageId => Setting.ReadMessageId;
+
+    [NotMapped]
+    public virtual long? PeerReadMessageId => Setting.PeerReadMessageId;
+
+    [NotMapped]
+    public virtual long? StartMessageId => Setting.StartMessageId;
+
+    [NotMapped]
+    public virtual long? EndMessageId => Setting.EndMessageId;
 
     [NotMapped]
     public virtual bool IsImmersed => Setting.IsImmersed;
@@ -327,7 +328,57 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     [NotMapped]
     public virtual DateTime? LastSendTime => Setting.LastSendTime;
 
+    [NotMapped]
+    public virtual bool IsInputEnabled => Setting.IsInputEnabled;
+    [NotMapped]
+    public virtual DateTime? MuteExpireTime => Setting.MuteExpireTime;
+
+    [NotMapped]
+    public string RenameSpellingAbbreviation => Setting.RenameSpellingAbbreviation;
+    [NotMapped]
+    public string OwnerName => Owner.Name;
+    [NotMapped]
+    public string OwnerNameSpelling => Owner.NameSpelling;
+    [NotMapped]
+    public string OwnerNameSpellingAbbreviation => Owner.NameSpellingAbbreviation;
+    [NotMapped]
+    public string OwnerPortrait => Owner.Portrait;
+    [NotMapped]
+    public string OwnerThumbnail => Owner.Thumbnail;
+    [NotMapped]
+    public string DestinationName => Destination.Name;
+    [NotMapped]
+    public string DestinationNameSpelling => Destination.NameSpelling;
+    [NotMapped]
+    public string DestinationNameSpellingAbbreviation => Destination.NameSpellingAbbreviation;
+    [NotMapped]
+    public string DestinationPortrait => Destination.Portrait;
+    [NotMapped]
+    public string DestinationThumbnail => Destination.Thumbnail;
+
     protected SessionUnit() { }
+
+    public SessionUnit(
+       Guid id,
+       long lastMessageId,
+       int publicBadge,
+       int privateBadge,
+       int followingCount,
+       int remindAllCount,
+       int remindMeCount,
+       double ticks,
+       double sorting)
+       : base(id)
+    {
+        LastMessageId = lastMessageId;
+        PublicBadge = publicBadge;
+        PrivateBadge = privateBadge;
+        FollowingCount = followingCount;
+        RemindAllCount = remindAllCount;
+        RemindMeCount = remindMeCount;
+        Ticks = ticks;
+        Sorting = sorting;
+    }
 
     internal SessionUnit(ISessionUnitIdGenerator idGenerator,
         [NotNull]
@@ -361,7 +412,7 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     /// <returns></returns>
     public static Expression<Func<SessionUnit, bool>> GetActivePredicate(DateTime? messageCreationTime = null)
     {
-        var creationTime = messageCreationTime ?? DateTime.Now;
+        var creationTime = messageCreationTime ?? DateTime.UtcNow;
         return x =>
             !x.IsDeleted &&
             !x.Setting.IsKilled &&
@@ -374,7 +425,7 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
 
     internal virtual void UpdateCounter(SessionUnitCounterInfo counter)
     {
-        Setting.ReadedMessageId = counter.ReadedMessageId;
+        Setting.ReadMessageId = counter.ReadMessageId;
         PublicBadge = counter.PublicBadge;
         PrivateBadge = counter.PrivateBadge;
         RemindAllCount = counter.RemindAllCount;

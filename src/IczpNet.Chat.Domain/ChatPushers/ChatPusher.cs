@@ -78,13 +78,13 @@ public class ChatPusher(
 
     // send private message 
 
-    public async Task<Dictionary<string, long>> ExecutePrivateAsync(List<SessionUnit> sessionUnitList, object commandPayload, List<string> ignoreConnections = null)
+    public async Task<Dictionary<string, long>> ExecutePrivateAsync(List<SessionUnitCacheItem> sessionUnitList, object commandPayload, List<string> ignoreConnections = null)
     {
-        var sessionUnitCacheList = ObjectMapper.Map<List<SessionUnit>, List<SessionUnitCacheItem>>(sessionUnitList);
+        //var sessionUnitCacheList = ObjectMapper.Map<List<SessionUnit>, List<SessionUnitCacheItem>>(sessionUnitList);
 
         var key = $"{new SessionUnitCacheKey(DateTime.Now.Ticks)}";
 
-        await SessionUnitManager.SetCacheListAsync(key, sessionUnitCacheList, new DistributedCacheEntryOptions()
+        await SessionUnitManager.SetCacheListAsync(key, sessionUnitList, new DistributedCacheEntryOptions()
         {
             AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
         });

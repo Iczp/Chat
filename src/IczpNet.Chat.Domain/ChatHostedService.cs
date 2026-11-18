@@ -2,6 +2,7 @@
 using IczpNet.Chat.Hosting;
 using IczpNet.Chat.MessageReports;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,7 +15,8 @@ public class ChatHostedService(
     IConnectionPoolManager connectionPoolManager,
     IOnlineManager onlineManager,
     ILogger<ChatHostedService> logger,
-    ICurrentHosted currentHosted) : IHostedService, ISingletonDependency
+    ICurrentHosted currentHosted,
+    IConfiguration configuration) : IHostedService, ISingletonDependency
 {
     public IMessageReportManager MessageReportManager { get; } = messageReportManager;
     public IConnectionPoolManager ConnectionPoolManager { get; } = connectionPoolManager;
@@ -24,6 +26,12 @@ public class ChatHostedService(
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        if (!configuration.GetValue("Chat:HostedService:Enabled", true))
+        {
+            Logger.LogInformation("Chat startup maintenance is disabled for this host.");
+            return;
+        }
+
         Logger.LogWarning($"[App Start],HostName:{CurrentHosted.Name}");
 
         //await ConnectionPoolManager.ClearAllAsync(CurrentHosted.Name, "App Start", cancellationToken);
@@ -35,6 +43,8 @@ public class ChatHostedService(
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
+        if (!configuration.GetValue("Chat:HostedService:Enabled", true)) return;
+
         Logger.LogWarning($"[App Stop],HostName:{CurrentHosted.Name}");
 
         //await ConnectionPoolManager.ClearAllAsync(CurrentHosted.Name, "App Stop", cancellationToken);

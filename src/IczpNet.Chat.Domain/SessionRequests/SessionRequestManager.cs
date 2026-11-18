@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Settings;
@@ -39,6 +40,7 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
     protected IUnitOfWorkManager UnitOfWorkManager { get; }
     protected ISettingProvider SettingProvider { get; }
     protected ISessionPermissionChecker SessionPermissionChecker { get; }
+    protected IBackgroundJobManager BackgroundJobManager { get; }
     protected List<ChatObjectTypeEnums> DisallowCreateList { get; set; } = new List<ChatObjectTypeEnums>() {
         ChatObjectTypeEnums.Robot,
         ChatObjectTypeEnums.Anonymous,
@@ -57,7 +59,8 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
         IRepository<SessionPermissionUnitGrant> sessionPermissionUnitGrantRepository,
         IUnitOfWorkManager unitOfWorkManager,
         ISettingProvider settingProvider,
-        ISessionPermissionChecker sessionPermissionChecker)
+        ISessionPermissionChecker sessionPermissionChecker,
+        IBackgroundJobManager backgroundJobManager)
     {
         Repository = repository;
         SessionUnitRepository = sessionUnitRepository;
@@ -71,6 +74,7 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
         UnitOfWorkManager = unitOfWorkManager;
         SettingProvider = settingProvider;
         SessionPermissionChecker = sessionPermissionChecker;
+        BackgroundJobManager = backgroundJobManager;
     }
 
     protected virtual async Task CheckMaxSessionUnitCountAsync(long ownerId)
@@ -92,7 +96,7 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
 
         var entity = (await Repository.GetQueryableAsync())
             .Where(x => !x.IsHandled && x.IsEnabled)
-            .Where(x => x.ExpirationTime == null || x.ExpirationTime > DateTime.Now)
+            .Where(x => x.ExpirationTime == null || x.ExpirationTime > Clock.Now)
             .Where(x => x.OwnerId == ownerId && x.DestinationId == destinationId)
             .FirstOrDefault();
 
@@ -104,7 +108,7 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
         {
             entity.RequestMessage = requestMessage;
 
-            entity.SetExpirationTime(expiractionHours);
+            entity.SetExpirationTime(expiractionHours, Clock.Now);
 
             await Repository.UpdateAsync(entity, autoSave: true);
         }
@@ -114,7 +118,7 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
 
             entity = new SessionRequest(GuidGenerator.Create(), owner, destination, requestMessage);
 
-            entity.SetExpirationTime(expiractionHours);
+            entity.SetExpirationTime(expiractionHours, Clock.Now);
 
             entity = await Repository.InsertAsync(entity, autoSave: true);
         }
@@ -134,11 +138,9 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
             case ChatObjectTypeEnums.Personal:
             case ChatObjectTypeEnums.Customer:
             case ChatObjectTypeEnums.ShopKeeper:
-                await SendForPersonalAsync(owner, destination, entity);
-                break;
             case ChatObjectTypeEnums.Room:
             case ChatObjectTypeEnums.Square:
-                await SendForRoomOrSquareAsync(owner, destination, entity);
+                await QueueNotificationAsync(entity.Id, SessionRequestNotificationKind.Requested);
                 break;
             default:
                 Assert.If(true, $"The owner's ObjectType '{owner.ObjectType}' disallow create session request. OwnerId:{ownerId}");
@@ -150,8 +152,6 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
 
     protected virtual async Task SendForRoomOrSquareAsync(ChatObject owner, ChatObject destination, SessionRequest sessionRequest)
     {
-        var assistant = await ChatObjectManager.GetOrAddPrivateAssistantAsync();
-
         // room creator and room manager
 
         var roleIdList = (await SessionPermissionRoleGrantRepository.GetQueryableAsync())
@@ -176,17 +176,18 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
 
         foreach (var managerOrCretor in managerAndCretorList)
         {
-            await SessionGenerator.MakeAsync(assistant, managerOrCretor);
+            var (assistant, notificationDestinationId) = await EnsureAssistantSessionCommittedAsync(managerOrCretor);
 
-            var senderSessionUnit = await SessionUnitManager.FindAsync(assistant.Id, managerOrCretor.Id);
+            var senderSessionUnit = await GetSenderUnitAsync(assistant.Id, notificationDestinationId);
 
             await MessageSender.SendLinkAsync(senderSessionUnit, new MessageInput<LinkContentInfo>()
             {
+                ClientMessageId = $"{SessionRequestNotificationArgs.GetClientMessageId(sessionRequest.Id, SessionRequestNotificationKind.Requested)}:{notificationDestinationId}",
                 Content = new LinkContentInfo()
                 {
                     Title = new TextTemplate("{owner} 加入 '{destination}'")
-                                    .WithData("owner", new ChatObjectTextTemplate(sessionRequest.Owner))
-                                    .WithData("destination", new ChatObjectTextTemplate(sessionRequest.Destination))
+                                    .WithData("owner", new ChatObjectTextTemplate(owner))
+                                    .WithData("destination", new ChatObjectTextTemplate(destination))
                                     .ToString(),
                     Url = $"app://sesson-request/detail?id={sessionRequest.Id}"
                 }
@@ -196,14 +197,13 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
 
     protected virtual async Task SendForPersonalAsync(ChatObject owner, ChatObject receiver, SessionRequest sessionRequest)
     {
-        var assistant = await ChatObjectManager.GetOrAddPrivateAssistantAsync();
+        var (assistant, notificationDestinationId) = await EnsureAssistantSessionCommittedAsync(receiver);
 
-        await SessionGenerator.MakeAsync(assistant, receiver);
-
-        var sessionUnit = await SessionUnitManager.FindAsync(assistant.Id, receiver.Id);
+        var sessionUnit = await GetSenderUnitAsync(assistant.Id, notificationDestinationId);
 
         await MessageSender.SendLinkAsync(sessionUnit, new MessageInput<LinkContentInfo>()
         {
+            ClientMessageId = SessionRequestNotificationArgs.GetClientMessageId(sessionRequest.Id, SessionRequestNotificationKind.Requested),
             Content = new LinkContentInfo()
             {
                 Title = new TextTemplate("{owner} 请求加为好友")
@@ -216,7 +216,8 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
 
     public virtual async Task<SessionRequest> HandleRequestAsync(Guid sessionRequestId, bool isAgreed, string handlMessage, Guid? handlerSessionUnitId)
     {
-        Logger.LogInformation($"HandleRequest:sessionRequestId={sessionRequestId},isAgreed={isAgreed},handlMessage={handlMessage},handlerSessionUnitId={handlerSessionUnitId}");
+        Logger.LogInformation("HandleRequest:sessionRequestId={SessionRequestId},isAgreed={IsAgreed},handlerSessionUnitId={HandlerSessionUnitId}",
+            sessionRequestId, isAgreed, handlerSessionUnitId);
 
         var stopwatch = Stopwatch.StartNew();
 
@@ -231,6 +232,7 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
             await CheckMaxSessionUnitCountAsync(sessionRequest.DestinationId.Value);
 
             sessionRequest.AgreeRequest(handlMessage, handlerSessionUnitId);
+            sessionRequest.SetHandleTime(Clock.Now);
 
             var session = await SessionGenerator.MakeAsync(sessionRequest.Owner, sessionRequest.Destination);
 
@@ -250,23 +252,23 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
                 case ChatObjectTypeEnums.Customer:
                 case ChatObjectTypeEnums.ShopKeeper:
 
-                    var destinationSessionUnit = await SessionUnitManager.CreateIfNotContainsAsync(
-                          session: session,
-                          owner: sessionRequest.Destination,
-                          destination: sessionRequest.Owner,
-                          x =>
-                          {
-                              x.JoinWay = JoinWays.Request;
-                          });
-
-                    await MessageSender.SendCmdAsync(destinationSessionUnit, new MessageInput<CmdContentInfo>()
+                    // A ShopWaiter shares its parent's session. The destination
+                    // may already have a unit in that session addressed to the
+                    // ShopKeeper, and OwnerId+SessionId is unique.
+                    if (sessionRequest.Owner.ObjectType != ChatObjectTypeEnums.ShopWaiter ||
+                        await SessionUnitManager.FindBySessionIdAsync(session.Id, sessionRequest.Destination.Id) == null)
                     {
-                        Content = new CmdContentInfo()
-                        {
-                            Cmd = MessageKeyNames.AddFriendSuccess,
-                            Text = $"添加好友成功",
-                        }
-                    });
+                        await SessionUnitManager.CreateIfNotContainsAsync(
+                              session: session,
+                              owner: sessionRequest.Destination,
+                              destination: sessionRequest.Owner,
+                              x =>
+                              {
+                                  x.JoinWay = JoinWays.Request;
+                              });
+                    }
+
+                    await QueueNotificationAsync(sessionRequest.Id, SessionRequestNotificationKind.Accepted);
 
                     break;
                 case ChatObjectTypeEnums.Room:
@@ -278,7 +280,7 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
                         await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.SessionRequestPermission.Handle, handlerSessionUnit);
                     }
 
-                    var roomOrSquareSessionUnit = await SessionUnitManager.CreateIfNotContainsAsync(
+                    await SessionUnitManager.CreateIfNotContainsAsync(
                              session: session,
                              owner: sessionRequest.Destination,
                              destination: sessionRequest.Destination,
@@ -286,30 +288,28 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
                              {
                                  x.JoinWay = JoinWays.Request;
                              });
-
-                    await MessageSender.SendCmdAsync(roomOrSquareSessionUnit, new MessageInput<CmdContentInfo>()
-                    {
-                        Content = new CmdContentInfo()
-                        {
-                            Text = new TextTemplate("欢迎 '{owner}' 加入 '{destination}'")
-                                    .WithData("owner", new SessionUnitTextTemplate(ownerSessionUnit.Id, sessionRequest.Owner.Name))
-                                    .WithData("destination", new ChatObjectTextTemplate(sessionRequest.Destination))
-                                    .ToString(),
-                        }
-                    });
+                    await QueueNotificationAsync(sessionRequest.Id, SessionRequestNotificationKind.Accepted);
                     break;
                 default:
-                    Assert.If(true, $"The destination's ObjectType '{sessionRequest.Destination.ObjectType}' disallow create session request. destinationId:{sessionRequest.Destination.Id}");
+                    //Assert.If(true, $"The destination's ObjectType '{sessionRequest.Destination.ObjectType}' disallow create session request. destinationId:{sessionRequest.Destination.Id}");
                     break;
             }
         }
         else
         {
+            if (sessionRequest.Destination?.ObjectType is ChatObjectTypeEnums.Room or ChatObjectTypeEnums.Square
+                && handlerSessionUnitId.HasValue)
+            {
+                var handlerSessionUnit = await SessionUnitManager.GetAsync(handlerSessionUnitId.Value);
+                await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.SessionRequestPermission.Handle, handlerSessionUnit);
+            }
+
             if (ownerSessionUnit == null)
             {
                 sessionRequest.DisagreeRequest(handlMessage, handlerSessionUnitId);
+                sessionRequest.SetHandleTime(Clock.Now);
 
-                await SendForRequesterAsync(sessionRequest.Owner, sessionRequest);
+                await QueueNotificationAsync(sessionRequest.Id, SessionRequestNotificationKind.Declined);
             }
             else
             {
@@ -325,22 +325,159 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
     }
 
 
-    protected virtual async Task SendForRequesterAsync(IChatObject receiver, SessionRequest sessionRequest)
+    protected virtual Task QueueNotificationAsync(Guid requestId, SessionRequestNotificationKind kind) =>
+        BackgroundJobManager.EnqueueAsync(
+            new SessionRequestNotificationArgs { RequestId = requestId, Kind = kind },
+            delay: TimeSpan.FromSeconds(2));
+
+    // Quartz persists the notification before the caller commits Chat SQL. A retry may
+    // therefore arrive early: never send until the request's committed state is visible.
+    public virtual async Task DeliverNotificationAsync(SessionRequestNotificationArgs args)
     {
-        var assistant = await ChatObjectManager.GetOrAddPrivateAssistantAsync();
+        var sessionRequest = await Repository.GetAsync(args.RequestId);
+        if (!sessionRequest.IsEnabled) return;
 
-        await SessionGenerator.MakeAsync(assistant, sessionRequest.Owner);
+        if (args.Kind == SessionRequestNotificationKind.Requested)
+        {
+            if (sessionRequest.IsHandled) return;
+        }
+        else if (!sessionRequest.IsHandled || sessionRequest.IsAgreed !=
+                 (args.Kind == SessionRequestNotificationKind.Accepted))
+        {
+            throw new InvalidOperationException($"Session request {args.RequestId} has not committed the expected {args.Kind} state yet.");
+        }
 
-        var sessionUnit = await SessionUnitManager.FindAsync(assistant.Id, sessionRequest.Owner.Id);
+        var owner = await ChatObjectManager.GetAsync(sessionRequest.OwnerId);
+        var destination = await ChatObjectManager.GetAsync(sessionRequest.DestinationId
+            ?? throw new InvalidOperationException($"Session request {args.RequestId} has no destination."));
+
+        switch (args.Kind)
+        {
+            case SessionRequestNotificationKind.Requested:
+                if (destination.ObjectType is ChatObjectTypeEnums.Room or ChatObjectTypeEnums.Square)
+                    await SendForRoomOrSquareAsync(owner, destination, sessionRequest);
+                else
+                    await SendForPersonalAsync(owner, destination, sessionRequest);
+                break;
+            case SessionRequestNotificationKind.Accepted:
+                var sender = await GetSenderUnitAsync(destination.Id,
+                    destination.ObjectType is ChatObjectTypeEnums.Room or ChatObjectTypeEnums.Square
+                        ? destination.Id
+                        : owner.ObjectType == ChatObjectTypeEnums.ShopWaiter && owner.ParentId.HasValue
+                            ? owner.ParentId.Value : owner.Id);
+                var text = "添加好友成功";
+                Guid? joinedUnitId = null;
+                if (destination.ObjectType is ChatObjectTypeEnums.Room or ChatObjectTypeEnums.Square)
+                {
+                    var ownerUnit = await SessionUnitManager.FindAsync(owner.Id, destination.Id)
+                        ?? throw new InvalidOperationException($"Owner session unit for request {args.RequestId} is not committed yet.");
+                    joinedUnitId = ownerUnit.Id;
+                    text = new TextTemplate("欢迎 '{owner}' 加入 '{destination}'")
+                        .WithData("owner", new SessionUnitTextTemplate(ownerUnit.Id, owner.Name))
+                        .WithData("destination", new ChatObjectTextTemplate(destination))
+                        .ToString();
+                }
+                await MessageSender.SendCmdAsync(sender, new MessageInput<CmdContentInfo>
+                {
+                    ClientMessageId = SessionRequestNotificationArgs.GetClientMessageId(args.RequestId, args.Kind),
+                    Content = new CmdContentInfo
+                    {
+                        Cmd = destination.ObjectType is ChatObjectTypeEnums.Room or ChatObjectTypeEnums.Square
+                            ? null : MessageKeyNames.AddFriendSuccess,
+                        Text = text,
+                    }
+                });
+                if (destination.ObjectType is ChatObjectTypeEnums.Room or ChatObjectTypeEnums.Square)
+                {
+                    await SendAcceptedToRequesterAsync(owner, destination, sessionRequest, joinedUnitId);
+                }
+                break;
+            case SessionRequestNotificationKind.Declined:
+                await SendForRequesterAsync(owner, destination, sessionRequest);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(args.Kind), args.Kind, null);
+        }
+    }
+
+    // Creating the assistant's session and sending a message cannot share an uncommitted
+    // Chat transaction because MessageManager intentionally starts a new transaction.
+    private async Task<(ChatObject Assistant, long NotificationDestinationId)> EnsureAssistantSessionCommittedAsync(ChatObject receiver)
+    {
+        ChatObject assistant;
+        var notificationDestinationId = receiver.ObjectType == ChatObjectTypeEnums.ShopWaiter && receiver.ParentId.HasValue
+            ? receiver.ParentId.Value
+            : receiver.Id;
+        using (var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true))
+        {
+            assistant = await ChatObjectManager.GetOrAddPrivateAssistantAsync();
+            // Never attach the ChatObject from the caller's UOW to this new UOW.
+            // EF would otherwise try to insert it again when creating a session.
+            var notificationDestination = await ChatObjectManager.GetAsync(notificationDestinationId);
+            await SessionGenerator.MakeAsync(assistant, notificationDestination);
+            await uow.CompleteAsync();
+        }
+        return (assistant, notificationDestinationId);
+    }
+
+    private async Task<SessionUnitCacheItem> GetSenderUnitAsync(long ownerId, long destinationId)
+    {
+        // The persisted unit's computed cache fields dereference Owner and
+        // Destination. Keep the query and mapping in one explicit read UOW;
+        // a repository-created implicit UOW would dispose its DbContext first.
+        using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+        var query = await SessionUnitRepository.WithDetailsAsync(
+            x => x.Owner, x => x.Destination, x => x.Setting);
+        var unit = await AsyncExecuter.FirstOrDefaultAsync(query.Where(
+            x => x.OwnerId == ownerId && x.DestinationId == destinationId));
+        if (unit is null)
+            throw new InvalidOperationException($"Sender session unit {ownerId}->{destinationId} is not committed yet.");
+        var item = await SessionUnitManager.MapToCacheAsync(unit);
+        await uow.CompleteAsync();
+        return item;
+    }
+
+    protected virtual async Task SendAcceptedToRequesterAsync(
+        ChatObject owner,
+        ChatObject destination,
+        SessionRequest sessionRequest,
+        Guid? joinedSessionUnitId)
+    {
+        var (assistant, notificationDestinationId) = await EnsureAssistantSessionCommittedAsync(owner);
+
+        var sessionUnit = await GetSenderUnitAsync(assistant.Id, notificationDestinationId);
 
         await MessageSender.SendLinkAsync(sessionUnit, new MessageInput<LinkContentInfo>()
         {
+            ClientMessageId = $"{SessionRequestNotificationArgs.GetClientMessageId(sessionRequest.Id, SessionRequestNotificationKind.Accepted)}:requester:{notificationDestinationId}",
+            Content = new LinkContentInfo()
+            {
+                Title = new TextTemplate("'{destination}' 已同意 '{owner}' 加入群聊")
+                    .WithData("destination", new ChatObjectTextTemplate(destination))
+                    .WithData("owner", new ChatObjectTextTemplate(owner))
+                    .ToString(),
+                Url = joinedSessionUnitId.HasValue
+                    ? $"app://sesson-request/detail?id={sessionRequest.Id}&sessionUnitId={joinedSessionUnitId}"
+                    : $"app://sesson-request/detail?id={sessionRequest.Id}"
+            }
+        });
+    }
+
+    protected virtual async Task SendForRequesterAsync(ChatObject owner, ChatObject destination, SessionRequest sessionRequest)
+    {
+        var (assistant, notificationDestinationId) = await EnsureAssistantSessionCommittedAsync(owner);
+
+        var sessionUnit = await GetSenderUnitAsync(assistant.Id, notificationDestinationId);
+
+        await MessageSender.SendLinkAsync(sessionUnit, new MessageInput<LinkContentInfo>()
+        {
+            ClientMessageId = SessionRequestNotificationArgs.GetClientMessageId(sessionRequest.Id, SessionRequestNotificationKind.Declined),
             Content = new LinkContentInfo()
             {
                 //Title = $"'{Destination}'拒绝'{sessionRequest.Owner.Name}'请求:{sessionRequest.HandleMessage}",
                 Title = new TextTemplate("'{destination}' 拒绝 '{Owner}' 请求:{handleMessage}")
-                            .WithData("destination", new ChatObjectTextTemplate(sessionRequest.Destination))
-                            .WithData("owner", new ChatObjectTextTemplate(sessionRequest.Owner))
+                            .WithData("destination", new ChatObjectTextTemplate(destination))
+                            .WithData("owner", new ChatObjectTextTemplate(owner))
                             .WithData("handleMessage", sessionRequest.HandleMessage)
                             .ToString(),
                 Url = $"app://sesson-request/detail?id={sessionRequest.Id}"

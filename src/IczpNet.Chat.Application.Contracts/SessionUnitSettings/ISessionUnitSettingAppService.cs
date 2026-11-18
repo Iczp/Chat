@@ -38,7 +38,8 @@ public interface ISessionUnitSettingAppService
     /// <param name="isForce"></param>
     /// <param name="messageId"></param>
     /// <returns></returns>
-    Task<SessionUnitOwnerDto> SetReadedMessageIdAsync(Guid sessionUnitId, bool isForce = false, long? messageId = null);
+    Task<SessionUnitOwnerDto> SetReadAsync(Guid sessionUnitId, bool isForce = false, long? messageId = null);
+
 
     /// <summary>
     /// 设置为免打扰
@@ -63,6 +64,28 @@ public interface ISessionUnitSettingAppService
     /// <param name="isShowMemberName"></param>
     /// <returns></returns>
     Task<SessionUnitOwnerDto> SetIsShowMemberNameAsync(Guid sessionUnitId, bool isShowMemberName);
+
+    /// <summary>
+    /// 设置聊天背景图片
+    /// </summary>
+    /// <param name="sessionUnitId"></param>
+    /// <param name="backgroundImage">背景图片地址，为 null 时清除背景图片</param>
+    /// <returns></returns>
+    Task<SessionUnitOwnerDto> SetBackgroundImageAsync(Guid sessionUnitId, string backgroundImage);
+
+    /// <summary>
+    /// 清除聊天背景图片
+    /// </summary>
+    /// <param name="sessionUnitId"></param>
+    /// <returns></returns>
+    Task<SessionUnitOwnerDto> ClearBackgroundImageAsync(Guid sessionUnitId);
+
+    /// <summary>
+    /// 校验当前用户是否可以设置聊天背景图片
+    /// </summary>
+    /// <param name="sessionUnitId"></param>
+    /// <returns></returns>
+    Task CheckSetBackgroundImageAsync(Guid sessionUnitId);
 
     /// <summary>
     /// 退出聊天（主动）

@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.ChatObjects.Dtos;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.Enums.Dtos;
 using IczpNet.Chat.RoomSections.Rooms.Dtos;
 using IczpNet.Chat.SessionUnits;
@@ -23,6 +24,8 @@ public interface IRoomAppService
     Task<ChatObjectDto> UpdateNameAsync(Guid sessionUnitId, string name);
 
     Task<ChatObjectDto> UpdatePortraitAsync(Guid sessionUnitId, string thumbnail, string portrait);
+
+    Task<ChatObjectDto> SetVerificationMethodAsync(Guid sessionUnitId, VerificationMethods verificationMethod);
 
     Task TransferCreatorAsync(Guid sessionUnitId, Guid targetSessionUnitId);
 
