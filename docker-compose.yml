@@ -64,6 +64,8 @@ services:
       Blob__Minio__AccessKey: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER in .env}
       Blob__Minio__SecretKey: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}
       Blob__Minio__WithSSL: "false"
+      Blob__Minio__EnableDirectRedirect: ${BLOB_MINIO_ENABLE_DIRECT_REDIRECT:-false}
+      AttachmentSignature__SigningKey: ${ATTACHMENT_SIGNING_KEY:-eec1138c80c946094ec8808de8c99a4077fc00eac9fe42427ae11595b75f4de6}
       AuthServer__Authority: ${AUTH_SERVER_AUTHORITY:-http://host.docker.internal:51600}
       AuthServer__RequireHttpsMetadata: "false"
     ports:
@@ -89,6 +91,7 @@ services:
       Blob__Minio__AccessKey: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER in .env}
       Blob__Minio__SecretKey: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}
       Blob__Minio__WithSSL: "false"
+      AttachmentSignature__SigningKey: ${ATTACHMENT_SIGNING_KEY:-eec1138c80c946094ec8808de8c99a4077fc00eac9fe42427ae11595b75f4de6}
       AiRunDispatcher__Enabled: "true"
 
 volumes:

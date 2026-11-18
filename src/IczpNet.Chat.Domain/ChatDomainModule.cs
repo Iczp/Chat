@@ -20,6 +20,7 @@ using Volo.Abp.Mapperly;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.BlobStoring;
+using IczpNet.Chat.Blobs;
 using Volo.Abp.Domain;
 using Volo.Abp.Imaging;
 using Volo.Abp.Modularity;
@@ -51,6 +52,8 @@ public class ChatDomainModule : AbpModule
     {
         var configuration = context.Services.GetConfiguration();
 
+        Configure<IczpNet.Chat.Options.AttachmentSignatureOptions>(configuration.GetSection("AttachmentSignature"));
+
 
 
         context.Services.AddMapperlyObjectMapper<ChatDomainModule>();
@@ -58,6 +61,7 @@ public class ChatDomainModule : AbpModule
         context.Services.AddHttpClient(HttpRequest.ClientName);
 
         context.Services.AddTransient(typeof(IDistributedCacheListSet<,>), typeof(DistributedCacheListSet<,>));
+        context.Services.TryAddSingleton<IBlobDirectUrlProvider, NullBlobDirectUrlProvider>();
 
         //context.Services.ConfigureConventionModuleOptions<ChatDomainModule>();
         //context.Services.ConfigureByConvention<MessageReportOptions>();

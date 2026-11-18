@@ -1,0 +1,164 @@
+using IczpNet.Chat.Medias;
+using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.Options;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using System;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using Volo.Abp.BackgroundJobs;
+using Volo.Abp.Caching;
+using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Guids;
+using Volo.Abp.Json;
+using Volo.Abp.Timing;
+using Volo.Abp.Uow;
+
+namespace IczpNet.Chat.Blobs;
+
+public class GenerateVideoGifBackgroundJob(
+    IMessageRepository messageRepository,
+    IMessageManager messageManager,
+    IBlobManager blobManager,
+    IBlobResolver blobResolver,
+    IRepository<Blob, Guid> blobRepository,
+    IRepository<BlobMessageRef, Guid> blobMessageRefRepository,
+    IMediaResolver mediaResolver,
+    IGuidGenerator guidGenerator,
+    IJsonSerializer jsonSerializer,
+    IOptions<MessageOptions> messageOptions,
+    IDistributedCache<MessageCacheItem, MessageCacheKey> messageCache,
+    IClock clock) : AsyncBackgroundJob<GenerateVideoGifArgs>, ITransientDependency
+{
+    [UnitOfWork]
+    public override async Task ExecuteAsync(GenerateVideoGifArgs args)
+    {
+        var message = await messageRepository.FindAsync(args.MessageId);
+        if (message == null || message.IsRollbacked)
+        {
+            return;
+        }
+
+        var videoContent = message.GetTypedContentEntity<VideoContent>();
+        if (videoContent == null || videoContent.GifBlobId.HasValue)
+        {
+            return;
+        }
+
+        var videoBlob = await blobRepository.FindAsync(args.VideoBlobId);
+        if (videoBlob == null)
+        {
+            return;
+        }
+
+        var videoBytes = await blobManager.GetBytesAsync(videoBlob.Container, videoBlob.Name);
+        var mediaInfo = await mediaResolver.GetVideoInfoAsync(videoBytes, videoBlob.FileName);
+        if (mediaInfo == null || string.IsNullOrWhiteSpace(mediaInfo.GifSnapshotPath))
+        {
+            return;
+        }
+
+        try
+        {
+            if (!File.Exists(mediaInfo.GifSnapshotPath))
+            {
+                return;
+            }
+
+            var gifBytes = await File.ReadAllBytesAsync(mediaInfo.GifSnapshotPath);
+            var gifBlobId = guidGenerator.Create();
+            var directoryName = await blobResolver.GetDirectoryNameAsync(new BlobContext
+            {
+                BlobId = gifBlobId,
+                Container = videoBlob.Container,
+                MediaType = AttachmentMediaType.Video,
+                BlobRole = BlobRoles.Gif,
+                FileName = $"{videoBlob.FileName}.gif",
+                MimeType = "image/gif",
+                FileSize = gifBytes.Length,
+            });
+            var fileName = await blobResolver.GenerateFileNameAsync(".gif");
+            var gifBlobName = Path.Combine(directoryName, fileName).Replace(@"\", "/");
+
+            var gifBlob = await blobManager.CreateAsync(new Blob(gifBlobId, videoBlob.Container)
+            {
+                IsPublic = videoBlob.IsPublic,
+                FileSize = gifBytes.Length,
+                MimeType = "image/gif",
+                FileName = $"{Path.GetFileNameWithoutExtension(videoBlob.FileName)}.gif",
+                Name = gifBlobName,
+                Suffix = ".gif",
+                Bytes = gifBytes,
+                UploaderChatObjectId = videoBlob.UploaderChatObjectId,
+                UploadSessionUnitId = videoBlob.UploadSessionUnitId,
+                UploadSessionId = videoBlob.UploadSessionId,
+                ParentBlobId = videoBlob.Id,
+                Role = BlobRoles.Gif,
+                Status = BlobStatus.Bound,
+                RefCount = 1,
+            });
+
+            var gifUrl = await blobResolver.GetFileUrlAsync(gifBlob.Id, gifBlob.MimeType);
+            videoContent.GifBlobId = gifBlob.Id;
+            videoContent.GifUrl = gifUrl;
+
+            // 绑定到原消息（以及已转发到其他会话的消息引用）
+            await blobMessageRefRepository.InsertAsync(new BlobMessageRef(
+                guidGenerator.Create(),
+                gifBlob.Id,
+                message.Id,
+                message.SessionId,
+                BlobRefSourceTypes.Send));
+
+            var forwardedMessages = (await messageRepository.GetQueryableAsync())
+                .Where(x => x.ForwardMessageId == message.Id)
+                .Select(x => new { x.Id, x.SessionId })
+                .ToList();
+
+            foreach (var fwd in forwardedMessages)
+            {
+                await blobMessageRefRepository.InsertAsync(new BlobMessageRef(
+                    guidGenerator.Create(),
+                    gifBlob.Id,
+                    fwd.Id,
+                    fwd.SessionId,
+                    BlobRefSourceTypes.Forward));
+                gifBlob.RefCount += 1;
+            }
+
+            var contentDto = message.GetContentDto();
+            message.SetContentJson(jsonSerializer.Serialize(contentDto));
+
+            await messageCache.RemoveAsync(new MessageCacheKey(message.Id));
+            await messageManager.RecordMessageUpdatedAsync(message, clock.Now);
+        }
+        finally
+        {
+            DeleteTempFile(mediaInfo.ImageSnapshotPath);
+            DeleteTempFile(mediaInfo.GifSnapshotPath);
+            DeleteTempFile(mediaInfo.TempVideoPath);
+        }
+    }
+
+    private void DeleteTempFile(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return;
+        try
+        {
+            var root = Path.GetFullPath(messageOptions.Value.OutputTempPath)
+                .TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            var fullPath = Path.GetFullPath(path);
+            if (fullPath.StartsWith(root, StringComparison.Ordinal))
+            {
+                File.Delete(fullPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Could not delete temporary media file {Path}", path);
+        }
+    }
+}
