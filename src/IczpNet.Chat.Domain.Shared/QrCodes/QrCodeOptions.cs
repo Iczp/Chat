@@ -57,4 +57,14 @@ public class QrCodeOptions
     /// 缓存默认保留小时数
     /// </summary>
     public int CacheExpirationHours { get; set; } = 24;
+
+    /// <summary>
+    /// 临时二维码可复用的最小剩余有效小时数（低于此阈值或不足总有效期 30% 时自动签发新码）
+    /// </summary>
+    public int ReuseMinRemainingHours { get; set; } = 24;
+
+    /// <summary>
+    /// 已停用或已过期二维码的物理清理保留天数
+    /// </summary>
+    public int CleanupRetentionDays { get; set; } = 30;
 }

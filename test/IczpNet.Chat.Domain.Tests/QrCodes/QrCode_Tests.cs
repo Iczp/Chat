@@ -378,4 +378,57 @@ public class QrCode_Tests : ChatDomainTestBase
             addAgain.Status.ShouldBe("already_friend");
         }
     }
+
+    [Fact]
+    public async Task Switching_TempDays_And_NearExpiry_Should_Disable_Old_And_CleanupWorker_Should_Purge_Stale()
+    {
+        long ownerId = 0;
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var types = await EnsureChatObjectTypesAsync();
+            ownerId = (await CreateChatObjectAsync(types, "LifecycleOwner", ChatObjectTypeEnums.Personal, DefaultUserId)).Id;
+        });
+
+        // 1. 先生成永久名片 + 7天临时名片
+        var permanent = await _qrCodeManager.GenerateCardAsync(ownerId, isPermanent: true);
+        var temp7 = await _qrCodeManager.GenerateCardAsync(ownerId, isPermanent: false, expireDays: 7);
+        await _qrCodeManager.ResolveByCodeAsync(temp7.Code);
+        (await _qrCodeCache.GetAsync(new QrCodeCacheKey(temp7.Code))).ShouldNotBeNull();
+
+        // 2. 切换到 30天临时名片：旧 7天临时码应自动停用且清缓存，而永久名片保持有效
+        var temp30 = await _qrCodeManager.GenerateCardAsync(ownerId, isPermanent: false, expireDays: 30);
+        temp30.Id.ShouldNotBe(temp7.Id);
+        (await _qrCodeCache.GetAsync(new QrCodeCacheKey(temp7.Code))).ShouldBeNull();
+        (await _qrCodeManager.ResolveByCodeAsync(temp7.Code)).IsDisabled.ShouldBeTrue();
+        (await _qrCodeManager.ResolveByCodeAsync(permanent.Code)).IsValid.ShouldBeTrue();
+
+        // 3. 30天码临近过期（剩余不足 24 小时）：再次生成 30天码应自动续签新码并停用旧码
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var e = await _qrCodeRepository.GetAsync(temp30.Id);
+            e.SetValidity(false, 30, DateTime.UtcNow.AddHours(6));
+            await _qrCodeRepository.UpdateAsync(e, autoSave: true);
+        });
+        var renewed30 = await _qrCodeManager.GenerateCardAsync(ownerId, isPermanent: false, expireDays: 30);
+        renewed30.Id.ShouldNotBe(temp30.Id);
+        (await _qrCodeManager.ResolveByCodeAsync(temp30.Code)).IsDisabled.ShouldBeTrue();
+
+        // 4. 模拟一条已过期超过 40 天的历史码，验证 QrCodeCleanupWorker 物理清理且保留当前有效码
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var oldExpired = await _qrCodeRepository.GetAsync(temp7.Id);
+            oldExpired.SetValidity(false, 7, DateTime.UtcNow.AddDays(-40));
+            await _qrCodeRepository.UpdateAsync(oldExpired, autoSave: true);
+        });
+
+        var deletedCount = await QrCodeCleanupWorker.CleanupExpiredAsync(ServiceProvider);
+        deletedCount.ShouldBeGreaterThanOrEqualTo(1);
+
+        await WithUnitOfWorkAsync(async () =>
+        {
+            (await _qrCodeRepository.FindAsync(temp7.Id)).ShouldBeNull();
+            (await _qrCodeRepository.FindAsync(permanent.Id)).ShouldNotBeNull();
+            (await _qrCodeRepository.FindAsync(renewed30.Id)).ShouldNotBeNull();
+        });
+    }
 }

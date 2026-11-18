@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.Attributes;
 using IczpNet.Chat.Enums;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.MessageSections.Templates;
@@ -8,6 +9,21 @@ namespace IczpNet.Chat.MessageSections.Templates;
 [ContentOuput(typeof(VideoContentInfo))]
 public class VideoContent : MessageContentAttachmentsEntityBase
 {
+    /// <summary>
+    /// 视频封面 BlobId
+    /// </summary>
+    public virtual Guid? SnapshotBlobId { get; set; }
+
+    /// <summary>
+    /// 封面缩略图 BlobId
+    /// </summary>
+    public virtual Guid? SnapshotThumbnailBlobId { get; set; }
+
+    /// <summary>
+    /// GIF BlobId
+    /// </summary>
+    public virtual Guid? GifBlobId { get; set; }
+
     /// <summary>
     /// 视频地址
     /// </summary>

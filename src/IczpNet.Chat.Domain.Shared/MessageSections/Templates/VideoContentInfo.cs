@@ -1,10 +1,27 @@
-﻿namespace IczpNet.Chat.MessageSections.Templates;
+﻿using System;
+
+namespace IczpNet.Chat.MessageSections.Templates;
 
 /// <summary>
 /// 视频消息
 /// </summary>
 public class VideoContentInfo : MessageContentAttachmentsInfoBase, IContentInfo
 {
+    /// <summary>
+    /// 视频封面 BlobId
+    /// </summary>
+    public virtual Guid? SnapshotBlobId { get; set; }
+
+    /// <summary>
+    /// 封面缩略图 BlobId
+    /// </summary>
+    public virtual Guid? SnapshotThumbnailBlobId { get; set; }
+
+    /// <summary>
+    /// GIF BlobId
+    /// </summary>
+    public virtual Guid? GifBlobId { get; set; }
+
     /// <summary>
     /// 视频地址
     /// </summary>

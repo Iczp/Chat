@@ -518,9 +518,16 @@ public class QrCodeManager(
 
         if (!forceReset)
         {
+            var minRemainingHours = effectiveIsPermanent
+                ? 0d
+                : Math.Min(
+                    Math.Max(0, Config.ReuseMinRemainingHours),
+                    Math.Max(1, effectiveExpireDays ?? 7) * 24.0 * 0.3);
+            var minReusableExpiration = now.AddHours(minRemainingHours);
+
             var existingCandidates = await AsyncExecuter.ToListAsync(
                 baseQuery.Where(x => x.IsPermanent == effectiveIsPermanent)
-                         .Where(x => effectiveIsPermanent || (x.ExpirationTime != null && x.ExpirationTime > now))
+                         .Where(x => effectiveIsPermanent || (x.ExpirationTime != null && x.ExpirationTime > minReusableExpiration))
                          .OrderByDescending(x => x.CreationTime));
 
             var reusable = existingCandidates.FirstOrDefault(x =>
@@ -539,6 +546,21 @@ public class QrCodeManager(
 
                 await SetCacheAsync(ObjectMapper.Map<QrCode, QrCodeCacheItem>(reusable));
                 return reusable;
+            }
+
+            // 未命中可复用码（例如切换了临时天数 7天->30天，或原临时码临近过期）：
+            // 自动停用同类型（临时/永久）的旧有效码并清理缓存，避免长期积累多张无效/冗余码
+            var supersededCodes = await AsyncExecuter.ToListAsync(
+                baseQuery.Where(x => x.IsPermanent == effectiveIsPermanent));
+            if (supersededCodes.Count > 0)
+            {
+                foreach (var oldCode in supersededCodes)
+                {
+                    oldCode.Disable();
+                    await InvalidateCacheAsync(oldCode.Code);
+                }
+
+                await Repository.UpdateManyAsync(supersededCodes, autoSave: true);
             }
         }
         else

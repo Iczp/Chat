@@ -193,6 +193,7 @@ public class ChatDbContext(DbContextOptions<ChatDbContext> options) : AbpDbConte
 
     public DbSet<Blob> Blob { get; set; }
     public DbSet<BlobContent> BlobContent { get; set; }
+    public DbSet<BlobMessageRef> BlobMessageRef { get; set; }
 
     public DbSet<InvitationCode> InvitationCode { get; set; }
 

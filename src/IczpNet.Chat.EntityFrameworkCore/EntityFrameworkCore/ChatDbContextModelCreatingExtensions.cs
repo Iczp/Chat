@@ -401,6 +401,14 @@ public static class ChatDbContextModelCreatingExtensions
             b.HasOne(x => x.Blob).WithOne(x => x.Content).HasForeignKey<BlobContent>(x => x.BlobId).OnDelete(DeleteBehavior.NoAction).IsRequired(false);
         });
 
+        builder.Entity<BlobMessageRef>(b =>
+        {
+            b.ToTable($"{ChatDbProperties.DbTablePrefix}_{nameof(BlobMessageRef)}", ChatDbProperties.DbSchema);
+            b.ConfigureByConvention();
+            b.HasOne(x => x.Blob).WithMany().HasForeignKey(x => x.BlobId).OnDelete(DeleteBehavior.NoAction);
+            b.HasOne(x => x.Message).WithMany().HasForeignKey(x => x.MessageId).OnDelete(DeleteBehavior.NoAction);
+        });
+
 
 
         builder.Entity<MessageChange>(b =>

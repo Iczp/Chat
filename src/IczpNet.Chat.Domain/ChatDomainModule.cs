@@ -119,6 +119,7 @@ public class ChatDomainModule : AbpModule
         {
             await context.AddBackgroundWorkerAsync<MessageReportFlushWorker>();
             await context.AddBackgroundWorkerAsync<IczpNet.Chat.MessageSections.Messages.MessageChangeCleanupWorker>();
+            await context.AddBackgroundWorkerAsync<IczpNet.Chat.QrCodes.QrCodeCleanupWorker>();
             if (context.ServiceProvider.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>()
                 .GetValue("Chat:ArticleSchedules:Enabled", false))
                 await context.AddBackgroundWorkerAsync<IczpNet.Chat.MessageSections.ArticleScheduleRecoveryWorker>();

@@ -1,5 +1,6 @@
 ﻿using IczpNet.Chat.Attributes;
 using IczpNet.Chat.Enums;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace IczpNet.Chat.MessageSections.Templates;
@@ -9,6 +10,23 @@ namespace IczpNet.Chat.MessageSections.Templates;
 public class ImageContent : MessageContentAttachmentsEntityBase
 {
     public override long GetSize() => Size ?? 0;
+
+    /// <summary>
+    /// 缩略图 BlobId
+    /// </summary>
+    public virtual Guid? ThumbnailBlobId { get; set; }
+
+    /// <summary>
+    /// 原图 BlobId
+    /// </summary>
+    public virtual Guid? OriginalBlobId { get; set; }
+
+    /// <summary>
+    /// 原图地址
+    /// </summary>
+    [StringLength(500)]
+    public virtual string OriginalUrl { get; set; }
+
     /// <summary>
     /// 图片地址
     /// </summary>
