@@ -47,7 +47,10 @@ public class ChatBackgroundWorkerModule : AbpModule
     public override async System.Threading.Tasks.Task OnPostApplicationInitializationAsync(ApplicationInitializationContext context)
     {
         if (context.ServiceProvider.GetRequiredService<IConfiguration>().GetValue("Chat:Workers:EnablePeriodic", true))
+        {
             await context.AddBackgroundWorkerAsync<IczpNet.Chat.SessionUnits.SessionUnitFlushWorker>();
+            await context.AddBackgroundWorkerAsync<IczpNet.Chat.Blobs.TempBlobCleanupWorker>();
+        }
     }
 
     public override void ConfigureServices(ServiceConfigurationContext context)

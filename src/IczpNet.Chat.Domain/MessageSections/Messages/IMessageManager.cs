@@ -226,4 +226,14 @@ public interface IMessageManager
     /// <returns></returns>
     Task SetMaxMessageIdAsync(Guid sessionId, long messageId);
 
+    /// <summary>
+    /// 记录消息更新变更并推送通知
+    /// </summary>
+    Task<long?> RecordMessageUpdatedAsync(Message message, DateTime? time = null);
+
+    /// <summary>
+    /// 为合并转发消息递归绑定所含附件及引用/嵌套聊天记录附件的访问授权（最大 5 层）
+    /// </summary>
+    Task BindHistoryAttachmentsAsync(long historyRootMessageId, Guid? targetSessionId, IEnumerable<long> selectedMessageIds, int maxDepth = 5);
+
 }

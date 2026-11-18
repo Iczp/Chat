@@ -56,12 +56,14 @@ public partial class ChatDomainImageContentInfoToImageContentMapper(IUrlNormaliz
         if (source is null) return;
         MapOutputFields(source, destination);
         destination.Url = urlNormalizer.Normalize(source.Url);
+        destination.OriginalUrl = urlNormalizer.Normalize(source.OriginalUrl);
         destination.ActionUrl = urlNormalizer.Normalize(source.ActionUrl);
         destination.ThumbnailUrl = urlNormalizer.Normalize(source.ThumbnailUrl);
         destination.ThumbnailActionUrl = urlNormalizer.Normalize(source.ThumbnailActionUrl);
     }
 
     [MapperIgnoreTarget(nameof(ImageContentInfo.Url))]
+    [MapperIgnoreTarget(nameof(ImageContentInfo.OriginalUrl))]
     [MapperIgnoreTarget(nameof(ImageContentInfo.ActionUrl))]
     [MapperIgnoreTarget(nameof(ImageContentInfo.ThumbnailUrl))]
     [MapperIgnoreTarget(nameof(ImageContentInfo.ThumbnailActionUrl))]

@@ -32,6 +32,7 @@ public class RoomAppService(IRoomManager roomManager,
     protected IRoomManager RoomManager { get; } = roomManager;
     protected IChatObjectCategoryManager ChatObjectCategoryManager { get; } = chatObjectCategoryManager;
     protected ISessionPermissionChecker SessionPermissionChecker { get; } = sessionPermissionChecker;
+    protected IChatObjectRepository ChatObjectRepository => LazyServiceProvider.LazyGetRequiredService<IChatObjectRepository>();
 
     /// <summary>
     /// 创建群

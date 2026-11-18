@@ -207,6 +207,8 @@ public class ChatHttpApiHostModule : AbpModule
             });
         });
 
+        context.Services.Replace(Microsoft.Extensions.DependencyInjection.ServiceDescriptor.Singleton<IczpNet.Chat.Blobs.IBlobDirectUrlProvider, IczpNet.Chat.Blobs.MinioBlobDirectUrlProvider>());
+
         Configure<AbpDbContextOptions>(options =>
         {
             options.UseSqlServer(x =>

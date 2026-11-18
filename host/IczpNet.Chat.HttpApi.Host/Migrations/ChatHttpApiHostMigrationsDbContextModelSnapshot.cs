@@ -400,6 +400,9 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("DeletionTime");
 
+                    b.Property<DateTime?>("ExpireTime")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
@@ -440,9 +443,30 @@ namespace IczpNet.Chat.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<Guid?>("ParentBlobId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("RefCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
                     b.Property<string>("Suffix")
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
+
+                    b.Property<Guid?>("UploadSessionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UploadSessionUnitId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long?>("UploaderChatObjectId")
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
@@ -452,7 +476,13 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("Name");
 
+                    b.HasIndex("ParentBlobId");
+
                     b.HasIndex("Suffix");
+
+                    b.HasIndex("UploaderChatObjectId");
+
+                    b.HasIndex("Status", "ExpireTime");
 
                     b.ToTable("Chat_Blob", (string)null);
                 });
@@ -496,6 +526,78 @@ namespace IczpNet.Chat.Migrations
                     b.HasKey("BlobId");
 
                     b.ToTable("Chat_BlobContent", (string)null);
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.Blobs.BlobMessageRef", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BlobId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<long>("MessageId")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid?>("SessionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("SourceType")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MessageId");
+
+                    b.HasIndex("SessionId");
+
+                    b.HasIndex("BlobId", "MessageId")
+                        .IsUnique();
+
+                    b.ToTable("Chat_BlobMessageRef", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.ChatObjectCategories.ChatObjectCategory", b =>
@@ -3774,6 +3876,13 @@ namespace IczpNet.Chat.Migrations
                         .HasMaxLength(36)
                         .HasColumnType("nvarchar(36)");
 
+                    b.Property<Guid?>("OriginalBlobId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("OriginalUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<long?>("OwnerId")
                         .HasColumnType("bigint");
 
@@ -3795,6 +3904,9 @@ namespace IczpNet.Chat.Migrations
                     b.Property<string>("ThumbnailActionUrl")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid?>("ThumbnailBlobId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ThumbnailUrl")
                         .HasMaxLength(500)
@@ -4229,6 +4341,9 @@ namespace IczpNet.Chat.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<Guid?>("GifBlobId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("GifUrl")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
@@ -4273,6 +4388,12 @@ namespace IczpNet.Chat.Migrations
 
                     b.Property<long?>("Size")
                         .HasColumnType("bigint");
+
+                    b.Property<Guid?>("SnapshotBlobId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("SnapshotThumbnailBlobId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("SnapshotThumbnailUrl")
                         .HasMaxLength(1000)
@@ -7828,6 +7949,25 @@ namespace IczpNet.Chat.Migrations
                         .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Blob");
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.Blobs.BlobMessageRef", b =>
+                {
+                    b.HasOne("IczpNet.Chat.Blobs.Blob", "Blob")
+                        .WithMany()
+                        .HasForeignKey("BlobId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("IczpNet.Chat.MessageSections.Messages.Message", "Message")
+                        .WithMany()
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Blob");
+
+                    b.Navigation("Message");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.ChatObjectCategories.ChatObjectCategory", b =>

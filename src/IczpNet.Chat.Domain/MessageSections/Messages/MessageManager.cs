@@ -471,6 +471,8 @@ public partial class MessageManager(
             Assert.If(!await Repository.CanReadAsync(senderSessionUnit.Id, quoteMessageId.Value), "Quoted message is not visible.");
             var quoteMessage = await Repository.GetAsync(quoteMessageId.Value);
 
+            Assert.If(quoteMessage.IsRollbacked, "Cannot quote a rollbacked message.");
+
             Assert.If(quoteMessage.IsPrivate && (!receiverSessionUnitId.HasValue ||
                 !((quoteMessage.SenderSessionUnitId == senderSessionUnit.Id && quoteMessage.ReceiverSessionUnitId == receiverSessionUnitId) ||
                   (quoteMessage.ReceiverSessionUnitId == senderSessionUnit.Id && quoteMessage.SenderSessionUnitId == receiverSessionUnitId))),
@@ -485,6 +487,11 @@ public partial class MessageManager(
         var messageContent = await action(message);
 
         Assert.NotNull(messageContent, $"Message content is null");
+
+        if (!message.ForwardMessageId.HasValue)
+        {
+            await PrepareAndValidateAttachmentAsync(senderSessionUnit, messageContent);
+        }
 
 
         //TryToSetOwnerId(messageContent, senderSessionUnit.SessionUnitId);
@@ -524,6 +531,8 @@ public partial class MessageManager(
 
         // Save
         message = await Repository.InsertAsync(message, autoSave: true);
+
+        await BindAttachmentsAfterInsertAsync(message, messageContent);
 
         if (cleanupOnRollback)
         {
