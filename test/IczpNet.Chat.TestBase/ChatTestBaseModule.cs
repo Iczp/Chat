@@ -20,6 +20,7 @@ public class ChatTestBaseModule : AbpModule
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         context.Services.AddAlwaysAllowAuthorization();
+        context.Services.AddHttpContextAccessor();
     }
 
     public override void OnApplicationInitialization(ApplicationInitializationContext context)
