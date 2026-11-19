@@ -9,6 +9,10 @@ public class SendMessageToClientDistributedEto : ISendMessageToClientDistributed
     /// <summary>Required recipient scope for a member-only deletion or clear.</summary>
     public Guid? TargetSessionUnitId { get; set; }
     public Guid? SessionId { get; set; }
+    public Guid? SenderSessionUnitId { get; set; }
+    public string SenderName { get; set; }
+    public bool? IsTyping { get; set; }
+    public long? Timestamp { get; set; }
     public string LatestChangeSeq { get; set; }
     public string MessageChangeId { get; set; }
     public string ChangeType { get; set; }

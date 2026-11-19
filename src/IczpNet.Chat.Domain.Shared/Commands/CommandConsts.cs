@@ -54,6 +54,9 @@ public class CommandConsts
     public const string AiStreamCompleted = "completed@ai";
     public const string AiStreamFailed = "failed@ai";
 
+    // Transient typing indicator event.
+    public const string SessionTyping = "typing@session";
+
     /// <summary>
     /// 我上线了 default: online@me
     /// </summary>
