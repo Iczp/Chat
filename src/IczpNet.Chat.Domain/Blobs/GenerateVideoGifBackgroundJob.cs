@@ -1,7 +1,10 @@
+using IczpNet.Chat.Commands;
+using IczpNet.Chat.Hosting;
 using IczpNet.Chat.Medias;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.Options;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -12,6 +15,7 @@ using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Caching;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.Guids;
 using Volo.Abp.Json;
 using Volo.Abp.Timing;
@@ -31,7 +35,10 @@ public class GenerateVideoGifBackgroundJob(
     IJsonSerializer jsonSerializer,
     IOptions<MessageOptions> messageOptions,
     IDistributedCache<MessageCacheItem, MessageCacheKey> messageCache,
-    IClock clock) : AsyncBackgroundJob<GenerateVideoGifArgs>, ITransientDependency
+    IClock clock,
+    IServiceScopeFactory serviceScopeFactory,
+    ICurrentHosted currentHosted,
+    IUnitOfWorkManager unitOfWorkManager) : AsyncBackgroundJob<GenerateVideoGifArgs>, ITransientDependency
 {
     [UnitOfWork]
     public override async Task ExecuteAsync(GenerateVideoGifArgs args)
@@ -133,7 +140,54 @@ public class GenerateVideoGifBackgroundJob(
             message.SetContentJson(jsonSerializer.Serialize(contentDto));
 
             await messageCache.RemoveAsync(new MessageCacheKey(message.Id));
-            await messageManager.RecordMessageUpdatedAsync(message, clock.Now);
+            var changeVersion = await messageManager.RecordMessageUpdatedAsync(message, clock.Now);
+
+            if (!changeVersion.HasValue && message.SessionId.HasValue)
+            {
+                var notification = new SendMessageToClientDistributedEto
+                {
+                    Command = CommandConsts.MessageUpdated,
+                    HostName = currentHosted.Name,
+                    MessageId = message.Id,
+                    SessionId = message.SessionId,
+                    ChangeType = "Updated",
+                    ChangeScope = "Shared",
+                    Message = new MessageInfo<object>
+                    {
+                        Id = message.Id,
+                        SyncVersion = message.SyncVersion,
+                        ClientMessageId = message.ClientMessageId,
+                        SessionId = message.SessionId.Value,
+                        SessionSeq = message.SessionSeq,
+                        SenderId = message.SenderId,
+                        SenderSessionUnitId = message.SenderSessionUnitId,
+                        ReceiverId = message.ReceiverId,
+                        ReceiverSessionUnitId = message.ReceiverSessionUnitId,
+                        MessageType = message.MessageType,
+                        CreationTime = message.CreationTime,
+                        IsPrivate = message.IsPrivate,
+                        IsRollbacked = message.IsRollbackMessage(),
+                        RollbackTime = message.RollbackTime,
+                        Content = contentDto,
+                    },
+                };
+
+                if (unitOfWorkManager.Current != null)
+                {
+                    unitOfWorkManager.Current.OnCompleted(async () =>
+                    {
+                        using var scope = serviceScopeFactory.CreateScope();
+                        var bus = scope.ServiceProvider.GetRequiredService<IDistributedEventBus>();
+                        await bus.PublishAsync(notification, onUnitOfWorkComplete: false, useOutbox: false);
+                    });
+                }
+                else
+                {
+                    using var scope = serviceScopeFactory.CreateScope();
+                    var bus = scope.ServiceProvider.GetRequiredService<IDistributedEventBus>();
+                    await bus.PublishAsync(notification, onUnitOfWorkComplete: false, useOutbox: false);
+                }
+            }
         }
         finally
         {

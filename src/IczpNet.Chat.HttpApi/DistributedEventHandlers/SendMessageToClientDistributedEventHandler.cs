@@ -5,6 +5,7 @@ using IczpNet.Chat.Hosting;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -37,7 +38,12 @@ public class SendMessageToClientDistributedEventHandler : SendToClientDistribute
     /// <returns></returns>
     protected async Task<bool> SendToClientBySessionBackAsync(SendMessageToClientDistributedEto eventData)
     {
-        var sessionId = eventData.Message.SessionId;
+        var sessionId = eventData.Message?.SessionId ?? eventData.SessionId ?? Guid.Empty;
+        if (sessionId == Guid.Empty)
+        {
+            return false;
+        }
+        var typingSenderUnitId = eventData.SenderSessionUnitId ?? eventData.Message?.SenderSessionUnitId;
         var command = eventData.Command;
         //var reminderIdList = eventData.ReminderIdList;
         //var followerIdList = eventData.FollowerIdList;
@@ -93,15 +99,21 @@ public class SendMessageToClientDistributedEventHandler : SendToClientDistribute
     /// <returns></returns>
     protected async Task<bool> SendToClientBySessionAsync(SendMessageToClientDistributedEto eventData)
     {
-        var sessionId = eventData.Message.SessionId;
+        var sessionId = eventData.Message?.SessionId ?? eventData.SessionId ?? Guid.Empty;
+        if (sessionId == Guid.Empty)
+        {
+            return false;
+        }
+        var typingSenderUnitId = eventData.SenderSessionUnitId ?? eventData.Message?.SenderSessionUnitId;
 
         var command = eventData.Command;
 
         var members = (await SessionUnitCacheManager.GetMembersAsync(sessionId))
             .Where(unit => (command != CommandConsts.MessageDeleted && command != CommandConsts.MessageCleared) ||
                 unit.Id == eventData.TargetSessionUnitId)
-            .Where(unit => (command != CommandConsts.MessageRollbacked && command != CommandConsts.MessageUpdated) || !eventData.Message.IsPrivate ||
+            .Where(unit => (command != CommandConsts.MessageRollbacked && command != CommandConsts.MessageUpdated) || eventData.Message == null || !eventData.Message.IsPrivate ||
                 unit.Id == eventData.Message.SenderSessionUnitId || unit.Id == eventData.Message.ReceiverSessionUnitId)
+            .Where(unit => command != CommandConsts.SessionTyping || !typingSenderUnitId.HasValue || unit.Id != typingSenderUnitId.Value)
             .ToList();
 
         var ownerIds = members.Select(x => x.OwnerId).Distinct().ToList();
@@ -122,20 +134,33 @@ public class SendMessageToClientDistributedEventHandler : SendToClientDistribute
         var connMap = ownerDevices.Where(x => ownerUnitMap.ContainsKey(x.Key))
             .SelectMany(x => x.Value).GroupBy(x => x.ConnectionId).ToDictionary(x => x.Key, x => x.ToList());
 
-        Logger.LogInformation(
-            "Delivering IM event {Command} for message {MessageId} in session {SessionId}: owners={OwnerCount}, connections={ConnectionCount}",
-            command,
-            eventData.MessageId,
-            sessionId,
-            ownerIds.Count,
-            connMap.Count);
-
-        if (connMap.Count == 0)
+        if (command == CommandConsts.SessionTyping)
+        {
+            Logger.LogDebug(
+                "Delivering transient typing event {Command} for senderUnit {SenderSessionUnitId} in session {SessionId}: owners={OwnerCount}, connections={ConnectionCount}",
+                command,
+                typingSenderUnitId,
+                sessionId,
+                ownerIds.Count,
+                connMap.Count);
+        }
+        else
         {
             Logger.LogInformation(
-                "IM event {Command} for message {MessageId} has no online recipient connection; clients must recover it from message history.",
+                "Delivering IM event {Command} for message {MessageId} in session {SessionId}: owners={OwnerCount}, connections={ConnectionCount}",
                 command,
-                eventData.MessageId);
+                eventData.MessageId,
+                sessionId,
+                ownerIds.Count,
+                connMap.Count);
+
+            if (connMap.Count == 0)
+            {
+                Logger.LogInformation(
+                    "IM event {Command} for message {MessageId} has no online recipient connection; clients must recover it from message history.",
+                    command,
+                    eventData.MessageId);
+            }
         }
 
         foreach (var item in connMap)

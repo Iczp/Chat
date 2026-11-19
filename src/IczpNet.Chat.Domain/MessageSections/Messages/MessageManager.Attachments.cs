@@ -2,6 +2,7 @@ using IczpNet.Chat.Blobs;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionUnits;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -171,9 +172,12 @@ public partial class MessageManager
 
             if (UnitOfWorkManager.Current != null)
             {
+                var scopeFactory = LazyServiceProvider.LazyGetRequiredService<IServiceScopeFactory>();
                 UnitOfWorkManager.Current.OnCompleted(async () =>
                 {
-                    await BackgroundJobManager.EnqueueAsync(args);
+                    using var scope = scopeFactory.CreateScope();
+                    var jobManager = scope.ServiceProvider.GetRequiredService<IBackgroundJobManager>();
+                    await jobManager.EnqueueAsync(args);
                 });
             }
             else
