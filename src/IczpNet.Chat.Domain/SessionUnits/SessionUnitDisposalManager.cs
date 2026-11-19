@@ -13,15 +13,15 @@ namespace IczpNet.Chat.SessionUnits;
 /// 会话处置管理器实现
 /// </summary>
 public class SessionUnitDisposalManager(
-    IRepository<SessionUnitDisposalRecord, long> disposalRepository,
+    IRepository<SessionUnitDisposal, long> disposalRepository,
     IDistributedEventBus distributedEventBus,
     IUnitOfWorkManager unitOfWorkManager) : DomainService, ISessionUnitDisposalManager
 {
-    protected IRepository<SessionUnitDisposalRecord, long> DisposalRepository { get; } = disposalRepository;
+    protected IRepository<SessionUnitDisposal, long> DisposalRepository { get; } = disposalRepository;
     protected IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
     protected IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
 
-    public virtual async Task<SessionUnitDisposalRecord> RecordDisposalAsync(
+    public virtual async Task<SessionUnitDisposal> RecordDisposalAsync(
         long ownerId,
         Guid sessionUnitId,
         Guid? sessionId,
@@ -31,7 +31,7 @@ public class SessionUnitDisposalManager(
         long? operatorId = null,
         string description = null)
     {
-        var record = new SessionUnitDisposalRecord(
+        var record = new SessionUnitDisposal(
             ownerId: ownerId,
             sessionUnitId: sessionUnitId,
             sessionId: sessionId,

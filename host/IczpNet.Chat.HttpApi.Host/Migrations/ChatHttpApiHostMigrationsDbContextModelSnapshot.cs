@@ -6934,7 +6934,7 @@ namespace IczpNet.Chat.Migrations
                     b.ToTable("Chat_SessionUnit", (string)null);
                 });
 
-            modelBuilder.Entity("IczpNet.Chat.SessionUnits.SessionUnitDisposalRecord", b =>
+            modelBuilder.Entity("IczpNet.Chat.SessionUnits.SessionUnitDisposal", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -6993,7 +6993,7 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("OwnerId", "Id");
 
-                    b.ToTable("Chat_SessionUnitDisposalRecord", null, t =>
+                    b.ToTable("Chat_SessionUnitDisposal", null, t =>
                         {
                             t.HasComment("会话单元处置与删除记录");
                         });

@@ -12,7 +12,7 @@ public interface ISessionUnitDisposalManager
     /// <summary>
     /// 记录一次会话处置行为并推送实时事件
     /// </summary>
-    Task<SessionUnitDisposalRecord> RecordDisposalAsync(
+    Task<SessionUnitDisposal> RecordDisposalAsync(
         long ownerId,
         Guid sessionUnitId,
         Guid? sessionId,

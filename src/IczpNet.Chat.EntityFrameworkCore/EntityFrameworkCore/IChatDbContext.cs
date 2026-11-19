@@ -108,7 +108,7 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<SessionUnitContactTag> SessionUnitContactTag { get; }
     DbSet<SessionUnitRole> SessionUnitRole { get; }
     DbSet<SessionUnitOrganization> SessionUnitOrganization { get; }
-    DbSet<SessionUnitDisposalRecord> SessionUnitDisposalRecord { get; }
+    DbSet<SessionUnitDisposal> SessionUnitDisposal { get; }
     DbSet<SessionPermissionDefinition> SessionPermissionDefinition { get; }
     DbSet<SessionPermissionGroup> SessionPermissionGroup { get; }
     DbSet<SessionRequest> SessionRequest { get; }

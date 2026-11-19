@@ -42,7 +42,7 @@ public class SessionUnitDisposalCleanupWorker : AsyncPeriodicBackgroundWorkerBas
     {
         var clock = serviceProvider.GetRequiredService<IClock>();
         var unitOfWorkManager = serviceProvider.GetRequiredService<IUnitOfWorkManager>();
-        var repository = serviceProvider.GetRequiredService<IRepository<SessionUnitDisposalRecord, long>>();
+        var repository = serviceProvider.GetRequiredService<IRepository<SessionUnitDisposal, long>>();
         var asyncExecuter = serviceProvider.GetRequiredService<IAsyncQueryableExecuter>();
         var logger = serviceProvider.GetService<ILogger<SessionUnitDisposalCleanupWorker>>();
 
