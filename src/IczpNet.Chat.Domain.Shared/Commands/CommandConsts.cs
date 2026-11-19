@@ -47,6 +47,11 @@ public class CommandConsts
     public static string MessageDeleted { get; set; } = "deleted@message";
     public const string MessageCleared = "cleared@message";
 
+    /// <summary>
+    /// 会话处置（移出/删除/隐藏/清空） default: disposed@session-unit
+    /// </summary>
+    public const string SessionUnitDisposed = "disposed@session-unit";
+
     // Transient AI events are deliberately separate from persisted message
     // commands. Clients render them in memory and only sync the final reply.
     public const string AiStreamStarted = "started@ai";

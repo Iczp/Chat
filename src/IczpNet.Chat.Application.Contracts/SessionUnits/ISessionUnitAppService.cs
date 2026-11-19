@@ -84,4 +84,10 @@ public interface ISessionUnitAppService
     /// <param name="boxId"></param>
     /// <returns></returns>
     Task<SessionUnitCacheItem> SetBoxAsync([Required] Guid sessionUnitId, [Required] Guid boxId);
+
+    /// <summary>
+    /// 删除会话单元（软删除）
+    /// </summary>
+    /// <param name="id"></param>
+    Task DeleteAsync([Required] Guid id);
 }

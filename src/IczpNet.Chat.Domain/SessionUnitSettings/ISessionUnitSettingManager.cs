@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.SessionUnits;
+﻿using IczpNet.Chat.Enums;
+using IczpNet.Chat.SessionUnits;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -93,7 +94,7 @@ public interface ISessionUnitSettingManager
     /// </summary>
     /// <param name="sessionUnitId"></param>
     /// <returns></returns>
-    Task<SessionUnitSetting> KillAsync(Guid sessionUnitId);
+    Task<SessionUnitSetting> KillAsync(Guid sessionUnitId, KillTypes? killType = null, Guid? killerId = null);
 
     /// <summary>
     /// 清空消息

@@ -113,6 +113,7 @@ public class ChatDbContext(DbContextOptions<ChatDbContext> options) : AbpDbConte
     public DbSet<SessionUnitContactTag> SessionUnitContactTag { get; set; }
     public DbSet<SessionUnitRole> SessionUnitRole { get; set; }
     public DbSet<SessionUnitOrganization> SessionUnitOrganization { get; set; }
+    public DbSet<SessionUnitDisposalRecord> SessionUnitDisposalRecord { get; set; }
     public DbSet<SessionPermissionDefinition> SessionPermissionDefinition { get; set; }
     public DbSet<SessionPermissionGroup> SessionPermissionGroup { get; set; }
     public DbSet<SessionRequest> SessionRequest { get; set; }

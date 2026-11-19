@@ -76,6 +76,28 @@ public class SessionUnitAppService(
     }
 
     /// <inheritdoc/>
+    [HttpDelete]
+    public virtual async Task DeleteAsync(Guid id)
+    {
+        var entity = await Repository.FindAsync(id);
+        if (entity != null)
+        {
+            await Repository.DeleteAsync(entity, autoSave: true);
+
+            var disposalManager = LazyServiceProvider.LazyGetRequiredService<ISessionUnitDisposalManager>();
+            await disposalManager.RecordDisposalAsync(
+                ownerId: entity.OwnerId,
+                sessionUnitId: entity.Id,
+                sessionId: entity.SessionId,
+                destinationId: entity.DestinationId,
+                disposalType: SessionUnitDisposalType.Delete,
+                reason: entity.DestinationObjectType == ChatObjectTypeEnums.Personal
+                    ? SessionUnitDisposalReason.FriendDeleted
+                    : SessionUnitDisposalReason.UserDeletedSession);
+        }
+    }
+
+    /// <inheritdoc/>
     protected virtual async Task<IQueryable<SessionUnit>> CreateQueryAsync(SessionUnitGetListInput input)
     {
         //return from a in (await Repository.GetQueryableAsync())
