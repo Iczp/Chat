@@ -55,6 +55,16 @@ public class MessageOptions
         /// </summary>
         public int SnapshotThumbnailSize { get; set; } = 160;
 
+        /// <summary>
+        /// 单视频最大字节数（默认 200 MB）
+        /// </summary>
+        public long MaxFileSize { get; set; } = 200L * 1024 * 1024;
+
+        /// <summary>
+        /// 视频封面图最大字节数（默认 5 MB）
+        /// </summary>
+        public long MaxSnapshotSize { get; set; } = 5L * 1024 * 1024;
+
     }
 
     public class ImageOptions

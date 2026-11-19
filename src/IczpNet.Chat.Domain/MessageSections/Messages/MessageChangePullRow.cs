@@ -8,4 +8,5 @@ public record MessageChangePullRow(
     Guid SessionUnitId,
     long MessageId,
     MessageChangeKind ChangeType,
-    DateTime CreationTime);
+    DateTime CreationTime,
+    string Description = null);

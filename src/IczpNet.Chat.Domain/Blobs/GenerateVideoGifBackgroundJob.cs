@@ -18,6 +18,7 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.Guids;
 using Volo.Abp.Json;
+using Volo.Abp.Linq;
 using Volo.Abp.Timing;
 using Volo.Abp.Uow;
 
@@ -25,6 +26,7 @@ namespace IczpNet.Chat.Blobs;
 
 public class GenerateVideoGifBackgroundJob(
     IMessageRepository messageRepository,
+    IAsyncQueryableExecuter asyncExecuter,
     IMessageManager messageManager,
     IBlobManager blobManager,
     IBlobResolver blobResolver,
@@ -43,21 +45,41 @@ public class GenerateVideoGifBackgroundJob(
     [UnitOfWork]
     public override async Task ExecuteAsync(GenerateVideoGifArgs args)
     {
-        var message = await messageRepository.FindAsync(args.MessageId);
+        Logger.LogInformation(
+            "GenerateVideoGifBackgroundJob started: MessageId={MessageId}, VideoBlobId={VideoBlobId}",
+            args.MessageId,
+            args.VideoBlobId);
+
+        var queryable = await messageRepository.WithDetailsAsync(x => x.VideoContentList);
+        var message = await asyncExecuter.FirstOrDefaultAsync(queryable.Where(x => x.Id == args.MessageId));
         if (message == null || message.IsRollbacked)
         {
+            Logger.LogWarning(
+                "GenerateVideoGifBackgroundJob skipped: Message not found or rollbacked. MessageId={MessageId}, Found={Found}, IsRollbacked={IsRollbacked}",
+                args.MessageId,
+                message != null,
+                message?.IsRollbacked);
             return;
         }
 
         var videoContent = message.GetTypedContentEntity<VideoContent>();
         if (videoContent == null || videoContent.GifBlobId.HasValue)
         {
+            Logger.LogInformation(
+                "GenerateVideoGifBackgroundJob skipped: VideoContent missing or GifBlobId already set. MessageId={MessageId}, HasVideoContent={HasVideoContent}, GifBlobId={GifBlobId}",
+                args.MessageId,
+                videoContent != null,
+                videoContent?.GifBlobId);
             return;
         }
 
         var videoBlob = await blobRepository.FindAsync(args.VideoBlobId);
         if (videoBlob == null)
         {
+            Logger.LogWarning(
+                "GenerateVideoGifBackgroundJob skipped: VideoBlob not found. MessageId={MessageId}, VideoBlobId={VideoBlobId}",
+                args.MessageId,
+                args.VideoBlobId);
             return;
         }
 
@@ -65,6 +87,11 @@ public class GenerateVideoGifBackgroundJob(
         var mediaInfo = await mediaResolver.GetVideoInfoAsync(videoBytes, videoBlob.FileName);
         if (mediaInfo == null || string.IsNullOrWhiteSpace(mediaInfo.GifSnapshotPath))
         {
+            Logger.LogWarning(
+                "GenerateVideoGifBackgroundJob skipped: MediaResolver returned empty GifSnapshotPath. MessageId={MessageId}, VideoBlobId={VideoBlobId}, HasMediaInfo={HasMediaInfo}",
+                args.MessageId,
+                args.VideoBlobId,
+                mediaInfo != null);
             return;
         }
 
@@ -138,9 +165,16 @@ public class GenerateVideoGifBackgroundJob(
 
             var contentDto = message.GetContentDto();
             message.SetContentJson(jsonSerializer.Serialize(contentDto));
+            await messageRepository.UpdateAsync(message, autoSave: true);
 
             await messageCache.RemoveAsync(new MessageCacheKey(message.Id));
-            var changeVersion = await messageManager.RecordMessageUpdatedAsync(message, clock.Now);
+            var changeVersion = await messageManager.RecordMessageUpdatedAsync(message, clock.Now, "生成视频GIF缩略图");
+
+            Logger.LogInformation(
+                "GenerateVideoGifBackgroundJob completed: MessageId={MessageId}, GifBlobId={GifBlobId}, ChangeVersion={ChangeVersion}",
+                message.Id,
+                gifBlob.Id,
+                changeVersion);
 
             if (!changeVersion.HasValue && message.SessionId.HasValue)
             {

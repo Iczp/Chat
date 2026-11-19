@@ -14,6 +14,7 @@ public class MessageChangeEntry
     [JsonNumberHandling(JsonNumberHandling.WriteAsString | JsonNumberHandling.AllowReadingFromString)]
     public long Version { get; set; }
     public MessageChangeKind ChangeType { get; set; }
+    public string Description { get; set; }
     public DateTime ChangedAt { get; set; }
     public DateTime CreationTime { get; set; }
     public bool IsPrivate { get; set; }

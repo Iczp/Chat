@@ -417,6 +417,7 @@ public static class ChatDbContextModelCreatingExtensions
             b.ConfigureByConvention();
             b.HasKey(x => x.Id);
             b.Property(x => x.Id).ValueGeneratedOnAdd();
+            b.Property(x => x.Description).HasMaxLength(500);
             b.HasIndex(x => x.MessageId)
                 .IsUnique()
                 .HasFilter("[IsDeleted] = 0");

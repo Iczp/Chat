@@ -878,7 +878,7 @@ public partial class MessageManager(
         if (Config.ChangeSyncEnabled)
         {
             var change = await LazyServiceProvider.LazyGetRequiredService<IMessageChangeRepository>()
-                .AppendRollbackAsync(message, nowTime, cancellationTokenProvider.Token);
+                .AppendRollbackAsync(message, nowTime, "撤回消息", cancellationTokenProvider.Token);
             if (change.AlreadyApplied)
                 return new Dictionary<string, long> { { "MessageId", message.Id } };
             message.Rollback(change.ChangedAt);
@@ -899,13 +899,13 @@ public partial class MessageManager(
     }
 
     /// <summary>Records a shared message update change in the current transactional unit of work.</summary>
-    public virtual async Task<long?> RecordMessageUpdatedAsync(Message message, DateTime? time = null)
+    public virtual async Task<long?> RecordMessageUpdatedAsync(Message message, DateTime? time = null, string description = null)
     {
         if (!Config.ChangeSyncEnabled)
             return null;
 
         var change = await LazyServiceProvider.LazyGetRequiredService<IMessageChangeRepository>()
-            .AppendUpdateAsync(message, time ?? Clock.Now, cancellationTokenProvider.Token);
+            .AppendUpdateAsync(message, time ?? Clock.Now, description, cancellationTokenProvider.Token);
         message.SetMessageChangeId(change.Version);
         await UnitOfWorkManager.Current.SaveChangesAsync();
         return change.Version;

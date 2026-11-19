@@ -103,7 +103,8 @@ public class MessageChangeAppService : ChatAppService, IMessageChangeAppService
                 MessageChangeKind.Update => "Updated",
                 MessageChangeKind.Rollback => "Recalled",
                 _ => throw new InvalidOperationException($"Unsupported shared message change kind: {row.ChangeType}.")
-            })).ToList();
+            },
+            row.Description)).ToList();
 
         return new MessageChangePullDto(
             epoch,

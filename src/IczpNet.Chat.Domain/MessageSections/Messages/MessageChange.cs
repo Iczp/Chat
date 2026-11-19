@@ -14,13 +14,17 @@ public class MessageChange : FullAuditedEntity<long>
 
     public virtual MessageChangeKind ChangeType { get; protected set; }
 
+    /// <summary>变更说明</summary>
+    public virtual string Description { get; protected set; }
+
     protected MessageChange() { }
 
-    public MessageChange(Guid sessionId, long messageId, MessageChangeKind changeType, DateTime creationTime)
+    public MessageChange(Guid sessionId, long messageId, MessageChangeKind changeType, DateTime creationTime, string description = null)
     {
         SessionId = sessionId;
         MessageId = messageId;
         ChangeType = changeType;
         CreationTime = creationTime;
+        Description = description;
     }
 }

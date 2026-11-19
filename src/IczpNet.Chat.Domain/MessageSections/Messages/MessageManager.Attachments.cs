@@ -3,6 +3,7 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -177,12 +178,22 @@ public partial class MessageManager
                 {
                     using var scope = scopeFactory.CreateScope();
                     var jobManager = scope.ServiceProvider.GetRequiredService<IBackgroundJobManager>();
-                    await jobManager.EnqueueAsync(args);
+                    var jobId = await jobManager.EnqueueAsync(args);
+                    Logger.LogInformation(
+                        "Enqueued GenerateVideoGifArgs: JobId={JobId}, MessageId={MessageId}, VideoBlobId={VideoBlobId}",
+                        jobId,
+                        args.MessageId,
+                        args.VideoBlobId);
                 });
             }
             else
             {
-                await BackgroundJobManager.EnqueueAsync(args);
+                var jobId = await BackgroundJobManager.EnqueueAsync(args);
+                Logger.LogInformation(
+                    "Enqueued GenerateVideoGifArgs: JobId={JobId}, MessageId={MessageId}, VideoBlobId={VideoBlobId}",
+                    jobId,
+                    args.MessageId,
+                    args.VideoBlobId);
             }
         }
     }
