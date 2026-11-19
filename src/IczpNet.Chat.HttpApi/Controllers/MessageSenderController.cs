@@ -520,6 +520,8 @@ public class MessageSenderController(
         public Guid SessionId { get; set; }
         public string SenderName { get; set; }
         public bool IsTyping { get; set; }
+        public string Action { get; set; } = "typing";
+        public string ActionText { get; set; }
     }
 
     /// <summary>
@@ -566,6 +568,8 @@ public class MessageSenderController(
                 SenderSessionUnitId = unit.Id,
                 SenderName = input.SenderName,
                 IsTyping = input.IsTyping,
+                Action = string.IsNullOrWhiteSpace(input.Action) ? "typing" : input.Action,
+                ActionText = input.ActionText,
                 Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                 Message = new MessageInfo<object>
                 {

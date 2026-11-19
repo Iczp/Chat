@@ -12,6 +12,8 @@ public class SendMessageToClientDistributedEto : ISendMessageToClientDistributed
     public Guid? SenderSessionUnitId { get; set; }
     public string SenderName { get; set; }
     public bool? IsTyping { get; set; }
+    public string Action { get; set; }
+    public string ActionText { get; set; }
     public long? Timestamp { get; set; }
     public string LatestChangeSeq { get; set; }
     public string MessageChangeId { get; set; }
