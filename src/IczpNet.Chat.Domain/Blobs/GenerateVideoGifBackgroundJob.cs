@@ -136,8 +136,6 @@ public class GenerateVideoGifBackgroundJob(
             });
 
             var gifUrl = await blobResolver.GetFileUrlAsync(gifBlob.Id, gifBlob.MimeType);
-            videoContent.GifBlobId = gifBlob.Id;
-            videoContent.GifUrl = gifUrl;
 
             // 绑定到原消息（以及已转发到其他会话的消息引用）
             await blobMessageRefRepository.InsertAsync(new BlobMessageRef(
@@ -163,12 +161,37 @@ public class GenerateVideoGifBackgroundJob(
                 gifBlob.RefCount += 1;
             }
 
-            var contentDto = message.GetContentDto();
-            message.SetContentJson(jsonSerializer.Serialize(contentDto));
-            await messageRepository.UpdateAsync(message, autoSave: true);
+            var relativeVideoUrl = await blobResolver.GetFileUrlAsync(videoContent.BlobId ?? args.VideoBlobId, videoBlob.MimeType);
+            var relativeSnapshotUrl = videoContent.SnapshotBlobId.HasValue
+                ? await blobResolver.GetFileUrlAsync(videoContent.SnapshotBlobId.Value, "image/png")
+                : null;
+            var relativeSnapshotThumbnailUrl = videoContent.SnapshotThumbnailBlobId.HasValue
+                ? await blobResolver.GetFileUrlAsync(videoContent.SnapshotThumbnailBlobId.Value, "image/png")
+                : null;
+
+            object contentDto = null;
+            // 先写 Chat_MessageChange，再在回调中统一修改 VideoContent / ContentJson 与 MessageChangeId，
+            // 确保只触发一次 UPDATE [Chat_Message] 与一次 EntityUpdatedEventData<Message>
+            var changeVersion = await messageManager.RecordMessageUpdatedAsync(
+                message,
+                clock.Now,
+                "生成视频GIF缩略图",
+                applyChanges: msg =>
+                {
+                    videoContent.GifBlobId = gifBlob.Id;
+                    videoContent.GifUrl = gifUrl;
+                    contentDto = msg.GetContentDto();
+                    if (contentDto is VideoContentInfo videoDto)
+                    {
+                        videoDto.Url = relativeVideoUrl;
+                        if (relativeSnapshotUrl != null) videoDto.SnapshotUrl = relativeSnapshotUrl;
+                        if (relativeSnapshotThumbnailUrl != null) videoDto.SnapshotThumbnailUrl = relativeSnapshotThumbnailUrl;
+                        videoDto.GifUrl = gifUrl;
+                    }
+                    msg.SetContentJson(jsonSerializer.Serialize(contentDto));
+                });
 
             await messageCache.RemoveAsync(new MessageCacheKey(message.Id));
-            var changeVersion = await messageManager.RecordMessageUpdatedAsync(message, clock.Now, "生成视频GIF缩略图");
 
             Logger.LogInformation(
                 "GenerateVideoGifBackgroundJob completed: MessageId={MessageId}, GifBlobId={GifBlobId}, ChangeVersion={ChangeVersion}",
