@@ -487,26 +487,84 @@ public class SessionUnitManager(
         return CreateIfNotContainsAsync(Generate(session, owner, destination, setting));
     }
 
+    public const int MaxPinnedCount = 30;
+
     /// <inheritdoc />
     public virtual async Task<SessionUnit> SetPinningAsync(SessionUnit entity, bool isTopping)
     {
         long sorting = 0;
+        var nowTicks = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
         if (isTopping)
         {
-            //sorting = isTopping ? new DateTimeOffset(Clock.Now).ToUnixTimeMilliseconds() : 0;
+            var pinnedUnits = await (await Repository.GetQueryableAsync())
+                .Where(x => x.OwnerId == entity.OwnerId && x.Sorting > 0 && x.Id != entity.Id)
+                .OrderBy(x => x.Sorting)
+                .ToListAsync();
 
-            var maxSorting = await (await Repository.GetQueryableAsync())
-                .Where(x => x.OwnerId == entity.OwnerId)
-                .MaxAsync(x => x.Sorting);
+            if (pinnedUnits.Count >= MaxPinnedCount)
+            {
+                throw new Volo.Abp.UserFriendlyException($"最多只能置顶 {MaxPinnedCount} 个会话，请先取消部分置顶。");
+            }
 
-            sorting = (long)maxSorting + 1;
+            var maxSorting = pinnedUnits.Count > 0 ? (long)pinnedUnits.Max(x => x.Sorting) : 0;
+
+            if (maxSorting >= 60)
+            {
+                // 触发归一化压缩重排
+                for (var i = 0; i < pinnedUnits.Count; i++)
+                {
+                    pinnedUnits[i].SetTopping(i + 1);
+                    pinnedUnits[i].SetTicks(nowTicks);
+                }
+
+                sorting = pinnedUnits.Count + 1;
+                entity.SetTopping(sorting);
+                entity.SetTicks(nowTicks);
+
+                await Repository.UpdateManyAsync(pinnedUnits);
+                var resultNormalized = await SetEntityAsync(entity, x =>
+                {
+                    x.SetTopping(sorting);
+                    x.SetTicks(nowTicks);
+                });
+
+                var allToUpdate = pinnedUnits.Concat([resultNormalized]).ToList();
+                await SessionUnitCacheManager.SetPinningManyAsync(
+                    allToUpdate.Select(x => (x.SessionId.Value, x.Id, x.OwnerId, (long)x.Sorting, x.Ticks)));
+
+                foreach (var u in allToUpdate)
+                {
+                    var cacheItem = await SessionUnitCacheManager.GetAsync(u.Id) ?? ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(u);
+                    await DistributedEventBus.PublishAsync(new SessionUnitChangedDistributedEto
+                    {
+                        SessionUnit = cacheItem,
+                        Score = FriendScore.Create(u.Sorting, u.Ticks)
+                    });
+                }
+
+                return resultNormalized;
+            }
+
+            sorting = maxSorting + 1;
         }
 
-        var result = await SetEntityAsync(entity, x => x.SetTopping(sorting));
+        entity.SetTicks(nowTicks);
+        var result = await SetEntityAsync(entity, x =>
+        {
+            x.SetTopping(sorting);
+            x.SetTicks(nowTicks);
+        });
 
-        //update cache
-        await SessionUnitCacheManager.SetPinningAsync(entity.SessionId.Value, entity.Id, entity.OwnerId, sorting);
+        // update cache
+        await SessionUnitCacheManager.SetPinningAsync(entity.SessionId.Value, entity.Id, entity.OwnerId, sorting, nowTicks);
+
+        var singleCacheItem = await SessionUnitCacheManager.GetAsync(result.Id) ?? ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(result);
+        await DistributedEventBus.PublishAsync(new SessionUnitChangedDistributedEto
+        {
+            SessionUnit = singleCacheItem,
+            Score = FriendScore.Create(result.Sorting, result.Ticks)
+        });
 
         return result;
     }

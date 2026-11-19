@@ -1,4 +1,4 @@
-﻿using IczpNet.AbpCommons.Extensions;
+﻿﻿using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
@@ -360,11 +360,14 @@ if not oldScore then
 end
 
 local multiplier = tonumber(ARGV[4])
-local ticks = tonumber(oldScore) - math.floor(tonumber(oldScore) / multiplier) * multiplier
+local ticks = (ARGV[6] and tonumber(ARGV[6]) > 0) and tonumber(ARGV[6]) or (tonumber(oldScore) - math.floor(tonumber(oldScore) / multiplier) * multiplier)
 local score = tonumber(ARGV[3]) * multiplier + ticks
 
 if redis.call('EXISTS', KEYS[1]) == 1 then
     redis.call('HSET', KEYS[1], ARGV[2], ARGV[3])
+    if ARGV[6] and tonumber(ARGV[6]) > 0 and ARGV[7] then
+        redis.call('HSET', KEYS[1], ARGV[7], ARGV[6])
+    end
 end
 
 if tonumber(ARGV[3]) == 0 then
@@ -1788,7 +1791,7 @@ return 1";
         return unit;
     }
 
-    public async Task SetPinningAsync(Guid sessionId, Guid unitId, long ownerId, long sorting)
+    public async Task SetPinningAsync(Guid sessionId, Guid unitId, long ownerId, long sorting, double? ticks = null)
     {
         var unit = await GetAsync(unitId);
         if (unit == null)
@@ -1816,10 +1819,11 @@ return 1";
         // Read the current owner score and rewrite all affected indexes in one
         // Redis operation. This prevents a concurrent message update from
         // restoring a stale tick while pinning or unpinning the session.
+        var ticksValue = ticks.GetValueOrDefault(0);
         var updated = await Database.ScriptEvaluateAsync(
             SetPinningScript,
             keys,
-            [element, F_Sorting, sorting, FriendScore.Multiplier, unit.PublicBadge]);
+            [element, F_Sorting, sorting, FriendScore.Multiplier, unit.PublicBadge, ticksValue, F_Ticks]);
 
         if ((int)updated == 0)
         {
@@ -1840,54 +1844,182 @@ return 1";
         batch.Execute();
     }
 
-    private const string SnapshotFriendsScript = @"
-redis.call('ZUNIONSTORE', KEYS[2], 1, KEYS[1])
-redis.call('PEXPIRE', KEYS[2], 120000)
-return 1";
-
-    public async Task<List<FriendModel>> GetChangedFriendsAsync(long ownerId, double? minTicks, double? maxTicks,
-        Guid? cursorId, int take, int skip = 0, Func<FriendModel, bool> filter = null, CancellationToken cancellationToken = default)
+    public async Task SetPinningManyAsync(IEnumerable<(Guid SessionId, Guid UnitId, long OwnerId, long Sorting, double Ticks)> items)
     {
-        // Pinning is part of the existing score. Snapshot before scanning ranks
-        // so concurrent score updates cannot move entries across scan batches.
-        var snapshotKey = $"{OwnerFriendsSetKey(ownerId)}:Changes:{Guid.NewGuid():N}";
-        await Database.ScriptEvaluateAsync(SnapshotFriendsScript, [OwnerFriendsSetKey(ownerId), snapshotKey]);
-        try
+        var list = items.ToList();
+        if (list.Count == 0) return;
+
+        var units = await GetManyAsync(list.Select(x => x.UnitId).ToList());
+        var unitMap = units.Where(x => x.Value != null).ToDictionary(x => x.Key, x => x.Value);
+
+        var batch = Database.CreateBatch();
+        var tasks = new List<Task>();
+
+        foreach (var item in list)
         {
-            var candidates = new List<FriendModel>();
-            for (var offset = 0; ; offset += 500)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                var entries = await Database.SortedSetRangeByRankWithScoresAsync(snapshotKey, offset, offset + 499);
-                if (entries.Length > 0)
-                    await Database.KeyExpireAsync(snapshotKey, TimeSpan.FromMinutes(2));
-                foreach (var entry in entries)
+            if (!unitMap.TryGetValue(item.UnitId, out var unit) || unit == null) continue;
+
+            var ownerFriendsSetKey = OwnerFriendsSetKey(item.OwnerId);
+            var ownerPinnedBadgeSetKey = OwnerPinnedBadgeSetKey(item.OwnerId);
+            var sessionPinnedSortingHashKey = SessionPinnedSortingHashKey(item.SessionId);
+            var element = GetElement(unit);
+            var keys = unit.BoxId.HasValue
+                ? new RedisKey[]
                 {
-                    var element = SessionUnitElement.Parse(entry.Element);
-                    var score = new FriendScore(entry.Score);
-                    var friend = new FriendModel
-                    {
-                        Id = element.SessionUnitId, OwnerId = element.OwnerId,
-                        OwnerObjectType = element.OwnerObjectType, DestinationId = element.DestinationId,
-                        DestinationObjectType = element.DestinationObjectType, SessionId = element.SessionId,
-                        Sorting = score.Sorting, Ticks = score.Ticks, Score = entry.Score
-                    };
-                    if ((!minTicks.HasValue || friend.Ticks > minTicks ||
-                        (cursorId.HasValue && friend.Ticks == minTicks &&
-                         StringComparer.Ordinal.Compare(friend.Id.ToString(), cursorId.Value.ToString()) > 0)) &&
-                        (!maxTicks.HasValue || friend.Ticks < maxTicks) && (filter == null || filter(friend)))
-                        candidates.Add(friend);
+                    UnitHashKey(item.UnitId), ownerFriendsSetKey, ownerPinnedBadgeSetKey,
+                    sessionPinnedSortingHashKey, OwnerBoxFriendsSetKey(item.OwnerId, unit.BoxId.Value)
                 }
-                candidates = candidates.OrderBy(x => x.Ticks)
-                    .ThenBy(x => x.Id.ToString(), StringComparer.Ordinal).Take(skip + take).ToList();
-                if (entries.Length < 500) break;
+                : new RedisKey[]
+                {
+                    UnitHashKey(item.UnitId), ownerFriendsSetKey, ownerPinnedBadgeSetKey,
+                    sessionPinnedSortingHashKey
+                };
+
+            tasks.Add(batch.ScriptEvaluateAsync(
+                SetPinningScript,
+                keys,
+                [element, F_Sorting, item.Sorting, FriendScore.Multiplier, unit.PublicBadge, item.Ticks, F_Ticks]));
+
+            Expire(batch, ownerFriendsSetKey, CacheExpire);
+            if (unit.BoxId.HasValue)
+            {
+                Expire(batch, OwnerBoxFriendsSetKey(item.OwnerId, unit.BoxId.Value), CacheExpire);
             }
-            return candidates.Skip(skip).Take(take).ToList();
+            if (item.Sorting > 0)
+            {
+                Expire(batch, ownerPinnedBadgeSetKey, CacheExpire);
+                Expire(batch, sessionPinnedSortingHashKey, CacheExpire);
+            }
         }
-        finally
+
+        batch.Execute();
+        await Task.WhenAll(tasks);
+    }
+
+    public async Task<List<FriendModel>> GetChangedFriendsAsync(
+        long ownerId,
+        double? minTicks,
+        double? maxTicks,
+        Guid? cursorId,
+        int take,
+        int skip = 0,
+        Func<FriendModel, bool> filter = null,
+        CancellationToken cancellationToken = default)
+    {
+        var key = OwnerFriendsSetKey(ownerId);
+        var multiplier = FriendScore.Multiplier;
+        var baseMinTicks = minTicks.GetValueOrDefault(0);
+
+        var candidates = new List<FriendModel>();
+
+        // 1. 段 1：非置顶 (Score 等于 Ticks，Score 区间落在 [baseMinTicks, multiplier))
+        var unpinnedTake = filter == null ? skip + take + 100 : 500;
+        var unpinnedOffset = 0;
+
+        while (true)
         {
-            await Database.KeyDeleteAsync(snapshotKey);
+            cancellationToken.ThrowIfCancellationRequested();
+            var unpinnedEntries = await Database.SortedSetRangeByScoreWithScoresAsync(
+                key,
+                start: baseMinTicks,
+                stop: multiplier,
+                exclude: Exclude.Stop,
+                skip: unpinnedOffset,
+                take: unpinnedTake
+            );
+
+            foreach (var entry in unpinnedEntries)
+            {
+                var element = SessionUnitElement.Parse(entry.Element);
+                var friend = new FriendModel
+                {
+                    Id = element.SessionUnitId,
+                    OwnerId = element.OwnerId,
+                    OwnerObjectType = element.OwnerObjectType,
+                    DestinationId = element.DestinationId,
+                    DestinationObjectType = element.DestinationObjectType,
+                    SessionId = element.SessionId,
+                    Sorting = 0,
+                    Ticks = entry.Score,
+                    Score = entry.Score
+                };
+
+                if (IsFriendMatch(friend, minTicks, maxTicks, cursorId, filter))
+                {
+                    candidates.Add(friend);
+                }
+            }
+
+            if (unpinnedEntries.Length < unpinnedTake || (filter == null && candidates.Count >= skip + take + 1))
+            {
+                break;
+            }
+
+            unpinnedOffset += unpinnedTake;
         }
+
+        // 2. 段 2：置顶会话 (Score >= multiplier，置顶总数受限，通常 <= 30 条)
+        cancellationToken.ThrowIfCancellationRequested();
+        var pinnedEntries = await Database.SortedSetRangeByScoreWithScoresAsync(
+            key,
+            start: multiplier,
+            stop: double.PositiveInfinity,
+            exclude: Exclude.None
+        );
+
+        foreach (var entry in pinnedEntries)
+        {
+            var element = SessionUnitElement.Parse(entry.Element);
+            var score = new FriendScore(entry.Score);
+            var friend = new FriendModel
+            {
+                Id = element.SessionUnitId,
+                OwnerId = element.OwnerId,
+                OwnerObjectType = element.OwnerObjectType,
+                DestinationId = element.DestinationId,
+                DestinationObjectType = element.DestinationObjectType,
+                SessionId = element.SessionId,
+                Sorting = score.Sorting,
+                Ticks = score.Ticks,
+                Score = entry.Score
+            };
+
+            if (IsFriendMatch(friend, minTicks, maxTicks, cursorId, filter))
+            {
+                candidates.Add(friend);
+            }
+        }
+
+        // 3. 将两段过滤出的增量变更项归并排序，完成分页返回
+        return candidates
+            .OrderBy(x => x.Ticks)
+            .ThenBy(x => x.Id.ToString(), StringComparer.Ordinal)
+            .Skip(skip)
+            .Take(take)
+            .ToList();
+    }
+
+    private static bool IsFriendMatch(
+        FriendModel friend,
+        double? minTicks,
+        double? maxTicks,
+        Guid? cursorId,
+        Func<FriendModel, bool> filter)
+    {
+        if (minTicks.HasValue)
+        {
+            if (friend.Ticks < minTicks.Value) return false;
+            if (friend.Ticks == minTicks.Value)
+            {
+                if (!cursorId.HasValue || StringComparer.Ordinal.Compare(friend.Id.ToString(), cursorId.Value.ToString()) <= 0)
+                {
+                    return false;
+                }
+            }
+        }
+
+        if (maxTicks.HasValue && friend.Ticks >= maxTicks.Value) return false;
+        return filter == null || filter(friend);
     }
 
     public async Task ChangeImmersedAsync(Guid unitId, bool isImmersed)
