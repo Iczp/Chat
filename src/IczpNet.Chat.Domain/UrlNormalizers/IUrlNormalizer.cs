@@ -3,4 +3,6 @@
 public interface IUrlNormalizer
 {
     string Normalize(string url);
+
+    string ToRelative(string url);
 }

@@ -20,6 +20,39 @@ public partial class MessageManager
     protected IRepository<BlobMessageRef, Guid> BlobMessageRefRepository => LazyServiceProvider.LazyGetRequiredService<IRepository<BlobMessageRef, Guid>>();
     protected IBlobResolver BlobResolver => LazyServiceProvider.LazyGetRequiredService<IBlobResolver>();
     protected IBackgroundJobManager BackgroundJobManager => LazyServiceProvider.LazyGetRequiredService<IBackgroundJobManager>();
+    protected UrlNormalizers.IUrlNormalizer UrlNormalizer => LazyServiceProvider.LazyGetRequiredService<UrlNormalizers.IUrlNormalizer>();
+
+    /// <summary>
+    /// 将消息内容 DTO 中的本站绝对 URL 还原为相对路径后再序列化入库，便于后续域名/地址迁移
+    /// </summary>
+    protected virtual string SerializeContentJsonForStorage(Message message)
+    {
+        var contentDto = message.GetContentDto();
+        switch (contentDto)
+        {
+            case VideoContentInfo video:
+                video.Url = UrlNormalizer.ToRelative(video.Url);
+                video.SnapshotUrl = UrlNormalizer.ToRelative(video.SnapshotUrl);
+                video.SnapshotThumbnailUrl = UrlNormalizer.ToRelative(video.SnapshotThumbnailUrl);
+                video.GifUrl = UrlNormalizer.ToRelative(video.GifUrl);
+                break;
+            case ImageContentInfo image:
+                image.Url = UrlNormalizer.ToRelative(image.Url);
+                image.OriginalUrl = UrlNormalizer.ToRelative(image.OriginalUrl);
+                image.ThumbnailUrl = UrlNormalizer.ToRelative(image.ThumbnailUrl);
+                image.ActionUrl = UrlNormalizer.ToRelative(image.ActionUrl);
+                image.ThumbnailActionUrl = UrlNormalizer.ToRelative(image.ThumbnailActionUrl);
+                break;
+            case SoundContentInfo sound:
+                sound.Url = UrlNormalizer.ToRelative(sound.Url);
+                break;
+            case FileContentInfo file:
+                file.Url = UrlNormalizer.ToRelative(file.Url);
+                file.ActionUrl = UrlNormalizer.ToRelative(file.ActionUrl);
+                break;
+        }
+        return JsonSerializer.Serialize(contentDto);
+    }
 
     protected virtual List<Guid> CollectAttachmentBlobIds(IContentEntity messageContent)
     {

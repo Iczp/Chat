@@ -118,10 +118,12 @@ public partial class ChatDomainVideoContentInfoToVideoContentMapper(IUrlNormaliz
         destination.Url = urlNormalizer.Normalize(source.Url);
         destination.SnapshotUrl = urlNormalizer.Normalize(source.SnapshotUrl);
         destination.SnapshotThumbnailUrl = urlNormalizer.Normalize(source.SnapshotThumbnailUrl);
+        destination.GifUrl = urlNormalizer.Normalize(source.GifUrl);
     }
 
     [MapperIgnoreTarget(nameof(VideoContentInfo.Url))]
     [MapperIgnoreTarget(nameof(VideoContentInfo.SnapshotUrl))]
     [MapperIgnoreTarget(nameof(VideoContentInfo.SnapshotThumbnailUrl))]
+    [MapperIgnoreTarget(nameof(VideoContentInfo.GifUrl))]
     private partial void MapOutputFields(VideoContent source, VideoContentInfo destination);
 }
