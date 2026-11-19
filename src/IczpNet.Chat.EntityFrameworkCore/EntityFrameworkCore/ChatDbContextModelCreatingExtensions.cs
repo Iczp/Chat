@@ -434,6 +434,16 @@ public static class ChatDbContextModelCreatingExtensions
                 .IsUnique()
                 .HasFilter(null);
         });
+        builder.Entity<SessionUnitDisposalRecord>(b =>
+        {
+            b.ToTable($"{ChatDbProperties.DbTablePrefix}_SessionUnitDisposalRecord", ChatDbProperties.DbSchema);
+            b.ConfigureByConvention();
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Id).ValueGeneratedOnAdd();
+            b.Property(x => x.Description).HasMaxLength(256);
+            b.HasIndex(x => new { x.OwnerId, x.Id });
+            b.HasIndex(x => x.CreationTime);
+        });
         builder.Entity<Message>(b =>
             {
                 b.HasIndex(x => new { x.SessionId, x.SessionSeq }).IsUnique().HasFilter(null);

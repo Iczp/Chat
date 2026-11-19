@@ -6934,6 +6934,71 @@ namespace IczpNet.Chat.Migrations
                     b.ToTable("Chat_SessionUnit", (string)null);
                 });
 
+            modelBuilder.Entity("IczpNet.Chat.SessionUnits.SessionUnitDisposalRecord", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)")
+                        .HasComment("附加说明");
+
+                    b.Property<long?>("DestinationId")
+                        .HasColumnType("bigint")
+                        .HasComment("对方聊天对象ID");
+
+                    b.Property<byte>("DisposalType")
+                        .HasColumnType("tinyint")
+                        .HasComment("处置动作类型: 1=Remove, 2=Delete, 3=Hide, 4=ClearMessage");
+
+                    b.Property<long?>("OperatorId")
+                        .HasColumnType("bigint")
+                        .HasComment("操作执行人ID");
+
+                    b.Property<long>("OwnerId")
+                        .HasColumnType("bigint")
+                        .HasComment("所属聊天对象ID");
+
+                    b.Property<byte>("Reason")
+                        .HasColumnType("tinyint")
+                        .HasComment("处置原因细分");
+
+                    b.Property<Guid?>("SessionId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasComment("所属会话ID");
+
+                    b.Property<Guid>("SessionUnitId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasComment("会话单元ID");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreationTime");
+
+                    b.HasIndex("OwnerId", "Id");
+
+                    b.ToTable("Chat_SessionUnitDisposalRecord", null, t =>
+                        {
+                            t.HasComment("会话单元处置与删除记录");
+                        });
+                });
+
             modelBuilder.Entity("IczpNet.Chat.Sessions.Session", b =>
                 {
                     b.Property<Guid>("Id")

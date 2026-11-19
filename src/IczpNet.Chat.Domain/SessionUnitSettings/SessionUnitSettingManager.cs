@@ -185,6 +185,21 @@ public class SessionUnitSettingManager(
         await uow.SaveChangesAsync();
 
         NotifyMessageChangeOnCommit(uow, change, sessionUnitId, CommandConsts.MessageCleared, "Clear");
+
+        var unitRepo = LazyServiceProvider.LazyGetRequiredService<ISessionUnitRepository>();
+        var unit = await unitRepo.FindAsync(sessionUnitId);
+        if (unit != null)
+        {
+            var disposalManager = LazyServiceProvider.LazyGetRequiredService<ISessionUnitDisposalManager>();
+            await disposalManager.RecordDisposalAsync(
+                ownerId: unit.OwnerId,
+                sessionUnitId: unit.Id,
+                sessionId: unit.SessionId,
+                destinationId: unit.DestinationId,
+                disposalType: SessionUnitDisposalType.ClearMessage,
+                reason: SessionUnitDisposalReason.UserClearedMessages);
+        }
+
         return setting;
     }
 
@@ -246,15 +261,49 @@ public class SessionUnitSettingManager(
     }
 
     /// <inheritdoc />
-    public virtual Task<SessionUnitSetting> KillAsync(Guid sessionUnitId)
+    public virtual async Task<SessionUnitSetting> KillAsync(Guid sessionUnitId, KillTypes? killType = null, Guid? killerId = null)
     {
-        return SetEntityAsync(sessionUnitId, x => x.Kill(Clock.Now));
+        var setting = await SetEntityAsync(sessionUnitId, x => x.Kill(Clock.Now, killType, killerId));
+        var unitRepo = LazyServiceProvider.LazyGetRequiredService<ISessionUnitRepository>();
+        var unit = await unitRepo.FindAsync(sessionUnitId);
+        if (unit != null)
+        {
+            var disposalReason = killType switch
+            {
+                KillTypes.OwnerQuit => SessionUnitDisposalReason.MemberQuit,
+                KillTypes.SystemKill => SessionUnitDisposalReason.RoomDisbanded,
+                _ => SessionUnitDisposalReason.ManagerKicked
+            };
+            var disposalManager = LazyServiceProvider.LazyGetRequiredService<ISessionUnitDisposalManager>();
+            await disposalManager.RecordDisposalAsync(
+                ownerId: unit.OwnerId,
+                sessionUnitId: unit.Id,
+                sessionId: unit.SessionId,
+                destinationId: unit.DestinationId,
+                disposalType: SessionUnitDisposalType.Remove,
+                reason: disposalReason);
+        }
+        return setting;
     }
 
     /// <inheritdoc />
-    public virtual Task<SessionUnitSetting> RemoveAsync(Guid sessionUnitId)
+    public virtual async Task<SessionUnitSetting> RemoveAsync(Guid sessionUnitId)
     {
-        return SetEntityAsync(sessionUnitId, x => x.Remove(Clock.Now));
+        var setting = await SetEntityAsync(sessionUnitId, x => x.Remove(Clock.Now));
+        var unitRepo = LazyServiceProvider.LazyGetRequiredService<ISessionUnitRepository>();
+        var unit = await unitRepo.FindAsync(sessionUnitId);
+        if (unit != null)
+        {
+            var disposalManager = LazyServiceProvider.LazyGetRequiredService<ISessionUnitDisposalManager>();
+            await disposalManager.RecordDisposalAsync(
+                ownerId: unit.OwnerId,
+                sessionUnitId: unit.Id,
+                sessionId: unit.SessionId,
+                destinationId: unit.DestinationId,
+                disposalType: SessionUnitDisposalType.Hide,
+                reason: SessionUnitDisposalReason.UserHiddenSession);
+        }
+        return setting;
     }
 
     /// <inheritdoc />
