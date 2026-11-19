@@ -34,9 +34,32 @@ public class UrlNormalizer(
         return $"{BaseUrl}{url}";
     }
 
+    public virtual string ToRelative(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return url;
+        }
+
+        if (!url.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+        {
+            return url;
+        }
+
+        var baseUrl = BaseUrl;
+        if (!string.IsNullOrEmpty(baseUrl) &&
+            url.StartsWith(baseUrl, StringComparison.OrdinalIgnoreCase))
+        {
+            var relative = url.Substring(baseUrl.Length);
+            return relative.StartsWith('/') ? relative : $"/{relative}";
+        }
+
+        return url;
+    }
+
     protected virtual string RequestBaseUrl()
     {
-        var request = HttpContextAccessor.HttpContext!.Request;
-        return $"{request.Scheme}://{request.Host}";
+        var request = HttpContextAccessor.HttpContext?.Request;
+        return request == null ? null : $"{request.Scheme}://{request.Host}";
     }
 }

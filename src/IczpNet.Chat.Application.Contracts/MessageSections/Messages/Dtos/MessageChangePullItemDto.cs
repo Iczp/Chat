@@ -7,4 +7,5 @@ public record MessageChangePullItemDto(
     Guid SessionId,
     Guid SessionUnitId,
     string MessageId,
-    string ChangeType);
+    string ChangeType,
+    string Description = null);

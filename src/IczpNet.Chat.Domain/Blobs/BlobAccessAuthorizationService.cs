@@ -50,7 +50,9 @@ public class BlobAccessAuthorizationService(
             return blob;
         }
 
-        if (blob.Status == BlobStatus.Temp)
+        var isTempDraft = blob.Status == BlobStatus.Temp &&
+            (blob.UploaderChatObjectId.HasValue || blob.ExpireTime.HasValue);
+        if (isTempDraft)
         {
             if (!blob.UploaderChatObjectId.HasValue ||
                 currentUserChatObjectIds == null ||
@@ -86,6 +88,21 @@ public class BlobAccessAuthorizationService(
                              x.Setting.IsEnabled,
                         cancellationToken);
                     if (isMember)
+                    {
+                        return blob;
+                    }
+                }
+
+                // 兼容历史消息（迁移前未写 BlobMessageRef）：通过内容表的索引 BlobId 关联反查 SessionId
+                var legacySessionIds = await FindLegacySessionIdsByBlobIdAsync(blobId);
+                if (legacySessionIds.Count > 0)
+                {
+                    var isLegacyMember = await sessionUnitRepository.AnyAsync(
+                        x => legacySessionIds.Contains(x.SessionId.Value) &&
+                             currentUserChatObjectIds.Contains(x.OwnerId) &&
+                             x.Setting.IsEnabled,
+                        cancellationToken);
+                    if (isLegacyMember)
                     {
                         return blob;
                     }
@@ -128,6 +145,53 @@ public class BlobAccessAuthorizationService(
         }
 
         throw new BusinessException(ChatErrorCodes.Blobs.AccessDenied);
+    }
+
+    private async Task<List<Guid>> FindLegacySessionIdsByBlobIdAsync(Guid blobId)
+    {
+        var sessionIds = new HashSet<Guid>();
+
+        var imageRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<MessageSections.Templates.ImageContent, Guid>>();
+        foreach (var sid in (await imageRepo.GetQueryableAsync())
+            .Where(x => x.BlobId == blobId || x.ThumbnailBlobId == blobId || x.OriginalBlobId == blobId)
+            .SelectMany(x => x.MessageList.Where(m => m.SessionId.HasValue).Select(m => m.SessionId.Value))
+            .Distinct()
+            .ToList())
+        {
+            sessionIds.Add(sid);
+        }
+
+        var videoRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<MessageSections.Templates.VideoContent, Guid>>();
+        foreach (var sid in (await videoRepo.GetQueryableAsync())
+            .Where(x => x.BlobId == blobId || x.SnapshotBlobId == blobId || x.SnapshotThumbnailBlobId == blobId || x.GifBlobId == blobId)
+            .SelectMany(x => x.MessageList.Where(m => m.SessionId.HasValue).Select(m => m.SessionId.Value))
+            .Distinct()
+            .ToList())
+        {
+            sessionIds.Add(sid);
+        }
+
+        var soundRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<MessageSections.Templates.SoundContent, Guid>>();
+        foreach (var sid in (await soundRepo.GetQueryableAsync())
+            .Where(x => x.BlobId == blobId)
+            .SelectMany(x => x.MessageList.Where(m => m.SessionId.HasValue).Select(m => m.SessionId.Value))
+            .Distinct()
+            .ToList())
+        {
+            sessionIds.Add(sid);
+        }
+
+        var fileRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<MessageSections.Templates.FileContent, Guid>>();
+        foreach (var sid in (await fileRepo.GetQueryableAsync())
+            .Where(x => x.BlobId == blobId)
+            .SelectMany(x => x.MessageList.Where(m => m.SessionId.HasValue).Select(m => m.SessionId.Value))
+            .Distinct()
+            .ToList())
+        {
+            sessionIds.Add(sid);
+        }
+
+        return sessionIds.ToList();
     }
 
     private static bool Contains(IReadOnlyCollection<long> ids, long target)

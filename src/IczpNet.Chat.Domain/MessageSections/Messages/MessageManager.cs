@@ -504,7 +504,7 @@ public partial class MessageManager(
         }
         message.SetMessageContent(messageContent);
 
-        var contentJson = JsonSerializer.Serialize(message.GetContentDto());
+        var contentJson = SerializeContentJsonForStorage(message);
 
         message.SetContentJson(contentJson);
 
@@ -878,7 +878,7 @@ public partial class MessageManager(
         if (Config.ChangeSyncEnabled)
         {
             var change = await LazyServiceProvider.LazyGetRequiredService<IMessageChangeRepository>()
-                .AppendRollbackAsync(message, nowTime, cancellationTokenProvider.Token);
+                .AppendRollbackAsync(message, nowTime, "撤回消息", cancellationTokenProvider.Token);
             if (change.AlreadyApplied)
                 return new Dictionary<string, long> { { "MessageId", message.Id } };
             message.Rollback(change.ChangedAt);
@@ -899,13 +899,21 @@ public partial class MessageManager(
     }
 
     /// <summary>Records a shared message update change in the current transactional unit of work.</summary>
-    public virtual async Task<long?> RecordMessageUpdatedAsync(Message message, DateTime? time = null)
+    public virtual async Task<long?> RecordMessageUpdatedAsync(
+        Message message,
+        DateTime? time = null,
+        string description = null,
+        Action<Message> applyChanges = null)
     {
         if (!Config.ChangeSyncEnabled)
+        {
+            applyChanges?.Invoke(message);
             return null;
+        }
 
         var change = await LazyServiceProvider.LazyGetRequiredService<IMessageChangeRepository>()
-            .AppendUpdateAsync(message, time ?? Clock.Now, cancellationTokenProvider.Token);
+            .AppendUpdateAsync(message, time ?? Clock.Now, description, cancellationTokenProvider.Token);
+        applyChanges?.Invoke(message);
         message.SetMessageChangeId(change.Version);
         await UnitOfWorkManager.Current.SaveChangesAsync();
         return change.Version;
@@ -1102,8 +1110,11 @@ public partial class MessageManager(
         var query = await Repository.GetQueryableAsync();
         foreach (var ids in entriesById.Select(x => x.Key).Chunk(500))
         {
-            var values = await query.Where(x => ids.Contains(x.Id))
-                .Select(x => new { x.Id, x.SessionSeq }).ToListAsync(token);
+            var projected = query.Where(x => ids.Contains(x.Id))
+                .Select(x => new { x.Id, x.SessionSeq });
+            var values = projected is IAsyncEnumerable<object>
+                ? await EntityFrameworkQueryableExtensions.ToListAsync(projected, token)
+                : projected.ToList();
             foreach (var value in values)
                 foreach (var entry in entriesById[value.Id]) entry.SessionSeq = value.SessionSeq;
         }

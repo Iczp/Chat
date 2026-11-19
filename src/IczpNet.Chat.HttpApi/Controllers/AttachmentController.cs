@@ -10,6 +10,7 @@ using ImageMagick;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
@@ -18,6 +19,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Authorization;
+using Volo.Abp.Http;
 using Volo.Abp.Imaging;
 using Volo.Abp.Json;
 using Volo.Abp.Uow;
@@ -325,8 +327,11 @@ public class AttachmentController(
         string snapshotUrl = null;
         Guid? snapshotThumbBlobId = null;
         string snapshotThumbUrl = null;
+        Guid? gifBlobId = null;
+        string gifUrl = null;
         int? resolvedWidth = width;
         int? resolvedHeight = height;
+        int? resolvedDurationMs = durationMs;
 
         if (snapshotFile != null && snapshotFile.Length > 0)
         {
@@ -408,6 +413,26 @@ public class AttachmentController(
             snapshotThumbBlobId = snapThumbBlob.Id;
             snapshotThumbUrl = await GetFileUrlAsync(snapThumbBlob.Id, snapThumbBlob.MimeType);
         }
+        else if (MessageSetting.VideoSetting.IsGenerateSnapshot)
+        {
+            var fallback = await GenerateVideoSnapshotFallbackAsync(
+                videoBytes,
+                file.FileName,
+                unit,
+                videoBlob.Id,
+                resolvedWidth,
+                resolvedHeight,
+                resolvedDurationMs);
+            snapshotBlobId = fallback.SnapshotBlobId;
+            snapshotUrl = fallback.SnapshotUrl;
+            snapshotThumbBlobId = fallback.SnapshotThumbnailBlobId;
+            snapshotThumbUrl = fallback.SnapshotThumbnailUrl;
+            gifBlobId = fallback.GifBlobId;
+            gifUrl = fallback.GifUrl;
+            resolvedWidth = fallback.Width;
+            resolvedHeight = fallback.Height;
+            resolvedDurationMs = fallback.DurationMs;
+        }
 
         return new UploadAttachmentOutput
         {
@@ -418,15 +443,170 @@ public class AttachmentController(
             SnapshotUrl = snapshotUrl,
             SnapshotThumbnailBlobId = snapshotThumbBlobId,
             SnapshotThumbnailUrl = snapshotThumbUrl,
+            GifBlobId = gifBlobId,
+            GifUrl = gifUrl,
             FileName = videoBlob.FileName,
             ContentType = videoBlob.MimeType,
             Suffix = videoBlob.Suffix,
             Size = videoBlob.FileSize,
             Width = resolvedWidth,
             Height = resolvedHeight,
-            Duration = durationMs,
+            Duration = resolvedDurationMs,
             ExpireTime = videoBlob.ExpireTime,
         };
+    }
+
+    protected sealed record VideoSnapshotFallbackResult(
+        Guid? SnapshotBlobId,
+        string SnapshotUrl,
+        Guid? SnapshotThumbnailBlobId,
+        string SnapshotThumbnailUrl,
+        Guid? GifBlobId,
+        string GifUrl,
+        int? Width,
+        int? Height,
+        int? DurationMs);
+
+    /// <summary>
+    /// 客户端未携带封面时，由服务端兜底抽帧生成封面与封面缩略图
+    /// </summary>
+    protected virtual async Task<VideoSnapshotFallbackResult> GenerateVideoSnapshotFallbackAsync(
+        byte[] videoBytes,
+        string fileName,
+        SessionUnitCacheItem unit,
+        Guid videoBlobId,
+        int? currentWidth,
+        int? currentHeight,
+        int? currentDurationMs)
+    {
+        Guid? snapshotBlobId = null;
+        string snapshotUrl = null;
+        Guid? snapshotThumbBlobId = null;
+        string snapshotThumbUrl = null;
+        Guid? gifBlobId = null;
+        string gifUrl = null;
+        int? resolvedWidth = currentWidth;
+        int? resolvedHeight = currentHeight;
+        int? resolvedDurationMs = currentDurationMs;
+
+        var mediaInfo = await mediaResolver.GetVideoInfoAsync(videoBytes, fileName);
+        if (mediaInfo == null)
+        {
+            return new VideoSnapshotFallbackResult(
+                snapshotBlobId,
+                snapshotUrl,
+                snapshotThumbBlobId,
+                snapshotThumbUrl,
+                gifBlobId,
+                gifUrl,
+                resolvedWidth,
+                resolvedHeight,
+                resolvedDurationMs);
+        }
+
+        try
+        {
+            if (!resolvedWidth.HasValue && mediaInfo.Width.GetValueOrDefault() > 0)
+            {
+                resolvedWidth = mediaInfo.Width.Value;
+            }
+            if (!resolvedHeight.HasValue && mediaInfo.Height.GetValueOrDefault() > 0)
+            {
+                resolvedHeight = mediaInfo.Height.Value;
+            }
+            if (!resolvedDurationMs.HasValue && mediaInfo.Duration.HasValue)
+            {
+                resolvedDurationMs = (int)mediaInfo.Duration.Value.TotalMilliseconds;
+            }
+
+            if (!string.IsNullOrWhiteSpace(mediaInfo.ImageSnapshotPath) && System.IO.File.Exists(mediaInfo.ImageSnapshotPath))
+            {
+                var snapBytes = await System.IO.File.ReadAllBytesAsync(mediaInfo.ImageSnapshotPath);
+                var snapSuffix = Path.GetExtension(mediaInfo.ImageSnapshotPath);
+                var snapMime = MimeTypes.GetByExtension(snapSuffix);
+
+                using (var snapImg = new Image(snapBytes))
+                {
+                    var (w, h) = GetImageActualDimensions(snapImg);
+                    if (w > 0 && h > 0)
+                    {
+                        resolvedWidth ??= w;
+                        resolvedHeight ??= h;
+                    }
+                }
+
+                var snapBlob = await SaveTempBlobAsync(
+                    GuidGenerator.Create(),
+                    snapBytes,
+                    $"{Path.GetFileNameWithoutExtension(fileName)}.snapshot{snapSuffix}",
+                    snapMime,
+                    snapSuffix,
+                    unit,
+                    AttachmentMediaType.Snapshot,
+                    BlobRoles.Snapshot,
+                    parentBlobId: videoBlobId);
+                snapshotBlobId = snapBlob.Id;
+                snapshotUrl = await GetFileUrlAsync(snapBlob.Id, snapBlob.MimeType);
+
+                var thumbSize = MessageSetting.VideoSetting.SnapshotThumbnailSize;
+                var resized = await ImageResizer.ResizeAsync(snapBytes, new ImageResizeArgs
+                {
+                    Width = (uint)thumbSize,
+                    Height = (uint)thumbSize,
+                    Mode = ImageResizeMode.Max,
+                });
+                var snapThumbBytes = resized.State == ImageProcessState.Done && resized.Result?.Length > 0
+                    ? resized.Result
+                    : snapBytes;
+
+                var snapThumbBlob = await SaveTempBlobAsync(
+                    GuidGenerator.Create(),
+                    snapThumbBytes,
+                    $"thumb_{Path.GetFileNameWithoutExtension(fileName)}{snapSuffix}",
+                    snapMime,
+                    snapSuffix,
+                    unit,
+                    AttachmentMediaType.Snapshot,
+                    BlobRoles.SnapshotThumbnail,
+                    parentBlobId: videoBlobId);
+                snapshotThumbBlobId = snapThumbBlob.Id;
+                snapshotThumbUrl = await GetFileUrlAsync(snapThumbBlob.Id, snapThumbBlob.MimeType);
+            }
+
+            if (!string.IsNullOrWhiteSpace(mediaInfo.GifSnapshotPath) && System.IO.File.Exists(mediaInfo.GifSnapshotPath))
+            {
+                var gifBytes = await System.IO.File.ReadAllBytesAsync(mediaInfo.GifSnapshotPath);
+                var gifBlob = await SaveTempBlobAsync(
+                    GuidGenerator.Create(),
+                    gifBytes,
+                    $"{Path.GetFileNameWithoutExtension(fileName)}.gif",
+                    "image/gif",
+                    ".gif",
+                    unit,
+                    AttachmentMediaType.Video,
+                    BlobRoles.Gif,
+                    parentBlobId: videoBlobId);
+                gifBlobId = gifBlob.Id;
+                gifUrl = await GetFileUrlAsync(gifBlob.Id, gifBlob.MimeType);
+            }
+        }
+        finally
+        {
+            DeleteGeneratedTempFile(mediaInfo.ImageSnapshotPath);
+            DeleteGeneratedTempFile(mediaInfo.GifSnapshotPath);
+            DeleteGeneratedTempFile(mediaInfo.TempVideoPath);
+        }
+
+        return new VideoSnapshotFallbackResult(
+            snapshotBlobId,
+            snapshotUrl,
+            snapshotThumbBlobId,
+            snapshotThumbUrl,
+            gifBlobId,
+            gifUrl,
+            resolvedWidth,
+            resolvedHeight,
+            resolvedDurationMs);
     }
 
     [HttpPost]
@@ -569,5 +749,24 @@ public class AttachmentController(
             }
         }
         return jsonSerializer.Serialize(items);
+    }
+
+    private void DeleteGeneratedTempFile(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return;
+        try
+        {
+            var root = Path.GetFullPath(MessageSetting.OutputTempPath)
+                .TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            var fullPath = Path.GetFullPath(path);
+            if (fullPath.StartsWith(root, StringComparison.Ordinal))
+            {
+                System.IO.File.Delete(fullPath);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            Logger.LogWarning(ex, "Could not delete generated temp media file {Path}", path);
+        }
     }
 }

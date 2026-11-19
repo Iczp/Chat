@@ -1,12 +1,15 @@
 ﻿using IczpNet.Chat.AiRuns;
 using IczpNet.Chat.AiProviders;
 using IczpNet.Chat.IdentityUsers;
+using IczpNet.Chat.Medias;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.EntityFrameworkCore;
+using IczpNet.Chat.Options;
 using IczpNet.RedisDistributedEventBus;
 using IczpNet.AbpCommons.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using System;
 using Volo.Abp;
 using Volo.Abp.Autofac;
@@ -58,11 +61,25 @@ public class ChatBackgroundWorkerModule : AbpModule
         context.Services.AddUnifiedAbpTiming();
         // UrlNormalizer is used by nested ChatObject mappings in this non-HTTP host.
         context.Services.AddHttpContextAccessor();
+        context.Services.Replace(ServiceDescriptor.Transient<IMediaResolver, FFMpegCoreMediaResolver>());
         context.Services.AddMapperlyObjectMapper();
         context.Services.AddSingleton<Medallion.Threading.IDistributedLockProvider>(provider =>
             new Medallion.Threading.Redis.RedisDistributedSynchronizationProvider(
                 provider.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>().GetDatabase()));
         var configuration = context.Services.GetConfiguration();
+        Configure<MessageOptions>(options =>
+        {
+            var section = configuration.GetSection("MessageOptions");
+            options.OutputTempPath = section["OutputTempPath"] ?? options.OutputTempPath;
+            options.ImageSetting.ThumbnailSize = section.GetValue("ImageSetting:ThumbnailSize", options.ImageSetting.ThumbnailSize);
+            options.ImageSetting.BigSize = section.GetValue("ImageSetting:BigSize", options.ImageSetting.BigSize);
+            options.VideoSetting.IsGenerateSnapshot = section.GetValue("VideoSetting:IsGenerateSnapshot", options.VideoSetting.IsGenerateSnapshot);
+            options.VideoSetting.ImgCaptureSeconds = section.GetValue("VideoSetting:ImgCaptureSeconds", options.VideoSetting.ImgCaptureSeconds);
+            options.VideoSetting.GifSeconds = section.GetValue("VideoSetting:GifSeconds", options.VideoSetting.GifSeconds);
+            options.VideoSetting.SnapshotThumbnailSize = section.GetValue("VideoSetting:SnapshotThumbnailSize", options.VideoSetting.SnapshotThumbnailSize);
+            options.VideoSetting.ImgSnapshotSize = ParseSize(section["VideoSetting:ImgSnapshotSize"], options.VideoSetting.ImgSnapshotSize);
+            options.VideoSetting.GifSnapshotSize = ParseSize(section["VideoSetting:GifSnapshotSize"], options.VideoSetting.GifSnapshotSize);
+        });
         Configure<AbpBackgroundJobWorkerOptions>(options => options.DefaultTimeout = 864000);
         Configure<AbpDistributedCacheOptions>(options => options.KeyPrefix = configuration["Cache:KeyPrefix"] ?? "Chat:");
         Configure<AbpBackgroundJobOptions>(options => options.IsJobExecutionEnabled = true);
@@ -85,5 +102,14 @@ public class ChatBackgroundWorkerModule : AbpModule
             minio.CreateBucketIfNotExists = true;
         })));
         context.Services.AddHostedService<AiRunDispatcher>();
+    }
+
+    private static (int Width, int Height) ParseSize(string value, (int Width, int Height) fallback)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return fallback;
+        var parts = value.Split(',');
+        if (parts.Length != 2 || !int.TryParse(parts[0], out var width) || !int.TryParse(parts[1], out var height))
+            throw new InvalidOperationException("MessageOptions video size must contain two comma-separated integers.");
+        return (width, height);
     }
 }

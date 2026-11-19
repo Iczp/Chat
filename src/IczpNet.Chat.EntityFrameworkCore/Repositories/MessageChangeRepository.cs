@@ -20,7 +20,7 @@ public class MessageChangeRepository(
     IDbContextProvider<ChatDbContext> provider,
     IDataFilter<ISoftDelete> softDeleteFilter) : ChatRepositoryBase<MessageChange, long>(provider), IMessageChangeRepository, ITransientDependency
 {
-    public async Task<MessageChangeEntry> AppendRollbackAsync(Message message, DateTime time, CancellationToken cancellationToken = default)
+    public async Task<MessageChangeEntry> AppendRollbackAsync(Message message, DateTime time, string description = null, CancellationToken cancellationToken = default)
     {
         var db = await GetDbContextAsync();
         if (db.Database.CurrentTransaction == null)
@@ -37,6 +37,7 @@ public class MessageChangeRepository(
                 MessageId = message.Id,
                 Version = existing.MessageChangeId ?? existing.SyncVersion,
                 ChangeType = MessageChangeKind.Rollback,
+                Description = description ?? "撤回消息",
                 ChangedAt = existing.RollbackTime ?? time
             };
         }
@@ -45,7 +46,8 @@ public class MessageChangeRepository(
         await SoftDeleteExistingActiveChangesAsync(db, message.Id, time, cancellationToken);
 
         var sessionId = message.SessionId!.Value;
-        var change = new MessageChange(sessionId, message.Id, MessageChangeKind.Rollback, time);
+        var resolvedDescription = string.IsNullOrWhiteSpace(description) ? "撤回消息" : description;
+        var change = new MessageChange(sessionId, message.Id, MessageChangeKind.Rollback, time, resolvedDescription);
         await InsertAsync(change, autoSave: true, cancellationToken: cancellationToken);
 
         return new MessageChangeEntry
@@ -55,11 +57,12 @@ public class MessageChangeRepository(
             SessionSeq = message.SessionSeq,
             Version = change.Id,
             ChangeType = MessageChangeKind.Rollback,
+            Description = resolvedDescription,
             ChangedAt = time
         };
     }
 
-    public async Task<MessageChangeEntry> AppendUpdateAsync(Message message, DateTime time, CancellationToken cancellationToken = default)
+    public async Task<MessageChangeEntry> AppendUpdateAsync(Message message, DateTime time, string description = null, CancellationToken cancellationToken = default)
     {
         var db = await GetDbContextAsync();
         if (db.Database.CurrentTransaction == null)
@@ -75,7 +78,7 @@ public class MessageChangeRepository(
         await SoftDeleteExistingActiveChangesAsync(db, message.Id, time, cancellationToken);
 
         var sessionId = message.SessionId!.Value;
-        var change = new MessageChange(sessionId, message.Id, MessageChangeKind.Update, time);
+        var change = new MessageChange(sessionId, message.Id, MessageChangeKind.Update, time, description);
         await InsertAsync(change, autoSave: true, cancellationToken: cancellationToken);
 
         return new MessageChangeEntry
@@ -85,6 +88,7 @@ public class MessageChangeRepository(
             SessionSeq = message.SessionSeq,
             Version = change.Id,
             ChangeType = MessageChangeKind.Update,
+            Description = description,
             ChangedAt = time
         };
     }
@@ -344,7 +348,7 @@ public class MessageChangeRepository(
                   && (!u.Setting.ClearTime.HasValue || m.CreationTime > u.Setting.ClearTime)
                   && !m.DeletedList.Any(d => d.SessionUnitId == u.Id)
             orderby c.Id
-            select new MessageChangePullRow(c.Id, c.SessionId, u.Id, c.MessageId, c.ChangeType, c.CreationTime))
+            select new MessageChangePullRow(c.Id, c.SessionId, u.Id, c.MessageId, c.ChangeType, c.CreationTime, c.Description))
             .Take(maxResultCount + 1)
             .ToListAsync(cancellationToken);
 

@@ -3,6 +3,9 @@ using IczpNet.Chat.CommandPayloads;
 using IczpNet.Chat.Commands;
 using IczpNet.Chat.ConnectionPools;
 using IczpNet.Chat.Connections;
+using IczpNet.Chat.Hosting;
+using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.SessionUnits;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
@@ -176,5 +179,54 @@ public class ChatHub(
         await OnlineManager.UpdateActiveTimeAsync(Context.ConnectionId);
 
         return ticks;
+    }
+
+    public async Task SendTypingAsync(Guid sessionId, Guid senderSessionUnitId, string senderName, bool isTyping)
+    {
+        if (!CurrentUser.Id.HasValue || senderSessionUnitId == Guid.Empty)
+        {
+            return;
+        }
+
+        var sessionUnitManager = LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
+        var unit = await sessionUnitManager.GetCacheAsync(senderSessionUnitId);
+        if (unit?.SessionId == null)
+        {
+            return;
+        }
+
+        if (sessionId != Guid.Empty && unit.SessionId.Value != sessionId)
+        {
+            return;
+        }
+
+        var ownerIds = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+        if (!ownerIds.Contains(unit.OwnerId))
+        {
+            return;
+        }
+
+        var currentHosted = LazyServiceProvider.LazyGetRequiredService<ICurrentHosted>();
+        var resolvedSessionId = unit.SessionId.Value;
+
+        await DistributedEventBus.PublishAsync(
+            new SendMessageToClientDistributedEto
+            {
+                Command = CommandConsts.SessionTyping,
+                HostName = currentHosted.Name,
+                SessionId = resolvedSessionId,
+                SenderSessionUnitId = unit.Id,
+                SenderName = senderName,
+                IsTyping = isTyping,
+                Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                Message = new MessageInfo<object>
+                {
+                    SessionId = resolvedSessionId,
+                    SenderId = unit.OwnerId,
+                    SenderSessionUnitId = unit.Id,
+                },
+            },
+            onUnitOfWorkComplete: false,
+            useOutbox: false);
     }
 }

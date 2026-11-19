@@ -22,6 +22,11 @@ using Blob = IczpNet.Chat.Blobs.Blob;
 using Microsoft.Extensions.Logging;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.Blobs;
+using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.Commands;
+using IczpNet.Chat.Hosting;
+using Microsoft.AspNetCore.Authorization;
+using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.Uow;
 namespace IczpNet.Chat.Controllers;
 
@@ -508,5 +513,72 @@ public class MessageSenderController(
         });
 
         return entity;
+    }
+
+    public class SendTypingInput
+    {
+        public Guid SessionId { get; set; }
+        public string SenderName { get; set; }
+        public bool IsTyping { get; set; }
+        public string Action { get; set; } = "typing";
+        public string ActionText { get; set; }
+    }
+
+    /// <summary>
+    /// 上报正在输入状态（瞬态，不落库）
+    /// </summary>
+    [HttpPost("send-typing/{sessionUnitId}")]
+    [Authorize]
+    [UnitOfWork(false)]
+    public virtual async Task SendTypingAsync(Guid sessionUnitId, [FromBody] SendTypingInput input)
+    {
+        if (!CurrentUser.Id.HasValue || sessionUnitId == Guid.Empty || input == null)
+        {
+            return;
+        }
+
+        var unit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
+        if (unit?.SessionId == null)
+        {
+            return;
+        }
+
+        if (input.SessionId != Guid.Empty && unit.SessionId.Value != input.SessionId)
+        {
+            return;
+        }
+
+        var chatObjectManager = LazyServiceProvider.LazyGetRequiredService<IChatObjectManager>();
+        var ownerIds = await chatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+        if (!ownerIds.Contains(unit.OwnerId))
+        {
+            return;
+        }
+
+        var currentHosted = LazyServiceProvider.LazyGetRequiredService<ICurrentHosted>();
+        var distributedEventBus = LazyServiceProvider.LazyGetRequiredService<IDistributedEventBus>();
+        var resolvedSessionId = unit.SessionId.Value;
+
+        await distributedEventBus.PublishAsync(
+            new SendMessageToClientDistributedEto
+            {
+                Command = CommandConsts.SessionTyping,
+                HostName = currentHosted.Name,
+                SessionId = resolvedSessionId,
+                SenderSessionUnitId = unit.Id,
+                SenderName = input.SenderName,
+                IsTyping = input.IsTyping,
+                Action = string.IsNullOrWhiteSpace(input.Action) ? "typing" : input.Action,
+                ActionText = input.ActionText,
+                Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                Message = new MessageInfo<object>
+                {
+                    SessionId = resolvedSessionId,
+                    SenderId = unit.OwnerId,
+                    SenderSessionUnitId = unit.Id,
+                },
+            },
+            onUnitOfWorkComplete: false,
+            useOutbox: false);
     }
 }

@@ -116,6 +116,37 @@ public class ChatHttpApiHostModule : AbpModule
             options.VideoSetting.SnapshotThumbnailSize = section.GetValue("VideoSetting:SnapshotThumbnailSize", options.VideoSetting.SnapshotThumbnailSize);
             options.VideoSetting.ImgSnapshotSize = ParseSize(section["VideoSetting:ImgSnapshotSize"], options.VideoSetting.ImgSnapshotSize);
             options.VideoSetting.GifSnapshotSize = ParseSize(section["VideoSetting:GifSnapshotSize"], options.VideoSetting.GifSnapshotSize);
+            options.VideoSetting.MaxFileSize = section.GetValue("VideoSetting:MaxFileSize", options.VideoSetting.MaxFileSize);
+            options.VideoSetting.MaxSnapshotSize = section.GetValue("VideoSetting:MaxSnapshotSize", options.VideoSetting.MaxSnapshotSize);
+        });
+
+        var messageSection = configuration.GetSection("MessageOptions");
+        var videoOptions = new MessageOptions.VideoOptions
+        {
+            MaxFileSize = messageSection.GetValue("VideoSetting:MaxFileSize", new MessageOptions.VideoOptions().MaxFileSize),
+            MaxSnapshotSize = messageSection.GetValue("VideoSetting:MaxSnapshotSize", new MessageOptions.VideoOptions().MaxSnapshotSize)
+        };
+        var attachmentUploadOptions = new AttachmentUploadOptions();
+        configuration.GetSection("AttachmentUpload").Bind(attachmentUploadOptions);
+        var maxVideoSize = Math.Max(videoOptions.MaxFileSize, attachmentUploadOptions.MaxVideoSize);
+        var maxSnapshotSize = Math.Max(videoOptions.MaxSnapshotSize, attachmentUploadOptions.MaxSnapshotSize);
+        Configure<AttachmentUploadOptions>(options =>
+        {
+            options.MaxVideoSize = maxVideoSize;
+            options.MaxSnapshotSize = maxSnapshotSize;
+        });
+        var maxUploadBodySize =
+            Math.Max(
+                Math.Max(maxVideoSize, attachmentUploadOptions.MaxFileSize),
+                Math.Max(attachmentUploadOptions.MaxImageSize, attachmentUploadOptions.MaxSoundSize))
+            + maxSnapshotSize * 2;
+        Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+        {
+            options.MultipartBodyLengthLimit = maxUploadBodySize;
+        });
+        Configure<Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerOptions>(options =>
+        {
+            options.Limits.MaxRequestBodySize = maxUploadBodySize;
         });
 
         //SameSiteCookiePolicy

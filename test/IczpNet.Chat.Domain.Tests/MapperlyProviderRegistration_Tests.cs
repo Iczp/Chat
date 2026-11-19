@@ -198,6 +198,7 @@ public class MapperlyProviderRegistration_Tests : AbpIntegratedTest<MapperlyProv
     private sealed class TestUrlNormalizer : IUrlNormalizer
     {
         public string Normalize(string url) => url is null ? null! : $"https://chat.example{url}";
+        public string ToRelative(string url) => url is null ? null! : url.Replace("https://chat.example", string.Empty);
     }
 
     public class DeviceTypeConnectionProxy : DispatchProxy
