@@ -464,6 +464,11 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
         Sorting = sorting;
     }
 
+    internal virtual void SetTicks(double ticks)
+    {
+        Ticks = ticks;
+    }
+
     private List<SessionTag> GetTagList()
     {
         return SessionUnitTagList.Select(x => x.SessionTag).ToList();

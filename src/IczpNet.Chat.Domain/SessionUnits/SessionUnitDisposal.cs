@@ -13,7 +13,7 @@ namespace IczpNet.Chat.SessionUnits;
 /// 会话单元处置与删除记录
 /// </summary>
 [Comment("会话单元处置与删除记录")]
-public class SessionUnitDisposalRecord : CreationAuditedEntity<long>, IMultiTenant
+public class SessionUnitDisposal : CreationAuditedEntity<long>, IMultiTenant
 {
     /// <summary>
     /// 租户 ID
@@ -73,9 +73,9 @@ public class SessionUnitDisposalRecord : CreationAuditedEntity<long>, IMultiTena
     [Comment("附加说明")]
     public virtual string Description { get; protected set; }
 
-    protected SessionUnitDisposalRecord() { }
+    protected SessionUnitDisposal() { }
 
-    public SessionUnitDisposalRecord(
+    public SessionUnitDisposal(
         long ownerId,
         Guid sessionUnitId,
         Guid? sessionId,

@@ -14,9 +14,9 @@ namespace IczpNet.Chat.SessionUnits;
 /// </summary>
 [Authorize]
 public class SessionUnitDisposalAppService(
-    IRepository<SessionUnitDisposalRecord, long> disposalRepository) : ChatAppService, ISessionUnitDisposalAppService
+    IRepository<SessionUnitDisposal, long> disposalRepository) : ChatAppService, ISessionUnitDisposalAppService
 {
-    protected IRepository<SessionUnitDisposalRecord, long> DisposalRepository { get; } = disposalRepository;
+    protected IRepository<SessionUnitDisposal, long> DisposalRepository { get; } = disposalRepository;
 
     /// <summary>
     /// 增量拉取会话处置记录（Remove/Delete/Hide/ClearMessage）

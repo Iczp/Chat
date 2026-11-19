@@ -404,7 +404,14 @@ public interface ISessionUnitCacheManager
     /// <param name="ownerId"></param>
     /// <param name="sorting"></param>
     /// <returns></returns>
-    Task SetPinningAsync(Guid sessionId, Guid unitId, long ownerId, long sorting);
+    Task SetPinningAsync(Guid sessionId, Guid unitId, long ownerId, long sorting, double? ticks = null);
+
+    /// <summary>
+    /// 批量更新置顶
+    /// </summary>
+    /// <param name="items"></param>
+    /// <returns></returns>
+    Task SetPinningManyAsync(IEnumerable<(Guid SessionId, Guid UnitId, long OwnerId, long Sorting, double Ticks)> items);
 
     /// <summary>
     /// 变更免打扰状态

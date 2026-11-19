@@ -434,9 +434,9 @@ public static class ChatDbContextModelCreatingExtensions
                 .IsUnique()
                 .HasFilter(null);
         });
-        builder.Entity<SessionUnitDisposalRecord>(b =>
+        builder.Entity<SessionUnitDisposal>(b =>
         {
-            b.ToTable($"{ChatDbProperties.DbTablePrefix}_SessionUnitDisposalRecord", ChatDbProperties.DbSchema);
+            b.ToTable($"{ChatDbProperties.DbTablePrefix}_SessionUnitDisposal", ChatDbProperties.DbSchema);
             b.ConfigureByConvention();
             b.HasKey(x => x.Id);
             b.Property(x => x.Id).ValueGeneratedOnAdd();
