@@ -45,7 +45,7 @@ public class MessageChangeRollback_Tests
     public async Task Journal_is_appended_before_the_message_state_is_saved()
     {
         var (manager, message, changes, uow) = Create();
-        changes.AppendRollbackAsync(message, Arg.Any<DateTime>(), Arg.Any<CancellationToken>()).Returns(call =>
+        changes.AppendRollbackAsync(message, Arg.Any<DateTime>(), Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(call =>
         {
             Assert.False(message.IsRollbacked);
             return new MessageChangeEntry { Version = 7, ChangedAt = call.Arg<DateTime>() };
@@ -61,7 +61,7 @@ public class MessageChangeRollback_Tests
     public async Task Already_committed_recall_does_not_resave_a_stale_entity()
     {
         var (manager, message, changes, uow) = Create();
-        changes.AppendRollbackAsync(message, Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+        changes.AppendRollbackAsync(message, Arg.Any<DateTime>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(new MessageChangeEntry { AlreadyApplied = true, Version = 7 });
         await manager.RollbackAsync(message);
         Assert.False(message.IsRollbacked);
@@ -73,7 +73,7 @@ public class MessageChangeRollback_Tests
     public async Task Failed_journal_write_does_not_change_the_message_in_memory()
     {
         var (manager, message, changes, uow) = Create();
-        changes.AppendRollbackAsync(message, Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+        changes.AppendRollbackAsync(message, Arg.Any<DateTime>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns<Task<MessageChangeEntry>>(_ => throw new InvalidOperationException("storage failed"));
         await Assert.ThrowsAsync<InvalidOperationException>(() => manager.RollbackAsync(message));
         Assert.False(message.IsRollbacked);
