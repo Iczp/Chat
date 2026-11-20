@@ -1,527 +1,318 @@
-# IM.Chat
+# IczpNet.Chat
 
-abpvnext  chat module.
+[![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4.svg)](https://dotnet.microsoft.com/)
+[![ABP vNext](https://img.shields.io/badge/ABP-10.6.1-277BD5.svg)](https://abp.io/)
+[![EF Core](https://img.shields.io/badge/EF%20Core-10.0-blue.svg)](https://learn.microsoft.com/ef/core/)
+[![SignalR](https://img.shields.io/badge/SignalR-Realtime-orange.svg)](https://learn.microsoft.com/aspnet/core/signalr/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-## Docker build
+`IczpNet.Chat` 是一套基于 **.NET 10** 与 **ABP vNext 10.6.1** 框架构建的企业级分布式即时通讯（IM）核心业务模块。系统采用领域驱动设计（DDD）规范与模块化架构，专为高并发、大数据量及多端协同（Flutter 移动端/桌面端、Electron 桌面端、Web 端、小程序）量身打造，提供高可用、多租户、安全合规的全功能即时通讯能力。
 
-```bash
-docker build -t iczpnet/chat-auth-server:v0 -f ./host/IczpNet.Chat.AuthServer/Dockerfile .
-docker build -t iczpnet/chat-api-host:v0 -f ./host/IczpNet.Chat.HttpApi.Host/Dockerfile .
+---
+
+## 目录
+
+- [核心架构与设计特性](#核心架构与设计特性)
+- [项目结构与模块划分](#项目结构与模块划分)
+- [技术栈](#技术栈)
+- [聊天对象模型与交互矩阵](#聊天对象模型与交互矩阵)
+- [快速开始](#快速开始)
+  - [环境准备](#环境准备)
+  - [使用 Docker Compose 快速运行](#使用-docker-compose-快速运行)
+  - [本地开发调试](#本地开发调试)
+- [核心机制说明](#核心机制说明)
+  - [消息流水线与幂等机制](#消息流水线与幂等机制)
+  - [多端在线状态与连接池](#多端在线状态与连接池)
+  - [增量同步与断线重连](#增量同步与断线重连)
+  - [AI 助理与异步调度](#ai-助理与异步调度)
+- [功能路线图 (Roadmap)](#功能路线图-roadmap)
+- [开发规范与注意事项](#开发规范与注意事项)
+
+---
+
+## 核心架构与设计特性
+
+1. **统一聊天对象模型 (ChatObject)**
+   - 抽象出统一的“聊天参与者”基座，涵盖：个人用户/员工 (`Person`)、外部客户 (`Customer`)、群聊 (`Room`)、聊天广场 (`Square`)、官方服务号 (`Official`)、订阅号 (`Subscription`)、电商掌柜 (`Shopkeeper`)、店小二 (`ShopWaiter`)、智能机器人 (`Robot`)。
+   - 支持单用户多重身份绑定与动态角色切换。
+
+2. **会话与会话单元架构 (Session & SessionUnit)**
+   - 会话 (`Session`) 与独立用户的会话单元 (`SessionUnit`) 严格解耦。
+   - **独立角标体系**：支持公共消息角标 (`PublicBadge`)、私有角标 (`PrivateBadge`)、特别关注角标与 `@我` 计数独立计算。
+   - **个性化会话配置**：消息免打扰、置顶、自定义聊天背景、入群历史消息可视范围、会话内角色与细粒度权限控制。
+
+3. **高吞吐与消息可靠性 (Message & SessionSeq)**
+   - **幂等发信**：基于 `ClientMessageId` 强幂等设计，杜绝网络重试引发的重复入库。
+   - **连续会话序号**：基于会话维度自增连续序号 (`SessionSeq`)，保障群内/单聊中消息严格保序与漏包检测。
+   - **复合消息类型**：内置文本、富文本/Markdown、图片、语音、视频、文件、地理位置、名片、红包、系统指令通知等全格式支持。
+   - **状态与轨迹**：细粒度记录消息已读 (`ReadedRecorder`)、打开轨迹 (`OpenedRecorder`)、软删除与会话可见性过滤 (`DeletedRecorder`)。
+
+4. **本地优先与增量同步 (Local-First Sync)**
+   - 服务端提供全局 `MessageChange` 增量变更流水，配合会话游标快速拉取增量数据。
+   - 为桌面端（Electron）及移动端（Flutter）本地 SQLite 离线缓存、高水位标记重连补偿提供坚实的服务端契约支持。
+
+5. **多端在线连接池 (ConnectionPools)**
+   - 支持 PC、手机、平板、网页端多设备同时在线与互斥踢出。
+   - 基于 Redis `ListSet` 分布式索引，快速判定在线状态与具体设备类型。
+   - 自动广播好友上下线事件与设备变更状态。
+
+6. **AI 大模型对话与后台异步分发 (AI Providers & BackgroundWorker)**
+   - 具备插件式 AI 智能体接入能力（ChatGPT、Google Gemini 等），支持对话驱动。
+   - 独立的 `BackgroundWorker` 负责会话未读计数回写、Redis 脏标记刷新以及异步 AI 任务调度。
+
+---
+
+## 项目结构与模块划分
+
+```text
+IczpNet.Chat/
+├── src/                                   # 核心类库模块 (DDD 分层)
+│   ├── IczpNet.Chat.Domain.Shared/        # 枚举、常量、错误码、国际化资源
+│   ├── IczpNet.Chat.Domain/               # 实体、聚合根、领域服务、仓储接口、领域事件
+│   ├── IczpNet.Chat.Application.Contracts/# 应用服务接口、输入输出 DTO、权限契约
+│   ├── IczpNet.Chat.Application/          # 核心业务编排、用例逻辑、事务协调
+│   ├── IczpNet.Chat.AdminApplication/     # 平台运营与后台管理应用服务
+│   ├── IczpNet.Chat.ManagementApplication/# 租户/群组管理应用服务
+│   ├── IczpNet.Chat.HttpApi/              # ASP.NET Core REST API 控制器端点
+│   ├── IczpNet.Chat.HttpApi.Client/       # C# 强类型客户端 SDK (基于 Refit/HttpClient)
+│   ├── IczpNet.Chat.EntityFrameworkCore/  # EF Core 映射、SQL Server 仓储实现与查询优化
+│   ├── IczpNet.Chat.EntityFrameworkCore.DbMigrations/ # 独立数据迁移管理
+│   ├── IczpNet.Chat.MongoDB/              # MongoDB 数据适配（预留）
+│   └── IczpNet.Chat.Installer/            # ABP 模块安装包打包支持
+│
+├── host/                                  # 宿主项目
+│   ├── IczpNet.Chat.HttpApi.Host/         # Web API 服务端主入口、SignalR Hub 宿主
+│   ├── IczpNet.Chat.BackgroundWorker/     # 独立后台处理服务（定时任务、Redis刷新、AI分发）
+│   ├── IczpNet.Chat.AuthServer/           # 认证授权服务 (OpenIddict)
+│   ├── IczpNet.Chat.AiProviders/          # AI 大语言模型提供商对接
+│   ├── IczpNet.Chat.SchemaMigrator/       # 数据库迁移执行器
+│   └── IczpNet.Chat.Host.Shared/          # Host 公共配置与扩展
+│
+├── test/                                  # 单元测试与集成测试
+│   ├── IczpNet.Chat.Domain.Tests/         # 领域逻辑、Mapperly 映射、并发与幂等测试
+│   ├── IczpNet.Chat.EntityFrameworkCore.Tests/ # EF Core 集成与仓储测试
+│   └── IczpNet.Chat.TestBase/             # 测试基础设施与数据种子
+│
+├── docs/                                  # 架构文档、设计规约、日志与迁移指南
+├── docker-compose.yml                     # 容器编排文件 (SQL Server + Redis + MinIO + API + Worker)
+└── common.props                           # MSBuild 全局编译配置
 ```
 
-## Startup
+---
 
-```
-abp new IczpNet.Chat -t module --no-ui 
-```
+## 技术栈
 
-### Set Startup object: IczpNet.Chat.AuthServer
+| 维度 | 技术栈 / 依赖项 | 描述 |
+| :--- | :--- | :--- |
+| **运行时** | .NET 10.0 / C# 13 | 极致性能与现代 C# 特性支持 |
+| **应用框架** | ABP Framework 10.6.1 | DDD 分层、模块化体系、依赖注入、事件总线 |
+| **ORM & 数据库** | EF Core 10.0 + SQL Server 2022 | 复杂查询、游标索引优化、短事务保障 |
+| **缓存与原子状态** | Redis 6+ / StackExchange.Redis | 分布式连接池、脏标记集中收集、原子计数自增 |
+| **实时通讯** | ASP.NET Core SignalR | 全双工多路复用连接、事件广播、会话推送 |
+| **对象映射** | Riok.Mapperly | 高性能编译期 Source Generator 映射，零运行时反射损耗 |
+| **对象存储** | MinIO / Volo.Abp.BlobStoring | 附件、图片、音视频文件存储及安全签名下载机制 |
+| **安全与认证** | OpenIddict / OAuth2 / JWT | 集中认证、凭证校验、资源授权 |
 
-```
-Update-Database
-```
+---
 
-### Message
+## 聊天对象模型与交互矩阵
 
-| SenderId | ReceiverId | SessionId |
-| -------- | ---------- | --------- |
-| C1       | S1.1       | S1-C1     |
-| s2       | C2         | S-C2      |
-|          |            |           |
+系统中的每种会话形态均通过 `ChatObject` 进行定义与约束：
 
-## 项目的需求
+| 聊天对象类型 | 英文标识 | 典型场景 | 单聊模式 | 群聊模式 | 订阅/通知模式 |
+| :--- | :--- | :--- | :---: | :---: | :---: |
+| **个人 (用户/员工)** | `Person` | 普通用户、内部企业员工 | ✅ 支持 | ✅ 可作为群成员 | ❌ |
+| **客户** | `Customer` | 外部访客、电商客户 | ✅ 客服单聊 | ❌ | ❌ |
+| **群聊** | `Room` | 多人交流群、项目协作组 | ❌ | ✅ 多人交互 | ❌ |
+| **聊天广场** | `Square` | 全体/公开频道的开放式讨论区 | ❌ | ✅ 开放群聊 | ❌ |
+| **官方号** | `Official` | 系统通知、功能动态、业务工单推送 | ✅ 单向通知 | ❌ | ✅ 服务通知 |
+| **订阅号** | `Subscription` | 新闻资讯、公告文章广播 | ❌ | ❌ | ✅ 广播订阅 |
+| **电商掌柜** | `Shopkeeper` | 旗舰店总管账号 | ✅ 对接买家 | ✅ 店铺群 | ❌ |
+| **店小二** | `ShopWaiter` | 坐席客服、售后专员（子账号） | ✅ 客服接待 | ✅ 店铺群 | ❌ |
+| **智能机器人** | `Robot` | 智能助理、入群欢迎、自动化告警 | ✅ 问答互动 | ✅ 群助手 | ❌ |
 
-### 需求
+---
 
-### ss
+## 快速开始
 
-dasfasdfwftc
+### 环境准备
 
-- ddaf
+- **操作系统**：Windows / macOS / Linux
+- **开发工具**：Visual Studio 2022 (最新版) 或 VS Code / JetBrains Rider
+- **SDK**：[.NET 10 SDK](https://dotnet.microsoft.com/download)
+- **容器环境**：Docker & Docker Compose
 
-## 在线状态
+### 使用 Docker Compose 快速运行
 
-### 在线连接池状态V2 `IConnectionPoolManager`
+仓库根目录内置了完整的 `docker-compose.yml`，包含 SQL Server 2022、Redis、MinIO、API Host 与 BackgroundWorker：
 
-- [x] 服务器异常关闭时与重启时，在线用户边界处理
-- [x] 多设备、踢出设备, 
-- [x] 同步多设备上线/下线通知
-- [x] ListSet 分布式索引（快速定位用户是否在线，以及在线设备[pc,phone,tablet,pad,web]）
-- [x] 好友事件通知（上线/下线通知）
+1. **配置环境变量**：
+   ```bash
+   cp .env.example .env
+   # 根据实际需求修改 .env 中的密码与端口设置（如 SQL_SA_PASSWORD、REDIS_PASSWORD 等）
+   ```
 
-#### 管理接口
+2. **启动基础支撑组件与应用服务**：
+   ```bash
+   docker compose up -d
+   ```
 
-```C#
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+3. **服务端口一览**：
+   - **Chat API Host**：`http://localhost:51601`（包含 Swagger 文档 UI）
+   - **SQL Server**：`localhost:14333`
+   - **Redis**：`localhost:6379`
+   - **MinIO Console**：`http://localhost:19001` (API 端口: `9000`)
 
-namespace IczpNet.Chat.ConnectionPools;
+### 本地开发调试
 
-/// <summary>
-/// 连接池管理器
-/// </summary>
-public interface IConnectionPoolManager
-{
-    /// <summary>
-    /// 添加连接
-    /// </summary>
-    /// <param name="connectionPool"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<bool> ConnectedAsync(ConnectionPoolCacheItem connectionPool, CancellationToken token = default);
+1. **还原依赖并构建解决方案**：
+   ```bash
+   dotnet restore IczpNet.Chat.sln
+   dotnet build IczpNet.Chat.sln
+   ```
 
-    /// <summary>
-    /// 设置活跃时间
-    /// </summary>
-    /// <param name="connectionId"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<ConnectionPoolCacheItem> UpdateActiveTimeAsync(string connectionId, CancellationToken token = default);
+2. **配置连接字符串**：
+   在 `host/IczpNet.Chat.HttpApi.Host/appsettings.json` 中配置本地数据库与 Redis 连接：
+   ```json
+   {
+     "ConnectionStrings": {
+       "Default": "Server=127.0.0.1,14333;Initial Catalog=Chat_Main;User ID=sa;Password=YourPassword;Encrypt=False;TrustServerCertificate=True",
+       "Chat": "Server=127.0.0.1,14333;Initial Catalog=Chat_Module_v3;User ID=sa;Password=YourPassword;Encrypt=False;TrustServerCertificate=True"
+     },
+     "Redis": {
+       "Configuration": "127.0.0.1:6379,password=YourPassword"
+     }
+   }
+   ```
 
-    /// <summary>
-    /// 移除连接
-    /// </summary>
-    /// <param name="connectionId"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<bool> DisconnectedAsync(string connectionId, CancellationToken token = default);
+3. **执行数据库迁移**：
+   运行 `IczpNet.Chat.SchemaMigrator` 工具完成数据库表结构和种子数据初始化：
+   ```bash
+   dotnet run --project host/IczpNet.Chat.SchemaMigrator
+   ```
 
-    ///// <summary>
-    ///// 移除连接
-    ///// </summary>
-    ///// <param name="connectionId"></param>
-    //void Remove(string connectionId);
+4. **启动 API 服务**：
+   ```bash
+   dotnet run --project host/IczpNet.Chat.HttpApi.Host
+   ```
+   启动后访问 `http://localhost:51601/swagger` 即可查看完整的 REST API 调试界面。
 
-    /// <summary>
-    /// 获取连接数量
-    /// </summary>
-    /// <param name="host"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<int> GetTotalCountAsync(string host = null, CancellationToken token = default);
+5. **启动后台 Worker 调度**：
+   ```bash
+   dotnet run --project host/IczpNet.Chat.BackgroundWorker
+   ```
 
-    /// <summary>
-    /// 清空所有连接
-    /// </summary>
-    /// <param name="host"></param>
-    /// <param name="reason"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task ClearAllAsync(string host, string reason, CancellationToken token = default);
+6. **运行自动化测试**：
+   ```bash
+   dotnet test test/IczpNet.Chat.Domain.Tests/IczpNet.Chat.Domain.Tests.csproj
+   ```
 
-    /// <summary>
-    /// 创建查询
-    /// </summary>
-    /// <returns></returns>
-    Task<IQueryable<ConnectionPoolCacheItem>> CreateQueryableAsync(CancellationToken token = default);
+---
 
-    /// <summary>
-    /// 获取连接
-    /// </summary>
-    /// <param name="connectionId"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<ConnectionPoolCacheItem> GetAsync(string connectionId, CancellationToken token = default);
+## 核心机制说明
 
-    /// <summary>
-    /// 更新连接数量
-    /// </summary>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<int> UpdateAllConnectionIdsAsync(CancellationToken token = default);
+### 消息流水线与幂等机制
 
-    /// <summary>
-    /// 获取用户连接
-    /// </summary>
-    /// <param name="userId"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<List<string>> GetConnectionIdsByUserAsync(Guid userId, CancellationToken token = default);
-
-    /// <summary>
-    /// 更新连接数量
-    /// </summary>
-    /// <param name="userId"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<int> UpdateIndexByUserAsync(Guid userId, CancellationToken token = default);
-
-    /// <summary>
-    /// 更新连接数量
-    /// </summary>
-    /// <param name="chatObjectId"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<int> UpdateIndexByChatObjectAsync(long chatObjectId, CancellationToken token = default);
-
-    /// <summary>
-    /// 获取聊天对象连接
-    /// </summary>
-    /// <param name="chatObjectId"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<IEnumerable<ConnectionPoolCacheItem>> GetListByChatObjectAsync(long chatObjectId, CancellationToken token = default);
-
-    /// <summary>
-    /// 获取聊天对象连接
-    /// </summary>
-    /// <param name="chatObjectIdList"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<IEnumerable<ConnectionPoolCacheItem>> GetListByChatObjectAsync(IEnumerable<long> chatObjectIdList, CancellationToken token = default);
-
-    /// <summary>
-    /// 获取 用户 连接
-    /// </summary>
-    /// <param name="userId"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<IEnumerable<ConnectionPoolCacheItem>> GetListByUserAsync(Guid userId, CancellationToken token = default);
-
-    /// <summary>
-    /// 获取 用户 连接
-    /// </summary>
-    /// <param name="userIdList"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<IEnumerable<ConnectionPoolCacheItem>> GetListByUserAsync(IEnumerable<Guid> userIdList, CancellationToken token = default);
-
-    /// <summary>
-    /// 是否在线（用户）
-    /// </summary>
-    /// <param name="userId"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<bool> IsOnlineAsync(Guid userId, CancellationToken token = default);
-
-    /// <summary>
-    /// 是否在线（聊天对象）
-    /// </summary>
-    /// <param name="chatObjectId"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<bool> IsOnlineAsync(long chatObjectId, CancellationToken token = default);
-
-    /// <summary>
-    /// 获取设备类型 聊天对象
-    /// </summary>
-    /// <param name="chatObjectId"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<List<string>> GetDeviceTypesAsync(long chatObjectId, CancellationToken token = default);
-
-    /// <summary>
-    /// 获取设备类型 用户
-    /// </summary>
-    /// <param name="userId"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<List<string>> GetDeviceTypesAsync(Guid userId, CancellationToken token = default);
-
-    /// <summary>
-    /// 获取连接数量(用户)
-    /// </summary>
-    /// <param name="userId"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<int> GetCountByUserAsync(Guid userId, CancellationToken token = default);
-
-    /// <summary>
-    /// 获取连接数量(聊天对象)
-    /// </summary>
-    /// <param name="chatObjectId"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<int> GetCountByChatObjectAsync(long chatObjectId, CancellationToken token = default);
-}
-
+```mermaid
+flowchart TD
+    Client[客户端 发送请求] --> Check{校验 ClientMessageId}
+    Check -- 已存在相同Id --> Ret[返回已有消息回执 幂等]
+    Check -- 全新消息 --> Trans[开启数据库短事务]
+    Trans --> GenSeq[生成会话自增 SessionSeq]
+    GenSeq --> SaveMsg[写入 Message & 生成流水]
+    SaveMsg --> WriteChange[记录 MessageChange 增量日志]
+    WriteChange --> Commit[事务提交]
+    Commit --> PushSignalR[SignalR 多端实时推送]
+    Commit --> RedisFlush[标记 Redis 脏数据 / 未读数自增]
 ```
 
-
-
-### 在线状态管理 `IServiceStateManager` 
-
-1. 群/公众号 解析为 null
-2. 人/Anonymous/ShopWaiter/Customer 解析为 [Online | Offline]
-3. Shopper（自己或是子账号任何一下在线就解析为 [Online ]），都不在线都解析为【Offline】
-
-## Internal structure 数据结构
-
-### Message 消息表
-
-### ChatObject 聊天对象(参与会话)
-
-#### Person 人(用户、员工)
-
-#### Customer 人（客户）
-
-#### Room 群
-
-#### Official 公众号
-
-#### ----OfficialGroup 公众号分组（人群定义、临时分组等）
-
-#### Robot 机器人（智能对话）
-
-#### Shopkeeper 电商掌柜(主账号)
-
-#### ShopWaiter 店小二(子账号)
-
-#### Square 广场
-
-## Session
-
-## Room
-
-### 聊天对象
-
-|                             | Person人(用户、员工) | Customer 人（客户） | Room(Group) 群 | Official 公众号 | Subscription订阅号 | Square 聊天广场 | Shopkeeper 电商掌柜(主账号) | ShopWaiter 店小二(子账号) |
-| --------------------------- | -------------------- | ------------------- | -------------- | --------------- | ------------------ | --------------- | --------------------------- | ------------------------- |
-| 说明                        | 单聊                 | 单聊                | 群聊           | 单聊(服务通知)  | 群聊(新闻)         | 群聊(论坛)      | 群聊(日春旗舰店)            | 群聊(售后\客服)           |
-| Person人(用户、员工)        | 单聊                 |                     |                |                 |                    |                 |                             |                           |
-| Customer 人（客户）         | 单聊                 |                     |                |                 |                    |                 |                             |                           |
-| Room(Group) 群              | 群聊                 |                     |                |                 |                    |                 |                             |                           |
-| Official 公众号             | X                    |                     |                |                 |                    |                 |                             |                           |
-| Subscription订阅号          | 订阅                 |                     |                |                 |                    |                 |                             |                           |
-| Square 聊天广场             |                      |                     |                |                 |                    |                 |                             |                           |
-| Shopkeeper 电商掌柜(主账号) |                      |                     |                |                 |                    |                 |                             |                           |
-| ShopWaiter 店小二(子账号)   |                      |                     |                |                 |                    |                 |                             |                           |
-
-
-
-### CreateRoom
-
-```json
-{
-  "name": "9999999999999999999999999",
-  "code": "string",
-  "ownerId": null,
-  "type": 0,
-  "description": "string",
-  "chatObjectIdList": [
-    "31F8B124-BEA6-85C4-B4E3-3A07BB313745","329A7C43-9B01-5966-322A-3A07D4A342EA","5B6A6100-CA52-8040-09F2-3A07D4A367ED","972157FA-2449-FEC6-49A1-3A07DE609F58",
-  ]
-}
-```
-
-## 待实现功能
-
-### 以前要求未实现的功能
-
-## Roadmap
-
-### 聊天对象(ChatObject)
-
-- [X] **单用户绑定多个聊天对象**
-- [X] 机器人
-- [X] 官方号(Official)
-- [X] 订阅号(Subscription)
-- [X] 掌柜(ShopKeeper)
-- [X] 店小二(ShopWaiter)
-- [X] 聊天广场(Square)
-- [X] 匿名(Anonymous)
-- [X] 动态信息添加（添加手机，QQ，职位等）
-
-### 聊天对象扩展(ChatObject)
-
-- [X] 个性签名(Motto)
-- [ ] 朋友圈
-
-### 会话功能(Session)
-
-- [X] 单聊
-- [X] 群聊
-- [X] 官方通知/功能号(Official)
-- [X] 聊天广场
-- [X] 订阅号/服务号
-- [ ] 客服系统（CallCenter）
-
-### 会话验证系统（好友、加群、加聊天广场）
-
-- [X] 好友验证、处理好友验证消息
-- [X] 加群验证，群主/管理员处理验证
-- [X] 设置验证方式(不需要验证、验证、自动拒绝验证)
-- [X] 自动验证
-
-### 会话单元(SessionUnit)
-
-- [X] 我的会话消息
-- [X] 会话成员(群内成员，广场成员)
-- [X] 共同的好友、共同所在的群/广场
-- [X] 群/广场内名称
-- [X] 备注好友/群
-- [X] 会话置顶
-- [X] 会话免打扰功能
-- [X] 标记为已读
-- [X] 删除会话消息
-- [X] 清除会话消息
-- [X] 会话角标
-- [X] 删除会话（不退群）
-- [X] 退出会话（退群）
-- [X] 会话开启与停用(官方号、功能号)
-- [X] 订阅与取消订阅（订阅号、服务号）
-- [X] 设置聊天背景
-- [X] 只读会话（通知群、官方功能、公告等）
-- [X] 【新消息】角标统计
-- [X] 【私有消息】角标统计
-- [X] 【特别关注】角标统计
-- [X] 【@我】角标统计
-- [X] 动态属性备注（添加手机，QQ，职位等）
-
-### 会话管理功能
-
-- [x] 会话生成器(SessionGenerator)
-- [ ] 会话盒子(SessionBox)
-- [x] 创建聊天广场
-- [ ] 二维码扫码加入群聊
-- [ ] 二维码扫码加入聊天广场
-- [x] 角色管理、角色权限分配
-- [x] 组织架构
-- [x] 角色管理、角色权限分配
-- [x] 会话内权限（组织、角色、加人，踢人等）
-- [x] 权限分组
-- [ ] 权限启用与禁用
-- [ ] 会话标签（SessionTag）--
-- [x] 会话菜单功能
-- [ ] “拍一拍”
-- [x] 消息提醒（@我、@所有人、@XXX）
-- [ ] 禁言（管理员、群主）
-- [x] 是否允许设置“免打扰”
-- [x] 特别关注
-- [ ] 一键关注()
-- [x] 收藏
-- [x] 消息已读
-- [x] 消息已打开
-
-### 群聊功能
-
-- [X] 创建群聊
-- [X] 邀请成员入群
-- [X] 邀请成员加群
-- [X] 群主权限（拥有所有权限）
-- [X] 群角色功能（可配置多角色）
-- [X] 群成员权限（可单一配置成员权限）
-- [X] [权限]更新群名称并通知群成员
-- [X] [权限]更新头头像并通知群成员
-- [X] 转让群主
-- [X] 共同所在的群
-- [X] 加群验证（验证消息由【机器人/群助手】发送到【群主或管理员】）
-- [X] 管理员/群主处理验证
-- [X] 添加/取消【特别关注】（关注群成员，有新消息时标注为【特别关注】）
-- [X] 入群方式设置
-- [ ] 二维码扫码加入群聊
-- [ ] 面对面加群
-- [ ] 邀请码加群
-- [X] 群内组织架构
-- [ ] 群内公告
-- [ ] 群机器人提醒功能
-- [ ] 设置是否可以转发群里消息
-- [ ] 设置新成员“默认角色”
-- [X] 设置新成员“历史消息查看范围”
-
-### 聊天广场
-
-- [X] 创建聊天广场
-- [X] 广场成员（分组）
-- [ ] 特别关注（关注群成员，有新消息时标注为【特别关注】）
-- [ ] 设置广场进入方式（公有、私有）
-- [ ] 广场公告
-- [ ] 机器人提醒功能
-
-### 单聊天功能
-
-- [ ] 设置“能过账号找到我”
-- [ ] 设置“通过手机号找到我”
-- [X] 设置“好友验证方式”
-- [ ] 设置是否群内加好友
-
-### 官方号功能号(Official)
-
-- [X] 启用与停用功能
-- [X] 设置是否可以停用
-- [X] 设置是否为只读（通知功能 ，成员不能发消息，只能接收消息）
-
-### 订阅号功能
-
-- [X] 订阅与取消订阅（同时发会话内私有通知）
-- [ ] 设置是否可以停用
-- [X] 设置是否为只读（通知功能 ，成员不能发消息，只能接收消息）
-
-#### 掌柜与店小二
-
-- [X] 创建子账号
-- [ ] 子账号管理（开启、禁用、删除）
-- [X] 消息同步
-- [x] 消息转接
-- [ ] 账号状态设置（挂起、忙录）
-
-### 消息模板功能
-
-- [X] 系统消息(Command)
-- [X] 文本消息
-- [X] 图片消息
-- [X] 语音消息
-- [X] 视频消息
-- [X] 文件消息
-- [ ] 文章消息
-- [X] HTML消息
-- [X] 链接消息
-- [X] 名片消息
-- [X] HTML消息[H5、markdown]
-- [X] 位置消息（Location）
-- [X] 历史聊天记录
-- [ ] 公告消息（群公告、广场公告）
-- [X] 红包消息（未实现支付功能，只能积分形式收发红包）
-
-### 消息扩展功能
-
-- [X] 转发消息
-- [X] 群发消息
-- [X] 引用消息
-- [X] 消息提醒器
-- [X] 消息收藏夹
-- [X] 消息已读记录器(ReadedRecorder)
-- [X] 消息打开记录器(OpenedRecorder)
-- [ ] **敏感词过滤\审核**
-- [ ] Elasticsearch（elastic.co）
-
-### 客服系统（CallCenter）
-
-- [X] 子账号管理
-- [ ] 设置服务状态(挂起、接收、忙录等)
-- [ ] 会话转接功能
-- [ ] 消息分流功能
-- [ ] 客户发起会话(自动加入会话)
-
-### 智能对话功能(机器人)
-
-- [X] 机器人账号
-- [X] 机器人主动发通知
-- [ ] ChatGPT
-- [ ] Google Gemini
-
-### 开发者功能
-
-- [X] 开发者设置（Token、EncodingAesKey、PostUrl）
-- [X] 开启与关闭功能
-- [X] 验证及验签（signature）
-- [X] Http请求开发者服务日志
-- [X] 后台作业调用开发者及重试功能
-- [ ] 验证开发者主机（HOST）
-- [ ] 开发者Demo
-- [ ] 开发者SDK
-
-### WebHook
-
-- [ ] 权限验证（APIKey）
-- [ ] ApiKey管理功能
-- [ ] Api日志
-
-### 扩展功能
-
-- [ ] 实现共享位置
-- [ ] 扫码登录
-- [ ] 文件服务器（文件预览）
+- **原子发信**：消息写入、`SessionSeq` 分配与变更日志在单一短事务内提交，保证严格的数据一致性。
+- **防止重复入库**：对于因弱网重试带来的重复请求，利用唯一的 `ClientMessageId` 与时间窗口直接响应原始回执。
+
+### 多端在线状态与连接池
+
+- 连接池核心接口：`IConnectionPoolManager`
+- 客户端建立 SignalR 连接后注册连接节点，记录当前登录账号、`ChatObjectId`、客户端类型（`PC` / `Mobile` / `Tablet` / `Web`）。
+- 服务端统一通过 Redis 维护心跳与活跃时间戳，支持管理员或用户在其他设备上一键剔除会话。
+
+### 增量同步与断线重连
+
+- 服务端为每个会话单元维护 `LastMessageId`、`ReadMessageId` 与增量事件流水。
+- 客户端在断线重连后无需拉取全量历史，只需通过 `GetMessageChangesAsync(afterSeq)` 按游标补偿漏收的变更，保证离线消息零丢失、高吞吐。
+
+### AI 助理与异步调度
+
+- `IczpNet.Chat.AiProviders` 提供大模型推理驱动。
+- 当群聊中 `@机器人` 或发起对话时，系统异步提交推理作业至任务队列，由 `BackgroundWorker` 统一拉取并流式推送生成内容，避免阻塞主业务 API。
+
+---
+
+## 功能路线图 (Roadmap)
+
+### 聊天对象体系 (ChatObject)
+- [x] 单用户绑定多个聊天对象与身份切换
+- [x] 智能机器人 (Robot)
+- [x] 官方号与服务号 (Official / Subscription)
+- [x] 电商掌柜与店小二 (Shopkeeper / ShopWaiter)
+- [x] 聊天广场 (Square)
+- [x] 匿名会话支持 (Anonymous)
+- [x] 动态属性扩展（手机号、职位、工号、业务标识等）
+- [x] 个性签名与用户状态
+- [ ] 朋友圈 / 动态圈子功能
+
+### 会话与群聊体系 (Session & Room)
+- [x] 单聊与群聊完整功能
+- [x] 细粒度群角色配置与群成员权限
+- [x] 好友验证与入群审核流转
+- [x] 邀请加群与群主转让
+- [x] 群内组织架构与分组
+- [x] 新成员历史消息查看范围控制
+- [x] 会话置顶、免打扰与自定义聊天背景
+- [x] 独立会话角标统计（新消息、特别关注、@我、私有消息）
+- [x] 消息收藏夹
+- [ ] 面对面建群与二维码扫码加入
+- [ ] 群内禁言（全员禁言 / 指定成员禁言）
+- [ ] 群公告与置顶消息
+
+### 消息能力 (Messages)
+- [x] 基础消息类型（文本、Markdown、图片、语音、视频、文件、位置）
+- [x] 名片消息、链接卡片消息、历史合并转发
+- [x] 红包消息格式规范
+- [x] 消息引用与回复
+- [x] 消息已读回执 (`ReadedRecorder`) 与打开追踪 (`OpenedRecorder`)
+- [x] 客户端全局消息撤回与本地单向删除 (`DeletedRecorder`)
+- [x] 系统通知与控制指令消息 (Command)
+- [ ] 敏感词过滤与合规审计
+- [ ] 基于 Elasticsearch 的海量全文消息搜索
+
+### 电商与客服体系 (Customer Service)
+- [x] 掌柜与店小二子账号绑定与管理
+- [x] 客服会话多端同步
+- [x] 会话转接与跨坐席流转
+- [ ] 智能排队与负载均衡分流
+- [ ] 客服坐席状态流转（在线、忙碌、挂起、小休）
+
+### 开放能力与生态 (Open Ecosystem)
+- [x] 开发者参数设置 (Token、EncodingAesKey、CallbackUrl)
+- [x] 签名校验与事件推送机制
+- [x] 后台重试作业保证可靠投递
+- [x] 完整 Swagger / OpenAPI 规范
+- [ ] WebHook 与 API Key 访问令牌管理
+- [ ] 开箱即用的第三方 SDK (C#, TypeScript, Dart)
+
+---
+
+## 开发规范与注意事项
+
+> ⚠️ **重要开发守则**（详见项目根目录 [`AGENTS.md`](AGENTS.md)）：
+>
+> 1. **严禁破坏分层架构**：业务领域规则严禁写入 Controller，基础设施与 EF 特有 API 严禁泄漏到 Domain 核心层。
+> 2. **大数据量与高并发设计**：杜绝全表扫描与大 Offset 分页，查询历史消息必须采用基于 `MessageId` / `SessionSeq` 的游标分页（Cursor Pagination）。
+> 3. **Redis 原子性与一致性**：涉及计数、角标、游标时必须使用 Redis 原子命令（如 `INCR`、`HINCRBY`、Lua 脚本），杜绝 `GET -> 修改 -> SET` 竞态。
+> 4. **数据库变更安全**：实体修改必须通过严格的 Migration 流程核验，严禁在生产启动时随意删除或重构核心字段。
+
+---
+
+## 许可证 (License)
+
+本项目采用 [MIT License](LICENSE) 授权许可。
