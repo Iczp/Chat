@@ -348,10 +348,25 @@ public class AttachmentController(
             });
 
             var snapBytes = await snapshotFile.GetAllBytesAsync();
-            if (!resolvedWidth.HasValue || !resolvedHeight.HasValue)
+            using (var snapImg = new Image(snapBytes))
             {
-                using var snapImg = new Image(snapBytes);
-                (resolvedWidth, resolvedHeight) = GetImageActualDimensions(snapImg);
+                var (snapW, snapH) = GetImageActualDimensions(snapImg);
+                if (!resolvedWidth.HasValue || !resolvedHeight.HasValue)
+                {
+                    resolvedWidth = snapW;
+                    resolvedHeight = snapH;
+                }
+                else if (snapW > 0 && snapH > 0 && resolvedWidth.Value > 0 && resolvedHeight.Value > 0)
+                {
+                    var isSnapLandscape = snapW > snapH;
+                    var isResolvedLandscape = resolvedWidth.Value > resolvedHeight.Value;
+                    if (isSnapLandscape != isResolvedLandscape)
+                    {
+                        var temp = resolvedWidth.Value;
+                        resolvedWidth = resolvedHeight.Value;
+                        resolvedHeight = temp;
+                    }
+                }
             }
 
             var snapBlob = await SaveTempBlobAsync(
@@ -389,15 +404,23 @@ public class AttachmentController(
             else
             {
                 var thumbSize = MessageSetting.VideoSetting.SnapshotThumbnailSize;
-                var resized = await ImageResizer.ResizeAsync(snapBytes, new ImageResizeArgs
+                if (resolvedWidth.HasValue && resolvedHeight.HasValue &&
+                    resolvedWidth.Value <= thumbSize && resolvedHeight.Value <= thumbSize)
                 {
-                    Width = (uint)thumbSize,
-                    Height = (uint)thumbSize,
-                    Mode = ImageResizeMode.Max,
-                });
-                snapThumbBytes = resized.State == ImageProcessState.Done && resized.Result?.Length > 0
-                    ? resized.Result
-                    : snapBytes;
+                    snapThumbBytes = snapBytes;
+                }
+                else
+                {
+                    var resized = await ImageResizer.ResizeAsync(snapBytes, new ImageResizeArgs
+                    {
+                        Width = (uint)thumbSize,
+                        Height = (uint)thumbSize,
+                        Mode = ImageResizeMode.Max,
+                    });
+                    snapThumbBytes = resized.State == ImageProcessState.Done && resized.Result?.Length > 0
+                        ? resized.Result
+                        : snapBytes;
+                }
             }
 
             var snapThumbBlob = await SaveTempBlobAsync(
@@ -530,8 +553,22 @@ public class AttachmentController(
                     var (w, h) = GetImageActualDimensions(snapImg);
                     if (w > 0 && h > 0)
                     {
-                        resolvedWidth ??= w;
-                        resolvedHeight ??= h;
+                        if (!resolvedWidth.HasValue || !resolvedHeight.HasValue)
+                        {
+                            resolvedWidth = w;
+                            resolvedHeight = h;
+                        }
+                        else
+                        {
+                            var isSnapLandscape = w > h;
+                            var isResolvedLandscape = resolvedWidth.Value > resolvedHeight.Value;
+                            if (isSnapLandscape != isResolvedLandscape)
+                            {
+                                var temp = resolvedWidth.Value;
+                                resolvedWidth = resolvedHeight.Value;
+                                resolvedHeight = temp;
+                            }
+                        }
                     }
                 }
 

@@ -180,6 +180,10 @@ public class GenerateVideoGifBackgroundJob(
                 {
                     videoContent.GifBlobId = gifBlob.Id;
                     videoContent.GifUrl = gifUrl;
+                    if ((videoContent.ImageWidth == null || videoContent.ImageWidth <= 0) && videoContent.Width > 0)
+                        videoContent.ImageWidth = videoContent.Width;
+                    if ((videoContent.ImageHeight == null || videoContent.ImageHeight <= 0) && videoContent.Height > 0)
+                        videoContent.ImageHeight = videoContent.Height;
                     contentDto = msg.GetContentDto();
                     if (contentDto is VideoContentInfo videoDto)
                     {
@@ -187,6 +191,8 @@ public class GenerateVideoGifBackgroundJob(
                         if (relativeSnapshotUrl != null) videoDto.SnapshotUrl = relativeSnapshotUrl;
                         if (relativeSnapshotThumbnailUrl != null) videoDto.SnapshotThumbnailUrl = relativeSnapshotThumbnailUrl;
                         videoDto.GifUrl = gifUrl;
+                        if (videoDto.ImageWidth <= 0 && videoDto.Width > 0) videoDto.ImageWidth = videoDto.Width;
+                        if (videoDto.ImageHeight <= 0 && videoDto.Height > 0) videoDto.ImageHeight = videoDto.Height;
                     }
                     msg.SetContentJson(jsonSerializer.Serialize(contentDto));
                 });

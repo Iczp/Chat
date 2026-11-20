@@ -49,14 +49,21 @@ public class FFMpegCoreMediaResolver(IConfiguration configuration) : NullMediaRe
                 captureTime: TimeSpan.FromSeconds(gifStartSeconds),
                 duration: TimeSpan.FromSeconds(gifDurationSeconds));
 
+            var isRotated = mediaInfo.PrimaryVideoStream != null &&
+                            Math.Abs(mediaInfo.PrimaryVideoStream.Rotation) % 180 != 0;
+            var vWidth = mediaInfo.PrimaryVideoStream?.Width ?? 0;
+            var vHeight = mediaInfo.PrimaryVideoStream?.Height ?? 0;
+            var resolvedVideoWidth = isRotated ? vHeight : vWidth;
+            var resolvedVideoHeight = isRotated ? vWidth : vHeight;
+
             return new VideoInfo
             {
                 Resolver = typeof(FFMpegCoreMediaResolver).FullName,
                 Size = fileStream.Length,
                 TempVideoPath = tempVideoPath,
                 Duration = mediaInfo.Duration,
-                Width = mediaInfo.PrimaryVideoStream.Width,
-                Height = mediaInfo.PrimaryVideoStream.Height,
+                Width = resolvedVideoWidth,
+                Height = resolvedVideoHeight,
                 ImageSnapshotPath = imageCreated ? imgSnapshotPath : null,
                 GifSnapshotPath = gifCreated ? gifSnapshotPath : null,
                 ElapsedMilliseconds = stopwatch.ElapsedMilliseconds

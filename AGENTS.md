@@ -1961,3 +1961,21 @@ redis.call('HSET', key, 'FieldB', valueB)
 - 每次提交应具备明确且精准的中文说明（如 `feat: ...`、`refactor: ...`、`perf: ...` 等）；
 - 代码提交前必须确保编译无报错、涉及的自动化测试验证通过。
 
+------
+
+# 80. 服务重启与镜像构建规范
+
+在 `F:\Dev\abpvnext\Rctea.IM\deploy` 目录下执行服务构建与重启时，必须严格遵守以下规范：
+
+- **开发热更新（秒级重启）**：
+  ```powershell
+  .\rebuild-chat-api.ps1 -NoRestore
+  .\rebuild-chat-worker.ps1 -NoRestore
+  ```
+- **正式打包镜像**：
+  ```powershell
+  .\rebuild-chat-api.ps1 -RebuildImage
+  .\rebuild-chat-worker.ps1 -RebuildImage
+  ```
+
+
