@@ -219,12 +219,7 @@ public class ChatHub(
                 SenderName = senderName,
                 IsTyping = isTyping,
                 Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                Message = new MessageInfo<object>
-                {
-                    SessionId = resolvedSessionId,
-                    SenderId = unit.OwnerId,
-                    SenderSessionUnitId = unit.Id,
-                },
+                Message = null,
             },
             onUnitOfWorkComplete: false,
             useOutbox: false);
