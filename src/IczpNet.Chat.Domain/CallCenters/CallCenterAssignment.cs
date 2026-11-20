@@ -7,6 +7,7 @@ namespace IczpNet.Chat.CallCenters;
 /// <summary>Current assignee or durable queue position for one customer session.</summary>
 [Index(nameof(SessionId), IsUnique = true)]
 [Index(nameof(ShopKeeperId), nameof(Status), nameof(QueuedAt), nameof(Id))]
+[Index(nameof(Status), nameof(QueuedAt), nameof(Id), nameof(ShopKeeperId))]
 [Index(nameof(ShopKeeperId), nameof(AgentId), nameof(Status), nameof(LastActivityAt))]
 public class CallCenterAssignment : BaseEntity<Guid>
 {

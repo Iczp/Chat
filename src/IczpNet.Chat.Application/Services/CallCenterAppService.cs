@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
+using System.Linq;
 using IczpNet.Chat.Enums;
 using Volo.Abp;
 using Volo.Abp.DistributedLocking;
@@ -39,7 +40,6 @@ public class CallCenterAppService(ICallCenterManager callCenterManager) : ChatAp
         RequireOnline = configuration.RequireOnline
     };
 
-    [RemoteService(false)]
     [HttpGet]
     public async Task<CallCenterConfigurationDto> GetConfigurationAsync(long shopKeeperId)
     {
@@ -49,7 +49,6 @@ public class CallCenterAppService(ICallCenterManager callCenterManager) : ChatAp
         return MapConfiguration(config ?? new CallCenterConfiguration(Guid.Empty, shopKeeperId));
     }
 
-    [RemoteService(false)]
     [HttpPost]
     public async Task<CallCenterConfigurationDto> UpdateConfigurationAsync(long shopKeeperId, UpdateCallCenterConfigurationInput input)
     {
@@ -70,6 +69,71 @@ public class CallCenterAppService(ICallCenterManager callCenterManager) : ChatAp
         else await repository.UpdateAsync(config);
         await uow.CompleteAsync();
         return MapConfiguration(config);
+    }
+
+    [HttpDelete]
+    public async Task DeleteConfigurationAsync(long shopKeeperId)
+    {
+        await CheckShopOwnerAsync(shopKeeperId);
+        var distributedLock = LazyServiceProvider.LazyGetRequiredService<IAbpDistributedLock>();
+        if (distributedLock is NullAbpDistributedLock)
+            throw new UserFriendlyException("客服配置暂不可用，缺少分布式锁。");
+        await using var handle = await distributedLock.TryAcquireAsync($"Chat:CallCenter:{shopKeeperId}", TimeSpan.FromSeconds(10));
+        if (handle == null) throw new UserFriendlyException("客服配置正在更新，请重试。");
+        using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
+        var repository = LazyServiceProvider.LazyGetRequiredService<IRepository<CallCenterConfiguration, Guid>>();
+        var configuration = await repository.FindAsync(x => x.ShopKeeperId == shopKeeperId);
+        if (configuration != null) await repository.DeleteAsync(configuration);
+        await uow.CompleteAsync();
+    }
+
+    [HttpGet]
+    public async Task<System.Collections.Generic.Dictionary<long, int>> GetActiveCountsAsync(long shopKeeperId)
+    {
+        await CheckShopOwnerAsync(shopKeeperId);
+        var staff = await ChatObjectManager.GetChildsAsync(shopKeeperId);
+        var counts = new System.Collections.Generic.Dictionary<long, int>();
+        foreach (var batch in new[] { shopKeeperId }.Concat(staff.Where(x => x.ObjectType == ChatObjectTypeEnums.ShopWaiter)
+            .Select(x => x.Id)).Distinct().Chunk(500))
+            foreach (var (agentId, count) in await CallCenterManager.GetActiveCountsAsync(shopKeeperId, batch))
+                counts[agentId] = count;
+        return counts;
+    }
+
+    [HttpGet]
+    public async Task<CallCenterAssignmentDto> GetAssignmentAsync(Guid sessionId)
+    {
+        var assignment = await CallCenterManager.GetAssignmentAsync(sessionId)
+            ?? throw new UserFriendlyException("客服接待记录不存在。");
+        var staff = await ChatObjectManager.GetChildsAsync(assignment.ShopKeeperId);
+        await CheckPolicyForUserAsync(new[] { assignment.CustomerId, assignment.ShopKeeperId }
+            .Concat(staff.Select(x => x.Id)));
+        return new CallCenterAssignmentDto
+        {
+            SessionId = assignment.SessionId,
+            ShopKeeperId = assignment.ShopKeeperId,
+            CustomerId = assignment.CustomerId,
+            AgentId = assignment.AgentId,
+            Status = assignment.Status,
+            QueuedAt = assignment.QueuedAt,
+            LastActivityAt = assignment.LastActivityAt
+        };
+    }
+
+    [HttpPost]
+    public async Task<int> DrainQueueAsync(long shopKeeperId)
+    {
+        await CheckShopOwnerAsync(shopKeeperId);
+        return await CallCenterManager.DrainQueueAsync(shopKeeperId);
+    }
+
+    [HttpPost]
+    public async Task CancelQueueAsync(Guid sessionId)
+    {
+        var assignment = await CallCenterManager.GetAssignmentAsync(sessionId);
+        if (assignment == null) return;
+        await CheckPolicyForUserAsync(assignment.CustomerId);
+        await CallCenterManager.CancelQueueAsync(sessionId, assignment.CustomerId);
     }
 
     /// <summary>

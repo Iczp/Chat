@@ -681,6 +681,8 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("ShopKeeperId", "Status", "QueuedAt", "Id");
 
+                    b.HasIndex("Status", "QueuedAt", "Id", "ShopKeeperId");
+
                     b.ToTable("Chat_CallCenterAssignment", (string)null);
                 });
 

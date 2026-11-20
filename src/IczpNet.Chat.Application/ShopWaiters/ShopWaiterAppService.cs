@@ -12,6 +12,7 @@ using Volo.Abp;
 using Volo.Abp.Identity;
 using Volo.Abp.DistributedLocking;
 using Volo.Abp.Uow;
+using Volo.Abp.BackgroundJobs;
 
 namespace IczpNet.Chat.ShopWaiters;
 
@@ -74,6 +75,9 @@ public class ShopWaiterAppService : ChatAppService, IShopWaiterAppService
     public virtual async Task<ShopWaiterDto> CreateAsync(ShopWaiterCreateInput input)
     {
         var entity = await ShopWaiterManager.CreateAsync(input.ShopKeeperId, input.Name);
+
+        await LazyServiceProvider.LazyGetRequiredService<IBackgroundJobManager>()
+            .EnqueueAsync(new ShopWaiterSessionSyncJobArgs { ShopKeeperId = input.ShopKeeperId, WaiterId = entity.Id });
 
         return await MapToDtoAsync(entity);
     }

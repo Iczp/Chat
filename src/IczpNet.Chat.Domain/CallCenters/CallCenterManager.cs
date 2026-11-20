@@ -3,6 +3,7 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.ServiceStates;
 using IczpNet.Chat.Sessions;
 using IczpNet.Chat.SessionUnits;
@@ -14,6 +15,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.DistributedLocking;
+using Volo.Abp.Uow;
+using Volo.Abp;
 
 namespace IczpNet.Chat.CallCenters;
 
@@ -31,6 +35,151 @@ public class CallCenterManager(ISessionUnitManager sessionUnitManager,
     protected IMessageSender MessageSender { get; } = messageSender;
     protected IServiceStateManager ServiceStateManager { get; } = serviceStateManager;
     protected Type ObjectMapperContext { get; set; }
+
+    private IRepository<CallCenterAssignment, Guid> Assignments => LazyServiceProvider.LazyGetRequiredService<IRepository<CallCenterAssignment, Guid>>();
+    private IRepository<CallCenterConfiguration, Guid> Configurations => LazyServiceProvider.LazyGetRequiredService<IRepository<CallCenterConfiguration, Guid>>();
+    private IAbpDistributedLock DistributedLock => LazyServiceProvider.LazyGetRequiredService<IAbpDistributedLock>();
+    private IUnitOfWorkManager UnitOfWorkManager => LazyServiceProvider.LazyGetRequiredService<IUnitOfWorkManager>();
+
+    private async Task<IAbpDistributedLockHandle> LockShopAsync(long shopKeeperId)
+    {
+        if (DistributedLock is NullAbpDistributedLock)
+            throw new UserFriendlyException("客服分配需要分布式锁。");
+        return await DistributedLock.TryAcquireAsync($"Chat:CallCenter:{shopKeeperId}", TimeSpan.FromSeconds(10))
+            ?? throw new UserFriendlyException("客服分配正在处理，请重试。");
+    }
+
+    public Task<CallCenterAssignment> GetAssignmentAsync(Guid sessionId) =>
+        Assignments.FindAsync(x => x.SessionId == sessionId);
+
+    private async Task<CallCenterConfiguration> GetConfigurationAsync(long shopKeeperId) =>
+        await Configurations.FindAsync(x => x.ShopKeeperId == shopKeeperId)
+        ?? new CallCenterConfiguration(Guid.Empty, shopKeeperId);
+
+    private async Task<List<long>> GetEligibleAgentsAsync(long shopKeeperId, CallCenterConfiguration configuration)
+    {
+        var children = await ChatObjectManager.GetChildsAsync(shopKeeperId);
+        var ids = new List<long> { shopKeeperId };
+        ids.AddRange(children.Where(x => x.ObjectType == ChatObjectTypeEnums.ShopWaiter).Select(x => x.Id));
+        if (!configuration.RequireOnline) return ids;
+        var eligible = new List<long>();
+        foreach (var id in ids)
+            if (await ServiceStateManager.GetStatusAsync(id) == ServiceStatus.Online) eligible.Add(id);
+        return eligible;
+    }
+
+    private async Task<bool> TryAssignAsync(CallCenterAssignment assignment, CallCenterConfiguration configuration)
+    {
+        var eligible = await GetEligibleAgentsAsync(assignment.ShopKeeperId, configuration);
+        var counts = await GetActiveCountsAsync(assignment.ShopKeeperId, eligible);
+        var candidates = eligible.Select(id => new { Id = id, Count = counts.GetValueOrDefault(id) }).ToList();
+        var available = candidates.Where(x => x.Count < configuration.MaxActiveConversations).ToList();
+        long? selected = null;
+        if (configuration.DistributionStrategy == CallCenterDistributionStrategy.ShopKeeper)
+            selected = available.FirstOrDefault(x => x.Id == assignment.ShopKeeperId)?.Id;
+        else if (available.Count > 0)
+            selected = available.OrderBy(x => x.Count).ThenBy(x => x.Id).First().Id;
+        if (selected == null)
+        {
+            selected = configuration.OverflowStrategy switch
+            {
+                CallCenterOverflowStrategy.ShopKeeper => assignment.ShopKeeperId,
+                CallCenterOverflowStrategy.AllowOverCapacity when candidates.Count > 0 =>
+                    candidates.OrderBy(x => x.Count).ThenBy(x => x.Id).First().Id,
+                // When every agent is offline, keep the consultation visible to the shopkeeper.
+                CallCenterOverflowStrategy.AllowOverCapacity => assignment.ShopKeeperId,
+                _ => null
+            };
+        }
+        if (!selected.HasValue) return false;
+        assignment.Assign(selected.Value);
+        return true;
+    }
+
+    public async Task ProcessMessageAsync(Message message)
+    {
+        if (message.MessageType == MessageTypes.Cmd || !message.SessionId.HasValue || !message.SenderId.HasValue || !message.ReceiverId.HasValue)
+            return;
+        var sender = await ChatObjectManager.GetAsync(message.SenderId.Value);
+        var receiver = await ChatObjectManager.GetAsync(message.ReceiverId.Value);
+        var customerTypes = new[] { ChatObjectTypeEnums.Personal, ChatObjectTypeEnums.Anonymous, ChatObjectTypeEnums.Customer };
+        var customer = customerTypes.Contains(sender.ObjectType.GetValueOrDefault()) ? sender :
+            customerTypes.Contains(receiver.ObjectType.GetValueOrDefault()) ? receiver : null;
+        var shop = sender.ObjectType is ChatObjectTypeEnums.ShopKeeper or ChatObjectTypeEnums.ShopWaiter ? sender :
+            receiver.ObjectType is ChatObjectTypeEnums.ShopKeeper or ChatObjectTypeEnums.ShopWaiter ? receiver : null;
+        if (customer == null || shop == null) return;
+        var shopKeeperId = shop.ObjectType == ChatObjectTypeEnums.ShopKeeper ? shop.Id : shop.ParentId;
+        if (!shopKeeperId.HasValue) return;
+        await using var handle = await LockShopAsync(shopKeeperId.Value);
+        using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
+        var configuration = await GetConfigurationAsync(shopKeeperId.Value);
+        var assignment = await GetAssignmentAsync(message.SessionId.Value);
+        if (assignment == null)
+        {
+            assignment = new CallCenterAssignment(GuidGenerator.Create(), shopKeeperId.Value, message.SessionId.Value, customer.Id, message.CreationTime);
+            assignment.RecordActivity(message.Id, message.CreationTime);
+            var hasQueue = await Assignments.AnyAsync(x => x.ShopKeeperId == shopKeeperId.Value && x.Status == CallCenterAssignmentStatus.Queued);
+            if (!hasQueue) await TryAssignAsync(assignment, configuration);
+            await Assignments.InsertAsync(assignment);
+        }
+        else
+        {
+            if (message.Id <= assignment.LastActivityMessageId)
+            {
+                await uow.CompleteAsync();
+                return;
+            }
+            var wasExpired = assignment.Status == CallCenterAssignmentStatus.Assigned &&
+                !assignment.IsActive(Clock.Now, TimeSpan.FromMinutes(configuration.ActiveTimeoutMinutes));
+            assignment.RecordActivity(message.Id, message.CreationTime);
+            if (wasExpired)
+                assignment.Queue(Clock.Now);
+            if (assignment.Status == CallCenterAssignmentStatus.Queued)
+            {
+                var earlier = await Assignments.AnyAsync(x => x.ShopKeeperId == shopKeeperId.Value &&
+                    x.Status == CallCenterAssignmentStatus.Queued && x.SessionId != assignment.SessionId &&
+                    x.QueuedAt < assignment.QueuedAt);
+                if (!earlier) await TryAssignAsync(assignment, configuration);
+            }
+            await Assignments.UpdateAsync(assignment);
+        }
+        await uow.CompleteAsync();
+    }
+
+    public async Task<int> DrainQueueAsync(long shopKeeperId, int maxCount = 50)
+    {
+        if (maxCount < 1 || maxCount > 200) throw new ArgumentOutOfRangeException(nameof(maxCount));
+        await using var handle = await LockShopAsync(shopKeeperId);
+        using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
+        var configuration = await GetConfigurationAsync(shopKeeperId);
+        var query = (await Assignments.GetQueryableAsync())
+            .Where(x => x.ShopKeeperId == shopKeeperId && x.Status == CallCenterAssignmentStatus.Queued)
+            .OrderBy(x => x.QueuedAt).ThenBy(x => x.Id).Take(maxCount);
+        var waiting = await AsyncExecuter.ToListAsync(query);
+        var assigned = 0;
+        foreach (var item in waiting)
+        {
+            if (!await TryAssignAsync(item, configuration)) break;
+            await Assignments.UpdateAsync(item, autoSave: true);
+            assigned++;
+        }
+        await uow.CompleteAsync();
+        return assigned;
+    }
+
+    public async Task CancelQueueAsync(Guid sessionId, long customerId)
+    {
+        var assignment = await GetAssignmentAsync(sessionId);
+        if (assignment == null) return;
+        if (assignment.CustomerId != customerId)
+            throw new UserFriendlyException("客服排队记录不属于当前客户。");
+        await using var handle = await LockShopAsync(assignment.ShopKeeperId);
+        using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
+        assignment = await GetAssignmentAsync(sessionId);
+        if (assignment?.Status == CallCenterAssignmentStatus.Queued)
+            await Assignments.DeleteAsync(assignment);
+        await uow.CompleteAsync();
+    }
 
     public virtual async Task<Dictionary<long, int>> GetActiveCountsAsync(long shopKeeperId, IReadOnlyCollection<long> agentIds)
     {
@@ -75,6 +224,25 @@ public class CallCenterManager(ISessionUnitManager sessionUnitManager,
         var isShopWaiter = shopWaiter.ObjectType == ChatObjectTypeEnums.ShopWaiter && shopWaiter.ParentId == shopKeeperId;
         Assert.If(!isShopKeeper && !isShopWaiter, "Transfer target must belong to the same shop");
 
+        await using var transferLock = await LockShopAsync(shopKeeperId);
+        using var transferUow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
+        var customerSessionId = sessionUnit.SessionId ?? throw new InvalidOperationException("Customer session is missing.");
+        var assignment = await GetAssignmentAsync(customerSessionId);
+        if (assignment != null && (assignment.ShopKeeperId != shopKeeperId || assignment.CustomerId != sessionUnit.DestinationId))
+            throw new UserFriendlyException("客服会话归属不一致。");
+        if (assignment == null)
+        {
+            assignment = new CallCenterAssignment(GuidGenerator.Create(), shopKeeperId, customerSessionId,
+                sessionUnit.DestinationId ?? throw new InvalidOperationException("Customer is missing."), Clock.Now);
+            assignment.Assign(waiterId);
+            await Assignments.InsertAsync(assignment);
+        }
+        else
+        {
+            assignment.Assign(waiterId);
+            await Assignments.UpdateAsync(assignment);
+        }
+
         var isOnline = await ServiceStateManager.IsOnlineAsync(waiterId);
 
         if (!isOnline)
@@ -82,10 +250,14 @@ public class CallCenterManager(ISessionUnitManager sessionUnitManager,
             Logger.LogWarning($"Waiter Name:${shopWaiter.Name},Id:{shopWaiter.Id} is offline");
         }
 
+        var session = sessionUnit.Session ?? await LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>()
+            .GetAsync(customerSessionId);
+        var customer = sessionUnit.Destination ?? await ChatObjectManager.GetAsync(
+            sessionUnit.DestinationId ?? throw new InvalidOperationException("Customer is missing."));
         var waiterSessionUnit = await SessionUnitManager.CreateIfNotContainsAsync(
-                session: sessionUnit.Session,
+                session: session,
                 owner: shopWaiter,
-                destination: sessionUnit.Destination,
+                destination: customer,
                 x =>
                 {
                     x.JoinWay = JoinWays.AutoJoin;
@@ -111,6 +283,7 @@ public class CallCenterManager(ISessionUnitManager sessionUnitManager,
             });
             sessionUnit.Setting.ReadMessageId = message.Id;
         }
+        await transferUow.CompleteAsync();
         return waiterSessionUnit;
     }
 }

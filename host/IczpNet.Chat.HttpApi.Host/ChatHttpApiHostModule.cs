@@ -172,6 +172,7 @@ public class ChatHttpApiHostModule : AbpModule
         PostConfigure<AbpDistributedEventBusOptions>(options =>
         {
             options.Handlers.Remove(typeof(MessageSentDistributedEventHandler));
+            options.Handlers.Remove(typeof(IczpNet.Chat.CallCenters.CallCenterMessageSentHandler));
             options.Handlers.Remove(typeof(SeedDataByUserCreatedDistributedEventHandler));
         });
 
