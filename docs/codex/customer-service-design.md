@@ -48,7 +48,8 @@
 - 现有 Migration `20261120030235_AddCallCenterAssignments` 未重复创建。新增 `20261120085204_AddCallCenterQueueScanIndex`，为跨店铺排队扫描增加 `(Status, QueuedAt, Id, ShopKeeperId)` 索引；已应用到本机 `localhost / Chat_Module_v3` 并复核无待执行迁移。
 - 新店员创建后排入分批回填任务，按店长会话单元的 Id 游标补齐历史客户会话；重复执行保持同一组成员。
 - 已运行 Domain 客服测试 5 项、EF 模型与流程测试 9 项、Application 共享会话测试 4 项、配置 ApplicationService 测试 1 项；流程测试覆盖重复及乱序活动、三种离线兜底、满员排队与超时出队、重复转接持久化、新店员历史回填和排队取消。配置测试覆盖授权、默认值、更新及删除。API 与 Worker 宿主均编译成功。
-- 尚未完成真实 HTTP/SignalR 端到端和真实多实例竞争验证。跨实例锁的实际 Redis 3.2 行为、消息事件可靠性、客服消息高频数据库写入成本、排队分组扫描成本与 API 权限仍需运行环境验证；不得把当前实现视为全部验收完成。
+- 使用本机 Redis 3.2.100 实际分布式锁运行了 3 项竞争集成测试：两个 Manager 并发首次分配、并发转接和并发出队，均通过。命令为 `CHAT_REAL_REDIS_TEST=1 dotnet test test/IczpNet.Chat.EntityFrameworkCore.Tests/IczpNet.Chat.EntityFrameworkCore.Tests.csproj --filter FullyQualifiedName~CallCenterRedisConcurrency`（PowerShell 先设置同名环境变量）。未设置变量时这 3 项不连接本机 Redis。
+- 尚未完成真实 HTTP/SignalR 端到端和两个独立进程的部署验证。消息事件可靠性、客服消息高频数据库写入成本、排队分组扫描成本仍需运行环境验证；不得把当前实现视为全部验收完成。
 
 - 已覆盖四种首次建会话方向及客服状态的自动化测试；这些测试不覆盖会话请求、历史会话补员、发送者身份展示或分配与排队。
 - 已调整会话请求处理以复用客户成员；该路径仍需独立的端到端测试。
