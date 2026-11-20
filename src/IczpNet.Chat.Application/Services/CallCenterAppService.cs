@@ -12,6 +12,7 @@ using Volo.Abp;
 using Volo.Abp.DistributedLocking;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
+using Volo.Abp.Authorization;
 
 namespace IczpNet.Chat.Services;
 
@@ -106,8 +107,12 @@ public class CallCenterAppService(ICallCenterManager callCenterManager) : ChatAp
         var assignment = await CallCenterManager.GetAssignmentAsync(sessionId)
             ?? throw new UserFriendlyException("客服接待记录不存在。");
         var staff = await ChatObjectManager.GetChildsAsync(assignment.ShopKeeperId);
-        await CheckPolicyForUserAsync(new[] { assignment.CustomerId, assignment.ShopKeeperId }
-            .Concat(staff.Select(x => x.Id)));
+        if (!CurrentUser.Id.HasValue) throw new AbpAuthorizationException("Authentication required.");
+        var ownedIds = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+        var allowedId = new[] { assignment.CustomerId, assignment.ShopKeeperId }
+            .Concat(staff.Where(x => x.ObjectType == ChatObjectTypeEnums.ShopWaiter).Select(x => x.Id))
+            .FirstOrDefault(ownedIds.Contains);
+        if (allowedId == 0) throw new AbpAuthorizationException("The current user is not a member of this consultation.");
         return new CallCenterAssignmentDto
         {
             SessionId = assignment.SessionId,

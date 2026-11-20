@@ -75,6 +75,12 @@ public class CallCenterFlow_Tests : ChatTestBase<CallCenterFlowTestModule>
         var assignment = await manager.GetAssignmentAsync(sessionId);
         Assert.Equal(expected, assignment!.Status);
         Assert.Equal(expected == CallCenterAssignmentStatus.Queued ? null : shopId, assignment.AgentId);
+        if (expected == CallCenterAssignmentStatus.Queued)
+        {
+            await manager.CancelQueueAsync(sessionId, customerId);
+            await manager.CancelQueueAsync(sessionId, customerId);
+            Assert.Null(await manager.GetAssignmentAsync(sessionId));
+        }
     }
 
     [Fact]
