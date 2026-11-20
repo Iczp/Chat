@@ -1,4 +1,5 @@
 using IczpNet.Chat.Articles;
+using IczpNet.Chat.CallCenters;
 using IczpNet.Chat.Blobs;
 using IczpNet.Chat.ChatObjectCategories;
 using IczpNet.Chat.ChatObjectEntryValues;
@@ -79,6 +80,8 @@ public class ChatDbContext(DbContextOptions<ChatDbContext> options) : AbpDbConte
     public DbSet<DbTable> DbTable { get; set; }
     public DbSet<AiRun> AiRun { get; set; }
     public DbSet<ScheduledArticleMessage> ScheduledArticleMessage { get; set; }
+    public DbSet<CallCenterConfiguration> CallCenterConfiguration { get; set; }
+    public DbSet<CallCenterAssignment> CallCenterAssignment { get; set; }
 
     public DbSet<ChatObject> ChatObject { get; set; }
     public DbSet<ChatObjectCategory> ChatObjectCategory { get; set; }

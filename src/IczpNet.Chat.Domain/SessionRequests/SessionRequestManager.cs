@@ -138,6 +138,7 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
             case ChatObjectTypeEnums.Personal:
             case ChatObjectTypeEnums.Customer:
             case ChatObjectTypeEnums.ShopKeeper:
+            case ChatObjectTypeEnums.ShopWaiter:
             case ChatObjectTypeEnums.Room:
             case ChatObjectTypeEnums.Square:
                 await QueueNotificationAsync(entity.Id, SessionRequestNotificationKind.Requested);
@@ -236,6 +237,13 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
 
             var session = await SessionGenerator.MakeAsync(sessionRequest.Owner, sessionRequest.Destination);
 
+            // The customer sees the shopkeeper even when the request targets a waiter.
+            // Find the already-created unit by session to avoid a second unit for the same owner.
+            if (sessionRequest.Destination.ObjectType == ChatObjectTypeEnums.ShopWaiter)
+            {
+                ownerSessionUnit ??= await SessionUnitManager.FindBySessionIdAsync(session.Id, sessionRequest.OwnerId);
+            }
+
             ownerSessionUnit ??= await SessionUnitManager.CreateIfNotContainsAsync(
                   session: session,
                   owner: sessionRequest.Owner,
@@ -251,6 +259,7 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
                 case ChatObjectTypeEnums.Personal:
                 case ChatObjectTypeEnums.Customer:
                 case ChatObjectTypeEnums.ShopKeeper:
+                case ChatObjectTypeEnums.ShopWaiter:
 
                     // A ShopWaiter shares its parent's session. The destination
                     // may already have a unit in that session addressed to the

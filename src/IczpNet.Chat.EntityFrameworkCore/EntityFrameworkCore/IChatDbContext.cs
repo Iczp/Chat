@@ -1,5 +1,6 @@
 using IczpNet.Chat.AiRuns;
 using IczpNet.Chat.Articles;
+using IczpNet.Chat.CallCenters;
 using IczpNet.Chat.Blobs;
 using IczpNet.Chat.ChatObjectCategories;
 using IczpNet.Chat.ChatObjectEntryValues;
@@ -75,6 +76,8 @@ public interface IChatDbContext : IEfCoreDbContext
 
     DbSet<AiRun> AiRun { get; }
     DbSet<ScheduledArticleMessage> ScheduledArticleMessage { get; }
+    DbSet<CallCenterConfiguration> CallCenterConfiguration { get; }
+    DbSet<CallCenterAssignment> CallCenterAssignment { get; }
 
 
     DbSet<ChatObject> ChatObject { get; }

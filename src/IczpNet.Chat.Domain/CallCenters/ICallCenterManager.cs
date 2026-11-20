@@ -1,12 +1,15 @@
 ﻿using IczpNet.Chat.SessionUnits;
 using System;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.CallCenters;
 
 public interface ICallCenterManager : IDomainService
 {
+    /// <summary>Count assigned conversations whose last activity is within the configured window.</summary>
+    Task<Dictionary<long, int>> GetActiveCountsAsync(long shopKeeperId, IReadOnlyCollection<long> agentIds);
 
     /// <summary>
     /// 转接

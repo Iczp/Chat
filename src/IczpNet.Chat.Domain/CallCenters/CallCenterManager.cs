@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.CallCenters;
 
@@ -31,6 +32,25 @@ public class CallCenterManager(ISessionUnitManager sessionUnitManager,
     protected IServiceStateManager ServiceStateManager { get; } = serviceStateManager;
     protected Type ObjectMapperContext { get; set; }
 
+    public virtual async Task<Dictionary<long, int>> GetActiveCountsAsync(long shopKeeperId, IReadOnlyCollection<long> agentIds)
+    {
+        ArgumentNullException.ThrowIfNull(agentIds);
+        if (agentIds.Count == 0) return new Dictionary<long, int>();
+        if (agentIds.Count > 500) throw new ArgumentOutOfRangeException(nameof(agentIds), "At most 500 agents can be counted per batch.");
+        var configurations = LazyServiceProvider.LazyGetRequiredService<IRepository<CallCenterConfiguration, Guid>>();
+        var assignments = LazyServiceProvider.LazyGetRequiredService<IRepository<CallCenterAssignment, Guid>>();
+        var configuration = await configurations.FindAsync(x => x.ShopKeeperId == shopKeeperId)
+            ?? new CallCenterConfiguration(Guid.Empty, shopKeeperId);
+        var cutoff = Clock.Now.AddMinutes(-configuration.ActiveTimeoutMinutes);
+        var query = (await assignments.GetQueryableAsync())
+            .Where(x => x.ShopKeeperId == shopKeeperId && x.Status == CallCenterAssignmentStatus.Assigned &&
+                        x.AgentId.HasValue && agentIds.Contains(x.AgentId.Value) && x.LastActivityAt > cutoff)
+            .GroupBy(x => x.AgentId.Value)
+            .Select(x => new { AgentId = x.Key, Count = x.Count() });
+        var counts = await AsyncExecuter.ToListAsync(query);
+        return counts.ToDictionary(x => x.AgentId, x => x.Count);
+    }
+
     /// <inheritdoc/>
     public async Task<SessionUnit> TransferToAsync(Guid sessionUnitId, long waiterId, bool isNotice = true)
     {
@@ -42,13 +62,18 @@ public class CallCenterManager(ISessionUnitManager sessionUnitManager,
 
         Assert.If(!sessionUnit.IsWaiterOfOwner(), "Owner object type error");
 
-        var waiters = await ChatObjectManager.GetRootChildrenAsync(sessionUnit.OwnerId);
-
-        var shopWaiter = waiters.FirstOrDefault(x => x.Id.Equals(waiterId));
-
-        Assert.If(shopWaiter == null, "Is not some root");
-
-        //Assert.If(!await ChatObjectManager.IsSomeRootAsync(sessionUnit.OwnerId, waiterId), "Is not some root");
+        var owner = await ChatObjectManager.GetAsync(sessionUnit.OwnerId);
+        Assert.If(owner.ObjectType != ChatObjectTypeEnums.ShopKeeper && owner.ObjectType != ChatObjectTypeEnums.ShopWaiter,
+            "Transfer source must be a shopkeeper or shop waiter");
+        var shopKeeperId = owner.ObjectType == ChatObjectTypeEnums.ShopKeeper
+            ? owner.Id
+            : owner.ParentId ?? throw new InvalidOperationException("Shop waiter has no shopkeeper.");
+        var shopKeeper = owner.Id == shopKeeperId ? owner : await ChatObjectManager.GetAsync(shopKeeperId);
+        Assert.If(shopKeeper.ObjectType != ChatObjectTypeEnums.ShopKeeper, "Shop waiter has no valid shopkeeper");
+        var shopWaiter = await ChatObjectManager.GetAsync(waiterId);
+        var isShopKeeper = shopWaiter.ObjectType == ChatObjectTypeEnums.ShopKeeper && shopWaiter.Id == shopKeeperId;
+        var isShopWaiter = shopWaiter.ObjectType == ChatObjectTypeEnums.ShopWaiter && shopWaiter.ParentId == shopKeeperId;
+        Assert.If(!isShopKeeper && !isShopWaiter, "Transfer target must belong to the same shop");
 
         var isOnline = await ServiceStateManager.IsOnlineAsync(waiterId);
 
@@ -66,25 +91,9 @@ public class CallCenterManager(ISessionUnitManager sessionUnitManager,
                     x.JoinWay = JoinWays.AutoJoin;
                 });
 
-        if (sessionUnit.OwnerObjectType != ChatObjectTypeEnums.ShopKeeper)
-        {
-            sessionUnit.Setting.IsDisplay = false;
-        }
         waiterSessionUnit.Setting.IsDisplay = true;
 
         waiterSessionUnit.Setting.IsInputEnabled = true;
-
-        // set other waiter
-        var ignoreIdList = new List<long>() { sessionUnit.OwnerId, waiterId };
-
-        foreach (var waiter in waiters.Where(x => !ignoreIdList.Contains(x.Id)))
-        {
-            var unit = await SessionUnitManager.FindAsync(waiter.Id, sessionUnit.DestinationId.Value);
-            if (unit != null)
-            {
-                unit.Setting.IsDisplay = false;
-            }
-        }
         //
         if (isNotice)
         {

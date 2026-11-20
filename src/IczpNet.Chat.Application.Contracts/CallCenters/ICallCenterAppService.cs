@@ -7,6 +7,8 @@ namespace IczpNet.Chat.CallCenters
 {
     public interface ICallCenterAppService : IApplicationService
     {
+        Task<CallCenterConfigurationDto> GetConfigurationAsync(long shopKeeperId);
+        Task<CallCenterConfigurationDto> UpdateConfigurationAsync(long shopKeeperId, UpdateCallCenterConfigurationInput input);
 
         /// <summary>
         /// 转接
