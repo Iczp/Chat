@@ -308,6 +308,10 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
         return result;
     }
 
+    /// <summary>
+    /// 持久化更新会话单元盒子归属用途：
+    /// 支持指定 boxId 进行盒子归档，或传入 null 将其从盒子移出（将数据库 BoxId 列设为 NULL）
+    /// </summary>
     public async Task<long> UpdateBoxAsync(Guid id, Guid? boxId)
     {
         var stopwatch = Stopwatch.StartNew();

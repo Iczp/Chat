@@ -1649,12 +1649,23 @@ public class SessionUnitManager(
                  await GetMembersAsync(id));
     }
 
+    /// <summary>
+    /// 设置会话单元归属盒子用途：
+    /// 1. 支持指定 boxId 将会话归档收纳进会话盒子（如折叠群聊、公众号列表）；
+    /// 2. 支持传 null 将会话从盒子移出，重新展示在根主会话列表中；
+    /// 3. 执行目标盒子有效性前置检查，并同步更新 SQLite/SQLServer 与 Redis 索引集合及未读角标。
+    /// </summary>
+    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <param name="boxId">目标会话盒子Id，传 null 时代表从盒子中移出</param>
     public async Task<bool> SetBoxAsync(Guid sessionUnitId, Guid? boxId)
     {
         var unit = await GetCacheAsync(sessionUnitId);
         return await SetBoxAsync(unit, boxId);
     }
 
+    /// <summary>
+    /// 设置会话单元归属盒子内部实现
+    /// </summary>
     public async Task<bool> SetBoxAsync(SessionUnitCacheItem unit, Guid? boxId)
     {
         if (boxId.HasValue)

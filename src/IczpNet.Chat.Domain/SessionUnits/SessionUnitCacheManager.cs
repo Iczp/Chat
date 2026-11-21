@@ -1502,13 +1502,16 @@ return 1";
                 continue;
             }
 
-            // 消息盒子 boxId (非静默才增加角标)
+            // 消息盒子 boxId 角标累加用途：
+            // 仅对非免打扰会话累加盒子角标，保证未读数与已读扣减时的逻辑对称，避免免打扰消息污染盒子红点总数
             if (hasBox && !isImmersed)
             {
                 ZsetIncrementIfGuardKeyExist(batch, ownerStatisticSetKey, OwnerBoxBadgeZsetKey(ownerId), boxId.ToString(), 1);
             }
 
-            // receiverType / destinations 分类角标 (非静默才增加角标，且使用与扣减一致的 DestinationObjectType)
+            // 分类角标 (StatisticMap: 单聊/群聊/服务号/机器人等 Tab 对应的未读数) 累加用途：
+            // 1. 严格限制仅在非免打扰 (!isImmersed) 时累加，确保分类未读与全局未读总数一致，杜绝免打扰群产生无法扣减的残留角标；
+            // 2. Field 统一使用 element.DestinationObjectType 与已读扣减严格对齐，避免因枚举映射差异导致增减错位。
             if (!isImmersed && element.DestinationObjectType.HasValue)
             {
                 HashIncrementIfExist(batch, StatisticMapHashKey(ownerId), element.DestinationObjectType.Value.ToString(), 1);
@@ -1780,7 +1783,8 @@ return 1";
 
         if (!immersed)
         {
-            // //非静默减量 destinations （key 必须已存在才更新）
+            // 分类角标扣减用途：
+            // 当会话已读时，扣减该聊天对象分类（如群聊、单聊）名下的未读计数（仅对非免打扰会话扣减，保证与新消息累加对称闭环）
             HashIncrementIfExist(batch, StatisticMapHashKey(unit.OwnerId), unit.DestinationObjectType.ToString(), -publicBadge);
         }
 
@@ -1799,12 +1803,14 @@ return 1";
         DecrementStatisticAsync(immersed ? F_Total_Immersed : F_Total_Public, publicBadge);
 
         DecrementStatisticAsync(F_Total_Pinned, publicBadge);
+        // 私聊消息未读数扣减用途：修复笔误，正确传入 privateBadge 而非 publicBadge
         DecrementStatisticAsync(F_Total_Private, privateBadge);
         DecrementStatisticAsync(F_Total_RemindMe, remindMeCount);
         DecrementStatisticAsync(F_Total_RemindAll, remindAllCount);
         DecrementStatisticAsync(F_Total_Following, followingCount);
 
-        // 减量更新会话盒子 (非静默)
+        // 会话盒子角标扣减用途：
+        // 仅对非免打扰会话扣减所属盒子未读数，避免免打扰会话已读时错误扣减其他正常会话贡献的红点
         if (unit.BoxId.HasValue && !immersed)
         {
             _ = ZsetDecrementIfExistsAndClampZeroAsync(batch, OwnerBoxBadgeZsetKey(unit.OwnerId), unit.BoxId.ToString(), publicBadge, removeWhenZero: false);

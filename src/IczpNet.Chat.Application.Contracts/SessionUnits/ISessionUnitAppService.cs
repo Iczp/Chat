@@ -78,7 +78,7 @@ public interface ISessionUnitAppService
     Task<long> ClearBadgeAsync(long ownerId);
 
     /// <summary>
-    /// 设置会话盒子
+    /// 设置会话盒子归属（boxId 传 null 时代表移出盒子）
     /// </summary>
     /// <param name="sessionUnitId"></param>
     /// <param name="boxId"></param>
