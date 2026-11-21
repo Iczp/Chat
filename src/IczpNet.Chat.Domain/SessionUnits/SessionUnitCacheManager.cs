@@ -1502,14 +1502,17 @@ return 1";
                 continue;
             }
 
-            // 消息盒子 boxId
-            if (hasBox)
+            // 消息盒子 boxId (非静默才增加角标)
+            if (hasBox && !isImmersed)
             {
                 ZsetIncrementIfGuardKeyExist(batch, ownerStatisticSetKey, OwnerBoxBadgeZsetKey(ownerId), boxId.ToString(), 1);
             }
 
-            // receiverType
-            HashIncrementIfExist(batch, StatisticMapHashKey(ownerId), receiverType.ToString(), 1);
+            // receiverType / destinations 分类角标 (非静默才增加角标，且使用与扣减一致的 DestinationObjectType)
+            if (!isImmersed && element.DestinationObjectType.HasValue)
+            {
+                HashIncrementIfExist(batch, StatisticMapHashKey(ownerId), element.DestinationObjectType.Value.ToString(), 1);
+            }
 
             // badge
             _ = batch.HashIncrementAsync(unitKey, isPrivate ? F_PrivateBadge : F_PublicBadge, 1);
@@ -1761,7 +1764,7 @@ return 1";
         // -----------------------------
 
         var publicBadge = unit.PublicBadge;
-        var privatePublic = unit.PublicBadge;
+        var privateBadge = unit.PrivateBadge;
         var remindMeCount = unit.RemindMeCount;
         var remindAllCount = unit.RemindAllCount;
         var followingCount = unit.FollowingCount;
@@ -1796,13 +1799,13 @@ return 1";
         DecrementStatisticAsync(immersed ? F_Total_Immersed : F_Total_Public, publicBadge);
 
         DecrementStatisticAsync(F_Total_Pinned, publicBadge);
-        DecrementStatisticAsync(F_Total_Private, privatePublic);
+        DecrementStatisticAsync(F_Total_Private, privateBadge);
         DecrementStatisticAsync(F_Total_RemindMe, remindMeCount);
         DecrementStatisticAsync(F_Total_RemindAll, remindAllCount);
         DecrementStatisticAsync(F_Total_Following, followingCount);
 
-        // 减量更新会话盒子
-        if (unit.BoxId.HasValue)
+        // 减量更新会话盒子 (非静默)
+        if (unit.BoxId.HasValue && !immersed)
         {
             _ = ZsetDecrementIfExistsAndClampZeroAsync(batch, OwnerBoxBadgeZsetKey(unit.OwnerId), unit.BoxId.ToString(), publicBadge, removeWhenZero: false);
         }

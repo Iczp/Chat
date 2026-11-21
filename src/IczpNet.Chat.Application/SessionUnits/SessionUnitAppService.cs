@@ -713,7 +713,7 @@ public class SessionUnitAppService(
     /// <param name="boxId"></param>
     /// <returns></returns>
     [HttpPost]
-    public async Task<SessionUnitCacheItem> SetBoxAsync([Required] Guid sessionUnitId, [Required] Guid boxId)
+    public async Task<SessionUnitCacheItem> SetBoxAsync([Required] Guid sessionUnitId, Guid? boxId)
     {
         var unit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
 

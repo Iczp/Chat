@@ -308,7 +308,7 @@ public class SessionUnitRepository(IDbContextProvider<ChatDbContext> dbContextPr
         return result;
     }
 
-    public async Task<long> UpdateBoxAsync(Guid id, Guid boxId)
+    public async Task<long> UpdateBoxAsync(Guid id, Guid? boxId)
     {
         var stopwatch = Stopwatch.StartNew();
         var context = await GetDbContextAsync();

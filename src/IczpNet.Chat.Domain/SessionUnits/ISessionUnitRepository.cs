@@ -48,5 +48,5 @@ public interface ISessionUnitRepository : IRepository<SessionUnit, Guid>
     /// <param name="id"></param>
     /// <param name="boxId"></param>
     /// <returns></returns>
-    Task<long> UpdateBoxAsync(Guid id, Guid boxId);
+    Task<long> UpdateBoxAsync(Guid id, Guid? boxId);
 }

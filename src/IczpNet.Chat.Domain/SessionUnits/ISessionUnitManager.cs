@@ -544,7 +544,7 @@ public interface ISessionUnitManager
     /// <param name="entity"></param>
     /// <param name="boxId"></param>
     /// <returns></returns>
-    Task<bool> SetBoxAsync(SessionUnitCacheItem entity, Guid boxId);
+    Task<bool> SetBoxAsync(SessionUnitCacheItem entity, Guid? boxId);
 
     /// <summary>
     /// 设置会话单元盒子
@@ -552,7 +552,7 @@ public interface ISessionUnitManager
     /// <param name="sessionUnitId"></param>
     /// <param name="boxId"></param>
     /// <returns></returns>
-    Task<bool> SetBoxAsync(Guid sessionUnitId, Guid boxId);
+    Task<bool> SetBoxAsync(Guid sessionUnitId, Guid? boxId);
 
     /// <summary>
     /// 添加会话单元到缓存

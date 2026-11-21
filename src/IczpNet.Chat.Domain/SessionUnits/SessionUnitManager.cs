@@ -1649,20 +1649,19 @@ public class SessionUnitManager(
                  await GetMembersAsync(id));
     }
 
-    public async Task<bool> SetBoxAsync(Guid sessionUnitId, Guid boxId)
+    public async Task<bool> SetBoxAsync(Guid sessionUnitId, Guid? boxId)
     {
         var unit = await GetCacheAsync(sessionUnitId);
         return await SetBoxAsync(unit, boxId);
     }
 
-    public async Task<bool> SetBoxAsync(SessionUnitCacheItem unit, Guid boxId)
+    public async Task<bool> SetBoxAsync(SessionUnitCacheItem unit, Guid? boxId)
     {
-        var isBoxExists = await BoxRepository.AnyAsync(x => x.Id == boxId);
-
-        Assert.If(isBoxExists, $"No such Entity[Box], id:{boxId}");
-
-        //entity.SetBox(box.Id);
-        //await Repository.UpdateAsync(entity, autoSave: true);
+        if (boxId.HasValue)
+        {
+            var isBoxExists = await BoxRepository.AnyAsync(x => x.Id == boxId.Value);
+            Assert.If(!isBoxExists, $"No such Entity[Box], id:{boxId}");
+        }
 
         var result = await Repository.UpdateBoxAsync(unit.Id, boxId);
 
