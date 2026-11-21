@@ -1,4 +1,4 @@
-using IczpNet.Chat.MessageSections.Messages;
+﻿using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnits.Dtos;
@@ -290,7 +290,7 @@ public partial class MessageSectionApplicationSessionUnitSenderInfoToSessionUnit
     {
         if (source is null || destination is null) return;
         MapFields(source, destination);
-        destination.Score = MemberScore.Create(source.IsCreator, source.CreationTime);
+        destination.Score = MemberScore.Create(source.IsCreator, source.IsAdmin, source.CreationTime);
     }
 
     [MapperIgnoreTarget(nameof(SessionUnitSenderDto.Score))]
@@ -313,7 +313,7 @@ public partial class MessageSectionApplicationSessionUnitCacheItemToSessionUnitS
     {
         if (source is null || destination is null) return;
         MapFields(source, destination);
-        destination.Score = MemberScore.Create(source.IsCreator, source.CreationTime);
+        destination.Score = MemberScore.Create(source.IsCreator, source.IsAdmin, source.CreationTime);
     }
 
     [MapperIgnoreTarget(nameof(SessionUnitSenderDto.Score))]

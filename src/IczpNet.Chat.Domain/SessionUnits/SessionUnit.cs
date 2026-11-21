@@ -265,6 +265,12 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     [NotMapped]
     public virtual List<SessionRole> RoleList => GetRoleList();
 
+    /// <summary>
+    /// 是否管理员
+    /// </summary>
+    [NotMapped]
+    public virtual bool IsAdmin => (Setting != null && Setting.IsAdmin) || (SessionUnitRoleList != null && SessionUnitRoleList.Any(x => x.SessionRole != null && (x.SessionRole.Name == "管理员" || x.SessionRole.Name == "Admin")));
+
     [NotMapped]
     public virtual List<Guid> RoleIdList => GetRoleIdList();
 

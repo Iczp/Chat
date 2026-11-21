@@ -614,7 +614,7 @@ return 1";
     private void SetSessionRelations(IBatch batch, RedisKey sessionMembersSetKey, SessionUnitCacheItem unit)
     {
         var element = GetElement(unit);
-        var score = MemberScore.Create(unit.IsCreator, unit.CreationTime);
+        var score = MemberScore.Create(unit.IsCreator, unit.IsAdmin, unit.CreationTime);
         _ = batch.SortedSetAddAsync(sessionMembersSetKey, element, score);
 
         // set session Topping
@@ -2467,7 +2467,7 @@ return 1";
             AddHash(true, OwnersIndexedHashKey(ownerId), element, JsonSerializer.Serialize(contact), expire: false);
             if (!unit.SessionId.HasValue) continue;
             var sessionId = unit.SessionId.Value;
-            AddSorted(true, SessionMembersSetKey(sessionId), element, MemberScore.Create(unit.IsCreator, unit.CreationTime));
+            AddSorted(true, SessionMembersSetKey(sessionId), element, MemberScore.Create(unit.IsCreator, unit.IsAdmin, unit.CreationTime));
             AddHash(unit.Sorting > 0, SessionPinnedSortingHashKey(sessionId), element, unit.Sorting);
             AddHash(unit.IsImmersed, SessionImmersedHashKey(sessionId), element, unit.IsImmersed);
             AddHash(unit.IsCreator, SessionImmersedHashKey(sessionId), element, unit.IsCreator);
@@ -2845,5 +2845,21 @@ return 0";
         var progress = kvs.Select(x => x.Value).FirstOrDefault();
 
         return progress;
+    }
+    public async Task UpdateUnitAdminAsync(Guid sessionUnitId, bool isAdmin)
+    {
+        var unit = await GetAsync(sessionUnitId);
+        if (unit != null)
+        {
+            unit.IsAdmin = isAdmin;
+            var batch = Database.CreateBatch();
+            SetUnit(batch, unit, refreshExpire: true);
+            if (unit.SessionId.HasValue)
+            {
+                var score = MemberScore.Create(unit.IsCreator, isAdmin, unit.CreationTime);
+                _ = batch.SortedSetAddAsync(SessionMembersSetKey(unit.SessionId.Value), GetElement(unit), score);
+            }
+            batch.Execute();
+        }
     }
 }

@@ -162,6 +162,11 @@ public class SessionUnitSettingCacheItem
     public virtual bool IsCreator { get; set; } = false;
 
     /// <summary>
+    /// 是否管理员
+    /// </summary>
+    public virtual bool IsAdmin { get; set; } = false;
+
+    /// <summary>
     /// 禁言过期时间
     /// </summary>
     public virtual DateTime? MuteExpireTime { get; set; }

@@ -1,4 +1,5 @@
 ﻿using IczpNet.Chat.SessionUnits.Dtos;
+using IczpNet.Chat.SessionUnitSettings.Dtos;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -138,5 +139,14 @@ public interface ISessionUnitSettingAppService
     /// <param name="setterSessionUnitId">设置者会话单元Id</param>
     /// <param name="seconds">禁言(秒)，为0则取消禁言</param>
     /// <returns>禁言过期时间</returns>
+    /// <summary>
+    /// 设置或取消管理员
+    /// </summary>
+    /// <param name="sessionUnitId">目标会话单元Id</param>
+    /// <param name="isAdmin">是否管理员</param>
+    /// <param name="setterSessionUnitId">操作人会话单元Id（可选）</param>
+    /// <returns>更新后的成员设置</returns>
+    Task<SessionUnitMemberSettingDto> SetAdminAsync(Guid sessionUnitId, bool isAdmin, Guid? setterSessionUnitId = null);
+
     Task<DateTime?> SetMuteExpireTimeAsync(Guid muterSessionUnitId, Guid setterSessionUnitId, int seconds);
 }

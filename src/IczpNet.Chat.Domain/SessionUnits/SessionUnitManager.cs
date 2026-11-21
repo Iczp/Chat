@@ -1,4 +1,4 @@
-using IczpNet.AbpCommons;
+﻿using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
@@ -181,6 +181,7 @@ public class SessionUnitManager(
 
                         IsImmersed = x.Setting.IsImmersed,
                         IsCreator = x.Setting.IsCreator,
+                        IsAdmin = x.SessionUnitRoleList.Any(r => r.SessionRole.Name == "管理员" || r.SessionRole.Name == "Admin"),
                         Rename = x.Setting.Rename,
                         RenameSpellingAbbreviation = x.Setting.RenameSpellingAbbreviation,
                         MemberName = x.Setting.MemberName,

@@ -120,6 +120,16 @@ public interface ISessionUnitSettingManager
     /// <param name="setterSessionUnit"></param>
     /// <param name="isSendMessage"></param>
     /// <returns></returns>
+    /// <summary>
+    /// 设置或取消管理员
+    /// </summary>
+    /// <param name="sessionUnitId">目标会话单元Id</param>
+    /// <param name="isAdmin">是否管理员</param>
+    /// <param name="setterSessionUnit">操作人会话单元</param>
+    /// <param name="isSendMessage">是否发送群消息通知</param>
+    /// <returns></returns>
+    Task<SessionUnitSetting> SetAdminAsync(Guid sessionUnitId, bool isAdmin, SessionUnit setterSessionUnit, bool isSendMessage = true);
+
     Task<DateTime?> SetMuteExpireTimeAsync(Guid muterSessionUnitId, DateTime? muteExpireTime, SessionUnit setterSessionUnit, bool isSendMessage);
 
 

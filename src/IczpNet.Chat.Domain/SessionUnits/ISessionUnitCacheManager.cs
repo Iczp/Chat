@@ -78,6 +78,11 @@ public interface ISessionUnitCacheManager
     /// <param name="take"></param>
     /// <param name="isDescending"></param>
     /// <returns></returns>
+    /// <summary>
+    /// 更新成员管理员状态及排序分值
+    /// </summary>
+    Task UpdateUnitAdminAsync(Guid sessionUnitId, bool isAdmin);
+
     Task<IEnumerable<KeyValuePair<SessionUnitElement, MemberScore>>> GetRawMembersAsync(
         Guid sessionId,
         double minScore = double.NegativeInfinity,
