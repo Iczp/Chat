@@ -13,6 +13,7 @@ using Volo.Abp.DistributedLocking;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 using Volo.Abp.Authorization;
+using IczpNet.Chat.ServiceStates;
 
 namespace IczpNet.Chat.Services;
 
@@ -102,6 +103,28 @@ public class CallCenterAppService(ICallCenterManager callCenterManager) : ChatAp
     }
 
     [HttpGet]
+    public async Task<System.Collections.Generic.List<CallCenterAgentDto>> GetAgentsAsync(long shopKeeperId)
+    {
+        await CheckShopOwnerAsync(shopKeeperId);
+        var shop = await ChatObjectManager.GetAsync(shopKeeperId);
+        var staff = (await ChatObjectManager.GetChildsAsync(shopKeeperId))
+            .Where(x => x.ObjectType == ChatObjectTypeEnums.ShopWaiter).ToList();
+        var agents = new[] { shop }.Concat(staff).ToList();
+        var counts = await GetActiveCountsAsync(shopKeeperId);
+        var states = LazyServiceProvider.LazyGetRequiredService<IServiceStateManager>();
+        var result = new System.Collections.Generic.List<CallCenterAgentDto>(agents.Count);
+        foreach (var agent in agents)
+            result.Add(new CallCenterAgentDto
+            {
+                Id = agent.Id,
+                Name = agent.Name,
+                ServiceStatus = await states.GetStatusAsync(agent.Id),
+                ActiveCount = counts.TryGetValue(agent.Id, out var count) ? count : 0
+            });
+        return result;
+    }
+
+    [HttpGet]
     public async Task<CallCenterAssignmentDto> GetAssignmentAsync(Guid sessionId)
     {
         var assignment = await CallCenterManager.GetAssignmentAsync(sessionId)
@@ -113,6 +136,16 @@ public class CallCenterAppService(ICallCenterManager callCenterManager) : ChatAp
             .Concat(staff.Where(x => x.ObjectType == ChatObjectTypeEnums.ShopWaiter).Select(x => x.Id))
             .FirstOrDefault(ownedIds.Contains);
         if (allowedId == 0) throw new AbpAuthorizationException("The current user is not a member of this consultation.");
+        long? queuePosition = null;
+        if (assignment.Status == CallCenterAssignmentStatus.Queued)
+        {
+            var repository = LazyServiceProvider.LazyGetRequiredService<IRepository<CallCenterAssignment, Guid>>();
+            var preceding = (await repository.GetQueryableAsync()).Where(x =>
+                x.ShopKeeperId == assignment.ShopKeeperId && x.Status == CallCenterAssignmentStatus.Queued &&
+                (x.QueuedAt < assignment.QueuedAt ||
+                 (x.QueuedAt == assignment.QueuedAt && x.Id.CompareTo(assignment.Id) < 0)));
+            queuePosition = await AsyncExecuter.CountAsync(preceding) + 1;
+        }
         return new CallCenterAssignmentDto
         {
             SessionId = assignment.SessionId,
@@ -121,7 +154,46 @@ public class CallCenterAppService(ICallCenterManager callCenterManager) : ChatAp
             AgentId = assignment.AgentId,
             Status = assignment.Status,
             QueuedAt = assignment.QueuedAt,
-            LastActivityAt = assignment.LastActivityAt
+            LastActivityAt = assignment.LastActivityAt,
+            QueuePosition = queuePosition
+        };
+    }
+
+    [HttpGet]
+    public async Task<CallCenterAssignmentPageDto> GetAssignmentsAsync(long shopKeeperId,
+        CallCenterAssignmentStatus status, DateTime? afterQueuedAt = null, Guid? afterId = null,
+        int maxResultCount = 30)
+    {
+        await CheckShopOwnerAsync(shopKeeperId);
+        if (status != CallCenterAssignmentStatus.Assigned && status != CallCenterAssignmentStatus.Queued)
+            throw new UserFriendlyException("无效的接待状态。");
+        if (maxResultCount is < 1 or > 100) throw new UserFriendlyException("分页大小必须在 1 到 100 之间。");
+        if (afterQueuedAt.HasValue != afterId.HasValue)
+            throw new UserFriendlyException("分页游标不完整。");
+        var repository = LazyServiceProvider.LazyGetRequiredService<IRepository<CallCenterAssignment, Guid>>();
+        var query = (await repository.GetQueryableAsync())
+            .Where(x => x.ShopKeeperId == shopKeeperId && x.Status == status);
+        if (afterQueuedAt.HasValue)
+            query = query.Where(x => x.QueuedAt > afterQueuedAt.Value ||
+                (x.QueuedAt == afterQueuedAt.Value && x.Id.CompareTo(afterId.Value) > 0));
+        var rows = await AsyncExecuter.ToListAsync(query.OrderBy(x => x.QueuedAt).ThenBy(x => x.Id)
+            .Take(maxResultCount + 1));
+        var page = rows.Take(maxResultCount).Select(x => new CallCenterAssignmentDto
+        {
+            SessionId = x.SessionId,
+            ShopKeeperId = x.ShopKeeperId,
+            CustomerId = x.CustomerId,
+            AgentId = x.AgentId,
+            Status = x.Status,
+            QueuedAt = x.QueuedAt,
+            LastActivityAt = x.LastActivityAt
+        }).ToList();
+        var last = rows.Count > maxResultCount ? rows[maxResultCount - 1] : null;
+        return new CallCenterAssignmentPageDto
+        {
+            Items = page,
+            NextQueuedAt = last?.QueuedAt,
+            NextId = last?.Id
         };
     }
 
@@ -137,8 +209,26 @@ public class CallCenterAppService(ICallCenterManager callCenterManager) : ChatAp
     {
         var assignment = await CallCenterManager.GetAssignmentAsync(sessionId);
         if (assignment == null) return;
-        await CheckPolicyForUserAsync(assignment.CustomerId);
+        if (!CurrentUser.Id.HasValue) throw new AbpAuthorizationException("Authentication required.");
+        var ownedIds = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+        if (!ownedIds.Contains(assignment.CustomerId) && !ownedIds.Contains(assignment.ShopKeeperId))
+            throw new AbpAuthorizationException("The current user cannot cancel this queue entry.");
         await CallCenterManager.CancelQueueAsync(sessionId, assignment.CustomerId);
+    }
+
+    [HttpPost]
+    public async Task<CallCenterAssignmentDto> TransferAssignmentAsync(Guid sessionId, long destinationId)
+    {
+        var assignment = await CallCenterManager.GetAssignmentAsync(sessionId)
+            ?? throw new UserFriendlyException("客服接待记录不存在。");
+        await CheckShopOwnerAsync(assignment.ShopKeeperId);
+        if (assignment.Status != CallCenterAssignmentStatus.Assigned || !assignment.AgentId.HasValue)
+            throw new UserFriendlyException("排队会话尚无接待人，不能转接。");
+        var source = await SessionUnitManager.FindBySessionIdAsync(sessionId, assignment.AgentId.Value)
+            ?? throw new UserFriendlyException("店铺会话不存在。");
+        await CallCenterManager.TransferToAsync(source.Id, destinationId, isNotice: true,
+            expectedAgentId: assignment.AgentId.Value);
+        return await GetAssignmentAsync(sessionId);
     }
 
     /// <summary>

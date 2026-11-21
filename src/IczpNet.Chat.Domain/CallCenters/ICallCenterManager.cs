@@ -22,6 +22,8 @@ public interface ICallCenterManager : IDomainService
     /// <param name="sessionUnitId"></param>
     /// <param name="waiterId"></param>
     /// <param name="isNotice"></param>
+    /// <param name="expectedAgentId">Expected current assignee for concurrent transfer protection.</param>
     /// <returns></returns>
-    Task<SessionUnit> TransferToAsync(Guid sessionUnitId, long waiterId, bool isNotice = true);
+    Task<SessionUnit> TransferToAsync(Guid sessionUnitId, long waiterId, bool isNotice = true,
+        long? expectedAgentId = null);
 }

@@ -11,4 +11,5 @@ public class CallCenterAssignmentDto
     public CallCenterAssignmentStatus Status { get; set; }
     public DateTime QueuedAt { get; set; }
     public DateTime LastActivityAt { get; set; }
+    public long? QueuePosition { get; set; }
 }

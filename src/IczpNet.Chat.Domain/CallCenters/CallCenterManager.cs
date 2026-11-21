@@ -201,7 +201,8 @@ public class CallCenterManager(ISessionUnitManager sessionUnitManager,
     }
 
     /// <inheritdoc/>
-    public async Task<SessionUnit> TransferToAsync(Guid sessionUnitId, long waiterId, bool isNotice = true)
+    public async Task<SessionUnit> TransferToAsync(Guid sessionUnitId, long waiterId, bool isNotice = true,
+        long? expectedAgentId = null)
     {
         var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
 
@@ -228,6 +229,8 @@ public class CallCenterManager(ISessionUnitManager sessionUnitManager,
         using var transferUow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
         var customerSessionId = sessionUnit.SessionId ?? throw new InvalidOperationException("Customer session is missing.");
         var assignment = await GetAssignmentAsync(customerSessionId);
+        if (expectedAgentId.HasValue && assignment?.AgentId != expectedAgentId.Value)
+            throw new UserFriendlyException("接待人已变更，请刷新后重试。");
         if (assignment != null && (assignment.ShopKeeperId != shopKeeperId || assignment.CustomerId != sessionUnit.DestinationId))
             throw new UserFriendlyException("客服会话归属不一致。");
         if (assignment == null)

@@ -32,6 +32,8 @@ public class CallCenterConfigurationAppService_Tests : ChatApplicationTestBase
         var ownerUser = Guid.NewGuid();
         var customerUser = Guid.NewGuid();
         var sessionId = Guid.NewGuid();
+        var queuedSessionId = Guid.NewGuid();
+        var secondSessionId = Guid.NewGuid();
         long shopId = 0;
         await WithUnitOfWorkAsync(async () =>
         {
@@ -49,9 +51,16 @@ public class CallCenterConfigurationAppService_Tests : ChatApplicationTestBase
             customer.SetAppUserId(customerUser);
             var customerId = (await GetRequiredService<IRepository<ChatObject, long>>()
                 .InsertAsync(customer, autoSave: true)).Id;
-            var assignment = new CallCenterAssignment(Guid.NewGuid(), shopId, sessionId, customerId, DateTime.UtcNow);
+            var queuedAt = DateTime.UtcNow;
+            var assignment = new CallCenterAssignment(Guid.NewGuid(), shopId, sessionId, customerId, queuedAt);
             assignment.Assign(shopId);
             await GetRequiredService<IRepository<CallCenterAssignment, Guid>>().InsertAsync(assignment, autoSave: true);
+            var second = new CallCenterAssignment(Guid.NewGuid(), shopId, secondSessionId, customerId, queuedAt);
+            second.Assign(shopId);
+            await GetRequiredService<IRepository<CallCenterAssignment, Guid>>().InsertAsync(second, autoSave: true);
+            var queued = new CallCenterAssignment(Guid.NewGuid(), shopId, queuedSessionId, customerId,
+                DateTime.UtcNow.AddMinutes(1));
+            await GetRequiredService<IRepository<CallCenterAssignment, Guid>>().InsertAsync(queued, autoSave: true);
         });
         var principals = GetRequiredService<ICurrentPrincipalAccessor>();
         var service = GetRequiredService<ICallCenterAppService>();
@@ -62,13 +71,31 @@ public class CallCenterConfigurationAppService_Tests : ChatApplicationTestBase
         {
             await Assert.ThrowsAsync<AbpAuthorizationException>(() => service.GetConfigurationAsync(shopId));
             await Assert.ThrowsAsync<AbpAuthorizationException>(() => service.GetAssignmentAsync(sessionId));
+            await Assert.ThrowsAsync<AbpAuthorizationException>(() => service.GetAssignmentsAsync(shopId,
+                CallCenterAssignmentStatus.Assigned));
         }
 
         using (principals.Change(Principal(customerUser)))
+        {
             Assert.Equal(shopId, (await service.GetAssignmentAsync(sessionId)).AgentId);
+            Assert.Equal(1, (await service.GetAssignmentAsync(queuedSessionId)).QueuePosition);
+        }
 
         using (principals.Change(Principal(ownerUser)))
         {
+            var agents = await service.GetAgentsAsync(shopId);
+            Assert.Contains(agents, x => x.Id == shopId && x.ActiveCount >= 0);
+            var firstPage = await service.GetAssignmentsAsync(shopId, CallCenterAssignmentStatus.Assigned,
+                maxResultCount: 1);
+            Assert.Single(firstPage.Items);
+            Assert.NotNull(firstPage.NextId);
+            var secondPage = await service.GetAssignmentsAsync(shopId, CallCenterAssignmentStatus.Assigned,
+                firstPage.NextQueuedAt, firstPage.NextId, maxResultCount: 1);
+            Assert.Single(secondPage.Items);
+            Assert.NotEqual(firstPage.Items[0].SessionId, secondPage.Items[0].SessionId);
+            Assert.Single((await service.GetAssignmentsAsync(shopId, CallCenterAssignmentStatus.Queued)).Items);
+            await service.CancelQueueAsync(queuedSessionId);
+            Assert.Empty((await service.GetAssignmentsAsync(shopId, CallCenterAssignmentStatus.Queued)).Items);
             var defaults = await service.GetConfigurationAsync(shopId);
             Assert.Equal(CallCenterOverflowStrategy.AllowOverCapacity, defaults.OverflowStrategy);
             var configured = await service.UpdateConfigurationAsync(shopId, new UpdateCallCenterConfigurationInput
