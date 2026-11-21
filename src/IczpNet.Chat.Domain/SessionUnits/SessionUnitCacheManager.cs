@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
@@ -569,9 +570,9 @@ return 1";
             .ToHashSet()
             ;
 
-        var uncachedUnits = unitList.Where(x => uncachedUnitIds.Contains(x.Id));
+        var uncachedUnits = unitList.Where(x => uncachedUnitIds.Contains(x.Id)).ToList();
 
-        foreach (var unit in unitList)
+        foreach (var unit in uncachedUnits)
         {
             SetUnit(batch, unit, refreshExpire: true);
         }
@@ -637,13 +638,33 @@ return 1";
         return await SetMembersAsync(sessionId, units);
     }
 
+    private static readonly ConcurrentDictionary<Guid, SemaphoreSlim> _memberLoadLocks = new();
+
     public async Task<IEnumerable<SessionUnitCacheItem>> SetMembersIfNotExistsAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
     {
-        if (!await Database.KeyExistsAsync(SessionMembersSetKey(sessionId)))
+        if (await Database.KeyExistsAsync(SessionMembersSetKey(sessionId)))
         {
+            return null;
+        }
+
+        var semaphore = _memberLoadLocks.GetOrAdd(sessionId, _ => new SemaphoreSlim(1, 1));
+        await semaphore.WaitAsync();
+        try
+        {
+            if (await Database.KeyExistsAsync(SessionMembersSetKey(sessionId)))
+            {
+                return null;
+            }
             return await SetMembersAsync(sessionId, fetchTask);
         }
-        return null;
+        finally
+        {
+            semaphore.Release();
+            if (semaphore.CurrentCount == 1)
+            {
+                _memberLoadLocks.TryRemove(sessionId, out _);
+            }
+        }
     }
 
     public async Task<IEnumerable<SessionUnitCacheItem>> GetOrSetMembersAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)

@@ -1,3 +1,4 @@
+using IczpNet.Chat.Enums;
 using System.Linq;
 using System.Threading.Tasks;
 using IczpNet.Chat.CommandPayloads;
@@ -33,6 +34,31 @@ public class SessionUnitDisposedDistributedEventHandler : SendToClientDistribute
         };
 
         await HubContext.Clients.Clients(connIdList).ReceivedMessage(commandPayload);
+
+        // 如果是群会话内的移除/退群，向群内其他在线成员广播 member-removed@session
+        if (eventData.SessionId.HasValue && eventData.DisposalType == SessionUnitDisposalType.Remove)
+        {
+            var sessionConnDict = await OnlineManager.GetConnectionsBySessionAsync(eventData.SessionId.Value);
+            var sessionConnIds = sessionConnDict.Keys.Where(id => !connIdList.Contains(id)).ToList();
+            if (sessionConnIds.Count > 0)
+            {
+                var memberRemovedPayload = new CommandPayload
+                {
+                    Command = "member-removed@session",
+                    Payload = new
+                    {
+                        sessionId = eventData.SessionId.Value,
+                        sessionUnitId = eventData.SessionUnitId,
+                        memberChatObjectId = eventData.OwnerId,
+                        reason = (int)eventData.Reason,
+                        operatorId = eventData.OperatorId,
+                        creationTime = eventData.CreationTime
+                    }
+                };
+                await HubContext.Clients.Clients(sessionConnIds).ReceivedMessage(memberRemovedPayload);
+            }
+        }
+
         return true;
     }
 }

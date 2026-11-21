@@ -1077,11 +1077,16 @@ public class SessionUnitCacheAppService(
         //加载全部
         await LoadMembersAsync(sessionId);
 
+        var minScore = input.MinScore.GetValueOrDefault() > 0 ? input.MinScore.Value : double.NegativeInfinity;
+        var maxScore = input.MaxScore.GetValueOrDefault() > 0 ? input.MaxScore.Value : double.PositiveInfinity;
+
         var queryable = await SessionUnitCacheManager.GetMembersAsync(
             sessionId,
             isCreator: input.IsCreator,
             isPrivate: input.IsPrivate,
             isStatic: input.IsStatic,
+            minScore: minScore,
+            maxScore: maxScore,
             isDescending: true);
 
         var query = queryable.AsQueryable()

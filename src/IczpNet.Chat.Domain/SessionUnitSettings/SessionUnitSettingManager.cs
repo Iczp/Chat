@@ -282,6 +282,13 @@ public class SessionUnitSettingManager(
                 destinationId: unit.DestinationId,
                 disposalType: SessionUnitDisposalType.Remove,
                 reason: disposalReason);
+
+            if (unit.SessionId.HasValue)
+            {
+                var cacheManager = LazyServiceProvider.LazyGetRequiredService<ISessionUnitCacheManager>();
+                var cacheItem = ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(unit);
+                await cacheManager.RemoveNewUnitsAsync([cacheItem]);
+            }
         }
         return setting;
     }

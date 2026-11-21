@@ -1644,8 +1644,8 @@ public class SessionUnitManager(
     public virtual async Task<IEnumerable<SessionUnitCacheItem>> LoadMembersIfNotExistsAsync(Guid sessionId)
     {
         return await SessionUnitCacheManager.SetMembersIfNotExistsAsync(sessionId,
-             async (ownerId) =>
-                 await GetOrAddCacheListAsync(ownerId));
+             async (id) =>
+                 await GetMembersAsync(id));
     }
 
     public async Task<bool> SetBoxAsync(Guid sessionUnitId, Guid boxId)
