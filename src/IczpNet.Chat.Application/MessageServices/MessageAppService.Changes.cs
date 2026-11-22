@@ -161,7 +161,8 @@ public partial class MessageAppService
     private async Task<ExtraPagedResultDto<MessageFastDto>> GetAuthoritativeWindowAsync(Guid sessionUnitId, int maxResultCount,
         long? minId, long? maxId, bool descending)
     {
-        GetChangeSyncOptions();
+        // Authoritative message reads remain available when change notifications
+        // are disabled. Permission and member visibility are checked below.
         if (maxResultCount is < 1 or > 200)
             throw new UserFriendlyException("消息同步请求超过批次限制。");
         var sessionUnit = await GetAndCheckPolicyAsync(GetListPolicyName, sessionUnitId);

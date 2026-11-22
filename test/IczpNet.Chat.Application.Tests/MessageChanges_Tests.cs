@@ -106,6 +106,7 @@ public class MessageChanges_Tests
         public IMessageChangeRepository Changes { get; } = Substitute.For<IMessageChangeRepository>();
         public IObjectMapper<ChatDomainModule> DomainMapper { get; } = Substitute.For<IObjectMapper<ChatDomainModule>>();
         public IMessageManager Messages => MessageManager;
+        public int WindowPolicyChecks { get; private set; }
 
         public MessageProbe(bool enabled = true) : base(
             Substitute.For<IDeletedRecorderManager>(),
@@ -140,10 +141,35 @@ public class MessageChanges_Tests
         protected override Task CheckPolicyForUserAsync(long? ownerId, Func<Task> func)
             => ownerId == 1 ? Task.CompletedTask : throw new AbpAuthorizationException();
 
+        protected override Task<SessionUnit> GetAndCheckPolicyAsync(string policyName, Guid sessionUnitId, bool checkIsKilled = true)
+        {
+            WindowPolicyChecks++;
+            return sessionUnitId == Unit.Id ? Task.FromResult(Unit) : throw new AbpAuthorizationException();
+        }
+
         protected override MessageFastDto MapToMessage(MessageCacheItem item) => new()
         {
             Id = item.Id, Content = item.Content, MessageChangeId = item.SyncVersion, IsRollbacked = item.IsRollbacked, RollbackTime = item.RollbackTime
         };
+    }
+
+    [Fact]
+    public async Task Authoritative_zero_cursor_works_with_change_notifications_disabled_and_still_checks_member_policy()
+    {
+        var service = new MessageProbe(enabled: false);
+        service.Changes.ReadWindowAsync(Arg.Any<MessageChangeUnitScope>(), Arg.Any<long?>(),
+            Arg.Any<long?>(), Arg.Any<int>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(new List<Message>());
+        var result = await service.GetLatestAsync(new()
+        {
+            SessionUnitId = service.Unit.Id, MinMessageId = 0, Authoritative = true
+        });
+        Assert.Empty(result.Items);
+        Assert.Equal(1, service.WindowPolicyChecks);
+        await Assert.ThrowsAsync<AbpAuthorizationException>(() => service.GetLatestAsync(new()
+        {
+            SessionUnitId = Guid.NewGuid(), MinMessageId = 0, Authoritative = true
+        }));
     }
 
     [Fact]
