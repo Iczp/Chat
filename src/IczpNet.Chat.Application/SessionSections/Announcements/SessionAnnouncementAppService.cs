@@ -24,12 +24,14 @@ namespace IczpNet.Chat.SessionSections.Announcements;
 public class SessionAnnouncementAppService(
     ISessionAnnouncementRepository announcementRepository,
     ISessionAnnouncementReceiptRepository receiptRepository,
+    ISessionUnitRepository sessionUnitRepository,
     ISessionAnnouncementManager announcementManager,
     ISessionPermissionChecker sessionPermissionChecker,
     IMessageManager messageManager) : ChatAppService, ISessionAnnouncementAppService
 {
     protected ISessionAnnouncementRepository AnnouncementRepository { get; } = announcementRepository;
     protected ISessionAnnouncementReceiptRepository ReceiptRepository { get; } = receiptRepository;
+    protected ISessionUnitRepository SessionUnitRepository { get; } = sessionUnitRepository;
     protected ISessionAnnouncementManager AnnouncementManager { get; } = announcementManager;
     protected ISessionPermissionChecker SessionPermissionChecker { get; } = sessionPermissionChecker;
     protected IMessageManager MessageManager { get; } = messageManager;
@@ -189,6 +191,116 @@ public class SessionAnnouncementAppService(
             sessionUnitId: sessionUnit.Id,
             chatObjectId: sessionUnit.OwnerId,
             deviceId: input.DeviceId);
+    }
+
+    [HttpPost]
+    public virtual async Task RecordViewAsync(Guid id, RecordAnnouncementViewInput input)
+    {
+        var sessionUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
+        Check.NotNull(sessionUnit, nameof(sessionUnit));
+
+        await AnnouncementManager.RecordViewAsync(
+            announcementId: id,
+            sessionUnitId: sessionUnit.Id,
+            chatObjectId: sessionUnit.OwnerId,
+            deviceId: input.DeviceId);
+    }
+
+    [HttpGet]
+    public virtual async Task<SessionAnnouncementStatDto> GetStatAsync(Guid id, Guid sessionUnitId)
+    {
+        var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+        Check.NotNull(sessionUnit, nameof(sessionUnit));
+
+        var announcement = await AnnouncementRepository.GetAsync(id);
+        Check.NotNull(announcement.SessionId, nameof(announcement.SessionId));
+
+        var totalMembers = await SessionUnitManager.GetCountBySessionIdAsync(announcement.SessionId.Value);
+
+        var receipts = await ReceiptRepository.GetQueryableAsync();
+        var readCount = await receipts.CountAsync(x => x.AnnouncementId == id);
+        var confirmedCount = await receipts.CountAsync(x => x.AnnouncementId == id && x.IsConfirmed);
+
+        return new SessionAnnouncementStatDto
+        {
+            AnnouncementId = id,
+            TotalMembersCount = totalMembers,
+            ReadCount = readCount,
+            UnreadCount = Math.Max(0, totalMembers - readCount),
+            ConfirmedCount = confirmedCount,
+            UnconfirmedCount = Math.Max(0, totalMembers - confirmedCount)
+        };
+    }
+
+    [HttpGet]
+    public virtual async Task<PagedResultDto<SessionAnnouncementMemberDto>> GetMembersAsync(Guid id, GetAnnouncementMemberListInput input)
+    {
+        var sessionUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
+        Check.NotNull(sessionUnit, nameof(sessionUnit));
+
+        var announcement = await AnnouncementRepository.GetAsync(id);
+        Check.NotNull(announcement.SessionId, nameof(announcement.SessionId));
+
+        var receiptsQuery = (await ReceiptRepository.GetQueryableAsync()).Where(x => x.AnnouncementId == id);
+        var unitQuery = (await SessionUnitRepository.GetQueryableAsync())
+            .Where(x => x.SessionId == announcement.SessionId && x.IsEnabled);
+
+        if (!string.IsNullOrWhiteSpace(input.Keyword))
+        {
+            var keyword = input.Keyword.Trim();
+            unitQuery = unitQuery.Where(x => (x.DisplayName != null && x.DisplayName.Contains(keyword)) ||
+                                             (x.Owner != null && x.Owner.Name.Contains(keyword)));
+        }
+
+        switch (input.FilterType)
+        {
+            case AnnouncementMemberFilterType.Read:
+                var readUnitIds = receiptsQuery.Select(x => x.SessionUnitId);
+                unitQuery = unitQuery.Where(x => readUnitIds.Contains(x.Id));
+                break;
+            case AnnouncementMemberFilterType.Unread:
+                var recordedUnitIds = receiptsQuery.Select(x => x.SessionUnitId);
+                unitQuery = unitQuery.Where(x => !recordedUnitIds.Contains(x.Id));
+                break;
+            case AnnouncementMemberFilterType.Confirmed:
+                var confirmedUnitIds = receiptsQuery.Where(x => x.IsConfirmed).Select(x => x.SessionUnitId);
+                unitQuery = unitQuery.Where(x => confirmedUnitIds.Contains(x.Id));
+                break;
+            case AnnouncementMemberFilterType.Unconfirmed:
+                var alreadyConfirmedUnitIds = receiptsQuery.Where(x => x.IsConfirmed).Select(x => x.SessionUnitId);
+                unitQuery = unitQuery.Where(x => !alreadyConfirmedUnitIds.Contains(x.Id));
+                break;
+        }
+
+        var totalCount = await unitQuery.CountAsync();
+
+        var pagedUnits = await unitQuery
+            .OrderByDescending(x => x.CreationTime)
+            .PageBy(input)
+            .Include(x => x.Owner)
+            .ToListAsync();
+
+        var unitIds = pagedUnits.Select(x => x.Id).ToList();
+        var receipts = await receiptsQuery.Where(x => unitIds.Contains(x.SessionUnitId)).ToListAsync();
+        var receiptDict = receipts.ToDictionary(x => x.SessionUnitId, x => x);
+
+        var list = pagedUnits.Select(u =>
+        {
+            receiptDict.TryGetValue(u.Id, out var r);
+            return new SessionAnnouncementMemberDto
+            {
+                SessionUnitId = u.Id,
+                ChatObjectId = u.OwnerId,
+                MemberName = u.DisplayName ?? u.Owner?.Name,
+                MemberPortrait = u.Owner?.Portrait,
+                IsRead = r != null,
+                FirstReadTime = r?.FirstReadTime,
+                IsConfirmed = r?.IsConfirmed ?? false,
+                ConfirmedTime = r?.ConfirmedTime
+            };
+        }).ToList();
+
+        return new PagedResultDto<SessionAnnouncementMemberDto>(totalCount, list);
     }
 
     [HttpGet]

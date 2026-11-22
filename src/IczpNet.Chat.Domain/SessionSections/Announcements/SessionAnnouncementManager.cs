@@ -4,15 +4,24 @@ using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.Guids;
+using Volo.Abp.Timing;
 
 namespace IczpNet.Chat.SessionSections.Announcements;
 
 public class SessionAnnouncementManager(
     ISessionAnnouncementRepository announcementRepository,
-    ISessionAnnouncementReceiptRepository receiptRepository) : DomainService, ISessionAnnouncementManager
+    ISessionAnnouncementReceiptRepository receiptRepository,
+    IGuidGenerator guidGenerator = null,
+    IClock clock = null) : DomainService, ISessionAnnouncementManager
 {
     protected ISessionAnnouncementRepository AnnouncementRepository { get; } = announcementRepository;
     protected ISessionAnnouncementReceiptRepository ReceiptRepository { get; } = receiptRepository;
+    protected IGuidGenerator CustomGuidGenerator { get; } = guidGenerator;
+    protected IClock CustomClock { get; } = clock;
+
+    protected DateTime CurrentTime => (CustomClock ?? (LazyServiceProvider != null ? base.Clock : null))?.Now ?? DateTime.Now;
+    protected Guid GenerateGuid() => (CustomGuidGenerator ?? (LazyServiceProvider != null ? base.GuidGenerator : null))?.Create() ?? Guid.NewGuid();
 
     public virtual async Task<SessionAnnouncement> CreateAsync(
         Guid sessionId,
@@ -30,8 +39,8 @@ public class SessionAnnouncementManager(
         Check.NotNullOrWhiteSpace(title, nameof(title));
         Check.NotNullOrWhiteSpace(content, nameof(content));
 
-        var id = GuidGenerator.Create();
-        var now = Clock.Now;
+        var id = GenerateGuid();
+        var now = CurrentTime;
 
         if (isPinned)
         {
@@ -75,7 +84,7 @@ public class SessionAnnouncementManager(
         if (isPinned && !announcement.IsPinned && announcement.SessionId.HasValue)
         {
             await AnnouncementRepository.UnpinOthersAsync(announcement.SessionId.Value, announcement.Id, cancellationToken);
-            announcement.SetPinned(true, Clock.Now);
+            announcement.SetPinned(true, CurrentTime);
         }
         else if (!isPinned && announcement.IsPinned)
         {
@@ -95,7 +104,7 @@ public class SessionAnnouncementManager(
         if (isPinned && announcement.SessionId.HasValue)
         {
             await AnnouncementRepository.UnpinOthersAsync(announcement.SessionId.Value, announcement.Id, cancellationToken);
-            announcement.SetPinned(true, Clock.Now);
+            announcement.SetPinned(true, CurrentTime);
         }
         else
         {
@@ -122,7 +131,7 @@ public class SessionAnnouncementManager(
     {
         var announcement = await AnnouncementRepository.GetAsync(announcementId, cancellationToken: cancellationToken);
         var existing = await ReceiptRepository.FindByUnitAsync(announcementId, sessionUnitId, cancellationToken);
-        var now = Clock.Now;
+        var now = CurrentTime;
 
         if (existing != null)
         {
@@ -141,6 +150,30 @@ public class SessionAnnouncementManager(
         receipt = await ReceiptRepository.InsertAsync(receipt, autoSave: true, cancellationToken: cancellationToken);
 
         announcement.IncrementConfirmedCount();
+        announcement.IncrementReadCount();
+        await AnnouncementRepository.UpdateAsync(announcement, autoSave: true, cancellationToken: cancellationToken);
+
+        return receipt;
+    }
+
+    public virtual async Task<SessionAnnouncementReceipt> RecordViewAsync(
+        Guid announcementId,
+        Guid sessionUnitId,
+        long chatObjectId,
+        string deviceId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var announcement = await AnnouncementRepository.GetAsync(announcementId, cancellationToken: cancellationToken);
+        var existing = await ReceiptRepository.FindByUnitAsync(announcementId, sessionUnitId, cancellationToken);
+        if (existing != null)
+        {
+            return existing;
+        }
+
+        var now = CurrentTime;
+        var receipt = new SessionAnnouncementReceipt(announcementId, sessionUnitId, chatObjectId, now, deviceId);
+        receipt = await ReceiptRepository.InsertAsync(receipt, autoSave: true, cancellationToken: cancellationToken);
+
         announcement.IncrementReadCount();
         await AnnouncementRepository.UpdateAsync(announcement, autoSave: true, cancellationToken: cancellationToken);
 

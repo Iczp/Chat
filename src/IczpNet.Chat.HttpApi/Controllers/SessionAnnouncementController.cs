@@ -70,6 +70,27 @@ public class SessionAnnouncementController(ISessionAnnouncementAppService announ
         return AnnouncementAppService.ConfirmReceiptAsync(id, input);
     }
 
+    [HttpPost]
+    [Route("{id}/record-view")]
+    public virtual Task RecordViewAsync(Guid id, RecordAnnouncementViewInput input)
+    {
+        return AnnouncementAppService.RecordViewAsync(id, input);
+    }
+
+    [HttpGet]
+    [Route("{id}/stat")]
+    public virtual Task<SessionAnnouncementStatDto> GetStatAsync(Guid id, [FromQuery] Guid sessionUnitId)
+    {
+        return AnnouncementAppService.GetStatAsync(id, sessionUnitId);
+    }
+
+    [HttpGet]
+    [Route("{id}/members")]
+    public virtual Task<PagedResultDto<SessionAnnouncementMemberDto>> GetMembersAsync(Guid id, GetAnnouncementMemberListInput input)
+    {
+        return AnnouncementAppService.GetMembersAsync(id, input);
+    }
+
     [HttpGet]
     [Route("{id}/receipts")]
     public virtual Task<PagedResultDto<SessionAnnouncementReceiptDto>> GetReceiptsAsync(Guid id, PagedAndSortedResultRequestDto input)

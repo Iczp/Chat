@@ -46,6 +46,13 @@ public interface ISessionAnnouncementManager
         string deviceId = null,
         CancellationToken cancellationToken = default);
 
+    Task<SessionAnnouncementReceipt> RecordViewAsync(
+        Guid announcementId,
+        Guid sessionUnitId,
+        long chatObjectId,
+        string deviceId = null,
+        CancellationToken cancellationToken = default);
+
     Task IncrementReadCountAsync(
         Guid announcementId,
         CancellationToken cancellationToken = default);

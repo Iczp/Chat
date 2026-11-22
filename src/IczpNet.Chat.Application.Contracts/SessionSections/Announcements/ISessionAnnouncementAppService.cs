@@ -24,5 +24,11 @@ public interface ISessionAnnouncementAppService : IApplicationService
 
     Task ConfirmReceiptAsync(Guid id, ConfirmSessionAnnouncementInput input);
 
+    Task RecordViewAsync(Guid id, RecordAnnouncementViewInput input);
+
+    Task<SessionAnnouncementStatDto> GetStatAsync(Guid id, Guid sessionUnitId);
+
+    Task<PagedResultDto<SessionAnnouncementMemberDto>> GetMembersAsync(Guid id, GetAnnouncementMemberListInput input);
+
     Task<PagedResultDto<SessionAnnouncementReceiptDto>> GetReceiptsAsync(Guid id, PagedAndSortedResultRequestDto input);
 }
