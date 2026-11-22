@@ -48,5 +48,17 @@ public enum SessionUnitDisposalReason : byte
     /// 用户主动清空消息
     /// </summary>
     [Description("用户主动清空消息")]
-    UserClearedMessages = 7
+    UserClearedMessages = 7,
+
+    /// <summary>
+    /// 成员重新加入群聊（重新激活）
+    /// </summary>
+    [Description("重新加入群聊")]
+    MemberRejoined = 8,
+
+    /// <summary>
+    /// 重新添加好友（恢复会话）
+    /// </summary>
+    [Description("重新添加好友")]
+    FriendRestored = 9
 }

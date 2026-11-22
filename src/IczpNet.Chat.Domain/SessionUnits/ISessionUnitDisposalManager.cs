@@ -20,5 +20,7 @@ public interface ISessionUnitDisposalManager
         SessionUnitDisposalType disposalType,
         SessionUnitDisposalReason reason,
         long? operatorId = null,
-        string description = null);
+        string description = null,
+        DateTime? clearBeforeTime = null,
+        long? clearMaxMessageId = null);
 }

@@ -9,6 +9,12 @@ namespace IczpNet.Chat.Enums;
 public enum SessionUnitDisposalType : byte
 {
     /// <summary>
+    /// 正常活跃态（重激活 / 重新加入 / 未处置）
+    /// </summary>
+    [Description("正常活跃态")]
+    Normal = 0,
+
+    /// <summary>
     /// 移出会话（保留历史）：被踢、群解散、主动退群保留记录
     /// </summary>
     [Description("移出会话（保留历史）")]

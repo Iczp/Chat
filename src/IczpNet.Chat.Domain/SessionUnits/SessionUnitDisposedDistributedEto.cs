@@ -28,6 +28,10 @@ public class SessionUnitDisposedDistributedEto
 
     public long? OperatorId { get; set; }
 
+    public DateTime? ClearBeforeTime { get; set; }
+
+    public long? ClearMaxMessageId { get; set; }
+
     public string Description { get; set; }
 
     public DateTime CreationTime { get; set; }

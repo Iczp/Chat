@@ -25,8 +25,10 @@ using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Volo.Abp;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Caching;
+using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.EventBus.Distributed;
@@ -466,9 +468,41 @@ public class SessionUnitManager(
     /// <inheritdoc />
     public virtual async Task<SessionUnit> CreateIfNotContainsAsync(SessionUnit sessionUnit)
     {
-        var entity = await FindAsync(sessionUnit.OwnerId, sessionUnit.DestinationId.Value);
+        SessionUnit entity;
+        var dataFilter = LazyServiceProvider.LazyGetRequiredService<IDataFilter>();
+        using (dataFilter.Disable<ISoftDelete>())
+        {
+            entity = await FindAsync(sessionUnit.OwnerId, sessionUnit.DestinationId.Value);
+        }
 
-        entity ??= await Repository.InsertAsync(sessionUnit, autoSave: true);
+        if (entity != null)
+        {
+            if (entity.IsDeleted)
+            {
+                entity.IsDeleted = false;
+                entity.DeleterId = null;
+                entity.DeletionTime = null;
+                await Repository.UpdateAsync(entity, autoSave: true);
+
+                var disposalManager = LazyServiceProvider.LazyGetRequiredService<ISessionUnitDisposalManager>();
+                await disposalManager.RecordDisposalAsync(
+                    ownerId: entity.OwnerId,
+                    sessionUnitId: entity.Id,
+                    sessionId: entity.SessionId,
+                    destinationId: entity.DestinationId,
+                    disposalType: SessionUnitDisposalType.Normal,
+                    reason: SessionUnitDisposalReason.FriendRestored,
+                    description: "重新添加好友恢复会话");
+            }
+            if (entity.Setting != null && entity.Setting.IsKilled)
+            {
+                entity.Setting.IsKilled = false;
+                entity.Setting.KillTime = null;
+            }
+            return entity;
+        }
+
+        entity = await Repository.InsertAsync(sessionUnit, autoSave: true);
 
         return entity;
     }

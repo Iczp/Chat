@@ -29,7 +29,9 @@ public class SessionUnitDisposalManager(
         SessionUnitDisposalType disposalType,
         SessionUnitDisposalReason reason,
         long? operatorId = null,
-        string description = null)
+        string description = null,
+        DateTime? clearBeforeTime = null,
+        long? clearMaxMessageId = null)
     {
         var record = new SessionUnitDisposal(
             ownerId: ownerId,
@@ -40,7 +42,9 @@ public class SessionUnitDisposalManager(
             reason: reason,
             operatorId: operatorId,
             description: description,
-            tenantId: CurrentTenant.Id);
+            tenantId: CurrentTenant.Id,
+            clearBeforeTime: clearBeforeTime,
+            clearMaxMessageId: clearMaxMessageId);
 
         var entity = await DisposalRepository.InsertAsync(record, autoSave: true);
 
@@ -54,6 +58,8 @@ public class SessionUnitDisposalManager(
             DisposalType = entity.DisposalType,
             Reason = entity.Reason,
             OperatorId = entity.OperatorId,
+            ClearBeforeTime = entity.ClearBeforeTime,
+            ClearMaxMessageId = entity.ClearMaxMessageId,
             Description = entity.Description,
             CreationTime = entity.CreationTime
         };
