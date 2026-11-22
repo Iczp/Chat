@@ -30,6 +30,8 @@ public class EntryAppService : ChatAppService, IEntryAppService
     protected ISessionPermissionChecker SessionPermissionChecker { get; }
     protected IRepository<EntryName, Guid> EntryNameRepository { get; }
     protected IRepository<EntryValue, Guid> EntryValueRepository { get; }
+    protected ISessionUnitRepository SessionUnitRepository => LazyServiceProvider.LazyGetRequiredService<ISessionUnitRepository>();
+    protected ISessionUnitCacheManager SessionUnitCacheManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitCacheManager>();
     public EntryAppService(
         ISessionPermissionChecker sessionPermissionChecker,
         IRepository<EntryName, Guid> entryNameRepository,
@@ -227,6 +229,19 @@ public class EntryAppService : ChatAppService, IEntryAppService
         var entityComparer = new EntityComparer<SessionUnitEntryValue>(x => x.GetKeys().JoinAsString(","));
 
         sessionUnit.Entries = await CudItemsAsync(sessionUnit.Entries, inputItems, entityComparer);
+
+        // 联动更新 SessionUnit.Ticks，驱动客户端增量轮询与缓存一致性
+        var nowTicks = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        await SessionUnitRepository.UpdateTicksAsync(sessionUnit.Id, nowTicks);
+        if (sessionUnit.SessionId.HasValue)
+        {
+            await SessionUnitCacheManager.SetPinningAsync(
+                sessionUnit.SessionId.Value,
+                sessionUnit.Id,
+                sessionUnit.OwnerId,
+                (long)sessionUnit.Sorting,
+                nowTicks);
+        }
 
         return await MapToSessionUnitDetailDtoAsync(sessionUnit);
     }
