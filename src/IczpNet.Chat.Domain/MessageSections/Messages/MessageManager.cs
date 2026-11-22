@@ -405,6 +405,19 @@ public partial class MessageManager(
             clientMessageId, cleanupOnRollback: true);
     }
 
+    public async Task<Message> CreateAnnouncementCommandInCurrentTransactionAsync(
+        SessionUnitCacheItem senderSessionUnit, CmdContentInfo content, string clientMessageId)
+    {
+        var uow = UnitOfWorkManager.Current;
+        if (uow?.Options.IsTransactional != true)
+            throw new InvalidOperationException("Announcement commands require the current transactional unit of work.");
+        if (string.IsNullOrWhiteSpace(clientMessageId) || clientMessageId.Length > 26)
+            throw new ArgumentException("A stable client message ID of at most 26 characters is required.", nameof(clientMessageId));
+        var entity = ObjectMapper.Map<CmdContentInfo, CmdContent>(content);
+        return await CreateMessageCoreAsync(senderSessionUnit, _ => Task.FromResult<IContentEntity>(entity),
+            clientMessageId, cleanupOnRollback: true);
+    }
+
     private async Task<Message> CreateMessageCoreAsync(
         SessionUnitCacheItem senderSessionUnit,
         Func<Message, Task<IContentEntity>> action,

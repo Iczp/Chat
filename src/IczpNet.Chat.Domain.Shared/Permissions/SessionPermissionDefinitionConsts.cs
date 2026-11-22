@@ -70,4 +70,13 @@ public class SessionPermissionDefinitionConsts
         [Description("设置禁言过期时间")]
         public const string SetMuteExpireTime = Default + "." + nameof(SetMuteExpireTime);
     }
+
+    public class AnnouncementPermission
+    {
+        public const string Default = GroupName + "." + nameof(AnnouncementPermission);
+        public const string Create = Default + "." + nameof(Create);
+        public const string Update = Default + "." + nameof(Update);
+        public const string Delete = Default + "." + nameof(Delete);
+        public const string Pin = Default + "." + nameof(Pin);
+    }
 }

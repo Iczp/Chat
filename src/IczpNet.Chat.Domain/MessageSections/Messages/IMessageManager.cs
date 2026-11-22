@@ -87,6 +87,8 @@ public interface IMessageManager
 
     Task<Message> CreateRoomCommandInCurrentTransactionAsync(SessionUnitCacheItem senderSessionUnit, CmdContentInfo content, string clientMessageId);
 
+    Task<Message> CreateAnnouncementCommandInCurrentTransactionAsync(SessionUnitCacheItem senderSessionUnit, CmdContentInfo content, string clientMessageId);
+
     /// <summary>
     /// 发送消息
     /// </summary>

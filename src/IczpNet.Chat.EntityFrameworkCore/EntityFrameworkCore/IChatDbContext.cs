@@ -199,5 +199,6 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<UrlSecurityRule> UrlSecurityRule { get; }
     DbSet<SecurityReport> SecurityReport { get; }
 
-
+    DbSet<IczpNet.Chat.SessionSections.Announcements.SessionAnnouncement> SessionAnnouncement { get; }
+    DbSet<IczpNet.Chat.SessionSections.Announcements.SessionAnnouncementReceipt> SessionAnnouncementReceipt { get; }
 }

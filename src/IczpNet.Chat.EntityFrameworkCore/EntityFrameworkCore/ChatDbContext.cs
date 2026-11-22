@@ -215,6 +215,9 @@ public class ChatDbContext(DbContextOptions<ChatDbContext> options) : AbpDbConte
     public DbSet<UrlSecurityRule> UrlSecurityRule { get; set; }
     public DbSet<SecurityReport> SecurityReport { get; set; }
 
+    public DbSet<IczpNet.Chat.SessionSections.Announcements.SessionAnnouncement> SessionAnnouncement { get; set; }
+    public DbSet<IczpNet.Chat.SessionSections.Announcements.SessionAnnouncementReceipt> SessionAnnouncementReceipt { get; set; }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
