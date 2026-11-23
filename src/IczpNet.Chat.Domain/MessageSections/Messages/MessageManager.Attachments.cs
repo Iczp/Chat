@@ -11,16 +11,17 @@ using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Users;
 
 namespace IczpNet.Chat.MessageSections.Messages;
 
 public partial class MessageManager
 {
-    protected IRepository<Blob, Guid> BlobRepository => LazyServiceProvider.LazyGetRequiredService<IRepository<Blob, Guid>>();
     protected IRepository<BlobMessageRef, Guid> BlobMessageRefRepository => LazyServiceProvider.LazyGetRequiredService<IRepository<BlobMessageRef, Guid>>();
     protected IBlobResolver BlobResolver => LazyServiceProvider.LazyGetRequiredService<IBlobResolver>();
     protected IBackgroundJobManager BackgroundJobManager => LazyServiceProvider.LazyGetRequiredService<IBackgroundJobManager>();
     protected UrlNormalizers.IUrlNormalizer UrlNormalizer => LazyServiceProvider.LazyGetRequiredService<UrlNormalizers.IUrlNormalizer>();
+    protected ICurrentUser CurrentUser => LazyServiceProvider.LazyGetService<ICurrentUser>();
 
     /// <summary>
     /// 将消息内容 DTO 中的本站绝对 URL 还原为相对路径后再序列化入库，便于后续域名/地址迁移
@@ -103,7 +104,7 @@ public partial class MessageManager
             return;
         }
 
-        var blobs = (await BlobRepository.GetListAsync(x => blobIds.Contains(x.Id)))
+        var blobs = (await Repository.GetBlobsAsNoTrackingAsync(blobIds))
             .ToDictionary(x => x.Id);
 
         foreach (var id in blobIds)
@@ -186,19 +187,14 @@ public partial class MessageManager
             ? BlobRefSourceTypes.Forward
             : BlobRefSourceTypes.Send;
 
-        var blobs = await BlobRepository.GetListAsync(x => blobIds.Contains(x.Id));
-        foreach (var blob in blobs)
-        {
-            blob.Status = BlobStatus.Bound;
-            blob.ExpireTime = null;
-            blob.RefCount += 1;
-            await BlobMessageRefRepository.InsertAsync(new BlobMessageRef(
-                GuidGenerator.Create(),
-                blob.Id,
-                message.Id,
-                message.SessionId,
-                sourceType));
-        }
+        await Repository.BindBlobsToMessageAsync(
+            message.Id,
+            message.SessionId,
+            blobIds,
+            sourceType,
+            CurrentUser?.Id,
+            Clock.Now,
+            markAsBound: true);
 
         if (!message.ForwardMessageId.HasValue &&
             messageContent is VideoContent video &&
@@ -328,16 +324,13 @@ public partial class MessageManager
             return;
         }
 
-        var blobs = await BlobRepository.GetListAsync(x => newBlobIds.Contains(x.Id));
-        foreach (var blob in blobs)
-        {
-            blob.RefCount += 1;
-            await BlobMessageRefRepository.InsertAsync(new BlobMessageRef(
-                GuidGenerator.Create(),
-                blob.Id,
-                historyRootMessageId,
-                targetSessionId,
-                BlobRefSourceTypes.History));
-        }
+        await Repository.BindBlobsToMessageAsync(
+            historyRootMessageId,
+            targetSessionId,
+            newBlobIds,
+            BlobRefSourceTypes.History,
+            CurrentUser?.Id,
+            Clock.Now,
+            markAsBound: false);
     }
 }
