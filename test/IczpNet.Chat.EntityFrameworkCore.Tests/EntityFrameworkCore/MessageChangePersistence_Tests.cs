@@ -11,6 +11,7 @@ using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.Settings;
 using Volo.Abp.Timing;
+using Volo.Abp.Uow;
 using Xunit;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
@@ -172,6 +173,152 @@ public class MessageChangePersistence_Tests : ChatTestBase<MessageQueryReviewTes
 
             Assert.Contains(db.Model.FindEntityType(typeof(MessageChangeCursor))!.GetIndexes(),
                 index => index.IsUnique && index.Properties.Select(x => x.Name).SequenceEqual(new[] { "TenantId", "UserId", "ChatObjectId", "DeviceId" }));
+        });
+    }
+
+    [Fact]
+    public async Task VideoMessage_EntityVersion_stays_0_on_create_and_becomes_1_after_gif_update()
+    {
+        await WithUnitOfWorkAsync(new AbpUnitOfWorkOptions { IsTransactional = true }, async () =>
+        {
+            var db = await ServiceProvider.GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            await db.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys=OFF");
+
+            var msgRepo = ServiceProvider.GetRequiredService<IMessageRepository>();
+            var changeRepo = ServiceProvider.GetRequiredService<IMessageChangeRepository>();
+            var blobRepo = ServiceProvider.GetRequiredService<Volo.Abp.Domain.Repositories.IRepository<IczpNet.Chat.Blobs.Blob, Guid>>();
+
+            var session = Guid.NewGuid();
+            await MessageVisibilityQuery_Tests.InsertAsync<IczpNet.Chat.Sessions.Session>(db, new() { ["Id"] = session });
+            await MessageVisibilityQuery_Tests.InsertAsync<IczpNet.Chat.ChatObjects.ChatObject>(db, new() { ["Id"] = 14L });
+
+            var unitId = Guid.NewGuid();
+            await MessageVisibilityQuery_Tests.InsertAsync<IczpNet.Chat.SessionUnits.SessionUnit>(db, new()
+            {
+                ["Id"] = unitId,
+                ["SessionId"] = session,
+                ["OwnerId"] = 14L
+            });
+
+            var videoBlobId = Guid.NewGuid();
+            await blobRepo.InsertAsync(new IczpNet.Chat.Blobs.Blob(videoBlobId, "chat")
+            {
+                Name = "video.mp4",
+                FileName = "video.mp4",
+                MimeType = "video/mp4",
+                Suffix = ".mp4",
+                Status = IczpNet.Chat.Blobs.BlobStatus.Temp,
+                ExpireTime = DateTime.UtcNow.AddHours(1),
+                RefCount = 0
+            }, autoSave: true);
+            // Simulate separate HTTP upload request by clearing ChangeTracker before send-video
+            db.ChangeTracker.Clear();
+
+            var unit = new IczpNet.Chat.SessionUnits.SessionUnitCacheItem
+            {
+                Id = unitId,
+                SessionId = session,
+                OwnerId = 14L,
+                OwnerObjectType = IczpNet.Chat.Enums.ChatObjectTypeEnums.Personal,
+                IsInputEnabled = true
+            };
+
+            // Stage 1 (chat-api): validate via AsNoTracking, insert message, then bind blobs via non-tracking repository methods
+            var loadedBlobs = await msgRepo.GetBlobsAsNoTrackingAsync([videoBlobId]);
+            Assert.Single(loadedBlobs);
+
+            var message = new Message(unit)
+            {
+                CreationTime = DateTime.UtcNow,
+                ClientMessageId = "cmsg_fixed_001"
+            };
+            message.SetSessionSeq(1L);
+            var video = new IczpNet.Chat.MessageSections.Templates.VideoContent
+            {
+                Url = $"/api/chat/file/{videoBlobId}",
+                BlobId = videoBlobId,
+                Width = 636,
+                Height = 1362,
+                ImageWidth = 636,
+                ImageHeight = 1362
+            };
+            video.SetId(Guid.NewGuid());
+            message.VideoContentList.Add(video);
+            message.SetMessageType(IczpNet.Chat.Enums.MessageTypes.Video);
+
+            await db.Message.AddAsync(message);
+            await db.SaveChangesAsync();
+            Assert.Equal(0, message.EntityVersion);
+
+            var creatorId = Guid.NewGuid();
+            var now = DateTime.UtcNow;
+            await msgRepo.BindBlobsToMessageAsync(
+                message.Id,
+                session,
+                [videoBlobId],
+                IczpNet.Chat.Blobs.BlobRefSourceTypes.Send,
+                creatorId,
+                now,
+                markAsBound: true);
+            await db.SaveChangesAsync();
+
+            Assert.Equal(0, message.EntityVersion);
+            Assert.Null(message.LastModificationTime);
+
+            // Stage 2 (chat-worker): Fresh DbContext tracking
+            db.ChangeTracker.Clear();
+            var queryable = await msgRepo.WithDetailsAsync(x => x.VideoContentList);
+            var workerMessage = await queryable.FirstOrDefaultAsync(x => x.Id == message.Id);
+            Assert.NotNull(workerMessage);
+            var workerVideo = workerMessage!.GetTypedContentEntity<IczpNet.Chat.MessageSections.Templates.VideoContent>()!;
+
+            var workerVideoBlob = (await msgRepo.GetBlobsAsNoTrackingAsync([videoBlobId])).FirstOrDefault();
+            Assert.NotNull(workerVideoBlob);
+
+            var gifBlobId = Guid.NewGuid();
+            await blobRepo.InsertAsync(new IczpNet.Chat.Blobs.Blob(gifBlobId, "chat")
+            {
+                Name = "video.gif",
+                FileName = "video.gif",
+                MimeType = "image/gif",
+                Suffix = ".gif",
+                ParentBlobId = videoBlobId,
+                Role = IczpNet.Chat.Blobs.BlobRoles.Gif,
+                Status = IczpNet.Chat.Blobs.BlobStatus.Bound,
+                RefCount = 1
+            }, autoSave: true);
+            Assert.Equal(0, workerMessage.EntityVersion);
+
+            await msgRepo.InsertBlobMessageRefsAsync(
+                [(gifBlobId, workerMessage.Id, session, IczpNet.Chat.Blobs.BlobRefSourceTypes.Send)],
+                now: DateTime.UtcNow);
+
+            var change = await changeRepo.AppendUpdateAsync(workerMessage, DateTime.UtcNow, "生成视频GIF缩略图");
+            Assert.Equal(0, workerMessage.EntityVersion);
+
+            workerVideo.GifBlobId = gifBlobId;
+            workerVideo.GifUrl = $"/api/chat/file/{gifBlobId}";
+            workerMessage.SetContentJson("{\"gifUrl\":\"/test.gif\"}");
+            typeof(Message).GetMethod("SetMessageChangeId", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                .Invoke(workerMessage, [change.Version]);
+            await db.SaveChangesAsync();
+
+            Assert.Equal(1, workerMessage.EntityVersion);
+
+            // Verify persisted Blob state and BlobMessageRef records in DB
+            var persistedVideoBlob = await db.Blob.AsNoTracking().SingleAsync(x => x.Id == videoBlobId);
+            Assert.Equal(IczpNet.Chat.Blobs.BlobStatus.Bound, persistedVideoBlob.Status);
+            Assert.Equal(1, persistedVideoBlob.RefCount);
+            Assert.Null(persistedVideoBlob.ExpireTime);
+
+            var persistedRefs = await db.BlobMessageRef.AsNoTracking()
+                .Where(x => x.MessageId == workerMessage.Id)
+                .ToListAsync();
+            Assert.Equal(2, persistedRefs.Count);
+            Assert.Contains(persistedRefs, r => r.BlobId == videoBlobId);
+            Assert.Contains(persistedRefs, r => r.BlobId == gifBlobId);
+
+            await ServiceProvider.GetRequiredService<IUnitOfWorkManager>().Current!.RollbackAsync();
         });
     }
 }

@@ -30,8 +30,6 @@ public class GenerateVideoGifBackgroundJob(
     IMessageManager messageManager,
     IBlobManager blobManager,
     IBlobResolver blobResolver,
-    IRepository<Blob, Guid> blobRepository,
-    IRepository<BlobMessageRef, Guid> blobMessageRefRepository,
     IMediaResolver mediaResolver,
     IGuidGenerator guidGenerator,
     IJsonSerializer jsonSerializer,
@@ -73,7 +71,7 @@ public class GenerateVideoGifBackgroundJob(
             return;
         }
 
-        var videoBlob = await blobRepository.FindAsync(args.VideoBlobId);
+        var videoBlob = (await messageRepository.GetBlobsAsNoTrackingAsync([args.VideoBlobId])).FirstOrDefault();
         if (videoBlob == null)
         {
             Logger.LogWarning(
@@ -117,6 +115,11 @@ public class GenerateVideoGifBackgroundJob(
             var fileName = await blobResolver.GenerateFileNameAsync(".gif");
             var gifBlobName = Path.Combine(directoryName, fileName).Replace(@"\", "/");
 
+            var forwardedMessages = (await messageRepository.GetQueryableAsync())
+                .Where(x => x.ForwardMessageId == message.Id)
+                .Select(x => new { x.Id, x.SessionId })
+                .ToList();
+
             var gifBlob = await blobManager.CreateAsync(new Blob(gifBlobId, videoBlob.Container)
             {
                 IsPublic = videoBlob.IsPublic,
@@ -132,34 +135,21 @@ public class GenerateVideoGifBackgroundJob(
                 ParentBlobId = videoBlob.Id,
                 Role = BlobRoles.Gif,
                 Status = BlobStatus.Bound,
-                RefCount = 1,
+                RefCount = 1 + forwardedMessages.Count,
             });
 
             var gifUrl = await blobResolver.GetFileUrlAsync(gifBlob.Id, gifBlob.MimeType);
 
-            // 绑定到原消息（以及已转发到其他会话的消息引用）
-            await blobMessageRefRepository.InsertAsync(new BlobMessageRef(
-                guidGenerator.Create(),
-                gifBlob.Id,
-                message.Id,
-                message.SessionId,
-                BlobRefSourceTypes.Send));
-
-            var forwardedMessages = (await messageRepository.GetQueryableAsync())
-                .Where(x => x.ForwardMessageId == message.Id)
-                .Select(x => new { x.Id, x.SessionId })
-                .ToList();
-
+            // 绑定到原消息（以及已转发到其他会话的消息引用）——使用无跟踪 SQL 写入，避免触发 Message 状态变更
+            var refs = new System.Collections.Generic.List<(Guid BlobId, long MessageId, Guid? SessionId, BlobRefSourceTypes SourceType)>(1 + forwardedMessages.Count)
+            {
+                (gifBlob.Id, message.Id, message.SessionId, BlobRefSourceTypes.Send)
+            };
             foreach (var fwd in forwardedMessages)
             {
-                await blobMessageRefRepository.InsertAsync(new BlobMessageRef(
-                    guidGenerator.Create(),
-                    gifBlob.Id,
-                    fwd.Id,
-                    fwd.SessionId,
-                    BlobRefSourceTypes.Forward));
-                gifBlob.RefCount += 1;
+                refs.Add((gifBlob.Id, fwd.Id, fwd.SessionId, BlobRefSourceTypes.Forward));
             }
+            await messageRepository.InsertBlobMessageRefsAsync(refs, now: clock.Now);
 
             var relativeVideoUrl = await blobResolver.GetFileUrlAsync(videoContent.BlobId ?? args.VideoBlobId, videoBlob.MimeType);
             var relativeSnapshotUrl = videoContent.SnapshotBlobId.HasValue
