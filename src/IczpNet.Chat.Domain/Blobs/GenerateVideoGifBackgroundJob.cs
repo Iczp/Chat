@@ -140,7 +140,7 @@ public class GenerateVideoGifBackgroundJob(
 
             var gifUrl = await blobResolver.GetFileUrlAsync(gifBlob.Id, gifBlob.MimeType);
 
-            // 绑定到原消息（以及已转发到其他会话的消息引用）——使用无跟踪 SQL 写入，避免触发 Message 状态变更
+            // 通过 ABP 仓储绑定到原消息，以及已转发到其他会话的消息引用。
             var refs = new System.Collections.Generic.List<(Guid BlobId, long MessageId, Guid? SessionId, BlobRefSourceTypes SourceType)>(1 + forwardedMessages.Count)
             {
                 (gifBlob.Id, message.Id, message.SessionId, BlobRefSourceTypes.Send)
