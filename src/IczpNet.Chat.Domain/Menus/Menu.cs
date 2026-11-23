@@ -36,4 +36,14 @@ public class Menu : BaseTreeEntity<Menu, Guid>, IChatOwner<long>
     /// </summary>
     [MaxLength(500)]
     public virtual string Args { get; set; }
+
+    /// <summary>
+    /// 持久化总点击量 (PV)
+    /// </summary>
+    public virtual long ClickCount { get; set; }
+
+    /// <summary>
+    /// 持久化独立点击人数 (UV)
+    /// </summary>
+    public virtual long ClickUsersCount { get; set; }
 }

@@ -28,4 +28,9 @@ public class MenuUpdateInput : BaseTreeInputDto<Guid>
     /// </summary>
     [MaxLength(500)]
     public virtual string Args { get; set; }
+
+    /// <summary>
+    /// 是否在修改后立即发布（若为 true，保存后自动刷新线上版本快照）
+    /// </summary>
+    public virtual bool IsPublishNow { get; set; }
 }

@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using Volo.Abp.BackgroundJobs;
+using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Json;
 
@@ -22,16 +23,19 @@ public class MenuManager : TreeManager<Menu, Guid, MenuInfo>, IMenuManager
     protected IBackgroundJobManager BackgroundJobManager { get; }
     protected IHttpRequestManager HttpRequestManager { get; }
     protected IJsonSerializer JsonSerializer { get; }
+    protected IDistributedCache<PublishedMenuCacheItem, string> PublishedMenuCache { get; }
 
     public MenuManager(
         IRepository<Menu, Guid> repository,
         IBackgroundJobManager backgroundJobManager,
         IHttpRequestManager httpRequestManager,
-        IJsonSerializer jsonSerializer) : base(repository)
+        IJsonSerializer jsonSerializer,
+        IDistributedCache<PublishedMenuCacheItem, string> publishedMenuCache) : base(repository)
     {
         BackgroundJobManager = backgroundJobManager;
         HttpRequestManager = httpRequestManager;
         JsonSerializer = jsonSerializer;
+        PublishedMenuCache = publishedMenuCache;
     }
 
     protected override async Task CheckExistsByCreateAsync(Menu inputEntity)
@@ -156,5 +160,69 @@ public class MenuManager : TreeManager<Menu, Guid, MenuInfo>, IMenuManager
         var responseResult = await HttpRequestManager.RequestAsync(HttpMethod.Post, remoteUrl, httpContent, name: name);
         Logger.LogInformation($"SendToRemoteHost ReqId={responseResult.Id},[POST,{responseResult.StatusCode}],url={responseResult.Url}");
         return responseResult;
+    }
+
+    private static string GetCacheKey(long chatObjectId) => $"Chat:Menu:Published:{chatObjectId}";
+
+    public virtual async Task<PublishedMenuCacheItem> GetPublishedAsync(long chatObjectId)
+    {
+        var cacheKey = GetCacheKey(chatObjectId);
+        var cached = await PublishedMenuCache.GetAsync(cacheKey);
+        if (cached != null)
+        {
+            return cached;
+        }
+
+        // 冷启动从数据库加载当前配置并自动发布快照（保证已有公众号菜单不丢失）
+        return await PublishAsync(chatObjectId);
+    }
+
+    public virtual async Task<PublishedMenuCacheItem> PublishAsync(long chatObjectId)
+    {
+        var entities = await Repository.GetListAsync(x => x.OwnerId == chatObjectId);
+        var ordered = entities.OrderByDescending(x => x.Sorting).ToList();
+
+        // 构建已发布菜单树快照
+        var itemMap = ordered.Select(x => new PublishedMenuItem
+        {
+            Id = x.Id,
+            ParentId = x.ParentId,
+            Name = x.Name,
+            OwnerId = x.OwnerId,
+            Event = x.Event.ToString(),
+            Code = x.Code,
+            Args = x.Args,
+            Sorting = x.Sorting,
+            Children = []
+        }).ToDictionary(x => x.Id);
+
+        var rootItems = new List<PublishedMenuItem>();
+        foreach (var item in itemMap.Values)
+        {
+            if (item.ParentId.HasValue && itemMap.TryGetValue(item.ParentId.Value, out var parent))
+            {
+                parent.Children.Add(item);
+            }
+            else
+            {
+                rootItems.Add(item);
+            }
+        }
+
+        var now = Clock.Now;
+        var version = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
+
+        var snapshot = new PublishedMenuCacheItem
+        {
+            ChatObjectId = chatObjectId,
+            Version = version,
+            PublishTime = now,
+            Items = rootItems
+        };
+
+        var cacheKey = GetCacheKey(chatObjectId);
+        await PublishedMenuCache.SetAsync(cacheKey, snapshot);
+        Logger.LogInformation($"[MenuManager] Published menu for ChatObjectId={chatObjectId}, Version={version}, RootCount={rootItems.Count}");
+        return snapshot;
     }
 }
