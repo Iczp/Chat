@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.Guids;
+using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.Repositories;
 
@@ -241,26 +242,17 @@ public class MessageRepository(IDbContextProvider<ChatDbContext> dbContextProvid
 
         var time = now ?? Clock.Now;
         var guidGenerator = LazyServiceProvider.LazyGetRequiredService<IGuidGenerator>();
-        var db = await GetDbContextAsync();
-        const string extraProperties = "{}";
-        const bool isDeleted = false;
+        var repository = LazyServiceProvider.LazyGetRequiredService<IRepository<BlobMessageRef, Guid>>();
+        var entities = refs.DistinctBy(x => (x.BlobId, x.MessageId))
+            .Select(item => new BlobMessageRef(
+                guidGenerator.Create(), item.BlobId, item.MessageId, item.SessionId, item.SourceType)
+            {
+                CreationTime = time,
+                CreatorId = creatorId
+            })
+            .ToList();
 
-        foreach (var item in refs.DistinctBy(x => (x.BlobId, x.MessageId)))
-        {
-            var id = guidGenerator.Create();
-            var concurrencyStamp = Guid.NewGuid().ToString("N");
-            var blobId = item.BlobId;
-            var msgId = item.MessageId;
-            var sessionId = item.SessionId;
-            var sourceType = (int)item.SourceType;
-
-            await db.Database.ExecuteSqlInterpolatedAsync($@"
-INSERT INTO Chat_BlobMessageRef
-    (Id, BlobId, MessageId, SessionId, SourceType, ExtraProperties, ConcurrencyStamp, CreationTime, CreatorId, IsDeleted)
-VALUES
-    ({id}, {blobId}, {msgId}, {sessionId}, {sourceType}, {extraProperties}, {concurrencyStamp}, {time}, {creatorId}, {isDeleted})",
-                cancellationToken);
-        }
+        await repository.InsertManyAsync(entities, autoSave: true, cancellationToken: cancellationToken);
     }
 
 

@@ -70,7 +70,7 @@ public interface IMessageRepository : IRepository<Message, long>
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// 使用无跟踪批量更新与参数化 SQL 绑定 Blob 状态、引用计数与 BlobMessageRef 授权记录，避免触发 ABP 实体版本误递增
+    /// 批量原子更新 Blob 状态与引用计数，并通过 ABP 仓储写入 BlobMessageRef 授权记录
     /// </summary>
     Task BindBlobsToMessageAsync(
         long messageId,
@@ -83,7 +83,7 @@ public interface IMessageRepository : IRepository<Message, long>
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// 使用参数化 SQL 无跟踪批量写入 BlobMessageRef 授权记录，避免触发关联 Message 实体状态变更
+    /// 通过 ABP 仓储批量写入 BlobMessageRef 授权记录，保留实体审计与 EF Core 表映射
     /// </summary>
     Task InsertBlobMessageRefsAsync(
         IReadOnlyCollection<(Guid BlobId, long MessageId, Guid? SessionId, BlobRefSourceTypes SourceType)> refs,

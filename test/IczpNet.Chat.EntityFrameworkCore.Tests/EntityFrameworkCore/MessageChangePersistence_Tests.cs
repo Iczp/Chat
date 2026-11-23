@@ -176,8 +176,10 @@ public class MessageChangePersistence_Tests : ChatTestBase<MessageQueryReviewTes
         });
     }
 
-    [Fact]
-    public async Task VideoMessage_EntityVersion_stays_0_on_create_and_becomes_1_after_gif_update()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task VideoMessage_EntityVersion_stays_0_on_create_and_becomes_1_after_gif_update(bool trackVideoBlob)
     {
         await WithUnitOfWorkAsync(new AbpUnitOfWorkOptions { IsTransactional = true }, async () =>
         {
@@ -213,6 +215,10 @@ public class MessageChangePersistence_Tests : ChatTestBase<MessageQueryReviewTes
             }, autoSave: true);
             // Simulate separate HTTP upload request by clearing ChangeTracker before send-video
             db.ChangeTracker.Clear();
+            if (trackVideoBlob)
+            {
+                await blobRepo.GetAsync(videoBlobId);
+            }
 
             var unit = new IczpNet.Chat.SessionUnits.SessionUnitCacheItem
             {
@@ -223,7 +229,7 @@ public class MessageChangePersistence_Tests : ChatTestBase<MessageQueryReviewTes
                 IsInputEnabled = true
             };
 
-            // Stage 1 (chat-api): validate via AsNoTracking, insert message, then bind blobs via non-tracking repository methods
+            // Stage 1 (chat-api): validate, insert message, then bind blobs through ABP repositories.
             var loadedBlobs = await msgRepo.GetBlobsAsNoTrackingAsync([videoBlobId]);
             Assert.Single(loadedBlobs);
 
@@ -272,7 +278,9 @@ public class MessageChangePersistence_Tests : ChatTestBase<MessageQueryReviewTes
             Assert.NotNull(workerMessage);
             var workerVideo = workerMessage!.GetTypedContentEntity<IczpNet.Chat.MessageSections.Templates.VideoContent>()!;
 
-            var workerVideoBlob = (await msgRepo.GetBlobsAsNoTrackingAsync([videoBlobId])).FirstOrDefault();
+            var workerVideoBlob = trackVideoBlob
+                ? await blobRepo.GetAsync(videoBlobId)
+                : (await msgRepo.GetBlobsAsNoTrackingAsync([videoBlobId])).FirstOrDefault();
             Assert.NotNull(workerVideoBlob);
 
             var gifBlobId = Guid.NewGuid();
@@ -289,9 +297,10 @@ public class MessageChangePersistence_Tests : ChatTestBase<MessageQueryReviewTes
             }, autoSave: true);
             Assert.Equal(0, workerMessage.EntityVersion);
 
-            await msgRepo.InsertBlobMessageRefsAsync(
-                [(gifBlobId, workerMessage.Id, session, IczpNet.Chat.Blobs.BlobRefSourceTypes.Send)],
-                now: DateTime.UtcNow);
+            var gifRef = (gifBlobId, workerMessage.Id, (Guid?)session, IczpNet.Chat.Blobs.BlobRefSourceTypes.Send);
+            await msgRepo.InsertBlobMessageRefsAsync([gifRef, gifRef], creatorId, now);
+            Assert.Equal(0, workerMessage.EntityVersion);
+            Assert.Null(workerMessage.LastModificationTime);
 
             var change = await changeRepo.AppendUpdateAsync(workerMessage, DateTime.UtcNow, "生成视频GIF缩略图");
             Assert.Equal(0, workerMessage.EntityVersion);
@@ -304,6 +313,14 @@ public class MessageChangePersistence_Tests : ChatTestBase<MessageQueryReviewTes
             await db.SaveChangesAsync();
 
             Assert.Equal(1, workerMessage.EntityVersion);
+            Assert.NotNull(workerMessage.LastModificationTime);
+            // Extra SaveChanges must not replay a navigation change or increment the version again.
+            await db.SaveChangesAsync();
+            Assert.Equal(1, workerMessage.EntityVersion);
+            var persistedMessage = await db.Message.AsNoTracking().Include(x => x.VideoContentList)
+                .SingleAsync(x => x.Id == message.Id);
+            Assert.Equal(1, persistedMessage.EntityVersion);
+            Assert.Equal(workerVideo.GifUrl, persistedMessage.VideoContentList.Single().GifUrl);
 
             // Verify persisted Blob state and BlobMessageRef records in DB
             var persistedVideoBlob = await db.Blob.AsNoTracking().SingleAsync(x => x.Id == videoBlobId);
@@ -317,6 +334,15 @@ public class MessageChangePersistence_Tests : ChatTestBase<MessageQueryReviewTes
             Assert.Equal(2, persistedRefs.Count);
             Assert.Contains(persistedRefs, r => r.BlobId == videoBlobId);
             Assert.Contains(persistedRefs, r => r.BlobId == gifBlobId);
+            Assert.All(persistedRefs, r =>
+            {
+                Assert.NotEqual(Guid.Empty, r.Id);
+                Assert.Equal(creatorId, r.CreatorId);
+                Assert.Equal(now, r.CreationTime);
+                Assert.False(string.IsNullOrWhiteSpace(r.ConcurrencyStamp));
+                Assert.NotNull(r.ExtraProperties);
+                Assert.False(r.IsDeleted);
+            });
 
             await ServiceProvider.GetRequiredService<IUnitOfWorkManager>().Current!.RollbackAsync();
         });
