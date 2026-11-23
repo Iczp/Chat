@@ -1,6 +1,7 @@
 ﻿using IczpNet.BizCrypts;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.Developers.Dtos;
+using IczpNet.Chat.HttpRequests;
 using IczpNet.Chat.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -182,5 +183,33 @@ public class DeveloperAppService : ChatAppService, IDeveloperAppService
     public async Task<string> GenerateEncodingAesKeyAsync()
     {
         return await Task.FromResult(BizCrypt.CreateRandCode(43));
+    }
+
+    /// <summary>
+    /// 测试验证开发者服务器 (发送 Echo 校验请求)
+    /// </summary>
+    /// <param name="id">主键Id</param>
+    /// <returns></returns>
+    [HttpPost]
+    public async Task<bool> TestServerAsync(long id)
+    {
+        var entity = await ChatObjectManager.GetAsync(id);
+        var developer = entity.Developer;
+        if (developer == null || string.IsNullOrWhiteSpace(developer.PostUrl) || string.IsNullOrWhiteSpace(developer.Token))
+        {
+            return false;
+        }
+
+        var timeStamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+        var nonce = BizCrypt.CreateRandCode(10, "123456789");
+        var echoStr = BizCrypt.CreateRandCode(16, "abcdefghijklmnopqrstuvwxyz0123456789");
+        var signature = BizCrypt.GenerateSignature(developer.Token, timeStamp, nonce, echoStr);
+
+        var url = developer.PostUrl + (developer.PostUrl.Contains("?") ? "&" : "?") +
+                  $"signature={signature}&timestamp={timeStamp}&nonce={nonce}&echostr={echoStr}";
+
+        var httpRequestManager = LazyServiceProvider.LazyGetRequiredService<IHttpRequestManager>();
+        var req = await httpRequestManager.GetAsync(url);
+        return req.IsSuccess && req.Response?.Content?.Trim() == echoStr;
     }
 }
