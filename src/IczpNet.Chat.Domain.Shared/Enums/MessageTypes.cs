@@ -83,4 +83,10 @@ public enum MessageTypes
     /// </summary>
     [Description("聊天记录")]
     History = 12,
+
+    /// <summary>
+    /// 自定义模板消息
+    /// </summary>
+    [Description("模板消息")]
+    Template = 13,
 }

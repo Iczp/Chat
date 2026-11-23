@@ -4,6 +4,8 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Messages.Dtos;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionUnits;
+using Microsoft.AspNetCore.Authorization;
+using Volo.Abp.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
@@ -42,6 +44,14 @@ public class MessageSenderAppService(
         await CheckArticleManagementOrOwnerAsync(unit.OwnerId);
         IczpNet.AbpCommons.Assert.If(!unit.IsEnabled, "Session unit disabled.");
         return await MessageSender.SendArticleContentMessageAsync(unit, input);
+    }
+
+    [HttpPost("/api/chat/message-sender/send-template-content-message/{sessionUnitId}")]
+    public async Task<MessageInfo<TemplateContentInfo>> SendTemplateContentMessageAsync(Guid sessionUnitId, MessageInput<TemplateContentInput> input)
+    {
+        await AuthorizationService.CheckAsync(IczpNet.Chat.Permissions.ChatPermissions.MessageTemplatePermission.Use);
+        var unit = await GetAndCheckSessionUnitAsync(sessionUnitId);
+        return await MessageSender.SendTemplateContentMessageAsync(unit, input);
     }
 
     /// <summary>

@@ -23,4 +23,17 @@ public static class ChatErrorCodes
         public const string AccessDenied = "Chat:Blobs:0008";
         public const string InvalidSignature = "Chat:Blobs:0009";
     }
+
+    public static class TemplateMessages
+    {
+        public const string TemplateNotFound = "Chat:Template:NotFound";
+        public const string TemplateForbidden = "Chat:Template:Forbidden";
+        public const string TemplateDisabled = "Chat:Template:Disabled";
+        public const string TemplateVersionNotPublished = "Chat:Template:VersionNotPublished";
+        public const string TemplateConcurrencyConflict = "Chat:Template:ConcurrencyConflict";
+        public const string TemplateSchemaUnsupported = "Chat:Template:SchemaUnsupported";
+        public const string TemplateDefinitionInvalid = "Chat:Template:DefinitionInvalid";
+        public const string TemplateDataInvalid = "Chat:Template:DataInvalid";
+        public const string TemplatePayloadTooLarge = "Chat:Template:PayloadTooLarge";
+    }
 }

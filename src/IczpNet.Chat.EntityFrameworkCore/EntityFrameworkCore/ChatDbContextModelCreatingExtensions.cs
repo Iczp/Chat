@@ -20,6 +20,7 @@ using IczpNet.Chat.MessageSections.MessageFollowers;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.MessageTemplates;
 using IczpNet.Chat.MessageWords;
 using IczpNet.Chat.OpenedRecorders;
 using IczpNet.Chat.QrCodes;
@@ -487,6 +488,7 @@ public static class ChatDbContextModelCreatingExtensions
                 b.HasMany(x => x.ContactsContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(ContactsContent)}", ChatDbProperties.DbSchema));
                 b.HasMany(x => x.RedEnvelopeContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(RedEnvelopeContent)}", ChatDbProperties.DbSchema));
                 b.HasMany(x => x.HistoryContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(HistoryContent)}", ChatDbProperties.DbSchema));
+                b.HasMany(x => x.TemplateContentList).WithMany(x => x.MessageList).UsingEntity(x => x.ToTable($"{_prefix}_{nameof(TemplateContent)}", ChatDbProperties.DbSchema));
                 //b.Property<long>(nameof(Message.AutoId))
                 //    .ValueGeneratedOnAdd()
                 //    .HasColumnType("bigint")
@@ -598,6 +600,34 @@ public static class ChatDbContextModelCreatingExtensions
             //b.Property(x => x.MessageType).HasConversion<string>().HasMaxLength(32);
         });
 
+        builder.Entity<TemplateContent>(b =>
+        {
+            b.ConfigureByConvention();
+            b.Property(x => x.FallbackText).IsRequired().HasMaxLength(MessageTemplateConsts.MaxFallbackTextLength);
+            b.Property(x => x.SnapshotJson).IsRequired();
+            b.HasIndex(x => x.TemplateId);
+        });
+
+        builder.Entity<MessageTemplateDefinition>(b =>
+        {
+            b.ToTable(ChatDbProperties.DbTablePrefix + nameof(MessageTemplateDefinition), ChatDbProperties.DbSchema);
+            b.ConfigureByConvention();
+            b.Property(x => x.Name).IsRequired().HasMaxLength(MessageTemplateConsts.MaxNameLength);
+            b.Property(x => x.Description).HasMaxLength(MessageTemplateConsts.MaxDescriptionLength);
+            b.Property(x => x.DraftJson).IsRequired();
+            b.HasIndex(x => new { x.TenantId, x.OwnerId });
+            b.HasIndex(x => new { x.TenantId, x.Visibility, x.IsEnabled });
+        });
+
+        builder.Entity<MessageTemplateRevision>(b =>
+        {
+            b.ToTable(ChatDbProperties.DbTablePrefix + nameof(MessageTemplateRevision), ChatDbProperties.DbSchema);
+            b.ConfigureByConvention();
+            b.Property(x => x.DefinitionJson).IsRequired();
+            b.Property(x => x.DefinitionHash).IsRequired().HasMaxLength(64);
+            b.HasIndex(x => new { x.TemplateId, x.Version }).IsUnique();
+            b.HasOne(x => x.Template).WithMany().HasForeignKey(x => x.TemplateId).OnDelete(DeleteBehavior.Restrict);
+        });
 
     }
 

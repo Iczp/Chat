@@ -1,0 +1,24 @@
+{
+  "name": "未来协议版本卡片",
+  "description": "schemaVersion=2 超出当前v1协议支持范围，客户端安全降级显示fallbackText",
+  "serverExpectation": { "accepted": false, "errorCode": "TemplateSchemaUnsupported" },
+  "clientExpectation": { "fallback": true, "expectedFallbackText": "[未来工单]WX20261123005" },
+  "snapshot": {
+    "schemaVersion": 2,
+    "templateId": "4a82b63d-e9cd-4bed-8d41-c7bd12fe5005",
+    "templateVersion": 1,
+    "templateName": "未来协议工单",
+    "fallbackText": "[未来工单]WX20261123005",
+    "data": {
+      "title": "未来协议测试",
+      "orderNo": "WX20261123005"
+    },
+    "layout": {
+      "type": "card",
+      "children": [
+        { "type": "text", "bind": "title" }
+      ]
+    },
+    "actions": []
+  }
+}

@@ -31,4 +31,6 @@ public interface IMessageSender
     Task<MessageInfo<RedEnvelopeContentOutput>> SendRedEnvelopeAsync(SessionUnitCacheItem senderSessionUnit, MessageInput<RedEnvelopeContentInput> input);
 
     Task<MessageInfo<ArticleContentInfo>> SendArticleContentMessageAsync(SessionUnitCacheItem senderSessionUnit, MessageInput<ArticleContentInput> input);
+
+    Task<MessageInfo<TemplateContentInfo>> SendTemplateContentMessageAsync(SessionUnitCacheItem senderSessionUnit, MessageInput<TemplateContentInput> input);
 }

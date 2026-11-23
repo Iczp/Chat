@@ -1,0 +1,42 @@
+{
+  "name": "完整功能卡片",
+  "description": "包含标题、字段、徽标、图片、分隔线、多列与安全按钮的完整模板快照",
+  "serverExpectation": { "accepted": true },
+  "clientExpectation": { "fallback": false, "expectedFallbackText": "[工单]WX20261123001：待处理" },
+  "snapshot": {
+    "schemaVersion": 1,
+    "templateId": "4a82b63d-e9cd-4bed-8d41-c7bd12fe5002",
+    "templateVersion": 1,
+    "templateName": "维修工单",
+    "fallbackText": "[工单]WX20261123001：待处理",
+    "data": {
+      "title": "机房空调漏水紧急报修",
+      "orderNo": "WX20261123001",
+      "status": "待处理",
+      "applicant": "张工",
+      "imageUrl": "https://img.example.com/repair-preview.jpg",
+      "detailUrl": "https://workorder.example.com/tickets/WX20261123001"
+    },
+    "layout": {
+      "type": "card",
+      "children": [
+        { "type": "text", "bind": "title", "style": "heading" },
+        { "type": "image", "bind": "imageUrl", "aspectRatio": "landscape" },
+        { "type": "field", "label": "工单编号", "bind": "orderNo" },
+        {
+          "type": "row",
+          "gap": "small",
+          "children": [
+            { "type": "badge", "bind": "status", "tone": "warning" },
+            { "type": "field", "label": "报修人", "bind": "applicant" }
+          ]
+        },
+        { "type": "divider" },
+        { "type": "button", "label": "查看工单", "actionId": "viewDetail" }
+      ]
+    },
+    "actions": [
+      { "id": "viewDetail", "type": "openUrl", "bind": "detailUrl" }
+    ]
+  }
+}

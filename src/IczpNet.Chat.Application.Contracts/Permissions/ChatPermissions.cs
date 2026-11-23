@@ -337,5 +337,21 @@ public class ChatPermissions
         public const string Cancel = Default + ".Cancel";
     }
 
+    /// <summary>
+    /// 自定义模板消息权限
+    /// </summary>
+    public class MessageTemplatePermission
+    {
+        public const string Default = GroupName + $".{nameof(MessageTemplatePermission)}";
+        public const string GetItem = Default + ".GetItem";
+        public const string GetList = Default + ".GetList";
+        public const string Create = Default + ".Create";
+        public const string Update = Default + ".Update";
+        public const string Publish = Default + ".Publish";
+        public const string Use = Default + ".Use";
+        public const string ManageAll = Default + ".ManageAll";
+        public const string Share = Default + ".Share";
+    }
+
     /*---------code-generator-permissions: Do not modify or delete this line of comments--------*/
 }

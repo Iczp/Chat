@@ -2,6 +2,7 @@
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.MessageTemplates;
 using IczpNet.Chat.RedEnvelopes;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.ChatObjects;
@@ -9,6 +10,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.ObjectMapping;
@@ -64,6 +67,81 @@ public class MessageSender(
         Assert.If(account == null || !account.IsEnabled || (account.ObjectType != ChatObjectTypeEnums.Official && account.ObjectType != ChatObjectTypeEnums.Subscription),
             "The article sender account is disabled or invalid.");
         return await MessageManager.SendAsync<ArticleContentInfo, ArticleContent>(senderSessionUnit, input, content);
+    }
+
+    public virtual async Task<MessageInfo<TemplateContentInfo>> SendTemplateContentMessageAsync(
+        SessionUnitCacheItem senderSessionUnit,
+        MessageInput<TemplateContentInput> input)
+    {
+        Assert.NotNull(senderSessionUnit, "Sender session unit required.");
+        Assert.NotNull(input, "Message input required.");
+        Assert.NotNull(input.Content, "TemplateContentInput required.");
+
+        var templateId = input.Content.TemplateId;
+        var templateVersion = input.Content.TemplateVersion;
+        var data = input.Content.Data;
+
+        var templateRepository = LazyServiceProvider.LazyGetRequiredService<IRepository<MessageTemplateDefinition, Guid>>();
+        var revisionRepository = LazyServiceProvider.LazyGetRequiredService<IRepository<MessageTemplateRevision, Guid>>();
+        var templateManager = LazyServiceProvider.LazyGetRequiredService<MessageTemplateManager>();
+
+        var message = await MessageManager.CreateMessageAsync(
+            senderSessionUnit,
+            async (msg) =>
+            {
+                var template = await templateRepository.FindAsync(templateId);
+                if (template == null)
+                {
+                    throw new UserFriendlyException("模板不存在。", ChatErrorCodes.TemplateMessages.TemplateNotFound);
+                }
+                if (!template.IsEnabled)
+                {
+                    throw new UserFriendlyException("模板已被停用，禁止发送。", ChatErrorCodes.TemplateMessages.TemplateDisabled);
+                }
+                if (!template.PublishedVersion.HasValue || template.PublishedVersion.Value < templateVersion)
+                {
+                    throw new UserFriendlyException($"模板版本 {templateVersion} 尚未发布或不存在。", ChatErrorCodes.TemplateMessages.TemplateVersionNotPublished);
+                }
+
+                // Check permission: if private, must match sender's OwnerId
+                if (template.Visibility == MessageTemplateVisibility.Private && template.OwnerId != senderSessionUnit.OwnerId)
+                {
+                    throw new UserFriendlyException("无权使用该私有模板。", ChatErrorCodes.TemplateMessages.TemplateForbidden);
+                }
+
+                var revision = await (await revisionRepository.GetQueryableAsync())
+                    .FirstOrDefaultAsync(x => x.TemplateId == templateId && x.Version == templateVersion);
+
+                if (revision == null)
+                {
+                    throw new UserFriendlyException($"模板发布版本 {templateVersion} 不存在。", ChatErrorCodes.TemplateMessages.TemplateVersionNotPublished);
+                }
+
+                var parsed = templateManager.ValidateDefinitionJson(revision.DefinitionJson);
+                var sanitizedData = templateManager.ValidateAndSanitizeData(data, parsed);
+                var fallbackText = templateManager.GenerateFallbackText(parsed, sanitizedData);
+                var snapshot = templateManager.BuildSnapshot(templateId, templateVersion, parsed, sanitizedData, fallbackText);
+                var snapshotJson = System.Text.Json.JsonSerializer.Serialize(snapshot);
+
+                var templateContent = new TemplateContent(
+                    templateId,
+                    templateVersion,
+                    MessageTemplateConsts.SchemaVersion,
+                    fallbackText,
+                    snapshotJson,
+                    template.TenantId);
+
+                return templateContent;
+            },
+            clientMessageId: input.ClientMessageId,
+            quoteMessageId: input.QuoteMessageId,
+            remindList: input.RemindList,
+            receiverSessionUnitId: input.ReceiverSessionUnitId);
+
+        var output = ObjectMapper.Map<Message, MessageInfo<TemplateContentInfo>>(message);
+        var sessionUnitManager = LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
+        output.SenderSessionUnit ??= await sessionUnitManager.MapToSenderAsync(senderSessionUnit);
+        return output;
     }
 
     public virtual async Task<MessageInfo<HtmlContentInfo>> SendHtmlAsync(SessionUnitCacheItem senderSessionUnit, MessageInput<HtmlContentInfo> input)

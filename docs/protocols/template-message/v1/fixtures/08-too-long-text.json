@@ -1,0 +1,21 @@
+{
+  "name": "超长文本内容卡片",
+  "description": "静态文本超过1000字符或字段输入超过2000字符限制，服务端校验拒绝",
+  "serverExpectation": { "accepted": false, "errorCode": "TemplatePayloadTooLarge" },
+  "clientExpectation": { "fallback": true, "expectedFallbackText": "[超长测试]文本超出上限" },
+  "snapshot": {
+    "schemaVersion": 1,
+    "templateId": "4a82b63d-e9cd-4bed-8d41-c7bd12fe5008",
+    "templateVersion": 1,
+    "templateName": "超长文本",
+    "fallbackText": "[超长测试]文本超出上限",
+    "data": { "msg": "超长" },
+    "layout": {
+      "type": "card",
+      "children": [
+        { "type": "text", "text": "超长静态文本示例（此处为校验标记，实际单段静态文本上限1000字符，字段输入上限2000字符）" }
+      ]
+    },
+    "actions": []
+  }
+}

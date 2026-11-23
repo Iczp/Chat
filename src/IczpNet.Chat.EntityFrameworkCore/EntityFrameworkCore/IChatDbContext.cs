@@ -26,6 +26,7 @@ using IczpNet.Chat.MessageSections.MessageFollowers;
 using IczpNet.Chat.MessageSections.MessageReminders;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.MessageTemplates;
 using IczpNet.Chat.MessageWords;
 using IczpNet.Chat.Mottos;
 using IczpNet.Chat.OpenedRecorders;
@@ -164,6 +165,9 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<RedEnvelopeUnit> RedEnvelopeUnit { get; }
     DbSet<HistoryContent> HistoryContent { get; }
     DbSet<HistoryMessage> HistoryMessage { get; }
+    DbSet<TemplateContent> TemplateContent { get; }
+    DbSet<MessageTemplateDefinition> MessageTemplateDefinitions { get; }
+    DbSet<MessageTemplateRevision> MessageTemplateRevisions { get; }
     DbSet<MessageReportDay> MessageReportDay { get; }
     DbSet<MessageReportMonth> MessageReportMonth { get; }
     DbSet<MessageReportHour> MessageReportHour { get; }

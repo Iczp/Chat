@@ -135,6 +135,16 @@
     "ChatSettings:QrCodeMaxExpireDays": "二维码最大有效天数",
     "ChatSettings:QrCodeContentTemplate": "二维码内容模板",
 
+    "ChatPermissions.MessageTemplatePermission": "消息模板管理",
+    "ChatPermissions.MessageTemplatePermission.GetItem": "查看详情",
+    "ChatPermissions.MessageTemplatePermission.GetList": "查看列表",
+    "ChatPermissions.MessageTemplatePermission.Create": "创建模板",
+    "ChatPermissions.MessageTemplatePermission.Update": "修改模板",
+    "ChatPermissions.MessageTemplatePermission.Publish": "发布模板",
+    "ChatPermissions.MessageTemplatePermission.Use": "使用模板发送",
+    "ChatPermissions.MessageTemplatePermission.ManageAll": "管理所有模板",
+    "ChatPermissions.MessageTemplatePermission.Share": "共享模板至租户",
+
     "code-generator-localization": "Do not modify or delete this line of comments"
   }
 }

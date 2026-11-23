@@ -1,0 +1,23 @@
+{
+  "name": "最小有效卡片",
+  "description": "仅包含一个纯文本卡片节点的最小有效模板快照",
+  "serverExpectation": { "accepted": true },
+  "clientExpectation": { "fallback": false, "expectedFallbackText": "[通知]系统初始化完成" },
+  "snapshot": {
+    "schemaVersion": 1,
+    "templateId": "4a82b63d-e9cd-4bed-8d41-c7bd12fe5001",
+    "templateVersion": 1,
+    "templateName": "系统通知",
+    "fallbackText": "[通知]系统初始化完成",
+    "data": {
+      "message": "系统初始化完成"
+    },
+    "layout": {
+      "type": "card",
+      "children": [
+        { "type": "text", "bind": "message", "style": "heading" }
+      ]
+    },
+    "actions": []
+  }
+}

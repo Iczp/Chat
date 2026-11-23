@@ -65,6 +65,9 @@ public partial class Message
     [ContentType(MessageTypes.History)]
     public virtual IList<HistoryContent> HistoryContentList { get; set; } = [];
 
+    [ContentType(MessageTypes.Template)]
+    public virtual IList<TemplateContent> TemplateContentList { get; set; } = [];
+
     //HistoryMessageList
     [InverseProperty(nameof(HistoryMessage.Message))]
     public virtual IList<HistoryMessage> HistoryMessageList { get; set; } = [];
