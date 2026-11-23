@@ -100,7 +100,26 @@ public static class ServiceCollectionOptionsExtensions
     /// </summary>
     private static void RegisterConventionOptionsFromAssembly(IServiceCollection services, Assembly assembly)
     {
-        var optionTypes = assembly.GetTypes()
+        if (assembly.IsDynamic)
+        {
+            return;
+        }
+
+        Type[] types;
+        try
+        {
+            types = assembly.GetTypes();
+        }
+        catch (ReflectionTypeLoadException ex)
+        {
+            types = ex.Types.Where(t => t != null).ToArray()!;
+        }
+        catch
+        {
+            return;
+        }
+
+        var optionTypes = types
             .Where(t =>
                 t.IsClass &&
                 !t.IsAbstract &&
