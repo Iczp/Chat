@@ -78,12 +78,12 @@ public interface ISessionUnitAppService
     Task<long> ClearBadgeAsync(long ownerId);
 
     /// <summary>
-    /// 设置会话盒子
+    /// 设置会话盒子归属（boxId 传 null 时代表移出盒子）
     /// </summary>
     /// <param name="sessionUnitId"></param>
     /// <param name="boxId"></param>
     /// <returns></returns>
-    Task<SessionUnitCacheItem> SetBoxAsync([Required] Guid sessionUnitId, [Required] Guid boxId);
+    Task<SessionUnitCacheItem> SetBoxAsync([Required] Guid sessionUnitId, Guid? boxId);
 
     /// <summary>
     /// 删除会话单元（软删除）

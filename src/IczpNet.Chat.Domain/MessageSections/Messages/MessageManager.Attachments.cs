@@ -35,6 +35,10 @@ public partial class MessageManager
                 video.SnapshotUrl = UrlNormalizer.ToRelative(video.SnapshotUrl);
                 video.SnapshotThumbnailUrl = UrlNormalizer.ToRelative(video.SnapshotThumbnailUrl);
                 video.GifUrl = UrlNormalizer.ToRelative(video.GifUrl);
+                if (video.ImageWidth <= 0 && video.Width > 0) video.ImageWidth = video.Width;
+                if (video.ImageHeight <= 0 && video.Height > 0) video.ImageHeight = video.Height;
+                if (video.Width <= 0 && video.ImageWidth > 0) video.Width = video.ImageWidth;
+                if (video.Height <= 0 && video.ImageHeight > 0) video.Height = video.ImageHeight;
                 break;
             case ImageContentInfo image:
                 image.Url = UrlNormalizer.ToRelative(image.Url);
@@ -148,6 +152,10 @@ public partial class MessageManager
         }
         else if (attachment is VideoContent video)
         {
+            if ((video.ImageWidth == null || video.ImageWidth <= 0) && video.Width > 0) video.ImageWidth = video.Width;
+            if ((video.ImageHeight == null || video.ImageHeight <= 0) && video.Height > 0) video.ImageHeight = video.Height;
+            if ((video.Width == null || video.Width <= 0) && video.ImageWidth > 0) video.Width = video.ImageWidth;
+            if ((video.Height == null || video.Height <= 0) && video.ImageHeight > 0) video.Height = video.ImageHeight;
             if (video.SnapshotBlobId.HasValue && blobs.TryGetValue(video.SnapshotBlobId.Value, out var snapBlob))
             {
                 video.SnapshotUrl = await BlobResolver.GetFileUrlAsync(snapBlob.Id, snapBlob.MimeType);

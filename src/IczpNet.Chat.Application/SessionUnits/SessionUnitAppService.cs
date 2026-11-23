@@ -707,13 +707,13 @@ public class SessionUnitAppService(
     }
 
     /// <summary>
-    /// 设置会话盒子
+    /// 设置会话盒子归属用途：支持指定 boxId 进行盒子归档，或传入 null 将其从盒子移出（恢复到主会话列表）
     /// </summary>
     /// <param name="sessionUnitId">会话单元Id</param>
     /// <param name="boxId"></param>
     /// <returns></returns>
     [HttpPost]
-    public async Task<SessionUnitCacheItem> SetBoxAsync([Required] Guid sessionUnitId, [Required] Guid boxId)
+    public async Task<SessionUnitCacheItem> SetBoxAsync([Required] Guid sessionUnitId, Guid? boxId)
     {
         var unit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
 

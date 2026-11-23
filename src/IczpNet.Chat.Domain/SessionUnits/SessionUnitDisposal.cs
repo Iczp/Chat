@@ -67,6 +67,18 @@ public class SessionUnitDisposal : CreationAuditedEntity<long>, IMultiTenant
     public virtual long? OperatorId { get; protected set; }
 
     /// <summary>
+    /// 历史消息可见性时间截断边界（早于等于此时间的消息对该成员不可见）
+    /// </summary>
+    [Comment("历史消息可见性时间截断边界")]
+    public virtual DateTime? ClearBeforeTime { get; protected set; }
+
+    /// <summary>
+    /// 历史消息可见性最大 ID 截断边界（小于等于此 ID 的消息对该成员不可见）
+    /// </summary>
+    [Comment("历史消息可见性最大 ID 截断边界")]
+    public virtual long? ClearMaxMessageId { get; protected set; }
+
+    /// <summary>
     /// 附加说明
     /// </summary>
     [MaxLength(256)]
@@ -84,7 +96,9 @@ public class SessionUnitDisposal : CreationAuditedEntity<long>, IMultiTenant
         SessionUnitDisposalReason reason,
         long? operatorId = null,
         string description = null,
-        Guid? tenantId = null)
+        Guid? tenantId = null,
+        DateTime? clearBeforeTime = null,
+        long? clearMaxMessageId = null)
     {
         OwnerId = ownerId;
         SessionUnitId = sessionUnitId;
@@ -95,5 +109,7 @@ public class SessionUnitDisposal : CreationAuditedEntity<long>, IMultiTenant
         OperatorId = operatorId;
         Description = description;
         TenantId = tenantId;
+        ClearBeforeTime = clearBeforeTime;
+        ClearMaxMessageId = clearMaxMessageId;
     }
 }

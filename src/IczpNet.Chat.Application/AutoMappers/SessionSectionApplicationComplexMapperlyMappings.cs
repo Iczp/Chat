@@ -1,4 +1,4 @@
-using IczpNet.Chat.Entries.Dtos;
+﻿using IczpNet.Chat.Entries.Dtos;
 using IczpNet.Chat.EntryNames;
 using IczpNet.Chat.EntryNames.Dtos;
 using IczpNet.Chat.EntryValues;
@@ -388,7 +388,7 @@ public partial class SessionSectionApplicationSessionUnitToSessionUnitSenderDtoM
     {
         if (source is null || destination is null) return;
         MapFields(source, destination);
-        destination.Score = MemberScore.Create(source.IsCreator, source.CreationTime);
+        destination.Score = MemberScore.Create(source.IsCreator, source.IsAdmin, source.CreationTime);
     }
 
     [MapperIgnoreTarget(nameof(SessionUnitSenderDto.Score))]
@@ -457,7 +457,7 @@ public partial class SessionSectionApplicationSessionUnitCacheItemToSessionUnitM
     {
         if (source is null || destination is null) return;
         MapFields(source, destination);
-        destination.Score = MemberScore.Create(source.IsCreator, source.CreationTime);
+        destination.Score = MemberScore.Create(source.IsCreator, source.IsAdmin, source.CreationTime);
     }
 
     [MapperIgnoreTarget(nameof(SessionUnitMemberDto.Score))]

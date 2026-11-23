@@ -144,12 +144,23 @@ public class SessionGenerator : DomainService, ISessionGenerator
             await Task.Yield();
         });
 
-        await ResolveShopWaiterId(sender, receiver, async (shopKeeperId) =>
+        var customerTypes = new[] { ChatObjectTypeEnums.Personal, ChatObjectTypeEnums.Anonymous, ChatObjectTypeEnums.Customer };
+        var shopTypes = new[] { ChatObjectTypeEnums.ShopKeeper, ChatObjectTypeEnums.ShopWaiter };
+        var customer = sender.ObjectType.HasValue && customerTypes.Contains(sender.ObjectType.Value) ? sender :
+            receiver.ObjectType.HasValue && customerTypes.Contains(receiver.ObjectType.Value) ? receiver : null;
+        var shop = sender.ObjectType.HasValue && shopTypes.Contains(sender.ObjectType.Value) ? sender :
+            receiver.ObjectType.HasValue && shopTypes.Contains(receiver.ObjectType.Value) ? receiver : null;
+        if (customer != null && shop != null)
         {
-            var shopKeeper = await ChatObjectManager.GetAsync(shopKeeperId);
-            //add sender
+            var shopKeeper = shop.ObjectType == ChatObjectTypeEnums.ShopKeeper ? shop :
+                await ChatObjectManager.GetAsync(shop.ParentId ?? throw new InvalidOperationException("Shop waiter has no shopkeeper."));
+            if (shopKeeper.ObjectType != ChatObjectTypeEnums.ShopKeeper)
+            {
+                throw new InvalidOperationException("Shop waiter's parent is not a shopkeeper.");
+            }
+
             SessionUnitManager.Create(session: session,
-                    owner: sender,
+                    owner: customer,
                     destination: shopKeeper,
                     x =>
                     {
@@ -159,29 +170,27 @@ public class SessionGenerator : DomainService, ISessionGenerator
             //add shopKeeper
             SessionUnitManager.Create(session: session,
                      owner: shopKeeper,
-                     destination: sender,
+                     destination: customer,
                      x =>
                      {
                          x.JoinWay = JoinWays.AutoJoin;
                      });
 
             //Cache GetChildsByCacheAsync
-            var shopWaiterList = await ChatObjectManager.GetChildsAsync(shopKeeperId);
+            var shopWaiterList = await ChatObjectManager.GetChildsAsync(shopKeeper.Id);
 
-            foreach (var shopWaiter in shopWaiterList)
+            foreach (var shopWaiter in shopWaiterList.Where(x => x.ObjectType == ChatObjectTypeEnums.ShopWaiter))
             {
                 SessionUnitManager.Create(session: session,
                     owner: shopWaiter,
-                    destination: sender,
+                    destination: customer,
                     x =>
                     {
                         x.JoinWay = JoinWays.AutoJoin;
                     });
             }
 
-            //add or update sessionUnit
-            await Task.Yield();
-        });
+        }
 
 
         //if (sender.ObjectType == ChatObjectTypeEnums.Official)

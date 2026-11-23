@@ -180,6 +180,10 @@ public class ChatObjectAppService(
     {
         var shopWaiter = await ChatObjectManager.CreateShopWaiterAsync(shopKeeperId, name, code);
 
+        await LazyServiceProvider.LazyGetRequiredService<Volo.Abp.BackgroundJobs.IBackgroundJobManager>()
+            .EnqueueAsync(new IczpNet.Chat.ShopWaiters.ShopWaiterSessionSyncJobArgs
+            { ShopKeeperId = shopKeeperId, WaiterId = shopWaiter.Id });
+
         return ObjectMapper.Map<ChatObject, ChatObjectDto>(shopWaiter);
     }
 

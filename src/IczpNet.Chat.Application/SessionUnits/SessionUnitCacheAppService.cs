@@ -1,4 +1,4 @@
-using CommunityToolkit.HighPerformance;
+﻿using CommunityToolkit.HighPerformance;
 using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.BaseDtos;
@@ -850,6 +850,7 @@ public class SessionUnitCacheAppService(
         dto.LastSendMessageId = unit.LastMessageId;
         dto.LastSendTime = unit.LastSendTime;
         dto.IsCreator = unit.IsCreator;
+        dto.IsAdmin = unit.IsAdmin;
         dto.IsPublic = unit.IsPublic;
         dto.IsStatic = unit.IsStatic;
         dto.IsEnabled = unit.IsEnabled;
@@ -921,7 +922,7 @@ public class SessionUnitCacheAppService(
             DestinationId = memberUnit.DestinationId,
             DestinationObjectType = memberUnit.DestinationObjectType,
             CreationTime = memberUnit.CreationTime,
-            Score = MemberScore.Create(memberUnit.IsCreator, memberUnit.CreationTime),
+            Score = MemberScore.Create(memberUnit.IsCreator, setting?.IsAdmin ?? memberUnit.IsAdmin, memberUnit.CreationTime),
             //TagList= memberUnit,
 
             // Setting
@@ -1022,7 +1023,7 @@ public class SessionUnitCacheAppService(
                 Setting = MergeSetting(settingsMap.GetValueOrDefault(x.Id), x),
 
                 CreationTime = x.CreationTime,
-                Score = MemberScore.Create(x.IsCreator, x.CreationTime),
+                Score = MemberScore.Create(x.IsCreator, (settingsMap.GetValueOrDefault(x.Id)?.IsAdmin ?? false) || x.IsAdmin, x.CreationTime),
             })
             .ToList();
 
@@ -1077,11 +1078,16 @@ public class SessionUnitCacheAppService(
         //加载全部
         await LoadMembersAsync(sessionId);
 
+        var minScore = input.MinScore.GetValueOrDefault() > 0 ? input.MinScore.Value : double.NegativeInfinity;
+        var maxScore = input.MaxScore.GetValueOrDefault() > 0 ? input.MaxScore.Value : double.PositiveInfinity;
+
         var queryable = await SessionUnitCacheManager.GetMembersAsync(
             sessionId,
             isCreator: input.IsCreator,
             isPrivate: input.IsPrivate,
             isStatic: input.IsStatic,
+            minScore: minScore,
+            maxScore: maxScore,
             isDescending: true);
 
         var query = queryable.AsQueryable()

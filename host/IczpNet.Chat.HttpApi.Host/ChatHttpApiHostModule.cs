@@ -48,6 +48,7 @@ using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.Json;
 using Volo.Abp.Json.SystemTextJson;
 using Volo.Abp.Localization;
+using Volo.Abp.Threading;
 using Volo.Abp.Modularity;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.PermissionManagement.EntityFrameworkCore;
@@ -172,6 +173,7 @@ public class ChatHttpApiHostModule : AbpModule
         PostConfigure<AbpDistributedEventBusOptions>(options =>
         {
             options.Handlers.Remove(typeof(MessageSentDistributedEventHandler));
+            options.Handlers.Remove(typeof(IczpNet.Chat.CallCenters.CallCenterMessageSentHandler));
             options.Handlers.Remove(typeof(SeedDataByUserCreatedDistributedEventHandler));
         });
 
@@ -504,5 +506,13 @@ public class ChatHttpApiHostModule : AbpModule
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
         app.UseConfiguredEndpoints();
+
+        AsyncHelper.RunSync(async () =>
+        {
+            using var scope = context.ServiceProvider.CreateScope();
+            await scope.ServiceProvider
+                .GetRequiredService<Volo.Abp.Data.IDataSeeder>()
+                .SeedAsync(new Volo.Abp.Data.DataSeedContext());
+        });
     }
 }

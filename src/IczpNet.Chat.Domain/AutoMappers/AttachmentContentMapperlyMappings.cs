@@ -100,8 +100,20 @@ public partial class ChatDomainSoundContentInfoToSoundContentMapper(IUrlNormaliz
 public partial class ChatDomainVideoContentInfoToVideoContentMapper(IUrlNormalizer urlNormalizer)
     : TwoWayMapperBase<VideoContentInfo, VideoContent>
 {
-    public override partial VideoContent Map(VideoContentInfo source);
-    public override partial void Map(VideoContentInfo source, VideoContent destination);
+    public override VideoContent Map(VideoContentInfo source)
+    {
+        if (source is null) return default!;
+        var destination = new VideoContent();
+        Map(source, destination);
+        return destination;
+    }
+
+    public override void Map(VideoContentInfo source, VideoContent destination)
+    {
+        if (source is null || destination is null) return;
+        MapInputFields(source, destination);
+        NormalizeEntityDimensions(source, destination);
+    }
 
     public override VideoContentInfo ReverseMap(VideoContent source)
     {
@@ -119,7 +131,44 @@ public partial class ChatDomainVideoContentInfoToVideoContentMapper(IUrlNormaliz
         destination.SnapshotUrl = urlNormalizer.Normalize(source.SnapshotUrl);
         destination.SnapshotThumbnailUrl = urlNormalizer.Normalize(source.SnapshotThumbnailUrl);
         destination.GifUrl = urlNormalizer.Normalize(source.GifUrl);
+        NormalizeDtoDimensions(destination, source);
     }
+
+    private static void NormalizeEntityDimensions(VideoContentInfo info, VideoContent content)
+    {
+        var w = content.Width ?? (info.Width > 0 ? info.Width : (content.ImageWidth ?? (info.ImageWidth > 0 ? info.ImageWidth : 0)));
+        var h = content.Height ?? (info.Height > 0 ? info.Height : (content.ImageHeight ?? (info.ImageHeight > 0 ? info.ImageHeight : 0)));
+
+        if (w > 0)
+        {
+            content.Width = w;
+            content.ImageWidth = w;
+        }
+        if (h > 0)
+        {
+            content.Height = h;
+            content.ImageHeight = h;
+        }
+    }
+
+    private static void NormalizeDtoDimensions(VideoContentInfo info, VideoContent content)
+    {
+        var w = info.Width > 0 ? info.Width : (info.ImageWidth > 0 ? info.ImageWidth : (content.Width ?? content.ImageWidth ?? 0));
+        var h = info.Height > 0 ? info.Height : (info.ImageHeight > 0 ? info.ImageHeight : (content.Height ?? content.ImageHeight ?? 0));
+
+        if (w > 0)
+        {
+            info.Width = w;
+            info.ImageWidth = w;
+        }
+        if (h > 0)
+        {
+            info.Height = h;
+            info.ImageHeight = h;
+        }
+    }
+
+    private partial void MapInputFields(VideoContentInfo source, VideoContent destination);
 
     [MapperIgnoreTarget(nameof(VideoContentInfo.Url))]
     [MapperIgnoreTarget(nameof(VideoContentInfo.SnapshotUrl))]

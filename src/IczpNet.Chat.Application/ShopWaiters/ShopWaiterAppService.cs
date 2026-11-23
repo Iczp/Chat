@@ -8,6 +8,11 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp;
+using Volo.Abp.Identity;
+using Volo.Abp.DistributedLocking;
+using Volo.Abp.Uow;
+using Volo.Abp.BackgroundJobs;
 
 namespace IczpNet.Chat.ShopWaiters;
 
@@ -71,6 +76,9 @@ public class ShopWaiterAppService : ChatAppService, IShopWaiterAppService
     {
         var entity = await ShopWaiterManager.CreateAsync(input.ShopKeeperId, input.Name);
 
+        await LazyServiceProvider.LazyGetRequiredService<IBackgroundJobManager>()
+            .EnqueueAsync(new ShopWaiterSessionSyncJobArgs { ShopKeeperId = input.ShopKeeperId, WaiterId = entity.Id });
+
         return await MapToDtoAsync(entity);
     }
 
@@ -94,10 +102,51 @@ public class ShopWaiterAppService : ChatAppService, IShopWaiterAppService
     /// <param name="id">主建Id</param>
     /// <param name="userId">用户Id</param>
     /// <returns></returns>
-    /// <exception cref="NotImplementedException"></exception>
     [HttpPost]
-    public virtual Task<ShopWaiterDto> BingUserAsync(long id, Guid userId)
+    public virtual async Task<ShopWaiterDto> BingUserAsync(long id, Guid userId)
     {
-        throw new NotImplementedException();
+        var distributedLock = LazyServiceProvider.LazyGetRequiredService<IAbpDistributedLock>();
+        if (distributedLock is NullAbpDistributedLock)
+        {
+            throw new InvalidOperationException("Binding a shop waiter requires a distributed lock provider.");
+        }
+        await using var handle = await distributedLock.TryAcquireAsync($"Chat:ShopWaiter:Bind:{id}", TimeSpan.FromSeconds(10));
+        if (handle == null)
+        {
+            throw new UserFriendlyException("店小二绑定正在处理，请重试。");
+        }
+        using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
+        var waiter = await Repository.GetAsync(id);
+        if (waiter.ObjectType != ChatObjectTypeEnums.ShopWaiter || !waiter.ParentId.HasValue)
+        {
+            throw new UserFriendlyException("聊天对象不是店小二。");
+        }
+
+        var shopKeeper = await Repository.GetAsync(waiter.ParentId.Value);
+        if (shopKeeper.ObjectType != ChatObjectTypeEnums.ShopKeeper)
+        {
+            throw new UserFriendlyException("店小二所属的聊天对象不是店长。");
+        }
+        await CheckPolicyForUserAsync(shopKeeper.Id);
+
+        var users = LazyServiceProvider.LazyGetRequiredService<IdentityUserManager>();
+        if (await users.FindByIdAsync(userId.ToString()) == null)
+        {
+            throw new UserFriendlyException("用户不存在。");
+        }
+        if (waiter.AppUserId.HasValue && waiter.AppUserId != userId)
+        {
+            throw new UserFriendlyException("店小二已绑定其他用户。");
+        }
+        if (waiter.AppUserId == userId)
+        {
+            var existing = await MapToDtoAsync(waiter);
+            await uow.CompleteAsync();
+            return existing;
+        }
+
+        var result = await MapToDtoAsync(await ChatObjectManager.BingAppUserIdAsync(id, userId));
+        await uow.CompleteAsync();
+        return result;
     }
 }

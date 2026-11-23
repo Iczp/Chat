@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
@@ -569,9 +570,9 @@ return 1";
             .ToHashSet()
             ;
 
-        var uncachedUnits = unitList.Where(x => uncachedUnitIds.Contains(x.Id));
+        var uncachedUnits = unitList.Where(x => uncachedUnitIds.Contains(x.Id)).ToList();
 
-        foreach (var unit in unitList)
+        foreach (var unit in uncachedUnits)
         {
             SetUnit(batch, unit, refreshExpire: true);
         }
@@ -613,7 +614,7 @@ return 1";
     private void SetSessionRelations(IBatch batch, RedisKey sessionMembersSetKey, SessionUnitCacheItem unit)
     {
         var element = GetElement(unit);
-        var score = MemberScore.Create(unit.IsCreator, unit.CreationTime);
+        var score = MemberScore.Create(unit.IsCreator, unit.IsAdmin, unit.CreationTime);
         _ = batch.SortedSetAddAsync(sessionMembersSetKey, element, score);
 
         // set session Topping
@@ -637,13 +638,33 @@ return 1";
         return await SetMembersAsync(sessionId, units);
     }
 
+    private static readonly ConcurrentDictionary<Guid, SemaphoreSlim> _memberLoadLocks = new();
+
     public async Task<IEnumerable<SessionUnitCacheItem>> SetMembersIfNotExistsAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
     {
-        if (!await Database.KeyExistsAsync(SessionMembersSetKey(sessionId)))
+        if (await Database.KeyExistsAsync(SessionMembersSetKey(sessionId)))
         {
+            return null;
+        }
+
+        var semaphore = _memberLoadLocks.GetOrAdd(sessionId, _ => new SemaphoreSlim(1, 1));
+        await semaphore.WaitAsync();
+        try
+        {
+            if (await Database.KeyExistsAsync(SessionMembersSetKey(sessionId)))
+            {
+                return null;
+            }
             return await SetMembersAsync(sessionId, fetchTask);
         }
-        return null;
+        finally
+        {
+            semaphore.Release();
+            if (semaphore.CurrentCount == 1)
+            {
+                _memberLoadLocks.TryRemove(sessionId, out _);
+            }
+        }
     }
 
     public async Task<IEnumerable<SessionUnitCacheItem>> GetOrSetMembersAsync(Guid sessionId, Func<Guid, Task<IEnumerable<SessionUnitCacheItem>>> fetchTask)
@@ -1481,14 +1502,20 @@ return 1";
                 continue;
             }
 
-            // 消息盒子 boxId
-            if (hasBox)
+            // 消息盒子 boxId 角标累加用途：
+            // 仅对非免打扰会话累加盒子角标，保证未读数与已读扣减时的逻辑对称，避免免打扰消息污染盒子红点总数
+            if (hasBox && !isImmersed)
             {
                 ZsetIncrementIfGuardKeyExist(batch, ownerStatisticSetKey, OwnerBoxBadgeZsetKey(ownerId), boxId.ToString(), 1);
             }
 
-            // receiverType
-            HashIncrementIfExist(batch, StatisticMapHashKey(ownerId), receiverType.ToString(), 1);
+            // 分类角标 (StatisticMap: 单聊/群聊/服务号/机器人等 Tab 对应的未读数) 累加用途：
+            // 1. 严格限制仅在非免打扰 (!isImmersed) 时累加，确保分类未读与全局未读总数一致，杜绝免打扰群产生无法扣减的残留角标；
+            // 2. Field 统一使用 element.DestinationObjectType 与已读扣减严格对齐，避免因枚举映射差异导致增减错位。
+            if (!isImmersed && element.DestinationObjectType.HasValue)
+            {
+                HashIncrementIfExist(batch, StatisticMapHashKey(ownerId), element.DestinationObjectType.Value.ToString(), 1);
+            }
 
             // badge
             _ = batch.HashIncrementAsync(unitKey, isPrivate ? F_PrivateBadge : F_PublicBadge, 1);
@@ -1740,7 +1767,7 @@ return 1";
         // -----------------------------
 
         var publicBadge = unit.PublicBadge;
-        var privatePublic = unit.PublicBadge;
+        var privateBadge = unit.PrivateBadge;
         var remindMeCount = unit.RemindMeCount;
         var remindAllCount = unit.RemindAllCount;
         var followingCount = unit.FollowingCount;
@@ -1756,7 +1783,8 @@ return 1";
 
         if (!immersed)
         {
-            // //非静默减量 destinations （key 必须已存在才更新）
+            // 分类角标扣减用途：
+            // 当会话已读时，扣减该聊天对象分类（如群聊、单聊）名下的未读计数（仅对非免打扰会话扣减，保证与新消息累加对称闭环）
             HashIncrementIfExist(batch, StatisticMapHashKey(unit.OwnerId), unit.DestinationObjectType.ToString(), -publicBadge);
         }
 
@@ -1775,13 +1803,15 @@ return 1";
         DecrementStatisticAsync(immersed ? F_Total_Immersed : F_Total_Public, publicBadge);
 
         DecrementStatisticAsync(F_Total_Pinned, publicBadge);
-        DecrementStatisticAsync(F_Total_Private, privatePublic);
+        // 私聊消息未读数扣减用途：修复笔误，正确传入 privateBadge 而非 publicBadge
+        DecrementStatisticAsync(F_Total_Private, privateBadge);
         DecrementStatisticAsync(F_Total_RemindMe, remindMeCount);
         DecrementStatisticAsync(F_Total_RemindAll, remindAllCount);
         DecrementStatisticAsync(F_Total_Following, followingCount);
 
-        // 减量更新会话盒子
-        if (unit.BoxId.HasValue)
+        // 会话盒子角标扣减用途：
+        // 仅对非免打扰会话扣减所属盒子未读数，避免免打扰会话已读时错误扣减其他正常会话贡献的红点
+        if (unit.BoxId.HasValue && !immersed)
         {
             _ = ZsetDecrementIfExistsAndClampZeroAsync(batch, OwnerBoxBadgeZsetKey(unit.OwnerId), unit.BoxId.ToString(), publicBadge, removeWhenZero: false);
         }
@@ -2446,7 +2476,7 @@ return 1";
             AddHash(true, OwnersIndexedHashKey(ownerId), element, JsonSerializer.Serialize(contact), expire: false);
             if (!unit.SessionId.HasValue) continue;
             var sessionId = unit.SessionId.Value;
-            AddSorted(true, SessionMembersSetKey(sessionId), element, MemberScore.Create(unit.IsCreator, unit.CreationTime));
+            AddSorted(true, SessionMembersSetKey(sessionId), element, MemberScore.Create(unit.IsCreator, unit.IsAdmin, unit.CreationTime));
             AddHash(unit.Sorting > 0, SessionPinnedSortingHashKey(sessionId), element, unit.Sorting);
             AddHash(unit.IsImmersed, SessionImmersedHashKey(sessionId), element, unit.IsImmersed);
             AddHash(unit.IsCreator, SessionImmersedHashKey(sessionId), element, unit.IsCreator);
@@ -2824,5 +2854,21 @@ return 0";
         var progress = kvs.Select(x => x.Value).FirstOrDefault();
 
         return progress;
+    }
+    public async Task UpdateUnitAdminAsync(Guid sessionUnitId, bool isAdmin)
+    {
+        var unit = await GetAsync(sessionUnitId);
+        if (unit != null)
+        {
+            unit.IsAdmin = isAdmin;
+            var batch = Database.CreateBatch();
+            SetUnit(batch, unit, refreshExpire: true);
+            if (unit.SessionId.HasValue)
+            {
+                var score = MemberScore.Create(unit.IsCreator, isAdmin, unit.CreationTime);
+                _ = batch.SortedSetAddAsync(SessionMembersSetKey(unit.SessionId.Value), GetElement(unit), score);
+            }
+            batch.Execute();
+        }
     }
 }

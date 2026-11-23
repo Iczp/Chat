@@ -63,7 +63,12 @@ public class SessionUnitMemberSettingDto
     /// <summary>
     /// 是否创建者（群主等）
     /// </summary>
-    public virtual bool IsCreator { get; set; } 
+    public virtual bool IsCreator { get; set; }
+
+    /// <summary>
+    /// 是否管理员
+    /// </summary>
+    public virtual bool IsAdmin { get; set; } 
 
     /// <summary>
     /// 禁言过期时间

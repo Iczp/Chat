@@ -33,7 +33,7 @@ public class ServiceStateManager(
 
         ServiceStatus? status = null;
 
-        if (items != null)
+        if (items is { Count: > 0 })
         {
             status = items.Count == 1 ? items[0].Status : items.OrderByDescending(x => x.ActiveTime).FirstOrDefault().Status;
         }
@@ -51,20 +51,23 @@ public class ServiceStateManager(
     {
         var status = await GetStatusAsync(shopKeeperId);
 
-        if (status != null)
+        if (status == ServiceStatus.Online)
         {
-            var all = await ChatObjectManager.GetRootChildrenAsync(shopKeeperId);
-            foreach (var child in all)
-            {
-                status = await GetStatusAsync(shopKeeperId);
-                if((int)status > 0)
-                {
-                    break;
-                }
-            }
+            return status;
         }
-        
-        return null;
+
+        var all = await ChatObjectManager.GetRootChildrenAsync(shopKeeperId);
+        foreach (var child in all.Where(x => x.Id != shopKeeperId))
+        {
+            var childStatus = await GetStatusAsync(child.Id);
+            if (childStatus == ServiceStatus.Online)
+            {
+                return childStatus;
+            }
+            status ??= childStatus;
+        }
+
+        return status;
     }
 
     public virtual async Task<List<ServiceStatusCacheItem>> SetAsync(long chatObjectId, string deviceId, ServiceStatus status)
@@ -154,6 +157,6 @@ public class ServiceStateManager(
     {
         var status = await GetStatusAsync(chatObjectId);
 
-        return status != null;
+        return status == ServiceStatus.Online;
     }
 }

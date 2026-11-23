@@ -1,4 +1,5 @@
-﻿using IczpNet.AbpCommons;
+﻿using Microsoft.EntityFrameworkCore;
+using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjectTypes;
@@ -261,29 +262,75 @@ public class RoomManager(
             Assert.If(inviterSessionUnit == null, "邀请人不在群里");
         }
 
-        var inMemberIdList = (await SessionUnitRepository.GetQueryableAsync())
-            .Where(x => x.SessionId == session.Id && input.MemberIdList.Contains(x.OwnerId))
+        var queryable = await SessionUnitRepository.GetQueryableAsync();
+        var existingUnits = await AsyncExecuter.ToListAsync(
+            queryable
+                .Include(x => x.Setting)
+                .Where(x => x.SessionId == session.Id && input.MemberIdList.Contains(x.OwnerId)));
+
+        // 已经在群里且处于活跃状态（未退群未删除）的成员
+        var activeInMemberList = existingUnits
+            .Where(x => x.Setting != null && !x.Setting.IsKilled && !x.IsDeleted)
             .Select(x => x.OwnerId)
             .ToList();
 
-        Assert.If(inMemberIdList.Any(), $"有 {inMemberIdList.Count} 人已经在群里,[id:{inMemberIdList.FirstOrDefault()}]");
+        Assert.If(activeInMemberList.Any(), $"有 {activeInMemberList.Count} 人已经在群里,[id:{activeInMemberList.FirstOrDefault()}]");
 
-        var newMemberIdList = input.MemberIdList.Except(inMemberIdList).ToList();
+        // 曾经在群里但退出/被踢出的成员（需要重新激活复用原有 SessionUnit.Id）
+        var rejoinUnits = existingUnits
+            .Where(x => (x.Setting != null && x.Setting.IsKilled) || x.IsDeleted)
+            .ToList();
 
-        Assert.If(newMemberIdList.Count == 0, "没有数据:newMemberIdList");
+        var existingOwnerIds = existingUnits.Select(x => x.OwnerId).ToHashSet();
+        var brandNewMemberIdList = input.MemberIdList.Where(id => !existingOwnerIds.Contains(id)).ToList();
 
-        var joinMembers = await ChatObjectManager.GetManyAsync(newMemberIdList);
+        var allCandidateMemberIds = input.MemberIdList.Except(activeInMemberList).ToList();
+        Assert.If(allCandidateMemberIds.Count == 0, "没有数据:memberIdList");
 
-        Assert.If(joinMembers.Count == 0, "没有数据:joinMembers");
+        var allJoinedMembers = await ChatObjectManager.GetManyAsync(allCandidateMemberIds);
+        Assert.If(allJoinedMembers.Count == 0, "没有数据:allJoinedMembers");
 
-        foreach (var member in joinMembers)
+        foreach (var member in allJoinedMembers)
         {
             Assert.If(!IsAllowJoinRoom(member.ObjectType.GetValueOrDefault()), $"不能加入群:[id:${member.Id},ObjectType:{member.ObjectType}]");
         }
 
         var room = await ChatObjectManager.GetAsync(input.RoomId);
+        var disposalManager = LazyServiceProvider.LazyGetRequiredService<ISessionUnitDisposalManager>();
 
-        var joinMemberSessionUnitList = joinMembers.Select(x =>
+        // 1. 重新激活已有 SessionUnit
+        foreach (var rejoinUnit in rejoinUnits)
+        {
+            rejoinUnit.IsDeleted = false;
+            rejoinUnit.DeleterId = null;
+            rejoinUnit.DeletionTime = null;
+            if (rejoinUnit.Setting != null)
+            {
+                rejoinUnit.Setting.IsKilled = false;
+                rejoinUnit.Setting.KillTime = null;
+                rejoinUnit.Setting.JoinWay = input.JoinWay ?? JoinWays.Invitation;
+                rejoinUnit.Setting.InviterId = inviterSessionUnit?.Id;
+            }
+
+            // 记录重新入群处置事件（Normal / MemberRejoined）通知各端恢复活跃状态
+            await disposalManager.RecordDisposalAsync(
+                ownerId: rejoinUnit.OwnerId,
+                sessionUnitId: rejoinUnit.Id,
+                sessionId: rejoinUnit.SessionId,
+                destinationId: rejoinUnit.DestinationId,
+                disposalType: SessionUnitDisposalType.Normal,
+                reason: SessionUnitDisposalReason.MemberRejoined,
+                operatorId: input.InviterId);
+        }
+
+        if (rejoinUnits.Count > 0)
+        {
+            await SessionUnitRepository.UpdateManyAsync(rejoinUnits, autoSave: true);
+        }
+
+        // 2. 为全新成员创建 SessionUnit
+        var newJoinMembers = allJoinedMembers.Where(m => brandNewMemberIdList.Contains(m.Id)).ToList();
+        var newMemberSessionUnitList = newJoinMembers.Select(x =>
             SessionUnitManager.Generate(
                 session: session,
                 owner: x,
@@ -295,8 +342,12 @@ public class RoomManager(
                 }))
             .ToList();
 
-        await SessionUnitRepository.InsertManyAsync(joinMemberSessionUnitList, autoSave: true);
+        if (newMemberSessionUnitList.Count > 0)
+        {
+            await SessionUnitRepository.InsertManyAsync(newMemberSessionUnitList, autoSave: true);
+        }
 
+        var joinMemberSessionUnitList = rejoinUnits.Concat(newMemberSessionUnitList).ToList();
         var units = joinMemberSessionUnitList.Select(x => ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(x)).ToList();
         SessionUnitCacheItem roomUnit = null;
         CmdContentInfo content = null;
@@ -314,7 +365,7 @@ public class RoomManager(
             }
 
             var membersJoinText = joinMemberSessionUnitList.Take(3)
-                                .Select(x => new SessionUnitTextTemplate(x.Id, joinMembers.FirstOrDefault(d => d.Id == x.OwnerId)?.Name).ToString())
+                                .Select(x => new SessionUnitTextTemplate(x.Id, allJoinedMembers.FirstOrDefault(d => d.Id == x.OwnerId)?.Name).ToString())
                                 .JoinAsString("、");
 
             content = new CmdContentInfo()
@@ -324,7 +375,7 @@ public class RoomManager(
                 Text = new TextTemplate("{inviterText} {membersJoinText} 等 {count} 人加入群聊")
                             .WithData("inviterText", inviterText)
                             .WithData("membersJoinText", membersJoinText)
-                            .WithData("count", joinMembers.Count)
+                            .WithData("count", allJoinedMembers.Count)
                             .ToString(),
             };
             var senderUnit = await SessionUnitManager.FindAsync(room.Id, room.Id);

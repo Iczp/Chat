@@ -45,6 +45,16 @@ public class SessionUnitDisposalDto : EntityDto<long>
     public virtual long? OperatorId { get; set; }
 
     /// <summary>
+    /// 历史消息可见性时间截断边界（早于等于此时间的消息对该成员不可见）
+    /// </summary>
+    public virtual DateTime? ClearBeforeTime { get; set; }
+
+    /// <summary>
+    /// 历史消息可见性最大 ID 截断边界（小于等于此 ID 的消息对该成员不可见）
+    /// </summary>
+    public virtual long? ClearMaxMessageId { get; set; }
+
+    /// <summary>
     /// 附加说明
     /// </summary>
     public virtual string Description { get; set; }

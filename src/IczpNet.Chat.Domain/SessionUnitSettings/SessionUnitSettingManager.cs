@@ -27,6 +27,9 @@ using Volo.Abp;
 using Volo.Abp.Uow;
 using Volo.Abp.Threading;
 using Volo.Abp.EventBus.Distributed;
+using IczpNet.Chat.SessionRoles;
+using IczpNet.Chat.SessionUnitRoles;
+using Volo.Abp.Domain.Repositories;
 
 
 namespace IczpNet.Chat.SessionUnitSettings;
@@ -37,7 +40,10 @@ public class SessionUnitSettingManager(
     IMessageSender messageSender,
     ISessionUnitManager sessionUnitManager,
     ISessionUnitCacheManager sessionUnitCacheManager,
-    ISessionUnitSettingRepository sessionUnitSettingRepository) : DomainService, ISessionUnitSettingManager
+    ISessionUnitSettingRepository sessionUnitSettingRepository,
+    ISessionUnitRepository sessionUnitRepository,
+    IRepository<SessionRole, Guid> sessionRoleRepository,
+    IDistributedEventBus distributedEventBus) : DomainService, ISessionUnitSettingManager
 {
     public IDistributedCache<SessionUnitSettingCacheItem, Guid> SessionUnitSettingCache { get; } = sessionUnitSettingCache;
     public IObjectMapper ObjectMapper { get; } = objectMapper;
@@ -45,6 +51,9 @@ public class SessionUnitSettingManager(
     public ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
     public ISessionUnitCacheManager SessionUnitCacheManager { get; } = sessionUnitCacheManager;
     public ISessionUnitSettingRepository SessionUnitSettingRepository { get; } = sessionUnitSettingRepository;
+    public ISessionUnitRepository SessionUnitRepository { get; } = sessionUnitRepository;
+    public IRepository<SessionRole, Guid> SessionRoleRepository { get; } = sessionRoleRepository;
+    public IDistributedEventBus DistributedEventBus { get; } = distributedEventBus;
 
     protected Task<SessionUnitSetting> GetAsync(Guid sessionUnitId)
     {
@@ -282,6 +291,13 @@ public class SessionUnitSettingManager(
                 destinationId: unit.DestinationId,
                 disposalType: SessionUnitDisposalType.Remove,
                 reason: disposalReason);
+
+            if (unit.SessionId.HasValue)
+            {
+                var cacheManager = LazyServiceProvider.LazyGetRequiredService<ISessionUnitCacheManager>();
+                var cacheItem = ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(unit);
+                await cacheManager.RemoveNewUnitsAsync([cacheItem]);
+            }
         }
         return setting;
     }
@@ -393,6 +409,97 @@ public class SessionUnitSettingManager(
         });
 
         return muteExpireTime;
+    }
+
+    [UnitOfWork(isTransactional: true)]
+    public virtual async Task<SessionUnitSetting> SetAdminAsync(Guid sessionUnitId, bool isAdmin, SessionUnit setterSessionUnit, bool isSendMessage = true)
+    {
+        var setting = await GetAsync(sessionUnitId);
+        var targetSessionUnit = setting.SessionUnit ?? await SessionUnitRepository.GetAsync(sessionUnitId);
+
+        Assert.If(setting.IsCreator, "群主不能被设为管理员。");
+        Assert.If(setting.IsKilled, "已退出群聊的成员不能被设为管理员。");
+
+        if (setterSessionUnit != null)
+        {
+            Assert.If(!setterSessionUnit.Setting.IsCreator, "仅群主有权设置或取消管理员。");
+            Assert.If(setterSessionUnit.SessionId != targetSessionUnit.SessionId, "非本群群主无权操作。");
+        }
+
+        var sessionId = targetSessionUnit.SessionId.Value;
+
+        // 1. 管理 SessionRole 与 SessionUnitRole
+        var roles = await SessionRoleRepository.GetListAsync(x => x.SessionId == sessionId);
+        var adminRole = roles.FirstOrDefault(x => x.Name == "管理员" || x.Name == "Admin");
+        if (adminRole == null && isAdmin)
+        {
+            adminRole = new SessionRole(GuidGenerator.Create(), sessionId, "管理员");
+            await SessionRoleRepository.InsertAsync(adminRole, autoSave: true);
+        }
+
+        if (adminRole != null)
+        {
+            if (isAdmin)
+            {
+                if (!targetSessionUnit.SessionUnitRoleList.Any(x => x.SessionRoleId == adminRole.Id))
+                {
+                    targetSessionUnit.SessionUnitRoleList.Add(new SessionUnitRole(adminRole, targetSessionUnit));
+                }
+            }
+            else
+            {
+                var roleItem = targetSessionUnit.SessionUnitRoleList.FirstOrDefault(x => x.SessionRoleId == adminRole.Id);
+                if (roleItem != null)
+                {
+                    targetSessionUnit.SessionUnitRoleList.Remove(roleItem);
+                }
+            }
+        }
+
+        // 2. 更新 SessionUnit.Ticks (使当事人重连后增量补全自身数据)
+        targetSessionUnit.SetTicks(Clock.Now.Ticks);
+        await SessionUnitRepository.UpdateAsync(targetSessionUnit, autoSave: true);
+
+        // 3. 更新 Setting 实体与缓存
+        setting.SetIsAdmin(isAdmin);
+        var entity = await SessionUnitSettingRepository.UpdateAsync(setting, autoSave: true);
+        var settingCacheItem = ObjectMapper.Map<SessionUnitSetting, SessionUnitSettingCacheItem>(entity);
+        settingCacheItem.IsAdmin = isAdmin;
+        await SessionUnitSettingCache.SetAsync(sessionUnitId, settingCacheItem);
+
+        // 4. 更新 Redis 缓存快照与 ZSet 排序分值
+        await SessionUnitCacheManager.UpdateUnitAdminAsync(sessionUnitId, isAdmin);
+
+        // 5. 广播 SignalR 事件向群在线成员同步
+        var newScore = MemberScore.Create(setting.IsCreator, isAdmin, targetSessionUnit.CreationTime);
+        await DistributedEventBus.PublishAsync(new SessionUnitMemberUpdatedDistributedEto
+        {
+            SessionId = sessionId,
+            SessionUnitId = sessionUnitId,
+            MemberChatObjectId = targetSessionUnit.OwnerId,
+            IsAdmin = isAdmin,
+            IsCreator = setting.IsCreator,
+            Score = newScore.Value,
+            MemberName = setting.MemberName ?? targetSessionUnit.Owner?.Name,
+            CreationTime = targetSessionUnit.CreationTime,
+        });
+
+        // 6. 发送群内审计系统消息 (离线成员拉取消息流时补偿)
+        if (isSendMessage && setterSessionUnit != null)
+        {
+            var unit = await SessionUnitManager.MapToCacheAsync(setterSessionUnit);
+            await MessageSender.SendCmdAsync(unit, new MessageInput<CmdContentInfo>()
+            {
+                Content = new CmdContentInfo()
+                {
+                    Text = new TextTemplate(isAdmin ? "'{targetObject}' 被设为管理员" : "'{targetObject}' 被取消管理员")
+                            .WithData("targetObject", new SessionUnitTextTemplate(targetSessionUnit))
+                            .ToString(),
+                }
+            });
+        }
+
+        return entity;
     }
 
     public virtual async Task<List<SessionUnitSetting>> GetManyAsync(List<Guid> unitIdList)

@@ -16,6 +16,8 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
+using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.Entries;
@@ -28,6 +30,8 @@ public class EntryAppService : ChatAppService, IEntryAppService
     protected ISessionPermissionChecker SessionPermissionChecker { get; }
     protected IRepository<EntryName, Guid> EntryNameRepository { get; }
     protected IRepository<EntryValue, Guid> EntryValueRepository { get; }
+    protected ISessionUnitRepository SessionUnitRepository => LazyServiceProvider.LazyGetRequiredService<ISessionUnitRepository>();
+    protected ISessionUnitCacheManager SessionUnitCacheManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitCacheManager>();
     public EntryAppService(
         ISessionPermissionChecker sessionPermissionChecker,
         IRepository<EntryName, Guid> entryNameRepository,
@@ -50,29 +54,60 @@ public class EntryAppService : ChatAppService, IEntryAppService
         return ObjectMapper.Map<SessionUnit, SessionUnitDestinationDetailDto>(entity);
     }
 
+    private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(200);
+
     protected virtual async Task CheckEntriesInputAsync(Dictionary<Guid, List<string>> entries)
     {
+        if (entries == null || entries.Count == 0)
+        {
+            return;
+        }
+
         foreach (var item in entries)
         {
             var entryName = Assert.NotNull(await EntryNameRepository.FindAsync(item.Key), $"不存在EntryNameId:{item.Key}");
 
-            Assert.If(entryName.IsRequired && item.Value.Count == 0, $"${entryName.Name}必填");
+            var nonNullValues = item.Value?.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()).ToList() ?? [];
 
-            Assert.If(entryName.MaxCount.HasValue && item.Value.Count > entryName.MaxCount, $"{entryName.Name}最大个数：{entryName.MaxCount}");
+            Assert.If(entryName.IsRequired && nonNullValues.Count == 0, $"{entryName.Name}必填");
 
-            Assert.If(entryName.MinCount.HasValue && item.Value.Count < entryName.MinCount, $"{entryName.Name}最小个数：{entryName.MinCount}");
+            Assert.If(entryName.MaxCount.HasValue && nonNullValues.Count > entryName.MaxCount, $"{entryName.Name}最大个数：{entryName.MaxCount}");
 
-            foreach (var value in item.Value)
+            Assert.If(entryName.MinCount.HasValue && nonNullValues.Count < entryName.MinCount, $"{entryName.Name}最小个数：{entryName.MinCount}");
+
+            HashSet<string> validOptionValues = null;
+            if (entryName.IsChoice)
             {
-                Assert.If(entryName.MaxLenth.HasValue && value.Length > entryName.MaxLenth, $"{entryName.Name}({entryName.Code})[{item.Value.IndexOf(value) + 1}]最大长度：{entryName.MaxLenth}");
+                var options = await EntryValueRepository.GetListAsync(x => x.EntryNameId == entryName.Id && x.IsOption);
+                validOptionValues = options.Select(x => x.Value).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            }
 
-                Assert.If(entryName.MinLenth.HasValue && value.Length < entryName.MinLenth, $"{entryName.Name}({entryName.Code})[{item.Value.IndexOf(value) + 1}]最小长度：{entryName.MinLenth}");
+            foreach (var value in nonNullValues)
+            {
+                Assert.If(entryName.MaxLenth.HasValue && value.Length > entryName.MaxLenth, $"{entryName.Name}({entryName.Code})[{nonNullValues.IndexOf(value) + 1}]最大长度：{entryName.MaxLenth}");
 
-                //if (entryName.IsUniqued)
-                //{
-                //    var isAny = !await EntryValueRepository.AnyAsync(x => x.EntryNameId == entryName.Id && x.Value == value.Value);
-                //    Assert.If(isAny, $"${entryName.Title}已经存在值：{value.Value}");
-                //}
+                Assert.If(entryName.MinLenth.HasValue && value.Length < entryName.MinLenth, $"{entryName.Name}({entryName.Code})[{nonNullValues.IndexOf(value) + 1}]最小长度：{entryName.MinLenth}");
+
+                if (entryName.IsChoice && validOptionValues != null && validOptionValues.Count > 0)
+                {
+                    Assert.If(!validOptionValues.Contains(value), $"值「{value}」不在【{entryName.Name}】的可选范围内");
+                }
+
+                if (!string.IsNullOrWhiteSpace(entryName.Regex))
+                {
+                    try
+                    {
+                        var isMatch = Regex.IsMatch(value, entryName.Regex, RegexOptions.None, RegexTimeout);
+                        var errMsg = !string.IsNullOrWhiteSpace(entryName.ErrorMessage)
+                            ? entryName.ErrorMessage
+                            : $"{entryName.Name}格式不正确";
+                        Assert.If(!isMatch, errMsg);
+                    }
+                    catch (RegexMatchTimeoutException)
+                    {
+                        throw new UserFriendlyException($"{entryName.Name}格式校验超时");
+                    }
+                }
             }
         }
     }
@@ -194,6 +229,19 @@ public class EntryAppService : ChatAppService, IEntryAppService
         var entityComparer = new EntityComparer<SessionUnitEntryValue>(x => x.GetKeys().JoinAsString(","));
 
         sessionUnit.Entries = await CudItemsAsync(sessionUnit.Entries, inputItems, entityComparer);
+
+        // 联动更新 SessionUnit.Ticks，驱动客户端增量轮询与缓存一致性
+        var nowTicks = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        await SessionUnitRepository.UpdateTicksAsync(sessionUnit.Id, nowTicks);
+        if (sessionUnit.SessionId.HasValue)
+        {
+            await SessionUnitCacheManager.SetPinningAsync(
+                sessionUnit.SessionId.Value,
+                sessionUnit.Id,
+                sessionUnit.OwnerId,
+                (long)sessionUnit.Sorting,
+                nowTicks);
+        }
 
         return await MapToSessionUnitDetailDtoAsync(sessionUnit);
     }

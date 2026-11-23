@@ -297,6 +297,14 @@ public class SessionUnitSetting : BaseEntity, IHasCreationTime, IHasModification
     [Comment("是否创建者（群主等）")]
     public virtual bool IsCreator { get; protected set; } = false;
 
+
+    /// <summary>
+    /// 是否管理员
+    /// </summary>
+    [NotMapped]
+    public virtual bool IsAdmin { get; set; } = false;
+
+    internal virtual void SetIsAdmin(bool v) => IsAdmin = v;
     #region 邀请人 SessionUnit
     /// <summary>
     /// 邀请人Id

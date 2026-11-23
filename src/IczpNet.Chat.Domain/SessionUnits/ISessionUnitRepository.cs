@@ -43,10 +43,10 @@ public interface ISessionUnitRepository : IRepository<SessionUnit, Guid>
     Task<long> ClearBadgeAsync(long ownerId);
 
     /// <summary>
-    /// 更新消息盒子
+    /// 更新会话盒子归属（boxId 为 null 时代表移出盒子）
     /// </summary>
     /// <param name="id"></param>
     /// <param name="boxId"></param>
     /// <returns></returns>
-    Task<long> UpdateBoxAsync(Guid id, Guid boxId);
+    Task<long> UpdateBoxAsync(Guid id, Guid? boxId);
 }

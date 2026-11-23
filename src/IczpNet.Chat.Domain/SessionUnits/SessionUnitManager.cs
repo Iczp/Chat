@@ -1,4 +1,4 @@
-using IczpNet.AbpCommons;
+ï»¿using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Enums;
@@ -25,8 +25,10 @@ using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Volo.Abp;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Caching;
+using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.EventBus.Distributed;
@@ -64,7 +66,7 @@ public class SessionUnitManager(
     public IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
     protected ISessionUnitRepository Repository { get; } = repository;
     /// <summary>
-    /// SessionUnit ¸üĞÂÆµ·±£¬Ê¹ÓÃ ReadOnlyRepository ·ÀÖ¹ÒâÍâ¸üĞÂµ½Êı¾İ¿â£¬ÒıÆğ²¢·¢³åÍ» --2025.03.19
+    /// SessionUnit æ›´æ–°é¢‘ç¹ï¼Œä½¿ç”¨ ReadOnlyRepository é˜²æ­¢æ„å¤–æ›´æ–°åˆ°æ•°æ®åº“ï¼Œå¼•èµ·å¹¶å‘å†²çª --2025.03.19
     /// </summary>
     public IReadOnlyRepository<SessionUnit, Guid> SessionUnitReadOnlyRepository { get; } = sessionUnitReadOnlyRepository;
     protected IReadOnlyRepository<Message, long> MessageReadOnlyRepository { get; } = messageReadOnlyRepository;
@@ -89,7 +91,7 @@ public class SessionUnitManager(
     protected ISessionUnitIdGenerator IdGenerator { get; } = idGenerator;
 
     /// <summary>
-    /// ÓÎ±êÄ£ĞÍ
+    /// æ¸¸æ ‡æ¨¡å‹
     /// </summary>
     /// <param name="CreationTime"></param>
     /// <param name="Id"></param>
@@ -98,7 +100,7 @@ public class SessionUnitManager(
         public static SessionUnitCursor Start => new(DateTime.MinValue, Guid.Empty);
     }
     /// <summary>
-    /// Í¨ÓÃÓÎ±ê·ÖÆ¬Æ÷£¨ºËĞÄ£©
+    /// é€šç”¨æ¸¸æ ‡åˆ†ç‰‡å™¨ï¼ˆæ ¸å¿ƒï¼‰
     /// </summary>
     /// <param name="baseQuery"></param>
     /// <param name="batchSize"></param>
@@ -181,6 +183,7 @@ public class SessionUnitManager(
 
                         IsImmersed = x.Setting.IsImmersed,
                         IsCreator = x.Setting.IsCreator,
+                        IsAdmin = x.SessionUnitRoleList.Any(r => r.SessionRole.Name == "ç®¡ç†å‘˜" || r.SessionRole.Name == "Admin"),
                         Rename = x.Setting.Rename,
                         RenameSpellingAbbreviation = x.Setting.RenameSpellingAbbreviation,
                         MemberName = x.Setting.MemberName,
@@ -232,7 +235,7 @@ public class SessionUnitManager(
                     swQuery.ElapsedMilliseconds);
 
                 var swMap = Stopwatch.StartNew();
-                // È¡Ïû MapToCacheItem£¬Ìá¸ßĞÔÄÜ--2026.01.30
+                // å–æ¶ˆ MapToCacheItemï¼Œæé«˜æ€§èƒ½--2026.01.30
                 //var list = batch.Select(MapToCacheItem).ToList();
                 var list = batch.ToList();
                 swMap.Stop();
@@ -339,7 +342,7 @@ public class SessionUnitManager(
             IsVisible = x.IsVisible,
             SessionId = x.SessionId,
             CreationTime = x.CreationTime,
-            // ´ı¸³Öµ
+            // å¾…èµ‹å€¼
             TagList = [],
             // owner
             Owner = ownerMap.GetOrDefault(x.OwnerId)
@@ -465,9 +468,41 @@ public class SessionUnitManager(
     /// <inheritdoc />
     public virtual async Task<SessionUnit> CreateIfNotContainsAsync(SessionUnit sessionUnit)
     {
-        var entity = await FindAsync(sessionUnit.OwnerId, sessionUnit.DestinationId.Value);
+        SessionUnit entity;
+        var dataFilter = LazyServiceProvider.LazyGetRequiredService<IDataFilter>();
+        using (dataFilter.Disable<ISoftDelete>())
+        {
+            entity = await FindAsync(sessionUnit.OwnerId, sessionUnit.DestinationId.Value);
+        }
 
-        entity ??= await Repository.InsertAsync(sessionUnit, autoSave: true);
+        if (entity != null)
+        {
+            if (entity.IsDeleted)
+            {
+                entity.IsDeleted = false;
+                entity.DeleterId = null;
+                entity.DeletionTime = null;
+                await Repository.UpdateAsync(entity, autoSave: true);
+
+                var disposalManager = LazyServiceProvider.LazyGetRequiredService<ISessionUnitDisposalManager>();
+                await disposalManager.RecordDisposalAsync(
+                    ownerId: entity.OwnerId,
+                    sessionUnitId: entity.Id,
+                    sessionId: entity.SessionId,
+                    destinationId: entity.DestinationId,
+                    disposalType: SessionUnitDisposalType.Normal,
+                    reason: SessionUnitDisposalReason.FriendRestored,
+                    description: "é‡æ–°æ·»åŠ å¥½å‹æ¢å¤ä¼šè¯");
+            }
+            if (entity.Setting != null && entity.Setting.IsKilled)
+            {
+                entity.Setting.IsKilled = false;
+                entity.Setting.KillTime = null;
+            }
+            return entity;
+        }
+
+        entity = await Repository.InsertAsync(sessionUnit, autoSave: true);
 
         return entity;
     }
@@ -487,7 +522,7 @@ public class SessionUnitManager(
         return CreateIfNotContainsAsync(Generate(session, owner, destination, setting));
     }
 
-    public const int MaxPinnedCount = 30;
+    public const int DefaultMaxPinnedCount = 30;
 
     /// <inheritdoc />
     public virtual async Task<SessionUnit> SetPinningAsync(SessionUnit entity, bool isTopping)
@@ -497,21 +532,23 @@ public class SessionUnitManager(
 
         if (isTopping)
         {
+            var maxAllowed = Config.MaxPinnedCount;
             var pinnedUnits = await (await Repository.GetQueryableAsync())
                 .Where(x => x.OwnerId == entity.OwnerId && x.Sorting > 0 && x.Id != entity.Id)
                 .OrderBy(x => x.Sorting)
                 .ToListAsync();
 
-            if (pinnedUnits.Count >= MaxPinnedCount)
+            if (pinnedUnits.Count >= maxAllowed)
             {
-                throw new Volo.Abp.UserFriendlyException($"×î¶àÖ»ÄÜÖÃ¶¥ {MaxPinnedCount} ¸ö»á»°£¬ÇëÏÈÈ¡Ïû²¿·ÖÖÃ¶¥¡£");
+                throw new Volo.Abp.UserFriendlyException($"æœ€å¤šåªèƒ½ç½®é¡¶ {maxAllowed} ä¸ªä¼šè¯ï¼Œè¯·å…ˆå–æ¶ˆéƒ¨åˆ†ç½®é¡¶ã€‚");
             }
 
             var maxSorting = pinnedUnits.Count > 0 ? (long)pinnedUnits.Max(x => x.Sorting) : 0;
+            var normalizeThreshold = Math.Min(99, Math.Max(maxAllowed + 15, 60));
 
-            if (maxSorting >= 60)
+            if (maxSorting >= normalizeThreshold)
             {
-                // ´¥·¢¹éÒ»»¯Ñ¹ËõÖØÅÅ
+                // è§¦å‘å½’ä¸€åŒ–å‹ç¼©é‡æ’
                 for (var i = 0; i < pinnedUnits.Count; i++)
                 {
                     pinnedUnits[i].SetTopping(i + 1);
@@ -615,12 +652,12 @@ public class SessionUnitManager(
         {
             counter = await GetCounterAsync(entity.Id, lastMessageId);
         }
-        // ¸üĞÂSetting
+        // æ›´æ–°Setting
         await SetEntityAsync(entity, x => x.UpdateCounter(counter));
-        // ¸üĞÂ¼ÇÊıÆ÷
+        // æ›´æ–°è®°æ•°å™¨
         entity = await Repository.UpdateCountersync(counter);
 
-        // ¸üĞÂ»º´æ
+        // æ›´æ–°ç¼“å­˜
         var unit = await SessionUnitCacheManager.UpdateCounterAsync(
              counter,
              async (id) =>
@@ -629,10 +666,10 @@ public class SessionUnitManager(
                  return ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(entity);
              });
 
-        //// É¾³ı×Ü¼ÇÊı»º´æ
+        //// åˆ é™¤æ€»è®°æ•°ç¼“å­˜
         //await SessionUnitCacheManager.RemoveTotalBadgeAsync(entity.OwnerId);
 
-        //ÍÆËÍÍ¬²½µ½¿Í»§¶Ë
+        //æ¨é€åŒæ­¥åˆ°å®¢æˆ·ç«¯
         await DistributedEventBus.PublishAsync(new SessionUnitChangedDistributedEto()
         {
             ReadMessageId = lastMessageId,
@@ -1191,7 +1228,7 @@ public class SessionUnitManager(
     {
         var stopwatch = Stopwatch.StartNew();
 
-        //·´ÏòºÃÓÑ£º¶Ô·½°Ñ×Ô¼º¼ÓÎªºÃÓÑµÄ»á»°µ¥Ôª
+        //åå‘å¥½å‹ï¼šå¯¹æ–¹æŠŠè‡ªå·±åŠ ä¸ºå¥½å‹çš„ä¼šè¯å•å…ƒ
         var list = await BatchGetListAsync(queryable => queryable.Where(x => x.DestinationId == destinationId), batchSize, cancellationToken);
 
         Logger.LogInformation("{method} DestinationId:{destinationId}, [DB Elapsed:{elapsed}ms]", nameof(GetReverseFriendsAsync), destinationId, stopwatch.ElapsedMilliseconds);
@@ -1461,7 +1498,7 @@ public class SessionUnitManager(
         {
             Content = new CmdContentInfo()
             {
-                Text = new TextTemplate(isMuted ? "'{muteObject}' ±»½ûÑÔ {Minutes} ·ÖÖÓ" : "'{muteObject}' ±»È¡Ïû½ûÑÔ")
+                Text = new TextTemplate(isMuted ? "'{muteObject}' è¢«ç¦è¨€ {Minutes} åˆ†é’Ÿ" : "'{muteObject}' è¢«å–æ¶ˆç¦è¨€")
                         .WithData("muteObject", new SessionUnitTextTemplate(muterSessionUnit))
                         .WithData("minutes", timeSpan?.Minutes)
                         .ToString(),
@@ -1486,7 +1523,7 @@ public class SessionUnitManager(
 
         if (codeList.Contains(userChatObject.Code))
         {
-            Logger.LogWarning($"{nameof(GenerateDefaultSessionByChatObjectAsync)}:²»ĞèÒª´´½¨Ä¬ÈÏ»á»°");
+            Logger.LogWarning($"{nameof(GenerateDefaultSessionByChatObjectAsync)}:ä¸éœ€è¦åˆ›å»ºé»˜è®¤ä¼šè¯");
             return [];
         }
         var a = await GenerateNotifySessionAsync(userChatObject);
@@ -1498,11 +1535,11 @@ public class SessionUnitManager(
     {
         var notifyChatObject = await ChatObjectManager.GetOrAddNotifyAsync();
 
-        //´´½¨»á»°
+        //åˆ›å»ºä¼šè¯
         var session = await SessionGenerator.MakeAsync(notifyChatObject, userChatObject);
 
         session.SetOwner(notifyChatObject);
-        //´´½¨Í¨Öªµ¥Ôª
+        //åˆ›å»ºé€šçŸ¥å•å…ƒ
         var notifySessionUnit = await CreateIfNotContainsAsync(
                session: session,
                owner: notifyChatObject,
@@ -1518,7 +1555,7 @@ public class SessionUnitManager(
 
         var isAny = await IsAnyAsync(userChatObject.Id, notifyChatObject.Id);
 
-        //´´½¨ÓÃ»§µ¥Ôª
+        //åˆ›å»ºç”¨æˆ·å•å…ƒ
         var userSessionUnit = await CreateIfNotContainsAsync(
                 session: session,
                 owner: userChatObject,
@@ -1534,14 +1571,14 @@ public class SessionUnitManager(
 
         if (!isAny)
         {
-            //µÚÒ»´Î ²Å·¢ËÍÍ¨Öª
+            //ç¬¬ä¸€æ¬¡ æ‰å‘é€é€šçŸ¥
             var unit = await GetCacheAsync(notifySessionUnit.Id);
             await MessageSender.SendCmdAsync(unit, new MessageInput<CmdContentInfo>()
             {
                 Content = new CmdContentInfo()
                 {
                     Cmd = MessageKeyNames.CreatedUser,
-                    Text = new TextTemplate("»¶Ó­ {userSessionUnit} ¼ÓÈë")
+                    Text = new TextTemplate("æ¬¢è¿ {userSessionUnit} åŠ å…¥")
                             .WithData("userSessionUnit", new SessionUnitTextTemplate(userSessionUnit))
                             .ToString(),
                 }
@@ -1555,12 +1592,12 @@ public class SessionUnitManager(
     {
         var newsChatObject = await ChatObjectManager.GetOrAddNewsAsync();
 
-        //´´½¨ĞÂÎÅµ¥Ôª
+        //åˆ›å»ºæ–°é—»å•å…ƒ
         var newsSessionUnit = await FindAsync(newsChatObject.Id, newsChatObject.Id);
 
         if (newsSessionUnit == null)
         {
-            //´´½¨»á»°
+            //åˆ›å»ºä¼šè¯
             var session = await SessionGenerator.MakeAsync(newsChatObject, newsChatObject);
             newsSessionUnit = Generate(
                    session: session,
@@ -1576,7 +1613,7 @@ public class SessionUnitManager(
                    });
         }
 
-        //´´½¨ÓÃ»§µ¥Ôª
+        //åˆ›å»ºç”¨æˆ·å•å…ƒ
         var userSessionUnit = Generate(
                 session: newsSessionUnit.Session,
                 owner: userChatObject,
@@ -1618,7 +1655,7 @@ public class SessionUnitManager(
     }
 
     /// <summary>
-    /// »ñÈ¡ºÃÓÑ»á»°(×Ô¶¯¼ÓÔØ)
+    /// è·å–å¥½å‹ä¼šè¯(è‡ªåŠ¨åŠ è½½)
     /// key: ownerId
     /// value: SessionUnitElement[]
     /// </summary>
@@ -1642,24 +1679,34 @@ public class SessionUnitManager(
     public virtual async Task<IEnumerable<SessionUnitCacheItem>> LoadMembersIfNotExistsAsync(Guid sessionId)
     {
         return await SessionUnitCacheManager.SetMembersIfNotExistsAsync(sessionId,
-             async (ownerId) =>
-                 await GetOrAddCacheListAsync(ownerId));
+             async (id) =>
+                 await GetMembersAsync(id));
     }
 
-    public async Task<bool> SetBoxAsync(Guid sessionUnitId, Guid boxId)
+    /// <summary>
+    /// è®¾ç½®ä¼šè¯å•å…ƒå½’å±ç›’å­ç”¨é€”ï¼š
+    /// 1. æ”¯æŒæŒ‡å®š boxId å°†ä¼šè¯å½’æ¡£æ”¶çº³è¿›ä¼šè¯ç›’å­ï¼ˆå¦‚æŠ˜å ç¾¤èŠã€å…¬ä¼—å·åˆ—è¡¨ï¼‰ï¼›
+    /// 2. æ”¯æŒä¼  null å°†ä¼šè¯ä»ç›’å­ç§»å‡ºï¼Œé‡æ–°å±•ç¤ºåœ¨æ ¹ä¸»ä¼šè¯åˆ—è¡¨ä¸­ï¼›
+    /// 3. æ‰§è¡Œç›®æ ‡ç›’å­æœ‰æ•ˆæ€§å‰ç½®æ£€æŸ¥ï¼Œå¹¶åŒæ­¥æ›´æ–° SQLite/SQLServer ä¸ Redis ç´¢å¼•é›†åˆåŠæœªè¯»è§’æ ‡ã€‚
+    /// </summary>
+    /// <param name="sessionUnitId">ä¼šè¯å•å…ƒId</param>
+    /// <param name="boxId">ç›®æ ‡ä¼šè¯ç›’å­Idï¼Œä¼  null æ—¶ä»£è¡¨ä»ç›’å­ä¸­ç§»å‡º</param>
+    public async Task<bool> SetBoxAsync(Guid sessionUnitId, Guid? boxId)
     {
         var unit = await GetCacheAsync(sessionUnitId);
         return await SetBoxAsync(unit, boxId);
     }
 
-    public async Task<bool> SetBoxAsync(SessionUnitCacheItem unit, Guid boxId)
+    /// <summary>
+    /// è®¾ç½®ä¼šè¯å•å…ƒå½’å±ç›’å­å†…éƒ¨å®ç°
+    /// </summary>
+    public async Task<bool> SetBoxAsync(SessionUnitCacheItem unit, Guid? boxId)
     {
-        var isBoxExists = await BoxRepository.AnyAsync(x => x.Id == boxId);
-
-        Assert.If(isBoxExists, $"No such Entity[Box], id:{boxId}");
-
-        //entity.SetBox(box.Id);
-        //await Repository.UpdateAsync(entity, autoSave: true);
+        if (boxId.HasValue)
+        {
+            var isBoxExists = await BoxRepository.AnyAsync(x => x.Id == boxId.Value);
+            Assert.If(!isBoxExists, $"No such Entity[Box], id:{boxId}");
+        }
 
         var result = await Repository.UpdateBoxAsync(unit.Id, boxId);
 

@@ -57,6 +57,11 @@ public class SessionUnitInfoBase //: ExtensibleObject
     public virtual bool IsCreator { get; set; }
 
     /// <summary>
+    /// 是否管理员
+    /// </summary>
+    public virtual bool IsAdmin { get; set; }
+
+    /// <summary>
     /// 创建时间
     /// </summary>
     public virtual DateTime CreationTime { get; set; }

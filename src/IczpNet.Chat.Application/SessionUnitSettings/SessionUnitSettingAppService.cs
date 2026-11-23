@@ -381,4 +381,43 @@ public class SessionUnitSettingAppService(
 
         return await SessionUnitSettingManager.SetMuteExpireTimeAsync(muterSessionUnitId, muteExpireTime, setterSessionUnit, true);
     }
+    /// <summary>
+    /// 设置或取消管理员
+    /// </summary>
+    /// <param name="sessionUnitId">目标会话单元Id</param>
+    /// <param name="isAdmin">是否管理员</param>
+    /// <param name="setterSessionUnitId">操作人会话单元Id（可选）</param>
+    /// <returns>更新后的成员设置</returns>
+    [HttpPost("set-admin/{sessionUnitId}")]
+    public virtual async Task<SessionUnitMemberSettingDto> SetAdminAsync(Guid sessionUnitId, bool isAdmin, Guid? setterSessionUnitId = null)
+    {
+        var target = await GetEntityAsync(sessionUnitId);
+        SessionUnit setter = null;
+        if (setterSessionUnitId.HasValue)
+        {
+            setter = await GetEntityAsync(setterSessionUnitId.Value);
+            if (CurrentUser.Id.HasValue)
+            {
+                var ownedIds = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+                Assert.If(!ownedIds.Contains(setter.OwnerId), "无权使用此身份操作。");
+            }
+        }
+        else if (CurrentUser.Id.HasValue)
+        {
+            var ownedIds = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+            var candidates = await Repository.GetListAsync(x => x.SessionId == target.SessionId && ownedIds.Contains(x.OwnerId) && x.Setting.IsEnabled && !x.Setting.IsKilled);
+            setter = candidates.FirstOrDefault(x => x.Setting.IsCreator) ?? candidates.FirstOrDefault();
+        }
+
+        if (setter == null || !setter.Setting.IsCreator)
+        {
+            throw new UserFriendlyException("仅群主有权设置或取消管理员。");
+        }
+
+        var setting = await SessionUnitSettingManager.SetAdminAsync(sessionUnitId, isAdmin, setter, isSendMessage: true);
+        var dto = ObjectMapper.Map<SessionUnitSettingCacheItem, SessionUnitMemberSettingDto>(
+            await SessionUnitSettingManager.GetOrAddCacheAsync(sessionUnitId));
+        dto.IsAdmin = isAdmin;
+        return dto;
+    }
 }

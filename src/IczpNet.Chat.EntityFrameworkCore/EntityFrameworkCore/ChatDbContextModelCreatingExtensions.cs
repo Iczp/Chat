@@ -145,6 +145,27 @@ public static class ChatDbContextModelCreatingExtensions
                 .IsRequired(false);
         });
 
+        builder.Entity<IczpNet.Chat.SessionSections.Announcements.SessionAnnouncement>(b =>
+        {
+            b.ToTable(ChatDbProperties.DbTablePrefix + "SessionAnnouncement", ChatDbProperties.DbSchema);
+            b.ConfigureByConvention();
+            b.HasOne(x => x.Session).WithMany().HasForeignKey(x => x.SessionId).OnDelete(DeleteBehavior.Restrict).IsRequired();
+            b.HasOne(x => x.ChatObject).WithMany().HasForeignKey(x => x.ChatObjectId).OnDelete(DeleteBehavior.Restrict).IsRequired();
+            b.HasOne(x => x.PublisherSessionUnit).WithMany().HasForeignKey(x => x.PublisherSessionUnitId).OnDelete(DeleteBehavior.Restrict).IsRequired();
+            b.HasOne(x => x.PublisherChatObject).WithMany().HasForeignKey(x => x.PublisherChatObjectId).OnDelete(DeleteBehavior.Restrict).IsRequired();
+        });
+
+        builder.Entity<IczpNet.Chat.SessionSections.Announcements.SessionAnnouncementReceipt>(b =>
+        {
+            b.ToTable(ChatDbProperties.DbTablePrefix + "SessionAnnouncementReceipt", ChatDbProperties.DbSchema);
+            b.ConfigureByConvention();
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Id).ValueGeneratedOnAdd();
+            b.HasOne(x => x.Announcement).WithMany().HasForeignKey(x => x.AnnouncementId).OnDelete(DeleteBehavior.Cascade).IsRequired();
+            b.HasOne(x => x.SessionUnit).WithMany().HasForeignKey(x => x.SessionUnitId).OnDelete(DeleteBehavior.Restrict).IsRequired();
+            b.HasOne(x => x.ChatObject).WithMany().HasForeignKey(x => x.ChatObjectId).OnDelete(DeleteBehavior.Restrict).IsRequired();
+        });
+
         ConfigMessageTemplateEntitys(builder);
         //ForEachEntitys(builder);
         //ConfigKeys(builder);

@@ -54,6 +54,7 @@ public class ChatBackgroundWorkerModule : AbpModule
             await context.AddBackgroundWorkerAsync<IczpNet.Chat.SessionUnits.SessionUnitFlushWorker>();
             await context.AddBackgroundWorkerAsync<IczpNet.Chat.Blobs.TempBlobCleanupWorker>();
             await context.AddBackgroundWorkerAsync<IczpNet.Chat.SessionUnits.SessionUnitDisposalCleanupWorker>();
+            await context.AddBackgroundWorkerAsync<IczpNet.Chat.CallCenters.CallCenterQueueWorker>();
         }
     }
 
@@ -91,6 +92,7 @@ public class ChatBackgroundWorkerModule : AbpModule
         {
             options.Handlers.Clear();
             options.Handlers.Add(typeof(MessageSentDistributedEventHandler));
+            options.Handlers.Add(typeof(IczpNet.Chat.CallCenters.CallCenterMessageSentHandler));
             options.Handlers.Add(typeof(SeedDataByUserCreatedDistributedEventHandler));
         });
         Configure<AbpDbContextOptions>(options => options.UseSqlServer(sql => sql.CommandTimeout(60000)));
