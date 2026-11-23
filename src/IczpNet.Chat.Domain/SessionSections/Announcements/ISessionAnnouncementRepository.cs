@@ -10,4 +10,6 @@ public interface ISessionAnnouncementRepository : IRepository<SessionAnnouncemen
     Task<SessionAnnouncement> GetPinnedAsync(Guid sessionId, CancellationToken cancellationToken = default);
 
     Task UnpinOthersAsync(Guid sessionId, Guid excludeAnnouncementId, CancellationToken cancellationToken = default);
+
+    Task IncrementReceiptCountsAsync(Guid announcementId, int readCount, int confirmedCount, CancellationToken cancellationToken = default);
 }

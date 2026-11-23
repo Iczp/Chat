@@ -55,6 +55,7 @@ public class SessionAnnouncementReceipt : Entity<long>
 
     public virtual void Confirm(DateTime confirmedTime, string deviceId = null)
     {
+        if (IsConfirmed) return;
         IsConfirmed = true;
         ConfirmedTime = confirmedTime;
         if (!string.IsNullOrEmpty(deviceId))

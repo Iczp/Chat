@@ -118,6 +118,12 @@ public class SessionAnnouncement : BaseEntity<Guid>, ISessionId
         ConcurrencyStamp = Guid.NewGuid().ToString("N");
     }
 
+    public virtual void SetOptions(bool isPopup, bool requireConfirm)
+    {
+        IsPopup = isPopup;
+        RequireConfirm = requireConfirm;
+    }
+
     public virtual void SetLinkedMessageId(long? messageId)
     {
         LinkedMessageId = messageId;

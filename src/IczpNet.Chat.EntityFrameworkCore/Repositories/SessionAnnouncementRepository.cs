@@ -1,5 +1,6 @@
 using IczpNet.Chat.EntityFrameworkCore;
 using IczpNet.Chat.SessionSections.Announcements;
+using IczpNet.Chat.Enums;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
@@ -17,9 +18,18 @@ public class SessionAnnouncementRepository(IDbContextProvider<ChatDbContext> dbC
         var dbSet = await GetDbSetAsync();
         return await dbSet
             .AsNoTracking()
-            .Where(x => x.SessionId == sessionId && x.IsPinned)
+            .Where(x => x.SessionId == sessionId && x.IsPinned && x.Status == AnnouncementStatus.Published)
             .OrderByDescending(x => x.PinnedTime ?? x.CreationTime)
             .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public virtual async Task IncrementReceiptCountsAsync(Guid announcementId, int readCount, int confirmedCount, CancellationToken cancellationToken = default)
+    {
+        // Counters are independent of content edits and must not use tracked read/modify/write.
+        await (await GetDbSetAsync()).Where(x => x.Id == announcementId)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(x => x.ReadCount, x => x.ReadCount + readCount)
+                .SetProperty(x => x.ConfirmedCount, x => x.ConfirmedCount + confirmedCount), cancellationToken);
     }
 
     public virtual async Task UnpinOthersAsync(Guid sessionId, Guid excludeAnnouncementId, CancellationToken cancellationToken = default)

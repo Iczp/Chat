@@ -4,14 +4,18 @@ using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.DistributedLocking;
 using Volo.Abp.Guids;
 using Volo.Abp.Timing;
+using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.SessionSections.Announcements;
 
 public class SessionAnnouncementManager(
     ISessionAnnouncementRepository announcementRepository,
     ISessionAnnouncementReceiptRepository receiptRepository,
+    IAbpDistributedLock distributedLock,
+    IUnitOfWorkManager unitOfWorkManager,
     IGuidGenerator guidGenerator = null,
     IClock clock = null) : DomainService, ISessionAnnouncementManager
 {
@@ -80,6 +84,7 @@ public class SessionAnnouncementManager(
         Check.NotNullOrWhiteSpace(content, nameof(content));
 
         announcement.SetContent(title.Trim(), content, editorType);
+        announcement.SetOptions(isPopup, requireConfirm);
 
         if (isPinned && !announcement.IsPinned && announcement.SessionId.HasValue)
         {
@@ -129,31 +134,7 @@ public class SessionAnnouncementManager(
         string deviceId = null,
         CancellationToken cancellationToken = default)
     {
-        var announcement = await AnnouncementRepository.GetAsync(announcementId, cancellationToken: cancellationToken);
-        var existing = await ReceiptRepository.FindByUnitAsync(announcementId, sessionUnitId, cancellationToken);
-        var now = CurrentTime;
-
-        if (existing != null)
-        {
-            if (!existing.IsConfirmed)
-            {
-                existing.Confirm(now, deviceId);
-                await ReceiptRepository.UpdateAsync(existing, autoSave: true, cancellationToken: cancellationToken);
-                announcement.IncrementConfirmedCount();
-                await AnnouncementRepository.UpdateAsync(announcement, autoSave: true, cancellationToken: cancellationToken);
-            }
-            return existing;
-        }
-
-        var receipt = new SessionAnnouncementReceipt(announcementId, sessionUnitId, chatObjectId, now, deviceId);
-        receipt.Confirm(now, deviceId);
-        receipt = await ReceiptRepository.InsertAsync(receipt, autoSave: true, cancellationToken: cancellationToken);
-
-        announcement.IncrementConfirmedCount();
-        announcement.IncrementReadCount();
-        await AnnouncementRepository.UpdateAsync(announcement, autoSave: true, cancellationToken: cancellationToken);
-
-        return receipt;
+        return await SaveReceiptAsync(announcementId, sessionUnitId, chatObjectId, deviceId, confirm: true, cancellationToken);
     }
 
     public virtual async Task<SessionAnnouncementReceipt> RecordViewAsync(
@@ -163,20 +144,35 @@ public class SessionAnnouncementManager(
         string deviceId = null,
         CancellationToken cancellationToken = default)
     {
+        return await SaveReceiptAsync(announcementId, sessionUnitId, chatObjectId, deviceId, confirm: false, cancellationToken);
+    }
+
+    private async Task<SessionAnnouncementReceipt> SaveReceiptAsync(Guid announcementId, Guid sessionUnitId,
+        long chatObjectId, string deviceId, bool confirm, CancellationToken cancellationToken)
+    {
+        if (distributedLock is NullAbpDistributedLock)
+            throw new InvalidOperationException("Announcement receipts require a distributed lock provider.");
+        // Hold the per-member lock until commit; different members can proceed concurrently.
+        await using var handle = await distributedLock.TryAcquireAsync(
+            $"Chat:Announcement:Receipt:{announcementId:N}:{sessionUnitId:N}", TimeSpan.FromSeconds(10), cancellationToken);
+        if (handle == null) throw new UserFriendlyException("公告回执正在处理中，请重试。");
+        using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
         var announcement = await AnnouncementRepository.GetAsync(announcementId, cancellationToken: cancellationToken);
+        if (announcement.Status != AnnouncementStatus.Published)
+            throw new UserFriendlyException("公告尚未发布或已撤下。");
         var existing = await ReceiptRepository.FindByUnitAsync(announcementId, sessionUnitId, cancellationToken);
-        if (existing != null)
-        {
-            return existing;
-        }
-
         var now = CurrentTime;
-        var receipt = new SessionAnnouncementReceipt(announcementId, sessionUnitId, chatObjectId, now, deviceId);
-        receipt = await ReceiptRepository.InsertAsync(receipt, autoSave: true, cancellationToken: cancellationToken);
-
-        announcement.IncrementReadCount();
-        await AnnouncementRepository.UpdateAsync(announcement, autoSave: true, cancellationToken: cancellationToken);
-
+        var receipt = existing ?? new SessionAnnouncementReceipt(announcementId, sessionUnitId, chatObjectId, now, deviceId);
+        var newConfirmation = confirm && !receipt.IsConfirmed;
+        if (newConfirmation) receipt.Confirm(now, deviceId);
+        if (existing == null)
+            receipt = await ReceiptRepository.InsertAsync(receipt, autoSave: true, cancellationToken: cancellationToken);
+        else if (newConfirmation)
+            await ReceiptRepository.UpdateAsync(receipt, autoSave: true, cancellationToken: cancellationToken);
+        if (existing == null || newConfirmation)
+            await AnnouncementRepository.IncrementReceiptCountsAsync(announcementId, existing == null ? 1 : 0,
+                newConfirmation ? 1 : 0, cancellationToken);
+        await uow.CompleteAsync(cancellationToken);
         return receipt;
     }
 
@@ -184,11 +180,6 @@ public class SessionAnnouncementManager(
         Guid announcementId,
         CancellationToken cancellationToken = default)
     {
-        var announcement = await AnnouncementRepository.FindAsync(announcementId, cancellationToken: cancellationToken);
-        if (announcement != null)
-        {
-            announcement.IncrementReadCount();
-            await AnnouncementRepository.UpdateAsync(announcement, autoSave: true, cancellationToken: cancellationToken);
-        }
+        await AnnouncementRepository.IncrementReceiptCountsAsync(announcementId, 1, 0, cancellationToken);
     }
 }
