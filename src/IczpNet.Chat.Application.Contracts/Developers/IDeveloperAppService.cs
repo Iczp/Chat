@@ -69,4 +69,11 @@ public interface IDeveloperAppService
     /// </summary>
     /// <returns></returns>
     Task<string> GenerateEncodingAesKeyAsync();
+
+    /// <summary>
+    /// 测试验证开发者服务器 (发送 Echo 校验请求)
+    /// </summary>
+    /// <param name="id">主键Id</param>
+    /// <returns></returns>
+    Task<bool> TestServerAsync(long id);
 }

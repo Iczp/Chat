@@ -80,14 +80,34 @@ public class MenuAppService(
     }
 
     /// <summary>
+    /// 获取指定聊天对象(公众号/订阅号)的菜单列表
+    /// </summary>
+    /// <param name="ownerId">聊天对象Id</param>
+    /// <returns></returns>
+    [HttpGet]
+    public virtual async Task<List<MenuDto>> GetListByOwnerIdAsync(long ownerId)
+    {
+        var entities = await Repository.GetListAsync(x => x.OwnerId == ownerId);
+        var ordered = entities.OrderByDescending(x => x.Sorting).ToList();
+        return ObjectMapper.Map<List<Menu>, List<MenuDto>>(ordered);
+    }
+
+    /// <summary>
     /// 菜单触发器(调用后台作业)
     /// </summary>
     /// <param name="id">菜单Id</param>
+    /// <param name="sessionUnitId">会话单元Id</param>
     /// <returns></returns>
+    [HttpPost]
     [HttpGet]
-    //[UnitOfWork(true, IsolationLevel.ReadUncommitted)]
-    public async Task<string> TriggerAsync(Guid id)
+    public virtual async Task<string> TriggerAsync(Guid id, Guid? sessionUnitId = null)
     {
-        return await TreeManager.TriggerAsync(id);
+        long? senderId = null;
+        if (sessionUnitId.HasValue)
+        {
+            var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId.Value);
+            senderId = sessionUnit?.OwnerId;
+        }
+        return await TreeManager.TriggerAsync(id, sessionUnitId, senderId);
     }
 }

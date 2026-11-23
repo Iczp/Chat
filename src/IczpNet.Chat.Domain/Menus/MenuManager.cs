@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using System.Web;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Json;
 
 namespace IczpNet.Chat.Menus;
 
@@ -20,14 +21,17 @@ public class MenuManager : TreeManager<Menu, Guid, MenuInfo>, IMenuManager
 {
     protected IBackgroundJobManager BackgroundJobManager { get; }
     protected IHttpRequestManager HttpRequestManager { get; }
+    protected IJsonSerializer JsonSerializer { get; }
 
     public MenuManager(
         IRepository<Menu, Guid> repository,
         IBackgroundJobManager backgroundJobManager,
-        IHttpRequestManager httpRequestManager) : base(repository)
+        IHttpRequestManager httpRequestManager,
+        IJsonSerializer jsonSerializer) : base(repository)
     {
         BackgroundJobManager = backgroundJobManager;
         HttpRequestManager = httpRequestManager;
+        JsonSerializer = jsonSerializer;
     }
 
     protected override async Task CheckExistsByCreateAsync(Menu inputEntity)
@@ -38,34 +42,6 @@ public class MenuManager : TreeManager<Menu, Guid, MenuInfo>, IMenuManager
     protected override async Task CheckExistsByUpdateAsync(Menu inputEntity)
     {
         Assert.If(await Repository.AnyAsync((x) => x.Name == inputEntity.Name && x.OwnerId == inputEntity.OwnerId && !x.Id.Equals(inputEntity.Id)), $" Name[{inputEntity.Name}] already such");
-    }
-
-    /// <summary>
-    /// 发送一个请求
-    /// </summary>
-    /// <returns></returns>
-    protected virtual async Task<HttpRequest> HttpGetRemoteHostAsync(Developer developer, string requestContent, string name = null)
-    {
-        var bizCrypt = new BizCrypt(developer.Token, developer.EncodingAesKey, developer.OwnerId.ToString());
-
-        var timeStamp = Clock.Now.Ticks.ToString();
-
-        var nonce = BizCrypt.CreateRandCode(10, "123456789");
-
-        var echo = bizCrypt.Encrypt(requestContent);
-
-        var signature = BizCrypt.GenerateSignature(developer.Token, timeStamp, nonce, echo);
-
-        var remoteUrl = ParseUrl(developer.PostUrl, new Dictionary<string, string> {
-            {"signature",signature },
-            {"timeStamp",timeStamp },
-            {"nonce",nonce },
-            {"echo",echo },
-        });
-
-        var responseResult = await HttpRequestManager.RequestAsync(HttpMethod.Get, remoteUrl, name: name);
-
-        return responseResult;
     }
 
     /// <summary>
@@ -91,19 +67,16 @@ public class MenuManager : TreeManager<Menu, Guid, MenuInfo>, IMenuManager
         return retUrl.JoinAsString("");
     }
 
-
-    public virtual async Task<string> TriggerAsync(Guid id)
+    public virtual async Task<string> TriggerAsync(Guid id, Guid? sessionUnitId = null, long? senderId = null)
     {
-        //var menu = await Repository.GetWalletAsync(id);
-
-        //await CheckMenuAsync(menu);
-
         var jobId = await BackgroundJobManager.EnqueueAsync(new MenuTriggerArgs()
         {
             MenuId = id,
+            SessionUnitId = sessionUnitId,
+            SenderId = senderId
         });
 
-        Logger.LogInformation($"Trigger:MenuId={id},jobId={jobId}");
+        Logger.LogInformation($"Trigger:MenuId={id},SessionUnitId={sessionUnitId},SenderId={senderId},jobId={jobId}");
 
         return jobId;
     }
@@ -144,16 +117,44 @@ public class MenuManager : TreeManager<Menu, Guid, MenuInfo>, IMenuManager
         return Uri.TryCreate(url, UriKind.RelativeOrAbsolute, out Uri uri) && httpSchemes.Contains(uri.Scheme);
     }
 
-    public virtual async Task<HttpRequest> SendToRemoteHostAsync(Menu menu, string name = null)
+    public virtual async Task<HttpRequest> SendToRemoteHostAsync(Menu menu, MenuTriggerArgs args = null, string name = null)
     {
-        //var menu = await Repository.GetWalletAsync(id);
+        var developer = menu.Owner?.Developer;
+        if (developer == null || string.IsNullOrWhiteSpace(developer.PostUrl))
+        {
+            throw new InvalidOperationException("Developer or PostUrl is not configured.");
+        }
 
-        //await CheckMenuAsync(menu);
+        var payload = JsonSerializer.Serialize(new
+        {
+            ToUserName = menu.Owner?.Code ?? menu.OwnerId.ToString(),
+            FromUserName = args?.SenderId?.ToString() ?? "",
+            CreateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+            MsgType = "event",
+            Event = menu.Event.ToString(),
+            EventKey = menu.Code ?? menu.Name,
+            MenuId = menu.Id.ToString(),
+            SessionUnitId = args?.SessionUnitId?.ToString()
+        });
 
-        var req = await HttpGetRemoteHostAsync(menu.Owner.Developer, $"menuId:{menu}", name: name);
+        var bizCrypt = new BizCrypt(developer.Token, developer.EncodingAesKey, developer.OwnerId.ToString());
+        var timeStamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+        var nonce = BizCrypt.CreateRandCode(10, "123456789");
+        var echo = bizCrypt.Encrypt(payload);
+        var signature = BizCrypt.GenerateSignature(developer.Token, timeStamp, nonce, echo);
 
-        Logger.LogInformation($"SendToRemoteHost ReqId={req.Id},[GET,{req.StatusCode}],url={req.Url}");
+        var remoteUrl = ParseUrl(developer.PostUrl, new Dictionary<string, string>
+        {
+            { "signature", signature },
+            { "timeStamp", timeStamp },
+            { "nonce", nonce }
+        });
 
-        return req;
+        var jsonBody = JsonSerializer.Serialize(new { encrypt = echo });
+        var httpContent = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+
+        var responseResult = await HttpRequestManager.RequestAsync(HttpMethod.Post, remoteUrl, httpContent, name: name);
+        Logger.LogInformation($"SendToRemoteHost ReqId={responseResult.Id},[POST,{responseResult.StatusCode}],url={responseResult.Url}");
+        return responseResult;
     }
 }
