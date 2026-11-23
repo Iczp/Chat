@@ -48,6 +48,7 @@ using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.Json;
 using Volo.Abp.Json.SystemTextJson;
 using Volo.Abp.Localization;
+using Volo.Abp.Threading;
 using Volo.Abp.Modularity;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.PermissionManagement.EntityFrameworkCore;
@@ -511,7 +512,7 @@ public class ChatHttpApiHostModule : AbpModule
             using var scope = context.ServiceProvider.CreateScope();
             await scope.ServiceProvider
                 .GetRequiredService<Volo.Abp.Data.IDataSeeder>()
-                .SeedAsync();
+                .SeedAsync(new Volo.Abp.Data.DataSeedContext());
         });
     }
 }

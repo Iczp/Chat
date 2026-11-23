@@ -569,9 +569,6 @@ public partial class MessageManager(
             };
         }
 
-        // 重新获取一下，填充导航属性
-        message = await Repository.GetAsync(message.Id);
-
         // 缓存消息
         await SetCacheAsync(message, senderSessionUnit, hideErrors: cleanupOnRollback ? false : null);
 

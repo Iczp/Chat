@@ -112,7 +112,7 @@ public partial class ChatDomainVideoContentInfoToVideoContentMapper(IUrlNormaliz
     {
         if (source is null || destination is null) return;
         MapInputFields(source, destination);
-        NormalizeDimensions(source, destination);
+        NormalizeEntityDimensions(source, destination);
     }
 
     public override VideoContentInfo ReverseMap(VideoContent source)
@@ -131,10 +131,10 @@ public partial class ChatDomainVideoContentInfoToVideoContentMapper(IUrlNormaliz
         destination.SnapshotUrl = urlNormalizer.Normalize(source.SnapshotUrl);
         destination.SnapshotThumbnailUrl = urlNormalizer.Normalize(source.SnapshotThumbnailUrl);
         destination.GifUrl = urlNormalizer.Normalize(source.GifUrl);
-        NormalizeDimensions(destination, source);
+        NormalizeDtoDimensions(destination, source);
     }
 
-    private static void NormalizeDimensions(VideoContentInfo info, VideoContent content)
+    private static void NormalizeEntityDimensions(VideoContentInfo info, VideoContent content)
     {
         var w = content.Width ?? (info.Width > 0 ? info.Width : (content.ImageWidth ?? (info.ImageWidth > 0 ? info.ImageWidth : 0)));
         var h = content.Height ?? (info.Height > 0 ? info.Height : (content.ImageHeight ?? (info.ImageHeight > 0 ? info.ImageHeight : 0)));
@@ -143,13 +143,26 @@ public partial class ChatDomainVideoContentInfoToVideoContentMapper(IUrlNormaliz
         {
             content.Width = w;
             content.ImageWidth = w;
-            info.Width = w;
-            info.ImageWidth = w;
         }
         if (h > 0)
         {
             content.Height = h;
             content.ImageHeight = h;
+        }
+    }
+
+    private static void NormalizeDtoDimensions(VideoContentInfo info, VideoContent content)
+    {
+        var w = info.Width > 0 ? info.Width : (info.ImageWidth > 0 ? info.ImageWidth : (content.Width ?? content.ImageWidth ?? 0));
+        var h = info.Height > 0 ? info.Height : (info.ImageHeight > 0 ? info.ImageHeight : (content.Height ?? content.ImageHeight ?? 0));
+
+        if (w > 0)
+        {
+            info.Width = w;
+            info.ImageWidth = w;
+        }
+        if (h > 0)
+        {
             info.Height = h;
             info.ImageHeight = h;
         }
