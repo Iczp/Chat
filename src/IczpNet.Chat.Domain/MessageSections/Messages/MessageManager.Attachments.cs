@@ -56,7 +56,11 @@ public partial class MessageManager
                 file.ActionUrl = UrlNormalizer.ToRelative(file.ActionUrl);
                 break;
         }
-        return JsonSerializer.Serialize(contentDto);
+        var json = JsonSerializer.Serialize(contentDto);
+        if (contentDto is TemplateContentInfo && System.Text.Encoding.UTF8.GetByteCount(json) >
+            MessageTemplates.MessageTemplateConsts.MaxSnapshotBytes)
+            throw new UserFriendlyException("模板消息快照超过大小限制。", ChatErrorCodes.TemplateMessages.TemplatePayloadTooLarge);
+        return json;
     }
 
     protected virtual List<Guid> CollectAttachmentBlobIds(IContentEntity messageContent)

@@ -615,6 +615,7 @@ public static class ChatDbContextModelCreatingExtensions
             b.Property(x => x.Name).IsRequired().HasMaxLength(MessageTemplateConsts.MaxNameLength);
             b.Property(x => x.Description).HasMaxLength(MessageTemplateConsts.MaxDescriptionLength);
             b.Property(x => x.DraftJson).IsRequired();
+            b.HasOne(x => x.Owner).WithMany().HasForeignKey(x => x.OwnerId).OnDelete(DeleteBehavior.Restrict);
             b.HasIndex(x => new { x.TenantId, x.OwnerId });
             b.HasIndex(x => new { x.TenantId, x.Visibility, x.IsEnabled });
         });

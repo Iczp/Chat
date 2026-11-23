@@ -1,0 +1,93 @@
+{
+  "name": "非法协议URL卡片",
+  "description": "动作绑定包含javascript:伪协议的危险URL，服务端拒绝发送，客户端若遇异常直接降级",
+  "serverExpectation": {
+    "accepted": false,
+    "errorCode": "TemplateDataInvalid"
+  },
+  "clientExpectation": {
+    "fallback": true,
+    "expectedFallbackText": "[安全预警]非法跳转拦截"
+  },
+  "snapshot": {
+    "schemaVersion": 1,
+    "templateId": "4a82b63d-e9cd-4bed-8d41-c7bd12fe5006",
+    "templateVersion": 1,
+    "templateName": "安全警报",
+    "fallbackText": "[安全预警]非法跳转拦截",
+    "data": {
+      "dangerUrl": "javascript:alert('attack')",
+      "title": "非法脚本跳转"
+    },
+    "layout": {
+      "type": "card",
+      "children": [
+        {
+          "type": "text",
+          "bind": "title"
+        },
+        {
+          "type": "button",
+          "label": "恶意链接",
+          "actionId": "runScript"
+        }
+      ]
+    },
+    "actions": [
+      {
+        "id": "runScript",
+        "type": "openUrl",
+        "bind": "dangerUrl"
+      }
+    ]
+  },
+  "definition": {
+    "schemaVersion": 1,
+    "name": "安全警报",
+    "fields": [
+      {
+        "name": "dangerUrl",
+        "type": "string",
+        "required": true,
+        "maxLength": 2000,
+        "format": "url"
+      },
+      {
+        "name": "title",
+        "type": "string",
+        "required": true,
+        "maxLength": 2000
+      }
+    ],
+    "summary": {
+      "prefix": "[安全预警]非法跳转拦截",
+      "fields": [],
+      "separator": "："
+    },
+    "layout": {
+      "type": "card",
+      "children": [
+        {
+          "type": "text",
+          "bind": "title"
+        },
+        {
+          "type": "button",
+          "label": "恶意链接",
+          "actionId": "runScript"
+        }
+      ]
+    },
+    "actions": [
+      {
+        "id": "runScript",
+        "type": "openUrl",
+        "bind": "dangerUrl"
+      }
+    ]
+  },
+  "data": {
+    "dangerUrl": "javascript:alert('attack')",
+    "title": "非法脚本跳转"
+  }
+}

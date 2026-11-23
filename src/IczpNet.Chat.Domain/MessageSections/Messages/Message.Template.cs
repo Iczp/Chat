@@ -1,4 +1,4 @@
-﻿using Castle.DynamicProxy;
+using Castle.DynamicProxy;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.Articles;
 using IczpNet.Chat.Attributes;
@@ -92,6 +92,21 @@ public partial class Message
 
     public virtual object GetContentDto()
     {
+        // 模板历史与重试直接使用已提交的消息快照，避免离开创建事务后懒加载内容表。
+        if (MessageType == MessageTypes.Template && !string.IsNullOrWhiteSpace(ContentJson))
+        {
+            try
+            {
+                if (System.Text.Encoding.UTF8.GetByteCount(ContentJson) <= MessageTemplates.MessageTemplateConsts.MaxSnapshotBytes)
+                    return System.Text.Json.JsonSerializer.Deserialize<TemplateContentInfo>(ContentJson);
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                // 损坏的单条消息仅显示安全摘要，不影响其余历史消息。
+            }
+            return new TemplateContentInfo { FallbackText = "[模板消息] 内容暂不可用" };
+        }
+
         var content = GetContentEntity();
 
         if (content == null)

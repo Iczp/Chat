@@ -1,0 +1,122 @@
+{
+  "name": "超深嵌套层级卡片",
+  "description": "嵌套层级深度超过6层（根card为第1层），服务端与客户端均判定非法并拒绝/降级",
+  "serverExpectation": {
+    "accepted": false,
+    "errorCode": "TemplateDefinitionInvalid"
+  },
+  "clientExpectation": {
+    "fallback": true,
+    "expectedFallbackText": "[超深测试]层级超出限制"
+  },
+  "snapshot": {
+    "schemaVersion": 1,
+    "templateId": "4a82b63d-e9cd-4bed-8d41-c7bd12fe5007",
+    "templateVersion": 1,
+    "templateName": "超深嵌套",
+    "fallbackText": "[超深测试]层级超出限制",
+    "data": {
+      "msg": "深度测试"
+    },
+    "layout": {
+      "type": "card",
+      "children": [
+        {
+          "type": "column",
+          "children": [
+            {
+              "type": "column",
+              "children": [
+                {
+                  "type": "column",
+                  "children": [
+                    {
+                      "type": "column",
+                      "children": [
+                        {
+                          "type": "column",
+                          "children": [
+                            {
+                              "type": "column",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "bind": "msg"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "actions": []
+  },
+  "definition": {
+    "schemaVersion": 1,
+    "name": "超深嵌套",
+    "fields": [
+      {
+        "name": "msg",
+        "type": "string",
+        "required": true,
+        "maxLength": 2000
+      }
+    ],
+    "summary": {
+      "prefix": "[超深测试]层级超出限制",
+      "fields": [],
+      "separator": "："
+    },
+    "layout": {
+      "type": "card",
+      "children": [
+        {
+          "type": "column",
+          "children": [
+            {
+              "type": "column",
+              "children": [
+                {
+                  "type": "column",
+                  "children": [
+                    {
+                      "type": "column",
+                      "children": [
+                        {
+                          "type": "column",
+                          "children": [
+                            {
+                              "type": "column",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "bind": "msg"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "actions": []
+  },
+  "data": {
+    "msg": "深度测试"
+  }
+}

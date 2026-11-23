@@ -8,6 +8,7 @@ namespace IczpNet.Chat.MessageTemplates.Dtos;
 
 public class MessageTemplateDto : EntityDto<Guid>
 {
+    [System.Text.Json.Serialization.JsonNumberHandling(System.Text.Json.Serialization.JsonNumberHandling.WriteAsString | System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString)]
     public virtual long OwnerId { get; set; }
     public virtual string Name { get; set; }
     public virtual string Description { get; set; }
@@ -47,6 +48,7 @@ public class MessageTemplateGetListInput : PagedResultRequestDto
 public class MessageTemplateCreateInput
 {
     [Required]
+    [System.Text.Json.Serialization.JsonNumberHandling(System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString)]
     public virtual long OwnerId { get; set; }
 
     [Required]

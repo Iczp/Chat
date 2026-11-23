@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Update="MessageSections/Fixtures/template-message/*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
     <ProjectReference Include="../../../IczpNet.AppDevice/src/IczpNet.AppDevice.AspNetCore/IczpNet.AppDevice.AspNetCore.csproj" />
     <ProjectReference Include="..\IczpNet.Chat.EntityFrameworkCore.Tests\IczpNet.Chat.EntityFrameworkCore.Tests.csproj" />

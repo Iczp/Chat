@@ -10,11 +10,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.ObjectMapping;
+using Volo.Abp.Threading;
+using Volo.Abp.MultiTenancy;
 
 namespace IczpNet.Chat.MessageSections;
 
@@ -84,12 +85,15 @@ public class MessageSender(
         var templateRepository = LazyServiceProvider.LazyGetRequiredService<IRepository<MessageTemplateDefinition, Guid>>();
         var revisionRepository = LazyServiceProvider.LazyGetRequiredService<IRepository<MessageTemplateRevision, Guid>>();
         var templateManager = LazyServiceProvider.LazyGetRequiredService<MessageTemplateManager>();
+        templateManager.EnsureEnabled();
+        var cancellationToken = LazyServiceProvider.LazyGetRequiredService<ICancellationTokenProvider>().Token;
+        var tenantId = LazyServiceProvider.LazyGetRequiredService<ICurrentTenant>().Id;
 
         var message = await MessageManager.CreateMessageAsync(
             senderSessionUnit,
             async (msg) =>
             {
-                var template = await templateRepository.FindAsync(templateId);
+                var template = await templateRepository.FindAsync(templateId, cancellationToken: cancellationToken);
                 if (template == null)
                 {
                     throw new UserFriendlyException("模板不存在。", ChatErrorCodes.TemplateMessages.TemplateNotFound);
@@ -98,24 +102,27 @@ public class MessageSender(
                 {
                     throw new UserFriendlyException("模板已被停用，禁止发送。", ChatErrorCodes.TemplateMessages.TemplateDisabled);
                 }
-                if (!template.PublishedVersion.HasValue || template.PublishedVersion.Value < templateVersion)
+                if (templateVersion < 1 || !template.PublishedVersion.HasValue || template.PublishedVersion.Value < templateVersion)
                 {
                     throw new UserFriendlyException($"模板版本 {templateVersion} 尚未发布或不存在。", ChatErrorCodes.TemplateMessages.TemplateVersionNotPublished);
                 }
 
                 // Check permission: if private, must match sender's OwnerId
-                if (template.Visibility == MessageTemplateVisibility.Private && template.OwnerId != senderSessionUnit.OwnerId)
-                {
-                    throw new UserFriendlyException("无权使用该私有模板。", ChatErrorCodes.TemplateMessages.TemplateForbidden);
-                }
+                templateManager.CheckUsage(template, senderSessionUnit.OwnerId, tenantId);
 
-                var revision = await (await revisionRepository.GetQueryableAsync())
-                    .FirstOrDefaultAsync(x => x.TemplateId == templateId && x.Version == templateVersion);
+                var revision = await revisionRepository.FindAsync(x => x.TemplateId == templateId && x.Version == templateVersion,
+                    cancellationToken: cancellationToken);
 
                 if (revision == null)
                 {
                     throw new UserFriendlyException($"模板发布版本 {templateVersion} 不存在。", ChatErrorCodes.TemplateMessages.TemplateVersionNotPublished);
                 }
+
+                if (revision.TenantId != tenantId)
+                    throw new UserFriendlyException("模板版本不存在。", ChatErrorCodes.TemplateMessages.TemplateNotFound);
+                if (revision.SchemaVersion != MessageTemplateConsts.SchemaVersion ||
+                    !string.Equals(revision.DefinitionHash, templateManager.ComputeSha256(revision.DefinitionJson), StringComparison.Ordinal))
+                    throw new UserFriendlyException("模板发布版本校验失败。", ChatErrorCodes.TemplateMessages.TemplateDefinitionInvalid);
 
                 var parsed = templateManager.ValidateDefinitionJson(revision.DefinitionJson);
                 var sanitizedData = templateManager.ValidateAndSanitizeData(data, parsed);
@@ -193,6 +200,7 @@ public class MessageSender(
         //.Select(x => x.Id)
             .ToList();
         Assert.If(selectedMessageList.Count != messageIdList.Count, "Some selected messages are not visible or cannot be forwarded.");
+        Assert.If(selectedMessageList.Any(x => x.MessageType == MessageTypes.Template), "Template messages cannot be forwarded in chat history.");
         var description = selectedMessageList.Take(3)
             .Select(x => $"{x.Sender?.Name}:{x.GetTypedContentEntity()?.GetBody()}")
             .ToArray()

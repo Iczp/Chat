@@ -4,11 +4,14 @@ using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using Riok.Mapperly.Abstractions;
 using Volo.Abp.Mapperly;
+using Microsoft.Extensions.Logging;
+using IczpNet.Chat.MessageTemplates;
+using System.Text;
 
 namespace IczpNet.Chat.AutoMappers;
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-public partial class ChatDomainTemplateContentMapper : MapperBase<TemplateContent, TemplateContentInfo>
+public partial class ChatDomainTemplateContentMapper(ILogger<ChatDomainTemplateContentMapper> logger = null) : MapperBase<TemplateContent, TemplateContentInfo>
 {
     public override TemplateContentInfo Map(TemplateContent source)
     {
@@ -26,8 +29,11 @@ public partial class ChatDomainTemplateContentMapper : MapperBase<TemplateConten
         {
             try
             {
-                var snapshot = JsonSerializer.Deserialize<TemplateContentInfo>(source.SnapshotJson);
-                if (snapshot != null)
+                var snapshot = Encoding.UTF8.GetByteCount(source.SnapshotJson) <= MessageTemplateConsts.MaxSnapshotBytes
+                    ? JsonSerializer.Deserialize<TemplateContentInfo>(source.SnapshotJson) : null;
+                if (snapshot != null && snapshot.TemplateId == source.TemplateId &&
+                    snapshot.TemplateVersion == source.TemplateVersion && snapshot.SchemaVersion == source.SchemaVersion &&
+                    snapshot.FallbackText == source.FallbackText)
                 {
                     destination.SchemaVersion = snapshot.SchemaVersion;
                     destination.TemplateId = snapshot.TemplateId;
@@ -39,10 +45,12 @@ public partial class ChatDomainTemplateContentMapper : MapperBase<TemplateConten
                     destination.Actions = snapshot.Actions;
                     destination.Resources = snapshot.Resources;
                 }
+                else
+                    logger?.LogWarning("模板快照元数据不一致，已降级摘要。TemplateId={TemplateId}, Version={Version}", source.TemplateId, source.TemplateVersion);
             }
-            catch
+            catch (JsonException)
             {
-                // Fallback to scalar properties if snapshot parse fails
+                logger?.LogWarning("模板快照JSON损坏，已降级摘要。TemplateId={TemplateId}, Version={Version}", source.TemplateId, source.TemplateVersion);
             }
         }
 

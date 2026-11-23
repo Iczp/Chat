@@ -1,0 +1,37 @@
+{
+  "name": "损坏载荷卡片",
+  "description": "JSON缺少根card节点或关键字段缺失，客户端安全降级显示[模板消息] 内容暂不可用",
+  "serverExpectation": {
+    "accepted": false,
+    "errorCode": "TemplateDefinitionInvalid"
+  },
+  "clientExpectation": {
+    "fallback": true,
+    "expectedFallbackText": "[模板消息] 内容暂不可用"
+  },
+  "snapshot": {
+    "schemaVersion": 1,
+    "templateId": "4a82b63d-e9cd-4bed-8d41-c7bd12fe5009",
+    "fallbackText": "",
+    "layout": {
+      "type": "row",
+      "children": []
+    }
+  },
+  "definition": {
+    "schemaVersion": 1,
+    "name": "损坏载荷",
+    "fields": [],
+    "summary": {
+      "prefix": "",
+      "fields": [],
+      "separator": "："
+    },
+    "layout": {
+      "type": "row",
+      "children": []
+    },
+    "actions": []
+  },
+  "data": {}
+}

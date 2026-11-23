@@ -11,6 +11,7 @@ using IczpNet.Chat.MessageSections.Templates;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
+using Microsoft.Extensions.Configuration;
 
 namespace IczpNet.Chat.MessageTemplates;
 
@@ -27,6 +28,59 @@ public class MessageTemplateManager : DomainService
     private static readonly HashSet<string> AllowedActionTypes = ["openUrl", "copyText"];
 
     public MessageTemplateManager() { }
+
+    /// <summary>迁移和客户端部署完成前，默认关闭模板写入口。</summary>
+    public virtual void EnsureEnabled()
+    {
+        if (!LazyServiceProvider.LazyGetRequiredService<IConfiguration>().GetValue<bool>("Chat:TemplateMessages:Enabled"))
+            throw new UserFriendlyException("模板消息功能尚未启用。", ChatErrorCodes.TemplateMessages.TemplateDisabled);
+    }
+
+    /// <summary>领域层统一检查租户和模板使用范围，不允许 host 模板隐式共享。</summary>
+    public virtual void CheckUsage(MessageTemplateDefinition template, long senderOwnerId, Guid? tenantId)
+    {
+        if (template.TenantId != tenantId)
+            throw new UserFriendlyException("模板不存在。", ChatErrorCodes.TemplateMessages.TemplateNotFound);
+        if (template.OwnerId != senderOwnerId &&
+            (template.Visibility != MessageTemplateVisibility.TenantShared || !tenantId.HasValue))
+            throw new UserFriendlyException("无权使用该模板。", ChatErrorCodes.TemplateMessages.TemplateForbidden);
+    }
+
+    /// <summary>统一验证草稿并发戳。</summary>
+    public virtual void CheckConcurrency(MessageTemplateDefinition template, string stamp)
+    {
+        if (string.IsNullOrWhiteSpace(stamp) || !string.Equals(template.ConcurrencyStamp, stamp, StringComparison.Ordinal))
+            throw new UserFriendlyException("并发冲突，请刷新模板后再试。", ChatErrorCodes.TemplateMessages.TemplateConcurrencyConflict);
+    }
+
+    /// <summary>验证后修改草稿，禁止绕过共享范围和字段边界。</summary>
+    public virtual void UpdateDraft(MessageTemplateDefinition template, string stamp, string name, string description,
+        MessageTemplateVisibility visibility, string definition)
+    {
+        CheckConcurrency(template, stamp);
+        ValidateMetadata(name, description, visibility, template.TenantId);
+        var parsed = ValidateDefinitionJson(definition);
+        template.UpdateDraft(name, description, visibility, parsed.RawJson);
+    }
+
+    public virtual void ValidateMetadata(string name, string description, MessageTemplateVisibility visibility, Guid? tenantId)
+    {
+        if (string.IsNullOrWhiteSpace(name) || name.Length > MessageTemplateConsts.MaxNameLength ||
+            (description?.Length ?? 0) > MessageTemplateConsts.MaxDescriptionLength ||
+            !Enum.IsDefined(visibility) || (visibility == MessageTemplateVisibility.TenantShared && !tenantId.HasValue))
+            throw InvalidDefinition("请检查名称、说明与模板共享范围；host 模板不能设为租户共享。");
+    }
+
+    /// <summary>发布不可变版本；调用方在同一事务中先保存模板并发更新再插入版本。</summary>
+    public virtual MessageTemplateRevision PreparePublication(MessageTemplateDefinition template, string stamp, Guid revisionId)
+    {
+        CheckConcurrency(template, stamp);
+        var definition = ValidateDefinitionJson(template.DraftJson);
+        var version = checked((template.PublishedVersion ?? 0) + 1);
+        template.SetPublishedVersion(version);
+        return new MessageTemplateRevision(revisionId, template.Id, version, MessageTemplateConsts.SchemaVersion,
+            definition.RawJson, ComputeSha256(definition.RawJson), template.TenantId);
+    }
 
     /// <summary>
     /// 校验草稿或发布定义 JSON
@@ -62,8 +116,10 @@ public class MessageTemplateManager : DomainService
                 throw new UserFriendlyException("模板定义根节点必须为对象。", ChatErrorCodes.TemplateMessages.TemplateDefinitionInvalid);
             }
 
+            ValidateDefinitionStructure(root);
+
             // 1. schemaVersion
-            if (!root.TryGetProperty("schemaVersion", out var schemaProp) || schemaProp.ValueKind != JsonValueKind.Number || schemaProp.GetInt32() != MessageTemplateConsts.SchemaVersion)
+            if (!root.TryGetProperty("schemaVersion", out var schemaProp) || schemaProp.ValueKind != JsonValueKind.Number || !schemaProp.TryGetInt32(out var schemaVersion) || schemaVersion != MessageTemplateConsts.SchemaVersion)
             {
                 throw new UserFriendlyException($"不支持的协议版本，当前仅支持 schemaVersion={MessageTemplateConsts.SchemaVersion}。", ChatErrorCodes.TemplateMessages.TemplateSchemaUnsupported);
             }
@@ -103,7 +159,7 @@ public class MessageTemplateManager : DomainService
                         throw new UserFriendlyException("字段名不能为空。", ChatErrorCodes.TemplateMessages.TemplateDefinitionInvalid);
                     }
                     var fname = fNameProp.GetString()!;
-                    if (ForbiddenFieldNames.Contains(fname) || !Regex.IsMatch(fname, @"^[a-zA-Z_][a-zA-Z0-9_]*$"))
+                    if (ForbiddenFieldNames.Contains(fname) || !Regex.IsMatch(fname, @"^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"))
                     {
                         throw new UserFriendlyException($"非法字段名: '{fname}'。", ChatErrorCodes.TemplateMessages.TemplateDefinitionInvalid);
                     }
@@ -123,7 +179,7 @@ public class MessageTemplateManager : DomainService
                     int? maxLength = null;
                     if (f.TryGetProperty("maxLength", out var maxLenProp))
                     {
-                        if (maxLenProp.ValueKind != JsonValueKind.Number || maxLenProp.GetInt32() <= 0 || maxLenProp.GetInt32() > MessageTemplateConsts.MaxFieldTextLength)
+                        if (maxLenProp.ValueKind != JsonValueKind.Number || !maxLenProp.TryGetInt32(out var maxLengthValue) || maxLengthValue <= 0 || maxLengthValue > MessageTemplateConsts.MaxFieldTextLength)
                         {
                             throw new UserFriendlyException($"字段 '{fname}' 的 maxLength 必须在 1～{MessageTemplateConsts.MaxFieldTextLength} 之间。", ChatErrorCodes.TemplateMessages.TemplateDefinitionInvalid);
                         }
@@ -186,6 +242,8 @@ public class MessageTemplateManager : DomainService
                         throw new UserFriendlyException("action 的 id 不能为空。", ChatErrorCodes.TemplateMessages.TemplateDefinitionInvalid);
                     }
                     var aid = aIdProp.GetString()!;
+                    if (ForbiddenFieldNames.Contains(aid) || !Regex.IsMatch(aid, @"^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"))
+                        throw InvalidDefinition("action.id 必须为安全标识符。");
                     if (actions.ContainsKey(aid))
                     {
                         throw new UserFriendlyException($"重复 actionId: '{aid}'。", ChatErrorCodes.TemplateMessages.TemplateDefinitionInvalid);
@@ -207,7 +265,7 @@ public class MessageTemplateManager : DomainService
                         throw new UserFriendlyException($"action '{aid}' 绑定的字段 '{abind}' 未在 fields 中声明。", ChatErrorCodes.TemplateMessages.TemplateDefinitionInvalid);
                     }
 
-                    if (atype == "openUrl" && boundField.Format != "url")
+                    if (boundField.Type != "string" || (atype == "openUrl" && boundField.Format != "url"))
                     {
                         throw new UserFriendlyException($"openUrl action '{aid}' 绑定的字段 '{abind}' format 必须为 url。", ChatErrorCodes.TemplateMessages.TemplateDefinitionInvalid);
                     }
@@ -236,14 +294,17 @@ public class MessageTemplateManager : DomainService
                 {
                     foreach (var item in sfProp.EnumerateArray())
                     {
-                        if (item.ValueKind == JsonValueKind.String && fields.ContainsKey(item.GetString()!))
-                        {
-                            summaryFields.Add(item.GetString()!);
-                        }
+                        if (item.ValueKind != JsonValueKind.String || !fields.ContainsKey(item.GetString()!))
+                            throw InvalidDefinition("summary.fields 引用了未声明字段。");
+                        summaryFields.Add(item.GetString()!);
                     }
                 }
                 summary = new TemplateSummaryDefinition { Prefix = prefix, Separator = separator, Fields = summaryFields };
             }
+
+            var normalizedJson = JsonSerializer.Serialize(root);
+            if (Encoding.UTF8.GetByteCount(normalizedJson) > MessageTemplateConsts.MaxDefinitionBytes)
+                throw new UserFriendlyException("规范化后的模板定义超过大小限制。", ChatErrorCodes.TemplateMessages.TemplatePayloadTooLarge);
 
             return new ParsedTemplateDefinition
             {
@@ -251,8 +312,118 @@ public class MessageTemplateManager : DomainService
                 Fields = fields,
                 Actions = actions,
                 Summary = summary,
-                RawJson = json
+                RawJson = normalizedJson
             };
+        }
+    }
+
+    private static UserFriendlyException InvalidDefinition(string message) =>
+        new(message, ChatErrorCodes.TemplateMessages.TemplateDefinitionInvalid);
+
+    private static void CheckProperties(JsonElement value, params string[] allowed)
+    {
+        if (value.ValueKind != JsonValueKind.Object) throw InvalidDefinition("定义项必须是对象。");
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var property in value.EnumerateObject())
+            if (!seen.Add(property.Name) || !allowed.Contains(property.Name))
+                throw InvalidDefinition($"不支持或重复的属性 '{property.Name}'。");
+    }
+
+    private static void CheckText(JsonElement value, string property, bool required = false, int limit = MessageTemplateConsts.MaxStaticTextLength)
+    {
+        if (!value.TryGetProperty(property, out var item))
+        {
+            if (required) throw InvalidDefinition($"缺少属性 '{property}'。");
+            return;
+        }
+        if (item.ValueKind != JsonValueKind.String || item.GetString()!.Length > limit ||
+            (required && string.IsNullOrWhiteSpace(item.GetString())))
+            throw InvalidDefinition($"属性 '{property}' 必须是长度不超过 {limit} 的文本。");
+    }
+
+    private static void ValidateDefinitionStructure(JsonElement root)
+    {
+        CheckProperties(root, "schemaVersion", "name", "fields", "summary", "layout", "actions", "resources");
+        // Blob 引用保活尚未接入；首期只开放 URL 图片，拒绝伪造资源及生命周期不完整的 Blob。
+        if (root.TryGetProperty("resources", out var resources) &&
+            (resources.ValueKind != JsonValueKind.Array || resources.GetArrayLength() != 0))
+            throw InvalidDefinition("首期暂不支持 Blob 素材，请使用已授权的长期图片 URL。");
+        if (root.TryGetProperty("fields", out var fields))
+        {
+            if (fields.ValueKind != JsonValueKind.Array) throw InvalidDefinition("fields 必须为数组。");
+            foreach (var field in fields.EnumerateArray())
+            {
+                CheckProperties(field, "name", "type", "required", "maxLength", "enum", "format");
+                CheckText(field, "name", true, MessageTemplateConsts.MaxNameLength);
+                CheckText(field, "type", true);
+                CheckText(field, "format");
+                if (field.TryGetProperty("required", out var required) && required.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+                    throw InvalidDefinition("required 必须为布尔值。");
+                var isString = field.GetProperty("type").GetString() == "string";
+                if (!isString && (field.TryGetProperty("maxLength", out _) || field.TryGetProperty("format", out _) || field.TryGetProperty("enum", out _)))
+                    throw InvalidDefinition("maxLength、format、enum 只适用于字符串字段。");
+                if (field.TryGetProperty("enum", out var values))
+                {
+                    if (values.ValueKind != JsonValueKind.Array || values.GetArrayLength() == 0 ||
+                        values.EnumerateArray().Any(x => x.ValueKind != JsonValueKind.String || x.GetString()!.Length > MessageTemplateConsts.MaxFieldTextLength))
+                        throw InvalidDefinition("enum 必须为非空的字符串数组。");
+                }
+            }
+        }
+        if (root.TryGetProperty("actions", out var actions))
+        {
+            if (actions.ValueKind != JsonValueKind.Array) throw InvalidDefinition("actions 必须为数组。");
+            foreach (var action in actions.EnumerateArray())
+            {
+                CheckProperties(action, "id", "type", "bind");
+                CheckText(action, "id", true, MessageTemplateConsts.MaxNameLength);
+                CheckText(action, "type", true);
+                CheckText(action, "bind", true, MessageTemplateConsts.MaxNameLength);
+            }
+        }
+        if (root.TryGetProperty("summary", out var summary))
+        {
+            CheckProperties(summary, "prefix", "fields", "separator");
+            CheckText(summary, "prefix");
+            CheckText(summary, "separator");
+            if (summary.TryGetProperty("fields", out var summaryFields) &&
+                (summaryFields.ValueKind != JsonValueKind.Array || summaryFields.GetArrayLength() > MessageTemplateConsts.MaxFields))
+                throw InvalidDefinition("summary.fields 必须为有界数组。");
+        }
+        if (root.TryGetProperty("layout", out var layout))
+        {
+            var images = 0;
+            ValidateLayoutShape(layout, 1, ref images);
+        }
+    }
+
+    private static void ValidateLayoutShape(JsonElement node, int depth, ref int images)
+    {
+        if (depth > MessageTemplateConsts.MaxDepth) throw InvalidDefinition("布局嵌套深度超过限制。");
+        if (node.ValueKind != JsonValueKind.Object) throw InvalidDefinition("节点必须为对象。");
+        CheckText(node, "type", true);
+        var type = node.GetProperty("type").GetString();
+        var allowed = type switch
+        {
+            "card" => new[] { "type", "children" },
+            "row" or "column" => new[] { "type", "children", "gap" },
+            "text" => new[] { "type", "text", "bind", "style" },
+            "field" => new[] { "type", "label", "bind" },
+            "badge" => new[] { "type", "text", "bind", "tone" },
+            "image" => new[] { "type", "bind", "aspectRatio" },
+            "divider" => new[] { "type" },
+            "button" => new[] { "type", "label", "actionId" },
+            _ => throw InvalidDefinition("未知布局组件。")
+        };
+        CheckProperties(node, allowed);
+        foreach (var property in new[] { "text", "bind", "label", "style", "tone", "gap", "aspectRatio", "actionId" })
+            CheckText(node, property);
+        if (type == "image" && ++images > MessageTemplateConsts.MaxResources)
+            throw InvalidDefinition("图片数量不能超过3张。");
+        if (node.TryGetProperty("children", out var children))
+        {
+            if (children.ValueKind != JsonValueKind.Array) throw InvalidDefinition("children 必须为数组。");
+            foreach (var child in children.EnumerateArray()) ValidateLayoutShape(child, depth + 1, ref images);
         }
     }
 
@@ -408,7 +579,7 @@ public class MessageTemplateManager : DomainService
                 {
                     throw new UserFriendlyException("image 节点必须提供 bind 或 resourceId。", ChatErrorCodes.TemplateMessages.TemplateDefinitionInvalid);
                 }
-                if (hasImgBind && (!fields.TryGetValue(ibProp.GetString()!, out var fdef) || fdef.Format != "url"))
+                if (hasImgBind && (!fields.TryGetValue(ibProp.GetString()!, out var fdef) || fdef.Type != "string" || fdef.Format != "url"))
                 {
                     throw new UserFriendlyException($"image 节点绑定的字段 '{ibProp.GetString()}' 必须为 format:url 的字段。", ChatErrorCodes.TemplateMessages.TemplateDefinitionInvalid);
                 }
@@ -447,113 +618,58 @@ public class MessageTemplateManager : DomainService
         }
 
         var result = new Dictionary<string, object>(StringComparer.Ordinal);
-
-        // Check for unknown fields (additionalProperties = false)
         foreach (var key in inputData.Keys)
-        {
             if (!definition.Fields.ContainsKey(key))
-            {
-                throw new UserFriendlyException($"提交了未在模板中声明的未知字段: '{key}'。", ChatErrorCodes.TemplateMessages.TemplateDataInvalid);
-            }
-        }
+                throw InvalidData(key, "未声明字段");
 
-        foreach (var (fname, fdef) in definition.Fields)
+        foreach (var (name, field) in definition.Fields)
         {
-            if (!inputData.TryGetValue(fname, out var rawVal) || rawVal == null)
+            if (!inputData.TryGetValue(name, out var raw) || raw == null ||
+                raw is JsonElement missing && missing.ValueKind == JsonValueKind.Null)
             {
-                if (fdef.Required)
-                {
-                    throw new UserFriendlyException($"必填字段 '{fname}' 缺失。", ChatErrorCodes.TemplateMessages.TemplateDataInvalid);
-                }
+                if (field.Required) throw InvalidData(name, "必填字段缺失");
                 continue;
             }
-
-            // Type check and normalization
-            switch (fdef.Type)
+            JsonElement value;
+            try { value = raw is JsonElement json ? json : JsonSerializer.SerializeToElement(raw); }
+            catch (Exception ex) when (ex is JsonException or ArgumentException or NotSupportedException)
+            { throw InvalidData(name, "字段类型无效"); }
+            switch (field.Type)
             {
                 case "string":
-                    var strVal = rawVal is JsonElement je && je.ValueKind == JsonValueKind.String
-                        ? je.GetString()!
-                        : rawVal.ToString()!;
-
-                    if (fdef.MaxLength.HasValue && strVal.Length > fdef.MaxLength.Value)
-                    {
-                        throw new UserFriendlyException($"字段 '{fname}' 长度超出最大限制 ({fdef.MaxLength.Value})。", ChatErrorCodes.TemplateMessages.TemplateDataInvalid);
-                    }
-                    if (strVal.Length > MessageTemplateConsts.MaxFieldTextLength)
-                    {
-                        throw new UserFriendlyException($"字段 '{fname}' 长度超出系统上限 ({MessageTemplateConsts.MaxFieldTextLength})。", ChatErrorCodes.TemplateMessages.TemplateDataInvalid);
-                    }
-                    if (fdef.Enum != null && fdef.Enum.Count > 0 && !fdef.Enum.Contains(strVal))
-                    {
-                        throw new UserFriendlyException($"字段 '{fname}' 的值不在允许的枚举列表中。", ChatErrorCodes.TemplateMessages.TemplateDataInvalid);
-                    }
-                    if (fdef.Format == "url")
-                    {
-                        ValidateSafeWebUrl(strVal, fname);
-                    }
-                    result[fname] = strVal;
+                    if (value.ValueKind != JsonValueKind.String) throw InvalidData(name, "必须为字符串");
+                    var text = value.GetString()!;
+                    if (text.Length > (field.MaxLength ?? MessageTemplateConsts.MaxFieldTextLength))
+                        throw InvalidData(name, "超过长度上限");
+                    if (field.Enum != null && !field.Enum.Contains(text)) throw InvalidData(name, "不在允许枚举中");
+                    if (field.Format == "url") ValidateSafeWebUrl(text, name);
+                    result[name] = text;
                     break;
-
                 case "boolean":
-                    bool boolVal;
-                    if (rawVal is JsonElement jb && (jb.ValueKind == JsonValueKind.True || jb.ValueKind == JsonValueKind.False))
-                    {
-                        boolVal = jb.GetBoolean();
-                    }
-                    else if (rawVal is bool b)
-                    {
-                        boolVal = b;
-                    }
-                    else if (bool.TryParse(rawVal.ToString(), out var parsedB))
-                    {
-                        boolVal = parsedB;
-                    }
-                    else
-                    {
-                        throw new UserFriendlyException($"字段 '{fname}' 必须为布尔值。", ChatErrorCodes.TemplateMessages.TemplateDataInvalid);
-                    }
-                    result[fname] = boolVal;
+                    if (value.ValueKind is not (JsonValueKind.True or JsonValueKind.False)) throw InvalidData(name, "必须为布尔值");
+                    result[name] = value.GetBoolean();
                     break;
-
                 case "integer":
-                    long intVal;
-                    if (rawVal is JsonElement ji && ji.ValueKind == JsonValueKind.Number && ji.TryGetInt64(out var parsedLong))
-                    {
-                        intVal = parsedLong;
-                    }
-                    else if (long.TryParse(rawVal.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var pl))
-                    {
-                        intVal = pl;
-                    }
-                    else
-                    {
-                        throw new UserFriendlyException($"字段 '{fname}' 必须为整数。", ChatErrorCodes.TemplateMessages.TemplateDataInvalid);
-                    }
-                    result[fname] = intVal;
+                    if (value.ValueKind != JsonValueKind.Number || !value.TryGetDouble(out var integer) ||
+                        !double.IsFinite(integer) || Math.Abs(integer) > 9007199254740991d || Math.Truncate(integer) != integer)
+                        throw InvalidData(name, "必须为 JavaScript 安全范围内的整数");
+                    result[name] = (long)integer;
                     break;
-
                 case "number":
-                    double numVal;
-                    if (rawVal is JsonElement jn && jn.ValueKind == JsonValueKind.Number && jn.TryGetDouble(out var parsedDouble))
-                    {
-                        numVal = parsedDouble;
-                    }
-                    else if (double.TryParse(rawVal.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var pd))
-                    {
-                        numVal = pd;
-                    }
-                    else
-                    {
-                        throw new UserFriendlyException($"字段 '{fname}' 必须为数值。", ChatErrorCodes.TemplateMessages.TemplateDataInvalid);
-                    }
-                    result[fname] = numVal;
+                    if (value.ValueKind != JsonValueKind.Number || !value.TryGetDouble(out var number) || !double.IsFinite(number) || Math.Abs(number) > 9007199254740991d)
+                        throw InvalidData(name, "必须为有限数值");
+                    result[name] = number;
                     break;
+                default:
+                    throw InvalidData(name, "不支持的类型");
             }
         }
 
         return result;
     }
+
+    private static UserFriendlyException InvalidData(string field, string rule) =>
+        new($"字段 '{field}': {rule}。", ChatErrorCodes.TemplateMessages.TemplateDataInvalid);
 
     /// <summary>
     /// 生成降级与通知摘要文本
@@ -586,7 +702,7 @@ public class MessageTemplateManager : DomainService
                         }
                         else
                         {
-                            parts.Add(val.ToString() ?? "");
+                            parts.Add(Convert.ToString(val, CultureInfo.InvariantCulture) ?? "");
                         }
                     }
                 }
@@ -601,7 +717,8 @@ public class MessageTemplateManager : DomainService
         }
 
         // Clean control characters and truncate to 256
-        var clean = Regex.Replace(sb.ToString(), @"[\p{C}-[\r\n\t]]", "");
+        var clean = Regex.Replace(sb.ToString(), @"<[^>]*>", "");
+        clean = Regex.Replace(clean, @"[\p{C}\s]+", " ").Trim();
         if (clean.Length > MessageTemplateConsts.MaxFallbackTextLength)
         {
             clean = clean[..MessageTemplateConsts.MaxFallbackTextLength];
@@ -661,7 +778,7 @@ public class MessageTemplateManager : DomainService
 
     private static void ValidateSafeWebUrl(string url, string fieldName)
     {
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+        if (url.Any(char.IsControl) || url.Contains('\\') || !Uri.TryCreate(url, UriKind.Absolute, out var uri) || string.IsNullOrWhiteSpace(uri.Host))
         {
             throw new UserFriendlyException($"字段 '{fieldName}' 不是合法的绝对 URL 地址。", ChatErrorCodes.TemplateMessages.TemplateDataInvalid);
         }

@@ -34,6 +34,10 @@ public class TemplateContentInput : MessageContentInfoBase, IContentInfo
 /// </summary>
 public class TemplateContentInfo : MessageContentInfoBase, IContentInfo
 {
+    [JsonPropertyName("id")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public override Guid? Id { get; set; }
+
     /// <summary>
     /// 协议版本
     /// </summary>

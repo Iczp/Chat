@@ -1,0 +1,144 @@
+{
+  "name": "可选字段缺失卡片",
+  "description": "未提供可选字段detailUrl与applicant时，对应按钮或整行隐藏，卡片正常渲染",
+  "serverExpectation": {
+    "accepted": true
+  },
+  "clientExpectation": {
+    "fallback": false,
+    "expectedFallbackText": "[工单]WX20261123002：处理中"
+  },
+  "snapshot": {
+    "schemaVersion": 1,
+    "templateId": "4a82b63d-e9cd-4bed-8d41-c7bd12fe5003",
+    "templateVersion": 1,
+    "templateName": "维修工单",
+    "fallbackText": "[工单]WX20261123002：处理中",
+    "data": {
+      "title": "网络插座松动",
+      "orderNo": "WX20261123002",
+      "status": "处理中"
+    },
+    "layout": {
+      "type": "card",
+      "children": [
+        {
+          "type": "text",
+          "bind": "title",
+          "style": "heading"
+        },
+        {
+          "type": "field",
+          "label": "工单编号",
+          "bind": "orderNo"
+        },
+        {
+          "type": "field",
+          "label": "报修人",
+          "bind": "applicant"
+        },
+        {
+          "type": "badge",
+          "bind": "status",
+          "tone": "neutral"
+        },
+        {
+          "type": "button",
+          "label": "查看工单",
+          "actionId": "viewDetail"
+        }
+      ]
+    },
+    "actions": [
+      {
+        "id": "viewDetail",
+        "type": "openUrl",
+        "bind": "detailUrl"
+      }
+    ]
+  },
+  "definition": {
+    "schemaVersion": 1,
+    "name": "维修工单",
+    "fields": [
+      {
+        "name": "applicant",
+        "type": "string",
+        "required": false,
+        "maxLength": 2000
+      },
+      {
+        "name": "detailUrl",
+        "type": "string",
+        "required": false,
+        "maxLength": 2000,
+        "format": "url"
+      },
+      {
+        "name": "orderNo",
+        "type": "string",
+        "required": true,
+        "maxLength": 2000
+      },
+      {
+        "name": "status",
+        "type": "string",
+        "required": true,
+        "maxLength": 2000
+      },
+      {
+        "name": "title",
+        "type": "string",
+        "required": true,
+        "maxLength": 2000
+      }
+    ],
+    "summary": {
+      "prefix": "[工单]WX20261123002：处理中",
+      "fields": [],
+      "separator": "："
+    },
+    "layout": {
+      "type": "card",
+      "children": [
+        {
+          "type": "text",
+          "bind": "title",
+          "style": "heading"
+        },
+        {
+          "type": "field",
+          "label": "工单编号",
+          "bind": "orderNo"
+        },
+        {
+          "type": "field",
+          "label": "报修人",
+          "bind": "applicant"
+        },
+        {
+          "type": "badge",
+          "bind": "status",
+          "tone": "neutral"
+        },
+        {
+          "type": "button",
+          "label": "查看工单",
+          "actionId": "viewDetail"
+        }
+      ]
+    },
+    "actions": [
+      {
+        "id": "viewDetail",
+        "type": "openUrl",
+        "bind": "detailUrl"
+      }
+    ]
+  },
+  "data": {
+    "title": "网络插座松动",
+    "orderNo": "WX20261123002",
+    "status": "处理中"
+  }
+}
