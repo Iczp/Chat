@@ -24,6 +24,13 @@ public class SessionAnnouncementController(ISessionAnnouncementAppService announ
     }
 
     [HttpGet]
+    [Route("pinned")]
+    public virtual Task<SessionAnnouncementDetailDto> GetPinnedByQueryAsync([FromQuery] Guid sessionId)
+    {
+        return AnnouncementAppService.GetPinnedAsync(sessionId);
+    }
+
+    [HttpGet]
     [Route("{id}")]
     public virtual Task<SessionAnnouncementDetailDto> GetAsync(Guid id)
     {
@@ -42,9 +49,16 @@ public class SessionAnnouncementController(ISessionAnnouncementAppService announ
         return AnnouncementAppService.CreateAsync(input);
     }
 
-    [HttpPost]
+    [HttpPut]
     [Route("{id}")]
     public virtual Task<SessionAnnouncementDetailDto> UpdateAsync(Guid id, UpdateSessionAnnouncementInput input)
+    {
+        return AnnouncementAppService.UpdateAsync(id, input);
+    }
+
+    [HttpPost]
+    [Route("{id}/update")]
+    public virtual Task<SessionAnnouncementDetailDto> UpdateAliasAsync(Guid id, UpdateSessionAnnouncementInput input)
     {
         return AnnouncementAppService.UpdateAsync(id, input);
     }
@@ -57,10 +71,26 @@ public class SessionAnnouncementController(ISessionAnnouncementAppService announ
     }
 
     [HttpPost]
+    [Route("{id}/pinned")]
+    public virtual Task SetPinnedAliasAsync(Guid id, SetPinnedInput input)
+    {
+        return AnnouncementAppService.SetPinnedAsync(id, input);
+    }
+
+    [HttpPost]
     [Route("{id}/delete/{sessionUnitId}")]
     public virtual Task DeleteAsync(Guid id, Guid sessionUnitId)
     {
         return AnnouncementAppService.DeleteAsync(id, sessionUnitId);
+    }
+
+    [HttpDelete]
+    [Route("{id}")]
+    [HttpPost]
+    [Route("{id}/delete")]
+    public virtual Task DeleteDefaultAsync(Guid id, [FromQuery] Guid? sessionUnitId)
+    {
+        return AnnouncementAppService.DeleteAsync(id, sessionUnitId ?? Guid.Empty);
     }
 
     [HttpPost]
@@ -77,11 +107,25 @@ public class SessionAnnouncementController(ISessionAnnouncementAppService announ
         return AnnouncementAppService.RecordViewAsync(id, input);
     }
 
+    [HttpPost]
+    [Route("{id}/view")]
+    public virtual Task RecordViewAliasAsync(Guid id, RecordAnnouncementViewInput input)
+    {
+        return AnnouncementAppService.RecordViewAsync(id, input);
+    }
+
     [HttpGet]
     [Route("{id}/stat")]
     public virtual Task<SessionAnnouncementStatDto> GetStatAsync(Guid id, [FromQuery] Guid sessionUnitId)
     {
         return AnnouncementAppService.GetStatAsync(id, sessionUnitId);
+    }
+
+    [HttpGet]
+    [Route("{id}/stat-summary")]
+    public virtual Task<SessionAnnouncementStatDto> GetStatSummaryAsync(Guid id, [FromQuery] Guid? sessionUnitId)
+    {
+        return AnnouncementAppService.GetStatAsync(id, sessionUnitId ?? Guid.Empty);
     }
 
     [HttpGet]

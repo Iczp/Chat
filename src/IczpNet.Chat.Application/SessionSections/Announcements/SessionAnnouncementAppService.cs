@@ -36,6 +36,29 @@ public class SessionAnnouncementAppService(
     protected ISessionPermissionChecker SessionPermissionChecker { get; } = sessionPermissionChecker;
     protected IMessageManager MessageManager { get; } = messageManager;
 
+    protected virtual async Task<SessionUnit> GetSessionUnitOrDefaultAsync(Guid sessionUnitId, Guid? sessionId = null)
+    {
+        if (sessionUnitId != Guid.Empty)
+        {
+            var unit = await SessionUnitRepository.FindAsync(sessionUnitId);
+            if (unit != null)
+            {
+                return unit;
+            }
+        }
+        if (CurrentUser.Id.HasValue && sessionId.HasValue && sessionId.Value != Guid.Empty)
+        {
+            var ownedIds = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+            var candidates = await SessionUnitRepository.GetListAsync(x => x.SessionId == sessionId.Value && ownedIds.Contains(x.OwnerId) && x.Setting.IsEnabled && !x.Setting.IsKilled);
+            var found = candidates.FirstOrDefault(x => x.Setting.IsCreator) ?? candidates.FirstOrDefault(x => x.Setting.IsAdmin) ?? candidates.FirstOrDefault();
+            if (found != null)
+            {
+                return found;
+            }
+        }
+        return sessionUnitId != Guid.Empty ? await SessionUnitManager.GetAsync(sessionUnitId) : null;
+    }
+
     [HttpGet]
     public virtual async Task<SessionAnnouncementDetailDto> GetPinnedAsync(Guid sessionId)
     {
@@ -93,7 +116,7 @@ public class SessionAnnouncementAppService(
     [HttpPost]
     public virtual async Task<SessionAnnouncementDetailDto> CreateAsync(CreateSessionAnnouncementInput input)
     {
-        var sessionUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
+        var sessionUnit = await GetSessionUnitOrDefaultAsync(input.SessionUnitId, input.SessionId);
         Check.NotNull(sessionUnit, nameof(sessionUnit));
 
         await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Create, sessionUnit);
@@ -128,12 +151,11 @@ public class SessionAnnouncementAppService(
     [HttpPost]
     public virtual async Task<SessionAnnouncementDetailDto> UpdateAsync(Guid id, UpdateSessionAnnouncementInput input)
     {
-        var sessionUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
+        var entity = await AnnouncementRepository.GetAsync(id);
+        var sessionUnit = await GetSessionUnitOrDefaultAsync(input.SessionUnitId, entity.SessionId);
         Check.NotNull(sessionUnit, nameof(sessionUnit));
 
         await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Update, sessionUnit);
-
-        var entity = await AnnouncementRepository.GetAsync(id);
 
         using var uow = UnitOfWorkManager.Begin(requiresNew: false, isTransactional: true);
 
@@ -159,31 +181,32 @@ public class SessionAnnouncementAppService(
     [HttpPost]
     public virtual async Task SetPinnedAsync(Guid id, SetPinnedInput input)
     {
-        var sessionUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
+        var entity = await AnnouncementRepository.GetAsync(id);
+        var sessionUnit = await GetSessionUnitOrDefaultAsync(input.SessionUnitId, entity.SessionId);
         Check.NotNull(sessionUnit, nameof(sessionUnit));
 
         await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Pin, sessionUnit);
 
-        var entity = await AnnouncementRepository.GetAsync(id);
         await AnnouncementManager.SetPinnedAsync(entity, input.IsPinned);
     }
 
     [HttpPost]
     public virtual async Task DeleteAsync(Guid id, Guid sessionUnitId)
     {
-        var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+        var entity = await AnnouncementRepository.GetAsync(id);
+        var sessionUnit = await GetSessionUnitOrDefaultAsync(sessionUnitId, entity.SessionId);
         Check.NotNull(sessionUnit, nameof(sessionUnit));
 
         await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Delete, sessionUnit);
 
-        var entity = await AnnouncementRepository.GetAsync(id);
         await AnnouncementManager.DeleteAsync(entity);
     }
 
     [HttpPost]
     public virtual async Task ConfirmReceiptAsync(Guid id, ConfirmSessionAnnouncementInput input)
     {
-        var sessionUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
+        var entity = await AnnouncementRepository.GetAsync(id);
+        var sessionUnit = await GetSessionUnitOrDefaultAsync(input.SessionUnitId, entity.SessionId);
         Check.NotNull(sessionUnit, nameof(sessionUnit));
 
         await AnnouncementManager.ConfirmReceiptAsync(
@@ -196,7 +219,8 @@ public class SessionAnnouncementAppService(
     [HttpPost]
     public virtual async Task RecordViewAsync(Guid id, RecordAnnouncementViewInput input)
     {
-        var sessionUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
+        var entity = await AnnouncementRepository.GetAsync(id);
+        var sessionUnit = await GetSessionUnitOrDefaultAsync(input.SessionUnitId, entity.SessionId);
         Check.NotNull(sessionUnit, nameof(sessionUnit));
 
         await AnnouncementManager.RecordViewAsync(
@@ -209,11 +233,11 @@ public class SessionAnnouncementAppService(
     [HttpGet]
     public virtual async Task<SessionAnnouncementStatDto> GetStatAsync(Guid id, Guid sessionUnitId)
     {
-        var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
-        Check.NotNull(sessionUnit, nameof(sessionUnit));
-
         var announcement = await AnnouncementRepository.GetAsync(id);
         Check.NotNull(announcement.SessionId, nameof(announcement.SessionId));
+
+        var sessionUnit = await GetSessionUnitOrDefaultAsync(sessionUnitId, announcement.SessionId);
+        Check.NotNull(sessionUnit, nameof(sessionUnit));
 
         var totalMembers = await SessionUnitManager.GetCountBySessionIdAsync(announcement.SessionId.Value);
 
@@ -235,11 +259,11 @@ public class SessionAnnouncementAppService(
     [HttpGet]
     public virtual async Task<PagedResultDto<SessionAnnouncementMemberDto>> GetMembersAsync(Guid id, GetAnnouncementMemberListInput input)
     {
-        var sessionUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
-        Check.NotNull(sessionUnit, nameof(sessionUnit));
-
         var announcement = await AnnouncementRepository.GetAsync(id);
         Check.NotNull(announcement.SessionId, nameof(announcement.SessionId));
+
+        var sessionUnit = await GetSessionUnitOrDefaultAsync(input.SessionUnitId, announcement.SessionId);
+        Check.NotNull(sessionUnit, nameof(sessionUnit));
 
         var receiptsQuery = (await ReceiptRepository.GetQueryableAsync()).Where(x => x.AnnouncementId == id);
         var unitQuery = (await SessionUnitRepository.GetQueryableAsync())
