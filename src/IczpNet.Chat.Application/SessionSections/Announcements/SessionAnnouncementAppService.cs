@@ -98,7 +98,6 @@ public class SessionAnnouncementAppService(
         return handle ?? throw new UserFriendlyException("公告正在更新，请重试。");
     }
 
-    [HttpGet("pinned")]
     public virtual async Task<SessionAnnouncementDetailDto> GetPinnedAsync(Guid sessionId)
     {
         var unit = await GetSessionUnitOrDefaultAsync(Guid.Empty, sessionId);
@@ -112,7 +111,6 @@ public class SessionAnnouncementAppService(
         return await MapToDetailDtoAsync(entity);
     }
 
-    [HttpGet("{id:guid}")]
     public virtual async Task<SessionAnnouncementDetailDto> GetAsync(Guid id)
     {
         var entity = await AnnouncementRepository.GetAsync(id);
@@ -122,7 +120,6 @@ public class SessionAnnouncementAppService(
         return await MapToDetailDtoAsync(entity);
     }
 
-    [HttpGet]
     public virtual async Task<PagedResultDto<SessionAnnouncementDto>> GetListAsync(GetSessionAnnouncementListInput input)
     {
         var unit = await GetSessionUnitOrDefaultAsync(Guid.Empty, input.SessionId);
@@ -303,7 +300,6 @@ public class SessionAnnouncementAppService(
             deviceId: input.DeviceId);
     }
 
-    [HttpGet]
     public virtual async Task<SessionAnnouncementStatDto> GetStatAsync(Guid id, Guid sessionUnitId)
     {
         var announcement = await AnnouncementRepository.GetAsync(id);
@@ -332,7 +328,6 @@ public class SessionAnnouncementAppService(
         };
     }
 
-    [HttpGet]
     public virtual async Task<PagedResultDto<SessionAnnouncementMemberDto>> GetMembersAsync(Guid id, GetAnnouncementMemberListInput input)
     {
         var announcement = await AnnouncementRepository.GetAsync(id);
@@ -406,7 +401,6 @@ public class SessionAnnouncementAppService(
         return new PagedResultDto<SessionAnnouncementMemberDto>(totalCount, list);
     }
 
-    [HttpGet]
     public virtual async Task<PagedResultDto<SessionAnnouncementReceiptDto>> GetReceiptsAsync(Guid id, PagedAndSortedResultRequestDto input)
     {
         var announcement = await AnnouncementRepository.GetAsync(id);
