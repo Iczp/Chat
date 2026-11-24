@@ -133,13 +133,6 @@ public interface ISessionUnitSettingAppService
     Task SetContactTagsAsync(Guid sessionUnitId, List<Guid> ContactTagIdList);
 
     /// <summary>
-    /// 禁言过期时间，为空则不禁言
-    /// </summary>
-    /// <param name="muterSessionUnitId">被设置的会话单元Id</param>
-    /// <param name="setterSessionUnitId">设置者会话单元Id</param>
-    /// <param name="seconds">禁言(秒)，为0则取消禁言</param>
-    /// <returns>禁言过期时间</returns>
-    /// <summary>
     /// 设置或取消管理员
     /// </summary>
     /// <param name="sessionUnitId">目标会话单元Id</param>
@@ -148,5 +141,12 @@ public interface ISessionUnitSettingAppService
     /// <returns>更新后的成员设置</returns>
     Task<SessionUnitMemberSettingDto> SetAdminAsync(Guid sessionUnitId, bool isAdmin, Guid? setterSessionUnitId = null);
 
+    /// <summary>
+    /// 禁言过期时间，为空则不禁言
+    /// </summary>
+    /// <param name="muterSessionUnitId">被设置的会话单元Id</param>
+    /// <param name="setterSessionUnitId">设置者会话单元Id</param>
+    /// <param name="seconds">禁言(秒)，为0则取消禁言</param>
+    /// <returns>禁言过期时间</returns>
     Task<DateTime?> SetMuteExpireTimeAsync(Guid muterSessionUnitId, Guid setterSessionUnitId, int seconds);
 }

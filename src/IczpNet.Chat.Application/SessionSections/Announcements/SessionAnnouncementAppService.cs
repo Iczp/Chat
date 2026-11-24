@@ -24,7 +24,6 @@ using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.SessionSections.Announcements;
 
-[RemoteService(false)]
 public class SessionAnnouncementAppService(
     ISessionAnnouncementRepository announcementRepository,
     ISessionAnnouncementReceiptRepository receiptRepository,

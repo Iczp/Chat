@@ -69,6 +69,14 @@ public interface ISessionUnitCacheManager
     Task<long> GetMembersCountAsync(Guid sessionId);
 
     /// <summary>
+    /// 更新成员管理员状态及排序分值
+    /// </summary>
+    /// <param name="sessionUnitId"></param>
+    /// <param name="isAdmin"></param>
+    /// <returns></returns>
+    Task UpdateUnitAdminAsync(Guid sessionUnitId, bool isAdmin);
+
+    /// <summary>
     /// 获取会话成员
     /// </summary>
     /// <param name="sessionId"></param>
@@ -78,11 +86,6 @@ public interface ISessionUnitCacheManager
     /// <param name="take"></param>
     /// <param name="isDescending"></param>
     /// <returns></returns>
-    /// <summary>
-    /// 更新成员管理员状态及排序分值
-    /// </summary>
-    Task UpdateUnitAdminAsync(Guid sessionUnitId, bool isAdmin);
-
     Task<IEnumerable<KeyValuePair<SessionUnitElement, MemberScore>>> GetRawMembersAsync(
         Guid sessionId,
         double minScore = double.NegativeInfinity,
@@ -408,6 +411,7 @@ public interface ISessionUnitCacheManager
     /// <param name="unitId"></param>
     /// <param name="ownerId"></param>
     /// <param name="sorting"></param>
+    /// <param name="ticks"></param>
     /// <returns></returns>
     Task SetPinningAsync(Guid sessionId, Guid unitId, long ownerId, long sorting, double? ticks = null);
 

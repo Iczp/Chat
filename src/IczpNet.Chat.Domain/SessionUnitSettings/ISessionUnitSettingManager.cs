@@ -93,6 +93,8 @@ public interface ISessionUnitSettingManager
     /// 删除会话
     /// </summary>
     /// <param name="sessionUnitId"></param>
+    /// <param name="killType"></param>
+    /// <param name="killerId"></param>
     /// <returns></returns>
     Task<SessionUnitSetting> KillAsync(Guid sessionUnitId, KillTypes? killType = null, Guid? killerId = null);
 
@@ -113,14 +115,6 @@ public interface ISessionUnitSettingManager
     Task<SessionUnitSetting> DeleteMessageAsync(Guid sessionUnitId, long messageId, string deviceId);
 
     /// <summary>
-    /// 禁言过期时间，为空则不禁言
-    /// </summary>
-    /// <param name="muterSessionUnitId"></param>
-    /// <param name="muteExpireTime"></param>
-    /// <param name="setterSessionUnit"></param>
-    /// <param name="isSendMessage"></param>
-    /// <returns></returns>
-    /// <summary>
     /// 设置或取消管理员
     /// </summary>
     /// <param name="sessionUnitId">目标会话单元Id</param>
@@ -130,6 +124,14 @@ public interface ISessionUnitSettingManager
     /// <returns></returns>
     Task<SessionUnitSetting> SetAdminAsync(Guid sessionUnitId, bool isAdmin, SessionUnit setterSessionUnit, bool isSendMessage = true);
 
+    /// <summary>
+    /// 禁言过期时间，为空则不禁言
+    /// </summary>
+    /// <param name="muterSessionUnitId"></param>
+    /// <param name="muteExpireTime"></param>
+    /// <param name="setterSessionUnit"></param>
+    /// <param name="isSendMessage"></param>
+    /// <returns></returns>
     Task<DateTime?> SetMuteExpireTimeAsync(Guid muterSessionUnitId, DateTime? muteExpireTime, SessionUnit setterSessionUnit, bool isSendMessage);
 
 

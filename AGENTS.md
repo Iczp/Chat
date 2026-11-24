@@ -1993,4 +1993,13 @@ redis.call('HSET', key, 'FieldB', valueB)
   .\rebuild-chat-worker.ps1 -RebuildImage
   ```
 
+------
+
+# 82. ABP 自动 API 规范（尽量不使用手写 Controller）
+
+- **使用 ABP 的自动 API（ConventionalControllers）规则，尽量不使用手写 Controller，除非必要**；
+- `ApplicationService`（继承自 `ChatAppService`）会由 ABP 自动生成传统控制器并暴露 HTTP 接口，禁止在 `IczpNet.Chat.HttpApi` 中为已有 `AppService` 重复编写同路径的转发 `Controller`（避免路由冲突引发 `AmbiguousMatchException`）；
+- 仅在必须自定义非标准 HTTP 行为（如文件流下载/上传、`SignalR`、`[AllowAnonymous]` 特殊回调或与常规路由不兼容的场景）时，才允许在 `HttpApi` 中编写 `Controller`，且必须同步评估并处理与自动 API 的路由隔离（如在对应方法或服务上配置 `[RemoteService(false)]`）。
+
+
 
