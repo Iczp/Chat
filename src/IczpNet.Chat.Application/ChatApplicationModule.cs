@@ -10,8 +10,12 @@ using Microsoft.AspNetCore.Authorization;
 using IczpNet.Chat.Authorizations;
 using IczpNet.Chat.Permissions;
 using Volo.Abp.PermissionManagement;
+using IczpNet.Chat.SessionSections.Announcements;
 using FluentValidation;
 using System.Linq;
+using System.Threading.Tasks;
+using Volo.Abp;
+using Volo.Abp.BackgroundWorkers;
 
 namespace IczpNet.Chat;
 
@@ -40,5 +44,10 @@ public class ChatApplicationModule : AbpModule
         });
         context.Services.AddSingleton<IAuthorizationHandler, SessionUnitAuthorizationHandler>();
         context.Services.AddSingleton<IAuthorizationHandler, ChatObjectAuthorizationHandler>();
+    }
+
+    public override async Task OnApplicationInitializationAsync(ApplicationInitializationContext context)
+    {
+        await context.AddBackgroundWorkerAsync<ScheduledAnnouncementWorker>();
     }
 }

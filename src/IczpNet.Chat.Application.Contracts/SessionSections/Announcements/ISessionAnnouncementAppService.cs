@@ -1,5 +1,6 @@
 using IczpNet.Chat.SessionSections.Announcements.Dtos;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -10,6 +11,8 @@ public interface ISessionAnnouncementAppService : IApplicationService
 {
     Task<SessionAnnouncementDetailDto> GetPinnedAsync(Guid sessionId);
 
+    Task<List<SessionAnnouncementDetailDto>> GetPinnedListAsync(Guid sessionId);
+
     Task<SessionAnnouncementDetailDto> GetAsync(Guid id);
 
     Task<PagedResultDto<SessionAnnouncementDto>> GetListAsync(GetSessionAnnouncementListInput input);
@@ -17,6 +20,12 @@ public interface ISessionAnnouncementAppService : IApplicationService
     Task<SessionAnnouncementDetailDto> CreateAsync(CreateSessionAnnouncementInput input);
 
     Task<SessionAnnouncementDetailDto> UpdateAsync(Guid id, UpdateSessionAnnouncementInput input);
+
+    Task<SessionAnnouncementDetailDto> PublishAsync(Guid id, Guid sessionUnitId);
+
+    Task RevokeAsync(Guid id, Guid sessionUnitId);
+
+    Task<int> RemindUnconfirmedAsync(Guid id, RemindAnnouncementInput input);
 
     Task SetPinnedAsync(Guid id, SetPinnedInput input);
 

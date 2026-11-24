@@ -19,6 +19,7 @@ public class SessionAnnouncementDto : EntityDto<Guid>
     public virtual double Sorting { get; set; }
     public virtual DateTime? PinnedTime { get; set; }
     public virtual DateTime? ExpireTime { get; set; }
+    public virtual DateTime? PublishTime { get; set; }
     public virtual bool ApplyToNewMembers { get; set; }
     public virtual bool IsExpired { get; set; }
     public virtual bool IsEffectiveForCurrentUser { get; set; } = true;

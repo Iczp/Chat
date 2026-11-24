@@ -19,4 +19,15 @@ public class SessionAnnouncementReceiptRepository(IDbContextProvider<ChatDbConte
             .Where(x => x.AnnouncementId == announcementId && x.SessionUnitId == sessionUnitId)
             .FirstOrDefaultAsync(cancellationToken);
     }
+
+    public virtual async Task ResetConfirmationsAsync(Guid announcementId, CancellationToken cancellationToken = default)
+    {
+        var dbSet = await GetDbSetAsync();
+        await dbSet
+            .Where(x => x.AnnouncementId == announcementId && x.IsConfirmed)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(x => x.IsConfirmed, false)
+                .SetProperty(x => x.ConfirmedTime, (DateTime?)null),
+                cancellationToken);
+    }
 }

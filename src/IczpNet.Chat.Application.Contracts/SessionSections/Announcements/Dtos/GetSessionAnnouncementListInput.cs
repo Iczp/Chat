@@ -12,4 +12,6 @@ public class GetSessionAnnouncementListInput : PagedAndSortedResultRequestDto
     public virtual bool? IsPinned { get; set; }
 
     public virtual string Keyword { get; set; }
+
+    public virtual bool IncludeDrafts { get; set; } = false;
 }

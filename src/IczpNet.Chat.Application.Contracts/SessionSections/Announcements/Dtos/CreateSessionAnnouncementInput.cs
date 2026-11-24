@@ -38,6 +38,16 @@ public class CreateSessionAnnouncementInput
     /// </summary>
     public virtual bool ApplyToNewMembers { get; set; } = false;
 
+    /// <summary>
+    /// 定时发布时间（null=立即发布）
+    /// </summary>
+    public virtual DateTime? PublishTime { get; set; }
+
+    /// <summary>
+    /// 是否保存为草稿（不立即发布）
+    /// </summary>
+    public virtual bool SaveAsDraft { get; set; } = false;
+
     public virtual bool IsPopup { get; set; } = false;
 
     public virtual bool RequireConfirm { get; set; } = false;

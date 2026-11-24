@@ -21,4 +21,14 @@ public class GetAnnouncementMemberListInput : PagedAndSortedResultRequestDto
     public virtual AnnouncementMemberFilterType FilterType { get; set; } = AnnouncementMemberFilterType.All;
 
     public virtual string Keyword { get; set; }
+
+    /// <summary>
+    /// 大群游标分页：上一页最后一条的 JoinTime
+    /// </summary>
+    public virtual DateTime? CursorJoinTime { get; set; }
+
+    /// <summary>
+    /// 大群游标分页：上一页最后一条的 SessionUnitId
+    /// </summary>
+    public virtual Guid? CursorSessionUnitId { get; set; }
 }

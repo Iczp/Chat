@@ -3,6 +3,7 @@ using IczpNet.Chat.SessionSections.Announcements;
 using IczpNet.Chat.Enums;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,6 +28,34 @@ public class SessionAnnouncementRepository(IDbContextProvider<ChatDbContext> dbC
             .ThenByDescending(x => x.PinnedTime ?? x.CreationTime)
             .ThenByDescending(x => x.Id)
             .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public virtual async Task<List<SessionAnnouncement>> GetPinnedListAsync(Guid sessionId, CancellationToken cancellationToken = default)
+    {
+        var now = DateTime.Now;
+        var dbSet = await GetDbSetAsync();
+        return await dbSet
+            .AsNoTracking()
+            .Where(x => x.SessionId == sessionId
+                && (x.Sorting > 0 || x.IsPinned)
+                && x.Status == AnnouncementStatus.Published
+                && (x.ExpireTime == null || x.ExpireTime > now))
+            .OrderByDescending(x => x.Sorting)
+            .ThenByDescending(x => x.PinnedTime ?? x.CreationTime)
+            .ThenByDescending(x => x.Id)
+            .ToListAsync(cancellationToken);
+    }
+
+    public virtual async Task<List<SessionAnnouncement>> GetDueScheduledAsync(DateTime now, int maxCount = 50, CancellationToken cancellationToken = default)
+    {
+        var dbSet = await GetDbSetAsync();
+        return await dbSet
+            .Where(x => x.Status == AnnouncementStatus.Draft
+                && x.PublishTime != null
+                && x.PublishTime <= now)
+            .OrderBy(x => x.PublishTime)
+            .Take(maxCount)
+            .ToListAsync(cancellationToken);
     }
 
     public virtual async Task IncrementReceiptCountsAsync(Guid announcementId, int readCount, int confirmedCount, CancellationToken cancellationToken = default)

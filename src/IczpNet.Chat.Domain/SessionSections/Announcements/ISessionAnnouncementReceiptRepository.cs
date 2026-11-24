@@ -8,4 +8,6 @@ namespace IczpNet.Chat.SessionSections.Announcements;
 public interface ISessionAnnouncementReceiptRepository : IRepository<SessionAnnouncementReceipt, long>
 {
     Task<SessionAnnouncementReceipt> FindByUnitAsync(Guid announcementId, Guid sessionUnitId, CancellationToken cancellationToken = default);
+
+    Task ResetConfirmationsAsync(Guid announcementId, CancellationToken cancellationToken = default);
 }

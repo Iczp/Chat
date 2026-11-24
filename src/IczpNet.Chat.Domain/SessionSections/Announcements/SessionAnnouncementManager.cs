@@ -41,6 +41,8 @@ public class SessionAnnouncementManager(
         double? sorting = null,
         DateTime? expireTime = null,
         bool applyToNewMembers = false,
+        AnnouncementStatus status = AnnouncementStatus.Published,
+        DateTime? publishTime = null,
         CancellationToken cancellationToken = default)
     {
         Check.NotNullOrWhiteSpace(title, nameof(title));
@@ -62,14 +64,15 @@ public class SessionAnnouncementManager(
             title: title.Trim(),
             content: content,
             editorType: editorType,
-            status: AnnouncementStatus.Published,
+            status: status,
             isPinned: effectivePinned,
             isPopup: isPopup,
             requireConfirm: requireConfirm,
             pinnedTime: effectivePinned ? now : null,
             sorting: effectiveSorting,
             expireTime: expireTime,
-            applyToNewMembers: applyToNewMembers);
+            applyToNewMembers: applyToNewMembers,
+            publishTime: publishTime);
 
         return await AnnouncementRepository.InsertAsync(announcement, autoSave: true, cancellationToken: cancellationToken);
     }
@@ -85,6 +88,9 @@ public class SessionAnnouncementManager(
         double? sorting = null,
         DateTime? expireTime = null,
         bool applyToNewMembers = false,
+        AnnouncementStatus? status = null,
+        DateTime? publishTime = null,
+        bool resetReceipts = false,
         CancellationToken cancellationToken = default)
     {
         Check.NotNull(announcement, nameof(announcement));
@@ -93,10 +99,39 @@ public class SessionAnnouncementManager(
 
         announcement.SetContent(title.Trim(), content, editorType);
         announcement.SetOptions(isPopup, requireConfirm);
-        announcement.SetPolicy(expireTime, applyToNewMembers);
+        announcement.SetPolicy(expireTime, applyToNewMembers, publishTime);
         announcement.SetPinned(isPinned, CurrentTime, sorting);
+        if (status.HasValue)
+        {
+            announcement.SetStatus(status.Value);
+        }
+
+        if (resetReceipts)
+        {
+            await ReceiptRepository.ResetConfirmationsAsync(announcement.Id, cancellationToken);
+            announcement.ResetConfirmedCount();
+        }
 
         return await AnnouncementRepository.UpdateAsync(announcement, autoSave: true, cancellationToken: cancellationToken);
+    }
+
+    public virtual async Task PublishAsync(
+        SessionAnnouncement announcement,
+        CancellationToken cancellationToken = default)
+    {
+        Check.NotNull(announcement, nameof(announcement));
+        announcement.SetStatus(AnnouncementStatus.Published);
+        announcement.SetPolicy(announcement.ExpireTime, announcement.ApplyToNewMembers, null);
+        await AnnouncementRepository.UpdateAsync(announcement, autoSave: true, cancellationToken: cancellationToken);
+    }
+
+    public virtual async Task RevokeAsync(
+        SessionAnnouncement announcement,
+        CancellationToken cancellationToken = default)
+    {
+        Check.NotNull(announcement, nameof(announcement));
+        announcement.SetStatus(AnnouncementStatus.Revoked);
+        await AnnouncementRepository.UpdateAsync(announcement, autoSave: true, cancellationToken: cancellationToken);
     }
 
     public virtual async Task SetPinnedAsync(

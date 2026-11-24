@@ -36,6 +36,21 @@ public class UpdateSessionAnnouncementInput
     /// </summary>
     public virtual bool ApplyToNewMembers { get; set; }
 
+    /// <summary>
+    /// 定时发布时间（null=立即发布）
+    /// </summary>
+    public virtual DateTime? PublishTime { get; set; }
+
+    /// <summary>
+    /// 是否保存为草稿
+    /// </summary>
+    public virtual bool SaveAsDraft { get; set; } = false;
+
+    /// <summary>
+    /// 修改后是否重置已读/确认状态（要求成员重新确认）
+    /// </summary>
+    public virtual bool ResetReceipts { get; set; } = false;
+
     public virtual bool IsPopup { get; set; }
 
     public virtual bool RequireConfirm { get; set; }

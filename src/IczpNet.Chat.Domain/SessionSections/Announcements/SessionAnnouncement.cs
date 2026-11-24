@@ -13,6 +13,7 @@ namespace IczpNet.Chat.SessionSections.Announcements;
 [Index(nameof(SessionId), nameof(IsPinned))]
 [Index(nameof(SessionId), nameof(Sorting), AllDescending = true)]
 [Index(nameof(SessionId), nameof(CreationTime), AllDescending = true)]
+[Index(nameof(Status), nameof(PublishTime))]
 [Index(nameof(ExpireTime))]
 [Index(nameof(ChatObjectId))]
 public class SessionAnnouncement : BaseEntity<Guid>, ISessionId
@@ -59,6 +60,9 @@ public class SessionAnnouncement : BaseEntity<Guid>, ISessionId
     [Comment("公告有效期截止时间（null=长期有效）")]
     public virtual DateTime? ExpireTime { get; protected set; }
 
+    [Comment("定时发布时间（null=立即发布）")]
+    public virtual DateTime? PublishTime { get; protected set; }
+
     [Comment("是否对发布后新入群/重入群成员生效（弹窗/需确认）")]
     public virtual bool ApplyToNewMembers { get; protected set; }
 
@@ -90,7 +94,8 @@ public class SessionAnnouncement : BaseEntity<Guid>, ISessionId
         DateTime? pinnedTime = null,
         double sorting = 0,
         DateTime? expireTime = null,
-        bool applyToNewMembers = false) : base(id)
+        bool applyToNewMembers = false,
+        DateTime? publishTime = null) : base(id)
     {
         SessionId = sessionId;
         ChatObjectId = chatObjectId;
@@ -115,6 +120,7 @@ public class SessionAnnouncement : BaseEntity<Guid>, ISessionId
         PinnedTime = IsPinned ? (pinnedTime ?? DateTime.Now) : null;
         ExpireTime = expireTime;
         ApplyToNewMembers = applyToNewMembers;
+        PublishTime = publishTime;
     }
 
     public virtual void SetContent(string title, string content, EditorTypes editorType)
@@ -141,10 +147,17 @@ public class SessionAnnouncement : BaseEntity<Guid>, ISessionId
         ConcurrencyStamp = Guid.NewGuid().ToString("N");
     }
 
-    public virtual void SetPolicy(DateTime? expireTime, bool applyToNewMembers)
+    public virtual void SetPolicy(DateTime? expireTime, bool applyToNewMembers, DateTime? publishTime = null)
     {
         ExpireTime = expireTime;
         ApplyToNewMembers = applyToNewMembers;
+        PublishTime = publishTime;
+        ConcurrencyStamp = Guid.NewGuid().ToString("N");
+    }
+
+    public virtual void ResetConfirmedCount()
+    {
+        ConfirmedCount = 0;
         ConcurrencyStamp = Guid.NewGuid().ToString("N");
     }
 

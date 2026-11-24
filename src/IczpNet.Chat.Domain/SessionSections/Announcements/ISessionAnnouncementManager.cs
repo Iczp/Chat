@@ -21,6 +21,8 @@ public interface ISessionAnnouncementManager
         double? sorting = null,
         DateTime? expireTime = null,
         bool applyToNewMembers = false,
+        AnnouncementStatus status = AnnouncementStatus.Published,
+        DateTime? publishTime = null,
         CancellationToken cancellationToken = default);
 
     Task<SessionAnnouncement> UpdateAsync(
@@ -34,6 +36,17 @@ public interface ISessionAnnouncementManager
         double? sorting = null,
         DateTime? expireTime = null,
         bool applyToNewMembers = false,
+        AnnouncementStatus? status = null,
+        DateTime? publishTime = null,
+        bool resetReceipts = false,
+        CancellationToken cancellationToken = default);
+
+    Task PublishAsync(
+        SessionAnnouncement announcement,
+        CancellationToken cancellationToken = default);
+
+    Task RevokeAsync(
+        SessionAnnouncement announcement,
         CancellationToken cancellationToken = default);
 
     Task SetPinnedAsync(

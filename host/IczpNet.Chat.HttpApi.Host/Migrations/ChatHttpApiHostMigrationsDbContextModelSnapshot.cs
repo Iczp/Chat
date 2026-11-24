@@ -6541,6 +6541,10 @@ namespace IczpNet.Chat.Migrations
                     b.Property<DateTime?>("PinnedTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("PublishTime")
+                        .HasColumnType("datetime2")
+                        .HasComment("定时发布时间（null=立即发布）");
+
                     b.Property<long>("PublisherChatObjectId")
                         .HasColumnType("bigint");
 
@@ -6585,6 +6589,8 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("SessionId", "Sorting")
                         .IsDescending();
+
+                    b.HasIndex("Status", "PublishTime");
 
                     b.ToTable("ChatSessionAnnouncement", (string)null);
                 });
