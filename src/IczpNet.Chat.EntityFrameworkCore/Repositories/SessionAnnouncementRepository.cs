@@ -15,11 +15,17 @@ public class SessionAnnouncementRepository(IDbContextProvider<ChatDbContext> dbC
 {
     public virtual async Task<SessionAnnouncement> GetPinnedAsync(Guid sessionId, CancellationToken cancellationToken = default)
     {
+        var now = DateTime.Now;
         var dbSet = await GetDbSetAsync();
         return await dbSet
             .AsNoTracking()
-            .Where(x => x.SessionId == sessionId && x.IsPinned && x.Status == AnnouncementStatus.Published)
-            .OrderByDescending(x => x.PinnedTime ?? x.CreationTime)
+            .Where(x => x.SessionId == sessionId
+                && (x.Sorting > 0 || x.IsPinned)
+                && x.Status == AnnouncementStatus.Published
+                && (x.ExpireTime == null || x.ExpireTime > now))
+            .OrderByDescending(x => x.Sorting)
+            .ThenByDescending(x => x.PinnedTime ?? x.CreationTime)
+            .ThenByDescending(x => x.Id)
             .FirstOrDefaultAsync(cancellationToken);
     }
 

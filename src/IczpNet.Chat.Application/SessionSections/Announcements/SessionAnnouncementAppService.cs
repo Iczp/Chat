@@ -109,7 +109,7 @@ public class SessionAnnouncementAppService(
             return null;
         }
 
-        return await MapToDetailDtoAsync(entity);
+        return await MapToDetailDtoAsync(entity, unit);
     }
 
     public virtual async Task<SessionAnnouncementDetailDto> GetAsync(Guid id)
@@ -118,7 +118,7 @@ public class SessionAnnouncementAppService(
         var unit = await GetSessionUnitOrDefaultAsync(Guid.Empty, entity.SessionId);
         if (entity.Status != AnnouncementStatus.Published)
             await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Update, unit);
-        return await MapToDetailDtoAsync(entity);
+        return await MapToDetailDtoAsync(entity, unit);
     }
 
     public virtual async Task<PagedResultDto<SessionAnnouncementDto>> GetListAsync(GetSessionAnnouncementListInput input)
@@ -143,7 +143,7 @@ public class SessionAnnouncementAppService(
         var totalCount = await queryable.CountAsync();
 
         var entities = await queryable
-            .OrderByDescending(x => x.IsPinned)
+            .OrderByDescending(x => x.Sorting)
             .ThenByDescending(x => x.PinnedTime ?? x.CreationTime)
             .ThenByDescending(x => x.Id)
             .PageBy(input)
@@ -155,14 +155,24 @@ public class SessionAnnouncementAppService(
             .Include(x => x.Owner).Include(x => x.Setting).ToDictionaryAsync(x => x.Id);
         var ids = entities.Select(x => x.Id).ToList();
         var ownedIds = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id!.Value);
-        var confirmedIds = await (await ReceiptRepository.GetQueryableAsync())
+        var confirmedReceipts = await (await ReceiptRepository.GetQueryableAsync())
             .Where(x => ids.Contains(x.AnnouncementId) && ownedIds.Contains(x.ChatObjectId) && x.IsConfirmed)
-            .Select(x => x.AnnouncementId).Distinct().ToListAsync();
+            .GroupBy(x => x.AnnouncementId)
+            .Select(g => new { AnnouncementId = g.Key, LatestConfirmedTime = g.Max(x => x.ConfirmedTime) })
+            .ToDictionaryAsync(x => x.AnnouncementId, x => x.LatestConfirmedTime);
+
+        var unitJoinTime = unit.Setting?.JoinTime ?? unit.CreationTime;
+        var now = Clock.Now;
         foreach (var entity in entities)
         {
             publishers.TryGetValue(entity.PublisherSessionUnitId, out var publisher);
-            var dto = MapToDto(entity, publisher);
-            dto.IsConfirmedByCurrentUser = confirmedIds.Contains(entity.Id);
+            var dto = MapToDto(entity, publisher, unitJoinTime, now);
+            if (confirmedReceipts.TryGetValue(entity.Id, out var confirmedTime))
+            {
+                dto.IsConfirmedByCurrentUser = !entity.ApplyToNewMembers
+                    || !confirmedTime.HasValue
+                    || confirmedTime.Value >= unitJoinTime;
+            }
             dtoList.Add(dto);
         }
 
@@ -176,7 +186,7 @@ public class SessionAnnouncementAppService(
         Check.NotNull(sessionUnit, nameof(sessionUnit));
 
         await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Create, sessionUnit);
-        if (input.IsPinned)
+        if (input.IsPinned || (input.Sorting.HasValue && input.Sorting.Value > 0))
             await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Pin, sessionUnit);
 
         var sessionId = sessionUnit.SessionId!.Value;
@@ -195,7 +205,10 @@ public class SessionAnnouncementAppService(
             editorType: input.EditorType,
             isPinned: input.IsPinned,
             isPopup: input.IsPopup,
-            requireConfirm: input.RequireConfirm);
+            requireConfirm: input.RequireConfirm,
+            sorting: input.Sorting,
+            expireTime: input.ExpireTime,
+            applyToNewMembers: input.ApplyToNewMembers);
 
         if (input.SendMessageNotification)
         {
@@ -204,7 +217,7 @@ public class SessionAnnouncementAppService(
 
         await uow.CompleteAsync();
 
-        return await MapToDetailDtoAsync(entity);
+        return await MapToDetailDtoAsync(entity, sessionUnit);
     }
 
     [HttpPost]
@@ -219,7 +232,7 @@ public class SessionAnnouncementAppService(
         await using var handle = await LockSessionAsync(entity.SessionId!.Value);
         using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
         entity = await AnnouncementRepository.GetAsync(id);
-        if (input.IsPinned != entity.IsPinned)
+        if (input.IsPinned != entity.IsPinned || (input.Sorting.HasValue && input.Sorting.Value != entity.Sorting))
             await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Pin, sessionUnit);
 
         entity = await AnnouncementManager.UpdateAsync(
@@ -229,7 +242,10 @@ public class SessionAnnouncementAppService(
             editorType: input.EditorType,
             isPinned: input.IsPinned,
             isPopup: input.IsPopup,
-            requireConfirm: input.RequireConfirm);
+            requireConfirm: input.RequireConfirm,
+            sorting: input.Sorting,
+            expireTime: input.ExpireTime,
+            applyToNewMembers: input.ApplyToNewMembers);
 
         if (input.SendMessageNotification)
         {
@@ -238,7 +254,7 @@ public class SessionAnnouncementAppService(
 
         await uow.CompleteAsync();
 
-        return await MapToDetailDtoAsync(entity);
+        return await MapToDetailDtoAsync(entity, sessionUnit);
     }
 
     [HttpPost]
@@ -253,7 +269,7 @@ public class SessionAnnouncementAppService(
         await using var handle = await LockSessionAsync(entity.SessionId!.Value);
         using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
         entity = await AnnouncementRepository.GetAsync(id);
-        await AnnouncementManager.SetPinnedAsync(entity, input.IsPinned);
+        await AnnouncementManager.SetPinnedAsync(entity, input.IsPinned, input.Sorting);
         await uow.CompleteAsync();
     }
 
@@ -312,6 +328,10 @@ public class SessionAnnouncementAppService(
 
         var members = (await SessionUnitRepository.GetQueryableAsync())
             .Where(x => x.SessionId == announcement.SessionId && x.Setting.IsEnabled && !x.Setting.IsKilled);
+        if (!announcement.ApplyToNewMembers)
+        {
+            members = members.Where(x => (x.Setting.JoinTime ?? x.Setting.CreationTime) <= announcement.CreationTime);
+        }
         var totalMembers = await members.CountAsync();
 
         var receipts = (await ReceiptRepository.GetQueryableAsync()).Where(x => members.Any(u => u.Id == x.SessionUnitId));
@@ -341,6 +361,10 @@ public class SessionAnnouncementAppService(
         var receiptsQuery = (await ReceiptRepository.GetQueryableAsync()).Where(x => x.AnnouncementId == id);
         var unitQuery = (await SessionUnitRepository.GetQueryableAsync())
             .Where(x => x.SessionId == announcement.SessionId && x.Setting.IsEnabled && !x.Setting.IsKilled);
+        if (!announcement.ApplyToNewMembers)
+        {
+            unitQuery = unitQuery.Where(x => (x.Setting.JoinTime ?? x.Setting.CreationTime) <= announcement.CreationTime);
+        }
 
         if (!string.IsNullOrWhiteSpace(input.Keyword))
         {
@@ -477,18 +501,27 @@ public class SessionAnnouncementAppService(
         announcement.SetLinkedMessageId(message.Id);
     }
 
-    protected virtual async Task<SessionAnnouncementDto> MapToDtoAsync(SessionAnnouncement entity)
+    protected virtual async Task<SessionAnnouncementDto> MapToDtoAsync(SessionAnnouncement entity, SessionUnit currentUnit = null)
     {
         var publisherUnit = await (await SessionUnitRepository.GetQueryableAsync())
             .Include(x => x.Owner).Include(x => x.Setting).FirstOrDefaultAsync(x => x.Id == entity.PublisherSessionUnitId);
-        var dto = MapToDto(entity, publisherUnit);
+        var unitJoinTime = currentUnit != null ? (currentUnit.Setting?.JoinTime ?? currentUnit.CreationTime) : (DateTime?)null;
+        var dto = MapToDto(entity, publisherUnit, unitJoinTime, Clock.Now);
         var receipt = await GetCurrentReceiptAsync(entity.Id);
-        dto.IsConfirmedByCurrentUser = receipt?.IsConfirmed ?? false;
+        dto.IsConfirmedByCurrentUser = receipt != null && receipt.IsConfirmed
+            && (!entity.ApplyToNewMembers || !unitJoinTime.HasValue || !receipt.ConfirmedTime.HasValue || receipt.ConfirmedTime.Value >= unitJoinTime.Value);
         return dto;
     }
 
-    protected virtual SessionAnnouncementDto MapToDto(SessionAnnouncement entity, SessionUnit publisherUnit)
+    protected virtual SessionAnnouncementDto MapToDto(
+        SessionAnnouncement entity,
+        SessionUnit publisherUnit,
+        DateTime? currentUnitJoinTime = null,
+        DateTime? now = null)
     {
+        var current = now ?? Clock.Now;
+        var isExpired = entity.ExpireTime.HasValue && entity.ExpireTime.Value <= current;
+        var isEffective = !isExpired && (entity.ApplyToNewMembers || !currentUnitJoinTime.HasValue || currentUnitJoinTime.Value <= entity.CreationTime);
         return new SessionAnnouncementDto
         {
             Id = entity.Id,
@@ -501,8 +534,13 @@ public class SessionAnnouncementAppService(
             Title = entity.Title,
             EditorType = entity.EditorType,
             Status = entity.Status,
-            IsPinned = entity.IsPinned,
+            IsPinned = entity.IsPinned || entity.Sorting > 0,
+            Sorting = entity.Sorting,
             PinnedTime = entity.PinnedTime,
+            ExpireTime = entity.ExpireTime,
+            ApplyToNewMembers = entity.ApplyToNewMembers,
+            IsExpired = isExpired,
+            IsEffectiveForCurrentUser = isEffective,
             IsPopup = entity.IsPopup,
             RequireConfirm = entity.RequireConfirm,
             ConfirmedCount = entity.ConfirmedCount,
@@ -519,9 +557,9 @@ public class SessionAnnouncementAppService(
             .OrderByDescending(x => x.IsConfirmed).ThenByDescending(x => x.ConfirmedTime).FirstOrDefaultAsync();
     }
 
-    protected virtual async Task<SessionAnnouncementDetailDto> MapToDetailDtoAsync(SessionAnnouncement entity)
+    protected virtual async Task<SessionAnnouncementDetailDto> MapToDetailDtoAsync(SessionAnnouncement entity, SessionUnit currentUnit = null)
     {
-        var dto = await MapToDtoAsync(entity);
+        var dto = await MapToDtoAsync(entity, currentUnit);
 
         return new SessionAnnouncementDetailDto
         {
@@ -536,7 +574,12 @@ public class SessionAnnouncementAppService(
             EditorType = dto.EditorType,
             Status = dto.Status,
             IsPinned = dto.IsPinned,
+            Sorting = dto.Sorting,
             PinnedTime = dto.PinnedTime,
+            ExpireTime = dto.ExpireTime,
+            ApplyToNewMembers = dto.ApplyToNewMembers,
+            IsExpired = dto.IsExpired,
+            IsEffectiveForCurrentUser = dto.IsEffectiveForCurrentUser,
             IsPopup = dto.IsPopup,
             RequireConfirm = dto.RequireConfirm,
             ConfirmedCount = dto.ConfirmedCount,

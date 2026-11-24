@@ -18,6 +18,9 @@ public interface ISessionAnnouncementManager
         bool isPinned = false,
         bool isPopup = false,
         bool requireConfirm = false,
+        double? sorting = null,
+        DateTime? expireTime = null,
+        bool applyToNewMembers = false,
         CancellationToken cancellationToken = default);
 
     Task<SessionAnnouncement> UpdateAsync(
@@ -28,11 +31,15 @@ public interface ISessionAnnouncementManager
         bool isPinned,
         bool isPopup,
         bool requireConfirm,
+        double? sorting = null,
+        DateTime? expireTime = null,
+        bool applyToNewMembers = false,
         CancellationToken cancellationToken = default);
 
     Task SetPinnedAsync(
         SessionAnnouncement announcement,
         bool isPinned,
+        double? sorting = null,
         CancellationToken cancellationToken = default);
 
     Task DeleteAsync(

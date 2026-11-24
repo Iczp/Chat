@@ -498,6 +498,7 @@ public class SessionUnitManager(
             {
                 entity.Setting.IsKilled = false;
                 entity.Setting.KillTime = null;
+                entity.Setting.JoinTime = DateTime.Now;
             }
             return entity;
         }

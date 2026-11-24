@@ -16,7 +16,12 @@ public class SessionAnnouncementDto : EntityDto<Guid>
     public virtual EditorTypes EditorType { get; set; }
     public virtual AnnouncementStatus Status { get; set; }
     public virtual bool IsPinned { get; set; }
+    public virtual double Sorting { get; set; }
     public virtual DateTime? PinnedTime { get; set; }
+    public virtual DateTime? ExpireTime { get; set; }
+    public virtual bool ApplyToNewMembers { get; set; }
+    public virtual bool IsExpired { get; set; }
+    public virtual bool IsEffectiveForCurrentUser { get; set; } = true;
     public virtual bool IsPopup { get; set; }
     public virtual bool RequireConfirm { get; set; }
     public virtual int ConfirmedCount { get; set; }

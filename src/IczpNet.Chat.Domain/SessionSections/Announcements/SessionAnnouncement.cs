@@ -11,7 +11,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace IczpNet.Chat.SessionSections.Announcements;
 
 [Index(nameof(SessionId), nameof(IsPinned))]
+[Index(nameof(SessionId), nameof(Sorting), AllDescending = true)]
 [Index(nameof(SessionId), nameof(CreationTime), AllDescending = true)]
+[Index(nameof(ExpireTime))]
 [Index(nameof(ChatObjectId))]
 public class SessionAnnouncement : BaseEntity<Guid>, ISessionId
 {
@@ -49,7 +51,16 @@ public class SessionAnnouncement : BaseEntity<Guid>, ISessionId
 
     public virtual bool IsPinned { get; protected set; }
 
+    [Comment("置顶排序权重（0=不置顶，数值越大越置顶）")]
+    public virtual double Sorting { get; protected set; }
+
     public virtual DateTime? PinnedTime { get; protected set; }
+
+    [Comment("公告有效期截止时间（null=长期有效）")]
+    public virtual DateTime? ExpireTime { get; protected set; }
+
+    [Comment("是否对发布后新入群/重入群成员生效（弹窗/需确认）")]
+    public virtual bool ApplyToNewMembers { get; protected set; }
 
     public virtual bool IsPopup { get; protected set; }
 
@@ -76,7 +87,10 @@ public class SessionAnnouncement : BaseEntity<Guid>, ISessionId
         bool isPinned = false,
         bool isPopup = false,
         bool requireConfirm = false,
-        DateTime? pinnedTime = null) : base(id)
+        DateTime? pinnedTime = null,
+        double sorting = 0,
+        DateTime? expireTime = null,
+        bool applyToNewMembers = false) : base(id)
     {
         SessionId = sessionId;
         ChatObjectId = chatObjectId;
@@ -86,10 +100,21 @@ public class SessionAnnouncement : BaseEntity<Guid>, ISessionId
         Content = content;
         EditorType = editorType;
         Status = status;
-        IsPinned = isPinned;
+        if (sorting > 0)
+        {
+            Sorting = sorting;
+            IsPinned = true;
+        }
+        else
+        {
+            IsPinned = isPinned;
+            Sorting = isPinned ? 1 : 0;
+        }
         IsPopup = isPopup;
         RequireConfirm = requireConfirm;
-        PinnedTime = isPinned ? (pinnedTime ?? DateTime.Now) : null;
+        PinnedTime = IsPinned ? (pinnedTime ?? DateTime.Now) : null;
+        ExpireTime = expireTime;
+        ApplyToNewMembers = applyToNewMembers;
     }
 
     public virtual void SetContent(string title, string content, EditorTypes editorType)
@@ -100,10 +125,26 @@ public class SessionAnnouncement : BaseEntity<Guid>, ISessionId
         ConcurrencyStamp = Guid.NewGuid().ToString("N");
     }
 
-    public virtual void SetPinned(bool isPinned, DateTime? pinnedTime = null)
+    public virtual void SetPinned(bool isPinned, DateTime? pinnedTime = null, double? sorting = null)
     {
-        IsPinned = isPinned;
-        PinnedTime = isPinned ? (pinnedTime ?? DateTime.Now) : null;
+        if (sorting.HasValue)
+        {
+            Sorting = sorting.Value > 0 ? sorting.Value : 0;
+            IsPinned = Sorting > 0;
+        }
+        else
+        {
+            IsPinned = isPinned;
+            Sorting = isPinned ? (Sorting > 0 ? Sorting : 1) : 0;
+        }
+        PinnedTime = IsPinned ? (pinnedTime ?? DateTime.Now) : null;
+        ConcurrencyStamp = Guid.NewGuid().ToString("N");
+    }
+
+    public virtual void SetPolicy(DateTime? expireTime, bool applyToNewMembers)
+    {
+        ExpireTime = expireTime;
+        ApplyToNewMembers = applyToNewMembers;
         ConcurrencyStamp = Guid.NewGuid().ToString("N");
     }
 
@@ -113,6 +154,7 @@ public class SessionAnnouncement : BaseEntity<Guid>, ISessionId
         if (status == AnnouncementStatus.Revoked)
         {
             IsPinned = false;
+            Sorting = 0;
             PinnedTime = null;
         }
         ConcurrencyStamp = Guid.NewGuid().ToString("N");

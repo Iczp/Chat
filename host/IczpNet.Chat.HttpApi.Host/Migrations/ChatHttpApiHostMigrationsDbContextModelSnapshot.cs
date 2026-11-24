@@ -6465,6 +6465,10 @@ namespace IczpNet.Chat.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("ApplyToNewMembers")
+                        .HasColumnType("bit")
+                        .HasComment("是否对发布后新入群/重入群成员生效（弹窗/需确认）");
+
                     b.Property<long>("ChatObjectId")
                         .HasColumnType("bigint");
 
@@ -6501,6 +6505,10 @@ namespace IczpNet.Chat.Migrations
 
                     b.Property<int>("EditorType")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("ExpireTime")
+                        .HasColumnType("datetime2")
+                        .HasComment("公告有效期截止时间（null=长期有效）");
 
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
@@ -6548,6 +6556,10 @@ namespace IczpNet.Chat.Migrations
                     b.Property<Guid>("SessionId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<double>("Sorting")
+                        .HasColumnType("float")
+                        .HasComment("置顶排序权重（0=不置顶，数值越大越置顶）");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -6560,6 +6572,8 @@ namespace IczpNet.Chat.Migrations
 
                     b.HasIndex("ChatObjectId");
 
+                    b.HasIndex("ExpireTime");
+
                     b.HasIndex("PublisherChatObjectId");
 
                     b.HasIndex("PublisherSessionUnitId");
@@ -6568,6 +6582,9 @@ namespace IczpNet.Chat.Migrations
                         .IsDescending();
 
                     b.HasIndex("SessionId", "IsPinned");
+
+                    b.HasIndex("SessionId", "Sorting")
+                        .IsDescending();
 
                     b.ToTable("ChatSessionAnnouncement", (string)null);
                 });
@@ -7130,6 +7147,10 @@ namespace IczpNet.Chat.Migrations
                     b.Property<bool>("IsVisible")
                         .HasColumnType("bit")
                         .HasComment("是否可见的");
+
+                    b.Property<DateTime?>("JoinTime")
+                        .HasColumnType("datetime2")
+                        .HasComment("加入时间");
 
                     b.Property<int?>("JoinWay")
                         .HasColumnType("int")

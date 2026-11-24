@@ -308,6 +308,7 @@ public class RoomManager(
             {
                 rejoinUnit.Setting.IsKilled = false;
                 rejoinUnit.Setting.KillTime = null;
+                rejoinUnit.Setting.JoinTime = DateTime.Now;
                 rejoinUnit.Setting.JoinWay = input.JoinWay ?? JoinWays.Invitation;
                 rejoinUnit.Setting.InviterId = inviterSessionUnit?.Id;
             }

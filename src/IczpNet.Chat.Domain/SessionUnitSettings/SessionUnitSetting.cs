@@ -288,8 +288,7 @@ public class SessionUnitSetting : BaseEntity, IHasCreationTime, IHasModification
     /// 加入时间
     /// </summary>
     [Comment("加入时间")]
-    [NotMapped]
-    public virtual DateTime? JoinTime => CreationTime;
+    public virtual DateTime? JoinTime { get; set; } = DateTime.Now;
 
     /// <summary>
     /// 是否创建者（群主等）
