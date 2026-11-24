@@ -78,7 +78,7 @@ public class SessionAnnouncementAppService(
 
         if (!ownedIds.Contains(unit.OwnerId) || unit.IsDeleted || unit.Setting == null
             || !unit.Setting.IsEnabled || unit.Setting.IsKilled || !unit.SessionId.HasValue
-            || (sessionId.HasValue && sessionId.Value != Guid.Empty && unit.SessionId != sessionId)
+            || (sessionId.HasValue && sessionId.Value != Guid.Empty && unit.SessionId != sessionId && unit.Id != sessionId)
             || (unit.DestinationObjectType != ChatObjectTypeEnums.Room && unit.DestinationObjectType != ChatObjectTypeEnums.Square))
             throw new AbpAuthorizationException("Invalid announcement membership.");
 
@@ -173,7 +173,7 @@ public class SessionAnnouncementAppService(
         if (input.IsPinned)
             await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Pin, sessionUnit);
 
-        var sessionId = input.SessionId ?? sessionUnit.SessionId!.Value;
+        var sessionId = sessionUnit.SessionId!.Value;
         var chatObjectId = sessionUnit.DestinationId ?? sessionUnit.OwnerId;
 
         await using var handle = await LockSessionAsync(sessionId);
