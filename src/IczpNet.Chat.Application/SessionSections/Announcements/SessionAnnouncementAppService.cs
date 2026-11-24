@@ -51,26 +51,34 @@ public class SessionAnnouncementAppService(
             .Include(x => x.GrantList)
             .Include(x => x.SessionUnitRoleList).ThenInclude(x => x.SessionRole).ThenInclude(x => x.GrantList)
             .AsSplitQuery();
-        SessionUnit unit;
+        SessionUnit unit = null;
         if (sessionUnitId != Guid.Empty)
         {
             unit = await query.FirstOrDefaultAsync(x => x.Id == sessionUnitId);
         }
-        else if (sessionId.HasValue && sessionId.Value != Guid.Empty)
+        if (unit == null && sessionId.HasValue && sessionId.Value != Guid.Empty)
         {
             unit = await query.Where(x => x.SessionId == sessionId.Value && ownedIds.Contains(x.OwnerId)
                     && x.Setting.IsEnabled && !x.Setting.IsKilled)
                 .OrderByDescending(x => x.Setting.IsCreator).ThenByDescending(x => x.SessionUnitRoleList.Any()).ThenBy(x => x.Id)
                 .FirstOrDefaultAsync();
         }
-        else
+        if (unit == null && sessionUnitId != Guid.Empty)
         {
-            throw new AbpAuthorizationException("A session membership is required.");
+            // 兼容客户端把 SessionId 误传入 sessionUnitId 字段的场景
+            unit = await query.Where(x => x.SessionId == sessionUnitId && ownedIds.Contains(x.OwnerId)
+                    && x.Setting.IsEnabled && !x.Setting.IsKilled)
+                .OrderByDescending(x => x.Setting.IsCreator).ThenByDescending(x => x.SessionUnitRoleList.Any()).ThenBy(x => x.Id)
+                .FirstOrDefaultAsync();
+        }
+        if (unit == null)
+        {
+            throw new AbpAuthorizationException("A valid session membership is required.");
         }
 
-        if (unit == null || !ownedIds.Contains(unit.OwnerId) || unit.IsDeleted || unit.Setting == null
+        if (!ownedIds.Contains(unit.OwnerId) || unit.IsDeleted || unit.Setting == null
             || !unit.Setting.IsEnabled || unit.Setting.IsKilled || !unit.SessionId.HasValue
-            || (sessionId.HasValue && unit.SessionId != sessionId)
+            || (sessionId.HasValue && sessionId.Value != Guid.Empty && unit.SessionId != sessionId)
             || (unit.DestinationObjectType != ChatObjectTypeEnums.Room && unit.DestinationObjectType != ChatObjectTypeEnums.Square))
             throw new AbpAuthorizationException("Invalid announcement membership.");
 
@@ -80,10 +88,8 @@ public class SessionAnnouncementAppService(
     protected virtual async Task<IAbpDistributedLockHandle> LockSessionAsync(Guid sessionId)
     {
         var distributedLock = LazyServiceProvider.LazyGetRequiredService<IAbpDistributedLock>();
-        if (distributedLock is NullAbpDistributedLock)
-            throw new InvalidOperationException("Announcements require a distributed lock provider.");
-        return await distributedLock.TryAcquireAsync($"Chat:Announcement:Session:{sessionId:N}", TimeSpan.FromSeconds(10))
-            ?? throw new UserFriendlyException("公告正在更新，请重试。");
+        var handle = await distributedLock.TryAcquireAsync($"Chat:Announcement:Session:{sessionId:N}", TimeSpan.FromSeconds(10));
+        return handle ?? throw new UserFriendlyException("公告正在更新，请重试。");
     }
 
     [HttpGet]
