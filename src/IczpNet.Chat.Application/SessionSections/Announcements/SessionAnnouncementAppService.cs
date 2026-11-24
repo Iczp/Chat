@@ -62,6 +62,12 @@ public class SessionAnnouncementAppService(
                     && x.Setting.IsEnabled && !x.Setting.IsKilled)
                 .OrderByDescending(x => x.Setting.IsCreator).ThenByDescending(x => x.SessionUnitRoleList.Any()).ThenBy(x => x.Id)
                 .FirstOrDefaultAsync();
+            if (unit == null)
+            {
+                unit = await query.Where(x => x.Id == sessionId.Value && ownedIds.Contains(x.OwnerId)
+                        && x.Setting.IsEnabled && !x.Setting.IsKilled)
+                    .FirstOrDefaultAsync();
+            }
         }
         if (unit == null && sessionUnitId != Guid.Empty)
         {
@@ -92,11 +98,12 @@ public class SessionAnnouncementAppService(
         return handle ?? throw new UserFriendlyException("公告正在更新，请重试。");
     }
 
-    [HttpGet]
+    [HttpGet("pinned")]
     public virtual async Task<SessionAnnouncementDetailDto> GetPinnedAsync(Guid sessionId)
     {
-        await GetSessionUnitOrDefaultAsync(Guid.Empty, sessionId);
-        var entity = await AnnouncementRepository.GetPinnedAsync(sessionId);
+        var unit = await GetSessionUnitOrDefaultAsync(Guid.Empty, sessionId);
+        var targetSessionId = unit.SessionId!.Value;
+        var entity = await AnnouncementRepository.GetPinnedAsync(targetSessionId);
         if (entity == null)
         {
             return null;
@@ -105,7 +112,7 @@ public class SessionAnnouncementAppService(
         return await MapToDetailDtoAsync(entity);
     }
 
-    [HttpGet]
+    [HttpGet("{id:guid}")]
     public virtual async Task<SessionAnnouncementDetailDto> GetAsync(Guid id)
     {
         var entity = await AnnouncementRepository.GetAsync(id);
@@ -118,10 +125,11 @@ public class SessionAnnouncementAppService(
     [HttpGet]
     public virtual async Task<PagedResultDto<SessionAnnouncementDto>> GetListAsync(GetSessionAnnouncementListInput input)
     {
-        await GetSessionUnitOrDefaultAsync(Guid.Empty, input.SessionId);
+        var unit = await GetSessionUnitOrDefaultAsync(Guid.Empty, input.SessionId);
+        var targetSessionId = unit.SessionId!.Value;
         var queryable = await AnnouncementRepository.GetQueryableAsync();
 
-        queryable = queryable.Where(x => x.SessionId == input.SessionId && x.Status == AnnouncementStatus.Published);
+        queryable = queryable.Where(x => x.SessionId == targetSessionId && x.Status == AnnouncementStatus.Published);
 
         if (input.IsPinned.HasValue)
         {
