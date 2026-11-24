@@ -113,8 +113,8 @@ public class QrCodeManager(
                 throw new UserFriendlyException("生成群二维码需要有效的群成员身份");
             }
 
-            var inviterUnit = await SessionUnitManager.FindAsync(effectiveInviterId.Value, owner.Id);
-            if (!IsActiveUnit(inviterUnit))
+            var inviterUnit = await FindActiveUnitAsync(effectiveInviterId.Value, owner.Id);
+            if (inviterUnit == null)
             {
                 throw new UserFriendlyException("您不是该群有效成员，无法生成群二维码");
             }
@@ -370,8 +370,8 @@ public class QrCodeManager(
 
         Assert.If(applicant.Id == target.Id, "不能添加自己为好友");
 
-        var existingUnit = await SessionUnitManager.FindAsync(applicant.Id, target.Id);
-        if (IsActiveUnit(existingUnit))
+        var existingUnit = await FindActiveUnitAsync(applicant.Id, target.Id);
+        if (existingUnit != null)
         {
             var isRoom = target.ObjectType == ChatObjectTypeEnums.Room;
             return new QrCodeApplyResult
@@ -849,8 +849,8 @@ public class QrCodeManager(
         {
             result.IsSelf = owner.Id == effectiveViewerId.Value;
 
-            var viewerUnit = await SessionUnitManager.FindAsync(effectiveViewerId.Value, owner.Id);
-            if (IsActiveUnit(viewerUnit))
+            var viewerUnit = await FindActiveUnitAsync(effectiveViewerId.Value, owner.Id);
+            if (viewerUnit != null)
             {
                 result.SessionUnitId = viewerUnit.Id;
                 result.SessionId ??= viewerUnit.SessionId;
@@ -1000,6 +1000,15 @@ public class QrCodeManager(
         }
 
         return UrlNormalizer != null ? UrlNormalizer.Normalize(url) : url;
+    }
+
+    protected virtual async Task<SessionUnit> FindActiveUnitAsync(long ownerId, long destinationId)
+    {
+        var query = (await SessionUnitRepository.GetQueryableAsync())
+            .Where(x => x.OwnerId == ownerId && x.DestinationId == destinationId)
+            .Where(SessionUnit.GetActivePredicate(Clock.Now));
+
+        return await AsyncExecuter.FirstOrDefaultAsync(query);
     }
 
     protected static bool IsActiveUnit(SessionUnit unit)
