@@ -53,7 +53,6 @@ public class SessionUnitTextTemplate : TextTemplate
 
     public override string ToString()
     {
-        SetData();
-        return base.ToString();
+        return SessionTextTemplate.SessionUnit(SessionUnitIds, ChatObjectName).ToString();
     }
 }

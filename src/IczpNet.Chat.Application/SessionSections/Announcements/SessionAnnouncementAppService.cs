@@ -7,6 +7,7 @@ using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionPermissions;
 using IczpNet.Chat.SessionSections.Announcements.Dtos;
 using IczpNet.Chat.SessionUnits;
+using IczpNet.Chat.TextTemplates;
 using IczpNet.Chat.Ulids;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -449,12 +450,22 @@ public class SessionAnnouncementAppService(
         bool isUpdated)
     {
         var unitCache = ObjectMapper.Map<SessionUnit, SessionUnitCacheItem>(sessionUnit);
+        var publisherName = !unitCache.MemberName.IsNullOrWhiteSpace()
+            ? unitCache.MemberName
+            : unitCache.OwnerName ?? sessionUnit.DisplayName ?? sessionUnit.Owner?.Name ?? string.Empty;
         var actionText = isUpdated ? "更新了群公告" : "发布了新公告";
+        var announcementUrl = SessionTextTemplate.BuildUri(
+            "announcement",
+            new Dictionary<string, string> { ["id"] = announcement.Id.ToString() });
         var content = new CmdContentInfo
         {
             Cmd = "SessionAnnouncement",
-            Text = $"{sessionUnit.DisplayName ?? sessionUnit.Owner?.Name} {actionText}：《{announcement.Title}》",
-            Url = $"app:///pages/im/announcement?id={announcement.Id}"
+            Text = new TextTemplate("{publisher} {actionText}：《{announcement}》")
+                .WithData("publisher", SessionTextTemplate.SessionUnit(unitCache.Id, publisherName))
+                .WithData("actionText", actionText)
+                .WithData("announcement", SessionTextTemplate.Announcement(announcement.Id, announcement.Title))
+                .ToString(),
+            Url = announcementUrl
         };
 
         // Each update is a distinct notification; reusing the announcement ID makes

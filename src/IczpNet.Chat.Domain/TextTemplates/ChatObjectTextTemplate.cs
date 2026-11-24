@@ -37,7 +37,6 @@ public class ChatObjectTextTemplate : TextTemplate
 
     public override string ToString()
     {
-        SetData();
-        return base.ToString();
+        return SessionTextTemplate.ChatObject(ChatObjectId, ChatObjectName).ToString();
     }
 }
