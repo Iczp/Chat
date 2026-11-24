@@ -36,12 +36,42 @@ public class FavoriteAppService : ChatAppService, IFavoriteAppService
     [HttpGet]
     public async Task<PagedResultDto<FavoritedRecorderDto>> GetListAsync(FavoritedRecorderGetListInput input)
     {
+        var normalizedExts = input.Extensions?
+            .Where(e => !string.IsNullOrWhiteSpace(e))
+            .Select(e => e.Trim().TrimStart('.').ToLower())
+            .Distinct()
+            .ToList();
+
         var query = (await Repository.GetQueryableAsync())
             .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
             .WhereIf(input.DestinationId.HasValue, x => x.DestinationId == input.DestinationId)
+            .WhereIf(input.SessionUnitId.HasValue, x => x.SessionUnitId == input.SessionUnitId)
+            .WhereIf(input.SessionId.HasValue, x => x.Message.SessionId == input.SessionId)
+            .WhereIf(input.SenderId.HasValue, x => x.Message.SenderId == input.SenderId)
             .WhereIf(input.MinSize.HasValue, x => x.Size >= input.MinSize)
             .WhereIf(input.MaxSize.HasValue, x => x.Size < input.MaxSize)
+            .WhereIf(input.MessageType.HasValue, x => x.MessageType == input.MessageType)
+            .WhereIf(input.MessageTypes != null && input.MessageTypes.Count > 0, x => input.MessageTypes.Contains(x.MessageType))
+            .WhereIf(input.StartTime.HasValue, x => x.CreationTime >= input.StartTime)
+            .WhereIf(input.EndTime.HasValue, x => x.CreationTime < input.EndTime)
+            .WhereIf(!string.IsNullOrWhiteSpace(input.Keyword), x =>
+                x.Message.TextContentList.Any(t => t.Text.Contains(input.Keyword)) ||
+                x.Message.FileContentList.Any(f => f.FileName.Contains(input.Keyword)) ||
+                x.Message.ImageContentList.Any(i => i.FileName.Contains(input.Keyword)) ||
+                x.Message.VideoContentList.Any(v => v.FileName.Contains(input.Keyword)) ||
+                x.Message.SoundContentList.Any(s => s.FileName.Contains(input.Keyword)))
+            .WhereIf(normalizedExts != null && normalizedExts.Count > 0, x =>
+                x.Message.FileContentList.Any(f => normalizedExts.Contains(f.Suffix.ToLower())) ||
+                x.Message.ImageContentList.Any(i => normalizedExts.Contains(i.Suffix.ToLower())) ||
+                x.Message.VideoContentList.Any(v => normalizedExts.Contains(v.Suffix.ToLower())) ||
+                x.Message.SoundContentList.Any(s => normalizedExts.Contains(s.Suffix.ToLower())))
             ;
+
+        if (string.IsNullOrWhiteSpace(input.Sorting))
+        {
+            input.Sorting = $"{nameof(FavoritedRecorder.CreationTime)} desc";
+        }
+
         return await GetPagedListAsync<FavoritedRecorder, FavoritedRecorderDto>(query, input);
     }
 

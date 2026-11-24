@@ -4,6 +4,7 @@ using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.BaseDtos;
 using IczpNet.Chat.DataFilters;
 using IczpNet.Chat.DeletedRecorders;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.Enums.Dtos;
 using IczpNet.Chat.FavoritedRecorders;
 using IczpNet.Chat.Follows;
@@ -28,6 +29,7 @@ using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Volo.Abp.Users;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
@@ -96,6 +98,12 @@ public partial class MessageAppService(
 
         //var followingIdList = await FollowManager.GetFollowingIdListAsync(sessionUnitId);
 
+        var normalizedExts = input.Extensions?
+            .Where(e => !string.IsNullOrWhiteSpace(e))
+            .Select(e => e.Trim().TrimStart('.').ToLower())
+            .Distinct()
+            .ToList();
+
         var query = (await Repository.GetQueryableAsync())
             .Where(x => x.SessionId == sessionId)
             .Where(new OwnerMessageSpecification(entity.OwnerId, entity.Id).ToExpression())
@@ -121,7 +129,19 @@ public partial class MessageAppService(
             .WhereIf(input.QuoteDepth.HasValue, x => x.QuoteDepth == input.QuoteDepth.Value)
             .WhereIf(input.MinMessageId.HasValue, x => x.Id > input.MinMessageId)
             .WhereIf(input.MaxMessageId.HasValue, x => x.Id < input.MaxMessageId)
-            .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x => x.TextContentList.Any(d => d.Text.Contains(input.Keyword)))
+            .WhereIf(input.MinSize.HasValue, x => x.Size >= input.MinSize)
+            .WhereIf(input.MaxSize.HasValue, x => x.Size < input.MaxSize)
+            .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x =>
+                x.TextContentList.Any(d => d.Text.Contains(input.Keyword)) ||
+                x.FileContentList.Any(f => f.FileName.Contains(input.Keyword)) ||
+                x.ImageContentList.Any(i => i.FileName.Contains(input.Keyword)) ||
+                x.VideoContentList.Any(v => v.FileName.Contains(input.Keyword)) ||
+                x.SoundContentList.Any(s => s.FileName.Contains(input.Keyword)))
+            .WhereIf(normalizedExts != null && normalizedExts.Count > 0, x =>
+                x.FileContentList.Any(f => normalizedExts.Contains(f.Suffix.ToLower())) ||
+                x.ImageContentList.Any(i => normalizedExts.Contains(i.Suffix.ToLower())) ||
+                x.VideoContentList.Any(v => normalizedExts.Contains(v.Suffix.ToLower())) ||
+                x.SoundContentList.Any(s => normalizedExts.Contains(s.Suffix.ToLower())))
             ;
 
         return query;
@@ -284,6 +304,101 @@ public partial class MessageAppService(
     /// </summary>
     /// <param name="input"></param>
     /// <returns></returns>
+    /// <summary>
+    /// 跨会话/单会话统一附件与媒体检索
+    /// </summary>
+    [HttpGet]
+    [UnitOfWork(true, IsolationLevel.ReadUncommitted)]
+    public async Task<PagedResultDto<MessageOwnerDto>> GetAttachmentListAsync(AttachmentGetListInput input)
+    {
+        if (input.SessionUnitId.HasValue)
+        {
+            await GetAndCheckPolicyAsync(GetListPolicyName, input.SessionUnitId.Value);
+        }
+
+        var currentUserId = CurrentUser.GetId();
+        var unitQueryable = (await SessionUnitRepository.GetQueryableAsync())
+            .Where(u => u.Owner.AppUserId == currentUserId && !u.Setting.IsKilled && u.SessionId.HasValue)
+            .WhereIf(input.OwnerId.HasValue, u => u.OwnerId == input.OwnerId.Value)
+            .WhereIf(input.SessionUnitId.HasValue, u => u.Id == input.SessionUnitId.Value)
+            .WhereIf(input.SessionId.HasValue, u => u.SessionId == input.SessionId.Value);
+
+        var units = await AsyncExecuter.ToListAsync(
+            unitQueryable.Select(u => new
+            {
+                u.Id,
+                u.OwnerId,
+                SessionId = u.SessionId!.Value,
+                u.Setting.HistoryFristTime,
+                u.Setting.HistoryLastTime,
+                u.Setting.ClearTime,
+            }));
+
+        if (units.Count == 0)
+        {
+            return new PagedResultDto<MessageOwnerDto>(0, []);
+        }
+
+        var sessionIds = units.Select(u => u.SessionId).Distinct().ToList();
+        var unitIds = units.Select(u => u.Id).ToList();
+
+        var types = input.MessageTypes != null && input.MessageTypes.Count > 0
+            ? input.MessageTypes
+            : [MessageTypes.Image, MessageTypes.Video, MessageTypes.Sound, MessageTypes.File, MessageTypes.Link];
+
+        var normalizedExts = input.Extensions?
+            .Where(e => !string.IsNullOrWhiteSpace(e))
+            .Select(e => e.Trim().TrimStart('.').ToLower())
+            .Distinct()
+            .ToList();
+
+        var query = (await Repository.GetQueryableAsync())
+            .Where(x => x.SessionId.HasValue && sessionIds.Contains(x.SessionId.Value))
+            .Where(x => !x.IsDeleted)
+            .Where(x => types.Contains(x.MessageType))
+            .Where(x => !x.DeletedList.Any(d => unitIds.Contains(d.SessionUnitId) && d.MessageId == x.Id))
+            .WhereIf(input.StartTime.HasValue, x => x.CreationTime >= input.StartTime)
+            .WhereIf(input.EndTime.HasValue, x => x.CreationTime < input.EndTime)
+            .WhereIf(input.SenderId.HasValue, x => x.SenderId == input.SenderId)
+            .WhereIf(input.MinSize.HasValue, x => x.Size >= input.MinSize)
+            .WhereIf(input.MaxSize.HasValue, x => x.Size < input.MaxSize)
+            .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), x =>
+                x.TextContentList.Any(d => d.Text.Contains(input.Keyword)) ||
+                x.FileContentList.Any(f => f.FileName.Contains(input.Keyword)) ||
+                x.ImageContentList.Any(i => i.FileName.Contains(input.Keyword)) ||
+                x.VideoContentList.Any(v => v.FileName.Contains(input.Keyword)) ||
+                x.SoundContentList.Any(s => s.FileName.Contains(input.Keyword)))
+            .WhereIf(normalizedExts != null && normalizedExts.Count > 0, x =>
+                x.FileContentList.Any(f => normalizedExts.Contains(f.Suffix.ToLower())) ||
+                x.ImageContentList.Any(i => normalizedExts.Contains(i.Suffix.ToLower())) ||
+                x.VideoContentList.Any(v => normalizedExts.Contains(v.Suffix.ToLower())) ||
+                x.SoundContentList.Any(s => normalizedExts.Contains(s.Suffix.ToLower())));
+
+        if (units.Count == 1)
+        {
+            var single = units[0];
+            query = query
+                .WhereIf(single.HistoryFristTime.HasValue, x => x.CreationTime >= single.HistoryFristTime)
+                .WhereIf(single.HistoryLastTime.HasValue, x => x.CreationTime < single.HistoryLastTime)
+                .WhereIf(single.ClearTime.HasValue, x => x.CreationTime > single.ClearTime);
+        }
+
+        if (string.IsNullOrWhiteSpace(input.Sorting))
+        {
+            input.Sorting = $"{nameof(Message.Id)} desc";
+        }
+
+        var result = await GetPagedListAsync<Message, MessageOwnerDto>(query, input);
+
+        if (units.Count == 1)
+        {
+            await FillStatisticsAsync(units[0].Id, result);
+            await FillFriendshipAsync(units[0].OwnerId, result);
+        }
+
+        return result;
+    }
+
     public async Task<ExtraPagedResultDto<MessageOwnerDto>> GetListFastAsync(MessageFastGetListInput input)
     {
         var sessionUnitId = input.SessionUnitId;

@@ -32,4 +32,6 @@ public interface IMessageAppService
     Task<MessageOwnerDto> GetItemAsync(MessageGetItemInput input);
 
     Task<MessageOwnerDto> GetFileAsync(MessageGetItemInput input);
+
+    Task<PagedResultDto<MessageOwnerDto>> GetAttachmentListAsync(AttachmentGetListInput input);
 }

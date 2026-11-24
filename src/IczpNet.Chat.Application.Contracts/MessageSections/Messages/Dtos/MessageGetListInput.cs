@@ -63,4 +63,19 @@ public class MessageGetListInput : GetListInput
     /// 结束时间(不包含)
     /// </summary>
     public virtual DateTime? EndTime { get; set; }
+
+    /// <summary>
+    /// 最小大小（字节）
+    /// </summary>
+    public virtual long? MinSize { get; set; }
+
+    /// <summary>
+    /// 最大大小（字节）
+    /// </summary>
+    public virtual long? MaxSize { get; set; }
+
+    /// <summary>
+    /// 允许的扩展名列表
+    /// </summary>
+    public virtual List<string> Extensions { get; set; }
 }
