@@ -7,6 +7,7 @@ namespace IczpNet.Chat.SessionSections.Announcements.Dtos;
 public class SessionAnnouncementDto : EntityDto<Guid>
 {
     public virtual Guid? SessionId { get; set; }
+    public virtual string SessionName { get; set; }
     public virtual long ChatObjectId { get; set; }
     public virtual Guid PublisherSessionUnitId { get; set; }
     public virtual long PublisherChatObjectId { get; set; }

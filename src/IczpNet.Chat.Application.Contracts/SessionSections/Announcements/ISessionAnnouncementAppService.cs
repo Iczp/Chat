@@ -17,6 +17,8 @@ public interface ISessionAnnouncementAppService : IApplicationService
 
     Task<PagedResultDto<SessionAnnouncementDto>> GetListAsync(GetSessionAnnouncementListInput input);
 
+    Task<PagedResultDto<SessionAnnouncementDto>> SearchAsync(SearchSessionAnnouncementInput input);
+
     Task<SessionAnnouncementDetailDto> CreateAsync(CreateSessionAnnouncementInput input);
 
     Task<SessionAnnouncementDetailDto> UpdateAsync(Guid id, UpdateSessionAnnouncementInput input);

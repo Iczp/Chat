@@ -206,6 +206,96 @@ public class SessionAnnouncementAppService(
         return new PagedResultDto<SessionAnnouncementDto>(totalCount, dtoList);
     }
 
+    public virtual async Task<PagedResultDto<SessionAnnouncementDto>> SearchAsync(SearchSessionAnnouncementInput input)
+    {
+        if (!CurrentUser.Id.HasValue || string.IsNullOrWhiteSpace(input.Keyword))
+        {
+            return new PagedResultDto<SessionAnnouncementDto>(0, []);
+        }
+
+        var keyword = input.Keyword.Trim();
+        var ownedIds = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+        if (ownedIds == null || ownedIds.Count == 0)
+        {
+            return new PagedResultDto<SessionAnnouncementDto>(0, []);
+        }
+
+        var activeUnitsQuery = (await SessionUnitRepository.GetQueryableAsync())
+            .AsNoTracking()
+            .Where(x => ownedIds.Contains(x.OwnerId)
+                && x.SessionId != null
+                && x.Setting.IsEnabled
+                && !x.Setting.IsKilled);
+
+        if (input.SessionId.HasValue)
+        {
+            activeUnitsQuery = activeUnitsQuery.Where(x => x.SessionId == input.SessionId.Value);
+        }
+
+        var unitInfos = await activeUnitsQuery
+            .Select(x => new
+            {
+                SessionId = x.SessionId.Value,
+                SessionName = x.Destination != null ? x.Destination.Name : null,
+                JoinTime = x.Setting.JoinTime ?? x.CreationTime
+            })
+            .ToListAsync();
+
+        var sessionMap = unitInfos
+            .GroupBy(x => x.SessionId)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(u => u.JoinTime).First());
+
+        var sessionIds = sessionMap.Keys.ToList();
+        if (sessionIds.Count == 0)
+        {
+            return new PagedResultDto<SessionAnnouncementDto>(0, []);
+        }
+
+        var queryable = (await AnnouncementRepository.GetQueryableAsync())
+            .AsNoTracking()
+            .Where(x => x.SessionId.HasValue
+                && sessionIds.Contains(x.SessionId.Value)
+                && x.Status == AnnouncementStatus.Published
+                && (x.Title.Contains(keyword) || x.Content.Contains(keyword)));
+
+        var totalCount = await queryable.CountAsync();
+        var entities = await queryable
+            .OrderByDescending(x => x.CreationTime)
+            .ThenByDescending(x => x.Id)
+            .PageBy(input)
+            .ToListAsync();
+
+        var publisherIds = entities.Select(x => x.PublisherSessionUnitId).Distinct().ToList();
+        var publishers = await (await SessionUnitRepository.GetQueryableAsync())
+            .AsNoTracking()
+            .Where(x => publisherIds.Contains(x.Id))
+            .Include(x => x.Owner)
+            .Include(x => x.Setting)
+            .ToDictionaryAsync(x => x.Id);
+
+        var ids = entities.Select(x => x.Id).ToList();
+        var confirmedIds = await (await ReceiptRepository.GetQueryableAsync())
+            .AsNoTracking()
+            .Where(x => ids.Contains(x.AnnouncementId) && ownedIds.Contains(x.ChatObjectId) && x.IsConfirmed)
+            .Select(x => x.AnnouncementId)
+            .Distinct()
+            .ToListAsync();
+
+        var now = Clock.Now;
+        var dtoList = new List<SessionAnnouncementDto>(entities.Count);
+        foreach (var entity in entities)
+        {
+            publishers.TryGetValue(entity.PublisherSessionUnitId, out var publisher);
+            sessionMap.TryGetValue(entity.SessionId!.Value, out var unitInfo);
+            var dto = MapToDto(entity, publisher, unitInfo?.JoinTime, now);
+            dto.SessionName = unitInfo?.SessionName;
+            dto.IsConfirmedByCurrentUser = confirmedIds.Contains(entity.Id);
+            dtoList.Add(dto);
+        }
+
+        return new PagedResultDto<SessionAnnouncementDto>(totalCount, dtoList);
+    }
+
     [HttpPost]
     public virtual async Task<SessionAnnouncementDetailDto> CreateAsync(CreateSessionAnnouncementInput input)
     {
