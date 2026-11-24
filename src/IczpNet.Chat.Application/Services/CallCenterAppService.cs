@@ -112,12 +112,15 @@ public class CallCenterAppService(ICallCenterManager callCenterManager) : ChatAp
         var agents = new[] { shop }.Concat(staff).ToList();
         var counts = await GetActiveCountsAsync(shopKeeperId);
         var states = LazyServiceProvider.LazyGetRequiredService<IServiceStateManager>();
+        var urlNormalizer = LazyServiceProvider.LazyGetRequiredService<IczpNet.Chat.UrlNormalizers.IUrlNormalizer>();
         var result = new System.Collections.Generic.List<CallCenterAgentDto>(agents.Count);
         foreach (var agent in agents)
             result.Add(new CallCenterAgentDto
             {
                 Id = agent.Id,
                 Name = agent.Name,
+                Thumbnail = urlNormalizer.Normalize(agent.Thumbnail),
+                Portrait = urlNormalizer.Normalize(agent.Portrait),
                 ServiceStatus = await states.GetStatusAsync(agent.Id),
                 ActiveCount = counts.TryGetValue(agent.Id, out var count) ? count : 0
             });
