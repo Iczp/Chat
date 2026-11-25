@@ -110,6 +110,13 @@ public class SessionOrganiztionBySessionUnitAppService
         return x => x.SessionId == sessionUnit.SessionId;
     }
 
+    public override async Task<PagedResultDto<SessionOrganizationDto>> GetListAsync(Guid sessionUnitId, SessionOrganizationGetListBySessionUnitInput input)
+    {
+        var result = await base.GetListAsync(sessionUnitId, input);
+        await EnrichOrganizationsAsync(result.Items);
+        return result;
+    }
+
     public override async Task<PagedResultDto<SessionOrganizationDto>> GetListAsync(SessionOrganizationGetListBySessionUnitInput input)
     {
         var result = await base.GetListAsync(input);
@@ -166,10 +173,7 @@ public class SessionOrganiztionBySessionUnitAppService
         Assert.If(operatorUnit.Setting == null || !operatorUnit.Setting.IsEnabled || operatorUnit.Setting.IsKilled, "当前成员身份已失效");
         Assert.If(!operatorUnit.SessionId.HasValue, "无效的群会话");
 
-        var sessionRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<Sessions.Session, Guid>>();
-        var sessionEnabled = await AsyncExecuter.AnyAsync(
-            (await sessionRepo.GetQueryableAsync()).Where(x => x.Id == operatorUnit.SessionId.Value && x.IsEnabled));
-        Assert.If(!sessionEnabled, "群会话不存在或已解散");
+        await SessionUnitPolicyHelper.EnsureSessionActiveAsync(LazyServiceProvider, operatorUnit.SessionId.Value);
 
         if (CurrentUser.Id.HasValue)
         {

@@ -134,9 +134,23 @@ public abstract class CrudBySessionUnitTreeChatAppService<
 
     protected virtual async Task<SessionUnit> GetAndCheckSessionUnitAsync(Guid sessionUnitId)
     {
-        var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+        var sessionUnit = await SessionUnitPolicyHelper.LoadDetailedSessionUnitAsync(LazyServiceProvider, sessionUnitId);
 
-        Assert.If(!sessionUnit.Setting.IsEnabled, $"SessionUnit disabled,SessionUnitId:{sessionUnit.Id}");
+        Assert.If(sessionUnit.OwnerId == sessionUnit.DestinationId, "系统会话单元无权执行管理操作");
+        Assert.If(sessionUnit.Setting == null || !sessionUnit.Setting.IsEnabled || sessionUnit.Setting.IsKilled, $"SessionUnit disabled,SessionUnitId:{sessionUnit.Id}");
+        Assert.If(!sessionUnit.SessionId.HasValue, "无效的群会话单元");
+
+        await SessionUnitPolicyHelper.EnsureSessionActiveAsync(LazyServiceProvider, sessionUnit.SessionId.Value);
+
+        if (CurrentUser.Id.HasValue)
+        {
+            var chatObjectManager = LazyServiceProvider.LazyGetRequiredService<ChatObjects.IChatObjectManager>();
+            var ownedIds = await chatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+            if (!ownedIds.Contains(sessionUnit.OwnerId))
+            {
+                throw new Volo.Abp.Authorization.AbpAuthorizationException("无权使用该群成员身份操作");
+            }
+        }
 
         return sessionUnit;
     }

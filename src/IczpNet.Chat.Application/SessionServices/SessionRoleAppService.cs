@@ -51,18 +51,35 @@ public class SessionRoleAppService
         SessionRepository = sessionRepository;
     }
 
+    protected virtual async Task EnsureSessionIdFromUnitAsync(SessionRoleGetListInput input)
+    {
+        if (!input.SessionId.HasValue && input.SessionUnitId.HasValue && input.SessionUnitId.Value != Guid.Empty)
+        {
+            var unit = await ResolveAndCheckSessionUnitByIdAsync(input.SessionUnitId.Value, null);
+            input.SessionId = unit.SessionId;
+        }
+    }
+
+    protected virtual async Task<SessionUnit> ResolveAndCheckSessionUnitByIdAsync(Guid sessionUnitId, string policyName)
+    {
+        var unit = await LoadDetailedSessionUnitAsync(sessionUnitId);
+        Assert.If(!unit.SessionId.HasValue, "无效的群会话单元");
+        return await ResolveAndCheckSessionUnitPolicyAsync(unit.SessionId.Value, sessionUnitId, policyName);
+    }
+
     protected override async Task<IQueryable<SessionRole>> CreateFilteredQueryAsync(SessionRoleGetListInput input)
     {
+        await EnsureSessionIdFromUnitAsync(input);
         return (await base.CreateFilteredQueryAsync(input))
             .WhereIf(input.SessionId.HasValue, x => x.SessionId.Value == input.SessionId);
-        ;
     }
 
     protected override async Task CheckGetListPolicyAsync(SessionRoleGetListInput input)
     {
+        await EnsureSessionIdFromUnitAsync(input);
         if (input.SessionId.HasValue)
         {
-            await ResolveAndCheckSessionUnitPolicyAsync(input.SessionId.Value, null, SessionPermissionDefinitionConsts.SessionRolePermission.Default);
+            await ResolveAndCheckSessionUnitPolicyAsync(input.SessionId.Value, input.SessionUnitId, SessionPermissionDefinitionConsts.SessionRolePermission.Default);
         }
         await base.CheckGetListPolicyAsync(input);
     }
@@ -71,13 +88,25 @@ public class SessionRoleAppService
     {
         Assert.If(IsBuiltInAdminRoleName(input.Name), "内置管理员角色由群主通过管理员任免维护");
 
-        Assert.If(!await SessionRepository.AnyAsync(x => x.Id == input.SessionId), $"No such entity of sessionId:{input.SessionId}");
+        if (!input.SessionId.HasValue && input.SessionUnitId.HasValue && input.SessionUnitId.Value != Guid.Empty)
+        {
+            var unit = await ResolveAndCheckSessionUnitByIdAsync(input.SessionUnitId.Value, null);
+            input.SessionId = unit.SessionId;
+        }
+
+        Assert.If(!input.SessionId.HasValue || !await SessionRepository.AnyAsync(x => x.Id == input.SessionId), $"No such entity of sessionId:{input.SessionId}");
 
         Assert.If(await Repository.AnyAsync(x => x.SessionId == input.SessionId && x.Name == input.Name), $"Already exists [{input.Name}].");
     }
 
     protected override async Task CheckCreatePolicyAsync(SessionRoleCreateInput input)
     {
+        if (!input.SessionId.HasValue && input.SessionUnitId.HasValue && input.SessionUnitId.Value != Guid.Empty)
+        {
+            var unit = await ResolveAndCheckSessionUnitByIdAsync(input.SessionUnitId.Value, null);
+            input.SessionId = unit.SessionId;
+        }
+        Assert.If(!input.SessionId.HasValue, "缺少群会话或操作成员标识");
         var operatorUnit = await ResolveAndCheckSessionUnitPolicyAsync(
             input.SessionId!.Value,
             input.SessionUnitId,
@@ -178,12 +207,13 @@ public class SessionRoleAppService
     /// 获取角色权限
     /// </summary>
     /// <param name="id">主建Id</param>
+    /// <param name="sessionUnitId">操作成员单元Id</param>
     /// <returns></returns>
     [HttpGet]
-    public virtual async Task<SessionRolePermissionDto> GetPermissionsAsync(Guid id)
+    public virtual async Task<SessionRolePermissionDto> GetPermissionsAsync(Guid id, Guid? sessionUnitId = null)
     {
         var entity = await GetEntityByIdAsync(id);
-        await ResolveAndCheckSessionUnitPolicyAsync(entity.SessionId!.Value, null, SessionPermissionDefinitionConsts.SessionRolePermission.Default);
+        await ResolveAndCheckSessionUnitPolicyAsync(entity.SessionId!.Value, sessionUnitId, SessionPermissionDefinitionConsts.SessionRolePermission.Default);
 
         return await MapToPermissionDtoAsync(entity);
     }
@@ -193,15 +223,16 @@ public class SessionRoleAppService
     /// </summary>
     /// <param name="id">主建Id</param>
     /// <param name="permissionGrantValue">授予值</param>
+    /// <param name="sessionUnitId">操作者会话单元Id</param>
     /// <returns></returns>
     [HttpPost]
-    public virtual async Task<SessionRolePermissionDto> SetAllPermissionsAsync(Guid id, PermissionGrantValue permissionGrantValue)
+    public virtual async Task<SessionRolePermissionDto> SetAllPermissionsAsync(Guid id, PermissionGrantValue permissionGrantValue, Guid? sessionUnitId = null)
     {
         var existing = await GetEntityByIdAsync(id);
         Assert.If(IsBuiltInAdminRoleName(existing.Name), "内置管理员角色不可通过全量授权接口修改");
         var operatorUnit = await ResolveAndCheckSessionUnitPolicyAsync(
             existing.SessionId!.Value,
-            null,
+            sessionUnitId,
             SessionPermissionDefinitionConsts.SessionRolePermission.SetAllPermissions);
 
         if (permissionGrantValue?.IsEnabled == true && operatorUnit.Setting?.IsCreator != true && !operatorUnit.IsAdmin)

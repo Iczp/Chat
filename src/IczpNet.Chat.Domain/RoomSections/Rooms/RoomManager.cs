@@ -612,7 +612,9 @@ public class RoomManager(
 
             var sessionRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
             var session = await sessionRepo.GetAsync(sessionId);
-            Assert.If(!session.IsEnabled, "群聊已解散，无法转让群主");
+            var roomId = session.OwnerId ?? sessionUnit.DestinationId;
+            var room = roomId.HasValue ? await ChatObjectRepository.FindAsync(roomId.Value) : null;
+            Assert.If(room != null ? !room.IsEnabled : !session.IsEnabled, "群聊已解散，无法转让群主");
 
             targetSessionUnit = await AsyncExecuter.FirstOrDefaultAsync(freshQuery, x => x.Id == targetSessionUnitId);
             Assert.NotNull(targetSessionUnit, $"Target SessionUnit not found: {targetSessionUnitId}");
@@ -675,6 +677,7 @@ public class RoomManager(
         var queryable = await SessionUnitRepository.GetQueryableAsync();
         var sessionUnit = await AsyncExecuter.FirstOrDefaultAsync(
             queryable
+                .AsNoTracking()
                 .Include(x => x.Setting)
                 .Include(x => x.Destination),
             x => x.Id == sessionUnitId);
@@ -697,7 +700,9 @@ public class RoomManager(
         {
             var sessionRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
             var session = await sessionRepo.GetAsync(sessionId);
-            Assert.If(!session.IsEnabled, "群聊已解散，无法接任或认领群主");
+            var roomId = session.OwnerId ?? sessionUnit.DestinationId;
+            var room = roomId.HasValue ? await ChatObjectRepository.FindAsync(roomId.Value) : null;
+            Assert.If(room != null ? !room.IsEnabled : !session.IsEnabled, "群聊已解散，无法接任或认领群主");
 
             var freshQuery = (await SessionUnitRepository.GetQueryableAsync())
                 .Include(x => x.Setting)

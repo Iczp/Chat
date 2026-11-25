@@ -64,7 +64,7 @@ public class Session : BaseEntity<Guid>, IChatOwner<long?>, IIsEnabled
     /// <summary>
     /// 
     /// </summary>
-    public virtual bool IsEnabled { get; protected set; }
+    public virtual bool IsEnabled { get; protected set; } = true;
 
     /// <summary>
     /// 第一条消息

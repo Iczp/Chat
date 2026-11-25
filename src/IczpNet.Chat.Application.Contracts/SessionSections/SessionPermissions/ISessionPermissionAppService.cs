@@ -18,7 +18,7 @@ public interface ISessionPermissionAppService
 
     Task<List<SessionPermissionDefinitionTreeDto>> GetDefinitionsAsync();
 
-    Task<SessionPermissionUnitGrantDto> GrantBySessionUnitAsync(string definitionId, Guid sessionUnitId, PermissionGrantValue permissionGrantValue);
+    Task<SessionPermissionUnitGrantDto> GrantBySessionUnitAsync(string definitionId, Guid sessionUnitId, PermissionGrantValue permissionGrantValue, Guid? operatorSessionUnitId = null);
 
-    Task<SessionPermissionRoleGrantDto> GrantBySessionRoleAsync(string definitionId, Guid sessionRoleId, PermissionGrantValue permissionGrantValue);
+    Task<SessionPermissionRoleGrantDto> GrantBySessionRoleAsync(string definitionId, Guid sessionRoleId, PermissionGrantValue permissionGrantValue, Guid? operatorSessionUnitId = null);
 }

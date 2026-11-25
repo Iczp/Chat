@@ -200,51 +200,76 @@ public class SessionAnnouncementAppService(
         dto.CanViewStat = isCreator || perms.ViewStat || perms.Update;
     }
 
-    protected virtual async Task<SessionUnit> GetSessionUnitOrDefaultAsync(Guid sessionUnitId, Guid? sessionId = null)
+    protected virtual async Task<SessionUnit> GetSessionUnitOrDefaultAsync(Guid sessionUnitId, Guid? expectedSessionId = null)
     {
         if (!CurrentUser.Id.HasValue)
             throw new AbpAuthorizationException("Authentication required.");
 
+        if (sessionUnitId == Guid.Empty)
+        {
+            throw new AbpAuthorizationException("A valid sessionUnitId is required.");
+        }
+
         var ownedIds = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+        if (ownedIds == null || ownedIds.Count == 0)
+        {
+            throw new AbpAuthorizationException("Invalid announcement membership.");
+        }
+
+        // 优先尝试通过 Redis 缓存解析 SessionUnit -> SessionId / OwnerId / ObjectType，拦截跨身份或跨会话访问
+        var unitManager = LazyServiceProvider.LazyGetService<ISessionUnitManager>();
+        if (unitManager != null)
+        {
+            try
+            {
+                var cached = await unitManager.GetCacheAsync(sessionUnitId);
+                if (cached != null)
+                {
+                    if (!ownedIds.Contains(cached.OwnerId)
+                        || cached.OwnerId == cached.DestinationId
+                        || !cached.SessionId.HasValue
+                        || (expectedSessionId.HasValue && expectedSessionId.Value != Guid.Empty && cached.SessionId != expectedSessionId)
+                        || (cached.DestinationObjectType != ChatObjectTypeEnums.Room && cached.DestinationObjectType != ChatObjectTypeEnums.Square))
+                    {
+                        throw new AbpAuthorizationException("Invalid announcement membership.");
+                    }
+                }
+            }
+            catch (AbpAuthorizationException)
+            {
+                throw;
+            }
+            catch
+            {
+                // 单测或缓存尚未预热时回退数据库实体查询
+            }
+        }
+
         var query = (await SessionUnitRepository.GetQueryableAsync())
             .Include(x => x.Setting)
             .Include(x => x.Owner)
             .Include(x => x.GrantList)
             .Include(x => x.SessionUnitRoleList).ThenInclude(x => x.SessionRole).ThenInclude(x => x.GrantList)
             .AsSplitQuery();
-        SessionUnit unit = null;
-        if (sessionUnitId != Guid.Empty)
-        {
-            unit = await query.FirstOrDefaultAsync(x => x.Id == sessionUnitId);
-            if (unit == null)
-            {
-                throw new AbpAuthorizationException("Invalid announcement membership.");
-            }
-        }
-        else if (sessionId.HasValue && sessionId.Value != Guid.Empty)
-        {
-            var candidates = await query
-                .Where(x => x.SessionId == sessionId.Value && ownedIds.Contains(x.OwnerId)
-                    && x.Setting.IsEnabled && !x.Setting.IsKilled)
-                .OrderBy(x => x.Id)
-                .ToListAsync();
-            if (candidates.Count > 1)
-            {
-                throw new UserFriendlyException("当前账号在该群存在多个身份，请显式指定操作成员身份");
-            }
-            unit = candidates.FirstOrDefault();
-        }
 
+        var unit = await query.FirstOrDefaultAsync(x => x.Id == sessionUnitId);
         if (unit == null)
         {
-            throw new AbpAuthorizationException("A valid session membership is required.");
+            throw new AbpAuthorizationException("Invalid announcement membership.");
         }
 
-        if (!ownedIds.Contains(unit.OwnerId) || unit.IsDeleted || unit.Setting == null
-            || !unit.Setting.IsEnabled || unit.Setting.IsKilled || !unit.SessionId.HasValue
-            || (sessionId.HasValue && sessionId.Value != Guid.Empty && unit.SessionId != sessionId)
+        if (!ownedIds.Contains(unit.OwnerId)
+            || unit.OwnerId == unit.DestinationId
+            || unit.IsDeleted
+            || unit.Setting == null
+            || !unit.Setting.IsEnabled
+            || unit.Setting.IsKilled
+            || !unit.SessionId.HasValue
+            || (expectedSessionId.HasValue && expectedSessionId.Value != Guid.Empty && unit.SessionId != expectedSessionId)
             || (unit.DestinationObjectType != ChatObjectTypeEnums.Room && unit.DestinationObjectType != ChatObjectTypeEnums.Square))
+        {
             throw new AbpAuthorizationException("Invalid announcement membership.");
+        }
 
         return unit;
     }
@@ -256,9 +281,10 @@ public class SessionAnnouncementAppService(
         return handle ?? throw new UserFriendlyException("公告正在更新，请重试。");
     }
 
-    public virtual async Task<SessionAnnouncementDetailDto> GetPinnedAsync(Guid sessionId, Guid? sessionUnitId = null)
+    [HttpGet]
+    public virtual async Task<SessionAnnouncementDetailDto> GetPinnedAsync(Guid sessionUnitId)
     {
-        var unit = await GetSessionUnitOrDefaultAsync(sessionUnitId ?? Guid.Empty, sessionId);
+        var unit = await GetSessionUnitOrDefaultAsync(sessionUnitId);
         var targetSessionId = unit.SessionId!.Value;
         var entity = await AnnouncementRepository.GetPinnedAsync(targetSessionId);
         if (entity == null)
@@ -269,9 +295,10 @@ public class SessionAnnouncementAppService(
         return await MapToDetailDtoAsync(entity, unit);
     }
 
-    public virtual async Task<List<SessionAnnouncementDetailDto>> GetPinnedListAsync(Guid sessionId, Guid? sessionUnitId = null)
+    [HttpGet]
+    public virtual async Task<List<SessionAnnouncementDetailDto>> GetPinnedListAsync(Guid sessionUnitId)
     {
-        var unit = await GetSessionUnitOrDefaultAsync(sessionUnitId ?? Guid.Empty, sessionId);
+        var unit = await GetSessionUnitOrDefaultAsync(sessionUnitId);
         var targetSessionId = unit.SessionId!.Value;
         var entities = await AnnouncementRepository.GetPinnedListAsync(targetSessionId);
         var result = new List<SessionAnnouncementDetailDto>(entities.Count);
@@ -282,10 +309,11 @@ public class SessionAnnouncementAppService(
         return result;
     }
 
-    public virtual async Task<SessionAnnouncementDetailDto> GetAsync(Guid id, Guid? sessionUnitId = null)
+    [HttpGet]
+    public virtual async Task<SessionAnnouncementDetailDto> GetAsync(Guid id, Guid sessionUnitId)
     {
         var entity = await AnnouncementRepository.GetAsync(id);
-        var unit = await GetSessionUnitOrDefaultAsync(sessionUnitId ?? Guid.Empty, entity.SessionId);
+        var unit = await GetSessionUnitOrDefaultAsync(sessionUnitId, entity.SessionId);
         if (entity.Status != AnnouncementStatus.Published)
         {
             var isAuthor = entity.PublisherSessionUnitId == unit.Id || entity.PublisherChatObjectId == unit.OwnerId;
@@ -309,9 +337,10 @@ public class SessionAnnouncementAppService(
         return await MapToDetailDtoAsync(entity, unit);
     }
 
-    public virtual async Task<SessionAnnouncementPermissionsDto> GetPermissionsAsync(Guid sessionId, Guid? sessionUnitId = null)
+    [HttpGet]
+    public virtual async Task<SessionAnnouncementPermissionsDto> GetPermissionsAsync(Guid sessionUnitId)
     {
-        var unit = await GetSessionUnitOrDefaultAsync(sessionUnitId ?? Guid.Empty, sessionId);
+        var unit = await GetSessionUnitOrDefaultAsync(sessionUnitId);
         var targetSessionId = unit.SessionId!.Value;
         var perms = await GetUnitPermSnapshotAsync(unit);
 
@@ -350,9 +379,10 @@ public class SessionAnnouncementAppService(
         };
     }
 
+    [HttpGet]
     public virtual async Task<PagedResultDto<SessionAnnouncementDto>> GetListAsync(GetSessionAnnouncementListInput input)
     {
-        var unit = await GetSessionUnitOrDefaultAsync(input.SessionUnitId ?? Guid.Empty, input.SessionId);
+        var unit = await GetSessionUnitOrDefaultAsync(input.SessionUnitId);
         var targetSessionId = unit.SessionId!.Value;
         var queryable = await AnnouncementRepository.GetQueryableAsync();
         var perms = await GetUnitPermSnapshotAsync(unit);
@@ -437,6 +467,7 @@ public class SessionAnnouncementAppService(
         return new PagedResultDto<SessionAnnouncementDto>(totalCount, dtoList);
     }
 
+    [HttpGet]
     public virtual async Task<PagedResultDto<SessionAnnouncementDto>> SearchAsync(SearchSessionAnnouncementInput input)
     {
         if (!CurrentUser.Id.HasValue || string.IsNullOrWhiteSpace(input.Keyword))
@@ -451,16 +482,28 @@ public class SessionAnnouncementAppService(
             return new PagedResultDto<SessionAnnouncementDto>(0, []);
         }
 
+        Guid? targetSessionId = null;
+        if (input.SessionUnitId.HasValue && input.SessionUnitId.Value != Guid.Empty)
+        {
+            var scopedUnit = await GetSessionUnitOrDefaultAsync(input.SessionUnitId.Value);
+            targetSessionId = scopedUnit.SessionId;
+        }
+
         var activeUnitsQuery = (await SessionUnitRepository.GetQueryableAsync())
             .AsNoTracking()
             .Where(x => ownedIds.Contains(x.OwnerId)
+                && x.OwnerId != x.DestinationId
                 && x.SessionId != null
                 && x.Setting.IsEnabled
                 && !x.Setting.IsKilled);
 
-        if (input.SessionId.HasValue)
+        if (input.SessionUnitId.HasValue && input.SessionUnitId.Value != Guid.Empty)
         {
-            activeUnitsQuery = activeUnitsQuery.Where(x => x.SessionId == input.SessionId.Value);
+            activeUnitsQuery = activeUnitsQuery.Where(x => x.Id == input.SessionUnitId.Value);
+        }
+        else if (targetSessionId.HasValue)
+        {
+            activeUnitsQuery = activeUnitsQuery.Where(x => x.SessionId == targetSessionId.Value);
         }
 
         var unitInfos = await activeUnitsQuery
@@ -530,7 +573,7 @@ public class SessionAnnouncementAppService(
     [HttpPost]
     public virtual async Task<SessionAnnouncementDetailDto> CreateAsync(CreateSessionAnnouncementInput input)
     {
-        var sessionUnit = await GetSessionUnitOrDefaultAsync(input.SessionUnitId, input.SessionId);
+        var sessionUnit = await GetSessionUnitOrDefaultAsync(input.SessionUnitId);
         Check.NotNull(sessionUnit, nameof(sessionUnit));
 
         await CheckAnyOrFallbackAsync(sessionUnit,
@@ -738,10 +781,11 @@ public class SessionAnnouncementAppService(
         return await MapToDetailDtoAsync(entity, sessionUnit);
     }
 
-    public virtual async Task<List<SessionAnnouncementRevisionDto>> GetRevisionsAsync(Guid id, Guid? sessionUnitId = null)
+    [HttpGet]
+    public virtual async Task<List<SessionAnnouncementRevisionDto>> GetRevisionsAsync(Guid id, Guid sessionUnitId)
     {
         var entity = await AnnouncementRepository.GetAsync(id);
-        var unit = await GetSessionUnitOrDefaultAsync(sessionUnitId ?? Guid.Empty, entity.SessionId);
+        var unit = await GetSessionUnitOrDefaultAsync(sessionUnitId, entity.SessionId);
         if (entity.Status != AnnouncementStatus.Published)
         {
             var isAuthor = entity.PublisherSessionUnitId == unit.Id || entity.PublisherChatObjectId == unit.OwnerId;
@@ -948,6 +992,7 @@ public class SessionAnnouncementAppService(
             deviceId: input.DeviceId);
     }
 
+    [HttpGet]
     public virtual async Task<SessionAnnouncementStatDto> GetStatAsync(Guid id, Guid sessionUnitId)
     {
         var announcement = await AnnouncementRepository.GetAsync(id);
@@ -1100,10 +1145,11 @@ public class SessionAnnouncementAppService(
         return new PagedResultDto<SessionAnnouncementMemberDto>(totalCount, list);
     }
 
-    public virtual async Task<PagedResultDto<SessionAnnouncementReceiptDto>> GetReceiptsAsync(Guid id, PagedAndSortedResultRequestDto input, Guid? sessionUnitId = null)
+    [HttpGet]
+    public virtual async Task<PagedResultDto<SessionAnnouncementReceiptDto>> GetReceiptsAsync(Guid id, Guid sessionUnitId, PagedAndSortedResultRequestDto input)
     {
         var announcement = await AnnouncementRepository.GetAsync(id);
-        var sessionUnit = await GetSessionUnitOrDefaultAsync(sessionUnitId ?? Guid.Empty, announcement.SessionId);
+        var sessionUnit = await GetSessionUnitOrDefaultAsync(sessionUnitId, announcement.SessionId);
         await CheckAnyOrFallbackAsync(sessionUnit,
             SessionPermissionDefinitionConsts.AnnouncementPermission.ViewStat,
             SessionPermissionDefinitionConsts.AnnouncementPermission.Update);

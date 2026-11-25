@@ -11,4 +11,9 @@ public class SessionRoleGetListInput : GetListInput, ISessionId
     /// 会话Id
     /// </summary>
     public virtual Guid? SessionId { get; set; }
+
+    /// <summary>
+    /// 会话单元Id
+    /// </summary>
+    public virtual Guid? SessionUnitId { get; set; }
 }

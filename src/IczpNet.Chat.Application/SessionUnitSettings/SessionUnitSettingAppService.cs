@@ -287,16 +287,29 @@ public class SessionUnitSettingAppService(
     }
 
     /// <summary>
-    /// 删除会话
+    /// <summary>
+    /// <summary>
+    /// 删除会话 / 踢出成员
     /// </summary>
-    /// <param name="sessionUnitId">会话单元Id</param>
+    /// <param name="sessionUnitId">目标会话单元Id</param>
+    /// <param name="killerSessionUnitId">操作人会话单元Id</param>
     /// <returns></returns>
     [HttpPost]
-    public virtual async Task<SessionUnitOwnerDto> KillAsync([Required] Guid sessionUnitId)
+    public virtual async Task<SessionUnitOwnerDto> KillAsync([Required] Guid sessionUnitId, Guid? killerSessionUnitId = null)
     {
-        var entity = await GetAndCheckPolicyAsync(KillPolicyName, sessionUnitId);
+        SessionUnit entity;
+        if (killerSessionUnitId.HasValue && killerSessionUnitId.Value != Guid.Empty)
+        {
+            var killer = await GetAndCheckPolicyAsync(KillPolicyName, killerSessionUnitId.Value);
+            entity = await GetEntityAsync(sessionUnitId);
+            Assert.If(killer.SessionId != entity.SessionId, "操作成员身份不属于目标群会话");
+        }
+        else
+        {
+            entity = await GetAndCheckPolicyAsync(KillPolicyName, sessionUnitId);
+        }
 
-        var sessionUnitSetting = await SessionUnitSettingManager.KillAsync(sessionUnitId);
+        var sessionUnitSetting = await SessionUnitSettingManager.KillAsync(sessionUnitId, killerId: killerSessionUnitId);
 
         var result = await MapToDtoAsync(entity);
 

@@ -16,7 +16,7 @@ public interface ISessionRoleAppService :
         SessionRoleUpdateInput>
 {
 
-    Task<SessionRolePermissionDto> GetPermissionsAsync(Guid id);
+    Task<SessionRolePermissionDto> GetPermissionsAsync(Guid id, Guid? sessionUnitId = null);
 
-    Task<SessionRolePermissionDto> SetAllPermissionsAsync(Guid id, PermissionGrantValue permissionGrantValue);
+    Task<SessionRolePermissionDto> SetAllPermissionsAsync(Guid id, PermissionGrantValue permissionGrantValue, Guid? sessionUnitId = null);
 }

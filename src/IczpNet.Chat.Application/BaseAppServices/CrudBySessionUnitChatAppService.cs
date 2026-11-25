@@ -123,12 +123,11 @@ public abstract class CrudBySessionUnitChatAppService<
     {
         var sessionUnit = await LoadDetailedSessionUnitAsync(sessionUnitId);
 
+        Assert.If(sessionUnit.OwnerId == sessionUnit.DestinationId, "系统会话单元无权执行管理操作");
         Assert.If(sessionUnit.Setting == null || !sessionUnit.Setting.IsEnabled || sessionUnit.Setting.IsKilled, $"SessionUnit disabled,SessionUnitId:{sessionUnit.Id}");
         Assert.If(!sessionUnit.SessionId.HasValue, "无效的群会话单元");
 
-        var sessionEnabled = await AsyncExecuter.AnyAsync(
-            (await SessionRepository.GetQueryableAsync()).Where(x => x.Id == sessionUnit.SessionId.Value && x.IsEnabled));
-        Assert.If(!sessionEnabled, "群会话不存在或已解散");
+        await SessionUnitPolicyHelper.EnsureSessionActiveAsync(LazyServiceProvider, sessionUnit.SessionId.Value);
 
         if (CurrentUser.Id.HasValue)
         {

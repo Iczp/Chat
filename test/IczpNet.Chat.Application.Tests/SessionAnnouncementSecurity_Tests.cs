@@ -120,10 +120,11 @@ public class SessionAnnouncementSecurity_Tests : ChatTestBase<MessageQueryReview
             var context = await GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
             var data = await SeedAsync(context, owner: 2);
             var service = CreateService(1);
-            await Assert.ThrowsAsync<AbpAuthorizationException>(() => service.GetAsync(data.Announcement));
-            await Assert.ThrowsAsync<AbpAuthorizationException>(() => service.GetPinnedAsync(data.Session));
-            await Assert.ThrowsAsync<AbpAuthorizationException>(() => service.GetListAsync(new() { SessionId = data.Session }));
-            await Assert.ThrowsAsync<AbpAuthorizationException>(() => service.GetReceiptsAsync(data.Announcement, new PagedAndSortedResultRequestDto()));
+            var nonMemberUnit = Guid.NewGuid();
+            await Assert.ThrowsAsync<AbpAuthorizationException>(() => service.GetAsync(data.Announcement, nonMemberUnit));
+            await Assert.ThrowsAsync<AbpAuthorizationException>(() => service.GetPinnedAsync(data.Unit));
+            await Assert.ThrowsAsync<AbpAuthorizationException>(() => service.GetListAsync(new() { SessionUnitId = data.Unit }));
+            await Assert.ThrowsAsync<AbpAuthorizationException>(() => service.GetReceiptsAsync(data.Announcement, data.Unit, new PagedAndSortedResultRequestDto()));
         });
     }
 
@@ -136,8 +137,6 @@ public class SessionAnnouncementSecurity_Tests : ChatTestBase<MessageQueryReview
             var source = await SeedAsync(context);
             var target = await SeedAsync(context, owner: 2);
             var service = CreateService(1);
-            await Assert.ThrowsAsync<AbpAuthorizationException>(() => service.CreateAsync(new()
-                { SessionUnitId = source.Unit, SessionId = target.Session, Title = "hack", Content = "hack" }));
             await Assert.ThrowsAsync<AbpAuthorizationException>(() => service.UpdateAsync(target.Announcement,
                 new() { SessionUnitId = source.Unit, Title = "hack", Content = "hack" }));
         });
@@ -181,8 +180,8 @@ public class SessionAnnouncementSecurity_Tests : ChatTestBase<MessageQueryReview
             Assert.Equal(1, stat.TotalMembersCount);
             Assert.Equal(1, stat.ConfirmedCount);
             Assert.Equal(0, stat.UnconfirmedCount);
-            Assert.True((await service.GetAsync(data.Announcement)).IsConfirmedByCurrentUser);
-            Assert.Single((await service.GetReceiptsAsync(data.Announcement, new())).Items);
+            Assert.True((await service.GetAsync(data.Announcement, data.Unit)).IsConfirmedByCurrentUser);
+            Assert.Single((await service.GetReceiptsAsync(data.Announcement, data.Unit, new())).Items);
         });
     }
 
@@ -353,12 +352,12 @@ public class SessionAnnouncementSecurity_Tests : ChatTestBase<MessageQueryReview
             // 1. 用身份 A 确认公告
             await service.ConfirmReceiptAsync(data.Announcement, new ConfirmSessionAnnouncementInput { SessionUnitId = data.UnitA });
 
-            var listForA = await service.GetListAsync(new GetSessionAnnouncementListInput { SessionId = data.Session, SessionUnitId = data.UnitA });
+            var listForA = await service.GetListAsync(new GetSessionAnnouncementListInput { SessionUnitId = data.UnitA });
             Assert.Single(listForA.Items);
             Assert.True(listForA.Items[0].IsConfirmedByCurrentUser);
 
             // 2. 身份 B 应保持独立未确认状态
-            var listForB = await service.GetListAsync(new GetSessionAnnouncementListInput { SessionId = data.Session, SessionUnitId = data.UnitB });
+            var listForB = await service.GetListAsync(new GetSessionAnnouncementListInput { SessionUnitId = data.UnitB });
             Assert.Single(listForB.Items);
             Assert.False(listForB.Items[0].IsConfirmedByCurrentUser);
 
@@ -366,15 +365,17 @@ public class SessionAnnouncementSecurity_Tests : ChatTestBase<MessageQueryReview
             await Assert.ThrowsAsync<AbpAuthorizationException>(() =>
                 service.ConfirmReceiptAsync(data.Announcement, new ConfirmSessionAnnouncementInput { SessionUnitId = data.Announcement }));
 
-            // 4. 多身份场景下，显式传入 sessionUnitId 时可正常读取详情、权限与置顶公告；不传则提示需指定成员身份
+            // 4. 多身份场景下，显式传入 sessionUnitId（无需传 sessionId）可正常读取详情、权限、搜索与置顶公告；不传有效 sessionUnitId 则拒绝
             var detailForA = await service.GetAsync(data.Announcement, data.UnitA);
             Assert.Equal(data.Announcement, detailForA.Id);
-            var permsForA = await service.GetPermissionsAsync(data.Session, data.UnitA);
+            var permsForA = await service.GetPermissionsAsync(data.UnitA);
             Assert.NotNull(permsForA);
-            var pinnedListForB = await service.GetPinnedListAsync(data.Session, data.UnitB);
+            var pinnedListForB = await service.GetPinnedListAsync(data.UnitB);
             Assert.NotNull(pinnedListForB);
-            await Assert.ThrowsAsync<Volo.Abp.UserFriendlyException>(() => service.GetAsync(data.Announcement));
-            await Assert.ThrowsAsync<Volo.Abp.UserFriendlyException>(() => service.GetPermissionsAsync(data.Session));
+            var searchForA = await service.SearchAsync(new SearchSessionAnnouncementInput { Keyword = "多身份回执", SessionUnitId = data.UnitA });
+            Assert.Single(searchForA.Items);
+            await Assert.ThrowsAsync<AbpAuthorizationException>(() => service.GetAsync(data.Announcement, Guid.Empty));
+            await Assert.ThrowsAsync<AbpAuthorizationException>(() => service.GetPermissionsAsync(Guid.Empty));
         });
     }
 }

@@ -376,4 +376,9 @@ public class ChatObject : BaseTreeEntity<ChatObject, long>, IName, IChatObject, 
     {
         AppUserId = appUserId;
     }
+
+    public virtual void SetIsEnabled(bool isEnabled)
+    {
+        IsEnabled = isEnabled;
+    }
 }

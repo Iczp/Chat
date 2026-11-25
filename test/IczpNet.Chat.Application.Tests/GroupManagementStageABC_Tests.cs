@@ -81,6 +81,8 @@ public class GroupManagementStageABC_Tests : ChatTestBase<RoomManagementPolicies
             .Returns(GetRequiredService<IRepository<Session, Guid>>());
         lazy.LazyGetRequiredService<ChatObjects.IChatObjectManager>()
             .Returns(GetRequiredService<ChatObjects.IChatObjectManager>());
+        lazy.LazyGetRequiredService<IChatObjectRepository>()
+            .Returns(GetRequiredService<IChatObjectRepository>());
         lazy.LazyGetService<ISessionPermissionChecker>().Returns(checker);
 
         return new SessionOrganiztionBySessionUnitAppService(
@@ -385,6 +387,74 @@ public class GroupManagementStageABC_Tests : ChatTestBase<RoomManagementPolicies
             var settingManager = GetRequiredService<ISessionUnitSettingManager>();
             await Assert.ThrowsAsync<UserFriendlyException>(() =>
                 settingManager.KillAsync(ids.adminUnitId, KillTypes.ManagerKill, killerId: null));
+        });
+    }
+
+    [Fact]
+    public async Task Historical_session_with_isEnabled_false_and_room_isEnabled_true_works_normally()
+    {
+        var ids = await WithUnitOfWorkAsync(async () =>
+        {
+            var context = await GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            await context.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys=OFF");
+
+            var roomId = 7300L;
+            var memberOwnerId = 7301L;
+            var sessionId = Guid.NewGuid();
+            var memberUnitId = Guid.NewGuid();
+
+            await InsertAsync<ChatObject>(context, new()
+            {
+                ["Id"] = roomId, ["Name"] = "历史IsEnabled测试群", ["IsEnabled"] = true, ["IsActive"] = true, ["ObjectType"] = ChatObjectTypeEnums.Room
+            });
+            await InsertAsync<ChatObject>(context, new()
+            {
+                ["Id"] = memberOwnerId, ["Name"] = "成员", ["IsEnabled"] = true, ["IsActive"] = true, ["ObjectType"] = ChatObjectTypeEnums.Personal
+            });
+            // 模拟历史数据库记录：Session.IsEnabled = false，但 ChatObject(Room).IsEnabled = true
+            await InsertAsync<Session>(context, new()
+            {
+                ["Id"] = sessionId, ["OwnerId"] = roomId, ["Channel"] = Channels.RoomChannel, ["IsEnabled"] = false
+            });
+            await InsertAsync<SessionUnit>(context, new()
+            {
+                ["Id"] = memberUnitId, ["SessionId"] = sessionId, ["OwnerId"] = memberOwnerId,
+                ["DestinationId"] = roomId, ["DestinationObjectType"] = ChatObjectTypeEnums.Room
+            });
+            await InsertAsync<SessionUnitSetting>(context, new()
+            {
+                ["SessionUnitId"] = memberUnitId, ["SessionId"] = sessionId,
+                ["IsCreator"] = false, ["IsEnabled"] = true, ["IsKilled"] = false
+            });
+            await InsertAsync<SessionPermissionDefinition>(context, new()
+            {
+                ["Id"] = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Create, ["Name"] = "创建组织", ["IsEnabled"] = true
+            });
+
+            return (roomId, memberOwnerId, sessionId, memberUnitId);
+        });
+
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var roomManager = GetRequiredService<RoomSections.Rooms.RoomManager>();
+            // 1. 不因 Session.IsEnabled=false 误报"群聊已解散"
+            await roomManager.ClaimCreatorAsync(ids.memberUnitId, isSendMessageToRoom: false);
+
+            var orgService = CreateOrgService();
+            var createdOrg = await orgService.CreateAsync(ids.memberUnitId, new SessionOrganizationCreateBySessionUnitInput
+            {
+                Name = "运营部"
+            });
+            Assert.NotNull(createdOrg);
+
+            // 2. 群解散（Room ChatObject.IsEnabled = false）后，再检查会话有效性必须拦截
+            var chatObjRepo = GetRequiredService<IChatObjectRepository>();
+            var room = await chatObjRepo.GetAsync(ids.roomId);
+            room.SetIsEnabled(false);
+            await chatObjRepo.UpdateAsync(room, autoSave: true);
+
+            await Assert.ThrowsAsync<UserFriendlyException>(() =>
+                orgService.CreateAsync(ids.memberUnitId, new SessionOrganizationCreateBySessionUnitInput { Name = "失效后组织" }));
         });
     }
 }

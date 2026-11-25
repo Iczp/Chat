@@ -509,7 +509,7 @@ public class RoomManagementPolicies_Tests : ChatTestBase<RoomManagementPoliciesT
             var roomId = 9004L;
             var ownerId = 10041L;
             var unitId = Guid.NewGuid();
-            await InsertAsync<ChatObject>(context, new() { ["Id"] = roomId, ["Name"] = "已解散群", ["ObjectType"] = ChatObjectTypeEnums.Room, ["IsEnabled"] = true });
+            await InsertAsync<ChatObject>(context, new() { ["Id"] = roomId, ["Name"] = "已解散群", ["ObjectType"] = ChatObjectTypeEnums.Room, ["IsEnabled"] = false });
             await InsertAsync<ChatObject>(context, new() { ["Id"] = ownerId, ["Name"] = "成员", ["ObjectType"] = ChatObjectTypeEnums.Personal });
             await InsertAsync<Session>(context, new() { ["Id"] = sessionId, ["OwnerId"] = roomId, ["IsEnabled"] = false });
             await InsertAsync<SessionUnit>(context, new() { ["Id"] = unitId, ["SessionId"] = sessionId, ["OwnerId"] = ownerId, ["DestinationId"] = roomId, ["DestinationObjectType"] = ChatObjectTypeEnums.Room });

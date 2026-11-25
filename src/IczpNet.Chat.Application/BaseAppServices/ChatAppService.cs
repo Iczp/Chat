@@ -45,6 +45,33 @@ internal static class SessionUnitPolicyHelper
         return Assert.NotNull(entity, $"SessionUnit not found: {sessionUnitId}");
     }
 
+    public static async Task EnsureSessionActiveAsync(
+        IAbpLazyServiceProvider lazyServiceProvider,
+        Guid sessionId)
+    {
+        var sessionRepo = lazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
+        var asyncExecuter = lazyServiceProvider.LazyGetRequiredService<IAsyncQueryableExecuter>();
+        var session = await asyncExecuter.FirstOrDefaultAsync(
+            (await sessionRepo.GetQueryableAsync()).Where(x => x.Id == sessionId));
+        Assert.If(session == null, "群会话不存在或已解散");
+
+        if (session.OwnerId.HasValue)
+        {
+            var chatObjectRepo = lazyServiceProvider.LazyGetRequiredService<IChatObjectRepository>();
+            var ownerEnabled = await asyncExecuter.FirstOrDefaultAsync(
+                (await chatObjectRepo.GetQueryableAsync())
+                    .Where(x => x.Id == session.OwnerId.Value)
+                    .Select(x => (bool?)x.IsEnabled));
+            if (ownerEnabled.HasValue)
+            {
+                Assert.If(!ownerEnabled.Value, "群会话不存在或已解散");
+                return;
+            }
+        }
+
+        Assert.If(!session.IsEnabled, "群会话不存在或已解散");
+    }
+
     public static async Task<SessionUnit> ResolveAndCheckSessionUnitPolicyAsync(
         IAbpLazyServiceProvider lazyServiceProvider,
         ICurrentUser currentUser,
@@ -53,17 +80,15 @@ internal static class SessionUnitPolicyHelper
         Guid? sessionUnitId,
         string policyName)
     {
-        var sessionRepo = lazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
+        await EnsureSessionActiveAsync(lazyServiceProvider, sessionId);
         var asyncExecuter = lazyServiceProvider.LazyGetRequiredService<IAsyncQueryableExecuter>();
-        var sessionEnabled = await asyncExecuter.AnyAsync(
-            (await sessionRepo.GetQueryableAsync()).Where(x => x.Id == sessionId && x.IsEnabled));
-        Assert.If(!sessionEnabled, "群会话不存在或已解散");
 
         SessionUnit unit;
         if (sessionUnitId.HasValue)
         {
             unit = await LoadDetailedSessionUnitAsync(lazyServiceProvider, sessionUnitId.Value);
             Assert.If(unit.SessionId != sessionId, "操作成员身份不属于目标群会话");
+            Assert.If(unit.OwnerId == unit.DestinationId, "系统会话单元无权执行管理操作");
             Assert.If(unit.Setting == null || !unit.Setting.IsEnabled || unit.Setting.IsKilled, "当前成员身份已失效");
             if (currentUser.Id.HasValue)
             {
@@ -88,7 +113,12 @@ internal static class SessionUnitPolicyHelper
                 .Include(x => x.SessionUnitRoleList)
                     .ThenInclude(x => x.SessionRole)
                         .ThenInclude(x => x.GrantList)
-                .Where(x => x.SessionId == sessionId && ownedIds.Contains(x.OwnerId) && x.Setting != null && x.Setting.IsEnabled && !x.Setting.IsKilled);
+                .Where(x => x.SessionId == sessionId
+                    && x.OwnerId != x.DestinationId
+                    && ownedIds.Contains(x.OwnerId)
+                    && x.Setting != null
+                    && x.Setting.IsEnabled
+                    && !x.Setting.IsKilled);
             var candidates = await asyncExecuter.ToListAsync(query);
             if (candidates.Count == 0)
             {

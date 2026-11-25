@@ -8,9 +8,7 @@ namespace IczpNet.Chat.SessionSections.Announcements.Dtos;
 public class GetSessionAnnouncementListInput : PagedAndSortedResultRequestDto
 {
     [Required]
-    public virtual Guid SessionId { get; set; }
-
-    public virtual Guid? SessionUnitId { get; set; }
+    public virtual Guid SessionUnitId { get; set; }
 
     public virtual bool? IsPinned { get; set; }
 

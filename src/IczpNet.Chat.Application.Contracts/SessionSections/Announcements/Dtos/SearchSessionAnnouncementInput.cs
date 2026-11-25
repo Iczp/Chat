@@ -10,5 +10,5 @@ public class SearchSessionAnnouncementInput : PagedAndSortedResultRequestDto
     [StringLength(128)]
     public virtual string Keyword { get; set; }
 
-    public virtual Guid? SessionId { get; set; }
+    public virtual Guid? SessionUnitId { get; set; }
 }

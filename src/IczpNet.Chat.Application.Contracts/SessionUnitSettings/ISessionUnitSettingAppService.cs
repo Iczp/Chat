@@ -106,8 +106,9 @@ public interface ISessionUnitSettingAppService
     /// 踢出聊天
     /// </summary>
     /// <param name="sessionUnitId"></param>
+    /// <param name="killerSessionUnitId"></param>
     /// <returns></returns>
-    Task<SessionUnitOwnerDto> KillAsync(Guid sessionUnitId);
+    Task<SessionUnitOwnerDto> KillAsync(Guid sessionUnitId, Guid? killerSessionUnitId = null);
 
     /// <summary>
     /// 清空消息

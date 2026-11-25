@@ -210,6 +210,16 @@ public class RoomAppService(IRoomManager roomManager,
             session.SetIsEnabled(false);
             await sessionRepository.UpdateAsync(session, autoSave: true);
         }
+
+        if (sessionUnit.DestinationId.HasValue)
+        {
+            var room = await ChatObjectRepository.FindAsync(sessionUnit.DestinationId.Value);
+            if (room != null)
+            {
+                room.SetIsEnabled(false);
+                await ChatObjectRepository.UpdateAsync(room, autoSave: true);
+            }
+        }
     }
 
     /// <summary>
@@ -319,7 +329,8 @@ public class RoomAppService(IRoomManager roomManager,
         RoomOwnershipRecoveryAction recoveryAction = RoomOwnershipRecoveryAction.None;
         string recoveryUnavailableReason = null;
 
-        if (!session.IsEnabled)
+        var isRoomDissolved = room != null ? !room.IsEnabled : !session.IsEnabled;
+        if (isRoomDissolved)
         {
             ownershipState = RoomOwnershipState.Dissolved;
             recoveryUnavailableReason = "群聊已解散";

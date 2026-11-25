@@ -9,8 +9,6 @@ public class CreateSessionAnnouncementInput
     [Required]
     public virtual Guid SessionUnitId { get; set; }
 
-    public virtual Guid? SessionId { get; set; }
-
     [Required]
     [StringLength(128)]
     public virtual string Title { get; set; }

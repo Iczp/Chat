@@ -1,13 +1,18 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.Permissions;
+using IczpNet.Chat.SessionPermissions;
 using IczpNet.Chat.SessionRoles;
 using IczpNet.Chat.SessionSections.SessionRoles;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 using IczpNet.Chat.SessionUnits;
+using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Volo.Abp.Authorization;
 using Volo.Abp.Domain.Repositories;
 
 namespace IczpNet.Chat.SessionServices;
@@ -34,7 +39,7 @@ public class SessionRoleBySessionUnitAppService(
     protected override string UpdatePolicyName { get; set; } = Permissions.SessionPermissionDefinitionConsts.SessionRolePermission.Update;
     protected override string DeletePolicyName { get; set; } = Permissions.SessionPermissionDefinitionConsts.SessionRolePermission.Delete;
     protected override string DeleteManyPolicyName { get; set; } = Permissions.SessionPermissionDefinitionConsts.SessionRolePermission.Delete;
-    protected ISessionRoleManager SessionRoleManager { get; }
+    protected ISessionRoleManager SessionRoleManager => LazyServiceProvider.LazyGetRequiredService<ISessionRoleManager>();
 
     protected override async Task<IQueryable<SessionRole>> CreateFilteredQueryAsync(SessionUnit sessionUnit, SessionRoleGetListBySessionUnitInput input)
     {
@@ -70,14 +75,31 @@ public class SessionRoleBySessionUnitAppService(
         Assert.If(await Repository.AnyAsync(x => x.SessionId == sessionUnit.SessionId && x.Name == input.Name), $"Already exists [{input.Name}].");
 
         await base.CheckCreatePolicyAsync(sessionUnit, input);
+        await EnsureNoPermissionEscalationAsync(sessionUnit, input.PermissionGrant);
     }
 
-    protected override Task CheckUpdatePolicyAsync(SessionUnit sessionUnit, SessionRole entity, SessionRoleUpdateInput input)
+    protected override async Task CheckUpdatePolicyAsync(SessionUnit sessionUnit, SessionRole entity, SessionRoleUpdateInput input)
     {
         Assert.If(sessionUnit.SessionId != entity.SessionId, $"Not in same session");
         Assert.If(IsBuiltInAdminRoleName(entity.Name) || IsBuiltInAdminRoleName(input.Name), "内置管理员角色不可通过自定义角色接口修改");
 
-        return base.CheckUpdatePolicyAsync(sessionUnit, entity, input);
+        await base.CheckUpdatePolicyAsync(sessionUnit, entity, input);
+        await EnsureNoPermissionEscalationAsync(sessionUnit, input.PermissionGrant);
+    }
+
+    private async Task EnsureNoPermissionEscalationAsync(SessionUnit operatorUnit, Dictionary<string, PermissionGrantValue> permissionGrant)
+    {
+        if (permissionGrant == null || permissionGrant.Count == 0 || operatorUnit.Setting?.IsCreator == true)
+        {
+            return;
+        }
+        foreach (var kv in permissionGrant.Where(x => x.Value != null && x.Value.IsEnabled))
+        {
+            if (!await SessionPermissionChecker.IsGrantedAsync(kv.Key, operatorUnit))
+            {
+                throw new AbpAuthorizationException($"无权授予自身未持有的权限: {kv.Key}");
+            }
+        }
     }
 
     protected override Task SetUpdateEntityAsync(SessionRole entity, SessionRoleUpdateInput input)
@@ -110,5 +132,31 @@ public class SessionRoleBySessionUnitAppService(
     protected override Expression<Func<SessionRole, bool>> GetPredicateDeleteManyAsync(SessionUnit sessionUnit)
     {
         return x => x.SessionId == sessionUnit.SessionId && x.Name != "管理员" && x.Name != "Admin";
+    }
+
+    [HttpGet]
+    public virtual async Task<SessionRolePermissionDto> GetPermissionsAsync(Guid sessionUnitId, Guid id)
+    {
+        var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
+        var entity = await GetEntityByIdAsync(id);
+        Assert.If(sessionUnit.SessionId != entity.SessionId, "Not in same session");
+        await CheckPolicyAsync(SessionPermissionDefinitionConsts.SessionRolePermission.Default, sessionUnit);
+        return await MapToPermissionDtoAsync(entity);
+    }
+
+    [HttpPost]
+    public virtual async Task<SessionRolePermissionDto> SetAllPermissionsAsync(Guid sessionUnitId, Guid id, PermissionGrantValue permissionGrantValue)
+    {
+        var sessionUnit = await GetAndCheckSessionUnitAsync(sessionUnitId);
+        var existing = await GetEntityByIdAsync(id);
+        Assert.If(sessionUnit.SessionId != existing.SessionId, "Not in same session");
+        Assert.If(IsBuiltInAdminRoleName(existing.Name), "内置管理员角色不可通过全量授权接口修改");
+        await CheckPolicyAsync(SessionPermissionDefinitionConsts.SessionRolePermission.SetAllPermissions, sessionUnit);
+        if (permissionGrantValue?.IsEnabled == true && sessionUnit.Setting?.IsCreator != true && !sessionUnit.IsAdmin)
+        {
+            throw new AbpAuthorizationException("仅群主或管理员可授予全量权限");
+        }
+        var entity = await SessionRoleManager.SetAllPermissionsAsync(id, permissionGrantValue);
+        return await MapToPermissionDtoAsync(entity);
     }
 }

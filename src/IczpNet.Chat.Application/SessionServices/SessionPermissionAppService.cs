@@ -106,13 +106,29 @@ public class SessionPermissionAppService : ChatAppService, ISessionPermissionApp
     /// <param name="definitionId">权限Id</param>
     /// <param name="sessionUnitId">会话单元</param>
     /// <param name="permissionGrantValue">授予值</param>
+    /// <param name="operatorSessionUnitId">操作成员单元Id</param>
     /// <returns></returns>
     [HttpPost]
-    public async Task<SessionPermissionUnitGrantDto> GrantBySessionUnitAsync(string definitionId, Guid sessionUnitId, PermissionGrantValue permissionGrantValue)
+    public async Task<SessionPermissionUnitGrantDto> GrantBySessionUnitAsync(string definitionId, Guid sessionUnitId, PermissionGrantValue permissionGrantValue, Guid? operatorSessionUnitId = null)
     {
         var permissionDefinition = await SessionPermissionDefinitionRepository.GetAsync(definitionId);
 
         var sessionUnit = await SessionUnitRepository.GetAsync(sessionUnitId);
+        if (sessionUnit.SessionId.HasValue)
+        {
+            var operatorUnit = await ResolveAndCheckSessionUnitPolicyAsync(
+                sessionUnit.SessionId.Value,
+                operatorSessionUnitId,
+                IczpNet.Chat.Permissions.SessionPermissionDefinitionConsts.SessionRolePermission.Update);
+            if (permissionGrantValue?.IsEnabled == true && operatorUnit.Setting?.IsCreator != true)
+            {
+                var checker = LazyServiceProvider.LazyGetRequiredService<ISessionPermissionChecker>();
+                if (!await checker.IsGrantedAsync(definitionId, operatorUnit))
+                {
+                    throw new Volo.Abp.Authorization.AbpAuthorizationException($"无权授予自身未持有的权限: {definitionId}");
+                }
+            }
+        }
 
         var sessionPermissionUnitGrant = sessionUnit.GrantList.FirstOrDefault(x => x.DefinitionId == definitionId);
 
@@ -140,13 +156,29 @@ public class SessionPermissionAppService : ChatAppService, ISessionPermissionApp
     /// <param name="definitionId">权限Id</param>
     /// <param name="sessionRoleId">角色Id</param>
     /// <param name="permissionGrantValue">授予值</param>
+    /// <param name="operatorSessionUnitId">操作成员单元Id</param>
     /// <returns></returns>
     [HttpPost]
-    public async Task<SessionPermissionRoleGrantDto> GrantBySessionRoleAsync(string definitionId, Guid sessionRoleId, PermissionGrantValue permissionGrantValue)
+    public async Task<SessionPermissionRoleGrantDto> GrantBySessionRoleAsync(string definitionId, Guid sessionRoleId, PermissionGrantValue permissionGrantValue, Guid? operatorSessionUnitId = null)
     {
         var permissionDefinition = await SessionPermissionDefinitionRepository.GetAsync(definitionId);
 
         var sessionRole = await SessionRoleRepository.GetAsync(sessionRoleId);
+        if (sessionRole.SessionId.HasValue)
+        {
+            var operatorUnit = await ResolveAndCheckSessionUnitPolicyAsync(
+                sessionRole.SessionId.Value,
+                operatorSessionUnitId,
+                IczpNet.Chat.Permissions.SessionPermissionDefinitionConsts.SessionRolePermission.Update);
+            if (permissionGrantValue?.IsEnabled == true && operatorUnit.Setting?.IsCreator != true)
+            {
+                var checker = LazyServiceProvider.LazyGetRequiredService<ISessionPermissionChecker>();
+                if (!await checker.IsGrantedAsync(definitionId, operatorUnit))
+                {
+                    throw new Volo.Abp.Authorization.AbpAuthorizationException($"无权授予自身未持有的权限: {definitionId}");
+                }
+            }
+        }
 
         var sessionPermissionUnitGrant = sessionRole.GrantList.FirstOrDefault(x => x.DefinitionId == definitionId);
 
