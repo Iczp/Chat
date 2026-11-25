@@ -2871,4 +2871,21 @@ return 0";
             batch.Execute();
         }
     }
+
+    public async Task UpdateUnitCreatorAsync(Guid sessionUnitId, bool isCreator)
+    {
+        var unit = await GetAsync(sessionUnitId);
+        if (unit != null)
+        {
+            unit.IsCreator = isCreator;
+            var batch = Database.CreateBatch();
+            SetUnit(batch, unit, refreshExpire: true);
+            if (unit.SessionId.HasValue)
+            {
+                var score = MemberScore.Create(isCreator, unit.IsAdmin, unit.CreationTime);
+                _ = batch.SortedSetAddAsync(SessionMembersSetKey(unit.SessionId.Value), GetElement(unit), score);
+            }
+            batch.Execute();
+        }
+    }
 }

@@ -18,6 +18,9 @@ public class RoomManagementSettingsDto
     public virtual int PendingAnnouncementCount { get; set; }
     public virtual bool IsCreator { get; set; }
     public virtual bool IsAdmin { get; set; }
+    public virtual bool HasCreator { get; set; }
+    public virtual bool HasAdmin { get; set; }
+    public virtual bool CanClaimCreator { get; set; }
     public virtual bool CanEnterManagement { get; set; }
     public virtual bool CanManageSettings { get; set; }
     public virtual bool CanManageJoinRequests { get; set; }

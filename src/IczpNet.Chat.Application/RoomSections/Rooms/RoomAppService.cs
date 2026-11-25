@@ -180,6 +180,18 @@ public class RoomAppService(IRoomManager roomManager,
     }
 
     /// <summary>
+    /// 当群内无群主且无管理员时，当前有效群成员认领成为群主
+    /// </summary>
+    [HttpPost]
+    public virtual async Task<RoomManagementSettingsDto> ClaimCreatorAsync(Guid sessionUnitId)
+    {
+        var sessionUnit = await GetDetailedSessionUnitAsync(sessionUnitId);
+        await EnsureCurrentUserOwnsUnitAsync(sessionUnit);
+        await RoomManager.ClaimCreatorAsync(sessionUnitId);
+        return await GetManagementSettingsAsync(sessionUnitId);
+    }
+
+    /// <summary>
     /// 解散群（仅群主）
     /// </summary>
     [HttpPost]
@@ -214,7 +226,7 @@ public class RoomAppService(IRoomManager roomManager,
         var room = await ChatObjectRepository.GetAsync(sessionUnit.DestinationId.Value);
 
         var isCreator = sessionUnit.Setting?.IsCreator == true || sessionUnit.Setting?.IsStatic == true;
-        var isAdmin = sessionUnit.Setting?.IsAdmin == true;
+        var isAdmin = sessionUnit.IsAdmin;
         var isAdminOrCreator = isCreator || isAdmin;
 
         var canManageSettings = isAdminOrCreator || await IsAnyPermissionGrantedAsync(
@@ -272,6 +284,20 @@ public class RoomAppService(IRoomManager roomManager,
 
         var canTransferOrDissolve = isCreator;
 
+        var activeUnitQuery = (await SessionUnitRepository.GetQueryableAsync())
+            .AsNoTracking()
+            .Where(x => x.SessionId == session.Id && x.Setting != null && x.Setting.IsEnabled && !x.Setting.IsKilled);
+        var hasCreator = isCreator || await AsyncExecuter.AnyAsync(activeUnitQuery.Where(x => x.Setting.IsCreator));
+        var hasAdmin = isAdmin || await AsyncExecuter.AnyAsync(
+            activeUnitQuery.Where(x => x.SessionUnitRoleList.Any(r =>
+                r.SessionRole != null && (r.SessionRole.Name == "管理员" || r.SessionRole.Name == "Admin"))));
+        var canClaimCreator = !hasCreator
+            && !hasAdmin
+            && session.IsEnabled
+            && sessionUnit.Setting != null
+            && sessionUnit.Setting.IsEnabled
+            && !sessionUnit.Setting.IsKilled;
+
         var pendingJoinRequestCount = 0;
         if (canManageJoinRequests)
         {
@@ -308,6 +334,9 @@ public class RoomAppService(IRoomManager roomManager,
             PendingAnnouncementCount = pendingAnnouncementCount,
             IsCreator = isCreator,
             IsAdmin = isAdmin,
+            HasCreator = hasCreator,
+            HasAdmin = hasAdmin,
+            CanClaimCreator = canClaimCreator,
             CanEnterManagement = canManageSettings
                 || canManageJoinRequests
                 || canManageAnnouncements

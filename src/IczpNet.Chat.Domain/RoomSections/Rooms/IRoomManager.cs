@@ -39,4 +39,6 @@ public interface IRoomManager
     Task<ChatObject> UpdatePortraitAsync(SessionUnit sessionUnit, string thumbnail, string portrait, Action<long> beforeSend = null);
 
     Task TransferCreatorAsync(Guid sessionUnitId, Guid targetSessionUnitId, bool isSendMessageToRoom = true);
+
+    Task ClaimCreatorAsync(Guid sessionUnitId, bool isSendMessageToRoom = true);
 }

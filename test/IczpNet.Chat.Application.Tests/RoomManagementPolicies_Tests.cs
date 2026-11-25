@@ -10,21 +10,38 @@ using IczpNet.Chat.Permissions;
 using IczpNet.Chat.RoomSections.Rooms;
 using IczpNet.Chat.RoomSections.Rooms.Dtos;
 using IczpNet.Chat.SessionPermissions;
+using IczpNet.Chat.SessionRoles;
 using IczpNet.Chat.Sessions;
+using IczpNet.Chat.SessionUnitRoles;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
+using StackExchange.Redis;
 using Volo.Abp.Authorization;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EntityFrameworkCore;
+using Volo.Abp.Modularity;
 using Volo.Abp.Users;
 using Xunit;
 
 namespace IczpNet.Chat;
 
-public class RoomManagementPolicies_Tests : ChatTestBase<MessageQueryReviewTestModule>
+[DependsOn(typeof(MessageQueryReviewTestModule))]
+public class RoomManagementPoliciesTestModule : AbpModule
+{
+    public override void ConfigureServices(ServiceConfigurationContext context)
+    {
+        var db = Substitute.For<IDatabase>();
+        var mux = Substitute.For<IConnectionMultiplexer>();
+        mux.GetDatabase(Arg.Any<int>(), Arg.Any<object>()).Returns(db);
+        context.Services.AddSingleton(mux);
+    }
+}
+
+public class RoomManagementPolicies_Tests : ChatTestBase<RoomManagementPoliciesTestModule>
 {
     private static async Task InsertAsync<T>(ChatDbContext context, Dictionary<string, object> values)
     {
@@ -81,7 +98,7 @@ public class RoomManagementPolicies_Tests : ChatTestBase<MessageQueryReviewTestM
         }
 
         return new RoomAppService(
-            Substitute.For<IRoomManager>(),
+            GetRequiredService<IRoomManager>(),
             Substitute.For<IChatObjectCategoryManager>(),
             checker)
         {
@@ -207,6 +224,205 @@ public class RoomManagementPolicies_Tests : ChatTestBase<MessageQueryReviewTestM
             Assert.Equal(RoomInvitePolicies.AdminsOnly, updated.InvitePolicy);
             Assert.Equal(RoomJoinChannels.Invitation | RoomJoinChannels.QrCode, updated.AllowJoinChannels);
             Assert.Equal("新群简介", updated.Description);
+        });
+    }
+
+    [Fact]
+    public async Task ClaimCreatorAsync_Succeeds_Only_When_No_Creator_And_No_Admin()
+    {
+        var data = await WithUnitOfWorkAsync(async () =>
+        {
+            var context = await GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            var sessionId = Guid.NewGuid();
+            const long roomId = 71001;
+            const long member1OwnerId = 71002;
+            const long member2OwnerId = 71003;
+            var member1UnitId = Guid.NewGuid();
+            var member2UnitId = Guid.NewGuid();
+
+            await InsertAsync<ChatObject>(context, new()
+            {
+                ["Id"] = roomId,
+                ["Name"] = "无主群",
+                ["ObjectType"] = ChatObjectTypeEnums.Room,
+                ["VerificationMethod"] = VerificationMethods.None,
+                ["IsEnabled"] = true
+            });
+            await InsertAsync<ChatObject>(context, new() { ["Id"] = member1OwnerId, ["Name"] = "成员甲", ["ObjectType"] = ChatObjectTypeEnums.Personal });
+            await InsertAsync<ChatObject>(context, new() { ["Id"] = member2OwnerId, ["Name"] = "成员乙", ["ObjectType"] = ChatObjectTypeEnums.Personal });
+
+            await InsertAsync<Session>(context, new()
+            {
+                ["Id"] = sessionId,
+                ["OwnerId"] = roomId,
+                ["IsEnabled"] = true,
+                ["IsAllMuted"] = false,
+                ["InvitePolicy"] = RoomInvitePolicies.AllMembers,
+                ["AllowJoinChannels"] = RoomJoinChannels.All
+            });
+
+            await InsertAsync<SessionUnit>(context, new()
+            {
+                ["Id"] = member1UnitId,
+                ["SessionId"] = sessionId,
+                ["OwnerId"] = member1OwnerId,
+                ["DestinationId"] = roomId,
+                ["DestinationObjectType"] = ChatObjectTypeEnums.Room
+            });
+            await InsertAsync<SessionUnitSetting>(context, new()
+            {
+                ["SessionUnitId"] = member1UnitId,
+                ["SessionId"] = sessionId,
+                ["IsCreator"] = false,
+                ["IsAdmin"] = false,
+                ["IsEnabled"] = true,
+                ["IsKilled"] = false
+            });
+
+            await InsertAsync<SessionUnit>(context, new()
+            {
+                ["Id"] = member2UnitId,
+                ["SessionId"] = sessionId,
+                ["OwnerId"] = member2OwnerId,
+                ["DestinationId"] = roomId,
+                ["DestinationObjectType"] = ChatObjectTypeEnums.Room
+            });
+            await InsertAsync<SessionUnitSetting>(context, new()
+            {
+                ["SessionUnitId"] = member2UnitId,
+                ["SessionId"] = sessionId,
+                ["IsCreator"] = false,
+                ["IsAdmin"] = false,
+                ["IsEnabled"] = true,
+                ["IsKilled"] = false
+            });
+
+            return (sessionId, roomId, member1OwnerId, member1UnitId, member2OwnerId, member2UnitId);
+        });
+
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var member1Service = CreateService(data.member1OwnerId);
+            var settingsBefore = await member1Service.GetManagementSettingsAsync(data.member1UnitId);
+            Assert.False(settingsBefore.HasCreator);
+            Assert.False(settingsBefore.HasAdmin);
+            Assert.True(settingsBefore.CanClaimCreator);
+
+            var roomManager = GetRequiredService<RoomManager>();
+            await roomManager.ClaimCreatorAsync(data.member1UnitId, isSendMessageToRoom: false);
+
+            var settingsAfter = await member1Service.GetManagementSettingsAsync(data.member1UnitId);
+            Assert.True(settingsAfter.IsCreator);
+            Assert.True(settingsAfter.HasCreator);
+            Assert.False(settingsAfter.CanClaimCreator);
+            Assert.True(settingsAfter.CanEnterManagement);
+
+            var member2Service = CreateService(data.member2OwnerId);
+            var member2Settings = await member2Service.GetManagementSettingsAsync(data.member2UnitId);
+            Assert.True(member2Settings.HasCreator);
+            Assert.False(member2Settings.CanClaimCreator);
+
+            await Assert.ThrowsAsync<Volo.Abp.UserFriendlyException>(
+                () => roomManager.ClaimCreatorAsync(data.member2UnitId, isSendMessageToRoom: false));
+        });
+    }
+
+    [Fact]
+    public async Task ClaimCreatorAsync_Blocked_When_Admin_Exists()
+    {
+        var data = await WithUnitOfWorkAsync(async () =>
+        {
+            var context = await GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            var sessionId = Guid.NewGuid();
+            const long roomId = 72001;
+            const long adminOwnerId = 72002;
+            const long memberOwnerId = 72003;
+            var adminUnitId = Guid.NewGuid();
+            var memberUnitId = Guid.NewGuid();
+
+            await InsertAsync<ChatObject>(context, new()
+            {
+                ["Id"] = roomId,
+                ["Name"] = "有管理无群主群",
+                ["ObjectType"] = ChatObjectTypeEnums.Room,
+                ["VerificationMethod"] = VerificationMethods.None,
+                ["IsEnabled"] = true
+            });
+            await InsertAsync<ChatObject>(context, new() { ["Id"] = adminOwnerId, ["Name"] = "管理员", ["ObjectType"] = ChatObjectTypeEnums.Personal });
+            await InsertAsync<ChatObject>(context, new() { ["Id"] = memberOwnerId, ["Name"] = "普通成员", ["ObjectType"] = ChatObjectTypeEnums.Personal });
+
+            await InsertAsync<Session>(context, new()
+            {
+                ["Id"] = sessionId,
+                ["OwnerId"] = roomId,
+                ["IsEnabled"] = true,
+                ["InvitePolicy"] = RoomInvitePolicies.AllMembers,
+                ["AllowJoinChannels"] = RoomJoinChannels.All
+            });
+
+            await InsertAsync<SessionUnit>(context, new()
+            {
+                ["Id"] = adminUnitId,
+                ["SessionId"] = sessionId,
+                ["OwnerId"] = adminOwnerId,
+                ["DestinationId"] = roomId,
+                ["DestinationObjectType"] = ChatObjectTypeEnums.Room
+            });
+            await InsertAsync<SessionUnitSetting>(context, new()
+            {
+                ["SessionUnitId"] = adminUnitId,
+                ["SessionId"] = sessionId,
+                ["IsCreator"] = false,
+                ["IsEnabled"] = true,
+                ["IsKilled"] = false
+            });
+            var adminRoleId = Guid.NewGuid();
+            await InsertAsync<SessionRole>(context, new()
+            {
+                ["Id"] = adminRoleId,
+                ["SessionId"] = sessionId,
+                ["Name"] = "管理员",
+                ["IsDefault"] = false,
+                ["PermissionCount"] = 0
+            });
+            await InsertAsync<SessionUnitRole>(context, new()
+            {
+                ["SessionUnitId"] = adminUnitId,
+                ["SessionRoleId"] = adminRoleId
+            });
+
+            await InsertAsync<SessionUnit>(context, new()
+            {
+                ["Id"] = memberUnitId,
+                ["SessionId"] = sessionId,
+                ["OwnerId"] = memberOwnerId,
+                ["DestinationId"] = roomId,
+                ["DestinationObjectType"] = ChatObjectTypeEnums.Room
+            });
+            await InsertAsync<SessionUnitSetting>(context, new()
+            {
+                ["SessionUnitId"] = memberUnitId,
+                ["SessionId"] = sessionId,
+                ["IsCreator"] = false,
+                ["IsAdmin"] = false,
+                ["IsEnabled"] = true,
+                ["IsKilled"] = false
+            });
+
+            return (memberOwnerId, memberUnitId);
+        });
+
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var memberService = CreateService(data.memberOwnerId);
+            var settings = await memberService.GetManagementSettingsAsync(data.memberUnitId);
+            Assert.False(settings.HasCreator);
+            Assert.True(settings.HasAdmin);
+            Assert.False(settings.CanClaimCreator);
+
+            var roomManager = GetRequiredService<RoomManager>();
+            await Assert.ThrowsAsync<Volo.Abp.UserFriendlyException>(
+                () => roomManager.ClaimCreatorAsync(data.memberUnitId, isSendMessageToRoom: false));
         });
     }
 }

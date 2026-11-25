@@ -29,6 +29,8 @@ public interface IRoomAppService
 
     Task TransferCreatorAsync(Guid sessionUnitId, Guid targetSessionUnitId);
 
+    Task<RoomManagementSettingsDto> ClaimCreatorAsync(Guid sessionUnitId);
+
     /// <summary>
     /// 解散群
     /// </summary>

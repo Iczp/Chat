@@ -77,6 +77,14 @@ public interface ISessionUnitCacheManager
     Task UpdateUnitAdminAsync(Guid sessionUnitId, bool isAdmin);
 
     /// <summary>
+    /// 更新成员群主状态及排序分值
+    /// </summary>
+    /// <param name="sessionUnitId"></param>
+    /// <param name="isCreator"></param>
+    /// <returns></returns>
+    Task UpdateUnitCreatorAsync(Guid sessionUnitId, bool isCreator);
+
+    /// <summary>
     /// 获取会话成员
     /// </summary>
     /// <param name="sessionId"></param>
