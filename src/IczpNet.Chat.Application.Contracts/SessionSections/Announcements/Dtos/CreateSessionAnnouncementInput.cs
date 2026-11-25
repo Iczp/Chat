@@ -48,6 +48,11 @@ public class CreateSessionAnnouncementInput
     /// </summary>
     public virtual bool SaveAsDraft { get; set; } = false;
 
+    /// <summary>
+    /// 是否提交审核（无直接发布权时自动提交审核）
+    /// </summary>
+    public virtual bool SubmitForReview { get; set; } = false;
+
     public virtual bool IsPopup { get; set; } = false;
 
     public virtual bool RequireConfirm { get; set; } = false;

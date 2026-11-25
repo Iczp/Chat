@@ -47,6 +47,27 @@ public class UpdateSessionAnnouncementInput
     public virtual bool SaveAsDraft { get; set; } = false;
 
     /// <summary>
+    /// 是否提交审核
+    /// </summary>
+    public virtual bool SubmitForReview { get; set; } = false;
+
+    /// <summary>
+    /// 是否递增版本号（已发布公告修订默认可升版）
+    /// </summary>
+    public virtual bool BumpVersion { get; set; } = false;
+
+    /// <summary>
+    /// 本次修订摘要
+    /// </summary>
+    [StringLength(300)]
+    public virtual string ChangeSummary { get; set; }
+
+    /// <summary>
+    /// 乐观并发校验的期望版本号
+    /// </summary>
+    public virtual int? ExpectedVersion { get; set; }
+
+    /// <summary>
     /// 修改后是否重置已读/确认状态（要求成员重新确认）
     /// </summary>
     public virtual bool ResetReceipts { get; set; } = false;

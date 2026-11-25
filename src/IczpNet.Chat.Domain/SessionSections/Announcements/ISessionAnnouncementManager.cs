@@ -23,6 +23,7 @@ public interface ISessionAnnouncementManager
         bool applyToNewMembers = false,
         AnnouncementStatus status = AnnouncementStatus.Published,
         DateTime? publishTime = null,
+        bool isApproved = true,
         CancellationToken cancellationToken = default);
 
     Task<SessionAnnouncement> UpdateAsync(
@@ -39,10 +40,26 @@ public interface ISessionAnnouncementManager
         AnnouncementStatus? status = null,
         DateTime? publishTime = null,
         bool resetReceipts = false,
+        bool bumpVersion = false,
+        string changeSummary = null,
+        Guid? editorSessionUnitId = null,
+        long? editorChatObjectId = null,
         CancellationToken cancellationToken = default);
 
     Task PublishAsync(
         SessionAnnouncement announcement,
+        CancellationToken cancellationToken = default);
+
+    Task SubmitForReviewAsync(
+        SessionAnnouncement announcement,
+        CancellationToken cancellationToken = default);
+
+    Task ReviewAsync(
+        SessionAnnouncement announcement,
+        bool approved,
+        Guid reviewerSessionUnitId,
+        long reviewerChatObjectId,
+        string remark = null,
         CancellationToken cancellationToken = default);
 
     Task RevokeAsync(

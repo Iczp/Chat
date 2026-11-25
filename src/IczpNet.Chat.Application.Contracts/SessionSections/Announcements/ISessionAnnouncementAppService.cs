@@ -19,9 +19,17 @@ public interface ISessionAnnouncementAppService : IApplicationService
 
     Task<PagedResultDto<SessionAnnouncementDto>> SearchAsync(SearchSessionAnnouncementInput input);
 
+    Task<SessionAnnouncementPermissionsDto> GetPermissionsAsync(Guid sessionId);
+
     Task<SessionAnnouncementDetailDto> CreateAsync(CreateSessionAnnouncementInput input);
 
     Task<SessionAnnouncementDetailDto> UpdateAsync(Guid id, UpdateSessionAnnouncementInput input);
+
+    Task<SessionAnnouncementDetailDto> SubmitReviewAsync(Guid id, SubmitAnnouncementReviewInput input);
+
+    Task<SessionAnnouncementDetailDto> ReviewAsync(Guid id, ReviewSessionAnnouncementInput input);
+
+    Task<List<SessionAnnouncementRevisionDto>> GetRevisionsAsync(Guid id);
 
     Task<SessionAnnouncementDetailDto> PublishAsync(Guid id, Guid sessionUnitId);
 

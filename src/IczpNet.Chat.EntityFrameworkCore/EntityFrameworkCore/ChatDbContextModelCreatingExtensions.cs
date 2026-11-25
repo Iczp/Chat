@@ -154,6 +154,8 @@ public static class ChatDbContextModelCreatingExtensions
             b.HasOne(x => x.ChatObject).WithMany().HasForeignKey(x => x.ChatObjectId).OnDelete(DeleteBehavior.Restrict).IsRequired();
             b.HasOne(x => x.PublisherSessionUnit).WithMany().HasForeignKey(x => x.PublisherSessionUnitId).OnDelete(DeleteBehavior.Restrict).IsRequired();
             b.HasOne(x => x.PublisherChatObject).WithMany().HasForeignKey(x => x.PublisherChatObjectId).OnDelete(DeleteBehavior.Restrict).IsRequired();
+            b.HasOne(x => x.ReviewerSessionUnit).WithMany().HasForeignKey(x => x.ReviewerSessionUnitId).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
+            b.HasOne(x => x.ReviewerChatObject).WithMany().HasForeignKey(x => x.ReviewerChatObjectId).OnDelete(DeleteBehavior.Restrict).IsRequired(false);
         });
 
         builder.Entity<IczpNet.Chat.SessionSections.Announcements.SessionAnnouncementReceipt>(b =>
@@ -165,6 +167,15 @@ public static class ChatDbContextModelCreatingExtensions
             b.HasOne(x => x.Announcement).WithMany().HasForeignKey(x => x.AnnouncementId).OnDelete(DeleteBehavior.Cascade).IsRequired();
             b.HasOne(x => x.SessionUnit).WithMany().HasForeignKey(x => x.SessionUnitId).OnDelete(DeleteBehavior.Restrict).IsRequired();
             b.HasOne(x => x.ChatObject).WithMany().HasForeignKey(x => x.ChatObjectId).OnDelete(DeleteBehavior.Restrict).IsRequired();
+        });
+
+        builder.Entity<IczpNet.Chat.SessionSections.Announcements.SessionAnnouncementRevision>(b =>
+        {
+            b.ToTable(ChatDbProperties.DbTablePrefix + "SessionAnnouncementRevision", ChatDbProperties.DbSchema);
+            b.ConfigureByConvention();
+            b.HasOne(x => x.Announcement).WithMany().HasForeignKey(x => x.AnnouncementId).OnDelete(DeleteBehavior.Cascade).IsRequired();
+            b.HasOne(x => x.EditorSessionUnit).WithMany().HasForeignKey(x => x.EditorSessionUnitId).OnDelete(DeleteBehavior.Restrict).IsRequired();
+            b.HasOne(x => x.EditorChatObject).WithMany().HasForeignKey(x => x.EditorChatObjectId).OnDelete(DeleteBehavior.Restrict).IsRequired();
         });
 
         ConfigMessageTemplateEntitys(builder);

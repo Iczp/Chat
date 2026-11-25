@@ -34,7 +34,8 @@ public class SessionAnnouncementAppService(
     ISessionAnnouncementManager announcementManager,
     ISessionPermissionChecker sessionPermissionChecker,
     IMessageManager messageManager,
-    IDistributedCache<string> distributedCache) : ChatAppService, ISessionAnnouncementAppService
+    IDistributedCache<string> distributedCache = null,
+    IRepository<SessionAnnouncementRevision, Guid> revisionRepository = null) : ChatAppService, ISessionAnnouncementAppService
 {
     protected ISessionAnnouncementRepository AnnouncementRepository { get; } = announcementRepository;
     protected ISessionAnnouncementReceiptRepository ReceiptRepository { get; } = receiptRepository;
@@ -43,6 +44,161 @@ public class SessionAnnouncementAppService(
     protected ISessionPermissionChecker SessionPermissionChecker { get; } = sessionPermissionChecker;
     protected IMessageManager MessageManager { get; } = messageManager;
     protected IDistributedCache<string> DistributedCache { get; } = distributedCache;
+    protected IRepository<SessionAnnouncementRevision, Guid> RevisionRepository { get; } = revisionRepository;
+
+    private readonly record struct UnitPermSnapshot(
+        bool IsCreator,
+        bool Create,
+        bool Publish,
+        bool Approve,
+        bool Update,
+        bool UpdateOwn,
+        bool UpdateAny,
+        bool Delete,
+        bool DeleteOwn,
+        bool DeleteAny,
+        bool Pin,
+        bool Remind,
+        bool ViewStat);
+
+    private async Task<UnitPermSnapshot> GetUnitPermSnapshotAsync(SessionUnit unit)
+    {
+        var isCreator = unit.Setting != null && (unit.Setting.IsCreator || unit.Setting.IsStatic);
+        if (isCreator)
+        {
+            return new UnitPermSnapshot(true, true, true, true, true, true, true, true, true, true, true, true, true);
+        }
+
+        var create = await SessionPermissionChecker.IsGrantedAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Create, unit);
+        var publish = await SessionPermissionChecker.IsGrantedAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Publish, unit);
+        var approve = await SessionPermissionChecker.IsGrantedAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Approve, unit);
+        var update = await SessionPermissionChecker.IsGrantedAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Update, unit);
+        var updateOwn = await SessionPermissionChecker.IsGrantedAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.UpdateOwn, unit);
+        var updateAny = await SessionPermissionChecker.IsGrantedAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.UpdateAny, unit);
+        var delete = await SessionPermissionChecker.IsGrantedAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Delete, unit);
+        var deleteOwn = await SessionPermissionChecker.IsGrantedAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.DeleteOwn, unit);
+        var deleteAny = await SessionPermissionChecker.IsGrantedAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.DeleteAny, unit);
+        var pin = await SessionPermissionChecker.IsGrantedAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Pin, unit);
+        var remind = await SessionPermissionChecker.IsGrantedAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Remind, unit);
+        var viewStat = await SessionPermissionChecker.IsGrantedAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.ViewStat, unit);
+
+        return new UnitPermSnapshot(false, create, publish || update, approve, update, updateOwn, updateAny, delete, deleteOwn, deleteAny, pin, remind, viewStat);
+    }
+
+    private async Task CheckAnyOrFallbackAsync(SessionUnit unit, params string[] permissions)
+    {
+        foreach (var perm in permissions)
+        {
+            if (await SessionPermissionChecker.IsGrantedAsync(perm, unit))
+            {
+                return;
+            }
+        }
+        await SessionPermissionChecker.CheckAsync(permissions[0], unit);
+    }
+
+    private async Task CheckEditPermissionAsync(SessionAnnouncement entity, SessionUnit unit)
+    {
+        var isAuthor = entity.PublisherSessionUnitId == unit.Id || entity.PublisherChatObjectId == unit.OwnerId;
+        var isCreator = unit.Setting != null && (unit.Setting.IsCreator || unit.Setting.IsStatic);
+        if (isCreator)
+        {
+            return;
+        }
+
+        if (entity.Status == AnnouncementStatus.Draft)
+        {
+            if (!isAuthor)
+            {
+                throw new AbpAuthorizationException("草稿仅发布者本人可操作。");
+            }
+            await CheckAnyOrFallbackAsync(unit,
+                SessionPermissionDefinitionConsts.AnnouncementPermission.Create,
+                SessionPermissionDefinitionConsts.AnnouncementPermission.UpdateOwn,
+                SessionPermissionDefinitionConsts.AnnouncementPermission.Update);
+            return;
+        }
+
+        if (isAuthor)
+        {
+            if (entity.Status is AnnouncementStatus.PendingReview or AnnouncementStatus.Rejected)
+            {
+                await CheckAnyOrFallbackAsync(unit,
+                    SessionPermissionDefinitionConsts.AnnouncementPermission.UpdateOwn,
+                    SessionPermissionDefinitionConsts.AnnouncementPermission.Create,
+                    SessionPermissionDefinitionConsts.AnnouncementPermission.Update,
+                    SessionPermissionDefinitionConsts.AnnouncementPermission.UpdateAny);
+                return;
+            }
+
+            await CheckAnyOrFallbackAsync(unit,
+                SessionPermissionDefinitionConsts.AnnouncementPermission.UpdateOwn,
+                SessionPermissionDefinitionConsts.AnnouncementPermission.Update,
+                SessionPermissionDefinitionConsts.AnnouncementPermission.UpdateAny);
+            return;
+        }
+
+        await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.UpdateAny, unit);
+    }
+
+    private async Task CheckDeletePermissionAsync(SessionAnnouncement entity, SessionUnit unit)
+    {
+        var isAuthor = entity.PublisherSessionUnitId == unit.Id || entity.PublisherChatObjectId == unit.OwnerId;
+        var isCreator = unit.Setting != null && (unit.Setting.IsCreator || unit.Setting.IsStatic);
+        if (isCreator)
+        {
+            return;
+        }
+
+        if (entity.Status == AnnouncementStatus.Draft)
+        {
+            if (!isAuthor)
+            {
+                throw new AbpAuthorizationException("草稿仅发布者本人可删除。");
+            }
+            await CheckAnyOrFallbackAsync(unit,
+                SessionPermissionDefinitionConsts.AnnouncementPermission.DeleteOwn,
+                SessionPermissionDefinitionConsts.AnnouncementPermission.Create,
+                SessionPermissionDefinitionConsts.AnnouncementPermission.Delete,
+                SessionPermissionDefinitionConsts.AnnouncementPermission.DeleteAny);
+            return;
+        }
+
+        if (isAuthor)
+        {
+            await CheckAnyOrFallbackAsync(unit,
+                SessionPermissionDefinitionConsts.AnnouncementPermission.DeleteOwn,
+                SessionPermissionDefinitionConsts.AnnouncementPermission.Delete,
+                SessionPermissionDefinitionConsts.AnnouncementPermission.DeleteAny);
+            return;
+        }
+
+        await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.DeleteAny, unit);
+    }
+
+    private static void ApplyCapabilities(SessionAnnouncementDto dto, SessionAnnouncement entity, SessionUnit unit, UnitPermSnapshot perms, bool isExpired)
+    {
+        var isCreator = perms.IsCreator;
+        var isAuthor = entity.PublisherSessionUnitId == unit.Id || entity.PublisherChatObjectId == unit.OwnerId;
+
+        dto.CanEdit = entity.Status == AnnouncementStatus.Draft
+            ? (isCreator || isAuthor)
+            : (isCreator || perms.UpdateAny || (isAuthor && (perms.UpdateOwn || perms.Update || (entity.Status is AnnouncementStatus.PendingReview or AnnouncementStatus.Rejected && perms.Create))));
+        dto.CanDelete = entity.Status == AnnouncementStatus.Draft
+            ? (isCreator || isAuthor)
+            : (isCreator || perms.DeleteAny || (isAuthor && (perms.DeleteOwn || perms.Delete)));
+        dto.CanPublish = (entity.Status is AnnouncementStatus.Draft or AnnouncementStatus.Rejected or AnnouncementStatus.Revoked)
+            && (isCreator || perms.Publish || perms.Update);
+        dto.CanSubmitReview = (entity.Status is AnnouncementStatus.Draft or AnnouncementStatus.Rejected)
+            && (isAuthor || isCreator)
+            && (perms.Create || perms.Publish || perms.UpdateOwn || perms.Update);
+        dto.CanApprove = entity.Status == AnnouncementStatus.PendingReview && (isCreator || perms.Approve);
+        dto.CanRevoke = entity.Status == AnnouncementStatus.Published
+            && (isCreator || perms.UpdateAny || (isAuthor && (perms.UpdateOwn || perms.Update)));
+        dto.CanPin = isCreator || perms.Pin;
+        dto.CanRemind = entity.Status == AnnouncementStatus.Published && !isExpired && (isCreator || perms.Remind || perms.Update);
+        dto.CanViewStat = isCreator || perms.ViewStat || perms.Update;
+    }
 
     protected virtual async Task<SessionUnit> GetSessionUnitOrDefaultAsync(Guid sessionUnitId, Guid? sessionId = null)
     {
@@ -134,8 +290,67 @@ public class SessionAnnouncementAppService(
         var entity = await AnnouncementRepository.GetAsync(id);
         var unit = await GetSessionUnitOrDefaultAsync(Guid.Empty, entity.SessionId);
         if (entity.Status != AnnouncementStatus.Published)
-            await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Update, unit);
+        {
+            var isAuthor = entity.PublisherSessionUnitId == unit.Id || entity.PublisherChatObjectId == unit.OwnerId;
+            if (!isAuthor)
+            {
+                if (entity.Status == AnnouncementStatus.PendingReview || entity.Status == AnnouncementStatus.Rejected)
+                {
+                    await CheckAnyOrFallbackAsync(unit,
+                        SessionPermissionDefinitionConsts.AnnouncementPermission.Approve,
+                        SessionPermissionDefinitionConsts.AnnouncementPermission.UpdateAny,
+                        SessionPermissionDefinitionConsts.AnnouncementPermission.Update);
+                }
+                else
+                {
+                    await CheckAnyOrFallbackAsync(unit,
+                        SessionPermissionDefinitionConsts.AnnouncementPermission.UpdateAny,
+                        SessionPermissionDefinitionConsts.AnnouncementPermission.Update);
+                }
+            }
+        }
         return await MapToDetailDtoAsync(entity, unit);
+    }
+
+    public virtual async Task<SessionAnnouncementPermissionsDto> GetPermissionsAsync(Guid sessionId)
+    {
+        var unit = await GetSessionUnitOrDefaultAsync(Guid.Empty, sessionId);
+        var targetSessionId = unit.SessionId!.Value;
+        var perms = await GetUnitPermSnapshotAsync(unit);
+
+        var queryable = await AnnouncementRepository.GetQueryableAsync();
+        var pendingCount = 0;
+        if (perms.IsCreator || perms.Approve)
+        {
+            pendingCount = await queryable.CountAsync(x => x.SessionId == targetSessionId && x.Status == AnnouncementStatus.PendingReview);
+        }
+        else if (perms.Create)
+        {
+            pendingCount = await queryable.CountAsync(x => x.SessionId == targetSessionId
+                && x.Status == AnnouncementStatus.PendingReview
+                && (x.PublisherSessionUnitId == unit.Id || x.PublisherChatObjectId == unit.OwnerId));
+        }
+
+        var draftCount = await queryable.CountAsync(x => x.SessionId == targetSessionId
+            && x.Status == AnnouncementStatus.Draft
+            && (perms.IsCreator || x.PublisherSessionUnitId == unit.Id || x.PublisherChatObjectId == unit.OwnerId));
+
+        return new SessionAnnouncementPermissionsDto
+        {
+            SessionId = targetSessionId,
+            SessionUnitId = unit.Id,
+            IsCreator = perms.IsCreator,
+            CanCreate = perms.IsCreator || perms.Create || perms.Publish || perms.Update,
+            CanPublish = perms.IsCreator || perms.Publish || perms.Update,
+            CanApprove = perms.IsCreator || perms.Approve,
+            CanUpdateAny = perms.IsCreator || perms.UpdateAny,
+            CanDeleteAny = perms.IsCreator || perms.DeleteAny,
+            CanPin = perms.IsCreator || perms.Pin,
+            CanRemind = perms.IsCreator || perms.Remind || perms.Update,
+            CanViewStat = perms.IsCreator || perms.ViewStat || perms.Update,
+            PendingReviewCount = pendingCount,
+            DraftCount = draftCount
+        };
     }
 
     public virtual async Task<PagedResultDto<SessionAnnouncementDto>> GetListAsync(GetSessionAnnouncementListInput input)
@@ -143,24 +358,29 @@ public class SessionAnnouncementAppService(
         var unit = await GetSessionUnitOrDefaultAsync(Guid.Empty, input.SessionId);
         var targetSessionId = unit.SessionId!.Value;
         var queryable = await AnnouncementRepository.GetQueryableAsync();
+        var perms = await GetUnitPermSnapshotAsync(unit);
 
-        var allowAllStatuses = false;
-        if (input.IncludeDrafts)
+        if (!input.IncludeDrafts)
         {
-            allowAllStatuses =
-                await SessionPermissionChecker.IsGrantedAsync(
-                    SessionPermissionDefinitionConsts.AnnouncementPermission.Update,
-                    unit) ||
-                await SessionPermissionChecker.IsGrantedAsync(
-                    SessionPermissionDefinitionConsts.AnnouncementPermission.Create,
-                    unit);
+            queryable = queryable.Where(x => x.SessionId == targetSessionId && x.Status == AnnouncementStatus.Published);
+        }
+        else
+        {
+            var canApproveAll = perms.IsCreator || perms.Approve;
+            var canManageAll = perms.IsCreator || perms.UpdateAny;
+            queryable = queryable.Where(x => x.SessionId == targetSessionId && (
+                x.Status == AnnouncementStatus.Published
+                || (x.Status == AnnouncementStatus.Draft && (perms.IsCreator || x.PublisherSessionUnitId == unit.Id || x.PublisherChatObjectId == unit.OwnerId))
+                || (x.Status == AnnouncementStatus.PendingReview && (canApproveAll || canManageAll || x.PublisherSessionUnitId == unit.Id || x.PublisherChatObjectId == unit.OwnerId))
+                || (x.Status == AnnouncementStatus.Rejected && (canApproveAll || canManageAll || x.PublisherSessionUnitId == unit.Id || x.PublisherChatObjectId == unit.OwnerId))
+                || (x.Status == AnnouncementStatus.Revoked && (canManageAll || x.PublisherSessionUnitId == unit.Id || x.PublisherChatObjectId == unit.OwnerId))
+            ));
         }
 
-        queryable = allowAllStatuses
-            ? queryable.Where(x => x.SessionId == targetSessionId)
-            : input.IncludeDrafts
-                ? queryable.Where(x => x.SessionId == targetSessionId && (x.Status == AnnouncementStatus.Published || x.PublisherSessionUnitId == unit.Id || x.PublisherChatObjectId == unit.OwnerId))
-                : queryable.Where(x => x.SessionId == targetSessionId && x.Status == AnnouncementStatus.Published);
+        if (input.Status.HasValue)
+        {
+            queryable = queryable.Where(x => x.Status == input.Status.Value);
+        }
 
         if (input.IsPinned.HasValue)
         {
@@ -183,28 +403,37 @@ public class SessionAnnouncementAppService(
             .ToListAsync();
 
         var dtoList = new List<SessionAnnouncementDto>();
-        var publisherIds = entities.Select(x => x.PublisherSessionUnitId).Distinct().ToList();
-        var publishers = await (await SessionUnitRepository.GetQueryableAsync()).Where(x => publisherIds.Contains(x.Id))
+        var relatedUnitIds = entities.Select(x => x.PublisherSessionUnitId)
+            .Concat(entities.Where(x => x.ReviewerSessionUnitId.HasValue).Select(x => x.ReviewerSessionUnitId!.Value))
+            .Distinct()
+            .ToList();
+        var unitDict = await (await SessionUnitRepository.GetQueryableAsync()).Where(x => relatedUnitIds.Contains(x.Id))
             .Include(x => x.Owner).Include(x => x.Setting).ToDictionaryAsync(x => x.Id);
         var ids = entities.Select(x => x.Id).ToList();
         var ownedIds = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id!.Value);
         var confirmedReceipts = await (await ReceiptRepository.GetQueryableAsync())
             .Where(x => ids.Contains(x.AnnouncementId) && ownedIds.Contains(x.ChatObjectId) && x.IsConfirmed)
             .GroupBy(x => x.AnnouncementId)
-            .Select(g => new { AnnouncementId = g.Key, LatestConfirmedTime = g.Max(x => x.ConfirmedTime) })
-            .ToDictionaryAsync(x => x.AnnouncementId, x => x.LatestConfirmedTime);
+            .Select(g => new { AnnouncementId = g.Key, LatestConfirmedTime = g.Max(x => x.ConfirmedTime), MaxConfirmedVersion = g.Max(x => x.ConfirmedVersion) })
+            .ToDictionaryAsync(x => x.AnnouncementId, x => x);
 
         var unitJoinTime = unit.Setting?.JoinTime ?? unit.CreationTime;
         var now = Clock.Now;
         foreach (var entity in entities)
         {
-            publishers.TryGetValue(entity.PublisherSessionUnitId, out var publisher);
-            var dto = MapToDto(entity, publisher, unitJoinTime, now);
-            if (confirmedReceipts.TryGetValue(entity.Id, out var confirmedTime))
+            unitDict.TryGetValue(entity.PublisherSessionUnitId, out var publisher);
+            SessionUnit reviewer = null;
+            if (entity.ReviewerSessionUnitId.HasValue)
             {
-                dto.IsConfirmedByCurrentUser = !entity.ApplyToNewMembers
-                    || !confirmedTime.HasValue
-                    || confirmedTime.Value >= unitJoinTime;
+                unitDict.TryGetValue(entity.ReviewerSessionUnitId.Value, out reviewer);
+            }
+            var dto = MapToDto(entity, publisher, reviewer, unitJoinTime, now);
+            ApplyCapabilities(dto, entity, unit, perms, dto.IsExpired);
+            if (confirmedReceipts.TryGetValue(entity.Id, out var receiptInfo))
+            {
+                dto.ConfirmedVersion = receiptInfo.MaxConfirmedVersion;
+                dto.IsConfirmedByCurrentUser = receiptInfo.MaxConfirmedVersion >= entity.Version
+                    && (!entity.ApplyToNewMembers || !receiptInfo.LatestConfirmedTime.HasValue || receiptInfo.LatestConfirmedTime.Value >= unitJoinTime);
             }
             dtoList.Add(dto);
         }
@@ -293,7 +522,7 @@ public class SessionAnnouncementAppService(
         {
             publishers.TryGetValue(entity.PublisherSessionUnitId, out var publisher);
             sessionMap.TryGetValue(entity.SessionId!.Value, out var unitInfo);
-            var dto = MapToDto(entity, publisher, unitInfo?.JoinTime, now);
+            var dto = MapToDto(entity, publisher, null, unitInfo?.JoinTime, now);
             dto.SessionName = unitInfo?.SessionName;
             dto.IsConfirmedByCurrentUser = confirmedIds.Contains(entity.Id);
             dtoList.Add(dto);
@@ -308,10 +537,15 @@ public class SessionAnnouncementAppService(
         var sessionUnit = await GetSessionUnitOrDefaultAsync(input.SessionUnitId, input.SessionId);
         Check.NotNull(sessionUnit, nameof(sessionUnit));
 
-        await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Create, sessionUnit);
+        await CheckAnyOrFallbackAsync(sessionUnit,
+            SessionPermissionDefinitionConsts.AnnouncementPermission.Create,
+            SessionPermissionDefinitionConsts.AnnouncementPermission.Publish,
+            SessionPermissionDefinitionConsts.AnnouncementPermission.Update);
         if (input.IsPinned || (input.Sorting.HasValue && input.Sorting.Value > 0))
             await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Pin, sessionUnit);
 
+        var perms = await GetUnitPermSnapshotAsync(sessionUnit);
+        var hasPublishPerm = perms.IsCreator || perms.Publish || perms.Update;
         var sessionId = sessionUnit.SessionId!.Value;
         var chatObjectId = sessionUnit.DestinationId ?? sessionUnit.OwnerId;
 
@@ -319,9 +553,29 @@ public class SessionAnnouncementAppService(
         using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
 
         var isScheduledFuture = input.PublishTime.HasValue && input.PublishTime.Value > Clock.Now;
-        var targetStatus = (input.SaveAsDraft || isScheduledFuture)
-            ? AnnouncementStatus.Draft
-            : AnnouncementStatus.Published;
+        AnnouncementStatus targetStatus;
+        bool isApproved;
+        if (input.SaveAsDraft)
+        {
+            targetStatus = AnnouncementStatus.Draft;
+            isApproved = hasPublishPerm;
+        }
+        else if (input.SubmitForReview || !hasPublishPerm)
+        {
+            // 无直接发布权时强制进入待审核队列
+            targetStatus = AnnouncementStatus.PendingReview;
+            isApproved = false;
+        }
+        else if (isScheduledFuture)
+        {
+            targetStatus = AnnouncementStatus.Draft;
+            isApproved = true;
+        }
+        else
+        {
+            targetStatus = AnnouncementStatus.Published;
+            isApproved = true;
+        }
 
         var entity = await AnnouncementManager.CreateAsync(
             sessionId: sessionId,
@@ -338,7 +592,8 @@ public class SessionAnnouncementAppService(
             expireTime: input.ExpireTime,
             applyToNewMembers: input.ApplyToNewMembers,
             status: targetStatus,
-            publishTime: input.PublishTime);
+            publishTime: input.PublishTime,
+            isApproved: isApproved);
 
         if (input.SendMessageNotification && targetStatus == AnnouncementStatus.Published)
         {
@@ -357,18 +612,51 @@ public class SessionAnnouncementAppService(
         var sessionUnit = await GetSessionUnitOrDefaultAsync(input.SessionUnitId, entity.SessionId);
         Check.NotNull(sessionUnit, nameof(sessionUnit));
 
-        await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Update, sessionUnit);
+        await CheckEditPermissionAsync(entity, sessionUnit);
 
         await using var handle = await LockSessionAsync(entity.SessionId!.Value);
         using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
         entity = await AnnouncementRepository.GetAsync(id);
+        if (input.ExpectedVersion.HasValue && entity.Version != input.ExpectedVersion.Value)
+        {
+            throw new UserFriendlyException($"公告已被其他人修改（当前版本 v{entity.Version}），请刷新后重试。");
+        }
         if (input.IsPinned != entity.IsPinned || (input.Sorting.HasValue && input.Sorting.Value != entity.Sorting))
             await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Pin, sessionUnit);
 
+        var perms = await GetUnitPermSnapshotAsync(sessionUnit);
+        var hasPublishPerm = perms.IsCreator || perms.Publish || perms.Update;
         var isScheduledFuture = input.PublishTime.HasValue && input.PublishTime.Value > Clock.Now;
-        var nextStatus = (input.SaveAsDraft || isScheduledFuture)
-            ? AnnouncementStatus.Draft
-            : AnnouncementStatus.Published;
+
+        AnnouncementStatus nextStatus;
+        if (input.SaveAsDraft)
+        {
+            nextStatus = AnnouncementStatus.Draft;
+            entity.SetApproved(hasPublishPerm);
+        }
+        else if (input.SubmitForReview || (!hasPublishPerm && entity.Status != AnnouncementStatus.Published))
+        {
+            nextStatus = AnnouncementStatus.PendingReview;
+            entity.SetApproved(false);
+        }
+        else if (isScheduledFuture)
+        {
+            nextStatus = AnnouncementStatus.Draft;
+            entity.SetApproved(true);
+        }
+        else
+        {
+            if (!hasPublishPerm && entity.Status != AnnouncementStatus.Published)
+            {
+                nextStatus = AnnouncementStatus.PendingReview;
+                entity.SetApproved(false);
+            }
+            else
+            {
+                nextStatus = AnnouncementStatus.Published;
+                entity.SetApproved(true);
+            }
+        }
 
         entity = await AnnouncementManager.UpdateAsync(
             announcement: entity,
@@ -383,7 +671,11 @@ public class SessionAnnouncementAppService(
             applyToNewMembers: input.ApplyToNewMembers,
             status: nextStatus,
             publishTime: input.PublishTime,
-            resetReceipts: input.ResetReceipts);
+            resetReceipts: input.ResetReceipts,
+            bumpVersion: input.BumpVersion,
+            changeSummary: input.ChangeSummary,
+            editorSessionUnitId: sessionUnit.Id,
+            editorChatObjectId: sessionUnit.OwnerId);
 
         if (input.SendMessageNotification && entity.Status == AnnouncementStatus.Published)
         {
@@ -396,13 +688,127 @@ public class SessionAnnouncementAppService(
     }
 
     [HttpPost]
+    public virtual async Task<SessionAnnouncementDetailDto> SubmitReviewAsync(Guid id, SubmitAnnouncementReviewInput input)
+    {
+        var entity = await AnnouncementRepository.GetAsync(id);
+        var sessionUnit = await GetSessionUnitOrDefaultAsync(input.SessionUnitId, entity.SessionId);
+        Check.NotNull(sessionUnit, nameof(sessionUnit));
+
+        await CheckEditPermissionAsync(entity, sessionUnit);
+        if (entity.Status != AnnouncementStatus.Draft && entity.Status != AnnouncementStatus.Rejected)
+        {
+            throw new UserFriendlyException("仅草稿或已驳回状态的公告可提交审核。");
+        }
+
+        await using var handle = await LockSessionAsync(entity.SessionId!.Value);
+        using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
+        entity = await AnnouncementRepository.GetAsync(id);
+        await AnnouncementManager.SubmitForReviewAsync(entity);
+        await uow.CompleteAsync();
+
+        return await MapToDetailDtoAsync(entity, sessionUnit);
+    }
+
+    [HttpPost]
+    public virtual async Task<SessionAnnouncementDetailDto> ReviewAsync(Guid id, ReviewSessionAnnouncementInput input)
+    {
+        var entity = await AnnouncementRepository.GetAsync(id);
+        var sessionUnit = await GetSessionUnitOrDefaultAsync(input.SessionUnitId, entity.SessionId);
+        Check.NotNull(sessionUnit, nameof(sessionUnit));
+
+        // 只要拥有审核管理权限，允许审核自己提审的公告
+        await CheckAnyOrFallbackAsync(sessionUnit,
+            SessionPermissionDefinitionConsts.AnnouncementPermission.Approve,
+            SessionPermissionDefinitionConsts.AnnouncementPermission.UpdateAny);
+
+        await using var handle = await LockSessionAsync(entity.SessionId!.Value);
+        using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
+        entity = await AnnouncementRepository.GetAsync(id);
+
+        await AnnouncementManager.ReviewAsync(
+            announcement: entity,
+            approved: input.Approved,
+            reviewerSessionUnitId: sessionUnit.Id,
+            reviewerChatObjectId: sessionUnit.OwnerId,
+            remark: input.Remark);
+
+        if (input.Approved && input.SendMessageNotification && entity.Status == AnnouncementStatus.Published)
+        {
+            await SendAnnouncementNotificationMessageAsync(sessionUnit, entity, isUpdated: entity.Version > 1);
+        }
+
+        await uow.CompleteAsync();
+
+        return await MapToDetailDtoAsync(entity, sessionUnit);
+    }
+
+    public virtual async Task<List<SessionAnnouncementRevisionDto>> GetRevisionsAsync(Guid id)
+    {
+        var entity = await AnnouncementRepository.GetAsync(id);
+        var unit = await GetSessionUnitOrDefaultAsync(Guid.Empty, entity.SessionId);
+        if (entity.Status != AnnouncementStatus.Published)
+        {
+            var isAuthor = entity.PublisherSessionUnitId == unit.Id || entity.PublisherChatObjectId == unit.OwnerId;
+            if (!isAuthor)
+            {
+                await CheckAnyOrFallbackAsync(unit,
+                    SessionPermissionDefinitionConsts.AnnouncementPermission.Approve,
+                    SessionPermissionDefinitionConsts.AnnouncementPermission.UpdateAny,
+                    SessionPermissionDefinitionConsts.AnnouncementPermission.Update);
+            }
+        }
+
+        if (RevisionRepository == null)
+        {
+            return [];
+        }
+
+        var revisions = await (await RevisionRepository.GetQueryableAsync())
+            .AsNoTracking()
+            .Where(x => x.AnnouncementId == id)
+            .OrderByDescending(x => x.Version)
+            .ToListAsync();
+
+        var editorUnitIds = revisions.Select(x => x.EditorSessionUnitId).Distinct().ToList();
+        var editorUnits = await (await SessionUnitRepository.GetQueryableAsync())
+            .AsNoTracking()
+            .Where(x => editorUnitIds.Contains(x.Id))
+            .Include(x => x.Owner)
+            .Include(x => x.Setting)
+            .ToDictionaryAsync(x => x.Id);
+
+        return revisions.Select(r =>
+        {
+            editorUnits.TryGetValue(r.EditorSessionUnitId, out var eu);
+            return new SessionAnnouncementRevisionDto
+            {
+                Id = r.Id,
+                AnnouncementId = r.AnnouncementId,
+                Version = r.Version,
+                Title = r.Title,
+                Content = r.Content,
+                EditorType = r.EditorType,
+                EditorSessionUnitId = r.EditorSessionUnitId,
+                EditorChatObjectId = r.EditorChatObjectId,
+                EditorName = eu?.DisplayName ?? eu?.Owner?.Name,
+                EditorPortrait = eu?.Owner?.Portrait,
+                ChangeSummary = r.ChangeSummary,
+                CreationTime = r.CreationTime
+            };
+        }).ToList();
+    }
+
+    [HttpPost]
     public virtual async Task<SessionAnnouncementDetailDto> PublishAsync(Guid id, Guid sessionUnitId)
     {
         var entity = await AnnouncementRepository.GetAsync(id);
         var sessionUnit = await GetSessionUnitOrDefaultAsync(sessionUnitId, entity.SessionId);
         Check.NotNull(sessionUnit, nameof(sessionUnit));
 
-        await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Update, sessionUnit);
+        await CheckAnyOrFallbackAsync(sessionUnit,
+            SessionPermissionDefinitionConsts.AnnouncementPermission.Publish,
+            SessionPermissionDefinitionConsts.AnnouncementPermission.Approve,
+            SessionPermissionDefinitionConsts.AnnouncementPermission.Update);
 
         await using var handle = await LockSessionAsync(entity.SessionId!.Value);
         using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
@@ -421,7 +827,7 @@ public class SessionAnnouncementAppService(
         var sessionUnit = await GetSessionUnitOrDefaultAsync(sessionUnitId, entity.SessionId);
         Check.NotNull(sessionUnit, nameof(sessionUnit));
 
-        await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Update, sessionUnit);
+        await CheckEditPermissionAsync(entity, sessionUnit);
 
         await using var handle = await LockSessionAsync(entity.SessionId!.Value);
         using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
@@ -438,7 +844,9 @@ public class SessionAnnouncementAppService(
 
         var sessionUnit = await GetSessionUnitOrDefaultAsync(input.SessionUnitId, entity.SessionId);
         Check.NotNull(sessionUnit, nameof(sessionUnit));
-        await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Update, sessionUnit);
+        await CheckAnyOrFallbackAsync(sessionUnit,
+            SessionPermissionDefinitionConsts.AnnouncementPermission.Remind,
+            SessionPermissionDefinitionConsts.AnnouncementPermission.Update);
 
         if (entity.Status != AnnouncementStatus.Published)
         {
@@ -450,7 +858,7 @@ public class SessionAnnouncementAppService(
         }
 
         var cooldownKey = $"Chat_Announcement_RemindCooldown:{id}";
-        var lastRemind = await DistributedCache.GetAsync(cooldownKey);
+        var lastRemind = DistributedCache != null ? await DistributedCache.GetAsync(cooldownKey) : null;
         if (!string.IsNullOrEmpty(lastRemind))
         {
             throw new UserFriendlyException("催办过于频繁，请 60 分钟后再试");
@@ -463,7 +871,7 @@ public class SessionAnnouncementAppService(
             members = members.Where(x => (x.Setting.JoinTime ?? x.Setting.CreationTime) <= entity.CreationTime);
         }
         var confirmedUnitIds = (await ReceiptRepository.GetQueryableAsync())
-            .Where(x => x.AnnouncementId == id && x.IsConfirmed)
+            .Where(x => x.AnnouncementId == id && x.IsConfirmed && x.ConfirmedVersion >= entity.Version)
             .Select(x => x.SessionUnitId);
         var unconfirmedCount = await members.CountAsync(x => !confirmedUnitIds.Contains(x.Id));
 
@@ -473,10 +881,13 @@ public class SessionAnnouncementAppService(
         }
 
         await SendAnnouncementRemindMessageAsync(sessionUnit, entity, unconfirmedCount);
-        await DistributedCache.SetAsync(
-            cooldownKey,
-            Clock.Now.ToString("O"),
-            new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(60) });
+        if (DistributedCache != null)
+        {
+            await DistributedCache.SetAsync(
+                cooldownKey,
+                Clock.Now.ToString("O"),
+                new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(60) });
+        }
 
         return unconfirmedCount;
     }
@@ -504,7 +915,7 @@ public class SessionAnnouncementAppService(
         var sessionUnit = await GetSessionUnitOrDefaultAsync(sessionUnitId, entity.SessionId);
         Check.NotNull(sessionUnit, nameof(sessionUnit));
 
-        await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Delete, sessionUnit);
+        await CheckDeletePermissionAsync(entity, sessionUnit);
 
         await using var handle = await LockSessionAsync(entity.SessionId!.Value);
         using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
@@ -548,7 +959,9 @@ public class SessionAnnouncementAppService(
 
         var sessionUnit = await GetSessionUnitOrDefaultAsync(sessionUnitId, announcement.SessionId);
         Check.NotNull(sessionUnit, nameof(sessionUnit));
-        await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Update, sessionUnit);
+        await CheckAnyOrFallbackAsync(sessionUnit,
+            SessionPermissionDefinitionConsts.AnnouncementPermission.ViewStat,
+            SessionPermissionDefinitionConsts.AnnouncementPermission.Update);
 
         var members = (await SessionUnitRepository.GetQueryableAsync())
             .AsNoTracking()
@@ -559,7 +972,7 @@ public class SessionAnnouncementAppService(
         }
 
         var countCacheKey = $"Chat_Announcement_MemberCount:{announcement.SessionId}:{announcement.ApplyToNewMembers}:{announcement.CreationTime.Ticks}";
-        var cachedCountStr = await DistributedCache.GetAsync(countCacheKey);
+        var cachedCountStr = DistributedCache != null ? await DistributedCache.GetAsync(countCacheKey) : null;
         int totalMembers;
         if (int.TryParse(cachedCountStr, out var parsedCount))
         {
@@ -568,10 +981,13 @@ public class SessionAnnouncementAppService(
         else
         {
             totalMembers = await members.CountAsync();
-            await DistributedCache.SetAsync(
-                countCacheKey,
-                totalMembers.ToString(),
-                new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30) });
+            if (DistributedCache != null)
+            {
+                await DistributedCache.SetAsync(
+                    countCacheKey,
+                    totalMembers.ToString(),
+                    new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30) });
+            }
         }
 
         var receiptStats = await (await ReceiptRepository.GetQueryableAsync())
@@ -581,7 +997,7 @@ public class SessionAnnouncementAppService(
             .Select(g => new
             {
                 ReadCount = g.Count(),
-                ConfirmedCount = g.Count(x => x.IsConfirmed)
+                ConfirmedCount = g.Count(x => x.IsConfirmed && x.ConfirmedVersion >= announcement.Version)
             })
             .FirstOrDefaultAsync();
 
@@ -606,7 +1022,9 @@ public class SessionAnnouncementAppService(
 
         var sessionUnit = await GetSessionUnitOrDefaultAsync(input.SessionUnitId, announcement.SessionId);
         Check.NotNull(sessionUnit, nameof(sessionUnit));
-        await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Update, sessionUnit);
+        await CheckAnyOrFallbackAsync(sessionUnit,
+            SessionPermissionDefinitionConsts.AnnouncementPermission.ViewStat,
+            SessionPermissionDefinitionConsts.AnnouncementPermission.Update);
 
         var receiptsQuery = (await ReceiptRepository.GetQueryableAsync()).Where(x => x.AnnouncementId == id);
         var unitQuery = (await SessionUnitRepository.GetQueryableAsync())
@@ -634,11 +1052,11 @@ public class SessionAnnouncementAppService(
                 unitQuery = unitQuery.Where(x => !recordedUnitIds.Contains(x.Id));
                 break;
             case AnnouncementMemberFilterType.Confirmed:
-                var confirmedUnitIds = receiptsQuery.Where(x => x.IsConfirmed).Select(x => x.SessionUnitId);
+                var confirmedUnitIds = receiptsQuery.Where(x => x.IsConfirmed && x.ConfirmedVersion >= announcement.Version).Select(x => x.SessionUnitId);
                 unitQuery = unitQuery.Where(x => confirmedUnitIds.Contains(x.Id));
                 break;
             case AnnouncementMemberFilterType.Unconfirmed:
-                var alreadyConfirmedUnitIds = receiptsQuery.Where(x => x.IsConfirmed).Select(x => x.SessionUnitId);
+                var alreadyConfirmedUnitIds = receiptsQuery.Where(x => x.IsConfirmed && x.ConfirmedVersion >= announcement.Version).Select(x => x.SessionUnitId);
                 unitQuery = unitQuery.Where(x => !alreadyConfirmedUnitIds.Contains(x.Id));
                 break;
         }
@@ -678,7 +1096,7 @@ public class SessionAnnouncementAppService(
                 MemberPortrait = u.Owner?.Portrait,
                 IsRead = r != null,
                 FirstReadTime = r?.FirstReadTime,
-                IsConfirmed = r?.IsConfirmed ?? false,
+                IsConfirmed = r != null && r.IsConfirmed && r.ConfirmedVersion >= announcement.Version,
                 ConfirmedTime = r?.ConfirmedTime
             };
         }).ToList();
@@ -690,9 +1108,11 @@ public class SessionAnnouncementAppService(
     {
         var announcement = await AnnouncementRepository.GetAsync(id);
         var sessionUnit = await GetSessionUnitOrDefaultAsync(Guid.Empty, announcement.SessionId);
-        await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.AnnouncementPermission.Update, sessionUnit);
+        await CheckAnyOrFallbackAsync(sessionUnit,
+            SessionPermissionDefinitionConsts.AnnouncementPermission.ViewStat,
+            SessionPermissionDefinitionConsts.AnnouncementPermission.Update);
         var queryable = await ReceiptRepository.GetQueryableAsync();
-        queryable = queryable.Where(x => x.AnnouncementId == id && x.IsConfirmed
+        queryable = queryable.Where(x => x.AnnouncementId == id && x.IsConfirmed && x.ConfirmedVersion >= announcement.Version
             && x.SessionUnit.SessionId == announcement.SessionId
             && x.SessionUnit.Setting.IsEnabled && !x.SessionUnit.Setting.IsKilled);
 
@@ -795,19 +1215,44 @@ public class SessionAnnouncementAppService(
 
     protected virtual async Task<SessionAnnouncementDto> MapToDtoAsync(SessionAnnouncement entity, SessionUnit currentUnit = null)
     {
-        var publisherUnit = await (await SessionUnitRepository.GetQueryableAsync())
-            .Include(x => x.Owner).Include(x => x.Setting).FirstOrDefaultAsync(x => x.Id == entity.PublisherSessionUnitId);
+        var lookupIds = new List<Guid> { entity.PublisherSessionUnitId };
+        if (entity.ReviewerSessionUnitId.HasValue && entity.ReviewerSessionUnitId.Value != entity.PublisherSessionUnitId)
+        {
+            lookupIds.Add(entity.ReviewerSessionUnitId.Value);
+        }
+        var units = await (await SessionUnitRepository.GetQueryableAsync())
+            .Include(x => x.Owner).Include(x => x.Setting)
+            .Where(x => lookupIds.Contains(x.Id))
+            .ToDictionaryAsync(x => x.Id);
+        units.TryGetValue(entity.PublisherSessionUnitId, out var publisherUnit);
+        SessionUnit reviewerUnit = null;
+        if (entity.ReviewerSessionUnitId.HasValue)
+        {
+            units.TryGetValue(entity.ReviewerSessionUnitId.Value, out reviewerUnit);
+        }
+
         var unitJoinTime = currentUnit != null ? (currentUnit.Setting?.JoinTime ?? currentUnit.CreationTime) : (DateTime?)null;
-        var dto = MapToDto(entity, publisherUnit, unitJoinTime, Clock.Now);
+        var dto = MapToDto(entity, publisherUnit, reviewerUnit, unitJoinTime, Clock.Now);
+        if (currentUnit != null)
+        {
+            var perms = await GetUnitPermSnapshotAsync(currentUnit);
+            ApplyCapabilities(dto, entity, currentUnit, perms, dto.IsExpired);
+        }
         var receipt = await GetCurrentReceiptAsync(entity.Id);
-        dto.IsConfirmedByCurrentUser = receipt != null && receipt.IsConfirmed
-            && (!entity.ApplyToNewMembers || !unitJoinTime.HasValue || !receipt.ConfirmedTime.HasValue || receipt.ConfirmedTime.Value >= unitJoinTime.Value);
+        if (receipt != null)
+        {
+            dto.ConfirmedVersion = receipt.ConfirmedVersion;
+            dto.IsConfirmedByCurrentUser = receipt.IsConfirmed
+                && receipt.ConfirmedVersion >= entity.Version
+                && (!entity.ApplyToNewMembers || !unitJoinTime.HasValue || !receipt.ConfirmedTime.HasValue || receipt.ConfirmedTime.Value >= unitJoinTime.Value);
+        }
         return dto;
     }
 
     protected virtual SessionAnnouncementDto MapToDto(
         SessionAnnouncement entity,
         SessionUnit publisherUnit,
+        SessionUnit reviewerUnit = null,
         DateTime? currentUnitJoinTime = null,
         DateTime? now = null)
     {
@@ -838,7 +1283,15 @@ public class SessionAnnouncementAppService(
             RequireConfirm = entity.RequireConfirm,
             ConfirmedCount = entity.ConfirmedCount,
             ReadCount = entity.ReadCount,
-            CreationTime = entity.CreationTime
+            CreationTime = entity.CreationTime,
+            Version = entity.Version,
+            IsApproved = entity.IsApproved,
+            ReviewerSessionUnitId = entity.ReviewerSessionUnitId,
+            ReviewerChatObjectId = entity.ReviewerChatObjectId,
+            ReviewerName = reviewerUnit?.DisplayName ?? reviewerUnit?.Owner?.Name,
+            ReviewerPortrait = reviewerUnit?.Owner?.Portrait,
+            ReviewedTime = entity.ReviewedTime,
+            ReviewRemark = entity.ReviewRemark
         };
     }
 
@@ -882,7 +1335,25 @@ public class SessionAnnouncementAppService(
             IsConfirmedByCurrentUser = dto.IsConfirmedByCurrentUser,
             ConfirmedTime = (await GetCurrentReceiptAsync(entity.Id))?.ConfirmedTime,
             Content = entity.Content,
-            LinkedMessageId = entity.LinkedMessageId
+            LinkedMessageId = entity.LinkedMessageId,
+            Version = dto.Version,
+            IsApproved = dto.IsApproved,
+            ReviewerSessionUnitId = dto.ReviewerSessionUnitId,
+            ReviewerChatObjectId = dto.ReviewerChatObjectId,
+            ReviewerName = dto.ReviewerName,
+            ReviewerPortrait = dto.ReviewerPortrait,
+            ReviewedTime = dto.ReviewedTime,
+            ReviewRemark = dto.ReviewRemark,
+            ConfirmedVersion = dto.ConfirmedVersion,
+            CanEdit = dto.CanEdit,
+            CanDelete = dto.CanDelete,
+            CanPublish = dto.CanPublish,
+            CanSubmitReview = dto.CanSubmitReview,
+            CanApprove = dto.CanApprove,
+            CanRevoke = dto.CanRevoke,
+            CanPin = dto.CanPin,
+            CanRemind = dto.CanRemind,
+            CanViewStat = dto.CanViewStat
         };
     }
 }

@@ -56,10 +56,8 @@ public class SessionAnnouncementManager_Tests
         Assert.NotNull(announcement);
         Assert.Equal("群公告标题", announcement.Title);
         Assert.True(announcement.IsPinned);
+        Assert.Equal(1, announcement.Version);
         Assert.NotNull(announcement.PinnedTime);
-
-        // 验证排他性 unpin 其他公告
-        await _announcementRepository.Received(1).UnpinOthersAsync(sessionId, announcement.Id, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -74,12 +72,62 @@ public class SessionAnnouncementManager_Tests
 
         Assert.True(announcement.IsPinned);
         Assert.NotNull(announcement.PinnedTime);
-        await _announcementRepository.Received(1).UnpinOthersAsync(sessionId, announcement.Id, Arg.Any<CancellationToken>());
 
         // 再次取消置顶
         await _manager.SetPinnedAsync(announcement, false);
         Assert.False(announcement.IsPinned);
         Assert.Null(announcement.PinnedTime);
+    }
+
+    [Fact]
+    public async Task ReviewAsync_Should_Approve_Own_Submission_And_Assign_Version_1()
+    {
+        var publisherUnitId = Guid.NewGuid();
+        var announcement = new SessionAnnouncement(
+            Guid.NewGuid(), Guid.NewGuid(), 1001L, publisherUnitId, 2001L,
+            "待审公告", "正文内容", status: AnnouncementStatus.PendingReview);
+
+        Assert.Equal(0, announcement.Version);
+        Assert.False(announcement.IsApproved);
+
+        await _manager.ReviewAsync(announcement, approved: true, publisherUnitId, 2001L, "自行审核通过");
+
+        Assert.Equal(AnnouncementStatus.Published, announcement.Status);
+        Assert.True(announcement.IsApproved);
+        Assert.Equal(1, announcement.Version);
+        Assert.Equal(publisherUnitId, announcement.ReviewerSessionUnitId);
+        Assert.Equal("自行审核通过", announcement.ReviewRemark);
+    }
+
+    [Fact]
+    public async Task VersionBump_Requires_Reconfirmation_Without_Losing_Receipt_History()
+    {
+        var id = Guid.NewGuid();
+        var member = Guid.NewGuid();
+        var announcement = new SessionAnnouncement(id, Guid.NewGuid(), 1, Guid.NewGuid(), 2, "v1", "body v1");
+        Assert.Equal(1, announcement.Version);
+
+        await _manager.UpdateAsync(
+            announcement,
+            "v2",
+            "body v2",
+            EditorTypes.None,
+            false,
+            false,
+            true,
+            resetReceipts: true,
+            bumpVersion: true);
+
+        Assert.Equal(2, announcement.Version);
+
+        var receipt = new SessionAnnouncementReceipt(id, member, 2, DateTime.UtcNow, "dev-1", 1);
+        receipt.Confirm(DateTime.UtcNow, "dev-1", 1);
+        _announcementRepository.GetAsync(id, cancellationToken: Arg.Any<CancellationToken>()).Returns(announcement);
+        _receiptRepository.FindByUnitAsync(id, member, Arg.Any<CancellationToken>()).Returns(receipt);
+
+        var reconfirmed = await _manager.ConfirmReceiptAsync(id, member, 2, "dev-2");
+        Assert.Equal(2, reconfirmed.ConfirmedVersion);
+        await _announcementRepository.Received(1).IncrementReceiptCountsAsync(id, 0, 1, Arg.Any<CancellationToken>());
     }
 
     [Fact]

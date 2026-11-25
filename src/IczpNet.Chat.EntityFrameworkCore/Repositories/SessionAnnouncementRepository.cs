@@ -51,6 +51,7 @@ public class SessionAnnouncementRepository(IDbContextProvider<ChatDbContext> dbC
         var dbSet = await GetDbSetAsync();
         return await dbSet
             .Where(x => x.Status == AnnouncementStatus.Draft
+                && x.IsApproved
                 && x.PublishTime != null
                 && x.PublishTime <= now)
             .OrderBy(x => x.PublishTime)

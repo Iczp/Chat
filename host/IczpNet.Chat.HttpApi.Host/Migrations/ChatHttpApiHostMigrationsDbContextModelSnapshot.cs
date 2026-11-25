@@ -6515,6 +6515,10 @@ namespace IczpNet.Chat.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("ExtraProperties");
 
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("bit")
+                        .HasComment("是否已通过审核（具备直发权或审核通过为 true）");
+
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -6557,6 +6561,19 @@ namespace IczpNet.Chat.Migrations
                     b.Property<bool>("RequireConfirm")
                         .HasColumnType("bit");
 
+                    b.Property<string>("ReviewRemark")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("ReviewedTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("ReviewerChatObjectId")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid?>("ReviewerSessionUnitId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("SessionId")
                         .HasColumnType("uniqueidentifier");
 
@@ -6572,6 +6589,10 @@ namespace IczpNet.Chat.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
+                    b.Property<int>("Version")
+                        .HasColumnType("int")
+                        .HasComment("当前公告版本号（未发布=0，首次发布=1，升版递增）");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ChatObjectId");
@@ -6581,6 +6602,10 @@ namespace IczpNet.Chat.Migrations
                     b.HasIndex("PublisherChatObjectId");
 
                     b.HasIndex("PublisherSessionUnitId");
+
+                    b.HasIndex("ReviewerChatObjectId");
+
+                    b.HasIndex("ReviewerSessionUnitId");
 
                     b.HasIndex("SessionId", "CreationTime")
                         .IsDescending();
@@ -6612,6 +6637,9 @@ namespace IczpNet.Chat.Migrations
                     b.Property<DateTime?>("ConfirmedTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("ConfirmedVersion")
+                        .HasColumnType("int");
+
                     b.Property<string>("DeviceId")
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
@@ -6621,6 +6649,9 @@ namespace IczpNet.Chat.Migrations
 
                     b.Property<bool>("IsConfirmed")
                         .HasColumnType("bit");
+
+                    b.Property<int>("ReadVersion")
+                        .HasColumnType("int");
 
                     b.Property<Guid>("SessionUnitId")
                         .HasColumnType("uniqueidentifier");
@@ -6637,6 +6668,95 @@ namespace IczpNet.Chat.Migrations
                         .IsUnique();
 
                     b.ToTable("ChatSessionAnnouncementReceipt", (string)null);
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.SessionSections.Announcements.SessionAnnouncementRevision", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AnnouncementId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ChangeSummary")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(10000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<long>("EditorChatObjectId")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("EditorSessionUnitId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("EditorType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EditorChatObjectId");
+
+                    b.HasIndex("EditorSessionUnitId");
+
+                    b.HasIndex("AnnouncementId", "Version")
+                        .IsDescending();
+
+                    b.ToTable("ChatSessionAnnouncementRevision", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.SessionTags.SessionTag", b =>
@@ -9553,6 +9673,16 @@ namespace IczpNet.Chat.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "ReviewerChatObject")
+                        .WithMany()
+                        .HasForeignKey("ReviewerChatObjectId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IczpNet.Chat.SessionUnits.SessionUnit", "ReviewerSessionUnit")
+                        .WithMany()
+                        .HasForeignKey("ReviewerSessionUnitId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("IczpNet.Chat.Sessions.Session", "Session")
                         .WithMany()
                         .HasForeignKey("SessionId")
@@ -9564,6 +9694,10 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("PublisherChatObject");
 
                     b.Navigation("PublisherSessionUnit");
+
+                    b.Navigation("ReviewerChatObject");
+
+                    b.Navigation("ReviewerSessionUnit");
 
                     b.Navigation("Session");
                 });
@@ -9593,6 +9727,33 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("ChatObject");
 
                     b.Navigation("SessionUnit");
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.SessionSections.Announcements.SessionAnnouncementRevision", b =>
+                {
+                    b.HasOne("IczpNet.Chat.SessionSections.Announcements.SessionAnnouncement", "Announcement")
+                        .WithMany()
+                        .HasForeignKey("AnnouncementId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("IczpNet.Chat.ChatObjects.ChatObject", "EditorChatObject")
+                        .WithMany()
+                        .HasForeignKey("EditorChatObjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("IczpNet.Chat.SessionUnits.SessionUnit", "EditorSessionUnit")
+                        .WithMany()
+                        .HasForeignKey("EditorSessionUnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Announcement");
+
+                    b.Navigation("EditorChatObject");
+
+                    b.Navigation("EditorSessionUnit");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.SessionTags.SessionTag", b =>

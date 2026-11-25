@@ -3,6 +3,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.DistributedLocking;
 using Volo.Abp.Guids;
@@ -17,10 +18,12 @@ public class SessionAnnouncementManager(
     IAbpDistributedLock distributedLock,
     IUnitOfWorkManager unitOfWorkManager,
     IGuidGenerator guidGenerator = null,
-    IClock clock = null) : DomainService, ISessionAnnouncementManager
+    IClock clock = null,
+    IRepository<SessionAnnouncementRevision, Guid> revisionRepository = null) : DomainService, ISessionAnnouncementManager
 {
     protected ISessionAnnouncementRepository AnnouncementRepository { get; } = announcementRepository;
     protected ISessionAnnouncementReceiptRepository ReceiptRepository { get; } = receiptRepository;
+    protected IRepository<SessionAnnouncementRevision, Guid> RevisionRepository { get; } = revisionRepository;
     protected IGuidGenerator CustomGuidGenerator { get; } = guidGenerator;
     protected IClock CustomClock { get; } = clock;
 
@@ -43,6 +46,7 @@ public class SessionAnnouncementManager(
         bool applyToNewMembers = false,
         AnnouncementStatus status = AnnouncementStatus.Published,
         DateTime? publishTime = null,
+        bool isApproved = true,
         CancellationToken cancellationToken = default)
     {
         Check.NotNullOrWhiteSpace(title, nameof(title));
@@ -74,7 +78,33 @@ public class SessionAnnouncementManager(
             applyToNewMembers: applyToNewMembers,
             publishTime: publishTime);
 
-        return await AnnouncementRepository.InsertAsync(announcement, autoSave: true, cancellationToken: cancellationToken);
+        if (status == AnnouncementStatus.Published)
+        {
+            announcement.EnsureInitialPublishedVersion();
+        }
+        else
+        {
+            announcement.SetApproved(isApproved);
+        }
+
+        var inserted = await AnnouncementRepository.InsertAsync(announcement, autoSave: true, cancellationToken: cancellationToken);
+        if (inserted.Status == AnnouncementStatus.Published && RevisionRepository != null)
+        {
+            await RevisionRepository.InsertAsync(
+                new SessionAnnouncementRevision(
+                    GenerateGuid(),
+                    inserted.Id,
+                    inserted.Version,
+                    inserted.Title,
+                    inserted.Content,
+                    inserted.EditorType,
+                    publisherSessionUnitId,
+                    publisherChatObjectId,
+                    "首次发布"),
+                autoSave: true,
+                cancellationToken: cancellationToken);
+        }
+        return inserted;
     }
 
     public virtual async Task<SessionAnnouncement> UpdateAsync(
@@ -91,12 +121,17 @@ public class SessionAnnouncementManager(
         AnnouncementStatus? status = null,
         DateTime? publishTime = null,
         bool resetReceipts = false,
+        bool bumpVersion = false,
+        string changeSummary = null,
+        Guid? editorSessionUnitId = null,
+        long? editorChatObjectId = null,
         CancellationToken cancellationToken = default)
     {
         Check.NotNull(announcement, nameof(announcement));
         Check.NotNullOrWhiteSpace(title, nameof(title));
         Check.NotNullOrWhiteSpace(content, nameof(content));
 
+        var previousVersion = announcement.Version;
         announcement.SetContent(title.Trim(), content, editorType);
         announcement.SetOptions(isPopup, requireConfirm);
         announcement.SetPolicy(expireTime, applyToNewMembers, publishTime);
@@ -106,13 +141,43 @@ public class SessionAnnouncementManager(
             announcement.SetStatus(status.Value);
         }
 
+        if (announcement.Status == AnnouncementStatus.Published)
+        {
+            if (announcement.Version <= 0)
+            {
+                announcement.EnsureInitialPublishedVersion();
+            }
+            else if (bumpVersion || resetReceipts)
+            {
+                announcement.IncrementVersion();
+            }
+        }
+
         if (resetReceipts)
         {
-            await ReceiptRepository.ResetConfirmationsAsync(announcement.Id, cancellationToken);
             announcement.ResetConfirmedCount();
         }
 
-        return await AnnouncementRepository.UpdateAsync(announcement, autoSave: true, cancellationToken: cancellationToken);
+        var updated = await AnnouncementRepository.UpdateAsync(announcement, autoSave: true, cancellationToken: cancellationToken);
+
+        if (RevisionRepository != null && updated.Status == AnnouncementStatus.Published && updated.Version > previousVersion)
+        {
+            await RevisionRepository.InsertAsync(
+                new SessionAnnouncementRevision(
+                    GenerateGuid(),
+                    updated.Id,
+                    updated.Version,
+                    updated.Title,
+                    updated.Content,
+                    updated.EditorType,
+                    editorSessionUnitId ?? updated.PublisherSessionUnitId,
+                    editorChatObjectId ?? updated.PublisherChatObjectId,
+                    changeSummary ?? (updated.Version == 1 ? "首次发布" : $"修订至 v{updated.Version}")),
+                autoSave: true,
+                cancellationToken: cancellationToken);
+        }
+
+        return updated;
     }
 
     public virtual async Task PublishAsync(
@@ -120,9 +185,84 @@ public class SessionAnnouncementManager(
         CancellationToken cancellationToken = default)
     {
         Check.NotNull(announcement, nameof(announcement));
+        var previousVersion = announcement.Version;
+        announcement.EnsureInitialPublishedVersion();
         announcement.SetStatus(AnnouncementStatus.Published);
         announcement.SetPolicy(announcement.ExpireTime, announcement.ApplyToNewMembers, null);
         await AnnouncementRepository.UpdateAsync(announcement, autoSave: true, cancellationToken: cancellationToken);
+
+        if (RevisionRepository != null && announcement.Version > previousVersion)
+        {
+            await RevisionRepository.InsertAsync(
+                new SessionAnnouncementRevision(
+                    GenerateGuid(),
+                    announcement.Id,
+                    announcement.Version,
+                    announcement.Title,
+                    announcement.Content,
+                    announcement.EditorType,
+                    announcement.PublisherSessionUnitId,
+                    announcement.PublisherChatObjectId,
+                    "正式发布"),
+                autoSave: true,
+                cancellationToken: cancellationToken);
+        }
+    }
+
+    public virtual async Task SubmitForReviewAsync(
+        SessionAnnouncement announcement,
+        CancellationToken cancellationToken = default)
+    {
+        Check.NotNull(announcement, nameof(announcement));
+        announcement.SubmitForReview();
+        await AnnouncementRepository.UpdateAsync(announcement, autoSave: true, cancellationToken: cancellationToken);
+    }
+
+    public virtual async Task ReviewAsync(
+        SessionAnnouncement announcement,
+        bool approved,
+        Guid reviewerSessionUnitId,
+        long reviewerChatObjectId,
+        string remark = null,
+        CancellationToken cancellationToken = default)
+    {
+        Check.NotNull(announcement, nameof(announcement));
+        if (announcement.Status != AnnouncementStatus.PendingReview)
+        {
+            throw new UserFriendlyException("仅待审核状态的公告可执行审核操作。");
+        }
+
+        var previousVersion = announcement.Version;
+        var approvedStatus = announcement.PublishTime.HasValue && announcement.PublishTime.Value > CurrentTime
+            ? AnnouncementStatus.Draft
+            : AnnouncementStatus.Published;
+
+        announcement.ApplyReview(
+            approved: approved,
+            reviewerSessionUnitId: reviewerSessionUnitId,
+            reviewerChatObjectId: reviewerChatObjectId,
+            reviewedTime: CurrentTime,
+            remark: remark,
+            approvedStatus: approvedStatus);
+
+        await AnnouncementRepository.UpdateAsync(announcement, autoSave: true, cancellationToken: cancellationToken);
+
+        if (approved && approvedStatus == AnnouncementStatus.Published && RevisionRepository != null && announcement.Version > previousVersion)
+        {
+            await RevisionRepository.InsertAsync(
+                new SessionAnnouncementRevision(
+                    GenerateGuid(),
+                    announcement.Id,
+                    announcement.Version,
+                    announcement.Title,
+                    announcement.Content,
+                    announcement.EditorType,
+                    announcement.PublisherSessionUnitId,
+                    announcement.PublisherChatObjectId,
+                    "审核通过发布"),
+                autoSave: true,
+                cancellationToken: cancellationToken);
+        }
     }
 
     public virtual async Task RevokeAsync(
@@ -190,12 +330,14 @@ public class SessionAnnouncementManager(
             throw new UserFriendlyException("公告尚未发布或已撤下。");
         var existing = await ReceiptRepository.FindByUnitAsync(announcementId, sessionUnitId, cancellationToken);
         var now = CurrentTime;
-        var receipt = existing ?? new SessionAnnouncementReceipt(announcementId, sessionUnitId, chatObjectId, now, deviceId);
-        var newConfirmation = confirm && !receipt.IsConfirmed;
-        if (newConfirmation) receipt.Confirm(now, deviceId);
+        var currentVersion = announcement.Version > 0 ? announcement.Version : 1;
+        var receipt = existing ?? new SessionAnnouncementReceipt(announcementId, sessionUnitId, chatObjectId, now, deviceId, currentVersion);
+        var readVersionUpdated = existing != null && receipt.MarkReadVersion(currentVersion);
+        var newConfirmation = confirm && (!receipt.IsConfirmed || receipt.ConfirmedVersion < currentVersion);
+        if (newConfirmation) receipt.Confirm(now, deviceId, currentVersion);
         if (existing == null)
             receipt = await ReceiptRepository.InsertAsync(receipt, autoSave: true, cancellationToken: cancellationToken);
-        else if (newConfirmation)
+        else if (newConfirmation || readVersionUpdated)
             await ReceiptRepository.UpdateAsync(receipt, autoSave: true, cancellationToken: cancellationToken);
         if (existing == null || newConfirmation)
             await AnnouncementRepository.IncrementReceiptCountsAsync(announcementId, existing == null ? 1 : 0,

@@ -61,14 +61,32 @@ public class SessionPermissionDefinitionDataSeedContributor : IDataSeedContribut
             return;
         }
 
+        var displayNames = new Dictionary<string, string>
+        {
+            [SessionPermissionDefinitionConsts.AnnouncementPermission.Create] = "创建/提审群公告",
+            [SessionPermissionDefinitionConsts.AnnouncementPermission.Publish] = "直接发布群公告",
+            [SessionPermissionDefinitionConsts.AnnouncementPermission.Approve] = "审核群公告",
+            [SessionPermissionDefinitionConsts.AnnouncementPermission.Update] = "管理/编辑群公告",
+            [SessionPermissionDefinitionConsts.AnnouncementPermission.UpdateOwn] = "编辑/撤回本人公告",
+            [SessionPermissionDefinitionConsts.AnnouncementPermission.UpdateAny] = "编辑/撤回他人公告",
+            [SessionPermissionDefinitionConsts.AnnouncementPermission.Delete] = "删除群公告",
+            [SessionPermissionDefinitionConsts.AnnouncementPermission.DeleteOwn] = "删除本人公告",
+            [SessionPermissionDefinitionConsts.AnnouncementPermission.DeleteAny] = "删除他人公告",
+            [SessionPermissionDefinitionConsts.AnnouncementPermission.Pin] = "置顶/调权群公告",
+            [SessionPermissionDefinitionConsts.AnnouncementPermission.Remind] = "催办未确认成员",
+            [SessionPermissionDefinitionConsts.AnnouncementPermission.ViewStat] = "查看公告回执统计",
+        };
+
         var list = new List<SessionPermissionDefinition>();
 
         foreach (var id in createIdList)
         {
+            var isAnnouncementPerm = id.StartsWith(SessionPermissionDefinitionConsts.AnnouncementPermission.Default);
             list.Add(new SessionPermissionDefinition(id)
             {
-                Name = id.MaxLength(50),
+                Name = displayNames.TryGetValue(id, out var label) ? label : id.MaxLength(120),
                 Description = $"Initialization：{_click.Now}",
+                IsEnabled = isAnnouncementPerm,
             });
         }
         await _sessionPermissionDefinitionRepository.InsertManyAsync(list);

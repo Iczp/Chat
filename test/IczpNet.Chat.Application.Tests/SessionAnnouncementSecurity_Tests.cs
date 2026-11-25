@@ -214,4 +214,68 @@ public class SessionAnnouncementSecurity_Tests : ChatTestBase<MessageQueryReview
             Assert.Equal("first", receipts[0].DeviceId);
         });
     }
+
+    [Fact]
+    public async Task Reviewer_with_approve_permission_can_review_own_submission()
+    {
+        var data = await WithUnitOfWorkAsync(async () =>
+        {
+            var context = await GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            var seeded = await SeedAsync(context, owner: 1);
+            await context.Database.ExecuteSqlRawAsync(
+                "UPDATE \"ChatSessionAnnouncement\" SET \"Status\" = 3, \"Version\" = 0, \"IsApproved\" = 0, \"ConcurrencyStamp\" = {1} WHERE \"Id\" = {0}",
+                seeded.Announcement,
+                Guid.NewGuid().ToString("N"));
+            return seeded;
+        });
+
+        await WithUnitOfWorkAsync(new AbpUnitOfWorkOptions { IsTransactional = false }, async () =>
+        {
+            var lazy = Substitute.For<IAbpLazyServiceProvider>();
+            var user = Substitute.For<ICurrentUser>();
+            var userId = Guid.NewGuid();
+            user.Id.Returns(userId);
+            var objects = Substitute.For<IChatObjectManager>();
+            objects.GetIdListByUserIdAsync(userId).Returns([1L]);
+            lazy.LazyGetRequiredService<ICurrentUser>().Returns(user);
+            lazy.LazyGetRequiredService<IChatObjectManager>().Returns(objects);
+
+            var checker = Substitute.For<ISessionPermissionChecker>();
+            checker.IsGrantedAsync(IczpNet.Chat.Permissions.SessionPermissionDefinitionConsts.AnnouncementPermission.Approve, Arg.Any<SessionUnit>())
+                .Returns(true);
+
+            var distributedLock = Substitute.For<IAbpDistributedLock>();
+            distributedLock.TryAcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
+                .Returns(Substitute.For<IAbpDistributedLockHandle>());
+
+            var manager = new SessionAnnouncementManager(
+                GetRequiredService<ISessionAnnouncementRepository>(),
+                GetRequiredService<ISessionAnnouncementReceiptRepository>(),
+                distributedLock,
+                GetRequiredService<IUnitOfWorkManager>());
+
+            var service = new SessionAnnouncementAppService(
+                GetRequiredService<ISessionAnnouncementRepository>(),
+                GetRequiredService<ISessionAnnouncementReceiptRepository>(),
+                GetRequiredService<ISessionUnitRepository>(),
+                manager,
+                checker,
+                Substitute.For<IMessageManager>())
+            { LazyServiceProvider = lazy };
+
+            var reviewed = await service.ReviewAsync(data.Announcement, new ReviewSessionAnnouncementInput
+            {
+                SessionUnitId = data.Unit,
+                Approved = true,
+                Remark = "允许审核本人提审",
+                SendMessageNotification = false
+            });
+
+            Assert.Equal(AnnouncementStatus.Published, reviewed.Status);
+            Assert.True(reviewed.IsApproved);
+            Assert.Equal(1, reviewed.Version);
+            Assert.Equal(1L, reviewed.ReviewerChatObjectId);
+            Assert.Equal("允许审核本人提审", reviewed.ReviewRemark);
+        });
+    }
 }

@@ -75,8 +75,16 @@ public class SessionPermissionDefinitionConsts
     {
         public const string Default = GroupName + "." + nameof(AnnouncementPermission);
         public const string Create = Default + "." + nameof(Create);
+        public const string Publish = Default + "." + nameof(Publish);
+        public const string Approve = Default + "." + nameof(Approve);
         public const string Update = Default + "." + nameof(Update);
+        public const string UpdateOwn = Default + "." + nameof(UpdateOwn);
+        public const string UpdateAny = Default + "." + nameof(UpdateAny);
         public const string Delete = Default + "." + nameof(Delete);
+        public const string DeleteOwn = Default + "." + nameof(DeleteOwn);
+        public const string DeleteAny = Default + "." + nameof(DeleteAny);
         public const string Pin = Default + "." + nameof(Pin);
+        public const string Remind = Default + "." + nameof(Remind);
+        public const string ViewStat = Default + "." + nameof(ViewStat);
     }
 }

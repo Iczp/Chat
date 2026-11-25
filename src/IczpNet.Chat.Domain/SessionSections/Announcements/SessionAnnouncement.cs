@@ -76,6 +76,27 @@ public class SessionAnnouncement : BaseEntity<Guid>, ISessionId
 
     public virtual long? LinkedMessageId { get; protected set; }
 
+    [Comment("当前公告版本号（未发布=0，首次发布=1，升版递增）")]
+    public virtual int Version { get; protected set; }
+
+    [Comment("是否已通过审核（具备直发权或审核通过为 true）")]
+    public virtual bool IsApproved { get; protected set; }
+
+    public virtual Guid? ReviewerSessionUnitId { get; protected set; }
+
+    [ForeignKey(nameof(ReviewerSessionUnitId))]
+    public virtual SessionUnit ReviewerSessionUnit { get; protected set; }
+
+    public virtual long? ReviewerChatObjectId { get; protected set; }
+
+    [ForeignKey(nameof(ReviewerChatObjectId))]
+    public virtual ChatObject ReviewerChatObject { get; protected set; }
+
+    public virtual DateTime? ReviewedTime { get; protected set; }
+
+    [StringLength(500)]
+    public virtual string ReviewRemark { get; protected set; }
+
     protected SessionAnnouncement() { }
 
     public SessionAnnouncement(
@@ -121,6 +142,8 @@ public class SessionAnnouncement : BaseEntity<Guid>, ISessionId
         ExpireTime = expireTime;
         ApplyToNewMembers = applyToNewMembers;
         PublishTime = publishTime;
+        IsApproved = status == AnnouncementStatus.Published;
+        Version = status == AnnouncementStatus.Published ? 1 : 0;
     }
 
     public virtual void SetContent(string title, string content, EditorTypes editorType)
@@ -128,7 +151,7 @@ public class SessionAnnouncement : BaseEntity<Guid>, ISessionId
         Title = title;
         Content = content;
         EditorType = editorType;
-        ConcurrencyStamp = Guid.NewGuid().ToString("N");
+        // ConcurrencyStamp 由 AbpDbContext 自动管理
     }
 
     public virtual void SetPinned(bool isPinned, DateTime? pinnedTime = null, double? sorting = null)
@@ -144,7 +167,7 @@ public class SessionAnnouncement : BaseEntity<Guid>, ISessionId
             Sorting = isPinned ? (Sorting > 0 ? Sorting : 1) : 0;
         }
         PinnedTime = IsPinned ? (pinnedTime ?? DateTime.Now) : null;
-        ConcurrencyStamp = Guid.NewGuid().ToString("N");
+        // ConcurrencyStamp 由 AbpDbContext 自动管理
     }
 
     public virtual void SetPolicy(DateTime? expireTime, bool applyToNewMembers, DateTime? publishTime = null)
@@ -152,25 +175,94 @@ public class SessionAnnouncement : BaseEntity<Guid>, ISessionId
         ExpireTime = expireTime;
         ApplyToNewMembers = applyToNewMembers;
         PublishTime = publishTime;
-        ConcurrencyStamp = Guid.NewGuid().ToString("N");
+        // ConcurrencyStamp 由 AbpDbContext 自动管理
     }
 
     public virtual void ResetConfirmedCount()
     {
         ConfirmedCount = 0;
-        ConcurrencyStamp = Guid.NewGuid().ToString("N");
+        // ConcurrencyStamp 由 AbpDbContext 自动管理
     }
 
     public virtual void SetStatus(AnnouncementStatus status)
     {
         Status = status;
-        if (status == AnnouncementStatus.Revoked)
+        if (status == AnnouncementStatus.Revoked || status == AnnouncementStatus.Rejected)
         {
             IsPinned = false;
             Sorting = 0;
             PinnedTime = null;
         }
-        ConcurrencyStamp = Guid.NewGuid().ToString("N");
+        // ConcurrencyStamp 由 AbpDbContext 自动管理
+    }
+
+    public virtual void EnsureInitialPublishedVersion()
+    {
+        if (Version <= 0)
+        {
+            Version = 1;
+        }
+        IsApproved = true;
+        // ConcurrencyStamp 由 AbpDbContext 自动管理
+    }
+
+    public virtual int IncrementVersion()
+    {
+        Version = Version <= 0 ? 1 : Version + 1;
+        // ConcurrencyStamp 由 AbpDbContext 自动管理
+        return Version;
+    }
+
+    public virtual void SetApproved(bool isApproved)
+    {
+        IsApproved = isApproved;
+        // ConcurrencyStamp 由 AbpDbContext 自动管理
+    }
+
+    public virtual void SubmitForReview()
+    {
+        Status = AnnouncementStatus.PendingReview;
+        IsApproved = false;
+        ReviewerSessionUnitId = null;
+        ReviewerChatObjectId = null;
+        ReviewedTime = null;
+        ReviewRemark = null;
+        // ConcurrencyStamp 由 AbpDbContext 自动管理
+    }
+
+    public virtual void ApplyReview(
+        bool approved,
+        Guid reviewerSessionUnitId,
+        long reviewerChatObjectId,
+        DateTime reviewedTime,
+        string remark,
+        AnnouncementStatus approvedStatus)
+    {
+        ReviewerSessionUnitId = reviewerSessionUnitId;
+        ReviewerChatObjectId = reviewerChatObjectId;
+        ReviewedTime = reviewedTime;
+        ReviewRemark = string.IsNullOrWhiteSpace(remark) ? null : remark.Trim();
+
+        if (approved)
+        {
+            IsApproved = true;
+            Status = approvedStatus;
+            if (approvedStatus == AnnouncementStatus.Published)
+            {
+                if (Version <= 0)
+                {
+                    Version = 1;
+                }
+                PublishTime = null;
+            }
+        }
+        else
+        {
+            IsApproved = false;
+            SetStatus(AnnouncementStatus.Rejected);
+        }
+
+        // ConcurrencyStamp 由 AbpDbContext 自动管理
     }
 
     public virtual void SetOptions(bool isPopup, bool requireConfirm)

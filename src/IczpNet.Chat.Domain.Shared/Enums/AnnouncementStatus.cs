@@ -25,4 +25,16 @@ public enum AnnouncementStatus : int
     /// </summary>
     [Description("已撤下")]
     Revoked = 2,
+
+    /// <summary>
+    /// 待审核
+    /// </summary>
+    [Description("待审核")]
+    PendingReview = 3,
+
+    /// <summary>
+    /// 已驳回
+    /// </summary>
+    [Description("已驳回")]
+    Rejected = 4,
 }

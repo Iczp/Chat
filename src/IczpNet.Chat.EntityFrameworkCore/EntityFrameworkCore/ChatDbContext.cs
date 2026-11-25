@@ -221,6 +221,7 @@ public class ChatDbContext(DbContextOptions<ChatDbContext> options) : AbpDbConte
 
     public DbSet<IczpNet.Chat.SessionSections.Announcements.SessionAnnouncement> SessionAnnouncement { get; set; }
     public DbSet<IczpNet.Chat.SessionSections.Announcements.SessionAnnouncementReceipt> SessionAnnouncementReceipt { get; set; }
+    public DbSet<IczpNet.Chat.SessionSections.Announcements.SessionAnnouncementRevision> SessionAnnouncementRevision { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

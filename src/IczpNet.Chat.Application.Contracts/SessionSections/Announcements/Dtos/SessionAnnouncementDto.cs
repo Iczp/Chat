@@ -30,4 +30,22 @@ public class SessionAnnouncementDto : EntityDto<Guid>
     public virtual int ReadCount { get; set; }
     public virtual DateTime CreationTime { get; set; }
     public virtual bool IsConfirmedByCurrentUser { get; set; }
+    public virtual int Version { get; set; }
+    public virtual bool IsApproved { get; set; }
+    public virtual Guid? ReviewerSessionUnitId { get; set; }
+    public virtual long? ReviewerChatObjectId { get; set; }
+    public virtual string ReviewerName { get; set; }
+    public virtual string ReviewerPortrait { get; set; }
+    public virtual DateTime? ReviewedTime { get; set; }
+    public virtual string ReviewRemark { get; set; }
+    public virtual int ConfirmedVersion { get; set; }
+    public virtual bool CanEdit { get; set; }
+    public virtual bool CanDelete { get; set; }
+    public virtual bool CanPublish { get; set; }
+    public virtual bool CanSubmitReview { get; set; }
+    public virtual bool CanApprove { get; set; }
+    public virtual bool CanRevoke { get; set; }
+    public virtual bool CanPin { get; set; }
+    public virtual bool CanRemind { get; set; }
+    public virtual bool CanViewStat { get; set; }
 }
