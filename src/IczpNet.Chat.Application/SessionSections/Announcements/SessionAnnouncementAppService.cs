@@ -147,14 +147,20 @@ public class SessionAnnouncementAppService(
         var allowAllStatuses = false;
         if (input.IncludeDrafts)
         {
-            allowAllStatuses = await SessionPermissionChecker.IsGrantedAsync(
-                SessionPermissionDefinitionConsts.AnnouncementPermission.Update,
-                unit);
+            allowAllStatuses =
+                await SessionPermissionChecker.IsGrantedAsync(
+                    SessionPermissionDefinitionConsts.AnnouncementPermission.Update,
+                    unit) ||
+                await SessionPermissionChecker.IsGrantedAsync(
+                    SessionPermissionDefinitionConsts.AnnouncementPermission.Create,
+                    unit);
         }
 
         queryable = allowAllStatuses
             ? queryable.Where(x => x.SessionId == targetSessionId)
-            : queryable.Where(x => x.SessionId == targetSessionId && x.Status == AnnouncementStatus.Published);
+            : input.IncludeDrafts
+                ? queryable.Where(x => x.SessionId == targetSessionId && (x.Status == AnnouncementStatus.Published || x.PublisherSessionUnitId == unit.Id || x.PublisherChatObjectId == unit.OwnerId))
+                : queryable.Where(x => x.SessionId == targetSessionId && x.Status == AnnouncementStatus.Published);
 
         if (input.IsPinned.HasValue)
         {
