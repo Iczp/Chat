@@ -1050,7 +1050,7 @@ public partial class MessageManager(
 
         messageInfo.Content ??= message.GetContentDto();
 
-        await MessageCache.SetAsync(new MessageCacheKey(messageInfo.Id), messageInfo, options ?? CacheOptions, hideErrors, considerUow, token);
+        await MessageCache.SetAsync(new MessageCacheKey(messageInfo.Id), messageInfo.ToSlimRedisCopy(), options ?? CacheOptions, hideErrors, considerUow, token);
 
         return messageInfo;
     }
@@ -1062,7 +1062,9 @@ public partial class MessageManager(
         CancellationToken token = default)
     {
         var item = await MessageCache.GetAsync(new MessageCacheKey(messageId), hideErrors, considerUow, token);
-        await PopulateSessionSeqAsync(item == null ? [] : [item], token);
+        var list = item == null ? new List<MessageCacheItem>() : [item];
+        await PopulateSessionSeqAsync(list, token);
+        await HydrateSenderSessionUnitsAsync(list);
         return item;
     }
 
@@ -1090,13 +1092,19 @@ public partial class MessageManager(
 
         var list = await MessageCache.GetOrAddManyAsync(cacheKeys, async (keys) =>
         {
-            var messageIds = keys.Select(x => x.MessageId);
+            var missingIds = keys.Select(x => x.MessageId).ToList();
 
-            var entities = await Repository.GetListAsync(x => messageIds.Contains(x.Id));
+            var entities = await Repository.GetCacheMissMessagesAsync(missingIds, token)
+                ?? await Repository.GetListAsync(x => missingIds.Contains(x.Id), cancellationToken: token);
 
             var dict = entities.ToDictionary(
                 x => new MessageCacheKey(x.Id),
-                x => ObjectMapper.Map<Message, MessageCacheItem>(x));
+                x =>
+                {
+                    var mapped = ObjectMapper.Map<Message, MessageCacheItem>(x);
+                    mapped.Content ??= x.GetContentDto();
+                    return mapped.ToSlimRedisCopy();
+                });
 
             return [.. keys.Select(x =>
                 new KeyValuePair<MessageCacheKey, MessageCacheItem>(x, dict.TryGetValue(x, out var cacheItem) ? cacheItem : null)

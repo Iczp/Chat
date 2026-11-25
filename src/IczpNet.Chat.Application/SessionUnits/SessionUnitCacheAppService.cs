@@ -283,65 +283,169 @@ public class SessionUnitCacheAppService(
         }
         var tagMap = await SessionTagManager.GetSessionUnitTagMapAsync(unitIds);
 
-        var unitRoleRepo = LazyServiceProvider.LazyGetService<IRepository<SessionUnitRole>>();
-        Dictionary<Guid, List<SessionRoleSimpleDto>> roleMap = new();
-        if (unitRoleRepo != null)
+        var versionCache = LazyServiceProvider.LazyGetService<Volo.Abp.Caching.IDistributedCache<string>>();
+        var orgRoleCache = LazyServiceProvider.LazyGetService<Volo.Abp.Caching.IDistributedCache<SessionUnitOrgRoleCacheItem, string>>();
+
+        var resolvedMap = new Dictionary<Guid, SessionUnitOrgRoleCacheItem>(unitIds.Count);
+        var missedUnitIds = new List<Guid>();
+        var unitCacheKeys = new Dictionary<Guid, string>(unitIds.Count);
+
+        if (versionCache != null && orgRoleCache != null)
         {
-            var roleRows = await AsyncExecuter.ToListAsync(
-                (await unitRoleRepo.GetQueryableAsync())
-                    .AsNoTracking()
-                    .Where(x => unitIds.Contains(x.SessionUnitId) && x.SessionRole != null)
-                    .Select(x => new
+            var sessionIds = list.Where(x => x.SessionId.HasValue).Select(x => x.SessionId!.Value).Distinct().ToList();
+            var versionBySession = new Dictionary<Guid, string>(sessionIds.Count);
+            foreach (var sid in sessionIds)
+            {
+                var ver = await versionCache.GetAsync(SessionUnitOrgRoleCacheKeys.VersionKey(sid), hideErrors: true);
+                versionBySession[sid] = string.IsNullOrEmpty(ver) ? "0" : ver;
+            }
+
+            foreach (var item in list)
+            {
+                if (item.SessionId.HasValue && !unitCacheKeys.ContainsKey(item.Id))
+                {
+                    unitCacheKeys[item.Id] = SessionUnitOrgRoleCacheKeys.UnitKey(
+                        item.SessionId.Value,
+                        versionBySession[item.SessionId.Value],
+                        item.Id);
+                }
+            }
+
+            if (unitCacheKeys.Count > 0)
+            {
+                var keyToUnit = unitCacheKeys.ToDictionary(kv => kv.Value, kv => kv.Key);
+                var cachedPairs = await orgRoleCache.GetManyAsync(keyToUnit.Keys, hideErrors: true);
+                foreach (var kv in cachedPairs)
+                {
+                    var uid = keyToUnit[kv.Key];
+                    if (kv.Value != null)
                     {
-                        x.SessionUnitId,
-                        RoleId = x.SessionRole.Id,
-                        RoleName = x.SessionRole.Name,
-                    }));
-            roleMap = roleRows
-                .GroupBy(x => x.SessionUnitId)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Select(r => new SessionRoleSimpleDto { Id = r.RoleId, Name = r.RoleName }).ToList());
+                        resolvedMap[uid] = kv.Value;
+                    }
+                    else
+                    {
+                        missedUnitIds.Add(uid);
+                    }
+                }
+            }
+
+            foreach (var uid in unitIds)
+            {
+                if (!resolvedMap.ContainsKey(uid) && !missedUnitIds.Contains(uid))
+                {
+                    missedUnitIds.Add(uid);
+                }
+            }
+        }
+        else
+        {
+            missedUnitIds.AddRange(unitIds);
         }
 
-        var unitOrgRepo = LazyServiceProvider.LazyGetService<IRepository<SessionUnitOrganization>>();
-        Dictionary<Guid, List<SessionOrganizationDto>> orgMap = new();
-        if (unitOrgRepo != null)
+        if (missedUnitIds.Count > 0)
         {
-            var orgRows = await AsyncExecuter.ToListAsync(
-                (await unitOrgRepo.GetQueryableAsync())
-                    .AsNoTracking()
-                    .Where(x => unitIds.Contains(x.SessionUnitId) && x.SessionOrganization != null)
-                    .Select(x => new
+            var unitRoleRepo = LazyServiceProvider.LazyGetService<IRepository<SessionUnitRole>>();
+            Dictionary<Guid, List<SessionUnitCachedRoleItem>> dbRoles = new();
+            if (unitRoleRepo != null)
+            {
+                var roleRows = await AsyncExecuter.ToListAsync(
+                    (await unitRoleRepo.GetQueryableAsync())
+                        .AsNoTracking()
+                        .Where(x => missedUnitIds.Contains(x.SessionUnitId) && x.SessionRole != null)
+                        .Select(x => new
+                        {
+                            x.SessionUnitId,
+                            RoleId = x.SessionRole.Id,
+                            RoleName = x.SessionRole.Name,
+                        }));
+                dbRoles = roleRows
+                    .GroupBy(x => x.SessionUnitId)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Select(r => new SessionUnitCachedRoleItem { Id = r.RoleId, Name = r.RoleName }).ToList());
+            }
+
+            var unitOrgRepo = LazyServiceProvider.LazyGetService<IRepository<SessionUnitOrganization>>();
+            Dictionary<Guid, List<SessionUnitCachedOrgItem>> dbOrgs = new();
+            if (unitOrgRepo != null)
+            {
+                var orgRows = await AsyncExecuter.ToListAsync(
+                    (await unitOrgRepo.GetQueryableAsync())
+                        .AsNoTracking()
+                        .Where(x => missedUnitIds.Contains(x.SessionUnitId) && x.SessionOrganization != null)
+                        .Select(x => new
+                        {
+                            x.SessionUnitId,
+                            OrgId = x.SessionOrganization.Id,
+                            OrgName = x.SessionOrganization.Name,
+                            x.SessionOrganization.ParentId,
+                            x.SessionOrganization.FullPath,
+                            x.SessionOrganization.FullPathName,
+                            x.SessionOrganization.Depth,
+                        }));
+                dbOrgs = orgRows
+                    .GroupBy(x => x.SessionUnitId)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Select(o => new SessionUnitCachedOrgItem
+                        {
+                            Id = o.OrgId,
+                            Name = o.OrgName,
+                            ParentId = o.ParentId,
+                            FullPath = o.FullPath,
+                            FullPathName = o.FullPathName,
+                            Depth = o.Depth,
+                        }).ToList());
+            }
+
+            var toCache = new List<KeyValuePair<string, SessionUnitOrgRoleCacheItem>>(missedUnitIds.Count);
+            foreach (var uid in missedUnitIds)
+            {
+                var entry = new SessionUnitOrgRoleCacheItem
+                {
+                    Roles = dbRoles.GetValueOrDefault(uid) ?? [],
+                    Organizations = dbOrgs.GetValueOrDefault(uid) ?? [],
+                };
+                resolvedMap[uid] = entry;
+                if (unitCacheKeys.TryGetValue(uid, out var cKey))
+                {
+                    toCache.Add(new KeyValuePair<string, SessionUnitOrgRoleCacheItem>(cKey, entry));
+                }
+            }
+
+            if (orgRoleCache != null && toCache.Count > 0)
+            {
+                await orgRoleCache.SetManyAsync(
+                    toCache,
+                    new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions
                     {
-                        x.SessionUnitId,
-                        OrgId = x.SessionOrganization.Id,
-                        OrgName = x.SessionOrganization.Name,
-                        x.SessionOrganization.ParentId,
-                        x.SessionOrganization.FullPath,
-                        x.SessionOrganization.FullPathName,
-                        x.SessionOrganization.Depth,
-                    }));
-            orgMap = orgRows
-                .GroupBy(x => x.SessionUnitId)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Select(o => new SessionOrganizationDto
-                    {
-                        Id = o.OrgId,
-                        Name = o.OrgName,
-                        ParentId = o.ParentId,
-                        FullPath = o.FullPath,
-                        FullPathName = o.FullPathName,
-                        Depth = o.Depth,
-                    }).ToList());
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30)
+                    },
+                    hideErrors: true);
+            }
         }
 
         foreach (var item in list)
         {
             item.TagList = tagMap.GetValueOrDefault(item.Id) ?? [];
-            item.RoleList = roleMap.GetValueOrDefault(item.Id) ?? [];
-            item.OrganizationList = orgMap.GetValueOrDefault(item.Id) ?? [];
+            if (resolvedMap.TryGetValue(item.Id, out var meta))
+            {
+                item.RoleList = meta.Roles.Select(r => new SessionRoleSimpleDto { Id = r.Id, Name = r.Name }).ToList();
+                item.OrganizationList = meta.Organizations.Select(o => new SessionOrganizationDto
+                {
+                    Id = o.Id,
+                    Name = o.Name,
+                    ParentId = o.ParentId,
+                    FullPath = o.FullPath,
+                    FullPathName = o.FullPathName,
+                    Depth = o.Depth,
+                }).ToList();
+            }
+            else
+            {
+                item.RoleList = [];
+                item.OrganizationList = [];
+            }
         }
     }
 

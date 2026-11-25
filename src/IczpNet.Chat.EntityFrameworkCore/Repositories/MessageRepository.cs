@@ -1,6 +1,10 @@
-﻿using IczpNet.Chat.Blobs;
+﻿using IczpNet.Chat.Articles;
+using IczpNet.Chat.Blobs;
 using IczpNet.Chat.EntityFrameworkCore;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.MessageSections.Templates;
+using IczpNet.Chat.RedEnvelopes;
 using Microsoft.EntityFrameworkCore;
 using IczpNet.Chat.Specifications;
 using System;
@@ -253,6 +257,231 @@ public class MessageRepository(IDbContextProvider<ChatDbContext> dbContextProvid
             .ToList();
 
         await repository.InsertManyAsync(entities, autoSave: true, cancellationToken: cancellationToken);
+    }
+
+    public virtual async Task<List<Message>> GetCacheMissMessagesAsync(
+        IReadOnlyCollection<long> messageIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (messageIds == null || messageIds.Count == 0)
+        {
+            return [];
+        }
+
+        var distinctIds = messageIds.Where(x => x > 0).Distinct().ToList();
+        if (distinctIds.Count == 0)
+        {
+            return [];
+        }
+
+        var db = await GetDbContextAsync();
+        var messages = await db.Message.AsNoTracking()
+            .Where(x => distinctIds.Contains(x.Id))
+            .ToListAsync(cancellationToken);
+
+        await LoadMessageContentsBatchAsync(messages, cancellationToken);
+        return messages;
+    }
+
+    public virtual async Task LoadMessageContentsBatchAsync(
+        IReadOnlyCollection<Message> messages,
+        CancellationToken cancellationToken = default)
+    {
+        if (messages == null || messages.Count == 0)
+        {
+            return;
+        }
+
+        var db = await GetDbContextAsync();
+
+        // 1. 批量无跟踪加载单层引用消息
+        var quoteIds = messages
+            .Where(x => x.QuoteMessageId.HasValue && x.QuoteMessage == null)
+            .Select(x => x.QuoteMessageId!.Value)
+            .Distinct()
+            .ToList();
+
+        var allTargetMessages = new List<Message>(messages);
+        if (quoteIds.Count > 0)
+        {
+            var existingMap = messages.ToDictionary(x => x.Id);
+            var missingQuoteIds = quoteIds.Where(id => !existingMap.ContainsKey(id)).ToList();
+            var fetchedQuotes = missingQuoteIds.Count == 0
+                ? []
+                : await db.Message.AsNoTracking()
+                    .Where(x => missingQuoteIds.Contains(x.Id))
+                    .ToListAsync(cancellationToken);
+
+            var quoteMap = new Dictionary<long, Message>(existingMap);
+            foreach (var q in fetchedQuotes)
+            {
+                quoteMap[q.Id] = q;
+                allTargetMessages.Add(q);
+            }
+
+            foreach (var msg in messages)
+            {
+                if (msg.QuoteMessageId.HasValue && msg.QuoteMessage == null &&
+                    quoteMap.TryGetValue(msg.QuoteMessageId.Value, out var qMsg))
+                {
+                    msg.AttachQuoteMessage(qMsg);
+                }
+            }
+        }
+
+        // 2. 仅按本批消息实际出现的 MessageType 分组批量投影内容表（避免 13 张子表笛卡尔积 Join 与 N+1 懒加载）
+        var messageById = allTargetMessages
+            .Where(x => !x.IsRollbacked && !x.RollbackTime.HasValue)
+            .GroupBy(x => x.Id)
+            .ToDictionary(g => g.Key, g => g.ToList());
+        if (messageById.Count == 0)
+        {
+            return;
+        }
+
+        var byType = allTargetMessages
+            .Where(x => !x.IsRollbacked && !x.RollbackTime.HasValue && x.MessageType != MessageTypes.Template)
+            .GroupBy(x => x.MessageType);
+
+        foreach (var group in byType)
+        {
+            var ids = group.Select(x => x.Id).Distinct().ToList();
+            if (ids.Count == 0) continue;
+
+            switch (group.Key)
+            {
+                case MessageTypes.Text:
+                    {
+                        var rows = await db.Set<TextContent>().AsNoTracking()
+                            .SelectMany(c => c.MessageList.Where(m => ids.Contains(m.Id)), (c, m) => new { MessageId = m.Id, Content = c })
+                            .ToListAsync(cancellationToken);
+                        foreach (var r in rows)
+                            foreach (var m in messageById[r.MessageId])
+                                if (m.TextContentList.Count == 0) m.TextContentList.Add(r.Content);
+                        break;
+                    }
+                case MessageTypes.Cmd:
+                    {
+                        var rows = await db.Set<CmdContent>().AsNoTracking()
+                            .SelectMany(c => c.MessageList.Where(m => ids.Contains(m.Id)), (c, m) => new { MessageId = m.Id, Content = c })
+                            .ToListAsync(cancellationToken);
+                        foreach (var r in rows)
+                            foreach (var m in messageById[r.MessageId])
+                                if (m.CmdContentList.Count == 0) m.CmdContentList.Add(r.Content);
+                        break;
+                    }
+                case MessageTypes.Image:
+                    {
+                        var rows = await db.Set<ImageContent>().AsNoTracking()
+                            .SelectMany(c => c.MessageList.Where(m => ids.Contains(m.Id)), (c, m) => new { MessageId = m.Id, Content = c })
+                            .ToListAsync(cancellationToken);
+                        foreach (var r in rows)
+                            foreach (var m in messageById[r.MessageId])
+                                if (m.ImageContentList.Count == 0) m.ImageContentList.Add(r.Content);
+                        break;
+                    }
+                case MessageTypes.Sound:
+                    {
+                        var rows = await db.Set<SoundContent>().AsNoTracking()
+                            .SelectMany(c => c.MessageList.Where(m => ids.Contains(m.Id)), (c, m) => new { MessageId = m.Id, Content = c })
+                            .ToListAsync(cancellationToken);
+                        foreach (var r in rows)
+                            foreach (var m in messageById[r.MessageId])
+                                if (m.SoundContentList.Count == 0) m.SoundContentList.Add(r.Content);
+                        break;
+                    }
+                case MessageTypes.Video:
+                    {
+                        var rows = await db.Set<VideoContent>().AsNoTracking()
+                            .SelectMany(c => c.MessageList.Where(m => ids.Contains(m.Id)), (c, m) => new { MessageId = m.Id, Content = c })
+                            .ToListAsync(cancellationToken);
+                        foreach (var r in rows)
+                            foreach (var m in messageById[r.MessageId])
+                                if (m.VideoContentList.Count == 0) m.VideoContentList.Add(r.Content);
+                        break;
+                    }
+                case MessageTypes.File:
+                    {
+                        var rows = await db.Set<FileContent>().AsNoTracking()
+                            .SelectMany(c => c.MessageList.Where(m => ids.Contains(m.Id)), (c, m) => new { MessageId = m.Id, Content = c })
+                            .ToListAsync(cancellationToken);
+                        foreach (var r in rows)
+                            foreach (var m in messageById[r.MessageId])
+                                if (m.FileContentList.Count == 0) m.FileContentList.Add(r.Content);
+                        break;
+                    }
+                case MessageTypes.Link:
+                    {
+                        var rows = await db.Set<LinkContent>().AsNoTracking()
+                            .SelectMany(c => c.MessageList.Where(m => ids.Contains(m.Id)), (c, m) => new { MessageId = m.Id, Content = c })
+                            .ToListAsync(cancellationToken);
+                        foreach (var r in rows)
+                            foreach (var m in messageById[r.MessageId])
+                                if (m.LinkContentList.Count == 0) m.LinkContentList.Add(r.Content);
+                        break;
+                    }
+                case MessageTypes.Html:
+                    {
+                        var rows = await db.Set<HtmlContent>().AsNoTracking()
+                            .SelectMany(c => c.MessageList.Where(m => ids.Contains(m.Id)), (c, m) => new { MessageId = m.Id, Content = c })
+                            .ToListAsync(cancellationToken);
+                        foreach (var r in rows)
+                            foreach (var m in messageById[r.MessageId])
+                                if (m.HtmlContentList.Count == 0) m.HtmlContentList.Add(r.Content);
+                        break;
+                    }
+                case MessageTypes.Article:
+                    {
+                        var rows = await db.Set<ArticleContent>().AsNoTracking()
+                            .SelectMany(c => c.MessageList.Where(m => ids.Contains(m.Id)), (c, m) => new { MessageId = m.Id, Content = c })
+                            .ToListAsync(cancellationToken);
+                        foreach (var r in rows)
+                            foreach (var m in messageById[r.MessageId])
+                                if (m.ArticleContentList.Count == 0) m.ArticleContentList.Add(r.Content);
+                        break;
+                    }
+                case MessageTypes.Location:
+                    {
+                        var rows = await db.Set<LocationContent>().AsNoTracking()
+                            .SelectMany(c => c.MessageList.Where(m => ids.Contains(m.Id)), (c, m) => new { MessageId = m.Id, Content = c })
+                            .ToListAsync(cancellationToken);
+                        foreach (var r in rows)
+                            foreach (var m in messageById[r.MessageId])
+                                if (m.LocationContentList.Count == 0) m.LocationContentList.Add(r.Content);
+                        break;
+                    }
+                case MessageTypes.Contacts:
+                    {
+                        var rows = await db.Set<ContactsContent>().AsNoTracking()
+                            .SelectMany(c => c.MessageList.Where(m => ids.Contains(m.Id)), (c, m) => new { MessageId = m.Id, Content = c })
+                            .ToListAsync(cancellationToken);
+                        foreach (var r in rows)
+                            foreach (var m in messageById[r.MessageId])
+                                if (m.ContactsContentList.Count == 0) m.ContactsContentList.Add(r.Content);
+                        break;
+                    }
+                case MessageTypes.RedEnvelope:
+                    {
+                        var rows = await db.Set<RedEnvelopeContent>().AsNoTracking()
+                            .SelectMany(c => c.MessageList.Where(m => ids.Contains(m.Id)), (c, m) => new { MessageId = m.Id, Content = c })
+                            .ToListAsync(cancellationToken);
+                        foreach (var r in rows)
+                            foreach (var m in messageById[r.MessageId])
+                                if (m.RedEnvelopeContentList.Count == 0) m.RedEnvelopeContentList.Add(r.Content);
+                        break;
+                    }
+                case MessageTypes.History:
+                    {
+                        var rows = await db.Set<HistoryContent>().AsNoTracking()
+                            .SelectMany(c => c.MessageList.Where(m => ids.Contains(m.Id)), (c, m) => new { MessageId = m.Id, Content = c })
+                            .ToListAsync(cancellationToken);
+                        foreach (var r in rows)
+                            foreach (var m in messageById[r.MessageId])
+                                if (m.HistoryContentList.Count == 0) m.HistoryContentList.Add(r.Content);
+                        break;
+                    }
+            }
+        }
     }
 
 

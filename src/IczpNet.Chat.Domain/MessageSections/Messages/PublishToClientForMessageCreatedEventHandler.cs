@@ -71,7 +71,7 @@ public class PublishToClientForMessageCreatedEventHandler(
 
         messageDto.Content ??= message.GetContentDto();
 
-        await MessageCache.SetAsync(new MessageCacheKey(messageDto.Id), messageDto);
+        await MessageCache.SetAsync(new MessageCacheKey(messageDto.Id), messageDto.ToSlimRedisCopy());
 
         var eventData = new SendMessageToClientDistributedEto()
         {

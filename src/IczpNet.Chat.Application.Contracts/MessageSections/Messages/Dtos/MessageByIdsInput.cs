@@ -20,4 +20,9 @@ public class MessageByIdsInput
     public List<long> MessageIds { get; set; }
 
     public List<MessageByIdsScopeRequest> Requests { get; set; }
+
+    /// <summary>
+    /// 是否在 Senders 字典中去重返回发送人详情，并置空每条消息体内的重复 SenderSessionUnit
+    /// </summary>
+    public bool CompactSenders { get; set; }
 }

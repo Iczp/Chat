@@ -78,4 +78,9 @@ public class MessageGetListInput : GetListInput
     /// 允许的扩展名列表
     /// </summary>
     public virtual List<string> Extensions { get; set; }
+
+    /// <summary>
+    /// 是否在 extra.senders 中以去重字典返回发送人详情，并置空每条消息内的重复 SenderSessionUnit
+    /// </summary>
+    public virtual bool CompactSenders { get; set; }
 }

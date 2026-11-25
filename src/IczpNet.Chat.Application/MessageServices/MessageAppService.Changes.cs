@@ -127,7 +127,9 @@ public partial class MessageAppService
             }
         }
 
-        return new MessageByIdsDto(results);
+        return new MessageByIdsDto(
+            results,
+            input.CompactSenders ? ExtractCompactSenders(results.Where(x => x.Message != null).Select(x => x.Message)) : null);
     }
 
     private static List<MessageByIdsScopeRequest> ResolveByIdsRequests(MessageByIdsInput input)
@@ -199,6 +201,14 @@ public partial class MessageAppService
             (await MessageManager.GetManyCacheAsync(visibleIds, hideErrors: true, token: token))
             .Where(x => x.Value != null).ToDictionary(x => x.Key.MessageId, x => x.Value);
         var domainMapper = LazyServiceProvider.LazyGetRequiredService<IObjectMapper<ChatDomainModule>>();
+        var uncachedMessages = messages
+            .Where(m => !m.IsRollbacked && !m.RollbackTime.HasValue &&
+                (!cached.TryGetValue(m.Id, out var c) || c.SyncVersion != m.SyncVersion))
+            .ToList();
+        if (uncachedMessages.Count > 0)
+        {
+            await Repository.LoadMessageContentsBatchAsync(uncachedMessages, token);
+        }
         var authoritative = new List<MessageCacheItem>(messages.Count);
         foreach (var message in messages)
         {

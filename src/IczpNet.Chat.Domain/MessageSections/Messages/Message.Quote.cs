@@ -38,6 +38,8 @@ public partial class Message
     [ForeignKey(nameof(QuoteMessageId))]
     public virtual Message QuoteMessage { get; protected set; }
 
+    public virtual void AttachQuoteMessage(Message quoteMessage) => QuoteMessage = quoteMessage;
+
     /// <summary>
     /// 被引用列表
     /// </summary>

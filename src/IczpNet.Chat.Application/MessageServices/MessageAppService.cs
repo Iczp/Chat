@@ -457,13 +457,22 @@ public partial class MessageAppService(
             ? idQueryable.Count()
             : skip + ids.Count + (hasMore ? 1 : 0);
 
-        var result = new ExtraPagedResultDto<MessageOwnerDto>(totalCount, items, new
-        {
-            NextCursorId = nextCursorId,
-        });
+        var tempResult = new PagedResultDto<MessageOwnerDto>(totalCount, items);
+        await FillStatisticsAsync(sessionUnitId, tempResult);
+        await FillFriendshipAsync(entity.OwnerId, tempResult);
 
-        await FillStatisticsAsync(sessionUnitId, result);
-        await FillFriendshipAsync(entity.OwnerId, result);
+        object extra = input.CompactSenders
+            ? new
+            {
+                NextCursorId = nextCursorId,
+                Senders = ExtractCompactOwnerSenders(items)
+            }
+            : new
+            {
+                NextCursorId = nextCursorId,
+            };
+
+        var result = new ExtraPagedResultDto<MessageOwnerDto>(totalCount, items, extra);
         //await FillSettingsAsync(result);
 
         return result;
@@ -594,6 +603,27 @@ public partial class MessageAppService(
 
         return new ExtraPagedResultDto<MessageFastDto>(totalCount, items, extra);
 
+    }
+
+    private static Dictionary<string, IczpNet.Chat.SessionUnits.Dtos.SessionUnitSenderDto> ExtractCompactOwnerSenders(IEnumerable<MessageOwnerDto> items)
+    {
+        var senders = new Dictionary<string, IczpNet.Chat.SessionUnits.Dtos.SessionUnitSenderDto>();
+        foreach (var item in items)
+        {
+            if (item.SenderSessionUnit != null)
+            {
+                var key = item.SenderSessionUnit.Id.ToString();
+                senders.TryAdd(key, item.SenderSessionUnit);
+                item.SenderSessionUnit = null;
+            }
+            if (item.QuoteMessage?.SenderSessionUnit != null)
+            {
+                var quoteKey = item.QuoteMessage.SenderSessionUnit.Id.ToString();
+                senders.TryAdd(quoteKey, item.QuoteMessage.SenderSessionUnit);
+                item.QuoteMessage.SenderSessionUnit = null;
+            }
+        }
+        return senders;
     }
 
     private static Dictionary<string, IczpNet.Chat.SessionUnits.Dtos.SessionUnitMemberSenderDto> ExtractCompactSenders(IEnumerable<MessageFastDto> items)

@@ -91,6 +91,20 @@ public interface IMessageRepository : IRepository<Message, long>
         DateTime? now = null,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// 缓存未命中时无跟踪批量回源消息主表、引用消息及对应内容表，避免 EF Core 懒加载代理引发 N+1 查询与全量多表笛卡尔积。
+    /// </summary>
+    Task<List<Message>> GetCacheMissMessagesAsync(
+        IReadOnlyCollection<long> messageIds,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 按批次内实际出现的 MessageType 分组，无跟踪批量填充消息内容子表（及单层引用消息内容）。
+    /// </summary>
+    Task LoadMessageContentsBatchAsync(
+        IReadOnlyCollection<Message> messages,
+        CancellationToken cancellationToken = default);
+
     //Task<int> IncrementRecorderAsync(List<long> messageIdList);
 
 }
