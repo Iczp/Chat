@@ -272,21 +272,31 @@ public class SessionUnitSettingManager(
     /// <inheritdoc />
     public virtual async Task<SessionUnitSetting> KillAsync(Guid sessionUnitId, KillTypes? killType = null, Guid? killerId = null)
     {
-        if (killerId.HasValue && killType != KillTypes.OwnerQuit && killType != KillTypes.SystemKill)
+        var unitRepo = LazyServiceProvider.LazyGetRequiredService<ISessionUnitRepository>();
+        var unitQuery = (await unitRepo.GetQueryableAsync())
+            .Include(x => x.Setting)
+            .Include(x => x.SessionUnitRoleList).ThenInclude(r => r.SessionRole);
+        var targetUnit = await AsyncExecuter.FirstOrDefaultAsync(unitQuery, x => x.Id == sessionUnitId);
+
+        if (killType != KillTypes.OwnerQuit && killType != KillTypes.SystemKill)
         {
-            var targetSetting = await GetAsync(sessionUnitId);
-            Assert.If(targetSetting.IsCreator, "不能移除群主。");
-            var killerUnitRepo = LazyServiceProvider.LazyGetRequiredService<ISessionUnitRepository>();
-            var killer = await killerUnitRepo.FindAsync(killerId.Value);
-            if (killer != null && !killer.Setting.IsCreator)
+            Assert.If(!killerId.HasValue, "缺少操作人身份，禁止移除群成员。");
+            var killer = await AsyncExecuter.FirstOrDefaultAsync(unitQuery, x => x.Id == killerId.Value);
+            Assert.If(killer == null || killer.Setting == null || !killer.Setting.IsEnabled || killer.Setting.IsKilled, "操作人身份无效。");
+            Assert.If(killer.OwnerId == killer.DestinationId, "系统单元无权移除群成员。");
+            if (targetUnit != null)
             {
-                Assert.If(targetSetting.IsAdmin, "管理员不能移除其他管理员。");
+                Assert.If(killer.SessionId != targetUnit.SessionId, "非同一群聊无权操作。");
+                Assert.If(targetUnit.Setting?.IsCreator == true, "不能移除群主。");
+                if (!killer.Setting.IsCreator)
+                {
+                    Assert.If(targetUnit.IsAdmin, "管理员不能移除其他管理员。");
+                }
             }
         }
 
         var setting = await SetEntityAsync(sessionUnitId, x => x.Kill(Clock.Now, killType, killerId));
-        var unitRepo = LazyServiceProvider.LazyGetRequiredService<ISessionUnitRepository>();
-        var unit = await unitRepo.FindAsync(sessionUnitId);
+        var unit = targetUnit ?? await unitRepo.FindAsync(sessionUnitId);
         if (unit != null)
         {
             var disposalReason = killType switch
@@ -380,12 +390,15 @@ public class SessionUnitSettingManager(
     /// <inheritdoc />
     public virtual async Task<DateTime?> SetMuteExpireTimeAsync(Guid muterSessionUnitId, DateTime? muteExpireTime, SessionUnit setterSessionUnit, bool isSendMessage)
     {
-        var setting = await GetAsync(muterSessionUnitId);
-
-        var muterSessionUnit = setting.SessionUnit;
+        var unitQuery = (await SessionUnitRepository.GetQueryableAsync())
+            .Include(x => x.Setting)
+            .Include(x => x.SessionUnitRoleList).ThenInclude(r => r.SessionRole);
+        var muterSessionUnit = await AsyncExecuter.FirstOrDefaultAsync(unitQuery, x => x.Id == muterSessionUnitId);
+        var setting = muterSessionUnit?.Setting ?? await GetAsync(muterSessionUnitId);
+        muterSessionUnit ??= setting.SessionUnit;
 
         Assert.If(setting.IsCreator, $"Creator can't be mute.");
-        Assert.If(setting.IsAdmin && setterSessionUnit != null && !setterSessionUnit.Setting.IsCreator, "管理员不能禁言其他管理员。");
+        Assert.If((muterSessionUnit?.IsAdmin == true) && (setterSessionUnit == null || !setterSessionUnit.Setting.IsCreator), "管理员不能禁言其他管理员。");
 
         var allowList = new List<ChatObjectTypeEnums?> { ChatObjectTypeEnums.Room, ChatObjectTypeEnums.Square, ChatObjectTypeEnums.Official, ChatObjectTypeEnums.Subscription, };
 

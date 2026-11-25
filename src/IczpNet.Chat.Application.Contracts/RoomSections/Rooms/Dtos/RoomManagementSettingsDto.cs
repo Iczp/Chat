@@ -34,4 +34,9 @@ public class RoomManagementSettingsDto
     public virtual bool CanToggleAllMuted { get; set; }
     public virtual bool CanManageJoinPolicies { get; set; }
     public virtual bool CanTransferOrDissolve { get; set; }
+    public virtual RoomOwnershipState OwnershipState { get; set; }
+    public virtual Guid? CreatorSessionUnitId { get; set; }
+    public virtual RoomOwnershipRecoveryAction OwnershipRecoveryAction { get; set; }
+    public virtual string RecoveryUnavailableReason { get; set; }
+    public virtual long OwnershipVersion { get; set; }
 }

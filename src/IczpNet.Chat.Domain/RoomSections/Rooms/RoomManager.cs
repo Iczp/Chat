@@ -599,34 +599,39 @@ public class RoomManager(
             throw new UserFriendlyException("群主变更操作繁忙，请稍后重试");
         }
 
-        // 锁内重读状态与群启用状态
-        sessionUnit = await AsyncExecuter.FirstOrDefaultAsync(
-            queryable.Include(x => x.Setting).Include(x => x.Destination),
-            x => x.Id == sessionUnitId);
-        Assert.If(sessionUnit?.Setting == null || !sessionUnit.Setting.IsEnabled || sessionUnit.Setting.IsKilled || !sessionUnit.Setting.IsCreator, "当前成员已无群主权限");
-
-        var sessionRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
-        var session = await sessionRepo.GetAsync(sessionId);
-        Assert.If(!session.IsEnabled, "群聊已解散，无法转让群主");
-
-        var targetSessionUnit = await AsyncExecuter.FirstOrDefaultAsync(
-            queryable.Include(x => x.Setting),
-            x => x.Id == targetSessionUnitId);
-        Assert.NotNull(targetSessionUnit, $"Target SessionUnit not found: {targetSessionUnitId}");
-        Assert.If(sessionUnit.SessionId != targetSessionUnit.SessionId, "Not in same session");
-        Assert.If(targetSessionUnit.Setting == null || !targetSessionUnit.Setting.IsEnabled || targetSessionUnit.Setting.IsKilled, "目标成员已退出或被禁用，无法成为群主");
-        Assert.If(targetSessionUnit.OwnerId == targetSessionUnit.DestinationId, "系统会话单元不能成为群主");
-
-        sessionUnit.Setting.SetIsCreator(false);
-        if (sessionUnit.OwnerId != sessionUnit.DestinationId)
+        SessionUnit targetSessionUnit = null;
+        using (var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true))
         {
-            sessionUnit.Setting.SetIsStatic(false);
+            var freshQuery = (await SessionUnitRepository.GetQueryableAsync())
+                .Include(x => x.Setting)
+                .Include(x => x.Destination);
+
+            sessionUnit = await AsyncExecuter.FirstOrDefaultAsync(freshQuery, x => x.Id == sessionUnitId);
+            Assert.If(sessionUnit?.Setting == null || !sessionUnit.Setting.IsEnabled || sessionUnit.Setting.IsKilled || !sessionUnit.Setting.IsCreator, "当前成员已无群主权限");
+            Assert.If(sessionUnit.OwnerId == sessionUnit.DestinationId, "系统会话单元不能作为群主");
+
+            var sessionRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
+            var session = await sessionRepo.GetAsync(sessionId);
+            Assert.If(!session.IsEnabled, "群聊已解散，无法转让群主");
+
+            targetSessionUnit = await AsyncExecuter.FirstOrDefaultAsync(freshQuery, x => x.Id == targetSessionUnitId);
+            Assert.NotNull(targetSessionUnit, $"Target SessionUnit not found: {targetSessionUnitId}");
+            Assert.If(sessionUnit.SessionId != targetSessionUnit.SessionId, "Not in same session");
+            Assert.If(targetSessionUnit.Setting == null || !targetSessionUnit.Setting.IsEnabled || targetSessionUnit.Setting.IsKilled, "目标成员已退出或被禁用，无法成为群主");
+            Assert.If(targetSessionUnit.OwnerId == targetSessionUnit.DestinationId, "系统会话单元不能成为群主");
+
+            sessionUnit.Setting.SetIsCreator(false);
+            if (sessionUnit.OwnerId != sessionUnit.DestinationId)
+            {
+                sessionUnit.Setting.SetIsStatic(false);
+            }
+
+            targetSessionUnit.Setting.SetIsCreator(true);
+
+            await SessionUnitRepository.UpdateAsync(sessionUnit, autoSave: true);
+            await SessionUnitRepository.UpdateAsync(targetSessionUnit, autoSave: true);
+            await uow.CompleteAsync();
         }
-
-        targetSessionUnit.Setting.SetIsCreator(true);
-
-        await SessionUnitRepository.UpdateAsync(sessionUnit, autoSave: true);
-        await SessionUnitRepository.UpdateAsync(targetSessionUnit, autoSave: true);
 
         async Task InvalidateCachesAsync()
         {
@@ -675,7 +680,8 @@ public class RoomManager(
             x => x.Id == sessionUnitId);
 
         Assert.NotNull(sessionUnit, $"SessionUnit not found: {sessionUnitId}");
-        Assert.If(!sessionUnit.SessionId.HasValue || sessionUnit.DestinationObjectType != ChatObjectTypeEnums.Room, "仅群聊支持认领群主");
+        Assert.If(!sessionUnit.SessionId.HasValue || sessionUnit.DestinationObjectType != ChatObjectTypeEnums.Room, "仅群聊支持认领或接任群主");
+        Assert.If(sessionUnit.OwnerId == sessionUnit.DestinationId, "群系统消息单元不能成为群主");
         Assert.If(sessionUnit.Setting == null || !sessionUnit.Setting.IsEnabled || sessionUnit.Setting.IsKilled, "当前成员状态无效，无法成为群主");
 
         var sessionId = sessionUnit.SessionId!.Value;
@@ -683,39 +689,78 @@ public class RoomManager(
         await using var lockHandle = await distributedLock.TryAcquireAsync($"Chat:Room:Ownership:{sessionId}", TimeSpan.FromSeconds(10));
         if (lockHandle == null)
         {
-            throw new UserFriendlyException("群主认领操作繁忙，请稍后重试");
+            throw new UserFriendlyException("群主恢复操作繁忙，请稍后重试");
         }
 
-        var sessionRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
-        var session = await sessionRepo.GetAsync(sessionId);
-        Assert.If(!session.IsEnabled, "群聊已解散，无法认领群主");
-
-        sessionUnit = await AsyncExecuter.FirstOrDefaultAsync(
-            queryable
-                .Include(x => x.Setting)
-                .Include(x => x.Destination),
-            x => x.Id == sessionUnitId);
-        Assert.If(sessionUnit?.Setting == null || !sessionUnit.Setting.IsEnabled || sessionUnit.Setting.IsKilled, "当前成员状态无效，无法成为群主");
-
-        var hasCreatorOrAdmin = await AsyncExecuter.AnyAsync(
-            queryable.Where(x =>
-                x.SessionId == sessionId &&
-                x.Setting != null &&
-                x.Setting.IsEnabled &&
-                !x.Setting.IsKilled &&
-                (x.Setting.IsCreator ||
-                 x.SessionUnitRoleList.Any(r =>
-                     r.SessionRole != null &&
-                     (r.SessionRole.Name == "管理员" || r.SessionRole.Name == "Admin")))));
-
-        if (hasCreatorOrAdmin)
+        bool alreadySoleCreator = false;
+        using (var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true))
         {
-            throw new UserFriendlyException("当前群已存在群主或管理员，无法认领群主");
+            var sessionRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
+            var session = await sessionRepo.GetAsync(sessionId);
+            Assert.If(!session.IsEnabled, "群聊已解散，无法接任或认领群主");
+
+            var freshQuery = (await SessionUnitRepository.GetQueryableAsync())
+                .Include(x => x.Setting)
+                .Include(x => x.Destination)
+                .Include(x => x.SessionUnitRoleList).ThenInclude(r => r.SessionRole);
+
+            var allUnits = await AsyncExecuter.ToListAsync(freshQuery.Where(x => x.SessionId == sessionId));
+            var actor = allUnits.FirstOrDefault(x => x.Id == sessionUnitId);
+            Assert.If(actor?.Setting == null || !actor.Setting.IsEnabled || actor.Setting.IsKilled, "当前成员状态无效，无法成为群主");
+            Assert.If(actor.OwnerId == actor.DestinationId, "群系统消息单元不能成为群主");
+
+            var activeRealMembers = allUnits
+                .Where(x => x.OwnerId != x.DestinationId && x.Setting != null && x.Setting.IsEnabled && !x.Setting.IsKilled)
+                .ToList();
+
+            var validCreators = activeRealMembers.Where(x => x.Setting.IsCreator).ToList();
+            if (validCreators.Count > 1)
+            {
+                throw new UserFriendlyException("群治理状态异常：存在多个有效群主，请联系平台处理。");
+            }
+
+            if (validCreators.Count == 1)
+            {
+                if (validCreators[0].Id == sessionUnitId)
+                {
+                    alreadySoleCreator = true;
+                    await uow.CompleteAsync();
+                }
+                else
+                {
+                    throw new UserFriendlyException("当前群已存在群主，无法接任或认领。");
+                }
+            }
+            else
+            {
+                // 清理系统单元或已失效/退群成员上的历史脏 IsCreator 标记
+                var staleCreators = allUnits
+                    .Where(x => x.Setting != null && x.Setting.IsCreator && (x.OwnerId == x.DestinationId || !x.Setting.IsEnabled || x.Setting.IsKilled))
+                    .ToList();
+                foreach (var stale in staleCreators)
+                {
+                    stale.Setting.SetIsCreator(false);
+                    await SessionUnitRepository.UpdateAsync(stale, autoSave: false);
+                }
+
+                var validAdmins = activeRealMembers.Where(x => x.IsAdmin).ToList();
+                if (validAdmins.Count > 0 && !actor.IsAdmin)
+                {
+                    throw new UserFriendlyException("当前群存在管理员，请等待管理员接任群主。");
+                }
+
+                actor.Setting.SetIsCreator(true);
+                actor.SetTicks(Clock.Now.Ticks);
+                await SessionUnitRepository.UpdateAsync(actor, autoSave: true);
+                sessionUnit = actor;
+                await uow.CompleteAsync();
+            }
         }
 
-        sessionUnit.Setting.SetIsCreator(true);
-        sessionUnit.SetTicks(Clock.Now.Ticks);
-        await SessionUnitRepository.UpdateAsync(sessionUnit, autoSave: true);
+        if (alreadySoleCreator)
+        {
+            return;
+        }
 
         async Task InvalidateCachesAsync()
         {

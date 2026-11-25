@@ -21,6 +21,8 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Authorization;
+using Volo.Abp.DistributedLocking;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 
@@ -157,11 +159,35 @@ public class SessionOrganiztionBySessionUnitAppService
         }
     }
 
+    protected virtual async Task EnsureOperatorAuthorizedAsync(SessionUnit operatorUnit)
+    {
+        Assert.NotNull(operatorUnit, "操作成员身份不存在");
+        Assert.If(operatorUnit.OwnerId == operatorUnit.DestinationId, "系统会话单元无权执行组织与授权管理操作");
+        Assert.If(operatorUnit.Setting == null || !operatorUnit.Setting.IsEnabled || operatorUnit.Setting.IsKilled, "当前成员身份已失效");
+        Assert.If(!operatorUnit.SessionId.HasValue, "无效的群会话");
+
+        var sessionRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<Sessions.Session, Guid>>();
+        var sessionEnabled = await AsyncExecuter.AnyAsync(
+            (await sessionRepo.GetQueryableAsync()).Where(x => x.Id == operatorUnit.SessionId.Value && x.IsEnabled));
+        Assert.If(!sessionEnabled, "群会话不存在或已解散");
+
+        if (CurrentUser.Id.HasValue)
+        {
+            var chatObjectManager = LazyServiceProvider.LazyGetRequiredService<ChatObjects.IChatObjectManager>();
+            var ownedIds = await chatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+            if (!ownedIds.Contains(operatorUnit.OwnerId))
+            {
+                throw new AbpAuthorizationException("无权使用该群成员身份操作");
+            }
+        }
+    }
+
     [HttpPost("/api/chat/session-organiztion-by-session-unit/batch-set-members")]
-    [UnitOfWork(isTransactional: true)]
+    [UnitOfWork(IsDisabled = true)]
     public virtual async Task<BatchSetMemberOrganizationsResultDto> BatchSetMembersAsync(BatchSetMemberOrganizationsInput input)
     {
         var operatorUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
+        await EnsureOperatorAuthorizedAsync(operatorUnit);
         await CheckPolicyAsync(UpdatePolicyName, operatorUnit);
 
         var memberIds = (input.MemberSessionUnitIdList ?? new List<Guid>()).Distinct().ToList();
@@ -199,15 +225,28 @@ public class SessionOrganiztionBySessionUnitAppService
                 break;
         }
 
+        var distributedLock = LazyServiceProvider.LazyGetRequiredService<IAbpDistributedLock>();
+        await using var lockHandle = await distributedLock.TryAcquireAsync($"Chat:Room:OrgAuth:{operatorUnit.SessionId}", TimeSpan.FromSeconds(10));
+        if (lockHandle == null)
+        {
+            throw new UserFriendlyException("组织成员调整操作繁忙，请稍后重试。");
+        }
+
+        using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
+
         var sessionUnitRepo = LazyServiceProvider.LazyGetRequiredService<ISessionUnitRepository>();
         var targetUnits = await AsyncExecuter.ToListAsync(
             (await sessionUnitRepo.GetQueryableAsync())
                 .Include(x => x.Setting)
-                .Where(x => memberIds.Contains(x.Id) && x.SessionId == operatorUnit.SessionId && x.Setting.IsEnabled && !x.Setting.IsKilled));
+                .Where(x => memberIds.Contains(x.Id)
+                    && x.SessionId == operatorUnit.SessionId
+                    && x.OwnerId != x.DestinationId
+                    && x.Setting.IsEnabled
+                    && !x.Setting.IsKilled));
 
         if (targetUnits.Count != memberIds.Count)
         {
-            throw new UserFriendlyException("部分目标成员不存在、已退群或不属于当前群聊。");
+            throw new UserFriendlyException("部分目标成员不存在、已退群、为系统单元或不属于当前群聊。");
         }
 
         if (orgIds.Count > 0)
@@ -301,6 +340,8 @@ public class SessionOrganiztionBySessionUnitAppService
             await unitOrgRepo.InsertManyAsync(toInsert, autoSave: true);
         }
 
+        await uow.CompleteAsync();
+
         return new BatchSetMemberOrganizationsResultDto
         {
             AffectedMemberCount = targetUnits.Count,
@@ -312,6 +353,7 @@ public class SessionOrganiztionBySessionUnitAppService
     public virtual async Task<List<SessionRoleSimpleDto>> GetOrganizationRolesAsync(Guid sessionUnitId, long organizationId)
     {
         var operatorUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+        await EnsureOperatorAuthorizedAsync(operatorUnit);
         await CheckPolicyAsync(GetPolicyName, operatorUnit);
 
         var org = await Repository.GetAsync(organizationId);
@@ -326,14 +368,24 @@ public class SessionOrganiztionBySessionUnitAppService
     }
 
     [HttpPost("/api/chat/session-organiztion-by-session-unit/set-organization-roles")]
-    [UnitOfWork(isTransactional: true)]
+    [UnitOfWork(IsDisabled = true)]
     public virtual async Task<List<SessionRoleSimpleDto>> SetOrganizationRolesAsync(SetOrganizationRolesInput input)
     {
         var operatorUnit = await SessionUnitManager.GetAsync(input.SessionUnitId);
+        await EnsureOperatorAuthorizedAsync(operatorUnit);
         if (!operatorUnit.Setting.IsCreator)
         {
             throw new UserFriendlyException("仅群主可配置组织绑定的角色。");
         }
+
+        var distributedLock = LazyServiceProvider.LazyGetRequiredService<IAbpDistributedLock>();
+        await using var lockHandle = await distributedLock.TryAcquireAsync($"Chat:Room:OrgAuth:{operatorUnit.SessionId}", TimeSpan.FromSeconds(10));
+        if (lockHandle == null)
+        {
+            throw new UserFriendlyException("组织角色配置操作繁忙，请稍后重试。");
+        }
+
+        using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
 
         var org = await Repository.GetAsync(input.OrganizationId);
         Assert.If(org.SessionId != operatorUnit.SessionId, "Not in same session");
@@ -373,6 +425,8 @@ public class SessionOrganiztionBySessionUnitAppService
             await orgRoleRepo.InsertManyAsync(links, autoSave: true);
         }
 
+        await uow.CompleteAsync();
+
         return roles.Select(r => new SessionRoleSimpleDto { Id = r.Id, Name = r.Name }).ToList();
     }
 
@@ -380,6 +434,7 @@ public class SessionOrganiztionBySessionUnitAppService
     public virtual async Task<MemberPermissionSourcesDto> GetMemberPermissionSourcesAsync(Guid sessionUnitId, Guid targetSessionUnitId)
     {
         var operatorUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+        await EnsureOperatorAuthorizedAsync(operatorUnit);
         if (!operatorUnit.Setting.IsCreator && !operatorUnit.IsAdmin)
         {
             await CheckPolicyAsync(SessionPermissionDefinitionConsts.SessionRolePermission.Default, operatorUnit);

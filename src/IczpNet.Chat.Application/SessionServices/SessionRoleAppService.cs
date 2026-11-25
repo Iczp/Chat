@@ -125,7 +125,7 @@ public class SessionRoleAppService
         {
             return;
         }
-        if (operatorUnit.Setting?.IsCreator == true || operatorUnit.IsAdmin)
+        if (operatorUnit.Setting?.IsCreator == true)
         {
             return;
         }

@@ -79,6 +79,23 @@ public class SessionUnitDisposalAppService(
             }
         }
 
+        if (unit.Setting?.IsCreator == true && unit.OwnerId != unit.DestinationId && unit.SessionId.HasValue)
+        {
+            var unitRepoCheck = LazyServiceProvider.LazyGetRequiredService<ISessionUnitRepository>();
+            var hasOtherRealMember = await AsyncExecuter.AnyAsync(
+                (await unitRepoCheck.GetQueryableAsync()).Where(x =>
+                    x.SessionId == unit.SessionId.Value
+                    && x.Id != unit.Id
+                    && x.OwnerId != x.DestinationId
+                    && x.Setting != null
+                    && x.Setting.IsEnabled
+                    && !x.Setting.IsKilled));
+            if (hasOtherRealMember)
+            {
+                throw new Volo.Abp.UserFriendlyException("群主退群前请先转让群主，或先解散群聊。");
+            }
+        }
+
         var settingManager = LazyServiceProvider.LazyGetRequiredService<ISessionUnitSettingManager>();
         await settingManager.KillAsync(sessionUnitId, KillTypes.OwnerQuit);
 
@@ -117,6 +134,23 @@ public class SessionUnitDisposalAppService(
             if (!ownedIds.Contains(unit.OwnerId))
             {
                 throw new Volo.Abp.Authorization.AbpAuthorizationException("无权操作该会话单元");
+            }
+        }
+
+        if (unit.Setting?.IsCreator == true && unit.OwnerId != unit.DestinationId && unit.SessionId.HasValue)
+        {
+            var unitRepoCheck = LazyServiceProvider.LazyGetRequiredService<ISessionUnitRepository>();
+            var hasOtherRealMember = await AsyncExecuter.AnyAsync(
+                (await unitRepoCheck.GetQueryableAsync()).Where(x =>
+                    x.SessionId == unit.SessionId.Value
+                    && x.Id != unit.Id
+                    && x.OwnerId != x.DestinationId
+                    && x.Setting != null
+                    && x.Setting.IsEnabled
+                    && !x.Setting.IsKilled));
+            if (hasOtherRealMember)
+            {
+                throw new Volo.Abp.UserFriendlyException("群主退群前请先转让群主，或先解散群聊。");
             }
         }
 

@@ -172,6 +172,7 @@ public class RoomAppService(IRoomManager roomManager,
     /// 转让群主
     /// </summary>
     [HttpPost]
+    [Volo.Abp.Uow.UnitOfWork(IsDisabled = true)]
     public virtual async Task TransferCreatorAsync(Guid sessionUnitId, Guid targetSessionUnitId)
     {
         var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
@@ -180,9 +181,10 @@ public class RoomAppService(IRoomManager roomManager,
     }
 
     /// <summary>
-    /// 当群内无群主且无管理员时，当前有效群成员认领成为群主
+    /// 当群内无群主时，管理员优先接任；无管理员时，有效成员认领成为群主
     /// </summary>
     [HttpPost]
+    [Volo.Abp.Uow.UnitOfWork(IsDisabled = true)]
     public virtual async Task<RoomManagementSettingsDto> ClaimCreatorAsync(Guid sessionUnitId)
     {
         var sessionUnit = await GetDetailedSessionUnitAsync(sessionUnitId);
@@ -220,6 +222,7 @@ public class RoomAppService(IRoomManager roomManager,
         await EnsureCurrentUserOwnsUnitAsync(sessionUnit);
 
         Assert.If(!sessionUnit.SessionId.HasValue || !sessionUnit.DestinationId.HasValue, "无效的群会话单元");
+        Assert.If(sessionUnit.OwnerId == sessionUnit.DestinationId, "群系统消息单元不可访问群管理设置");
 
         var sessionRepository = LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
         var session = await sessionRepository.GetAsync(sessionUnit.SessionId.Value);
@@ -227,28 +230,27 @@ public class RoomAppService(IRoomManager roomManager,
 
         var isCreator = sessionUnit.Setting?.IsCreator == true;
         var isAdmin = sessionUnit.IsAdmin;
-        var isAdminOrCreator = isCreator || isAdmin;
 
-        var canManageNameOrDescription = isAdminOrCreator || await IsAnyPermissionGrantedAsync(
+        var canManageNameOrDescription = await IsAnyPermissionGrantedAsync(
             sessionUnit,
             SessionPermissionDefinitionConsts.ChatObjectPermission.UpdateName,
             SessionPermissionDefinitionConsts.ChatObjectPermission.UpdatePortrait);
 
-        var canToggleAllMuted = isAdminOrCreator || await IsAnyPermissionGrantedAsync(
+        var canToggleAllMuted = await IsAnyPermissionGrantedAsync(
             sessionUnit,
             SessionPermissionDefinitionConsts.ChatObjectPermission.ToggleAllInputEnabled);
 
-        var canManageJoinPolicies = isAdminOrCreator || await IsAnyPermissionGrantedAsync(
+        var canManageJoinPolicies = await IsAnyPermissionGrantedAsync(
             sessionUnit,
             SessionPermissionDefinitionConsts.ChatObjectPermission.VerificationMethod);
 
         var canManageSettings = canManageNameOrDescription || canToggleAllMuted || canManageJoinPolicies;
 
-        var canManageJoinRequests = isAdminOrCreator || await IsAnyPermissionGrantedAsync(
+        var canManageJoinRequests = await IsAnyPermissionGrantedAsync(
             sessionUnit,
             SessionPermissionDefinitionConsts.SessionRequestPermission.Handle);
 
-        var canManageAnnouncements = isAdminOrCreator || await IsAnyPermissionGrantedAsync(
+        var canManageAnnouncements = await IsAnyPermissionGrantedAsync(
             sessionUnit,
             SessionPermissionDefinitionConsts.AnnouncementPermission.Create,
             SessionPermissionDefinitionConsts.AnnouncementPermission.Publish,
@@ -263,17 +265,17 @@ public class RoomAppService(IRoomManager roomManager,
             SessionPermissionDefinitionConsts.AnnouncementPermission.Remind,
             SessionPermissionDefinitionConsts.AnnouncementPermission.ViewStat);
 
-        var canApproveAnnouncements = isAdminOrCreator || await IsAnyPermissionGrantedAsync(
+        var canApproveAnnouncements = await IsAnyPermissionGrantedAsync(
             sessionUnit,
             SessionPermissionDefinitionConsts.AnnouncementPermission.Approve);
 
-        var canManageMembers = isAdminOrCreator || await IsAnyPermissionGrantedAsync(
+        var canManageMembers = await IsAnyPermissionGrantedAsync(
             sessionUnit,
             SessionPermissionDefinitionConsts.SessionUnitPermissions.RemoveMember,
             SessionPermissionDefinitionConsts.SessionUnitPermissions.SetMuteExpireTime,
             SessionPermissionDefinitionConsts.SessionUnitPermissions.ToggleInputEnabled);
 
-        var canManageOrgs = isAdminOrCreator || await IsAnyPermissionGrantedAsync(
+        var canManageOrgs = await IsAnyPermissionGrantedAsync(
             sessionUnit,
             SessionPermissionDefinitionConsts.SessionOrganizationPermission.Create,
             SessionPermissionDefinitionConsts.SessionOrganizationPermission.Update,
@@ -293,19 +295,74 @@ public class RoomAppService(IRoomManager roomManager,
         var canTransferOrDissolve = isCreator;
         var canSetAdmin = isCreator;
 
-        var activeUnitQuery = (await SessionUnitRepository.GetQueryableAsync())
+        // 仅统计真实业务成员（排除 OwnerId == DestinationId 的群系统消息单元）
+        var activeRealUnitQuery = (await SessionUnitRepository.GetQueryableAsync())
             .AsNoTracking()
-            .Where(x => x.SessionId == session.Id && x.Setting != null && x.Setting.IsEnabled && !x.Setting.IsKilled);
-        var hasCreator = isCreator || await AsyncExecuter.AnyAsync(activeUnitQuery.Where(x => x.Setting.IsCreator));
+            .Where(x => x.SessionId == session.Id
+                && x.OwnerId != x.DestinationId
+                && x.Setting != null
+                && x.Setting.IsEnabled
+                && !x.Setting.IsKilled);
+
+        var creatorIds = await AsyncExecuter.ToListAsync(
+            activeRealUnitQuery.Where(x => x.Setting.IsCreator).Select(x => x.Id));
+        var hasMultipleCreators = creatorIds.Count > 1;
+        var hasCreator = creatorIds.Count == 1;
+        var creatorSessionUnitId = hasCreator ? (Guid?)creatorIds[0] : null;
         var hasAdmin = isAdmin || await AsyncExecuter.AnyAsync(
-            activeUnitQuery.Where(x => x.SessionUnitRoleList.Any(r =>
+            activeRealUnitQuery.Where(x => x.SessionUnitRoleList.Any(r =>
                 r.SessionRole != null && (r.SessionRole.Name == "管理员" || r.SessionRole.Name == "Admin"))));
-        var canClaimCreator = !hasCreator
-            && !hasAdmin
-            && session.IsEnabled
-            && sessionUnit.Setting != null
-            && sessionUnit.Setting.IsEnabled
-            && !sessionUnit.Setting.IsKilled;
+        var hasRealMembers = creatorIds.Count > 0 || hasAdmin || await AsyncExecuter.AnyAsync(activeRealUnitQuery);
+
+        var unitActive = sessionUnit.Setting != null && sessionUnit.Setting.IsEnabled && !sessionUnit.Setting.IsKilled;
+        RoomOwnershipState ownershipState;
+        RoomOwnershipRecoveryAction recoveryAction = RoomOwnershipRecoveryAction.None;
+        string recoveryUnavailableReason = null;
+
+        if (!session.IsEnabled)
+        {
+            ownershipState = RoomOwnershipState.Dissolved;
+            recoveryUnavailableReason = "群聊已解散";
+        }
+        else if (hasMultipleCreators)
+        {
+            ownershipState = RoomOwnershipState.Inconsistent;
+            recoveryAction = RoomOwnershipRecoveryAction.ManualRecovery;
+            recoveryUnavailableReason = "群治理状态异常（存在多个有效群主），请通过平台恢复流程处理";
+        }
+        else if (hasCreator)
+        {
+            ownershipState = RoomOwnershipState.Healthy;
+        }
+        else if (!hasRealMembers)
+        {
+            ownershipState = RoomOwnershipState.Empty;
+            recoveryAction = RoomOwnershipRecoveryAction.ManualRecovery;
+            recoveryUnavailableReason = "当前没有可接任成员";
+        }
+        else if (hasAdmin)
+        {
+            ownershipState = RoomOwnershipState.OwnerlessWithAdmins;
+            if (isAdmin && unitActive)
+            {
+                recoveryAction = RoomOwnershipRecoveryAction.AdminTakeover;
+            }
+            else
+            {
+                recoveryUnavailableReason = "当前群存在管理员，等待管理员接任群主";
+            }
+        }
+        else
+        {
+            ownershipState = RoomOwnershipState.OwnerlessWithoutAdmins;
+            if (unitActive)
+            {
+                recoveryAction = RoomOwnershipRecoveryAction.MemberClaim;
+            }
+        }
+
+        var canClaimCreator = recoveryAction == RoomOwnershipRecoveryAction.AdminTakeover
+            || recoveryAction == RoomOwnershipRecoveryAction.MemberClaim;
 
         var pendingJoinRequestCount = 0;
         if (canManageJoinRequests)
@@ -366,6 +423,11 @@ public class RoomAppService(IRoomManager roomManager,
             CanToggleAllMuted = canToggleAllMuted,
             CanManageJoinPolicies = canManageJoinPolicies,
             CanTransferOrDissolve = canTransferOrDissolve,
+            OwnershipState = ownershipState,
+            CreatorSessionUnitId = creatorSessionUnitId,
+            OwnershipRecoveryAction = recoveryAction,
+            RecoveryUnavailableReason = recoveryUnavailableReason,
+            OwnershipVersion = (session.LastModificationTime ?? session.CreationTime).Ticks,
         };
     }
 
@@ -451,6 +513,7 @@ public class RoomAppService(IRoomManager roomManager,
     protected virtual async Task<SessionUnit> GetDetailedSessionUnitAsync(Guid sessionUnitId)
     {
         var query = (await SessionUnitRepository.GetQueryableAsync())
+            .AsNoTracking()
             .Include(x => x.Setting)
             .Include(x => x.GrantList)
             .Include(x => x.SessionUnitRoleList)

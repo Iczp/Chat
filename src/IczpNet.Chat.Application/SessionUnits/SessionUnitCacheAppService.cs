@@ -1139,6 +1139,7 @@ public class SessionUnitCacheAppService(
         var query = (await SessionUnitRepository.GetQueryableAsync())
             .AsNoTracking()
             .Where(x => x.SessionId == sessionId && x.Setting.IsEnabled && !x.Setting.IsKilled)
+            .WhereIf(filterMode != SessionUnitOrganizationFilterMode.All, x => x.OwnerId != x.DestinationId)
             .WhereIf(input.IsStatic.HasValue, x => x.Setting.IsStatic == input.IsStatic)
             .WhereIf(input.IsCreator.HasValue, x => x.Setting.IsCreator == input.IsCreator)
             .WhereIf(input.IsPrivate.HasValue, x => x.Setting.IsPublic == !input.IsPrivate)
@@ -1154,7 +1155,8 @@ public class SessionUnitCacheAppService(
 
         query = query
            .OrderByDescending(x => x.Setting.IsCreator)
-           .ThenByDescending(x => x.Setting.IsAdmin)
+           .ThenByDescending(x => x.SessionUnitRoleList.Any(r =>
+               r.SessionRole != null && (r.SessionRole.Name == "管理员" || r.SessionRole.Name == "Admin")))
            .ThenBy(x => x.CreationTime)
            .ThenBy(x => x.Id)
            ;

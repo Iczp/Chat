@@ -75,6 +75,12 @@ public class GroupManagementStageABC_Tests : ChatTestBase<RoomManagementPolicies
         lazy.LazyGetRequiredService<IAsyncQueryableExecuter>().Returns(GetRequiredService<IAsyncQueryableExecuter>());
         lazy.LazyGetRequiredService<IUnitOfWorkManager>().Returns(GetRequiredService<IUnitOfWorkManager>());
         lazy.LazyGetRequiredService<ICurrentUser>().Returns(Substitute.For<ICurrentUser>());
+        lazy.LazyGetRequiredService<Volo.Abp.DistributedLocking.IAbpDistributedLock>()
+            .Returns(GetRequiredService<Volo.Abp.DistributedLocking.IAbpDistributedLock>());
+        lazy.LazyGetRequiredService<IRepository<Session, Guid>>()
+            .Returns(GetRequiredService<IRepository<Session, Guid>>());
+        lazy.LazyGetRequiredService<ChatObjects.IChatObjectManager>()
+            .Returns(GetRequiredService<ChatObjects.IChatObjectManager>());
         lazy.LazyGetService<ISessionPermissionChecker>().Returns(checker);
 
         return new SessionOrganiztionBySessionUnitAppService(
@@ -271,6 +277,114 @@ public class GroupManagementStageABC_Tests : ChatTestBase<RoomManagementPolicies
             // 有成员或已绑定角色的组织不可删除
             var orgManager = GetRequiredService<ISessionOrganizationManager>();
             await Assert.ThrowsAsync<UserFriendlyException>(() => orgManager.DeleteAsync(ids.parentOrgId));
+        });
+    }
+
+    [Fact]
+    public async Task Ownerless_recovery_excludes_system_unit_and_admin_takes_over_before_member()
+    {
+        var ids = await WithUnitOfWorkAsync(async () =>
+        {
+            var context = await GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            await context.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys=OFF");
+
+            var roomId = 7200L;
+            var adminOwnerId = 7201L;
+            var memberOwnerId = 7202L;
+            var sessionId = Guid.NewGuid();
+            var systemUnitId = Guid.NewGuid();
+            var adminUnitId = Guid.NewGuid();
+            var memberUnitId = Guid.NewGuid();
+            var adminRoleId = Guid.NewGuid();
+
+            await InsertAsync<ChatObject>(context, new()
+            {
+                ["Id"] = roomId, ["Name"] = "无主恢复测试群", ["IsEnabled"] = true, ["IsActive"] = true, ["ObjectType"] = ChatObjectTypeEnums.Room
+            });
+            await InsertAsync<ChatObject>(context, new()
+            {
+                ["Id"] = adminOwnerId, ["Name"] = "管理员", ["IsEnabled"] = true, ["IsActive"] = true, ["ObjectType"] = ChatObjectTypeEnums.Personal
+            });
+            await InsertAsync<ChatObject>(context, new()
+            {
+                ["Id"] = memberOwnerId, ["Name"] = "普通成员", ["IsEnabled"] = true, ["IsActive"] = true, ["ObjectType"] = ChatObjectTypeEnums.Personal
+            });
+            await InsertAsync<Session>(context, new()
+            {
+                ["Id"] = sessionId, ["OwnerId"] = roomId, ["Channel"] = Channels.RoomChannel, ["IsEnabled"] = true
+            });
+
+            // 群系统单元（OwnerId == DestinationId）即使误带 IsCreator=true 也不应算群主
+            await InsertAsync<SessionUnit>(context, new()
+            {
+                ["Id"] = systemUnitId, ["SessionId"] = sessionId, ["OwnerId"] = roomId,
+                ["DestinationId"] = roomId, ["DestinationObjectType"] = ChatObjectTypeEnums.Room
+            });
+            await InsertAsync<SessionUnitSetting>(context, new()
+            {
+                ["SessionUnitId"] = systemUnitId, ["SessionId"] = sessionId,
+                ["IsCreator"] = true, ["IsEnabled"] = true, ["IsKilled"] = false, ["IsStatic"] = true
+            });
+
+            await InsertAsync<SessionUnit>(context, new()
+            {
+                ["Id"] = adminUnitId, ["SessionId"] = sessionId, ["OwnerId"] = adminOwnerId,
+                ["DestinationId"] = roomId, ["DestinationObjectType"] = ChatObjectTypeEnums.Room
+            });
+            await InsertAsync<SessionUnitSetting>(context, new()
+            {
+                ["SessionUnitId"] = adminUnitId, ["SessionId"] = sessionId,
+                ["IsCreator"] = false, ["IsEnabled"] = true, ["IsKilled"] = false
+            });
+            await InsertAsync<SessionRole>(context, new()
+            {
+                ["Id"] = adminRoleId, ["SessionId"] = sessionId, ["Name"] = "管理员"
+            });
+            await InsertAsync<SessionUnitRoles.SessionUnitRole>(context, new()
+            {
+                ["SessionUnitId"] = adminUnitId, ["SessionRoleId"] = adminRoleId
+            });
+
+            await InsertAsync<SessionUnit>(context, new()
+            {
+                ["Id"] = memberUnitId, ["SessionId"] = sessionId, ["OwnerId"] = memberOwnerId,
+                ["DestinationId"] = roomId, ["DestinationObjectType"] = ChatObjectTypeEnums.Room
+            });
+            await InsertAsync<SessionUnitSetting>(context, new()
+            {
+                ["SessionUnitId"] = memberUnitId, ["SessionId"] = sessionId,
+                ["IsCreator"] = false, ["IsEnabled"] = true, ["IsKilled"] = false
+            });
+
+            return (systemUnitId, adminUnitId, memberUnitId);
+        });
+
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var roomManager = GetRequiredService<RoomSections.Rooms.RoomManager>();
+
+            // 1. 系统单元不能认领群主
+            await Assert.ThrowsAsync<UserFriendlyException>(() =>
+                roomManager.ClaimCreatorAsync(ids.systemUnitId, isSendMessageToRoom: false));
+
+            // 2. 有管理员时，普通成员不能抢占认领
+            await Assert.ThrowsAsync<UserFriendlyException>(() =>
+                roomManager.ClaimCreatorAsync(ids.memberUnitId, isSendMessageToRoom: false));
+
+            // 3. 管理员可以接任群主，且重复调用幂等成功
+            await roomManager.ClaimCreatorAsync(ids.adminUnitId, isSendMessageToRoom: false);
+            await roomManager.ClaimCreatorAsync(ids.adminUnitId, isSendMessageToRoom: false);
+
+            var unitRepo = GetRequiredService<ISessionUnitRepository>();
+            var adminAfter = await (await unitRepo.GetQueryableAsync()).AsNoTracking().Include(x => x.Setting).FirstAsync(x => x.Id == ids.adminUnitId);
+            var systemAfter = await (await unitRepo.GetQueryableAsync()).AsNoTracking().Include(x => x.Setting).FirstAsync(x => x.Id == ids.systemUnitId);
+            Assert.True(adminAfter.Setting.IsCreator);
+            Assert.False(systemAfter.Setting.IsCreator);
+
+            // 4. 目标保护（F03）：缺少操作人或管理员尝试移除群主被拒绝
+            var settingManager = GetRequiredService<ISessionUnitSettingManager>();
+            await Assert.ThrowsAsync<UserFriendlyException>(() =>
+                settingManager.KillAsync(ids.adminUnitId, KillTypes.ManagerKill, killerId: null));
         });
     }
 }

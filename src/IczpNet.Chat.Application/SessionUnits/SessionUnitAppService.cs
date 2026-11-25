@@ -255,6 +255,7 @@ public class SessionUnitAppService(
             .WhereIf(input.OwnerTypeList.IsAny(), x => input.OwnerTypeList.Contains(x.Owner.ObjectType.Value))
             .WhereIf(!input.TagId.IsEmpty(), x => x.SessionUnitTagList.Any(x => x.SessionTagId == input.TagId))
             .WhereIf(!input.RoleId.IsEmpty(), x => x.SessionUnitRoleList.Any(x => x.SessionRoleId == input.RoleId))
+            .WhereIf(filterMode != SessionUnitOrganizationFilterMode.All, x => x.OwnerId != x.DestinationId)
             .WhereIf(filterMode == SessionUnitOrganizationFilterMode.Ungrouped, x => !x.SessionUnitOrganizationList.Any())
             .WhereIf(filterMode == SessionUnitOrganizationFilterMode.Organization && targetOrgIds != null,
                 x => x.SessionUnitOrganizationList.Any(o => targetOrgIds.Contains(o.SessionOrganizationId)))
