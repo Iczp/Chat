@@ -215,7 +215,12 @@ public partial class MessageAppService(
             .Where(x => x.SenderSessionUnit != null)
             .Select(x => x.SenderSessionUnit.OwnerId)
             .Distinct()
-            .ToList();
+            .ToHashSet();
+
+        if (distnactionIds.Count == 0)
+        {
+            return;
+        }
 
         var friendsMap = await SessionUnitManager.LoadFriendsMapAsync([ownerId]);
 
@@ -226,7 +231,18 @@ public partial class MessageAppService(
             return;
         }
 
-        var friendshipSessionUnits = await SessionUnitCacheManager.GetManyAsync([.. unitIdMap.Values]);
+        var targetUnitIds = unitIdMap
+            .Where(x => distnactionIds.Contains(x.Key))
+            .Select(x => x.Value)
+            .Distinct()
+            .ToList();
+
+        if (targetUnitIds.Count == 0)
+        {
+            return;
+        }
+
+        var friendshipSessionUnits = await SessionUnitCacheManager.GetManyAsync(targetUnitIds);
 
         var friendMap = friendshipSessionUnits
             .Select(x => x.Value)
@@ -487,7 +503,7 @@ public partial class MessageAppService(
         if (input.Authoritative)
         {
             Assert.If(input.MinMessageId < 0, $"参数 {nameof(input.MinMessageId)} 不能小于 0");
-            return await GetAuthoritativeWindowAsync(input.SessionUnitId, input.MaxResultCount, input.MinMessageId, null, descending: false);
+            return await GetAuthoritativeWindowAsync(input.SessionUnitId, input.MaxResultCount, input.MinMessageId, null, descending: false, input.CompactSenders);
         }
 
         Assert.If(input.MinMessageId <= 0, $"参数 {nameof(input.MinMessageId)} 要大于 0");
@@ -514,13 +530,20 @@ public partial class MessageAppService(
 
         var items = await MapToMessageFasterAsync(messageIdList);
 
-        var result = new ExtraPagedResultDto<MessageFastDto>(totalCount, items, new
-        {
-            HasMore = hasMore,
-            NextCursorId = nextCursorId,
-        });
+        object extra = input.CompactSenders
+            ? new
+            {
+                HasMore = hasMore,
+                NextCursorId = nextCursorId,
+                Senders = ExtractCompactSenders(items)
+            }
+            : new
+            {
+                HasMore = hasMore,
+                NextCursorId = nextCursorId,
+            };
 
-        return result;
+        return new ExtraPagedResultDto<MessageFastDto>(totalCount, items, extra);
     }
 
     /// <summary>
@@ -531,7 +554,7 @@ public partial class MessageAppService(
     public async Task<ExtraPagedResultDto<MessageFastDto>> GetHistoryAsync(MessageGetHistoryInput input)
     {
         if (input.Authoritative)
-            return await GetAuthoritativeWindowAsync(input.SessionUnitId, input.MaxResultCount, null, input.MaxMessageId, descending: true);
+            return await GetAuthoritativeWindowAsync(input.SessionUnitId, input.MaxResultCount, null, input.MaxMessageId, descending: true, input.CompactSenders);
 
         var unit = await SessionUnitManager.GetCacheAsync(input.SessionUnitId);
         await CheckArticleManagementOrOwnerAsync(unit.OwnerId, () => CheckPolicyAsync(GetListPolicyName));
@@ -556,14 +579,42 @@ public partial class MessageAppService(
 
         var items = await MapToMessageFasterAsync(messageIdList);
 
-        var result = new ExtraPagedResultDto<MessageFastDto>(totalCount, items, new
+        object extra = input.CompactSenders
+            ? new
+            {
+                HasMore = hasMore,
+                NextCursorId = nextCursorId,
+                Senders = ExtractCompactSenders(items)
+            }
+            : new
+            {
+                HasMore = hasMore,
+                NextCursorId = nextCursorId,
+            };
+
+        return new ExtraPagedResultDto<MessageFastDto>(totalCount, items, extra);
+
+    }
+
+    private static Dictionary<string, IczpNet.Chat.SessionUnits.Dtos.SessionUnitMemberSenderDto> ExtractCompactSenders(IEnumerable<MessageFastDto> items)
+    {
+        var senders = new Dictionary<string, IczpNet.Chat.SessionUnits.Dtos.SessionUnitMemberSenderDto>();
+        foreach (var item in items)
         {
-            HasMore = hasMore,
-            NextCursorId = nextCursorId,
-        });
-
-        return result;
-
+            if (item.SenderSessionUnit != null)
+            {
+                var key = item.SenderSessionUnit.Id.ToString();
+                senders.TryAdd(key, item.SenderSessionUnit);
+                item.SenderSessionUnit = null;
+            }
+            if (item.QuoteMessage?.SenderSessionUnit != null)
+            {
+                var quoteKey = item.QuoteMessage.SenderSessionUnit.Id.ToString();
+                senders.TryAdd(quoteKey, item.QuoteMessage.SenderSessionUnit);
+                item.QuoteMessage.SenderSessionUnit = null;
+            }
+        }
+        return senders;
     }
 
     protected virtual async Task<List<MessageFastDto>> MapToMessageFasterAsync(List<long> messageIdList)

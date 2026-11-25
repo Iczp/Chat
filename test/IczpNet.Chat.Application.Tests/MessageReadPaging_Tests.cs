@@ -139,4 +139,72 @@ public class MessageReadPaging_Tests
         await reader.Manager.DidNotReceiveWithAnyArgs().GetSessionMessageTotalCountAsync(default, default, default);
         Assert.Empty(reader.Repository.ReceivedCalls());
     }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task CompactSenders_returns_deduplicated_sender_dictionary_and_slims_rows(bool descending)
+    {
+        var reader = new Reader(ownerId: 1);
+        var senderA = new IczpNet.Chat.SessionUnits.Dtos.SessionUnitMemberSenderDto { Id = Guid.NewGuid(), OwnerId = 11 };
+        var senderB = new IczpNet.Chat.SessionUnits.Dtos.SessionUnitMemberSenderDto { Id = Guid.NewGuid(), OwnerId = 22 };
+        var ids = new List<long> { 101, 102, 103, 104, 105 };
+        reader.Manager.GetLatestAsync(reader.Unit, 100, 21).Returns(_ => ids.ToList());
+        reader.Manager.GetHistoryAsync(reader.Unit, 2000, 21).Returns(_ => ids.ToList());
+        reader.Manager.GetOrAddManyCacheAsync(Arg.Any<IEnumerable<long>>(),
+                Arg.Any<Func<DistributedCacheEntryOptions>>(), Arg.Any<bool?>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(call => call.Arg<IEnumerable<long>>().Select(id =>
+                new KeyValuePair<MessageCacheKey, MessageCacheItem>(new MessageCacheKey(id), new MessageCacheItem { Id = id })).ToArray());
+        // Five messages, only two distinct senders — the shared instances mimic the hydrated cache page.
+        var mapper = Substitute.For<IObjectMapper>();
+        mapper.Map<MessageCacheItem, MessageFastDto>(Arg.Any<MessageCacheItem>())
+            .Returns(call =>
+            {
+                var id = call.Arg<MessageCacheItem>().Id;
+                return new MessageFastDto { Id = id, SenderSessionUnit = id % 2 == 0 ? senderA : senderB };
+            });
+        reader.Service.LazyServiceProvider.LazyGetService<IObjectMapper>(Arg.Any<Func<IServiceProvider, object>>()).Returns(mapper);
+
+        var result = descending
+            ? await reader.Service.GetHistoryAsync(new MessageGetHistoryInput
+            {
+                SessionUnitId = reader.Unit.Id, MaxMessageId = 2000, MaxResultCount = 20, CompactSenders = true
+            })
+            : await reader.Service.GetLatestAsync(new MessageGetLatestInput
+            {
+                SessionUnitId = reader.Unit.Id, MinMessageId = 100, MaxResultCount = 20, CompactSenders = true
+            });
+
+        Assert.Equal(5, result.Items.Count);
+        Assert.All(result.Items, x => Assert.Null(x.SenderSessionUnit));
+        var senders = Assert.IsType<Dictionary<string, IczpNet.Chat.SessionUnits.Dtos.SessionUnitMemberSenderDto>>(
+            result.Extra.GetType().GetProperty("Senders").GetValue(result.Extra));
+        Assert.Equal(2, senders.Count);
+        Assert.Same(senderA, senders[senderA.Id.ToString()]);
+        Assert.Same(senderB, senders[senderB.Id.ToString()]);
+    }
+
+    [Fact]
+    public async Task Without_CompactSenders_extra_has_no_senders_and_rows_keep_sender()
+    {
+        var reader = new Reader(ownerId: 1);
+        var sender = new IczpNet.Chat.SessionUnits.Dtos.SessionUnitMemberSenderDto { Id = Guid.NewGuid(), OwnerId = 11 };
+        reader.Manager.GetHistoryAsync(reader.Unit, 2000, 21).Returns(_ => new List<long> { 101 });
+        reader.Manager.GetOrAddManyCacheAsync(Arg.Any<IEnumerable<long>>(),
+                Arg.Any<Func<DistributedCacheEntryOptions>>(), Arg.Any<bool?>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(call => call.Arg<IEnumerable<long>>().Select(id =>
+                new KeyValuePair<MessageCacheKey, MessageCacheItem>(new MessageCacheKey(id), new MessageCacheItem { Id = id })).ToArray());
+        var mapper = Substitute.For<IObjectMapper>();
+        mapper.Map<MessageCacheItem, MessageFastDto>(Arg.Any<MessageCacheItem>())
+            .Returns(call => new MessageFastDto { Id = call.Arg<MessageCacheItem>().Id, SenderSessionUnit = sender });
+        reader.Service.LazyServiceProvider.LazyGetService<IObjectMapper>(Arg.Any<Func<IServiceProvider, object>>()).Returns(mapper);
+
+        var result = await reader.Service.GetHistoryAsync(new MessageGetHistoryInput
+        {
+            SessionUnitId = reader.Unit.Id, MaxMessageId = 2000, MaxResultCount = 20
+        });
+
+        Assert.Same(sender, result.Items.Single().SenderSessionUnit);
+        Assert.Null(result.Extra.GetType().GetProperty("Senders"));
+    }
 }

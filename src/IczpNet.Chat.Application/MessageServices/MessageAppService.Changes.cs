@@ -159,7 +159,7 @@ public partial class MessageAppService
     }
 
     private async Task<ExtraPagedResultDto<MessageFastDto>> GetAuthoritativeWindowAsync(Guid sessionUnitId, int maxResultCount,
-        long? minId, long? maxId, bool descending)
+        long? minId, long? maxId, bool descending, bool compactSenders = false)
     {
         // Authoritative message reads remain available when change notifications
         // are disabled. Permission and member visibility are checked below.
@@ -172,12 +172,23 @@ public partial class MessageAppService
         var count = messages.Count;
         var more = count > maxResultCount;
         if (more) messages.RemoveAt(messages.Count - 1);
-        return new ExtraPagedResultDto<MessageFastDto>(count, await MapAuthoritativeMessagesAsync(messages, token), new
-        {
-            Authoritative = true,
-            HasMore = more,
-            NextCursorId = more ? ToSeq(messages[^1].Id) : null
-        });
+        var items = await MapAuthoritativeMessagesAsync(messages, token);
+        var nextCursorId = more ? ToSeq(messages[^1].Id) : null;
+        object extra = compactSenders
+            ? new
+            {
+                Authoritative = true,
+                HasMore = more,
+                NextCursorId = nextCursorId,
+                Senders = ExtractCompactSenders(items)
+            }
+            : new
+            {
+                Authoritative = true,
+                HasMore = more,
+                NextCursorId = nextCursorId
+            };
+        return new ExtraPagedResultDto<MessageFastDto>(count, items, extra);
     }
 
     private async Task<List<MessageFastDto>> MapAuthoritativeMessagesAsync(List<Message> messages, CancellationToken token)
@@ -202,6 +213,29 @@ public partial class MessageAppService
                 item = sqlItem;
             }
             authoritative.Add(item);
+        }
+
+        // Batch hydrate missing sender snapshots for SQL fallback items using deduplicated SenderSessionUnitIds.
+        var incompleteSenders = authoritative
+            .SelectMany(x => x.QuoteMessage == null ? new MessageInfo[] { x } : [x, x.QuoteMessage])
+            .Where(x => x.SenderSessionUnitId.HasValue && x.SenderSessionUnit?.Owner == null)
+            .ToList();
+        if (incompleteSenders.Count > 0)
+        {
+            var distinctUnitIds = incompleteSenders.Select(x => x.SenderSessionUnitId!.Value).Distinct().ToList();
+            var units = await SessionUnitManager.GetCacheManyAsync(distinctUnitIds);
+            var validUnits = units.Where(x => x.Value != null).Select(x => x.Value).ToList();
+            if (validUnits.Count > 0)
+            {
+                var senderMap = (await SessionUnitManager.MapToSenderAsync(validUnits)).ToDictionary(x => x.Id);
+                foreach (var entry in incompleteSenders)
+                {
+                    if (senderMap.TryGetValue(entry.SenderSessionUnitId!.Value, out var sender))
+                    {
+                        entry.SenderSessionUnit = sender;
+                    }
+                }
+            }
         }
 
         return authoritative.Select(item =>

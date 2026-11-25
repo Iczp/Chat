@@ -1073,7 +1073,9 @@ public partial class MessageManager(
         CancellationToken token = default)
     {
         var items = await MessageCache.GetManyAsync(messageIds.Select(x => new MessageCacheKey(x)), hideErrors, considerUow, token);
-        await PopulateSessionSeqAsync(items.Where(x => x.Value != null).Select(x => x.Value), token);
+        var nonNullItems = items.Where(x => x.Value != null).Select(x => x.Value).ToList();
+        await PopulateSessionSeqAsync(nonNullItems, token);
+        await HydrateSenderSessionUnitsAsync(nonNullItems);
         return items;
     }
 
@@ -1102,24 +1104,52 @@ public partial class MessageManager(
 
         }, optionsFactory ?? (() => CacheOptions), hideErrors, considerUow, token);
 
-        await PopulateSessionSeqAsync(list.Where(x => x.Value != null).Select(x => x.Value), token);
-
-        // Cold/older cache rows may lack navigation-derived sender snapshots.
-        // Resolve the distinct members and owners through the existing batch
-        // caches; do not turn a history page into one lookup per message.
-        var messages = list.Where(x => x.Value != null).Select(x => (MessageInfo<object>)x.Value)
-            .Concat(list.Where(x => x.Value?.QuoteMessage != null).Select(x => x.Value.QuoteMessage)).ToList();
-        var incomplete = messages.Where(x => x.SenderSessionUnitId.HasValue && x.SenderSessionUnit?.Owner == null).ToList();
-        if (incomplete.Count > 0)
-        {
-            var units = await SessionUnitManager.GetCacheManyAsync(incomplete.Select(x => x.SenderSessionUnitId!.Value).Distinct().ToList());
-            var senders = (await SessionUnitManager.MapToSenderAsync(units.Where(x => x.Value != null).Select(x => x.Value).ToList()))
-                .ToDictionary(x => x.Id);
-            foreach (var message in incomplete)
-                if (senders.TryGetValue(message.SenderSessionUnitId!.Value, out var sender)) message.SenderSessionUnit = sender;
-        }
+        var nonNullItems = list.Where(x => x.Value != null).Select(x => x.Value).ToList();
+        await PopulateSessionSeqAsync(nonNullItems, token);
+        await HydrateSenderSessionUnitsAsync(nonNullItems);
         return list;
 
+    }
+
+    private async Task HydrateSenderSessionUnitsAsync(List<MessageCacheItem> items)
+    {
+        if (items.Count == 0)
+        {
+            return;
+        }
+
+        // Deduplicate sender SessionUnitIds across messages and quoted messages so a page of
+        // N messages only triggers a single batch lookup for the few distinct senders.
+        var messages = items.Select(x => (MessageInfo<object>)x)
+            .Concat(items.Where(x => x.QuoteMessage != null).Select(x => x.QuoteMessage)).ToList();
+        var distinctUnitIds = messages
+            .Where(x => x.SenderSessionUnitId.HasValue)
+            .Select(x => x.SenderSessionUnitId!.Value)
+            .Distinct()
+            .ToList();
+        if (distinctUnitIds.Count == 0)
+        {
+            return;
+        }
+
+        var units = await SessionUnitManager.GetCacheManyAsync(distinctUnitIds);
+        var validUnits = units.Where(x => x.Value != null).Select(x => x.Value).ToList();
+        if (validUnits.Count == 0)
+        {
+            return;
+        }
+
+        var senders = (await SessionUnitManager.MapToSenderAsync(validUnits))
+            .ToDictionary(x => x.Id);
+        foreach (var message in messages)
+        {
+            if (message.SenderSessionUnitId.HasValue &&
+                senders.TryGetValue(message.SenderSessionUnitId.Value, out var sender) &&
+                (message.SenderSessionUnit?.Owner == null || sender.Owner != null))
+            {
+                message.SenderSessionUnit = sender;
+            }
+        }
     }
 
     private async Task PopulateSessionSeqAsync(IEnumerable<MessageCacheItem> items, CancellationToken token)
