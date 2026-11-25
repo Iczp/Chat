@@ -365,6 +365,16 @@ public class SessionAnnouncementSecurity_Tests : ChatTestBase<MessageQueryReview
             // 3. 把公告 ID 或错误 ID 填入 SessionUnitId 时，必须拒绝，不允许回退到身份 B
             await Assert.ThrowsAsync<AbpAuthorizationException>(() =>
                 service.ConfirmReceiptAsync(data.Announcement, new ConfirmSessionAnnouncementInput { SessionUnitId = data.Announcement }));
+
+            // 4. 多身份场景下，显式传入 sessionUnitId 时可正常读取详情、权限与置顶公告；不传则提示需指定成员身份
+            var detailForA = await service.GetAsync(data.Announcement, data.UnitA);
+            Assert.Equal(data.Announcement, detailForA.Id);
+            var permsForA = await service.GetPermissionsAsync(data.Session, data.UnitA);
+            Assert.NotNull(permsForA);
+            var pinnedListForB = await service.GetPinnedListAsync(data.Session, data.UnitB);
+            Assert.NotNull(pinnedListForB);
+            await Assert.ThrowsAsync<Volo.Abp.UserFriendlyException>(() => service.GetAsync(data.Announcement));
+            await Assert.ThrowsAsync<Volo.Abp.UserFriendlyException>(() => service.GetPermissionsAsync(data.Session));
         });
     }
 }

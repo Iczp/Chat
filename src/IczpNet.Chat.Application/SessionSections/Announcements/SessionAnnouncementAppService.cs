@@ -256,9 +256,9 @@ public class SessionAnnouncementAppService(
         return handle ?? throw new UserFriendlyException("公告正在更新，请重试。");
     }
 
-    public virtual async Task<SessionAnnouncementDetailDto> GetPinnedAsync(Guid sessionId)
+    public virtual async Task<SessionAnnouncementDetailDto> GetPinnedAsync(Guid sessionId, Guid? sessionUnitId = null)
     {
-        var unit = await GetSessionUnitOrDefaultAsync(Guid.Empty, sessionId);
+        var unit = await GetSessionUnitOrDefaultAsync(sessionUnitId ?? Guid.Empty, sessionId);
         var targetSessionId = unit.SessionId!.Value;
         var entity = await AnnouncementRepository.GetPinnedAsync(targetSessionId);
         if (entity == null)
@@ -269,9 +269,9 @@ public class SessionAnnouncementAppService(
         return await MapToDetailDtoAsync(entity, unit);
     }
 
-    public virtual async Task<List<SessionAnnouncementDetailDto>> GetPinnedListAsync(Guid sessionId)
+    public virtual async Task<List<SessionAnnouncementDetailDto>> GetPinnedListAsync(Guid sessionId, Guid? sessionUnitId = null)
     {
-        var unit = await GetSessionUnitOrDefaultAsync(Guid.Empty, sessionId);
+        var unit = await GetSessionUnitOrDefaultAsync(sessionUnitId ?? Guid.Empty, sessionId);
         var targetSessionId = unit.SessionId!.Value;
         var entities = await AnnouncementRepository.GetPinnedListAsync(targetSessionId);
         var result = new List<SessionAnnouncementDetailDto>(entities.Count);
@@ -282,10 +282,10 @@ public class SessionAnnouncementAppService(
         return result;
     }
 
-    public virtual async Task<SessionAnnouncementDetailDto> GetAsync(Guid id)
+    public virtual async Task<SessionAnnouncementDetailDto> GetAsync(Guid id, Guid? sessionUnitId = null)
     {
         var entity = await AnnouncementRepository.GetAsync(id);
-        var unit = await GetSessionUnitOrDefaultAsync(Guid.Empty, entity.SessionId);
+        var unit = await GetSessionUnitOrDefaultAsync(sessionUnitId ?? Guid.Empty, entity.SessionId);
         if (entity.Status != AnnouncementStatus.Published)
         {
             var isAuthor = entity.PublisherSessionUnitId == unit.Id || entity.PublisherChatObjectId == unit.OwnerId;
@@ -309,9 +309,9 @@ public class SessionAnnouncementAppService(
         return await MapToDetailDtoAsync(entity, unit);
     }
 
-    public virtual async Task<SessionAnnouncementPermissionsDto> GetPermissionsAsync(Guid sessionId)
+    public virtual async Task<SessionAnnouncementPermissionsDto> GetPermissionsAsync(Guid sessionId, Guid? sessionUnitId = null)
     {
-        var unit = await GetSessionUnitOrDefaultAsync(Guid.Empty, sessionId);
+        var unit = await GetSessionUnitOrDefaultAsync(sessionUnitId ?? Guid.Empty, sessionId);
         var targetSessionId = unit.SessionId!.Value;
         var perms = await GetUnitPermSnapshotAsync(unit);
 
@@ -738,10 +738,10 @@ public class SessionAnnouncementAppService(
         return await MapToDetailDtoAsync(entity, sessionUnit);
     }
 
-    public virtual async Task<List<SessionAnnouncementRevisionDto>> GetRevisionsAsync(Guid id)
+    public virtual async Task<List<SessionAnnouncementRevisionDto>> GetRevisionsAsync(Guid id, Guid? sessionUnitId = null)
     {
         var entity = await AnnouncementRepository.GetAsync(id);
-        var unit = await GetSessionUnitOrDefaultAsync(Guid.Empty, entity.SessionId);
+        var unit = await GetSessionUnitOrDefaultAsync(sessionUnitId ?? Guid.Empty, entity.SessionId);
         if (entity.Status != AnnouncementStatus.Published)
         {
             var isAuthor = entity.PublisherSessionUnitId == unit.Id || entity.PublisherChatObjectId == unit.OwnerId;
@@ -1100,10 +1100,10 @@ public class SessionAnnouncementAppService(
         return new PagedResultDto<SessionAnnouncementMemberDto>(totalCount, list);
     }
 
-    public virtual async Task<PagedResultDto<SessionAnnouncementReceiptDto>> GetReceiptsAsync(Guid id, PagedAndSortedResultRequestDto input)
+    public virtual async Task<PagedResultDto<SessionAnnouncementReceiptDto>> GetReceiptsAsync(Guid id, PagedAndSortedResultRequestDto input, Guid? sessionUnitId = null)
     {
         var announcement = await AnnouncementRepository.GetAsync(id);
-        var sessionUnit = await GetSessionUnitOrDefaultAsync(Guid.Empty, announcement.SessionId);
+        var sessionUnit = await GetSessionUnitOrDefaultAsync(sessionUnitId ?? Guid.Empty, announcement.SessionId);
         await CheckAnyOrFallbackAsync(sessionUnit,
             SessionPermissionDefinitionConsts.AnnouncementPermission.ViewStat,
             SessionPermissionDefinitionConsts.AnnouncementPermission.Update);

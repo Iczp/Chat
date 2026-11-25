@@ -9,17 +9,17 @@ namespace IczpNet.Chat.SessionSections.Announcements;
 
 public interface ISessionAnnouncementAppService : IApplicationService
 {
-    Task<SessionAnnouncementDetailDto> GetPinnedAsync(Guid sessionId);
+    Task<SessionAnnouncementDetailDto> GetPinnedAsync(Guid sessionId, Guid? sessionUnitId = null);
 
-    Task<List<SessionAnnouncementDetailDto>> GetPinnedListAsync(Guid sessionId);
+    Task<List<SessionAnnouncementDetailDto>> GetPinnedListAsync(Guid sessionId, Guid? sessionUnitId = null);
 
-    Task<SessionAnnouncementDetailDto> GetAsync(Guid id);
+    Task<SessionAnnouncementDetailDto> GetAsync(Guid id, Guid? sessionUnitId = null);
 
     Task<PagedResultDto<SessionAnnouncementDto>> GetListAsync(GetSessionAnnouncementListInput input);
 
     Task<PagedResultDto<SessionAnnouncementDto>> SearchAsync(SearchSessionAnnouncementInput input);
 
-    Task<SessionAnnouncementPermissionsDto> GetPermissionsAsync(Guid sessionId);
+    Task<SessionAnnouncementPermissionsDto> GetPermissionsAsync(Guid sessionId, Guid? sessionUnitId = null);
 
     Task<SessionAnnouncementDetailDto> CreateAsync(CreateSessionAnnouncementInput input);
 
@@ -29,7 +29,7 @@ public interface ISessionAnnouncementAppService : IApplicationService
 
     Task<SessionAnnouncementDetailDto> ReviewAsync(Guid id, ReviewSessionAnnouncementInput input);
 
-    Task<List<SessionAnnouncementRevisionDto>> GetRevisionsAsync(Guid id);
+    Task<List<SessionAnnouncementRevisionDto>> GetRevisionsAsync(Guid id, Guid? sessionUnitId = null);
 
     Task<SessionAnnouncementDetailDto> PublishAsync(Guid id, Guid sessionUnitId);
 
@@ -49,5 +49,5 @@ public interface ISessionAnnouncementAppService : IApplicationService
 
     Task<PagedResultDto<SessionAnnouncementMemberDto>> GetMembersAsync(Guid id, GetAnnouncementMemberListInput input);
 
-    Task<PagedResultDto<SessionAnnouncementReceiptDto>> GetReceiptsAsync(Guid id, PagedAndSortedResultRequestDto input);
+    Task<PagedResultDto<SessionAnnouncementReceiptDto>> GetReceiptsAsync(Guid id, PagedAndSortedResultRequestDto input, Guid? sessionUnitId = null);
 }
