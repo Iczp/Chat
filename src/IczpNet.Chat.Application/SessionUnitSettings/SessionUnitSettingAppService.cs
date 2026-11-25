@@ -388,8 +388,8 @@ public class SessionUnitSettingAppService(
     /// <param name="isAdmin">是否管理员</param>
     /// <param name="setterSessionUnitId">操作人会话单元Id（可选）</param>
     /// <returns>更新后的成员设置</returns>
-    [HttpPost("set-admin/{sessionUnitId}")]
-    public virtual async Task<SessionUnitMemberSettingDto> SetAdminAsync(Guid sessionUnitId, bool isAdmin, Guid? setterSessionUnitId = null)
+    [HttpPost("/api/chat/session-unit-setting/set-admin/{sessionUnitId}")]
+    public virtual async Task<SessionUnitMemberSettingDto> SetAdminAsync([Required] Guid sessionUnitId, bool isAdmin, Guid? setterSessionUnitId = null)
     {
         var target = await GetEntityAsync(sessionUnitId);
         SessionUnit setter = null;
