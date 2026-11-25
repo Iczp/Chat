@@ -41,4 +41,8 @@ public interface IRoomAppService
     /// </summary>
     /// <returns></returns>
     Task<PagedResultDto<EnumDto>> GetListAllowJoinTypes();
+
+    Task<RoomManagementSettingsDto> GetManagementSettingsAsync(Guid sessionUnitId);
+
+    Task<RoomManagementSettingsDto> UpdatePoliciesAsync(UpdateRoomPoliciesInput input);
 }

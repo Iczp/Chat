@@ -7717,6 +7717,10 @@ namespace IczpNet.Chat.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("AllowJoinChannels")
+                        .HasColumnType("int")
+                        .HasComment("允许的入群渠道");
+
                     b.Property<int>("Channel")
                         .HasColumnType("int")
                         .HasComment("Channel");
@@ -7756,6 +7760,14 @@ namespace IczpNet.Chat.Migrations
 
                     b.Property<long?>("FirstMessageId")
                         .HasColumnType("bigint");
+
+                    b.Property<int>("InvitePolicy")
+                        .HasColumnType("int")
+                        .HasComment("群邀请策略");
+
+                    b.Property<bool>("IsAllMuted")
+                        .HasColumnType("bit")
+                        .HasComment("全员禁言");
 
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()

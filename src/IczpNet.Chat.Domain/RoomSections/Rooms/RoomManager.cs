@@ -258,8 +258,28 @@ public class RoomManager(
 
         if (input.InviterId.HasValue)
         {
-            inviterSessionUnit = await SessionUnitManager.FindBySessionIdAsync(session.Id, input.InviterId.Value);
+            inviterSessionUnit = await (await SessionUnitRepository.GetQueryableAsync())
+                .Include(x => x.Setting)
+                .FirstOrDefaultAsync(x => x.SessionId == session.Id && x.OwnerId == input.InviterId.Value);
             Assert.If(inviterSessionUnit == null, "邀请人不在群里");
+
+            var isManager = inviterSessionUnit.Setting != null
+                && (inviterSessionUnit.Setting.IsCreator || inviterSessionUnit.Setting.IsAdmin);
+            if (!isManager && (!input.JoinWay.HasValue || input.JoinWay == JoinWays.Invitation))
+            {
+                if (!session.AllowJoinChannels.HasFlag(RoomJoinChannels.Invitation))
+                {
+                    throw new Volo.Abp.UserFriendlyException("当前群已关闭成员邀请入群");
+                }
+                if (session.InvitePolicy == RoomInvitePolicies.AdminsOnly)
+                {
+                    throw new Volo.Abp.UserFriendlyException("当前群仅允许群主和管理员邀请成员");
+                }
+                if (session.InvitePolicy == RoomInvitePolicies.ApprovalRequired)
+                {
+                    throw new Volo.Abp.UserFriendlyException("当前群已开启邀请需管理员确认，请通过入群申请加入");
+                }
+            }
         }
 
         var queryable = await SessionUnitRepository.GetQueryableAsync();

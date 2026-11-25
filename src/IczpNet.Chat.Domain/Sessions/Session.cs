@@ -112,6 +112,24 @@ public class Session : BaseEntity<Guid>, IChatOwner<long?>, IIsEnabled
     [Comment("更新消息总数量时间")]
     public virtual DateTime? MessageTotalCountUpdateTime { get; protected set; }
 
+    /// <summary>
+    /// 全员禁言（群主和管理员除外）
+    /// </summary>
+    [Comment("全员禁言")]
+    public virtual bool IsAllMuted { get; protected set; } = false;
+
+    /// <summary>
+    /// 群邀请策略
+    /// </summary>
+    [Comment("群邀请策略")]
+    public virtual RoomInvitePolicies InvitePolicy { get; protected set; } = RoomInvitePolicies.AllMembers;
+
+    /// <summary>
+    /// 允许的入群渠道（位掩码）
+    /// </summary>
+    [Comment("允许的入群渠道")]
+    public virtual RoomJoinChannels AllowJoinChannels { get; protected set; } = RoomJoinChannels.All;
+
     [InverseProperty(nameof(Message.Session))]
     public virtual IList<Message> MessageList { get; internal set; } = [];
 
@@ -184,5 +202,29 @@ public class Session : BaseEntity<Guid>, IChatOwner<long?>, IIsEnabled
     {
         LastMessage = lastMessage;
         LastMessageId = lastMessage.Id;
+    }
+
+    public virtual void SetRoomPolicies(
+        bool? isAllMuted = null,
+        RoomInvitePolicies? invitePolicy = null,
+        RoomJoinChannels? allowJoinChannels = null)
+    {
+        if (isAllMuted.HasValue)
+        {
+            IsAllMuted = isAllMuted.Value;
+        }
+        if (invitePolicy.HasValue)
+        {
+            InvitePolicy = invitePolicy.Value;
+        }
+        if (allowJoinChannels.HasValue)
+        {
+            AllowJoinChannels = allowJoinChannels.Value;
+        }
+    }
+
+    public virtual void SetIsEnabled(bool isEnabled)
+    {
+        IsEnabled = isEnabled;
     }
 }

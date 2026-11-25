@@ -436,6 +436,19 @@ public partial class MessageManager(
 
         Assert.If(senderSessionUnit.MuteExpireTime > Clock.Now, $"Unable to send message,sessionUnit has been muted.senderSessionUnitId:{senderSessionUnit.Id}");
 
+        if (senderSessionUnit.DestinationObjectType == ChatObjectTypeEnums.Room
+            && senderSessionUnit.SessionId.HasValue
+            && !senderSessionUnit.IsStatic
+            && !senderSessionUnit.IsCreator
+            && !senderSessionUnit.IsAdmin)
+        {
+            var sessionEntity = await SessionRepository.FindAsync(senderSessionUnit.SessionId.Value);
+            if (sessionEntity != null && sessionEntity.IsAllMuted)
+            {
+                throw new Volo.Abp.UserFriendlyException("当前群已开启全员禁言");
+            }
+        }
+
         var sw = Stopwatch.StartNew();
 
         // Create SessionUnit By Message

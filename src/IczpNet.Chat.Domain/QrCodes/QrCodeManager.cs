@@ -396,6 +396,16 @@ public class QrCodeManager(
             Assert.If(!await RoomManager.IsAllowJoinRoomAsync(applicant.ObjectType.GetValueOrDefault()),
                 $"当前身份类型 [{applicant.ObjectType}] 不允许加入群聊");
 
+            var roomSession = await SessionRepository.FindAsync(x => x.OwnerId == target.Id);
+            if (roomSession != null && !roomSession.AllowJoinChannels.HasFlag(RoomJoinChannels.QrCode))
+            {
+                throw new UserFriendlyException("当前群已关闭二维码入群方式");
+            }
+            if (target.VerificationMethod == VerificationMethods.Rejected)
+            {
+                throw new UserFriendlyException("该群已禁止主动申请加入");
+            }
+
             if (qrCode.InviterId.HasValue)
             {
                 var inviterUnit = await SessionUnitManager.FindAsync(qrCode.InviterId.Value, target.Id);

@@ -104,6 +104,11 @@ public class SessionRequestManager : DomainService, ISessionRequestManager
 
         var destination = await ChatObjectManager.GetAsync(destinationId);
 
+        if (destination.VerificationMethod == VerificationMethods.Rejected)
+        {
+            throw new Volo.Abp.UserFriendlyException("对方已设置为拒绝添加或加入");
+        }
+
         if (entity != null)
         {
             entity.RequestMessage = requestMessage;
