@@ -9,7 +9,12 @@ using IczpNet.Chat.Follows;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionBoxes;
+using IczpNet.Chat.SessionOrganizations;
+using IczpNet.Chat.SessionSections.SessionOrganiztions.Dtos;
+using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
 using IczpNet.Chat.SessionTags;
+using IczpNet.Chat.SessionUnitOrganizations;
+using IczpNet.Chat.SessionUnitRoles;
 using IczpNet.Chat.SessionUnits.Dtos;
 using IczpNet.Chat.SessionUnitSettings;
 using IczpNet.Chat.SessionUnitSettings.Dtos;
@@ -270,16 +275,73 @@ public class SessionUnitCacheAppService(
     }
     private async Task FillSessionTagAsync(IEnumerable<SessionUnitMemberDto> items)
     {
-        var unitIds = items.Select(x => x.Id).Distinct().ToList();
+        var list = items.ToList();
+        var unitIds = list.Select(x => x.Id).Distinct().ToList();
         if (unitIds.Count == 0)
         {
             return;
         }
         var tagMap = await SessionTagManager.GetSessionUnitTagMapAsync(unitIds);
 
-        foreach (var item in items)
+        var unitRoleRepo = LazyServiceProvider.LazyGetService<IRepository<SessionUnitRole>>();
+        Dictionary<Guid, List<SessionRoleSimpleDto>> roleMap = new();
+        if (unitRoleRepo != null)
+        {
+            var roleRows = await AsyncExecuter.ToListAsync(
+                (await unitRoleRepo.GetQueryableAsync())
+                    .AsNoTracking()
+                    .Where(x => unitIds.Contains(x.SessionUnitId) && x.SessionRole != null)
+                    .Select(x => new
+                    {
+                        x.SessionUnitId,
+                        RoleId = x.SessionRole.Id,
+                        RoleName = x.SessionRole.Name,
+                    }));
+            roleMap = roleRows
+                .GroupBy(x => x.SessionUnitId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(r => new SessionRoleSimpleDto { Id = r.RoleId, Name = r.RoleName }).ToList());
+        }
+
+        var unitOrgRepo = LazyServiceProvider.LazyGetService<IRepository<SessionUnitOrganization>>();
+        Dictionary<Guid, List<SessionOrganizationDto>> orgMap = new();
+        if (unitOrgRepo != null)
+        {
+            var orgRows = await AsyncExecuter.ToListAsync(
+                (await unitOrgRepo.GetQueryableAsync())
+                    .AsNoTracking()
+                    .Where(x => unitIds.Contains(x.SessionUnitId) && x.SessionOrganization != null)
+                    .Select(x => new
+                    {
+                        x.SessionUnitId,
+                        OrgId = x.SessionOrganization.Id,
+                        OrgName = x.SessionOrganization.Name,
+                        x.SessionOrganization.ParentId,
+                        x.SessionOrganization.FullPath,
+                        x.SessionOrganization.FullPathName,
+                        x.SessionOrganization.Depth,
+                    }));
+            orgMap = orgRows
+                .GroupBy(x => x.SessionUnitId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(o => new SessionOrganizationDto
+                    {
+                        Id = o.OrgId,
+                        Name = o.OrgName,
+                        ParentId = o.ParentId,
+                        FullPath = o.FullPath,
+                        FullPathName = o.FullPathName,
+                        Depth = o.Depth,
+                    }).ToList());
+        }
+
+        foreach (var item in list)
         {
             item.TagList = tagMap.GetValueOrDefault(item.Id) ?? [];
+            item.RoleList = roleMap.GetValueOrDefault(item.Id) ?? [];
+            item.OrganizationList = orgMap.GetValueOrDefault(item.Id) ?? [];
         }
     }
 
@@ -971,7 +1033,9 @@ public class SessionUnitCacheAppService(
         // check owner
         await CheckPolicyForUserAsync(ownerId, () => CheckPolicyAsync(GetListPolicyName, ownerId));
 
-        if (!string.IsNullOrWhiteSpace(input.Keyword))
+        if (!string.IsNullOrWhiteSpace(input.Keyword) ||
+            (input.OrganizationFilter.HasValue && input.OrganizationFilter != SessionUnitOrganizationFilterMode.All) ||
+            input.OrganizationId.HasValue)
         {
             return await GetSearchMembersAsync(sessionId, input);
         }
@@ -1040,27 +1104,65 @@ public class SessionUnitCacheAppService(
     /// <returns></returns>
     protected virtual async Task<ExtraPagedResultDto<SessionUnitMemberDto>> GetSearchMembersAsync(Guid sessionId, SessionUnitMemberGetListInput input)
     {
-        //var unit = await GetCacheAsync(input.SessionUnitId);
+        var filterMode = input.OrganizationFilter
+            ?? (input.OrganizationId.HasValue ? SessionUnitOrganizationFilterMode.Organization : SessionUnitOrganizationFilterMode.All);
+
+        List<long> targetOrgIds = null;
+        if (filterMode == SessionUnitOrganizationFilterMode.Organization && input.OrganizationId.HasValue)
+        {
+            var orgRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<SessionOrganization, long>>();
+            var targetOrg = await AsyncExecuter.FirstOrDefaultAsync(
+                (await orgRepo.GetQueryableAsync())
+                    .AsNoTracking()
+                    .Where(x => x.Id == input.OrganizationId.Value && x.SessionId == sessionId));
+
+            if (targetOrg == null)
+            {
+                return new ExtraPagedResultDto<SessionUnitMemberDto>(0, []);
+            }
+
+            if (input.IncludeDescendants && !string.IsNullOrWhiteSpace(targetOrg.FullPath))
+            {
+                var prefix = targetOrg.FullPath + "/";
+                targetOrgIds = await AsyncExecuter.ToListAsync(
+                    (await orgRepo.GetQueryableAsync())
+                        .AsNoTracking()
+                        .Where(x => x.SessionId == sessionId && (x.Id == targetOrg.Id || x.FullPath.StartsWith(prefix)))
+                        .Select(x => x.Id));
+            }
+            else
+            {
+                targetOrgIds = [targetOrg.Id];
+            }
+        }
+
         var query = (await SessionUnitRepository.GetQueryableAsync())
-            .Where(x => x.SessionId == sessionId && x.Setting.IsEnabled)
-            //.WhereIf(input.IsKilled.HasValue, x => x.Setting.IsKilled == input.IsKilled)
+            .AsNoTracking()
+            .Where(x => x.SessionId == sessionId && x.Setting.IsEnabled && !x.Setting.IsKilled)
             .WhereIf(input.IsStatic.HasValue, x => x.Setting.IsStatic == input.IsStatic)
             .WhereIf(input.IsCreator.HasValue, x => x.Setting.IsCreator == input.IsCreator)
             .WhereIf(input.IsPrivate.HasValue, x => x.Setting.IsPublic == !input.IsPrivate)
+            .WhereIf(input.OwnerObjectType.HasValue, x => x.OwnerObjectType == input.OwnerObjectType)
+            .WhereIf(input.OwnerId.HasValue, x => x.OwnerId == input.OwnerId)
+            .WhereIf(filterMode == SessionUnitOrganizationFilterMode.Ungrouped, x => !x.SessionUnitOrganizationList.Any())
+            .WhereIf(filterMode == SessionUnitOrganizationFilterMode.Organization && targetOrgIds != null,
+                x => x.SessionUnitOrganizationList.Any(o => targetOrgIds.Contains(o.SessionOrganizationId)))
             .WhereIf(!input.Keyword.IsNullOrWhiteSpace(), new KeywordOwnerSessionUnitSpecification(input.Keyword, await ChatObjectManager.SearchKeywordByCacheAsync(input.Keyword)))
             ;
 
-        var totalCount = query.Count(); //kvs.Length
+        var totalCount = await AsyncExecuter.CountAsync(query);
 
         query = query
            .OrderByDescending(x => x.Setting.IsCreator)
+           .ThenByDescending(x => x.Setting.IsAdmin)
            .ThenBy(x => x.CreationTime)
+           .ThenBy(x => x.Id)
            ;
 
         // paged
         query = query.Skip(input.SkipCount).Take(input.MaxResultCount);
 
-        var unitIds = query.Select(x => x.Id).ToList();
+        var unitIds = await AsyncExecuter.ToListAsync(query.Select(x => x.Id));
 
         var items = await GetMemberListAsync(unitIds);
 

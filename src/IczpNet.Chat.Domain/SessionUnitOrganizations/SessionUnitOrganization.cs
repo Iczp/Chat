@@ -21,6 +21,12 @@ public class SessionUnitOrganization : BaseEntity
 
     protected SessionUnitOrganization() { }
 
+    public SessionUnitOrganization(long sessionOrganizationId, Guid sessionUnitId)
+    {
+        SessionOrganizationId = sessionOrganizationId;
+        SessionUnitId = sessionUnitId;
+    }
+
     public SessionUnitOrganization(SessionOrganization sessionOrganization, SessionUnit sessionUnit)
     {
         SessionOrganization = sessionOrganization;

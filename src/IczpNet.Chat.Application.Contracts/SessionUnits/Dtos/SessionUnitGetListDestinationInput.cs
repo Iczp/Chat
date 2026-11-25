@@ -59,5 +59,18 @@ public class SessionUnitGetListDestinationInput : GetListInput
     /// </summary>
     public virtual Guid? InviterId { get; set; }
 
+    /// <summary>
+    /// 组织过滤模式（0=全部, 1=未分组, 2=指定组织）
+    /// </summary>
+    public virtual SessionUnitOrganizationFilterMode? OrganizationFilter { get; set; }
 
+    /// <summary>
+    /// 目标组织 Id
+    /// </summary>
+    public virtual long? OrganizationId { get; set; }
+
+    /// <summary>
+    /// 是否包含子组织（默认 false）
+    /// </summary>
+    public virtual bool IncludeDescendants { get; set; } = false;
 }

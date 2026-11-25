@@ -35,6 +35,7 @@ using IczpNet.Chat.SessionUnitCounters;
 using IczpNet.Chat.SessionUnitEntryValues;
 using IczpNet.Chat.SessionUnitMessages;
 using IczpNet.Chat.SessionUnitOrganizations;
+using IczpNet.Chat.SessionOrganizationRoles;
 using IczpNet.Chat.SessionUnitRoles;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
@@ -266,6 +267,13 @@ public static class ChatDbContextModelCreatingExtensions
             b.HasKey(x => new { x.SessionUnitId, x.SessionOrganizationId });
             b.HasOne(x => x.SessionUnit).WithMany(x => x.SessionUnitOrganizationList).HasForeignKey(x => x.SessionUnitId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
             b.HasOne(x => x.SessionOrganization).WithMany(x => x.SessionUnitOrganizationList).HasForeignKey(x => x.SessionOrganizationId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+        });
+        builder.Entity<SessionOrganizationRole>(b =>
+        {
+            b.HasKey(x => new { x.SessionOrganizationId, x.SessionRoleId });
+            b.HasIndex(x => x.SessionRoleId);
+            b.HasOne(x => x.SessionOrganization).WithMany().HasForeignKey(x => x.SessionOrganizationId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
+            b.HasOne(x => x.SessionRole).WithMany().HasForeignKey(x => x.SessionRoleId).OnDelete(DeleteBehavior.Cascade).IsRequired(false);
         });
         builder.Entity<SessionPermissionRoleGrant>(b =>
         {

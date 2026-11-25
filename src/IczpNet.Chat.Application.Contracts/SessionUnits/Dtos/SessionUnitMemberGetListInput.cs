@@ -62,4 +62,19 @@ public class SessionUnitMemberGetListInput : GetListInput
     /// Guid CursorId 用 Next Item Id [SessionUnitId]
     /// </summary>
     public Guid? CursorId { get; set; }
+
+    /// <summary>
+    /// 组织过滤模式（0=全部, 1=未分组, 2=指定组织）
+    /// </summary>
+    public SessionUnitOrganizationFilterMode? OrganizationFilter { get; set; }
+
+    /// <summary>
+    /// 目标组织 Id（当 OrganizationFilter=Organization 时有效）
+    /// </summary>
+    public long? OrganizationId { get; set; }
+
+    /// <summary>
+    /// 是否包含子组织（默认 false）
+    /// </summary>
+    public bool IncludeDescendants { get; set; } = false;
 }

@@ -272,6 +272,18 @@ public class SessionUnitSettingManager(
     /// <inheritdoc />
     public virtual async Task<SessionUnitSetting> KillAsync(Guid sessionUnitId, KillTypes? killType = null, Guid? killerId = null)
     {
+        if (killerId.HasValue && killType != KillTypes.OwnerQuit && killType != KillTypes.SystemKill)
+        {
+            var targetSetting = await GetAsync(sessionUnitId);
+            Assert.If(targetSetting.IsCreator, "不能移除群主。");
+            var killerUnitRepo = LazyServiceProvider.LazyGetRequiredService<ISessionUnitRepository>();
+            var killer = await killerUnitRepo.FindAsync(killerId.Value);
+            if (killer != null && !killer.Setting.IsCreator)
+            {
+                Assert.If(targetSetting.IsAdmin, "管理员不能移除其他管理员。");
+            }
+        }
+
         var setting = await SetEntityAsync(sessionUnitId, x => x.Kill(Clock.Now, killType, killerId));
         var unitRepo = LazyServiceProvider.LazyGetRequiredService<ISessionUnitRepository>();
         var unit = await unitRepo.FindAsync(sessionUnitId);
@@ -373,6 +385,7 @@ public class SessionUnitSettingManager(
         var muterSessionUnit = setting.SessionUnit;
 
         Assert.If(setting.IsCreator, $"Creator can't be mute.");
+        Assert.If(setting.IsAdmin && setterSessionUnit != null && !setterSessionUnit.Setting.IsCreator, "管理员不能禁言其他管理员。");
 
         var allowList = new List<ChatObjectTypeEnums?> { ChatObjectTypeEnums.Room, ChatObjectTypeEnums.Square, ChatObjectTypeEnums.Official, ChatObjectTypeEnums.Subscription, };
 

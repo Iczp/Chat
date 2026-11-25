@@ -5896,6 +5896,49 @@ namespace IczpNet.Chat.Migrations
                         });
                 });
 
+            modelBuilder.Entity("IczpNet.Chat.SessionOrganizationRoles.SessionOrganizationRole", b =>
+                {
+                    b.Property<long>("SessionOrganizationId")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("SessionRoleId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.HasKey("SessionOrganizationId", "SessionRoleId");
+
+                    b.HasIndex("SessionRoleId");
+
+                    b.ToTable("Chat_SessionOrganizationRole", (string)null);
+                });
+
             modelBuilder.Entity("IczpNet.Chat.SessionOrganizations.SessionOrganization", b =>
                 {
                     b.Property<long>("Id")
@@ -9564,6 +9607,23 @@ namespace IczpNet.Chat.Migrations
                         .HasForeignKey("OwnerId");
 
                     b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.SessionOrganizationRoles.SessionOrganizationRole", b =>
+                {
+                    b.HasOne("IczpNet.Chat.SessionOrganizations.SessionOrganization", "SessionOrganization")
+                        .WithMany()
+                        .HasForeignKey("SessionOrganizationId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("IczpNet.Chat.SessionRoles.SessionRole", "SessionRole")
+                        .WithMany()
+                        .HasForeignKey("SessionRoleId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("SessionOrganization");
+
+                    b.Navigation("SessionRole");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.SessionOrganizations.SessionOrganization", b =>

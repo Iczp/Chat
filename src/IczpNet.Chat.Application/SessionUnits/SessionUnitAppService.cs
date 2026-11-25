@@ -19,6 +19,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 using Volo.Abp.Users;
 
@@ -215,6 +216,34 @@ public class SessionUnitAppService(
 
         await CheckPolicyForUserAsync(entity.OwnerId, () => CheckPolicyAsync(GetListForSameSessionPolicyName));
 
+        var filterMode = input.OrganizationFilter
+            ?? (input.OrganizationId.HasValue ? SessionUnitOrganizationFilterMode.Organization : SessionUnitOrganizationFilterMode.All);
+
+        List<long> targetOrgIds = null;
+        if (filterMode == SessionUnitOrganizationFilterMode.Organization && input.OrganizationId.HasValue)
+        {
+            var orgRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<SessionOrganizations.SessionOrganization, long>>();
+            var targetOrg = await AsyncExecuter.FirstOrDefaultAsync(
+                (await orgRepo.GetQueryableAsync())
+                    .Where(x => x.Id == input.OrganizationId.Value && x.SessionId == entity.SessionId));
+            if (targetOrg == null)
+            {
+                return new PagedResultDto<SessionUnitDestinationDto>(0, []);
+            }
+            if (input.IncludeDescendants && !string.IsNullOrWhiteSpace(targetOrg.FullPath))
+            {
+                var prefix = targetOrg.FullPath + "/";
+                targetOrgIds = await AsyncExecuter.ToListAsync(
+                    (await orgRepo.GetQueryableAsync())
+                        .Where(x => x.SessionId == entity.SessionId && (x.Id == targetOrg.Id || x.FullPath.StartsWith(prefix)))
+                        .Select(x => x.Id));
+            }
+            else
+            {
+                targetOrgIds = [targetOrg.Id];
+            }
+        }
+
         var query = (await Repository.GetQueryableAsync())
             .Where(x => x.SessionId == entity.SessionId && x.Setting.IsEnabled)
             .WhereIf(input.IsKilled.HasValue, x => x.Setting.IsKilled == input.IsKilled)
@@ -226,6 +255,9 @@ public class SessionUnitAppService(
             .WhereIf(input.OwnerTypeList.IsAny(), x => input.OwnerTypeList.Contains(x.Owner.ObjectType.Value))
             .WhereIf(!input.TagId.IsEmpty(), x => x.SessionUnitTagList.Any(x => x.SessionTagId == input.TagId))
             .WhereIf(!input.RoleId.IsEmpty(), x => x.SessionUnitRoleList.Any(x => x.SessionRoleId == input.RoleId))
+            .WhereIf(filterMode == SessionUnitOrganizationFilterMode.Ungrouped, x => !x.SessionUnitOrganizationList.Any())
+            .WhereIf(filterMode == SessionUnitOrganizationFilterMode.Organization && targetOrgIds != null,
+                x => x.SessionUnitOrganizationList.Any(o => targetOrgIds.Contains(o.SessionOrganizationId)))
             .WhereIf(!input.JoinWay.IsEmpty(), x => x.Setting.JoinWay == input.JoinWay)
             .WhereIf(!input.InviterId.IsEmpty(), x => x.Setting.InviterId == input.InviterId)
             //排除自已

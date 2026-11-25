@@ -52,6 +52,7 @@ using IczpNet.Chat.SessionUnitCounters;
 using IczpNet.Chat.SessionUnitEntryValues;
 using IczpNet.Chat.SessionUnitMessages;
 using IczpNet.Chat.SessionUnitOrganizations;
+using IczpNet.Chat.SessionOrganizationRoles;
 using IczpNet.Chat.SessionUnitRoles;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
@@ -123,6 +124,7 @@ public class ChatDbContext(DbContextOptions<ChatDbContext> options) : AbpDbConte
     public DbSet<SessionRequest> SessionRequest { get; set; }
     public DbSet<SessionPermissionRoleGrant> SessionPermissionRoleGrant { get; set; }
     public DbSet<SessionPermissionUnitGrant> SessionPermissionUnitGrant { get; set; }
+    public DbSet<SessionOrganizationRole> SessionOrganizationRole { get; set; }
 
 
     public DbSet<Follow> Follow { get; set; }

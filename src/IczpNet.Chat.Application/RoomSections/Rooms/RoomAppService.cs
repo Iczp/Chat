@@ -279,14 +279,14 @@ public class RoomAppService(IRoomManager roomManager,
             SessionPermissionDefinitionConsts.SessionOrganizationPermission.Update,
             SessionPermissionDefinitionConsts.SessionOrganizationPermission.Delete);
 
-        var canManageRoles = isAdminOrCreator || await IsAnyPermissionGrantedAsync(
+        var canManageRoles = isCreator || await IsAnyPermissionGrantedAsync(
             sessionUnit,
             SessionPermissionDefinitionConsts.SessionRolePermission.Create,
             SessionPermissionDefinitionConsts.SessionRolePermission.Update,
             SessionPermissionDefinitionConsts.SessionRolePermission.Delete,
             SessionPermissionDefinitionConsts.SessionRolePermission.SetAllPermissions);
 
-        var canManagePermissions = isAdminOrCreator || await IsAnyPermissionGrantedAsync(
+        var canManagePermissions = isCreator || await IsAnyPermissionGrantedAsync(
             sessionUnit,
             SessionPermissionDefinitionConsts.SessionRolePermission.SetAllPermissions);
 

@@ -52,6 +52,7 @@ using IczpNet.Chat.SessionUnitCounters;
 using IczpNet.Chat.SessionUnitEntryValues;
 using IczpNet.Chat.SessionUnitMessages;
 using IczpNet.Chat.SessionUnitOrganizations;
+using IczpNet.Chat.SessionOrganizationRoles;
 using IczpNet.Chat.SessionUnitRoles;
 using IczpNet.Chat.SessionUnits;
 using IczpNet.Chat.SessionUnitSettings;
@@ -118,6 +119,7 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<SessionRequest> SessionRequest { get; }
     DbSet<SessionPermissionRoleGrant> SessionPermissionRoleGrant { get; }
     DbSet<SessionPermissionUnitGrant> SessionPermissionUnitGrant { get; }
+    DbSet<SessionOrganizationRole> SessionOrganizationRole { get; }
 
     DbSet<Follow> Follow { get; }
 
