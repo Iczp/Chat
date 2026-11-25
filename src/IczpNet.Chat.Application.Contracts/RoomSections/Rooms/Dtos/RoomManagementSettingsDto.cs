@@ -29,5 +29,9 @@ public class RoomManagementSettingsDto
     public virtual bool CanManageOrgs { get; set; }
     public virtual bool CanManageRoles { get; set; }
     public virtual bool CanManagePermissions { get; set; }
+    public virtual bool CanSetAdmin { get; set; }
+    public virtual bool CanManageNameOrDescription { get; set; }
+    public virtual bool CanToggleAllMuted { get; set; }
+    public virtual bool CanManageJoinPolicies { get; set; }
     public virtual bool CanTransferOrDissolve { get; set; }
 }

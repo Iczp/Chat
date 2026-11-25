@@ -425,4 +425,150 @@ public class RoomManagementPolicies_Tests : ChatTestBase<RoomManagementPoliciesT
                 () => roomManager.ClaimCreatorAsync(data.memberUnitId, isSendMessageToRoom: false));
         });
     }
+
+    [Fact]
+    public async Task TransferCreatorAsync_Revokes_Creator_And_IsStatic_And_Rejects_Invalid_Target()
+    {
+        var data = await WithUnitOfWorkAsync(async () =>
+        {
+            var context = await GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            await context.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys=OFF");
+
+            var sessionId = Guid.NewGuid();
+            var roomId = 9003L;
+            var ownerA = 10031L;
+            var ownerB = 10032L;
+            var ownerKilled = 10033L;
+            var unitA = Guid.NewGuid();
+            var unitB = Guid.NewGuid();
+            var unitKilled = Guid.NewGuid();
+
+            await InsertAsync<ChatObject>(context, new() { ["Id"] = roomId, ["Name"] = "转让测试群", ["ObjectType"] = ChatObjectTypeEnums.Room, ["IsEnabled"] = true });
+            await InsertAsync<ChatObject>(context, new() { ["Id"] = ownerA, ["Name"] = "原群主", ["ObjectType"] = ChatObjectTypeEnums.Personal });
+            await InsertAsync<ChatObject>(context, new() { ["Id"] = ownerB, ["Name"] = "新群主", ["ObjectType"] = ChatObjectTypeEnums.Personal });
+            await InsertAsync<ChatObject>(context, new() { ["Id"] = ownerKilled, ["Name"] = "已退成员", ["ObjectType"] = ChatObjectTypeEnums.Personal });
+            await InsertAsync<Session>(context, new() { ["Id"] = sessionId, ["OwnerId"] = roomId, ["IsEnabled"] = true });
+
+            await InsertAsync<SessionUnit>(context, new() { ["Id"] = unitA, ["SessionId"] = sessionId, ["OwnerId"] = ownerA, ["DestinationId"] = roomId, ["DestinationObjectType"] = ChatObjectTypeEnums.Room });
+            await InsertAsync<SessionUnitSetting>(context, new() { ["SessionUnitId"] = unitA, ["SessionId"] = sessionId, ["IsCreator"] = true, ["IsStatic"] = true, ["IsEnabled"] = true, ["IsKilled"] = false });
+
+            await InsertAsync<SessionUnit>(context, new() { ["Id"] = unitB, ["SessionId"] = sessionId, ["OwnerId"] = ownerB, ["DestinationId"] = roomId, ["DestinationObjectType"] = ChatObjectTypeEnums.Room });
+            await InsertAsync<SessionUnitSetting>(context, new() { ["SessionUnitId"] = unitB, ["SessionId"] = sessionId, ["IsCreator"] = false, ["IsStatic"] = false, ["IsEnabled"] = true, ["IsKilled"] = false });
+
+            await InsertAsync<SessionUnit>(context, new() { ["Id"] = unitKilled, ["SessionId"] = sessionId, ["OwnerId"] = ownerKilled, ["DestinationId"] = roomId, ["DestinationObjectType"] = ChatObjectTypeEnums.Room });
+            await InsertAsync<SessionUnitSetting>(context, new() { ["SessionUnitId"] = unitKilled, ["SessionId"] = sessionId, ["IsCreator"] = false, ["IsStatic"] = false, ["IsEnabled"] = true, ["IsKilled"] = true });
+
+            return (ownerA, unitA, ownerB, unitB, unitKilled);
+        });
+
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var roomManager = GetRequiredService<RoomManager>();
+            await Assert.ThrowsAsync<Volo.Abp.UserFriendlyException>(
+                () => roomManager.TransferCreatorAsync(data.unitA, data.unitKilled, isSendMessageToRoom: false));
+
+            await roomManager.TransferCreatorAsync(data.unitA, data.unitB, isSendMessageToRoom: false);
+        });
+
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var checker = GetRequiredService<ISessionPermissionChecker>();
+            var unitRepo = GetRequiredService<ISessionUnitRepository>();
+            var unitA = await unitRepo.GetAsync(data.unitA);
+            var unitB = await unitRepo.GetAsync(data.unitB);
+
+            Assert.False(unitA.Setting.IsCreator);
+            Assert.False(unitA.Setting.IsStatic);
+            Assert.False(await checker.IsGrantedAsync(SessionPermissionDefinitionConsts.ChatObjectPermission.UpdateName, unitA));
+            Assert.True(unitB.Setting.IsCreator);
+            Assert.True(await checker.IsGrantedAsync(SessionPermissionDefinitionConsts.ChatObjectPermission.UpdateName, unitB));
+
+            var serviceA = CreateService(data.ownerA, checker);
+            var settingsA = await serviceA.GetManagementSettingsAsync(data.unitA);
+            Assert.False(settingsA.IsCreator);
+            Assert.False(settingsA.CanSetAdmin);
+            Assert.False(settingsA.CanTransferOrDissolve);
+            Assert.False(settingsA.CanManageSettings);
+
+            var serviceB = CreateService(data.ownerB, checker);
+            var settingsB = await serviceB.GetManagementSettingsAsync(data.unitB);
+            Assert.True(settingsB.IsCreator);
+            Assert.True(settingsB.CanSetAdmin);
+            Assert.True(settingsB.CanTransferOrDissolve);
+        });
+    }
+
+    [Fact]
+    public async Task ClaimCreatorAsync_Rejects_Dissolved_Room()
+    {
+        var memberUnitId = await WithUnitOfWorkAsync(async () =>
+        {
+            var context = await GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            await context.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys=OFF");
+            var sessionId = Guid.NewGuid();
+            var roomId = 9004L;
+            var ownerId = 10041L;
+            var unitId = Guid.NewGuid();
+            await InsertAsync<ChatObject>(context, new() { ["Id"] = roomId, ["Name"] = "已解散群", ["ObjectType"] = ChatObjectTypeEnums.Room, ["IsEnabled"] = true });
+            await InsertAsync<ChatObject>(context, new() { ["Id"] = ownerId, ["Name"] = "成员", ["ObjectType"] = ChatObjectTypeEnums.Personal });
+            await InsertAsync<Session>(context, new() { ["Id"] = sessionId, ["OwnerId"] = roomId, ["IsEnabled"] = false });
+            await InsertAsync<SessionUnit>(context, new() { ["Id"] = unitId, ["SessionId"] = sessionId, ["OwnerId"] = ownerId, ["DestinationId"] = roomId, ["DestinationObjectType"] = ChatObjectTypeEnums.Room });
+            await InsertAsync<SessionUnitSetting>(context, new() { ["SessionUnitId"] = unitId, ["SessionId"] = sessionId, ["IsCreator"] = false, ["IsEnabled"] = true, ["IsKilled"] = false });
+            return unitId;
+        });
+
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var roomManager = GetRequiredService<RoomManager>();
+            await Assert.ThrowsAsync<Volo.Abp.UserFriendlyException>(
+                () => roomManager.ClaimCreatorAsync(memberUnitId, isSendMessageToRoom: false));
+        });
+    }
+
+    [Fact]
+    public async Task UpdatePoliciesAsync_Enforces_Per_Field_Permission_Without_Partial_Write()
+    {
+        var data = await WithUnitOfWorkAsync(async () =>
+        {
+            var context = await GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            await context.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys=OFF");
+            var sessionId = Guid.NewGuid();
+            var roomId = 9005L;
+            var ownerId = 10051L;
+            var unitId = Guid.NewGuid();
+            await InsertAsync<ChatObject>(context, new() { ["Id"] = roomId, ["Name"] = "策略权限群", ["Description"] = "原简介", ["ObjectType"] = ChatObjectTypeEnums.Room, ["IsEnabled"] = true });
+            await InsertAsync<ChatObject>(context, new() { ["Id"] = ownerId, ["Name"] = "仅改名成员", ["ObjectType"] = ChatObjectTypeEnums.Personal });
+            await InsertAsync<Session>(context, new() { ["Id"] = sessionId, ["OwnerId"] = roomId, ["IsEnabled"] = true, ["IsAllMuted"] = false });
+            await InsertAsync<SessionUnit>(context, new() { ["Id"] = unitId, ["SessionId"] = sessionId, ["OwnerId"] = ownerId, ["DestinationId"] = roomId, ["DestinationObjectType"] = ChatObjectTypeEnums.Room });
+            await InsertAsync<SessionUnitSetting>(context, new() { ["SessionUnitId"] = unitId, ["SessionId"] = sessionId, ["IsCreator"] = false, ["IsEnabled"] = true, ["IsKilled"] = false });
+            return (roomId, ownerId, unitId);
+        });
+
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var checker = Substitute.For<ISessionPermissionChecker>();
+            checker.IsGrantedAsync(SessionPermissionDefinitionConsts.ChatObjectPermission.UpdateName, Arg.Any<SessionUnit>()).Returns(true);
+            checker.CheckAsync(SessionPermissionDefinitionConsts.ChatObjectPermission.UpdateName, Arg.Any<SessionUnit>()).Returns(Task.CompletedTask);
+            checker.CheckAsync(SessionPermissionDefinitionConsts.ChatObjectPermission.ToggleAllInputEnabled, Arg.Any<SessionUnit>())
+                .Returns<Task>(_ => throw new AbpAuthorizationException("No permission:ToggleAllInputEnabled"));
+
+            var service = CreateService(data.ownerId, checker);
+            await Assert.ThrowsAsync<AbpAuthorizationException>(() => service.UpdatePoliciesAsync(new UpdateRoomPoliciesInput
+            {
+                SessionUnitId = data.unitId,
+                Description = "不应部分写入的新简介",
+                IsAllMuted = true
+            }));
+
+            var room = await GetRequiredService<IChatObjectRepository>().GetAsync(data.roomId);
+            Assert.Equal("原简介", room.Description);
+
+            var updated = await service.UpdatePoliciesAsync(new UpdateRoomPoliciesInput
+            {
+                SessionUnitId = data.unitId,
+                Description = "合法修改后的简介"
+            });
+            Assert.Equal("合法修改后的简介", updated.Description);
+        });
+    }
 }

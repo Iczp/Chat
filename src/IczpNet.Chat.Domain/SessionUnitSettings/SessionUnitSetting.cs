@@ -471,6 +471,10 @@ public class SessionUnitSetting : BaseEntity, IHasCreationTime, IHasModification
     internal virtual void SetIsCreator(bool v)
     {
         IsCreator = v;
+    }
+
+    internal virtual void SetIsStatic(bool v)
+    {
         IsStatic = v;
     }
 

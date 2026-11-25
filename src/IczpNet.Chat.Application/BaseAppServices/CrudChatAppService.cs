@@ -103,6 +103,15 @@ public abstract class CrudChatAppService<
     protected ICurrentChatObject CurrentChatObject => LazyServiceProvider.LazyGetRequiredService<ICurrentChatObject>();
     protected IChatObjectManager ChatObjectManager => LazyServiceProvider.LazyGetRequiredService<IChatObjectManager>();
     protected ISessionUnitManager SessionUnitManager => LazyServiceProvider.LazyGetRequiredService<ISessionUnitManager>();
+
+    protected virtual Task<SessionUnit> LoadDetailedSessionUnitAsync(Guid sessionUnitId)
+        => SessionUnitPolicyHelper.LoadDetailedSessionUnitAsync(LazyServiceProvider, sessionUnitId);
+
+    protected virtual Task<SessionUnit> ResolveAndCheckSessionUnitPolicyAsync(Guid sessionId, Guid? sessionUnitId, string policyName)
+        => SessionUnitPolicyHelper.ResolveAndCheckSessionUnitPolicyAsync(LazyServiceProvider, CurrentUser, ChatObjectManager, sessionId, sessionUnitId, policyName);
+
+    protected static bool IsBuiltInAdminRoleName(string roleName)
+        => SessionUnitPolicyHelper.IsBuiltInAdminRoleName(roleName);
     protected CrudChatAppService(IRepository<TEntity, TKey> repository) : base(repository)
     {
         LocalizationResource = typeof(ChatResource);

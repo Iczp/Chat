@@ -121,9 +121,23 @@ public abstract class CrudBySessionUnitChatAppService<
 
     protected virtual async Task<SessionUnit> GetAndCheckSessionUnitAsync(Guid sessionUnitId)
     {
-        var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+        var sessionUnit = await LoadDetailedSessionUnitAsync(sessionUnitId);
 
-        Assert.If(!sessionUnit.Setting.IsEnabled, $"SessionUnit disabled,SessionUnitId:{sessionUnit.Id}");
+        Assert.If(sessionUnit.Setting == null || !sessionUnit.Setting.IsEnabled || sessionUnit.Setting.IsKilled, $"SessionUnit disabled,SessionUnitId:{sessionUnit.Id}");
+        Assert.If(!sessionUnit.SessionId.HasValue, "无效的群会话单元");
+
+        var sessionEnabled = await AsyncExecuter.AnyAsync(
+            (await SessionRepository.GetQueryableAsync()).Where(x => x.Id == sessionUnit.SessionId.Value && x.IsEnabled));
+        Assert.If(!sessionEnabled, "群会话不存在或已解散");
+
+        if (CurrentUser.Id.HasValue)
+        {
+            var ownedIds = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+            if (!ownedIds.Contains(sessionUnit.OwnerId))
+            {
+                throw new Volo.Abp.Authorization.AbpAuthorizationException("无权使用该群成员身份操作");
+            }
+        }
 
         return sessionUnit;
     }

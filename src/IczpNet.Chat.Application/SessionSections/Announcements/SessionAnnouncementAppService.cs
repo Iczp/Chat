@@ -63,7 +63,7 @@ public class SessionAnnouncementAppService(
 
     private async Task<UnitPermSnapshot> GetUnitPermSnapshotAsync(SessionUnit unit)
     {
-        var isCreator = unit.Setting != null && (unit.Setting.IsCreator || unit.Setting.IsStatic);
+        var isCreator = unit.Setting != null && unit.Setting.IsCreator;
         if (isCreator)
         {
             return new UnitPermSnapshot(true, true, true, true, true, true, true, true, true, true, true, true, true);
@@ -100,7 +100,7 @@ public class SessionAnnouncementAppService(
     private async Task CheckEditPermissionAsync(SessionAnnouncement entity, SessionUnit unit)
     {
         var isAuthor = entity.PublisherSessionUnitId == unit.Id || entity.PublisherChatObjectId == unit.OwnerId;
-        var isCreator = unit.Setting != null && (unit.Setting.IsCreator || unit.Setting.IsStatic);
+        var isCreator = unit.Setting != null && unit.Setting.IsCreator;
         if (isCreator)
         {
             return;
@@ -144,7 +144,7 @@ public class SessionAnnouncementAppService(
     private async Task CheckDeletePermissionAsync(SessionAnnouncement entity, SessionUnit unit)
     {
         var isAuthor = entity.PublisherSessionUnitId == unit.Id || entity.PublisherChatObjectId == unit.OwnerId;
-        var isCreator = unit.Setting != null && (unit.Setting.IsCreator || unit.Setting.IsStatic);
+        var isCreator = unit.Setting != null && unit.Setting.IsCreator;
         if (isCreator)
         {
             return;
@@ -216,28 +216,25 @@ public class SessionAnnouncementAppService(
         if (sessionUnitId != Guid.Empty)
         {
             unit = await query.FirstOrDefaultAsync(x => x.Id == sessionUnitId);
-        }
-        if (unit == null && sessionId.HasValue && sessionId.Value != Guid.Empty)
-        {
-            unit = await query.Where(x => x.SessionId == sessionId.Value && ownedIds.Contains(x.OwnerId)
-                    && x.Setting.IsEnabled && !x.Setting.IsKilled)
-                .OrderByDescending(x => x.Setting.IsCreator).ThenByDescending(x => x.SessionUnitRoleList.Any()).ThenBy(x => x.Id)
-                .FirstOrDefaultAsync();
             if (unit == null)
             {
-                unit = await query.Where(x => x.Id == sessionId.Value && ownedIds.Contains(x.OwnerId)
-                        && x.Setting.IsEnabled && !x.Setting.IsKilled)
-                    .FirstOrDefaultAsync();
+                throw new AbpAuthorizationException("Invalid announcement membership.");
             }
         }
-        if (unit == null && sessionUnitId != Guid.Empty)
+        else if (sessionId.HasValue && sessionId.Value != Guid.Empty)
         {
-            // 兼容客户端把 SessionId 误传入 sessionUnitId 字段的场景
-            unit = await query.Where(x => x.SessionId == sessionUnitId && ownedIds.Contains(x.OwnerId)
+            var candidates = await query
+                .Where(x => x.SessionId == sessionId.Value && ownedIds.Contains(x.OwnerId)
                     && x.Setting.IsEnabled && !x.Setting.IsKilled)
-                .OrderByDescending(x => x.Setting.IsCreator).ThenByDescending(x => x.SessionUnitRoleList.Any()).ThenBy(x => x.Id)
-                .FirstOrDefaultAsync();
+                .OrderBy(x => x.Id)
+                .ToListAsync();
+            if (candidates.Count > 1)
+            {
+                throw new UserFriendlyException("当前账号在该群存在多个身份，请显式指定操作成员身份");
+            }
+            unit = candidates.FirstOrDefault();
         }
+
         if (unit == null)
         {
             throw new AbpAuthorizationException("A valid session membership is required.");
@@ -245,7 +242,7 @@ public class SessionAnnouncementAppService(
 
         if (!ownedIds.Contains(unit.OwnerId) || unit.IsDeleted || unit.Setting == null
             || !unit.Setting.IsEnabled || unit.Setting.IsKilled || !unit.SessionId.HasValue
-            || (sessionId.HasValue && sessionId.Value != Guid.Empty && unit.SessionId != sessionId && unit.Id != sessionId)
+            || (sessionId.HasValue && sessionId.Value != Guid.Empty && unit.SessionId != sessionId)
             || (unit.DestinationObjectType != ChatObjectTypeEnums.Room && unit.DestinationObjectType != ChatObjectTypeEnums.Square))
             throw new AbpAuthorizationException("Invalid announcement membership.");
 
@@ -355,7 +352,7 @@ public class SessionAnnouncementAppService(
 
     public virtual async Task<PagedResultDto<SessionAnnouncementDto>> GetListAsync(GetSessionAnnouncementListInput input)
     {
-        var unit = await GetSessionUnitOrDefaultAsync(Guid.Empty, input.SessionId);
+        var unit = await GetSessionUnitOrDefaultAsync(input.SessionUnitId ?? Guid.Empty, input.SessionId);
         var targetSessionId = unit.SessionId!.Value;
         var queryable = await AnnouncementRepository.GetQueryableAsync();
         var perms = await GetUnitPermSnapshotAsync(unit);
@@ -410,9 +407,8 @@ public class SessionAnnouncementAppService(
         var unitDict = await (await SessionUnitRepository.GetQueryableAsync()).Where(x => relatedUnitIds.Contains(x.Id))
             .Include(x => x.Owner).Include(x => x.Setting).ToDictionaryAsync(x => x.Id);
         var ids = entities.Select(x => x.Id).ToList();
-        var ownedIds = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id!.Value);
         var confirmedReceipts = await (await ReceiptRepository.GetQueryableAsync())
-            .Where(x => ids.Contains(x.AnnouncementId) && ownedIds.Contains(x.ChatObjectId) && x.IsConfirmed)
+            .Where(x => ids.Contains(x.AnnouncementId) && x.SessionUnitId == unit.Id && x.IsConfirmed)
             .GroupBy(x => x.AnnouncementId)
             .Select(g => new { AnnouncementId = g.Key, LatestConfirmedTime = g.Max(x => x.ConfirmedTime), MaxConfirmedVersion = g.Max(x => x.ConfirmedVersion) })
             .ToDictionaryAsync(x => x.AnnouncementId, x => x);
@@ -1238,7 +1234,7 @@ public class SessionAnnouncementAppService(
             var perms = await GetUnitPermSnapshotAsync(currentUnit);
             ApplyCapabilities(dto, entity, currentUnit, perms, dto.IsExpired);
         }
-        var receipt = await GetCurrentReceiptAsync(entity.Id);
+        var receipt = await GetCurrentReceiptAsync(entity.Id, currentUnit?.Id);
         if (receipt != null)
         {
             dto.ConfirmedVersion = receipt.ConfirmedVersion;
@@ -1295,10 +1291,17 @@ public class SessionAnnouncementAppService(
         };
     }
 
-    protected virtual async Task<SessionAnnouncementReceipt> GetCurrentReceiptAsync(Guid announcementId)
+    protected virtual async Task<SessionAnnouncementReceipt> GetCurrentReceiptAsync(Guid announcementId, Guid? sessionUnitId = null)
     {
+        var query = await ReceiptRepository.GetQueryableAsync();
+        if (sessionUnitId.HasValue && sessionUnitId.Value != Guid.Empty)
+        {
+            return await query
+                .Where(x => x.AnnouncementId == announcementId && x.SessionUnitId == sessionUnitId.Value)
+                .OrderByDescending(x => x.IsConfirmed).ThenByDescending(x => x.ConfirmedTime).FirstOrDefaultAsync();
+        }
         var ownedIds = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id!.Value);
-        return await (await ReceiptRepository.GetQueryableAsync())
+        return await query
             .Where(x => x.AnnouncementId == announcementId && ownedIds.Contains(x.ChatObjectId))
             .OrderByDescending(x => x.IsConfirmed).ThenByDescending(x => x.ConfirmedTime).FirstOrDefaultAsync();
     }
@@ -1333,7 +1336,7 @@ public class SessionAnnouncementAppService(
             ReadCount = dto.ReadCount,
             CreationTime = dto.CreationTime,
             IsConfirmedByCurrentUser = dto.IsConfirmedByCurrentUser,
-            ConfirmedTime = (await GetCurrentReceiptAsync(entity.Id))?.ConfirmedTime,
+            ConfirmedTime = (await GetCurrentReceiptAsync(entity.Id, currentUnit?.Id))?.ConfirmedTime,
             Content = entity.Content,
             LinkedMessageId = entity.LinkedMessageId,
             Version = dto.Version,

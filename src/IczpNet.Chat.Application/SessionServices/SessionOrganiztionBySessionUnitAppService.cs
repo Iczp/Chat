@@ -25,12 +25,12 @@ public class SessionOrganiztionBySessionUnitAppService
         SessionOrganizationUpdateInput>,
     ISessionOrganiztionBySessionUnitAppService
 {
-    //protected override string GetPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Default;
-    //protected override string GetListPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Default;
-    //protected override string CreatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Create;
-    //protected override string UpdatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Update;
-    //protected override string DeletePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Delete;
-    //protected override string DeleteManyPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionOrganizationPermission.Delete;
+    protected override string GetPolicyName { get; set; } = Permissions.SessionPermissionDefinitionConsts.SessionOrganizationPermission.Default;
+    protected override string GetListPolicyName { get; set; } = Permissions.SessionPermissionDefinitionConsts.SessionOrganizationPermission.Default;
+    protected override string CreatePolicyName { get; set; } = Permissions.SessionPermissionDefinitionConsts.SessionOrganizationPermission.Create;
+    protected override string UpdatePolicyName { get; set; } = Permissions.SessionPermissionDefinitionConsts.SessionOrganizationPermission.Update;
+    protected override string DeletePolicyName { get; set; } = Permissions.SessionPermissionDefinitionConsts.SessionOrganizationPermission.Delete;
+    protected override string DeleteManyPolicyName { get; set; } = Permissions.SessionPermissionDefinitionConsts.SessionOrganizationPermission.Delete;
 
     public SessionOrganiztionBySessionUnitAppService(
         IRepository<SessionOrganization, long> repository,
@@ -55,6 +55,13 @@ public class SessionOrganiztionBySessionUnitAppService
         await Task.Yield();
 
         return new SessionOrganization(createInput.Name, sessionUnit.SessionId.Value, createInput.ParentId);
+    }
+
+    protected override Task CheckGetPolicyAsync(SessionUnit sessionUnit, SessionOrganization entity)
+    {
+        Assert.If(sessionUnit.SessionId != entity.SessionId, "Not in same session");
+
+        return base.CheckGetPolicyAsync(sessionUnit, entity);
     }
 
     protected override async Task CheckCreatePolicyAsync(SessionUnit sessionUnit, SessionOrganizationCreateBySessionUnitInput input)

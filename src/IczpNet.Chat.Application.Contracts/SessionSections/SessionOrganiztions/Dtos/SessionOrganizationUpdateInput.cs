@@ -12,4 +12,6 @@ public class SessionOrganizationUpdateInput : BaseTreeInputDto<long>
     /// 说明
     /// </summary>
     public virtual string Description { get; set; }
+
+    public virtual Guid? SessionUnitId { get; set; }
 }

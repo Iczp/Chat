@@ -59,21 +59,27 @@ public class SessionPermissionChecker : DomainService, ISessionPermissionChecker
 
         Assert.If(!SessionPermissionDefinitionConsts.GetAll().Contains(sessionPermissionDefinitionId), $"Key does not exist:{sessionPermissionDefinitionId}");
 
-        if (!sessionUnit.Setting.IsEnabled)
+        if (!sessionUnit.Setting.IsEnabled || sessionUnit.Setting.IsKilled)
         {
-            Logger.LogDebug($"SessionUnit is disabled, sessionUnitId:{sessionUnit.Id}, sessionPermissionDefinitionId:{sessionPermissionDefinitionId},");
+            Logger.LogDebug($"SessionUnit is disabled or killed, sessionUnitId:{sessionUnit.Id}, sessionPermissionDefinitionId:{sessionPermissionDefinitionId},");
             return false;
         }
 
-        if (sessionUnit.Setting.IsStatic)
+        if (sessionUnit.Setting.IsStatic && sessionUnit.OwnerId == sessionUnit.DestinationId)
         {
-            Logger.LogDebug($"SessionUnit is Static, sessionUnitId:{sessionUnit.Id}, sessionPermissionDefinitionId:{sessionPermissionDefinitionId},");
+            Logger.LogDebug($"SessionUnit is system Static, sessionUnitId:{sessionUnit.Id}, sessionPermissionDefinitionId:{sessionPermissionDefinitionId},");
             return true;
         }
 
         if (sessionUnit.Setting.IsCreator)
         {
             Logger.LogDebug($"SessionUnit is Creator, sessionUnitId:{sessionUnit.Id}, sessionPermissionDefinitionId:{sessionPermissionDefinitionId},");
+            return true;
+        }
+
+        if (sessionUnit.IsAdmin)
+        {
+            Logger.LogDebug($"SessionUnit is Admin, sessionUnitId:{sessionUnit.Id}, sessionPermissionDefinitionId:{sessionPermissionDefinitionId},");
             return true;
         }
 

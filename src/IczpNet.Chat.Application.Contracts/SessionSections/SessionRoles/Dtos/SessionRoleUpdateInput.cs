@@ -18,4 +18,6 @@ public class SessionRoleUpdateInput : BaseInput
     public virtual bool IsDefault { get; set; }
 
     public virtual Dictionary<string, PermissionGrantValue> PermissionGrant { get; set; }
+
+    public virtual System.Guid? SessionUnitId { get; set; }
 }

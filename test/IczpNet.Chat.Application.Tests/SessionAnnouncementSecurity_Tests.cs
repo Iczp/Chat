@@ -278,4 +278,93 @@ public class SessionAnnouncementSecurity_Tests : ChatTestBase<MessageQueryReview
             Assert.Equal("允许审核本人提审", reviewed.ReviewRemark);
         });
     }
+
+    [Fact]
+    public async Task Same_account_multiple_identities_isolate_announcement_receipts_and_reject_wrong_unit_id()
+    {
+        var data = await WithUnitOfWorkAsync(async () =>
+        {
+            var context = await GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            await context.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys=OFF");
+            var session = Guid.NewGuid();
+            var unitA = Guid.NewGuid();
+            var unitB = Guid.NewGuid();
+            var announcement = Guid.NewGuid();
+            await InsertAsync<ChatObject>(context, new() { ["Id"] = 10L, ["Name"] = "身份A", ["ObjectType"] = ChatObjectTypeEnums.Personal });
+            await InsertAsync<ChatObject>(context, new() { ["Id"] = 11L, ["Name"] = "身份B", ["ObjectType"] = ChatObjectTypeEnums.Personal });
+            await InsertAsync<ChatObject>(context, new() { ["Id"] = 200L, ["Name"] = "同账号双身份群", ["ObjectType"] = ChatObjectTypeEnums.Room });
+            await InsertAsync<Session>(context, new() { ["Id"] = session, ["OwnerId"] = 200L, ["IsEnabled"] = true });
+
+            await InsertAsync<SessionUnit>(context, new() { ["Id"] = unitA, ["SessionId"] = session, ["OwnerId"] = 10L, ["DestinationId"] = 200L, ["DestinationObjectType"] = ChatObjectTypeEnums.Room });
+            await InsertAsync<SessionUnitSetting>(context, new() { ["SessionUnitId"] = unitA, ["SessionId"] = session, ["IsCreator"] = false, ["IsEnabled"] = true, ["IsKilled"] = false });
+
+            await InsertAsync<SessionUnit>(context, new() { ["Id"] = unitB, ["SessionId"] = session, ["OwnerId"] = 11L, ["DestinationId"] = 200L, ["DestinationObjectType"] = ChatObjectTypeEnums.Room });
+            await InsertAsync<SessionUnitSetting>(context, new() { ["SessionUnitId"] = unitB, ["SessionId"] = session, ["IsCreator"] = true, ["IsEnabled"] = true, ["IsKilled"] = false });
+
+            await InsertAsync<SessionAnnouncement>(context, new()
+            {
+                ["Id"] = announcement,
+                ["SessionId"] = session,
+                ["ChatObjectId"] = 200L,
+                ["PublisherSessionUnitId"] = unitB,
+                ["PublisherChatObjectId"] = 11L,
+                ["Title"] = "多身份回执隔离测试",
+                ["Content"] = "测试内容",
+                ["Status"] = AnnouncementStatus.Published,
+                ["IsApproved"] = true,
+                ["Version"] = 1,
+                ["RequireConfirm"] = true
+            });
+
+            return (Session: session, UnitA: unitA, UnitB: unitB, Announcement: announcement);
+        });
+
+        await WithUnitOfWorkAsync(new AbpUnitOfWorkOptions { IsTransactional = false }, async () =>
+        {
+            var lazy = Substitute.For<IAbpLazyServiceProvider>();
+            var user = Substitute.For<ICurrentUser>();
+            var userId = Guid.NewGuid();
+            user.Id.Returns(userId);
+            var objects = Substitute.For<IChatObjectManager>();
+            objects.GetIdListByUserIdAsync(userId).Returns([10L, 11L]);
+            lazy.LazyGetRequiredService<ICurrentUser>().Returns(user);
+            lazy.LazyGetRequiredService<IChatObjectManager>().Returns(objects);
+
+            var checker = Substitute.For<ISessionPermissionChecker>();
+            var distributedLock = Substitute.For<IAbpDistributedLock>();
+            distributedLock.TryAcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
+                .Returns(Substitute.For<IAbpDistributedLockHandle>());
+
+            var manager = new SessionAnnouncementManager(
+                GetRequiredService<ISessionAnnouncementRepository>(),
+                GetRequiredService<ISessionAnnouncementReceiptRepository>(),
+                distributedLock,
+                GetRequiredService<IUnitOfWorkManager>());
+
+            var service = new SessionAnnouncementAppService(
+                GetRequiredService<ISessionAnnouncementRepository>(),
+                GetRequiredService<ISessionAnnouncementReceiptRepository>(),
+                GetRequiredService<ISessionUnitRepository>(),
+                manager,
+                checker,
+                Substitute.For<IMessageManager>())
+            { LazyServiceProvider = lazy };
+
+            // 1. 用身份 A 确认公告
+            await service.ConfirmReceiptAsync(data.Announcement, new ConfirmSessionAnnouncementInput { SessionUnitId = data.UnitA });
+
+            var listForA = await service.GetListAsync(new GetSessionAnnouncementListInput { SessionId = data.Session, SessionUnitId = data.UnitA });
+            Assert.Single(listForA.Items);
+            Assert.True(listForA.Items[0].IsConfirmedByCurrentUser);
+
+            // 2. 身份 B 应保持独立未确认状态
+            var listForB = await service.GetListAsync(new GetSessionAnnouncementListInput { SessionId = data.Session, SessionUnitId = data.UnitB });
+            Assert.Single(listForB.Items);
+            Assert.False(listForB.Items[0].IsConfirmedByCurrentUser);
+
+            // 3. 把公告 ID 或错误 ID 填入 SessionUnitId 时，必须拒绝，不允许回退到身份 B
+            await Assert.ThrowsAsync<AbpAuthorizationException>(() =>
+                service.ConfirmReceiptAsync(data.Announcement, new ConfirmSessionAnnouncementInput { SessionUnitId = data.Announcement }));
+        });
+    }
 }

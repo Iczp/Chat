@@ -1,4 +1,5 @@
-﻿using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.AbpCommons;
+using IczpNet.Chat.BaseAppServices;
 using IczpNet.Chat.ChatObjectCategories;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjects.Dtos;
@@ -83,8 +84,13 @@ public class RoomAdminAppService(
     public async Task<ChatObjectDto> UpdateNameAsync(Guid sessionUnitId, string name)
     {
         var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+        if (CurrentUser.Id.HasValue)
+        {
+            var ownedIds = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+            Assert.If(!ownedIds.Contains(sessionUnit.OwnerId), "无权使用该群成员身份操作");
+        }
 
-        //await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.ChatObjectPermission.UpdateName, sessionUnit);
+        await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.ChatObjectPermission.UpdateName, sessionUnit);
 
         var entity = await RoomManager.UpdateNameAsync(sessionUnit, name);
 
@@ -95,6 +101,11 @@ public class RoomAdminAppService(
     public virtual async Task<ChatObjectDto> UpdatePortraitAsync(Guid sessionUnitId, string thubmnail, string portrait)
     {
         var sessionUnit = await SessionUnitManager.GetAsync(sessionUnitId);
+        if (CurrentUser.Id.HasValue)
+        {
+            var ownedIds = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+            Assert.If(!ownedIds.Contains(sessionUnit.OwnerId), "无权使用该群成员身份操作");
+        }
 
         await SessionPermissionChecker.CheckAsync(SessionPermissionDefinitionConsts.ChatObjectPermission.UpdatePortrait, sessionUnit);
 

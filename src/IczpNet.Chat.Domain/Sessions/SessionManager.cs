@@ -131,7 +131,8 @@ public class SessionManager(
             }
             var sessionUnit = await SessionUnitRepository.GetAsync(sessionUnitId);
 
-            Assert.If(sessionRole.SessionId != sessionUnit.SessionId, "");
+            Assert.If(sessionRole.SessionId != sessionUnit.SessionId, "成员与角色不属于同一群聊");
+            Assert.If(sessionUnit.Setting == null || !sessionUnit.Setting.IsEnabled || sessionUnit.Setting.IsKilled, "目标成员状态无效");
 
             sessionRole.SessionUnitRoleList.Add(new SessionUnitRole(sessionRole, sessionUnit));
         }

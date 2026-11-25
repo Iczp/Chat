@@ -2,18 +2,114 @@
 using IczpNet.AbpCommons.DataFilters;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Localization;
+using IczpNet.Chat.SessionPermissions;
+using IczpNet.Chat.Sessions;
 using IczpNet.Chat.SessionUnits;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp;
 using Volo.Abp.Auditing;
 using Volo.Abp.Authorization;
+using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Linq;
 using Volo.Abp.Users;
 
 namespace IczpNet.Chat.BaseAppServices;
+
+internal static class SessionUnitPolicyHelper
+{
+    public static bool IsBuiltInAdminRoleName(string roleName)
+    {
+        var normalized = roleName?.Trim();
+        return string.Equals(normalized, "管理员", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "Admin", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static async Task<SessionUnit> LoadDetailedSessionUnitAsync(IAbpLazyServiceProvider lazyServiceProvider, Guid sessionUnitId)
+    {
+        var sessionUnitRepo = lazyServiceProvider.LazyGetRequiredService<ISessionUnitRepository>();
+        var asyncExecuter = lazyServiceProvider.LazyGetRequiredService<IAsyncQueryableExecuter>();
+        var query = (await sessionUnitRepo.GetQueryableAsync())
+            .Include(x => x.Setting)
+            .Include(x => x.GrantList)
+            .Include(x => x.SessionUnitRoleList)
+                .ThenInclude(x => x.SessionRole)
+                    .ThenInclude(x => x.GrantList);
+        var entity = await asyncExecuter.FirstOrDefaultAsync(query, x => x.Id == sessionUnitId);
+        return Assert.NotNull(entity, $"SessionUnit not found: {sessionUnitId}");
+    }
+
+    public static async Task<SessionUnit> ResolveAndCheckSessionUnitPolicyAsync(
+        IAbpLazyServiceProvider lazyServiceProvider,
+        ICurrentUser currentUser,
+        IChatObjectManager chatObjectManager,
+        Guid sessionId,
+        Guid? sessionUnitId,
+        string policyName)
+    {
+        var sessionRepo = lazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
+        var asyncExecuter = lazyServiceProvider.LazyGetRequiredService<IAsyncQueryableExecuter>();
+        var sessionEnabled = await asyncExecuter.AnyAsync(
+            (await sessionRepo.GetQueryableAsync()).Where(x => x.Id == sessionId && x.IsEnabled));
+        Assert.If(!sessionEnabled, "群会话不存在或已解散");
+
+        SessionUnit unit;
+        if (sessionUnitId.HasValue)
+        {
+            unit = await LoadDetailedSessionUnitAsync(lazyServiceProvider, sessionUnitId.Value);
+            Assert.If(unit.SessionId != sessionId, "操作成员身份不属于目标群会话");
+            Assert.If(unit.Setting == null || !unit.Setting.IsEnabled || unit.Setting.IsKilled, "当前成员身份已失效");
+            if (currentUser.Id.HasValue)
+            {
+                var ownedIds = await chatObjectManager.GetIdListByUserIdAsync(currentUser.Id.Value);
+                if (!ownedIds.Contains(unit.OwnerId))
+                {
+                    throw new AbpAuthorizationException("无权使用该群成员身份操作");
+                }
+            }
+        }
+        else
+        {
+            if (!currentUser.Id.HasValue)
+            {
+                throw new AbpAuthorizationException("未登录或缺少操作成员身份");
+            }
+            var ownedIds = await chatObjectManager.GetIdListByUserIdAsync(currentUser.Id.Value);
+            var sessionUnitRepo = lazyServiceProvider.LazyGetRequiredService<ISessionUnitRepository>();
+            var query = (await sessionUnitRepo.GetQueryableAsync())
+                .Include(x => x.Setting)
+                .Include(x => x.GrantList)
+                .Include(x => x.SessionUnitRoleList)
+                    .ThenInclude(x => x.SessionRole)
+                        .ThenInclude(x => x.GrantList)
+                .Where(x => x.SessionId == sessionId && ownedIds.Contains(x.OwnerId) && x.Setting != null && x.Setting.IsEnabled && !x.Setting.IsKilled);
+            var candidates = await asyncExecuter.ToListAsync(query);
+            if (candidates.Count == 0)
+            {
+                throw new AbpAuthorizationException("当前账号不是该群有效成员");
+            }
+            if (candidates.Count > 1)
+            {
+                throw new UserFriendlyException("当前账号在该群存在多个身份，请显式指定操作成员身份");
+            }
+            unit = candidates[0];
+        }
+
+        if (!string.IsNullOrEmpty(policyName))
+        {
+            var checker = lazyServiceProvider.LazyGetRequiredService<ISessionPermissionChecker>();
+            await checker.CheckAsync(policyName, unit);
+        }
+
+        return unit;
+    }
+}
 
 [ApiExplorerSettings(GroupName = ChatRemoteServiceConsts.ModuleName)]
 [Authorize]
@@ -180,6 +276,15 @@ public abstract class ChatAppService : AbpCommonsAppService
 
         await AuthorizationService.CheckAsync(owner, policyName);
     }
+
+    protected virtual Task<SessionUnit> LoadDetailedSessionUnitAsync(Guid sessionUnitId)
+        => SessionUnitPolicyHelper.LoadDetailedSessionUnitAsync(LazyServiceProvider, sessionUnitId);
+
+    protected virtual Task<SessionUnit> ResolveAndCheckSessionUnitPolicyAsync(Guid sessionId, Guid? sessionUnitId, string policyName)
+        => SessionUnitPolicyHelper.ResolveAndCheckSessionUnitPolicyAsync(LazyServiceProvider, CurrentUser, ChatObjectManager, sessionId, sessionUnitId, policyName);
+
+    protected static bool IsBuiltInAdminRoleName(string roleName)
+        => SessionUnitPolicyHelper.IsBuiltInAdminRoleName(roleName);
 
     protected virtual async Task CheckPolicyAsync(string policyName, Guid sessionUnitId)
     {

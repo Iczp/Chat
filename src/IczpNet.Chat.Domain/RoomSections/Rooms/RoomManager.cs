@@ -23,6 +23,7 @@ using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Caching;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.DistributedLocking;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.ObjectMapping;
@@ -144,7 +145,6 @@ public class RoomManager(
                 x =>
                 {
                     x.IsPublic = true;
-                    x.IsStatic = true;
                     x.SetIsCreator(true);
                     x.JoinWay = JoinWays.Creator;
                 });
@@ -580,31 +580,79 @@ public class RoomManager(
 
     public async Task TransferCreatorAsync(Guid sessionUnitId, Guid targetSessionUnitId, bool isSendMessageToRoom = true)
     {
-        var sessionUnit = await SessionUnitRepository.GetAsync(sessionUnitId);
+        Assert.If(sessionUnitId == targetSessionUnitId, "不能转让给自己");
 
+        var queryable = await SessionUnitRepository.GetQueryableAsync();
+        var sessionUnit = await AsyncExecuter.FirstOrDefaultAsync(
+            queryable.Include(x => x.Setting).Include(x => x.Destination),
+            x => x.Id == sessionUnitId);
+        Assert.NotNull(sessionUnit, $"SessionUnit not found: {sessionUnitId}");
+        Assert.If(sessionUnit.Setting == null || !sessionUnit.Setting.IsEnabled || sessionUnit.Setting.IsKilled, "当前成员状态无效");
         Assert.If(!sessionUnit.Setting.IsCreator, "Not the session creator");
+        Assert.If(!sessionUnit.SessionId.HasValue, "无效的群会话");
 
-        var targetSessionUnit = await SessionUnitRepository.GetAsync(targetSessionUnitId);
+        var sessionId = sessionUnit.SessionId!.Value;
+        var distributedLock = LazyServiceProvider.LazyGetRequiredService<IAbpDistributedLock>();
+        await using var lockHandle = await distributedLock.TryAcquireAsync($"Chat:Room:Ownership:{sessionId}", TimeSpan.FromSeconds(10));
+        if (lockHandle == null)
+        {
+            throw new UserFriendlyException("群主变更操作繁忙，请稍后重试");
+        }
 
+        // 锁内重读状态与群启用状态
+        sessionUnit = await AsyncExecuter.FirstOrDefaultAsync(
+            queryable.Include(x => x.Setting).Include(x => x.Destination),
+            x => x.Id == sessionUnitId);
+        Assert.If(sessionUnit?.Setting == null || !sessionUnit.Setting.IsEnabled || sessionUnit.Setting.IsKilled || !sessionUnit.Setting.IsCreator, "当前成员已无群主权限");
+
+        var sessionRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
+        var session = await sessionRepo.GetAsync(sessionId);
+        Assert.If(!session.IsEnabled, "群聊已解散，无法转让群主");
+
+        var targetSessionUnit = await AsyncExecuter.FirstOrDefaultAsync(
+            queryable.Include(x => x.Setting),
+            x => x.Id == targetSessionUnitId);
+        Assert.NotNull(targetSessionUnit, $"Target SessionUnit not found: {targetSessionUnitId}");
         Assert.If(sessionUnit.SessionId != targetSessionUnit.SessionId, "Not in same session");
+        Assert.If(targetSessionUnit.Setting == null || !targetSessionUnit.Setting.IsEnabled || targetSessionUnit.Setting.IsKilled, "目标成员已退出或被禁用，无法成为群主");
+        Assert.If(targetSessionUnit.OwnerId == targetSessionUnit.DestinationId, "系统会话单元不能成为群主");
 
         sessionUnit.Setting.SetIsCreator(false);
+        if (sessionUnit.OwnerId != sessionUnit.DestinationId)
+        {
+            sessionUnit.Setting.SetIsStatic(false);
+        }
 
         targetSessionUnit.Setting.SetIsCreator(true);
 
-        var settingCache = LazyServiceProvider.LazyGetService<IDistributedCache<SessionUnitSettingCacheItem, Guid>>();
-        if (settingCache != null)
+        await SessionUnitRepository.UpdateAsync(sessionUnit, autoSave: true);
+        await SessionUnitRepository.UpdateAsync(targetSessionUnit, autoSave: true);
+
+        async Task InvalidateCachesAsync()
         {
-            await settingCache.RemoveAsync(sessionUnitId);
-            await settingCache.RemoveAsync(targetSessionUnitId);
-        }
-        if (LazyServiceProvider.LazyGetService<StackExchange.Redis.IConnectionMultiplexer>() != null)
-        {
-            await SessionUnitCacheManager.UpdateUnitCreatorAsync(sessionUnitId, false);
-            await SessionUnitCacheManager.UpdateUnitCreatorAsync(targetSessionUnitId, true);
+            var settingCache = LazyServiceProvider.LazyGetService<IDistributedCache<SessionUnitSettingCacheItem, Guid>>();
+            if (settingCache != null)
+            {
+                await settingCache.RemoveAsync(sessionUnitId);
+                await settingCache.RemoveAsync(targetSessionUnitId);
+            }
+            if (LazyServiceProvider.LazyGetService<StackExchange.Redis.IConnectionMultiplexer>() != null)
+            {
+                await SessionUnitCacheManager.UpdateUnitCreatorAsync(sessionUnitId, false);
+                await SessionUnitCacheManager.UpdateUnitCreatorAsync(targetSessionUnitId, true);
+            }
         }
 
-        if (isSendMessageToRoom)
+        if (UnitOfWorkManager.Current != null)
+        {
+            UnitOfWorkManager.Current.OnCompleted(InvalidateCachesAsync);
+        }
+        else
+        {
+            await InvalidateCachesAsync();
+        }
+
+        if (isSendMessageToRoom && sessionUnit.Destination != null)
         {
             await SendRoomMessageAsync(sessionUnit.Destination, new CmdContentInfo()
             {
@@ -631,14 +679,23 @@ public class RoomManager(
         Assert.If(sessionUnit.Setting == null || !sessionUnit.Setting.IsEnabled || sessionUnit.Setting.IsKilled, "当前成员状态无效，无法成为群主");
 
         var sessionId = sessionUnit.SessionId!.Value;
-        var distributedLock = LazyServiceProvider.LazyGetService<IAbpDistributedLock>();
-        await using var lockHandle = distributedLock != null
-            ? await distributedLock.TryAcquireAsync($"Chat:Room:ClaimCreator:{sessionId}", TimeSpan.FromSeconds(10))
-            : null;
-        if (distributedLock != null && lockHandle == null)
+        var distributedLock = LazyServiceProvider.LazyGetRequiredService<IAbpDistributedLock>();
+        await using var lockHandle = await distributedLock.TryAcquireAsync($"Chat:Room:Ownership:{sessionId}", TimeSpan.FromSeconds(10));
+        if (lockHandle == null)
         {
             throw new UserFriendlyException("群主认领操作繁忙，请稍后重试");
         }
+
+        var sessionRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
+        var session = await sessionRepo.GetAsync(sessionId);
+        Assert.If(!session.IsEnabled, "群聊已解散，无法认领群主");
+
+        sessionUnit = await AsyncExecuter.FirstOrDefaultAsync(
+            queryable
+                .Include(x => x.Setting)
+                .Include(x => x.Destination),
+            x => x.Id == sessionUnitId);
+        Assert.If(sessionUnit?.Setting == null || !sessionUnit.Setting.IsEnabled || sessionUnit.Setting.IsKilled, "当前成员状态无效，无法成为群主");
 
         var hasCreatorOrAdmin = await AsyncExecuter.AnyAsync(
             queryable.Where(x =>
@@ -660,14 +717,26 @@ public class RoomManager(
         sessionUnit.SetTicks(Clock.Now.Ticks);
         await SessionUnitRepository.UpdateAsync(sessionUnit, autoSave: true);
 
-        var settingCache = LazyServiceProvider.LazyGetService<IDistributedCache<SessionUnitSettingCacheItem, Guid>>();
-        if (settingCache != null)
+        async Task InvalidateCachesAsync()
         {
-            await settingCache.RemoveAsync(sessionUnitId);
+            var settingCache = LazyServiceProvider.LazyGetService<IDistributedCache<SessionUnitSettingCacheItem, Guid>>();
+            if (settingCache != null)
+            {
+                await settingCache.RemoveAsync(sessionUnitId);
+            }
+            if (LazyServiceProvider.LazyGetService<StackExchange.Redis.IConnectionMultiplexer>() != null)
+            {
+                await SessionUnitCacheManager.UpdateUnitCreatorAsync(sessionUnitId, true);
+            }
         }
-        if (LazyServiceProvider.LazyGetService<StackExchange.Redis.IConnectionMultiplexer>() != null)
+
+        if (UnitOfWorkManager.Current != null)
         {
-            await SessionUnitCacheManager.UpdateUnitCreatorAsync(sessionUnitId, true);
+            UnitOfWorkManager.Current.OnCompleted(InvalidateCachesAsync);
+        }
+        else
+        {
+            await InvalidateCachesAsync();
         }
 
         if (isSendMessageToRoom && sessionUnit.Destination != null)

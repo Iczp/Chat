@@ -1,6 +1,7 @@
 ﻿using IczpNet.AbpCommons;
 using IczpNet.AbpCommons.Extensions;
 using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionOrganizations;
 using IczpNet.Chat.Sessions;
 using IczpNet.Chat.SessionSections.SessionOrganiztions;
@@ -63,6 +64,10 @@ public class SessionOrganizationAppService
         {
             await CheckPolicyAsync(GetListPolicyName, input.SessionUnitId.Value);
         }
+        else if (input.SessionId.HasValue)
+        {
+            await SessionUnitPolicyHelper.ResolveAndCheckSessionUnitPolicyAsync(LazyServiceProvider, CurrentUser, ChatObjectManager, input.SessionId.Value, null, SessionPermissionDefinitionConsts.SessionOrganizationPermission.Default);
+        }
 
         await base.CheckGetListPolicyAsync(input);
     }
@@ -82,6 +87,13 @@ public class SessionOrganizationAppService
     [HttpPost]
     public override async Task<SessionOrganizationDetailDto> CreateAsync(SessionOrganizationCreateInput input)
     {
+        Assert.If(!input.SessionId.HasValue, "SessionId 不能为空");
+        await SessionUnitPolicyHelper.ResolveAndCheckSessionUnitPolicyAsync(
+            LazyServiceProvider, CurrentUser, ChatObjectManager,
+            input.SessionId!.Value,
+            input.SessionUnitId,
+            SessionPermissionDefinitionConsts.SessionOrganizationPermission.Create);
+
         Assert.If(!await SessionRepository.AnyAsync(x => x.Id == input.SessionId), $"No such entity of sessionId:{input.SessionId}");
 
         Assert.If(input.ParentId.HasValue && !await Repository.AnyAsync(x => x.Id == input.ParentId && x.SessionId == input.SessionId), $"No such entity of ParentId:{input.ParentId}");
@@ -98,14 +110,42 @@ public class SessionOrganizationAppService
     [HttpPost]
     public override async Task<SessionOrganizationDetailDto> UpdateAsync(long id, SessionOrganizationUpdateInput input)
     {
+        var entity = await Repository.GetAsync(id);
+        await SessionUnitPolicyHelper.ResolveAndCheckSessionUnitPolicyAsync(
+            LazyServiceProvider, CurrentUser, ChatObjectManager,
+            entity.SessionId!.Value,
+            input.SessionUnitId,
+            SessionPermissionDefinitionConsts.SessionOrganizationPermission.Update);
+
         if (input.ParentId.HasValue)
         {
             var perent = await Repository.GetAsync(input.ParentId.Value);
 
-            var entity = await Repository.GetAsync(id);
-
             Assert.If(perent.SessionId != entity.SessionId, $"Parent session is different,ParentId:{input.ParentId}");
         }
         return await base.UpdateAsync(id, input);
+    }
+
+    [HttpPost]
+    public override async Task DeleteAsync(long id)
+    {
+        var entity = await Repository.GetAsync(id);
+        await SessionUnitPolicyHelper.ResolveAndCheckSessionUnitPolicyAsync(
+            LazyServiceProvider, CurrentUser, ChatObjectManager,
+            entity.SessionId!.Value,
+            null,
+            SessionPermissionDefinitionConsts.SessionOrganizationPermission.Delete);
+        await base.DeleteAsync(id);
+    }
+
+    [HttpPost]
+    public override async Task DeleteManyAsync(List<long> idList)
+    {
+        var entities = await Repository.GetListAsync(x => idList.Contains(x.Id));
+        foreach (var sessionId in entities.Where(x => x.SessionId.HasValue).Select(x => x.SessionId!.Value).Distinct())
+        {
+            await SessionUnitPolicyHelper.ResolveAndCheckSessionUnitPolicyAsync(LazyServiceProvider, CurrentUser, ChatObjectManager, sessionId, null, SessionPermissionDefinitionConsts.SessionOrganizationPermission.Delete);
+        }
+        await base.DeleteManyAsync(idList);
     }
 }

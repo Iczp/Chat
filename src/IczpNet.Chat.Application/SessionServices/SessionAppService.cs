@@ -1,4 +1,6 @@
-﻿using IczpNet.Chat.BaseAppServices;
+﻿using IczpNet.AbpCommons;
+using IczpNet.Chat.BaseAppServices;
+using IczpNet.Chat.Permissions;
 using IczpNet.Chat.SessionRoles;
 using IczpNet.Chat.Sessions;
 using IczpNet.Chat.SessionSections.SessionRoles.Dtos;
@@ -6,6 +8,8 @@ using IczpNet.Chat.SessionSections.Sessions;
 using IczpNet.Chat.SessionSections.Sessions.Dtos;
 using IczpNet.Chat.SessionSections.SessionTags.Dtos;
 using IczpNet.Chat.SessionTags;
+using IczpNet.Chat.SessionUnitRoles;
+using IczpNet.Chat.SessionUnits;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -155,6 +159,9 @@ public class SessionAppService : ChatAppService, ISessionAppService
     [HttpPost]
     public async Task<SessionRoleDto> AddRoleAsync(Guid sessionId, string name)
     {
+        Assert.If(IsBuiltInAdminRoleName(name), "内置管理员角色由群主通过管理员任免维护");
+        await ResolveAndCheckSessionUnitPolicyAsync(sessionId, null, SessionPermissionDefinitionConsts.SessionRolePermission.Create);
+
         var entity = await Repository.GetAsync(sessionId);
 
         var role = await SessionManager.AddRoleAsync(entity, new SessionRole(GuidGenerator.Create(), sessionId, name));
@@ -168,9 +175,15 @@ public class SessionAppService : ChatAppService, ISessionAppService
     /// <param name="roleId">会话角色Id</param>
     /// <returns></returns>
     [HttpPost]
-    public Task RemoveRoleAsync(Guid roleId)
+    public async Task RemoveRoleAsync(Guid roleId)
     {
-        return SessionManager.RemoveRoleAsync(roleId);
+        var roleRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<SessionRole, Guid>>();
+        var role = await roleRepo.GetAsync(roleId);
+        Assert.If(!role.SessionId.HasValue, "无效的群角色");
+        Assert.If(IsBuiltInAdminRoleName(role.Name), "内置管理员角色不可删除");
+        await ResolveAndCheckSessionUnitPolicyAsync(role.SessionId!.Value, null, SessionPermissionDefinitionConsts.SessionRolePermission.Delete);
+
+        await SessionManager.RemoveRoleAsync(roleId);
     }
 
     /// <summary>
@@ -182,6 +195,12 @@ public class SessionAppService : ChatAppService, ISessionAppService
     [HttpPost]
     public async Task AddRoleMembersAsync(Guid roleId, List<Guid> sessionUnitIdList)
     {
+        var roleRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<SessionRole, Guid>>();
+        var role = await roleRepo.GetAsync(roleId);
+        Assert.If(!role.SessionId.HasValue, "无效的群角色");
+        Assert.If(IsBuiltInAdminRoleName(role.Name), "内置管理员角色请通过管理员任免接口操作");
+        await ResolveAndCheckSessionUnitPolicyAsync(role.SessionId!.Value, null, SessionPermissionDefinitionConsts.SessionRolePermission.Update);
+
         await SessionManager.AddRoleMembersAsync(roleId, sessionUnitIdList);
     }
 
@@ -192,9 +211,15 @@ public class SessionAppService : ChatAppService, ISessionAppService
     /// <param name="sessionUnitIdList">会话单元Id列表</param>
     /// <returns></returns>
     [HttpPost]
-    public Task RemoveRoleMembersAsync(Guid roleId, List<Guid> sessionUnitIdList)
+    public async Task RemoveRoleMembersAsync(Guid roleId, List<Guid> sessionUnitIdList)
     {
-        return SessionManager.RemoveRoleMembersAsync(roleId, sessionUnitIdList);
+        var roleRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<SessionRole, Guid>>();
+        var role = await roleRepo.GetAsync(roleId);
+        Assert.If(!role.SessionId.HasValue, "无效的群角色");
+        Assert.If(IsBuiltInAdminRoleName(role.Name), "内置管理员角色请通过管理员任免接口操作");
+        await ResolveAndCheckSessionUnitPolicyAsync(role.SessionId!.Value, null, SessionPermissionDefinitionConsts.SessionRolePermission.Update);
+
+        await SessionManager.RemoveRoleMembersAsync(roleId, sessionUnitIdList);
     }
 
     /// <summary>
@@ -203,11 +228,45 @@ public class SessionAppService : ChatAppService, ISessionAppService
     /// <param name="sessionUnitId">会话单元Id</param>
     /// <param name="roleIdList">会话角色Id</param>
     /// <returns></returns>
-    /// <exception cref="NotImplementedException"></exception>
     [HttpPost]
-    public Task<List<SessionRoleDto>> SetRolesAsync(Guid sessionUnitId, List<Guid> roleIdList)
+    public async Task<List<SessionRoleDto>> SetRolesAsync(Guid sessionUnitId, List<Guid> roleIdList)
     {
-        throw new NotImplementedException();
+        var targetUnit = await LoadDetailedSessionUnitAsync(sessionUnitId);
+        Assert.If(!targetUnit.SessionId.HasValue, "无效的群成员");
+        Assert.If(targetUnit.Setting == null || !targetUnit.Setting.IsEnabled || targetUnit.Setting.IsKilled, "目标成员状态无效");
+        var sessionId = targetUnit.SessionId!.Value;
+        await ResolveAndCheckSessionUnitPolicyAsync(sessionId, null, SessionPermissionDefinitionConsts.SessionRolePermission.Update);
+
+        var distinctRoleIds = (roleIdList ?? []).Distinct().ToList();
+        var roleRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<SessionRole, Guid>>();
+        var requestedRoles = distinctRoleIds.Count > 0
+            ? await roleRepo.GetListAsync(x => distinctRoleIds.Contains(x.Id))
+            : [];
+        Assert.If(requestedRoles.Count != distinctRoleIds.Count, "存在无效的角色Id");
+        Assert.If(requestedRoles.Any(x => x.SessionId != sessionId), "存在不属于当前群的角色");
+        Assert.If(requestedRoles.Any(x => IsBuiltInAdminRoleName(x.Name)), "内置管理员角色请通过管理员任免接口操作");
+
+        var existingCustomRoles = (targetUnit.SessionUnitRoleList ?? [])
+            .Where(x => x.SessionRole == null || !IsBuiltInAdminRoleName(x.SessionRole.Name))
+            .ToList();
+        foreach (var existing in existingCustomRoles)
+        {
+            if (!distinctRoleIds.Contains(existing.SessionRoleId))
+            {
+                targetUnit.SessionUnitRoleList.Remove(existing);
+            }
+        }
+        foreach (var role in requestedRoles)
+        {
+            if (targetUnit.SessionUnitRoleList.All(x => x.SessionRoleId != role.Id))
+            {
+                targetUnit.SessionUnitRoleList.Add(new SessionUnitRole(role, targetUnit));
+            }
+        }
+        var unitRepo = LazyServiceProvider.LazyGetRequiredService<ISessionUnitRepository>();
+        await unitRepo.UpdateAsync(targetUnit, autoSave: true);
+
+        return ObjectMapper.Map<List<SessionRole>, List<SessionRoleDto>>(requestedRoles);
     }
 
     /// <summary>

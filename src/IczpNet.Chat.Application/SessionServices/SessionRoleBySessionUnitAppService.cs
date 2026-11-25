@@ -28,12 +28,12 @@ public class SessionRoleBySessionUnitAppService(
         SessionRoleUpdateInput>(repository),
     ISessionRoleBySessionUnitAppService
 {
-    //protected override string GetPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Default;
-    //protected override string GetListPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Default;
-    //protected override string CreatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Create;
-    //protected override string UpdatePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Update;
-    //protected override string DeletePolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Delete;
-    //protected override string DeleteManyPolicyName { get; set; } = SessionPermissionDefinitionConsts.SessionRolePermission.Delete;
+    protected override string GetPolicyName { get; set; } = Permissions.SessionPermissionDefinitionConsts.SessionRolePermission.Default;
+    protected override string GetListPolicyName { get; set; } = Permissions.SessionPermissionDefinitionConsts.SessionRolePermission.Default;
+    protected override string CreatePolicyName { get; set; } = Permissions.SessionPermissionDefinitionConsts.SessionRolePermission.Create;
+    protected override string UpdatePolicyName { get; set; } = Permissions.SessionPermissionDefinitionConsts.SessionRolePermission.Update;
+    protected override string DeletePolicyName { get; set; } = Permissions.SessionPermissionDefinitionConsts.SessionRolePermission.Delete;
+    protected override string DeleteManyPolicyName { get; set; } = Permissions.SessionPermissionDefinitionConsts.SessionRolePermission.Delete;
     protected ISessionRoleManager SessionRoleManager { get; }
 
     protected override async Task<IQueryable<SessionRole>> CreateFilteredQueryAsync(SessionUnit sessionUnit, SessionRoleGetListBySessionUnitInput input)
@@ -54,8 +54,17 @@ public class SessionRoleBySessionUnitAppService(
     }
 
 
+    protected override Task CheckGetPolicyAsync(SessionUnit sessionUnit, SessionRole entity)
+    {
+        Assert.If(sessionUnit.SessionId != entity.SessionId, "Not in same session");
+
+        return base.CheckGetPolicyAsync(sessionUnit, entity);
+    }
+
     protected override async Task CheckCreatePolicyAsync(SessionUnit sessionUnit, SessionRoleCreateBySessionUnitInput input)
     {
+        Assert.If(IsBuiltInAdminRoleName(input.Name), "内置管理员角色由群主通过管理员任免维护");
+
         Assert.If(!await SessionRepository.AnyAsync(x => x.Id == sessionUnit.SessionId), $"No such entity of sessionId:{sessionUnit.SessionId}");
 
         Assert.If(await Repository.AnyAsync(x => x.SessionId == sessionUnit.SessionId && x.Name == input.Name), $"Already exists [{input.Name}].");
@@ -66,6 +75,7 @@ public class SessionRoleBySessionUnitAppService(
     protected override Task CheckUpdatePolicyAsync(SessionUnit sessionUnit, SessionRole entity, SessionRoleUpdateInput input)
     {
         Assert.If(sessionUnit.SessionId != entity.SessionId, $"Not in same session");
+        Assert.If(IsBuiltInAdminRoleName(entity.Name) || IsBuiltInAdminRoleName(input.Name), "内置管理员角色不可通过自定义角色接口修改");
 
         return base.CheckUpdatePolicyAsync(sessionUnit, entity, input);
     }
@@ -92,12 +102,13 @@ public class SessionRoleBySessionUnitAppService(
     protected override Task CheckDeletePolicyAsync(SessionUnit sessionUnit, SessionRole entity)
     {
         Assert.If(sessionUnit.SessionId != entity.SessionId, $"Not in same session");
+        Assert.If(IsBuiltInAdminRoleName(entity.Name), "内置管理员角色不可删除");
 
         return base.CheckDeletePolicyAsync(sessionUnit, entity);
     }
 
     protected override Expression<Func<SessionRole, bool>> GetPredicateDeleteManyAsync(SessionUnit sessionUnit)
     {
-        return x => x.SessionId == sessionUnit.SessionId;
+        return x => x.SessionId == sessionUnit.SessionId && x.Name != "管理员" && x.Name != "Admin";
     }
 }

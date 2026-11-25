@@ -225,16 +225,24 @@ public class RoomAppService(IRoomManager roomManager,
         var session = await sessionRepository.GetAsync(sessionUnit.SessionId.Value);
         var room = await ChatObjectRepository.GetAsync(sessionUnit.DestinationId.Value);
 
-        var isCreator = sessionUnit.Setting?.IsCreator == true || sessionUnit.Setting?.IsStatic == true;
+        var isCreator = sessionUnit.Setting?.IsCreator == true;
         var isAdmin = sessionUnit.IsAdmin;
         var isAdminOrCreator = isCreator || isAdmin;
 
-        var canManageSettings = isAdminOrCreator || await IsAnyPermissionGrantedAsync(
+        var canManageNameOrDescription = isAdminOrCreator || await IsAnyPermissionGrantedAsync(
             sessionUnit,
             SessionPermissionDefinitionConsts.ChatObjectPermission.UpdateName,
-            SessionPermissionDefinitionConsts.ChatObjectPermission.UpdatePortrait,
-            SessionPermissionDefinitionConsts.ChatObjectPermission.ToggleAllInputEnabled,
+            SessionPermissionDefinitionConsts.ChatObjectPermission.UpdatePortrait);
+
+        var canToggleAllMuted = isAdminOrCreator || await IsAnyPermissionGrantedAsync(
+            sessionUnit,
+            SessionPermissionDefinitionConsts.ChatObjectPermission.ToggleAllInputEnabled);
+
+        var canManageJoinPolicies = isAdminOrCreator || await IsAnyPermissionGrantedAsync(
+            sessionUnit,
             SessionPermissionDefinitionConsts.ChatObjectPermission.VerificationMethod);
+
+        var canManageSettings = canManageNameOrDescription || canToggleAllMuted || canManageJoinPolicies;
 
         var canManageJoinRequests = isAdminOrCreator || await IsAnyPermissionGrantedAsync(
             sessionUnit,
@@ -283,6 +291,7 @@ public class RoomAppService(IRoomManager roomManager,
             SessionPermissionDefinitionConsts.SessionRolePermission.SetAllPermissions);
 
         var canTransferOrDissolve = isCreator;
+        var canSetAdmin = isCreator;
 
         var activeUnitQuery = (await SessionUnitRepository.GetQueryableAsync())
             .AsNoTracking()
@@ -352,6 +361,10 @@ public class RoomAppService(IRoomManager roomManager,
             CanManageOrgs = canManageOrgs,
             CanManageRoles = canManageRoles,
             CanManagePermissions = canManagePermissions,
+            CanSetAdmin = canSetAdmin,
+            CanManageNameOrDescription = canManageNameOrDescription,
+            CanToggleAllMuted = canToggleAllMuted,
+            CanManageJoinPolicies = canManageJoinPolicies,
             CanTransferOrDissolve = canTransferOrDissolve,
         };
     }
@@ -365,37 +378,58 @@ public class RoomAppService(IRoomManager roomManager,
         var sessionUnit = await GetDetailedSessionUnitAsync(input.SessionUnitId);
         await EnsureCurrentUserOwnsUnitAsync(sessionUnit);
 
-        var isAdminOrCreator = sessionUnit.Setting?.IsCreator == true
-            || sessionUnit.Setting?.IsStatic == true
-            || sessionUnit.Setting?.IsAdmin == true;
-
-        if (!isAdminOrCreator)
-        {
-            var hasPolicyPerm = await IsAnyPermissionGrantedAsync(
-                sessionUnit,
-                SessionPermissionDefinitionConsts.ChatObjectPermission.ToggleAllInputEnabled,
-                SessionPermissionDefinitionConsts.ChatObjectPermission.VerificationMethod,
-                SessionPermissionDefinitionConsts.ChatObjectPermission.UpdateName,
-                SessionPermissionDefinitionConsts.SessionRequestPermission.Handle);
-            if (!hasPolicyPerm)
-            {
-                throw new AbpAuthorizationException("无权修改群管理策略");
-            }
-        }
-
         Assert.If(!sessionUnit.SessionId.HasValue || !sessionUnit.DestinationId.HasValue, "无效的群会话单元");
 
         var sessionRepository = LazyServiceProvider.LazyGetRequiredService<IRepository<Session, Guid>>();
         var session = await sessionRepository.GetAsync(sessionUnit.SessionId.Value);
         var room = await ChatObjectRepository.GetAsync(sessionUnit.DestinationId.Value);
 
-        var roomChanged = false;
-        if (input.VerificationMethod.HasValue && room.VerificationMethod != input.VerificationMethod.Value)
+        var isAdminOrCreator = sessionUnit.Setting?.IsCreator == true || sessionUnit.IsAdmin;
+        var verificationChanged = input.VerificationMethod.HasValue && room.VerificationMethod != input.VerificationMethod.Value;
+        var descriptionChanged = input.Description != null && room.Description != input.Description;
+        var allMutedChanged = input.IsAllMuted.HasValue && session.IsAllMuted != input.IsAllMuted.Value;
+        var invitePolicyChanged = input.InvitePolicy.HasValue && session.InvitePolicy != input.InvitePolicy.Value;
+        var joinChannelsChanged = input.AllowJoinChannels.HasValue && session.AllowJoinChannels != input.AllowJoinChannels.Value;
+
+        if (!isAdminOrCreator)
         {
-            room.SetVerificationMethod(input.VerificationMethod.Value);
+            if (verificationChanged && !await SessionPermissionChecker.IsGrantedAsync(SessionPermissionDefinitionConsts.ChatObjectPermission.VerificationMethod, sessionUnit))
+            {
+                throw new AbpAuthorizationException("无权修改入群审核方式");
+            }
+            if (descriptionChanged && !await SessionPermissionChecker.IsGrantedAsync(SessionPermissionDefinitionConsts.ChatObjectPermission.UpdateName, sessionUnit))
+            {
+                throw new AbpAuthorizationException("无权修改群简介");
+            }
+            if (allMutedChanged && !await SessionPermissionChecker.IsGrantedAsync(SessionPermissionDefinitionConsts.ChatObjectPermission.ToggleAllInputEnabled, sessionUnit))
+            {
+                throw new AbpAuthorizationException("无权修改全员禁言");
+            }
+            if ((invitePolicyChanged || joinChannelsChanged) && !await SessionPermissionChecker.IsGrantedAsync(SessionPermissionDefinitionConsts.ChatObjectPermission.VerificationMethod, sessionUnit))
+            {
+                throw new AbpAuthorizationException("无权修改邀请或入群渠道策略");
+            }
+            if (!verificationChanged && !descriptionChanged && !allMutedChanged && !invitePolicyChanged && !joinChannelsChanged)
+            {
+                var hasAnySettingsPerm = await IsAnyPermissionGrantedAsync(
+                    sessionUnit,
+                    SessionPermissionDefinitionConsts.ChatObjectPermission.UpdateName,
+                    SessionPermissionDefinitionConsts.ChatObjectPermission.ToggleAllInputEnabled,
+                    SessionPermissionDefinitionConsts.ChatObjectPermission.VerificationMethod);
+                if (!hasAnySettingsPerm)
+                {
+                    throw new AbpAuthorizationException("无权修改群管理策略");
+                }
+            }
+        }
+
+        var roomChanged = false;
+        if (verificationChanged)
+        {
+            room.SetVerificationMethod(input.VerificationMethod!.Value);
             roomChanged = true;
         }
-        if (input.Description != null && room.Description != input.Description)
+        if (descriptionChanged)
         {
             room.Description = input.Description;
             roomChanged = true;
@@ -405,8 +439,11 @@ public class RoomAppService(IRoomManager roomManager,
             await ChatObjectRepository.UpdateAsync(room, autoSave: true);
         }
 
-        session.SetRoomPolicies(input.IsAllMuted, input.InvitePolicy, input.AllowJoinChannels);
-        await sessionRepository.UpdateAsync(session, autoSave: true);
+        if (allMutedChanged || invitePolicyChanged || joinChannelsChanged)
+        {
+            session.SetRoomPolicies(input.IsAllMuted, input.InvitePolicy, input.AllowJoinChannels);
+            await sessionRepository.UpdateAsync(session, autoSave: true);
+        }
 
         return await GetManagementSettingsAsync(sessionUnit.Id);
     }
