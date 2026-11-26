@@ -359,6 +359,10 @@ public class AttachmentAuthorizationAndForwarding_Tests : ChatTestBase<Attachmen
                 Assert.Contains(gifUrl, msg.ContentJson);
                 Assert.NotNull(msg.MessageChangeId);
             }
+
+            // 聊天记录根消息新增 GIF 授权后也应写入 MessageChange 以驱动增量同步
+            var updatedHistoryRoot = await db.Message.AsNoTracking().SingleAsync(x => x.Id == 4004L);
+            Assert.NotNull(updatedHistoryRoot.MessageChangeId);
         });
     }
 
@@ -537,6 +541,53 @@ public class AttachmentAuthorizationAndForwarding_Tests : ChatTestBase<Attachmen
             Assert.NotNull(await auth.CheckAccessAsync(tempBlobId, null, null, null, [101L], false));
             await Assert.ThrowsAsync<BusinessException>(() => auth.CheckAccessAsync(tempBlobId, null, null, null, [102L], false));
             await Assert.ThrowsAsync<BusinessException>(() => auth.CheckAccessAsync(expiredTempBlobId, null, null, null, [101L], false));
+
+            // 根消息 + 无关子消息 -> 拒绝（必须存在 History/同会话Quote 关联）
+            var unrelatedSession = guidGen.Create();
+            await MessageVisibilityQuery_Tests.InsertAsync<Session>(db, new() { ["Id"] = unrelatedSession });
+            await MessageVisibilityQuery_Tests.InsertAsync<Message>(db, new()
+            {
+                ["Id"] = 6099L,
+                ["SessionId"] = unrelatedSession,
+                ["SessionSeq"] = 1L,
+                ["SenderId"] = 101L,
+                ["MessageType"] = MessageTypes.Image,
+                ["ExtraProperties"] = new ExtraPropertyDictionary()
+            });
+            await db.SaveChangesAsync();
+            await Assert.ThrowsAsync<BusinessException>(() => auth.CheckAccessAsync(boundBlobId, unitAlice, 6099L, 6001L, [101L], false));
+
+            // 超过 50 条其他会话的较新引用也不应截断旧客户端对较早合法消息的访问
+            for (int i = 0; i < 55; i++)
+            {
+                long extMsgId = 6200L + i;
+                await MessageVisibilityQuery_Tests.InsertAsync<Message>(db, new()
+                {
+                    ["Id"] = extMsgId,
+                    ["SessionId"] = unrelatedSession,
+                    ["SessionSeq"] = i + 2L,
+                    ["SenderId"] = 999L,
+                    ["MessageType"] = MessageTypes.Image,
+                    ["CreationTime"] = DateTime.UtcNow.AddMinutes(i + 1),
+                    ["ExtraProperties"] = new ExtraPropertyDictionary()
+                });
+                await MessageVisibilityQuery_Tests.InsertAsync<BlobMessageRef>(db, new()
+                {
+                    ["Id"] = guidGen.Create(),
+                    ["BlobId"] = boundBlobId,
+                    ["MessageId"] = extMsgId,
+                    ["SessionId"] = unrelatedSession,
+                    ["SourceType"] = BlobRefSourceTypes.Forward,
+                    ["CreationTime"] = DateTime.UtcNow.AddMinutes(i + 1)
+                });
+            }
+            await db.SaveChangesAsync();
+            Assert.NotNull(await auth.CheckAccessAsync(boundBlobId, null, null, null, [101L], false));
+
+            // 已过期 Temp 在绑定消息阶段必须被拒绝
+            var msgRepo = ServiceProvider.GetRequiredService<IMessageRepository>();
+            await Assert.ThrowsAsync<BusinessException>(() =>
+                msgRepo.BindBlobsToMessageAsync(6001L, sessionA, [expiredTempBlobId], BlobRefSourceTypes.Send, now: now, markAsBound: true));
         });
     }
 }

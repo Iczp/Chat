@@ -27,8 +27,7 @@ public class BlobAccessAuthorizationService(
     IRepository<Blob, Guid> blobRepository,
     IRepository<BlobMessageRef, Guid> blobMessageRefRepository,
     IMessageRepository messageRepository,
-    ISessionUnitManager sessionUnitManager,
-    ISessionUnitRepository sessionUnitRepository) : DomainService, IBlobAccessAuthorizationService
+    ISessionUnitManager sessionUnitManager) : DomainService, IBlobAccessAuthorizationService
 {
     public virtual async Task<Blob> CheckAccessAsync(
         Guid blobId,
@@ -74,13 +73,7 @@ public class BlobAccessAuthorizationService(
             if (currentUserChatObjectIds != null && currentUserChatObjectIds.Count > 0)
             {
                 var ownerIdList = currentUserChatObjectIds.ToList();
-                if (await HasVisibleBoundMessageAsync(blobId, ownerIdList, cancellationToken))
-                {
-                    return blob;
-                }
-
-                // 兼容早期私有消息（缺少 BlobMessageRef）：精确反查结构化附件表并校验消息可见性
-                if (await HasVisibleLegacyAttachmentMessageAsync(blobId, ownerIdList, cancellationToken))
+                if (await messageRepository.HasVisibleBlobForOwnersAsync(blobId, ownerIdList, cancellationToken))
                 {
                     return blob;
                 }
@@ -113,12 +106,9 @@ public class BlobAccessAuthorizationService(
             return blob;
         }
 
-        // 兼容历史消息（改造前未写 BlobMessageRef，但结构化附件字段或 ContentJson 中包含该 BlobId）
-        var message = await messageRepository.FindAsync(targetMessageId.Value, cancellationToken: cancellationToken);
-        if (message != null &&
-            !message.IsRollbackMessage() &&
-            !string.IsNullOrWhiteSpace(message.ContentJson) &&
-            message.ContentJson.Contains(blobId.ToString("D"), StringComparison.OrdinalIgnoreCase))
+        // 兼容历史消息（改造前未写 BlobMessageRef）：仅允许通过结构化附件表精确匹配绑定关系
+        var checkMessageId = childMsgId ?? targetMessageId.Value;
+        if (await HasStructuredAttachmentOnMessageAsync(checkMessageId, blobId, cancellationToken))
         {
             return blob;
         }
@@ -126,123 +116,44 @@ public class BlobAccessAuthorizationService(
         throw new BusinessException(ChatErrorCodes.Blobs.AccessDenied);
     }
 
-    private async Task<bool> HasVisibleBoundMessageAsync(
+    private async Task<bool> HasStructuredAttachmentOnMessageAsync(
+        long messageId,
         Guid blobId,
-        IReadOnlyCollection<long> ownerIdList,
         CancellationToken cancellationToken)
     {
-        var candidates = (await blobMessageRefRepository.GetQueryableAsync())
-            .Where(x => x.BlobId == blobId && x.SessionId.HasValue)
-            .OrderByDescending(x => x.CreationTime)
-            .Select(x => new { x.MessageId, SessionId = x.SessionId!.Value })
-            .Take(50)
-            .ToList();
-
-        if (candidates.Count == 0)
-        {
-            return false;
-        }
-
-        var sessionIds = candidates.Select(x => x.SessionId).Distinct().ToList();
-        var unitIds = (await sessionUnitRepository.GetQueryableAsync())
-            .Where(u => u.SessionId.HasValue &&
-                sessionIds.Contains(u.SessionId.Value) &&
-                ownerIdList.Contains(u.OwnerId) &&
-                !u.Setting.IsKilled)
-            .Select(u => new { u.Id, SessionId = u.SessionId!.Value })
-            .Take(50)
-            .ToList();
-
-        if (unitIds.Count == 0)
-        {
-            return false;
-        }
-
-        var unitsBySession = unitIds.ToLookup(u => u.SessionId, u => u.Id);
-        foreach (var item in candidates)
-        {
-            foreach (var suId in unitsBySession[item.SessionId])
-            {
-                if (await messageRepository.CanReadAttachmentAsync(suId, item.MessageId, cancellationToken: cancellationToken))
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    private async Task<bool> HasVisibleLegacyAttachmentMessageAsync(
-        Guid blobId,
-        IReadOnlyCollection<long> ownerIdList,
-        CancellationToken cancellationToken)
-    {
-        var candidateMessages = new List<(long MessageId, Guid SessionId)>();
-
         var imageRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<MessageSections.Templates.ImageContent, Guid>>();
-        candidateMessages.AddRange((await imageRepo.GetQueryableAsync())
-            .Where(x => x.BlobId == blobId || x.ThumbnailBlobId == blobId || x.OriginalBlobId == blobId)
-            .SelectMany(x => x.MessageList.Where(m => m.SessionId.HasValue && !m.IsRollbacked && !m.RollbackTime.HasValue)
-                .Select(m => new { m.Id, SessionId = m.SessionId!.Value }))
-            .Take(20)
-            .ToList()
-            .Select(x => (x.Id, x.SessionId)));
+        if ((await imageRepo.GetQueryableAsync()).Any(x =>
+                (x.BlobId == blobId || x.ThumbnailBlobId == blobId || x.OriginalBlobId == blobId) &&
+                x.MessageList.Any(m => m.Id == messageId && !m.IsRollbacked && !m.RollbackTime.HasValue)))
+        {
+            return true;
+        }
 
         var videoRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<MessageSections.Templates.VideoContent, Guid>>();
-        candidateMessages.AddRange((await videoRepo.GetQueryableAsync())
-            .Where(x => x.BlobId == blobId || x.SnapshotBlobId == blobId || x.SnapshotThumbnailBlobId == blobId || x.GifBlobId == blobId)
-            .SelectMany(x => x.MessageList.Where(m => m.SessionId.HasValue && !m.IsRollbacked && !m.RollbackTime.HasValue)
-                .Select(m => new { m.Id, SessionId = m.SessionId!.Value }))
-            .Take(20)
-            .ToList()
-            .Select(x => (x.Id, x.SessionId)));
+        if ((await videoRepo.GetQueryableAsync()).Any(x =>
+                (x.BlobId == blobId || x.SnapshotBlobId == blobId || x.SnapshotThumbnailBlobId == blobId || x.GifBlobId == blobId) &&
+                x.MessageList.Any(m => m.Id == messageId && !m.IsRollbacked && !m.RollbackTime.HasValue)))
+        {
+            return true;
+        }
 
         var soundRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<MessageSections.Templates.SoundContent, Guid>>();
-        candidateMessages.AddRange((await soundRepo.GetQueryableAsync())
-            .Where(x => x.BlobId == blobId)
-            .SelectMany(x => x.MessageList.Where(m => m.SessionId.HasValue && !m.IsRollbacked && !m.RollbackTime.HasValue)
-                .Select(m => new { m.Id, SessionId = m.SessionId!.Value }))
-            .Take(20)
-            .ToList()
-            .Select(x => (x.Id, x.SessionId)));
+        if ((await soundRepo.GetQueryableAsync()).Any(x =>
+                x.BlobId == blobId &&
+                x.MessageList.Any(m => m.Id == messageId && !m.IsRollbacked && !m.RollbackTime.HasValue)))
+        {
+            return true;
+        }
 
         var fileRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<MessageSections.Templates.FileContent, Guid>>();
-        candidateMessages.AddRange((await fileRepo.GetQueryableAsync())
-            .Where(x => x.BlobId == blobId)
-            .SelectMany(x => x.MessageList.Where(m => m.SessionId.HasValue && !m.IsRollbacked && !m.RollbackTime.HasValue)
-                .Select(m => new { m.Id, SessionId = m.SessionId!.Value }))
-            .Take(20)
-            .ToList()
-            .Select(x => (x.Id, x.SessionId)));
-
-        if (candidateMessages.Count == 0)
+        if ((await fileRepo.GetQueryableAsync()).Any(x =>
+                x.BlobId == blobId &&
+                x.MessageList.Any(m => m.Id == messageId && !m.IsRollbacked && !m.RollbackTime.HasValue)))
         {
-            return false;
+            return true;
         }
 
-        var sessionIds = candidateMessages.Select(x => x.SessionId).Distinct().ToList();
-        var unitIds = (await sessionUnitRepository.GetQueryableAsync())
-            .Where(u => u.SessionId.HasValue &&
-                sessionIds.Contains(u.SessionId.Value) &&
-                ownerIdList.Contains(u.OwnerId) &&
-                !u.Setting.IsKilled)
-            .Select(u => new { u.Id, SessionId = u.SessionId!.Value })
-            .Take(50)
-            .ToList();
-
-        var unitsBySession = unitIds.ToLookup(u => u.SessionId, u => u.Id);
-        foreach (var (msgId, sessionId) in candidateMessages.Distinct())
-        {
-            foreach (var suId in unitsBySession[sessionId])
-            {
-                if (await messageRepository.CanReadAttachmentAsync(suId, msgId, cancellationToken: cancellationToken))
-                {
-                    return true;
-                }
-            }
-        }
-
+        cancellationToken.ThrowIfCancellationRequested();
         return false;
     }
 

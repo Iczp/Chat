@@ -786,31 +786,16 @@ public class AttachmentController(
         }
 
         var unit = await GetAndCheckSessionUnitAsync(sessionUnitId);
-        if (!unit.IsEnabled || !unit.IsInputEnabled)
+        if (!unit.IsEnabled || !unit.IsInputEnabled || (unit.MuteExpireTime.HasValue && unit.MuteExpireTime.Value > Clock.Now))
         {
             throw new BusinessException(ChatErrorCodes.Blobs.AccessDenied)
-                .WithData("Reason", "Target session unit does not allow sending attachments.");
+                .WithData("Reason", "Target session unit does not allow sending attachments or is muted.");
         }
 
         var tokenService = LazyServiceProvider.LazyGetRequiredService<IAttachmentReuseTokenService>();
         if (!tokenService.TryValidateToken(input.ReuseToken, CurrentUser.Id.Value, out var payload))
         {
             throw new AbpAuthorizationException("Invalid or expired attachment reuse token.");
-        }
-
-        var clientUploadKey = string.IsNullOrWhiteSpace(input.ClientUploadId)
-            ? null
-            : $"attach-reuse:{CurrentUser.Id.Value:N}:{sessionUnitId:N}:{payload.PrimaryBlobId:N}:{input.ClientUploadId.Trim()}";
-        var reuseCache = clientUploadKey != null
-            ? LazyServiceProvider.LazyGetRequiredService<IDistributedCache<UploadAttachmentOutput, string>>()
-            : null;
-        if (reuseCache != null && clientUploadKey != null)
-        {
-            var cachedOutput = await reuseCache.GetAsync(clientUploadKey);
-            if (cachedOutput != null)
-            {
-                return cachedOutput;
-            }
         }
 
         var blobRepository = LazyServiceProvider.LazyGetRequiredService<IRepository<Blob, Guid>>();
@@ -827,6 +812,33 @@ public class AttachmentController(
             throw new BusinessException(ChatErrorCodes.Blobs.AccessDenied);
         }
 
+        var effectiveFileName = string.IsNullOrWhiteSpace(input.FileName)
+            ? sourcePrimary.FileName
+            : Path.GetFileName(input.FileName.Trim());
+        var fileNameDigest = Convert.ToHexString(
+            System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(effectiveFileName ?? string.Empty)))[..16];
+
+        var clientUploadKey = string.IsNullOrWhiteSpace(input.ClientUploadId)
+            ? null
+            : $"attach-reuse:{CurrentUser.Id.Value:N}:{sessionUnitId:N}:{payload.PrimaryBlobId:N}:{input.ClientUploadId.Trim()}:{fileNameDigest}";
+        var reuseCache = clientUploadKey != null
+            ? LazyServiceProvider.LazyGetRequiredService<IDistributedCache<UploadAttachmentOutput, string>>()
+            : null;
+        if (reuseCache != null && clientUploadKey != null)
+        {
+            var cachedOutput = await reuseCache.GetAsync(clientUploadKey);
+            if (cachedOutput != null)
+            {
+                var cachedBlob = await blobRepository.FindAsync(cachedOutput.BlobId);
+                if (cachedBlob != null &&
+                    cachedBlob.Status == BlobStatus.Temp &&
+                    (!cachedBlob.ExpireTime.HasValue || cachedBlob.ExpireTime.Value >= Clock.Now))
+                {
+                    return cachedOutput;
+                }
+            }
+        }
+
         var ownerIds = await chatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
         if (sourcePrimary.UploaderChatObjectId.HasValue && !ownerIds.Contains(sourcePrimary.UploaderChatObjectId.Value))
         {
@@ -837,9 +849,6 @@ public class AttachmentController(
             .Where(x => x.ParentBlobId == sourcePrimary.Id && x.Status != BlobStatus.Expired)
             .ToList();
 
-        var effectiveFileName = string.IsNullOrWhiteSpace(input.FileName)
-            ? sourcePrimary.FileName
-            : Path.GetFileName(input.FileName.Trim());
         var effectiveSuffix = !string.IsNullOrWhiteSpace(sourcePrimary.Suffix)
             ? sourcePrimary.Suffix
             : GetExtension(sourcePrimary.MimeType, effectiveFileName);
@@ -955,10 +964,24 @@ public class AttachmentController(
 
         if (reuseCache != null && clientUploadKey != null)
         {
-            await reuseCache.SetAsync(clientUploadKey, output, new DistributedCacheEntryOptions
+            var currentUow = UnitOfWorkManager?.Current;
+            if (currentUow != null)
             {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1),
-            });
+                currentUow.OnCompleted(async () =>
+                {
+                    await reuseCache.SetAsync(clientUploadKey, output, new DistributedCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1),
+                    });
+                });
+            }
+            else
+            {
+                await reuseCache.SetAsync(clientUploadKey, output, new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1),
+                });
+            }
         }
 
         return output;

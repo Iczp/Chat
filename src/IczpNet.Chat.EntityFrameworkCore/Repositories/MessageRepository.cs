@@ -89,27 +89,179 @@ public class MessageRepository(IDbContextProvider<ChatDbContext> dbContextProvid
         CancellationToken cancellationToken = default)
     {
         var query = await GetVisibleQueryAsync(sessionUnitId, cancellationToken);
-        var rootVisible = await query.AnyAsync(
-            x => x.Id == targetMessageId && !x.IsRollbacked && !x.RollbackTime.HasValue,
-            cancellationToken);
-        if (!rootVisible)
+        var rootSessionId = await query
+            .Where(x => x.Id == targetMessageId && !x.IsRollbacked && !x.RollbackTime.HasValue)
+            .Select(x => x.SessionId)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (rootSessionId == null)
         {
             return false;
         }
 
-        if (childMessageId.HasValue && childMessageId.Value != targetMessageId)
+        if (!childMessageId.HasValue || childMessageId.Value == targetMessageId)
         {
-            var context = await GetDbContextAsync();
-            var childAlive = await context.Message.AsNoTracking().AnyAsync(
-                x => x.Id == childMessageId.Value && !x.IsPrivate && !x.IsRollbacked && !x.RollbackTime.HasValue,
-                cancellationToken);
-            if (!childAlive)
-            {
-                return false;
-            }
+            return true;
         }
 
-        return true;
+        var context = await GetDbContextAsync();
+        var childAlive = await context.Message.AsNoTracking().AnyAsync(
+            x => x.Id == childMessageId.Value && !x.IsPrivate && !x.IsRollbacked && !x.RollbackTime.HasValue,
+            cancellationToken);
+        if (!childAlive)
+        {
+            return false;
+        }
+
+        // Verify childMessageId is genuinely reachable from targetMessageId within 1..5 hops
+        // via HistoryContent -> HistoryMessage or same-session QuoteMessageId.
+        var visited = new HashSet<long> { targetMessageId };
+        var frontier = new List<long> { targetMessageId };
+        for (int depth = 1; depth <= 5 && frontier.Count > 0 && visited.Count < 500; depth++)
+        {
+            var historyChildren = await context.Message.AsNoTracking()
+                .Where(m => frontier.Contains(m.Id) && !m.IsRollbacked && !m.RollbackTime.HasValue)
+                .SelectMany(m => m.HistoryContentList.SelectMany(c => c.HistoryMessageList.Select(h => h.MessageId)))
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+            var quoteChildren = await context.Message.AsNoTracking()
+                .Where(m => frontier.Contains(m.Id) && m.QuoteMessageId.HasValue && m.SessionId == rootSessionId && !m.IsRollbacked && !m.RollbackTime.HasValue)
+                .Select(m => m.QuoteMessageId!.Value)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+            var candidateIds = historyChildren
+                .Concat(quoteChildren)
+                .Where(id => !visited.Contains(id))
+                .Distinct()
+                .Take(200)
+                .ToList();
+
+            if (candidateIds.Count == 0)
+            {
+                break;
+            }
+
+            var aliveCandidateIds = await context.Message.AsNoTracking()
+                .Where(m => candidateIds.Contains(m.Id) && !m.IsPrivate && !m.IsRollbacked && !m.RollbackTime.HasValue)
+                .Select(m => m.Id)
+                .ToListAsync(cancellationToken);
+
+            var nextFrontier = new List<long>();
+            foreach (var cid in aliveCandidateIds)
+            {
+                if (cid == childMessageId.Value)
+                {
+                    return true;
+                }
+
+                if (visited.Add(cid))
+                {
+                    nextFrontier.Add(cid);
+                }
+            }
+
+            frontier = nextFrontier;
+        }
+
+        return false;
+    }
+
+    public virtual async Task<bool> HasVisibleBlobForOwnersAsync(
+        Guid blobId,
+        IReadOnlyCollection<long> ownerIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (blobId == Guid.Empty || ownerIds == null || ownerIds.Count == 0)
+        {
+            return false;
+        }
+
+        var context = await GetDbContextAsync();
+        var owners = ownerIds.Distinct().ToList();
+
+        // DB-side EXISTS check combining BlobMessageRef -> Message -> active SessionUnit visibility + DeletedRecorder.
+        var hasBoundRef = await context.BlobMessageRef.AsNoTracking()
+            .Where(r => r.BlobId == blobId && r.SessionId.HasValue)
+            .Join(
+                context.Message.AsNoTracking().Where(m => m.SessionId.HasValue && !m.IsRollbacked && !m.RollbackTime.HasValue),
+                r => r.MessageId,
+                m => m.Id,
+                (r, m) => m)
+            .Where(m => context.SessionUnit.Any(u =>
+                u.SessionId == m.SessionId &&
+                owners.Contains(u.OwnerId) &&
+                !u.Setting.IsKilled &&
+                (!m.IsPrivate || m.SenderSessionUnitId == u.Id || m.ReceiverSessionUnitId == u.Id) &&
+                (!u.Setting.StartMessageId.HasValue || m.Id > u.Setting.StartMessageId.Value) &&
+                (!u.Setting.EndMessageId.HasValue || m.Id <= u.Setting.EndMessageId.Value) &&
+                (!u.Setting.HistoryFristTime.HasValue || m.CreationTime >= u.Setting.HistoryFristTime.Value) &&
+                (!u.Setting.HistoryLastTime.HasValue || m.CreationTime < u.Setting.HistoryLastTime.Value) &&
+                (!u.Setting.ClearTime.HasValue || m.CreationTime > u.Setting.ClearTime.Value) &&
+                !context.DeletedRecorder.Any(d => d.SessionUnitId == u.Id && d.MessageId == m.Id)))
+            .AnyAsync(cancellationToken);
+
+        if (hasBoundRef)
+        {
+            return true;
+        }
+
+        static IQueryable<Message> FilterVisibleForOwners(
+            IQueryable<Message> query,
+            ChatDbContext db,
+            List<long> ownerList)
+            => query.Where(m =>
+                m.SessionId.HasValue &&
+                !m.IsRollbacked &&
+                !m.RollbackTime.HasValue &&
+                db.SessionUnit.Any(u =>
+                    u.SessionId == m.SessionId &&
+                    ownerList.Contains(u.OwnerId) &&
+                    !u.Setting.IsKilled &&
+                    (!m.IsPrivate || m.SenderSessionUnitId == u.Id || m.ReceiverSessionUnitId == u.Id) &&
+                    (!u.Setting.StartMessageId.HasValue || m.Id > u.Setting.StartMessageId.Value) &&
+                    (!u.Setting.EndMessageId.HasValue || m.Id <= u.Setting.EndMessageId.Value) &&
+                    (!u.Setting.HistoryFristTime.HasValue || m.CreationTime >= u.Setting.HistoryFristTime.Value) &&
+                    (!u.Setting.HistoryLastTime.HasValue || m.CreationTime < u.Setting.HistoryLastTime.Value) &&
+                    (!u.Setting.ClearTime.HasValue || m.CreationTime > u.Setting.ClearTime.Value) &&
+                    !db.DeletedRecorder.Any(d => d.SessionUnitId == u.Id && d.MessageId == m.Id)));
+
+        if (await FilterVisibleForOwners(
+                context.ImageMessage.AsNoTracking()
+                    .Where(x => x.BlobId == blobId || x.ThumbnailBlobId == blobId || x.OriginalBlobId == blobId)
+                    .SelectMany(x => x.MessageList),
+                context,
+                owners).AnyAsync(cancellationToken))
+        {
+            return true;
+        }
+
+        if (await FilterVisibleForOwners(
+                context.VideoContent.AsNoTracking()
+                    .Where(x => x.BlobId == blobId || x.SnapshotBlobId == blobId || x.SnapshotThumbnailBlobId == blobId || x.GifBlobId == blobId)
+                    .SelectMany(x => x.MessageList),
+                context,
+                owners).AnyAsync(cancellationToken))
+        {
+            return true;
+        }
+
+        if (await FilterVisibleForOwners(
+                context.SoundContent.AsNoTracking()
+                    .Where(x => x.BlobId == blobId)
+                    .SelectMany(x => x.MessageList),
+                context,
+                owners).AnyAsync(cancellationToken))
+        {
+            return true;
+        }
+
+        return await FilterVisibleForOwners(
+            context.FileContent.AsNoTracking()
+                .Where(x => x.BlobId == blobId)
+                .SelectMany(x => x.MessageList),
+            context,
+            owners).AnyAsync(cancellationToken);
     }
 
     public async Task<bool> TrySetVideoGifAsync(Guid videoContentId, Guid gifBlobId, string gifUrl,
@@ -220,7 +372,7 @@ public class MessageRepository(IDbContextProvider<ChatDbContext> dbContextProvid
     }
 
     /// <inheritdoc />
-    public virtual async Task BindBlobsToMessageAsync(
+    public virtual async Task<int> BindBlobsToMessageAsync(
         long messageId,
         Guid? sessionId,
         IReadOnlyCollection<Guid> blobIds,
@@ -232,17 +384,41 @@ public class MessageRepository(IDbContextProvider<ChatDbContext> dbContextProvid
     {
         if (blobIds == null || blobIds.Count == 0)
         {
-            return;
+            return 0;
         }
 
         var distinctBlobIds = blobIds.Where(x => x != Guid.Empty).Distinct().ToList();
         if (distinctBlobIds.Count == 0)
         {
-            return;
+            return 0;
         }
 
         var time = now ?? Clock.Now;
         var db = await GetDbContextAsync();
+
+        if (markAsBound)
+        {
+            // Conditional claim: only already-Bound or still-valid unexpired Temp blobs can be claimed for sending.
+            await db.Blob
+                .Where(x => distinctBlobIds.Contains(x.Id) &&
+                    (x.Status == BlobStatus.Bound ||
+                     (x.Status == BlobStatus.Temp && (!x.ExpireTime.HasValue || x.ExpireTime.Value >= time))) &&
+                    (x.Status != BlobStatus.Bound || x.ExpireTime != null))
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(b => b.Status, BlobStatus.Bound)
+                    .SetProperty(b => b.ExpireTime, (DateTime?)null)
+                    .SetProperty(b => b.LastModificationTime, time)
+                    .SetProperty(b => b.LastModifierId, creatorId),
+                    cancellationToken);
+
+            var boundCount = await db.Blob.CountAsync(
+                x => distinctBlobIds.Contains(x.Id) && x.Status == BlobStatus.Bound,
+                cancellationToken);
+            if (boundCount < distinctBlobIds.Count)
+            {
+                throw new Volo.Abp.BusinessException(ChatErrorCodes.Blobs.AttachmentNotFoundOrForbidden);
+            }
+        }
 
         var existingBlobIds = await db.BlobMessageRef
             .Where(x => x.MessageId == messageId && distinctBlobIds.Contains(x.BlobId))
@@ -250,36 +426,82 @@ public class MessageRepository(IDbContextProvider<ChatDbContext> dbContextProvid
             .ToListAsync(cancellationToken);
 
         var newBlobIds = distinctBlobIds.Except(existingBlobIds).ToList();
-
-        if (markAsBound)
-        {
-            await db.Blob
-                .Where(x => distinctBlobIds.Contains(x.Id) && (x.Status != BlobStatus.Bound || x.ExpireTime != null))
-                .ExecuteUpdateAsync(s => s
-                    .SetProperty(b => b.Status, BlobStatus.Bound)
-                    .SetProperty(b => b.ExpireTime, (DateTime?)null)
-                    .SetProperty(b => b.LastModificationTime, time)
-                    .SetProperty(b => b.LastModifierId, creatorId),
-                    cancellationToken);
-        }
-
         if (newBlobIds.Count == 0)
         {
-            return;
+            return 0;
+        }
+
+        var insertedBlobIds = await TryInsertNewRefsIdempotentlyAsync(
+            db, messageId, sessionId, newBlobIds, sourceType, creatorId, time, cancellationToken);
+        if (insertedBlobIds.Count == 0)
+        {
+            return 0;
         }
 
         await db.Blob
-            .Where(x => newBlobIds.Contains(x.Id))
+            .Where(x => insertedBlobIds.Contains(x.Id))
             .ExecuteUpdateAsync(s => s
                 .SetProperty(b => b.RefCount, b => b.RefCount + 1)
                 .SetProperty(b => b.LastModificationTime, time)
                 .SetProperty(b => b.LastModifierId, creatorId),
                 cancellationToken);
 
-        var refs = newBlobIds
-            .Select(blobId => (blobId, messageId, sessionId, sourceType))
-            .ToList();
-        await InsertBlobMessageRefsAsync(refs, creatorId, time, cancellationToken);
+        return insertedBlobIds.Count;
+    }
+
+    private async Task<List<Guid>> TryInsertNewRefsIdempotentlyAsync(
+        ChatDbContext db,
+        long messageId,
+        Guid? sessionId,
+        List<Guid> candidateBlobIds,
+        BlobRefSourceTypes sourceType,
+        Guid? creatorId,
+        DateTime time,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var refs = candidateBlobIds
+                .Select(blobId => (blobId, messageId, sessionId, sourceType))
+                .ToList();
+            await InsertBlobMessageRefsAsync(refs, creatorId, time, cancellationToken);
+            return candidateBlobIds;
+        }
+        catch (DbUpdateException)
+        {
+            // Concurrent writer won unique index (BlobId, MessageId): re-check and insert only remaining missing ones.
+            var alreadyInserted = await db.BlobMessageRef
+                .AsNoTracking()
+                .Where(x => x.MessageId == messageId && candidateBlobIds.Contains(x.BlobId))
+                .Select(x => x.BlobId)
+                .ToListAsync(cancellationToken);
+
+            var remaining = candidateBlobIds.Except(alreadyInserted).ToList();
+            if (remaining.Count == 0)
+            {
+                return [];
+            }
+
+            foreach (var blobId in remaining)
+            {
+                try
+                {
+                    await InsertBlobMessageRefsAsync(
+                        [(blobId, messageId, sessionId, sourceType)], creatorId, time, cancellationToken);
+                }
+                catch (DbUpdateException)
+                {
+                    // Already inserted concurrently.
+                }
+            }
+
+            var finalPresent = await db.BlobMessageRef
+                .AsNoTracking()
+                .Where(x => x.MessageId == messageId && remaining.Contains(x.BlobId))
+                .Select(x => x.BlobId)
+                .ToListAsync(cancellationToken);
+            return finalPresent.Except(alreadyInserted).ToList();
+        }
     }
 
     /// <inheritdoc />

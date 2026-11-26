@@ -445,7 +445,9 @@ public static class ChatDbContextModelCreatingExtensions
             b.Property(x => x.StorageName).IsRequired().HasMaxLength(500);
             b.Property(x => x.Sha256).IsRequired().HasMaxLength(64);
             b.Property(x => x.MimeType).HasMaxLength(128);
-            b.HasIndex(x => new { x.StorageScope, x.Container, x.Sha256, x.FileSize }).IsUnique();
+            b.HasIndex(x => new { x.StorageScope, x.Container, x.Sha256, x.FileSize })
+                .IsUnique()
+                .HasFilter("IsDeleted = 0");
             b.HasIndex(x => new { x.Status, x.CreationTime });
         });
 

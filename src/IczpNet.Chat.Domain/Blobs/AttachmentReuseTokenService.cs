@@ -131,7 +131,7 @@ public class AttachmentReuseTokenService(
 
     private string ComputeHmac(string encodedPayload)
     {
-        var signingKey = signatureOptions.Value.SigningKey ?? string.Empty;
+        var signingKey = AttachmentSignatureOptions.ResolveValidatedSigningKey(signatureOptions.Value);
         using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(signingKey));
         var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes($"reuse|{encodedPayload}"));
         return Base64UrlEncode(hash);

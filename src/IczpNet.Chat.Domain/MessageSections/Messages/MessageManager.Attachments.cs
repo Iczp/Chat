@@ -125,6 +125,13 @@ public partial class MessageManager
                     .WithData("BlobId", id);
             }
 
+            if (blob.Status == BlobStatus.Expired ||
+                (blob.Status == BlobStatus.Temp && blob.ExpireTime.HasValue && blob.ExpireTime.Value < Clock.Now))
+            {
+                throw new BusinessException(ChatErrorCodes.Blobs.AttachmentNotFoundOrForbidden)
+                    .WithData("BlobId", id);
+            }
+
             if (attachment.BlobId.HasValue &&
                 blob.Id != attachment.BlobId.Value &&
                 blob.ParentBlobId.HasValue &&
@@ -474,7 +481,7 @@ public partial class MessageManager
                     }
                 }
 
-                // 沿 HistoryMessage 关系向上反查受影响的聊天记录根消息（最多 5 层）
+                // 沿 HistoryMessage 与同会话引用关系向上反查受影响的聊天记录根消息（最多 5 层）
                 var affectedHistoryIds = new HashSet<long>();
                 var frontier = batchIds;
                 for (int depth = 1; depth <= 5 && frontier.Count > 0; depth++)
@@ -487,7 +494,31 @@ public partial class MessageManager
                         .Distinct()
                         .ToList();
 
-                    var newlyFound = parentHistoryIds.Where(id => affectedHistoryIds.Add(id)).ToList();
+                    var frontierSessions = (await Repository.GetQueryableAsync())
+                        .Where(m => frontier.Contains(m.Id) && m.SessionId.HasValue)
+                        .Select(m => new { m.Id, SessionId = m.SessionId!.Value })
+                        .ToList();
+                    var quoteParentIds = new List<long>();
+                    foreach (var grp in frontierSessions.GroupBy(x => x.SessionId))
+                    {
+                        var sid = grp.Key;
+                        var childIds = grp.Select(x => x.Id).ToList();
+                        quoteParentIds.AddRange((await Repository.GetQueryableAsync())
+                            .Where(m => m.SessionId == sid &&
+                                m.QuoteMessageId.HasValue &&
+                                childIds.Contains(m.QuoteMessageId.Value) &&
+                                !m.IsRollbacked &&
+                                !m.RollbackTime.HasValue)
+                            .Select(m => m.Id)
+                            .ToList());
+                    }
+
+                    var newlyFound = parentHistoryIds
+                        .Concat(quoteParentIds)
+                        .Distinct()
+                        .Where(id => affectedHistoryIds.Add(id))
+                        .Take(500)
+                        .ToList();
                     frontier = newlyFound;
                 }
 
@@ -498,9 +529,10 @@ public partial class MessageManager
                         .Select(m => new { m.Id, m.SessionId })
                         .ToList();
 
+                    var newlyBoundHistoryIds = new List<long>();
                     foreach (var hist in historyRows)
                     {
-                        await Repository.BindBlobsToMessageAsync(
+                        var addedCount = await Repository.BindBlobsToMessageAsync(
                             hist.Id,
                             hist.SessionId,
                             [gifBlobId],
@@ -508,6 +540,21 @@ public partial class MessageManager
                             creatorId: null,
                             now: Clock.Now,
                             markAsBound: false);
+                        if (addedCount > 0)
+                        {
+                            newlyBoundHistoryIds.Add(hist.Id);
+                        }
+                    }
+
+                    if (newlyBoundHistoryIds.Count > 0)
+                    {
+                        var changedHistMessages = (await Repository.GetQueryableAsync())
+                            .Where(m => newlyBoundHistoryIds.Contains(m.Id) && !m.IsRollbacked && !m.RollbackTime.HasValue)
+                            .ToList();
+                        foreach (var histMsg in changedHistMessages)
+                        {
+                            await RecordMessageUpdatedAsync(histMsg, Clock.Now, "更新聊天记录视频GIF");
+                        }
                     }
                 }
 

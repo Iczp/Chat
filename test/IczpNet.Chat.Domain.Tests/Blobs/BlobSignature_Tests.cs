@@ -60,4 +60,26 @@ public class BlobSignature_Tests : AbpIntegratedTest<BlobSignatureTestModule>
         var expiredExp = new DateTimeOffset(_clock.Now).ToUnixTimeSeconds() - 10;
         Assert.False(_signatureService.ValidateSignature(blobId, suId, msgId, null, expiredExp, sig));
     }
+
+    [Fact]
+    public void SigningKey_Validation_Should_Reject_Default_And_Empty_Keys_Unless_Explicitly_Allowed()
+    {
+        var defaultOpts = new BlobSignatureService(
+            Microsoft.Extensions.Options.Options.Create(new AttachmentSignatureOptions()),
+            _clock);
+        Assert.Throws<InvalidOperationException>(() =>
+            defaultOpts.AppendSignature("/api/chat/file/test", Guid.NewGuid(), Guid.NewGuid()));
+
+        var shortOpts = new BlobSignatureService(
+            Microsoft.Extensions.Options.Options.Create(new AttachmentSignatureOptions { SigningKey = "short" }),
+            _clock);
+        Assert.Throws<InvalidOperationException>(() =>
+            shortOpts.AppendSignature("/api/chat/file/test", Guid.NewGuid(), Guid.NewGuid()));
+
+        var allowedDefaultOpts = new BlobSignatureService(
+            Microsoft.Extensions.Options.Options.Create(new AttachmentSignatureOptions { AllowInsecureDefaultSigningKey = true }),
+            _clock);
+        Assert.False(string.IsNullOrWhiteSpace(
+            allowedDefaultOpts.AppendSignature("/api/chat/file/test", Guid.NewGuid(), Guid.NewGuid())));
+    }
 }

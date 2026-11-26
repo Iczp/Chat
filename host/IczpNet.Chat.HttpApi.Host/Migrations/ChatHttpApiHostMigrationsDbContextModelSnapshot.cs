@@ -697,7 +697,8 @@ namespace IczpNet.Chat.Migrations
                     b.HasIndex("Status", "CreationTime");
 
                     b.HasIndex("StorageScope", "Container", "Sha256", "FileSize")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("IsDeleted = 0");
 
                     b.ToTable("Chat_BlobObject", (string)null);
                 });

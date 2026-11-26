@@ -82,9 +82,14 @@ public interface IMessageRepository : IRepository<Message, long>
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// 批量原子更新 Blob 状态与引用计数，并通过 ABP 仓储写入 BlobMessageRef 授权记录
+    /// 跨会话检索当前账号在任一未删且可见消息（含历史兼容结构化附件表）中是否有权限访问指定 BlobId
     /// </summary>
-    Task BindBlobsToMessageAsync(
+    Task<bool> HasVisibleBlobForOwnersAsync(Guid blobId, IReadOnlyCollection<long> ownerIds, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 批量原子更新 Blob 状态与引用计数，并通过 ABP 仓储写入 BlobMessageRef 授权记录；返回实际新增的引用数量
+    /// </summary>
+    Task<int> BindBlobsToMessageAsync(
         long messageId,
         Guid? sessionId,
         IReadOnlyCollection<Guid> blobIds,

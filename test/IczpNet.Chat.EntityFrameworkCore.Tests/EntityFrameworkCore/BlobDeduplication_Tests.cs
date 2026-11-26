@@ -252,6 +252,26 @@ public class BlobDeduplication_Tests : ChatEntityFrameworkCoreTestBase
             Assert.Null(await db.Blob.AsNoTracking().FirstOrDefaultAsync(x => x.Id == activeId));
             Assert.Null(await db.BlobObject.AsNoTracking().FirstOrDefaultAsync(x => x.Id == storageObjectId));
             Assert.Empty(sharedMem.Store);
+
+            // Re-uploading the exact same payload after soft-deleting the prior BlobObject must succeed.
+            var reuploadId = guidGen.Create();
+            var reuploaded = await manager.CreateAsync(new Blob(reuploadId, "chat-files")
+            {
+                Name = "2026/11/reupload.bin",
+                FileName = "reupload.bin",
+                MimeType = "application/octet-stream",
+                Suffix = ".bin",
+                Bytes = payload,
+                Status = BlobStatus.Temp,
+                ExpireTime = clock.Now.AddHours(4),
+                RefCount = 0,
+            });
+            Assert.NotNull(reuploaded.StorageObjectId);
+            Assert.NotEqual(storageObjectId, reuploaded.StorageObjectId!.Value);
+            Assert.Equal(payload, await manager.GetBytesAsync(reuploadId));
+            var newObj = await db.BlobObject.AsNoTracking().SingleAsync(x => x.Id == reuploaded.StorageObjectId.Value);
+            Assert.Equal(BlobObjectStatus.Ready, newObj.Status);
+            Assert.Equal(1L, newObj.RefCount);
         });
     }
 }

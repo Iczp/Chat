@@ -23,121 +23,178 @@ public class TempBlobCleanupService(
     IBlobContainerFactory blobContainerFactory,
     IAbpDistributedLock distributedLock) : DomainService, ITempBlobCleanupService
 {
-    [UnitOfWork]
     public virtual async Task<int> CleanupExpiredTempBlobsAsync(int batchSize = 200, CancellationToken cancellationToken = default)
     {
+        var uowManager = LazyServiceProvider.LazyGetRequiredService<IUnitOfWorkManager>();
         var now = Clock.Now;
-        var expiredBlobs = (await blobRepository.GetQueryableAsync())
-            .Where(x => x.Status == BlobStatus.Temp && x.ExpireTime.HasValue && x.ExpireTime.Value < now && x.RefCount <= 0)
-            .OrderBy(x => x.ExpireTime)
-            .Take(batchSize)
-            .ToList();
-
-        var deleted = 0;
+        var expiredIds = new List<(Guid Id, string Container, string Name, Guid? StorageObjectId)>();
         var touchedObjectIds = new HashSet<Guid>();
+        var legacyPhysicalToDelete = new List<(string Container, string Name)>();
 
-        foreach (var blob in expiredBlobs)
+        // Phase 1: In a committed transaction, claim & delete only expired unreferenced Temp Blobs.
+        // Physical I/O NEVER runs inside this transaction, so a rolled-back send/cleanup cannot orphan refs.
+        using (var uow1 = uowManager.Begin(requiresNew: true, isTransactional: true))
         {
-            try
+            var candidates = (await blobRepository.GetQueryableAsync())
+                .Where(x => x.Status == BlobStatus.Temp && x.ExpireTime.HasValue && x.ExpireTime.Value < now && x.RefCount <= 0)
+                .OrderBy(x => x.ExpireTime)
+                .Take(batchSize)
+                .Select(x => new { x.Id, x.Container, x.Name, x.StorageObjectId })
+                .ToList();
+
+            foreach (var item in candidates)
             {
-                if (!blob.StorageObjectId.HasValue)
+                var entity = await blobRepository.FindAsync(item.Id, cancellationToken: cancellationToken);
+                if (entity == null ||
+                    entity.Status != BlobStatus.Temp ||
+                    entity.RefCount > 0 ||
+                    !entity.ExpireTime.HasValue ||
+                    entity.ExpireTime.Value >= now)
                 {
-                    var container = blobContainerFactory.Create(blob.Container);
-                    await container.DeleteAsync(blob.Name, cancellationToken);
-                    await blobRepository.DeleteAsync(blob, autoSave: true, cancellationToken: cancellationToken);
-                    deleted++;
                     continue;
                 }
 
-                touchedObjectIds.Add(blob.StorageObjectId.Value);
-                await blobRepository.DeleteAsync(blob, autoSave: true, cancellationToken: cancellationToken);
-                deleted++;
+                await blobRepository.DeleteAsync(entity, autoSave: true, cancellationToken: cancellationToken);
+                expiredIds.Add((item.Id, item.Container, item.Name, item.StorageObjectId));
+                if (item.StorageObjectId.HasValue)
+                {
+                    touchedObjectIds.Add(item.StorageObjectId.Value);
+                }
+                else
+                {
+                    legacyPhysicalToDelete.Add((item.Container, item.Name));
+                }
+            }
+
+            await uow1.CompleteAsync(cancellationToken);
+        }
+
+        // Phase 2 (after logical Blob deletion committed): delete legacy physical files outside transaction.
+        foreach (var (container, name) in legacyPhysicalToDelete)
+        {
+            try
+            {
+                await blobContainerFactory.Create(container).DeleteAsync(name, cancellationToken);
             }
             catch (Exception ex)
             {
-                Logger.LogWarning(ex, "Failed to cleanup expired temp blob {BlobId} ({Container}/{Name})", blob.Id, blob.Container, blob.Name);
+                Logger.LogWarning(ex, "Failed to delete legacy expired temp blob file ({Container}/{Name})", container, name);
             }
         }
 
-        // Reconcile refcounts and physically delete dereferenced BlobObjects safely under lock.
-        foreach (var objectId in touchedObjectIds)
+        // Phase 3: Reconcile touched objects + bounded scan of Deleting, stale Pending (>2h), and Ready(RefCount<=0) orphans.
+        var candidateObjectIds = new HashSet<Guid>(touchedObjectIds);
+        using (var scanUow = uowManager.Begin(requiresNew: true, isTransactional: false))
         {
-            await TryReconcileOrDeleteStorageObjectAsync(objectId, cancellationToken);
-        }
+            var stalePendingCutoff = now.AddHours(-2);
+            var orphanIds = (await blobObjectRepository.GetQueryableAsync())
+                .Where(x =>
+                    x.Status == BlobObjectStatus.Deleting ||
+                    (x.Status == BlobObjectStatus.Pending && x.CreationTime < stalePendingCutoff && x.RefCount <= 0) ||
+                    (x.Status == BlobObjectStatus.Ready && x.RefCount <= 0))
+                .OrderBy(x => x.CreationTime)
+                .Take(batchSize)
+                .Select(x => x.Id)
+                .ToList();
 
-        // Recover stale Pending (>2h) or orphaned Deleting storage objects in small bounded batches.
-        var stalePendingCutoff = now.AddHours(-2);
-        var orphanObjectIds = (await blobObjectRepository.GetQueryableAsync())
-            .Where(x =>
-                (x.Status == BlobObjectStatus.Deleting) ||
-                (x.Status == BlobObjectStatus.Pending && x.CreationTime < stalePendingCutoff && x.RefCount <= 0))
-            .OrderBy(x => x.CreationTime)
-            .Take(batchSize)
-            .Select(x => x.Id)
-            .ToList();
-
-        foreach (var objectId in orphanObjectIds)
-        {
-            if (touchedObjectIds.Contains(objectId))
+            foreach (var id in orphanIds)
             {
-                continue;
+                candidateObjectIds.Add(id);
             }
-            await TryReconcileOrDeleteStorageObjectAsync(objectId, cancellationToken);
+
+            await scanUow.CompleteAsync(cancellationToken);
         }
 
-        return deleted;
+        foreach (var objectId in candidateObjectIds)
+        {
+            await TryReconcileOrDeleteStorageObjectAsync(uowManager, objectId, cancellationToken);
+        }
+
+        return expiredIds.Count;
     }
 
-    private async Task TryReconcileOrDeleteStorageObjectAsync(Guid objectId, CancellationToken cancellationToken)
+    private async Task TryReconcileOrDeleteStorageObjectAsync(
+        IUnitOfWorkManager uowManager,
+        Guid objectId,
+        CancellationToken cancellationToken)
     {
         try
         {
-            var obj = await blobObjectRepository.FindAsync(objectId, cancellationToken: cancellationToken);
-            if (obj == null)
+            BlobObject snapshot;
+            using (var readUow = uowManager.Begin(requiresNew: true, isTransactional: false))
+            {
+                snapshot = await blobObjectRepository.FindAsync(objectId, cancellationToken: cancellationToken);
+                await readUow.CompleteAsync(cancellationToken);
+            }
+
+            if (snapshot == null)
             {
                 return;
             }
 
-            var lockName = $"Chat:BlobObject:{obj.StorageScope}:{obj.Container}:{obj.Sha256}:{obj.FileSize}";
+            var lockName = $"Chat:BlobObject:{snapshot.StorageScope}:{snapshot.Container}:{snapshot.Sha256}:{snapshot.FileSize}";
             await using var handle = await distributedLock.TryAcquireAsync(lockName, TimeSpan.FromSeconds(10), cancellationToken);
             if (handle == null)
             {
                 return;
             }
 
-            obj = await blobObjectRepository.FindAsync(objectId, cancellationToken: cancellationToken);
-            if (obj == null)
-            {
-                return;
-            }
+            string physicalContainerToDelete = null;
+            string physicalNameToDelete = null;
 
-            var remainingRefs = (await blobRepository.GetQueryableAsync())
-                .Count(x => x.StorageObjectId == objectId);
-
-            if (remainingRefs > 0)
+            // Step A: Commit Status = Deleting (or reconcile RefCount) inside a transactional UOW first.
+            using (var markUow = uowManager.Begin(requiresNew: true, isTransactional: true))
             {
-                if (obj.RefCount != remainingRefs)
+                var obj = await blobObjectRepository.FindAsync(objectId, cancellationToken: cancellationToken);
+                if (obj == null)
                 {
-                    obj.RefCount = remainingRefs;
+                    await markUow.CompleteAsync(cancellationToken);
+                    return;
+                }
+
+                var remainingRefs = (await blobRepository.GetQueryableAsync())
+                    .Count(x => x.StorageObjectId == objectId);
+
+                if (remainingRefs > 0)
+                {
+                    if (obj.RefCount != remainingRefs)
+                    {
+                        obj.RefCount = remainingRefs;
+                        await blobObjectRepository.UpdateAsync(obj, autoSave: true, cancellationToken: cancellationToken);
+                    }
+                    await markUow.CompleteAsync(cancellationToken);
+                    return;
+                }
+
+                if (obj.Status != BlobObjectStatus.Deleting)
+                {
+                    obj.Status = BlobObjectStatus.Deleting;
+                    obj.RefCount = 0;
+                    obj.DeletingSince = Clock.Now;
                     await blobObjectRepository.UpdateAsync(obj, autoSave: true, cancellationToken: cancellationToken);
                 }
-                return;
+
+                physicalContainerToDelete = obj.Container;
+                physicalNameToDelete = obj.StorageName;
+                await markUow.CompleteAsync(cancellationToken);
             }
 
-            if (obj.Status != BlobObjectStatus.Deleting)
+            // Step B (after Deleting status is durably committed): delete physical bytes by immutable versioned StorageName.
+            if (!string.IsNullOrWhiteSpace(physicalNameToDelete))
             {
-                obj.Status = BlobObjectStatus.Deleting;
-                obj.RefCount = 0;
-                obj.DeletingSince = Clock.Now;
-                await blobObjectRepository.UpdateAsync(obj, autoSave: true, cancellationToken: cancellationToken);
+                await blobContainerFactory.Create(physicalContainerToDelete).DeleteAsync(physicalNameToDelete, cancellationToken);
             }
 
-            if (!string.IsNullOrWhiteSpace(obj.StorageName))
+            // Step C: Soft/remove the Deleting BlobObject row (only when still Deleting).
+            using (var finalizeUow = uowManager.Begin(requiresNew: true, isTransactional: true))
             {
-                await blobContainerFactory.Create(obj.Container).DeleteAsync(obj.StorageName, cancellationToken);
+                var obj = await blobObjectRepository.FindAsync(objectId, cancellationToken: cancellationToken);
+                if (obj != null && obj.Status == BlobObjectStatus.Deleting)
+                {
+                    await blobObjectRepository.DeleteAsync(obj, autoSave: true, cancellationToken: cancellationToken);
+                }
+                await finalizeUow.CompleteAsync(cancellationToken);
             }
-
-            await blobObjectRepository.DeleteAsync(obj, autoSave: true, cancellationToken: cancellationToken);
         }
         catch (Exception ex)
         {

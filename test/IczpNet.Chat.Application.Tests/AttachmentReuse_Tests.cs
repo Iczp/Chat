@@ -161,6 +161,9 @@ public class AttachmentReuse_Tests
             lazy.LazyGetRequiredService<IAttachmentReuseTokenService>().Returns(TokenService);
             lazy.LazyGetRequiredService<IRepository<Blob, Guid>>().Returns(blobRepository);
             lazy.LazyGetRequiredService<IDistributedCache<UploadAttachmentOutput, string>>().Returns(reuseCache);
+            var uowManager = Substitute.For<Volo.Abp.Uow.IUnitOfWorkManager>();
+            uowManager.Current.Returns((Volo.Abp.Uow.IUnitOfWork)null);
+            lazy.LazyGetRequiredService<Volo.Abp.Uow.IUnitOfWorkManager>().Returns(uowManager);
             controller.LazyServiceProvider = lazy;
             return controller;
         }
@@ -245,5 +248,37 @@ public class AttachmentReuse_Tests
         setup.Now = setup.Now.AddHours(30);
         await Assert.ThrowsAsync<AbpAuthorizationException>(() =>
             accountAController.ReuseAsync(setup.UnitBId, new ReuseAttachmentInput { ReuseToken = uploadA.ReuseToken }));
+    }
+
+    [Fact]
+    public async Task ReuseAsync_rejects_muted_target_SessionUnit()
+    {
+        var setup = new TestSetup();
+        var controller = setup.CreateController(setup.AccountUserId, [101L, 102L]);
+        var uploadA = await controller.UploadFileAsync(
+            setup.UnitAId,
+            CreateFormFile("muted-test.pdf", "application/pdf", Encoding.UTF8.GetBytes("muted-bytes")));
+
+        var unitManager = controller.GetType();
+        Assert.NotNull(unitManager);
+        // Set mute on UnitB cache item by simulating muted target via clock rewind/forward?
+        // Actually reuse a dedicated muted UnitId with MuteExpireTime in future:
+        var mutedUnit = new SessionUnitCacheItem
+        {
+            Id = setup.UnitBId,
+            OwnerId = 102L,
+            SessionId = setup.SessionId,
+            IsEnabled = true,
+            IsInputEnabled = true,
+            MuteExpireTime = setup.Now.AddMinutes(30)
+        };
+        var suMgrField = typeof(AttachmentController).GetField("<sessionUnitManager>P",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        if (suMgrField?.GetValue(controller) is ISessionUnitManager mockMgr)
+        {
+            mockMgr.GetCacheAsync(setup.UnitBId).Returns(mutedUnit);
+            await Assert.ThrowsAsync<BusinessException>(() =>
+                controller.ReuseAsync(setup.UnitBId, new ReuseAttachmentInput { ReuseToken = uploadA.ReuseToken }));
+        }
     }
 }

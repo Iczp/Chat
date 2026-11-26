@@ -69,8 +69,9 @@ public class BlobSignatureService(
 
     protected virtual string ComputeSignature(Guid blobId, Guid sessionUnitId, long? messageId, long? rootMessageId, long exp)
     {
+        var signingKey = AttachmentSignatureOptions.ResolveValidatedSigningKey(options.Value);
         var payload = $"{blobId:N}|{sessionUnitId:N}|{messageId?.ToString() ?? string.Empty}|{rootMessageId?.ToString() ?? string.Empty}|{exp}";
-        var keyBytes = Encoding.UTF8.GetBytes(options.Value.SigningKey);
+        var keyBytes = Encoding.UTF8.GetBytes(signingKey);
         var payloadBytes = Encoding.UTF8.GetBytes(payload);
         using var hmac = new HMACSHA256(keyBytes);
         var hash = hmac.ComputeHash(payloadBytes);

@@ -1,4 +1,6 @@
-﻿using System;
+﻿using IczpNet.Chat.Options;
+using Microsoft.Extensions.Options;
+using System;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,6 +9,7 @@ using Volo.Abp.BlobStoring;
 using Volo.Abp.DistributedLocking;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.Blobs;
 
@@ -19,6 +22,44 @@ public class BlobManager(
     protected IBlobContainerFactory BlobContainerFactory { get; set; } = blobContainerFactory;
     protected IRepository<Blob, Guid> Repository { get; set; } = repository;
     protected IRepository<BlobObject, Guid> BlobObjectRepository { get; set; } = blobObjectRepository;
+
+    private bool IsPhysicalDeduplicationEnabled()
+    {
+        var opts = LazyServiceProvider?.LazyGetService<IOptions<AttachmentUploadOptions>>()?.Value;
+        return opts?.EnablePhysicalDeduplication ?? true;
+    }
+
+    private Task RunCommittedStepAsync(Func<Task> action)
+    {
+        var uowManager = LazyServiceProvider?.LazyGetService<IUnitOfWorkManager>();
+        if (uowManager == null)
+        {
+            return action();
+        }
+
+        return ExecuteInNewUowAsync(uowManager, action);
+    }
+
+    private async Task<T> RunCommittedStepAsync<T>(Func<Task<T>> action)
+    {
+        var uowManager = LazyServiceProvider?.LazyGetService<IUnitOfWorkManager>();
+        if (uowManager == null)
+        {
+            return await action();
+        }
+
+        using var uow = uowManager.Begin(requiresNew: true, isTransactional: true);
+        var result = await action();
+        await uow.CompleteAsync();
+        return result;
+    }
+
+    private static async Task ExecuteInNewUowAsync(IUnitOfWorkManager uowManager, Func<Task> action)
+    {
+        using var uow = uowManager.Begin(requiresNew: true, isTransactional: true);
+        await action();
+        await uow.CompleteAsync();
+    }
 
     public virtual async Task<Blob> CreateAsync(Blob blob)
     {
@@ -37,22 +78,26 @@ public class BlobManager(
                 throw new UserFriendlyException("Blob storage object is busy, please retry.");
             }
 
-            sharedObj = await BlobObjectRepository.GetAsync(blob.StorageObjectId.Value);
-            if (sharedObj.Status != BlobObjectStatus.Ready)
+            var verifiedObj = await RunCommittedStepAsync(async () =>
             {
-                throw new BusinessException(ChatErrorCodes.Blobs.AccessDenied);
-            }
+                var current = await BlobObjectRepository.FindAsync(blob.StorageObjectId.Value);
+                if (current == null || current.Status != BlobObjectStatus.Ready)
+                {
+                    throw new BusinessException(ChatErrorCodes.Blobs.AccessDenied);
+                }
 
-            sharedObj.RefCount++;
-            await BlobObjectRepository.UpdateAsync(sharedObj, autoSave: true);
-            blob.SetStorageObject(sharedObj);
+                current.RefCount++;
+                return await BlobObjectRepository.UpdateAsync(current, autoSave: true);
+            });
+
+            blob.SetStorageObject(null);
+            blob.StorageObjectId = verifiedObj.Id;
             return await Repository.InsertAsync(blob, autoSave: true);
         }
 
-        if (blob.Bytes == null || blob.Bytes.Length == 0)
+        if (!IsPhysicalDeduplicationEnabled() || blob.Bytes == null || blob.Bytes.Length == 0)
         {
-            // Attachment content can be saved in a later application-service UOW.
-            // Flush metadata first so its BlobId FK exists before the message content insert.
+            // Legacy non-dedup write or empty bytes: persist logical record and physical bytes directly.
             var entity = await Repository.InsertAsync(blob, autoSave: true);
             if (entity.Bytes != null)
             {
@@ -72,64 +117,89 @@ public class BlobManager(
             throw new UserFriendlyException("Blob storage object is busy, please retry.");
         }
 
-        var existing = await BlobObjectRepository.FindAsync(x =>
-            x.StorageScope == storageScope &&
-            x.Container == blob.Container &&
-            x.Sha256 == sha256 &&
-            x.FileSize == fileSize);
+        // Phase 1 (committed before any physical I/O): claim existing Ready object or allocate Pending record.
+        Guid pendingOrReadyId = Guid.Empty;
+        string containerToWrite = blob.Container;
+        string storageNameToWrite = null;
+        string oldDeletingKey = null;
+        BlobObject readyObject = null;
 
-        if (existing != null && existing.Status == BlobObjectStatus.Ready)
+        await RunCommittedStepAsync(async () =>
         {
-            existing.RefCount++;
-            await BlobObjectRepository.UpdateAsync(existing, autoSave: true);
-            blob.SetStorageObject(existing);
-            return await Repository.InsertAsync(blob, autoSave: true);
-        }
+            var existing = await BlobObjectRepository.FindAsync(x =>
+                x.StorageScope == storageScope &&
+                x.Container == blob.Container &&
+                x.Sha256 == sha256 &&
+                x.FileSize == fileSize);
 
-        if (existing != null)
-        {
-            if (existing.Status == BlobObjectStatus.Deleting && !string.IsNullOrWhiteSpace(existing.StorageName))
+            if (existing != null && existing.Status == BlobObjectStatus.Ready)
             {
-                try
-                {
-                    await BlobContainerFactory.Create(existing.Container).DeleteAsync(existing.StorageName);
-                }
-                catch
-                {
-                    // Best-effort removal of superseded object key before writing a new versioned key.
-                }
+                existing.RefCount++;
+                readyObject = await BlobObjectRepository.UpdateAsync(existing, autoSave: true);
+                return;
             }
 
-            existing.StorageName = BuildVersionedStorageName(sha256, GuidGenerator.Create(), blob.Suffix);
-            existing.Status = BlobObjectStatus.Pending;
-            existing.DeletingSince = null;
-            existing.MimeType = blob.MimeType;
-            await BlobObjectRepository.UpdateAsync(existing, autoSave: true);
+            if (existing != null)
+            {
+                if (existing.Status == BlobObjectStatus.Deleting)
+                {
+                    oldDeletingKey = existing.StorageName;
+                }
 
-            await SaveBytesAsync(existing.Container, existing.StorageName, blob.Bytes);
+                existing.StorageName = BuildVersionedStorageName(sha256, GuidGenerator.Create(), blob.Suffix);
+                existing.Status = BlobObjectStatus.Pending;
+                existing.DeletingSince = null;
+                existing.MimeType = blob.MimeType;
+                await BlobObjectRepository.UpdateAsync(existing, autoSave: true);
+                pendingOrReadyId = existing.Id;
+                containerToWrite = existing.Container;
+                storageNameToWrite = existing.StorageName;
+                return;
+            }
 
-            existing.Status = BlobObjectStatus.Ready;
-            existing.RefCount = Math.Max(0, existing.RefCount) + 1;
-            existing.LastVerifiedTime = Clock.Now;
-            await BlobObjectRepository.UpdateAsync(existing, autoSave: true);
+            var objId = GuidGenerator.Create();
+            var storageName = BuildVersionedStorageName(sha256, objId, blob.Suffix);
+            var created = new BlobObject(objId, storageScope, blob.Container, storageName, sha256, fileSize, blob.MimeType);
+            await BlobObjectRepository.InsertAsync(created, autoSave: true);
+            pendingOrReadyId = objId;
+            containerToWrite = created.Container;
+            storageNameToWrite = created.StorageName;
+        });
 
-            blob.SetStorageObject(existing);
+        if (readyObject != null)
+        {
+            blob.SetStorageObject(null);
+            blob.StorageObjectId = readyObject.Id;
             return await Repository.InsertAsync(blob, autoSave: true);
         }
 
-        var objId = GuidGenerator.Create();
-        var storageName = BuildVersionedStorageName(sha256, objId, blob.Suffix);
-        var blobObject = new BlobObject(objId, storageScope, blob.Container, storageName, sha256, fileSize, blob.MimeType);
-        blobObject = await BlobObjectRepository.InsertAsync(blobObject, autoSave: true);
+        if (!string.IsNullOrWhiteSpace(oldDeletingKey))
+        {
+            try
+            {
+                await BlobContainerFactory.Create(containerToWrite).DeleteAsync(oldDeletingKey);
+            }
+            catch
+            {
+                // Best-effort cleanup of superseded versioned key.
+            }
+        }
 
-        await SaveBytesAsync(blobObject.Container, blobObject.StorageName, blob.Bytes);
+        // Phase 2 (outside DB write transaction): upload physical bytes to versioned StorageName.
+        await SaveBytesAsync(containerToWrite, storageNameToWrite, blob.Bytes);
 
-        blobObject.Status = BlobObjectStatus.Ready;
-        blobObject.RefCount = 1;
-        blobObject.LastVerifiedTime = Clock.Now;
-        await BlobObjectRepository.UpdateAsync(blobObject, autoSave: true);
+        // Phase 3 (committed after upload succeeds): mark BlobObject Ready before binding logical Blob.
+        var finalizedObject = await RunCommittedStepAsync(async () =>
+        {
+            var obj = await BlobObjectRepository.GetAsync(pendingOrReadyId);
+            obj.Status = BlobObjectStatus.Ready;
+            obj.RefCount = Math.Max(0, obj.RefCount) + 1;
+            obj.LastVerifiedTime = Clock.Now;
+            return await BlobObjectRepository.UpdateAsync(obj, autoSave: true);
+        });
 
-        blob.SetStorageObject(blobObject);
+        blob.SetStorageObject(null);
+        blob.StorageObjectId = finalizedObject.Id;
         return await Repository.InsertAsync(blob, autoSave: true);
     }
 

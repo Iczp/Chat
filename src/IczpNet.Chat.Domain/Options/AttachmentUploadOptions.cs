@@ -76,4 +76,9 @@ public class AttachmentUploadOptions
     /// 是否启用文件头魔数验证
     /// </summary>
     public bool EnableMagicHeaderValidation { get; set; } = true;
+
+    /// <summary>
+    /// 是否启用服务端物理存储去重（关闭后新上传回退到按逻辑路径直存，旧共享对象仍兼容读取与清理）
+    /// </summary>
+    public bool EnablePhysicalDeduplication { get; set; } = true;
 }
