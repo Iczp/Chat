@@ -125,8 +125,14 @@ public class MessageRepository(IDbContextProvider<ChatDbContext> dbContextProvid
                 .ToListAsync(cancellationToken);
 
             var quoteChildren = await context.Message.AsNoTracking()
-                .Where(m => frontier.Contains(m.Id) && m.QuoteMessageId.HasValue && m.SessionId == rootSessionId && !m.IsRollbacked && !m.RollbackTime.HasValue)
-                .Select(m => m.QuoteMessageId!.Value)
+                .Where(m => frontier.Contains(m.Id) && m.QuoteMessageId.HasValue && m.SessionId.HasValue && !m.IsRollbacked && !m.RollbackTime.HasValue)
+                .Join(
+                    context.Message.AsNoTracking().Where(q => q.SessionId.HasValue && !q.IsPrivate && !q.IsRollbacked && !q.RollbackTime.HasValue),
+                    m => m.QuoteMessageId!.Value,
+                    q => q.Id,
+                    (m, q) => new { ParentSessionId = m.SessionId!.Value, ChildSessionId = q.SessionId!.Value, ChildId = q.Id })
+                .Where(x => x.ParentSessionId == x.ChildSessionId)
+                .Select(x => x.ChildId)
                 .Distinct()
                 .ToListAsync(cancellationToken);
 
@@ -467,41 +473,64 @@ public class MessageRepository(IDbContextProvider<ChatDbContext> dbContextProvid
             await InsertBlobMessageRefsAsync(refs, creatorId, time, cancellationToken);
             return candidateBlobIds;
         }
-        catch (DbUpdateException)
+        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
         {
-            // Concurrent writer won unique index (BlobId, MessageId): re-check and insert only remaining missing ones.
-            var alreadyInserted = await db.BlobMessageRef
-                .AsNoTracking()
-                .Where(x => x.MessageId == messageId && candidateBlobIds.Contains(x.BlobId))
-                .Select(x => x.BlobId)
-                .ToListAsync(cancellationToken);
+            DetachPendingBlobMessageRefs(db);
 
-            var remaining = candidateBlobIds.Except(alreadyInserted).ToList();
-            if (remaining.Count == 0)
-            {
-                return [];
-            }
-
-            foreach (var blobId in remaining)
+            // Concurrent writer won unique index (BlobId, MessageId): probe row-by-row and count ONLY rows inserted by THIS transaction.
+            var actuallyInserted = new List<Guid>(candidateBlobIds.Count);
+            foreach (var blobId in candidateBlobIds)
             {
                 try
                 {
                     await InsertBlobMessageRefsAsync(
                         [(blobId, messageId, sessionId, sourceType)], creatorId, time, cancellationToken);
+                    actuallyInserted.Add(blobId);
                 }
-                catch (DbUpdateException)
+                catch (DbUpdateException innerEx) when (IsUniqueConstraintViolation(innerEx))
                 {
-                    // Already inserted concurrently.
+                    DetachPendingBlobMessageRefs(db);
                 }
             }
 
-            var finalPresent = await db.BlobMessageRef
-                .AsNoTracking()
-                .Where(x => x.MessageId == messageId && remaining.Contains(x.BlobId))
-                .Select(x => x.BlobId)
-                .ToListAsync(cancellationToken);
-            return finalPresent.Except(alreadyInserted).ToList();
+            return actuallyInserted;
         }
+    }
+
+    private static void DetachPendingBlobMessageRefs(ChatDbContext db)
+    {
+        foreach (var entry in db.ChangeTracker.Entries<BlobMessageRef>()
+                     .Where(e => e.State == EntityState.Added)
+                     .ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
+    }
+
+    private static bool IsUniqueConstraintViolation(DbUpdateException ex)
+    {
+        for (var current = ex.InnerException; current != null; current = current.InnerException)
+        {
+            var type = current.GetType();
+            if (type.FullName is "Microsoft.Data.SqlClient.SqlException" or "System.Data.SqlClient.SqlException")
+            {
+                if (type.GetProperty("Number")?.GetValue(current) is int number && (number == 2601 || number == 2627))
+                {
+                    return true;
+                }
+            }
+            else if (type.FullName == "Microsoft.Data.Sqlite.SqliteException")
+            {
+                if (type.GetProperty("SqliteErrorCode")?.GetValue(current) is int code &&
+                    code == 19 &&
+                    current.Message.Contains("UNIQUE constraint failed", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /// <inheritdoc />

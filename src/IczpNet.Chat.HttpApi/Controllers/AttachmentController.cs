@@ -799,6 +799,7 @@ public class AttachmentController(
         }
 
         var blobRepository = LazyServiceProvider.LazyGetRequiredService<IRepository<Blob, Guid>>();
+        var reuseRecordRepository = LazyServiceProvider.LazyGetRequiredService<IRepository<BlobReuseRecord, Guid>>();
         var sourcePrimary = await blobRepository.FindAsync(payload.PrimaryBlobId);
         if (sourcePrimary == null || sourcePrimary.Status == BlobStatus.Expired)
         {
@@ -818,9 +819,12 @@ public class AttachmentController(
         var fileNameDigest = Convert.ToHexString(
             System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(effectiveFileName ?? string.Empty)))[..16];
 
-        var clientUploadKey = string.IsNullOrWhiteSpace(input.ClientUploadId)
+        var normalizedClientUploadId = string.IsNullOrWhiteSpace(input.ClientUploadId)
             ? null
-            : $"attach-reuse:{CurrentUser.Id.Value:N}:{sessionUnitId:N}:{payload.PrimaryBlobId:N}:{input.ClientUploadId.Trim()}:{fileNameDigest}";
+            : input.ClientUploadId.Trim();
+        var clientUploadKey = normalizedClientUploadId == null
+            ? null
+            : $"attach-reuse:{CurrentUser.Id.Value:N}:{sessionUnitId:N}:{payload.PrimaryBlobId:N}:{normalizedClientUploadId}:{fileNameDigest}";
         var reuseCache = clientUploadKey != null
             ? LazyServiceProvider.LazyGetRequiredService<IDistributedCache<UploadAttachmentOutput, string>>()
             : null;
@@ -836,6 +840,34 @@ public class AttachmentController(
                 {
                     return cachedOutput;
                 }
+            }
+        }
+
+        if (normalizedClientUploadId != null)
+        {
+            var existingRecord = await reuseRecordRepository.FindAsync(x =>
+                x.UserId == CurrentUser.Id.Value &&
+                x.SessionUnitId == sessionUnitId &&
+                x.SourcePrimaryBlobId == payload.PrimaryBlobId &&
+                x.ClientUploadId == normalizedClientUploadId);
+            if (existingRecord != null)
+            {
+                if (!string.Equals(existingRecord.FileNameDigest, fileNameDigest, StringComparison.Ordinal))
+                {
+                    throw new BusinessException(ChatErrorCodes.Blobs.AccessDenied)
+                        .WithData("Reason", "ClientUploadId reused with different attachment parameters.");
+                }
+
+                var persistedBlob = await blobRepository.FindAsync(existingRecord.PrimaryBlobId);
+                if (persistedBlob != null &&
+                    persistedBlob.Status == BlobStatus.Temp &&
+                    (!persistedBlob.ExpireTime.HasValue || persistedBlob.ExpireTime.Value >= Clock.Now))
+                {
+                    return jsonSerializer.Deserialize<UploadAttachmentOutput>(existingRecord.ResultJson);
+                }
+
+                // Expired stale idempotency record: remove so a fresh upload/reuse for this ClientUploadId can proceed.
+                await reuseRecordRepository.DeleteAsync(existingRecord, autoSave: true);
             }
         }
 
@@ -961,6 +993,22 @@ public class AttachmentController(
                 payload.Profile,
                 newPrimaryBlob.ExpireTime),
         };
+
+        if (normalizedClientUploadId != null)
+        {
+            await reuseRecordRepository.InsertAsync(
+                new BlobReuseRecord(
+                    GuidGenerator.Create(),
+                    CurrentUser.Id.Value,
+                    sessionUnitId,
+                    payload.PrimaryBlobId,
+                    normalizedClientUploadId,
+                    fileNameDigest,
+                    output.BlobId,
+                    jsonSerializer.Serialize(output),
+                    output.ExpireTime),
+                autoSave: true);
+        }
 
         if (reuseCache != null && clientUploadKey != null)
         {

@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,6 +40,8 @@ public class AttachmentReuse_Tests
         public Guid UnitBId { get; } = Guid.NewGuid();
         public Guid DisabledUnitId { get; } = Guid.NewGuid();
         public List<Blob> StoredBlobs { get; } = [];
+        public List<BlobReuseRecord> ReuseRecords { get; } = [];
+        public Dictionary<string, UploadAttachmentOutput> CacheStore { get; } = new(StringComparer.Ordinal);
         public int PhysicalSaveCount { get; set; }
         public long StorageObjectRefCount { get; set; }
         public DateTime Now { get; set; } = new(2026, 11, 26, 12, 0, 0, DateTimeKind.Utc);
@@ -119,16 +122,38 @@ public class AttachmentReuse_Tests
             blobRepository.GetQueryableAsync()
                 .Returns(_ => Task.FromResult(StoredBlobs.AsQueryable()));
 
-            var cacheStore = new Dictionary<string, UploadAttachmentOutput>(StringComparer.Ordinal);
             var reuseCache = Substitute.For<IDistributedCache<UploadAttachmentOutput, string>>();
             reuseCache.GetAsync(Arg.Any<string>(), Arg.Any<bool?>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
-                .Returns(call => cacheStore.TryGetValue(call.Arg<string>(), out var v) ? v : null);
+                .Returns(call => CacheStore.TryGetValue(call.Arg<string>(), out var v) ? v : null);
             reuseCache.SetAsync(Arg.Any<string>(), Arg.Any<UploadAttachmentOutput>(), Arg.Any<DistributedCacheEntryOptions>(), Arg.Any<bool?>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
                 .Returns(call =>
                 {
-                    cacheStore[call.Arg<string>()] = call.Arg<UploadAttachmentOutput>();
+                    CacheStore[call.Arg<string>()] = call.Arg<UploadAttachmentOutput>();
                     return Task.CompletedTask;
                 });
+
+            var reuseRecordRepo = Substitute.For<IRepository<BlobReuseRecord, Guid>>();
+            reuseRecordRepo.FindAsync(Arg.Any<Expression<Func<BlobReuseRecord, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+                .Returns(call => ReuseRecords.AsQueryable().FirstOrDefault(call.Arg<Expression<Func<BlobReuseRecord, bool>>>()));
+            reuseRecordRepo.InsertAsync(Arg.Any<BlobReuseRecord>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+                .Returns(call =>
+                {
+                    var rec = call.Arg<BlobReuseRecord>();
+                    ReuseRecords.Add(rec);
+                    return Task.FromResult(rec);
+                });
+            reuseRecordRepo.DeleteAsync(Arg.Any<BlobReuseRecord>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+                .Returns(call =>
+                {
+                    ReuseRecords.Remove(call.Arg<BlobReuseRecord>());
+                    return Task.CompletedTask;
+                });
+
+            var jsonSerializer = Substitute.For<IJsonSerializer>();
+            jsonSerializer.Serialize(Arg.Any<object>(), Arg.Any<bool>(), Arg.Any<bool>())
+                .Returns(call => System.Text.Json.JsonSerializer.Serialize(call.Arg<object>()));
+            jsonSerializer.Deserialize<UploadAttachmentOutput>(Arg.Any<string>(), Arg.Any<bool>())
+                .Returns(call => System.Text.Json.JsonSerializer.Deserialize<UploadAttachmentOutput>(call.Arg<string>())!);
 
             var currentUser = Substitute.For<ICurrentUser>();
             currentUser.Id.Returns(currentUserId);
@@ -148,7 +173,7 @@ public class AttachmentReuse_Tests
                 Substitute.For<IMediaResolver>(),
                 msgOptions,
                 uploadOptions,
-                Substitute.For<IJsonSerializer>());
+                jsonSerializer);
 
             var lazy = Substitute.For<IAbpLazyServiceProvider>();
             lazy.LazyGetRequiredService<ICurrentUser>().Returns(currentUser);
@@ -160,6 +185,7 @@ public class AttachmentReuse_Tests
             lazy.LazyGetService<IGuidGenerator>(Arg.Any<IGuidGenerator>()).Returns(guidGen);
             lazy.LazyGetRequiredService<IAttachmentReuseTokenService>().Returns(TokenService);
             lazy.LazyGetRequiredService<IRepository<Blob, Guid>>().Returns(blobRepository);
+            lazy.LazyGetRequiredService<IRepository<BlobReuseRecord, Guid>>().Returns(reuseRecordRepo);
             lazy.LazyGetRequiredService<IDistributedCache<UploadAttachmentOutput, string>>().Returns(reuseCache);
             var uowManager = Substitute.For<Volo.Abp.Uow.IUnitOfWorkManager>();
             uowManager.Current.Returns((Volo.Abp.Uow.IUnitOfWork)null);
@@ -217,6 +243,26 @@ public class AttachmentReuse_Tests
         });
         Assert.Equal(reuseB.BlobId, retryB.BlobId);
         Assert.Equal(2L, setup.StorageObjectRefCount);
+
+        // Clearing Redis cache must still hit persistent DB BlobReuseRecord with zero extra Temp blobs.
+        setup.CacheStore.Clear();
+        var retryFromDb = await controller.ReuseAsync(setup.UnitBId, new ReuseAttachmentInput
+        {
+            ReuseToken = uploadA.ReuseToken,
+            ClientUploadId = "client-op-001",
+            FileName = "shared-report.pdf"
+        });
+        Assert.Equal(reuseB.BlobId, retryFromDb.BlobId);
+        Assert.Equal(2L, setup.StorageObjectRefCount);
+
+        // Changing FileName under the same ClientUploadId must be rejected.
+        await Assert.ThrowsAsync<BusinessException>(() =>
+            controller.ReuseAsync(setup.UnitBId, new ReuseAttachmentInput
+            {
+                ReuseToken = uploadA.ReuseToken,
+                ClientUploadId = "client-op-001",
+                FileName = "different-name.pdf"
+            }));
     }
 
     [Fact]

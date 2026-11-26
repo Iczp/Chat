@@ -200,21 +200,9 @@ public class GenerateVideoGifBackgroundJob(
 
     private async Task EnqueuePropagationAsync(PropagateVideoGifArgs propArgs)
     {
-        if (unitOfWorkManager.Current != null)
-        {
-            unitOfWorkManager.Current.OnCompleted(async () =>
-            {
-                using var scope = serviceScopeFactory.CreateScope();
-                var jobManager = scope.ServiceProvider.GetRequiredService<IBackgroundJobManager>();
-                await jobManager.EnqueueAsync(propArgs);
-            });
-        }
-        else
-        {
-            using var scope = serviceScopeFactory.CreateScope();
-            var jobManager = scope.ServiceProvider.GetRequiredService<IBackgroundJobManager>();
-            await jobManager.EnqueueAsync(propArgs);
-        }
+        using var scope = serviceScopeFactory.CreateScope();
+        var jobManager = scope.ServiceProvider.GetRequiredService<IBackgroundJobManager>();
+        await jobManager.EnqueueAsync(propArgs);
     }
 
     private void DeleteTempFile(string path)

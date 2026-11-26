@@ -588,6 +588,38 @@ public class AttachmentAuthorizationAndForwarding_Tests : ChatTestBase<Attachmen
             var msgRepo = ServiceProvider.GetRequiredService<IMessageRepository>();
             await Assert.ThrowsAsync<BusinessException>(() =>
                 msgRepo.BindBlobsToMessageAsync(6001L, sessionA, [expiredTempBlobId], BlobRefSourceTypes.Send, now: now, markAsBound: true));
+
+            // 跨会话转发聊天记录：Session B 中的 History 引用 Session A 消息，该消息又引用 Session A 的附件消息 -> 允许合法下载
+            var sessionB = guidGen.Create();
+            var unitBobInB = guidGen.Create();
+            var crossHistContentId = guidGen.Create();
+            var crossQuoteBlobId = guidGen.Create();
+            await MessageVisibilityQuery_Tests.InsertAsync<Session>(db, new() { ["Id"] = sessionB });
+            await MessageVisibilityQuery_Tests.InsertAsync<SessionUnit>(db, new() { ["Id"] = unitBobInB, ["SessionId"] = sessionB, ["OwnerId"] = 102L });
+            await MessageVisibilityQuery_Tests.InsertAsync<SessionUnitSetting>(db, new() { ["SessionUnitId"] = unitBobInB, ["SessionId"] = sessionB, ["IsEnabled"] = true });
+            await MessageVisibilityQuery_Tests.InsertAsync<Message>(db, new() { ["Id"] = 6301L, ["SessionId"] = sessionA, ["SessionSeq"] = 200L, ["SenderId"] = 101L, ["MessageType"] = MessageTypes.Image, ["ExtraProperties"] = new ExtraPropertyDictionary() });
+            await MessageVisibilityQuery_Tests.InsertAsync<Message>(db, new() { ["Id"] = 6302L, ["SessionId"] = sessionA, ["SessionSeq"] = 201L, ["SenderId"] = 101L, ["QuoteMessageId"] = 6301L, ["MessageType"] = MessageTypes.Text, ["ExtraProperties"] = new ExtraPropertyDictionary() });
+            await MessageVisibilityQuery_Tests.InsertAsync<Message>(db, new() { ["Id"] = 6303L, ["SessionId"] = sessionB, ["SessionSeq"] = 1L, ["SenderId"] = 101L, ["MessageType"] = MessageTypes.History, ["ExtraProperties"] = new ExtraPropertyDictionary() });
+            await MessageVisibilityQuery_Tests.InsertAsync<Blob>(db, new()
+            {
+                ["Id"] = crossQuoteBlobId,
+                ["Container"] = "chat-files",
+                ["Name"] = "2026/11/cross-quote.png",
+                ["FileName"] = "cross-quote.png",
+                ["MimeType"] = "image/png",
+                ["Suffix"] = ".png",
+                ["Status"] = BlobStatus.Bound,
+                ["RefCount"] = 1
+            });
+            await MessageVisibilityQuery_Tests.InsertAsync<BlobMessageRef>(db, new() { ["Id"] = guidGen.Create(), ["BlobId"] = crossQuoteBlobId, ["MessageId"] = 6303L, ["SessionId"] = sessionB, ["SourceType"] = BlobRefSourceTypes.History });
+            var crossHc = new HistoryContent(crossHistContentId, "跨会话记录", "desc");
+            db.Set<HistoryContent>().Add(crossHc);
+            var m6303 = await db.Message.SingleAsync(x => x.Id == 6303L);
+            m6303.HistoryContentList.Add(crossHc);
+            db.Set<HistoryMessage>().Add(new HistoryMessage(crossHc, await db.Message.SingleAsync(x => x.Id == 6302L)));
+            await db.SaveChangesAsync();
+            Assert.True(await msgRepo.CanReadAttachmentAsync(unitBobInB, 6303L, 6301L));
+            Assert.NotNull(await auth.CheckAccessAsync(crossQuoteBlobId, unitBobInB, 6301L, 6303L, [102L], false));
         });
     }
 }

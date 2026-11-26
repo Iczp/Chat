@@ -451,6 +451,19 @@ public static class ChatDbContextModelCreatingExtensions
             b.HasIndex(x => new { x.Status, x.CreationTime });
         });
 
+        builder.Entity<BlobReuseRecord>(b =>
+        {
+            b.ToTable($"{ChatDbProperties.DbTablePrefix}_{nameof(BlobReuseRecord)}", ChatDbProperties.DbSchema);
+            b.ConfigureByConvention();
+            b.Property(x => x.ClientUploadId).IsRequired().HasMaxLength(64);
+            b.Property(x => x.FileNameDigest).IsRequired().HasMaxLength(64);
+            b.Property(x => x.ResultJson).IsRequired().HasMaxLength(4000);
+            b.HasIndex(x => new { x.UserId, x.SessionUnitId, x.SourcePrimaryBlobId, x.ClientUploadId })
+                .IsUnique()
+                .HasFilter("IsDeleted = 0");
+            b.HasIndex(x => x.ExpireTime);
+        });
+
         builder.Entity<Blob>(b =>
         {
             b.HasOne(x => x.StorageObject)
