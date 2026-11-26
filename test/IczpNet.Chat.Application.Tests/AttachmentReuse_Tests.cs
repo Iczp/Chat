@@ -1,0 +1,249 @@
+using IczpNet.Chat.Blobs;
+using IczpNet.Chat.Blobs.Dtos;
+using IczpNet.Chat.Blobs.Validation;
+using IczpNet.Chat.ChatObjects;
+using IczpNet.Chat.Controllers;
+using IczpNet.Chat.Medias;
+using IczpNet.Chat.Options;
+using IczpNet.Chat.SessionUnits;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Caching.Distributed;
+using NSubstitute;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Volo.Abp;
+using Volo.Abp.Authorization;
+using Volo.Abp.Caching;
+using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Guids;
+using Volo.Abp.Json;
+using Volo.Abp.Timing;
+using Volo.Abp.Users;
+using Xunit;
+
+namespace IczpNet.Chat;
+
+public class AttachmentReuse_Tests
+{
+    private sealed class TestSetup
+    {
+        public Guid AccountUserId { get; init; } = Guid.NewGuid();
+        public Guid SessionId { get; } = Guid.NewGuid();
+        public Guid UnitAId { get; } = Guid.NewGuid();
+        public Guid UnitBId { get; } = Guid.NewGuid();
+        public Guid DisabledUnitId { get; } = Guid.NewGuid();
+        public List<Blob> StoredBlobs { get; } = [];
+        public int PhysicalSaveCount { get; set; }
+        public long StorageObjectRefCount { get; set; }
+        public DateTime Now { get; set; } = new(2026, 11, 26, 12, 0, 0, DateTimeKind.Utc);
+        public AttachmentReuseTokenService TokenService { get; private set; } = null!;
+
+        public AttachmentController CreateController(Guid currentUserId, long[] ownedChatObjectIds)
+        {
+            var clock = Substitute.For<IClock>();
+            clock.Now.Returns(_ => Now);
+
+            var sigOptions = Microsoft.Extensions.Options.Options.Create(new AttachmentSignatureOptions
+            {
+                SigningKey = "Reuse.Test.Signing.Key.2026",
+                DefaultExpireSeconds = 900,
+            });
+            var uploadOptions = Microsoft.Extensions.Options.Options.Create(new AttachmentUploadOptions
+            {
+                TempBlobExpireHours = 24,
+            });
+            var msgOptions = Microsoft.Extensions.Options.Options.Create(new MessageOptions());
+
+            TokenService = new AttachmentReuseTokenService(sigOptions, uploadOptions, clock);
+
+            var chatObjectManager = Substitute.For<IChatObjectManager>();
+            chatObjectManager.GetIdListByUserIdAsync(currentUserId).Returns(ownedChatObjectIds.ToList());
+
+            var unitA = new SessionUnitCacheItem { Id = UnitAId, OwnerId = 101L, SessionId = SessionId, IsEnabled = true, IsInputEnabled = true };
+            var unitB = new SessionUnitCacheItem { Id = UnitBId, OwnerId = 102L, SessionId = SessionId, IsEnabled = true, IsInputEnabled = true };
+            var unitDisabled = new SessionUnitCacheItem { Id = DisabledUnitId, OwnerId = 102L, SessionId = SessionId, IsEnabled = true, IsInputEnabled = false };
+
+            var sessionUnitManager = Substitute.For<ISessionUnitManager>();
+            sessionUnitManager.GetCacheAsync(UnitAId).Returns(unitA);
+            sessionUnitManager.GetCacheAsync(UnitBId).Returns(unitB);
+            sessionUnitManager.GetCacheAsync(DisabledUnitId).Returns(unitDisabled);
+
+            var validatorManager = Substitute.For<IAttachmentUploadValidatorManager>();
+            validatorManager.ValidateAsync(Arg.Any<AttachmentUploadValidationContext>(), Arg.Any<CancellationToken>())
+                .Returns(Task.CompletedTask);
+
+            var storageObjId = Guid.NewGuid();
+            var sharedObj = new BlobObject(storageObjId, "host", "chat-files", "objects/aa/bb/shared.pdf", new string('a', 64), 12, "application/pdf")
+            {
+                Status = BlobObjectStatus.Ready,
+                RefCount = StorageObjectRefCount
+            };
+
+            var blobManager = Substitute.For<IBlobManager>();
+            blobManager.CreateAsync(Arg.Any<Blob>()).Returns(call =>
+            {
+                var b = call.Arg<Blob>();
+                if (!b.StorageObjectId.HasValue)
+                {
+                    PhysicalSaveCount++;
+                    StorageObjectRefCount++;
+                    sharedObj.RefCount = StorageObjectRefCount;
+                    b.SetStorageObject(sharedObj);
+                }
+                else
+                {
+                    StorageObjectRefCount++;
+                    sharedObj.RefCount = StorageObjectRefCount;
+                    b.SetStorageObject(sharedObj);
+                }
+                StoredBlobs.Add(b);
+                return Task.FromResult(b);
+            });
+            blobManager.ResolvePhysicalLocationAsync(Arg.Any<Blob>(), Arg.Any<CancellationToken>())
+                .Returns(call =>
+                {
+                    var b = call.Arg<Blob>();
+                    return Task.FromResult((b.Container ?? "chat-files", b.StorageObject?.StorageName ?? b.Name));
+                });
+            blobManager.GetBytesAsync(Arg.Any<Guid>()).Returns([1, 2, 3, 4]);
+
+            var blobRepository = Substitute.For<IRepository<Blob, Guid>>();
+            blobRepository.FindAsync(Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+                .Returns(call => StoredBlobs.FirstOrDefault(x => x.Id == call.Arg<Guid>()));
+            blobRepository.GetQueryableAsync()
+                .Returns(_ => Task.FromResult(StoredBlobs.AsQueryable()));
+
+            var cacheStore = new Dictionary<string, UploadAttachmentOutput>(StringComparer.Ordinal);
+            var reuseCache = Substitute.For<IDistributedCache<UploadAttachmentOutput, string>>();
+            reuseCache.GetAsync(Arg.Any<string>(), Arg.Any<bool?>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+                .Returns(call => cacheStore.TryGetValue(call.Arg<string>(), out var v) ? v : null);
+            reuseCache.SetAsync(Arg.Any<string>(), Arg.Any<UploadAttachmentOutput>(), Arg.Any<DistributedCacheEntryOptions>(), Arg.Any<bool?>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+                .Returns(call =>
+                {
+                    cacheStore[call.Arg<string>()] = call.Arg<UploadAttachmentOutput>();
+                    return Task.CompletedTask;
+                });
+
+            var currentUser = Substitute.For<ICurrentUser>();
+            currentUser.Id.Returns(currentUserId);
+
+            var guidGen = Substitute.For<IGuidGenerator>();
+            guidGen.Create().Returns(_ => Guid.NewGuid());
+
+            var blobResolver = Substitute.For<IBlobResolver>();
+            blobResolver.GetDirectoryNameAsync(Arg.Any<BlobContext>()).Returns("2026/11/files");
+            blobResolver.GenerateFileNameAsync(Arg.Any<string>()).Returns(call => $"f_{Guid.NewGuid():N}{call.Arg<string>()}");
+            blobResolver.GetFileUrlAsync(Arg.Any<Guid>(), Arg.Any<string>()).Returns(call => $"/api/chat/file/{call.Arg<Guid>()}");
+
+            var controller = new AttachmentController(
+                sessionUnitManager,
+                chatObjectManager,
+                validatorManager,
+                Substitute.For<IMediaResolver>(),
+                msgOptions,
+                uploadOptions,
+                Substitute.For<IJsonSerializer>());
+
+            var lazy = Substitute.For<IAbpLazyServiceProvider>();
+            lazy.LazyGetRequiredService<ICurrentUser>().Returns(currentUser);
+            lazy.LazyGetRequiredService<IBlobManager>().Returns(blobManager);
+            lazy.LazyGetRequiredService<IBlobResolver>().Returns(blobResolver);
+            lazy.LazyGetRequiredService<IClock>().Returns(clock);
+            lazy.LazyGetRequiredService<IGuidGenerator>().Returns(guidGen);
+            lazy.LazyGetService<IGuidGenerator>().Returns(guidGen);
+            lazy.LazyGetService<IGuidGenerator>(Arg.Any<IGuidGenerator>()).Returns(guidGen);
+            lazy.LazyGetRequiredService<IAttachmentReuseTokenService>().Returns(TokenService);
+            lazy.LazyGetRequiredService<IRepository<Blob, Guid>>().Returns(blobRepository);
+            lazy.LazyGetRequiredService<IDistributedCache<UploadAttachmentOutput, string>>().Returns(reuseCache);
+            controller.LazyServiceProvider = lazy;
+            return controller;
+        }
+    }
+
+    private static IFormFile CreateFormFile(string fileName, string contentType, byte[] content)
+        => new FormFile(new MemoryStream(content), 0, content.Length, "file", fileName)
+        {
+            Headers = new HeaderDictionary(),
+            ContentType = contentType
+        };
+
+    [Fact]
+    public async Task Same_account_second_identity_reuses_upload_without_extra_physical_write_and_is_idempotent_by_ClientUploadId()
+    {
+        var setup = new TestSetup();
+        var controller = setup.CreateController(setup.AccountUserId, [101L, 102L]);
+        var content = Encoding.UTF8.GetBytes("multi-identity-shared-pdf");
+        var formFile = CreateFormFile("report.pdf", "application/pdf", content);
+
+        var uploadA = await controller.UploadFileAsync(setup.UnitAId, formFile);
+        Assert.NotNull(uploadA.ReuseToken);
+        Assert.Equal(1, setup.PhysicalSaveCount);
+        Assert.Equal(1L, setup.StorageObjectRefCount);
+
+        var reuseB = await controller.ReuseAsync(setup.UnitBId, new ReuseAttachmentInput
+        {
+            ReuseToken = uploadA.ReuseToken,
+            ClientUploadId = "client-op-001",
+            FileName = "shared-report.pdf"
+        });
+
+        Assert.NotEqual(uploadA.BlobId, reuseB.BlobId);
+        Assert.Equal("shared-report.pdf", reuseB.FileName);
+        Assert.Equal(1, setup.PhysicalSaveCount);
+        Assert.Equal(2L, setup.StorageObjectRefCount);
+
+        var blobA = setup.StoredBlobs.Single(x => x.Id == uploadA.BlobId);
+        var blobB = setup.StoredBlobs.Single(x => x.Id == reuseB.BlobId);
+        Assert.Equal(blobA.StorageObjectId, blobB.StorageObjectId);
+        Assert.Equal(101L, blobA.UploaderChatObjectId);
+        Assert.Equal(102L, blobB.UploaderChatObjectId);
+        Assert.Equal(BlobStatus.Temp, blobB.Status);
+
+        // Retry with the same ClientUploadId should be idempotent.
+        var retryB = await controller.ReuseAsync(setup.UnitBId, new ReuseAttachmentInput
+        {
+            ReuseToken = uploadA.ReuseToken,
+            ClientUploadId = "client-op-001",
+            FileName = "shared-report.pdf"
+        });
+        Assert.Equal(reuseB.BlobId, retryB.BlobId);
+        Assert.Equal(2L, setup.StorageObjectRefCount);
+    }
+
+    [Fact]
+    public async Task ReuseAsync_rejects_cross_account_token_disabled_unit_tampered_and_expired_tokens()
+    {
+        var setup = new TestSetup();
+        var accountAController = setup.CreateController(setup.AccountUserId, [101L, 102L]);
+        var uploadA = await accountAController.UploadFileAsync(
+            setup.UnitAId,
+            CreateFormFile("secret.pdf", "application/pdf", Encoding.UTF8.GetBytes("secret-bytes")));
+        Assert.False(string.IsNullOrWhiteSpace(uploadA.ReuseToken));
+
+        // 1. Different account trying to redeem account A's token -> rejected.
+        var accountBId = Guid.NewGuid();
+        var accountBController = setup.CreateController(accountBId, [101L, 102L]);
+        var crossAccountEx = await Assert.ThrowsAsync<AbpAuthorizationException>(() =>
+            accountBController.ReuseAsync(setup.UnitBId, new ReuseAttachmentInput { ReuseToken = uploadA.ReuseToken }));
+        Assert.Contains("invalid or expired", crossAccountEx.Message, StringComparison.OrdinalIgnoreCase);
+
+        // 2. Disabled / non-input-enabled target SessionUnit -> rejected.
+        await Assert.ThrowsAsync<BusinessException>(() =>
+            accountAController.ReuseAsync(setup.DisabledUnitId, new ReuseAttachmentInput { ReuseToken = uploadA.ReuseToken }));
+
+        // 3. Tampered token -> rejected.
+        await Assert.ThrowsAsync<AbpAuthorizationException>(() =>
+            accountAController.ReuseAsync(setup.UnitBId, new ReuseAttachmentInput { ReuseToken = uploadA.ReuseToken + "tampered" }));
+
+        // 4. Expired token -> rejected.
+        setup.Now = setup.Now.AddHours(30);
+        await Assert.ThrowsAsync<AbpAuthorizationException>(() =>
+            accountAController.ReuseAsync(setup.UnitBId, new ReuseAttachmentInput { ReuseToken = uploadA.ReuseToken }));
+    }
+}

@@ -53,4 +53,9 @@ public class UploadAttachmentOutput
     public string Profile { get; set; }
 
     public DateTime? ExpireTime { get; set; }
+
+    /// <summary>
+    /// 同账号多身份短时复用凭据（用于免重传兑换同账号下其他身份的独立 Temp 附件）
+    /// </summary>
+    public string ReuseToken { get; set; }
 }
