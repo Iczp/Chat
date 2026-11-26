@@ -187,10 +187,19 @@ public class RoomAppService(IRoomManager roomManager,
     [Volo.Abp.Uow.UnitOfWork(IsDisabled = true)]
     public virtual async Task<RoomManagementSettingsDto> ClaimCreatorAsync(Guid sessionUnitId)
     {
-        var sessionUnit = await GetDetailedSessionUnitAsync(sessionUnitId);
-        await EnsureCurrentUserOwnsUnitAsync(sessionUnit);
+        using (var preUow = UnitOfWorkManager.Begin(new Volo.Abp.Uow.AbpUnitOfWorkOptions(), requiresNew: true))
+        {
+            var sessionUnit = await GetDetailedSessionUnitAsync(sessionUnitId);
+            await EnsureCurrentUserOwnsUnitAsync(sessionUnit);
+            await preUow.CompleteAsync();
+        }
         await RoomManager.ClaimCreatorAsync(sessionUnitId);
-        return await GetManagementSettingsAsync(sessionUnitId);
+        using (var postUow = UnitOfWorkManager.Begin(new Volo.Abp.Uow.AbpUnitOfWorkOptions(), requiresNew: true))
+        {
+            var dto = await GetManagementSettingsAsync(sessionUnitId);
+            await postUow.CompleteAsync();
+            return dto;
+        }
     }
 
     /// <summary>

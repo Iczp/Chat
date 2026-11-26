@@ -674,13 +674,18 @@ public class RoomManager(
 
     public virtual async Task ClaimCreatorAsync(Guid sessionUnitId, bool isSendMessageToRoom = true)
     {
-        var queryable = await SessionUnitRepository.GetQueryableAsync();
-        var sessionUnit = await AsyncExecuter.FirstOrDefaultAsync(
-            queryable
-                .AsNoTracking()
-                .Include(x => x.Setting)
-                .Include(x => x.Destination),
-            x => x.Id == sessionUnitId);
+        SessionUnit sessionUnit;
+        using (var preUow = UnitOfWorkManager.Begin(requiresNew: true))
+        {
+            var queryable = await SessionUnitRepository.GetQueryableAsync();
+            sessionUnit = await AsyncExecuter.FirstOrDefaultAsync(
+                queryable
+                    .AsNoTracking()
+                    .Include(x => x.Setting)
+                    .Include(x => x.Destination),
+                x => x.Id == sessionUnitId);
+            await preUow.CompleteAsync();
+        }
 
         Assert.NotNull(sessionUnit, $"SessionUnit not found: {sessionUnitId}");
         Assert.If(!sessionUnit.SessionId.HasValue || sessionUnit.DestinationObjectType != ChatObjectTypeEnums.Room, "仅群聊支持认领或接任群主");
