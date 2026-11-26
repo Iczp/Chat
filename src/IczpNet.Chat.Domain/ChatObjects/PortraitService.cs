@@ -70,7 +70,10 @@ public class PortraitService(IChatObjectManager chatObjectManager,
             return null;
         }
 
-        return await BlobManager.GetBytesAsync(blob.Container, blob.Name);
+        var location = await BlobManager.ResolvePhysicalLocationAsync(blob);
+        return await BlobManager.GetBytesAsync(
+            !string.IsNullOrWhiteSpace(location.Container) ? location.Container : blob.Container,
+            !string.IsNullOrWhiteSpace(location.StorageName) ? location.StorageName : blob.Name);
     }
 
     protected virtual async Task<Guid?> GetBlobIdFromPortraitAsync(string portrait)
@@ -129,7 +132,10 @@ public class PortraitService(IChatObjectManager chatObjectManager,
                 continue;
             }
 
-            var bytes = await BlobManager.GetBytesAsync(blob.Container, blob.Name);
+            var location = await BlobManager.ResolvePhysicalLocationAsync(blob);
+            var bytes = await BlobManager.GetBytesAsync(
+                !string.IsNullOrWhiteSpace(location.Container) ? location.Container : blob.Container,
+                !string.IsNullOrWhiteSpace(location.StorageName) ? location.StorageName : blob.Name);
 
             imageBytesList.Add(bytes);
         }

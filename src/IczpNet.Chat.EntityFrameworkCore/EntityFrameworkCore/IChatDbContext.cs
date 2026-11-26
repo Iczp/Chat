@@ -187,6 +187,7 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<HttpRequest> HttpRequest { get; }
 
     DbSet<Blob> Blob { get; }
+    DbSet<BlobObject> BlobObject { get; }
     DbSet<BlobContent> BlobContent { get; }
     DbSet<BlobMessageRef> BlobMessageRef { get; }
 

@@ -97,7 +97,10 @@ public class GenerateVideoGifBackgroundJob(
             return;
         }
 
-        var videoBytes = await blobManager.GetBytesAsync(videoBlob.Container, videoBlob.Name);
+        var location = await blobManager.ResolvePhysicalLocationAsync(videoBlob);
+        var videoBytes = await blobManager.GetBytesAsync(
+            !string.IsNullOrWhiteSpace(location.Container) ? location.Container : videoBlob.Container,
+            !string.IsNullOrWhiteSpace(location.StorageName) ? location.StorageName : videoBlob.Name);
         var mediaInfo = await mediaResolver.GetVideoInfoAsync(videoBytes, videoBlob.FileName);
         if (mediaInfo == null || string.IsNullOrWhiteSpace(mediaInfo.GifSnapshotPath))
         {

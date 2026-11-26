@@ -81,6 +81,10 @@ public class FileController(
             return NotFound(new { message = "blob is null" });
         }
 
+        var location = await BlobManager.ResolvePhysicalLocationAsync(blob, HttpContext.RequestAborted);
+        var container = !string.IsNullOrWhiteSpace(location.Container) ? location.Container : blob.Container;
+        var storageName = !string.IsNullOrWhiteSpace(location.StorageName) ? location.StorageName : blob.Name;
+
         var expiry = TimeSpan.FromSeconds(Math.Max(signatureOptions.Value.DefaultExpireSeconds, 60));
         var directUrl = await blobDirectUrlProvider.TryGetPresignedUrlAsync(blob, expiry, HttpContext.RequestAborted);
         if (!string.IsNullOrWhiteSpace(directUrl))
@@ -90,12 +94,12 @@ public class FileController(
 
         try
         {
-            var bytes = await BlobManager.GetBytesAsync(blob.Container, blob.Name);
+            var bytes = await BlobManager.GetBytesAsync(container, storageName);
             return File(bytes, blob.MimeType, blob.FileName, enableRangeProcessing: true);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, $"Blob.ID={blob.Id},Container={blob.Container},Name={blob.Name},MimeType={blob.MimeType},FileName={blob.FileName}");
+            Logger.LogError(ex, $"Blob.ID={blob.Id},Container={container},Name={storageName},MimeType={blob.MimeType},FileName={blob.FileName}");
             return NotFound();
         }
     }

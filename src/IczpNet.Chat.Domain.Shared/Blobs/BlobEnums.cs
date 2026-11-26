@@ -44,3 +44,13 @@ public enum BlobRefSourceTypes
     Forward = 1,
     History = 2,
 }
+
+/// <summary>
+/// 物理存储对象生命周期状态
+/// </summary>
+public enum BlobObjectStatus
+{
+    Pending = 0,
+    Ready = 1,
+    Deleting = 2,
+}

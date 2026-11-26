@@ -40,10 +40,13 @@ public class MinioBlobDirectUrlProvider(IConfiguration configuration) : IBlobDir
             .WithSSL(withSsl)
             .Build();
 
+        var bucket = blob.StorageObject?.Container ?? blob.Container;
+        var objectName = blob.StorageObject?.StorageName ?? blob.Name;
+
         var expirySeconds = Math.Clamp((int)expiry.TotalSeconds, 60, 7 * 24 * 3600);
         var args = new PresignedGetObjectArgs()
-            .WithBucket(blob.Container)
-            .WithObject(blob.Name)
+            .WithBucket(bucket)
+            .WithObject(objectName)
             .WithExpiry(expirySeconds);
 
         return await client.PresignedGetObjectAsync(args);

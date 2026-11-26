@@ -14,6 +14,7 @@ namespace IczpNet.Chat.Blobs;
 [Index(nameof(UploaderChatObjectId))]
 [Index(nameof(ParentBlobId))]
 [Index(nameof(Status), nameof(ExpireTime))]
+[Index(nameof(StorageObjectId))]
 public class Blob : BaseEntity<Guid>, IIsPublic, IIsStatic
 {
     /// <summary>
@@ -103,6 +104,14 @@ public class Blob : BaseEntity<Guid>, IIsPublic, IIsStatic
     public virtual int RefCount { get; set; }
 
     /// <summary>
+    /// 物理去重存储对象 Id（历史未迁移数据可为空，回退按 Container + Name 读取）
+    /// </summary>
+    public virtual Guid? StorageObjectId { get; set; }
+
+    [ForeignKey(nameof(StorageObjectId))]
+    public virtual BlobObject StorageObject { get; protected internal set; }
+
+    /// <summary>
     /// 内容
     /// </summary>
     [NotMapped]
@@ -115,5 +124,11 @@ public class Blob : BaseEntity<Guid>, IIsPublic, IIsStatic
     public Blob(Guid id, string container) : base(id)
     {
         Container = container;
+    }
+
+    public virtual void SetStorageObject(BlobObject storageObject)
+    {
+        StorageObject = storageObject;
+        StorageObjectId = storageObject?.Id;
     }
 }

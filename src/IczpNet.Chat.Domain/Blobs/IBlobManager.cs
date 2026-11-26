@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.Blobs;
@@ -10,6 +11,8 @@ public interface IBlobManager
     Task<byte[]> GetBytesAsync(string container, string name);
 
     Task<byte[]> GetBytesAsync(Guid id);
+
+    Task<(string Container, string StorageName)> ResolvePhysicalLocationAsync(Blob blob, CancellationToken cancellationToken = default);
 
     Task<Blob> CreateAsync(Blob blob);
 

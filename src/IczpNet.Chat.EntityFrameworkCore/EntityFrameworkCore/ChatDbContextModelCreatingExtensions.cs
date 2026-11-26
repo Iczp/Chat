@@ -436,6 +436,28 @@ public static class ChatDbContextModelCreatingExtensions
             b.HasOne(x => x.HttpRequest).WithOne(x => x.Response).HasForeignKey<HttpResponse>(x => x.HttpRequestId).IsRequired(false);
         });
 
+        builder.Entity<BlobObject>(b =>
+        {
+            b.ToTable($"{ChatDbProperties.DbTablePrefix}_{nameof(BlobObject)}", ChatDbProperties.DbSchema);
+            b.ConfigureByConvention();
+            b.Property(x => x.StorageScope).IsRequired().HasMaxLength(64);
+            b.Property(x => x.Container).IsRequired().HasMaxLength(50);
+            b.Property(x => x.StorageName).IsRequired().HasMaxLength(500);
+            b.Property(x => x.Sha256).IsRequired().HasMaxLength(64);
+            b.Property(x => x.MimeType).HasMaxLength(128);
+            b.HasIndex(x => new { x.StorageScope, x.Container, x.Sha256, x.FileSize }).IsUnique();
+            b.HasIndex(x => new { x.Status, x.CreationTime });
+        });
+
+        builder.Entity<Blob>(b =>
+        {
+            b.HasOne(x => x.StorageObject)
+                .WithMany()
+                .HasForeignKey(x => x.StorageObjectId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
+        });
+
         builder.Entity<BlobContent>(b =>
         {
             b.HasKey(x => new { x.BlobId });

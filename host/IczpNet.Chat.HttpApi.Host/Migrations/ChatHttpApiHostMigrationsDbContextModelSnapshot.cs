@@ -455,6 +455,9 @@ namespace IczpNet.Chat.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("StorageObjectId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Suffix")
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
@@ -477,6 +480,8 @@ namespace IczpNet.Chat.Migrations
                     b.HasIndex("Name");
 
                     b.HasIndex("ParentBlobId");
+
+                    b.HasIndex("StorageObjectId");
 
                     b.HasIndex("Suffix");
 
@@ -598,6 +603,103 @@ namespace IczpNet.Chat.Migrations
                         .IsUnique();
 
                     b.ToTable("Chat_BlobMessageRef", (string)null);
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.Blobs.BlobObject", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<string>("Container")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletingSince")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<DateTime?>("LastVerifiedTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("MimeType")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<long>("RefCount")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StorageName")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("StorageScope")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status", "CreationTime");
+
+                    b.HasIndex("StorageScope", "Container", "Sha256", "FileSize")
+                        .IsUnique();
+
+                    b.ToTable("Chat_BlobObject", (string)null);
                 });
 
             modelBuilder.Entity("IczpNet.Chat.CallCenters.CallCenterAssignment", b =>
@@ -8790,6 +8892,16 @@ namespace IczpNet.Chat.Migrations
                     b.Navigation("Article");
 
                     b.Navigation("Message");
+                });
+
+            modelBuilder.Entity("IczpNet.Chat.Blobs.Blob", b =>
+                {
+                    b.HasOne("IczpNet.Chat.Blobs.BlobObject", "StorageObject")
+                        .WithMany()
+                        .HasForeignKey("StorageObjectId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("StorageObject");
                 });
 
             modelBuilder.Entity("IczpNet.Chat.Blobs.BlobContent", b =>
