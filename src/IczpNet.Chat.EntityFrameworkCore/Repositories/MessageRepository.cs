@@ -473,7 +473,7 @@ public class MessageRepository(IDbContextProvider<ChatDbContext> dbContextProvid
             await InsertBlobMessageRefsAsync(refs, creatorId, time, cancellationToken);
             return candidateBlobIds;
         }
-        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        catch (DbUpdateException ex) when (BlobDbExceptionHelper.IsUniqueConstraintViolation(ex))
         {
             DetachPendingBlobMessageRefs(db);
 
@@ -487,7 +487,7 @@ public class MessageRepository(IDbContextProvider<ChatDbContext> dbContextProvid
                         [(blobId, messageId, sessionId, sourceType)], creatorId, time, cancellationToken);
                     actuallyInserted.Add(blobId);
                 }
-                catch (DbUpdateException innerEx) when (IsUniqueConstraintViolation(innerEx))
+                catch (DbUpdateException innerEx) when (BlobDbExceptionHelper.IsUniqueConstraintViolation(innerEx))
                 {
                     DetachPendingBlobMessageRefs(db);
                 }
@@ -505,32 +505,6 @@ public class MessageRepository(IDbContextProvider<ChatDbContext> dbContextProvid
         {
             entry.State = EntityState.Detached;
         }
-    }
-
-    private static bool IsUniqueConstraintViolation(DbUpdateException ex)
-    {
-        for (var current = ex.InnerException; current != null; current = current.InnerException)
-        {
-            var type = current.GetType();
-            if (type.FullName is "Microsoft.Data.SqlClient.SqlException" or "System.Data.SqlClient.SqlException")
-            {
-                if (type.GetProperty("Number")?.GetValue(current) is int number && (number == 2601 || number == 2627))
-                {
-                    return true;
-                }
-            }
-            else if (type.FullName == "Microsoft.Data.Sqlite.SqliteException")
-            {
-                if (type.GetProperty("SqliteErrorCode")?.GetValue(current) is int code &&
-                    code == 19 &&
-                    current.Message.Contains("UNIQUE constraint failed", StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     /// <inheritdoc />

@@ -190,9 +190,14 @@ public class AttachmentReuse_Tests
             var uowManager = Substitute.For<Volo.Abp.Uow.IUnitOfWorkManager>();
             uowManager.Current.Returns((Volo.Abp.Uow.IUnitOfWork)null);
             lazy.LazyGetRequiredService<Volo.Abp.Uow.IUnitOfWorkManager>().Returns(uowManager);
+            ReuseRecordRepository = reuseRecordRepo;
+            UowManager = uowManager;
             controller.LazyServiceProvider = lazy;
             return controller;
         }
+
+        public IRepository<BlobReuseRecord, Guid> ReuseRecordRepository { get; private set; }
+        public Volo.Abp.Uow.IUnitOfWorkManager UowManager { get; private set; }
     }
 
     private static IFormFile CreateFormFile(string fileName, string contentType, byte[] content)
@@ -326,5 +331,60 @@ public class AttachmentReuse_Tests
             await Assert.ThrowsAsync<BusinessException>(() =>
                 controller.ReuseAsync(setup.UnitBId, new ReuseAttachmentInput { ReuseToken = uploadA.ReuseToken }));
         }
+    }
+
+    [Fact]
+    public async Task ReuseAsync_rolls_back_and_returns_committed_winner_on_unique_constraint_conflict()
+    {
+        var setup = new TestSetup();
+        var controller = setup.CreateController(setup.AccountUserId, [101L, 102L]);
+        var uploadA = await controller.UploadFileAsync(
+            setup.UnitAId,
+            CreateFormFile("race.pdf", "application/pdf", Encoding.UTF8.GetBytes("race-bytes")));
+
+        // First request succeeds and commits winner record
+        var winner = await controller.ReuseAsync(setup.UnitBId, new ReuseAttachmentInput
+        {
+            ReuseToken = uploadA.ReuseToken,
+            ClientUploadId = "race-op-1",
+            FileName = "race.pdf"
+        });
+        var winnerRecord = Assert.Single(setup.ReuseRecords);
+
+        // Simulate concurrent loser: initial read misses (cleared cache & transient empty read), then InsertAsync hits SQLite UNIQUE constraint (code 19)
+        setup.CacheStore.Clear();
+        var findCall = 0;
+        setup.ReuseRecordRepository
+            .FindAsync(Arg.Any<Expression<Func<BlobReuseRecord, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                findCall++;
+                return findCall == 1 ? null : winnerRecord;
+            });
+
+        var sqliteUniqueEx = new Microsoft.Data.Sqlite.SqliteException("SQLite Error 19: 'UNIQUE constraint failed: Chat_BlobReuseRecord'.", 19);
+        setup.ReuseRecordRepository
+            .InsertAsync(Arg.Any<BlobReuseRecord>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns<Task<BlobReuseRecord>>(_ => throw new InvalidOperationException("Wrapped constraint violation", sqliteUniqueEx));
+
+        var loserWriteUow = Substitute.For<Volo.Abp.Uow.IUnitOfWork>();
+        var readUow = Substitute.For<Volo.Abp.Uow.IUnitOfWork>();
+        setup.UowManager.Begin(Arg.Any<Volo.Abp.Uow.AbpUnitOfWorkOptions>(), Arg.Any<bool>())
+            .Returns(call =>
+            {
+                var opts = call.Arg<Volo.Abp.Uow.AbpUnitOfWorkOptions>();
+                return opts.IsTransactional ? loserWriteUow : readUow;
+            });
+
+        var recovered = await controller.ReuseAsync(setup.UnitBId, new ReuseAttachmentInput
+        {
+            ReuseToken = uploadA.ReuseToken,
+            ClientUploadId = "race-op-1",
+            FileName = "race.pdf"
+        });
+
+        Assert.Equal(winner.BlobId, recovered.BlobId);
+        await loserWriteUow.DidNotReceive().CompleteAsync(Arg.Any<CancellationToken>());
+        await readUow.Received(2).CompleteAsync(Arg.Any<CancellationToken>());
     }
 }

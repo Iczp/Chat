@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.DistributedLocking;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Guids;
 using Volo.Abp.Linq;
 using Volo.Abp.Uow;
@@ -20,6 +21,7 @@ namespace IczpNet.Chat.Blobs;
 
 public class GenerateVideoGifBackgroundJob(
     IMessageRepository messageRepository,
+    IRepository<VideoGifPropagationOutbox, Guid> gifOutboxRepository,
     IAsyncQueryableExecuter asyncExecuter,
     IBlobManager blobManager,
     IBlobResolver blobResolver,
@@ -200,9 +202,35 @@ public class GenerateVideoGifBackgroundJob(
 
     private async Task EnqueuePropagationAsync(PropagateVideoGifArgs propArgs)
     {
-        using var scope = serviceScopeFactory.CreateScope();
-        var jobManager = scope.ServiceProvider.GetRequiredService<IBackgroundJobManager>();
-        await jobManager.EnqueueAsync(propArgs);
+        // Write to the domain outbox inside the active business UOW so propagation is strictly atomic
+        // with GIF persistence, even though Quartz uses a separate connection/JobStoreTX.
+        await gifOutboxRepository.InsertAsync(
+            new VideoGifPropagationOutbox(
+                guidGenerator.Create(),
+                propArgs.SourceMessageId,
+                propArgs.VideoContentId,
+                propArgs.GifBlobId,
+                propArgs.GifUrl),
+            autoSave: true);
+
+        // Best-effort fast-path enqueue only after the business transaction commits; if skipped or interrupted,
+        // VideoGifPropagationWorker delivers the outbox record reliably.
+        if (unitOfWorkManager.Current is { } currentUow)
+        {
+            currentUow.OnCompleted(async () =>
+            {
+                try
+                {
+                    using var scope = serviceScopeFactory.CreateScope();
+                    var jobManager = scope.ServiceProvider.GetRequiredService<IBackgroundJobManager>();
+                    await jobManager.EnqueueAsync(propArgs);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarning(ex, "Best-effort GIF propagation Quartz enqueue failed; outbox worker will deliver. MessageId={MessageId}", propArgs.SourceMessageId);
+                }
+            });
+        }
     }
 
     private void DeleteTempFile(string path)

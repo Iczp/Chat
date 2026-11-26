@@ -53,6 +53,7 @@ public class ChatBackgroundWorkerModule : AbpModule
         {
             await context.AddBackgroundWorkerAsync<IczpNet.Chat.SessionUnits.SessionUnitFlushWorker>();
             await context.AddBackgroundWorkerAsync<IczpNet.Chat.Blobs.TempBlobCleanupWorker>();
+            await context.AddBackgroundWorkerAsync<IczpNet.Chat.Blobs.VideoGifPropagationWorker>();
             await context.AddBackgroundWorkerAsync<IczpNet.Chat.SessionUnits.SessionUnitDisposalCleanupWorker>();
             await context.AddBackgroundWorkerAsync<IczpNet.Chat.CallCenters.CallCenterQueueWorker>();
         }

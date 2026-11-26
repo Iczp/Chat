@@ -204,6 +204,7 @@ public class ChatDbContext(DbContextOptions<ChatDbContext> options) : AbpDbConte
     public DbSet<Blob> Blob { get; set; }
     public DbSet<BlobObject> BlobObject { get; set; }
     public DbSet<BlobReuseRecord> BlobReuseRecord { get; set; }
+    public DbSet<VideoGifPropagationOutbox> VideoGifPropagationOutbox { get; set; }
     public DbSet<BlobContent> BlobContent { get; set; }
     public DbSet<BlobMessageRef> BlobMessageRef { get; set; }
 

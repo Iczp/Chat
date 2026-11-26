@@ -770,7 +770,6 @@ public class AttachmentController(
     /// </summary>
     [HttpPost]
     [Route("reuse/{sessionUnitId}")]
-    [UnitOfWork]
     public async Task<UploadAttachmentOutput> ReuseAsync(
         Guid sessionUnitId,
         [FromBody] ReuseAttachmentInput input)
@@ -800,236 +799,289 @@ public class AttachmentController(
 
         var blobRepository = LazyServiceProvider.LazyGetRequiredService<IRepository<Blob, Guid>>();
         var reuseRecordRepository = LazyServiceProvider.LazyGetRequiredService<IRepository<BlobReuseRecord, Guid>>();
-        var sourcePrimary = await blobRepository.FindAsync(payload.PrimaryBlobId);
-        if (sourcePrimary == null || sourcePrimary.Status == BlobStatus.Expired)
-        {
-            throw new BusinessException(ChatErrorCodes.Blobs.AccessDenied);
-        }
-
-        if (sourcePrimary.Status == BlobStatus.Temp &&
-            sourcePrimary.ExpireTime.HasValue &&
-            sourcePrimary.ExpireTime.Value < Clock.Now)
-        {
-            throw new BusinessException(ChatErrorCodes.Blobs.AccessDenied);
-        }
-
-        var effectiveFileName = string.IsNullOrWhiteSpace(input.FileName)
-            ? sourcePrimary.FileName
-            : Path.GetFileName(input.FileName.Trim());
-        var fileNameDigest = Convert.ToHexString(
-            System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(effectiveFileName ?? string.Empty)))[..16];
-
         var normalizedClientUploadId = string.IsNullOrWhiteSpace(input.ClientUploadId)
             ? null
             : input.ClientUploadId.Trim();
-        var clientUploadKey = normalizedClientUploadId == null
-            ? null
-            : $"attach-reuse:{CurrentUser.Id.Value:N}:{sessionUnitId:N}:{payload.PrimaryBlobId:N}:{normalizedClientUploadId}:{fileNameDigest}";
-        var reuseCache = clientUploadKey != null
-            ? LazyServiceProvider.LazyGetRequiredService<IDistributedCache<UploadAttachmentOutput, string>>()
-            : null;
-        if (reuseCache != null && clientUploadKey != null)
+
+        Blob sourcePrimary;
+        List<Blob> childBlobs;
+        string effectiveFileName;
+        string fileNameDigest;
+        string clientUploadKey = null;
+        IDistributedCache<UploadAttachmentOutput, string> reuseCache = null;
+        Guid? expiredRecordId = null;
+
+        using (var readUow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: false))
         {
-            var cachedOutput = await reuseCache.GetAsync(clientUploadKey);
-            if (cachedOutput != null)
+            sourcePrimary = await blobRepository.FindAsync(payload.PrimaryBlobId);
+            if (sourcePrimary == null || sourcePrimary.Status == BlobStatus.Expired)
             {
-                var cachedBlob = await blobRepository.FindAsync(cachedOutput.BlobId);
-                if (cachedBlob != null &&
-                    cachedBlob.Status == BlobStatus.Temp &&
-                    (!cachedBlob.ExpireTime.HasValue || cachedBlob.ExpireTime.Value >= Clock.Now))
+                throw new BusinessException(ChatErrorCodes.Blobs.AccessDenied);
+            }
+
+            if (sourcePrimary.Status == BlobStatus.Temp &&
+                sourcePrimary.ExpireTime.HasValue &&
+                sourcePrimary.ExpireTime.Value < Clock.Now)
+            {
+                throw new BusinessException(ChatErrorCodes.Blobs.AccessDenied);
+            }
+
+            effectiveFileName = string.IsNullOrWhiteSpace(input.FileName)
+                ? sourcePrimary.FileName
+                : Path.GetFileName(input.FileName.Trim());
+            fileNameDigest = Convert.ToHexString(
+                System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(effectiveFileName ?? string.Empty)))[..16];
+
+            clientUploadKey = normalizedClientUploadId == null
+                ? null
+                : $"attach-reuse:{CurrentUser.Id.Value:N}:{sessionUnitId:N}:{payload.PrimaryBlobId:N}:{normalizedClientUploadId}:{fileNameDigest}";
+            reuseCache = clientUploadKey != null
+                ? LazyServiceProvider.LazyGetRequiredService<IDistributedCache<UploadAttachmentOutput, string>>()
+                : null;
+            if (reuseCache != null && clientUploadKey != null)
+            {
+                var cachedOutput = await reuseCache.GetAsync(clientUploadKey);
+                if (cachedOutput != null)
                 {
-                    return cachedOutput;
+                    var cachedBlob = await blobRepository.FindAsync(cachedOutput.BlobId);
+                    if (cachedBlob != null &&
+                        cachedBlob.Status == BlobStatus.Temp &&
+                        (!cachedBlob.ExpireTime.HasValue || cachedBlob.ExpireTime.Value >= Clock.Now))
+                    {
+                        await readUow.CompleteAsync();
+                        return cachedOutput;
+                    }
                 }
             }
+
+            if (normalizedClientUploadId != null)
+            {
+                var existingRecord = await reuseRecordRepository.FindAsync(x =>
+                    x.UserId == CurrentUser.Id.Value &&
+                    x.SessionUnitId == sessionUnitId &&
+                    x.SourcePrimaryBlobId == payload.PrimaryBlobId &&
+                    x.ClientUploadId == normalizedClientUploadId);
+                if (existingRecord != null)
+                {
+                    if (!string.Equals(existingRecord.FileNameDigest, fileNameDigest, StringComparison.Ordinal))
+                    {
+                        throw new BusinessException(ChatErrorCodes.Blobs.AccessDenied)
+                            .WithData("Reason", "ClientUploadId reused with different attachment parameters.");
+                    }
+
+                    var persistedBlob = await blobRepository.FindAsync(existingRecord.PrimaryBlobId);
+                    if (persistedBlob != null &&
+                        persistedBlob.Status == BlobStatus.Temp &&
+                        (!persistedBlob.ExpireTime.HasValue || persistedBlob.ExpireTime.Value >= Clock.Now))
+                    {
+                        var persistedOutput = jsonSerializer.Deserialize<UploadAttachmentOutput>(existingRecord.ResultJson);
+                        await readUow.CompleteAsync();
+                        if (reuseCache != null && clientUploadKey != null)
+                        {
+                            await reuseCache.SetAsync(clientUploadKey, persistedOutput, new DistributedCacheEntryOptions
+                            {
+                                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1),
+                            });
+                        }
+                        return persistedOutput;
+                    }
+
+                    expiredRecordId = existingRecord.Id;
+                }
+            }
+
+            var ownerIds = await chatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+            if (sourcePrimary.UploaderChatObjectId.HasValue && !ownerIds.Contains(sourcePrimary.UploaderChatObjectId.Value))
+            {
+                throw new AbpAuthorizationException("Source attachment does not belong to current account.");
+            }
+
+            childBlobs = (await blobRepository.GetQueryableAsync())
+                .Where(x => x.ParentBlobId == sourcePrimary.Id && x.Status != BlobStatus.Expired)
+                .ToList();
+
+            var effectiveSuffix = !string.IsNullOrWhiteSpace(sourcePrimary.Suffix)
+                ? sourcePrimary.Suffix
+                : GetExtension(sourcePrimary.MimeType, effectiveFileName);
+
+            await validatorManager.ValidateAsync(new AttachmentUploadValidationContext
+            {
+                SessionUnit = unit,
+                MediaType = payload.MediaType,
+                FileName = effectiveFileName,
+                ContentType = sourcePrimary.MimeType,
+                Suffix = effectiveSuffix,
+                FileSize = sourcePrimary.FileSize,
+                Width = payload.Width,
+                Height = payload.Height,
+                DurationMs = payload.Duration,
+                HasSnapshot = childBlobs.Any(x => x.Role == BlobRoles.Snapshot),
+                OpenReadStreamAsync = async _ => new MemoryStream(await BlobManager.GetBytesAsync(sourcePrimary.Id)),
+            });
+
+            await readUow.CompleteAsync();
         }
 
-        if (normalizedClientUploadId != null)
+        UploadAttachmentOutput output;
+        try
         {
+            using var writeUow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
+
+            if (expiredRecordId.HasValue)
+            {
+                await reuseRecordRepository.DeleteAsync(expiredRecordId.Value, autoSave: true);
+            }
+
+            var newPrimaryId = GuidGenerator.Create();
+            var newPrimaryBlob = await CloneTempBlobAsync(
+                sourcePrimary,
+                newPrimaryId,
+                unit,
+                payload.MediaType,
+                BlobRoles.Primary,
+                parentBlobId: null,
+                overrideFileName: effectiveFileName);
+
+            Guid? thumbId = null;
+            string thumbUrl = null;
+            Guid? originalId = null;
+            string originalUrl = null;
+            Guid? snapshotId = null;
+            string snapshotUrl = null;
+            Guid? snapshotThumbId = null;
+            string snapshotThumbUrl = null;
+            Guid? gifId = null;
+            string gifUrl = null;
+
+            foreach (var child in childBlobs)
+            {
+                var childMediaType = child.Role is BlobRoles.Snapshot or BlobRoles.SnapshotThumbnail
+                    ? AttachmentMediaType.Snapshot
+                    : payload.MediaType;
+                var clonedChild = await CloneTempBlobAsync(
+                    child,
+                    GuidGenerator.Create(),
+                    unit,
+                    childMediaType,
+                    child.Role,
+                    parentBlobId: newPrimaryBlob.Id);
+                var childUrl = await GetFileUrlAsync(clonedChild.Id, clonedChild.MimeType);
+
+                switch (child.Role)
+                {
+                    case BlobRoles.Thumbnail:
+                        thumbId = clonedChild.Id;
+                        thumbUrl = childUrl;
+                        break;
+                    case BlobRoles.Original:
+                        originalId = clonedChild.Id;
+                        originalUrl = childUrl;
+                        break;
+                    case BlobRoles.Snapshot:
+                        snapshotId = clonedChild.Id;
+                        snapshotUrl = childUrl;
+                        break;
+                    case BlobRoles.SnapshotThumbnail:
+                        snapshotThumbId = clonedChild.Id;
+                        snapshotThumbUrl = childUrl;
+                        break;
+                    case BlobRoles.Gif:
+                        gifId = clonedChild.Id;
+                        gifUrl = childUrl;
+                        break;
+                }
+            }
+
+            output = new UploadAttachmentOutput
+            {
+                BlobId = newPrimaryBlob.Id,
+                MediaType = payload.MediaType,
+                Url = await GetFileUrlAsync(newPrimaryBlob.Id, newPrimaryBlob.MimeType),
+                ThumbnailBlobId = thumbId,
+                ThumbnailUrl = thumbUrl,
+                OriginalBlobId = originalId,
+                OriginalUrl = originalUrl,
+                SnapshotBlobId = snapshotId,
+                SnapshotUrl = snapshotUrl,
+                SnapshotThumbnailBlobId = snapshotThumbId,
+                SnapshotThumbnailUrl = snapshotThumbUrl,
+                GifBlobId = gifId,
+                GifUrl = gifUrl,
+                FileName = newPrimaryBlob.FileName,
+                ContentType = newPrimaryBlob.MimeType,
+                Suffix = newPrimaryBlob.Suffix,
+                Size = newPrimaryBlob.FileSize,
+                Width = payload.Width,
+                Height = payload.Height,
+                Duration = payload.Duration,
+                Profile = payload.Profile,
+                ExpireTime = newPrimaryBlob.ExpireTime,
+                ReuseToken = IssueReuseToken(
+                    newPrimaryBlob.Id,
+                    payload.MediaType,
+                    payload.Width,
+                    payload.Height,
+                    payload.Duration,
+                    payload.Profile,
+                    newPrimaryBlob.ExpireTime),
+            };
+
+            if (normalizedClientUploadId != null)
+            {
+                await reuseRecordRepository.InsertAsync(
+                    new BlobReuseRecord(
+                        GuidGenerator.Create(),
+                        CurrentUser.Id.Value,
+                        sessionUnitId,
+                        payload.PrimaryBlobId,
+                        normalizedClientUploadId,
+                        fileNameDigest,
+                        output.BlobId,
+                        jsonSerializer.Serialize(output),
+                        output.ExpireTime),
+                    autoSave: true);
+            }
+
+            await writeUow.CompleteAsync();
+        }
+        catch (Exception ex) when (normalizedClientUploadId != null && BlobDbExceptionHelper.IsUniqueConstraintViolation(ex))
+        {
+            // Write UOW rolled back cloned Temp blobs; open a fresh UOW to read the committed winning record.
+            using var recoverUow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
             var existingRecord = await reuseRecordRepository.FindAsync(x =>
                 x.UserId == CurrentUser.Id.Value &&
                 x.SessionUnitId == sessionUnitId &&
                 x.SourcePrimaryBlobId == payload.PrimaryBlobId &&
                 x.ClientUploadId == normalizedClientUploadId);
-            if (existingRecord != null)
+            if (existingRecord == null)
             {
-                if (!string.Equals(existingRecord.FileNameDigest, fileNameDigest, StringComparison.Ordinal))
-                {
-                    throw new BusinessException(ChatErrorCodes.Blobs.AccessDenied)
-                        .WithData("Reason", "ClientUploadId reused with different attachment parameters.");
-                }
-
-                var persistedBlob = await blobRepository.FindAsync(existingRecord.PrimaryBlobId);
-                if (persistedBlob != null &&
-                    persistedBlob.Status == BlobStatus.Temp &&
-                    (!persistedBlob.ExpireTime.HasValue || persistedBlob.ExpireTime.Value >= Clock.Now))
-                {
-                    return jsonSerializer.Deserialize<UploadAttachmentOutput>(existingRecord.ResultJson);
-                }
-
-                // Expired stale idempotency record: remove so a fresh upload/reuse for this ClientUploadId can proceed.
-                await reuseRecordRepository.DeleteAsync(existingRecord, autoSave: true);
+                throw;
             }
+
+            if (!string.Equals(existingRecord.FileNameDigest, fileNameDigest, StringComparison.Ordinal))
+            {
+                throw new BusinessException(ChatErrorCodes.Blobs.AccessDenied)
+                    .WithData("Reason", "ClientUploadId reused with different attachment parameters.");
+            }
+
+            var persistedBlob = await blobRepository.FindAsync(existingRecord.PrimaryBlobId);
+            if (persistedBlob == null ||
+                persistedBlob.Status != BlobStatus.Temp ||
+                (persistedBlob.ExpireTime.HasValue && persistedBlob.ExpireTime.Value < Clock.Now))
+            {
+                throw;
+            }
+
+            output = jsonSerializer.Deserialize<UploadAttachmentOutput>(existingRecord.ResultJson);
+            await recoverUow.CompleteAsync();
         }
 
-        var ownerIds = await chatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
-        if (sourcePrimary.UploaderChatObjectId.HasValue && !ownerIds.Contains(sourcePrimary.UploaderChatObjectId.Value))
+        if (reuseCache != null && clientUploadKey != null && output != null)
         {
-            throw new AbpAuthorizationException("Source attachment does not belong to current account.");
-        }
-
-        var childBlobs = (await blobRepository.GetQueryableAsync())
-            .Where(x => x.ParentBlobId == sourcePrimary.Id && x.Status != BlobStatus.Expired)
-            .ToList();
-
-        var effectiveSuffix = !string.IsNullOrWhiteSpace(sourcePrimary.Suffix)
-            ? sourcePrimary.Suffix
-            : GetExtension(sourcePrimary.MimeType, effectiveFileName);
-
-        await validatorManager.ValidateAsync(new AttachmentUploadValidationContext
-        {
-            SessionUnit = unit,
-            MediaType = payload.MediaType,
-            FileName = effectiveFileName,
-            ContentType = sourcePrimary.MimeType,
-            Suffix = effectiveSuffix,
-            FileSize = sourcePrimary.FileSize,
-            Width = payload.Width,
-            Height = payload.Height,
-            DurationMs = payload.Duration,
-            HasSnapshot = childBlobs.Any(x => x.Role == BlobRoles.Snapshot),
-            OpenReadStreamAsync = async _ => new MemoryStream(await BlobManager.GetBytesAsync(sourcePrimary.Id)),
-        });
-
-        var newPrimaryId = GuidGenerator.Create();
-        var newPrimaryBlob = await CloneTempBlobAsync(
-            sourcePrimary,
-            newPrimaryId,
-            unit,
-            payload.MediaType,
-            BlobRoles.Primary,
-            parentBlobId: null,
-            overrideFileName: effectiveFileName);
-
-        Guid? thumbId = null;
-        string thumbUrl = null;
-        Guid? originalId = null;
-        string originalUrl = null;
-        Guid? snapshotId = null;
-        string snapshotUrl = null;
-        Guid? snapshotThumbId = null;
-        string snapshotThumbUrl = null;
-        Guid? gifId = null;
-        string gifUrl = null;
-
-        foreach (var child in childBlobs)
-        {
-            var childMediaType = child.Role is BlobRoles.Snapshot or BlobRoles.SnapshotThumbnail
-                ? AttachmentMediaType.Snapshot
-                : payload.MediaType;
-            var clonedChild = await CloneTempBlobAsync(
-                child,
-                GuidGenerator.Create(),
-                unit,
-                childMediaType,
-                child.Role,
-                parentBlobId: newPrimaryBlob.Id);
-            var childUrl = await GetFileUrlAsync(clonedChild.Id, clonedChild.MimeType);
-
-            switch (child.Role)
+            await reuseCache.SetAsync(clientUploadKey, output, new DistributedCacheEntryOptions
             {
-                case BlobRoles.Thumbnail:
-                    thumbId = clonedChild.Id;
-                    thumbUrl = childUrl;
-                    break;
-                case BlobRoles.Original:
-                    originalId = clonedChild.Id;
-                    originalUrl = childUrl;
-                    break;
-                case BlobRoles.Snapshot:
-                    snapshotId = clonedChild.Id;
-                    snapshotUrl = childUrl;
-                    break;
-                case BlobRoles.SnapshotThumbnail:
-                    snapshotThumbId = clonedChild.Id;
-                    snapshotThumbUrl = childUrl;
-                    break;
-                case BlobRoles.Gif:
-                    gifId = clonedChild.Id;
-                    gifUrl = childUrl;
-                    break;
-            }
-        }
-
-        var output = new UploadAttachmentOutput
-        {
-            BlobId = newPrimaryBlob.Id,
-            MediaType = payload.MediaType,
-            Url = await GetFileUrlAsync(newPrimaryBlob.Id, newPrimaryBlob.MimeType),
-            ThumbnailBlobId = thumbId,
-            ThumbnailUrl = thumbUrl,
-            OriginalBlobId = originalId,
-            OriginalUrl = originalUrl,
-            SnapshotBlobId = snapshotId,
-            SnapshotUrl = snapshotUrl,
-            SnapshotThumbnailBlobId = snapshotThumbId,
-            SnapshotThumbnailUrl = snapshotThumbUrl,
-            GifBlobId = gifId,
-            GifUrl = gifUrl,
-            FileName = newPrimaryBlob.FileName,
-            ContentType = newPrimaryBlob.MimeType,
-            Suffix = newPrimaryBlob.Suffix,
-            Size = newPrimaryBlob.FileSize,
-            Width = payload.Width,
-            Height = payload.Height,
-            Duration = payload.Duration,
-            Profile = payload.Profile,
-            ExpireTime = newPrimaryBlob.ExpireTime,
-            ReuseToken = IssueReuseToken(
-                newPrimaryBlob.Id,
-                payload.MediaType,
-                payload.Width,
-                payload.Height,
-                payload.Duration,
-                payload.Profile,
-                newPrimaryBlob.ExpireTime),
-        };
-
-        if (normalizedClientUploadId != null)
-        {
-            await reuseRecordRepository.InsertAsync(
-                new BlobReuseRecord(
-                    GuidGenerator.Create(),
-                    CurrentUser.Id.Value,
-                    sessionUnitId,
-                    payload.PrimaryBlobId,
-                    normalizedClientUploadId,
-                    fileNameDigest,
-                    output.BlobId,
-                    jsonSerializer.Serialize(output),
-                    output.ExpireTime),
-                autoSave: true);
-        }
-
-        if (reuseCache != null && clientUploadKey != null)
-        {
-            var currentUow = UnitOfWorkManager?.Current;
-            if (currentUow != null)
-            {
-                currentUow.OnCompleted(async () =>
-                {
-                    await reuseCache.SetAsync(clientUploadKey, output, new DistributedCacheEntryOptions
-                    {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1),
-                    });
-                });
-            }
-            else
-            {
-                await reuseCache.SetAsync(clientUploadKey, output, new DistributedCacheEntryOptions
-                {
-                    AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1),
-                });
-            }
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1),
+            });
         }
 
         return output;

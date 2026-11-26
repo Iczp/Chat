@@ -189,6 +189,7 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<Blob> Blob { get; }
     DbSet<BlobObject> BlobObject { get; }
     DbSet<BlobReuseRecord> BlobReuseRecord { get; }
+    DbSet<VideoGifPropagationOutbox> VideoGifPropagationOutbox { get; }
     DbSet<BlobContent> BlobContent { get; }
     DbSet<BlobMessageRef> BlobMessageRef { get; }
 

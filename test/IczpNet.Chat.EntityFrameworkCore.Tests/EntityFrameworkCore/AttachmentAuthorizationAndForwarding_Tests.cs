@@ -622,4 +622,211 @@ public class AttachmentAuthorizationAndForwarding_Tests : ChatTestBase<Attachmen
             Assert.NotNull(await auth.CheckAccessAsync(crossQuoteBlobId, unitBobInB, 6301L, 6303L, [102L], false));
         });
     }
+
+    [Fact]
+    public async Task VideoGifPropagationOutbox_commits_and_rolls_back_atomically_with_UOW_and_propagates()
+    {
+        var guidGen = ServiceProvider.GetRequiredService<IGuidGenerator>();
+        var uowManager = ServiceProvider.GetRequiredService<IUnitOfWorkManager>();
+        var outboxRepo = ServiceProvider.GetRequiredService<Volo.Abp.Domain.Repositories.IRepository<VideoGifPropagationOutbox, Guid>>();
+        var outboxService = ServiceProvider.GetRequiredService<IVideoGifPropagationOutboxService>();
+        var msgRepo = ServiceProvider.GetRequiredService<IMessageRepository>();
+
+        var sessionA = guidGen.Create();
+        var sessionB = guidGen.Create();
+        var videoBlobId = guidGen.Create();
+        var gifBlobId = guidGen.Create();
+        var videoContentId = guidGen.Create();
+        var gifUrl = $"/api/chat/file/{gifBlobId}";
+
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var db = await ServiceProvider.GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            await db.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys=OFF");
+
+            await MessageVisibilityQuery_Tests.InsertAsync<Session>(db, new() { ["Id"] = sessionA });
+            await MessageVisibilityQuery_Tests.InsertAsync<Session>(db, new() { ["Id"] = sessionB });
+            await MessageVisibilityQuery_Tests.InsertAsync<Blob>(db, new()
+            {
+                ["Id"] = videoBlobId,
+                ["Container"] = "chat-files",
+                ["Name"] = "2026/11/v-outbox.mp4",
+                ["FileName"] = "v-outbox.mp4",
+                ["MimeType"] = "video/mp4",
+                ["Suffix"] = ".mp4",
+                ["Status"] = BlobStatus.Bound,
+                ["RefCount"] = 2
+            });
+            await MessageVisibilityQuery_Tests.InsertAsync<Blob>(db, new()
+            {
+                ["Id"] = gifBlobId,
+                ["Container"] = "chat-files",
+                ["Name"] = "2026/11/v-outbox.gif",
+                ["FileName"] = "v-outbox.gif",
+                ["MimeType"] = "image/gif",
+                ["Suffix"] = ".gif",
+                ["Status"] = BlobStatus.Bound,
+                ["RefCount"] = 0
+            });
+
+            var videoContent = new VideoContent
+            {
+                BlobId = videoBlobId,
+                Url = $"/api/chat/file/{videoBlobId}",
+                FileName = "v-outbox.mp4",
+                Width = 640,
+                Height = 360
+            };
+            SetProp(videoContent, nameof(VideoContent.Id), videoContentId);
+            db.Set<VideoContent>().Add(videoContent);
+
+            await MessageVisibilityQuery_Tests.InsertAsync<Message>(db, new() { ["Id"] = 4101L, ["SessionId"] = sessionA, ["SessionSeq"] = 1L, ["MessageType"] = MessageTypes.Video, ["ExtraProperties"] = new ExtraPropertyDictionary() });
+            await MessageVisibilityQuery_Tests.InsertAsync<Message>(db, new() { ["Id"] = 4102L, ["SessionId"] = sessionB, ["SessionSeq"] = 1L, ["ForwardMessageId"] = 4101L, ["MessageType"] = MessageTypes.Video, ["ExtraProperties"] = new ExtraPropertyDictionary() });
+            (await db.Message.SingleAsync(x => x.Id == 4101L)).VideoContentList.Add(videoContent);
+            (await db.Message.SingleAsync(x => x.Id == 4102L)).VideoContentList.Add(videoContent);
+            await db.SaveChangesAsync();
+        });
+
+        // 未提交（回滚）的业务 UOW 不能留下游离 Outbox 记录
+        var rolledBackOutboxId = guidGen.Create();
+        using (var rollbackUow = uowManager.Begin(requiresNew: true, isTransactional: true))
+        {
+            await outboxRepo.InsertAsync(
+                new VideoGifPropagationOutbox(rolledBackOutboxId, 4101L, videoContentId, gifBlobId, gifUrl),
+                autoSave: true);
+            // 故意不调用 CompleteAsync
+        }
+
+        using (var verifyRollbackUow = uowManager.Begin(requiresNew: true, isTransactional: false))
+        {
+            var db = await ServiceProvider.GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            Assert.False(await db.VideoGifPropagationOutbox.AnyAsync(x => x.Id == rolledBackOutboxId));
+            await verifyRollbackUow.CompleteAsync();
+        }
+
+        // 与 GIF 写入同事务提交的 Outbox 记录由 Worker 服务投递到所有转发消息并标记 ProcessedTime
+        var committedOutboxId = guidGen.Create();
+        using (var commitUow = uowManager.Begin(requiresNew: true, isTransactional: true))
+        {
+            Assert.True(await msgRepo.TrySetVideoGifAsync(videoContentId, gifBlobId, gifUrl));
+            await outboxRepo.InsertAsync(
+                new VideoGifPropagationOutbox(committedOutboxId, 4101L, videoContentId, gifBlobId, gifUrl),
+                autoSave: true);
+            await commitUow.CompleteAsync();
+        }
+
+        var processedFirst = await outboxService.ProcessPendingAsync();
+        Assert.Equal(1, processedFirst);
+        var processedSecond = await outboxService.ProcessPendingAsync();
+        Assert.Equal(0, processedSecond);
+
+        using (var verifyUow = uowManager.Begin(requiresNew: true, isTransactional: false))
+        {
+            var db = await ServiceProvider.GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            var outboxRow = await db.VideoGifPropagationOutbox.AsNoTracking().SingleAsync(x => x.Id == committedOutboxId);
+            Assert.NotNull(outboxRow.ProcessedTime);
+
+            var refMsgIds = await db.BlobMessageRef.AsNoTracking()
+                .Where(x => x.BlobId == gifBlobId)
+                .OrderBy(x => x.MessageId)
+                .Select(x => x.MessageId)
+                .ToListAsync();
+            Assert.Equal([4101L, 4102L], refMsgIds);
+
+            var gifBlob = await db.Blob.AsNoTracking().SingleAsync(x => x.Id == gifBlobId);
+            Assert.Equal(2, gifBlob.RefCount);
+            await verifyUow.CompleteAsync();
+        }
+    }
+
+    [Fact]
+    public async Task BlobReuseRecord_unique_index_rejects_competing_transaction_and_rolls_back_leaving_winner_for_reread()
+    {
+        var guidGen = ServiceProvider.GetRequiredService<IGuidGenerator>();
+        var uowManager = ServiceProvider.GetRequiredService<IUnitOfWorkManager>();
+
+        var userId = guidGen.Create();
+        var sessionUnitId = guidGen.Create();
+        var sourcePrimaryBlobId = guidGen.Create();
+        var clientUploadId = $"op-{guidGen.Create():N}";
+        var fileNameDigest = "0123456789ABCDEF";
+        var blob1Id = guidGen.Create();
+        var blob2Id = guidGen.Create();
+        var winnerJson = $"{{\"BlobId\":\"{blob1Id}\"}}";
+        var loserJson = $"{{\"BlobId\":\"{blob2Id}\"}}";
+
+        // 第一个事务胜出并提交
+        using (var winnerUow = uowManager.Begin(requiresNew: true, isTransactional: true))
+        {
+            var db = await ServiceProvider.GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            await db.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys=OFF");
+            db.Blob.Add(new Blob(blob1Id, "chat-files")
+            {
+                FileName = "a.bin",
+                Name = "2026/11/a1.bin",
+                MimeType = "application/octet-stream",
+                Suffix = ".bin",
+                Status = BlobStatus.Temp,
+                ExpireTime = DateTime.UtcNow.AddHours(2),
+            });
+            db.BlobReuseRecord.Add(new BlobReuseRecord(
+                guidGen.Create(),
+                userId,
+                sessionUnitId,
+                sourcePrimaryBlobId,
+                clientUploadId,
+                fileNameDigest,
+                blob1Id,
+                winnerJson,
+                DateTime.UtcNow.AddHours(2)));
+            await db.SaveChangesAsync();
+            await winnerUow.CompleteAsync();
+        }
+
+        // 第二个并发事务各自创建 Temp Blob 后插入相同 ClientUploadId -> 唯一索引冲突并回滚
+        DbUpdateException conflictEx = null;
+        using (var loserUow = uowManager.Begin(requiresNew: true, isTransactional: true))
+        {
+            var db = await ServiceProvider.GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            await db.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys=OFF");
+            db.Blob.Add(new Blob(blob2Id, "chat-files")
+            {
+                FileName = "a.bin",
+                Name = "2026/11/a2.bin",
+                MimeType = "application/octet-stream",
+                Suffix = ".bin",
+                Status = BlobStatus.Temp,
+                ExpireTime = DateTime.UtcNow.AddHours(2),
+            });
+            db.BlobReuseRecord.Add(new BlobReuseRecord(
+                guidGen.Create(),
+                userId,
+                sessionUnitId,
+                sourcePrimaryBlobId,
+                clientUploadId,
+                fileNameDigest,
+                blob2Id,
+                loserJson,
+                DateTime.UtcNow.AddHours(2)));
+            conflictEx = await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+            // 不调用 CompleteAsync，让败者事务回滚其新建的 blob2
+        }
+
+        Assert.True(BlobDbExceptionHelper.IsUniqueConstraintViolation(conflictEx));
+
+        // 开启新 UOW 重读，确认 blob2 已回滚且可读取胜出记录
+        using (var recoverUow = uowManager.Begin(requiresNew: true, isTransactional: false))
+        {
+            var db = await ServiceProvider.GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            Assert.False(await db.Blob.AsNoTracking().AnyAsync(x => x.Id == blob2Id));
+            var winnerRecord = await db.BlobReuseRecord.AsNoTracking().SingleAsync(x =>
+                x.UserId == userId &&
+                x.SessionUnitId == sessionUnitId &&
+                x.SourcePrimaryBlobId == sourcePrimaryBlobId &&
+                x.ClientUploadId == clientUploadId);
+            Assert.Equal(blob1Id, winnerRecord.PrimaryBlobId);
+            Assert.Equal(winnerJson, winnerRecord.ResultJson);
+            await recoverUow.CompleteAsync();
+        }
+    }
 }

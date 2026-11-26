@@ -464,6 +464,15 @@ public static class ChatDbContextModelCreatingExtensions
             b.HasIndex(x => x.ExpireTime);
         });
 
+        builder.Entity<VideoGifPropagationOutbox>(b =>
+        {
+            b.ToTable($"{ChatDbProperties.DbTablePrefix}_{nameof(VideoGifPropagationOutbox)}", ChatDbProperties.DbSchema);
+            b.ConfigureByConvention();
+            b.Property(x => x.GifUrl).IsRequired().HasMaxLength(1024);
+            b.Property(x => x.LastError).HasMaxLength(2000);
+            b.HasIndex(x => new { x.ProcessedTime, x.NextRetryTime });
+        });
+
         builder.Entity<Blob>(b =>
         {
             b.HasOne(x => x.StorageObject)
