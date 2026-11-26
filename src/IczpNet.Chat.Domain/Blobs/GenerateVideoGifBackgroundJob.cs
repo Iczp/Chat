@@ -1,5 +1,3 @@
-using IczpNet.Chat.Commands;
-using IczpNet.Chat.Hosting;
 using IczpNet.Chat.Medias;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
@@ -12,14 +10,10 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.BackgroundJobs;
-using Volo.Abp.Caching;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.Domain.Repositories;
-using Volo.Abp.EventBus.Distributed;
+using Volo.Abp.DistributedLocking;
 using Volo.Abp.Guids;
-using Volo.Abp.Json;
 using Volo.Abp.Linq;
-using Volo.Abp.Timing;
 using Volo.Abp.Uow;
 
 namespace IczpNet.Chat.Blobs;
@@ -27,18 +21,14 @@ namespace IczpNet.Chat.Blobs;
 public class GenerateVideoGifBackgroundJob(
     IMessageRepository messageRepository,
     IAsyncQueryableExecuter asyncExecuter,
-    IMessageManager messageManager,
     IBlobManager blobManager,
     IBlobResolver blobResolver,
     IMediaResolver mediaResolver,
     IGuidGenerator guidGenerator,
-    IJsonSerializer jsonSerializer,
     IOptions<MessageOptions> messageOptions,
-    IDistributedCache<MessageCacheItem, MessageCacheKey> messageCache,
-    IClock clock,
     IServiceScopeFactory serviceScopeFactory,
-    ICurrentHosted currentHosted,
-    IUnitOfWorkManager unitOfWorkManager) : AsyncBackgroundJob<GenerateVideoGifArgs>, ITransientDependency
+    IUnitOfWorkManager unitOfWorkManager,
+    IAbpDistributedLock distributedLock) : AsyncBackgroundJob<GenerateVideoGifArgs>, ITransientDependency
 {
     [UnitOfWork]
     public override async Task ExecuteAsync(GenerateVideoGifArgs args)
@@ -48,9 +38,20 @@ public class GenerateVideoGifBackgroundJob(
             args.MessageId,
             args.VideoBlobId);
 
+        await using var lockHandle = distributedLock is not NullAbpDistributedLock
+            ? await distributedLock.TryAcquireAsync($"Chat:VideoGif:{args.MessageId}", TimeSpan.FromMinutes(2))
+            : null;
+        if (distributedLock is not NullAbpDistributedLock && lockHandle == null)
+        {
+            Logger.LogInformation(
+                "GenerateVideoGifBackgroundJob skipped due to active lock: MessageId={MessageId}",
+                args.MessageId);
+            return;
+        }
+
         var queryable = await messageRepository.WithDetailsAsync(x => x.VideoContentList);
         var message = await asyncExecuter.FirstOrDefaultAsync(queryable.Where(x => x.Id == args.MessageId));
-        if (message == null || message.IsRollbacked)
+        if (message == null || message.IsRollbacked || message.RollbackTime.HasValue)
         {
             Logger.LogWarning(
                 "GenerateVideoGifBackgroundJob skipped: Message not found or rollbacked. MessageId={MessageId}, Found={Found}, IsRollbacked={IsRollbacked}",
@@ -61,13 +62,28 @@ public class GenerateVideoGifBackgroundJob(
         }
 
         var videoContent = message.GetTypedContentEntity<VideoContent>();
-        if (videoContent == null || videoContent.GifBlobId.HasValue)
+        if (videoContent == null)
         {
             Logger.LogInformation(
-                "GenerateVideoGifBackgroundJob skipped: VideoContent missing or GifBlobId already set. MessageId={MessageId}, HasVideoContent={HasVideoContent}, GifBlobId={GifBlobId}",
-                args.MessageId,
-                videoContent != null,
-                videoContent?.GifBlobId);
+                "GenerateVideoGifBackgroundJob skipped: VideoContent missing. MessageId={MessageId}",
+                args.MessageId);
+            return;
+        }
+
+        // 若 GIF 已存在（例如重跑或并发 Job 已生成），跳过转码但仍触发下游传播以确保引用和变更完整
+        if (videoContent.GifBlobId.HasValue)
+        {
+            var existingGifUrl = !string.IsNullOrWhiteSpace(videoContent.GifUrl)
+                ? videoContent.GifUrl
+                : await blobResolver.GetFileUrlAsync(videoContent.GifBlobId.Value, "image/gif");
+
+            await EnqueuePropagationAsync(new PropagateVideoGifArgs
+            {
+                SourceMessageId = message.Id,
+                VideoContentId = videoContent.Id,
+                GifBlobId = videoContent.GifBlobId.Value,
+                GifUrl = existingGifUrl,
+            });
             return;
         }
 
@@ -115,11 +131,6 @@ public class GenerateVideoGifBackgroundJob(
             var fileName = await blobResolver.GenerateFileNameAsync(".gif");
             var gifBlobName = Path.Combine(directoryName, fileName).Replace(@"\", "/");
 
-            var forwardedMessages = (await messageRepository.GetQueryableAsync())
-                .Where(x => x.ForwardMessageId == message.Id)
-                .Select(x => new { x.Id, x.SessionId })
-                .ToList();
-
             var gifBlob = await blobManager.CreateAsync(new Blob(gifBlobId, videoBlob.Container)
             {
                 IsPublic = videoBlob.IsPublic,
@@ -135,118 +146,71 @@ public class GenerateVideoGifBackgroundJob(
                 ParentBlobId = videoBlob.Id,
                 Role = BlobRoles.Gif,
                 Status = BlobStatus.Bound,
-                RefCount = 1 + forwardedMessages.Count,
+                RefCount = 0,
             });
 
             var gifUrl = await blobResolver.GetFileUrlAsync(gifBlob.Id, gifBlob.MimeType);
 
-            // 通过 ABP 仓储绑定到原消息，以及已转发到其他会话的消息引用。
-            var refs = new System.Collections.Generic.List<(Guid BlobId, long MessageId, Guid? SessionId, BlobRefSourceTypes SourceType)>(1 + forwardedMessages.Count)
+            // 条件更新 VideoContent，确保并发 Job 只发布一个有效 GIF
+            var won = await messageRepository.TrySetVideoGifAsync(videoContent.Id, gifBlob.Id, gifUrl);
+            if (!won)
             {
-                (gifBlob.Id, message.Id, message.SessionId, BlobRefSourceTypes.Send)
-            };
-            foreach (var fwd in forwardedMessages)
-            {
-                refs.Add((gifBlob.Id, fwd.Id, fwd.SessionId, BlobRefSourceTypes.Forward));
-            }
-            await messageRepository.InsertBlobMessageRefsAsync(refs, now: clock.Now);
-
-            var relativeVideoUrl = await blobResolver.GetFileUrlAsync(videoContent.BlobId ?? args.VideoBlobId, videoBlob.MimeType);
-            var relativeSnapshotUrl = videoContent.SnapshotBlobId.HasValue
-                ? await blobResolver.GetFileUrlAsync(videoContent.SnapshotBlobId.Value, "image/png")
-                : null;
-            var relativeSnapshotThumbnailUrl = videoContent.SnapshotThumbnailBlobId.HasValue
-                ? await blobResolver.GetFileUrlAsync(videoContent.SnapshotThumbnailBlobId.Value, "image/png")
-                : null;
-
-            object contentDto = null;
-            // 先写 Chat_MessageChange，再在回调中统一修改 VideoContent / ContentJson 与 MessageChangeId，
-            // 确保只触发一次 UPDATE [Chat_Message] 与一次 EntityUpdatedEventData<Message>
-            var changeVersion = await messageManager.RecordMessageUpdatedAsync(
-                message,
-                clock.Now,
-                "生成视频GIF缩略图",
-                applyChanges: msg =>
+                var latestMessage = await asyncExecuter.FirstOrDefaultAsync(
+                    (await messageRepository.WithDetailsAsync(x => x.VideoContentList)).Where(x => x.Id == args.MessageId));
+                var latestVideo = latestMessage?.GetTypedContentEntity<VideoContent>();
+                if (latestVideo?.GifBlobId != null)
                 {
-                    videoContent.GifBlobId = gifBlob.Id;
-                    videoContent.GifUrl = gifUrl;
-                    if ((videoContent.ImageWidth == null || videoContent.ImageWidth <= 0) && videoContent.Width > 0)
-                        videoContent.ImageWidth = videoContent.Width;
-                    if ((videoContent.ImageHeight == null || videoContent.ImageHeight <= 0) && videoContent.Height > 0)
-                        videoContent.ImageHeight = videoContent.Height;
-                    contentDto = msg.GetContentDto();
-                    if (contentDto is VideoContentInfo videoDto)
+                    await EnqueuePropagationAsync(new PropagateVideoGifArgs
                     {
-                        videoDto.Url = relativeVideoUrl;
-                        if (relativeSnapshotUrl != null) videoDto.SnapshotUrl = relativeSnapshotUrl;
-                        if (relativeSnapshotThumbnailUrl != null) videoDto.SnapshotThumbnailUrl = relativeSnapshotThumbnailUrl;
-                        videoDto.GifUrl = gifUrl;
-                        if (videoDto.ImageWidth <= 0 && videoDto.Width > 0) videoDto.ImageWidth = videoDto.Width;
-                        if (videoDto.ImageHeight <= 0 && videoDto.Height > 0) videoDto.ImageHeight = videoDto.Height;
-                    }
-                    msg.SetContentJson(jsonSerializer.Serialize(contentDto));
-                });
-
-            await messageCache.RemoveAsync(new MessageCacheKey(message.Id));
-
-            Logger.LogInformation(
-                "GenerateVideoGifBackgroundJob completed: MessageId={MessageId}, GifBlobId={GifBlobId}, ChangeVersion={ChangeVersion}",
-                message.Id,
-                gifBlob.Id,
-                changeVersion);
-
-            if (!changeVersion.HasValue && message.SessionId.HasValue)
-            {
-                var notification = new SendMessageToClientDistributedEto
-                {
-                    Command = CommandConsts.MessageUpdated,
-                    HostName = currentHosted.Name,
-                    MessageId = message.Id,
-                    SessionId = message.SessionId,
-                    ChangeType = "Updated",
-                    ChangeScope = "Shared",
-                    Message = new MessageInfo<object>
-                    {
-                        Id = message.Id,
-                        SyncVersion = message.SyncVersion,
-                        ClientMessageId = message.ClientMessageId,
-                        SessionId = message.SessionId.Value,
-                        SessionSeq = message.SessionSeq,
-                        SenderId = message.SenderId,
-                        SenderSessionUnitId = message.SenderSessionUnitId,
-                        ReceiverId = message.ReceiverId,
-                        ReceiverSessionUnitId = message.ReceiverSessionUnitId,
-                        MessageType = message.MessageType,
-                        CreationTime = message.CreationTime,
-                        IsPrivate = message.IsPrivate,
-                        IsRollbacked = message.IsRollbackMessage(),
-                        RollbackTime = message.RollbackTime,
-                        Content = contentDto,
-                    },
-                };
-
-                if (unitOfWorkManager.Current != null)
-                {
-                    unitOfWorkManager.Current.OnCompleted(async () =>
-                    {
-                        using var scope = serviceScopeFactory.CreateScope();
-                        var bus = scope.ServiceProvider.GetRequiredService<IDistributedEventBus>();
-                        await bus.PublishAsync(notification, onUnitOfWorkComplete: false, useOutbox: false);
+                        SourceMessageId = message.Id,
+                        VideoContentId = videoContent.Id,
+                        GifBlobId = latestVideo.GifBlobId.Value,
+                        GifUrl = latestVideo.GifUrl ?? await blobResolver.GetFileUrlAsync(latestVideo.GifBlobId.Value, "image/gif"),
                     });
                 }
-                else
-                {
-                    using var scope = serviceScopeFactory.CreateScope();
-                    var bus = scope.ServiceProvider.GetRequiredService<IDistributedEventBus>();
-                    await bus.PublishAsync(notification, onUnitOfWorkComplete: false, useOutbox: false);
-                }
+                return;
             }
+
+            videoContent.GifBlobId = gifBlob.Id;
+            videoContent.GifUrl = gifUrl;
+
+            await EnqueuePropagationAsync(new PropagateVideoGifArgs
+            {
+                SourceMessageId = message.Id,
+                VideoContentId = videoContent.Id,
+                GifBlobId = gifBlob.Id,
+                GifUrl = gifUrl,
+            });
+
+            Logger.LogInformation(
+                "GenerateVideoGifBackgroundJob generated GIF and queued propagation: MessageId={MessageId}, GifBlobId={GifBlobId}",
+                message.Id,
+                gifBlob.Id);
         }
         finally
         {
             DeleteTempFile(mediaInfo.ImageSnapshotPath);
             DeleteTempFile(mediaInfo.GifSnapshotPath);
             DeleteTempFile(mediaInfo.TempVideoPath);
+        }
+    }
+
+    private async Task EnqueuePropagationAsync(PropagateVideoGifArgs propArgs)
+    {
+        if (unitOfWorkManager.Current != null)
+        {
+            unitOfWorkManager.Current.OnCompleted(async () =>
+            {
+                using var scope = serviceScopeFactory.CreateScope();
+                var jobManager = scope.ServiceProvider.GetRequiredService<IBackgroundJobManager>();
+                await jobManager.EnqueueAsync(propArgs);
+            });
+        }
+        else
+        {
+            using var scope = serviceScopeFactory.CreateScope();
+            var jobManager = scope.ServiceProvider.GetRequiredService<IBackgroundJobManager>();
+            await jobManager.EnqueueAsync(propArgs);
         }
     }
 

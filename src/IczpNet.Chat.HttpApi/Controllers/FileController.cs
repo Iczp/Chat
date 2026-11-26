@@ -26,7 +26,6 @@ public class FileController(
     IBlobDirectUrlProvider blobDirectUrlProvider,
     IChatObjectManager chatObjectManager,
     ISessionUnitManager sessionUnitManager,
-    IMessageRepository messageRepository,
     IOptions<AttachmentSignatureOptions> signatureOptions) : ChatController
 {
     [HttpGet]
@@ -125,8 +124,22 @@ public class FileController(
             return StatusCode(StatusCodes.Status403Forbidden);
         }
 
-        var targetMsgId = rootMessageId ?? messageId;
-        if (targetMsgId.HasValue && !await messageRepository.CanReadAsync(sessionUnitId, targetMsgId.Value))
+        try
+        {
+            var blob = await blobAccessAuthorizationService.CheckAccessAsync(
+                blobId,
+                sessionUnitId,
+                messageId,
+                rootMessageId,
+                ownerIds,
+                hasValidSignature: false,
+                HttpContext.RequestAborted);
+            if (blob == null)
+            {
+                return NotFound(new { message = "blob is null" });
+            }
+        }
+        catch (BusinessException ex) when (ex.Code == ChatErrorCodes.Blobs.AccessDenied)
         {
             return StatusCode(StatusCodes.Status403Forbidden);
         }

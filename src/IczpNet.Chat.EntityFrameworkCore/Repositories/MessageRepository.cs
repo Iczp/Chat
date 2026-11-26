@@ -2,6 +2,7 @@
 using IczpNet.Chat.Blobs;
 using IczpNet.Chat.EntityFrameworkCore;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.RedEnvelopes;
@@ -82,6 +83,46 @@ public class MessageRepository(IDbContextProvider<ChatDbContext> dbContextProvid
         if (!await context.Message.AnyAsync(x => x.Id == messageId && !x.IsPrivate && !x.IsRollbacked, cancellationToken)) return false;
         return await query.AnyAsync(x => x.QuoteMessageId == messageId ||
             x.HistoryContentList.Any(c => c.HistoryMessageList.Any(h => h.MessageId == messageId)), cancellationToken);
+    }
+
+    public async Task<bool> CanReadAttachmentAsync(Guid sessionUnitId, long targetMessageId, long? childMessageId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = await GetVisibleQueryAsync(sessionUnitId, cancellationToken);
+        var rootVisible = await query.AnyAsync(
+            x => x.Id == targetMessageId && !x.IsRollbacked && !x.RollbackTime.HasValue,
+            cancellationToken);
+        if (!rootVisible)
+        {
+            return false;
+        }
+
+        if (childMessageId.HasValue && childMessageId.Value != targetMessageId)
+        {
+            var context = await GetDbContextAsync();
+            var childAlive = await context.Message.AsNoTracking().AnyAsync(
+                x => x.Id == childMessageId.Value && !x.IsPrivate && !x.IsRollbacked && !x.RollbackTime.HasValue,
+                cancellationToken);
+            if (!childAlive)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public async Task<bool> TrySetVideoGifAsync(Guid videoContentId, Guid gifBlobId, string gifUrl,
+        CancellationToken cancellationToken = default)
+    {
+        var context = await GetDbContextAsync();
+        var affected = await context.VideoContent
+            .Where(x => x.Id == videoContentId && x.GifBlobId == null)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(v => v.GifBlobId, gifBlobId)
+                .SetProperty(v => v.GifUrl, gifUrl),
+                cancellationToken);
+        return affected > 0;
     }
     /// <inheritdoc />
     public virtual async Task<int> IncrementReadedCountAsync(List<long> messageIdList)
@@ -203,30 +244,39 @@ public class MessageRepository(IDbContextProvider<ChatDbContext> dbContextProvid
         var time = now ?? Clock.Now;
         var db = await GetDbContextAsync();
 
+        var existingBlobIds = await db.BlobMessageRef
+            .Where(x => x.MessageId == messageId && distinctBlobIds.Contains(x.BlobId))
+            .Select(x => x.BlobId)
+            .ToListAsync(cancellationToken);
+
+        var newBlobIds = distinctBlobIds.Except(existingBlobIds).ToList();
+
         if (markAsBound)
         {
             await db.Blob
-                .Where(x => distinctBlobIds.Contains(x.Id))
+                .Where(x => distinctBlobIds.Contains(x.Id) && (x.Status != BlobStatus.Bound || x.ExpireTime != null))
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(b => b.Status, BlobStatus.Bound)
                     .SetProperty(b => b.ExpireTime, (DateTime?)null)
-                    .SetProperty(b => b.RefCount, b => b.RefCount + 1)
-                    .SetProperty(b => b.LastModificationTime, time)
-                    .SetProperty(b => b.LastModifierId, creatorId),
-                    cancellationToken);
-        }
-        else
-        {
-            await db.Blob
-                .Where(x => distinctBlobIds.Contains(x.Id))
-                .ExecuteUpdateAsync(s => s
-                    .SetProperty(b => b.RefCount, b => b.RefCount + 1)
                     .SetProperty(b => b.LastModificationTime, time)
                     .SetProperty(b => b.LastModifierId, creatorId),
                     cancellationToken);
         }
 
-        var refs = distinctBlobIds
+        if (newBlobIds.Count == 0)
+        {
+            return;
+        }
+
+        await db.Blob
+            .Where(x => newBlobIds.Contains(x.Id))
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(b => b.RefCount, b => b.RefCount + 1)
+                .SetProperty(b => b.LastModificationTime, time)
+                .SetProperty(b => b.LastModifierId, creatorId),
+                cancellationToken);
+
+        var refs = newBlobIds
             .Select(blobId => (blobId, messageId, sessionId, sourceType))
             .ToList();
         await InsertBlobMessageRefsAsync(refs, creatorId, time, cancellationToken);
@@ -485,6 +535,24 @@ public class MessageRepository(IDbContextProvider<ChatDbContext> dbContextProvid
     }
 
 
+
+    public virtual async Task<Message> InsertForwardedMessageAsync(
+        Message message,
+        IContentEntity existingContent,
+        CancellationToken cancellationToken = default)
+    {
+        var db = await GetDbContextAsync();
+        if (existingContent != null)
+        {
+            var unproxied = Castle.DynamicProxy.ProxyUtil.GetUnproxiedInstance(existingContent);
+            var entry = db.Entry(unproxied);
+            if (entry.State == EntityState.Detached)
+            {
+                entry.State = EntityState.Unchanged;
+            }
+        }
+        return await InsertAsync(message, autoSave: true, cancellationToken: cancellationToken);
+    }
 
     //public virtual async Task<int> IncrementRecorderAsync(List<long> messageIdList)
     //{

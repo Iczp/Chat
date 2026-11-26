@@ -181,6 +181,24 @@ public partial class MessageManager
     /// </summary>
     protected virtual async Task BindAttachmentsAfterInsertAsync(Message message, IContentEntity messageContent)
     {
+        if (messageContent is HistoryContent historyContent)
+        {
+            if (message.ForwardMessageId.HasValue)
+            {
+                await BindHistoryAttachmentsAsync(message.Id, message.SessionId, [message.ForwardMessageId.Value]);
+            }
+            else
+            {
+                var selectedIds = historyContent.HistoryMessageList?
+                    .Select(x => x.MessageId > 0 ? x.MessageId : x.Message?.Id ?? 0)
+                    .Where(x => x > 0)
+                    .Distinct()
+                    .ToList() ?? [];
+                await BindHistoryAttachmentsAsync(message.Id, message.SessionId, selectedIds);
+            }
+            return;
+        }
+
         var blobIds = CollectAttachmentBlobIds(messageContent);
         if (blobIds.Count == 0)
         {
@@ -245,48 +263,104 @@ public partial class MessageManager
         IEnumerable<long> selectedMessageIds,
         int maxDepth = 5)
     {
+        const int maxVisitedMessages = 500;
+        var effectiveMaxDepth = Math.Clamp(maxDepth, 1, 5);
         var historyMessageRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<HistoryMessage>>();
         var visitedMessageIds = new HashSet<long>();
         var collectedBlobIds = new HashSet<Guid>();
-        var currentFrontier = selectedMessageIds.Distinct().ToList();
+        var currentFrontier = selectedMessageIds?.Where(x => x > 0).Distinct().ToList() ?? [];
 
-        for (int depth = 1; depth <= maxDepth && currentFrontier.Count > 0; depth++)
+        for (int depth = 1; depth <= effectiveMaxDepth && currentFrontier.Count > 0 && visitedMessageIds.Count < maxVisitedMessages; depth++)
         {
-            var toProcess = currentFrontier.Where(id => visitedMessageIds.Add(id)).ToList();
+            var remainingBudget = maxVisitedMessages - visitedMessageIds.Count;
+            var toProcess = currentFrontier
+                .Where(id => visitedMessageIds.Add(id))
+                .Take(remainingBudget)
+                .ToList();
             if (toProcess.Count == 0)
             {
                 break;
             }
 
-            // 1. 收集当前层消息引用的 QuoteMessageId（仅同会话内引用）
+            // 1. 仅处理非私密且未撤回的消息
             var msgRows = (await Repository.GetQueryableAsync())
-                .Where(x => toProcess.Contains(x.Id))
+                .Where(x => toProcess.Contains(x.Id) && !x.IsPrivate && !x.IsRollbacked && !x.RollbackTime.HasValue)
                 .Select(x => new { x.Id, x.MessageType, x.QuoteMessageId, x.SessionId })
                 .ToList();
 
-            var quoteIds = msgRows
-                .Where(x => x.QuoteMessageId.HasValue)
-                .Select(x => x.QuoteMessageId!.Value)
-                .Distinct()
-                .Where(qId => !visitedMessageIds.Contains(qId))
-                .ToList();
-
-            var allQueryIds = toProcess.Concat(quoteIds).Distinct().ToList();
-
-            // 2. 从 BlobMessageRef 收集所有相关 BlobId
-            var refBlobIds = (await BlobMessageRefRepository.GetQueryableAsync())
-                .Where(x => allQueryIds.Contains(x.MessageId))
-                .Select(x => x.BlobId)
-                .Distinct()
-                .ToList();
-
-            foreach (var bId in refBlobIds)
+            if (msgRows.Count == 0)
             {
-                collectedBlobIds.Add(bId);
+                break;
             }
 
-            // 3. 向下展开嵌套的 HistoryContent 消息（受 maxDepth = 5 限制）
-            if (depth < maxDepth)
+            // 2. 收集同会话内非私密、未撤回的引用消息
+            var candidateQuotePairs = msgRows
+                .Where(x => x.QuoteMessageId.HasValue && x.SessionId.HasValue)
+                .Select(x => new { QuoteId = x.QuoteMessageId!.Value, SessionId = x.SessionId!.Value })
+                .Distinct()
+                .ToList();
+
+            var validQuoteIds = new List<long>();
+            if (candidateQuotePairs.Count > 0)
+            {
+                var qIds = candidateQuotePairs.Select(x => x.QuoteId).Distinct().ToList();
+                var quoteSessionMap = (await Repository.GetQueryableAsync())
+                    .Where(x => qIds.Contains(x.Id) && !x.IsPrivate && !x.IsRollbacked && !x.RollbackTime.HasValue && x.SessionId.HasValue)
+                    .Select(x => new { x.Id, SessionId = x.SessionId!.Value })
+                    .ToDictionary(x => x.Id, x => x.SessionId);
+
+                foreach (var pair in candidateQuotePairs)
+                {
+                    if (quoteSessionMap.TryGetValue(pair.QuoteId, out var qSessionId) &&
+                        qSessionId == pair.SessionId &&
+                        !visitedMessageIds.Contains(pair.QuoteId))
+                    {
+                        validQuoteIds.Add(pair.QuoteId);
+                    }
+                }
+            }
+
+            var visibleProcessIds = msgRows.Select(x => x.Id).ToList();
+            var allQueryIds = visibleProcessIds.Concat(validQuoteIds).Distinct().ToList();
+
+            // 3. 从 BlobMessageRef 收集所有已授权 BlobId
+            var refRows = (await BlobMessageRefRepository.GetQueryableAsync())
+                .Where(x => allQueryIds.Contains(x.MessageId))
+                .Select(x => new { x.MessageId, x.BlobId })
+                .ToList();
+
+            foreach (var r in refRows)
+            {
+                collectedBlobIds.Add(r.BlobId);
+            }
+
+            // 4. 历史数据缺少 BlobMessageRef 时，按结构化附件表精确回退收集
+            var coveredMessageIds = refRows.Select(x => x.MessageId).ToHashSet();
+            var missingRefAttachmentIds = allQueryIds.Where(id => !coveredMessageIds.Contains(id)).ToList();
+            if (missingRefAttachmentIds.Count > 0)
+            {
+                var legacyMessages = (await Repository.GetQueryableAsync())
+                    .Where(x => missingRefAttachmentIds.Contains(x.Id) &&
+                        (x.MessageType == MessageTypes.Image ||
+                         x.MessageType == MessageTypes.Video ||
+                         x.MessageType == MessageTypes.Sound ||
+                         x.MessageType == MessageTypes.File))
+                    .ToList();
+                if (legacyMessages.Count > 0)
+                {
+                    await Repository.LoadMessageContentsBatchAsync(legacyMessages);
+                    foreach (var legacyMsg in legacyMessages)
+                    {
+                        foreach (var bId in CollectAttachmentBlobIds(legacyMsg.GetTypedContentEntity()))
+                        {
+                            collectedBlobIds.Add(bId);
+                        }
+                    }
+                }
+            }
+
+            // 5. 向下展开嵌套的 HistoryContent 消息（受 maxDepth = 5 与 maxVisitedMessages 限制）
+            if (depth < effectiveMaxDepth && visitedMessageIds.Count < maxVisitedMessages)
             {
                 var historyMsgIds = msgRows
                     .Where(x => x.MessageType == MessageTypes.History)
@@ -317,24 +391,176 @@ public partial class MessageManager
             return;
         }
 
-        var existingBlobIds = (await BlobMessageRefRepository.GetQueryableAsync())
-            .Where(x => x.MessageId == historyRootMessageId && collectedBlobIds.Contains(x.BlobId))
-            .Select(x => x.BlobId)
-            .ToHashSet();
-
-        var newBlobIds = collectedBlobIds.Where(id => !existingBlobIds.Contains(id)).ToList();
-        if (newBlobIds.Count == 0)
-        {
-            return;
-        }
-
         await Repository.BindBlobsToMessageAsync(
             historyRootMessageId,
             targetSessionId,
-            newBlobIds,
+            collectedBlobIds.ToList(),
             BlobRefSourceTypes.History,
             CurrentUser?.Id,
             Clock.Now,
             markAsBound: false);
+    }
+
+    public virtual async Task PropagateVideoGifAsync(
+        long sourceMessageId,
+        Guid videoContentId,
+        Guid gifBlobId,
+        string gifUrl,
+        int batchSize = 100)
+    {
+        var effectiveBatchSize = Math.Clamp(batchSize, 10, 500);
+        var historyMessageRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<HistoryMessage>>();
+        var relativeGifUrl = UrlNormalizer.ToRelative(gifUrl);
+        long cursorId = 0;
+
+        while (true)
+        {
+            List<long> batchIds;
+            using (var queryUow = UnitOfWorkManager.Begin(new Volo.Abp.Uow.AbpUnitOfWorkOptions { IsTransactional = false }, requiresNew: true))
+            {
+                batchIds = (await Repository.GetQueryableAsync())
+                    .Where(m => m.Id > cursorId &&
+                        !m.IsRollbacked &&
+                        !m.RollbackTime.HasValue &&
+                        m.VideoContentList.Any(v => v.Id == videoContentId))
+                    .OrderBy(m => m.Id)
+                    .Select(m => m.Id)
+                    .Take(effectiveBatchSize)
+                    .ToList();
+                await queryUow.CompleteAsync();
+            }
+
+            if (batchIds.Count == 0)
+            {
+                break;
+            }
+
+            cursorId = batchIds[^1];
+
+            using (var uow = UnitOfWorkManager.Begin(new Volo.Abp.Uow.AbpUnitOfWorkOptions { IsTransactional = true }, requiresNew: true))
+            {
+                var messages = (await Repository.GetQueryableAsync())
+                    .Where(m => batchIds.Contains(m.Id) && !m.IsRollbacked && !m.RollbackTime.HasValue)
+                    .OrderBy(m => m.Id)
+                    .ToList();
+
+                if (messages.Count > 0)
+                {
+                    await Repository.LoadMessageContentsBatchAsync(messages);
+                }
+
+                foreach (var msg in messages)
+                {
+                    var sourceType = msg.Id == sourceMessageId && !msg.ForwardMessageId.HasValue
+                        ? BlobRefSourceTypes.Send
+                        : BlobRefSourceTypes.Forward;
+
+                    await Repository.BindBlobsToMessageAsync(
+                        msg.Id,
+                        msg.SessionId,
+                        [gifBlobId],
+                        sourceType,
+                        creatorId: null,
+                        now: Clock.Now,
+                        markAsBound: true);
+
+                    if (NeedsVideoGifSnapshotUpdate(msg, gifBlobId, relativeGifUrl))
+                    {
+                        await RecordMessageUpdatedAsync(
+                            msg,
+                            Clock.Now,
+                            "生成视频GIF缩略图",
+                            applyChanges: target => ApplyVideoGifSnapshot(target, gifBlobId, relativeGifUrl));
+                    }
+                }
+
+                // 沿 HistoryMessage 关系向上反查受影响的聊天记录根消息（最多 5 层）
+                var affectedHistoryIds = new HashSet<long>();
+                var frontier = batchIds;
+                for (int depth = 1; depth <= 5 && frontier.Count > 0; depth++)
+                {
+                    var parentHistoryIds = (await historyMessageRepo.GetQueryableAsync())
+                        .Where(hm => frontier.Contains(hm.MessageId))
+                        .SelectMany(hm => hm.HistoryContent.MessageList
+                            .Where(pm => !pm.IsRollbacked && !pm.RollbackTime.HasValue)
+                            .Select(pm => pm.Id))
+                        .Distinct()
+                        .ToList();
+
+                    var newlyFound = parentHistoryIds.Where(id => affectedHistoryIds.Add(id)).ToList();
+                    frontier = newlyFound;
+                }
+
+                if (affectedHistoryIds.Count > 0)
+                {
+                    var historyRows = (await Repository.GetQueryableAsync())
+                        .Where(m => affectedHistoryIds.Contains(m.Id) && !m.IsRollbacked && !m.RollbackTime.HasValue)
+                        .Select(m => new { m.Id, m.SessionId })
+                        .ToList();
+
+                    foreach (var hist in historyRows)
+                    {
+                        await Repository.BindBlobsToMessageAsync(
+                            hist.Id,
+                            hist.SessionId,
+                            [gifBlobId],
+                            BlobRefSourceTypes.History,
+                            creatorId: null,
+                            now: Clock.Now,
+                            markAsBound: false);
+                    }
+                }
+
+                await uow.CompleteAsync();
+            }
+
+            if (batchIds.Count < effectiveBatchSize)
+            {
+                break;
+            }
+        }
+    }
+
+    private bool NeedsVideoGifSnapshotUpdate(Message message, Guid gifBlobId, string relativeGifUrl)
+    {
+        var videoContent = message.GetTypedContentEntity<VideoContent>();
+        if (videoContent != null && (videoContent.GifBlobId != gifBlobId || !string.Equals(UrlNormalizer.ToRelative(videoContent.GifUrl), relativeGifUrl, StringComparison.Ordinal)))
+        {
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(message.ContentJson))
+        {
+            return true;
+        }
+
+        return !message.ContentJson.Contains(relativeGifUrl, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void ApplyVideoGifSnapshot(Message message, Guid gifBlobId, string relativeGifUrl)
+    {
+        var videoContent = message.GetTypedContentEntity<VideoContent>();
+        if (videoContent == null)
+        {
+            return;
+        }
+
+        videoContent.GifBlobId = gifBlobId;
+        videoContent.GifUrl = relativeGifUrl;
+        if ((videoContent.ImageWidth == null || videoContent.ImageWidth <= 0) && videoContent.Width > 0)
+            videoContent.ImageWidth = videoContent.Width;
+        if ((videoContent.ImageHeight == null || videoContent.ImageHeight <= 0) && videoContent.Height > 0)
+            videoContent.ImageHeight = videoContent.Height;
+
+        var videoDto = ObjectMapper.Map<VideoContent, VideoContentInfo>(videoContent);
+        videoDto.Url = UrlNormalizer.ToRelative(videoDto.Url);
+        videoDto.SnapshotUrl = UrlNormalizer.ToRelative(videoDto.SnapshotUrl);
+        videoDto.SnapshotThumbnailUrl = UrlNormalizer.ToRelative(videoDto.SnapshotThumbnailUrl);
+        videoDto.GifBlobId = gifBlobId;
+        videoDto.GifUrl = relativeGifUrl;
+        if (videoDto.ImageWidth <= 0 && videoDto.Width > 0) videoDto.ImageWidth = videoDto.Width;
+        if (videoDto.ImageHeight <= 0 && videoDto.Height > 0) videoDto.ImageHeight = videoDto.Height;
+
+        message.SetContentJson(JsonSerializer.Serialize(videoDto));
     }
 }

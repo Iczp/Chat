@@ -517,11 +517,8 @@ public partial class MessageManager(
         if (!message.ForwardMessageId.HasValue)
         {
             await PrepareAndValidateAttachmentAsync(senderSessionUnit, messageContent);
+            messageContent.SetOwnerId(senderSessionUnit.OwnerId);
         }
-
-
-        //TryToSetOwnerId(messageContent, senderSessionUnit.SessionUnitId);
-        messageContent.SetOwnerId(senderSessionUnit.OwnerId);
 
 
         if (messageContent.Id == Guid.Empty)
@@ -556,7 +553,9 @@ public partial class MessageManager(
             await MessageCacheManager.PrepareRoomMessageWriteAsync(sessionId);
 
         // Save
-        message = await Repository.InsertAsync(message, autoSave: true);
+        message = message.ForwardMessageId.HasValue
+            ? await Repository.InsertForwardedMessageAsync(message, messageContent, cancellationTokenProvider.Token)
+            : await Repository.InsertAsync(message, autoSave: true);
 
         await BindAttachmentsAfterInsertAsync(message, messageContent);
 
@@ -955,7 +954,9 @@ public partial class MessageManager(
         Assert.If(!currentSessionUnit.Setting.IsEnabled, $"Current session unit disabled.", nameof(currentSessionUnit.Setting.IsEnabled));
 
         Assert.If(!await Repository.CanReadAsync(sessionUnitId, sourceMessageId), "Source message is not visible.");
-        var sourceMessage = await Repository.GetAsync(sourceMessageId);
+        var sourceMessage = (await Repository.GetCacheMissMessagesAsync([sourceMessageId], cancellationTokenProvider.Token))
+            .FirstOrDefault()
+            ?? throw new Volo.Abp.Domain.Entities.EntityNotFoundException(typeof(Message), sourceMessageId);
 
         Assert.If(sourceMessage.IsRollbackMessage(), $"message already rollback：{sourceMessageId}", nameof(currentSessionUnit.Setting.IsEnabled));
 

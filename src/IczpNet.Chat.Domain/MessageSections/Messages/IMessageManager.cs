@@ -238,4 +238,9 @@ public interface IMessageManager
     /// </summary>
     Task BindHistoryAttachmentsAsync(long historyRootMessageId, Guid? targetSessionId, IEnumerable<long> selectedMessageIds, int maxDepth = 5);
 
+    /// <summary>
+    /// 幂等向原视频消息、各级转发消息及受影响的聊天记录根消息传播视频 GIF 授权与变更通知
+    /// </summary>
+    Task PropagateVideoGifAsync(long sourceMessageId, Guid videoContentId, Guid gifBlobId, string gifUrl, int batchSize = 100);
+
 }

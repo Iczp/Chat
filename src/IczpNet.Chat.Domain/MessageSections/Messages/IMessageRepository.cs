@@ -20,6 +20,18 @@ public interface IMessageRepository : IRepository<Message, long>
 
     Task<bool> CanReadAsync(System.Guid sessionUnitId, long messageId, bool includeReferences = false,
         System.Threading.CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 校验附件访问权限（消息可见、未撤回，且当同时传入 rootMessageId 与 messageId 时两者均未撤回）
+    /// </summary>
+    Task<bool> CanReadAttachmentAsync(Guid sessionUnitId, long targetMessageId, long? childMessageId = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 原子设置视频内容的 GIF 信息（仅当 GifBlobId 为空时更新成功，防止并发 Job 重复发布）
+    /// </summary>
+    Task<bool> TrySetVideoGifAsync(Guid videoContentId, Guid gifBlobId, string gifUrl,
+        CancellationToken cancellationToken = default);
     /// <summary>
     /// 增加已读次数 +1
     /// </summary>
@@ -104,6 +116,11 @@ public interface IMessageRepository : IRepository<Message, long>
     Task LoadMessageContentsBatchAsync(
         IReadOnlyCollection<Message> messages,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 插入转发消息并关联已存在的共享内容实体（不重复插入内容实体及其关联的源消息）
+    /// </summary>
+    Task<Message> InsertForwardedMessageAsync(Message message, IContentEntity existingContent, CancellationToken cancellationToken = default);
 
     //Task<int> IncrementRecorderAsync(List<long> messageIdList);
 

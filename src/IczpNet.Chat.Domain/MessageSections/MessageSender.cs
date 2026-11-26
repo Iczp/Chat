@@ -209,9 +209,7 @@ public class MessageSender(
         var messageContent = new HistoryContent(GuidGenerator.Create(), $"聊天记录({selectedMessageList.Count})", description);
         messageContent.SetHistoryMessageList(selectedMessageList.Select(x => new HistoryMessage(messageContent, x)).ToList());
 
-        var result = await MessageManager.SendAsync<HistoryContentOutput, HistoryContent>(senderSessionUnit, input, messageContent);
-        await MessageManager.BindHistoryAttachmentsAsync(result.Id, senderSessionUnit.SessionId, messageIdList);
-        return result;
+        return await MessageManager.SendAsync<HistoryContentOutput, HistoryContent>(senderSessionUnit, input, messageContent);
     }
 
     protected virtual async Task CheckRedEnvelopeAsync(RedEnvelopeContentInput redEnvelope)
