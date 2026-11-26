@@ -123,9 +123,25 @@ public interface IMessageRepository : IRepository<Message, long>
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// 插入转发消息并关联已存在的共享内容实体（不重复插入内容实体及其关联的源消息）
+    /// 转发消息并关联已存在的共享内容实体（不重复插入内容实体及其关联的源消息）
     /// </summary>
     Task<Message> InsertForwardedMessageAsync(Message message, IContentEntity existingContent, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 使用单条条件更新原子认领已过期且未绑定的 Temp 附件并标记软删除（防发送并发绑定误删）
+    /// </summary>
+    Task<List<(Guid Id, string Container, string Name, Guid? StorageObjectId)>> ClaimExpiredTempBlobsAsync(
+        DateTime now,
+        int batchSize,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 在当前工作单元事务内原子递增 Ready 状态共享物理对象的引用计数
+    /// </summary>
+    Task<bool> TryIncrementBlobObjectRefCountAsync(
+        Guid storageObjectId,
+        DateTime now,
+        CancellationToken cancellationToken = default);
 
     //Task<int> IncrementRecorderAsync(List<long> messageIdList);
 

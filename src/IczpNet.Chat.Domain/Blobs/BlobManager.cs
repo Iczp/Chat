@@ -1,6 +1,8 @@
-﻿using IczpNet.Chat.Options;
+﻿using IczpNet.Chat.MessageSections.Messages;
+using IczpNet.Chat.Options;
 using Microsoft.Extensions.Options;
 using System;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
@@ -65,33 +67,25 @@ public class BlobManager(
     {
         if (blob.StorageObjectId.HasValue)
         {
-            var sharedObj = await BlobObjectRepository.FindAsync(blob.StorageObjectId.Value);
-            if (sharedObj == null || sharedObj.Status != BlobObjectStatus.Ready)
+            var sharedInfo = (await BlobObjectRepository.GetQueryableAsync())
+                .Where(x => x.Id == blob.StorageObjectId.Value)
+                .Select(x => new { x.Id, x.Status, x.StorageScope, x.Container, x.Sha256, x.FileSize })
+                .FirstOrDefault();
+            if (sharedInfo == null || sharedInfo.Status != BlobObjectStatus.Ready)
             {
                 throw new BusinessException(ChatErrorCodes.Blobs.AccessDenied);
             }
 
-            var reuseLockKey = BuildObjectLockName(sharedObj.StorageScope, sharedObj.Container, sharedObj.Sha256, sharedObj.FileSize);
+            var reuseLockKey = BuildObjectLockName(sharedInfo.StorageScope, sharedInfo.Container, sharedInfo.Sha256, sharedInfo.FileSize);
             await using var reuseHandle = await distributedLock.TryAcquireAsync(reuseLockKey, TimeSpan.FromSeconds(15));
             if (reuseHandle == null)
             {
                 throw new UserFriendlyException("Blob storage object is busy, please retry.");
             }
 
-            var verifiedObj = await RunCommittedStepAsync(async () =>
-            {
-                var current = await BlobObjectRepository.FindAsync(blob.StorageObjectId.Value);
-                if (current == null || current.Status != BlobObjectStatus.Ready)
-                {
-                    throw new BusinessException(ChatErrorCodes.Blobs.AccessDenied);
-                }
-
-                current.RefCount++;
-                return await BlobObjectRepository.UpdateAsync(current, autoSave: true);
-            });
-
+            await IncrementRefCountInCurrentUowAsync(sharedInfo.Id);
             blob.SetStorageObject(null);
-            blob.StorageObjectId = verifiedObj.Id;
+            blob.StorageObjectId = sharedInfo.Id;
             return await Repository.InsertAsync(blob, autoSave: true);
         }
 
@@ -134,8 +128,7 @@ public class BlobManager(
 
             if (existing != null && existing.Status == BlobObjectStatus.Ready)
             {
-                existing.RefCount++;
-                readyObject = await BlobObjectRepository.UpdateAsync(existing, autoSave: true);
+                readyObject = existing;
                 return;
             }
 
@@ -168,6 +161,7 @@ public class BlobManager(
 
         if (readyObject != null)
         {
+            await IncrementRefCountInCurrentUowAsync(readyObject.Id);
             blob.SetStorageObject(null);
             blob.StorageObjectId = readyObject.Id;
             return await Repository.InsertAsync(blob, autoSave: true);
@@ -188,19 +182,43 @@ public class BlobManager(
         // Phase 2 (outside DB write transaction): upload physical bytes to versioned StorageName.
         await SaveBytesAsync(containerToWrite, storageNameToWrite, blob.Bytes);
 
-        // Phase 3 (committed after upload succeeds): mark BlobObject Ready before binding logical Blob.
+        // Phase 3 (committed after upload succeeds): mark BlobObject Ready; RefCount increments inside caller's transaction below.
         var finalizedObject = await RunCommittedStepAsync(async () =>
         {
             var obj = await BlobObjectRepository.GetAsync(pendingOrReadyId);
             obj.Status = BlobObjectStatus.Ready;
-            obj.RefCount = Math.Max(0, obj.RefCount) + 1;
+            obj.RefCount = Math.Max(0, obj.RefCount);
             obj.LastVerifiedTime = Clock.Now;
             return await BlobObjectRepository.UpdateAsync(obj, autoSave: true);
         });
 
+        await IncrementRefCountInCurrentUowAsync(finalizedObject.Id);
         blob.SetStorageObject(null);
         blob.StorageObjectId = finalizedObject.Id;
         return await Repository.InsertAsync(blob, autoSave: true);
+    }
+
+    private async Task IncrementRefCountInCurrentUowAsync(Guid storageObjectId)
+    {
+        var messageRepo = LazyServiceProvider?.LazyGetService<IMessageRepository>();
+        if (messageRepo != null)
+        {
+            var updated = await messageRepo.TryIncrementBlobObjectRefCountAsync(storageObjectId, Clock.Now);
+            if (!updated)
+            {
+                throw new BusinessException(ChatErrorCodes.Blobs.AccessDenied);
+            }
+            return;
+        }
+
+        var current = await BlobObjectRepository.FindAsync(storageObjectId);
+        if (current == null || current.Status != BlobObjectStatus.Ready)
+        {
+            throw new BusinessException(ChatErrorCodes.Blobs.AccessDenied);
+        }
+
+        current.RefCount++;
+        await BlobObjectRepository.UpdateAsync(current, autoSave: true);
     }
 
     public virtual async Task<(string Container, string StorageName)> ResolvePhysicalLocationAsync(

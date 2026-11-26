@@ -15,6 +15,7 @@ using Volo.Abp.DistributedLocking;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Guids;
 using Volo.Abp.Timing;
+using Volo.Abp.Uow;
 using Xunit;
 
 namespace IczpNet.Chat.EntityFrameworkCore;
@@ -272,6 +273,149 @@ public class BlobDeduplication_Tests : ChatEntityFrameworkCoreTestBase
             var newObj = await db.BlobObject.AsNoTracking().SingleAsync(x => x.Id == reuploaded.StorageObjectId.Value);
             Assert.Equal(BlobObjectStatus.Ready, newObj.Status);
             Assert.Equal(1L, newObj.RefCount);
+        });
+    }
+
+    [Fact]
+    public async Task Conditional_claim_bumps_ConcurrencyStamp_and_never_deletes_concurrently_bound_blob()
+    {
+        var guidGen = ServiceProvider.GetRequiredService<IGuidGenerator>();
+        var clock = ServiceProvider.GetRequiredService<IClock>();
+        var msgRepo = ServiceProvider.GetRequiredService<IczpNet.Chat.MessageSections.Messages.IMessageRepository>();
+        var blobId = guidGen.Create();
+        var sessionId = guidGen.Create();
+        var initialStamp = Guid.NewGuid().ToString("N");
+
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var db = await ServiceProvider.GetRequiredService<Volo.Abp.EntityFrameworkCore.IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            await db.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys=OFF");
+            await MessageVisibilityQuery_Tests.InsertAsync<Blob>(db, new()
+            {
+                ["Id"] = blobId,
+                ["Container"] = "chat-files",
+                ["Name"] = "2026/11/race-bind.bin",
+                ["FileName"] = "race-bind.bin",
+                ["MimeType"] = "application/octet-stream",
+                ["Suffix"] = ".bin",
+                ["Status"] = BlobStatus.Temp,
+                ["ExpireTime"] = clock.Now.AddMinutes(30),
+                ["RefCount"] = 0,
+                ["ConcurrencyStamp"] = initialStamp,
+            });
+            await db.SaveChangesAsync();
+
+            var boundCount = await msgRepo.BindBlobsToMessageAsync(
+                91001L,
+                sessionId,
+                [blobId],
+                BlobRefSourceTypes.Send,
+                now: clock.Now,
+                markAsBound: true);
+            Assert.Equal(1, boundCount);
+
+            var boundBlob = await db.Blob.AsNoTracking().SingleAsync(x => x.Id == blobId);
+            Assert.Equal(BlobStatus.Bound, boundBlob.Status);
+            Assert.Null(boundBlob.ExpireTime);
+            Assert.NotEqual(initialStamp, boundBlob.ConcurrencyStamp);
+
+            // Even with a cleanup timestamp in the far future, the bound blob must NOT be claimed for deletion.
+            var claimed = await msgRepo.ClaimExpiredTempBlobsAsync(clock.Now.AddDays(30), 100);
+            Assert.DoesNotContain(claimed, c => c.Id == blobId);
+            Assert.NotNull(await db.Blob.AsNoTracking().FirstOrDefaultAsync(x => x.Id == blobId));
+        });
+    }
+
+    [Fact]
+    public async Task Rolled_back_caller_UOW_leaves_zero_RefCount_and_cleanup_reconciles_positive_RefCount_orphans()
+    {
+        var guidGen = ServiceProvider.GetRequiredService<IGuidGenerator>();
+        var clock = ServiceProvider.GetRequiredService<IClock>();
+        var uowManager = ServiceProvider.GetRequiredService<Volo.Abp.Uow.IUnitOfWorkManager>();
+        var payload = Encoding.UTF8.GetBytes("rollback-orphan-reconcile-bytes-002");
+
+        var blobIdA = guidGen.Create();
+        var rolledBackBlobId = guidGen.Create();
+        Guid? sharedObjectId = null;
+
+        // 1. First upload commits normally (RefCount == 1)
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var (manager, _, _) = CreateServices();
+            var db = await ServiceProvider.GetRequiredService<Volo.Abp.EntityFrameworkCore.IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            await db.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys=OFF");
+
+            var blobA = await manager.CreateAsync(new Blob(blobIdA, "chat-files")
+            {
+                Name = "2026/11/commit-a.bin",
+                FileName = "commit-a.bin",
+                MimeType = "application/octet-stream",
+                Suffix = ".bin",
+                Bytes = payload,
+                Status = BlobStatus.Temp,
+                ExpireTime = clock.Now.AddHours(2),
+            });
+            sharedObjectId = blobA.StorageObjectId;
+        });
+
+        Assert.NotNull(sharedObjectId);
+
+        // 2. Second CreateAsync inside an aborted UOW must NOT leak RefCount increment (stays 1).
+        using (var abortedUow = uowManager.Begin(requiresNew: true, isTransactional: true))
+        {
+            var (manager, _, _) = CreateServices();
+            var db = await ServiceProvider.GetRequiredService<Volo.Abp.EntityFrameworkCore.IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            await db.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys=OFF");
+
+            await manager.CreateAsync(new Blob(rolledBackBlobId, "chat-files")
+            {
+                Name = "2026/11/aborted-b.bin",
+                FileName = "aborted-b.bin",
+                MimeType = "application/octet-stream",
+                Suffix = ".bin",
+                StorageObjectId = sharedObjectId,
+                Status = BlobStatus.Temp,
+                ExpireTime = clock.Now.AddHours(2),
+            });
+            // 故意不调用 CompleteAsync，让逻辑 Blob 写入与 RefCount+1 一同回滚
+        }
+
+        using (var checkUow = uowManager.Begin(requiresNew: true, isTransactional: false))
+        {
+            var db = await ServiceProvider.GetRequiredService<Volo.Abp.EntityFrameworkCore.IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            Assert.Null(await db.Blob.AsNoTracking().FirstOrDefaultAsync(x => x.Id == rolledBackBlobId));
+            var obj = await db.BlobObject.AsNoTracking().SingleAsync(x => x.Id == sharedObjectId.Value);
+            Assert.Equal(1L, obj.RefCount);
+            await checkUow.CompleteAsync();
+        }
+
+        // 3. Pre-existing legacy positive-RefCount Ready orphan (>2h old with 0 logical Blobs) must be cleaned up.
+        var orphanObjId = guidGen.Create();
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var (_, cleanup, mem) = CreateServices();
+            var db = await ServiceProvider.GetRequiredService<Volo.Abp.EntityFrameworkCore.IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            await db.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys=OFF");
+
+            await MessageVisibilityQuery_Tests.InsertAsync<BlobObject>(db, new()
+            {
+                ["Id"] = orphanObjId,
+                ["StorageScope"] = "host",
+                ["Container"] = "chat-files",
+                ["StorageName"] = "objects/aa/bb/orphan_ready_positive.bin",
+                ["Sha256"] = new string('e', 64),
+                ["FileSize"] = 456L,
+                ["Status"] = BlobObjectStatus.Ready,
+                ["RefCount"] = 3L,
+                ["CreationTime"] = clock.Now.AddHours(-3),
+                ["LastVerifiedTime"] = clock.Now.AddHours(-3),
+            });
+            await db.SaveChangesAsync();
+            mem.Store["objects/aa/bb/orphan_ready_positive.bin"] = [9, 8, 7];
+
+            await cleanup.CleanupExpiredTempBlobsAsync();
+            Assert.Null(await db.BlobObject.AsNoTracking().FirstOrDefaultAsync(x => x.Id == orphanObjId));
+            Assert.False(mem.Store.ContainsKey("objects/aa/bb/orphan_ready_positive.bin"));
         });
     }
 }

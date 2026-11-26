@@ -414,7 +414,8 @@ public class MessageRepository(IDbContextProvider<ChatDbContext> dbContextProvid
                     .SetProperty(b => b.Status, BlobStatus.Bound)
                     .SetProperty(b => b.ExpireTime, (DateTime?)null)
                     .SetProperty(b => b.LastModificationTime, time)
-                    .SetProperty(b => b.LastModifierId, creatorId),
+                    .SetProperty(b => b.LastModifierId, creatorId)
+                    .SetProperty(b => b.ConcurrencyStamp, Guid.NewGuid().ToString("N")),
                     cancellationToken);
 
             var boundCount = await db.Blob.CountAsync(
@@ -777,6 +778,72 @@ public class MessageRepository(IDbContextProvider<ChatDbContext> dbContextProvid
             }
         }
         return await InsertAsync(message, autoSave: true, cancellationToken: cancellationToken);
+    }
+
+    public virtual async Task<List<(Guid Id, string Container, string Name, Guid? StorageObjectId)>> ClaimExpiredTempBlobsAsync(
+        DateTime now,
+        int batchSize,
+        CancellationToken cancellationToken = default)
+    {
+        var db = await GetDbContextAsync();
+        var candidates = await db.Blob
+            .AsNoTracking()
+            .Where(x => !x.IsDeleted &&
+                x.Status == BlobStatus.Temp &&
+                x.ExpireTime.HasValue &&
+                x.ExpireTime.Value < now &&
+                x.RefCount <= 0)
+            .OrderBy(x => x.ExpireTime)
+            .Take(batchSize)
+            .Select(x => new { x.Id, x.Container, x.Name, x.StorageObjectId })
+            .ToListAsync(cancellationToken);
+
+        var claimed = new List<(Guid Id, string Container, string Name, Guid? StorageObjectId)>(candidates.Count);
+        foreach (var item in candidates)
+        {
+            var stamp = Guid.NewGuid().ToString("N");
+            var affected = await db.Blob
+                .Where(x => x.Id == item.Id &&
+                    !x.IsDeleted &&
+                    x.Status == BlobStatus.Temp &&
+                    x.RefCount <= 0 &&
+                    x.ExpireTime.HasValue &&
+                    x.ExpireTime.Value < now)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(b => b.Status, BlobStatus.Expired)
+                    .SetProperty(b => b.IsDeleted, true)
+                    .SetProperty(b => b.DeletionTime, now)
+                    .SetProperty(b => b.LastModificationTime, now)
+                    .SetProperty(b => b.ConcurrencyStamp, stamp),
+                    cancellationToken);
+
+            if (affected == 1)
+            {
+                claimed.Add((item.Id, item.Container, item.Name, item.StorageObjectId));
+            }
+        }
+
+        return claimed;
+    }
+
+    public virtual async Task<bool> TryIncrementBlobObjectRefCountAsync(
+        Guid storageObjectId,
+        DateTime now,
+        CancellationToken cancellationToken = default)
+    {
+        var db = await GetDbContextAsync();
+        var stamp = Guid.NewGuid().ToString("N");
+        var affected = await db.BlobObject
+            .Where(x => x.Id == storageObjectId &&
+                !x.IsDeleted &&
+                x.Status == BlobObjectStatus.Ready)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(o => o.RefCount, o => o.RefCount + 1)
+                .SetProperty(o => o.LastModificationTime, now)
+                .SetProperty(o => o.ConcurrencyStamp, stamp),
+                cancellationToken);
+
+        return affected == 1;
     }
 
     //public virtual async Task<int> IncrementRecorderAsync(List<long> messageIdList)

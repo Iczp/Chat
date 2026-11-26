@@ -1,3 +1,4 @@
+using IczpNet.Chat.MessageSections.Messages;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -31,31 +32,16 @@ public class TempBlobCleanupService(
         var touchedObjectIds = new HashSet<Guid>();
         var legacyPhysicalToDelete = new List<(string Container, string Name)>();
 
-        // Phase 1: In a committed transaction, claim & delete only expired unreferenced Temp Blobs.
-        // Physical I/O NEVER runs inside this transaction, so a rolled-back send/cleanup cannot orphan refs.
+        // Phase 1: In a committed transaction, atomically claim & soft-delete expired unreferenced Temp Blobs
+        // using conditional ExecuteUpdate so concurrent Temp->Bound transitions cannot be deleted on stale reads.
+        // Physical I/O NEVER runs inside this transaction.
         using (var uow1 = uowManager.Begin(requiresNew: true, isTransactional: true))
         {
-            var candidates = (await blobRepository.GetQueryableAsync())
-                .Where(x => x.Status == BlobStatus.Temp && x.ExpireTime.HasValue && x.ExpireTime.Value < now && x.RefCount <= 0)
-                .OrderBy(x => x.ExpireTime)
-                .Take(batchSize)
-                .Select(x => new { x.Id, x.Container, x.Name, x.StorageObjectId })
-                .ToList();
-
-            foreach (var item in candidates)
+            var messageRepository = LazyServiceProvider.LazyGetRequiredService<IMessageRepository>();
+            var claimed = await messageRepository.ClaimExpiredTempBlobsAsync(now, batchSize, cancellationToken);
+            foreach (var item in claimed)
             {
-                var entity = await blobRepository.FindAsync(item.Id, cancellationToken: cancellationToken);
-                if (entity == null ||
-                    entity.Status != BlobStatus.Temp ||
-                    entity.RefCount > 0 ||
-                    !entity.ExpireTime.HasValue ||
-                    entity.ExpireTime.Value >= now)
-                {
-                    continue;
-                }
-
-                await blobRepository.DeleteAsync(entity, autoSave: true, cancellationToken: cancellationToken);
-                expiredIds.Add((item.Id, item.Container, item.Name, item.StorageObjectId));
+                expiredIds.Add(item);
                 if (item.StorageObjectId.HasValue)
                 {
                     touchedObjectIds.Add(item.StorageObjectId.Value);
@@ -82,16 +68,22 @@ public class TempBlobCleanupService(
             }
         }
 
-        // Phase 3: Reconcile touched objects + bounded scan of Deleting, stale Pending (>2h), and Ready(RefCount<=0) orphans.
+        // Phase 3: Reconcile touched objects + bounded scan of Deleting, stale Pending (>2h),
+        // Ready(RefCount<=0), and stale Ready orphans (including positive RefCount) with zero active logical Blob rows.
         var candidateObjectIds = new HashSet<Guid>(touchedObjectIds);
         using (var scanUow = uowManager.Begin(requiresNew: true, isTransactional: false))
         {
-            var stalePendingCutoff = now.AddHours(-2);
+            var staleCutoff = now.AddHours(-2);
+            var blobQuery = await blobRepository.GetQueryableAsync();
             var orphanIds = (await blobObjectRepository.GetQueryableAsync())
                 .Where(x =>
                     x.Status == BlobObjectStatus.Deleting ||
-                    (x.Status == BlobObjectStatus.Pending && x.CreationTime < stalePendingCutoff && x.RefCount <= 0) ||
-                    (x.Status == BlobObjectStatus.Ready && x.RefCount <= 0))
+                    (x.Status == BlobObjectStatus.Pending && x.CreationTime < staleCutoff && x.RefCount <= 0) ||
+                    (x.Status == BlobObjectStatus.Ready && x.RefCount <= 0) ||
+                    (x.Status == BlobObjectStatus.Ready &&
+                     x.CreationTime < staleCutoff &&
+                     (!x.LastVerifiedTime.HasValue || x.LastVerifiedTime.Value < staleCutoff) &&
+                     !blobQuery.Any(b => b.StorageObjectId == x.Id)))
                 .OrderBy(x => x.CreationTime)
                 .Take(batchSize)
                 .Select(x => x.Id)
