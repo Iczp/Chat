@@ -85,11 +85,16 @@ public class FileController(
         var container = !string.IsNullOrWhiteSpace(location.Container) ? location.Container : blob.Container;
         var storageName = !string.IsNullOrWhiteSpace(location.StorageName) ? location.StorageName : blob.Name;
 
-        var expiry = TimeSpan.FromSeconds(Math.Max(signatureOptions.Value.DefaultExpireSeconds, 60));
-        var directUrl = await blobDirectUrlProvider.TryGetPresignedUrlAsync(blob, expiry, HttpContext.RequestAborted);
-        if (!string.IsNullOrWhiteSpace(directUrl))
+        if (blob.IsPublic || signatureOptions.Value.EnableDirectUrlForPrivateBlobs)
         {
-            return Redirect(directUrl);
+            var expiry = blob.IsPublic
+                ? TimeSpan.FromSeconds(Math.Max(signatureOptions.Value.DefaultExpireSeconds, 60))
+                : TimeSpan.FromSeconds(Math.Max(15, Math.Min(signatureOptions.Value.PrivateDirectUrlExpireSeconds, signatureOptions.Value.DefaultExpireSeconds)));
+            var directUrl = await blobDirectUrlProvider.TryGetPresignedUrlAsync(blob, expiry, HttpContext.RequestAborted);
+            if (!string.IsNullOrWhiteSpace(directUrl))
+            {
+                return Redirect(directUrl);
+            }
         }
 
         try

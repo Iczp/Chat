@@ -21,6 +21,16 @@ public class AttachmentSignatureOptions
     /// </summary>
     public int DefaultExpireSeconds { get; set; } = 900;
 
+    /// <summary>
+    /// 是否允许对私有聊天附件重定向到对象存储预签名直链（默认 false，要求每次请求均经过应用鉴权）
+    /// </summary>
+    public bool EnableDirectUrlForPrivateBlobs { get; set; } = false;
+
+    /// <summary>
+    /// 私有聊天附件直链最大有效期（秒），默认 60 秒
+    /// </summary>
+    public int PrivateDirectUrlExpireSeconds { get; set; } = 60;
+
     internal static string ResolveValidatedSigningKey(AttachmentSignatureOptions options)
     {
         var key = options?.SigningKey?.Trim();

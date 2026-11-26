@@ -168,4 +168,57 @@ public class FileControllerAuthorization_Tests
         var ok = await realCtrl.SignAsync(blobId, suId, null, rootMsgId);
         Assert.IsType<OkObjectResult>(ok);
     }
+
+    [Fact]
+    public async Task GetAsync_blocks_presigned_direct_redirect_for_private_blobs_unless_enabled()
+    {
+        var userId = Guid.NewGuid();
+        var privateBlobId = Guid.NewGuid();
+        var publicBlobId = Guid.NewGuid();
+        var privateBlob = new Blob(privateBlobId, "chat-files") { Name = "2026/priv.png", FileName = "priv.png", MimeType = "image/png", IsPublic = false };
+        var publicBlob = new Blob(publicBlobId, "chat-object-portraits") { Name = "2026/pub.png", FileName = "pub.png", MimeType = "image/png", IsPublic = true };
+
+        var clock = Substitute.For<IClock>();
+        clock.Now.Returns(DateTime.UtcNow);
+        var sigOptions = Microsoft.Extensions.Options.Options.Create(new AttachmentSignatureOptions
+        {
+            SigningKey = "Http.Test.Signing.Key.2026",
+            DefaultExpireSeconds = 900,
+            EnableDirectUrlForPrivateBlobs = false,
+            PrivateDirectUrlExpireSeconds = 45
+        });
+        var sigSvc = new BlobSignatureService(sigOptions, clock);
+        var authSvc = Substitute.For<IBlobAccessAuthorizationService>();
+        authSvc.CheckAccessAsync(privateBlobId, null, null, null, Arg.Any<IReadOnlyCollection<long>>(), false, Arg.Any<CancellationToken>())
+            .Returns(privateBlob);
+        authSvc.CheckAccessAsync(publicBlobId, null, null, null, Arg.Any<IReadOnlyCollection<long>>(), false, Arg.Any<CancellationToken>())
+            .Returns(publicBlob);
+
+        var directUrl = Substitute.For<IBlobDirectUrlProvider>();
+        directUrl.TryGetPresignedUrlAsync(Arg.Any<Blob>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
+            .Returns("https://minio.local/presigned-url");
+
+        var (baseCtrl, _, _) = CreateController(userId, [10L]);
+        var controller = new FileController(
+            authSvc,
+            sigSvc,
+            directUrl,
+            Substitute.For<IChatObjectManager>(),
+            Substitute.For<ISessionUnitManager>(),
+            sigOptions)
+        {
+            LazyServiceProvider = baseCtrl.LazyServiceProvider,
+            ControllerContext = baseCtrl.ControllerContext
+        };
+
+        // 私有附件默认不走预签名重定向，每次请求经过应用字节流
+        var privateResult = await controller.GetAsync(privateBlobId);
+        Assert.IsType<FileContentResult>(privateResult);
+        await directUrl.DidNotReceive().TryGetPresignedUrlAsync(privateBlob, Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>());
+
+        // 公开资源允许重定向
+        var publicResult = await controller.GetAsync(publicBlobId);
+        var redirect = Assert.IsType<RedirectResult>(publicResult);
+        Assert.Equal("https://minio.local/presigned-url", redirect.Url);
+    }
 }

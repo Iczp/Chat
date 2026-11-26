@@ -119,7 +119,15 @@ public partial class MessageManager
                     .WithData("BlobId", id);
             }
 
-            if (blob.UploaderChatObjectId.HasValue && blob.UploaderChatObjectId.Value != senderSessionUnit.OwnerId)
+            if (!blob.IsPublic)
+            {
+                if (!blob.UploaderChatObjectId.HasValue || blob.UploaderChatObjectId.Value != senderSessionUnit.OwnerId)
+                {
+                    throw new BusinessException(ChatErrorCodes.Blobs.AttachmentNotFoundOrForbidden)
+                        .WithData("BlobId", id);
+                }
+            }
+            else if (blob.UploaderChatObjectId.HasValue && blob.UploaderChatObjectId.Value != senderSessionUnit.OwnerId)
             {
                 throw new BusinessException(ChatErrorCodes.Blobs.AttachmentNotFoundOrForbidden)
                     .WithData("BlobId", id);
@@ -132,13 +140,14 @@ public partial class MessageManager
                     .WithData("BlobId", id);
             }
 
-            if (attachment.BlobId.HasValue &&
-                blob.Id != attachment.BlobId.Value &&
-                blob.ParentBlobId.HasValue &&
-                blob.ParentBlobId.Value != attachment.BlobId.Value)
+            if (attachment.BlobId.HasValue && blob.Id != attachment.BlobId.Value)
             {
-                throw new BusinessException(ChatErrorCodes.Blobs.AttachmentNotFoundOrForbidden)
-                    .WithData("BlobId", id);
+                if ((!blob.IsPublic && blob.Role != BlobRoles.Primary && blob.ParentBlobId != attachment.BlobId.Value) ||
+                    (blob.ParentBlobId.HasValue && blob.ParentBlobId.Value != attachment.BlobId.Value))
+                {
+                    throw new BusinessException(ChatErrorCodes.Blobs.AttachmentNotFoundOrForbidden)
+                        .WithData("BlobId", id);
+                }
             }
         }
 

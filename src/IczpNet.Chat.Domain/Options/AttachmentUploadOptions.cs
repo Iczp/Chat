@@ -81,4 +81,9 @@ public class AttachmentUploadOptions
     /// 是否启用服务端物理存储去重（关闭后新上传回退到按逻辑路径直存，旧共享对象仍兼容读取与清理）
     /// </summary>
     public bool EnablePhysicalDeduplication { get; set; } = true;
+
+    /// <summary>
+    /// 是否启用同账号多身份附件上传兑换复用（关闭后 ReuseAsync 显式拒绝）
+    /// </summary>
+    public bool EnableAttachmentReuse { get; set; } = true;
 }

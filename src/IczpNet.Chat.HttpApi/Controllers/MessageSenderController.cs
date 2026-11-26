@@ -26,6 +26,8 @@ using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Commands;
 using IczpNet.Chat.Hosting;
 using Microsoft.AspNetCore.Authorization;
+using Volo.Abp;
+using Volo.Abp.Authorization;
 using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.Uow;
 namespace IczpNet.Chat.Controllers;
@@ -68,6 +70,62 @@ public class MessageSenderController(
         return directoryName;
     }
 
+    protected virtual async Task<SessionUnitCacheItem> GetAndCheckSendSessionUnitAsync(Guid sessionUnitId)
+    {
+        if (!CurrentUser.Id.HasValue)
+        {
+            throw new AbpAuthorizationException("Authentication required.");
+        }
+
+        var unit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
+        var chatObjectManager = LazyServiceProvider.LazyGetRequiredService<IChatObjectManager>();
+        var ownerIds = await chatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+        if (!ownerIds.Contains(unit.OwnerId))
+        {
+            throw new AbpAuthorizationException("SessionUnit does not belong to current user.");
+        }
+
+        if (!unit.IsEnabled || !unit.IsInputEnabled || (unit.MuteExpireTime.HasValue && unit.MuteExpireTime.Value > Clock.Now))
+        {
+            throw new BusinessException(ChatErrorCodes.Blobs.AccessDenied)
+                .WithData("Reason", "Target session unit does not allow sending attachments or is muted.");
+        }
+
+        return unit;
+    }
+
+    protected virtual Task<Blob> SavePrivateChatTempBlobAsync(
+        Guid blobId,
+        byte[] bytes,
+        string fileName,
+        string contentType,
+        string suffix,
+        string blobName,
+        SessionUnitCacheItem unit,
+        BlobRoles role,
+        Guid? parentBlobId = null)
+    {
+        var uploadOptions = LazyServiceProvider.LazyGetRequiredService<IOptions<AttachmentUploadOptions>>().Value;
+        return BlobManager.CreateAsync(new Blob(blobId, ChatFilesContainer)
+        {
+            IsPublic = false,
+            FileSize = bytes.Length,
+            MimeType = contentType,
+            FileName = Path.GetFileName(fileName),
+            Name = blobName,
+            Suffix = suffix,
+            Bytes = bytes,
+            UploaderChatObjectId = unit.OwnerId,
+            UploadSessionUnitId = unit.Id,
+            UploadSessionId = unit.SessionId,
+            ParentBlobId = parentBlobId,
+            Role = role,
+            Status = BlobStatus.Temp,
+            ExpireTime = Clock.Now.AddHours(uploadOptions.TempBlobExpireHours),
+            RefCount = 0,
+        });
+    }
+
     /// <summary>
     /// 上传并发送(file/sound/image/video)
     /// </summary>
@@ -77,21 +135,36 @@ public class MessageSenderController(
     /// <param name="sessionUnitId"></param>
     /// <returns></returns>
     [HttpPost]
+    [Authorize]
     [Route("send-upload-file/{sessionUnitId}")]
     [UnitOfWork(false)]
     public async Task<IActionResult> SendUploadFileAsync(Guid sessionUnitId, IFormFile file, long quoteMessageId, List<Guid> remindList)
     {
-        var sessionUnit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
+        if (file == null)
+        {
+            throw new BusinessException(ChatErrorCodes.Blobs.FileEmpty);
+        }
+
+        var sessionUnit = await GetAndCheckSendSessionUnitAsync(sessionUnitId);
 
         var blobId = GuidGenerator.Create();
 
-        //var directoryName = $"{DateDirectoryName}/files/{sessionUnit.SessionId}/{sessionUnitId}";
-
-        //var directoryName = await BlobResolver.GetDirectoryNameAsync(ChatFilesContainer, "files", blobId, sessionUnit.SessionId.Value, sessionUnitId);
-
         var directoryName = await GetDirectoryNameAsync(blobId, "files", sessionUnit, file);
 
-        var blob = await UploadFileAsync(blobId, file, ChatFilesContainer, directoryName, false);
+        var bytes = await file.GetAllBytesAsync();
+        var suffix = Path.GetExtension(file.FileName);
+        var storedFileName = await GenerateFileNameAsync(GetExtension(file.ContentType, file.FileName));
+        var blobName = Path.Combine(directoryName, storedFileName).Replace(@"\", "/");
+
+        var blob = await SavePrivateChatTempBlobAsync(
+            blobId,
+            bytes,
+            file.FileName,
+            file.ContentType,
+            suffix,
+            blobName,
+            sessionUnit,
+            BlobRoles.Primary);
 
         var sendResult = await MessageSenderAppService.SendFileAsync(sessionUnitId, new MessageInput<FileContentInfo>()
         {
@@ -103,7 +176,6 @@ public class MessageSenderController(
                 Size = blob.FileSize,
                 FileName = file.FileName,
                 Suffix = blob.Suffix,
-                //Url = $"/file?id={blob.Id}",
                 Url = await GetFileUrlAsync(blob.Id, file.ContentType),
                 BlobId = blob.Id,
             }
@@ -171,22 +243,34 @@ public class MessageSenderController(
     /// <param name="isOriginal">是否使用原始图片</param>
     /// <returns></returns>
     [HttpPost]
+    [Authorize]
     [Route("send-upload-image/{sessionUnitId}")]
     [UnitOfWork(false)]
     public async Task<IActionResult> SendUploadImageAsync(Guid sessionUnitId, IFormFile file, long quoteMessageId, List<Guid> remindList, bool isOriginal)
     {
+        if (file == null)
+        {
+            throw new BusinessException(ChatErrorCodes.Blobs.FileEmpty);
+        }
+
+        var sessionUnit = await GetAndCheckSendSessionUnitAsync(sessionUnitId);
+
         var bytes = await file.GetAllBytesAsync();
 
         var suffix = GetExtension(file.ContentType, file.FileName);
 
-        // SaveImageAsync
-        async Task<Blob> SaveImageAsync(Guid blobId, byte[] bytes, string name, int maxSize, bool isResize)
+        var filename = $"{Clock.Now:yyyyMMddhhmmss}_{ShortIdGenerator.Create()}".ToLower();
+        var primaryBlobId = GuidGenerator.Create();
+        var thumbnailBlobId = GuidGenerator.Create();
+        var directoryName = await GetDirectoryNameAsync(primaryBlobId, "images", sessionUnit, file);
+
+        async Task<Blob> SaveImageAsync(Guid blobId, byte[] srcBytes, string name, int maxSize, bool isResize, BlobRoles role, Guid? parentBlobId = null)
         {
-            byte[] resizedBytes = bytes;
+            byte[] resizedBytes = srcBytes;
 
             if (isResize)
             {
-                var resizeder = await ImageResizer.ResizeAsync(bytes, new ImageResizeArgs()
+                var resizeder = await ImageResizer.ResizeAsync(srcBytes, new ImageResizeArgs()
                 {
                     Width = (uint)maxSize,
                     Height = (uint)maxSize,
@@ -197,56 +281,58 @@ public class MessageSenderController(
                 resizedBytes = resizeder.Result;
             }
 
-            var entity = await BlobManager.CreateAsync(new Blob(blobId, ChatFilesContainer)
-            {
-                IsPublic = true,
-                FileSize = resizedBytes.Length,
-                MimeType = file.ContentType,
-                FileName = file.FileName,
-                Name = name,
-                Suffix = suffix,
-                Bytes = resizedBytes
-            });
-            return entity;
+            return await SavePrivateChatTempBlobAsync(
+                blobId,
+                resizedBytes,
+                file.FileName,
+                file.ContentType,
+                suffix,
+                name,
+                sessionUnit,
+                role,
+                parentBlobId);
         }
-
-        var sessionUnit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
-
-        var filename = $"{Clock.Now:yyyyMMddhhmmss}_{ShortIdGenerator.Create()}".ToLower();
-        //thumbnail
-        var thumbnailBlobId = GuidGenerator.Create();
-
-        var directoryName = await GetDirectoryNameAsync(thumbnailBlobId, "images", sessionUnit, file);
 
         var thumbnailImageSize = MessageSetting.ImageSetting.ThumbnailSize;
 
-        await SaveImageAsync(thumbnailBlobId, bytes, $"{directoryName}/{filename}_{thumbnailImageSize}{suffix}", thumbnailImageSize, true);
+        await SaveImageAsync(
+            thumbnailBlobId,
+            bytes,
+            $"{directoryName}/{filename}_{thumbnailImageSize}{suffix}",
+            thumbnailImageSize,
+            true,
+            BlobRoles.Thumbnail,
+            primaryBlobId);
 
         var imageContent = new ImageContentInfo()
         {
-            BlobId = thumbnailBlobId,
+            BlobId = primaryBlobId,
+            ThumbnailBlobId = thumbnailBlobId,
             ThumbnailUrl = await GetFileUrlAsync(thumbnailBlobId, file.ContentType),
             ContentType = file.ContentType,
             Suffix = suffix
         };
-
-        //using var image1 = System.Drawing.Image.FromStream(file.OpenReadStream());
 
         var bigImageSize = MessageSetting.ImageSetting.BigSize;
 
         if (isOriginal)
         {
             using Image image = new(bytes);
-            //original
-            var originalBlobId = GuidGenerator.Create();
-
             var maxSize = checked((int)Math.Max(image.Width, image.Height));
 
-            await SaveImageAsync(originalBlobId, bytes, $"{directoryName}/{filename}_original{suffix}", maxSize, false);
+            await SaveImageAsync(
+                primaryBlobId,
+                bytes,
+                $"{directoryName}/{filename}_original{suffix}",
+                maxSize,
+                false,
+                BlobRoles.Primary);
 
             (int width, int height) = GetImageActualDimensions(image);
 
-            imageContent.BlobId = originalBlobId;
+            imageContent.BlobId = primaryBlobId;
+            imageContent.OriginalBlobId = primaryBlobId;
+            imageContent.OriginalUrl = await GetFileUrlAsync(primaryBlobId, file.ContentType);
 
             imageContent.Width = width;
 
@@ -254,16 +340,19 @@ public class MessageSenderController(
 
             imageContent.Size = bytes.Length;
 
-            imageContent.Url = await GetFileUrlAsync(originalBlobId, file.ContentType);
+            imageContent.Url = imageContent.OriginalUrl;
 
             imageContent.Profile = GetImageProfileJson(image);
         }
         else
         {
-            //bigImage
-            var bigImgBlobId = GuidGenerator.Create();
-
-            var blob = await SaveImageAsync(bigImgBlobId, bytes, $"{directoryName}/{filename}_{bigImageSize}{suffix}", bigImageSize, true);
+            var blob = await SaveImageAsync(
+                primaryBlobId,
+                bytes,
+                $"{directoryName}/{filename}_{bigImageSize}{suffix}",
+                bigImageSize,
+                true,
+                BlobRoles.Primary);
 
             using Image img = new(blob.Bytes);
 
@@ -271,7 +360,7 @@ public class MessageSenderController(
 
             double p = (double)width / height;
 
-            imageContent.BlobId = bigImgBlobId;
+            imageContent.BlobId = primaryBlobId;
 
             imageContent.Width = p > 1 ? bigImageSize : Convert.ToInt32(bigImageSize * p);
 
@@ -279,7 +368,7 @@ public class MessageSenderController(
 
             imageContent.Size = blob.Bytes.Length;
 
-            imageContent.Url = await GetFileUrlAsync(bigImgBlobId, file.ContentType);
+            imageContent.Url = await GetFileUrlAsync(primaryBlobId, file.ContentType);
 
             imageContent.Profile = GetImageProfileJson(img);
         }
@@ -295,17 +384,36 @@ public class MessageSenderController(
     }
 
     [HttpPost]
+    [Authorize]
     [Route("send-upload-sound/{sessionUnitId}")]
     [UnitOfWork(false)]
     public async Task<IActionResult> SendUploadSoundAsync(Guid sessionUnitId, IFormFile file, long quoteMessageId, List<Guid> remindList, [FromForm] int? duration)
     {
-        var sessionUnit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
+        if (file == null)
+        {
+            throw new BusinessException(ChatErrorCodes.Blobs.FileEmpty);
+        }
+
+        var sessionUnit = await GetAndCheckSendSessionUnitAsync(sessionUnitId);
 
         var blobId = GuidGenerator.Create();
 
         var directoryName = await GetDirectoryNameAsync(blobId, "audios", sessionUnit, file);
 
-        var soundBlob = await UploadFileAsync(blobId, file, ChatFilesContainer, directoryName, false);
+        var bytes = await file.GetAllBytesAsync();
+        var suffix = Path.GetExtension(file.FileName);
+        var storedFileName = await GenerateFileNameAsync(GetExtension(file.ContentType, file.FileName));
+        var blobName = Path.Combine(directoryName, storedFileName).Replace(@"\", "/");
+
+        var soundBlob = await SavePrivateChatTempBlobAsync(
+            blobId,
+            bytes,
+            file.FileName,
+            file.ContentType,
+            suffix,
+            blobName,
+            sessionUnit,
+            BlobRoles.Primary);
 
         var content = new SoundContentInfo()
         {
@@ -320,7 +428,7 @@ public class MessageSenderController(
 
         if (!duration.HasValue)
         {
-            var audioInfo = await MediaResolver.GetAudioInfoAsync(soundBlob.Bytes, soundBlob.FileName);
+            var audioInfo = await MediaResolver.GetAudioInfoAsync(bytes, soundBlob.FileName);
 
             if (audioInfo != null)
             {
@@ -338,17 +446,36 @@ public class MessageSenderController(
     }
 
     [HttpPost]
+    [Authorize]
     [Route("send-upload-video/{sessionUnitId}")]
     [UnitOfWork(false)]
     public async Task<IActionResult> SendUploadVideoAsync(Guid sessionUnitId, IFormFile file, long quoteMessageId, List<Guid> remindList, bool isOriginal)
     {
-        var sessionUnit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
+        if (file == null)
+        {
+            throw new BusinessException(ChatErrorCodes.Blobs.FileEmpty);
+        }
+
+        var sessionUnit = await GetAndCheckSendSessionUnitAsync(sessionUnitId);
 
         var blobId = GuidGenerator.Create();
 
         var directoryName = await GetDirectoryNameAsync(blobId, "videos", sessionUnit, file);
 
-        var videoBlob = await UploadFileAsync(blobId, file, ChatFilesContainer, directoryName, false);
+        var bytes = await file.GetAllBytesAsync();
+        var suffix = Path.GetExtension(file.FileName);
+        var storedFileName = await GenerateFileNameAsync(GetExtension(file.ContentType, file.FileName));
+        var blobName = Path.Combine(directoryName, storedFileName).Replace(@"\", "/");
+
+        var videoBlob = await SavePrivateChatTempBlobAsync(
+            blobId,
+            bytes,
+            file.FileName,
+            file.ContentType,
+            suffix,
+            blobName,
+            sessionUnit,
+            BlobRoles.Primary);
 
         var content = new VideoContentInfo()
         {
@@ -357,13 +484,12 @@ public class MessageSenderController(
             Size = file.Length,
             FileName = Path.GetFileName(file.FileName),
             Suffix = Path.GetExtension(file.FileName),
-            //Url = $"/file?id={videoBlob.Id}"
             Url = await GetFileUrlAsync(videoBlob.Id, file.ContentType)
         };
 
         if (MessageSetting.VideoSetting.IsGenerateSnapshot)
         {
-            await GenerateSnapshotAsync(videoBlob, content);
+            await GenerateSnapshotAsync(videoBlob, content, sessionUnit);
         }
 
         var sendResult = await MessageSenderAppService.SendVideoAsync(sessionUnitId, new MessageInput<VideoContentInfo>()
@@ -380,8 +506,9 @@ public class MessageSenderController(
     /// </summary>
     /// <param name="videoBlob"></param>
     /// <param name="content"></param>
+    /// <param name="sessionUnit"></param>
     /// <returns></returns>
-    protected virtual async Task GenerateSnapshotAsync(Blob videoBlob, VideoContentInfo content)
+    protected virtual async Task GenerateSnapshotAsync(Blob videoBlob, VideoContentInfo content, SessionUnitCacheItem sessionUnit = null)
     {
         //var videoFileName = Path.GetFileNameWithoutExtension(videoBlob.Name);
         var videoFileName = videoBlob.Name;
@@ -407,7 +534,13 @@ public class MessageSenderController(
             if (!string.IsNullOrWhiteSpace(mediaInfo.ImageSnapshotPath))
             {
                 var suffix = Path.GetExtension(mediaInfo.ImageSnapshotPath);
-                var snapBlob = await UploadToBlobStoreAsync(mediaInfo.ImageSnapshotPath, $"{videoFileName}.snapshot{suffix}");
+                var snapBlob = await UploadToBlobStoreAsync(
+                    mediaInfo.ImageSnapshotPath,
+                    $"{videoFileName}.snapshot{suffix}",
+                    sessionUnit,
+                    BlobRoles.Snapshot,
+                    videoBlob.Id);
+                content.SnapshotBlobId = snapBlob.Id;
                 content.SnapshotUrl = await GetFileUrlAsync(snapBlob.Id, videoBlob.MimeType);
 
                 using Image snapshotImg = new(snapBlob.Bytes);
@@ -434,23 +567,44 @@ public class MessageSenderController(
                 var thumbnailResizedBytes = resizeder.Result;
 
                 var snapshotThumbnailBlobId = GuidGenerator.Create();
-                var snapshotThumbnailBlob = await BlobManager.CreateAsync(new Blob(snapshotThumbnailBlobId, ChatFilesContainer)
-                {
-                    IsPublic = true,
-                    FileSize = thumbnailResizedBytes.Length,
-                    MimeType = MimeTypes.GetByExtension(suffix),
-                    FileName = $"{videoBlob.FileName}",
-                    Name = $"{videoFileName}.thumbnail{suffix}",
-                    Suffix = suffix,
-                    Bytes = thumbnailResizedBytes
-                });
+                var snapshotThumbnailBlob = sessionUnit != null
+                    ? await SavePrivateChatTempBlobAsync(
+                        snapshotThumbnailBlobId,
+                        thumbnailResizedBytes,
+                        $"{videoBlob.FileName}",
+                        MimeTypes.GetByExtension(suffix),
+                        suffix,
+                        $"{videoFileName}.thumbnail{suffix}",
+                        sessionUnit,
+                        BlobRoles.SnapshotThumbnail,
+                        videoBlob.Id)
+                    : await BlobManager.CreateAsync(new Blob(snapshotThumbnailBlobId, ChatFilesContainer)
+                    {
+                        IsPublic = false,
+                        FileSize = thumbnailResizedBytes.Length,
+                        MimeType = MimeTypes.GetByExtension(suffix),
+                        FileName = $"{videoBlob.FileName}",
+                        Name = $"{videoFileName}.thumbnail{suffix}",
+                        Suffix = suffix,
+                        Bytes = thumbnailResizedBytes,
+                        ParentBlobId = videoBlob.Id,
+                        Role = BlobRoles.SnapshotThumbnail,
+                        Status = BlobStatus.Temp,
+                    });
 
+                content.SnapshotThumbnailBlobId = snapshotThumbnailBlob.Id;
                 content.SnapshotThumbnailUrl = await GetFileUrlAsync(snapshotThumbnailBlob.Id, snapshotThumbnailBlob.MimeType);
             }
 
             if (!string.IsNullOrWhiteSpace(mediaInfo.GifSnapshotPath))
             {
-                var gifBlob = await UploadToBlobStoreAsync(mediaInfo.GifSnapshotPath, $"{videoFileName}.snapshot.gif");
+                var gifBlob = await UploadToBlobStoreAsync(
+                    mediaInfo.GifSnapshotPath,
+                    $"{videoFileName}.snapshot.gif",
+                    sessionUnit,
+                    BlobRoles.Gif,
+                    videoBlob.Id);
+                content.GifBlobId = gifBlob.Id;
                 content.GifUrl = await GetFileUrlAsync(gifBlob.Id, gifBlob.MimeType);
             }
         }
@@ -486,8 +640,16 @@ public class MessageSenderController(
     /// </summary>
     /// <param name="srcFilePath">原文件地址</param>
     /// <param name="fileName"></param>
+    /// <param name="sessionUnit"></param>
+    /// <param name="role"></param>
+    /// <param name="parentBlobId"></param>
     /// <returns></returns>
-    protected virtual async Task<Blob> UploadToBlobStoreAsync(string srcFilePath, string fileName)
+    protected virtual async Task<Blob> UploadToBlobStoreAsync(
+        string srcFilePath,
+        string fileName,
+        SessionUnitCacheItem sessionUnit = null,
+        BlobRoles role = BlobRoles.Primary,
+        Guid? parentBlobId = null)
     {
         using var file = new FileStream(srcFilePath, FileMode.Open, FileAccess.Read);
 
@@ -499,17 +661,32 @@ public class MessageSenderController(
 
         var suffix = Path.GetExtension(srcFilePath);
 
-        //var fileName = Path.GetFileName(srcFilePath);
+        if (sessionUnit != null)
+        {
+            return await SavePrivateChatTempBlobAsync(
+                blobId,
+                bytes,
+                Path.GetFileName(fileName),
+                mimeType,
+                suffix,
+                fileName,
+                sessionUnit,
+                role,
+                parentBlobId);
+        }
 
         var entity = await BlobManager.CreateAsync(new Blob(blobId, ChatFilesContainer)
         {
-            IsPublic = true,
+            IsPublic = false,
             FileSize = bytes.Length,
-            MimeType = MimeTypes.GetByExtension(srcFilePath),
+            MimeType = mimeType,
             FileName = Path.GetFileName(fileName),
             Name = fileName,
             Suffix = suffix,
-            Bytes = bytes
+            Bytes = bytes,
+            ParentBlobId = parentBlobId,
+            Role = role,
+            Status = BlobStatus.Temp,
         });
 
         return entity;

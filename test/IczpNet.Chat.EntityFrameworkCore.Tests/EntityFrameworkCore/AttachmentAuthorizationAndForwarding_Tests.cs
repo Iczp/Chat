@@ -829,4 +829,175 @@ public class AttachmentAuthorizationAndForwarding_Tests : ChatTestBase<Attachmen
             await recoverUow.CompleteAsync();
         }
     }
+
+    [Fact]
+    public async Task PrepareAndValidateAttachmentAsync_rejects_unowned_or_mismatched_parent_private_blobs()
+    {
+        var guidGen = ServiceProvider.GetRequiredService<IGuidGenerator>();
+        var messageManager = ServiceProvider.GetRequiredService<IMessageManager>();
+        var method = typeof(MessageManager).GetMethod(
+            "PrepareAndValidateAttachmentAsync",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+
+        var sessionId = guidGen.Create();
+        var unitId = guidGen.Create();
+        var unownedBlobId = guidGen.Create();
+        var validPrimaryId = guidGen.Create();
+        var foreignThumbId = guidGen.Create();
+
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var db = await ServiceProvider.GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            await db.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys=OFF");
+
+            await MessageVisibilityQuery_Tests.InsertAsync<Blob>(db, new()
+            {
+                ["Id"] = unownedBlobId,
+                ["Container"] = "chat-files",
+                ["Name"] = "2026/11/unowned.png",
+                ["FileName"] = "unowned.png",
+                ["MimeType"] = "image/png",
+                ["Suffix"] = ".png",
+                ["IsPublic"] = false,
+                ["Role"] = BlobRoles.Primary,
+                ["Status"] = BlobStatus.Temp,
+                ["ExpireTime"] = DateTime.UtcNow.AddHours(2),
+            });
+            await MessageVisibilityQuery_Tests.InsertAsync<Blob>(db, new()
+            {
+                ["Id"] = validPrimaryId,
+                ["Container"] = "chat-files",
+                ["Name"] = "2026/11/valid-primary.png",
+                ["FileName"] = "valid-primary.png",
+                ["MimeType"] = "image/png",
+                ["Suffix"] = ".png",
+                ["IsPublic"] = false,
+                ["UploaderChatObjectId"] = 101L,
+                ["Role"] = BlobRoles.Primary,
+                ["Status"] = BlobStatus.Temp,
+                ["ExpireTime"] = DateTime.UtcNow.AddHours(2),
+            });
+            await MessageVisibilityQuery_Tests.InsertAsync<Blob>(db, new()
+            {
+                ["Id"] = foreignThumbId,
+                ["Container"] = "chat-files",
+                ["Name"] = "2026/11/foreign-thumb.png",
+                ["FileName"] = "foreign-thumb.png",
+                ["MimeType"] = "image/png",
+                ["Suffix"] = ".png",
+                ["IsPublic"] = false,
+                ["UploaderChatObjectId"] = 101L,
+                ["ParentBlobId"] = guidGen.Create(),
+                ["Role"] = BlobRoles.Thumbnail,
+                ["Status"] = BlobStatus.Temp,
+                ["ExpireTime"] = DateTime.UtcNow.AddHours(2),
+            });
+            await db.SaveChangesAsync();
+
+            var senderUnit = new SessionUnitCacheItem { Id = unitId, OwnerId = 101L, SessionId = sessionId };
+
+            // 缺少 UploaderChatObjectId 的私有附件凭证拒绝用于发送
+            await Assert.ThrowsAsync<BusinessException>(() =>
+                (Task)method.Invoke(messageManager, [senderUnit, new FileContent { BlobId = unownedBlobId }])!);
+
+            // ParentBlobId 不匹配的私有衍生图拒绝用于发送
+            await Assert.ThrowsAsync<BusinessException>(() =>
+                (Task)method.Invoke(messageManager, [senderUnit, new ImageContent { BlobId = validPrimaryId, ThumbnailBlobId = foreignThumbId }])!);
+        });
+    }
+
+    [Fact]
+    public async Task LegacyPublicBlobAuditService_backfills_refs_and_privatizes_only_confirmed_chat_blobs()
+    {
+        var guidGen = ServiceProvider.GetRequiredService<IGuidGenerator>();
+        var auditService = ServiceProvider.GetRequiredService<ILegacyPublicBlobAuditService>();
+
+        var sessionA = guidGen.Create();
+        var unitA = guidGen.Create();
+        var chatLegacyBlobId = guidGen.Create();
+        var portraitBlobId = guidGen.Create();
+        var orphanPublicChatBlobId = guidGen.Create();
+
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var db = await ServiceProvider.GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            await db.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys=OFF");
+
+            await MessageVisibilityQuery_Tests.InsertAsync<Session>(db, new() { ["Id"] = sessionA });
+            await MessageVisibilityQuery_Tests.InsertAsync<SessionUnit>(db, new() { ["Id"] = unitA, ["SessionId"] = sessionA, ["OwnerId"] = 101L });
+
+            await MessageVisibilityQuery_Tests.InsertAsync<Blob>(db, new()
+            {
+                ["Id"] = chatLegacyBlobId,
+                ["Container"] = "chat-files",
+                ["Name"] = "2024/05/legacy-chat.pdf",
+                ["FileName"] = "legacy-chat.pdf",
+                ["MimeType"] = "application/pdf",
+                ["Suffix"] = ".pdf",
+                ["IsPublic"] = true,
+                ["Status"] = BlobStatus.Bound,
+                ["RefCount"] = 1,
+            });
+            await MessageVisibilityQuery_Tests.InsertAsync<Blob>(db, new()
+            {
+                ["Id"] = portraitBlobId,
+                ["Container"] = "chat-object-portraits",
+                ["Name"] = "101/avatar.png",
+                ["FileName"] = "avatar.png",
+                ["MimeType"] = "image/png",
+                ["Suffix"] = ".png",
+                ["IsPublic"] = true,
+                ["Status"] = BlobStatus.Bound,
+                ["RefCount"] = 1,
+            });
+            await MessageVisibilityQuery_Tests.InsertAsync<Blob>(db, new()
+            {
+                ["Id"] = orphanPublicChatBlobId,
+                ["Container"] = "chat-files",
+                ["Name"] = "2024/05/unclassified.png",
+                ["FileName"] = "unclassified.png",
+                ["MimeType"] = "image/png",
+                ["Suffix"] = ".png",
+                ["IsPublic"] = true,
+                ["Status"] = BlobStatus.Bound,
+                ["RefCount"] = 0,
+            });
+
+            await MessageVisibilityQuery_Tests.InsertAsync<Message>(db, new()
+            {
+                ["Id"] = 7001L,
+                ["SessionId"] = sessionA,
+                ["SessionSeq"] = 1L,
+                ["SenderId"] = 101L,
+                ["SenderSessionUnitId"] = unitA,
+                ["MessageType"] = MessageTypes.File,
+                ["ExtraProperties"] = new ExtraPropertyDictionary(),
+            });
+            var fileContent = new FileContent { BlobId = chatLegacyBlobId, Url = $"/api/chat/file/{chatLegacyBlobId}", FileName = "legacy-chat.pdf" };
+            SetProp(fileContent, nameof(FileContent.Id), guidGen.Create());
+            db.Set<FileContent>().Add(fileContent);
+            (await db.Message.SingleAsync(x => x.Id == 7001L)).FileContentList.Add(fileContent);
+            await db.SaveChangesAsync();
+        });
+
+        var dryRunResult = await auditService.AuditAndMigrateBatchAsync(dryRun: true);
+        Assert.Equal(3, dryRunResult.CandidateCount);
+        Assert.Equal(1, dryRunResult.MissingRefCount);
+        Assert.Equal(2, dryRunResult.UnclassifiedCount);
+        Assert.Equal(0, dryRunResult.BackfilledRefCount);
+        Assert.Equal(0, dryRunResult.PrivatizedCount);
+
+        var applyResult = await auditService.AuditAndMigrateBatchAsync(dryRun: false);
+        Assert.Equal(1, applyResult.BackfilledRefCount);
+        Assert.Equal(1, applyResult.PrivatizedCount);
+
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var db = await ServiceProvider.GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            Assert.False((await db.Blob.AsNoTracking().SingleAsync(x => x.Id == chatLegacyBlobId)).IsPublic);
+            Assert.True((await db.Blob.AsNoTracking().SingleAsync(x => x.Id == portraitBlobId)).IsPublic);
+            Assert.True((await db.Blob.AsNoTracking().SingleAsync(x => x.Id == orphanPublicChatBlobId)).IsPublic);
+            Assert.True(await db.BlobMessageRef.AsNoTracking().AnyAsync(x => x.BlobId == chatLegacyBlobId && x.MessageId == 7001L));
+        });
+    }
 }

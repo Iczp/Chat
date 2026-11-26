@@ -779,6 +779,12 @@ public class AttachmentController(
             throw new AbpAuthorizationException("Authentication required.");
         }
 
+        if (!UploadSetting.EnableAttachmentReuse)
+        {
+            throw new BusinessException(ChatErrorCodes.Blobs.AccessDenied)
+                .WithData("Reason", "Attachment reuse is disabled.");
+        }
+
         if (input == null || string.IsNullOrWhiteSpace(input.ReuseToken))
         {
             throw new AbpAuthorizationException("Attachment reuse token required.");
@@ -802,6 +808,11 @@ public class AttachmentController(
         var normalizedClientUploadId = string.IsNullOrWhiteSpace(input.ClientUploadId)
             ? null
             : input.ClientUploadId.Trim();
+        if (normalizedClientUploadId != null && normalizedClientUploadId.Length > 64)
+        {
+            throw new BusinessException(ChatErrorCodes.Blobs.AccessDenied)
+                .WithData("Reason", "ClientUploadId exceeds maximum length.");
+        }
 
         Blob sourcePrimary;
         List<Blob> childBlobs;
@@ -824,6 +835,12 @@ public class AttachmentController(
                 sourcePrimary.ExpireTime.Value < Clock.Now)
             {
                 throw new BusinessException(ChatErrorCodes.Blobs.AccessDenied);
+            }
+
+            var ownerIds = await chatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+            if (!sourcePrimary.UploaderChatObjectId.HasValue || !ownerIds.Contains(sourcePrimary.UploaderChatObjectId.Value))
+            {
+                throw new AbpAuthorizationException("Source attachment does not belong to current account.");
             }
 
             effectiveFileName = string.IsNullOrWhiteSpace(input.FileName)
@@ -888,12 +905,6 @@ public class AttachmentController(
 
                     expiredRecordId = existingRecord.Id;
                 }
-            }
-
-            var ownerIds = await chatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
-            if (sourcePrimary.UploaderChatObjectId.HasValue && !ownerIds.Contains(sourcePrimary.UploaderChatObjectId.Value))
-            {
-                throw new AbpAuthorizationException("Source attachment does not belong to current account.");
             }
 
             childBlobs = (await blobRepository.GetQueryableAsync())
@@ -1139,8 +1150,9 @@ public class AttachmentController(
 
         var storedFileName = await GenerateFileNameAsync(sourceBlob.Suffix);
         var blobName = Path.Combine(directoryName, storedFileName).Replace(@"\", "/");
+        var usePhysicalDedup = UploadSetting.EnablePhysicalDeduplication;
         byte[] fallbackBytes = null;
-        if (!sourceBlob.StorageObjectId.HasValue)
+        if (!usePhysicalDedup || !sourceBlob.StorageObjectId.HasValue)
         {
             fallbackBytes = await BlobManager.GetBytesAsync(sourceBlob.Id);
         }
@@ -1153,7 +1165,7 @@ public class AttachmentController(
             FileName = Path.GetFileName(fileName),
             Name = blobName,
             Suffix = sourceBlob.Suffix,
-            StorageObjectId = sourceBlob.StorageObjectId,
+            StorageObjectId = usePhysicalDedup ? sourceBlob.StorageObjectId : null,
             Bytes = fallbackBytes,
             UploaderChatObjectId = targetUnit.OwnerId,
             UploadSessionUnitId = targetUnit.Id,

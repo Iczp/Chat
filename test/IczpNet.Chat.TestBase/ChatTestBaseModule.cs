@@ -21,6 +21,10 @@ public class ChatTestBaseModule : AbpModule
     {
         context.Services.AddAlwaysAllowAuthorization();
         context.Services.AddHttpContextAccessor();
+        Configure<IczpNet.Chat.Options.AttachmentSignatureOptions>(opt =>
+        {
+            opt.AllowInsecureDefaultSigningKey = true;
+        });
     }
 
     public override void OnApplicationInitialization(ApplicationInitializationContext context)

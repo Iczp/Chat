@@ -130,6 +130,9 @@ public class ChatDomainModule : AbpModule
                 await context.AddBackgroundWorkerAsync<IczpNet.Chat.MessageSections.ArticleScheduleRecoveryWorker>();
         }
 
+        var signatureOptions = context.ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<IczpNet.Chat.Options.AttachmentSignatureOptions>>();
+        IczpNet.Chat.Options.AttachmentSignatureOptions.ResolveValidatedSigningKey(signatureOptions.Value);
+
         await base.OnPostApplicationInitializationAsync(context);
     }
 }

@@ -47,7 +47,11 @@ public class AttachmentReuse_Tests
         public DateTime Now { get; set; } = new(2026, 11, 26, 12, 0, 0, DateTimeKind.Utc);
         public AttachmentReuseTokenService TokenService { get; private set; } = null!;
 
-        public AttachmentController CreateController(Guid currentUserId, long[] ownedChatObjectIds)
+        public AttachmentController CreateController(
+            Guid currentUserId,
+            long[] ownedChatObjectIds,
+            bool enableAttachmentReuse = true,
+            bool enablePhysicalDeduplication = true)
         {
             var clock = Substitute.For<IClock>();
             clock.Now.Returns(_ => Now);
@@ -60,6 +64,8 @@ public class AttachmentReuse_Tests
             var uploadOptions = Microsoft.Extensions.Options.Options.Create(new AttachmentUploadOptions
             {
                 TempBlobExpireHours = 24,
+                EnableAttachmentReuse = enableAttachmentReuse,
+                EnablePhysicalDeduplication = enablePhysicalDeduplication,
             });
             var msgOptions = Microsoft.Extensions.Options.Options.Create(new MessageOptions());
 
@@ -386,5 +392,32 @@ public class AttachmentReuse_Tests
         Assert.Equal(winner.BlobId, recovered.BlobId);
         await loserWriteUow.DidNotReceive().CompleteAsync(Arg.Any<CancellationToken>());
         await readUow.Received(2).CompleteAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ReuseAsync_enforces_feature_switch_and_ClientUploadId_length_limit()
+    {
+        var setup = new TestSetup();
+        var controller = setup.CreateController(setup.AccountUserId, [101L, 102L]);
+        var uploadA = await controller.UploadFileAsync(
+            setup.UnitAId,
+            CreateFormFile("switch-test.pdf", "application/pdf", Encoding.UTF8.GetBytes("switch-bytes")));
+
+        // 超过 64 字符的 ClientUploadId 必须拒绝
+        await Assert.ThrowsAsync<BusinessException>(() =>
+            controller.ReuseAsync(setup.UnitBId, new ReuseAttachmentInput
+            {
+                ReuseToken = uploadA.ReuseToken,
+                ClientUploadId = new string('x', 65),
+            }));
+
+        // 关闭 EnableAttachmentReuse 后拒绝兑换
+        var disabledReuseController = setup.CreateController(setup.AccountUserId, [101L, 102L], enableAttachmentReuse: false);
+        await Assert.ThrowsAsync<BusinessException>(() =>
+            disabledReuseController.ReuseAsync(setup.UnitBId, new ReuseAttachmentInput
+            {
+                ReuseToken = uploadA.ReuseToken,
+                ClientUploadId = "valid-op-1",
+            }));
     }
 }
