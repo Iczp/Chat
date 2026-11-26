@@ -342,25 +342,25 @@ public class SessionUnit : BaseSessionEntity<Guid>, IChatOwner<long>, ISorting, 
     [NotMapped]
     public string RenameSpellingAbbreviation => Setting.RenameSpellingAbbreviation;
     [NotMapped]
-    public string OwnerName => Owner.Name;
+    public string OwnerName => Owner?.Name;
     [NotMapped]
-    public string OwnerNameSpelling => Owner.NameSpelling;
+    public string OwnerNameSpelling => Owner?.NameSpelling;
     [NotMapped]
-    public string OwnerNameSpellingAbbreviation => Owner.NameSpellingAbbreviation;
+    public string OwnerNameSpellingAbbreviation => Owner?.NameSpellingAbbreviation;
     [NotMapped]
-    public string OwnerPortrait => Owner.Portrait;
+    public string OwnerPortrait => Owner?.Portrait;
     [NotMapped]
-    public string OwnerThumbnail => Owner.Thumbnail;
+    public string OwnerThumbnail => Owner?.Thumbnail;
     [NotMapped]
-    public string DestinationName => Destination.Name;
+    public string DestinationName => Destination?.Name;
     [NotMapped]
-    public string DestinationNameSpelling => Destination.NameSpelling;
+    public string DestinationNameSpelling => Destination?.NameSpelling;
     [NotMapped]
-    public string DestinationNameSpellingAbbreviation => Destination.NameSpellingAbbreviation;
+    public string DestinationNameSpellingAbbreviation => Destination?.NameSpellingAbbreviation;
     [NotMapped]
-    public string DestinationPortrait => Destination.Portrait;
+    public string DestinationPortrait => Destination?.Portrait;
     [NotMapped]
-    public string DestinationThumbnail => Destination.Thumbnail;
+    public string DestinationThumbnail => Destination?.Thumbnail;
 
     protected SessionUnit() { }
 
