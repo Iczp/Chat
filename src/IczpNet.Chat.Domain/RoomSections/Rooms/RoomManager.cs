@@ -796,11 +796,14 @@ public class RoomManager(
 
         if (isSendMessageToRoom && sessionUnit.Destination != null)
         {
+            var targetName = !string.IsNullOrWhiteSpace(sessionUnit.Setting?.MemberName)
+                ? sessionUnit.Setting.MemberName
+                : (sessionUnit.Owner?.Name ?? (await ChatObjectManager.FindAsync(sessionUnit.OwnerId))?.Name ?? string.Empty);
             await SendRoomMessageAsync(sessionUnit.Destination, new CmdContentInfo()
             {
                 Cmd = MessageKeyNames.TransferCreator,
                 Text = new TextTemplate("{targetObject} 成为群主")
-                    .WithData("targetObject", new SessionUnitTextTemplate(sessionUnit))
+                    .WithData("targetObject", new SessionUnitTextTemplate(sessionUnit.Id, targetName))
                     .ToString(),
             });
         }
