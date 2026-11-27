@@ -60,6 +60,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\IczpNet.Chat.Admin.Application\IczpNet.Chat.Admin.Application.csproj" />
     <ProjectReference Include="..\..\src\IczpNet.Chat.Application\IczpNet.Chat.Application.csproj" />
     <ProjectReference Include="..\..\..\IczpNet.AbpCommons\host\IczpNet.AbpCommons.Host.Shared\IczpNet.AbpCommons.Host.Shared.csproj" />
     <ProjectReference Include="..\..\src\IczpNet.Chat.HttpApi\IczpNet.Chat.HttpApi.csproj" />

@@ -2001,5 +2001,17 @@ redis.call('HSET', key, 'FieldB', valueB)
 - `ApplicationService`（继承自 `ChatAppService`）会由 ABP 自动生成传统控制器并暴露 HTTP 接口，禁止在 `IczpNet.Chat.HttpApi` 中为已有 `AppService` 重复编写同路径的转发 `Controller`（避免路由冲突引发 `AmbiguousMatchException`）；
 - 仅在必须自定义非标准 HTTP 行为（如文件流下载/上传、`SignalR`、`[AllowAnonymous]` 特殊回调或与常规路由不兼容的场景）时，才允许在 `HttpApi` 中编写 `Controller`，且必须同步评估并处理与自动 API 的路由隔离（如在对应方法或服务上配置 `[RemoteService(false)]`）。
 
+------
+
+# 83. Chat 管理端 ABP 规则
+
+本节适用于 IczpNet.Chat 提供给 Vben「即时通讯管理」的全部业务接口，优先于第 8 节对普通 Application 层的通用规定。按 [管理功能开发文档](docs/codex/CHAT-ADMIN-DEVELOPMENT.md) 先完成后端并验收实际 API 契约，再开发和切换 Vben。
+
+- 管理用例统一由 `IczpNet.Chat.Admin.Application` 的 ABP ApplicationService 提供。该层只负责 ABP 授权、输入校验、DTO 映射、Unit of Work 边界与调用 Domain。管理服务直接依赖 Chat Domain 和必要的 Contracts，禁止调用 `IczpNet.Chat.Application` 或 `IczpNet.Chat.ManagementApplication` 的实现。
+- Chat 业务规则、资源范围判定、状态变化、业务查询语义与幂等统一在 `IczpNet.Chat.Domain`，优先复用现有 Manager、领域服务和仓储契约。数据库投影和索引查询由 EntityFrameworkCore 实现。管理服务禁止直接注入仓储、DbContext、Redis、SignalR 连接管理器或作业队列来执行 Chat 业务。
+- `ChatHttpApiHostModule` 为管理程序集注册 `ConventionalControllers`，管理路由根为 `/api/chat/admin`，远程服务名为 `ChatAdmin`。管理 AppService 统一使用自动 API，禁止配套手写 Controller。以运行中的 Swagger 和 ABP API 定义验证 HTTP 方法、路径、参数与 DTO。普通客户端路由按原契约维护。
+- 所有对外管理操作必须有显式 ABP Permission。区分资源读取、写入和高影响操作，由 Domain 校验租户与目标范围。权限授予、数据范围、写操作审计和敏感字段裁剪要在前端接入前完成真实 HTTP 验证。不能用前端菜单权限替代后端校验。
+- 迁移前盘点菜单、按钮、辅助请求和旧接口调用方。每页切换后验证该页所有 Chat 管理请求都经新的管理 API，禁止对 403、404 或错误结果回退到普通 Chat API。其他模块的通用认证、权限与设施接口遵守其所属模块契约。
+
 
 

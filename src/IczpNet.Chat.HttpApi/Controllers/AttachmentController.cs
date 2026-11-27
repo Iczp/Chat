@@ -222,7 +222,7 @@ public class AttachmentController(
             : null;
         var thumbSize = MessageSetting.ImageSetting.ThumbnailSize;
         var thumbRecipeHash = reuseEnabled
-            ? ProcessingReuseManager.ComputeRecipeHash($"v1|img-thumb|{thumbSize}")
+            ? ProcessingReuseManager.ComputeRecipeHash($"v1|img-thumb|{thumbSize}|{primaryRecipeHash}")
             : null;
 
         if (isOriginal)
@@ -869,7 +869,7 @@ public class AttachmentController(
                             storageScope, ChatFilesContainer, videoSha256, videoBytes.LongLength,
                             AttachmentMediaType.Video, BlobRoles.Snapshot, snapRecipeHash,
                             snapBlob.StorageObjectId, snapBlob.MimeType, snapBlob.Suffix, snapBlob.FileSize,
-                            serverSnapWidth ?? resolvedWidth, serverSnapHeight ?? resolvedHeight, serverDurationMs);
+                            serverSnapWidth, serverSnapHeight, serverDurationMs);
                     }
                 }
 
@@ -904,7 +904,7 @@ public class AttachmentController(
                             storageScope, ChatFilesContainer, videoSha256, videoBytes.LongLength,
                             AttachmentMediaType.Video, BlobRoles.SnapshotThumbnail, snapThumbRecipeHash,
                             snapThumbBlob.StorageObjectId, snapThumbBlob.MimeType, snapThumbBlob.Suffix, snapThumbBlob.FileSize,
-                            serverSnapWidth ?? resolvedWidth, serverSnapHeight ?? resolvedHeight, serverDurationMs);
+                            serverSnapWidth, serverSnapHeight, serverDurationMs);
                     }
                 }
             }

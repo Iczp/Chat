@@ -60,6 +60,7 @@ using Volo.Abp.VirtualFileSystem;
 namespace IczpNet.Chat;
 [DependsOn(
 typeof(ChatApplicationModule),
+    typeof(Admin.ChatAdminApplicationModule),
     typeof(IczpNet.OpenIddict.OpenIddictAspNetCoreModule),
     typeof(ChatEntityFrameworkCoreModule),
     typeof(ChatHttpApiModule),
@@ -210,9 +211,11 @@ public class ChatHttpApiHostModule : AbpModule
                 {
                     conf.RootPath = ChatRemoteServiceConsts.RemoteServiceName.ToLower();
                 });
-            //options
-            //    .ConventionalControllers
-            //    .CreateAsync(typeof(ChatManagementApplicationModule).Assembly);
+            options.ConventionalControllers.Create(typeof(Admin.ChatAdminApplicationModule).Assembly, config =>
+            {
+                config.RootPath = "chat/admin";
+                config.RemoteServiceName = "ChatAdmin";
+            });
         });
 
         Configure<AbpBlobStoringOptions>(options =>

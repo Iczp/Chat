@@ -119,7 +119,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IczpNet.Chat.SchemaMigrator
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IczpNet.Chat.AppDevice", "integration\IczpNet.Chat.AppDevice\IczpNet.Chat.AppDevice.csproj", "{1FB29C14-75EE-48D0-9963-96221E9FEA23}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IczpNet.Chat.AdminApplication", "src\IczpNet.Chat.AdminApplication\IczpNet.Chat.AdminApplication.csproj", "{DB8108C0-BB44-4E62-9E45-D126BCF8B21F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IczpNet.Chat.Admin.Application", "src\IczpNet.Chat.Admin.Application\IczpNet.Chat.Admin.Application.csproj", "{DB8108C0-BB44-4E62-9E45-D126BCF8B21F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IczpNet.Chat.ManagementApplication", "src\IczpNet.Chat.ManagementApplication\IczpNet.Chat.ManagementApplication.csproj", "{A20FA98D-A4F8-4191-9C03-86DF25ABBCF3}"
 EndProject

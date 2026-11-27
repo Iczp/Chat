@@ -416,39 +416,49 @@ public class GenerateVideoGifBackgroundJob(
             return;
         }
 
-        var waiters = await processingReuseManager.GetPendingWaitersAsync(readyGif.Id, maxCount: 200);
-        foreach (var waiter in waiters)
+        var attemptedWaiterIds = new System.Collections.Generic.HashSet<Guid>();
+        while (true)
         {
-            try
+            var waiters = await processingReuseManager.GetPendingWaitersAsync(readyGif.Id, maxCount: 200);
+            var batch = waiters.Where(w => attemptedWaiterIds.Add(w.Id)).ToList();
+            if (batch.Count == 0)
             {
-                var queryable = await messageRepository.WithDetailsAsync(x => x.VideoContentList);
-                var msg = await asyncExecuter.FirstOrDefaultAsync(queryable.Where(x => x.Id == waiter.MessageId));
-                if (msg == null || msg.IsRollbacked || msg.RollbackTime.HasValue)
-                {
-                    await processingReuseManager.MarkWaiterStatusAsync(waiter.Id, AttachmentProcessingWaiterStatus.Skipped);
-                    continue;
-                }
-
-                var vc = msg.GetTypedContentEntity<VideoContent>();
-                if (vc == null || vc.GifBlobId.HasValue)
-                {
-                    await processingReuseManager.MarkWaiterStatusAsync(waiter.Id, AttachmentProcessingWaiterStatus.Skipped);
-                    continue;
-                }
-
-                var vBlob = (await messageRepository.GetBlobsAsNoTrackingAsync([waiter.PrimaryBlobId])).FirstOrDefault();
-                if (vBlob == null)
-                {
-                    await processingReuseManager.MarkWaiterStatusAsync(waiter.Id, AttachmentProcessingWaiterStatus.Skipped);
-                    continue;
-                }
-
-                await ApplyReadyGifToMessageAsync(msg, vc, vBlob, readyGif);
-                await processingReuseManager.MarkWaiterStatusAsync(waiter.Id, AttachmentProcessingWaiterStatus.Completed);
+                break;
             }
-            catch (Exception ex)
+
+            foreach (var waiter in batch)
             {
-                Logger.LogWarning(ex, "Failed to backfill GIF waiter: WaiterId={WaiterId}, MessageId={MessageId}", waiter.Id, waiter.MessageId);
+                try
+                {
+                    var queryable = await messageRepository.WithDetailsAsync(x => x.VideoContentList);
+                    var msg = await asyncExecuter.FirstOrDefaultAsync(queryable.Where(x => x.Id == waiter.MessageId));
+                    if (msg == null || msg.IsRollbacked || msg.RollbackTime.HasValue)
+                    {
+                        await processingReuseManager.MarkWaiterStatusAsync(waiter.Id, AttachmentProcessingWaiterStatus.Skipped);
+                        continue;
+                    }
+
+                    var vc = msg.GetTypedContentEntity<VideoContent>();
+                    if (vc == null || vc.GifBlobId.HasValue)
+                    {
+                        await processingReuseManager.MarkWaiterStatusAsync(waiter.Id, AttachmentProcessingWaiterStatus.Skipped);
+                        continue;
+                    }
+
+                    var vBlob = (await messageRepository.GetBlobsAsNoTrackingAsync([waiter.PrimaryBlobId])).FirstOrDefault();
+                    if (vBlob == null)
+                    {
+                        await processingReuseManager.MarkWaiterStatusAsync(waiter.Id, AttachmentProcessingWaiterStatus.Skipped);
+                        continue;
+                    }
+
+                    await ApplyReadyGifToMessageAsync(msg, vc, vBlob, readyGif);
+                    await processingReuseManager.MarkWaiterStatusAsync(waiter.Id, AttachmentProcessingWaiterStatus.Completed);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarning(ex, "Failed to backfill GIF waiter: WaiterId={WaiterId}, MessageId={MessageId}", waiter.Id, waiter.MessageId);
+                }
             }
         }
     }

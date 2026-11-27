@@ -118,6 +118,10 @@ public interface IAttachmentProcessingReuseManager
     Task<int> InvalidateByStorageObjectIdAsync(
         Guid storageObjectId,
         CancellationToken cancellationToken = default);
+
+    Task<int> RecoverPendingGifWaitersAsync(
+        int maxResults = 20,
+        CancellationToken cancellationToken = default);
 }
 
 public class AttachmentProcessingReuseManager(
@@ -180,17 +184,62 @@ public class AttachmentProcessingReuseManager(
             return existing;
         }
 
-        var entity = new AttachmentProcessingResult(
-            GuidGenerator.Create(),
-            storageScope,
-            container,
-            sourceSha256,
-            sourceFileSize,
-            mediaType,
-            outputRole,
-            recipeHash);
+        var lockKey = $"Chat:ProcClaim:{storageScope}:{container}:{sourceSha256}:{sourceFileSize}:{(int)mediaType}:{(int)outputRole}:{recipeHash}";
+        await using var handle = await distributedLock.TryAcquireAsync(lockKey, TimeSpan.FromSeconds(10), cancellationToken);
 
-        return await resultRepository.InsertAsync(entity, autoSave: true, cancellationToken: cancellationToken);
+        var uowManager = LazyServiceProvider.LazyGetRequiredService<IUnitOfWorkManager>();
+        try
+        {
+            using var uow = uowManager.Begin(requiresNew: true, isTransactional: true);
+            var rechecked = await resultRepository.FirstOrDefaultAsync(x =>
+                x.StorageScope == storageScope &&
+                x.Container == container &&
+                x.SourceSha256 == sourceSha256 &&
+                x.SourceFileSize == sourceFileSize &&
+                x.MediaType == mediaType &&
+                x.OutputRole == outputRole &&
+                x.RecipeHash == recipeHash,
+                cancellationToken: cancellationToken);
+
+            if (rechecked != null)
+            {
+                await uow.CompleteAsync(cancellationToken);
+                return rechecked;
+            }
+
+            var entity = new AttachmentProcessingResult(
+                GuidGenerator.Create(),
+                storageScope,
+                container,
+                sourceSha256,
+                sourceFileSize,
+                mediaType,
+                outputRole,
+                recipeHash);
+
+            var inserted = await resultRepository.InsertAsync(entity, autoSave: true, cancellationToken: cancellationToken);
+            await uow.CompleteAsync(cancellationToken);
+            return inserted;
+        }
+        catch (Exception ex) when (BlobDbExceptionHelper.IsUniqueConstraintViolation(ex))
+        {
+            using var recoverUow = uowManager.Begin(requiresNew: true, isTransactional: false);
+            var winner = await resultRepository.FirstOrDefaultAsync(x =>
+                x.StorageScope == storageScope &&
+                x.Container == container &&
+                x.SourceSha256 == sourceSha256 &&
+                x.SourceFileSize == sourceFileSize &&
+                x.MediaType == mediaType &&
+                x.OutputRole == outputRole &&
+                x.RecipeHash == recipeHash,
+                cancellationToken: cancellationToken);
+            await recoverUow.CompleteAsync(cancellationToken);
+            if (winner != null)
+            {
+                return winner;
+            }
+            throw;
+        }
     }
 
     public virtual async Task<AttachmentProcessingResult> FindReadyResultAsync(
@@ -574,5 +623,52 @@ public class AttachmentProcessingReuseManager(
 
         await resultRepository.UpdateManyAsync(results, autoSave: true, cancellationToken: cancellationToken);
         return results.Count;
+    }
+
+    public virtual async Task<int> RecoverPendingGifWaitersAsync(
+        int maxResults = 20,
+        CancellationToken cancellationToken = default)
+    {
+        if (!IsEnabled())
+        {
+            return 0;
+        }
+
+        var jobManager = LazyServiceProvider?.LazyGetService<Volo.Abp.BackgroundJobs.IBackgroundJobManager>();
+        if (jobManager == null)
+        {
+            return 0;
+        }
+
+        var now = Clock.Now;
+        var waiterQuery = await waiterRepository.GetQueryableAsync();
+        var resultQuery = await resultRepository.GetQueryableAsync();
+
+        var candidates = (from w in waiterQuery
+                          join r in resultQuery on w.ProcessingResultId equals r.Id
+                          where w.Status == AttachmentProcessingWaiterStatus.Pending &&
+                                w.OutputRole == BlobRoles.Gif &&
+                                (r.Status == AttachmentProcessingStatus.Ready ||
+                                 r.Status == AttachmentProcessingStatus.Pending ||
+                                 (r.Status == AttachmentProcessingStatus.Processing && r.LeaseExpireTime != null && r.LeaseExpireTime <= now) ||
+                                 (r.Status == AttachmentProcessingStatus.Failed && (r.NextRetryTime == null || r.NextRetryTime <= now)))
+                          orderby w.CreationTime
+                          select new { w.ProcessingResultId, w.MessageId, w.PrimaryBlobId })
+            .Take(maxResults * 5)
+            .ToList();
+
+        var enqueued = 0;
+        foreach (var group in candidates.GroupBy(x => x.ProcessingResultId).Take(maxResults))
+        {
+            var first = group.First();
+            await jobManager.EnqueueAsync(new GenerateVideoGifArgs
+            {
+                MessageId = first.MessageId,
+                VideoBlobId = first.PrimaryBlobId,
+            });
+            enqueued++;
+        }
+
+        return enqueued;
     }
 }

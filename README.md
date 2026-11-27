@@ -71,7 +71,7 @@ IczpNet.Chat/
 │   ├── IczpNet.Chat.Domain/               # 实体、聚合根、领域服务、仓储接口、领域事件
 │   ├── IczpNet.Chat.Application.Contracts/# 应用服务接口、输入输出 DTO、权限契约
 │   ├── IczpNet.Chat.Application/          # 核心业务编排、用例逻辑、事务协调
-│   ├── IczpNet.Chat.AdminApplication/     # 平台运营与后台管理应用服务
+│   ├── IczpNet.Chat.Admin.Application/    # 平台运营与后台管理应用服务
 │   ├── IczpNet.Chat.ManagementApplication/# 租户/群组管理应用服务
 │   ├── IczpNet.Chat.HttpApi/              # ASP.NET Core REST API 控制器端点
 │   ├── IczpNet.Chat.HttpApi.Client/       # C# 强类型客户端 SDK (基于 Refit/HttpClient)

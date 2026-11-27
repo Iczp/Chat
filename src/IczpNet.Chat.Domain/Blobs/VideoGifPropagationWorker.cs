@@ -42,5 +42,15 @@ public class VideoGifPropagationWorker : AsyncPeriodicBackgroundWorkerBase
         {
             logger?.LogInformation("VideoGifPropagationWorker processed {TotalProcessed} GIF propagation outbox item(s).", totalProcessed);
         }
+
+        var reuseManager = workerContext.ServiceProvider.GetService<IAttachmentProcessingReuseManager>();
+        if (reuseManager != null)
+        {
+            var recovered = await reuseManager.RecoverPendingGifWaitersAsync(20, workerContext.CancellationToken);
+            if (recovered > 0)
+            {
+                logger?.LogInformation("VideoGifPropagationWorker recovered {RecoveredCount} pending GIF waiter group(s).", recovered);
+            }
+        }
     }
 }

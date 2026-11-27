@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <RootNamespace>IczpNet.Chat</RootNamespace>
+    <RootNamespace>IczpNet.Chat.Admin</RootNamespace>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Authors>IczpNet</Authors>
 		<RepositoryUrl>https://github.com/Iczp/Chat.git</RepositoryUrl>
@@ -26,13 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-		<!--<PackageReference Include="IczpNet.AbpTrees.Application" Version="0.2.4" />-->
-    <PackageReference Include="Volo.Abp.Mapperly" Version="10.6.1" />
     <PackageReference Include="Volo.Abp.Ddd.Application" Version="10.6.1" />
-    <PackageReference Include="Volo.Abp.FluentValidation" Version="10.6.1" />
-    <PackageReference Include="Volo.Abp.Identity.Application" Version="10.6.1" />
-    <ProjectReference Include="..\..\..\IczpNet.AbpCommons\src\IczpNet.AbpCommons.Application\IczpNet.AbpCommons.Application.csproj" />
-    <ProjectReference Include="..\..\..\IczpNet.AbpTrees\src\IczpNet.AbpTrees.Application\IczpNet.AbpTrees.Application.csproj" />
     <ProjectReference Include="..\IczpNet.Chat.Domain\IczpNet.Chat.Domain.csproj" />
   </ItemGroup>
 
